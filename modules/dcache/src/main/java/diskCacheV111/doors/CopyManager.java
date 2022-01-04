@@ -38,6 +38,7 @@ import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.util.Args;
 import org.dcache.util.RedirectedTransfer;
+import org.dcache.util.TimeUtils;
 import org.dcache.util.Transfer;
 import org.dcache.util.URIs;
 import org.slf4j.Logger;
@@ -269,51 +270,30 @@ public class CopyManager extends AbstractCellComponent
         @Override
         public void run() {
             while (_envelope != null) {
-                boolean requeue = false;
-                CopyManagerMessage message =
-                      (CopyManagerMessage) _envelope.getMessageObject();
-                try {
-                    LOGGER.info("starting processing transfer message with id {}",
-                          message.getId());
+                CopyManagerMessage message = (CopyManagerMessage) _envelope.getMessageObject();
 
+                LOGGER.info("starting processing transfer message with id {}", message.getId());
+                message.increaseNumberOfPerformedRetries();
+
+                try {
                     copy(message.getSubject(),
                           message.getRestriction(),
                           FsPath.create(message.getSrcPnfsPath()),
                           FsPath.create(message.getDstPnfsPath()));
-
-                    message.setReturnCode(0);
-
-                    message.setDescription("file " +
-                          message.getDstPnfsPath() +
-                          " has been copied from " +
-                          message.getSrcPnfsPath());
                 } catch (CacheException e) {
                     int retries = message.getNumberOfRetries() - 1;
                     message.setNumberOfRetries(retries);
 
                     if (retries > 0) {
-                        requeue = true;
-                    } else {
-                        message.setReturnCode(1);
-                        message.setDescription("copy failed:" + e.getMessage());
-                    }
-                } catch (InterruptedException e) {
-                    message.setReturnCode(1);
-                    message.setDescription("copy was interrupted");
-                } finally {
-                    finishTransfer();
-                    message.increaseNumberOfPerformedRetries();
-                    if (requeue) {
                         LOGGER.info("putting on queue for retry: {}", _envelope);
                         putOnQueue(_envelope);
                     } else {
-                        try {
-                            _envelope.revertDirection();
-                            sendMessage(_envelope);
-                        } catch (RuntimeException e) {
-                            LOGGER.warn(e.toString(), e);
-                        }
+                        replyError("copy failed:" + e.getMessage());
                     }
+                } catch (InterruptedException e) {
+                    replyError("copy was interrupted");
+                } finally {
+                    finishTransfer();
                 }
 
                 synchronized (this) {
@@ -324,6 +304,55 @@ public class CopyManager extends AbstractCellComponent
             }
         }
 
+        private void replySuccess() {
+            CopyManagerMessage message = (CopyManagerMessage) _envelope.getMessageObject();
+            message.setReturnCode(0);
+            message.setDescription("file " + message.getDstPnfsPath() + " has been copied from " +
+                    message.getSrcPnfsPath());
+            sendReply();
+        }
+
+        private void replyError(String why) {
+            CopyManagerMessage message = (CopyManagerMessage) _envelope.getMessageObject();
+            message.setReturnCode(1);
+            message.setDescription(why);
+            sendReply();
+        }
+
+        private void sendReply() {
+            try {
+                _envelope.revertDirection();
+                sendMessage(_envelope);
+            } catch (RuntimeException e) {
+                LOGGER.warn(e.toString(), e);
+            }
+            _envelope = null; // Enforce that we never reply twice.
+        }
+
+        /**
+         * Copy a file's data.  This is done by selecting source and destination pools and
+         * initiating two transfers: an upload transfer on the destination pool and a download
+         * transfer on the source pool.  This method makes a single attempt to transfer the file:
+         * any retry logic is handled elsewhere.  The method returns once both transfers have
+         * completed.
+         * <p>
+         * The copy request is considered successful once the upload transfer (i.e., on the
+         * destination pool) completes successfully.  Although this method will wait for the
+         * download transfer to complete before returning, the result of the download transfer
+         * (i.e., on the source pool) will not affect the success of the copy request.
+         * <p>
+         * This method will send a cell message reply to the door requesting this copy as soon as
+         * the upload transfer completes successfully, which happens before this method returns.
+         * However, no message is sent if there is an error.
+         * <p>
+         * This method will throw an Exception if there is a problem with the upload transfer
+         * (i.e., on the destination pool), but not if there is a problem with the download transfer
+         * (i.e., on the source pool).
+         * <p>
+         * As a contract: this method will either send a cell message (to the door requesting the
+         * copy request) indicating the copy request was handled successfully or it will throw an
+         * Exception.
+         */
         private void copy(Subject subject,
               Restriction restriction,
               FsPath srcPnfsFilePath,
@@ -345,68 +374,81 @@ public class CopyManager extends AbstractCellComponent
             _target.setCellAddress(getCellAddress());
             _target.setIoQueue("pp");
 
-            boolean success = false;
-            boolean targetCreated = false;
-            String explanation = "copy failed";
-
             // Avoid long to int cast issues, when calling get/setsessionID, we cast the ID into int
             _activeTransfers.put((int) _target.getId(), this);
             _activeTransfers.put((int) _source.getId(), this);
 
             long timeout = _moverTimeoutUnit.toMillis(_moverTimeout);
             try {
+                try {
+                    _source.readNameSpaceEntry(false);
+                    _target.createNameSpaceEntry();
 
-                _source.readNameSpaceEntry(false);
-                _target.createNameSpaceEntry();
-                targetCreated = true;
+                    _source.setProtocolInfo(createSourceProtocolInfo());
+                    _target.setLength(_source.getLength());
 
-                _source.setProtocolInfo(createSourceProtocolInfo());
-                _target.setLength(_source.getLength());
+                    _source.selectPoolAndStartMover(tryOnce().doNotTimeout());
+                    _source.waitForRedirect(timeout);
 
-                _source.selectPoolAndStartMover(tryOnce().doNotTimeout());
-                _source.waitForRedirect(timeout);
+                    _target.setProtocolInfo(createTargetProtocolInfo(_source.getRedirect().getUrl()));
+                    _target.selectPoolAndStartMover(tryOnce().doNotTimeout());
 
-                _target.setProtocolInfo(createTargetProtocolInfo(_source.getRedirect().getUrl()));
-                _target.selectPoolAndStartMover(tryOnce().doNotTimeout());
-
-                if (!_source.waitForMover(timeout)) {
-                    throw new TimeoutCacheException(
-                          "copy: wait for DoorTransferFinishedMessage expired");
-                }
-
-                if (!_target.waitForMover(timeout)) {
-                    throw new TimeoutCacheException(
-                          "copy: wait for DoorTransferFinishedMessage expired");
-                }
-                LOGGER.info("transfer finished successfully");
-                success = true;
-            } catch (CacheException e) {
-                _target.setStatus("Failed: " + e.toString());
-                LOGGER.warn(e.toString());
-                explanation = "copy failed: " + e.getMessage();
-                throw e;
-            } catch (InterruptedException e) {
-                _target.setStatus("Failed: " + e.toString());
-                explanation = "interrupted";
-                throw e;
-            } finally {
-                if (!success) {
-                    String status = _source.getStatus();
-                    _source.killMover(0, "killed by CopyManager: " + explanation);
-                    if (targetCreated) {
-                        _target.killMover(1000, "killed by CopyManager: " + explanation);
-                        // It is only valid to delete after createNameSpaceEntry returned successfully.
-                        _target.deleteNameSpaceEntry();
+                    if (!_target.waitForMover(timeout)) {
+                        String duration = TimeUtils.describeDuration(_moverTimeout, _moverTimeoutUnit);
+                        throw new TimeoutCacheException("mover took longer than " + duration + " to complete.");
                     }
-                    _source.setStatus(status);
-                } else {
-                    _source.setStatus("Success");
+                } catch (CacheException e) {
+                    abort(e.getMessage());
+                    throw e;
+                } catch (InterruptedException e) {
+                    abort("Interrupted");
+                    throw e;
                 }
+
+                LOGGER.info("transfer finished successfully");
+                replySuccess();
+
+                try {
+                    if (!_source.waitForMover(timeout)) {
+                        String duration = TimeUtils.describeDuration(_moverTimeout, _moverTimeoutUnit);
+                        String why = "source mover took longer than " + duration + " to complete.";
+                        LOGGER.warn("Problem with {}: {}", poolName(_source), why);
+                        killSourceMover(why);
+                        return;
+                    }
+                    _source.setStatus("Success");
+                } catch (CacheException e) {
+                    LOGGER.warn("Problem with {}: {}", poolName(_source), e.toString());
+                } catch (InterruptedException e) {
+                    killSourceMover("Interrupted while waiting for mover to finish.");
+                }
+            } finally {
                 _activeTransfers.remove((int) _target.getId());
                 _activeTransfers.remove((int) _source.getId());
             }
         }
 
+        private String poolName(Transfer transfer) {
+            return Optional.ofNullable(transfer.getPool())
+                                .map(Pool::getName)
+                                .orElse("<unknown pool>");
+        }
+
+        private void killSourceMover(String why) {
+            String status = _source.getStatus();
+            _source.killMover(0, "Killed by CopyManager: " + why);
+            _source.setStatus(status);
+        }
+
+        private void abort(String why) {
+            LOGGER.warn(why);
+            killSourceMover(why);
+            _target.killMover(1000, "Killed by CopyManager: " + why);
+            if (_target.getPnfsId() != null) {
+                _target.deleteNameSpaceEntry();
+            }
+            _target.setStatus("Failed: " + why);
+        }
 
         private RemoteHttpDataTransferProtocolInfo createTargetProtocolInfo(String urlRemote) {
 
