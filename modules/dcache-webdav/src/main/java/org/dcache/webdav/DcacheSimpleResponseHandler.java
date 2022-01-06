@@ -35,6 +35,7 @@ import io.milton.http.quota.StorageChecker;
 import io.milton.resource.Resource;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import org.eclipse.jetty.io.EofException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -100,6 +101,8 @@ public class DcacheSimpleResponseHandler extends AbstractWrappingResponseHandler
 
         try {
             response.getOutputStream().write(messageBytes);
+        } catch (EofException e) {
+            LOGGER.debug("Client disconnected before we could respond {}", message);
         } catch (IOException e) {
             LOGGER.warn("Failed to write error response {}: {}", message, e.toString());
         }
