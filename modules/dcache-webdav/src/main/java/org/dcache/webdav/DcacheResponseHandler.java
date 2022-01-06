@@ -46,6 +46,7 @@ import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.http.AuthenticationHandler;
 import org.dcache.http.PathMapper;
+import org.eclipse.jetty.io.EofException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -199,8 +200,10 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler {
             response.setContentTypeHeader("text/html");
             OutputStream out = response.getOutputStream();
             out.write(error.getBytes());
-        } catch (IOException ex) {
-            LOGGER.warn("exception writing content");
+        } catch (EofException e) {
+            LOGGER.debug("Client disconnected before we could reply.");
+        } catch (IOException e) {
+            LOGGER.warn("exception writing content: {}", e.toString());
         }
     }
 
