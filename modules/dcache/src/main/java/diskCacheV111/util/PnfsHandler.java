@@ -344,6 +344,11 @@ public class PnfsHandler implements CellMessageSender {
         return request(new PnfsCreateEntryMessage(path, attributes));
     }
 
+    public PnfsCreateEntryMessage createPnfsEntry(String path,
+          FileAttributes attributes, Set<FileAttribute> queryAttributes) throws CacheException {
+        return request(new PnfsCreateEntryMessage(path, attributes, queryAttributes));
+    }
+
     public Collection<Link> find(PnfsId pnfsId) throws CacheException {
         PnfsGetParentMessage response = request(new PnfsGetParentMessage(pnfsId));
         List<PnfsId> parents = response.getParents();

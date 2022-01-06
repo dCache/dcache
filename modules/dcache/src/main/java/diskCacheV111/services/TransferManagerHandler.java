@@ -7,6 +7,7 @@ import static org.dcache.namespace.FileAttribute.STORAGECLASS;
 import static org.dcache.namespace.FileAttribute.STORAGEINFO;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -39,9 +40,12 @@ import dmg.cells.nucleus.CellPath;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.URI;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.OptionalLong;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import javax.security.auth.Subject;
 import org.dcache.acl.enums.AccessMask;
@@ -67,6 +71,18 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
 
     private static final int MAXIMUM_POOL_SELECTION_ATTEMPTS = 10;
     private static final int MAXIMUM_MOVER_START_ATTEMPTS = 10;
+
+    private static final PermissionHandler PERMISSION_HANDLER = new ChainedPermissionHandler(
+                    new ACLPermissionHandler(), new PosixPermissionHandler());
+
+    public static final Set<FileAttribute> ATTRIBUTES_FOR_PULL = unionOf(
+          PERMISSION_HANDLER.getRequiredAttributes(),
+          PoolMgrSelectWritePoolMsg.getRequiredAttributes());
+
+    public static final Set<FileAttribute> ATTRIBUTES_FOR_PUSH = unionOf(
+          PERMISSION_HANDLER.getRequiredAttributes(),
+          PoolMgrSelectReadPoolMsg.getRequiredAttributes(),
+          EnumSet.of(SIZE));  // SIZE to determine if file is currently being uploaded
 
     private final TransferManager manager;
     private final TransferManagerMessage transferRequest;
@@ -138,7 +154,6 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
     private transient int _replyCode;
     private transient Serializable _errorObject;
     private final transient DoorRequestInfoMessage info;
-    private final transient PermissionHandler permissionHandler;
     private transient PoolMgrSelectReadPoolMsg.Context _readPoolSelectionContext;
     private final transient Executor executor;
 
@@ -174,11 +189,13 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
 
         manager.addActiveTransfer(id, this);
         setState(INITIAL_STATE);
-        permissionHandler =
-              new ChainedPermissionHandler(
-                    new ACLPermissionHandler(),
-                    new PosixPermissionHandler());
         pnfsId = transferRequest.getPnfsId();
+    }
+
+    private static Set<FileAttribute> unionOf(Collection<FileAttribute> ...sources) {
+        return Arrays.stream(sources)
+            .flatMap(Collection::stream)
+            .collect(Sets.toImmutableEnumSet());
     }
 
     public static String describeState(int state) {
@@ -195,39 +212,60 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
             return;
         }
         parentDir = pnfsPath.substring(0, last_slash_pos);
-        PnfsMessage message;
+        FileAttributes attributesFromDoor = transferRequest.getFileAttributes();
         if (store) {
             if (pnfsId == null) {
-                message = new PnfsCreateEntryMessage(pnfsPath,
+                LOGGER.debug("Door {} provided minimal information for PULL, querying PnfsManager",
+                        requestor);
+                var message = new PnfsCreateEntryMessage(pnfsPath,
                       FileAttributes.ofFileType(FileType.REGULAR));
                 message.setSubject(transferRequest.getSubject());
                 message.setRestriction(transferRequest.getRestriction());
                 setState(WAITING_FOR_PNFS_ENTRY_CREATION_INFO_STATE);
+                sentToPnfsManager(message);
             } else {
-                info.setPnfsId(pnfsId);
-                pnfsIdString = pnfsId.toString();
-                EnumSet<FileAttribute> attributes = EnumSet.noneOf(FileAttribute.class);
-                attributes.addAll(permissionHandler.getRequiredAttributes());
-                attributes.addAll(PoolMgrSelectReadPoolMsg.getRequiredAttributes());
-                message = new PnfsGetFileAttributes(pnfsId, attributes);
-                message.setSubject(transferRequest.getSubject());
-                message.setRestriction(transferRequest.getRestriction());
-                message.setPnfsPath(pnfsPath);
-                setState(WAITING_FOR_CREATED_FILE_INFO_STATE);
+                if (attributesFromDoor != null && attributesFromDoor.isDefined(ATTRIBUTES_FOR_PULL)) {
+                    LOGGER.debug("Door {} provided sufficient information for PULL, by-passing"
+                            + " PnfsManager request", requestor);
+                    setState(RECEIVED_CREATED_FILE_INFO_STATE);
+                    getFileAttributesArrived(attributesFromDoor);
+                } else {
+                    LOGGER.warn("Please upgrade door {}!  Missing attributes: received={} required={}",
+                            requestor, attributesFromDoor == null ? "[none]"
+                                    : String.valueOf(attributesFromDoor.getDefinedAttributes()),
+                            ATTRIBUTES_FOR_PULL);
+                    info.setPnfsId(pnfsId);
+                    pnfsIdString = pnfsId.toString();
+                    var message = new PnfsGetFileAttributes(pnfsId, ATTRIBUTES_FOR_PULL);
+                    message.setSubject(transferRequest.getSubject());
+                    message.setRestriction(transferRequest.getRestriction());
+                    message.setPnfsPath(pnfsPath);
+                    setState(WAITING_FOR_CREATED_FILE_INFO_STATE);
+                    sentToPnfsManager(message);
+                }
             }
         } else {
-            EnumSet<FileAttribute> attributes = EnumSet.noneOf(FileAttribute.class);
-            attributes.addAll(permissionHandler.getRequiredAttributes());
-            attributes.addAll(PoolMgrSelectReadPoolMsg.getRequiredAttributes());
-            attributes.add(SIZE); // to determine if file is currently being uploaded
-            message = pnfsId == null ? new PnfsGetFileAttributes(pnfsPath, attributes)
-                  : new PnfsGetFileAttributes(pnfsId, attributes);
-            message.setSubject(transferRequest.getSubject());
-            message.setRestriction(transferRequest.getRestriction());
-            message.setAccessMask(EnumSet.of(AccessMask.READ_DATA));
-            message.setPnfsPath(pnfsPath);
-            setState(WAITING_FOR_PNFS_INFO_STATE);
+            if (pnfsId != null && attributesFromDoor != null && attributesFromDoor.isDefined(ATTRIBUTES_FOR_PUSH)) {
+                LOGGER.debug("Door {} provided sufficient information for PUSH, by-passing"
+                        + " PnfsManager request", requestor);
+                setState(RECEIVED_PNFS_INFO_STATE);
+                storageInfoArrived(pnfsId, attributesFromDoor);
+            } else {
+                LOGGER.debug("Door {} provided minimal information for PUSH, querying PnfsManager",
+                        requestor);
+                var message = pnfsId == null ? new PnfsGetFileAttributes(pnfsPath, ATTRIBUTES_FOR_PUSH)
+                      : new PnfsGetFileAttributes(pnfsId, ATTRIBUTES_FOR_PUSH);
+                message.setSubject(transferRequest.getSubject());
+                message.setRestriction(transferRequest.getRestriction());
+                message.setAccessMask(EnumSet.of(AccessMask.READ_DATA));
+                message.setPnfsPath(pnfsPath);
+                setState(WAITING_FOR_PNFS_INFO_STATE);
+                sentToPnfsManager(message);
+            }
         }
+    }
+
+    private void sentToPnfsManager(PnfsMessage message) {
         manager.persist(this);
         CellStub.addCallback(manager.getPnfsManagerStub().send(message), this, executor);
     }
@@ -250,7 +288,12 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
                       (PnfsGetFileAttributes) message;
                 if (state == WAITING_FOR_PNFS_INFO_STATE) {
                     setState(RECEIVED_PNFS_INFO_STATE);
-                    storageInfoArrived(attributesMessage);
+                    FileAttributes attributes = attributesMessage.getFileAttributes();
+                    if (!attributes.isDefined(SIZE)) {
+                        sendErrorReply(CacheException.FILE_IS_NEW, new FileIsNewCacheException());
+                        return;
+                    }
+                    storageInfoArrived(attributesMessage.getPnfsId(), attributes);
                     return;
                 } else if (state == WAITING_FOR_PNFS_CHECK_BEFORE_DELETE_STATE) {
                     state = RECEIVED_PNFS_CHECK_BEFORE_DELETE_STATE;
@@ -258,7 +301,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
                     return;
                 } else if (state == WAITING_FOR_CREATED_FILE_INFO_STATE) {
                     state = RECEIVED_CREATED_FILE_INFO_STATE;
-                    getFileAttributesArrived(attributesMessage);
+                    getFileAttributesArrived(attributesMessage.getFileAttributes());
                     return;
                 }
 
@@ -423,36 +466,31 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
         selectPool();
     }
 
-    public void getFileAttributesArrived(PnfsGetFileAttributes msg) {
+    private void getFileAttributesArrived(FileAttributes attributes) {
         manager.persist(this);
 
-        fileAttributes = msg.getFileAttributes();
-        info.setStorageInfo(msg.getFileAttributes().getStorageInfo());
-        if (msg.getFileAttributes().isDefined(STORAGEINFO)
-              && msg.getFileAttributes().getStorageInfo().getKey("path") != null) {
-            info.setBillingPath(msg.getFileAttributes().getStorageInfo().getKey("path"));
+        fileAttributes = attributes;
+        info.setStorageInfo(attributes.getStorageInfo());
+        if (attributes.isDefined(STORAGEINFO)
+              && attributes.getStorageInfo().getKey("path") != null) {
+            info.setBillingPath(attributes.getStorageInfo().getKey("path"));
         }
 
         selectPool();
     }
 
-    public void storageInfoArrived(PnfsGetFileAttributes msg) {
-        if (!msg.getFileAttributes().isDefined(SIZE)) {
-            sendErrorReply(CacheException.FILE_IS_NEW, new FileIsNewCacheException());
-            return;
-        }
-
+    private void storageInfoArrived(PnfsId id, FileAttributes attributes) {
         //
         // Added by litvinse@fnal.gov
         //
-        pnfsId = msg.getPnfsId();
+        pnfsId = id;
         info.setPnfsId(pnfsId);
-        info.setStorageInfo(msg.getFileAttributes().getStorageInfo());
+        info.setStorageInfo(attributes.getStorageInfo());
         pnfsIdString = pnfsId.toString();
         manager.persist(this);
         if (store) {
             synchronized (manager.justRequestedIDs) {
-                if (manager.justRequestedIDs.contains(msg.getPnfsId())) {
+                if (manager.justRequestedIDs.contains(id)) {
                     sendErrorReply(6, new CacheException(
                           "pnfs pnfsid: " + pnfsId.toString() + " file " + pnfsPath
                                 + "  is already there"));
@@ -466,8 +504,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
         }
 
         if (fileAttributes == null) {
-            fileAttributes =
-                  msg.getFileAttributes();
+            fileAttributes = attributes;
         }
 
         LOGGER.debug("storageInfoArrived(uid={} gid={} pnfsid={} fileAttributes={}", info.getUid(),
