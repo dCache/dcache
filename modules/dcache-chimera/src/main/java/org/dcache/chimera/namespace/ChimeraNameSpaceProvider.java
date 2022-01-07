@@ -53,8 +53,10 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.StorageInfo;
+import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellInfoProvider;
+import dmg.util.command.Command;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -71,6 +73,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
@@ -116,7 +119,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 public class ChimeraNameSpaceProvider
-      implements NameSpaceProvider, CellInfoProvider {
+      implements NameSpaceProvider, CellInfoProvider, CellCommandListener {
 
     private static final int SYMLINK_MODE = 0777;
 
@@ -853,6 +856,18 @@ public class ChimeraNameSpaceProvider
         pw.println("Statistics:");
         pw.println(_gauges);
         pw.println(_counters);
+    }
+
+
+    @Command(name = "reset chimera stats", hint="reset chimera statistics", description = "Reset"
+            + " the counters and gauge statistics describing the interaction with Chimera.")
+    public class ResetStatsCommand implements Callable<String> {
+        @Override
+        public String call() {
+            _gauges.reset();
+            _counters.reset();
+            return "";
+        }
     }
 
     @Override
