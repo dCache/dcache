@@ -30,10 +30,16 @@
         <groupId>org.apache.curator</groupId>
         <artifactId>curator-recipes</artifactId>
     </dependency>
-      <dependency>
-          <groupId>org.apache.zookeeper</groupId>
-          <artifactId>zookeeper</artifactId>
-      </dependency>
+    <dependency>
+        <groupId>org.apache.zookeeper</groupId>
+        <artifactId>zookeeper</artifactId>
+    </dependency>
+    <!-- Required for ZooKeeper 3.6.x https://issues.apache.org/jira/browse/ZOOKEEPER-3647 -->
+    <dependency>
+      <groupId>io.dropwizard.metrics</groupId>
+      <artifactId>metrics-core</artifactId>
+      <scope>runtime</scope>
+    </dependency>
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-context</artifactId>
