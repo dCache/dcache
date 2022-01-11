@@ -43,6 +43,8 @@ import java.util.function.Supplier;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.StatusLine;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.slf4j.Logger;
@@ -115,14 +117,22 @@ public class HttpJsonNode extends PreparationJsonNode {
 
     private Optional<JsonNode> fetch(String url) {
         HttpGet request = new HttpGet(url);
-        request.addHeader("Accept", "application/json");
+        request.addHeader("Accept", "application/json,application/jwk-set+json");
         try {
             HttpResponse response = client.execute(request);
+            checkResponse(response);
             String entity = readEntity(response);
             return Optional.of(mapper.readValue(entity, JsonNode.class));
         } catch (IOException e) {
             LOGGER.error("Failed to fetch {}: {}", url, messageOrClassName(e));
             return Optional.empty();
+        }
+    }
+
+    private static void checkResponse(HttpResponse response) throws IOException {
+        StatusLine status = response.getStatusLine();
+        if (status.getStatusCode() != HttpStatus.SC_OK) {
+            throw new IOException("Server responded with " + status.getStatusCode() + " " + status.getReasonPhrase());
         }
     }
 
@@ -158,6 +168,7 @@ public class HttpJsonNode extends PreparationJsonNode {
         String baseType = type.withoutParameters().toString().toLowerCase();
         switch (baseType) {
             case "application/json":
+            case "application/jwk-set+json":
             case "application/octet-stream": // basically "unknown"
                 break;
             default:
