@@ -22,7 +22,7 @@ When a pin is created, it will initially appear in state `PINNING`, then transit
 
 When a pin either has a finite lifetime that has expired or is directly requested to be removed, it is put into state `READY_TO_UNPIN`. An 'unpinning' background task runs regularly (default every minute), which selects a certain number of pins (default 200) in state `READY_TO_UNPIN` and attempts to remove them, during which the pins are in state `UNPINNING`.
 
-On success, the pin is deleted from the pool in question as well as the database, of failure the pin is put into state `FAILED_TO_UNPIN`. Another background process regularly (default every 2h) resets all pins in state `FAILED_TO_UNPIN` back to state `READY_TO_UNPIN` in order to make them eligible to be attempted again.
+On success, the pin is deleted from the pool in question as well as the database, on failure the pin is put into state `FAILED_TO_UNPIN`. Another background process regularly (default every 2h) resets all pins in state `FAILED_TO_UNPIN` back to state `READY_TO_UNPIN` in order to make them eligible to be attempted again.
 
 
 ## Configuring
