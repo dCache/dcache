@@ -615,7 +615,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
                   errorObject);
             manager.sendMessage(new CellMessage(requestor, errorReply));
         } catch (RuntimeException e) {
-            log.error(e.toString());
+            log.error("Send message failed:", e);
             //can not do much more here!!!
         }
         //this will allow the handler to be garbage collected
@@ -658,7 +658,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
                   errorObject);
             manager.sendMessage(new CellMessage(requestor, errorReply));
         } catch (RuntimeException e) {
-            log.error(e.toString());
+            log.error("Problem when sending failure report:", e);
             //can not do much more here!!!
         }
         //this will allow the handler to be garbage collected
@@ -691,7 +691,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
             TransferCompleteMessage errorReply = new TransferCompleteMessage(transferRequest);
             manager.sendMessage(new CellMessage(requestor, errorReply));
         } catch (RuntimeException e) {
-            log.error(e.toString());
+            log.error("Failed to send transfer complete message", e);
             //can not do much more here!!!
         }
         //this will allow the handler to be garbage collected
