@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.dcache.qos.services.verifier.data.db;
+package org.dcache.db;
 
 import static java.util.Arrays.asList;
 
@@ -27,7 +27,7 @@ import java.util.List;
 /**
  * Base class providing common SQL processing for queries.
  */
-abstract class JdbcCriterion {
+public abstract class JdbcCriterion {
 
     final StringBuilder predicate = new StringBuilder();
     final List<Object> arguments = new ArrayList<>();

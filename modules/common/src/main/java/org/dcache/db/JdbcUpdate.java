@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.dcache.qos.services.verifier.data.db;
+package org.dcache.db;
 
 import static java.util.stream.Collectors.joining;
 
@@ -28,7 +28,7 @@ import javax.annotation.Nullable;
 /**
  * Base class providing common SQL processing for UPDATES and INSERTS.
  */
-abstract class JdbcUpdate {
+public abstract class JdbcUpdate {
 
     final Map<String, Object> updates = new LinkedHashMap<>();
 

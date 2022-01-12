@@ -22,6 +22,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import java.util.Collection;
 import java.util.stream.Collectors;
+import org.dcache.db.JdbcUpdate;
 import org.dcache.qos.data.QoSAction;
 import org.dcache.qos.data.QoSMessageType;
 import org.dcache.qos.services.verifier.data.VerifyOperationState;

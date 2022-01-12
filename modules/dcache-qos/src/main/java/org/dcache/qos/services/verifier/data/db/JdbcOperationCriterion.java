@@ -19,6 +19,7 @@
 package org.dcache.qos.services.verifier.data.db;
 
 import diskCacheV111.util.PnfsId;
+import org.dcache.db.JdbcCriterion;
 import org.dcache.qos.data.QoSAction;
 import org.dcache.qos.data.QoSMessageType;
 import org.dcache.qos.services.verifier.data.VerifyOperationState;
