@@ -2,8 +2,12 @@ package diskCacheV111.vehicles.transferManager;
 
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
+import javax.annotation.Nullable;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
+import org.dcache.vehicles.FileAttributes;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * @author Patrick F.
@@ -33,6 +37,8 @@ public abstract class TransferManagerMessage extends Message {
     private Long credentialId;
     private Restriction restriction;
     private PnfsId pnfsId;
+    @Nullable
+    private FileAttributes attributes;
 
     public TransferManagerMessage(
           String pnfsPath,
@@ -78,6 +84,15 @@ public abstract class TransferManagerMessage extends Message {
      */
     public PnfsId getPnfsId() {
         return pnfsId;
+    }
+
+    public void setFileAttributes(FileAttributes attributes) {
+        this.attributes = requireNonNull(attributes);
+    }
+
+    @Nullable
+    public FileAttributes getFileAttributes() {
+        return attributes;
     }
 
     /**

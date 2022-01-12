@@ -812,6 +812,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                         EnumSet<FileAttribute> desired = _wantDigest.isPresent()
                               ? EnumSet.of(PNFSID, SIZE, TYPE, CHECKSUM)
                               : EnumSet.of(PNFSID, SIZE, TYPE);
+                        desired.addAll(TransferManagerHandler.ATTRIBUTES_FOR_PUSH);
                         try {
                             FileAttributes attributes = _pnfs.getFileAttributes(_path.toString(),
                                   desired, READ_ACCESS_MASK, false);
@@ -840,7 +841,8 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                               .xattr("xdg.origin.url", _destination.toASCIIString())
                               .build();
                         try {
-                            msg = _pnfs.createPnfsEntry(_path.toString(), attributes);
+                            msg = _pnfs.createPnfsEntry(_path.toString(), attributes,
+                                    TransferManagerHandler.ATTRIBUTES_FOR_PULL);
                         } catch (FileNotFoundCacheException | NotDirCacheException e) {
                             // Parent directory missing or parent is a file.
                             throw new ErrorResponseException(Response.Status.SC_BAD_REQUEST, e.getMessage());
@@ -852,7 +854,8 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                                 throw e;
                             }
                             _pnfs.deletePnfsEntry(_path.toString(), EnumSet.of(FileType.REGULAR));
-                            msg = _pnfs.createPnfsEntry(_path.toString(), attributes);
+                            msg = _pnfs.createPnfsEntry(_path.toString(), attributes,
+                                    TransferManagerHandler.ATTRIBUTES_FOR_PULL);
                         }
                         return msg.getFileAttributes();
 
@@ -885,6 +888,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
             message.setSubject(_subject);
             message.setRestriction(_restriction);
             message.setPnfsId(_pnfsId);
+            message.setFileAttributes(attributes);
             try {
                 _id = _transferManager.sendAndWait(message).getId();
                 addDigestResponseHeader(attributes);
