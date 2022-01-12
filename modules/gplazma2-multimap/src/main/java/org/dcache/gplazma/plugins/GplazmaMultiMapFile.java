@@ -27,6 +27,7 @@ import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
 import org.dcache.auth.GroupPrincipal;
+import org.dcache.auth.OAuthProviderPrincipal;
 import org.dcache.auth.OidcSubjectPrincipal;
 import org.dcache.auth.OpenIdGroupPrincipal;
 import org.dcache.auth.UidPrincipal;
@@ -113,7 +114,8 @@ public class GplazmaMultiMapFile {
         OIDC_GROUP("oidcgrp", OpenIdGroupPrincipal.class),
         UID("uid", UidPrincipal.class),
         USER_NAME("username", UserNamePrincipal.class),
-        ENTITLEMENT("entitlement", EntitlementPrincipal.class);
+        ENTITLEMENT("entitlement", EntitlementPrincipal.class),
+        OP("op", OAuthProviderPrincipal.class);
 
         private final String label;
         private final Class<? extends Principal> groupType;
