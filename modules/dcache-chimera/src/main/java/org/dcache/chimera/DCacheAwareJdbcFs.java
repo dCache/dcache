@@ -216,7 +216,7 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware {
     @Override
     public String getFileLocality(FsInode_PLOC node) throws ChimeraFsException {
         FsInode pathInode = new FsInode(DCacheAwareJdbcFs.this, node.ino());
-        return getFileLocality(inode2path(pathInode));
+        return getFileLocality(new PnfsId(pathInode.getId()));
     }
 
     /**
@@ -314,7 +314,7 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware {
      * Callout to get pool monitor and check for live (network) status of a file instead of simply
      * its status as recorded in the Chimera database.
      */
-    private String getFileLocality(String filePath) throws ChimeraFsException {
+    private String getFileLocality(PnfsId pnfsId) throws ChimeraFsException {
         FileLocality locality = FileLocality.UNAVAILABLE;
 
         try {
@@ -325,7 +325,7 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware {
                   FileAttribute.LOCATIONS);
             Set<AccessMask> accessMask = EnumSet.of(AccessMask.READ_DATA);
             FileAttributes attributes
-                  = pnfsHandler.getFileAttributes(filePath, requestedAttributes,
+                  = pnfsHandler.getFileAttributes(pnfsId, requestedAttributes,
                   accessMask, false);
             /*
              * TODO improve code to pass in the actual InetAddress of the
