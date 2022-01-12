@@ -144,6 +144,7 @@ import org.dcache.util.list.DirectoryListPrinter;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.webdav.owncloud.OwncloudClients;
+import org.eclipse.jetty.io.EofException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -740,6 +741,14 @@ public class DcacheResourceFactory
                         throw new TimeoutCacheException("Server is busy (internal timeout)");
                     }
                     transfer.relayData(inputStream);
+                } catch (EofException e) {
+                    // REVISIT: do we wish to log diagnostic/forensic details of the transfer?
+                    LOGGER.info("Proxied upload of {} failed: client disconnected", transfer.getPnfsId());
+
+                    String explanation = "Client disconnected while proxying an upload.";
+                    transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, explanation);
+                    transfer.killMover(explanation);
+                    throw new ClientDisconnectedException(explanation);
                 } catch (IOException e) {
                     String message = Exceptions.messageOrClassName(e);
                     transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
@@ -858,6 +867,14 @@ public class DcacheResourceFactory
                   "Shutting down");
             transfer.killMover("door shutting down");
             throw e;
+        } catch (EofException e) {
+            // REVISIT: do we wish to log diagnostic/forensic details of the transfer?
+            LOGGER.info("Proxied download of {} failed: client disconnected", transfer.getPnfsId());
+
+            String explanation = "Client disconnected while proxying a download.";
+            transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, explanation);
+            transfer.killMover(explanation);
+            throw new ClientDisconnectedException(explanation);
         } catch (IOException e) {
             String message = Exceptions.messageOrClassName(e);
             transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
