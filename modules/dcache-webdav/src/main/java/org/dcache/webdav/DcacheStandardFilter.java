@@ -103,6 +103,13 @@ public class DcacheStandardFilter implements Filter {
         } catch (WebDavException e) {
             LOGGER.warn("Internal server error: {}", e.toString());
             responseHandler.respondServerError(request, response, e.getMessage());
+        } catch (ClientDisconnectedException e) {
+            // Should have been logged in DcacheResourceFactory
+            LOGGER.debug("Problem transferring data: {}", e.getMessage());
+
+            // The choice of "500 Internal Server Error" is somewhat arbitrary as we expect that
+            // the client is no longer connected.
+            responseHandler.respondServerError(request, response, e.getMessage());
         } catch (RuntimeException e) {
             LOGGER.error("Internal server error", e);
             responseHandler.respondServerError(request, response, e.getMessage());
