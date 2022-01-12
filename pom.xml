@@ -75,12 +75,9 @@
         <version.dcache>${project.version}</version.dcache>
         <version.swagger-ui>3.1.7</version.swagger-ui>
 
-        <!-- Newer versions of logback suffer from bug
-	     http://jira.qos.ch/browse/LOGBACK-941. -->
-
         <!-- Remember to update modules/logback-test-config/pom.xml
              when upgrading logback. -->
-        <version.logback>1.2.3</version.logback>
+        <version.logback>1.2.10</version.logback>
         <version.logback.contrib>0.1.5</version.logback.contrib>
         <version.jackson>2.12.1</version.jackson>
         <version.jna>5.4.0</version.jna>
