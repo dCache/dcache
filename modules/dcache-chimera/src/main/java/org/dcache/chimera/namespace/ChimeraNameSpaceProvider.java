@@ -947,15 +947,25 @@ public class ChimeraNameSpaceProvider
                     break;
                 case SIZE:
                     stat = inode.statCache();
-		    // REVISIT when we have another way to detect new files
-		    ExtendedInode level2 = inode.getLevel(2);
-		    boolean isNew = (stat.getSize() == 0) &&
-			!level2.exists() &&
-			inode.getLocations().isEmpty();
-		    if (!isNew) {
-			attributes.setSize(stat.getSize());
-		    }
-                    break;
+                    switch (stat.getState()) {
+                    case LEGACY:
+                        // Must check existance of level-2 to figure out if this file is stored in dCache.
+                        ExtendedInode level2 = inode.getLevel(2);
+                        boolean isNew = stat.getSize() == 0
+                                && !level2.exists()
+                                && inode.getLocations().isEmpty();
+                        if (!isNew) {
+                            attributes.setSize(stat.getSize());
+                        }
+                        break;
+
+                    case CREATED:  // Created in namespace but not stored in dCache.
+                        break;
+
+                    default:
+                        attributes.setSize(stat.getSize());
+                        break;
+                    }
                 case CHANGE_TIME:
                     stat = inode.statCache();
                     attributes.setChangeTime(stat.getCTime());
@@ -980,11 +990,18 @@ public class ChimeraNameSpaceProvider
                     attributes.setChecksums(Sets.newHashSet(inode.getChecksums()));
                     break;
                 case LOCATIONS:
-		    attributes.setLocations(Lists.newArrayList(inode.getLocations(StorageGenericLocation.DISK)));
+                    stat = inode.statCache();
+                    Collection<String> locations = stat.getState() == FileState.CREATED
+                            ? Collections.emptySet() // avoid DB lookup.
+                            : Lists.newArrayList(inode.getLocations(StorageGenericLocation.DISK));
+                    attributes.setLocations(locations);
                     break;
                 case FLAGS:
-		    attributes.setFlags(Maps.newHashMap(inode.getFlags()));
-		    break;
+                    stat = inode.statCache();
+                    if (stat.getState() != FileState.CREATED) {
+                        attributes.setFlags(Maps.newHashMap(inode.getFlags()));
+                    }
+                    break;
                 case SIMPLE_TYPE:
                 case TYPE:
                     attributes.setFileType(inode.getFileType());
