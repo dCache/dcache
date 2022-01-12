@@ -56,6 +56,7 @@ import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -279,7 +280,7 @@ public class LoginBrokerSubscriber
             StringBuilder sb = new StringBuilder();
             for (Entry entry : doorsByIdentity.values()) {
                 LoginBrokerInfo info = entry.getLoginBrokerInfo();
-                if (protocolSet == null || protocolSet.contains(info.getProtocolFamily())) {
+                if (protocolSet == null || info.supportsAnyProtocol(protocolSet)) {
                     sb.append(info);
                     if (showTime) {
                         sb.append(entry.getDelay(MILLISECONDS)).append(" ms;");
@@ -349,11 +350,16 @@ public class LoginBrokerSubscriber
                     Collections::unmodifiableCollection));
 
         public void add(LoginBrokerInfo info) {
-            get(info.getProtocolFamily()).add(info);
+            info.getProtocolFamilies().stream()
+                    .map(this::get)
+                    .forEach(s -> s.add(info));
         }
 
         public boolean remove(LoginBrokerInfo info) {
-            return get(info.getProtocolFamily()).remove(info);
+            return info.getProtocolFamilies().stream()
+                    .map(this::get)
+                    .map(s -> s.remove(info))
+                    .collect(Collectors.reducing((a,b) -> a || b)).orElse(false);
         }
 
         /**

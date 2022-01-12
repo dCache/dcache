@@ -241,11 +241,11 @@ public class SrrBuilder {
               .filter(i -> i.supports(InetAddressScope.GLOBAL))
               .map(d -> {
                         Storageendpoint endpoint = new Storageendpoint()
-                              .withName(id + "#" + d.getProtocolFamily() + "@" + d.getAddresses().get(0)
+                              .withName(id + "#" + d.getPreferredProtocolFamily() + "@" + d.getAddresses().get(0)
                                     .getCanonicalHostName() + "-" + d.getPort())
-                              .withInterfacetype(d.getProtocolFamily())
+                              .withInterfacetype(d.getPreferredProtocolFamily())
                               .withInterfaceversion(d.getProtocolVersion())
-                              .withEndpointurl(d.getProtocolFamily() + "://" + d.getAddresses().get(0)
+                              .withEndpointurl(d.getPreferredProtocolFamily() + "://" + d.getAddresses().get(0)
                                     .getCanonicalHostName() + ":" + d.getPort() + d.getRoot())
                               .withAssignedshares(Collections.singletonList("all"));
 
