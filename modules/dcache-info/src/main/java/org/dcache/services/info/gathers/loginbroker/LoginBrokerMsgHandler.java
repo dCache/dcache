@@ -52,7 +52,7 @@ public class LoginBrokerMsgHandler implements CellMessageReceiver {
         StatePath pathToProtocol = pathToDoor.newChild("protocol");
 
         conditionalAddString(update, pathToProtocol, "engine", info.getProtocolEngine(), lifetime);
-        conditionalAddString(update, pathToProtocol, "family", info.getProtocolFamily(), lifetime);
+        conditionalAddString(update, pathToProtocol, "family", info.getPreferredProtocolFamily(), lifetime);
         conditionalAddString(update, pathToProtocol, "version", info.getProtocolVersion(),
               lifetime);
         conditionalAddString(update, pathToProtocol, "root", info.getRoot(), lifetime);
