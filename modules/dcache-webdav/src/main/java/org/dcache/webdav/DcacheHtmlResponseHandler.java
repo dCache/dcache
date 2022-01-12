@@ -24,6 +24,7 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.security.AccessController;
 import javax.security.auth.Subject;
+import org.eclipse.jetty.io.EofException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -137,8 +138,10 @@ public class DcacheHtmlResponseHandler extends AbstractWrappingResponseHandler {
             response.setContentTypeHeader("text/html");
             OutputStream out = response.getOutputStream();
             out.write(error.getBytes());
-        } catch (IOException ex) {
-            LOGGER.warn("exception writing content");
+        } catch (EofException e) {
+            LOGGER.debug("Client disconnected before we could reply.");
+        } catch (IOException e) {
+            LOGGER.warn("exception writing content: {}", e.toString());
         }
     }
 
