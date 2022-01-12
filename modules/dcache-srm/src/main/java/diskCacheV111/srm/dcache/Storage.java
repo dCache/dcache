@@ -254,6 +254,8 @@ public final class Storage
           "space reservation is disabled";
     private static final String SFN_STRING = "SFN=";
 
+    private static final Set<String> FTP_URL_SCHEMATA = Set.of("ftp", "gsiftp", "gkftp");
+
     private static final LoadingCache<InetAddress, String> GET_HOST_BY_ADDR_CACHE =
           CacheBuilder.newBuilder()
                 .expireAfterWrite(10, MINUTES)
@@ -679,9 +681,8 @@ public final class Storage
 
             /* Determine path component of TURL.
              */
-            String protocol = door.getProtocolFamily();
             String transferPath = door.relativize(user.getRoot(), path);
-            if (protocol.equals("gsiftp") || protocol.equals("ftp") || protocol.equals("gkftp")) {
+            if (door.supportsAnyProtocol(FTP_URL_SCHEMATA)) {
                 /* According to RFC 1738 an FTP URL is relative to the FTP server's initial
                  * working directory, which in dCache is the user's home directory.
                  *
@@ -707,6 +708,7 @@ public final class Storage
 
             /* Compose the TURL.
              */
+            String protocol = protocols.stream().filter(door::supportsProtocol).findFirst().orElseThrow();
             URI turl = isHostAndPortNeeded(protocol)
                   ? new URI(protocol, null, selectHostName(door, scope, family), door.getPort(),
                   transferPath, null, null)
@@ -820,8 +822,8 @@ public final class Storage
 
         Collection<LoginBrokerInfo> doors = loginBrokerSource.doors();
 
-        if (!doors.stream().map(LoginBrokerInfo::getProtocolFamily)
-              .anyMatch(s -> s.equals(srmProtocol))) {
+        boolean haveSrmDoor = doors.stream().anyMatch(d -> d.supportsProtocol(srmProtocol));
+        if (!haveSrmDoor) {
             /*  We have SRM activity without (apparently) any SRM doors.  This
              *  is likely from an SrmManager starting up and attempting to
              *  continue incomplete (for srmBringOnline) or queud activity.
@@ -837,7 +839,7 @@ public final class Storage
             result = doors
                   .stream()
                   .anyMatch(i -> (port == -1 || port == i.getPort())
-                        && i.getProtocolFamily().equals(srmProtocol)
+                        && i.supportsProtocol(srmProtocol)
                         && i.getAddresses().stream()
                         .map(InetAddress::getHostAddress)
                         .anyMatch(n -> n.equalsIgnoreCase(address.getHostAddress())));
@@ -849,7 +851,7 @@ public final class Storage
                     sb.append("    ").append(i.toString()).append(" ");
                     if (port != -1 && port != i.getPort()) {
                         sb.append("mismatch on port");
-                    } else if (!i.getProtocolFamily().equals(srmProtocol)) {
+                    } else if (!i.supportsProtocol(srmProtocol)) {
                         sb.append("mismatch on family");
                     } else if (!i.getAddresses()
                           .stream()
