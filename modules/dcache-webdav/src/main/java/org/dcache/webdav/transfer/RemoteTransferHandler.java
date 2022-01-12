@@ -38,6 +38,7 @@ import static org.dcache.webdav.transfer.CopyFilter.CredentialSource.NONE;
 import static org.dcache.webdav.transfer.CopyFilter.CredentialSource.OIDC;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.EvictingQueue;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.InetAddresses;
@@ -108,12 +109,14 @@ import javax.annotation.Nullable;
 import javax.annotation.PreDestroy;
 import javax.security.auth.Subject;
 import javax.servlet.ServletResponseWrapper;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.curator.shaded.com.google.common.base.Splitter;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.OpenIdCredential;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.CellStub;
+import org.dcache.http.AbstractLoggingHandler;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.util.BoundedCachedExecutor;
@@ -262,6 +265,8 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
     /** The time when the most recent message was received. */
     private volatile Instant _lastMessageArrived = Instant.now();
 
+    private boolean _performanceLogging;
+
     @Required
     public void setTransferManagerStub(CellStub stub) {
         _transferManager = stub;
@@ -283,6 +288,14 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
 
     public void setMaxConcurrentFinalisers(int count) {
         _activity.setMaximumPoolSize(count);
+    }
+
+    public void setPerformanceLogging(boolean isEnabled) {
+        _performanceLogging = isEnabled;
+    }
+
+    public boolean isPerformanceLogging() {
+        return _performanceLogging;
     }
 
     private enum IPFamilyMatcher {
@@ -693,7 +706,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         messageArrived(Duration.of(envelope.getLocalAge(), MILLIS));
         RemoteTransfer transfer = _transfers.get(message.getId());
         if (transfer != null) {
-            _activity.execute(() -> transfer.success());
+            _activity.execute(() -> transfer.success(message.getPerformance()));
         }
     }
 
@@ -702,7 +715,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         RemoteTransfer transfer = _transfers.get(message.getId());
         if (transfer != null) {
             String error = String.valueOf(message.getErrorObject());
-            _activity.execute(() -> transfer.failure(error));
+            _activity.execute(() -> transfer.failure(error, message.getPerformance()));
         }
     }
 
@@ -751,6 +764,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         private final Optional<String> _wantDigest;
         private final PnfsHandler _pnfs;
         private final Instant _whenSubmitted = Instant.now();
+        private final HttpServletRequest _request;
         private String _problem;
         private long _id;
         private final EndPoint _endpoint = HttpConnection.getCurrentConnection().getEndPoint();
@@ -765,6 +779,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         private Optional<Instant> _discoveredTransferMissing = Optional.empty();
         private Optional<Instant> _failTransferAfter = Optional.empty();
         private long _size;
+        private Stopwatch _resolveStopwatch;
 
         public RemoteTransfer(OutputStream out, Subject subject, Restriction restriction,
               FsPath path, URI destination, @Nullable Object credential,
@@ -799,6 +814,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
             _direction = direction;
             _overwriteAllowed = overwriteAllowed;
             _wantDigest = wantDigest;
+            _request = ServletRequest.getRequest();
         }
 
 
@@ -806,6 +822,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
          * Obtain the PnfsId of the local file, creating it as necessary.
          */
         private FileAttributes resolvePath() throws ErrorResponseException {
+            _resolveStopwatch = Stopwatch.createStarted();
             try {
                 switch (_direction) {
                     case PUSH:
@@ -872,6 +889,8 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                       e.getMessage());
                 throw new ErrorResponseException(Response.Status.SC_INTERNAL_SERVER_ERROR,
                       "Internal problem with server");
+            } finally {
+                _resolveStopwatch.stop();
             }
         }
 
@@ -924,7 +943,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                      * there is no transfer, we have nothing further to do.
                      */
                     failure("client went away, but failed to cancel transfer: "
-                          + e.getMessage());
+                          + e.getMessage(), null);
                 } catch (NoRouteToCellException | CacheException e) {
                     LOGGER.error("Failed to cancel transfer id={}: {}", _id, e.toString());
 
@@ -1052,21 +1071,27 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
             }
         }
 
-        public synchronized void success() {
+        public synchronized void success(@Nullable List<Duration> performance) {
             if (_finished) { // Transfer already registered as completed.
                 return;
             }
             _problem = null;
             _finished = true;
+            if (_performanceLogging) {
+                setPerformanceAttribute(performance);
+            }
             notifyAll();
         }
 
-        public synchronized void failure(String explanation) {
+        public synchronized void failure(String explanation, @Nullable List<Duration> performance) {
             if (_finished) { // Transfer already registered as completed.
                 return;
             }
             _problem = explanation;
             _finished = true;
+            if (_performanceLogging) {
+                setPerformanceAttribute(performance);
+            }
             notifyAll();
             if (_direction == Direction.PULL) {
                 try {
@@ -1099,6 +1124,30 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                           e.getMessage());
                     _problem += " (failed to remove badly transferred file)";
                 }
+            }
+        }
+
+        private void setPerformanceAttribute(@Nullable List<Duration> performance) {
+            StringBuilder sb = new StringBuilder();
+            if (_resolveStopwatch != null) {
+                sb.append("R:").append(_resolveStopwatch.elapsed().toMillis());
+            }
+
+            if (performance != null) {
+                for (int i = 0; i < performance.size(); i++) {
+                    Duration duration = performance.get(i);
+                    if (duration == null) {
+                        continue;
+                    }
+                    if (sb.length() > 0) {
+                        sb.append(',');
+                    }
+                    sb.append(i).append(':').append(duration.toMillis());
+                }
+            }
+
+            if (sb.length() > 0) {
+                _request.setAttribute(AbstractLoggingHandler.PERFORMANCE, sb);
             }
         }
 
@@ -1155,7 +1204,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                  *  is still queued and will be processed "soon".
                  */
                 if (shouldFailMissingTransfer()) {
-                    failure("RemoteTransferManager restarted");
+                    failure("RemoteTransferManager restarted", null);
                 }
             } catch (NoRouteToCellException | CacheException e) {
                 LOGGER.warn("Failed to fetch information for progress marker: {}",

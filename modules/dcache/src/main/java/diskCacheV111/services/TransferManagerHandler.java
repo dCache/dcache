@@ -1,5 +1,7 @@
 package diskCacheV111.services;
 
+import com.google.common.base.Stopwatch;
+
 import static org.dcache.namespace.FileAttribute.ACCESS_LATENCY;
 import static org.dcache.namespace.FileAttribute.RETENTION_POLICY;
 import static org.dcache.namespace.FileAttribute.SIZE;
@@ -40,13 +42,17 @@ import dmg.cells.nucleus.CellPath;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.URI;
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 import javax.security.auth.Subject;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.Subjects;
@@ -118,6 +124,10 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
     public static final int SENT_SUCCESS_REPLY_STATE = -2;
     public static final int UNKNOWN_ID = -3;
 
+    public static final int LARGEST_STATE_VALUE = RECEIVED_PNFS_CHECK_BEFORE_DELETE_STATE;
+
+    private final Stopwatch[] stateStopwatches = new Stopwatch[LARGEST_STATE_VALUE+1];
+
     private static final Map<Integer, String> STATE_DESCRIPTION =
           ImmutableMap.<Integer, String>builder()
                 .put(INITIAL_STATE, "Initialising")
@@ -141,7 +151,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
                 .put(SENT_SUCCESS_REPLY_STATE, "Succeeded")
                 .put(UNKNOWN_ID, "Unknown transfer")
                 .build();
-    public int state = INITIAL_STATE;
+    private int state = INITIAL_STATE;
     private long id;
     private Integer moverId;
     private IpProtocolInfo protocol_info;
@@ -296,11 +306,11 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
                     storageInfoArrived(attributesMessage.getPnfsId(), attributes);
                     return;
                 } else if (state == WAITING_FOR_PNFS_CHECK_BEFORE_DELETE_STATE) {
-                    state = RECEIVED_PNFS_CHECK_BEFORE_DELETE_STATE;
+                    setState(RECEIVED_PNFS_CHECK_BEFORE_DELETE_STATE);
                     deletePnfsEntry();
                     return;
                 } else if (state == WAITING_FOR_CREATED_FILE_INFO_STATE) {
-                    state = RECEIVED_CREATED_FILE_INFO_STATE;
+                    setState(RECEIVED_CREATED_FILE_INFO_STATE);
                     getFileAttributesArrived(attributesMessage.getFileAttributes());
                     return;
                 }
@@ -637,7 +647,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
         }
         sendDoorRequestInfo(replyCode, errorObject.toString());
 
-        setState(SENT_ERROR_REPLY_STATE, errorObject);
+        setState(SENT_ERROR_REPLY_STATE);
         manager.persist(this);
         manager.stopTimer(id);
 
@@ -648,9 +658,9 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
         }
         manager.finishTransfer();
         try {
-            TransferFailedMessage errorReply = new TransferFailedMessage(transferRequest, replyCode,
-                  errorObject);
-            manager.sendMessage(new CellMessage(requestor, errorReply));
+            var reply = new TransferFailedMessage(transferRequest, replyCode, errorObject,
+                    stateDurations());
+            manager.sendMessage(new CellMessage(requestor, reply));
         } catch (RuntimeException e) {
             LOGGER.error(e.toString());
             //can not do much more here!!!
@@ -658,6 +668,15 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
         //this will allow the handler to be garbage collected
         // once we sent a response
         manager.removeActiveTransfer(id);
+    }
+
+    private List<Duration> stateDurations() {
+        var durations = new ArrayList<Duration>(LARGEST_STATE_VALUE+1);
+        for (int thisState = 0; thisState <= LARGEST_STATE_VALUE; thisState++) {
+            Stopwatch stopwatch = stateStopwatches[thisState];
+            durations.add(stopwatch == null ? null : stopwatch.elapsed());
+        }
+        return durations;
     }
 
     private void sendErrorReply() {
@@ -680,7 +699,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
         }
         sendDoorRequestInfo(replyCode, errorObject.toString());
 
-        setState(SENT_ERROR_REPLY_STATE, errorObject);
+        setState(SENT_ERROR_REPLY_STATE);
         manager.persist(this);
         manager.stopTimer(id);
 
@@ -691,9 +710,9 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
         }
         manager.finishTransfer();
         try {
-            TransferFailedMessage errorReply = new TransferFailedMessage(transferRequest, replyCode,
-                  errorObject);
-            manager.sendMessage(new CellMessage(requestor, errorReply));
+            var reply = new TransferFailedMessage(transferRequest, replyCode, errorObject,
+                    stateDurations());
+            manager.sendMessage(new CellMessage(requestor, reply));
         } catch (RuntimeException e) {
             LOGGER.error(e.toString());
             //can not do much more here!!!
@@ -725,8 +744,8 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
         }
         manager.finishTransfer();
         try {
-            TransferCompleteMessage errorReply = new TransferCompleteMessage(transferRequest);
-            manager.sendMessage(new CellMessage(requestor, errorReply));
+            var reply = new TransferCompleteMessage(transferRequest, stateDurations());
+            manager.sendMessage(new CellMessage(requestor, reply));
         } catch (RuntimeException e) {
             LOGGER.error(e.toString());
             //can not do much more here!!!
@@ -881,12 +900,34 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
         manager.getPoolStub().notify(new CellPath(pool.getAddress()), killMessage);
     }
 
-    public void setState(int istate) {
-        this.state = istate;
+    private void stopStateStopwatch(int state) {
+        if (state >= 0 && state <= LARGEST_STATE_VALUE) {
+            var stopwatch = stateStopwatches[state];
+
+            if (stopwatch == null) {
+                stateStopwatches[state] = Stopwatch.createUnstarted();
+            } else {
+                stopwatch.stop();
+            }
+        }
     }
 
-    public void setState(int istate, Object errorObject) {
-        this.state = istate;
+    private void startStateStopwatch(int state) {
+        if (state >= 0 && state <= LARGEST_STATE_VALUE) {
+            var stopwatch = stateStopwatches[state];
+
+            if (stopwatch == null) {
+                stateStopwatches[state] = Stopwatch.createStarted();
+            } else {
+                stopwatch.start();
+            }
+        }
+    }
+
+    public void setState(int newState) {
+        stopStateStopwatch(state);
+        state = newState;
+        startStateStopwatch(state);
     }
 
     public void setMoverId(Integer moverid) {

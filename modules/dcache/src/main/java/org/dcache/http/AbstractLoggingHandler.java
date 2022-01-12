@@ -48,6 +48,7 @@ public abstract class AbstractLoggingHandler extends HandlerWrapper {
     private static final String X509_CERTIFICATE_ATTRIBUTE =
           "javax.servlet.request.X509Certificate";
     private static final String REMOTE_ADDRESS = "org.dcache.remote-address";
+    public static final String PERFORMANCE = "org.dcache.performance";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractLoggingHandler.class);
 
@@ -82,6 +83,7 @@ public abstract class AbstractLoggingHandler extends HandlerWrapper {
                   .omitNullValues();
             describeOperation(log, request, response);
             log.add("duration", processingTime.elapsed().toMillis());
+            log.add("performance", request.getAttribute(PERFORMANCE));
             log.toLogger(accessLogger());
         }
     }

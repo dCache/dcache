@@ -136,7 +136,9 @@
                      ${webdav.third-party-transfers.performance-marker-period},
                      '${webdav.third-party-transfers.performance-marker-period.unit}')}" />
       <property name="maxConcurrentFinalisers"
-              value="${webdav.third-party-transfers.concurrent-finalisers}"/>
+		value="${webdav.third-party-transfers.concurrent-finalisers}"/>
+      <property name="performanceLogging"
+		value="${webdav.third-party-transfers.performance-logging}"/>
   </bean>
 
   <bean id="oidc-client-ids"
