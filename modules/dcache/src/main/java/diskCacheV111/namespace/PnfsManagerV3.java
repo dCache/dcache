@@ -535,6 +535,46 @@ public class PnfsManagerV3
         pw.println(_foldedCounters.toString());
     }
 
+    @Command(name = "reset stats", hint="reset statistics",
+            description = "Reset the counters and gauge statistics describing PnfsManager.  These"
+                    + " statistics are shown as part of the 'info' command output.")
+    public class ResetStatsCommand implements Callable<String> {
+
+        @Option(name="target", usage="Which statistics to reset:\n"
+                + "\n"
+                + "\"calls\" is the cell message call gauges, labelled 'PnfsManagerV3'.\n"
+                + "\n"
+                + "\"folds\" is the message folding counts, labelled 'PnfsManagerV3.Folded'.\n"
+                + "\n"
+                + "\"all\" resets everything.\n"
+                + "\n"
+                + "If this option is not specified then \"all\" is assumed.",
+                values={"calls", "folds", "all"})
+        private String target;
+
+        @Override
+        public String call() throws CommandException {
+            if (target == null) {
+                target = "all";
+            }
+            switch (target) {
+            case "all":
+                _gauges.reset();
+                _foldedCounters.reset();
+                break;
+            case "calls":
+                _gauges.reset();
+                break;
+            case "folds":
+                _foldedCounters.reset();
+                break;
+            default:
+                throw new CommandException("Unknown target \"" + target + "\".");
+            }
+            return "";
+        }
+    }
+
     @Command(name = "pnfsidof",
           hint = "find the Pnfs-Id of a file",
           description = "Print the Pnfs-Id of a file given by its absolute path.")
