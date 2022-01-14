@@ -53,9 +53,9 @@ public class IdentityProviderTests {
 
     @Test
     public void shouldParseProviderWithTrailingSlash() throws Exception {
-        IdentityProvider google = new IdentityProvider("google", "https://accounts.google.com/");
+        IdentityProvider google = new IdentityProvider("GOOGLE", "https://accounts.google.com/");
 
-        assertThat(google.getName(), is(equalTo("google")));
+        assertThat(google.getName(), is(equalTo("GOOGLE")));
         assertThat(google.getIssuerEndpoint().toString(),
               is(equalTo("https://accounts.google.com/")));
         assertThat(google.getConfigurationEndpoint().toString(),
@@ -64,9 +64,9 @@ public class IdentityProviderTests {
 
     @Test
     public void shouldParseProviderWithoutTrailingSlash() throws Exception {
-        IdentityProvider google = new IdentityProvider("google", "https://accounts.google.com");
+        IdentityProvider google = new IdentityProvider("GOOGLE", "https://accounts.google.com");
 
-        assertThat(google.getName(), is(equalTo("google")));
+        assertThat(google.getName(), is(equalTo("GOOGLE")));
         assertThat(google.getIssuerEndpoint().toString(),
               is(equalTo("https://accounts.google.com")));
         assertThat(google.getConfigurationEndpoint().toString(),
@@ -75,25 +75,25 @@ public class IdentityProviderTests {
 
     @Test
     public void shouldParseProviderWithPathWithoutTrailingSlash() throws Exception {
-        IdentityProvider google = new IdentityProvider("unity",
+        IdentityProvider unity = new IdentityProvider("UNITY",
               "https://unity.helmholtz-data-federation.de/oauth2");
 
-        assertThat(google.getName(), is(equalTo("unity")));
-        assertThat(google.getIssuerEndpoint().toString(),
+        assertThat(unity.getName(), is(equalTo("UNITY")));
+        assertThat(unity.getIssuerEndpoint().toString(),
               is(equalTo("https://unity.helmholtz-data-federation.de/oauth2")));
-        assertThat(google.getConfigurationEndpoint().toString(), is(equalTo(
+        assertThat(unity.getConfigurationEndpoint().toString(), is(equalTo(
               "https://unity.helmholtz-data-federation.de/oauth2/.well-known/openid-configuration")));
     }
 
     @Test
     public void shouldParseProviderWithPathWithTrailingSlash() throws Exception {
-        IdentityProvider google = new IdentityProvider("unity",
+        IdentityProvider unity = new IdentityProvider("UNITY",
               "https://unity.helmholtz-data-federation.de/oauth2/");
 
-        assertThat(google.getName(), is(equalTo("unity")));
-        assertThat(google.getIssuerEndpoint().toString(),
+        assertThat(unity.getName(), is(equalTo("UNITY")));
+        assertThat(unity.getIssuerEndpoint().toString(),
               is(equalTo("https://unity.helmholtz-data-federation.de/oauth2/")));
-        assertThat(google.getConfigurationEndpoint().toString(), is(equalTo(
+        assertThat(unity.getConfigurationEndpoint().toString(), is(equalTo(
               "https://unity.helmholtz-data-federation.de/oauth2/.well-known/openid-configuration")));
     }
 }
