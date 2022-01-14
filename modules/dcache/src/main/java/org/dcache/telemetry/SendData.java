@@ -2,6 +2,7 @@ package org.dcache.telemetry;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellLifeCycleAware;
@@ -11,9 +12,12 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
+import dmg.util.command.Command;
 import org.dcache.util.CDCScheduledExecutorServiceDecorator;
 import org.dcache.util.FireAndForgetTask;
 import org.slf4j.Logger;
@@ -115,4 +119,17 @@ public class SendData implements CellCommandListener, CellLifeCycleAware {
             LOGGER.error("Sending data to {} failed, caused by: ", uri, ioe);
         }
     }
+
+    @Command(name = "print data",
+            hint = "prints data sent by telemetry cell",
+            description = "The telemetry cell sends data to a collector. Use print data to print the data that " +
+                    "are being sent. The unit for storage is byte.")
+    public class PrintTelemetryCommand implements Callable<String> {
+        @Override
+        public String call() throws JsonProcessingException {
+            ObjectMapper jackson = new ObjectMapper();
+            return jackson.writerWithDefaultPrettyPrinter().writeValueAsString(instanceData);
+        }
+    }
+
 }
