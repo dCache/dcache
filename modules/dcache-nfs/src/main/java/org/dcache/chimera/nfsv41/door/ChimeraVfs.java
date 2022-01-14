@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 - 2021 Deutsches Elektronen-Synchroton,
+ * Copyright (c) 2009 - 2022 Deutsches Elektronen-Synchroton,
  * Member of the Helmholtz Association, (DESY), HAMBURG, GERMANY
  *
  * This library is free software; you can redistribute it and/or modify
@@ -34,6 +34,7 @@ import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -117,6 +118,63 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
     private static final Logger _log = LoggerFactory.getLogger(ChimeraVfs.class);
 
     private final String XATTR_TAG_PREFIX = "dcache.tag.";
+
+
+    private enum SpecialXattrs {
+
+        ID("id") {
+            @Override
+            byte[] read(FsInode inode) throws ChimeraFsException {
+                return inode.getId().getBytes(UTF_8);
+            }
+        },
+        LOCALITY("locality") {
+            @Override
+            byte[] read(FsInode inode) throws ChimeraFsException {
+                return inode.getFs()
+                      .getFileLocality(new FsInode_PLOC(inode.getFs(), inode.ino()))
+                      .getBytes(UTF_8);
+            }
+        },
+        CHACKSUM("checksum") {
+            @Override
+            byte[] read(FsInode inode) throws IOException {
+                return inode.getFs().getInodeChecksums(inode)
+                      .stream()
+                      .map(Object::toString)
+                      .collect(Collectors.joining("\n"))
+                      .getBytes(UTF_8);
+            }
+        };
+
+        private final String attr;
+
+        SpecialXattrs(String attr) {
+            this.attr = "dcache." + attr;
+        }
+
+        byte[] read(FsInode inode) throws IOException {
+            return new byte[0];
+        }
+
+        void set(FsInode inode, byte[] value) throws IOException {
+            throw new PermException("Read only attribute: " + name());
+        }
+
+        static Optional<SpecialXattrs> byName(String s) {
+            return Arrays.stream(values())
+                  .filter(x -> x.attr.equals(s))
+                  .findAny();
+        }
+    }
+
+    /**
+     * dCache 'dot' files exposed as extended attributes.
+     */
+    private static final String[] DCACHE_XATTRS_NAMES = Arrays.stream(SpecialXattrs.values())
+          .map(a -> a.attr)
+          .toArray(String[]::new);
+
 
     private final JdbcFs _fs;
     private final NfsIdMapping _idMapping;
@@ -360,7 +418,8 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
                 }
 
                 // allow set size only for newly created files
-                if (fsInode.type() == FsInodeType.INODE && chimeraStat.getState() != FileState.CREATED) {
+                if (fsInode.type() == FsInodeType.INODE
+                      && chimeraStat.getState() != FileState.CREATED) {
                     throw new PermException("Can't change size of existing file");
                 }
             }
@@ -642,6 +701,13 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
                 }
                 return Arrays.copyOf(buf, n);
             }
+
+            // try dcache dot files first
+            var dcache_attr = SpecialXattrs.byName(attr);
+            if (dcache_attr.isPresent()) {
+                return dcache_attr.get().read(fsInode);
+            }
+            // just a regular extended attribute
             return _fs.getXattr(fsInode, attr);
         } catch (NoXdataChimeraException e) {
             throw new NoXattrException(e.getMessage(), e);
@@ -652,6 +718,13 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
     public void setXattr(Inode inode, String attr, byte[] value, SetXattrMode mode)
           throws IOException {
         FsInode fsInode = toFsInode(inode);
+
+        // try dcache dot files first
+        var dcache_attr = SpecialXattrs.byName(attr);
+        if (dcache_attr.isPresent()) {
+            dcache_attr.get().set(fsInode, value);
+            return;
+        }
 
         try {
             if (attr.startsWith(XATTR_TAG_PREFIX) && fsInode.isDirectory()) {
@@ -698,21 +771,31 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
 
     @Override
     public String[] listXattrs(Inode inode) throws IOException {
+
         FsInode fsInode = toFsInode(inode);
         String[] xattrs = _fs.listXattrs(fsInode).toArray(String[]::new);
-        if (fsInode.isDirectory()) {
-            String[] dirtags = Arrays.stream(_fs.tags(fsInode)).map(t -> XATTR_TAG_PREFIX + t)
-                  .toArray(String[]::new);
-            String[] combined = Arrays.copyOf(xattrs, xattrs.length + dirtags.length);
-            System.arraycopy(dirtags, 0, combined, xattrs.length, dirtags.length);
-            xattrs = combined;
-        }
-        return xattrs;
+
+        // add directory tags or special attributes, if a file.
+        String[] dxAttr = fsInode.isDirectory() ?
+              Arrays.stream(_fs.tags(fsInode)).map(t -> XATTR_TAG_PREFIX + t)
+                    .toArray(String[]::new) : DCACHE_XATTRS_NAMES;
+
+        // add dCache specific file attributes
+        String[] combined = Arrays.copyOf(xattrs, xattrs.length + dxAttr.length);
+        System.arraycopy(dxAttr, 0, combined, xattrs.length, dxAttr.length);
+        return combined;
     }
 
     @Override
     public void removeXattr(Inode inode, String attr) throws IOException {
         FsInode fsInode = toFsInode(inode);
+
+        // try dcache dot files first
+        var dcache_attr = SpecialXattrs.byName(attr);
+        if (dcache_attr.isPresent()) {
+            throw new PermException("Can't remove dCache attribute");
+        }
+
         try {
             if (attr.startsWith(XATTR_TAG_PREFIX) && fsInode.isDirectory()) {
                 String tagName = attr.substring(XATTR_TAG_PREFIX.length());
