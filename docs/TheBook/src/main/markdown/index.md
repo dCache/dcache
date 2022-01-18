@@ -65,6 +65,8 @@ dCache Book
 
         -   [statistics service](config-statistics.md)
 
+        -   [telemetry service](config-telemetry.md)
+
         -   topo service
 
         -   transfermanagers service
