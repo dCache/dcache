@@ -217,6 +217,8 @@ Given that pools may need to service clients that do not support TLS (they
 may, for instance, be using a non-xroot protocol), it is probably not
 practical to make the pools require TLS by setting ``pool.mover.xrootd.security.tls.mode=STRICT``.
 
+    ![tls-settings](https://user-images.githubusercontent.com/3985564/149995033-6e2b1aa9-69bd-49e6-8833-958e09149d30.png)
+
 
 ### Token-based authorization
 
