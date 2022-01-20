@@ -18,7 +18,6 @@
 package org.dcache.gplazma.oidc;
 
 import java.net.URI;
-import org.dcache.gplazma.oidc.profiles.OidcProfile;
 import org.mockito.BDDMockito;
 
 import static org.mockito.Mockito.mock;
@@ -28,8 +27,6 @@ import static org.mockito.Mockito.mock;
  */
 public class MockIdentityProviderBuilder {
     private final IdentityProvider provider = mock(IdentityProvider.class);
-    private boolean acceptUsername;
-    private boolean acceptGroups;
 
     static public MockIdentityProviderBuilder anIp(String name) {
         return new MockIdentityProviderBuilder(name);
@@ -50,19 +47,17 @@ public class MockIdentityProviderBuilder {
         return this;
     }
 
-    public MockIdentityProviderBuilder withAcceptedGroups() {
-        acceptGroups = true;
-        return this;
+    public MockIdentityProviderBuilder withProfile(MockProfileBuilder builder) {
+        Profile profile = builder.build();
+        return withProfile(profile);
     }
 
-    public MockIdentityProviderBuilder withAcceptedUsername() {
-        acceptUsername = true;
+    public MockIdentityProviderBuilder withProfile(Profile profile) {
+        BDDMockito.given(provider.getProfile()).willReturn(profile);
         return this;
     }
 
     public IdentityProvider build() {
-        // REVISIT this relies on OidcProfile working correctly.
-        BDDMockito.given(provider.getProfile()).willReturn(new OidcProfile(acceptUsername, acceptGroups));
         return provider;
     }
 }
