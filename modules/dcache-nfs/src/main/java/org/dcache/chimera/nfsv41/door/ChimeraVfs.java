@@ -342,7 +342,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
               parentFsInode)) {
             TreeSet<DirectoryEntry> list = dirStream.map(
                         e -> new DirectoryEntry(e.getName(), toInode(e.getInode()),
-                              fromChimeraStat(e.getStat(), e.getInode().ino()),
+                              fromChimeraStat(e.getStat()),
                               directoryCookieOf(e.getStat(), e.getName()))
                   )
                   .collect(Collectors.toCollection(TreeSet::new));
@@ -387,7 +387,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
     public Stat getattr(Inode inode) throws IOException {
         FsInode fsInode = toFsInode(inode);
         try {
-            return fromChimeraStat(fsInode.stat(), fsInode.ino());
+            return fromChimeraStat(fsInode.stat());
         } catch (FileNotFoundChimeraFsException e) {
             throw new NoEntException("Path Do not exist.");
         }
@@ -477,7 +477,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
         }
     }
 
-    private static Stat fromChimeraStat(org.dcache.chimera.posix.Stat pStat, long fileid) {
+    private static Stat fromChimeraStat(org.dcache.chimera.posix.Stat pStat) {
         Stat stat = new Stat();
 
         stat.setATime(pStat.getATime());
@@ -487,12 +487,11 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
         stat.setGid(pStat.getGid());
         stat.setUid(pStat.getUid());
         stat.setDev(pStat.getDev());
-        stat.setIno(Long.hashCode(pStat.getIno()));
+        stat.setIno(pStat.getIno());
         stat.setMode(pStat.getMode());
         stat.setNlink(pStat.getNlink());
         stat.setRdev(pStat.getRdev());
         stat.setSize(pStat.getSize());
-        stat.setFileid(fileid);
         stat.setGeneration(pStat.getGeneration());
 
         return stat;
@@ -544,7 +543,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
     }
 
     @Override
-    public int access(Inode inode, int mode) throws IOException {
+    public int access(Subject subject, Inode inode, int mode) throws IOException {
 
         int accessmask = mode;
         if ((mode & (ACCESS4_MODIFY | ACCESS4_EXTEND)) != 0) {
@@ -650,18 +649,18 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
         }
 
         nfsace4 nfsace = new nfsace4();
-        nfsace.access_mask = new acemask4(new uint32_t(ace.getAccessMsk()));
-        nfsace.flag = new aceflag4(new uint32_t(ace.getFlags()));
-        nfsace.type = new acetype4(new uint32_t(ace.getType().getValue()));
+        nfsace.access_mask = new acemask4(ace.getAccessMsk());
+        nfsace.flag = new aceflag4(ace.getFlags());
+        nfsace.type = new acetype4(ace.getType().getValue());
         nfsace.who = new utf8str_mixed(principal);
         return nfsace;
     }
 
     private static ACE valueOf(nfsace4 ace, NfsIdMapping idMapping) throws BadOwnerException {
         String principal = ace.who.toString();
-        int type = ace.type.value.value;
-        int flags = ace.flag.value.value;
-        int mask = ace.access_mask.value.value;
+        int type = ace.type.value;
+        int flags = ace.flag.value;
+        int mask = ace.access_mask.value;
 
         int id = -1;
         Who who = Who.fromAbbreviation(principal);

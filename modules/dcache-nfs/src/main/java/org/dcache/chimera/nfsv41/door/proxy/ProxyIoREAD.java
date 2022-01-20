@@ -60,7 +60,7 @@ public class ProxyIoREAD extends AbstractNFSv4Operation {
                 /*
                  * As there was no open, we have to check  permissions.
                  */
-                if (context.getFs().access(inode, nfs4_prot.ACCESS4_READ) == 0) {
+                if (context.getFs().access(context.getSubject(), inode, nfs4_prot.ACCESS4_READ) == 0) {
                     throw new AccessException();
                 }
 
