@@ -744,7 +744,29 @@ public class NFSv41Door extends AbstractCellComponent implements
                         /*
                          * Cleanup transfer when state invalidated.
                          */
-                        t.shutdownMover();
+                        if (t.hasMover()) {
+                            if (client.getMinorVersion() > 0 && client.isLeaseValid()
+                                  && client.getCB() != null) {
+                                /*
+                                 * Due to race in the Linux kernel client, a server might see CLOSE before
+                                 * the last WRITE operation have been processed by a data server. Thus,
+                                 * recall the layout (enforce dirty page flushing) and return a NFS4ERR_DELAY.
+                                 *
+                                 * see: https://bugzilla.redhat.com/show_bug.cgi?id=1901524
+                                 */
+                                _log.warn(
+                                      "Deploying work-around for buggy client {} issuing CLOSE before LAYOUT_RETURN for transfer {}@{} of {}",
+                                      t.getMoverId(), t.getPool(), t.getPnfsId(),
+                                      t.getClient().getRemoteAddress());
+                                t.recallLayout(_callbackExecutor);
+                                throw new DelayException("Close before layoutreturn");
+                            } else {
+                                _log.warn("Removing orphan mover: {}@{} for {} by {}",
+                                      t.getMoverId(), t.getPool(), t.getPnfsId(),
+                                      t.getClient().getRemoteAddress());
+                                t.shutdownMover();
+                            }
+                        }
                         if (t.isWrite()) {
                             /* write request keep in the message map to
                              * avoid re-creates and trigger errors.
