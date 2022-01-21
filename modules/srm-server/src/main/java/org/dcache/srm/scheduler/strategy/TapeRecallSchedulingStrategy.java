@@ -103,12 +103,7 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
         }
 
         if (activatedTapes) {
-            if (!tapesWithJobs.isEmpty()) {
-                LOGGER.info("Pending tapes: {}", describeTapesWithJobsMap(tapesWithJobs));
-            }
-            if (!activeTapesWithJobs.isEmpty()) {
-                LOGGER.info("Active tapes: {}", describeTapesWithJobsMap(activeTapesWithJobs));
-            }
+            logTapesWithJobsState();
         }
 
         if (immediateJobQueue.isEmpty()) {
@@ -415,6 +410,10 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
         Map<String, TapefileInfo> newTapeFileInfos = tapeInformant.getTapefileInfos(fileids);
         LOGGER.info("Retrieved tape info on {}/{} files", newTapeFileInfos.size(), fileids.size());
 
+        if (newTapeFileInfos.isEmpty()) {
+            return;
+        }
+
         Iterator<SchedulingItemJob> iterator = newJobs.iterator();
         SchedulingItemJob job;
         String fileid;
@@ -435,6 +434,8 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
             }
         }
         sortTapeRequestQueues(changedTapeQueues);
+
+        logTapesWithJobsState();
     }
 
     /**
@@ -523,6 +524,15 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
               e -> sb.append("(").append(e.getKey()).append(", ").append(e.getValue().size())
                     .append(") "));
         return sb.toString();
+    }
+
+    private void logTapesWithJobsState() {
+        if (!tapesWithJobs.isEmpty()) {
+            LOGGER.info("Pending tapes: {}", describeTapesWithJobsMap(tapesWithJobs));
+        }
+        if (!activeTapesWithJobs.isEmpty()) {
+            LOGGER.info("Active tapes: {}", describeTapesWithJobsMap(activeTapesWithJobs));
+        }
     }
 
 }
