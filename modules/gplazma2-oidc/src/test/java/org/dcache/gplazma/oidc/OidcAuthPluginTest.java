@@ -274,6 +274,8 @@ public class OidcAuthPluginTest {
         assertThat(provider.getProfile(), is(instanceOf(ScitokensProfile.class)));
         ScitokensProfile scitokensProfile = (ScitokensProfile)provider.getProfile();
         assertThat(scitokensProfile.getPrefix(), is(equalTo(FsPath.create("/target"))));
+        assertThat(scitokensProfile.getAuthzIdentity(), is(empty()));
+        assertThat(scitokensProfile.getNonAuthzIdentity(), is(empty()));
     }
 
 
@@ -282,6 +284,15 @@ public class OidcAuthPluginTest {
         Properties properties = new Properties();
         properties.setProperty("gplazma.oidc.provider!EXAMPLE",
                 "https://oidc.example.org/ -profile=wlcg");
+
+        OidcAuthPlugin.buildProviders(properties);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void shouldRejectWlcgProfileWithBadAuthz() throws Exception {
+        Properties properties = new Properties();
+        properties.setProperty("gplazma.oidc.provider!EXAMPLE",
+                "https://oidc.example.org/ -profile=wlcg -prefix=/target -authz-id=bad-principal");
 
         OidcAuthPlugin.buildProviders(properties);
     }
@@ -298,6 +309,56 @@ public class OidcAuthPluginTest {
         assertThat(provider.getProfile(), is(instanceOf(WlcgProfile.class)));
         WlcgProfile authzWGProfile = (WlcgProfile)provider.getProfile();
         assertThat(authzWGProfile.getPrefix(), is(equalTo(FsPath.create("/target"))));
+        assertThat(authzWGProfile.getAuthzIdentity(), is(empty()));
+        assertThat(authzWGProfile.getNonAuthzIdentity(), is(empty()));
+    }
+
+    @Test
+    public void shouldAcceptWlcgProfileWithAuthzPrincipal() throws Exception {
+        Properties properties = new Properties();
+        properties.setProperty("gplazma.oidc.provider!EXAMPLE",
+                "https://oidc.example.org/ -profile=wlcg -prefix=/target -authz-id=group:my-group");
+
+        var identityProviders = OidcAuthPlugin.buildProviders(properties);
+        assertThat(identityProviders, hasSize(1));
+        IdentityProvider provider = identityProviders.iterator().next();
+        assertThat(provider.getProfile(), is(instanceOf(WlcgProfile.class)));
+        WlcgProfile authzWGProfile = (WlcgProfile)provider.getProfile();
+        assertThat(authzWGProfile.getPrefix(), is(equalTo(FsPath.create("/target"))));
+        assertThat(authzWGProfile.getAuthzIdentity(), contains(new GroupNamePrincipal("my-group")));
+        assertThat(authzWGProfile.getNonAuthzIdentity(), is(empty()));
+    }
+
+    @Test
+    public void shouldAcceptWlcgProfileWithNonAuthzPrincipal() throws Exception {
+        Properties properties = new Properties();
+        properties.setProperty("gplazma.oidc.provider!EXAMPLE",
+                "https://oidc.example.org/ -profile=wlcg -prefix=/target -non-authz-id=group:my-group");
+
+        var identityProviders = OidcAuthPlugin.buildProviders(properties);
+        assertThat(identityProviders, hasSize(1));
+        IdentityProvider provider = identityProviders.iterator().next();
+        assertThat(provider.getProfile(), is(instanceOf(WlcgProfile.class)));
+        WlcgProfile authzWGProfile = (WlcgProfile)provider.getProfile();
+        assertThat(authzWGProfile.getPrefix(), is(equalTo(FsPath.create("/target"))));
+        assertThat(authzWGProfile.getAuthzIdentity(), is(empty()));
+        assertThat(authzWGProfile.getNonAuthzIdentity(), contains(new GroupNamePrincipal("my-group")));
+    }
+
+    @Test
+    public void shouldAcceptWlcgProfileWithAuthzAndNonAuthzPrincipal() throws Exception {
+        Properties properties = new Properties();
+        properties.setProperty("gplazma.oidc.provider!EXAMPLE",
+                "https://oidc.example.org/ -profile=wlcg -prefix=/target -authz-id=group:authz-group -non-authz-id=group:non-authz-group");
+
+        var identityProviders = OidcAuthPlugin.buildProviders(properties);
+        assertThat(identityProviders, hasSize(1));
+        IdentityProvider provider = identityProviders.iterator().next();
+        assertThat(provider.getProfile(), is(instanceOf(WlcgProfile.class)));
+        WlcgProfile authzWGProfile = (WlcgProfile)provider.getProfile();
+        assertThat(authzWGProfile.getPrefix(), is(equalTo(FsPath.create("/target"))));
+        assertThat(authzWGProfile.getAuthzIdentity(), contains(new GroupNamePrincipal("authz-group")));
+        assertThat(authzWGProfile.getNonAuthzIdentity(), contains(new GroupNamePrincipal("non-authz-group")));
     }
 
     @Test

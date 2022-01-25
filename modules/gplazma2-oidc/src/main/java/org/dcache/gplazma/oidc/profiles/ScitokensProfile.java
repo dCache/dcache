@@ -19,6 +19,7 @@ package org.dcache.gplazma.oidc.profiles;
 
 import com.google.common.base.Splitter;
 import diskCacheV111.util.FsPath;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.dcache.gplazma.AuthenticationException;
@@ -28,7 +29,7 @@ import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 public class ScitokensProfile extends ScopeBasedAuthzProfile {
 
     public ScitokensProfile(FsPath prefix) {
-        super(prefix);
+        super(prefix, Collections.emptySet(), Collections.emptySet());
     }
 
     @Override

@@ -20,9 +20,11 @@ package org.dcache.gplazma.oidc.profiles;
 
 import diskCacheV111.util.FsPath;
 import java.security.Principal;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import org.dcache.auth.ExemptFromNamespaceChecks;
+import org.dcache.auth.GroupNamePrincipal;
 import org.dcache.auth.JwtJtiPrincipal;
 import org.dcache.auth.JwtSubPrincipal;
 import org.dcache.auth.OidcSubjectPrincipal;
@@ -31,11 +33,13 @@ import org.dcache.auth.attributes.Activity;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.oidc.ProfileResult;
+import org.dcache.util.PrincipalSetMaker;
 import org.junit.Test;
 
 import static com.github.npathai.hamcrestopt.OptionalMatchers.isEmpty;
 import static com.github.npathai.hamcrestopt.OptionalMatchers.isPresent;
 import static org.dcache.gplazma.oidc.MockIdentityProviderBuilder.anIp;
+import static org.dcache.util.PrincipalSetMaker.aSetOfPrincipals;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertFalse;
@@ -45,6 +49,46 @@ public class WlcgProfileTest {
     private WlcgProfile profile;
     private Set<Principal> principals;
     private Optional<Restriction> restriction;
+
+    @Test
+    public void shouldAcceptEmptyIdentities() throws Exception {
+        given(aWlcgProfile().withPrefix("/prefix"));
+
+        assertThat(profile.getPrefix(), is(equalTo(FsPath.create("/prefix"))));
+        assertThat(profile.getAuthzIdentity(), is(empty()));
+        assertThat(profile.getNonAuthzIdentity(), is(empty()));
+    }
+
+    @Test
+    public void shouldAcceptNonEmptyAuthzIdentities() throws Exception {
+        given(aWlcgProfile().withPrefix("/prefix")
+                .withAuthzIdentity(aSetOfPrincipals().withGroupname("authz-group")));
+
+        assertThat(profile.getPrefix(), is(equalTo(FsPath.create("/prefix"))));
+        assertThat(profile.getAuthzIdentity(), contains(new GroupNamePrincipal("authz-group")));
+        assertThat(profile.getNonAuthzIdentity(), is(empty()));
+    }
+
+    @Test
+    public void shouldAcceptNonEmptyNonAuthzIdentities() throws Exception {
+        given(aWlcgProfile().withPrefix("/prefix")
+                .withNonAuthzIdentity(aSetOfPrincipals().withGroupname("non-authz-group")));
+
+        assertThat(profile.getPrefix(), is(equalTo(FsPath.create("/prefix"))));
+        assertThat(profile.getAuthzIdentity(), is(empty()));
+        assertThat(profile.getNonAuthzIdentity(), contains(new GroupNamePrincipal("non-authz-group")));
+    }
+
+    @Test
+    public void shouldAcceptNonEmptyAuthzAndNonAuthzIdentities() throws Exception {
+        given(aWlcgProfile().withPrefix("/prefix")
+                .withAuthzIdentity(aSetOfPrincipals().withGroupname("authz-group"))
+                .withNonAuthzIdentity(aSetOfPrincipals().withGroupname("non-authz-group")));
+
+        assertThat(profile.getPrefix(), is(equalTo(FsPath.create("/prefix"))));
+        assertThat(profile.getAuthzIdentity(), contains(new GroupNamePrincipal("authz-group")));
+        assertThat(profile.getNonAuthzIdentity(), contains(new GroupNamePrincipal("non-authz-group")));
+    }
 
     @Test(expected=AuthenticationException.class)
     public void shouldRejectTokenWithoutWlcgVersion() throws Exception {
@@ -171,6 +215,20 @@ public class WlcgProfileTest {
         assertThat(principals, not(hasItem(any(OpenIdGroupPrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
         assertThat(restriction, isEmpty());
+    }
+
+    @Test
+    public void shouldIncludeNonAuthzIdentity() throws Exception {
+        given(aWlcgProfile().withPrefix("/prefix")
+                .withAuthzIdentity(aSetOfPrincipals().withGroupname("authz-group"))
+                .withNonAuthzIdentity(aSetOfPrincipals().withGroupname("non-authz-group")));
+
+        when(invoked().withIdP(anIp("MY-OP"))
+                .withStringClaim("wlcg.ver", "1.0")
+                .withStringClaim("scope", "openid"));
+
+        assertThat(principals, not(hasItem(new GroupNamePrincipal("authz-group"))));
+        assertThat(principals, hasItem(new GroupNamePrincipal("non-authz-group")));
     }
 
     @Test
@@ -425,6 +483,20 @@ public class WlcgProfileTest {
         assertFalse(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/prefix/write-target/my-file")));
     }
 
+    @Test
+    public void shouldIncludeAuthzIdentity() throws Exception {
+        given(aWlcgProfile().withPrefix("/prefix")
+                .withAuthzIdentity(aSetOfPrincipals().withGroupname("authz-group"))
+                .withNonAuthzIdentity(aSetOfPrincipals().withGroupname("non-authz-group")));
+
+        when(invoked().withIdP(anIp("MY-OP"))
+                .withStringClaim("wlcg.ver", "1.0")
+                .withStringClaim("scope", "openid storage.read:/"));
+
+        assertThat(principals, hasItem(new GroupNamePrincipal("authz-group")));
+        assertThat(principals, not(hasItem(new GroupNamePrincipal("non-authz-group"))));
+    }
+
     private void given(WlcgProfileBuilder builder) {
 
         profile = builder.build();
@@ -446,14 +518,26 @@ public class WlcgProfileTest {
 
     private static class WlcgProfileBuilder {
         private FsPath prefix;
+        private Set<Principal> authzIdentity = Collections.emptySet();
+        private Set<Principal> nonAuthzIdentity = Collections.emptySet();
 
         public WlcgProfileBuilder withPrefix(String prefix) {
             this.prefix = FsPath.create(prefix);
             return this;
         }
 
+        public WlcgProfileBuilder withAuthzIdentity(PrincipalSetMaker maker) {
+            authzIdentity = maker.build();
+            return this;
+        }
+
+        public WlcgProfileBuilder withNonAuthzIdentity(PrincipalSetMaker maker) {
+            nonAuthzIdentity = maker.build();
+            return this;
+        }
+
         public WlcgProfile build() {
-            return new WlcgProfile(prefix);
+            return new WlcgProfile(prefix, authzIdentity, nonAuthzIdentity);
         }
     }
 }

@@ -19,7 +19,7 @@
 package org.dcache.gplazma.oidc.profiles;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Streams;
 import diskCacheV111.util.FsPath;
 import java.security.Principal;
 import java.util.Collection;
@@ -29,6 +29,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.dcache.auth.ExemptFromNamespaceChecks;
 import org.dcache.auth.attributes.Activity;
 import org.dcache.auth.attributes.MultiTargetedRestriction;
@@ -46,16 +48,32 @@ import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 abstract class ScopeBasedAuthzProfile extends BaseProfile {
 
     private static final Principal EXEMPT_FROM_NAMESPACE = new ExemptFromNamespaceChecks();
+    private static final List<Principal> AUTHZ_IDENTITY = Collections.singletonList(EXEMPT_FROM_NAMESPACE);
 
     private final FsPath prefix;
+    private final Set<Principal> authzIdentity;
+    private final Set<Principal> nonAuthzIdentity;
 
-    protected ScopeBasedAuthzProfile(FsPath prefix) {
+    protected ScopeBasedAuthzProfile(FsPath prefix, Set<Principal> authzIdentity,
+            Set<Principal> nonAuthzIdentity) {
         this.prefix = requireNonNull(prefix);
+        this.authzIdentity = requireNonNull(authzIdentity);
+        this.nonAuthzIdentity = requireNonNull(nonAuthzIdentity);
     }
 
-    @VisibleForTesting
+    // REVISIT: consider reducing visibility and annotating with @VisibleForTesting
     public FsPath getPrefix() {
         return prefix;
+    }
+
+    // REVISIT: consider reducing visibility and annotating with @VisibleForTesting
+    public Set<Principal> getAuthzIdentity() {
+        return authzIdentity;
+    }
+
+    // REVISIT: consider reducing visibility and annotating with @VisibleForTesting
+    public Set<Principal> getNonAuthzIdentity() {
+        return nonAuthzIdentity;
     }
 
     @Override
@@ -74,8 +92,11 @@ abstract class ScopeBasedAuthzProfile extends BaseProfile {
 
         if (!authorisationStatements.isEmpty()) {
             var newRestriction = buildRestriction(authorisationStatements);
-            var newPrincipals = Collections.singleton(EXEMPT_FROM_NAMESPACE);
+            var newPrincipals = Streams.concat(authzIdentity.stream(), AUTHZ_IDENTITY.stream())
+                    .collect(Collectors.toList());
             result = result.withPrincipals(newPrincipals).withRestriction(newRestriction);
+        } else {
+            result = result.withPrincipals(nonAuthzIdentity);
         }
 
         return result;

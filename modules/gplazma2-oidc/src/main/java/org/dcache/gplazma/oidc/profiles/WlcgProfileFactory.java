@@ -17,8 +17,14 @@
  */
 package org.dcache.gplazma.oidc.profiles;
 
+import com.google.common.base.Splitter;
 import diskCacheV111.util.FsPath;
+import java.security.Principal;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import org.dcache.auth.Subjects;
 
 /**
  * ProfileFactory for creating a Profile that supports the AuthZ-WG profile.
@@ -27,6 +33,26 @@ public class WlcgProfileFactory extends PrefixProfileFactory<WlcgProfile> {
 
     @Override
     protected WlcgProfile createProfile(FsPath prefix, Map<String, String> arguments) {
-        return new WlcgProfile(prefix);
+        Set<Principal> authzIdentity = parsePrincipals(arguments, "authz-id");
+        Set<Principal> nonAuthzIdentity = parsePrincipals(arguments, "non-authz-id");
+        return new WlcgProfile(prefix, authzIdentity, nonAuthzIdentity);
+    }
+
+    private Set<Principal> parsePrincipals(Map<String, String> arguments, String key) {
+        String value = arguments.get(key);
+        if (value == null) {
+            return Collections.emptySet();
+        }
+
+        List<String> items = Splitter.on(' ').omitEmptyStrings().trimResults().splitToList(value);
+        if (items.isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        try {
+            return Subjects.principalsFromArgs(items);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Bad " + key + " value: " + e.getMessage());
+        }
     }
 }

@@ -35,6 +35,7 @@ import org.dcache.gplazma.oidc.ProfileResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static java.util.Objects.requireNonNull;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 /**
@@ -46,8 +47,8 @@ import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 public class WlcgProfile extends ScopeBasedAuthzProfile {
     private static final Logger LOGGER = LoggerFactory.getLogger(WlcgProfile.class);
 
-    public WlcgProfile(FsPath prefix) {
-        super(prefix);
+    public WlcgProfile(FsPath prefix, Set<Principal> authzIdentity, Set<Principal> nonAuthzIdentity) {
+        super(prefix, authzIdentity, nonAuthzIdentity);
     }
 
     @Override

@@ -21,6 +21,7 @@ package org.dcache.gplazma.oidc.profiles;
 import diskCacheV111.util.FsPath;
 import java.util.HashMap;
 import java.util.Map;
+import org.dcache.auth.GroupNamePrincipal;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -47,11 +48,58 @@ public class WlcgProfileFactoryTest {
         when(factoryInvoked().withArg("prefix", "/valid/absolute/path"));
 
         assertThat(profile.getPrefix(), is(equalTo(FsPath.create("/valid/absolute/path"))));
+        assertThat(profile.getAuthzIdentity(), is(empty()));
+        assertThat(profile.getNonAuthzIdentity(), is(empty()));
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void shouldRejectProfileWithRelativePrefix() {
         when(factoryInvoked().withArg("prefix", "relative/path"));
+    }
+
+    @Test
+    public void shouldCreateProfileWithAuthzIdentityArgument() {
+        when(factoryInvoked()
+                .withArg("prefix", "/valid/absolute/path")
+                .withArg("authz-id", "group:my-group"));
+
+        assertThat(profile.getAuthzIdentity(), hasItem(new GroupNamePrincipal("my-group")));
+        assertThat(profile.getNonAuthzIdentity(), is(empty()));
+    }
+
+    @Test
+    public void shouldCreateProfileWithNonAuthzIdentityArgument() {
+        when(factoryInvoked()
+                .withArg("prefix", "/valid/absolute/path")
+                .withArg("non-authz-id", "group:my-group"));
+
+        assertThat(profile.getAuthzIdentity(), is(empty()));
+        assertThat(profile.getNonAuthzIdentity(), hasItem(new GroupNamePrincipal("my-group")));
+    }
+
+    @Test
+    public void shouldCreateProfileWithBothAuthzAndNonAuthzIdentityArgument() {
+        when(factoryInvoked()
+                .withArg("prefix", "/valid/absolute/path")
+                .withArg("authz-id", "group:authz-group")
+                .withArg("non-authz-id", "group:non-authz-group"));
+
+        assertThat(profile.getAuthzIdentity(), hasItem(new GroupNamePrincipal("authz-group")));
+        assertThat(profile.getNonAuthzIdentity(), hasItem(new GroupNamePrincipal("non-authz-group")));
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void shouldRejectBadAuthzIdentityArgument() {
+        when(factoryInvoked()
+                .withArg("prefix", "/valid/absolute/path")
+                .withArg("authz-id", "invalid-principal"));
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void shouldRejectBadNonAuthzIdentityArgument() {
+        when(factoryInvoked()
+                .withArg("prefix", "/valid/absolute/path")
+                .withArg("non-authz-id", "invalid-principal"));
     }
 
     public void when(FactoryInvocation invocation) {
