@@ -264,6 +264,7 @@ public class PinManagerCLI
                     break;
                 case "unpin-failed":
                     criterion.state(FAILED_TO_UNPIN);
+                    break;
                 case "all":
                     criterion.stateIsNot(PINNING);
                     requirePinning = true;
