@@ -24,10 +24,6 @@ public class ChimeraDirectoryEntry {
     private final Stat _stat;
     private final FsInode _inode;
 
-    public ChimeraDirectoryEntry(String name, FsInode inode) throws ChimeraFsException {
-        this(name, inode, inode.statCache());
-    }
-
     public ChimeraDirectoryEntry(String name, FsInode inode, Stat stat) {
         _inode = inode;
         _name = name;
