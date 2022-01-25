@@ -24,6 +24,8 @@ import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.hamcrest.Matchers.*;
+
 public class SubjectsTest {
 
     private final static String USERNAME1 = "user1";
@@ -322,5 +324,25 @@ public class SubjectsTest {
 
         assertThat("UnixNumericUserPrincipal not removed", dcacheSubject.getPrincipals(), not(hasItem(any(UnixNumericUserPrincipal.class))));
         assertThat("UnixNumericGroupPrincipal not removed", dcacheSubject.getPrincipals(), not(hasItem(any(UnixNumericGroupPrincipal.class))));
+    }
+
+    @Test
+    public void shouldBuildPrincipalsWithPrimaryGroup() {
+        var args = asList("group:!my-group");
+
+        var principals = Subjects.principalsFromArgs(args);
+
+        assertThat(principals.size(), is(equalTo(1)));
+        assertThat(principals, contains(new GroupNamePrincipal("my-group", true)));
+    }
+
+    @Test
+    public void shouldBuildPrincipalsWithNonPrimaryGroup() {
+        var args = asList("group:my-group");
+
+        var principals = Subjects.principalsFromArgs(args);
+
+        assertThat(principals.size(), is(equalTo(1)));
+        assertThat(principals, contains(new GroupNamePrincipal("my-group", false)));
     }
 }

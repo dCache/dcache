@@ -491,6 +491,13 @@ public class Subjects {
                 case "username":
                     principal = new UserNamePrincipal(value);
                     break;
+                case "group":
+                    boolean isPrimary = value.startsWith("!");
+                    if (isPrimary) {
+                        value = value.substring(1);
+                    }
+                    principal = new GroupNamePrincipal(value, isPrimary);
+                    break;
                 default:
                     try {
                         Class<? extends Principal> principalClass = Class.forName(type)
