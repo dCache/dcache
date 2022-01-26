@@ -22,7 +22,10 @@ import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.google.common.collect.EvictingQueue;
+import java.io.IOException;
 import java.math.BigInteger;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.PublicKey;
@@ -39,6 +42,7 @@ import java.util.UUID;
 import java.util.function.Supplier;
 import org.apache.http.client.HttpClient;
 import org.dcache.gplazma.AuthenticationException;
+import org.dcache.gplazma.oidc.HttpClientUtils;
 import org.dcache.gplazma.oidc.IdentityProvider;
 import org.dcache.gplazma.util.JsonWebToken;
 import org.slf4j.Logger;
@@ -55,19 +59,16 @@ public class Issuer {
 
     private final Queue<String> previousJtis;
     private final IdentityProvider provider;
-    private final JsonNode jwks;
+    private final HttpClient client;
 
-    private Supplier<Map<String, PublicKey>> keys = MemoizeMapWithExpiry.memorize(this::parseJwks)
+    private final Supplier<Map<String, PublicKey>> keys = MemoizeMapWithExpiry.memorize(this::readJwksDocument)
           .whenEmptyFor(Duration.ofMinutes(1))
           .whenNonEmptyFor(Duration.ofMinutes(10))
           .build();
 
     public Issuer(HttpClient client, IdentityProvider provider, int tokenHistory) {
         this.provider = requireNonNull(provider);
-
-        this.jwks = new HttpJsonNode(client, this::parseConfigurationForJwksUri,
-              Duration.ofSeconds(1), Duration.ofSeconds(1));
-
+        this.client = requireNonNull(client);
         previousJtis = tokenHistory > 0 ? EvictingQueue.create(tokenHistory) : null;
     }
 
@@ -79,7 +80,7 @@ public class Issuer {
         return provider.getIssuerEndpoint().toASCIIString();
     }
 
-    private Optional<String> parseConfigurationForJwksUri() {
+    private Optional<URI> jwksEndpoint() {
         JsonNode configuration = provider.discoveryDocument();
         if (configuration.getNodeType() == JsonNodeType.MISSING) {
             return Optional.empty();
@@ -104,20 +105,58 @@ public class Issuer {
             return Optional.empty();
         }
 
-        return Optional.of(url);
+        try {
+            return Optional.of(new URI(url));
+        } catch (URISyntaxException e) {
+            LOGGER.warn("Bad jwks_uri URI \"{}\": {}", url, e.toString());
+            return Optional.empty();
+        }
     }
 
-    private Map<String, PublicKey> parseJwks() {
-        JsonNode keys = jwks.get("keys");
-        if (keys == null) {
-            LOGGER.warn("missing keys");
-            return Collections.emptyMap();
+    private Optional<JsonNode> fetchJson(URI uri) {
+        try {
+            JsonNode document = HttpClientUtils.readJson(client, uri);
+            return Optional.of(document);
+        } catch (IOException e) {
+            LOGGER.warn("Failed to fetch {}: {}", uri, e.toString());
+            return Optional.empty();
         }
-        if (!keys.isArray()) {
-            LOGGER.warn("keys not an array");
-            return Collections.emptyMap();
+    }
+
+    private Optional<JsonNode> extractElement(JsonNode object, String key) {
+        if (object.getNodeType() != JsonNodeType.OBJECT) {
+            LOGGER.warn("Json node has wrong type: {} != OBJECT", object.getNodeType());
+            return Optional.empty();
         }
 
+        var element = object.get(key);
+
+        if (element == null) {
+            LOGGER.warn("JSON object is missing key \"{}\"", key);
+            return Optional.empty();
+        }
+
+        return Optional.of(element);
+    }
+
+    private Optional<JsonNode> asArray(JsonNode node) {
+        if (node.getNodeType() != JsonNodeType.ARRAY) {
+            LOGGER.warn("Json node has wrong type: {} != ARRAY", node.getNodeType());
+            return Optional.empty();
+        }
+        return Optional.of(node);
+    }
+
+    private Map<String, PublicKey> readJwksDocument() {
+        return jwksEndpoint()
+                .flatMap(this::fetchJson)
+                .flatMap(j -> this.extractElement(j, "keys"))
+                .flatMap(this::asArray)
+                .map(this::parseJwksKeys)
+                .orElse(Collections.emptyMap());
+    }
+
+    private Map<String, PublicKey> parseJwksKeys(JsonNode keys) {
         Map<String, PublicKey> publicKeys = new HashMap<>();
         for (JsonNode key : keys) {
             try {

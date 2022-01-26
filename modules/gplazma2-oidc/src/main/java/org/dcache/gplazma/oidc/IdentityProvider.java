@@ -22,8 +22,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.MissingNode;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Stopwatch;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -32,17 +30,10 @@ import static java.util.Objects.requireNonNull;
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
-import javax.annotation.Nullable;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.dcache.util.Strings;
-import org.dcache.util.TimeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 
 /**
@@ -120,7 +111,7 @@ public class IdentityProvider {
         Instant now = Instant.now();
         if (now.isAfter(nextDiscoveryFetch)) {
             try {
-                discoveryDocument = refreshDiscoveryDocument();
+                discoveryDocument = HttpClientUtils.readJson(client, configuration);
                 nextDiscoveryFetch = now.plus(cacheDurationWhenSuccessful);
             } catch (IOException e) {
                 LOGGER.warn("Failed to fetch discovery document for {}: {}", name, e.toString());
@@ -130,47 +121,6 @@ public class IdentityProvider {
         }
         return discoveryDocument;
     }
-
-    private JsonNode refreshDiscoveryDocument() throws IOException {
-        String url = configuration.toASCIIString();
-        HttpGet request = new HttpGet(url);
-
-        Stopwatch httpTiming = Stopwatch.createStarted();
-        HttpEntity entity = null;
-        HttpResponse response = null;
-        try {
-            response = client.execute(request);
-            entity = response.getEntity();
-            return asJson(entity);
-        } finally {
-            if (LOGGER.isDebugEnabled()) {
-                httpTiming.stop();
-
-                String entityDescription = entity == null ? "a missing"
-                        : entity.getContentLength() < 0 ? "an unknown sized"
-                                : entity.getContentLength() == 0 ? "an empty"
-                                        : Strings.describeSize(entity.getContentLength());
-
-                LOGGER.debug("GET {} took {} returning {} entity: {}",
-                        url,
-                        TimeUtils.describe(httpTiming.elapsed()).orElse("(no time)"),
-                        entityDescription,
-                        response.getStatusLine());
-            }
-        }
-    }
-
-    private JsonNode asJson(@Nullable HttpEntity response) throws IOException {
-        if (response == null) {
-            return MissingNode.getInstance();
-        }
-
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-        response.writeTo(os);
-        String responseAsJson = new String(os.toByteArray(), UTF_8);
-        return mapper.readValue(responseAsJson, JsonNode.class);
-    }
-
 
     @Override
     public int hashCode() {
