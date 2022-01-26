@@ -19,10 +19,12 @@ package org.dcache.gplazma.oidc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.Map;
 import org.junit.Test;
 
+import static org.dcache.gplazma.oidc.MockHttpClientBuilder.aClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertFalse;
@@ -40,12 +42,14 @@ public class ExtractResultTest {
 
     @Test(expected=NullPointerException.class)
     public void shouldThrowNpeOnNullMap() {
-        new ExtractResult(new IdentityProvider("test", URI.create("https://example.org/"), IGNORE_ALL), null);
+        new ExtractResult(new IdentityProvider("test", URI.create("https://example.org/"), IGNORE_ALL,
+                aClient().build(), Duration.ofSeconds(2)), null);
     }
 
     @Test
     public void shouldMatchIp() {
-        var idp = new IdentityProvider("test", URI.create("https://example.org"), IGNORE_ALL);
+        var idp = new IdentityProvider("test", URI.create("https://example.org"), IGNORE_ALL,
+                aClient().build(), Duration.ofSeconds(2));
 
         var result = new ExtractResult(idp, Collections.emptyMap());
 
@@ -54,7 +58,8 @@ public class ExtractResultTest {
 
     @Test
     public void shouldMatchClaims() throws Exception {
-        var result = new ExtractResult(new IdentityProvider("test", URI.create("https://example.org"), IGNORE_ALL),
+        var result = new ExtractResult(new IdentityProvider("test", URI.create("https://example.org"),
+                IGNORE_ALL, aClient().build(), Duration.ofSeconds(2)),
                 Map.of("sub", mapper.readTree("\"abcdefg012345\"")));
 
         assertThat(result.claims(), aMapWithSize(1));
@@ -63,10 +68,12 @@ public class ExtractResultTest {
 
     @Test
     public void twoSameResultsShouldBeEqual() throws Exception {
-        var result1 = new ExtractResult(new IdentityProvider("test", URI.create("https://example.org"), IGNORE_ALL),
+        var result1 = new ExtractResult(new IdentityProvider("test", URI.create("https://example.org"),
+                IGNORE_ALL, aClient().build(), Duration.ofSeconds(2)),
                 Map.of("sub", mapper.readTree("\"abcdefg012345\"")));
 
-        var result2 = new ExtractResult(new IdentityProvider("test", URI.create("https://example.org"), IGNORE_ALL),
+        var result2 = new ExtractResult(new IdentityProvider("test", URI.create("https://example.org"),
+                IGNORE_ALL, aClient().build(), Duration.ofSeconds(2)),
                 Map.of("sub", mapper.readTree("\"abcdefg012345\"")));
 
         assertTrue(result1.equals(result2));
@@ -74,10 +81,12 @@ public class ExtractResultTest {
 
     @Test
     public void twoResultsWithDifferentIpShouldNotBeEqual() throws Exception {
-        var result1 = new ExtractResult(new IdentityProvider("test", URI.create("https://example.org"), IGNORE_ALL),
+        var result1 = new ExtractResult(new IdentityProvider("test", URI.create("https://example.org"),
+                IGNORE_ALL, aClient().build(), Duration.ofSeconds(2)),
                 Map.of("sub", mapper.readTree("\"abcdefg012345\"")));
 
-        var result2 = new ExtractResult(new IdentityProvider("test2", URI.create("https://example.org"), IGNORE_ALL),
+        var result2 = new ExtractResult(new IdentityProvider("test2", URI.create("https://example.org"),
+                IGNORE_ALL, aClient().build(), Duration.ofSeconds(2)),
                 Map.of("sub", mapper.readTree("\"abcdefg012345\"")));
 
         assertFalse(result1.equals(result2));
@@ -85,10 +94,12 @@ public class ExtractResultTest {
 
     @Test
     public void twoResultsWithDifferentClaimsShouldNotBeEqual() throws Exception {
-        var result1 = new ExtractResult(new IdentityProvider("test", URI.create("https://example.org"), IGNORE_ALL),
+        var result1 = new ExtractResult(new IdentityProvider("test", URI.create("https://example.org"),
+                IGNORE_ALL, aClient().build(), Duration.ofSeconds(2)),
                 Map.of("sub", mapper.readTree("\"abcdefg012345\"")));
 
-        var result2 = new ExtractResult(new IdentityProvider("test2", URI.create("https://example.org"), IGNORE_ALL),
+        var result2 = new ExtractResult(new IdentityProvider("test2", URI.create("https://example.org"),
+                IGNORE_ALL, aClient().build(), Duration.ofSeconds(2)),
                 Map.of("sub", mapper.readTree("\"some-other-value\"")));
 
         assertFalse(result1.equals(result2));
@@ -96,10 +107,12 @@ public class ExtractResultTest {
 
     @Test
     public void twoSameResultsShouldHaveSameHash() throws Exception {
-        var result1 = new ExtractResult(new IdentityProvider("test", URI.create("https://example.org"), IGNORE_ALL),
+        var result1 = new ExtractResult(new IdentityProvider("test", URI.create("https://example.org"),
+                IGNORE_ALL, aClient().build(), Duration.ofSeconds(2)),
                 Map.of("sub", mapper.readTree("\"abcdefg012345\"")));
 
-        var result2 = new ExtractResult(new IdentityProvider("test", URI.create("https://example.org"), IGNORE_ALL),
+        var result2 = new ExtractResult(new IdentityProvider("test", URI.create("https://example.org"),
+                IGNORE_ALL, aClient().build(), Duration.ofSeconds(2)),
                 Map.of("sub", mapper.readTree("\"abcdefg012345\"")));
 
         assertThat(result2.hashCode(), equalTo(result1.hashCode()));
@@ -107,7 +120,8 @@ public class ExtractResultTest {
 
     @Test
     public void shouldHaveElementsInToString() throws Exception {
-        var description = new ExtractResult(new IdentityProvider("test", URI.create("https://example.org"), IGNORE_ALL),
+        var description = new ExtractResult(new IdentityProvider("test", URI.create("https://example.org"),
+                IGNORE_ALL, aClient().build(), Duration.ofSeconds(2)),
                 Map.of("sub", mapper.readTree("\"abcdefg012345\"")))
                 .toString();
 

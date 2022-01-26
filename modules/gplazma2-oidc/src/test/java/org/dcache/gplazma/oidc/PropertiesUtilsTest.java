@@ -18,13 +18,14 @@
  */
 package org.dcache.gplazma.oidc;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Properties;
 import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertFalse;
 
 public class PropertiesUtilsTest {
 
@@ -90,6 +91,69 @@ public class PropertiesUtilsTest {
         var properties = given(properties().with("foo", "bar"));
 
         PropertiesUtils.asIntOrDefault(properties, "foo", 42);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void shouldRejectChronoUnitWithMissingProperty() {
+        var properties = given(properties());
+
+        PropertiesUtils.asChronoUnit(properties, "foo");
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void shouldRejectChronoUnitWithValidProperty() {
+        var properties = given(properties().with("units", "JIFFIES"));
+
+        PropertiesUtils.asChronoUnit(properties, "units");
+    }
+
+    @Test
+    public void shouldAcceptChronoUnitWithValidProperty() {
+        var properties = given(properties().with("units", "SECONDS"));
+
+        var value = PropertiesUtils.asChronoUnit(properties, "units");
+
+        assertThat(value, is(equalTo(ChronoUnit.SECONDS)));
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void shouldRejectDurationWithMissingProperty() {
+        var properties = given(properties().with("duration.unit", "SECONDS"));
+
+        PropertiesUtils.asDuration(properties, "duration");
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void shouldRejectDurationWithMissingUnitProperty() {
+        var properties = given(properties().with("duration", "25"));
+
+        PropertiesUtils.asDuration(properties, "duration");
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void shouldRejectDurationWithNonNumericalProperty() {
+        var properties = given(properties().with("duration", "a few")
+                .with("duration.unit", "SECONDS"));
+
+        PropertiesUtils.asDuration(properties, "duration");
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void shouldRejectDurationWithInvalidUnits() {
+        var properties = given(properties().with("duration", "42")
+                .with("duration.unit", "JIFFIES"));
+
+        PropertiesUtils.asDuration(properties, "duration");
+    }
+
+    @Test
+    public void shouldAcceptValidDuration() {
+        var properties = given(properties().with("duration", "42")
+                .with("duration.unit", "SECONDS"));
+
+        var duration = PropertiesUtils.asDuration(properties, "duration");
+
+        assertThat(duration, is(equalTo(Duration.ofSeconds(42))));
     }
 
     private Properties given(PropertiesBuilder builder) {

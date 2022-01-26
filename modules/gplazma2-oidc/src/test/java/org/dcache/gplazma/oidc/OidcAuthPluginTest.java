@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import diskCacheV111.util.FsPath;
 import java.net.URI;
 import java.security.Principal;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
@@ -53,6 +54,7 @@ import org.mockito.BDDMockito;
 
 import static com.google.common.base.Preconditions.checkState;
 import static java.time.temporal.ChronoUnit.MINUTES;
+import static org.dcache.gplazma.oidc.MockHttpClientBuilder.aClient;
 import static org.dcache.gplazma.oidc.MockIdentityProviderBuilder.anIp;
 import static org.dcache.gplazma.oidc.MockProfileBuilder.aProfile;
 import static org.dcache.gplazma.oidc.MockProfileResultBuilder.aProfileResult;
@@ -86,7 +88,7 @@ public class OidcAuthPluginTest {
     public void shouldThrowExceptionIfHostnamesPropertyMissing() throws Exception {
         Properties properties = new Properties();
 
-        OidcAuthPlugin.buildHosts(properties);
+        OidcAuthPlugin.buildHosts(properties, aClient().build(), Duration.ofSeconds(2));
     }
 
     @Test
@@ -94,7 +96,8 @@ public class OidcAuthPluginTest {
         Properties properties = new Properties();
         properties.setProperty("gplazma.oidc.hostnames", "");
 
-        var identityProvides = OidcAuthPlugin.buildHosts(properties);
+        var identityProvides = OidcAuthPlugin.buildHosts(properties, aClient().build(),
+                Duration.ofSeconds(2));
 
         assertThat(identityProvides, is(empty()));
     }
@@ -104,7 +107,7 @@ public class OidcAuthPluginTest {
         Properties properties = new Properties();
         properties.setProperty("gplazma.oidc.hostnames", "-oidc.example.org");
 
-        OidcAuthPlugin.buildHosts(properties);
+        OidcAuthPlugin.buildHosts(properties, aClient().build(), Duration.ofSeconds(2));
     }
 
     @Test
@@ -112,20 +115,21 @@ public class OidcAuthPluginTest {
         Properties properties = new Properties();
         properties.setProperty("gplazma.oidc.hostnames", "oidc.example.org");
 
-        var identityProviders = OidcAuthPlugin.buildHosts(properties);
+        var identityProviders = OidcAuthPlugin.buildHosts(properties, aClient().build(),
+                Duration.ofSeconds(2));
 
         assertThat(identityProviders, hasSize(1));
         IdentityProvider provider = identityProviders.iterator().next();
         assertThat(provider.getName(), is(equalTo("oidc.example.org")));
         assertThat(provider.getIssuerEndpoint(), is(equalTo(URI.create("https://oidc.example.org/"))));
-        assertThat(provider.getConfigurationEndpoint(), is(equalTo(URI.create("https://oidc.example.org/.well-known/openid-configuration"))));
     }
 
     @Test
     public void shouldReturnEmptySetFromBuildProvidersWithNoPrefixEntries() throws Exception {
         Properties properties = new Properties();
 
-        var identityProviders = OidcAuthPlugin.buildProviders(properties);
+        var identityProviders = OidcAuthPlugin.buildProviders(properties, aClient().build(),
+                Duration.ofSeconds(2));
 
         assertThat(identityProviders, is(empty()));
     }
@@ -135,13 +139,13 @@ public class OidcAuthPluginTest {
         Properties properties = new Properties();
         properties.setProperty("gplazma.oidc.provider!EXAMPLE", "https://oidc.example.org/");
 
-        var identityProviders = OidcAuthPlugin.buildProviders(properties);
+        var identityProviders = OidcAuthPlugin.buildProviders(properties, aClient().build(),
+                Duration.ofSeconds(2));
 
         assertThat(identityProviders, hasSize(1));
         IdentityProvider provider = identityProviders.iterator().next();
         assertThat(provider.getName(), is(equalTo("EXAMPLE")));
         assertThat(provider.getIssuerEndpoint(), is(equalTo(URI.create("https://oidc.example.org/"))));
-        assertThat(provider.getConfigurationEndpoint(), is(equalTo(URI.create("https://oidc.example.org/.well-known/openid-configuration"))));
         assertThat(provider.getProfile(), is(instanceOf(OidcProfile.class)));
         OidcProfile oidcProfile = (OidcProfile)provider.getProfile();
         assertThat(oidcProfile.isPreferredUsernameClaimAccepted(), is(equalTo(false)));
@@ -153,13 +157,13 @@ public class OidcAuthPluginTest {
         Properties properties = new Properties();
         properties.setProperty("gplazma.oidc.provider!EXAMPLE", "https://oidc.example.org/ -profile=oidc");
 
-        var identityProviders = OidcAuthPlugin.buildProviders(properties);
+        var identityProviders = OidcAuthPlugin.buildProviders(properties, aClient().build(),
+                Duration.ofSeconds(2));
 
         assertThat(identityProviders, hasSize(1));
         IdentityProvider provider = identityProviders.iterator().next();
         assertThat(provider.getName(), is(equalTo("EXAMPLE")));
         assertThat(provider.getIssuerEndpoint(), is(equalTo(URI.create("https://oidc.example.org/"))));
-        assertThat(provider.getConfigurationEndpoint(), is(equalTo(URI.create("https://oidc.example.org/.well-known/openid-configuration"))));
         assertThat(provider.getProfile(), is(instanceOf(OidcProfile.class)));
         OidcProfile oidcProfile = (OidcProfile)provider.getProfile();
         assertThat(oidcProfile.isPreferredUsernameClaimAccepted(), is(equalTo(false)));
@@ -172,7 +176,7 @@ public class OidcAuthPluginTest {
         properties.setProperty("gplazma.oidc.provider!EXAMPLE",
                 "https://oidc.example.org/ -profile=unknown-profile");
 
-        OidcAuthPlugin.buildProviders(properties);
+        OidcAuthPlugin.buildProviders(properties, aClient().build(), Duration.ofSeconds(2));
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -180,7 +184,7 @@ public class OidcAuthPluginTest {
         Properties properties = new Properties();
         properties.setProperty("gplazma.oidc.provider!", "https://oidc.example.org/");
 
-        OidcAuthPlugin.buildProviders(properties);
+        OidcAuthPlugin.buildProviders(properties, aClient().build(), Duration.ofSeconds(2));
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -188,7 +192,7 @@ public class OidcAuthPluginTest {
         Properties properties = new Properties();
         properties.setProperty("gplazma.oidc.provider!", "");
 
-        OidcAuthPlugin.buildProviders(properties);
+        OidcAuthPlugin.buildProviders(properties, aClient().build(), Duration.ofSeconds(2));
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -196,7 +200,7 @@ public class OidcAuthPluginTest {
         Properties properties = new Properties();
         properties.setProperty("gplazma.oidc.provider!", "https://oidc.example.org/ -accept=BAD-VALUE");
 
-        OidcAuthPlugin.buildProviders(properties);
+        OidcAuthPlugin.buildProviders(properties, aClient().build(), Duration.ofSeconds(2));
     }
 
     @Test
@@ -204,13 +208,13 @@ public class OidcAuthPluginTest {
         Properties properties = new Properties();
         properties.setProperty("gplazma.oidc.provider!EXAMPLE", "https://oidc.example.org/ -accept=username");
 
-        var identityProviders = OidcAuthPlugin.buildProviders(properties);
+        var identityProviders = OidcAuthPlugin.buildProviders(properties, aClient().build(),
+                Duration.ofSeconds(2));
 
         assertThat(identityProviders, hasSize(1));
         IdentityProvider provider = identityProviders.iterator().next();
         assertThat(provider.getName(), is(equalTo("EXAMPLE")));
         assertThat(provider.getIssuerEndpoint(), is(equalTo(URI.create("https://oidc.example.org/"))));
-        assertThat(provider.getConfigurationEndpoint(), is(equalTo(URI.create("https://oidc.example.org/.well-known/openid-configuration"))));
         assertThat(provider.getProfile(), is(instanceOf(OidcProfile.class)));
         OidcProfile oidcProfile = (OidcProfile)provider.getProfile();
         assertThat(oidcProfile.isPreferredUsernameClaimAccepted(), is(equalTo(true)));
@@ -222,13 +226,13 @@ public class OidcAuthPluginTest {
         Properties properties = new Properties();
         properties.setProperty("gplazma.oidc.provider!EXAMPLE", "https://oidc.example.org/ -accept=groups");
 
-        var identityProviders = OidcAuthPlugin.buildProviders(properties);
+        var identityProviders = OidcAuthPlugin.buildProviders(properties, aClient().build(),
+                Duration.ofSeconds(2));
 
         assertThat(identityProviders, hasSize(1));
         IdentityProvider provider = identityProviders.iterator().next();
         assertThat(provider.getName(), is(equalTo("EXAMPLE")));
         assertThat(provider.getIssuerEndpoint(), is(equalTo(URI.create("https://oidc.example.org/"))));
-        assertThat(provider.getConfigurationEndpoint(), is(equalTo(URI.create("https://oidc.example.org/.well-known/openid-configuration"))));
         assertThat(provider.getProfile(), is(instanceOf(OidcProfile.class)));
         OidcProfile oidcProfile = (OidcProfile)provider.getProfile();
         assertThat(oidcProfile.isPreferredUsernameClaimAccepted(), is(equalTo(false)));
@@ -240,13 +244,13 @@ public class OidcAuthPluginTest {
         Properties properties = new Properties();
         properties.setProperty("gplazma.oidc.provider!EXAMPLE", "https://oidc.example.org/ -accept=username,groups");
 
-        var identityProviders = OidcAuthPlugin.buildProviders(properties);
+        var identityProviders = OidcAuthPlugin.buildProviders(properties, aClient().build(),
+                Duration.ofSeconds(2));
 
         assertThat(identityProviders, hasSize(1));
         IdentityProvider provider = identityProviders.iterator().next();
         assertThat(provider.getName(), is(equalTo("EXAMPLE")));
         assertThat(provider.getIssuerEndpoint(), is(equalTo(URI.create("https://oidc.example.org/"))));
-        assertThat(provider.getConfigurationEndpoint(), is(equalTo(URI.create("https://oidc.example.org/.well-known/openid-configuration"))));
         assertThat(provider.getProfile(), is(instanceOf(OidcProfile.class)));
         OidcProfile oidcProfile = (OidcProfile)provider.getProfile();
         assertThat(oidcProfile.isPreferredUsernameClaimAccepted(), is(equalTo(true)));
@@ -259,7 +263,7 @@ public class OidcAuthPluginTest {
         properties.setProperty("gplazma.oidc.provider!EXAMPLE",
                 "https://oidc.example.org/ -profile=scitokens");
 
-        OidcAuthPlugin.buildProviders(properties);
+        OidcAuthPlugin.buildProviders(properties, aClient().build(), Duration.ofSeconds(2));
     }
 
     @Test
@@ -268,7 +272,9 @@ public class OidcAuthPluginTest {
         properties.setProperty("gplazma.oidc.provider!EXAMPLE",
                 "https://oidc.example.org/ -profile=scitokens -prefix=/target");
 
-        var identityProviders = OidcAuthPlugin.buildProviders(properties);
+        var identityProviders = OidcAuthPlugin.buildProviders(properties, aClient().build(),
+                Duration.ofSeconds(2));
+
         assertThat(identityProviders, hasSize(1));
         IdentityProvider provider = identityProviders.iterator().next();
         assertThat(provider.getProfile(), is(instanceOf(ScitokensProfile.class)));
@@ -285,7 +291,7 @@ public class OidcAuthPluginTest {
         properties.setProperty("gplazma.oidc.provider!EXAMPLE",
                 "https://oidc.example.org/ -profile=wlcg");
 
-        OidcAuthPlugin.buildProviders(properties);
+        OidcAuthPlugin.buildProviders(properties, aClient().build(), Duration.ofSeconds(2));
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -294,7 +300,7 @@ public class OidcAuthPluginTest {
         properties.setProperty("gplazma.oidc.provider!EXAMPLE",
                 "https://oidc.example.org/ -profile=wlcg -prefix=/target -authz-id=bad-principal");
 
-        OidcAuthPlugin.buildProviders(properties);
+        OidcAuthPlugin.buildProviders(properties, aClient().build(), Duration.ofSeconds(2));
     }
 
     @Test
@@ -303,7 +309,9 @@ public class OidcAuthPluginTest {
         properties.setProperty("gplazma.oidc.provider!EXAMPLE",
                 "https://oidc.example.org/ -profile=wlcg -prefix=/target");
 
-        var identityProviders = OidcAuthPlugin.buildProviders(properties);
+        var identityProviders = OidcAuthPlugin.buildProviders(properties, aClient().build(),
+                Duration.ofSeconds(2));
+
         assertThat(identityProviders, hasSize(1));
         IdentityProvider provider = identityProviders.iterator().next();
         assertThat(provider.getProfile(), is(instanceOf(WlcgProfile.class)));
@@ -319,7 +327,9 @@ public class OidcAuthPluginTest {
         properties.setProperty("gplazma.oidc.provider!EXAMPLE",
                 "https://oidc.example.org/ -profile=wlcg -prefix=/target -authz-id=group:my-group");
 
-        var identityProviders = OidcAuthPlugin.buildProviders(properties);
+        var identityProviders = OidcAuthPlugin.buildProviders(properties, aClient().build(),
+                Duration.ofSeconds(2));
+
         assertThat(identityProviders, hasSize(1));
         IdentityProvider provider = identityProviders.iterator().next();
         assertThat(provider.getProfile(), is(instanceOf(WlcgProfile.class)));
@@ -335,7 +345,9 @@ public class OidcAuthPluginTest {
         properties.setProperty("gplazma.oidc.provider!EXAMPLE",
                 "https://oidc.example.org/ -profile=wlcg -prefix=/target -non-authz-id=group:my-group");
 
-        var identityProviders = OidcAuthPlugin.buildProviders(properties);
+        var identityProviders = OidcAuthPlugin.buildProviders(properties, aClient().build(),
+                Duration.ofSeconds(2));
+
         assertThat(identityProviders, hasSize(1));
         IdentityProvider provider = identityProviders.iterator().next();
         assertThat(provider.getProfile(), is(instanceOf(WlcgProfile.class)));
@@ -351,7 +363,9 @@ public class OidcAuthPluginTest {
         properties.setProperty("gplazma.oidc.provider!EXAMPLE",
                 "https://oidc.example.org/ -profile=wlcg -prefix=/target -authz-id=group:authz-group -non-authz-id=group:non-authz-group");
 
-        var identityProviders = OidcAuthPlugin.buildProviders(properties);
+        var identityProviders = OidcAuthPlugin.buildProviders(properties, aClient().build(),
+                Duration.ofSeconds(2));
+
         assertThat(identityProviders, hasSize(1));
         IdentityProvider provider = identityProviders.iterator().next();
         assertThat(provider.getProfile(), is(instanceOf(WlcgProfile.class)));

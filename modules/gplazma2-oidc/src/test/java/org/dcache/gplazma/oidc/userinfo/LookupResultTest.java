@@ -21,9 +21,11 @@ package org.dcache.gplazma.oidc.userinfo;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.Map;
 import org.dcache.gplazma.oidc.IdentityProvider;
+import org.dcache.gplazma.oidc.MockHttpClientBuilder;
 import org.dcache.gplazma.oidc.Profile;
 import org.dcache.gplazma.oidc.ProfileResult;
 import org.junit.Test;
@@ -34,8 +36,12 @@ import static org.hamcrest.Matchers.*;
 public class LookupResultTest {
 
     private static final Profile IGNORE_ALL = (i,c) -> new ProfileResult(Collections.emptySet());
-    private static final IdentityProvider EXAMPLE_IP = new IdentityProvider("example-op",
-            URI.create("https://example.org/"), IGNORE_ALL);
+    private static final IdentityProvider EXAMPLE_IP = new IdentityProvider(
+            "example-op",
+            URI.create("https://example.org/"),
+            IGNORE_ALL,
+            MockHttpClientBuilder.aClient().build(),
+            Duration.ofSeconds(1));
 
     @Test(expected=NullPointerException.class)
     public void shouldThrowNpeOnErrorWithNullIp() {

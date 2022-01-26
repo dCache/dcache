@@ -17,6 +17,9 @@
  */
 package org.dcache.gplazma.oidc;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import org.mockito.BDDMockito;
 
@@ -39,11 +42,6 @@ public class MockIdentityProviderBuilder {
     public MockIdentityProviderBuilder withEndpoint(String endpoint) {
         URI url = URI.create(endpoint);
         BDDMockito.given(provider.getIssuerEndpoint()).willReturn(url);
-
-        String withTrailingSlash = endpoint.endsWith("/") ? endpoint : (endpoint + "/");
-        URI config = URI.create(withTrailingSlash + ".well-known/openid-configuration");
-        BDDMockito.given(provider.getConfigurationEndpoint()).willReturn(config);
-
         return this;
     }
 
@@ -54,6 +52,17 @@ public class MockIdentityProviderBuilder {
 
     public MockIdentityProviderBuilder withProfile(Profile profile) {
         BDDMockito.given(provider.getProfile()).willReturn(profile);
+        return this;
+    }
+
+    public MockIdentityProviderBuilder withDiscovery(String json) {
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            JsonNode document = mapper.readTree(json);
+            BDDMockito.given(provider.discoveryDocument()).willReturn(document);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
         return this;
     }
 

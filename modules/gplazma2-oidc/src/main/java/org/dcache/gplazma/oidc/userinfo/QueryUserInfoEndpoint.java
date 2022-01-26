@@ -18,6 +18,7 @@
 package org.dcache.gplazma.oidc.userinfo;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Throwables;
 import com.google.common.cache.CacheBuilder;
@@ -41,7 +42,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -79,14 +79,11 @@ public class QueryUserInfoEndpoint implements TokenProcessor {
     private final static String ACCESS_TOKEN_CACHE_EXPIRE = "gplazma.oidc.access-token-cache.expire";
     private final static String ACCESS_TOKEN_CACHE_EXPIRE_UNIT = "gplazma.oidc.access-token-cache.expire.unit";
     private final static String CONCURRENCY = "gplazma.oidc.concurrent-requests";
-    private final static String DISCOVERY_CACHE_REFRESH = "gplazma.oidc.discovery-cache";
-    private final static String DISCOVERY_CACHE_REFRESH_UNIT = "gplazma.oidc.discovery-cache.unit";
     private final static String HTTP_SLOW_LOOKUP = "gplazma.oidc.http.slow-threshold";
     private final static String HTTP_SLOW_LOOKUP_UNIT = "gplazma.oidc.http.slow-threshold.unit";
 
     private final JsonHttpClient jsonHttpClient;
     private final ExecutorService executor;
-    private final LoadingCache<IdentityProvider, JsonNode> discoveryCache;
     private final LoadingCache<String, List<LookupResult>> userInfoCache;
     private final Map<URI, IdentityProvider> providersByIssuer;
     private final Duration slowLookupThreshold;
@@ -101,8 +98,6 @@ public class QueryUserInfoEndpoint implements TokenProcessor {
         providersByIssuer = providers.stream()
               .collect(toMap(IdentityProvider::getIssuerEndpoint, p -> p));
 
-        discoveryCache = createDiscoveryCache(asInt(properties, DISCOVERY_CACHE_REFRESH),
-              TimeUnit.valueOf(properties.getProperty(DISCOVERY_CACHE_REFRESH_UNIT)));
         slowLookupThreshold = Duration.of(asInt(properties, HTTP_SLOW_LOOKUP),
               ChronoUnit.valueOf(properties.getProperty(HTTP_SLOW_LOOKUP_UNIT)));
         userInfoCache = createUserInfoCache(asInt(properties, ACCESS_TOKEN_CACHE_SIZE),
@@ -172,40 +167,6 @@ public class QueryUserInfoEndpoint implements TokenProcessor {
 
         var result = successfulResults.get(0);
         return new ExtractResult(result.getIdentityProvider(), result.getClaims());
-    }
-
-    private LoadingCache<IdentityProvider, JsonNode> createDiscoveryCache(int refresh,
-          TimeUnit refreshUnits) {
-        return CacheBuilder.newBuilder()
-              .maximumSize(100)
-              .refreshAfterWrite(refresh, refreshUnits)
-              .build(
-                    new CacheLoader<IdentityProvider, JsonNode>() {
-                        @Override
-                        public JsonNode load(IdentityProvider provider)
-                              throws OidcException, IOException {
-                            LOG.debug("Fetching discoveryDoc for {}", provider.getName());
-                            URI configuration = provider.getConfigurationEndpoint();
-                            JsonNode discoveryDoc = jsonHttpClient.doGet(configuration);
-                            if (discoveryDoc != null && discoveryDoc.has("userinfo_endpoint")) {
-                                return discoveryDoc;
-                            } else {
-                                throw new OidcException(provider.getName(),
-                                      "Discovery Document at " + discoveryDoc +
-                                            " does not contain userinfo endpoint url");
-                            }
-                        }
-
-                        @Override
-                        public ListenableFuture<JsonNode> reload(final IdentityProvider provider,
-                              JsonNode value) {
-                            ListenableFutureTask<JsonNode> task = ListenableFutureTask.create(
-                                  () -> load(provider));
-                            executor.execute(task);
-                            return task;
-                        }
-                    }
-              );
     }
 
     private LoadingCache<String, List<LookupResult>> createUserInfoCache(int size,
@@ -300,16 +261,25 @@ public class QueryUserInfoEndpoint implements TokenProcessor {
                 LOG.debug("Starting querying {} about token {}", ip.getName(), describe(token, 20));
             }
 
-            JsonNode discoveryDoc = discoveryCache.get(ip);
+            JsonNode discoveryDoc = ip.discoveryDocument();
+            if (discoveryDoc.getNodeType() == JsonNodeType.MISSING) {
+                return LookupResult.error(ip, "Problem fetching discovery document.");
+            }
+
+            JsonNode userinfo = discoveryDoc.get("userinfo_endpoint");
+            if (userinfo == null) {
+                return LookupResult.error(ip, "Discovery document has no \"userinfo_endpoint\" field.");
+            }
+            if (!userinfo.isTextual()) {
+                return LookupResult.error(ip, "Discovery document has wrong type: " + userinfo.getNodeType());
+            }
+            String userInfoEndPoint = userinfo.asText();
+
             userinfoLookupTiming = Stopwatch.createStarted();
-            String userInfoEndPoint = extractUserInfoEndPoint(discoveryDoc);
-            Map<String,JsonNode> claims = claimsFromUserInfoEndpoint(token,
-                  userInfoEndPoint);
+            Map<String,JsonNode> claims = claimsFromUserInfoEndpoint(token, userInfoEndPoint);
             return LookupResult.success(ip, claims);
         } catch (OidcException oe) {
             return LookupResult.error(ip, oe.getMessage());
-        } catch (ExecutionException e) {
-            return LookupResult.error(ip, "(\"" + ip.getName() + "\", " + e.getMessage() + ")");
         } finally {
             if (userinfoLookupTiming != null) {
                 userinfoLookupTiming.stop();
@@ -345,15 +315,6 @@ public class QueryUserInfoEndpoint implements TokenProcessor {
             throw new OidcException("Error parsing UserInfo: " + iae.getMessage());
         } catch (IOException e) {
             throw new OidcException("Failed to fetch UserInfo: " + e.getMessage());
-        }
-    }
-
-
-    private String extractUserInfoEndPoint(JsonNode discoveryDoc) {
-        if (discoveryDoc.has("userinfo_endpoint")) {
-            return discoveryDoc.get("userinfo_endpoint").asText();
-        } else {
-            return null;
         }
     }
 

@@ -81,12 +81,10 @@ public class IssuerTest {
 
     @Test
     public void shouldAcceptJwtWithoutKidWhenJkwsNoKid() throws Exception {
-        given(aClient()
-            .onGet("https://oidc.example.org/.well-known/openid-configuration").responds()
-                .withEntity("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}")
-            .onGet("https://oidc.example.org/jwks").responds()
+        given(aClient().onGet("https://oidc.example.org/jwks").responds()
                 .withEntity("{\"keys\": [" + jwtFactory.describePublicKey() + "]}"));
-        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/"));
+        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/")
+                .withDiscovery("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}"));
         given(aMockJwt().withoutKid().withoutJti().signedBy(jwtFactory.publicKey()));
         given(anIssuer().withoutHistory());
 
@@ -98,12 +96,10 @@ public class IssuerTest {
     @Test
     public void shouldAcceptJwtWithoutKid() throws Exception {
         ObjectNode description = jwtFactory.describePublicKey().put("kid", "key-1");
-        given(aClient()
-            .onGet("https://oidc.example.org/.well-known/openid-configuration").responds()
-                .withEntity("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}")
-            .onGet("https://oidc.example.org/jwks").responds()
+        given(aClient().onGet("https://oidc.example.org/jwks").responds()
                 .withEntity("{\"keys\": [" + description + "]}"));
-        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/"));
+        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/")
+                .withDiscovery("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}"));
         given(aMockJwt().withoutKid().withoutJti().signedBy(jwtFactory.publicKey()));
         given(anIssuer().withoutHistory());
 
@@ -115,12 +111,10 @@ public class IssuerTest {
     @Test
     public void shouldAcceptJwtWithKid() throws Exception {
         ObjectNode description = jwtFactory.describePublicKey().put("kid", "key-1");
-        given(aClient()
-            .onGet("https://oidc.example.org/.well-known/openid-configuration").responds()
-                .withEntity("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}")
-            .onGet("https://oidc.example.org/jwks").responds()
+        given(aClient().onGet("https://oidc.example.org/jwks").responds()
                 .withEntity("{\"keys\": [" + description + "]}"));
-        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/"));
+        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/")
+                .withDiscovery("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}"));
         given(anIssuer().withoutHistory());
         given(aMockJwt().withKid("key-1").withoutJti().signedBy(jwtFactory.publicKey()));
 
@@ -132,12 +126,10 @@ public class IssuerTest {
     @Test(expected=AuthenticationException.class)
     public void shouldRejectJwtWithUnknownKid() throws Exception {
         ObjectNode description = jwtFactory.describePublicKey().put("kid", "key-1");
-        given(aClient()
-            .onGet("https://oidc.example.org/.well-known/openid-configuration").responds()
-                .withEntity("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}")
-            .onGet("https://oidc.example.org/jwks").responds()
+        given(aClient().onGet("https://oidc.example.org/jwks").responds()
                 .withEntity("{\"keys\": [" + description + "]}"));
-        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/"));
+        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/")
+                .withDiscovery("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}"));
         given(anIssuer().withoutHistory());
         given(aMockJwt().withKid("unknown-key-1").withoutJti().signedBy(jwtFactory.publicKey()));
 
@@ -148,12 +140,10 @@ public class IssuerTest {
     public void shouldAcceptJwtFromKey1FromOpWithMultipleKeys() throws Exception {
         ObjectNode description1 = jwtFactory.describePublicKey().put("kid", "key-1");
         ObjectNode description2 = anotherJwtFactory.describePublicKey().put("kid", "key-2");
-        given(aClient()
-            .onGet("https://oidc.example.org/.well-known/openid-configuration").responds()
-                .withEntity("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}")
-            .onGet("https://oidc.example.org/jwks").responds()
+        given(aClient().onGet("https://oidc.example.org/jwks").responds()
                 .withEntity("{\"keys\": [" + description1 + "," + description2 + "]}"));
-        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/"));
+        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/")
+                .withDiscovery("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}"));
         given(anIssuer().withoutHistory());
         given(aMockJwt().withKid("key-1").withoutJti().signedBy(jwtFactory.publicKey()));
 
@@ -167,12 +157,10 @@ public class IssuerTest {
     public void shouldAcceptJwtFromKey2FromOpWithMultipleKeys() throws Exception {
         ObjectNode description1 = jwtFactory.describePublicKey().put("kid", "key-1");
         ObjectNode description2 = anotherJwtFactory.describePublicKey().put("kid", "key-2");
-        given(aClient()
-            .onGet("https://oidc.example.org/.well-known/openid-configuration").responds()
-                .withEntity("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}")
-            .onGet("https://oidc.example.org/jwks").responds()
+        given(aClient().onGet("https://oidc.example.org/jwks").responds()
                 .withEntity("{\"keys\": [" + description1 + "," + description2 + "]}"));
-        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/"));
+        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/")
+                .withDiscovery("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}"));
         given(anIssuer().withoutHistory());
         given(aMockJwt().withKid("key-2").withoutJti().signedBy(anotherJwtFactory.publicKey()));
 
@@ -186,12 +174,10 @@ public class IssuerTest {
     public void shouldAcceptJwtFromKey1FromOpWithMultipleKeysNoKid() throws Exception {
         ObjectNode description1 = jwtFactory.describePublicKey();
         ObjectNode description2 = anotherJwtFactory.describePublicKey();
-        given(aClient()
-            .onGet("https://oidc.example.org/.well-known/openid-configuration").responds()
-                .withEntity("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}")
-            .onGet("https://oidc.example.org/jwks").responds()
+        given(aClient().onGet("https://oidc.example.org/jwks").responds()
                 .withEntity("{\"keys\": [" + description1 + "," + description2 + "]}"));
-        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/"));
+        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/")
+                .withDiscovery("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}"));
         given(anIssuer().withoutHistory());
         given(aMockJwt().withoutKid().withoutJti().signedBy(jwtFactory.publicKey()));
 
@@ -207,12 +193,10 @@ public class IssuerTest {
     public void shouldAcceptJwtFromKey2FromOpWithMultipleKeysNoKid() throws Exception {
         ObjectNode description1 = jwtFactory.describePublicKey();
         ObjectNode description2 = anotherJwtFactory.describePublicKey();
-        given(aClient()
-            .onGet("https://oidc.example.org/.well-known/openid-configuration").responds()
-                .withEntity("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}")
-            .onGet("https://oidc.example.org/jwks").responds()
+        given(aClient().onGet("https://oidc.example.org/jwks").responds()
                 .withEntity("{\"keys\": [" + description1 + "," + description2 + "]}"));
-        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/"));
+        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/")
+                .withDiscovery("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}"));
         given(anIssuer().withoutHistory());
         given(aMockJwt().withoutKid().withoutJti().signedBy(anotherJwtFactory.publicKey()));
 
@@ -227,12 +211,10 @@ public class IssuerTest {
     @Test
     public void shouldAcceptJwtWithoutJtiMultipleTimesWithoutReplayProtection() throws Exception {
         ObjectNode description = jwtFactory.describePublicKey();
-        given(aClient()
-            .onGet("https://oidc.example.org/.well-known/openid-configuration").responds()
-                .withEntity("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}")
-            .onGet("https://oidc.example.org/jwks").responds()
+        given(aClient().onGet("https://oidc.example.org/jwks").responds()
                 .withEntity("{\"keys\": [" + description + "]}"));
-        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/"));
+        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/")
+                .withDiscovery("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}"));
         given(anIssuer().withoutHistory());
         given(aMockJwt().withoutKid().withoutJti().signedBy(jwtFactory.publicKey()));
 
@@ -243,12 +225,10 @@ public class IssuerTest {
     @Test
     public void shouldAcceptJwtWithoutJtiMultipleTimesWithReplayProtection() throws Exception {
         ObjectNode description = jwtFactory.describePublicKey();
-        given(aClient()
-            .onGet("https://oidc.example.org/.well-known/openid-configuration").responds()
-                .withEntity("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}")
-            .onGet("https://oidc.example.org/jwks").responds()
+        given(aClient().onGet("https://oidc.example.org/jwks").responds()
                 .withEntity("{\"keys\": [" + description + "]}"));
-        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/"));
+        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/")
+                .withDiscovery("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}"));
         given(anIssuer().withHistory(10));
         given(aMockJwt().withoutKid().withoutJti().signedBy(jwtFactory.publicKey()));
 
@@ -259,12 +239,10 @@ public class IssuerTest {
     @Test
     public void shouldAcceptJwtWithJtiMultipleTimesWithoutReplayProtection() throws Exception {
         ObjectNode description = jwtFactory.describePublicKey();
-        given(aClient()
-            .onGet("https://oidc.example.org/.well-known/openid-configuration").responds()
-                .withEntity("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}")
-            .onGet("https://oidc.example.org/jwks").responds()
+        given(aClient().onGet("https://oidc.example.org/jwks").responds()
                 .withEntity("{\"keys\": [" + description + "]}"));
-        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/"));
+        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/")
+                .withDiscovery("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}"));
         given(anIssuer().withoutHistory());
         given(aMockJwt().withoutKid().withJti("token-42").signedBy(jwtFactory.publicKey()));
 
@@ -275,12 +253,10 @@ public class IssuerTest {
     @Test(expected=AuthenticationException.class)
     public void shouldRejectJwtWithJtiMultipleTimesWithReplayProtection() throws Exception {
         ObjectNode description = jwtFactory.describePublicKey();
-        given(aClient()
-            .onGet("https://oidc.example.org/.well-known/openid-configuration").responds()
-                .withEntity("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}")
-            .onGet("https://oidc.example.org/jwks").responds()
+        given(aClient().onGet("https://oidc.example.org/jwks").responds()
                 .withEntity("{\"keys\": [" + description + "]}"));
-        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/"));
+        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/")
+                .withDiscovery("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}"));
         given(anIssuer().withHistory(10));
         given(aMockJwt().withoutKid().withJti("token-42").signedBy(jwtFactory.publicKey()));
 

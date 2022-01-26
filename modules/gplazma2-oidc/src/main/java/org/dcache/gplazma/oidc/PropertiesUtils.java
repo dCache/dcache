@@ -18,8 +18,10 @@
  */
 package org.dcache.gplazma.oidc;
 
-import java.util.OptionalInt;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -38,6 +40,17 @@ public class PropertiesUtils {
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("Bad " + key + "value: " + e.getMessage());
         }
+    }
+
+    public static Duration asDuration(Properties properties, String key) {
+        ChronoUnit units = asChronoUnit(properties, key + ".unit");
+        return Duration.of(asInt(properties, key), units);
+    }
+
+    public static ChronoUnit asChronoUnit(Properties properties, String key) {
+        String value = properties.getProperty(key);
+        checkArgument(value != null, "Missing " + key + " property");
+        return TimeUnit.valueOf(value).toChronoUnit();
     }
 
     public static int asIntOrDefault(Properties properties, String key, int defaultValue) {

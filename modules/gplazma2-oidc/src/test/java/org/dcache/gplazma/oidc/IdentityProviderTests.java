@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2018 - 2020 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2018 - 2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -18,52 +18,77 @@
  */
 package org.dcache.gplazma.oidc;
 
+import com.fasterxml.jackson.databind.node.JsonNodeType;
 import java.net.URI;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
-
-import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.junit.Before;
 import org.junit.Test;
 
+import static java.time.temporal.ChronoUnit.SECONDS;
+import static java.util.Objects.requireNonNull;
+import static org.dcache.gplazma.oidc.MockHttpClientBuilder.aClient;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 public class IdentityProviderTests {
     private static final Profile IGNORE_ALL = (i,c) -> new ProfileResult(Collections.emptySet());
 
+    private IdentityProvider identityProvider;
+    private HttpClient client;
+
+    @Before
+    public void setup() {
+        client = null;
+        identityProvider = null;
+    }
+
     @Test(expected = NullPointerException.class)
     public void shouldFailWithNullName() throws Exception {
-        IdentityProvider ignored = new IdentityProvider(null, URI.create("http://example.org/"), IGNORE_ALL);
+        IdentityProvider ignored = new IdentityProvider(null, URI.create("http://example.org/"),
+                IGNORE_ALL, aClient().build(), Duration.ofSeconds(2));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void shouldFailWithEmptyName() throws Exception {
-        IdentityProvider ignored = new IdentityProvider("", URI.create("http://example.org/"), IGNORE_ALL);
+        IdentityProvider ignored = new IdentityProvider("", URI.create("http://example.org/"),
+                IGNORE_ALL, aClient().build(), Duration.ofSeconds(2));
     }
 
     @Test(expected = NullPointerException.class)
     public void shouldFailWithNullUri() throws Exception {
-        IdentityProvider ignored = new IdentityProvider("null-provider", null, IGNORE_ALL);
+        IdentityProvider ignored = new IdentityProvider("null-provider", null, IGNORE_ALL,
+                aClient().build(), Duration.ofSeconds(2));
     }
 
     @Test(expected = NullPointerException.class)
     public void shouldFailWithNullProfile() throws Exception {
-        IdentityProvider ignored = new IdentityProvider("null-profile", URI.create("http://example.org/"), null);
+        IdentityProvider ignored = new IdentityProvider("null-profile", URI.create("http://example.org/"),
+                null, aClient().build(), Duration.ofSeconds(2));
     }
 
     @Test
     public void shouldEqualReflectively() throws Exception {
-        IdentityProvider google = new IdentityProvider("GOOGLE", URI.create("https://accounts.google.com/"), IGNORE_ALL);
+        IdentityProvider google = new IdentityProvider("GOOGLE", URI.create("https://accounts.google.com/"),
+                IGNORE_ALL, aClient().build(), Duration.ofSeconds(2));
 
         assertTrue(google.equals(google));
     }
 
     @Test
     public void shouldEqualAnotherWithSameNameAndUrl() throws Exception {
-        IdentityProvider google1 = new IdentityProvider("GOOGLE", URI.create("https://accounts.google.com/"), IGNORE_ALL);
-        IdentityProvider google2 = new IdentityProvider("GOOGLE", URI.create("https://accounts.google.com/"), IGNORE_ALL);
+        IdentityProvider google1 = new IdentityProvider("GOOGLE", URI.create("https://accounts.google.com/"),
+                IGNORE_ALL, aClient().build(), Duration.ofSeconds(2));
+        IdentityProvider google2 = new IdentityProvider("GOOGLE", URI.create("https://accounts.google.com/"),
+                IGNORE_ALL, aClient().build(), Duration.ofSeconds(2));
 
         assertTrue(google1.hashCode() == google2.hashCode());
         assertTrue(google1.equals(google2));
@@ -71,23 +96,28 @@ public class IdentityProviderTests {
 
     @Test
     public void shouldNotEqualAnotherWithDifferentName() throws Exception {
-        IdentityProvider google1 = new IdentityProvider("GOOGLE-1", URI.create("https://accounts.google.com/"), IGNORE_ALL);
-        IdentityProvider google2 = new IdentityProvider("GOOGLE-2", URI.create("https://accounts.google.com/"), IGNORE_ALL);
+        IdentityProvider google1 = new IdentityProvider("GOOGLE-1", URI.create("https://accounts.google.com/"),
+                IGNORE_ALL, aClient().build(), Duration.ofSeconds(2));
+        IdentityProvider google2 = new IdentityProvider("GOOGLE-2", URI.create("https://accounts.google.com/"),
+                IGNORE_ALL, aClient().build(), Duration.ofSeconds(2));
 
         assertFalse(google1.equals(google2));
     }
 
     @Test
     public void shouldNotEqualAnotherWithDifferentUrl() throws Exception {
-        IdentityProvider google = new IdentityProvider("MYIP", URI.create("https://accounts.google.com/"), IGNORE_ALL);
-        IdentityProvider keycloak = new IdentityProvider("MYIP", URI.create("https://keycloak.desy.de/"), IGNORE_ALL);
+        IdentityProvider google = new IdentityProvider("MYIP", URI.create("https://accounts.google.com/"),
+                IGNORE_ALL, aClient().build(), Duration.ofSeconds(2));
+        IdentityProvider keycloak = new IdentityProvider("MYIP", URI.create("https://keycloak.desy.de/"),
+                IGNORE_ALL, aClient().build(), Duration.ofSeconds(2));
 
         assertFalse(google.equals(keycloak));
     }
 
     @Test
     public void shouldNotEqualAnotherType() throws Exception {
-        IdentityProvider google = new IdentityProvider("MYIP", URI.create("https://accounts.google.com/"), IGNORE_ALL);
+        IdentityProvider google = new IdentityProvider("MYIP", URI.create("https://accounts.google.com/"),
+                IGNORE_ALL, aClient().build(), Duration.ofSeconds(2));
 
         assertFalse(google.equals("MYIP"));
         assertFalse(google.equals("https://accounts.google.com/"));
@@ -96,7 +126,8 @@ public class IdentityProviderTests {
 
     @Test
     public void shouldReturnStringWithNameAndUrlWhenToStringCalled() throws Exception {
-        IdentityProvider google = new IdentityProvider("GOOGLE", URI.create("https://accounts.google.com/"), IGNORE_ALL);
+        IdentityProvider google = new IdentityProvider("GOOGLE", URI.create("https://accounts.google.com/"),
+                IGNORE_ALL, aClient().build(), Duration.ofSeconds(2));
 
         assertThat(google.toString(), containsString("GOOGLE"));
         assertThat(google.toString(), containsString("https://accounts.google.com/"));
@@ -105,7 +136,7 @@ public class IdentityProviderTests {
     @Test
     public void shouldParseProviderWithTrailingSlash() throws Exception {
         IdentityProvider google = new IdentityProvider("GOOGLE", URI.create("https://accounts.google.com/"),
-                IGNORE_ALL);
+                IGNORE_ALL, aClient().build(), Duration.ofSeconds(2));
 
         assertThat(google.getName(), is(equalTo("GOOGLE")));
         assertThat(google.getIssuerEndpoint().toString(),
@@ -118,7 +149,7 @@ public class IdentityProviderTests {
     @Test
     public void shouldParseProviderWithoutTrailingSlash() throws Exception {
         IdentityProvider google = new IdentityProvider("GOOGLE", URI.create("https://accounts.google.com"),
-                IGNORE_ALL);
+                IGNORE_ALL, aClient().build(), Duration.ofSeconds(2));
 
         assertThat(google.getName(), is(equalTo("GOOGLE")));
         assertThat(google.getIssuerEndpoint().toString(),
@@ -131,7 +162,8 @@ public class IdentityProviderTests {
     @Test
     public void shouldParseProviderWithPathWithoutTrailingSlash() throws Exception {
         IdentityProvider unity = new IdentityProvider("UNITY",
-              URI.create("https://unity.helmholtz-data-federation.de/oauth2"), IGNORE_ALL);
+              URI.create("https://unity.helmholtz-data-federation.de/oauth2"), IGNORE_ALL,
+                aClient().build(), Duration.ofSeconds(2));
 
         assertThat(unity.getName(), is(equalTo("UNITY")));
         assertThat(unity.getIssuerEndpoint().toString(),
@@ -144,7 +176,8 @@ public class IdentityProviderTests {
     @Test
     public void shouldParseProviderWithPathWithTrailingSlash() throws Exception {
         IdentityProvider unity = new IdentityProvider("UNITY",
-              URI.create("https://unity.helmholtz-data-federation.de/oauth2/"), IGNORE_ALL);
+              URI.create("https://unity.helmholtz-data-federation.de/oauth2/"), IGNORE_ALL,
+                aClient().build(), Duration.ofSeconds(2));
 
         assertThat(unity.getName(), is(equalTo("UNITY")));
         assertThat(unity.getIssuerEndpoint().toString(),
@@ -152,5 +185,165 @@ public class IdentityProviderTests {
         assertThat(unity.getConfigurationEndpoint().toString(), is(equalTo(
               "https://unity.helmholtz-data-federation.de/oauth2/.well-known/openid-configuration")));
         assertThat(unity.getProfile(), is(sameInstance(IGNORE_ALL)));
+    }
+
+    @Test
+    public void shouldSupportDiscoveryDocument() throws Exception {
+        given(anIdentityProvider("UNITY").withIssuer("https://login.helmholtz.de/oauth2/").withClient(aClient()
+                .onGet("https://login.helmholtz.de/oauth2/.well-known/openid-configuration")
+                .responds().withEntity("{\"authorization_endpoint\":\"https:\\/\\/login.helmholtz.de\\/oauth2-as\\/oauth2-authz\","
+                        + "\"token_endpoint\":\"https:\\/\\/login.helmholtz.de\\/oauth2\\/token\","
+                        + "\"introspection_endpoint\":\"https:\\/\\/login.helmholtz.de\\/oauth2\\/introspect\","
+                        + "\"revocation_endpoint\":\"https:\\/\\/login.helmholtz.de\\/oauth2\\/revoke\","
+                        + "\"issuer\":\"https:\\/\\/login.helmholtz.de\\/oauth2\","
+                        + "\"jwks_uri\":\"https:\\/\\/login.helmholtz.de\\/oauth2\\/jwk\","
+                        + "\"scopes_supported\":[\"credentials\",\"openid\",\"profile\",\"eduperson_scoped_affiliation\","
+                        + "\"eduperson_unique_id\",\"sn\",\"eduperson_assurance\",\"display_name\","
+                        + "\"email\",\"eduperson_entitlement\",\"eduperson_principal_name\",\"single-logout\"],"
+                        + "\"response_types_supported\":[\"code\",\"token\",\"id_token\",\"code id_token\","
+                        + "\"id_token token\",\"code token\",\"code id_token token\"],"
+                        + "\"response_modes_supported\":[\"query\",\"fragment\"],"
+                        + "\"grant_types_supported\":[\"authorization_code\",\"implicit\"],"
+                        + "\"code_challenge_methods_supported\":[\"plain\",\"S256\"],"
+                        + "\"request_uri_parameter_supported\":true,\"subject_types_supported\":[\"public\"],"
+                        + "\"userinfo_endpoint\":\"https:\\/\\/login.helmholtz.de\\/oauth2\\/userinfo\","
+                        + "\"id_token_signing_alg_values_supported\":[\"RS256\",\"ES256\"]}")));
+
+        var discovery = identityProvider.discoveryDocument();
+
+        verify(client).execute(any(HttpGet.class));
+
+        assertThat(discovery.getNodeType(), is(equalTo(JsonNodeType.OBJECT)));
+        var userinfo = discovery.get("userinfo_endpoint");
+        assertThat(userinfo, is(not(nullValue())));
+        assertThat(userinfo.getNodeType(), is(equalTo(JsonNodeType.STRING)));
+        assertThat(userinfo.asText(), is(equalTo("https://login.helmholtz.de/oauth2/userinfo")));
+        var jwks = discovery.get("jwks_uri");
+        assertThat(jwks, is(not(nullValue())));
+        assertThat(jwks.getNodeType(), is(equalTo(JsonNodeType.STRING)));
+        assertThat(jwks.asText(), is(equalTo("https://login.helmholtz.de/oauth2/jwk")));
+    }
+
+    @Test
+    public void shouldReturnCachedDocumentOnSuccess() throws Exception {
+        given(anIdentityProvider("UNITY")
+                .withIssuer("https://op.example.org/")
+                .withClient(aClient().onGet("https://op.example.org/.well-known/openid-configuration")
+                        .responds().withEntity("{\"userinfo_endpoint\": \"https:\\/\\/op.example.org\\/userinfo\"}"))
+                .withWarmedCache());
+
+        var discovery = identityProvider.discoveryDocument();
+
+        verify(client).execute(any(HttpGet.class));
+
+        assertThat(discovery.getNodeType(), is(equalTo(JsonNodeType.OBJECT)));
+        var userinfo = discovery.get("userinfo_endpoint");
+        assertThat(userinfo, is(not(nullValue())));
+        assertThat(userinfo.getNodeType(), is(equalTo(JsonNodeType.STRING)));
+        assertThat(userinfo.asText(), is(equalTo("https://op.example.org/userinfo")));
+    }
+
+    @Test
+    public void shouldReturnMissingDocumentOnError() throws Exception {
+        given(anIdentityProvider("UNITY").withIssuer("https://op.example.org/").withClient(aClient()
+                .onGet("https://op.example.org/.well-known/openid-configuration")
+                .responds().withStatusCode(500).withoutEntity()));
+
+        var discovery = identityProvider.discoveryDocument();
+
+        verify(client).execute(any(HttpGet.class));
+
+        assertThat(discovery.getNodeType(), is(equalTo(JsonNodeType.MISSING)));
+    }
+
+    @Test
+    public void shouldUsedCacheFailedResponseOnError() throws Exception {
+        given(anIdentityProvider("UNITY")
+                .withIssuer("https://op.example.org/")
+                .withClient(aClient().onGet("https://op.example.org/.well-known/openid-configuration")
+                        .responds().withStatusCode(500).withoutEntity())
+                .withWarmedCache());
+
+        var discovery = identityProvider.discoveryDocument();
+
+        verify(client).execute(any(HttpGet.class));
+
+        assertThat(discovery.getNodeType(), is(equalTo(JsonNodeType.MISSING)));
+    }
+
+    @Test
+    public void shouldObtainUpdatedInformationOnceCacheExpires() throws Exception {
+        given(anIdentityProvider("UNITY")
+                .withIssuer("https://op.example.org/")
+                .withClient(aClient()
+                        .onGet("https://op.example.org/.well-known/openid-configuration").responds()
+                                .withEntity("{\"userinfo_endpoint\": \"https:\\/\\/op.example.org\\/old-userinfo\"}")
+                        .onGet("https://op.example.org/.well-known/openid-configuration").responds()
+                                .withEntity("{\"userinfo_endpoint\": \"https:\\/\\/op.example.org\\/new-userinfo\"}"))
+                .withCacheDuration(0, SECONDS)
+                .withWarmedCache());
+
+        Thread.sleep(100); // Assuming better than 100 ms granularity in clock.
+
+        var discovery = identityProvider.discoveryDocument();
+
+        verify(client, times(2)).execute(any(HttpGet.class));
+
+        assertThat(discovery.getNodeType(), is(equalTo(JsonNodeType.OBJECT)));
+        var userinfo = discovery.get("userinfo_endpoint");
+        assertThat(userinfo, is(not(nullValue())));
+        assertThat(userinfo.getNodeType(), is(equalTo(JsonNodeType.STRING)));
+        assertThat(userinfo.asText(), is(equalTo("https://op.example.org/new-userinfo")));
+    }
+
+    private void given(IdentityProviderBuilder builder) {
+        builder.build();
+    }
+
+    private IdentityProviderBuilder anIdentityProvider(String name) {
+        return new IdentityProviderBuilder(name);
+    }
+
+    /**
+     * Fluent class to build a (real) IdentityProvider object.
+     */
+    private class IdentityProviderBuilder {
+        private final String name;
+        private URI issuer;
+        private boolean warmUpCache;
+        private Duration cacheDuration = Duration.ofHours(1);
+
+        IdentityProviderBuilder(String name) {
+            this.name = name;
+        }
+
+        IdentityProviderBuilder withIssuer(String url) {
+            issuer = URI.create(url);
+            return this;
+        }
+
+        IdentityProviderBuilder withCacheDuration(int delay, ChronoUnit units) {
+            cacheDuration = Duration.of(delay, units);
+            return this;
+        }
+
+        IdentityProviderBuilder withClient(MockHttpClientBuilder builder) {
+            client = builder.build();
+            return this;
+        }
+
+        IdentityProviderBuilder withWarmedCache() {
+            warmUpCache = true;
+            return this;
+        }
+
+        void build() {
+            requireNonNull(issuer);
+            requireNonNull(client);
+            identityProvider = new IdentityProvider(name, issuer, IGNORE_ALL, client, cacheDuration);
+            if (warmUpCache) {
+                identityProvider.discoveryDocument();
+            }
+        }
     }
 }

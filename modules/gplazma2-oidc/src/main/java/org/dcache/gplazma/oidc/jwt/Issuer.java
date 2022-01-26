@@ -20,6 +20,7 @@ package org.dcache.gplazma.oidc.jwt;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.google.common.collect.EvictingQueue;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
@@ -54,7 +55,6 @@ public class Issuer {
 
     private final Queue<String> previousJtis;
     private final IdentityProvider provider;
-    private final JsonNode configuration;
     private final JsonNode jwks;
 
     private Supplier<Map<String, PublicKey>> keys = MemoizeMapWithExpiry.memorize(this::parseJwks)
@@ -65,8 +65,6 @@ public class Issuer {
     public Issuer(HttpClient client, IdentityProvider provider, int tokenHistory) {
         this.provider = requireNonNull(provider);
 
-        this.configuration = new HttpJsonNode(client, provider.getConfigurationEndpoint(),
-              Duration.ofHours(1), Duration.ofSeconds(10));
         this.jwks = new HttpJsonNode(client, this::parseConfigurationForJwksUri,
               Duration.ofSeconds(1), Duration.ofSeconds(1));
 
@@ -82,6 +80,11 @@ public class Issuer {
     }
 
     private Optional<String> parseConfigurationForJwksUri() {
+        JsonNode configuration = provider.discoveryDocument();
+        if (configuration.getNodeType() == JsonNodeType.MISSING) {
+            return Optional.empty();
+        }
+
         JsonNode jwksNode = configuration.get("jwks_uri");
 
         if (jwksNode == null) {

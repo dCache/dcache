@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.Principal;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,6 +24,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import org.apache.http.client.HttpClient;
 import org.dcache.auth.BearerTokenCredential;
 import org.dcache.auth.OAuthProviderPrincipal;
 import org.dcache.auth.attributes.Restriction;
@@ -40,6 +42,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static org.dcache.gplazma.oidc.PropertiesUtils.asDuration;
 import static org.dcache.gplazma.oidc.PropertiesUtils.asInt;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
@@ -47,6 +50,7 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
 
     private final static Logger LOG = LoggerFactory.getLogger(OidcAuthPlugin.class);
 
+    private final static String DISCOVERY_CACHE_REFRESH = "gplazma.oidc.discovery-cache";
     private final static String HTTP_CONCURRENT_ACCESS = "gplazma.oidc.http.total-concurrent-requests";
     private final static String HTTP_PER_ROUTE_CONCURRENT_ACCESS = "gplazma.oidc.http.per-route-concurrent-requests";
     private final static String HTTP_TIMEOUT = "gplazma.oidc.http.timeout";
@@ -75,7 +79,8 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
         audienceTargets = Set.copyOf(Splitter.on(' ').trimResults().splitToList(targets));
     }
 
-    private static IdentityProvider createIdentityProvider(String name, String description) {
+    private static IdentityProvider createIdentityProvider(String name, String description,
+            HttpClient client, Duration discoveryCacheDuration) {
         checkArgument(!name.isEmpty(), "Empty name not allowed");
 
         Args args = new Args(description);
@@ -87,7 +92,7 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
         try {
             URI issuer = new URI(endpoint);
 
-            return new IdentityProvider(name, issuer, profile);
+            return new IdentityProvider(name, issuer, profile, client, discoveryCacheDuration);
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException(
                   "Invalid endpoint " + endpoint + ": " + e.getMessage());
@@ -109,10 +114,12 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
     }
 
     private static TokenProcessor buildProcessor(Properties properties) {
+        Duration discoveryCacheDuration = asDuration(properties, DISCOVERY_CACHE_REFRESH);
+
         JsonHttpClient client = buildClientFromProperties(properties);
         Set<IdentityProvider> providers = new HashSet<>();
-        providers.addAll(buildHosts(properties));
-        providers.addAll(buildProviders(properties));
+        providers.addAll(buildHosts(properties, client.getClient(), discoveryCacheDuration));
+        providers.addAll(buildProviders(properties, client.getClient(), discoveryCacheDuration));
         checkArgument(!providers.isEmpty(), "No OIDC providers configured");
 
         var queryUserInfo = new QueryUserInfoEndpoint(properties, client, providers);
@@ -134,7 +141,8 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
     }
 
     @VisibleForTesting
-    static Set<IdentityProvider> buildHosts(Properties properties) {
+    static Set<IdentityProvider> buildHosts(Properties properties, HttpClient client,
+            Duration discoveryCacheDuration) {
         String oidcHostnamesProperty = properties.getProperty(OIDC_HOSTNAMES);
         checkArgument(oidcHostnamesProperty != null, OIDC_HOSTNAMES + " not defined");
 
@@ -153,18 +161,20 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
         return goodHosts == null
               ? Collections.emptySet()
               : goodHosts.stream()
-                    .map(h -> createIdentityProvider(h, "https://" + h + "/"))
+                    .map(h -> createIdentityProvider(h, "https://" + h + "/", client, discoveryCacheDuration))
                     .collect(Collectors.toSet());
     }
 
     @VisibleForTesting
-    static Set<IdentityProvider> buildProviders(Properties properties) {
+    static Set<IdentityProvider> buildProviders(Properties properties, HttpClient client,
+            Duration discoveryCacheDuration) {
         return properties.stringPropertyNames().stream()
               .filter(n -> n.startsWith(OIDC_PROVIDER_PREFIX))
               .map(n -> {
                   try {
                       String name = n.substring(OIDC_PROVIDER_PREFIX.length());
-                      return createIdentityProvider(name, properties.getProperty(n));
+                      return createIdentityProvider(name, properties.getProperty(n), client,
+                              discoveryCacheDuration);
                   } catch (IllegalArgumentException e) {
                       throw new IllegalArgumentException(
                             "Bad OIDC provider " + n + ": " + e.getMessage());
