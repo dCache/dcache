@@ -23,7 +23,6 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import diskCacheV111.poolManager.RequestContainerV5;
 import diskCacheV111.poolManager.RequestContainerV5.RequestState;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CheckStagePermission;
@@ -430,27 +429,6 @@ public class Transfer implements Comparable<Transfer> {
      */
     private synchronized void clearPoolSelection() {
         _pool = null;
-    }
-
-    /**
-     * Restrict pool selection to only online files, e.g. no stage or p2p are allowed. Has no effect
-     * on upload.
-     * <p>
-     * This option has no effect on stage protection. This means, that stage protection still can
-     * reject staging, even if {@code onlineOnly} is {@code false}.
-     *
-     * @param onlineOnly True, is transfer should use on files directly accessible,
-     */
-    public synchronized void setOnlineFilesOnly(boolean onlineOnly) {
-        if (onlineOnly) {
-            _allowedRequestStates = RequestContainerV5.ONLINE_FILES_ONLY;
-        } else {
-            _allowedRequestStates = RequestContainerV5.allStates;
-        }
-    }
-
-    public synchronized boolean getOnlineFilesOnly() {
-        return _allowedRequestStates.equals(RequestContainerV5.ONLINE_FILES_ONLY);
     }
 
     public synchronized void setAllowStaging(boolean isAllowed) {

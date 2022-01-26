@@ -1296,12 +1296,6 @@ public class NFSv41Door extends AbstractCellComponent implements
                     }
                 }
 
-                /*
-                 * We start new request with an assumption, that file is available
-                 * and can be directly accessed by the client, e.q. no stage
-                 * or p2p is required.
-                 */
-                setOnlineFilesOnly(expectedOnline);
                 _log.debug("looking a read pool for {}", getPnfsId());
                 _redirectFuture = selectPoolAndStartMoverAsync(POOL_SELECTION_RETRY_POLICY);
                 if (!expectedOnline) {
@@ -1310,28 +1304,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                 }
             }
 
-            try {
-                _redirectFuture.get(NFS_REQUEST_BLOCKING, TimeUnit.MILLISECONDS);
-            } catch (ExecutionException e) {
-
-                /*
-                 * PERMISSION_DENIED on read indicates that pool manager was not allowed to run p2p or stage.
-                 */
-                Throwable t = e.getCause();
-                if (!(t instanceof CacheException)) {
-                    throw e;
-                }
-
-                CacheException ce = (CacheException) t;
-                if (ce.getRc() != CacheException.PERMISSION_DENIED || !getOnlineFilesOnly()) {
-                    throw e;
-                }
-
-                // kick stage/ p2p
-                setOnlineFilesOnly(false);
-                _redirectFuture = selectPoolAndStartMoverAsync(POOL_SELECTION_RETRY_POLICY);
-                throw new LayoutTryLaterException("File is not online: stage or p2p required");
-            }
+            _redirectFuture.get(NFS_REQUEST_BLOCKING, TimeUnit.MILLISECONDS);
             _log.debug("mover ready: pool={} moverid={}", getPool(), getMoverId());
 
             deviceid4 ds = waitForRedirect(NFS_REQUEST_BLOCKING).getDeviceId();
