@@ -16,6 +16,7 @@ import com.google.common.collect.Sets;
 import diskCacheV111.util.CacheException;
 import dmg.cells.nucleus.CellArgsAware;
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellDynamicCommandProvider;
 import dmg.cells.nucleus.CellEventListener;
 import dmg.cells.nucleus.CellIdentityAware;
 import dmg.cells.nucleus.CellInfo;
@@ -1017,6 +1018,10 @@ public class UniversalSpringCell
 
         if (bean instanceof CellEventListener) {
             addCellEventListener((CellEventListener) bean);
+        }
+
+        if (bean instanceof CellDynamicCommandProvider) {
+            ((CellDynamicCommandProvider) bean).setCommandInterpreter(this.getCommandInterpreter());
         }
 
         return bean;

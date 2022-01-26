@@ -1,7 +1,6 @@
 package org.dcache.util.cli;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableSortedMap;
 import dmg.util.CommandException;
 import dmg.util.CommandExitException;
 import dmg.util.CommandPanicException;
@@ -12,10 +11,9 @@ import dmg.util.command.Command;
 import dmg.util.command.HelpFormat;
 import dmg.util.command.Option;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Callable;
+
 import org.dcache.util.Args;
 
 /**
@@ -55,9 +53,32 @@ public class CommandInterpreter {
         _commandListeners.add(commandListener);
     }
 
+    public final synchronized void addPrefixedCommandListener(Object commandListener, String prefix) {
+        for (CommandScanner scanner : _scanners) {
+            addPrefixedCommands(scanner.scan(commandListener), List.of(prefix.split(" ")));
+        }
+
+        _commandListeners.add(commandListener);
+    }
+
+    public final synchronized void removePrefixedCommandListener(Object commandListener, String prefix) {
+        for (CommandScanner scanner : _scanners) {
+            removePrefixedCommands(scanner.scan(commandListener), prefix);
+        }
+
+        _commandListeners.remove(commandListener);
+    }
+
     private void addCommands(Map<List<String>, ? extends CommandExecutor> commands) {
+        addPrefixedCommands(commands, Collections.emptyList());
+    }
+
+    private void addPrefixedCommands(Map<List<String>, ? extends CommandExecutor> commands, List<String> prefix) {
+        List<String> commandElements = new ArrayList<>();
         for (Map.Entry<List<String>, ? extends CommandExecutor> entry : commands.entrySet()) {
-            CommandEntry currentEntry = _rootEntry.getOrCreate(entry.getKey());
+            commandElements.addAll(prefix);
+            commandElements.addAll(entry.getKey());
+            CommandEntry currentEntry = _rootEntry.getOrCreate(commandElements);
             if (currentEntry.hasCommand()) {
                 throw new IllegalArgumentException(
                       "Conflicting implementations of shell command '" +
@@ -65,6 +86,39 @@ public class CommandInterpreter {
                             currentEntry.getCommand() + " and " + entry.getValue());
             }
             currentEntry.setCommand(entry.getValue());
+            commandElements.clear();
+        }
+    }
+
+    private void removeCommand(List<String> command, CommandEntry commandEntry) {
+        if (command.size() == 0) {
+            return;
+        }
+        String firstCommandPart = command.get(0);
+        CommandEntry nestedEntry = commandEntry.get(firstCommandPart);
+        if (nestedEntry == null) {
+            return;
+        }
+
+        if (command.size() > 1) {
+            removeCommand(command.subList(1, command.size()), nestedEntry);
+        } else {
+            nestedEntry.removeExecutor();
+        }
+
+        if (nestedEntry.isEmpty()) {
+            commandEntry.remove(firstCommandPart);
+        }
+    }
+
+    private void removePrefixedCommands(Map<List<String>, ? extends CommandExecutor> commands, String prefix) {
+        List<String> commandElements = new ArrayList<>();
+        List<String> prefixElements = List.of(prefix.split(" "));
+        for (Map.Entry<List<String>, ? extends CommandExecutor> command : commands.entrySet()) {
+            commandElements.clear();
+            commandElements.addAll(prefixElements);
+            commandElements.addAll(command.getKey());
+            removeCommand(commandElements, _rootEntry);
         }
     }
 
@@ -139,8 +193,7 @@ public class CommandInterpreter {
      */
     protected static class CommandEntry {
 
-        private ImmutableSortedMap<String, CommandEntry> _suffixes =
-              ImmutableSortedMap.of();
+        private SortedMap<String, CommandEntry> _suffixes = new TreeMap<>();
 
         private final String _name;
         private CommandExecutor _commandExecutor;
@@ -154,10 +207,11 @@ public class CommandInterpreter {
         }
 
         public void put(String str, CommandEntry e) {
-            _suffixes = ImmutableSortedMap.<String, CommandEntry>naturalOrder()
-                  .putAll(_suffixes)
-                  .put(str, e)
-                  .build();
+            _suffixes.put(str, e);
+        }
+
+        public void remove(String key) {
+            _suffixes.remove(key);
         }
 
         public CommandEntry get(String str) {
@@ -230,6 +284,14 @@ public class CommandInterpreter {
                 sb.append(" -> ").append(key).append("\n");
             }
             return sb.toString();
+        }
+
+        public boolean isEmpty() {
+            return _suffixes.isEmpty() && _commandExecutor == null;
+        }
+
+        public void removeExecutor() {
+            this._commandExecutor = null;
         }
     }
 

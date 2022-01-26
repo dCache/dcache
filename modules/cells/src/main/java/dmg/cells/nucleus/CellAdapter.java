@@ -196,6 +196,14 @@ public class CellAdapter
     }
 
     /**
+     * Get {@link CommandInterpreter} used by this CellAdapter.
+     * @return
+     */
+    protected CommandInterpreter getCommandInterpreter() {
+        return _commandInterpreter;
+    }
+
+    /**
      * Called to execute admin shell commands. Subclasses may override this to intercept command
      * execution. Implementations should call CommandExecutor#execute to execute the command.
      *

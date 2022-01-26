@@ -17,17 +17,17 @@
  */
 package org.dcache.pool.nearline;
 
-import static com.google.common.base.Predicates.in;
-import static com.google.common.base.Predicates.not;
 import static java.util.Collections.unmodifiableSet;
 
 import com.google.common.collect.Maps;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.vehicles.StorageInfo;
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellDynamicCommandProvider;
 import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.cells.nucleus.CellSetupProvider;
 import dmg.util.CommandException;
+import dmg.util.CommandInterpreter;
 import dmg.util.Formats;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
@@ -56,6 +56,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 
+import static java.util.Objects.requireNonNull;
 import static org.dcache.util.Exceptions.messageOrClassName;
 
 /**
@@ -73,7 +74,8 @@ import static org.dcache.util.Exceptions.messageOrClassName;
  * serve as an instance name.
  */
 public class HsmSet
-      implements CellCommandListener, CellSetupProvider, CellLifeCycleAware {
+      implements CellCommandListener, CellSetupProvider, CellLifeCycleAware,
+        CellDynamicCommandProvider {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HsmSet.class);
     private static final ServiceLoader<NearlineStorageProvider> PROVIDERS =
@@ -86,6 +88,7 @@ public class HsmSet
           = Maps.newConcurrentMap();
     private boolean _isReadingSetup;
     private boolean _isStarted;
+    private CommandInterpreter _commandInterpreter;
 
     @Value("${pool.name}")
     private String _poolName;
@@ -268,9 +271,11 @@ public class HsmSet
          */
         public void start() throws IOException {
             _nearlineStorage.start();
+            _commandInterpreter.addPrefixedCommandListener(_nearlineStorage, _instance);
         }
 
         public void shutdown() {
+            _commandInterpreter.removePrefixedCommandListener(_nearlineStorage, _instance);
             _nearlineStorage.shutdown();
         }
     }
@@ -654,5 +659,10 @@ public class HsmSet
                       append('\n');
             }
         }
+    }
+
+    @Override
+    public void setCommandInterpreter(CommandInterpreter commandInterpreter) {
+        _commandInterpreter = requireNonNull(commandInterpreter);
     }
 }
