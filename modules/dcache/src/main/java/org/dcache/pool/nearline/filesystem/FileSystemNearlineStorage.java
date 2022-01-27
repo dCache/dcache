@@ -54,6 +54,7 @@ public abstract class FileSystemNearlineStorage extends AbstractBlockingNearline
     private long stageDelay = 0L;
     private TimeUnit stageDelayUnit = SECONDS;
     private ByteUnit stageDelayPer = MiB;
+    private boolean noUrl;
 
     public FileSystemNearlineStorage(String type, String name) {
         super(type, name);
@@ -87,7 +88,7 @@ public abstract class FileSystemNearlineStorage extends AbstractBlockingNearline
         flush(file, getExternalPath(file.getFileName().toString()));
         URI uri = new URI(type, name, '/' + request.getFileAttributes().getPnfsId().toString(),
               null, null);
-        return Collections.singleton(uri);
+        return noUrl ? Collections.emptySet() : Collections.singleton(uri);
     }
 
     @Override
@@ -138,6 +139,8 @@ public abstract class FileSystemNearlineStorage extends AbstractBlockingNearline
         stageDelayUnit = value == null ? SECONDS : TimeUnit.valueOf(value.toUpperCase());
         value = properties.get("stage-delay-per");
         stageDelayPer = value == null ? MiB : ByteUnit.valueOf(value);
+        value = properties.get("broken-flush");
+        noUrl = Boolean.parseBoolean(value);
     }
 
     @Override

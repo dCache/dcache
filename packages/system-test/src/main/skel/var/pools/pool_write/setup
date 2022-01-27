@@ -1,3 +1,11 @@
+
+#  The 'copy' handler has an option '-broken-flush' that is switched
+#  off by default.  If enabled then it simulates a broken flush script
+#  that returns success (return code 0) but returns no URLs in stdout.
+#
+#  Uncomment the following line to enable this feature.
+#
+# hsm create osm osm copy -directory=var/pools/tape/ -hsmInstance=osm -c:puts=1 -c:gets=1 -c:removes=1 -broken-flush=true
 hsm create osm osm copy -directory=var/pools/tape/ -hsmInstance=osm -c:puts=1 -c:gets=1 -c:removes=1
 
 csm set checksumtype ADLER32
