@@ -169,6 +169,11 @@ public class GenericStorageInfo
     }
 
     @Override
+    public void clearLocations() {
+        _locations.clear();
+    }
+
+    @Override
     @Deprecated
     public void setBitfileId(String bitfileId) {
         _bitfileId = bitfileId;
