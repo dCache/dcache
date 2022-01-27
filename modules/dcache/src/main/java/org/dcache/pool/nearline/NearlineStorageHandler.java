@@ -1054,6 +1054,7 @@ public class NearlineStorageHandler
               throws CacheException {
             FileAttributes fileAttributes = descriptor.getFileAttributes();
             StorageInfo storageInfo = fileAttributes.getStorageInfo().clone();
+            storageInfo.clearLocations(); // avoid sending potentially stale tape locations.
             storageInfo.isSetAddLocation(true);
             for (URI uri : uris) {
                 try {
