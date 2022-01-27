@@ -64,6 +64,11 @@ public interface StorageInfo
     List<URI> locations();
 
     /**
+     * Remove all known locations.
+     */
+    void clearLocations();
+
+    /**
      * add a new location for the file
      *
      * @param newLocation
