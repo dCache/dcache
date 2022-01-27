@@ -16,6 +16,7 @@ import org.dcache.nfs.v4.xdr.COMPOUND4args;
 import org.dcache.nfs.v4.xdr.COMPOUND4res;
 import org.dcache.nfs.v4.xdr.READ4resok;
 import org.dcache.nfs.v4.xdr.WRITE4resok;
+import org.dcache.nfs.v4.xdr.callback_sec_parms4;
 import org.dcache.nfs.v4.xdr.clientid4;
 import org.dcache.nfs.v4.xdr.nfs4_prot;
 import org.dcache.nfs.v4.xdr.nfs_fh4;
@@ -231,6 +232,10 @@ public class NfsProxyIo implements ProxyIoAdapter {
               .withCreatesession(_clientIdByServer, _sequenceID)
               .withTag("create_session")
               .build();
+
+
+        // disable callback
+        args.argarray[0].opcreate_session.csa_sec_parms = new callback_sec_parms4[0];
 
         COMPOUND4res compound4res = sendCompound(args);
 
