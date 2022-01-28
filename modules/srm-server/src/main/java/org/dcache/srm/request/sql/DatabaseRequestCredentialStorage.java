@@ -104,8 +104,6 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
     protected static final String stringType = " VARCHAR(32672)  ";
     protected static final String longType = " BIGINT ";
     protected static final String intType = " INTEGER ";
-    protected static final String dateTimeType = " TIMESTAMP ";
-    protected static final String booleanType = " INT ";
     private final String credentialsDirectory;
 
     public DatabaseRequestCredentialStorage(Configuration configuration)
@@ -333,8 +331,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
 
 
     @Override
-    public boolean hasRequestCredential(String name, String role)
-          throws IOException {
+    public boolean hasRequestCredential(String name, String role) {
         if (isRoleSpecified(role)) {
             return queryForInt(COUNT_ROWS_MATCHING_NAME_AND_ROLE, name, role) > 0;
         } else {
