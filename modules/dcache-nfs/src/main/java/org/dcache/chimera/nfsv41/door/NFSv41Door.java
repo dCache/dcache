@@ -745,8 +745,9 @@ public class NFSv41Door extends AbstractCellComponent implements
                          * Cleanup transfer when state invalidated.
                          */
                         if (t.hasMover()) {
-                            if (client.getMinorVersion() > 0 && client.isLeaseValid()
-                                  && client.getCB() != null) {
+                            // FIXME: as long as we can identify client's capabilities the workaround apply to flex_files layouts
+                            // to work correctly with proxy-io. As modern rhel clients (>= 7) use flex_files by default it's ok.
+                            if (layoutType == layouttype4.LAYOUT4_FLEX_FILES && client.isLeaseValid() && client.getCB() != null) {
                                 /*
                                  * Due to race in the Linux kernel client, a server might see CLOSE before
                                  * the last WRITE operation have been processed by a data server. Thus,
