@@ -636,6 +636,9 @@ public class SciTokenPluginTest {
         assertThat(identifiedPrincipals, hasItems(new UidPrincipal(1000),
               new GidPrincipal(1000, true), new JwtSubPrincipal("EXAMPLE", sub),
               new JwtJtiPrincipal("EXAMPLE", jti)));
+
+        assertThat(identifiedPrincipals, hasItem(instanceOf(ExemptFromNamespaceChecks.class)));
+
         assertFalse(
               resultingRestriction.isRestricted(DOWNLOAD, FsPath.create("/prefix/path/file.dat")));
         assertFalse(resultingRestriction.isRestricted(LIST, FsPath.create("/prefix/path")));
@@ -669,6 +672,9 @@ public class SciTokenPluginTest {
         assertThat(identifiedPrincipals, hasItems(new UidPrincipal(1000),
               new GidPrincipal(1000, true), new JwtSubPrincipal("EXAMPLE", sub),
               new JwtJtiPrincipal("EXAMPLE", jti)));
+
+        assertThat(identifiedPrincipals, hasItem(instanceOf(ExemptFromNamespaceChecks.class)));
+
         assertFalse(
               resultingRestriction.isRestricted(DOWNLOAD, FsPath.create("/prefix/path/file.dat")));
         assertFalse(resultingRestriction.isRestricted(LIST, FsPath.create("/prefix/path")));
@@ -700,6 +706,9 @@ public class SciTokenPluginTest {
         assertThat(identifiedPrincipals, hasItems(new UidPrincipal(1000),
               new GidPrincipal(1000, true), new JwtSubPrincipal("EXAMPLE", sub),
               new JwtJtiPrincipal("EXAMPLE", jti)));
+
+        assertThat(identifiedPrincipals, hasItem(instanceOf(ExemptFromNamespaceChecks.class)));
+
         assertFalse(resultingRestriction.isRestricted(DOWNLOAD,
               FsPath.create("/prefix/scope-path/file.dat")));
         assertFalse(resultingRestriction.isRestricted(LIST, FsPath.create("/prefix/scope-path")));
@@ -733,6 +742,9 @@ public class SciTokenPluginTest {
         assertThat(identifiedPrincipals, hasItems(new UidPrincipal(1000),
               new GidPrincipal(1000, true), new JwtSubPrincipal("EXAMPLE", sub),
               new JwtJtiPrincipal("EXAMPLE", jti)));
+
+        assertThat(identifiedPrincipals, hasItem(instanceOf(ExemptFromNamespaceChecks.class)));
+
         assertFalse(resultingRestriction.isRestricted(DOWNLOAD,
               FsPath.create("/prefix/scope-path1/file.dat")));
         assertFalse(resultingRestriction.isRestricted(DOWNLOAD,
@@ -787,6 +799,9 @@ public class SciTokenPluginTest {
         assertThat(identifiedPrincipals, hasItems(new UidPrincipal(1000),
               new GidPrincipal(1000, true), new JwtSubPrincipal("EXAMPLE", sub),
               new JwtJtiPrincipal("EXAMPLE", jti)));
+
+        assertThat(identifiedPrincipals, hasItem(instanceOf(ExemptFromNamespaceChecks.class)));
+
         assertFalse(
               resultingRestriction.isRestricted(DOWNLOAD, FsPath.create("/prefix/path/file.dat")));
         assertFalse(resultingRestriction.isRestricted(LIST, FsPath.create("/prefix/path")));
@@ -818,6 +833,9 @@ public class SciTokenPluginTest {
         assertThat(identifiedPrincipals, hasItems(new UidPrincipal(1000),
               new GidPrincipal(1000, true), new JwtSubPrincipal("EXAMPLE", sub),
               new JwtJtiPrincipal("EXAMPLE", jti)));
+
+        assertThat(identifiedPrincipals, hasItem(instanceOf(ExemptFromNamespaceChecks.class)));
+
         assertFalse(
               resultingRestriction.isRestricted(DOWNLOAD, FsPath.create("/prefix/path/file.dat")));
         assertFalse(resultingRestriction.isRestricted(LIST, FsPath.create("/prefix/path")));
@@ -849,6 +867,9 @@ public class SciTokenPluginTest {
         assertThat(identifiedPrincipals, hasItems(new UidPrincipal(1000),
               new GidPrincipal(1000, true), new JwtSubPrincipal("EXAMPLE", sub),
               new JwtJtiPrincipal("EXAMPLE", jti)));
+
+        assertThat(identifiedPrincipals, hasItem(instanceOf(ExemptFromNamespaceChecks.class)));
+
         assertFalse(
               resultingRestriction.isRestricted(DOWNLOAD, FsPath.create("/prefix/path/file.dat")));
         assertFalse(resultingRestriction.isRestricted(LIST, FsPath.create("/prefix/path")));
@@ -880,6 +901,9 @@ public class SciTokenPluginTest {
         assertThat(identifiedPrincipals, hasItems(new UidPrincipal(1000),
               new GidPrincipal(1000, true), new JwtSubPrincipal("EXAMPLE", sub),
               new JwtJtiPrincipal("EXAMPLE", jti)));
+
+        assertThat(identifiedPrincipals, hasItem(instanceOf(ExemptFromNamespaceChecks.class)));
+
         assertTrue(
               resultingRestriction.isRestricted(DOWNLOAD, FsPath.create("/prefix/path/file.dat")));
         assertTrue(resultingRestriction.isRestricted(LIST, FsPath.create("/prefix/path")));
@@ -952,6 +976,9 @@ public class SciTokenPluginTest {
         assertThat(identifiedPrincipals, hasItems(new UidPrincipal(1000),
               new GidPrincipal(1000, true), new JwtSubPrincipal("EXAMPLE", sub),
               new JwtJtiPrincipal("EXAMPLE", jti)));
+
+        assertThat(identifiedPrincipals, hasItem(instanceOf(ExemptFromNamespaceChecks.class)));
+
         assertFalse(
               resultingRestriction.isRestricted(UPLOAD, FsPath.create("/prefix/path/file.dat")));
         assertFalse(
@@ -983,6 +1010,9 @@ public class SciTokenPluginTest {
         assertThat(identifiedPrincipals, hasItems(new UidPrincipal(1000),
               new GidPrincipal(1000, true), new JwtSubPrincipal("EXAMPLE", sub),
               new JwtJtiPrincipal("EXAMPLE", jti)));
+
+        assertThat(identifiedPrincipals, hasItem(instanceOf(ExemptFromNamespaceChecks.class)));
+
         assertFalse(resultingRestriction.isRestricted(UPLOAD,
               FsPath.create("/prefix/path/new-file.dat")));
         assertFalse(
@@ -1014,6 +1044,9 @@ public class SciTokenPluginTest {
         assertThat(identifiedPrincipals, hasItems(new UidPrincipal(1000),
               new GidPrincipal(1000, true), new JwtSubPrincipal("EXAMPLE", sub),
               new JwtJtiPrincipal("EXAMPLE", jti)));
+
+        assertThat(identifiedPrincipals, hasItem(instanceOf(ExemptFromNamespaceChecks.class)));
+
         assertFalse(resultingRestriction.isRestricted(UPLOAD,
               FsPath.create("/prefix/path/home/paul/new-file.dat")));
         assertFalse(resultingRestriction.isRestricted(DOWNLOAD,
@@ -1065,6 +1098,9 @@ public class SciTokenPluginTest {
         assertThat(identifiedPrincipals, hasItems(new UidPrincipal(1000),
               new GidPrincipal(1000, true), new JwtSubPrincipal("EXAMPLE", sub),
               new JwtJtiPrincipal("EXAMPLE", jti)));
+
+        assertThat(identifiedPrincipals, hasItem(instanceOf(ExemptFromNamespaceChecks.class)));
+
         assertFalse(
               resultingRestriction.isRestricted(DOWNLOAD, FsPath.create("/prefix/path/file.dat")));
         assertFalse(resultingRestriction.isRestricted(LIST, FsPath.create("/prefix/path")));
@@ -1096,6 +1132,9 @@ public class SciTokenPluginTest {
         assertThat(identifiedPrincipals, hasItems(new UidPrincipal(1000),
               new GidPrincipal(1000, true), new JwtSubPrincipal("EXAMPLE", sub),
               new JwtJtiPrincipal("EXAMPLE", jti)));
+
+        assertThat(identifiedPrincipals, hasItem(instanceOf(ExemptFromNamespaceChecks.class)));
+
         assertFalse(resultingRestriction.isRestricted(DOWNLOAD,
               FsPath.create("/prefix/path/data/general/file.dat")));
         assertFalse(
@@ -1134,6 +1173,9 @@ public class SciTokenPluginTest {
         assertThat(identifiedPrincipals, hasItems(new UidPrincipal(1000),
               new GidPrincipal(1000, true), new JwtSubPrincipal("EXAMPLE", sub),
               new JwtJtiPrincipal("EXAMPLE", jti)));
+
+        assertThat(identifiedPrincipals, hasItem(instanceOf(ExemptFromNamespaceChecks.class)));
+
         assertFalse(
               resultingRestriction.isRestricted(UPLOAD, FsPath.create("/prefix/path/file.dat")));
         assertFalse(
@@ -1169,6 +1211,9 @@ public class SciTokenPluginTest {
         assertThat(identifiedPrincipals, hasItems(new UidPrincipal(1000),
               new GidPrincipal(1000, true), new JwtSubPrincipal("EXAMPLE", sub),
               new JwtJtiPrincipal("EXAMPLE", jti)));
+
+        assertThat(identifiedPrincipals, hasItem(instanceOf(ExemptFromNamespaceChecks.class)));
+
         assertFalse(resultingRestriction.isRestricted(UPLOAD,
               FsPath.create("/prefix/path/data/general/file.dat")));
         assertFalse(resultingRestriction.isRestricted(DELETE,
@@ -1221,6 +1266,9 @@ public class SciTokenPluginTest {
         assertThat(identifiedPrincipals, hasItems(new UidPrincipal(1000),
               new GidPrincipal(1000, true), new JwtSubPrincipal("EXAMPLE", sub),
               new JwtJtiPrincipal("EXAMPLE", jti)));
+
+        assertThat(identifiedPrincipals, hasItem(instanceOf(ExemptFromNamespaceChecks.class)));
+
         assertFalse(
               resultingRestriction.isRestricted(UPLOAD, FsPath.create("/prefix/path/file.dat")));
         assertFalse(
@@ -1256,6 +1304,9 @@ public class SciTokenPluginTest {
         assertThat(identifiedPrincipals, hasItems(new UidPrincipal(1000),
               new GidPrincipal(1000, true), new JwtSubPrincipal("EXAMPLE", sub),
               new JwtJtiPrincipal("EXAMPLE", jti)));
+
+        assertThat(identifiedPrincipals, hasItem(instanceOf(ExemptFromNamespaceChecks.class)));
+
         assertFalse(resultingRestriction.isRestricted(UPLOAD,
               FsPath.create("/prefix/path/data/general/file.dat")));
         assertFalse(resultingRestriction.isRestricted(MANAGE,
@@ -1303,6 +1354,9 @@ public class SciTokenPluginTest {
         assertThat(identifiedPrincipals, hasItems(new UidPrincipal(1000),
               new GidPrincipal(1000, true), new JwtSubPrincipal("EXAMPLE", sub),
               new JwtJtiPrincipal("EXAMPLE", jti)));
+
+        assertThat(identifiedPrincipals, hasItem(instanceOf(ExemptFromNamespaceChecks.class)));
+
         assertFalse(resultingRestriction.isRestricted(UPLOAD,
               FsPath.create("/prefix/path/my-data/my-file.dat")));
         assertFalse(resultingRestriction.isRestricted(DOWNLOAD,
@@ -1348,38 +1402,6 @@ public class SciTokenPluginTest {
         assertTrue(resultingRestriction.isRestricted(DOWNLOAD, FsPath.create("/my-file.dat")));
         assertTrue(resultingRestriction.isRestricted(MANAGE, FsPath.create("/my-file.dat")));
         assertTrue(resultingRestriction.isRestricted(DELETE, FsPath.create("/my-file.dat")));
-    }
-
-    @Test
-    public void shouldIncludeExemptionPricipal() throws Exception {
-        given(aSciTokenPlugin()
-                .withProperty("gplazma.scitoken.issuer!EXAMPLE", "https://example.org/ /prefix uid:1000 gid:1000")
-                .withProperty("gplazma.scitoken.dcache-supports-exempt-principal", "true"));
-        givenThat("OP1", isAnIssuer().withURL("https://example.org/").withKey("key1", rsa256Keys()));
-
-        whenAuthenticatingWith(aJwtToken()
-                .withRandomSub()
-                .withRandomJti()
-                .withClaim("scope", "openid offline_access storage.read:/ storage.modify:/ wlcg")
-                .issuedBy("OP1").usingKey("key1"));
-
-        assertThat(identifiedPrincipals, hasItem(instanceOf(ExemptFromNamespaceChecks.class)));
-    }
-
-    @Test
-    public void shouldSuppressExemptionPricipal() throws Exception {
-        given(aSciTokenPlugin()
-                .withProperty("gplazma.scitoken.issuer!EXAMPLE", "https://example.org/ /prefix uid:1000 gid:1000")
-                .withProperty("gplazma.scitoken.dcache-supports-exempt-principal", "false"));
-        givenThat("OP1", isAnIssuer().withURL("https://example.org/").withKey("key1", rsa256Keys()));
-
-        whenAuthenticatingWith(aJwtToken()
-                .withRandomSub()
-                .withRandomJti()
-                .withClaim("scope", "openid offline_access storage.read:/ storage.modify:/ wlcg")
-                .issuedBy("OP1").usingKey("key1"));
-
-        assertThat(identifiedPrincipals, not(hasItem(instanceOf(ExemptFromNamespaceChecks.class))));
     }
 
     @Test
