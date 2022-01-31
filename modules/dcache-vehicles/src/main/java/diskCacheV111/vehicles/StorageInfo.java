@@ -20,6 +20,8 @@ import java.util.Map;
  * data
  * <p>
  * example: osm://desy-main/?store=h1&bfid=1234 osm://desy-copy/?store=h1_d&bfid=5678
+ * <p>
+ * It is not guaranteed that a class implementing this interface is thread-safe.
  */
 public interface StorageInfo
       extends Serializable, Cloneable {
@@ -58,8 +60,16 @@ public interface StorageInfo
     String getBitfileId();
 
     /**
+     * Provide an unmodifiable view of the available locations for this file.  Direct modification
+     * of the returned List is not supported.
+     * <p>
+     * The returned object is a view, not a snapshot.  There are methods on StorageInfo that modify
+     * the list of locations for this file.  Any such change is reflected in subsequent queries of
+     * the returned List.
      * @return list of know locations
      * @since 1.8
+     * @see #clearLocations()
+     * @see #addLocation(java.net.URI)
      */
     List<URI> locations();
 

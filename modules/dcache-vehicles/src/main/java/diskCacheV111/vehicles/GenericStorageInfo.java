@@ -7,6 +7,7 @@ import diskCacheV111.util.RetentionPolicy;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -30,6 +31,7 @@ public class GenericStorageInfo
 
     private Map<String, String> _keyHash = new HashMap<>();
     private List<URI> _locations = new ArrayList<>();
+    private List<URI> _locationsRO = Collections.unmodifiableList(_locations);
     private boolean _setHsm;
     private boolean _setStorageClass;
     private boolean _setBitFileId;
@@ -164,7 +166,7 @@ public class GenericStorageInfo
 
     @Override
     public List<URI> locations() {
-        return _locations;
+        return _locationsRO;
     }
 
     @Override
