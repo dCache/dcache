@@ -486,9 +486,9 @@ public class LoginBrokerPublisher
         String localHostAddresses = System.getProperty(NetworkUtils.LOCAL_HOST_ADDRESS_PROPERTY);
         if (!isNullOrEmpty(localHostAddresses)) {
             List<InetAddress> address = new ArrayList<>();
-            for (String s : Splitter.on(',').omitEmptyStrings().trimResults()
-                  .split(localHostAddresses)) {
-                address.add(NetworkUtils.withCanonicalAddress(InetAddresses.forString(s)));
+            // if LOCAL_HOST_ADDRESS_PROPERTY is set, then NetworkUtils.getLocalAddresses will return them
+            for (InetAddress a : NetworkUtils.getLocalAddresses()) {
+                address.add(NetworkUtils.withCanonicalAddress(a));
             }
             return () -> address;
         }

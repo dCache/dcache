@@ -202,7 +202,11 @@ public abstract class NetworkUtils {
         String value = nullToEmpty(System.getProperty(LOCAL_HOST_ADDRESS_PROPERTY));
         ImmutableList.Builder<InetAddress> fakedAddresses = ImmutableList.builder();
         for (String address : Splitter.on(',').omitEmptyStrings().trimResults().split(value)) {
-            fakedAddresses.add(InetAddresses.forString(address));
+            try {
+                fakedAddresses.add(InetAddress.getByName(address));
+            } catch (UnknownHostException e) {
+                throw new RuntimeException("Can't resolve fake hostname " + address + " provided by " + LOCAL_HOST_ADDRESS_PROPERTY, e);
+            }
         }
         FAKED_ADDRESSES = fakedAddresses.build();
     }
