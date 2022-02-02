@@ -97,6 +97,9 @@ import org.apache.axis.types.URI;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.PathChildrenCache;
+import org.dcache.auth.JwtJtiPrincipal;
+import org.dcache.auth.OidcSubjectPrincipal;
+import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.CuratorFrameworkAware;
@@ -913,6 +916,8 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware {
                 log.add("socket.remote", Axis.getRemoteSocketAddress());
                 log.add("request.method", requestName);
                 log.add("user.dn", Axis.getDN().orElse(null));
+                log.add("user.sub", Subjects.getPrincipalNames(user, OidcSubjectPrincipal.class));
+                log.add("user.jti", Subjects.getPrincipalNames(user, JwtJtiPrincipal.class));
                 if (user != null) {
                     log.add("user.mapped", user);
                 }
