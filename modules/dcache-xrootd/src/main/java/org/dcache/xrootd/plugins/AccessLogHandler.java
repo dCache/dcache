@@ -109,7 +109,9 @@ import io.netty.channel.ChannelPromise;
 import java.net.InetSocketAddress;
 import java.time.Instant;
 import javax.security.auth.Subject;
+import org.dcache.auth.JwtJtiPrincipal;
 import org.dcache.auth.LoginReply;
+import org.dcache.auth.OidcSubjectPrincipal;
 import org.dcache.auth.Subjects;
 import org.dcache.util.NetLoggerBuilder;
 import org.dcache.xrootd.door.LoginEvent;
@@ -160,6 +162,8 @@ public class AccessLogHandler extends ChannelDuplexHandler {
                   "org.dcache.xrootd.login").omitNullValues();
             log.add("session", CDC.getSession());
             log.add("user.dn", Subjects.getDn(subject));
+            log.add("user.sub", Subjects.getPrincipalNames(subject, OidcSubjectPrincipal.class));
+            log.add("user.jti", Subjects.getPrincipalNames(subject, JwtJtiPrincipal.class));
             log.add("user.mapped", subject);
             log.toLogger(logger);
         }

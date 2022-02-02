@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import org.dcache.util.PrincipalSetMaker;
@@ -322,6 +323,22 @@ public class Subjects {
             }
         }
         return UNKNOWN;
+    }
+
+    /**
+     * Return a comma-separated list of principals names.  A null value is
+     * returned if the Subject has no principals of this type.
+     * @param <T> The kind of principal to examine.
+     * @param subject The subject to examine.
+     * @param type The kind of principals to examine.
+     * @return A list of principal names of this type.
+     */
+    @Nullable
+    public static <T extends Principal> String getPrincipalNames(Subject subject, Class<T> type) {
+        Set<? extends Principal> p = subject.getPrincipals(type);
+        return p.isEmpty()
+                ? null
+                : p.stream().map(Principal::getName).collect(Collectors.joining(","));
     }
 
     /**
