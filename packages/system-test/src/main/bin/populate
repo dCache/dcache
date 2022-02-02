@@ -18,6 +18,76 @@ lib="$(getProperty dcache.paths.share.lib)"
 
 cd @TARGET@/dcache
 
+prepend() { # $1 - file to update, $2 - text to add.
+    tmp=$(mktemp)
+    echo "$2" | cat - "$1" > $tmp && mv $tmp "$1"
+}
+
+prepend_layout() { # $1 - text to add.
+    prepend "@TARGET@/dcache/etc/layouts/system-test.conf" "$1"
+}
+
+add_oidc() {
+    # The "oidc-add -a" command currently produces output like:
+    #
+    #     The following account configurations are currently loaded:
+    #     HELMHOLTZ
+    #     ESCAPE
+    #     WLCG
+    #
+    # Therefore we must skip the first line.
+    #
+    # See https://github.com/indigo-dc/oidc-agent/issues/395
+
+    loaded_ops=$(oidc-add -a | tail -n +2 | tr '\n' ' ')
+
+    if [ "$loaded_ops" = "" ]; then
+	echo
+        echo -n "No OPs currently loaded into oidc-agent.  Try running "
+        if [ $(oidc-gen -l|wc -l) -lt 2 ]; then
+            echo "`oidc-gen` to register some new OPs."
+        else
+            echo "'oidc-add' to load some OPs."
+        fi
+        exit
+    fi
+
+    echo "Adding support for OP: $loaded_ops"
+
+    for op in $loaded_ops; do
+        eval $(oidc-token -c $op)
+
+        # REVISIT: we should be able to use OIDC_ISS variable to
+        # discover the OP's issuer endpoint.  However, the URL is
+        # sometimes wrong.  For details, see:
+        #
+        #     https://github.com/indigo-dc/oidc-agent/issues/396
+        #
+        # As a work-around, we use the 'iss' claim from the JWT, which
+        # assumes the access token is a JWT.
+        iss=$(echo $OIDC_AT | cut -d. -f2 | base64 -d 2>/dev/null | jq -r .iss)
+
+        prepend_layout "gplazma.oidc.provider!$op = $iss"
+
+        # REVISIT: here we assume the access token is a JWT.  More
+        # generally, we should contact the user-info endpoint to
+        # discover the 'sub' claim.
+
+        sub=$(echo $OIDC_AT | cut -d. -f2 | base64 -d 2>/dev/null | jq -r .sub)
+
+        echo "oidc:${sub}@${op} username:${username} uid:$uid gid:$gid,true" >> "@TARGET@/dcache/etc/multi-mapfile"
+
+        aud_claim=$(echo $OIDC_AT|cut -d. -f2 | base64 -d 2>/dev/null | jq -e -r .aud) \
+            && audiences="$audiences $aud_claim"
+    done
+
+    if [ "$audiences" != "" ]; then
+        prepend_layout "gplazma.oidc.audience-targets = $audiences"
+    fi
+
+    echo "username:${username} root:/ home:/" >> "@TARGET@/dcache/etc/omnisession.conf"
+}
+
 dn() { # $1 - path to X.509 certificate
 
     # OpenSSL used to print the subject DN like
@@ -202,3 +272,5 @@ for path in etc/grid-security/certificates/*; do
     compare $path ~/.globus/certificates/$file
     compare $path /etc/grid-security/certificates/$file
 done
+
+command -v oidc-token >/dev/null && add_oidc
