@@ -30,7 +30,7 @@ public abstract class OpScopedPrincipal implements Principal, Serializable {
     private final String name;
 
     public OpScopedPrincipal(String op, String sub) {
-        name = op + ":" + sub;
+        name = sub + "@" + op;
     }
 
     @Override
