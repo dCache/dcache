@@ -73,6 +73,8 @@ public final class NamespaceUtils {
      * @param isLocations add locations if true
      * @param isLabels    add label if true
      * @param isOptional  add optional attributes if true
+     * @param isXattr     add xattr if true
+     * @param isChecksum  add checksums if true
      * @param request     to check for client info
      * @param poolMonitor for access to remote PoolMonitor
      */
@@ -84,6 +86,7 @@ public final class NamespaceUtils {
           boolean isLabels,
           boolean isOptional,
           boolean isXattr,
+          boolean isChecksum,
           HttpServletRequest request,
           PoolMonitor poolMonitor) throws CacheException {
         json.setPnfsId(attributes.getPnfsId());
@@ -139,6 +142,12 @@ public final class NamespaceUtils {
         if (isXattr) {
             Map<String, String> xattr = attributes.getXattrs();
             json.setExtendedAttributes(xattr);
+        }
+
+        if (isChecksum) {
+            if (attributes.isDefined(FileAttribute.CHECKSUM)) {
+                json.setChecksums(attributes.getChecksums());
+            }
         }
 
         if (isLabels) {
@@ -200,10 +209,6 @@ public final class NamespaceUtils {
             json.setCacheClass(attributes.getCacheClass());
         }
 
-        if (attributes.isDefined(FileAttribute.CHECKSUM)) {
-            json.setChecksums(attributes.getChecksums());
-        }
-
         if (attributes.isDefined(FileAttribute.CHANGE_TIME)) {
             json.setCtime(attributes.getChangeTime());
         }
@@ -242,6 +247,7 @@ public final class NamespaceUtils {
     public static Set<FileAttribute> getRequestedAttributes(boolean locality,
           boolean locations,
           boolean qos,
+          boolean checksum,
           boolean optional) {
         Set<FileAttribute> attributes = new HashSet<>();
         attributes.add(FileAttribute.PNFSID);
@@ -269,11 +275,14 @@ public final class NamespaceUtils {
             attributes.add(FileAttribute.RETENTION_POLICY);
         }
 
+        if (checksum) {
+            attributes.add(FileAttribute.CHECKSUM);
+        }
+
         if (optional) {
             attributes.add(FileAttribute.ACL);
             attributes.add(FileAttribute.ACCESS_TIME);
             attributes.add(FileAttribute.CACHECLASS);
-            attributes.add(FileAttribute.CHECKSUM);
             attributes.add(FileAttribute.CHANGE_TIME);
             attributes.add(FileAttribute.OWNER_GROUP);
             attributes.add(FileAttribute.OWNER);

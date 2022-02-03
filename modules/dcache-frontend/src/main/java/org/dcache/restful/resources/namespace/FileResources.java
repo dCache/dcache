@@ -150,6 +150,8 @@ public class FileResources {
           @QueryParam("xattr") boolean isXattr,
           @ApiParam("Whether to include labels.")
           @QueryParam("labels") boolean isLabels,
+          @ApiParam("Whether or not to list checksum values.")
+          @QueryParam("checksum") boolean isChecksum,
           @ApiParam("Limit number of replies in directory listing.")
           @QueryParam("limit") String limit,
           @ApiParam("Number of entries to skip in directory listing.")
@@ -159,6 +161,7 @@ public class FileResources {
               NamespaceUtils.getRequestedAttributes(isLocality,
                     isLocations,
                     isQos,
+                    isChecksum,
                     false);
         PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager);
         FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new);
@@ -168,7 +171,7 @@ public class FileResources {
             NamespaceUtils.chimeraToJsonAttributes(path.name(), fileAttributes,
                   namespaceAttributes,
                   isLocality, isLocations, isLabels,
-                  false, isXattr,
+                  false, isXattr, isChecksum,
                   request, poolMonitor);
             if (isQos) {
                 NamespaceUtils.addQoSAttributes(fileAttributes,
@@ -211,7 +214,7 @@ public class FileResources {
                           childrenAttributes,
                           entry.getFileAttributes(),
                           isLocality, isLocations, isLabels,
-                          false, isXattr,
+                          false, isXattr, isChecksum,
                           request, poolMonitor);
                     childrenAttributes.setFileName(fName);
                     if (isQos) {
