@@ -145,6 +145,7 @@ public class LabelsResources {
               NamespaceUtils.getRequestedAttributes(isLocality,
                     isLocations,
                     false,
+                    false,
                     false);
 
         FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new);
@@ -182,7 +183,7 @@ public class LabelsResources {
                       childrenAttributes,
                       entry.getFileAttributes(),
                       isLocality, isLocations, isLabels,
-                      false, isXattr,
+                      false, isXattr, false,
                       request, poolMonitor);
                 childrenAttributes.setSourcePath(fPath);
                 childrenAttributes.setFileName(fName);
