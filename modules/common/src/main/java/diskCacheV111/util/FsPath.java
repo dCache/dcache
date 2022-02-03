@@ -49,7 +49,7 @@ public abstract class FsPath implements Serializable {
     }
 
     public static FsPath create(String path) {
-        checkArgument(path.startsWith("/"));
+        checkArgument(path.startsWith("/"), "Not an absolute path: %s", path);
         return ROOT.resolve(path.substring(1));
     }
 
