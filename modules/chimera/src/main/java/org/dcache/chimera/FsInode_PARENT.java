@@ -72,7 +72,7 @@ public class FsInode_PARENT extends FsInode {
         if (_parent == null) {
             FsInode parentInode = getParent();
             if (parentInode == null) {
-                throw new FileNotFoundChimeraFsException();
+                throw FileNotFoundChimeraFsException.ofFileInDirectory(this, "..");
             }
             _parent = parentInode;
         }

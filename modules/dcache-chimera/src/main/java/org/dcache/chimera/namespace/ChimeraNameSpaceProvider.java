@@ -914,7 +914,7 @@ public class ChimeraNameSpaceProvider
     private FileAttributes getFileAttributes(ExtendedInode inode, Set<FileAttribute> attr)
           throws ChimeraFsException, CacheException {
         if (!inode.exists()) {
-            throw new FileNotFoundChimeraFsException();
+            throw FileNotFoundChimeraFsException.of(inode);
         }
 
         FileAttributes attributes = new FileAttributes();

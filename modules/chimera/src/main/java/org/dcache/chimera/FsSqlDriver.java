@@ -134,7 +134,7 @@ public class FsSqlDriver {
         });
         Long root = getInumber("000000000000000000000000000000000000");
         if (root == null) {
-            throw new FileNotFoundChimeraFsException("Root inode does not exist.");
+            throw FileNotFoundChimeraFsException.ofPnfsId("000000000000000000000000000000000000");
         }
         _root = root;
     }
@@ -1244,7 +1244,7 @@ public class FsSqlDriver {
 
         Long tagid = getTagId(dir, tagName);
         if (tagid == null) {
-            throw new FileNotFoundChimeraFsException(tagName);
+            throw FileNotFoundChimeraFsException.ofTag(dir, tagName);
         }
 
         List<Long> subtrees = _jdbc.queryForList(pushStatement, Long.class, dir.ino());
@@ -1340,7 +1340,7 @@ public class FsSqlDriver {
         Long tagId = getTagId(dir, name);
 
         if (tagId == null) {
-            throw new FileNotFoundChimeraFsException("tag does not exist");
+            throw FileNotFoundChimeraFsException.ofTag(dir, name);
         }
 
         try {
@@ -1365,7 +1365,7 @@ public class FsSqlDriver {
                   },
                   tagId);
         } catch (IncorrectResultSizeDataAccessException e) {
-            throw new FileNotFoundChimeraFsException(name);
+            throw FileNotFoundChimeraFsException.ofTag(dir, name);
         }
     }
 
@@ -1423,7 +1423,7 @@ public class FsSqlDriver {
     void setTagOwner(FsInode_TAG tagInode, int newOwner) throws FileNotFoundChimeraFsException {
         Long tagId = getTagId(tagInode, tagInode.tagName());
         if (tagId == null) {
-            throw new FileNotFoundChimeraFsException("tag does not exist");
+            throw FileNotFoundChimeraFsException.ofTag(tagInode);
         }
         _jdbc.update("UPDATE t_tags_inodes SET iuid=?, ictime=? WHERE itagid=?",
               ps -> {
@@ -1437,7 +1437,7 @@ public class FsSqlDriver {
           throws FileNotFoundChimeraFsException {
         Long tagId = getTagId(tagInode, tagInode.tagName());
         if (tagId == null) {
-            throw new FileNotFoundChimeraFsException("tag does not exist");
+            throw FileNotFoundChimeraFsException.ofTag(tagInode);
         }
         _jdbc.update("UPDATE t_tags_inodes SET igid=?, ictime=? WHERE itagid=?",
               ps -> {
@@ -1450,7 +1450,7 @@ public class FsSqlDriver {
     void setTagMode(FsInode_TAG tagInode, int mode) throws FileNotFoundChimeraFsException {
         Long tagId = getTagId(tagInode, tagInode.tagName());
         if (tagId == null) {
-            throw new FileNotFoundChimeraFsException("tag does not exist");
+            throw FileNotFoundChimeraFsException.ofTag(tagInode);
         }
         _jdbc.update("UPDATE t_tags_inodes SET imode=?, ictime=? WHERE itagid=?",
               ps -> {
@@ -1501,7 +1501,7 @@ public class FsSqlDriver {
                   },
                   inode.ino());
         } catch (IncorrectResultSizeDataAccessException e) {
-            throw new FileNotFoundChimeraFsException(inode.toString());
+            throw FileNotFoundChimeraFsException.of(inode);
         }
     }
 
