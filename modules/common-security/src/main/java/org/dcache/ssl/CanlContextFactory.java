@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2015 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2015 - 2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -312,9 +312,12 @@ public class CanlContextFactory implements SslContextFactory {
              * PEMCredential does not consistently support keyPasswd being null
              * https://github.com/eu-emi/canl-java/issues/114
              */
-            PEMCredential credential
-                  = new PEMCredential(keyPath.toString(), certificatePath.toString(), new char[]{});
-            Callable newContext = () -> factory.getContext(contextType, credential);
+            Callable newContext = () -> {
+                PEMCredential credential
+                      = new PEMCredential(keyPath.toString(), certificatePath.toString(), new char[]{});
+                return factory.getContext(contextType, credential);
+            };
+
             return (Callable<T>) memoizeWithExpiration(memoizeFromFiles(newContext,
                         keyPath,
                         certificatePath),
