@@ -215,20 +215,15 @@ public class NfsTransferService
 
     @Override
     public Cancellable executeMover(final NfsMover mover,
-          final CompletionHandler<Void, Void> completionHandler) {
-        try {
+          final CompletionHandler<Void, Void> completionHandler)
+          throws DiskErrorCacheException, InterruptedIOException, SocketException {
+        final Cancellable cancellableMover = mover.enable(completionHandler);
+        notifyDoorWithRedirect(mover);
 
-            final Cancellable cancellableMover = mover.enable(completionHandler);
-            notifyDoorWithRedirect(mover);
-
-            /* An NFS mover doesn't complete until it is cancelled (the door sends a mover kill
-             * message when the file is closed).
-             */
-            return cancellableMover;
-        } catch (DiskErrorCacheException | InterruptedIOException | SocketException | RuntimeException e) {
-            completionHandler.failed(e, null);
-        }
-        return null;
+        /* An NFS mover doesn't complete until it is cancelled (the door sends a mover kill
+         * message when the file is closed).
+         */
+        return cancellableMover;
     }
 
     public void notifyDoorWithRedirect(NfsMover mover) throws SocketException {
