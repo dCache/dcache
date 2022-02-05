@@ -18,6 +18,7 @@
 package org.dcache.pool.classic;
 
 import java.nio.channels.CompletionHandler;
+import javax.annotation.Nonnull;
 import org.dcache.pool.movers.Mover;
 
 /**
@@ -27,6 +28,7 @@ import org.dcache.pool.movers.Mover;
  */
 public interface TransferService<M extends Mover<?>> {
 
+    @Nonnull
     Cancellable executeMover(M mover, CompletionHandler<Void, Void> completionHandler)
           throws Exception;
 
