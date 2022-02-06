@@ -1575,6 +1575,33 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
 
     }
 
+    @Test
+    public void testAddLabelsSameFileDiffLabels() throws Exception {
+
+        FsInode dir = _fs.mkdir("/test");
+
+        FsInode inodeA = _fs.createFile(dir, "aFile");
+        FsInode inodeB = _fs.createFile(dir, "bFile");
+        FsInode inodeC = _fs.createFile(dir, "cFile");
+
+        String labelnameCat = "cat";
+        String labelnameDog = "dog";
+
+        _fs.addLabel(inodeA, labelnameCat);
+        _fs.addLabel(inodeB, labelnameCat);
+        _fs.addLabel(inodeC, labelnameDog);
+        _fs.addLabel(inodeA, labelnameDog);
+
+
+        DirectoryStreamB<ChimeraDirectoryEntry> dirStream = _rootInode.virtualDirectoryStream(
+              labelnameDog);
+
+        assertEquals("Unexpected number of labels", 2, dirStream.stream().count());
+        assertTrue("Unexpected labels",
+              _fs.getLabels(inodeA).contains("cat") && _fs.getLabels(inodeA).contains("dog"));
+
+    }
+
     @Test(expected = FileExistsChimeraFsException.class)
     public void testExclusiveCreateXattr() throws Exception {
 
