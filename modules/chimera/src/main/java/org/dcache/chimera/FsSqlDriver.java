@@ -1995,8 +1995,6 @@ public class FsSqlDriver {
               }, labelname);
 
     }
-
-
     /**
      * Attache a given label to  a given file system object.
      *
@@ -2025,6 +2023,7 @@ public class FsSqlDriver {
                       }, keyHolder);
                 Long label_id = (Long) keyHolder.getKeys().get("label_id");
 
+                //TODO change to WHERE NOT EXISTS
                 _jdbc.update("INSERT INTO t_labels_ref (label_id, inumber) VALUES (?,?)",
                       label_id, inode.ino());
 
@@ -2033,8 +2032,8 @@ public class FsSqlDriver {
                 Long label_id = getLabel(labelname);
 
                 int n = _jdbc.queryForObject(
-                      "SELECT count(*) FROM t_labels_ref WHERE inumber=? and label_id = label_id",
-                      Integer.class, inode.ino());
+                      "SELECT count(*) FROM t_labels_ref WHERE inumber=? and label_id = ?",
+                      Integer.class, inode.ino(),label_id);
 
                 if (n == 0) {
                     _jdbc.update("INSERT INTO t_labels_ref (label_id, inumber) VALUES (?,?)",
