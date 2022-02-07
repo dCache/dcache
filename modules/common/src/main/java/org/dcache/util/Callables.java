@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2015 - 2020 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2015 - 2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,11 +17,9 @@
  */
 package org.dcache.util;
 
-import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Ordering;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
@@ -140,12 +138,21 @@ public class Callables {
         }
 
         private FileTime getLastModifiedTime() {
+
+            if (files.length == 0) {
+                return null;
+            }
+
             try {
-                FileTime[] times = new FileTime[files.length];
-                for (int i = 0; i < files.length; i++) {
-                    times[i] = java.nio.file.Files.getLastModifiedTime(files[i]);
+                FileTime max = java.nio.file.Files.getLastModifiedTime(files[0]);
+
+                for (int i = 1; i < files.length; i++) {
+                    var t = java.nio.file.Files.getLastModifiedTime(files[i]);
+                    if (t.compareTo(max) > 0) {
+                        max = t;
+                    }
                 }
-                return Ordering.natural().max(asList(times));
+                return max;
             } catch (IOException e) {
                 return null;
             }
