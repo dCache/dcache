@@ -101,7 +101,7 @@ Specifying whether clients are required to use a privileged port (< 1024). This 
 as they might spoof request credentials.
 
 - **insecure**
-The opposite of **secure** option. The use of privileged port by a client is not require. This is the *default* value.
+The opposite of **secure** option. The use of privileged port by a client is not required. This is the *default* value.
 
 - **lt=**
 A colon separated ordered list of pnfs layouts that offered to the client. The valid values are:
