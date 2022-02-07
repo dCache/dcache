@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2015 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2015 - 2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -23,6 +23,7 @@ import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Iterables.toArray;
 import static java.util.Arrays.asList;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
 import eu.emi.security.authn.x509.CrlCheckingMode;
@@ -130,5 +131,10 @@ public class ServerGsiEngineDssContextFactory implements DssContextFactory {
             Throwables.propagateIfPossible(e, IOException.class);
             throw new IOException("Failed to create SSL engine: " + e.getMessage(), e);
         }
+    }
+
+    @VisibleForTesting
+    Callable<SSLContext> getFactory() {
+        return factory;
     }
 }
