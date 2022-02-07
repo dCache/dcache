@@ -96,6 +96,13 @@ Enable NFSv4.1/pNFS to redirect pnfs capable clients to the dCache pools. This i
 - **no_pnfs** and **nopnfs**
 Opposite of **pnfs** option. Enforce clients to send all IO requests to NFS door event independent from client's pNFS capabilities.
 
+- **secure**
+Specifying whether clients are required to use a privileged port (< 1024). This option typically is used to disallow user-space NFS clients,
+as they might spoof request credentials.
+
+- **insecure**
+The opposite of **secure** option. The use of privileged port by a client is not require. This is the *default* value.
+
 - **lt=**
 A colon separated ordered list of pnfs layouts that offered to the client. The valid values are:
 
