@@ -1,6 +1,7 @@
 package org.dcache.webdav;
 
 import io.milton.resource.Resource;
+import javax.annotation.Nonnull;
 
 /**
  * Corresponds to a 401 unauthorized response.
@@ -13,15 +14,15 @@ public class UnauthorizedException extends WebDavException {
 
     private static final long serialVersionUID = 392046210465227212L;
 
-    public UnauthorizedException(Resource resource) {
+    public UnauthorizedException(@Nonnull Resource resource) {
         super(resource);
     }
 
-    public UnauthorizedException(String message, Resource resource) {
+    public UnauthorizedException(String message, @Nonnull Resource resource) {
         super(message, resource);
     }
 
-    public UnauthorizedException(String message, Throwable cause, Resource resource) {
+    public UnauthorizedException(String message, Throwable cause, @Nonnull Resource resource) {
         super(message, cause, resource);
     }
 }

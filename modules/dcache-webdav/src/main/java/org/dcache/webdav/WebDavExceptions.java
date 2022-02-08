@@ -20,6 +20,7 @@ package org.dcache.webdav;
 
 import io.milton.resource.Resource;
 import java.security.AccessController;
+import javax.annotation.Nonnull;
 import javax.security.auth.Subject;
 import org.dcache.auth.Subjects;
 
@@ -35,7 +36,7 @@ public class WebDavExceptions {
      * Returns either an UnauthorizedException or a ForbiddenException depending on whether the user
      * is authenticated.
      */
-    public static WebDavException permissionDenied(Resource resource) {
+    public static WebDavException permissionDenied(@Nonnull Resource resource) {
         Subject subject = Subject.getSubject(AccessController.getContext());
         if (Subjects.isNobody(subject)) {
             return new UnauthorizedException(resource);
