@@ -584,9 +584,7 @@ public class DcacheResourceFactory
      * @param path The full path
      */
     public DcacheResource getResource(FsPath path) {
-        if (!isAllowedPath(path)) {
-            return null;
-        }
+        checkPathAllowed(path);
 
         String requestPath = getRequestPath();
         boolean haveRetried = false;
@@ -1176,13 +1174,11 @@ public class DcacheResourceFactory
     /**
      * Returns true if access to path is allowed through the WebDAV door, false otherwise.
      */
-    private boolean isAllowedPath(FsPath path) {
-        for (FsPath allowedPath : _allowedPaths) {
-            if (path.hasPrefix(allowedPath)) {
-                return true;
-            }
+    private void checkPathAllowed(FsPath path) throws UnauthorizedException, ForbiddenException {
+        if (!_allowedPaths.stream().anyMatch(path::hasPrefix)) {
+            Resource denied = new DcacheResource(this, path, FileAttributes.of().build());
+            throw WebDavExceptions.permissionDenied(denied);
         }
-        return false;
     }
 
     /**
