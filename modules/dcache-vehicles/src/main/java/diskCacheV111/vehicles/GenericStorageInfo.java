@@ -30,8 +30,11 @@ public class GenericStorageInfo
     private RetentionPolicy _retentionPolicy = StorageInfo.DEFAULT_RETENTION_POLICY;
 
     private Map<String, String> _keyHash = new HashMap<>();
-    private List<URI> _locations = new ArrayList<>();
-    private List<URI> _locationsRO = Collections.unmodifiableList(_locations);
+
+    // Use a singleton instance in order to reduce memory footprint for a common case, where a file
+    // has no tape locations.
+    private List<URI> _locations = List.of();
+
     private boolean _setHsm;
     private boolean _setStorageClass;
     private boolean _setBitFileId;
@@ -68,6 +71,9 @@ public class GenericStorageInfo
 
     @Override
     public void addLocation(URI newLocation) {
+        if (_locations.isEmpty()) {
+            _locations = new ArrayList<>();
+        }
         _locations.add(newLocation);
     }
 
@@ -158,20 +164,17 @@ public class GenericStorageInfo
 
     @Override
     public boolean isStored() {
-        /*
-         * FIXME: _locations!= null is needed to read old SI files
-         */
-        return _locations != null && !_locations.isEmpty();
+        return !_locations.isEmpty();
     }
 
     @Override
     public List<URI> locations() {
-        return _locationsRO;
+        return _locations.isEmpty() ? _locations : Collections.unmodifiableList(_locations);
     }
 
     @Override
     public void clearLocations() {
-        _locations.clear();
+        _locations = List.of();
     }
 
     @Override
@@ -232,10 +235,8 @@ public class GenericStorageInfo
                 sb.append(key).append('=').append(value).append(';');
             }
         }
-        if (_locations != null) {
-            for (URI location : _locations) {
-                sb.append(location).append(';');
-            }
+        for (URI location : _locations) {
+            sb.append(location).append(';');
         }
         return sb.toString();
     }
@@ -338,7 +339,9 @@ public class GenericStorageInfo
         try {
             GenericStorageInfo copy = (GenericStorageInfo) super.clone();
             copy._keyHash = new HashMap<>(_keyHash);
-            copy._locations = new ArrayList<>(_locations);
+            copy._locations = _locations.isEmpty()
+                    ? List.of()
+                    : new ArrayList<>(_locations);
             return copy;
         } catch (CloneNotSupportedException e) {
             throw new RuntimeException("Failed to clone storage info: " +
@@ -431,7 +434,6 @@ public class GenericStorageInfo
         }
 
         if (_locations == null || _locations.isEmpty()) {
-            // immutable list is ok as only PnfsManager initially populates the locations.
             _locations = List.of();
         }
     }
