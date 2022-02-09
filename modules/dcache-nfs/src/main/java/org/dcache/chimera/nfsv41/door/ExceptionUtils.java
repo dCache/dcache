@@ -2,6 +2,7 @@ package org.dcache.chimera.nfsv41.door;
 
 import static diskCacheV111.util.CacheException.BROKEN_ON_TAPE;
 import static diskCacheV111.util.CacheException.ERROR_IO_DISK;
+import static diskCacheV111.util.CacheException.FILE_CORRUPTED;
 import static diskCacheV111.util.CacheException.FILE_IN_CACHE;
 import static diskCacheV111.util.CacheException.FILE_NOT_FOUND;
 import static diskCacheV111.util.CacheException.NO_POOL_CONFIGURED;
@@ -71,6 +72,8 @@ public class ExceptionUtils {
         switch (e.getRc()) {
             case BROKEN_ON_TAPE:
             case ERROR_IO_DISK:
+            case FILE_IN_CACHE:
+            case FILE_CORRUPTED:
                 return new NfsIoException(e.getMessage(), e);
             case FILE_NOT_FOUND:
                 return new NoEntException(e.getMessage(), e);
@@ -83,8 +86,6 @@ public class ExceptionUtils {
                 return new NoSpcException(e.getMessage(), e);
             case TIMEOUT:
                 return new DelayException(e.getMessage(), e);
-            case FILE_IN_CACHE:
-                return new NfsIoException(e.getMessage(), e);
             default:
                 return buildNfsException(defaultException, e);
         }
