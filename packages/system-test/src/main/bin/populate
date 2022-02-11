@@ -53,6 +53,7 @@ add_oidc() {
     fi
 
     echo "Adding support for OP: $loaded_ops"
+    prepend etc/gplazma.conf "auth    optional    oidc"
 
     for op in $loaded_ops; do
         eval $(oidc-token -c $op)
@@ -273,4 +274,4 @@ for path in etc/grid-security/certificates/*; do
     compare $path /etc/grid-security/certificates/$file
 done
 
-command -v oidc-token >/dev/null && add_oidc
+command -v oidc-token >/dev/null && add_oidc || :
