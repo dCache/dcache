@@ -20,16 +20,19 @@ import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
 import dmg.cells.nucleus.CellEndpoint;
 import java.io.IOException;
 import java.net.ConnectException;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
 import java.net.URI;
+import java.net.UnknownHostException;
 import java.nio.channels.Channels;
 import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -58,11 +61,13 @@ import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.conn.DnsResolver;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultRedirectStrategy;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.ConnectionShutdownException;
+import org.apache.http.impl.conn.SystemDefaultDnsResolver;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpCoreContext;
 import org.apache.http.protocol.HttpRequestExecutor;
@@ -208,6 +213,20 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
      */
     private static final Duration EXPECT_100_TIMEOUT = Duration.of(5, ChronoUnit.MINUTES);
 
+    /**
+     * A DnsResolver instance that prefers IPv6 over IPv4.  WLCG would like storage to use IPv6
+     * address, if available.
+     */
+    private static final DnsResolver PREFER_IPV6 = new SystemDefaultDnsResolver() {
+        @Override
+        public InetAddress[] resolve(final String host) throws UnknownHostException {
+            InetAddress[] addresses = super.resolve(host);
+            Arrays.sort(addresses, (a1, a2) -> a1 instanceof Inet6Address ? -1
+                    : a2 instanceof Inet6Address ? 1 : 0);
+            return addresses;
+        }
+    };
+
     private static final RedirectStrategy DROP_AUTHORIZATION_HEADER = new DefaultRedirectStrategy() {
 
         @Override
@@ -303,6 +322,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
         return builder
               .setUserAgent(USER_AGENT)
               .setRequestExecutor(new HttpRequestExecutor((int) EXPECT_100_TIMEOUT.toMillis()))
+              .setDnsResolver(PREFER_IPV6)
               .setRedirectStrategy(DROP_AUTHORIZATION_HEADER);
     }
 
