@@ -1,7 +1,7 @@
 package org.dcache.gplazma.plugins;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import com.google.common.collect.Lists;
 import com.google.common.io.Resources;

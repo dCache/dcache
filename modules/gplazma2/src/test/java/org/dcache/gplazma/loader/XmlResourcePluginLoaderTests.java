@@ -4,8 +4,8 @@ import static org.junit.Assert.assertNotNull;
 
 import java.util.Collections;
 import java.util.Properties;
-import junit.framework.Assert;
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
