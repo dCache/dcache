@@ -125,7 +125,14 @@ public class RunSystem implements Runnable {
                 }
                 if (!_processDone) {
                     say("Master : Wait 2 loop : Destroying process");
-                    _process.destroy();
+                    if (l < 2) {
+                        // SIGTERM (15)
+                        _process.destroy();
+                    } else {
+                        // SIGKILL (9)
+                        LOGGER.warn("The HSM script ignores SIGTERM (PLEASE FIX IT!). Terminating forcefully with SIGKILL.");
+                        _process.destroyForcibly();
+                    }
                 }
                 if ((l > 2) && (_stoppedReader < 2)) {
                     say("Master : Wait 2 loop : Interrupting readers");
