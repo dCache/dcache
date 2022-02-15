@@ -59,6 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.plugins.pinmanager;
 
+import static org.dcache.services.bulk.job.BulkJobArgumentDescriptor.EMPTY_DEFAULT;
 import static org.dcache.services.bulk.job.MultipleTargetJob.TargetType.FILE;
 
 import com.google.common.collect.ImmutableSet;
@@ -84,6 +85,14 @@ public class PinJobProvider extends BulkJobProvider<PinJob> {
                 false,
                 "MINUTES");
 
+    static final BulkJobArgumentDescriptor PIN_REQUEST_ID
+          = new BulkJobArgumentDescriptor("id",
+          "to use for this pin.  If empty/null on PIN, the id of the current request will "
+                + "be used)",
+          "string",
+          false,
+         EMPTY_DEFAULT);
+
     public PinJobProvider() {
         super("PIN", FILE, ExpansionType.BREADTH_FIRST);
     }
@@ -100,6 +109,6 @@ public class PinJobProvider extends BulkJobProvider<PinJob> {
 
     @Override
     public Set<BulkJobArgumentDescriptor> getArguments() {
-        return ImmutableSet.of(LIFETIME, LIFETIME_UNIT);
+        return ImmutableSet.of(LIFETIME, LIFETIME_UNIT, PIN_REQUEST_ID);
     }
 }
