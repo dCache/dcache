@@ -38,7 +38,7 @@ precautions need to be taken (e.g., only send macaroons over an
 encrypted/TLS network connections).  Macaroons also offer some
 protection over simple cookies by allowing the token to be locked
 down.  This may limit the damage should the token be stolen and could
-even prevent it misuse altogether.
+even prevent its misuse altogether.
 
 To be useful, a macaroon has a carefully constructed structure.  This
 structure is described in a research paper published by the team at
