@@ -351,9 +351,9 @@ Macaroons always have a time limit: they are no longer useful after a
 specific time.
 
 If, when requesting a macaroon, the client does not indicate for how
-long the macaroon should be valid then dCache will add a default
+long the macaroon should be valid, then dCache will add a default
 validity.  If the client indicates for how long the macaroon should
-stay valid then dCache will include this value provided it isn't too
+stay valid, then dCache will include this value provided it isn't too
 long.
 
 ### IP address
@@ -368,12 +368,12 @@ IP address outside of the set of valid IP addresses.
 ## Caveats supported by dCache
 
 Recall how dCache supports caveats with the structure
-`KEY:VALUE`. dCache will reject any macaroon that contains a caveats
+`KEY:VALUE`. dCache will reject any macaroon that contains a caveat
 that is not of the form `KEY:VALUE`.
 
 The allowed key values are: `root`, `home`, `path`, `before`, `ip`,
 `id`, `iid` and `activity`.  If a macaroon contains any caveats with a
-different key then dCache will reject that macaroon.
+different key, dCache will reject that macaroon.
 
 Some of these caveat keys must appear only once.  A macaroon that
 contains multiple caveats with that key is invalid and will be
@@ -457,7 +457,7 @@ The IP addresses or subnets from which a client may use the macaroon.
 The value is a comma-separated list of addresses (IPv4 or IPv6) or
 subnets following CIDR representation.
 
-If a macaroon contains multiple caveats with the `ip` key then this is
+If a macaroon contains multiple caveats with the `ip` key, then this is
 equivalent to taking the intersection of these sets.  In other words,
 a client request is accepted only if its IP address is valid according
 to all caveats containing the `ip` key.
@@ -468,7 +468,7 @@ A caveat with the `path` key describes the visibility path for this
 macaroon.  See above for a full description of the semantics of this
 path.
 
-This caveat is optional.  If omitted then the visitibility path is
+This caveat is optional.  If omitted, the visibility path is
 assumed to be the filesystem root (`/`).
 
 A macaroon may contain multiple `path` caveats.  These combine by
@@ -509,14 +509,14 @@ A caveat with the `root` key describes the root path for this
 macaroon.  See above for a full description of the semantics of this
 path.
 
-This caveat is optional.  If omitted then the root path is assumed to
+This caveat is optional.  If omitted, the root path is assumed to
 be the filesystem root (`/`).
 
 A macaroon may contain multiple `root` caveats.  These combine by
 considering subsequent caveats as relative paths and resolving them
 against the current (effective) root path.
 
-For example the macaroon with the two `root` caveats:
+For example, the macaroon with the two `root` caveats:
 
 ```
 root:/Users/alice
@@ -530,9 +530,9 @@ root:/Users/alice/shared-with-Bob
 ```
 
 Specifying a root caveat after a visibility path caveat will alter the
-affective visibility path.
+effective visibility path.
 
-For example a macaron with the two `path` and `root` caveats:
+For example, a macaron with the two `path` and `root` caveats:
 
 ```
 path:/Users/alice/shared-with-Bob
