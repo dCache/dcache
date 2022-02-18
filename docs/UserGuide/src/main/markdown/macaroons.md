@@ -326,7 +326,7 @@ the desired file.
 
 Visibility paths have the advantage of providing a common path for a
 file.  A common URL may be shared between dCache users authenticating
-directly with dCache, and users who are accessing data via a macaroon.
+directly with dCache and users who are accessing data via a macaroon.
 This may be useful if users with dCache accounts wish to use the same
 URL when authenticating directly and when accessing data via a
 macaroon.
