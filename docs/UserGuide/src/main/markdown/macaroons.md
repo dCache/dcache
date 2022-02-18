@@ -177,7 +177,7 @@ macaroon is allowed to do.  These are `READ_METADATA`,
   <dd>
     <p>Any requests that discover metadata about a file or directory.
     Examples include querying a file's size, POSIX permissions,
-    ownership, any ACLs, any checksum values that dCache knows, read
+    ownership, any ACLs, any checksum values that dCache knows, reading
     extended attributes, etc.</p>
   </dd>
 
@@ -185,7 +185,7 @@ macaroon is allowed to do.  These are `READ_METADATA`,
 
   <dd>
     <p>Any request that attempts to update the metadata about the
-    file: modifying the POSIX permissions, updating ACLs, update
+    file: modifying the POSIX permissions, updating ACLs, updating
     extended attributes.</p>
   </dd>
 
@@ -210,7 +210,7 @@ macaroon is allowed to do.  These are `READ_METADATA`,
   <dd>
     <p>Any request that adjusts the namespace: by renaming files,
     moving files, creating directories, etc.  If, by renaming a file,
-    the request overwrites some existing data then the request has
+    the request overwrites some existing data, then the request has
     both MANAGE and DELETE activities.</p>
   </dd>
 
@@ -218,7 +218,7 @@ macaroon is allowed to do.  These are `READ_METADATA`,
 
   <dd>
     <p>Any request that creates new data within dCache.  If the upload
-    overwrites some existing data then the request has both UPLOAD and
+    overwrites some existing data, then the request has both UPLOAD and
     DELETE activities.</p>
   </dd>
 
@@ -227,8 +227,8 @@ macaroon is allowed to do.  These are `READ_METADATA`,
   <dd>
     <p>Any request that makes data permanently inaccessible for all
     users.  Making data inaccessible for some users is a modification
-    to the authorisation (see UPDATE_METADATA activity). Making data
-    inaccessible from one path but accessible from other is namespace
+    to authorisation (see UPDATE_METADATA activity). Making data
+    inaccessible from one path but accessible from another is namespace
     management (see MANAGE activity).</p>
   </dd>
 </dl>
@@ -248,8 +248,8 @@ macaroons.
 
   <dt>PUT</dt>
 
-  <dd>The UPLOAD activity if file does not already exist, UPLOAD and
-  DELETE activity if target file already exists.</dd>
+  <dd>The UPLOAD activity if the file does not already exist, the UPLOAD and
+  DELETE activity if the target file already exists.</dd>
 
   <dt>DELETE</dt>
 
@@ -282,7 +282,7 @@ not specified.
 
 #### The root path
 
-The root path describes a path within dCache namespace under which all
+The root path describes a path within the dCache namespace under which all
 requests are resolved.  A client attempting to read the file
 `/latest.dat` with a macaroon containing a root
 `/Users/paul/shared-with-Bob` will attempt to download the file
@@ -296,7 +296,7 @@ above example macaroon will resolve to the same file.
 
 #### The visibility path
 
-(For historic reasons, this path is encoded as `path` caveat.)
+(For historic reasons, this path is encoded as a `path` caveat.)
 
 The visibility path describes which part of the namespace (a subtree)
 the user can see.  Parent directories show only a single directory.
@@ -304,8 +304,8 @@ Attempts to access files or directories outside of this subtree will
 fail.
 
 As an example, if a macaroon has a visibility path of
-`/Users/alice/shared-with-Bob` then when Bob makes a directory listing
-on the root path he will see a single item: the directory `Users`.
+`/Users/alice/shared-with-Bob`, then when Bob makes a directory listing
+on the root path, he will see a single item: the directory `Users`.
 When making a directory listing on `/Users` he sees only the `alice`
 directory.  Likewise, when making a directory listing on
 `/Users/alice` he sees only the `shared-with-Bob` directory.
