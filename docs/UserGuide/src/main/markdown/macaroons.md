@@ -85,7 +85,7 @@ the macaroon structure) could modify some of these characters in an
 attempt to gain unauthorised access; however, any such change will be
 detected and the modified macaroon will be rejected.
 
-A macaroon does contains two fields (the location and the identifier)
+A macaroon does contain two fields (the location and the identifier)
 that are not cryptographically protected.  These are meant to provide
 hints.  dCache simply ignores the location information.  Modifying the
 identifier simply prevents the macaroon from working.
@@ -128,7 +128,7 @@ have the form `KEY:VALUE`.  In the example caveat
 is `2022-02-02T09:51:22.840Z`.  The key describes what kind of caveat
 this is and the value provides the details for this specific
 restriction.  Using this example, the key (`before`) indicates that
-this caveat limits the macaroons validity, while the value part
+this caveat limits the macaroon's validity, while the value part
 (`2022-02-02T09:51:22.840Z`) describes when the macaroon becomes
 invalid.
 
@@ -142,7 +142,7 @@ without dCache rejecting the macaroon.
 ## Authorisation model for macaroons.
 
 All requests for which the client presents a macaroon are evaluated as
-the user that requested the macaroon.  If Alice requests a macaroon
+pertaining to the user that requested the macaroon.  If Alice requests a macaroon
 and shares it with Bob then Bob can only access files that Alice would
 be able to access.
 
@@ -154,14 +154,14 @@ has a couple of important consequences:
 
   * If Alice creates a macaroon for sharing a file and (subsequently)
     the dCache namespace permissions change so that Alice can no
-    longer read that file then the macaroon will also no longer have
+    longer read that file, then the macaroon will also no longer have
     access.
 
   * If the macaroon allows Bob to create new content (upload files,
-    create directories, etc) then those new files and directories will
+    create directories, etc.), then those new files and directories will
     be owned by Alice.
 
-    As with regular uploads, if a directory has the setgid bit then
+    As with regular uploads, if a directory has the setgid bit, then
     the group-ownership will come from the parent directory.
 
 ### Activities
