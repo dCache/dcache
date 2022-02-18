@@ -46,17 +46,17 @@ Google research.  Although the macaroon's format has not been adopted
 as standardised, various mutually compatible libraries exist that
 support it.  In this sense, macaroons have become a de facto standard.
 
-This chapter will provide a introduction to macaroons.  It will not
+This chapter will provide an introduction to macaroons.  It will not
 describe how macaroons are encoded, but it will provide a high-level
 overview so that the key concepts may be understood.  For example,
 caveats are described but without detailing the cryptographic
-algorithms that underpinning their behaviour.  The Google Research
+algorithms underpinning their behaviour.  The Google Research
 [paper on macaroons](https://research.google/pubs/pub41892/) provides
 an excellent description of the structure, if you want to know more.
 
 This chapter will also describe how macaroons work within dCache.  For
-the most part, this is describing the authorisation framework that
-macaroons provide and how this is mapped to caveats.  Unfortunately,
+the most part, this means describing the authorisation framework that
+macaroons provide and how it is mapped to caveats.  Unfortunately,
 there is no standard way of encoding authorisation within macaroons,
 so this is necessarily dCache-specific.  However, similar semantics
 have been adopted by other storage systems.
