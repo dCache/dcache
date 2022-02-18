@@ -43,7 +43,7 @@ even prevent its misuse altogether.
 To be useful, a macaroon has a carefully constructed structure.  This
 structure is described in a research paper published by the team at
 Google research.  Although the macaroon's format has not been adopted
-as a standardised, various mutually compatible libraries exist that
+as standardised, various mutually compatible libraries exist that
 support it.  In this sense, macaroons have become a de facto standard.
 
 This chapter will provide a introduction to macaroons.  It will not
