@@ -592,7 +592,7 @@ that the macaroon only leaves dCache with the additional caveats,
 providing a slight security benefit.
 
 Send a JSON object with the POST request to request dCache issues a
-macaroon that has additional caveats.  The general form for these
+macaroon that has additional caveats.  The general form for
 caveat-requesting JSON is:
 
 ```json
@@ -637,7 +637,7 @@ curl -E /tmp/x509up_u1000 -X POST \
 
 ### Requesting path caveats
 
-The `path` caveat may be specified by specifying a path in the POST
+The `path` caveat may be obtained by specifying a path in the POST
 request.
 
 The following operation requests a macaroon with the `path:/data/2019`
@@ -668,16 +668,16 @@ useless.
 
 The value is an instant in time, which is often not really what is
 desired.  Instead, it is often desired to have a macaroon that is
-valid for a fixed duration (e.g., the next five minutes).  This then
-requires calculating the expiry time in order to build the `before`
+valid for a fixed duration (e.g., the next five minutes).  This would
+require calculating the expiry time in order to build the `before`
 caveat.  An additional problem is that the clocks on the client and
 server might not agree exactly.
 
 Both these problems are resolved by the `validity` property in the
-request JSON object.  The value is an ISO 8601 duration; for example
+request JSON object.  The value is an ISO 8601 duration; for example,
 the value `PT5M` represents five minutes.
 
-For example, the following JSON object requests a macaroon that allows
+The following JSON object requests a macaroon that allows
 read-only access to dCache for one hour.
 
 ```json
@@ -711,7 +711,7 @@ caveats are added subsequently.
 
 ## Using a macaroon
 
-dCache supports macaroon based requests with the WebDAV door and the
+dCache supports macaroon-based requests with the WebDAV door and the
 frontend door.
 
 For both doors, there are two ways of using a macaroon: in the
