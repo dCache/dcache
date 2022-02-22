@@ -75,6 +75,7 @@ import org.apache.zookeeper.data.Stat;
 import org.dcache.ssl.CanlSslSocketCreator;
 import org.dcache.util.Args;
 import org.dcache.util.ColumnWriter;
+import org.dcache.util.NetworkUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -678,7 +679,7 @@ public class LocationManager extends CellAdapter {
                   args.getOption("netmask", ""));
             lmPlain = startListener(cellArgs);
             LOGGER.info("lmPlain: {}; port; {} ", lmPlain, lmPlain.getListenPort());
-            info.addCore("tcp", InetAddress.getLocalHost().getCanonicalHostName(),
+            info.addCore("tcp", NetworkUtils.getCanonicalHostName(),
                   lmPlain.getListenPort());
         }
 
@@ -692,7 +693,7 @@ public class LocationManager extends CellAdapter {
                   args.getOpt("socketfactory"));
             lmTls = startListener(cellArgs);
             LOGGER.info("lmTls: {}; port; {} ", lmTls, lmTls.getListenPort());
-            info.addCore("tls", InetAddress.getLocalHost().getCanonicalHostName(),
+            info.addCore("tls", NetworkUtils.getCanonicalHostName(),
                   lmTls.getListenPort());
         }
 
