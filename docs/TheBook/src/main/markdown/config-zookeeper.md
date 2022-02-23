@@ -54,6 +54,8 @@ We recommend deploying this domain on the same server as your core domain and to
 
 We recommend reading the [ZooKeeper admin guide](https://zookeeper.apache.org/doc/current/zookeeperAdmin.html) for details on deploying ZooKeeper. Many Linux distributions have prepackaged ZooKeeper.
 
+Since version 6.2 dCache requires the associated ZooKeeper servers to be of version 3.5 or above, where the ZooKeeper-side configuration format has changed. When using the old configuration format, the dCache System cell will log an `Invalid config event received:` line on startup.
+
 ### Configuring dCache to connect to ZooKeeper
 
 The `dcache.zookeeper.connection` property needs to be defined on every dCache server to identify the ZooKeeper server or servers. In a clustered ZooKeeper deployment this property is set to a comma separated list of ZooKeeper servers endpoints. The ZooKeeper admin guide should contain details on further configuration options that can be specified in the connection string; however, this seemed to be missing at the time of writing.  Instead, the ZooKeeper programmers guide [ZooKeeper Sessions](https://zookeeper.apache.org/doc/current/zookeeperProgrammers.html#ch_zkSessions) section contains some details (search for "connection string").
