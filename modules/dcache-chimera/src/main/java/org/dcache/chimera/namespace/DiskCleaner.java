@@ -195,6 +195,10 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
      * @param filelist file list for this pool
      */
     void removeFiles(final String poolname, final List<String> filelist) {
+        if(filelist == null || filelist.isEmpty()) {
+            _log.info("Unexpected empty delete file list.");
+            return;
+        }
         _db.batchUpdate(
               "DELETE FROM t_locationinfo_trash WHERE ilocation=? AND ipnfsid=? AND itype=1",
               new BatchPreparedStatementSetter() {
@@ -228,13 +232,13 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
                   CellStub.get(_poolStub.send(new CellPath(poolName),
                         new PoolRemoveFilesMessage(poolName, removeList)));
             if (msg.getReturnCode() == 0) {
-                removeFiles(poolName, removeList);
+                removeFiles(poolName, List.copyOf(removeList));
             } else if (msg.getReturnCode() == 1 && msg.getErrorObject() instanceof String[]) {
                 Set<String> notRemoved =
                       new HashSet<>(Arrays.asList((String[]) msg.getErrorObject()));
                 List<String> removed = new ArrayList<>(removeList);
                 removed.removeAll(notRemoved);
-                removeFiles(poolName, removed);
+                removeFiles(poolName, List.copyOf(removed));
             } else {
                 throw CacheExceptionFactory.exceptionOf(msg);
             }
