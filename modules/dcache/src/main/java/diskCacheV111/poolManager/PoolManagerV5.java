@@ -73,12 +73,8 @@ public class PoolManagerV5
       CellArgsAware {
 
     private static final Version VERSION = Version.of(PoolManagerV5.class);
-    private int _writeThreads;
-    private int _readThreads;
 
     private final LongAdder _counterPoolUp = new LongAdder();
-    private int _counterSelectWritePool;
-    private int _counterSelectReadPool;
 
     private PoolSelectionUnit _selectionUnit;
     private SerializablePoolMonitor _poolMonitor;
@@ -357,12 +353,8 @@ public class PoolManagerV5
         pw.println(
               "PoolManager V [$Id: PoolManagerV5.java,v 1.48 2007-10-10 08:05:34 tigran Exp $]");
         pw.println(" SelectionUnit : " + _selectionUnit.getVersion());
-        pw.println(" Write Threads : " + _writeThreads);
-        pw.println(" Read  Threads : " + _readThreads);
         pw.println("Message counts");
         pw.println("           PoolUp : " + _counterPoolUp);
-        pw.println("   SelectReadPool : " + _counterSelectReadPool);
-        pw.println("  SelectWritePool : " + _counterSelectWritePool);
         pw.println("         Watchdog : " + _watchdog);
     }
 
@@ -644,37 +636,6 @@ public class PoolManagerV5
         }
         return sb.toString();
     }
-    /*
-    public static final String hh_get_pools = "<hsm> <storageClass> <host>"+
-                                 " [-size=<size>] [-mode=stage|store]" ;
-    public String ac_get_pools_$_3( Args args ) throws Exception {
-       String mode = args.getOpt("mode") ;
-       mode = mode == null ? "stage" : mode ;
-       long size = 0L ;
-       String sizeString = args.getOpt("size") ;
-       if( sizeString != null )size = Long.parseLong(sizeString);
-       try{
-          XStorageInfo storageInfo = new XStorageInfo( args.argv(0) , args.argv(1) ) ;
-          XProtocolInfo protocolInfo = new XProtocolInfo( args.argv(2) ) ;
-
-          List list = mode.equals("stage") ?
-                      _poolMonitor.getStagePoolList( storageInfo , protocolInfo , size ) :
-                      _poolMonitor.getStorePoolList( storageInfo , protocolInfo , size ) ;
-
-          Iterator i = list.iterator() ;
-          StringBuffer sb = new StringBuffer() ;
-          while( i.hasNext() ){
-             sb.append( i.next().toString() ).append("\n");
-          }
-          return sb.toString() ;
-
-       }catch( Exception ee ){
-
-          ee.printStackTrace() ;
-          throw ee ;
-       }
-    }
-    */
 
     public PoolManagerGetPoolMonitor
     messageArrived(PoolManagerGetPoolMonitor msg) {
