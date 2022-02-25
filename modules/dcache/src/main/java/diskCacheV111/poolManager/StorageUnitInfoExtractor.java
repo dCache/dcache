@@ -132,16 +132,14 @@ public final class StorageUnitInfoExtractor {
     public static boolean hasPrimaryStorageUnit(String poolGroup, PoolSelectionUnit psu) {
         return getStorageUnitsInGroup(poolGroup, psu)
               .stream()
-              .filter((u) -> u.getRequiredCopies() != null)
-              .findAny().isPresent();
+              .anyMatch((u) -> u.getRequiredCopies() != null);
     }
 
     private static boolean hasStorageUnit(String poolGroup,
           String storageUnit,
           PoolSelectionUnit psu) {
         return getStorageUnitsInGroup(poolGroup, psu).stream()
-              .filter((sunit) -> sunit.getName().equals(storageUnit))
-              .findAny().isPresent();
+              .anyMatch((sunit) -> sunit.getName().equals(storageUnit));
     }
 
     private StorageUnitInfoExtractor() {
