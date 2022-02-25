@@ -192,6 +192,10 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
      * @param filelist file list for this pool
      */
     void removeFiles(final String poolname, final List<String> filelist) {
+        if(filelist == null || filelist.isEmpty()) {
+            _log.info("Unexpected empty delete file list.");
+            return;
+        }
         _db.batchUpdate(
               "DELETE FROM t_locationinfo_trash WHERE ilocation=? AND ipnfsid=? AND itype=1",
               new BatchPreparedStatementSetter() {
@@ -225,14 +229,14 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
                   CellStub.get(_poolStub.send(new CellPath(poolName),
                         new PoolRemoveFilesMessage(poolName, removeList)));
             if (msg.getReturnCode() == 0) {
-                removeFiles(poolName, removeList);
+                removeFiles(poolName, List.copyOf(removeList));
                 return removeList.size();
             } else if (msg.getReturnCode() == 1 && msg.getErrorObject() instanceof String[]) {
                 Set<String> notRemoved =
                       new HashSet<>(Arrays.asList((String[]) msg.getErrorObject()));
                 List<String> removed = new ArrayList<>(removeList);
                 removed.removeAll(notRemoved);
-                removeFiles(poolName, removed);
+                removeFiles(poolName, List.copyOf(removed));
                 return removed.size();
             } else {
                 throw CacheExceptionFactory.exceptionOf(msg);
@@ -380,7 +384,7 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
           hint = "clean this file (file will be deleted from DISK)")
     public class CleanFileCommand implements Callable<String> {
 
-        @Argument(usage = "pnfsid of the file to clean")
+        @Argument(required = true, usage = "pnfsid of the file to clean")
         String pnfsid;
 
         @Override
