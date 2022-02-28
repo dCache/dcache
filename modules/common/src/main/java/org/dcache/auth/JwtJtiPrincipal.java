@@ -24,6 +24,7 @@ package org.dcache.auth;
  *
  * @since 5.1
  */
+@AuthenticationOutput
 public class JwtJtiPrincipal extends OpScopedPrincipal {
 
     private static final long serialVersionUID = 1L;

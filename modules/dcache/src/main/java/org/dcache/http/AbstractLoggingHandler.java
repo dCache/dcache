@@ -31,6 +31,9 @@ import javax.security.auth.Subject;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.dcache.auth.JwtJtiPrincipal;
+import org.dcache.auth.OidcSubjectPrincipal;
+import org.dcache.auth.Subjects;
 import org.dcache.util.NetLoggerBuilder;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.server.Request;
@@ -98,7 +101,14 @@ public abstract class AbstractLoggingHandler extends HandlerWrapper {
         log.add("user-agent", request.getHeader("User-Agent"));
 
         log.add("user.dn", getCertificateName(request));
-        log.add("user.mapped", getSubject(request));
+        var subject = getSubject(request);
+        log.add("user.sub", subject
+                .flatMap(s -> Optional.ofNullable(Subjects.getPrincipalNames(s, OidcSubjectPrincipal.class)))
+                .orElse(null));
+        log.add("user.jti", subject
+                .flatMap(s -> Optional.ofNullable(Subjects.getPrincipalNames(s, JwtJtiPrincipal.class)))
+                .orElse(null));
+        log.add("user.mapped", subject.orElse(null));
     }
 
     /**
@@ -158,8 +168,8 @@ public abstract class AbstractLoggingHandler extends HandlerWrapper {
         return null;
     }
 
-    private static Subject getSubject(HttpServletRequest request) {
+    private static Optional<Subject> getSubject(HttpServletRequest request) {
         Object object = request.getAttribute(DCACHE_SUBJECT_ATTRIBUTE);
-        return (object instanceof Subject) ? (Subject) object : null;
+        return Optional.ofNullable((object instanceof Subject) ? (Subject) object : null);
     }
 }
