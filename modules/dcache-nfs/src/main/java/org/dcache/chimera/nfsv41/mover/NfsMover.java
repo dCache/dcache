@@ -95,12 +95,18 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
 
     /**
      * Disable access with this mover. If {@code error} is not a {@code null}, the {@link
-     * CompletionHandler#failed(Throwable, A)} method will be called.
+     * CompletionHandler#failed(Throwable, Object)} method will be called.
      *
      * @param error error to report, or {@code null} on success
      */
     void disable(Throwable error) {
-        _nfsTransferService.remove(NfsMover.this);
+
+        boolean isActive = _nfsTransferService.remove(NfsMover.this);
+        if (!isActive) {
+            _log.info("Skip disabling disposed mover: {} {} - {}", getFileAttributes().getPnfsId(), getIoMode(), getStatus());
+            return;
+        }
+
         detachSession();
         try {
             getMoverChannel().close();
