@@ -27,19 +27,21 @@ import eu.emi.security.authn.x509.ProxySupport;
 import eu.emi.security.authn.x509.RevocationParameters;
 import eu.emi.security.authn.x509.X509Credential;
 import eu.emi.security.authn.x509.helpers.ssl.SSLTrustManager;
-import eu.emi.security.authn.x509.impl.KeyAndCertCredential;
 import eu.emi.security.authn.x509.impl.OpensslCertChainValidator;
 import eu.emi.security.authn.x509.impl.ValidatorParams;
 import java.io.IOException;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.security.KeyManagementException;
-import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -53,9 +55,11 @@ import org.apache.http.HttpResponse;
 import org.apache.http.ProtocolException;
 import org.apache.http.client.RedirectStrategy;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.conn.DnsResolver;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultRedirectStrategy;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.SystemDefaultDnsResolver;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpRequestExecutor;
 import org.dcache.pool.movers.MoverProtocol;
@@ -95,6 +99,20 @@ public class RemoteHttpTransferService extends SecureRemoteTransferService {
 
     @Value("${pool.mover.http-tpc.connections.max-idle.unit}")
     private TimeUnit maxIdleUnits;
+
+    /**
+     * A DnsResolver instance that prefers IPv6 over IPv4.  WLCG would like storage to use IPv6
+     * address, if available.
+     */
+    private static final DnsResolver PREFER_IPV6 = new SystemDefaultDnsResolver() {
+        @Override
+        public InetAddress[] resolve(final String host) throws UnknownHostException {
+            InetAddress[] addresses = super.resolve(host);
+            Arrays.sort(addresses, (a1, a2) -> a1 instanceof Inet6Address ? -1
+                    : a2 instanceof Inet6Address ? 1 : 0);
+            return addresses;
+        }
+    };
 
     private static final RedirectStrategy DROP_AUTHORIZATION_HEADER = new DefaultRedirectStrategy() {
 
@@ -195,6 +213,7 @@ public class RemoteHttpTransferService extends SecureRemoteTransferService {
                 .setRequestExecutor(new HttpRequestExecutor((int) EXPECT_100_TIMEOUT.toMillis()))
                 .setRedirectStrategy(DROP_AUTHORIZATION_HEADER)
                 .setSSLContext(context)
+                .setDnsResolver(PREFER_IPV6)
                 .build();
     }
 
