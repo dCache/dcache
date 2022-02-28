@@ -64,6 +64,11 @@ public class SrrResource {
 
     private boolean spaceReservationEnabled;
 
+    /**
+     * If false, then SRR requests are accepted only from loopback interface.
+     */
+    private boolean isPublic;
+
     public void setQuality(String quality) {
         this.quality = quality;
     }
@@ -86,6 +91,10 @@ public class SrrResource {
 
     public void setArchitecture(String architecture) {
         this.architecture = architecture;
+    }
+
+    public void setIsPublic(boolean isPublic) {
+        this.isPublic = isPublic;
     }
 
     public void setGroupMapping(String mapping) {
@@ -115,9 +124,11 @@ public class SrrResource {
     @Path("/")
     public Response getSrr() throws InterruptedException, CacheException, NoRouteToCellException {
 
-        InetAddress remoteAddress = InetAddresses.forString(request.getRemoteAddr());
-        if (!remoteAddress.isLoopbackAddress()) {
-            throw new ForbiddenException();
+        if (isPublic) {
+            InetAddress remoteAddress = InetAddresses.forString(request.getRemoteAddr());
+            if (!remoteAddress.isLoopbackAddress()) {
+                throw new ForbiddenException();
+            }
         }
 
         SrrRecord record = SrrBuilder.builder()
