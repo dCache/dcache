@@ -13,8 +13,8 @@ class SshOutputStream extends FilterOutputStream {
     @Override
     public void write(int c) throws IOException {
         if (c == '\n') {
-            super.write(0xa);
             super.write(0xd);
+            super.write(0xa);
         } else {
             super.write(c);
         }
