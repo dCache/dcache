@@ -358,10 +358,11 @@ public class InMemoryBulkRequestStore extends InMemoryStore
           BulkRequestStorageException {
         read.lock();
         try {
+            BulkRequestStatus status = getNonNullStatus(requestId);
             if (!isRequestSubject(subject, requestId)) {
                 throw new BulkPermissionDeniedException(requestId);
             }
-            return getNonNullStatus(requestId);
+            return status;
         } finally {
             read.unlock();
         }

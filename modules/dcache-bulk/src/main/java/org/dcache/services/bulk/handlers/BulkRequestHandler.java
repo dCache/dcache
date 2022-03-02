@@ -350,12 +350,12 @@ public class BulkRequestHandler implements BulkSubmissionHandler, BulkRequestCom
           throws BulkServiceException {
         LOGGER.trace("cancelRequest {}, {}.", subject, requestId);
 
-        if (!requestStore.isRequestSubject(subject, requestId)) {
-            throw new BulkPermissionDeniedException(requestId);
-        }
-
         if (isRequestAlreadyCleared(requestId)) {
             throw new BulkRequestNotFoundException(requestId);
+        }
+
+        if (!requestStore.isRequestSubject(subject, requestId)) {
+            throw new BulkPermissionDeniedException(requestId);
         }
 
         if (isRequestActive(requestId)) {
