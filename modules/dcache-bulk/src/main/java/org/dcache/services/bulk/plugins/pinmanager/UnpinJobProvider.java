@@ -59,9 +59,10 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.plugins.pinmanager;
 
+import static org.dcache.services.bulk.job.BulkJobArgumentDescriptor.EMPTY_DEFAULT;
 import static org.dcache.services.bulk.job.MultipleTargetJob.TargetType.FILE;
 
-import java.util.Collections;
+import com.google.common.collect.ImmutableSet;
 import java.util.Set;
 import org.dcache.services.bulk.job.BulkJobArgumentDescriptor;
 import org.dcache.services.bulk.job.BulkJobKey;
@@ -69,6 +70,14 @@ import org.dcache.services.bulk.job.BulkJobProvider;
 import org.dcache.services.bulk.job.TargetExpansionJob.ExpansionType;
 
 public class UnpinJobProvider extends BulkJobProvider<UnpinJob> {
+
+    static final BulkJobArgumentDescriptor UNPIN_REQUEST_ID
+          = new BulkJobArgumentDescriptor("id",
+          "to use for this unpin.  If empty/null, no id will be used (meaning all pins "
+                + "should be released)",
+          "string",
+          false,
+          EMPTY_DEFAULT);
 
     public UnpinJobProvider() {
         super("UNPIN", FILE, ExpansionType.BREADTH_FIRST);
@@ -86,6 +95,6 @@ public class UnpinJobProvider extends BulkJobProvider<UnpinJob> {
 
     @Override
     public Set<BulkJobArgumentDescriptor> getArguments() {
-        return Collections.EMPTY_SET;
+        return ImmutableSet.of(UNPIN_REQUEST_ID);
     }
 }

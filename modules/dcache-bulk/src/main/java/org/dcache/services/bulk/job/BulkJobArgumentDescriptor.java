@@ -67,6 +67,7 @@ import com.google.common.base.Objects;
  * Metadata for optional argument to a bulk job.
  */
 public class BulkJobArgumentDescriptor {
+    public static final String EMPTY_DEFAULT = "empty";
 
     private final String name;
     private final String description;
@@ -90,6 +91,9 @@ public class BulkJobArgumentDescriptor {
         if (!required) {
             requireNonNull(defaultValue, "default value "
                   + "must be provided if arg is not required.");
+            if (defaultValue.equals(EMPTY_DEFAULT)) {
+                defaultValue = null;
+            }
             this.defaultValue = defaultValue;
         } else {
             this.defaultValue = null;

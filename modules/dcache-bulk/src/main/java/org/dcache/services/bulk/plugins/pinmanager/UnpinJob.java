@@ -59,6 +59,9 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.plugins.pinmanager;
 
+
+import static org.dcache.services.bulk.plugins.pinmanager.UnpinJobProvider.UNPIN_REQUEST_ID;
+
 import org.dcache.pinmanager.PinManagerUnpinMessage;
 import org.dcache.services.bulk.job.BulkJobKey;
 
@@ -70,6 +73,9 @@ public class UnpinJob extends PinManagerJob {
 
     @Override
     protected void doRun() {
-        sendToPinManager(new PinManagerUnpinMessage(attributes.getPnfsId()));
+        String id = arguments == null ? null : arguments.get(UNPIN_REQUEST_ID.getName());
+        PinManagerUnpinMessage message = new PinManagerUnpinMessage(attributes.getPnfsId());
+        message.setRequestId(id);
+        sendToPinManager(message);
     }
 }

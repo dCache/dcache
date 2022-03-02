@@ -61,6 +61,7 @@ package org.dcache.services.bulk.plugins.pinmanager;
 
 import static org.dcache.services.bulk.plugins.pinmanager.PinJobProvider.LIFETIME;
 import static org.dcache.services.bulk.plugins.pinmanager.PinJobProvider.LIFETIME_UNIT;
+import static org.dcache.services.bulk.plugins.pinmanager.PinJobProvider.PIN_REQUEST_ID;
 
 import diskCacheV111.vehicles.HttpProtocolInfo;
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -102,8 +103,12 @@ public class PinJob extends PinManagerJob {
     protected void doRun() {
         long lifetime = getLifetime(arguments);
         try {
+            String requestId =  arguments == null ? null : arguments.get(PIN_REQUEST_ID.getName());
+            if (requestId == null) {
+                requestId = key.getRequestId();
+            }
             PinManagerPinMessage message
-                  = new PinManagerPinMessage(attributes, getProtocolInfo(), null, lifetime);
+                  = new PinManagerPinMessage(attributes, getProtocolInfo(),requestId, lifetime);
             sendToPinManager(message);
         } catch (URISyntaxException e) {
             setError(e);
