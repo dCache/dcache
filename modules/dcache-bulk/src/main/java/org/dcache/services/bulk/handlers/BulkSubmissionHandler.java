@@ -84,6 +84,14 @@ public interface BulkSubmissionHandler {
           throws BulkServiceException;
 
     /**
+     * Unrecoverable internal failure. Mark the request as terminated.
+     *
+     * @param requestId unique identifier
+     */
+    void abortRequest(String requestId)
+          throws BulkServiceException;
+
+    /**
      * Services request (from user) to (cancel) the request.
      *
      * @param subject   of the user.

@@ -170,6 +170,15 @@ public class BulkRequestJob extends MultipleTargetJob
 
     protected void postCompletion() {
         completionHandler.requestProcessingFinished(key.getJobId());
+
+        if (completionHandler.isRequestCompleted()) {
+            try {
+                submissionHandler.abortRequest(key.getRequestId());
+            } catch (BulkServiceException e) {
+                LOGGER.error("RequestJob, postCompletion() for {}: {}.", key.getRequestId(),
+                      e.getMessage());
+            }
+        }
     }
 
     private void handleDirectory(String target, FileAttributes attributes)
