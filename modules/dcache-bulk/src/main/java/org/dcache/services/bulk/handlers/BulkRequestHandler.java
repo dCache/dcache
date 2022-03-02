@@ -73,6 +73,7 @@ import org.dcache.services.bulk.BulkRequest;
 import org.dcache.services.bulk.BulkRequestNotFoundException;
 import org.dcache.services.bulk.BulkRequestStatus;
 import org.dcache.services.bulk.BulkRequestStatus.Status;
+import org.dcache.services.bulk.BulkRequestStorageException;
 import org.dcache.services.bulk.BulkServiceException;
 import org.dcache.services.bulk.BulkStorageException;
 import org.dcache.services.bulk.job.BulkJob;
@@ -134,6 +135,11 @@ public class BulkRequestHandler implements BulkSubmissionHandler, BulkRequestCom
         queue.signal();
 
         statistics.incrementJobsAborted();
+    }
+
+    public synchronized void abortRequest(String requestId) throws BulkRequestStorageException {
+        requestStore.update(requestId, COMPLETED);
+        statistics.incrementRequestsCompleted();
     }
 
     @Override
@@ -228,7 +234,6 @@ public class BulkRequestHandler implements BulkSubmissionHandler, BulkRequestCom
             statistics.incrementJobsCompleted();
         }
     }
-
 
     @Required
     public void setCallbackExecutorService(ExecutorService service) {
