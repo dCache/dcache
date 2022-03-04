@@ -54,15 +54,13 @@ findJava()
 
 isJavaVersionOk()
 {
-    version=$($JAVA -version 2>&1)
-    case $version in
-        *1[1-9]*)
-            return 0
-            ;;
-        *)
-            return 1
-            ;;
-    esac
+    version=$($JAVA -version 2>&1 | awk -F '"' '/version/ {print $2}')
+    # Should match 11-19, which will let java major versions 11 to 19 through.
+    if [[ $version =~ ^1[1-9](.*)?$ ]]; then
+      return 0
+    else
+      return 1
+    fi
 }
 
 bootLoader()
