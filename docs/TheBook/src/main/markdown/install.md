@@ -2338,7 +2338,7 @@ Next, we need to update gPlazma configuration to extract the
 distinguished name (DN) from the X.509 certificate issued by one of
 the trusted CAs.
 
-To do this, update the `/etc/dcache/glazma.conf` file, adding the line
+To do this, update the `/etc/dcache/gplazma.conf` file, adding the line
 `auth optional x509`.  The resulting file should look like
 
 ```
