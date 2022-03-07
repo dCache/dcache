@@ -85,12 +85,11 @@ public class MessageReplyTest {
 
         messageReply.deliver(endpoint, envelope);
 
-        long timeToLive = envelope.getTtl();
-        long increasedLifetime = timeToLive + TimeUnit.SECONDS.toMillis(1);
-        long newTimeToLive = increasedLifetime < timeToLive ? Long.MAX_VALUE : increasedLifetime;
+        long ttl = TimeUnit.HOURS.toMillis(1);
+        envelope.setTtl(ttl);
 
-        envelope.setTtl(newTimeToLive);
-        assertTrue(messageReply.isValidIn(timeToLive));
+        long delay = TimeUnit.MINUTES.toMillis(5);
+        assertTrue(messageReply.isValidIn(ttl - delay));
     }
 
     @Test
@@ -101,12 +100,11 @@ public class MessageReplyTest {
 
         messageReply.deliver(endpoint, envelope);
 
-        long timeToLive = envelope.getTtl();
-        long decreasedLifetime = timeToLive - TimeUnit.SECONDS.toMillis(1);
-        long newTimeToLive = decreasedLifetime < 0 ? 0 : decreasedLifetime;
+        long ttl = TimeUnit.HOURS.toMillis(1);
+        envelope.setTtl(ttl);
 
-        envelope.setTtl(newTimeToLive);
-        assertFalse(messageReply.isValidIn(timeToLive));
+        long delay = TimeUnit.MINUTES.toMillis(5);
+        assertFalse(messageReply.isValidIn(ttl + delay));
     }
 
     @Test
