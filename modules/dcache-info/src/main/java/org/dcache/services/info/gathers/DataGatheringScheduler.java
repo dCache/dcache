@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.util.NDC;
@@ -30,7 +31,6 @@ import org.springframework.beans.factory.annotation.Required;
 
 public class DataGatheringScheduler implements Runnable, EnvironmentAware, CellLifeCycleAware {
 
-    private static final long FIVE_MINUTES = 5 * 60 * 1000;
     private static final Logger LOGGER_SCHED = LoggerFactory.getLogger(
           DataGatheringScheduler.class);
     private static final Logger LOGGER_RA = LoggerFactory.getLogger(RegisteredActivity.class);
@@ -75,8 +75,7 @@ public class DataGatheringScheduler implements Runnable, EnvironmentAware, CellL
          * Create a new PeriodicActvity, with specified DataGatheringActivity, that is triggered
          * with a fixed period.  The initial delay is a randomly chosen fraction of the period.
          *
-         * @param dga    the DataGatheringActivity to be triggered periodically
-         * @param period the period between successive triggering in milliseconds.
+         * @param dga the DataGatheringActivity to be triggered periodically
          */
         RegisteredActivity(Schedulable dga) {
             _dga = dga;
@@ -86,15 +85,13 @@ public class DataGatheringScheduler implements Runnable, EnvironmentAware, CellL
 
         /**
          * Try to make sure we don't hit the system with lots of queries at the same time
-         *
-         * @param period
          */
         private void updateNextTrigger() {
             Date nextTrigger = _dga.shouldNextBeTriggered();
 
             if (nextTrigger == null) {
                 LOGGER_RA.error("registered dga returned null Date");
-                nextTrigger = new Date(System.currentTimeMillis() + FIVE_MINUTES);
+                nextTrigger = new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(5));
             } else {
                 // Safety!  Check we wont trigger too quickly
                 if (nextTrigger.getTime() - System.currentTimeMillis() < MINIMUM_DGA_DELAY) {
@@ -149,9 +146,9 @@ public class DataGatheringScheduler implements Runnable, EnvironmentAware, CellL
         }
 
         /**
-         * Return the time this will be next triggered.
+         * Return the next time the DataGatheringActivity will be triggered.
          *
-         * @return
+         * @return the next time the DataGatheringActivity will be triggered.
          */
         long getNextTriggered() {
             return _nextTriggered.getTime();
@@ -435,7 +432,7 @@ public class DataGatheringScheduler implements Runnable, EnvironmentAware, CellL
     /**
      * Return a human-readable list of known activity.
      *
-     * @return
+     * @return a human-readable list of known activity.
      */
     public List<String> listActivity() {
         List<String> activityList = new ArrayList<>();

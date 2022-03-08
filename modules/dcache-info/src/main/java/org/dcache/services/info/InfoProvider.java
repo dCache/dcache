@@ -469,7 +469,7 @@ public class InfoProvider implements CellCommandListener, CellInfoProvider,
      * @param cwd  current path
      * @param path description of new path
      * @return a new path, or null if the path is root
-     * @throws BadPathException if the relative path is impossible.
+     * @throws BadStatePathException if the relative path is impossible.
      */
     private StatePath processPath(StatePath cwd, String path) throws BadStatePathException {
         String[] pathElements;
