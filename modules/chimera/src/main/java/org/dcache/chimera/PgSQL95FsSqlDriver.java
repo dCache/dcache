@@ -19,7 +19,9 @@ package org.dcache.chimera;
 import com.google.common.base.Throwables;
 import java.io.File;
 import java.net.SocketException;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,7 +36,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.dao.IncorrectUpdateSemanticsDataAccessException;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 
 /**
  * PostgreSQL 9.5 and later specific
@@ -310,6 +315,61 @@ public class PgSQL95FsSqlDriver extends FsSqlDriver {
                   ps.setTimestamp(6, now);
                   ps.setInt(7, 1); // online
               });
+    }
+
+
+    /**
+     * Attache a given label to  a given file system object.
+     *
+     * @param inode     file system object.
+     * @param labelname label name.
+     * @throws ChimeraFsException
+     */
+    void addLabel(FsInode inode, String labelname) throws ChimeraFsException {
+
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        try {
+
+            int n = _jdbc.update(
+                  con -> {
+                      PreparedStatement ps = con.prepareStatement(
+                            "INSERT INTO t_labels ( labelname) VALUES (?)"
+                                  + "ON CONFLICT ON CONSTRAINT labelname DO NOTHING",
+                            Statement.RETURN_GENERATED_KEYS);
+                      ps.setString(1, labelname);
+
+                      return ps;
+                  }, keyHolder);
+            if (n != 0) {
+                Long label_id = (Long) keyHolder.getKeys().get("label_id");
+
+                _jdbc.update("INSERT INTO t_labels_ref (label_id, inumber) VALUES (?,?)",
+                      label_id, inode.ino());
+
+            } else {
+
+
+                Long label_id = getLabel(labelname);
+
+                _jdbc.update(
+                      "INSERT INTO t_labels_ref (label_id, inumber) (SELECT * FROM (VALUES (?,?)) "
+                            + "ON CONFLICT ON CONSTRAINT i_label_pkey DO NOTHING",
+
+                      ps -> {
+                          ps.setLong(1, label_id);
+                          ps.setLong(2, inode.ino());
+                          ps.setLong(3, label_id);
+                          ps.setLong(4, inode.ino());
+
+                      });
+
+
+            }
+
+        } catch (EmptyResultDataAccessException e) {
+            throw new NoLabelChimeraException(labelname);
+        }
+
     }
 
     @Override
