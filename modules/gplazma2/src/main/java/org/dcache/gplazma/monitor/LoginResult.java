@@ -64,6 +64,14 @@ public class LoginResult {
     }
 
     /**
+     * Query whether the user was successfully logged in.
+     * @return true if (and only if) the login was successful.
+     */
+    public boolean isSuccessful() {
+        return _validationHasHappened && _validationResult == Result.SUCCESS;
+    }
+
+    /**
      * Returns whether gPlazma started processing the login request represent by this LoginResult
      * object.
      * <p>
