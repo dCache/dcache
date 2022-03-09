@@ -57,83 +57,47 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.qos.util;
+package org.dcache.qos.services.verifier.data;
 
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.concurrent.Callable;
+import java.util.function.Predicate;
+import org.dcache.qos.data.QoSAction;
+import org.dcache.qos.services.verifier.data.db.VerifyOperationDao;
+import org.dcache.qos.services.verifier.data.db.VerifyOperationDao.VerifyOperationCriterion;
+import org.dcache.qos.services.verifier.data.db.VerifyOperationDao.VerifyOperationUpdate;
 
 /**
- * Base command class for the admin interfaces.  Will notify when the service is not initialized.
+ * Filter used specifically with cancel operations.
  */
-public abstract class InitializerAwareCommand implements Callable<String> {
+public final class VerifyOperationCancelFilter {
 
-    protected static final String FORMAT_STRING = "yyyy/MM/dd-HH:mm:ss";
+    private final VerifyOperationFilter filter;
+    private final boolean remove;
 
-    protected static final String REQUIRE_LIMIT =
-          "The current table contains %s entries; listing them all "
-                + "could cause an out-of-memory error and "
-                + "cause the resilience system to fail and/or "
-                + "restarts; if you wish to proceed "
-                + "with this listing, reissue the command "
-                + "with the explicit option '-limit=%s'";
+    public VerifyOperationCancelFilter(VerifyOperationFilter filter, boolean remove) {
+        this.filter = filter;
+        this.remove = remove;
+    }
 
-    /**
-     * Represents the maximum on the number of lines that a list command in the admin interface can
-     * output without displaying a warning and requiring confirmation from the user (since it could
-     * potentially cause an out-of-memory error and take down the admin cell).
-     */
-    protected static final long LS_THRESHOLD = 500000L;
-
-    protected static final DateTimeFormatter DATE_FORMATTER
-          = DateTimeFormatter.ofPattern(FORMAT_STRING).withZone(ZoneId.systemDefault());
-
-    public static Long getTimestamp(String datetime) {
-        if (datetime == null) {
-            return null;
+    public VerifyOperationUpdate getUpdate(VerifyOperationDao dao) {
+        VerifyOperationUpdate update = dao.set().state(VerifyOperationState.CANCELED);
+        if (remove) {
+            /*
+             *  Only if the operation is voided will it be removed.
+             */
+            update.action(QoSAction.VOID);
         }
-        return Instant.from(DATE_FORMATTER.parse(datetime)).toEpochMilli();
+        return update;
     }
 
-    public enum ControlMode {
-        ON,
-        OFF,
-        START,
-        SHUTDOWN,
-        RESET,
-        RUN,
-        INFO
+    public VerifyOperationCriterion getCriterion(VerifyOperationDao dao) {
+        return filter.toCriterion(dao);
     }
 
-    public enum SortOrder {
-        ASC, DESC
+    public Predicate<VerifyOperation> getPredicate() {
+        return filter.toPredicate();
     }
 
-    private MapInitializer initializer;
-
-    protected InitializerAwareCommand(MapInitializer initializer) {
-        this.initializer = initializer;
+    public boolean shouldRemove() {
+        return remove;
     }
-
-    @Override
-    public String call() {
-        String error = initializer.getInitError();
-
-        if (error != null) {
-            return error;
-        }
-
-        if (!initializer.isInitialized()) {
-            return "Service is not yet initialized; use 'show pinboard' to see progress.";
-        }
-
-        try {
-            return doCall();
-        } catch (Exception e) {
-            return new ExceptionMessage(e).toString();
-        }
-    }
-
-    protected abstract String doCall() throws Exception;
 }

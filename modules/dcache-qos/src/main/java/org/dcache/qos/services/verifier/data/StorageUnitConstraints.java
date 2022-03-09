@@ -57,83 +57,73 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.qos.util;
+package org.dcache.qos.services.verifier.data;
 
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.concurrent.Callable;
+import com.google.common.collect.ImmutableSet;
+import java.util.Collection;
+import java.util.Objects;
+import java.util.Set;
 
 /**
- * Base command class for the admin interfaces.  Will notify when the service is not initialized.
+ * Encapsulates the constraints defined for a storage unit. These include the number of copies
+ * required, and how they are to be distributed according to pool tags.
  */
-public abstract class InitializerAwareCommand implements Callable<String> {
+public final class StorageUnitConstraints {
 
-    protected static final String FORMAT_STRING = "yyyy/MM/dd-HH:mm:ss";
-
-    protected static final String REQUIRE_LIMIT =
-          "The current table contains %s entries; listing them all "
-                + "could cause an out-of-memory error and "
-                + "cause the resilience system to fail and/or "
-                + "restarts; if you wish to proceed "
-                + "with this listing, reissue the command "
-                + "with the explicit option '-limit=%s'";
-
-    /**
-     * Represents the maximum on the number of lines that a list command in the admin interface can
-     * output without displaying a warning and requiring confirmation from the user (since it could
-     * potentially cause an out-of-memory error and take down the admin cell).
+    /*
+     *   The number of copies which should be maintained.
      */
-    protected static final long LS_THRESHOLD = 500000L;
+    private final Integer required;
 
-    protected static final DateTimeFormatter DATE_FORMATTER
-          = DateTimeFormatter.ofPattern(FORMAT_STRING).withZone(ZoneId.systemDefault());
+    /*
+     *  Copies should be distributed across pools in such a way that no two copies have
+     * the same values for a given tag.
+     */
+    private final ImmutableSet<String> oneCopyPer;
 
-    public static Long getTimestamp(String datetime) {
-        if (datetime == null) {
-            return null;
+    public StorageUnitConstraints(Integer required, Collection<String> oneCopyPer) {
+        this.required = required;
+        if (oneCopyPer == null) {
+            this.oneCopyPer = ImmutableSet.of();
+        } else {
+            this.oneCopyPer = ImmutableSet.copyOf(oneCopyPer);
         }
-        return Instant.from(DATE_FORMATTER.parse(datetime)).toEpochMilli();
-    }
-
-    public enum ControlMode {
-        ON,
-        OFF,
-        START,
-        SHUTDOWN,
-        RESET,
-        RUN,
-        INFO
-    }
-
-    public enum SortOrder {
-        ASC, DESC
-    }
-
-    private MapInitializer initializer;
-
-    protected InitializerAwareCommand(MapInitializer initializer) {
-        this.initializer = initializer;
     }
 
     @Override
-    public String call() {
-        String error = initializer.getInitError();
-
-        if (error != null) {
-            return error;
+    public boolean equals(Object other) {
+        if (!(other instanceof StorageUnitConstraints)) {
+            return false;
         }
 
-        if (!initializer.isInitialized()) {
-            return "Service is not yet initialized; use 'show pinboard' to see progress.";
-        }
+        StorageUnitConstraints otherConstraints = (StorageUnitConstraints) other;
 
-        try {
-            return doCall();
-        } catch (Exception e) {
-            return new ExceptionMessage(e).toString();
-        }
+        return Objects.equals(required, otherConstraints.required)
+              && this.oneCopyPer.equals(otherConstraints.oneCopyPer);
     }
 
-    protected abstract String doCall() throws Exception;
+    @Override
+    public int hashCode() {
+        return Objects.hash(required, oneCopyPer);
+    }
+
+    public Set<String> getOneCopyPer() {
+        return oneCopyPer;
+    }
+
+    public int getRequired() {
+        if (required == null) {
+            return 0;
+        }
+        return required;
+    }
+
+    public boolean hasRequirement() {
+        return required != null && required != 0;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("(required %s)(oneCopyPer %s)", required, oneCopyPer);
+    }
 }
