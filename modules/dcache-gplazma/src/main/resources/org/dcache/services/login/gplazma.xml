@@ -43,10 +43,28 @@
     <constructor-arg ref="pnfs-handler"/>
   </bean>
 
-  <bean id="login-strategy" class="org.dcache.auth.Gplazma2LoginStrategy" init-method="init" destroy-method="shutdown">
+  <bean id="propertyFactory" class="org.dcache.auth.PropertyFactory"/>
+
+  <bean id="gplazma" class="org.dcache.gplazma.GPlazma"
+	destroy-method="shutdown">
+    <constructor-arg>
+      <bean class="org.dcache.gplazma.configuration.FromFileConfigurationLoadingStrategy">
+	<constructor-arg value="${gplazma.configuration.file}"/>
+      </bean>
+    </constructor-arg>
+    <constructor-arg>
+      <bean factory-bean="propertyFactory" factory-method="build"/>
+    </constructor-arg>
+    <constructor-arg>
+      <bean class="org.dcache.gplazma.loader.DcacheAwarePluginFactory">
+	<constructor-arg ref="namespace"/>
+      </bean>
+    </constructor-arg>
+  </bean>
+
+  <bean id="login-strategy" class="org.dcache.auth.Gplazma2LoginStrategy">
     <description>Interfaces with gPlazma</description>
-    <property name="configurationFile" value="${gplazma.configuration.file}"/>
-    <property name="nameSpace" ref="namespace"/>
+    <property name="gplazma" ref="gplazma"/>
     <property name="uploadPath" value="${gplazma.authz.upload-directory}"/>
   </bean>
 </beans>

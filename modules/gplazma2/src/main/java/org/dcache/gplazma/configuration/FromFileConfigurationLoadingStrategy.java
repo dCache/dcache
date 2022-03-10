@@ -1,5 +1,6 @@
 package org.dcache.gplazma.configuration;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import java.io.File;
 import java.util.concurrent.TimeUnit;
 import org.dcache.gplazma.configuration.parser.ConfigurationParser;
@@ -23,12 +24,14 @@ public class FromFileConfigurationLoadingStrategy
     private long configurationFileLastModified;
     private long configurationFileLastChecked;
 
-    public FromFileConfigurationLoadingStrategy(File configurationFile) {
-        this.configurationFile = configurationFile;
-    }
-
     public FromFileConfigurationLoadingStrategy(String configurationFileName) {
-        this(new File(configurationFileName));
+        checkArgument(configurationFileName != null && !configurationFileName.isBlank(),
+                  "configuration file argument wasn't specified correctly");
+
+        configurationFile = new File(configurationFileName);
+
+        checkArgument(configurationFile.exists(),
+                  "configuration file does not exists at %s", configurationFileName);
     }
 
     /**
