@@ -521,6 +521,14 @@ public interface FileSystemProvider extends Closeable {
      */
     Set<String> getLabels(FsInode inode) throws ChimeraFsException;
 
+    /**
+     * Retrieve an array of all existing labels.
+     *
+     * @throws ChimeraFsException
+     */
+    Set<String> listLabels() throws ChimeraFsException;
+
+
 
     /**
      * Delete a given  labels of a given file system object.

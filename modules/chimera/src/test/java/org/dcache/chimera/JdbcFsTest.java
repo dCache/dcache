@@ -1530,6 +1530,34 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
 
     }
 
+
+    @Test
+    public void testlistLabels() throws Exception {
+
+        FsInode dir = _fs.mkdir("/test");
+        FsInode inode = _fs.createFile(dir, "aFile");
+
+        Collection<String> labels = new ArrayList<String>();
+        labels.add("cat");
+        labels.add("dog");
+        labels.add("green");
+        labels.add("yellow");
+
+        labels.stream().forEach(category -> {
+            try {
+                _fs.addLabel(inode, category);
+            } catch (ChimeraFsException e) {
+                e.printStackTrace();
+            }
+        });
+
+        Collection<String> labelsSet = _fs.listLabels();
+
+        assertEquals("Unexpected number of attributes", labels.size(), labelsSet.size());
+
+
+    }
+
     @Test
     public void testaddLabelsExist() throws Exception {
 

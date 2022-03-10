@@ -1996,6 +1996,23 @@ public class FsSqlDriver {
               }, labelname);
 
     }
+
+    /**
+     * Retrieve an array of all existing labels.
+     *
+     * @return a set of labels.
+     * @throws ChimeraFsException
+     */
+    Set<String> listLabels() throws ChimeraFsException {
+        Set<String> names = new HashSet<>();
+        _jdbc.query("SELECT labelname FROM t_labels",
+              (rs) -> {
+                  String name = rs.getString("labelname");
+                  names.add(name);
+              });
+        return names;
+    }
+
     /**
      * Attache a given label to  a given file system object.
      *

@@ -1509,6 +1509,12 @@ public class JdbcFs implements FileSystemProvider {
 
 
     @Override
+    public Set<String> listLabels() throws ChimeraFsException {
+        return inTransaction(status -> _sqlDriver.listLabels());
+    }
+
+
+    @Override
     public void addLabel(FsInode inode, String labelname) throws ChimeraFsException {
         inTransaction(status -> {
             try {
