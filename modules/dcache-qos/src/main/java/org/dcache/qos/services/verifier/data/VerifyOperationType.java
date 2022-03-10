@@ -57,83 +57,28 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.qos.util;
+package org.dcache.qos.services.verifier.data;
 
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.concurrent.Callable;
+import org.dcache.qos.data.PoolQoSStatus;
 
 /**
- * Base command class for the admin interfaces.  Will notify when the service is not initialized.
+ * Operation types which have a bearing on verification behavior.
  */
-public abstract class InitializerAwareCommand implements Callable<String> {
+public enum VerifyOperationType {
+    FILE,
+    POOL_SCAN_DOWN,
+    POOL_SCAN_ACTIVE;
 
-    protected static final String FORMAT_STRING = "yyyy/MM/dd-HH:mm:ss";
-
-    protected static final String REQUIRE_LIMIT =
-          "The current table contains %s entries; listing them all "
-                + "could cause an out-of-memory error and "
-                + "cause the resilience system to fail and/or "
-                + "restarts; if you wish to proceed "
-                + "with this listing, reissue the command "
-                + "with the explicit option '-limit=%s'";
-
-    /**
-     * Represents the maximum on the number of lines that a list command in the admin interface can
-     * output without displaying a warning and requiring confirmation from the user (since it could
-     * potentially cause an out-of-memory error and take down the admin cell).
-     */
-    protected static final long LS_THRESHOLD = 500000L;
-
-    protected static final DateTimeFormatter DATE_FORMATTER
-          = DateTimeFormatter.ofPattern(FORMAT_STRING).withZone(ZoneId.systemDefault());
-
-    public static Long getTimestamp(String datetime) {
-        if (datetime == null) {
-            return null;
-        }
-        return Instant.from(DATE_FORMATTER.parse(datetime)).toEpochMilli();
-    }
-
-    public enum ControlMode {
-        ON,
-        OFF,
-        START,
-        SHUTDOWN,
-        RESET,
-        RUN,
-        INFO
-    }
-
-    public enum SortOrder {
-        ASC, DESC
-    }
-
-    private MapInitializer initializer;
-
-    protected InitializerAwareCommand(MapInitializer initializer) {
-        this.initializer = initializer;
-    }
-
-    @Override
-    public String call() {
-        String error = initializer.getInitError();
-
-        if (error != null) {
-            return error;
+    public static VerifyOperationType get(PoolQoSStatus status) {
+        if (status == null) {
+            return FILE;
         }
 
-        if (!initializer.isInitialized()) {
-            return "Service is not yet initialized; use 'show pinboard' to see progress.";
-        }
-
-        try {
-            return doCall();
-        } catch (Exception e) {
-            return new ExceptionMessage(e).toString();
+        switch (status) {
+            case DOWN:
+                return POOL_SCAN_DOWN;
+            default:
+                return POOL_SCAN_ACTIVE;
         }
     }
-
-    protected abstract String doCall() throws Exception;
 }

@@ -57,83 +57,20 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.qos.util;
-
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.concurrent.Callable;
+package org.dcache.qos.services.verifier.data;
 
 /**
- * Base command class for the admin interfaces.  Will notify when the service is not initialized.
+ * Whether the pool group has been marked 'primary' ('resilient').
  */
-public abstract class InitializerAwareCommand implements Callable<String> {
+public final class PrimaryGroupMarker {
 
-    protected static final String FORMAT_STRING = "yyyy/MM/dd-HH:mm:ss";
+    private boolean primary;
 
-    protected static final String REQUIRE_LIMIT =
-          "The current table contains %s entries; listing them all "
-                + "could cause an out-of-memory error and "
-                + "cause the resilience system to fail and/or "
-                + "restarts; if you wish to proceed "
-                + "with this listing, reissue the command "
-                + "with the explicit option '-limit=%s'";
-
-    /**
-     * Represents the maximum on the number of lines that a list command in the admin interface can
-     * output without displaying a warning and requiring confirmation from the user (since it could
-     * potentially cause an out-of-memory error and take down the admin cell).
-     */
-    protected static final long LS_THRESHOLD = 500000L;
-
-    protected static final DateTimeFormatter DATE_FORMATTER
-          = DateTimeFormatter.ofPattern(FORMAT_STRING).withZone(ZoneId.systemDefault());
-
-    public static Long getTimestamp(String datetime) {
-        if (datetime == null) {
-            return null;
-        }
-        return Instant.from(DATE_FORMATTER.parse(datetime)).toEpochMilli();
+    PrimaryGroupMarker(boolean primary) {
+        this.primary = primary;
     }
 
-    public enum ControlMode {
-        ON,
-        OFF,
-        START,
-        SHUTDOWN,
-        RESET,
-        RUN,
-        INFO
+    public boolean isPrimary() {
+        return primary;
     }
-
-    public enum SortOrder {
-        ASC, DESC
-    }
-
-    private MapInitializer initializer;
-
-    protected InitializerAwareCommand(MapInitializer initializer) {
-        this.initializer = initializer;
-    }
-
-    @Override
-    public String call() {
-        String error = initializer.getInitError();
-
-        if (error != null) {
-            return error;
-        }
-
-        if (!initializer.isInitialized()) {
-            return "Service is not yet initialized; use 'show pinboard' to see progress.";
-        }
-
-        try {
-            return doCall();
-        } catch (Exception e) {
-            return new ExceptionMessage(e).toString();
-        }
-    }
-
-    protected abstract String doCall() throws Exception;
 }

@@ -57,83 +57,97 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.qos.util;
+package org.dcache.qos.services.verifier.data;
 
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.concurrent.Callable;
+import diskCacheV111.util.PnfsId;
+import java.util.Collection;
+import java.util.Map;
+import org.dcache.util.SignalAware;
 
 /**
- * Base command class for the admin interfaces.  Will notify when the service is not initialized.
+ * Defines interactions with the operation delegate which are in addition to its support of the
+ * VerifyOperationMap interface.
  */
-public abstract class InitializerAwareCommand implements Callable<String> {
-
-    protected static final String FORMAT_STRING = "yyyy/MM/dd-HH:mm:ss";
-
-    protected static final String REQUIRE_LIMIT =
-          "The current table contains %s entries; listing them all "
-                + "could cause an out-of-memory error and "
-                + "cause the resilience system to fail and/or "
-                + "restarts; if you wish to proceed "
-                + "with this listing, reissue the command "
-                + "with the explicit option '-limit=%s'";
+public interface VerifyOperationDelegate extends VerifyOperationMap {
 
     /**
-     * Represents the maximum on the number of lines that a list command in the admin interface can
-     * output without displaying a warning and requiring confirmation from the user (since it could
-     * potentially cause an out-of-memory error and take down the admin cell).
+     * @return counts listed according to the filter. This should return the full stored numbers,
+     * not just those held in memory.
      */
-    protected static final long LS_THRESHOLD = 500000L;
+    Map<String, Long> aggregateCounts(String classifier);
 
-    protected static final DateTimeFormatter DATE_FORMATTER
-          = DateTimeFormatter.ofPattern(FORMAT_STRING).withZone(ZoneId.systemDefault());
+    /**
+     * @return the number of unoccupied running slots.
+     */
+    int available();
 
-    public static Long getTimestamp(String datetime) {
-        if (datetime == null) {
-            return null;
-        }
-        return Instant.from(DATE_FORMATTER.parse(datetime)).toEpochMilli();
-    }
+    /**
+     * @param callback to signal when significant changes take place to the internal data
+     *                 structures.
+     */
+    VerifyOperationDelegate callback(SignalAware callback);
 
-    public enum ControlMode {
-        ON,
-        OFF,
-        START,
-        SHUTDOWN,
-        RESET,
-        RUN,
-        INFO
-    }
+    /**
+     * @return maximum cache size.
+     */
+    int capacity();
 
-    public enum SortOrder {
-        ASC, DESC
-    }
+    /**
+     * @return maximum number of operations that can be concurrently in the RUNNING state.
+     */
+    int maxRunning();
 
-    private MapInitializer initializer;
+    /**
+     * @return the next available operation (in the READY state).
+     */
+    VerifyOperation next();
 
-    protected InitializerAwareCommand(MapInitializer initializer) {
-        this.initializer = initializer;
-    }
+    /**
+     * Called on startup.  This may or may not populate the cache, depending on implementation.
+     */
+    void reload();
 
-    @Override
-    public String call() {
-        String error = initializer.getInitError();
+    /**
+     * Remove the operation from any in memory caches and from including any backing persistence.
+     *
+     * @param pnfsId of the operation.
+     */
+    void remove(PnfsId pnfsId);
 
-        if (error != null) {
-            return error;
-        }
+    /**
+     * Delete the operation from the backing persistence.
+     *
+     * @param filter describing the operations to match.
+     */
+    void remove(VerifyOperationCancelFilter filter);
 
-        if (!initializer.isInitialized()) {
-            return "Service is not yet initialized; use 'show pinboard' to see progress.";
-        }
+    /**
+     * Call reset on the operation and update the cache.  Write through changes if there is
+     * persistence.
+     *
+     * @param operation to reset.
+     * @param retry     true if the operation failed and is being retried.
+     */
+    void resetOperation(VerifyOperation operation, boolean retry);
 
-        try {
-            return doCall();
-        } catch (Exception e) {
-            return new ExceptionMessage(e).toString();
-        }
-    }
+    /**
+     * @return the number of operations currently in the RUNNING state.
+     */
+    int running();
 
-    protected abstract String doCall() throws Exception;
+    /**
+     * @return operations whose current phase has been terminated (DONE, FAILED, CANCELED). Note
+     * that this method need not return all currently terminated operations (it may be implemented
+     * with a limit to protect against memory bloat). Operations should be ordered by natural
+     * ordering.
+     */
+    Collection<VerifyOperation> terminated();
+
+    /**
+     * Special update which just changes the state of the operation.
+     *
+     * @param operation
+     * @param state     to be updated to.
+     */
+    void updateOperation(VerifyOperation operation, VerifyOperationState state);
 }

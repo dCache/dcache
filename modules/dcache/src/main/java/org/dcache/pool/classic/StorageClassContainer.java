@@ -195,6 +195,13 @@ public class StorageClassContainer
         _storageHandler.flush(hsm, Collections.singleton(pnfsId), callback);
     }
 
+    /**
+     * Trigger up to specified number of storage classes to flush. The storage class to flush is depends
+     * on {@code order} parameter.
+     * @param maxActive the maximum number of storage classes that may be active at any time.
+     * @param retryDelayOnError time delay in milliseconds before retrying failed requests
+     * @param order storage class selection order
+     */
     public void flushAll(int maxActive, long retryDelayOnError, Order order) {
         long now = System.currentTimeMillis();
         Map<Boolean, List<StorageClassInfo>> classes =

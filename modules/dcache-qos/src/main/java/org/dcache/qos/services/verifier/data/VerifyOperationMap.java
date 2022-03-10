@@ -57,83 +57,93 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.qos.util;
+package org.dcache.qos.services.verifier.data;
 
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.concurrent.Callable;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
+import org.dcache.qos.data.FileQoSUpdate;
+import org.dcache.qos.vehicles.QoSAdjustmentRequest;
 
 /**
- * Base command class for the admin interfaces.  Will notify when the service is not initialized.
+ * Defines interactions with the core mapping of verify operations.
  */
-public abstract class InitializerAwareCommand implements Callable<String> {
-
-    protected static final String FORMAT_STRING = "yyyy/MM/dd-HH:mm:ss";
-
-    protected static final String REQUIRE_LIMIT =
-          "The current table contains %s entries; listing them all "
-                + "could cause an out-of-memory error and "
-                + "cause the resilience system to fail and/or "
-                + "restarts; if you wish to proceed "
-                + "with this listing, reissue the command "
-                + "with the explicit option '-limit=%s'";
+public interface VerifyOperationMap {
 
     /**
-     * Represents the maximum on the number of lines that a list command in the admin interface can
-     * output without displaying a warning and requiring confirmation from the user (since it could
-     * potentially cause an out-of-memory error and take down the admin cell).
+     * @param filter based on parameters set by user.
      */
-    protected static final long LS_THRESHOLD = 500000L;
+    void cancel(VerifyOperationCancelFilter filter);
 
-    protected static final DateTimeFormatter DATE_FORMATTER
-          = DateTimeFormatter.ofPattern(FORMAT_STRING).withZone(ZoneId.systemDefault());
+    /**
+     * @param pnfsId of single operation to cancel.
+     * @param remove if false, the operation is reset for retry.
+     */
+    void cancel(PnfsId pnfsId, boolean remove);
 
-    public static Long getTimestamp(String datetime) {
-        if (datetime == null) {
-            return null;
-        }
-        return Instant.from(DATE_FORMATTER.parse(datetime)).toEpochMilli();
-    }
+    /**
+     * Forced cancellation of all operations matching this pool.
+     *
+     * @param pool       could be source, target or parent.
+     * @param onlyParent only match parent pools.
+     */
+    void cancelFileOpForPool(String pool, boolean onlyParent);
 
-    public enum ControlMode {
-        ON,
-        OFF,
-        START,
-        SHUTDOWN,
-        RESET,
-        RUN,
-        INFO
-    }
+    /**
+     * Should give a full count of the store (not only what may be held currently in memory).
+     *
+     * @param filter defining which operations to match.
+     * @return count of single matching type.
+     */
+    int count(VerifyOperationFilter filter);
 
-    public enum SortOrder {
-        ASC, DESC
-    }
+    /**
+     * Adds a new operation based on incoming data.
+     *
+     * @param data concerning the file derived from received message.
+     * @return true if new, false if simply updated (file is currently active).
+     */
+    boolean createOrUpdateOperation(FileQoSUpdate data);
 
-    private MapInitializer initializer;
+    /**
+     * @param pnfsId of the matching operation, if any.  It is understood that there can only be one
+     *               such operation active for any given pnfsid at a time.
+     * @return the operation, or <code>null</code> if there is no such operation currently running.
+     */
+    VerifyOperation getRunning(PnfsId pnfsId);
 
-    protected InitializerAwareCommand(MapInitializer initializer) {
-        this.initializer = initializer;
-    }
+    /**
+     * Should give a full listing of the store (not only what may be held currently in memory).
+     *
+     * @param filter defining which operations to match.
+     * @param limit  of matching entries to include.
+     * @return line-separated listing.
+     */
+    String list(VerifyOperationFilter filter, int limit);
 
-    @Override
-    public String call() {
-        String error = initializer.getInitError();
+    /**
+     * @return full size of the current operation store (not just what may be cached in memory).
+     */
+    int size();
 
-        if (error != null) {
-            return error;
-        }
+    /**
+     * Terminal update.
+     *
+     * @param pnfsId of the terminated operation.
+     * @param error  if there was a failure (can be <code>null</code>).
+     */
+    void updateOperation(PnfsId pnfsId, CacheException error);
 
-        if (!initializer.isInitialized()) {
-            return "Service is not yet initialized; use 'show pinboard' to see progress.";
-        }
+    /**
+     * Running update.  This is called after the verifier has determined the action to take.
+     *
+     * @param request which will be sent to the adjuster service.
+     */
+    void updateOperation(QoSAdjustmentRequest request);
 
-        try {
-            return doCall();
-        } catch (Exception e) {
-            return new ExceptionMessage(e).toString();
-        }
-    }
-
-    protected abstract String doCall() throws Exception;
+    /**
+     * If there is nothing (more) to do.
+     *
+     * @param operation to void.
+     */
+    void voidOperation(VerifyOperation operation);
 }

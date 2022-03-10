@@ -35,7 +35,7 @@ public class SingleMessageDga extends SkelPeriodicActivity {
      * Create a new Single-Message DataGatheringActivity.
      *
      * @param sender   component that sends messages
-     * @param targets  A comma-separated list of cells to contact.
+     * @param target  the cell to contact.
      * @param request  the message string,
      * @param interval how often (in seconds) this should be sent.
      */
@@ -53,7 +53,8 @@ public class SingleMessageDga extends SkelPeriodicActivity {
     /**
      * Create a new Single-Message DataGatheringActivity.
      *
-     * @param cellName The path to the dCache cell,
+     * @param mhc the sender message handler chain
+     * @param target  the cell to contact.
      * @param request  the Message to send
      * @param interval how often (in seconds) this message should be sent.
      */
