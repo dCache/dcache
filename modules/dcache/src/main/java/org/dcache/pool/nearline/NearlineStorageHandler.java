@@ -512,7 +512,6 @@ public class NearlineStorageHandler
         AbstractRequest(NearlineStorage storage, @Nonnull AtomicReference<QueueStat> queueStat) {
             this.storage = storage;
             this.queueStat = queueStat;
-            incQueued();
         }
 
         // Implements NearlineRequest#setIncluded
@@ -522,6 +521,10 @@ public class NearlineStorageHandler
 
         public long getCreatedAt() {
             return createdAt;
+        }
+
+        public void onQueued() {
+            incQueued();
         }
 
         protected synchronized <T> ListenableFuture<T> register(ListenableFuture<T> future) {
@@ -744,6 +747,7 @@ public class NearlineStorageHandler
                     try {
                         R newRequest = createRequest(storage, file);
                         newRequests.add(newRequest);
+                        newRequest.onQueued();
                         return newRequest;
                     } catch (Exception e) {
                         state.decrement();
