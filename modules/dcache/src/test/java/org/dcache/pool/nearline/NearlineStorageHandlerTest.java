@@ -4,6 +4,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -51,11 +52,13 @@ public class NearlineStorageHandlerTest {
     private PnfsHandler pnfs;
     private FileStore fileStore;
     private ChecksumModule csm;
+    private ReplicaDescriptor desc;
 
     @Before
     public void setUp() throws Exception {
 
         repository = mock(Repository.class);
+        desc = mock(ReplicaDescriptor.class);
         pnfs = mock(PnfsHandler.class);
         fileStore = mock(FileStore.class);
         csm = mock(ChecksumModule.class);
@@ -252,6 +255,36 @@ public class NearlineStorageHandlerTest {
     }
 
     @Test
+    public void testFailExceptionallyActiveFlush() throws CacheException {
+        var attr = given(aFile()
+              .withStorageClass("a:b", "foo")
+              .withSize(34567));
+
+        doThrow(new IllegalStateException("injected")).when(desc).close();
+        nsh.flush("foo", Set.of(attr.getPnfsId()), hsmMigrationRequestCallack);
+        var requests = givenAllFlushesActive();
+
+        requests.forEach(r -> r.failed(1, "injected"));
+        assertThat(nsh.getActiveStoreJobs(), is(0));
+        verify(hsmMigrationRequestCallack).failed(any(), any());
+    }
+
+    @Test
+    public void testFailExceptionallyActiveStage() throws CacheException {
+        var attr = given(aFile()
+              .withStorageClass("a:b", "foo")
+              .withSize(34567));
+
+        doThrow(new IllegalStateException("injected")).when(desc).close();
+        nsh.stage("foo", attr, hsmMigrationRequestCallack);
+        var requests = givenAllStagesActive();
+
+        requests.forEach(r -> r.failed(1, "injected"));
+        assertThat(nsh.getActiveFetchJobs(), is(0));
+        verify(hsmMigrationRequestCallack).failed(any(), any());
+    }
+
+    @Test
     public void testCompleteActiveStage() throws CacheException {
         var attr = given(aFile()
               .withStorageClass("a:b", "foo")
@@ -376,7 +409,6 @@ public class NearlineStorageHandlerTest {
             var fa = faBuilder.build();
             var id = fa.getPnfsId();
 
-            var desc = mock(ReplicaDescriptor.class);
             when(desc.getFileAttributes()).thenReturn(fa);
 
             when(repository.openEntry(eq(id), any())).thenReturn(desc);
