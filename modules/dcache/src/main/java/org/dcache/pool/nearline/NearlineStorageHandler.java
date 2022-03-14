@@ -85,6 +85,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.annotation.concurrent.Immutable;
@@ -1014,7 +1015,11 @@ public class NearlineStorageHandler
 
         @Override
         public void failed(Exception cause) {
-            descriptor.close();
+            try {
+                descriptor.close();
+            } catch (Exception e) {
+                cause.addSuppressed(e);
+            }
             /* ListenableFuture#get throws ExecutionException */
             if (cause instanceof ExecutionException) {
                 done(cause.getCause());
@@ -1141,7 +1146,7 @@ public class NearlineStorageHandler
             }
         }
 
-        private void done(Throwable cause) {
+        private void done(@Nullable Throwable cause) {
             PnfsId pnfsId = getFileAttributes().getPnfsId();
             if (cause != null) {
                 if (cause instanceof InterruptedException
@@ -1336,7 +1341,7 @@ public class NearlineStorageHandler
             }
         }
 
-        private void done(Throwable cause) {
+        private void done(@Nullable Throwable cause) {
             PnfsId pnfsId = getFileAttributes().getPnfsId();
             if (cause != null) {
                 deallocateSpace();
@@ -1352,7 +1357,15 @@ public class NearlineStorageHandler
                 }
                 LOGGER.warn("Stage of {} failed with {}.", pnfsId, cause.toString());
             }
-            descriptor.close();
+            try {
+                descriptor.close();
+            } catch (Exception e) {
+                if (cause == null) {
+                    cause = e;
+                } else {
+                    cause.addSuppressed(e);
+                }
+            }
             if (cause instanceof CacheException) {
                 infoMsg.setResult(((CacheException) cause).getRc(), cause.getMessage());
             } else if (cause != null) {
