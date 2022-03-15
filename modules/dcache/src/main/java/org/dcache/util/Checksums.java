@@ -55,6 +55,19 @@ public class Checksums {
           .put(SHA512, "sha-512")
           .build();
 
+    public static final boolean isValidRFC3230Name(String s) {
+        return CHECKSUMTYPE_TO_RFC3230_NAME.values().stream()
+              .anyMatch(s::equalsIgnoreCase);
+    }
+
+    public static final ChecksumType getChecksumTypeForRFC3230Name(String name) {
+        return CHECKSUMTYPE_TO_RFC3230_NAME.entrySet().stream()
+              .filter(kv -> kv.getValue().equalsIgnoreCase(name))
+              .map(kv -> kv.getKey())
+              .findAny()
+              .orElseThrow(() -> new IllegalArgumentException("Unknown checksum type: " + name));
+    }
+
     private static final EntryTransformer<String, String, Checksum>
           RFC3230_TO_CHECKSUM = (type, value) -> {
         try {
@@ -89,11 +102,11 @@ public class Checksums {
             return null;
         }
     };
+
     private static final Ordering<ChecksumType> PREFERRED_CHECKSUM_TYPE_ORDERING =
           Ordering.explicit(SHA512, SHA256, SHA1, MD5_TYPE, ADLER32, MD4_TYPE);
     private static final Ordering<Checksum> PREFERRED_CHECKSUM_ORDERING =
           PREFERRED_CHECKSUM_TYPE_ORDERING.onResultOf(Checksum::getType);
-
 
     /**
      * This Function maps an instance of Checksum to the corresponding fragment of an RFC 3230
@@ -126,8 +139,8 @@ public class Checksums {
           };
 
     /**
-     * This Function maps a collection of Checksum objects to the corresponding RFC 3230 string.
-     * For further details, see:
+     * This Function maps a collection of Checksum objects to the corresponding RFC 3230 string. For
+     * further details, see:
      * <p>
      * http://tools.ietf.org/html/rfc3230 http://www.iana.org/assignments/http-dig-alg/http-dig-alg.xml
      */
@@ -236,8 +249,8 @@ public class Checksums {
               Splitter.on(',').omitEmptyStrings().trimResults().splitToList(v).stream()
                     .map(QualityValue::of)
                     .filter(q -> q.quality() != 0)
-                    .filter(q -> ChecksumType.isValid(q.value()))
-                    .map(q -> q.mapWith(ChecksumType::getChecksumType))
+                    .filter(q -> isValidRFC3230Name(q.value()))
+                    .map(q -> q.mapWith(Checksums::getChecksumTypeForRFC3230Name))
                     .filter(q -> allowedTypes.contains(q.value()))
                     .sorted(Comparator.<QualityValue<ChecksumType>>comparingDouble(q -> q.quality())
                           .reversed()
