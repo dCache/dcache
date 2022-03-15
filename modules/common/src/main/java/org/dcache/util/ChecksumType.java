@@ -23,6 +23,9 @@ public enum ChecksumType {
     SHA512(6, "SHA-512", 512);
 
     private final int type;
+    /**
+     * the Java internal algorithm name for this checksum type.
+     */
     private final String name;
     private final int bits;
 
@@ -103,7 +106,7 @@ public enum ChecksumType {
     }
 
     /**
-     * Return a dCache internal canonical name for this checksum type.
+     * Return the Java internal algorithm name for this checksum type.
      */
     public String getName() {
         return name;
