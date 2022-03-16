@@ -376,10 +376,11 @@ public class NfsTransferService
      * Removes mover from the list of allowed transfers.
      *
      * @param mover
+     * @return true, if the given mover was known to this transfer service.
      */
-    public void remove(NfsMover mover) {
-        _log.debug("un-removing io handler for stateid {}", mover);
-        _activeIO.remove(mover.getStateId());
+    public boolean remove(NfsMover mover) {
+        _log.debug("un-registering io handler for stateid {}", mover);
+        return _activeIO.remove(mover.getStateId()) != null;
     }
 
     NfsMover getMoverByStateId(CompoundContext context, stateid4 stateid)
