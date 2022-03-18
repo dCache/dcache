@@ -1118,7 +1118,7 @@ public class Shell extends ShellApplication {
         @Argument(index = 0)
         File path;
 
-        @Argument(index = 1, valueSpec = "adler32|md5_type|md4_type")
+        @Argument(index = 1, valueSpec = "adler32|md5_type|md4_type|sha1|sha256|sha512")
         ChecksumType type;
 
         @Override
@@ -1139,7 +1139,7 @@ public class Shell extends ShellApplication {
         @Argument(index = 0)
         File path;
 
-        @Argument(index = 1, valueSpec = "adler32|md5_type|md4_type")
+        @Argument(index = 1, valueSpec = "adler32|md5_type|md4_type|sha1|sha256|sha512")
         ChecksumType type;
 
         @Argument(index = 2)
@@ -1157,13 +1157,13 @@ public class Shell extends ShellApplication {
         }
     }
 
-    @Command(name = "checksum delete", hint = "remove checkusm from file")
+    @Command(name = "checksum delete", hint = "remove checksum from file")
     public class ChecksumDeleteCommand implements Callable<Serializable> {
 
         @Argument(index = 0)
         File path;
 
-        @Argument(index = 1, valueSpec = "adler32|md5_type|md4_type")
+        @Argument(index = 1, valueSpec = "adler32|md5_type|md4_type|sha1|sha256|sha512")
         ChecksumType type;
 
         @Override
