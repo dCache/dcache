@@ -424,6 +424,7 @@ public class NFSv41Door extends AbstractCellComponent implements
               .withTCP()
               .withAutoPublish()
               .withWorkerThreadIoStrategy()
+              .withSubjectPropagation()
               .withRpcService(new OncRpcProgram(mount_prot.MOUNT_PROGRAM, mount_prot.MOUNT_V3), ms);
 
         if (_enableRpcsecGss) {
