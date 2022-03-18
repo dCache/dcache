@@ -423,9 +423,15 @@ public class ChecksumsTests {
 
     @Test
     public void shouldFindSha1AsSingleEntry() {
-        Optional<ChecksumType> type = Checksums.parseWantDigest("sha-1");
+        Optional<ChecksumType> type = Checksums.parseWantDigest("sha");
         assertThat(type.isPresent(), is(equalTo(true)));
         assertThat(type.get(), is(equalTo(SHA1)));
+    }
+
+    @Test
+    public void shouldNotFindSha1Explicitly() {
+        Optional<ChecksumType> type = Checksums.parseWantDigest("sha-1");
+        assertFalse(type.isPresent());
     }
 
     @Test
