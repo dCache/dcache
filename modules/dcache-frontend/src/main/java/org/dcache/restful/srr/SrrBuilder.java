@@ -20,6 +20,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.PoolMonitor;
+import org.dcache.util.NetworkUtils;
 import org.dcache.util.NetworkUtils.InetAddressScope;
 import org.dcache.util.Version;
 import org.slf4j.Logger;
@@ -240,12 +241,23 @@ public class SrrBuilder {
               .filter(doorTagFilter)
               .filter(i -> i.supports(InetAddressScope.GLOBAL))
               .map(d -> {
+                        /*
+                         * LoginBrokerInfo entry might contain multiple addresses (IPv4, IPv6, LinkLocal).
+                         * Thus we should tape only the one with global scope.
+                         *
+                         * REVISIT: this functionality probably should go into LoginBrokerInfo
+                         */
+                        var globalAddress = d.getAddresses().stream()
+                              .filter(a -> NetworkUtils.InetAddressScope.of(a).ordinal() >= InetAddressScope.GLOBAL.ordinal())
+                              .findAny()
+                              .orElseThrow(RuntimeException::new);
+
                         Storageendpoint endpoint = new Storageendpoint()
-                              .withName(id + "#" + d.getPreferredProtocolFamily() + "@" + d.getAddresses().get(0)
+                              .withName(id + "#" + d.getPreferredProtocolFamily() + "@" + globalAddress
                                     .getCanonicalHostName() + "-" + d.getPort())
                               .withInterfacetype(d.getPreferredProtocolFamily())
                               .withInterfaceversion(d.getProtocolVersion())
-                              .withEndpointurl(d.getPreferredProtocolFamily() + "://" + d.getAddresses().get(0)
+                              .withEndpointurl(d.getPreferredProtocolFamily() + "://" + globalAddress
                                     .getCanonicalHostName() + ":" + d.getPort() + d.getRoot())
                               .withAssignedshares(Collections.singletonList("all"));
 
