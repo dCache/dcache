@@ -174,6 +174,15 @@ public interface FileSystemProvider extends Closeable {
     DirectoryStreamB<ChimeraDirectoryEntry> virtualDirectoryStream(FsInode dir, String labelname)
           throws ChimeraFsException;
 
+    /**
+     * Returns {@link DirectoryStreamB} of Strings.
+     * <p>
+     * @return stream of label entries
+     */
+    //TODO add LabelSreamB
+    DirectoryStreamB<String> labelsStream()
+          throws ChimeraFsException;
+
     void remove(String path) throws ChimeraFsException;
 
     /**
@@ -514,20 +523,12 @@ public interface FileSystemProvider extends Closeable {
 
 
     /**
-     * Retrieve an array of lables  for a given file system object.
+     * Retrieve an array of labels  for a given file system object.
      *
      * @param inode file system object.
      * @throws ChimeraFsException
      */
     Set<String> getLabels(FsInode inode) throws ChimeraFsException;
-
-    /**
-     * Retrieve an array of all existing labels.
-     *
-     * @throws ChimeraFsException
-     */
-    Set<String> listLabels() throws ChimeraFsException;
-
 
 
     /**

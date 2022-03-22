@@ -1998,22 +1998,6 @@ public class FsSqlDriver {
     }
 
     /**
-     * Retrieve an array of all existing labels.
-     *
-     * @return a set of labels.
-     * @throws ChimeraFsException
-     */
-    Set<String> listLabels() throws ChimeraFsException {
-        Set<String> names = new HashSet<>();
-        _jdbc.query("SELECT labelname FROM t_labels",
-              (rs) -> {
-                  String name = rs.getString("labelname");
-                  names.add(name);
-              });
-        return names;
-    }
-
-    /**
      * Attache a given label to  a given file system object.
      *
      * @param inode     file system object.
@@ -2114,6 +2098,61 @@ public class FsSqlDriver {
                             String path = inode2path(rs.getLong("fileid"), _root);
                             return new ChimeraDirectoryEntry(path, inode, stat);
 
+
+                        } catch (SQLException e) {
+                            LOGGER.error("failed to fetch next entry: {}", e.getMessage());
+                            return null;
+                        }
+                    }
+                };
+            }
+
+            @Override
+            public void close() throws IOException {
+                stream.close();
+            }
+        };
+    }
+
+
+    /**
+     * Returns {@link DirectoryStreamB} of Strings of existing labels.     *
+     * @return stream of existing labels
+     */
+    DirectoryStreamB<String> labelsStream() {
+        return new DirectoryStreamB<String>() {
+            final LabelsStreamImpl stream = new LabelsStreamImpl(_jdbc);
+
+            Set<String> names = new HashSet<>();
+
+            @Override
+            public Iterator<String> iterator() {
+                return new Iterator<String>() {
+                    private String current = innerNext();
+
+                    @Override
+                    public boolean hasNext() {
+                        return current != null;
+                    }
+
+                    @Override
+                    public String next() {
+                        if (current == null) {
+                            throw new NoSuchElementException("No more entries");
+                        }
+                        String entry = current;
+                        current = innerNext();
+                        return entry;
+                    }
+
+                    protected String innerNext() {
+                        try {
+                            ResultSet rs = stream.next();
+                            if (rs == null) {
+                                return null;
+                            }
+
+                            return rs.getString("labelname");
 
                         } catch (SQLException e) {
                             LOGGER.error("failed to fetch next entry: {}", e.getMessage());

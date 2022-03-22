@@ -143,6 +143,7 @@ import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsCreateSymLinkMessage;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
+import org.dcache.vehicles.PnfsListLabelsMessage;
 import org.dcache.vehicles.PnfsRemoveChecksumMessage;
 import org.dcache.vehicles.PnfsSetFileAttributes;
 import org.dcache.vehicles.quota.PnfsManagerGetQuotaMessage;
@@ -2122,6 +2123,67 @@ public class PnfsManagerV3
         }
     }
 
+    private class ListlabelsHandlerImpl implements ListHandler {
+
+        private final CellPath _requestor;
+        private  PnfsListLabelsMessage _msg;
+        private final long _delay;
+        private final UOID _uoid;
+        private final Subject _subject;
+        private final Restriction _restriction;
+        private long _deadline;
+        private int _messageCount;
+
+        public ListlabelsHandlerImpl(CellPath requestor, UOID uoid,
+              PnfsListLabelsMessage msg,
+              long initialDelay, long delay) {
+            _msg = msg;
+            _requestor = requestor;
+            _uoid = uoid;
+            _delay = delay;
+            _subject = _msg.getSubject();
+            _restriction = _msg.getRestriction();
+            _deadline =
+                  (delay == Long.MAX_VALUE)
+                        ? Long.MAX_VALUE
+                        : System.currentTimeMillis() + initialDelay;
+        }
+
+        private void sendPartialReply() {
+            _msg.setReply();
+
+            CellMessage envelope = new CellMessage(_requestor, _msg);
+            envelope.setLastUOID(_uoid);
+            sendMessage(envelope);
+            _messageCount++;
+
+            _msg.clear();
+        }
+
+        @Override
+        public void addEntry(String name, FileAttributes attrs) {
+            if (Subjects.isRoot(_subject)
+                //  || !_restriction.isRestricted(READ_METADATA, _directory, name)
+            ) {
+                long now = System.currentTimeMillis();
+                _msg.addEntry(name, attrs);
+                if (_msg.getEntries().size() >= _directoryListLimit ||
+                      now > _deadline) {
+                    sendPartialReply();
+                    _deadline =
+                          (_delay == Long.MAX_VALUE) ? Long.MAX_VALUE : now + _delay;
+                }
+            }
+        }
+
+        public int getMessageCount() {
+            return _messageCount;
+        }
+    }
+
+
+
+
 
     /**
      * PnfsListDirectoryMessages can have more than one reply. This is to avoid large directories
@@ -2189,6 +2251,43 @@ public class PnfsManagerV3
 
         public int getMessageCount() {
             return _messageCount;
+        }
+    }
+
+
+
+
+    private void listLabels(CellMessage envelope, PnfsListLabelsMessage msg) {
+        if (!msg.getReplyRequired()) {
+            return;
+        }
+
+        try {
+
+            long delay = envelope.getAdjustedTtl();
+            long initialDelay =
+                  (delay == Long.MAX_VALUE)
+                        ? Long.MAX_VALUE
+                        : delay - envelope.getLocalAge();
+            CellPath source = envelope.getSourcePath().revert();
+            ListlabelsHandlerImpl handler =
+                  new ListlabelsHandlerImpl(source, envelope.getUOID(),
+                        msg, initialDelay, delay);
+
+            _nameSpaceProvider.listLabels(msg.getSubject(),
+                  msg.getRange(),
+                  handler);
+
+            msg.setSucceeded(handler.getMessageCount() + 1);
+        } catch (FileNotFoundCacheException | NotDirCacheException e) {
+            msg.setFailed(e.getRc(), e.getMessage());
+        } catch (CacheException e) {
+            LOGGER.warn(e.toString());
+            msg.setFailed(e.getRc(), e.getMessage());
+        } catch (RuntimeException e) {
+            LOGGER.error(e.toString(), e);
+            msg.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                  e.getMessage());
         }
     }
 
@@ -2639,6 +2738,8 @@ public class PnfsManagerV3
             getParent((PnfsGetParentMessage) pnfsMessage);
         } else if (pnfsMessage instanceof PnfsListDirectoryMessage) {
             listDirectory(message, (PnfsListDirectoryMessage) pnfsMessage);
+        } else if (pnfsMessage instanceof PnfsListLabelsMessage) {
+            listLabels(message, (PnfsListLabelsMessage) pnfsMessage);
         } else if (pnfsMessage instanceof PnfsGetFileAttributes) {
             getFileAttributes((PnfsGetFileAttributes) pnfsMessage);
         } else if (pnfsMessage instanceof PnfsSetFileAttributes) {

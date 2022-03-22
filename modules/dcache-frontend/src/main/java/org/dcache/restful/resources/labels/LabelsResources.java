@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2021 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2021 - 2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -33,6 +33,7 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import javax.inject.Inject;
@@ -56,19 +57,23 @@ import org.dcache.http.PathMapper;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.JsonFileAttributes;
+import org.dcache.restful.providers.JsonListLabels;
 import org.dcache.restful.util.HttpServletRequests;
 import org.dcache.restful.util.RequestUser;
 import org.dcache.restful.util.namespace.NamespaceUtils;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryStream;
+import org.dcache.util.list.LabelsEntry;
+import org.dcache.util.list.LabelsStream;
 import org.dcache.util.list.ListDirectoryHandler;
+import org.dcache.util.list.ListLabelsHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 
 /**
- * RestFul API to  provide files/folders manipulation operations.
+ * RestFul API to  provide list labels operations.
  */
 @Api(value = "labels", authorizations = {@Authorization("basicAuth")})
 @Component
@@ -95,17 +100,71 @@ public class LabelsResources {
     private ListDirectoryHandler listDirectoryHandler;
 
     @Inject
-    @Named("pool-manager-stub")
-    private CellStub poolmanager;
+    private ListLabelsHandler listLabelHandler;
 
     @Inject
     @Named("pinManagerStub")
     private CellStub pinmanager;
 
-    @Inject
-    @Named("pnfs-stub")
-    private CellStub pnfsmanager;
+    @GET
+    @ApiOperation(value = "List all existing labels.",
+          notes = "The method offers the possibility to list the list of all existing labels.")
+    @ApiResponses({
+          @ApiResponse(code = 401, message = "Unauthorized"),
+          @ApiResponse(code = 403, message = "Forbidden"),
+          @ApiResponse(code = 404, message = "Not Found"),
+          @ApiResponse(code = 500, message = "Internal Server Error"),
+    })
+    @Produces(MediaType.APPLICATION_JSON)
+    public JsonListLabels getListLabels(
+          @ApiParam("Limit number of replies in labels listing.")
+          @QueryParam("limit") String limit,
+          @ApiParam("Number of entries to skip in labels listing.")
+          @QueryParam("offset") String offset) throws CacheException {
 
+        JsonListLabels labels = new JsonListLabels();
+
+        Range<Integer> range;
+        try {
+            int lower = (offset == null) ? 0 : Integer.parseInt(offset);
+            int ceiling = (limit == null) ? Integer.MAX_VALUE : Integer.parseInt(limit);
+            if (ceiling < 0 || lower < 0) {
+                throw new BadRequestException("limit and offset can not be less than zero.");
+            }
+            range = (Integer.MAX_VALUE - lower < ceiling) ? Range.atLeast(lower)
+                  : Range.closedOpen(lower, lower + ceiling);
+        } catch (NumberFormatException e) {
+            throw new BadRequestException("limit and offset must be an integer value.");
+        }
+        try {
+            LabelsStream stream = listLabelHandler.listLabels(
+                  HttpServletRequests.roleAwareSubject(request),
+                  HttpServletRequests.roleAwareRestriction(request),
+                  null,
+                  range);
+
+            Set<String> labelsList = new HashSet<>();
+
+            for (LabelsEntry entry : stream) {
+                String labelName = entry.getName();
+                labelsList.add(labelName);
+            }
+
+            labels.setLabels(labelsList);
+
+
+        }  catch (PermissionDeniedCacheException e) {
+            if (RequestUser.isAnonymous()) {
+                throw new NotAuthorizedException(e);
+            } else {
+                throw new ForbiddenException(e);
+            }
+        } catch (CacheException | InterruptedException  ex) {
+            LOGGER.warn(Exceptions.meaningfulMessage(ex));
+            throw new InternalServerErrorException(ex);
+        }
+        return labels;
+    }
 
     @GET
     @ApiOperation(value = "Find metadata and optionally virtual directory contents.",

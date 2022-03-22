@@ -37,7 +37,11 @@ import org.dcache.util.ChecksumType;
 import org.dcache.util.Glob;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryStream;
+import org.dcache.util.list.LabelsEntry;
+import org.dcache.util.list.LabelsStream;
 import org.dcache.util.list.ListDirectoryHandler;
+import org.dcache.util.list.ListLabelsHandler;
+
 import org.dcache.vehicles.FileAttributes;
 
 /**
@@ -48,16 +52,20 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider {
 
     private final PnfsHandler _pnfs;
     private final ListDirectoryHandler _handler;
+    private final ListLabelsHandler _handlerLabels;
+
 
 
     public RemoteNameSpaceProvider(PnfsHandler pnfsHandler,
-          ListDirectoryHandler listHandler) {
+          ListDirectoryHandler listHandler, ListLabelsHandler labelsHandler) {
         _pnfs = pnfsHandler;
         _handler = listHandler;
+        _handlerLabels = labelsHandler;
+
     }
 
     public RemoteNameSpaceProvider(PnfsHandler pnfsHandler) {
-        this(pnfsHandler, new ListDirectoryHandler(pnfsHandler));
+        this(pnfsHandler, new ListDirectoryHandler(pnfsHandler), new ListLabelsHandler(pnfsHandler));
     }
 
     @Override
@@ -208,6 +216,20 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider {
         try (DirectoryStream stream = _handler.listVirtualDirectory(subject, Restrictions.none(), FsPath.create(path), range, attrs)) {
             for (DirectoryEntry entry : stream) {
                 handler.addEntry(entry.getName(), entry.getFileAttributes());
+            }
+        } catch (InterruptedException e) {
+            throw new TimeoutCacheException(e.getMessage());
+        }
+    }
+
+    @Override
+    public void listLabels(Subject subject,
+          Range<Integer> range, ListHandler handler)
+          throws CacheException
+    {
+        try (LabelsStream stream = _handlerLabels.listLabels(subject, Restrictions.none(), null, range)) {
+            for (LabelsEntry entry : stream) {
+                handler.addEntry(entry.getName(), null);
             }
         } catch (InterruptedException e) {
             throw new TimeoutCacheException(e.getMessage());

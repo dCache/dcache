@@ -510,6 +510,12 @@ public class JdbcFs implements FileSystemProvider {
         return _sqlDriver.virtualDirectoryStream(dir, labelname);
     }
 
+
+    @Override
+    public DirectoryStreamB<String> labelsStream() throws ChimeraFsException {
+        return _sqlDriver.labelsStream();
+    }
+
     @Override
     public void remove(String path) throws ChimeraFsException {
 
@@ -1506,13 +1512,6 @@ public class JdbcFs implements FileSystemProvider {
     public Set<String> listXattrs(FsInode inode) throws ChimeraFsException {
         return inTransaction(status -> _sqlDriver.listXattrs(inode));
     }
-
-
-    @Override
-    public Set<String> listLabels() throws ChimeraFsException {
-        return inTransaction(status -> _sqlDriver.listLabels());
-    }
-
 
     @Override
     public void addLabel(FsInode inode, String labelname) throws ChimeraFsException {

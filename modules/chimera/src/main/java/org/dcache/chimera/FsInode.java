@@ -435,6 +435,7 @@ public class FsInode {
         return _fs.virtualDirectoryStream(this, labelname);
     }
 
+
     public String getId() throws ChimeraFsException {
         Stat stat = _stat;
         return (stat != null) ? stat.getId() : _fs.inode2id(this);

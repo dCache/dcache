@@ -1551,9 +1551,9 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
             }
         });
 
-        Collection<String> labelsSet = _fs.listLabels();
+        DirectoryStreamB<String> labelsSet = _fs.labelsStream();
 
-        assertEquals("Unexpected number of attributes", labels.size(), labelsSet.size());
+        assertEquals("Unexpected number of attributes", labels.size(), labelsSet.stream().count());
 
 
     }

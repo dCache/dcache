@@ -1349,6 +1349,30 @@ public class ChimeraNameSpaceProvider
         }
     }
 
+
+    @Override
+    public void listLabels(Subject subject, Range<Integer> range,
+          ListHandler handler)
+          throws CacheException {
+        try {
+            int counter = 0;
+            try (DirectoryStreamB<String> dirStream = _fs.labelsStream()) {
+                for (String entry : dirStream) {
+                    String name = entry;
+                    if (!name.equals(".") && !name.equals("..") &&
+                          range.contains(counter++)) {
+                        //TODO create a new LabelsHandler
+                        handler.addEntry(name, null);
+                    }
+                }
+            }
+
+        } catch (IOException e) {
+            LOGGER.error("Exception in list: {}", e);
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
+        }
+    }
+
     private ExtendedInode mkdir(Subject subject, ExtendedInode parent, String name, int uid,
           int gid, int mode)
           throws ChimeraFsException, CacheException {

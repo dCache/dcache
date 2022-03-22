@@ -34,6 +34,7 @@ import org.dcache.namespace.FileType;
 import org.dcache.namespace.ListHandler;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Glob;
+import org.dcache.util.list.ListLabelsHandler;
 import org.dcache.vehicles.FileAttributes;
 
 /**
@@ -161,6 +162,13 @@ public abstract class ForwardingNameSpaceProvider implements NameSpaceProvider {
                      Set<FileAttribute> attrs, ListHandler handler) throws CacheException
     {
         delegate().listVirtualDirectory(subject, path, range, attrs, handler);
+    }
+
+    @Override
+    public void listLabels(Subject subject,  Range<Integer> range,
+           ListHandler handler) throws CacheException
+    {
+        delegate().listLabels(subject,  range,  handler);
     }
 
     @Override
