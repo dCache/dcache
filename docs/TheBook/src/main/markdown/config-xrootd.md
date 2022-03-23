@@ -302,8 +302,76 @@ it will not be turned on.
 > of whether the server supports TLS or has indicated that it should
 > be turned on.
 >
-> By using 'xroots', the client guarantees TLS will by on at login or
+> By using 'xroots', the client guarantees TLS will be on at login or
 > the connection will fail.
+
+####  Scitokens (JWT) and the ZTN protocol
+
+Scitokens are for authorization; however, the XrootD protocol also defines an authentication
+equivalent, ZTN, where a token is passed as a credential at authentication (just after login).
+
+Originally, this was a countermeasure taken to prevent stray clients from accessing the
+vanilla server via methods where there was no path (and thus no CGI authz element).  However,
+recent changes to the vanilla client and server have allowed a ZTN token to be used as
+a fallback authorization token as well, without further need to express a base64-encoded token
+as part of the path query.
+
+dCache now supports this strategy.  To illustrate, here are two different door configurations.
+
+This one:
+
+```
+[xrootd-1095-${host.name}Domain]
+dcache.java.memory.heap=2048m
+dcache.java.memory.direct=2048m
+[xrootd-1095-${host.name}Domain/xrootd]
+xrootd.cell.name=xrootd-1095-${host.name}
+xrootd.net.port=1095
+xrootd.authz.write-paths=/
+xrootd.authz.read-paths=/
+xrootd.plugins=gplazma:none,authz:scitokens
+xrootd.security.tls.mode=STRICT
+xrootd.security.tls.require-login=true
+xrootd.plugin!scitokens.strict=true
+```
+
+indicates that any client will be allowed through with anonymous credentials (NOBODY) at
+authentication time, but ultimately will need a token on the path in order to be authorized, with
+the subject and claim being converted into dCache user and restrictions at the time of the request
+containing the path.
+
+This configuration:
+
+```
+[xrootd-1095-${host.name}Domain]
+dcache.java.memory.heap=2048m
+dcache.java.memory.direct=2048m
+[xrootd-1095-${host.name}Domain/xrootd]
+xrootd.cell.name=xrootd-1095-${host.name}
+xrootd.net.port=1095
+xrootd.authz.write-paths=/
+xrootd.authz.read-paths=/
+xrootd.plugins=gplazma:ztn,authz:scitokens
+xrootd.security.tls.mode=STRICT
+xrootd.security.tls.require-login=true
+xrootd.plugin!scitokens.strict=false
+xrootd.authz.anonymous-operations=FULL
+```
+
+on the other hand, turns on ZTN in the door.  For seamless functioning, this should be coupled with
+a loosening of the strict requirement on the CGI/path token, and FULL anonymous access (which just
+means that an anonymous user will be allowed to try all operations, with underlying acls determining
+whether these succeed or not).   With this configuration, the client will need to be provided
+a ZTN token via an environment variable, e.g.,
+
+```
+XDG_RUNTIME_DIR=/run/user/8773
+```
+
+it will look for a file named 'bt_\<uid\>' in that directory.   With that token in hand, authorization
+will also take place.  A second token can still be passed as the path query CGI element (authz=Bearer%20),
+and will override the original if present, but this is treated as optional, not required.
+
 
 #### Token-based authorization as suggested in [http://people.web.psi.ch/feichtinger/doc/authz.pdf](https://www.psi.ch/search/phonebook-and-e-mail-directory?q=feichtinger).
 
