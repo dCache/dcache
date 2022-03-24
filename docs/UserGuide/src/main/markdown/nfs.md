@@ -1,4 +1,4 @@
-Chapter 5. NFS
+Chapter 6. NFS
 ==============
 
 Network File System (NFS) is a distributed file system protocol

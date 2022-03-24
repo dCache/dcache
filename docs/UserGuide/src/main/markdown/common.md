@@ -11,3 +11,5 @@ Table of Contents
 
 * [Chapter 2. Extended attributes](xattr.md)
 
+* [Chapter 3. Working with tertiary storage](tertiary.md)
+

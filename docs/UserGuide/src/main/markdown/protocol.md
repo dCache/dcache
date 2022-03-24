@@ -7,7 +7,7 @@ specific protocols.  There is a chapter for each protocol.
 Table of Contents
 -----------------
 
-* [Chapter 3. Frontend](frontend.md)
-* [Chapter 4. FTP](ftp.md)
-* [Chapter 5. NFS](nfs.md)
-* [Chapter 6. WebDAV](webdav.md)
+* [Chapter 4. Frontend](frontend.md)
+* [Chapter 5. FTP](ftp.md)
+* [Chapter 6. NFS](nfs.md)
+* [Chapter 7. WebDAV](webdav.md)
