@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2007-2021 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2007-2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -54,7 +54,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -109,7 +108,7 @@ public class ChecksumModuleV1
         ON_FLUSH,
 
         /**
-         * Validate checsum after restore from HSM.
+         * Validate checksum after restore from HSM.
          */
         ON_RESTORE,
 
@@ -345,12 +344,6 @@ public class ChecksumModuleV1
               usage = "Verbose.")
         boolean verbose;
 
-        @Option(name = "frequently",
-              metaVar = "IGNORED_VALUE",
-              usage = "This option is accepted but ignored.  It exists only " +
-                    "for backwards compatibility with older dCache pool 'setup' files")
-        String ignoredValue;
-
         private void updatePolicy(String value, PolicyFlag flag) {
             if (value != null) {
                 switch (value) {
@@ -481,7 +474,7 @@ public class ChecksumModuleV1
     @Override
     public void enforcePostTransferPolicy(
           ReplicaDescriptor handle, Iterable<Checksum> actualChecksums)
-          throws CacheException, NoSuchAlgorithmException, IOException, InterruptedException {
+          throws CacheException, IOException, InterruptedException {
         Iterable<Checksum> expectedChecksums = handle.getChecksums();
         if (hasPolicy(ON_WRITE)
               || (hasPolicy(ENFORCE_CRC) && isEmpty(expectedChecksums) && isEmpty(
@@ -505,7 +498,7 @@ public class ChecksumModuleV1
 
     @Override
     public void enforcePreFlushPolicy(ReplicaDescriptor handle)
-          throws CacheException, InterruptedException, NoSuchAlgorithmException, IOException {
+          throws CacheException, InterruptedException, IOException {
         if (hasPolicy(ON_FLUSH)) {
             verifyChecksum(handle);
         }
@@ -513,7 +506,7 @@ public class ChecksumModuleV1
 
     @Override
     public void enforcePostRestorePolicy(ReplicaDescriptor handle, Set<Checksum> expectedChecksums)
-          throws CacheException, NoSuchAlgorithmException, IOException, InterruptedException {
+          throws CacheException, IOException, InterruptedException {
         if (hasPolicy(GET_CRC_FROM_HSM)) {
             LOGGER.info("Obtained checksums {} for {} from HSM", expectedChecksums,
                   handle.getFileAttributes().getPnfsId());
@@ -528,14 +521,14 @@ public class ChecksumModuleV1
     @Nonnull
     @Override
     public Iterable<Checksum> verifyChecksum(ReplicaDescriptor handle)
-          throws NoSuchAlgorithmException, IOException, InterruptedException, CacheException {
+          throws IOException, InterruptedException, CacheException {
         try (RepositoryChannel channel = handle.createChannel()) {
             return verifyChecksum(channel, handle.getChecksums(), Double.POSITIVE_INFINITY);
         }
     }
 
     public Iterable<Checksum> verifyChecksumWithThroughputLimit(ReplicaDescriptor handle)
-          throws IOException, InterruptedException, NoSuchAlgorithmException, CacheException {
+          throws IOException, InterruptedException, CacheException {
         try (RepositoryChannel channel = handle.createChannel()) {
             return verifyChecksum(channel, handle.getChecksums(), getThroughputLimit());
         }
@@ -543,7 +536,7 @@ public class ChecksumModuleV1
 
     private Iterable<Checksum> verifyChecksum(RepositoryChannel channel,
           Iterable<Checksum> expectedChecksums, double throughputLimit)
-          throws NoSuchAlgorithmException, IOException, InterruptedException, CacheException {
+          throws IOException, InterruptedException, CacheException {
         /*
          * REVISIT:
          * It makes more sense to populate file's checksum if it's missing. However, currently
@@ -585,10 +578,10 @@ public class ChecksumModuleV1
     /**
      * Compute the checksum for a file with a limit on how many bytes/second to checksum.
      *
-     * @param file            the file to compute a checksum for.
+     * @param channel         the RepositoryChannel
      * @param digests         the digests to update with the file's content
      * @param throughputLimit a limit on how many bytes/second that may be checksummed.
-     * @return the computed checksum.
+     * @return the set of computed checksums.
      * @throws IOException
      * @throws InterruptedException
      */
