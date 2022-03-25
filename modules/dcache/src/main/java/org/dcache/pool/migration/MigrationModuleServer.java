@@ -25,6 +25,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import javax.annotation.Nullable;
 import org.dcache.pool.PoolDataBeanProvider;
 import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.migration.json.MigrationData;
@@ -152,7 +153,7 @@ public class MigrationModuleServer
 
         UUID uuid = message.getUUID();
         Request request = _requests.get(uuid);
-        if (request == null || !request.cancel()) {
+        if (request == null || !request.cancel(message.getReason())) {
             throw new CacheException(CacheException.INVALID_ARGS,
                   "No such request");
         }
@@ -176,6 +177,7 @@ public class MigrationModuleServer
         private final boolean _isMetaOnly;
         private Integer _companion;
         private Future<?> _updateTask;
+        private String _whyCancel;
 
         public Request(CellPath requestor, PoolMigrationCopyReplicaMessage message) {
             _requestor = requestor;
@@ -225,12 +227,17 @@ public class MigrationModuleServer
             }
         }
 
-        public synchronized boolean cancel() {
+        private String cancelMessage() {
+            return _whyCancel == null ? "Task was cancelled" : ("Task was cancelled: " + _whyCancel);
+        }
+
+        public synchronized boolean cancel(@Nullable String why) {
+            _whyCancel = why;
             if (_companion != null) {
                 return _p2p.cancel(_companion);
             } else if (_updateTask != null && _updateTask.cancel(true)) {
                 if (_requests.remove(_uuid) != null) {
-                    finished(new CacheException("Task was cancelled"));
+                    finished(new CacheException(cancelMessage()));
                 }
                 return true;
             }
@@ -306,7 +313,7 @@ public class MigrationModuleServer
                 finished(new DiskErrorCacheException(
                       "I/O error during checksum calculation: " + messageOrClassName(e)));
             } catch (InterruptedException e) {
-                finished(new CacheException("Task was cancelled"));
+                finished(new CacheException(cancelMessage()));
             } catch (IllegalTransitionException e) {
                 finished(new CacheException("Cannot update file in state " + e.getSourceState()));
             } catch (CacheException | NoSuchAlgorithmException | RuntimeException e) {
