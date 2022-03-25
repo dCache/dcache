@@ -9,6 +9,12 @@ Chapter 3. Tertiary storage
 + [Removing a pin](#removing-a-pin)
 + [File locality](#file-locality)
 
+<div class="float-right">
+
+![View inside tape silo](images/tape-silo.jpg)
+
+</div>
+
 Tertiary storage is storage that is, in some sense, external to
 dCache's directly managed disk storage.  This is typically a tape
 silo: a device where data is stored on different magnetic tape
