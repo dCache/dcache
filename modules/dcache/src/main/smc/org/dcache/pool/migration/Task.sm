@@ -220,7 +220,8 @@ Entry
                 {
                         // No reply, but message could have been
                         // received anyway, so try to cancel it.
-                        cancelCopy();
+                        cancelCopy("Timeout waiting for target pool "
+                            + ctxt.getTarget());
                 }
         cancel
                 Cancelling
