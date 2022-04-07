@@ -227,23 +227,51 @@ public class ChimeraNameSpaceProvider
         _uploadSubDirectory = path;
     }
 
+    private void checkLookupPermissions(Subject subject, List<FsInode> inodes, String path)
+          throws ChimeraFsException, CacheException {
+        for (FsInode inode : inodes) {
+            if (inode.isDirectory()) {
+                FileAttributes attributes = getFileAttributesForPermissionHandler(inode);
+                if (_permissionHandler.canLookup(subject, attributes) != ACCESS_ALLOWED) {
+                    throw new PermissionDeniedCacheException("Access denied: " + path);
+                }
+            }
+        }
+    }
+
+    private List<FsInode> findDeepestParent(String path) throws ChimeraFsException {
+        FsPath target = FsPath.create(path);
+
+        do {
+            target = target.parent();
+            try {
+                return _fs.path2inodes(target.toString());
+            } catch (FileNotFoundHimeraFsException ignored) {
+                // Continue onto next parent.
+            }
+        } while (target != FsPath.ROOT);
+
+        throw new RuntimeException("Unable to find inode for ROOT");
+    }
+
     private ExtendedInode pathToInode(Subject subject, String path)
           throws ChimeraFsException, CacheException {
         if (Subjects.isExemptFromNamespaceChecks(subject)) {
             return new ExtendedInode(_fs, _fs.path2inode(path));
         }
 
-        List<FsInode> inodes = _fs.path2inodes(path);
+        List<FsInode> inodes;
+        try {
+            inodes = _fs.path2inodes(path);
+        } catch (FileNotFoundHimeraFsException e) {
+            // Do not leak whether a file exists if user cannot 'cd' into the parent directory.
+            inodes = findDeepestParent(path);
+            checkLookupPermissions(subject, inodes, path);
+            throw e;
+        }
+
         if (_verifyAllLookups) {
-            for (FsInode inode : inodes.subList(0, inodes.size() - 1)) {
-                if (inode.isDirectory()) {
-                    FileAttributes attributes =
-                          getFileAttributesForPermissionHandler(inode);
-                    if (_permissionHandler.canLookup(subject, attributes) != ACCESS_ALLOWED) {
-                        throw new PermissionDeniedCacheException("Access denied: " + path);
-                    }
-                }
-            }
+            checkLookupPermissions(subject, inodes.subList(0, inodes.size() - 1), path);
         } else {
             for (FsInode inode : Iterables.skip(Lists.reverse(inodes), 1)) {
                 if (inode.isDirectory()) {
