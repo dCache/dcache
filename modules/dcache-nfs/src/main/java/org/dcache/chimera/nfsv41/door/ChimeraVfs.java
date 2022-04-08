@@ -483,6 +483,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
         stat.setATime(pStat.getATime());
         stat.setCTime(pStat.getCTime());
         stat.setMTime(pStat.getMTime());
+        stat.setBTime(pStat.getCrTime());
 
         stat.setGid(pStat.getGid());
         stat.setUid(pStat.getUid());
