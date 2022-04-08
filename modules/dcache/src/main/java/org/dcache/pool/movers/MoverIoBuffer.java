@@ -45,18 +45,6 @@ class MoverIoBuffer {
         return _ioBufferSize;
     }
 
-    void setSendBufferSize(int sendBufferSize) {
-        _sendBufferSize = sendBufferSize;
-    }
-
-    void setRecvBufferSize(int recvBufferSize) {
-        _recvBufferSize = recvBufferSize;
-    }
-
-    void setIoBufferSize(int ioBufferSize) {
-        _ioBufferSize = ioBufferSize;
-    }
-
     public String toString() {
         return "send=" + _sendBufferSize + ";recv=" + _recvBufferSize + ";io=" + _ioBufferSize;
     }
