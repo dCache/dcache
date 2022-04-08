@@ -1,5 +1,6 @@
 package org.dcache.chimera.nfsv41.door;
 
+import static com.google.common.net.InetAddresses.toAddrString;
 import static dmg.util.CommandException.checkCommand;
 import static java.util.stream.Collectors.toList;
 import static org.dcache.chimera.nfsv41.door.ExceptionUtils.asNfsException;
@@ -842,7 +843,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             for (device_error4 de : ioerr.ffie_errors) {
                 PoolDS ds = _poolDeviceMap.getByDeviceId(de.de_deviceid);
                 String pool = ds == null ? "an unknown pool" : ("pool " + ds.getName());
-                _log.error("Client reports error {} on {} for op {}",
+                _log.error("Client {} reports error {} on {} for op {}", toAddrString(context.getRemoteSocketAddress().getAddress()),
                       nfsstat.toString(de.de_status), pool, nfs_opnum4.toString(de.de_opnum));
 
                 // rise an alarm when client can't connect to the pool
@@ -850,7 +851,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                     _log.error(
                           AlarmMarkerFactory.getMarker(PredefinedAlarm.CLIENT_CONNECTION_REJECTED,
                                 pool),
-                          "Client failed to connect to {}", pool);
+                          "Client {} failed to connect to {}", toAddrString(context.getRemoteSocketAddress().getAddress()), pool);
                 }
             }
         }
