@@ -102,39 +102,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         }
     }
 
-    private MoverIoBuffer prepareBufferSize(StorageInfo storage) {
-        MoverIoBuffer bufferSize = new MoverIoBuffer(_defaultBufferSize);
-        String tmp;
-        try {
-            tmp = storage.getKey("send");
-            if (tmp != null) {
-                bufferSize.setSendBufferSize(
-                      Math.min(Integer.parseInt(tmp), _maxBufferSize.getSendBufferSize()));
-            }
-        } catch (NumberFormatException e) { /* bad values are ignored */
-
-        }
-        try {
-            tmp = storage.getKey("receive");
-            if (tmp != null) {
-                bufferSize.setRecvBufferSize(
-                      Math.min(Integer.parseInt(tmp), _maxBufferSize.getRecvBufferSize()));
-            }
-        } catch (NumberFormatException e) { /* bad values are ignored */
-
-        }
-        try {
-            tmp = storage.getKey("bsize");
-            if (tmp != null) {
-                bufferSize.setIoBufferSize(
-                      Math.min(Integer.parseInt(tmp), _maxBufferSize.getIoBufferSize()));
-            }
-        } catch (NumberFormatException e) { /* bad values are ignored */
-
-        }
-        return bufferSize;
-    }
-
     @Override
     public void setCellArgs(Args args) {
         _args = args;
@@ -343,8 +310,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
             }
         } catch (NumberFormatException e) { /* bad values are ignored */}
         _log.info("ioError = {}", _ioError);
-//        gets the buffervalues of the storageInfo keys
-        MoverIoBuffer bufferSize = prepareBufferSize(storage);
+        MoverIoBuffer bufferSize = new MoverIoBuffer(_defaultBufferSize);
         _log.info("Client : Buffer Sizes : {}", bufferSize);
 //        allocates the _bigBuffer
         initialiseBuffer(bufferSize);
