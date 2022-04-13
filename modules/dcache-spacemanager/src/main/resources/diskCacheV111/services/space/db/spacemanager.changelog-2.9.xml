@@ -2,9 +2,9 @@
 
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
-				       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+				       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
 
-    <changeSet id="3" author="behrmann">
+    <changeSet id="3.1" author="behrmann">
         <comment>Delete all ALLOCATED file reservations</comment>
         <sql>DELETE FROM srmspacefile WHERE state = 0</sql>
         <rollback/>
@@ -21,7 +21,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="hsqldb.trigger.1" author="behrmann" dbms="hsqldb">
+    <changeSet id="hsqldb.trigger.1.1" author="behrmann" dbms="hsqldb">
         <comment>Drop srmspace triggers before renaming srmlinkgroup columns</comment>
         <sql>DROP TRIGGER tgr_srmspace_insert IF EXISTS</sql>
         <sql>DROP TRIGGER tgr_srmspace_delete IF EXISTS</sql>
@@ -116,7 +116,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="hsqldb.trigger.2" author="behrmann" dbms="hsqldb">
+    <changeSet id="hsqldb.trigger.2.1" author="behrmann" dbms="hsqldb">
         <comment>Create srmspace triggers for maintaining accumulated fields</comment>
         <sql>DROP TRIGGER tgr_srmspace_insert IF EXISTS</sql>
         <createProcedure>
@@ -203,7 +203,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="postgresql.trigger.2" author="behrmann" dbms="postgresql">
+    <changeSet id="postgresql.trigger.2.1" author="behrmann" dbms="postgresql">
         <comment>Create srmspace triggers for maintaining accumulated fields</comment>
         <createProcedure>
             CREATE OR REPLACE FUNCTION f_srmspace_on_insert() RETURNS TRIGGER AS  $$
@@ -399,7 +399,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="4" author="behrmann">
+    <changeSet id="4.1" author="behrmann">
         <comment>Drop expirtationtime column</comment>
         <dropIndex tableName="srmspacefile" indexName="srmspacefile_expirationtime_idx"/>
         <dropColumn tableName="srmspacefile" columnName="expirationtime"/>

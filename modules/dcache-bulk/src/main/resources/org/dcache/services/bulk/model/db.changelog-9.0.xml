@@ -60,7 +60,7 @@
 <databaseChangeLog
         xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
 
     <changeSet author="arossi" id="4.1" runInTransaction="false">
         <preConditions onFail="MARK_RAN">
@@ -192,10 +192,10 @@
         <dropForeignKeyConstraint baseTableName="request_permissions" constraintName="request_permissions_id_fkey"/>
     </changeSet>
 
-    <changeSet author="arossi" id="5.2.1">
+    <changeSet author="arossi" id="5.2.1.1">
         <preConditions onFail="MARK_RAN">
             <and>
-                <primaryKeyExists primaryKeyName="idx_request_perm_id"/>
+                <primaryKeyExists tableName="request_permissions" primaryKeyName="idx_request_perm_id"/>
             </and>
         </preConditions>
         <dropPrimaryKey constraintName="idx_request_perm_id" tableName="request_permissions"/>
@@ -289,11 +289,11 @@
           referencedTableName="bulk_request"/>
     </changeSet>
 
-    <changeSet author="arossi" id="5.2.9">
+    <changeSet author="arossi" id="5.2.9.1">
         <preConditions onFail="MARK_RAN">
             <and>
                 <not>
-                    <primaryKeyExists primaryKeyName="idx_request_perm_id"/>
+                    <primaryKeyExists tableName="request_permissions" primaryKeyName="idx_request_perm_id"/>
                 </not>
             </and>
         </preConditions>
@@ -340,10 +340,10 @@
         <dropIndex indexName="idx_target_id_rid" tableName="request_target"/>
     </changeSet>
 
-    <changeSet author="arossi" id="5.4.2">
+    <changeSet author="arossi" id="5.4.2.1">
         <preConditions onFail="MARK_RAN">
             <and>
-                <primaryKeyExists primaryKeyName="i_target_pkey"/>
+                <primaryKeyExists tableName="request_target" primaryKeyName="i_target_pkey"/>
             </and>
         </preConditions>
         <dropPrimaryKey constraintName="i_target_pkey" tableName="request_target"/>
@@ -422,11 +422,11 @@
 
     <!-- This is still needed in order to return the auto-generated id on insert -->
 
-    <changeSet author="arossi" id="5.4.9" dbms="postgresql">
+    <changeSet author="arossi" id="5.4.9.1" dbms="postgresql">
         <preConditions onFail="MARK_RAN">
             <and>
                 <not>
-                    <primaryKeyExists primaryKeyName="i_target_pkey"/>
+                    <primaryKeyExists tableName="request_target" primaryKeyName="i_target_pkey"/>
                 </not>
             </and>
         </preConditions>

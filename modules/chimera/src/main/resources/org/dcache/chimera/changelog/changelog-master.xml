@@ -3,7 +3,11 @@
      xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
      xsi:schemaLocation="
-     http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+     http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <!-- liquibase >= 3.5 maps BLOB to OID type by default -->
+    <property  name="blob.type"  value="bytea"  dbms="postgresql"/>
+    <property  name="blob.type"  value="BLOB"  dbms="oracle,h2,hsqldb"/>
 
     <include file="org/dcache/chimera/changelog/changeset-1.8.0.xml"/>
     <include file="org/dcache/chimera/changelog/changeset-1.9.2.xml"/>

@@ -95,7 +95,14 @@
         <property name="transactionManager" ref="tx-manager"/>
     </bean>
 
-  <bean id="liquibase" class="org.dcache.util.SpringLiquibase">
+    <bean id="liquibase-pre" class="org.dcache.util.SpringLiquibase">
+        <description>Database schema Pre-manager</description>
+        <property name="dataSource" ref="data-source"/>
+        <property name="changeLog" value="classpath:${pnfsmanager.db.schema.changelog-pre}"/>
+        <property name="shouldUpdate" value="${pnfsmanager.db.schema.auto}"/>
+    </bean>
+
+    <bean id="liquibase" class="org.dcache.util.SpringLiquibase" depends-on="liquibase-pre">
       <description>Database schema manager</description>
       <property name="dataSource" ref="data-source"/>
       <property name="changeLog" value="classpath:${pnfsmanager.db.schema.changelog}"/>

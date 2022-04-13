@@ -3,7 +3,7 @@
      xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
      xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
-     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
 
     <changeSet author="tigran" id="1">
         <!--
@@ -88,7 +88,7 @@
             <column name="ipnfsid" type="char(36)">
                 <constraints nullable="false" primaryKey="true" primaryKeyName="t_inodes_data_pkey"/>
             </column>
-            <column name="ifiledata" type="BLOB"/>
+            <column name="ifiledata" type="${blob.type}"/>
         </createTable>
 
         <createTable tableName="t_level_1">
@@ -119,7 +119,7 @@
             <column name="imtime" type="DATETIME">
                 <constraints nullable="false"/>
             </column>
-            <column name="ifiledata" type="BLOB"/>
+            <column name="ifiledata" type="${blob.type}"/>
         </createTable>
 
         <createTable tableName="t_level_2">
@@ -150,7 +150,7 @@
             <column name="imtime" type="DATETIME">
                 <constraints nullable="false"/>
             </column>
-            <column name="ifiledata" type="BLOB"/>
+            <column name="ifiledata" type="${blob.type}"/>
         </createTable>
 
         <createTable tableName="t_level_3">
@@ -181,7 +181,7 @@
             <column name="imtime" type="DATETIME">
                 <constraints nullable="false"/>
             </column>
-            <column name="ifiledata" type="BLOB"/>
+            <column name="ifiledata" type="${blob.type}"/>
         </createTable>
 
         <createTable tableName="t_level_4">
@@ -212,7 +212,7 @@
             <column name="imtime" type="DATETIME">
                 <constraints nullable="false"/>
             </column>
-            <column name="ifiledata" type="BLOB"/>
+            <column name="ifiledata" type="${blob.type}"/>
         </createTable>
 
         <createTable tableName="t_level_5">
@@ -243,7 +243,7 @@
             <column name="imtime" type="DATETIME">
                 <constraints nullable="false"/>
             </column>
-            <column name="ifiledata" type="BLOB"/>
+            <column name="ifiledata" type="${blob.type}"/>
         </createTable>
 
         <createTable tableName="t_level_6">
@@ -274,7 +274,7 @@
             <column name="imtime" type="DATETIME">
                 <constraints nullable="false"/>
             </column>
-            <column name="ifiledata" type="BLOB"/>
+            <column name="ifiledata" type="${blob.type}"/>
         </createTable>
 
         <createTable tableName="t_level_7">
@@ -305,7 +305,7 @@
             <column name="imtime" type="DATETIME">
                 <constraints nullable="false"/>
             </column>
-            <column name="ifiledata" type="BLOB"/>
+            <column name="ifiledata" type="${blob.type}"/>
         </createTable>
 
         <createTable tableName="t_locationinfo">
@@ -414,7 +414,7 @@
             <column name="imtime" type="DATETIME">
                 <constraints nullable="false"/>
             </column>
-            <column name="ivalue" type="BLOB"/>
+            <column name="ivalue" type="${blob.type}"/>
         </createTable>
 
         <addPrimaryKey columnNames="iparent, iname" constraintName="t_dirs_pkey" tableName="t_dirs"/>

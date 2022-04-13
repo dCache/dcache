@@ -3,10 +3,10 @@
         xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
-     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
 
     <!-- Note that the imode value is wrong (value is read as decimal, not octal).  This is fixed in changeset 26 -->
-    <changeSet id="1" author="behrmann">
+    <changeSet id="1.2" author="behrmann">
         <preConditions onFail="MARK_RAN" onFailMessage="Not creating lost+found as it already exists (this is not an error)">
             <sqlCheck expectedResult="0">
                 SELECT count(*) FROM t_inodes WHERE ipnfsid='000000000000000000000000000000000001'
@@ -43,7 +43,7 @@
         <rollback/>
     </changeSet>
 
-    <changeSet id="2" author="behrmann">
+    <changeSet id="2.3" author="behrmann">
         <comment>Move lost links to lost+found</comment>
         <sql>
             UPDATE t_dirs SET iparent='000000000000000000000000000000000001',iname=ipnfsid WHERE NOT EXISTS (SELECT 1 FROM t_inodes WHERE ipnfsid=iparent);
@@ -52,7 +52,7 @@
         <rollback/>
     </changeSet>
 
-    <changeSet id="4" author="behrmann">
+    <changeSet id="4.2" author="behrmann">
         <comment>Move unlinked files and directories to lost+found</comment>
         <sql>
             UPDATE t_inodes i SET inlink=1 WHERE itype != 16384 AND NOT EXISTS (SELECT 1 FROM t_dirs d WHERE d.ipnfsid=i.ipnfsid);
@@ -62,7 +62,7 @@
         <rollback/>
     </changeSet>
 
-    <changeSet id="5" author="behrmann">
+    <changeSet id="5.1" author="behrmann">
         <comment>Correct link count on directories</comment>
         <sql>
             UPDATE t_inodes i SET inlink=2+(SELECT count(*) FROM t_dirs d WHERE d.iparent=i.ipnfsid) WHERE itype=16384 AND inlink!=2+(SELECT count(*) FROM t_dirs d WHERE d.iparent=i.ipnfsid);
@@ -81,7 +81,7 @@
         <addUniqueConstraint tableName="t_inodes" columnNames="inumber" constraintName="i_inodes_inumber"/>
     </changeSet>
 
-    <changeSet id="7" author="behrmann" dbms="postgresql">
+    <changeSet id="7.1" author="behrmann" dbms="postgresql">
         <comment>Update f_create_inode stored procedure to return inumber</comment>
         <createProcedure>
             CREATE OR REPLACE FUNCTION f_create_inode(parent bigint, name varchar, id varchar, type integer, mode integer, nlink integer, uid integer, gid int, size bigint, io integer, now timestamp) RETURNS bigint AS $$
@@ -109,7 +109,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="8" author="behrmann">
+    <changeSet id="8.1" author="behrmann">
         <comment>Rewrite t_tags to use inumber as foreign key</comment>
 
         <renameTable oldTableName="t_tags" newTableName="t_tags2"/>
@@ -318,7 +318,7 @@
             <column name="inumber" type="bigint">
                 <constraints nullable="false"/>
             </column>
-            <column name="ifiledata" type="BLOB"/>
+            <column name="ifiledata" type="${blob.type}"/>
         </createTable>
 
         <sql>
@@ -346,7 +346,7 @@
                 <column name="ipnfsid" type="varchar(36)">
                     <constraints nullable="false"/>
                 </column>
-                <column name="ifiledata" type="BLOB"/>
+                <column name="ifiledata" type="${blob.type}"/>
             </createTable>
 
             <sql>
@@ -1173,7 +1173,7 @@
             <column name="imtime" type="DATETIME">
                 <constraints nullable="false"/>
             </column>
-            <column name="ifiledata" type="BLOB"/>
+            <column name="ifiledata" type="${blob.type}"/>
         </createTable>
 
         <sql>
@@ -1225,7 +1225,7 @@
                 <column name="imtime" type="DATETIME">
                     <constraints nullable="false"/>
                 </column>
-                <column name="ifiledata" type="BLOB"/>
+                <column name="ifiledata" type="${blob.type}"/>
             </createTable>
 
             <sql>
@@ -1281,7 +1281,7 @@
             <column name="imtime" type="DATETIME">
                 <constraints nullable="false"/>
             </column>
-            <column name="ifiledata" type="BLOB"/>
+            <column name="ifiledata" type="${blob.type}"/>
         </createTable>
 
         <sql>
@@ -1333,7 +1333,7 @@
                 <column name="imtime" type="DATETIME">
                     <constraints nullable="false"/>
                 </column>
-                <column name="ifiledata" type="BLOB"/>
+                <column name="ifiledata" type="${blob.type}"/>
             </createTable>
 
             <sql>
@@ -1389,7 +1389,7 @@
             <column name="imtime" type="DATETIME">
                 <constraints nullable="false"/>
             </column>
-            <column name="ifiledata" type="BLOB"/>
+            <column name="ifiledata" type="${blob.type}"/>
         </createTable>
 
         <sql>
@@ -1441,7 +1441,7 @@
                 <column name="imtime" type="DATETIME">
                     <constraints nullable="false"/>
                 </column>
-                <column name="ifiledata" type="BLOB"/>
+                <column name="ifiledata" type="${blob.type}"/>
             </createTable>
 
             <sql>
@@ -1497,7 +1497,7 @@
             <column name="imtime" type="DATETIME">
                 <constraints nullable="false"/>
             </column>
-            <column name="ifiledata" type="BLOB"/>
+            <column name="ifiledata" type="${blob.type}"/>
         </createTable>
 
         <sql>
@@ -1549,7 +1549,7 @@
                 <column name="imtime" type="DATETIME">
                     <constraints nullable="false"/>
                 </column>
-                <column name="ifiledata" type="BLOB"/>
+                <column name="ifiledata" type="${blob.type}"/>
             </createTable>
 
             <sql>
@@ -1605,7 +1605,7 @@
             <column name="imtime" type="DATETIME">
                 <constraints nullable="false"/>
             </column>
-            <column name="ifiledata" type="BLOB"/>
+            <column name="ifiledata" type="${blob.type}"/>
         </createTable>
 
         <sql>
@@ -1657,7 +1657,7 @@
                 <column name="imtime" type="DATETIME">
                     <constraints nullable="false"/>
                 </column>
-                <column name="ifiledata" type="BLOB"/>
+                <column name="ifiledata" type="${blob.type}"/>
             </createTable>
 
             <sql>
@@ -1713,7 +1713,7 @@
             <column name="imtime" type="DATETIME">
                 <constraints nullable="false"/>
             </column>
-            <column name="ifiledata" type="BLOB"/>
+            <column name="ifiledata" type="${blob.type}"/>
         </createTable>
 
         <sql>
@@ -1765,7 +1765,7 @@
                 <column name="imtime" type="DATETIME">
                     <constraints nullable="false"/>
                 </column>
-                <column name="ifiledata" type="BLOB"/>
+                <column name="ifiledata" type="${blob.type}"/>
             </createTable>
 
             <sql>
@@ -1821,7 +1821,7 @@
             <column name="imtime" type="DATETIME">
                 <constraints nullable="false"/>
             </column>
-            <column name="ifiledata" type="BLOB"/>
+            <column name="ifiledata" type="${blob.type}"/>
         </createTable>
 
         <sql>
@@ -1873,7 +1873,7 @@
                 <column name="imtime" type="DATETIME">
                     <constraints nullable="false"/>
                 </column>
-                <column name="ifiledata" type="BLOB"/>
+                <column name="ifiledata" type="${blob.type}"/>
             </createTable>
 
             <sql>

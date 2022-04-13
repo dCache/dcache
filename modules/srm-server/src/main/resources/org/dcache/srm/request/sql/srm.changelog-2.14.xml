@@ -2,7 +2,7 @@
 
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
-                       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.3.xsd">
+                       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
 
     <changeSet id="0" author="behrmann">
         <preConditions onFail="MARK_RAN" onFailMessage="Not renaming count column as lsrequests table does not exist (this is not an error)">
@@ -973,7 +973,7 @@
         <createTable tableName="srmuser">
             <column name="id" type="bigint"><constraints primaryKey="true" primaryKeyName="srmuser_pkey" nullable="false"/></column>
             <column name="type" type="varchar(8)"/>
-            <column name="encoded" type="blob"/>
+            <column name="encoded" type="${blob.type}"/>
         </createTable>
 
         <createIndex tableName="bringonlinerequests" indexName="bringonlinerequests_userid_idx">

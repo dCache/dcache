@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog
+     xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <!--
+    IMPORTANT:
+        This file contains changes that should be applied prior any other schema changes,
+        typically to fix liquibase or schema issues that prevent other changes from being applied.
+    -->
+
+    <changeSet id="0.1" author="tigran" runOrder="first">
+
+        <comment>
+            Fix liquibase issue with duplicate id and mismatching md5sums in databasechangelog table.
+            This change set should be applied before any other changes.
+        </comment>
+
+        <sql>
+            UPDATE databasechangelog SET id='1.1' WHERE md5sum = '7:eb2d5f1df13d6bf3d4b52079c2dfa28d';
+            UPDATE databasechangelog SET id='1.2' WHERE md5sum = '7:2db9e833ae19148780e5d1acc517eaa8';
+
+            UPDATE databasechangelog SET id='2.2' WHERE md5sum = '7:c26ad33e589eb3cb7c66cc1f02031475';
+            UPDATE databasechangelog SET id='2.3' WHERE md5sum = '7:488b677497845d9fdccc2b4735c955fa';
+
+            UPDATE databasechangelog SET id='4.1' WHERE md5sum = '7:8b55165b04c65c4cb8ccf7f93fde9faa';
+            UPDATE databasechangelog SET id='4.2' WHERE md5sum = '7:21ed1ac81363f72ec5be2170ce036724';
+
+            UPDATE databasechangelog SET id='5.1' WHERE md5sum = '7:d541022e08ac308078ab824a740bb062';
+
+            UPDATE databasechangelog SET id='8.1' WHERE md5sum = '7:e303e36cdcbe213f479edb598925d775';
+
+            UPDATE databasechangelog SET md5sum = '7:17fde3a5dced499d37d7e113c3bf14a2' WHERE md5sum = '7:0dfb0413e67dda74b16e1991670974e2';
+            UPDATE databasechangelog SET md5sum = '7:297f2f5432210942b43b820a7c49006e' WHERE md5sum = '7:9a3cd4245e7d9c0b7015a20f9c284f2d';
+            UPDATE databasechangelog SET md5sum = '7:cfa6167e61fdbbea4d9a580079b655d7' WHERE md5sum = '7:44f6fc5af2832715524dc0811934b1e8';
+            UPDATE databasechangelog SET md5sum = '7:63673bb823281f204e16ea055d7fc773' WHERE md5sum = '7:cad6a1d47963b73b743d8324812fc90e';
+            UPDATE databasechangelog SET md5sum = '7:da6e72eda0500b2297060186def0ff79' WHERE md5sum = '7:3d41f66591e7f446f73dc9674bc28ad2';
+            UPDATE databasechangelog SET md5sum = '7:ad9dc5aefb279fb9eeba204b7f530c5d' WHERE md5sum = '7:a8ede4230eb74a2e938839a057b4759b';
+            UPDATE databasechangelog SET md5sum = '7:1694f852b51ff02fbd77dbdd9696e6c6' WHERE md5sum = '7:aaf8f4715d07789e3d4dd67ab2e386fc';
+            UPDATE databasechangelog SET md5sum = '7:4850fb9e27b6eeb94026f1475ce21046' WHERE md5sum = '7:bb7bdfc499d3d8b6dcd4c7eeaae27740';
+            UPDATE databasechangelog SET md5sum = '7:56a6b277ee4f7412dd6fe37d4c8caf42' WHERE md5sum = '7:a9642d3a7da231497eb2535a0de81a74';
+            UPDATE databasechangelog SET md5sum = '7:5fdeb9b27b034c454d4b7290dbd4a496' WHERE md5sum = '7:3b105eb3c3546102f65d970ecbfad6a8';
+            UPDATE databasechangelog SET md5sum = '7:b7d435508913f6378ce145a93205cb29' WHERE md5sum = '7:513a5a46018019f629edb84999ab9951';
+            UPDATE databasechangelog SET md5sum = '7:a7f81c8063cabff046bc73d764f359da' WHERE md5sum = '7:993c78bca18f3243c0a5da7bbdf3e1f7';
+            UPDATE databasechangelog SET md5sum = '7:ca1d1206b2f3d25f96040115e0f148ec' WHERE md5sum = '7:981ddaa56caaee56284f3a297d6bfc58';
+            UPDATE databasechangelog SET md5sum = '7:53ebb0055ff1ffe98b8db3603b2ef3a8' WHERE md5sum = '7:13362e810545e19fb1314971b3a792a7';
+            UPDATE databasechangelog SET md5sum = '7:e4d33c563df93e5ff1ae8ecd5da9b580' WHERE md5sum = '7:16d92e6ffdfebb8cbcd781060b2bd28d';
+            UPDATE databasechangelog SET md5sum = '7:25edbdaaba3176e673ec2998f320152c' WHERE md5sum = '7:1b659558b3e2cd781d765cc4b6a12a0a';
+            UPDATE databasechangelog SET md5sum = '7:bf04aa90cf10d3c7d45f53a261d9d068' WHERE md5sum = '7:0ddcf25f9c8db3c77d2bc9ae94243b69';
+            UPDATE databasechangelog SET md5sum = '7:f6edddc3206e3c4cf969dd2ec5f0519c' WHERE md5sum = '7:26bbab5e7c0f6ee06e96ee884cc43fb4';
+            UPDATE databasechangelog SET md5sum = '7:3f20884c35f64037f350d5009ad7f96d' WHERE md5sum = '7:3db30539a9c4af64bcfbf4c96f871048';
+            UPDATE databasechangelog SET md5sum = '7:ea390d7581aac2e346b6a737c188473b' WHERE md5sum = '7:c5ffc178c0e360910cda240b2953e61f';
+            UPDATE databasechangelog SET md5sum = '7:2ccfdb189f429dc6100f718d271c3584' WHERE md5sum = '7:5dd70248d188b08da7c802bd8b3d453b';
+            UPDATE databasechangelog SET md5sum = '7:217ec92208dff4a295b71510d11b7f76' WHERE md5sum = '7:fcfded6e1f1683ac1499de1bf5963faf';
+            UPDATE databasechangelog SET md5sum = '7:1d31f4dd435e7edb1ac1c7fafaa3c6e2' WHERE md5sum = '7:f30285a387085849684cb3818cf648b4';
+            UPDATE databasechangelog SET md5sum = '7:159acd52b9aafb7d3f9f64aa260ec166' WHERE md5sum = '7:4286e635a0f48d0e5c451dfd359aea86';
+            UPDATE databasechangelog SET md5sum = '7:f8dc45ef1c6a5d2b8bbba9151096697a' WHERE md5sum = '7:bf72944bc6399456cbf80ee5db5d79a4';
+            UPDATE databasechangelog SET md5sum = '7:cba821b535ee0ff5564d10600a887f73' WHERE md5sum = '7:4b9d65ab81957336b743dbcd3b1da7aa';
+            UPDATE databasechangelog SET md5sum = '7:6be54278cca6c1a4f596e2d96cda7125' WHERE md5sum = '7:bcb909cb14c25bd7529b604069719bf1';
+            UPDATE databasechangelog SET md5sum = '7:d48f1eec40c3a2859afb772617434152' WHERE md5sum = '7:bc088c15ee4f6746dc97689326faf3f1';
+            UPDATE databasechangelog SET md5sum = '7:b08d667e01804794ca7d691f67349d07' WHERE md5sum = '7:77ac2304ee24ab0b1311a4f650db332d';
+            UPDATE databasechangelog SET md5sum = '7:de72da59594baac6480826e9e0b56115' WHERE md5sum = '7:94e4077cafdb821e6a5f871cf4015833';
+            UPDATE databasechangelog SET md5sum = '7:c7092d089bbad634e509d55ed4a74747' WHERE md5sum = '7:adec189937cafcb88b8281803702a7bd';
+            UPDATE databasechangelog SET md5sum = '7:16ba8ba2f34e2831835106b9528a6c72' WHERE md5sum = '7:f62f76d60268682c376885254d11ff69';
+            UPDATE databasechangelog SET md5sum = '7:b2bf26fc059e19de1de1885bb7c6f69d' WHERE md5sum = '7:eb2d5f1df13d6bf3d4b52079c2dfa28d';
+            UPDATE databasechangelog SET md5sum = '7:fd12ef3ccb2e23e914344d5b2cb86bc2' WHERE md5sum = '7:b5c2f980fde8ee51bb242c2dda9f973b';
+        </sql>
+    </changeSet>
+</databaseChangeLog>

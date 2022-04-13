@@ -2,11 +2,11 @@
 
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
-         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
     <preConditions>
         <dbms type="hsqldb"/>
     </preConditions>
-    <changeSet id="4.2" author="arossi" context="billing">
+    <changeSet id="4.2.1" author="arossi" context="billing">
         <comment>daily views (for scalability)</comment>
         <sql splitStatements="false">CREATE VIEW "billinginfo_rd_hourly"
             AS

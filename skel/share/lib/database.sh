@@ -29,10 +29,17 @@ liquibase() # $1 = domain, $2 = cell, $3+ = liquibase arguments
     user=$(getScopedProperty db.user "$1" "$2")
     password=$(getScopedProperty db.password "$1" "$2")
     driver=$(getScopedProperty db.driver "$1" "$2")
-    classpath=$(printLimitedClassPath liquibase-core liquibase-slf4j slf4j-api logback-classic \
-                logback-core logback-console-config dcache-core dcache-bulk dcache-qos dcache-spacemanager srm-server chimera postgresql hsqldb h2)
+    classpath=$(printLimitedClassPath liquibase-core commons-lang3 commons-io opencsv snakeyaml picocli jaxb-api jaxb-core jaxb-impl slf4j-api logback-classic \
+                logback-core dcache-core dcache-bulk dcache-qos dcache-spacemanager srm-server chimera postgresql hsqldb h2)
     changelog=$(getScopedProperty db.schema.changelog "$1" "$2")
+    changelogpre=$(getScopedProperty db.schema.changelog-pre "$1" "$2")
 
     shift 2
-    CLASSPATH="$classpath" quickJava liquibase.integration.commandline.Main --driver="${driver}" --changeLogFile="${changelog}" --url="${url}" --username="${user}" --password="${password}" "$@"
+
+    # Apply changelog that fixes liquibase incompatibility issues
+    if [ "x${changelogpre}" != "x" ]
+    then
+        CLASSPATH="$classpath" quickJava liquibase.integration.commandline.LiquibaseCommandLine --headless=true --log-channels=all --log-level=WARNING --show-banner=false --driver="${driver}" --changeLogFile="${changelogpre}" --url="${url}" --username="${user}" --password="${password}" "$@"
+    fi
+    CLASSPATH="$classpath" quickJava liquibase.integration.commandline.LiquibaseCommandLine --headless=true --log-channels=all --log-level=WARNING --show-banner=false --driver="${driver}" --changeLogFile="${changelog}" --url="${url}" --username="${user}" --password="${password}" "$@"
 }

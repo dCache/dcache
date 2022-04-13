@@ -97,7 +97,14 @@
         <property name="dataSource" ref="dataSource"/>
     </bean>
 
-    <bean id="liquibase" class="org.dcache.util.SpringLiquibase">
+    <bean id="liquibase-pre" class="org.dcache.util.SpringLiquibase">
+        <description>Database schema Pre-manager</description>
+        <property name="dataSource" ref="dataSource"/>
+        <property name="changeLog" value="classpath:${nfs.db.schema.changelog-pre}"/>
+        <property name="shouldUpdate" value="${nfs.db.schema.auto}"/>
+    </bean>
+
+    <bean id="liquibase" class="org.dcache.util.SpringLiquibase" depends-on="liquibase-pre">
         <description>Database schema manager</description>
         <property name="dataSource" ref="dataSource"/>
         <property name="changeLog" value="classpath:${nfs.db.schema.changelog}"/>

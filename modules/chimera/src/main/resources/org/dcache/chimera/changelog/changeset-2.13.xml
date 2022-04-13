@@ -3,9 +3,9 @@
         xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
-     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
 
-    <changeSet author="behrmann" id="1" dbms="postgresql">
+    <changeSet author="behrmann" id="1.1" dbms="postgresql">
         <comment>Update trash trigger to add an itype 2 marker to trash.</comment>
         <createProcedure>
             DROP TRIGGER IF EXISTS tgr_locationinfo_trash ON t_inodes;
@@ -96,7 +96,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet author="behrmann" id="2" dbms="hsqldb">
+    <changeSet author="behrmann" id="2.1" dbms="hsqldb">
         <comment>Update trash trigger to add an itype 0 marker to trash.</comment>
         <!-- A BEFORE DELETE trigger on t_inodes would have been easier, but hsqldb
              does not allow data manipulation statements in BEFORE triggers. -->
@@ -134,7 +134,7 @@
             <column name="ictime" type="DATETIME"/>
             <column name="iatime" type="DATETIME"/>
             <column name="imtime" type="DATETIME"/>
-            <column name="ivalue" type="BLOB"/>
+            <column name="ivalue" type="${blob.type}"/>
         </createTable>
 
         <sql>

@@ -31,5 +31,10 @@
             <groupId>jline</groupId>
             <artifactId>jline</artifactId>
         </dependency>
+        <!-- needed by liquibase cli -->
+        <dependency>
+            <groupId>info.picocli</groupId>
+            <artifactId>picocli</artifactId>
+        </dependency>
     </dependencies>
 </project>

@@ -3,9 +3,9 @@
         xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
-     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
 
-    <changeSet author="behrmann" id="2" dbms="postgresql">
+    <changeSet author="behrmann" id="2.2" dbms="postgresql">
         <comment>Drop tag population trigger</comment>
         <sql>
             DROP TRIGGER IF EXISTS tgr_populate_tags ON t_dirs;
@@ -314,7 +314,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet author="behrmann" id="4">
+    <changeSet author="behrmann" id="4.1">
         <sql>
             DELETE FROM t_dirs WHERE iname IN ('.', '..')
         </sql>
@@ -661,7 +661,7 @@
             <column name="imtime" type="DATETIME">
                 <constraints nullable="false"/>
             </column>
-            <column name="ivalue" type="BLOB"/>
+            <column name="ivalue" type="${blob.type}"/>
         </createTable>
 
         <sql>
@@ -764,7 +764,7 @@
                 <column name="imtime" type="DATETIME">
                     <constraints nullable="false"/>
                 </column>
-                <column name="ivalue" type="BLOB"/>
+                <column name="ivalue" type="${blob.type}"/>
             </createTable>
 
             <sql>
