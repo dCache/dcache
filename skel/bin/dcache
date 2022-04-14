@@ -222,7 +222,7 @@ deprecationWarning()
             fi
         fi
     fi
-}
+} 1>&2
 
 # Dumps the heap. Terminates the script in case of failure.
 dumpHeap() # $1=force, $2=live, $3=file, $4=pid, $5=error
