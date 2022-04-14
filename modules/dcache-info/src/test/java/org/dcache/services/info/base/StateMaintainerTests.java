@@ -2,7 +2,7 @@ package org.dcache.services.info.base;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.mockito.BDDMockito.anyObject;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.atLeast;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
@@ -74,37 +74,27 @@ public class StateMaintainerTests {
     }
 
     @Test
-    public void shouldBeInitiallyEmptyQueueSize() throws InterruptedException {
+    public void shouldBeInitiallyEmptyQueueSize() {
         assertThat(_maintainer.countPendingUpdates(), is(0));
     }
 
     @Test(timeout = 10_000)
-    public void shouldIncrementAfterSubmittingUpdate() throws InterruptedException {
+    public void shouldIncrementAfterSubmittingUpdate() {
         Object monitor = new Object();
 
         willAnswer(a -> {
-            synchronized (monitor) {
-                monitor.wait();
+            try {
+                synchronized (monitor) {
+                    monitor.wait();
+                }
+            } catch (InterruptedException e) {
+                // finished
             }
             return null;
-        }).given(_caretaker).processUpdate(anyObject());
+        }).given(_caretaker).processUpdate(any());
 
         _maintainer.enqueueUpdate(new StateUpdate());
-
         assertThat(_maintainer.countPendingUpdates(), is(1));
-    }
-
-    @Test(timeout = 10_000)
-    public void shouldIncreaseAfterSubmittingUpdateWhenQueuedUpdate() throws InterruptedException {
-        willAnswer(i -> {
-            wait();
-            return null;
-        }).given(_caretaker).processUpdate(anyObject());
-
-        _maintainer.enqueueUpdate(new StateUpdate());
-        _maintainer.enqueueUpdate(new StateUpdate());
-
-        assertThat(_maintainer.countPendingUpdates(), is(2));
     }
 
     @Test(timeout = 10_000)
