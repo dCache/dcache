@@ -4,6 +4,7 @@ package diskCacheV111.services;
 
 import static java.util.Arrays.asList;
 import static org.dcache.util.ByteUnit.BYTES;
+import static org.dcache.util.Files.checkDirectory;
 
 import com.google.common.escape.Escaper;
 import com.google.common.escape.Escapers;
@@ -267,9 +268,9 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
             }
 
         } else {
-            if ((!_dbBase.exists()) || (_createHtmlTree && !_htmlBase.exists())) {
-                throw new IllegalArgumentException(
-                      "Either <baseDirectory> or <htmlBase> doesn't exist");
+            checkDirectory(_dbBase);
+            if (_createHtmlTree) {
+                checkDirectory(_htmlBase);
             }
 
         }
