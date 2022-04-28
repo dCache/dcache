@@ -5,7 +5,6 @@ import java.util.Properties;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.xrootd.plugins.AuthenticationFactory;
 import org.dcache.xrootd.plugins.ChannelHandlerFactory;
-import org.dcache.xrootd.plugins.InvalidHandlerConfigurationException;
 import org.dcache.xrootd.plugins.ProxyDelegationClient;
 import org.dcache.xrootd.plugins.ProxyDelegationClientFactory;
 import org.dcache.xrootd.plugins.authn.none.NoAuthenticationFactory;
@@ -17,6 +16,7 @@ import org.dcache.xrootd.plugins.authn.none.NoAuthenticationFactory;
  */
 public class LoginAuthenticationHandlerFactory implements ChannelHandlerFactory {
 
+    private final String _protocol;
     private final String _authnPluginName;
     private final String _clientName;
     private final Properties _properties;
@@ -60,6 +60,8 @@ public class LoginAuthenticationHandlerFactory implements ChannelHandlerFactory 
         _properties = properties;
         _authenticationFactory = authenticationFactory;
         _loginStrategy = loginStrategy;
+        String[] parts = _authnPluginName.split(":");
+        _protocol = parts[parts.length - 1];
     }
 
     @Override
@@ -74,23 +76,14 @@ public class LoginAuthenticationHandlerFactory implements ChannelHandlerFactory 
 
     @Override
     public ChannelHandler createHandler() {
-        return new LoginAuthenticationHandler(_authenticationFactory,
+        return new LoginAuthenticationHandler(_protocol, _authenticationFactory,
               createClient(),
               _loginStrategy);
     }
 
     private ProxyDelegationClient createClient() {
         if (_proxyDelegationFactory != null) {
-            try {
-                return _proxyDelegationFactory.createClient(_clientName,
-                      _properties);
-            } catch (InvalidHandlerConfigurationException e) {
-                throw new IllegalArgumentException("Unable to create delegation "
-                      + "client "
-                      + _clientName
-                      + ": "
-                      + e.toString());
-            }
+            return _proxyDelegationFactory.createClient(_clientName, _properties);
         }
         return null;
     }

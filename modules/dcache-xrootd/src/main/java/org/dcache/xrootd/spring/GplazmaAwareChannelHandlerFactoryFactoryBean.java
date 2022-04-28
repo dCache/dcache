@@ -2,9 +2,6 @@ package org.dcache.xrootd.spring;
 
 import static com.google.common.base.Predicates.containsPattern;
 import static com.google.common.collect.Iterables.any;
-import static com.google.common.collect.Iterables.filter;
-import static com.google.common.collect.Iterables.indexOf;
-import static com.google.common.collect.Iterables.size;
 
 import com.google.common.collect.Lists;
 import java.util.List;
@@ -20,7 +17,6 @@ import org.dcache.xrootd.plugins.AuthenticationProvider;
 import org.dcache.xrootd.plugins.AuthorizationFactory;
 import org.dcache.xrootd.plugins.AuthorizationProvider;
 import org.dcache.xrootd.plugins.ChannelHandlerFactory;
-import org.dcache.xrootd.plugins.InvalidHandlerConfigurationException;
 import org.dcache.xrootd.plugins.ProxyDelegationClientFactory;
 import org.dcache.xrootd.security.GSIProxyDelegationClientFactory;
 import org.dcache.xrootd.security.ProxyDelegationStore;
@@ -65,12 +61,8 @@ public class GplazmaAwareChannelHandlerFactoryFactoryBean
                   "The authn: prefix is not allowed in the xrootd door");
         }
 
-        if (size(filter(_plugins, containsPattern("^gplazma:"))) != 1) {
-            throw new IllegalArgumentException("Exactly one authentication plugin is required");
-        }
-
-        int authn = indexOf(_plugins, containsPattern("^gplazma:"));
-        int authz = indexOf(_plugins, containsPattern("^authz:"));
+        int authn = plugins.lastIndexOf("gplazma:");
+        int authz = plugins.indexOf("authz:");
         if (authz > -1 && authz < authn) {
             throw new IllegalArgumentException(
                   "Authorization plugins must be placed after authentication plugins");
@@ -99,11 +91,6 @@ public class GplazmaAwareChannelHandlerFactoryFactoryBean
           throws Exception {
         List<ChannelHandlerFactory> factories = Lists.newArrayList();
         for (String plugin : _plugins) {
-            /* We need special logic for the authentication handler as we
-             * cannot use a generic provider: The provider would not have
-             * access to the login strategies. REVISIT: Is there some way
-             * we could get Spring to inject them anyway?
-             */
             if (plugin.startsWith(GPLAZMA_PREFIX)) {
                 String name = plugin.substring(GPLAZMA_PREFIX.length());
                 factories.add(createAuthenticationHandlerFactory(name));
@@ -117,10 +104,17 @@ public class GplazmaAwareChannelHandlerFactoryFactoryBean
         return factories;
     }
 
-    private ChannelHandlerFactory createAuthenticationHandlerFactory(
-          String name) throws Exception {
+    private ChannelHandlerFactory createAuthenticationHandlerFactory(String name) throws Exception {
         if (name.equals("none")) {
-            return new LoginAuthenticationHandlerFactory(GPLAZMA_PREFIX + "none",
+            /*
+             * The substitution of 'unix' for 'none' matches the NoAuthenticationHandler
+             * protocol sent to the xrootd client.  That handler does not, however, process the
+             * uid:gid credential returned, but treats this as an anonymous login.
+             * In order to chain this as a last resort with other protocols, such a strategy
+             * is necessary.   This use of 'unix' is for under the covers, so we still
+             * map the handler to 'gplazma:none' in the dCache property configuration.
+             */
+            return new LoginAuthenticationHandlerFactory(GPLAZMA_PREFIX + "unix",
                   _anonymousLoginStrategy);
         }
 
@@ -157,17 +151,13 @@ public class GplazmaAwareChannelHandlerFactoryFactoryBean
 
     private ProxyDelegationClientFactory createProxyDelegationClientFactory(String name) {
         for (ProxyDelegationClientFactory factory : _clientFactories) {
-            try {
-                if (factory instanceof GSIProxyDelegationClientFactory) {
-                    ((GSIProxyDelegationClientFactory) factory)
-                          .setProvider(getGsiProxyDelegationProvider());
-                }
-                if (factory.createClient(name, _properties) != null) {
-                    return factory;
-                }
-            } catch (InvalidHandlerConfigurationException e) {
-                LOGGER.debug("Could not create client for {} using factory {}: {}.",
-                      name, factory, e.toString());
+            if (factory instanceof GSIProxyDelegationClientFactory) {
+                ((GSIProxyDelegationClientFactory) factory)
+                      .setProvider(getGsiProxyDelegationProvider());
+            }
+
+            if (factory.createClient(name, _properties) != null) {
+                return factory;
             }
         }
 

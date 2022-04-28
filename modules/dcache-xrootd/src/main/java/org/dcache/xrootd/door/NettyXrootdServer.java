@@ -39,6 +39,7 @@ import org.dcache.xrootd.core.XrootdAuthenticationHandler;
 import org.dcache.xrootd.core.XrootdDecoder;
 import org.dcache.xrootd.core.XrootdEncoder;
 import org.dcache.xrootd.core.XrootdHandshakeHandler;
+import org.dcache.xrootd.core.XrootdSessionHandler;
 import org.dcache.xrootd.plugins.ChannelHandlerFactory;
 import org.dcache.xrootd.plugins.tls.SSLHandlerFactory;
 import org.dcache.xrootd.protocol.XrootdProtocol;
@@ -238,7 +239,7 @@ public class NettyXrootdServer implements CellIdentityAware {
 
                       /*
                        *  The TLSSessionInfo needs to be shared between
-                       *  the authentication handler and the redirect handler.
+                       *  the xrootd session handler and the redirect handler.
                        *
                        *  The door only needs one for incoming requests (server).
                        */
@@ -248,19 +249,32 @@ public class NettyXrootdServer implements CellIdentityAware {
                       TLSSessionInfo tlsSessionInfo = new TLSSessionInfo(_serverProtocolFlags);
                       tlsSessionInfo.setServerSslHandlerFactory(sslHandlerFactory);
 
+                      XrootdSessionHandler sessionHandler = new XrootdSessionHandler();
+                      /*
+                       *  Support security level/signed hash verification or for TLS.
+                       */
+                      sessionHandler.setTlsSessionInfo(tlsSessionInfo);
+                      sessionHandler.setSigningPolicy(_signingPolicy);
+                      pipeline.addLast(XrootdSessionHandler.SESSION_HANDLER, sessionHandler);
+
                       for (ChannelHandlerFactory factory : _channelHandlerFactories) {
                           ChannelHandler handler = factory.createHandler();
                           if (handler instanceof XrootdAuthenticationHandler) {
-                              /*
-                               *  This is to support security level/signed hash verification
-                               *  or for TLS.
-                               */
                               XrootdAuthenticationHandler authn = (XrootdAuthenticationHandler) handler;
-                              authn.setSigningPolicy(_signingPolicy);
-                              authn.setTlsSessionInfo(tlsSessionInfo);
+                              _log.debug("adding {} to {}.", authn, sessionHandler);
+                              /*
+                               * Add this handler to the session handler, not the pipeline.
+                               * The session handler will select the requested handler from
+                               * its internal map and add it to the pipeline just at the time
+                               * of the authentication request.
+                               */
+                              authn.setSessionHandler(sessionHandler);
+                              sessionHandler.add(authn);
+                          } else {
+                              pipeline.addLast("plugin:" + factory.getName(), handler);
                           }
-                          pipeline.addLast("plugin:" + factory.getName(), handler);
                       }
+
                       XrootdRedirectHandler handler = new XrootdRedirectHandler(_door, _rootPath,
                             _requestExecutor, _queryConfig, _appIoQueues);
                       handler.setSigningPolicy(_signingPolicy);
