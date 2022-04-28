@@ -58,7 +58,7 @@ xrootd door is required):
 ```ini
 [xrootd-${host.name}Domain]
 [xrootd-${host.name}Domain/xrootd]
-port = 1095
+xrootd.net.port = 1095
 ```
 
 2.  *Globally:* Edit `/etc/dcache/dcache.conf` and add the variable
@@ -120,44 +120,27 @@ for later reuse.
 
 To read it back into ROOT from dCache:
 
-   	root [7] TFile *reopen = TXNetFile ("root://<door_hostname>//pnfs/<example.org>/data/test.root","read");
-   	root [8] reopen->ls();
-   	TXNetFile**             //pnfs/<example.org>/data/test.root
-   	TXNetFile*             //pnfs/<example.org>/data/test.root
-  	 KEY: TH1F     testhisto;1     test
+    root [7] TFile *reopen = TXNetFile ("root://<door_hostname>//pnfs/<example.org>/data/test.root","read");
+    root [8] reopen->ls();
+    TXNetFile**             //pnfs/<example.org>/data/test.root
+    TXNetFile*             //pnfs/<example.org>/data/test.root
+    KEY: TH1F     testhisto;1     test
 
 ## XROOT security
 
-### Read-Write access
+### Read-Write access (legacy)
 
-Per default dCache xroot is restricted to read-only, because plain
-xroot is completely unauthenticated. A typical error message on the
-clientside if the server is read-only looks like:
-
-```console-user
-xrdcp -d 1 /bin/sh root://ford.desy.de//pnfs/desy.de/data/xrd_test2
-|Setting debug level 1
-|061024 18:43:05 001 Xrd: main: (C) 2004 SLAC INFN xrdcp 0.2 beta
-|061024 18:43:05 001 Xrd: Create: (C) 2004 SLAC INFN XrdClient kXR_ver002+kXR_asyncap
-|061024 18:43:05 001 Xrd: ShowUrls: The converted URLs count is 1
-|061024 18:43:05 001 Xrd: ShowUrls: URL n.1: root://ford.desy.de:1094//pnfs/desy.de/data/asdfas.
-|061024 18:43:05 001 Xrd: Open: Access to server granted.
-|061024 18:43:05 001 Xrd: Open: Opening the remote file /pnfs/desy.de/data/asdfas
-|061024 18:43:05 001 Xrd: XrdClient::TryOpen: doitparallel=1
-|061024 18:43:05 001 Xrd: Open: File open in progress.
-|061024 18:43:06 5819 Xrd: SendGenCommand: Server declared: Permission denied. Access is read only.(error code: 3003)
-|061024 18:43:06 001 Xrd: Close: File not opened.
-|Error accessing path/file for root://ford//pnfs/desy.de/data/asdfas
-```
+Legacy default for dCache xroot is restricted to read-only, because plain
+xroot was originally completely unauthenticated.
 
 To enable read-write access, add the following line to
 `${dCacheHome}/etc/dcache.conf`
 
 ```ini
-xrootdIsReadOnly=false
+xrootd.authz.anonymous-operations=FULL
 ```
 
-and restart any domain(s) running a `xrootd door`.
+and restart any domain(s) running a `xroot door`.
 
 Please note that due to the unauthenticated nature of this access
 mode, files can be written and read to/from any subdirectory in the
@@ -167,7 +150,7 @@ new files/subdirectories generated through `xroot` will inherit
 UID/GID from its parent directory. The user used for this can be
 configured via the `xrootd.authz.user` property.
 
-### Permitting read/write access on selected directories
+#### Permitting read/write access on selected directories
 
 To overcome the security issue of uncontrolled `xroot` read and write
 access mentioned in the previous section, it is possible to restrict
@@ -184,135 +167,58 @@ xrootd.authz.read-paths=/pnfs/<example.org>/rpath1:/pnfs/<example.org>/rpath2
 xrootd.authz.write-paths=/pnfs/<example.org>/wpath1:/pnfs/<example.org>/wpath2
 ```
 
-A restart of the `xrootd` door is required to make the changes take effect. As soon as any of the above properties are set, all read or write requests to directories not matching the allowed path lists will be refused. Symlinks are however not restricted to these prefixes.
+A restart of the `xroot` door is required to make the changes take effect.
+As soon as any of the above properties are set, all read or write requests
+to directories not matching the allowed path lists will be refused.
+Symlinks are however not restricted to these prefixes.
 
-### TLS
+### Strong authentication
 
-As of 6.2, dCache supports TLS according to the protocol requirements
-specified by the xroot Protocol 5.0.
+The `xroot`-implementation in dCache includes a pluggable
+authentication framework. To control which authentication mechanism is
+used by `xroot`, add the `xrootd.plugins` option to your dCache
+configuration and set it to the desired value.
 
-The xroot protocol allows a negotiation between the client and server as to when to
-initiate the TLS handshake.  The server-side options are explained in
-the _xrootd.properties_ file.  Currently supported is the ability to
-require TLS on all connections to the door and pool, or to make TLS
-optional, depending on the client.  For the former, one can also
-specify whether to begin TLS before login or after.  The "after" option
-is useful in the case of TLS being used with a strong authentication protocol
-such as GSI, in which case it would make sense not to protect the login as GSI
-already requires a Diffie-Hellman handshake to protect the passing of
-credential information.
+#### GSI
 
-For third-party, the dCache embedded client (on the destination server) will
-initiate TLS if (a) TLS is available on the destination pool (not turned off),
-and (b) the source server supports or requires it.  In the case that the source
-does not support TLS, but the triggering client has expressed 'tls.tpc=1'
-(requiring TLS on TPC), the connection will fail.
+To enable `GSI` authentication in `xroot`, add the following line to `/etc/dcache/dcache.conf`
+(globally) or to the layout for the specific door:
 
-As of 6.2, dCache has not yet implemented the GP file or data channel options;
-stay tuned for further developments in those areas.
-
-#### A note on TLS configuration for the pools
-
-Given that pools may need to service clients that do not support TLS (they
-may, for instance, be using a non-xroot protocol), it is probably not
-practical to make the pools require TLS by setting ``pool.mover.xrootd.security.tls.mode=STRICT``.
-
-
-### Token-based authorization
-
-The `xroot` dCache implementation includes a generic mechanism to plug in different authorization handlers.
-
-#### SciTokens
-
-As of 6.2, xroot authorization has been integrated with gPlazma SciToken support.
-
-Add
-
-```
-auth    sufficient	scitoken
+```ini
+xrootd.plugins=gplazma:gsi
 ```
 
-to the _gplazma.conf_ configuration file in order to enable authorization.
+When using `GSI` authentication, depending on your setup, you may or may not want dCache to fail
+if the host certificate chain can not be verified against trusted certificate authorities.
+Whether dCache performs this check can be controlled by setting the option
+`dcache.authn.hostcert.verify` for all of dCache.  For enabling or disabling specifically
+for xroot,
 
-The token for xroot is passed as an 'authz' query element on paths.
-For example,
-
-```
-xrdcp -f xroots:///my-xroot-door.example.org:1095///pnfs/fs/usr/scratch/testdata?authz=eyJ0eXAiOiJKV1QiLCJhb... /dev/null
-```
-
-dCache will support different tokens during the same client session, as well as
-different tokens on source and destination endpoints in a third-party transfer.
-
-To enable scitoken authorization on an xroot door, use
-"authz:scitokens" to load the authorization plugin.
-
-Here is an example layout configuration:
-
-```
-##
- #  1095: TLS LOGIN, TLS mode=STRICT, SCITOKEN AUTHZ
-##
-[xrootd-${host.name}Domain]
-[xrootd-${host.name}Domain/xrootd]
-xrootd.cell.name=xrootd-${host.name}
-xrootd.net.port=1095
-xrootd.authz.write-paths=/pnfs/fs/usr/test
-xrootd.authz.read-paths=/pnfs/fs/usr/test
-xrootd.security.tls.mode=STRICT
-xrootd.security.tls.require-login=true
-xrootd.plugins=gplazma:none,authz:scitokens
-xrootd.plugin!scitokens.strict=true
+```ini
+xrootd.gsi.hostcert.verify=true
 ```
 
-Note that the above configuration enforces TLS (STRICT); this is highly recommended
-with SciToken authorization as the token hash is not secure unless encrypted.
-While it is not strictly required to start TLS at login (since the actual token
-is not passed until a request involving a path, in this case, 'open') ––
-``xrootd.security.tls.require-session=true``
-would have been sufficient –– the extra protection on login of course will not
-hurt.
-
-The xroot protocol states that the server can specify supporting
-different authentication protocols via a list which the client should
-try in order.  While our library code allows for the chaining of
-multiple such handlers, dCache currently only supports one protocol,
-either GSI or none, at a time.
-
-Authorization, on the other hand, takes place after the authentication
-phase; the current library code assumes that the authorization module it
-loads is the only procedure allowed, and there is no provision for passing
-a failed authorization on to a successive handler on the pipeline.
-
-We thus make provision here for failing over to "standard" behavior
-via ``xrootd.plugin!scitokens.strict``.   If it is ``true``, then
-the presence of a scitoken is required.  If ``false``, and the token is missing,
-whatever restrictions that are already in force from the login apply.
-
-##### A Note on Pool configuration with Scitokens
-
-What this means, however, is that unless the client requests TLS,
-it will not be turned on.
+*Authorization* of the user information obtained by strong authentication
+is performed by contacting the gPlazma service. Please refer to
+[Chapter 10, Authorization in dCache](config-gplazma.md) for instructions about
+how to configure gPlazma.
 
 > **SECURITY CONSIDERATION**
 >
-> In order to protect the bearer token, the client should _always_ require
-> TLS by using 'xroots' as the URL schema.  This is because the xrootd clients
-> continue to pass the token in the open request's path query regardless
-> of whether the server supports TLS or has indicated that it should
-> be turned on.
+> In general `GSI` on `xroot` is not secure. It does not provide confidentiality and integrity
+> guarantees and hence does not protect against man-in-the-middle attacks.
 >
-> By using 'xroots', the client guarantees TLS will be on at login or
-> the connection will fail.
+> As of 6.2, this can be mitigated by using GSI in conjunction with TLS.
 
-####  Scitokens (JWT) and the ZTN protocol
+####  ZTN
 
-Scitokens are for authorization; however, the XrootD protocol also defines an authentication
-equivalent, ZTN, where a token is passed as a credential at authentication (just after login).
+Scitokens/JWT bearer tokens (see below) are for authorization; however, the (SLAC) xroot protocol
+also defines an authentication equivalent, ZTN, where a token is passed as a credential at
+authentication (just after login).
 
 Originally, this was a countermeasure taken to prevent stray clients from accessing the
 vanilla server via methods where there was no path (and thus no CGI authz element).  However,
-recent changes to the vanilla client and server have allowed a ZTN token to be used as
+recent changes to the vanilla client and server will allow a ZTN token to be used as
 a fallback authorization token as well, without further need to express a base64-encoded token
 as part of the path query.
 
@@ -334,13 +240,12 @@ xrootd.security.tls.mode=STRICT
 xrootd.security.tls.require-login=true
 xrootd.plugin!scitokens.strict=true
 ```
-
-indicates that any client will be allowed through with anonymous credentials (NOBODY) at
+indicates that any client will be allowed through with anonymous identity and restrictions at
 authentication time, but ultimately will need a token on the path in order to be authorized, with
 the subject and claim being converted into dCache user and restrictions at the time of the request
-containing the path.
+containing the path (usually 'open' on the file).
 
-This configuration:
+This configuration,
 
 ```
 [xrootd-1095-${host.name}Domain]
@@ -355,128 +260,186 @@ xrootd.plugins=gplazma:ztn,authz:scitokens
 xrootd.security.tls.mode=STRICT
 xrootd.security.tls.require-login=true
 xrootd.plugin!scitokens.strict=false
-xrootd.authz.anonymous-operations=FULL
 ```
 
 on the other hand, turns on ZTN in the door.  For seamless functioning, this should be coupled with
-a loosening of the strict requirement on the CGI/path token, and FULL anonymous access (which just
-means that an anonymous user will be allowed to try all operations, with underlying acls determining
-whether these succeed or not).   With this configuration, the client will need to be provided
-a ZTN token via an environment variable, e.g.,
+a loosening of the strict requirement on the CGI/path token.   With this configuration, the client
+will need to be provided a ZTN token via an environment variable, e.g.,
 
 ```
 XDG_RUNTIME_DIR=/run/user/8773
 ```
 
-it will look for a file named 'bt_\<uid\>' in that directory.   With that token in hand, authorization
-will also take place.  A second token can still be passed as the path query CGI element (authz=Bearer%20),
-and will override the original if present, but this is treated as optional, not required.
+it will look for a file named 'bt_\<uid\>' in that directory.   With that token in hand,
+authorization will also take place.  A second token can still be passed as the path query CGI
+element (``authz=Bearer%20<base64-encoded string>``), and will override the original if present,
+but this is treated as optional, not required.
 
+ZTN requires TLS.  One has the option to enforce this up front via the ``STRICT`` setting
+(see further below), but a check will be made at authentication time as well, and an authentication
+error returned if TLS is not on.
 
-#### Token-based authorization as suggested in [http://people.web.psi.ch/feichtinger/doc/authz.pdf](https://www.psi.ch/search/phonebook-and-e-mail-directory?q=feichtinger).
+#### Token-based authorization (SciTokens/JWT)
 
-The first thing to do is to setup the keystore. The keystore file
-basically specifies all RSA-keypairs used within the authorization
-process and has exactly the same syntax as in the native xrootd
-tokenauthorization implementation. In this file, each line beginning
-with the keyword KEY corresponds to a certain Virtual Organisation
-(VO) and specifies the remote public (owned by the file catalogue) and
-the local private key belonging to that VO. A line containing the
-statement `"KEY VO:*"` defines a default keypair that is used as a
-fallback solution if no VO is specified in token-enhanced `xrootd`
-requests. Lines not starting with the KEY keyword are ignored. A
-template can be found in `/usr/share/dcache/examples/xrootd/keystore`.
+The `xroot` dCache implementation includes a generic mechanism to plug in different authorization
+handlers.
 
-The keys itself have to be converted into a certain format in order to be loaded into the authorization plugin. dCache expects both keys to be binary DER-encoded (Distinguished Encoding Rules for ASN.1). Furthermore the private key must be PKCS #8-compliant and the public key must follow the X.509-standard.
+As of 6.2, xroot authorization has been integrated with gPlazma SciToken/JWT bearer token support.
 
-The following example demonstrates how to create and convert a keypair using OpenSSL:
+Add
 
-Generate new RSA private key
-
-```console-root
-openssl genrsa -rand 12938467 -out key.pem 1024
+```
+auth    sufficient	scitoken
 ```
 
-Create certificate request
+to the _gplazma.conf_ configuration file in order to enable authorization.
 
-```console-root
-openssl req -new -inform PEM -key key.pem -outform PEM -out certreq.pem
+The token for xroot is passed as an 'authz=Bearer%20' query element on paths.
+
+For example,
+
+```
+xrdcp -f xroots:///my-xroot-door.example.org:1095///pnfs/fs/usr/scratch/testdata?authz=Bearer%20eyJ0eXAiOiJKV1QiLCJhb... /dev/null
 ```
 
-Create certificate by self-signing certificate request
+dCache will support different tokens during the same client session, as well as
+different tokens on source and destination endpoints in a third-party transfer.
 
-```console-root
-openssl x509 -days 3650 -signkey key.pem -in certreq.pem -req -out cert.pem
-```
+To enable scitoken authorization on an xroot door, use "authz:scitokens" to load the plugin.
+See above (under ZTN) for an example layout configuration.
 
-Extract public key from certificate
+Note that the above configuration enforces TLS (STRICT); this is highly recommended
+with SciToken authorization as the token hash is not secure unless encrypted.
+While it is not strictly required to start TLS at login (since the actual token
+is not passed until a request involving a path, in this case, 'open') ––
+``xrootd.security.tls.require-session=true``
+would have been sufficient –– the extra protection on login of course will not
+hurt. (The same applies to GSI: TLS is of course redundant for the handshake, but can further
+guarantee data protection and integrity if on thereafter. For GSI-only doors, then, one can also
+opt to start the TLS session after login using 'session'.)
 
-```console-root
-openssl x509 -pubkey -in cert.pem -out pkey.pem
-openssl pkcs8 -in key.pem -topk8 -nocrypt -outform DER -out <new_private_key>
-openssl enc -base64 -d -in pkey.pem -out <new_public_key>
-```
+The xroot protocol states that the server can specify supporting
+different authentication protocols via a list which the client should
+try in order (again, see below on multi-protocol doors). Authorization, on the other hand,
+takes place after the authentication phase; the current library code assumes that the
+authorization module it loads is the only procedure allowed, and there is no provision for passing
+a failed authorization on to a successive handler on the pipeline.
 
-Only the last two lines are performing the actual conversion, therefore you can skip the previous lines in case you already have a keypair. Make sure that your keystore file correctly points to the converted keys.
+We thus make provision here for failing over to "standard" behavior
+via ``xrootd.plugin!scitokens.strict``.   If it is ``true``, then
+the presence of a scitoken is required.  If ``false``, and the token is missing,
+whatever restrictions that are already in force from the login apply.
 
-To enable the plugin, it is necessary to add the following two lines
-to the file `/etc/dcache/dcache.conf`, so that it looks like
+##### A Note on Pool configuration with Scitokens
 
-```ini
-xrootdAuthzPlugin=org.dcache.xrootd.security.plugins.tokenauthz.TokenAuthorizationFactory
-xrootdAuthzKeystore=<Path_to_your_Keystore>
-```
-
-After doing a restart of dCache, any requests without an appropriate token should result in an error saying "authorization check failed: No authorization token found in open request, access denied.(error code: 3010)".
-
-If both tokenbased authorization and read-only access are activated, the read-only restriction will dominate (local settings have precedence over remote file catalogue permissions).
-
-### Strong authentication
-
-The `xroot`-implementation in dCache includes a pluggable
-authentication framework. To control which authentication mechanism is
-used by `xroot`, add the `xrootdAuthNPlugin` option to your dCache
-configuration and set it to the desired value.
-
-Example:
-
-For instance, to enable `GSI` authentication in `xroot`, add the
-following line to `/etc/dcache/dcache.conf`:
-
-```ini
-xrootdAuthNPlugin=gsi
-```
-
-When using `GSI` authentication, depending on your setup, you may or may not want dCache to fail if the host certificate chain can not be verified against trusted certificate authorities. Whether dCache performs this check can be controlled by setting the option `dcache.authn.hostcert.verify`:
-
-```ini
-dcache.authn.hostcert.verify=true
-```
-
-*Authorization* of the user information obtained by strong authentication is performed by contacting the gPlazma service. Please refer to [Chapter 10, Authorization in dCache](config-gplazma.md) for instructions about how to configure gPlazma.
+JWT/Scitoken authorization also requires TLS to protect the token.
 
 > **SECURITY CONSIDERATION**
 >
-> In general `GSI` on `xroot` is not secure. It does not provide confidentiality and integrity guarantees and hence does not protect against man-in-the-middle attacks.
+> The client will pass the token in the open request's path query
+> regardless of whether the server supports TLS or has indicated that it should
+> be turned on.  While a check for TLS when authenticating/authorizing via token
+> on the door is made, and the attempt rejected if TLS is off, on the pool no such check
+> occurs, since no further authorization takes place.
+>
+> In order to protect the bearer token when passed on redirect to the pool, then,
+> the client should _always_ require TLS by using 'xroots' as the URL schema.
+> By using 'xroots', the client guarantees TLS will be activated by dCache at login or
+> the connection will fail.
 
-### Precedence of security mechanisms
+#### Precedence of security mechanisms
 
 The previously explained methods to restrict access via `xroot` can
-also be used together. The precedence applied in that case is as
-following:
+also be used together. The precedence applied in that case is as follows:
 
-> **NOTE**
->
-> The `xrootd-door` can be configured to use either token authorization or strong authentication with `gPlazma` authorization. A combination of both is currently not possible.
+With strong authentication like GSI, (as well as the `Kerberos` protocols) trust in remote
+authorities is required; however, this only affects user *authentication*, while authorization
+decisions can be adjusted by local site administrators by adapting the `gPlazma` configuration.
+Hence, the permission check executed by an authorization plugin (if one is installed), or
+acquired at login via GSI, is given the lowest priority; access control is ultimately determined
+by the file catalogue (global namespace).
 
- The permission check executed by the authorization plugin (if one is installed) is given the lowest priority, because it can controlled by a remote party. E.g. in the case of token based authorization, access control is determined by the file catalogue (global namespace).
-
-The same argument holds for many strong authentication mechanisms - for example, both the `GSI` protocol as well as the `Kerberos` protocols require trust in remote authorities. However, this only affects user *authentication*, while authorization decisions can be adjusted by local site administrators by adapting the `gPlazma` configuration.
+This may also be true for some token authorization schemas; however, as implemented, the JWT/
+scitoken authorization (see below) **can in fact override the local controls via the scope and
+group claims** the token carries.
 
 To allow local site’s administrators to override remote security
 settings, write access can be further restricted to few directories
 (based on the local namespace, the `pnfs`). Setting xroot access to
 read-only has the highest priority, overriding all other settings.
+
+### TLS
+
+As of 6.2, dCache supports TLS according to the protocol requirements
+specified by the xroot Protocol 5.+.
+
+The xroot protocol allows a negotiation between the client and server as to when to
+initiate the TLS handshake.  The server-side options are explained in
+the _xrootd.properties_ file.  Currently supported is the ability to
+require TLS on all connections to the door and pool, or to make TLS
+optional, depending on the client.  For the former, one can also
+specify whether to begin TLS before login or after.  The "after" option
+is useful in the case of TLS being used with a strong authentication protocol
+such as GSI, in which case it would make sense not to protect the login as GSI
+already requires a Diffie-Hellman handshake to protect the passing of
+credential information; it can also be used if token authorization is coupled with
+anonymous authentication (``gplazma:none``).  For ZTN, TLS should begin at login.
+
+For third-party, the dCache embedded client (on the destination server) will
+initiate TLS if (a) TLS is available on the destination pool (not turned off),
+and (b) the source server supports or requires it.  In the case that the source
+does not support TLS, but the triggering client has expressed 'tls.tpc=1'
+(requiring TLS on TPC), the connection will fail.
+
+As of 6.2, dCache has not yet implemented the GP file or data channel options;
+stay tuned for further developments in those areas.
+
+> **A note on TLS configuration for the pools**
+>
+>Given that pools may need to service clients that do not support TLS (they
+>may, for instance, be using a non-xroot protocol), it is probably not
+>practical to make the pools require TLS by setting
+>``pool.mover.xrootd.security.tls.mode=STRICT``.
+
+###  Multiple authentication protocol chaining and defaults
+
+As of 8.1, dCache now supports the chaining of authentication plugins/protocols on the door.
+This means that a single door can tell the client to try each or any of the protocols indicated.
+
+The defaults have been modified so that dCache can be used out of the box in most cases
+without further concern to configure doors and pools.   To summarize, for the door:
+
+```
+xrootd.plugins=gplazma:gsi,gplazma:ztn,gplazma:none,authz:scitokens
+xrootd.security.tls.mode=OPTIONAL
+xrootd.plugin!scitokens.strict=false
+```
+
+These defaults guarantee that the client
+
+1. will try GSI without TLS first if it has a certificate;
+2. if it tries ZTN it must turn on/request TLS or that protocol will be rejected (xroots:// must be used)
+3. if those fail, it can be logged in anonymously and potentially receive further authorization
+   downstream from another token;
+4. if ZTN succeeds and there is no authorization token on the path URL, the ZTN token
+   will be used as fallback (the scitoken requirement is not strict);
+5. third-party-copy will succeed with dCache doors as sources because the third-party
+   client can connect using the rendezvous token without further authentication
+   (gplazma:none).
+6. NOTE:  it is possible to use GSI rather than ZTN and als provide a scitoken/JWT token on the path
+   URL; TLS must be activated in this case.  The usage scenario for this would, however, be rare.
+
+Of course, these remain configurable in case of special requirements.
+
+The pool defaults
+
+```
+pool.mover.xrootd.tpc-authn-plugins=gsi,unix,ztn
+```
+
+have been updated to load the ZTN module, but currently this results in a NOP
+because there is no agreed-upon strategy for getting the token to the third-party client;
+this may change in the near future.
 
 ### Tried-hosts
 
@@ -496,7 +459,7 @@ xrootd.enable.tried-hosts
 is true by default. When it is off, the 'tried' element on the path
 is simply ignored.  dCache also ignored the tried hosts when 'triedrc'
 is not provided, or when it is not 'enoent' or 'ioerr'.  In the latter
-two cases, the xrootd door will forward the list of previously tried
+two cases, the xroot door will forward the list of previously tried
 hosts to the Pool Manager to ask that they be excluded from selection.
 
 See ``xrootd.properties`` for further information.
@@ -509,13 +472,10 @@ queue buffer sizes on pools, the xroot root path, the xroot user and
 the xroot IO queue. Full descriptions on the effect of those can be
 found in `/usr/share/dcache/defaults/xrootd.properties`.
 
-
 ## XROOTD Third-party Transfer
 
 Starting with dCache 4.2, native third-party transfers between dCache
 and another xroot server (including another dCache door) are possible.
-These can be done either in unauthenticated mode, or with GSI (X509)
-authentication, using the client provided by SLAC (xrdcp or xrdcopy).
 
 To enforce third-party copy, one must execute the transfer using
 
@@ -542,35 +502,81 @@ Pools without the additional functionality provided by 4.2+ will not be able
 to act as destination in a third-party transfer and a "tpc not supported" error
 will be reported if `--tpc only` is specified.
 
+### Unauthenticated TPC using the xrootd-generated rendezvous key.
 
-### Changes to dCache configuration for authenticated (GSI) transfers
+The xrootd protocol allows the third-party-copy client to read the source file under
+the following conditions:
 
- For dCache as source, gPlazma configuration is identical to that needed for
- normal two-party reads and writes, with the caveat that the necessary destination
- DNs must be mapped on the dCache end. This will depend upon the nature of the
- proxy credential being used by the source.
+1. The initiating client has successfully opened the source file;
+2. The initiating client has been authorized to write the requested path on the destination;
+3. The third-party client has successfully connected to the source.
 
-To use dCache as TPC destination, some additional steps need to be taken.
+Note that (3) does not strictly require authentication, much less further authorization.  This
+is achieved by the generation of an internal opaque key called a 'rendezvous token' which is
+handed off by the client to both source and destination, with the destination forwarding
+this key to the third-party-client.  When the third-party-client connects, the source server
+checks the key against the one it was given by the initiating client, and if they match,
+the transfer proceeds.
 
-First, for all pools that will receive files through xroot TPC, the
-GSI service provider plugin must be loaded by including this in the
-configuration or layout:
+To allow for unauthenticated TPC, the ``gplazma:none`` plugin must be active on the door.
+
+Unauthenticated TPC (or "rendezvous TPC") is done using the ``--tpc only <source> <destination>``
+directive on the client command.
+
+### Authenticated TPC using GSI
+
+The only way currently available to enforce authentication by the TPC client is to use GSI (neither
+dCache nor plain xrootd currently support passing the ZTN token to the TPC client, though this
+is subject to change in the future).
+
+To enable GSI on the TPC client, on all pools that will receive files through xroot TPC, the
+GSI service provider plugin must be loaded by including this in the configuration or layout:
 
 ```ini
 pool.mover.xrootd.tpc-authn-plugins=gsi
 ```
+(Note that this is already loaded by default.)
 
-#### Credential (proxy) delegation
+There are two modes for using GSI to authenticate the TPC client.
 
-With the 5.2.0 release, full GSI (X509) credential delegation is available
-in dCache.  This means that the dCache door, when it acts as destination,
-will ask the client to sign a delegation request.
+#### GSI using a generated proxy
+
+This method may be useful in the case of communication with pre-4.9 xrootd or pre-5.2 dCache
+instances, or when using a pre-4.9 xroot client.
+
+First, enable this alternative by setting ``xrootd.gsi.tpc.delegation-only`` to false.
+
+There are two ways of providing authentication capability to the pools in
+this case:
+
+* Generate a proxy from a credential that will be recognized by the source (e.g., a robocert)
+  and arrange to have it placed (and periodically refreshed) on each pool that
+  may be the recipient of files transfered via xrootd TPC. The proxy path must
+  be indicated to dCache by setting this property:
+
+```ini
+xrootd.gsi.tpc.proxy.path={path-to-proxy}
+```
+
+* If this property is left undefined, dCache will attempt to auto-generate a proxy from
+  the `hostcert.pem` / `hostkey.pem` of the node on which the pool is running.
+  While this solution means no cron job is necessary to keep the proxy up to date,
+  it is also rather clunky in that it requires the hostcert DNs of all the pools
+  to be mapped on the source server end.
+
+Once again, this mode requires the ``--tpc only <source> <destination>`` directive.
+
+#### GSI using credential (proxy) delegation
+
+With the 5.2.0 release, full GSI (X509) credential delegation is available in dCache.
+This means that the dCache door, when it acts as destination, will ask the client to sign
+a delegation request.
 
 If both endpoints support delegation (dCache 5.2+, XrootD 4.9+), nothing further
-need be done by way of configuration.  dCache keeps the proxy in memory and
+need be done by way of configuration.  dCache caches the proxy in memory and
 discards it when the session is disconnected.
 
-To indicate that you wish delegation, the xroot client requires:
+To indicate that you wish delegation, the xroot client requires this directive:
 
     xrdcp --tpc delegate only <source> <destination>
 
@@ -582,32 +588,9 @@ Like the xrootd server and client, dCache can determine whether the endpoint
 with which it is communicating supports delegation, and fail over to the
 pre-delegation protocol if not.
 
-In the case of communication with pre-4.9 xrootd or pre-5.2 dCache
-instances, or when using a pre-4.9 xroot client, one can still make
-use of third-party copy with a few extra configuration steps.
-
-There are two ways of providing authentication capability to the pools in
-this case:
-
-* Generate a proxy from a credential that will be recognized by the source,
-and arrange to have it placed (and periodically refreshed) on each pool that
-may be the recipient of files transfered via xrootd TPC. The proxy path must
-be indicated to dCache by setting this property:
-
-```ini
-xrootd.gsi.tpc.proxy.path={path-to-proxy}
-```
-
-* If this property is left undefined, dCache will auto-generate a proxy from
-the `hostcert.pem` / `hostkey.pem` of the node on which the pool is running.
-While this solution means no cron job is necessary to keep the proxy up to date,
-it is also rather clunky in that it requires the hostcert DNs of all the pools
-to be mapped on the source server end.
-
-* Note:  For reading the file in dCache (dCache
-as TPC source), the third-party server needs only a valid certificate issued
-by a recognized CA; anonymous read access is granted to files (even privately
-owned) on the basis of the rendezvous token submitted with the request.
+> NOTE:  For reading the file in dCache (dCache as TPC source), the third-party server
+> needs only a valid certificate issued by a recognized CA; anonymous read access is granted
+> to files (even privately owned) on the basis of the rendezvous token submitted with the request.
 
 ##### Proxy delegation and host aliasing
 
@@ -635,7 +618,7 @@ XrdSecGSITRUSTDNS
       Default is 0.
 ```
 
-WARNING: this is considered to be a security hole.  The recommended
+> WARNING: this is considered to be a security hole.  The recommended
 solution is to issue the certificate with SAN extensions.
 
 Please consult the xrootd.org document for further information; this policy
@@ -650,7 +633,11 @@ an error if the response from the server does not arrive after a given
 amount of time.
 
 The default values for this can be controlled by the properties
-`pool.mover.xrootd.tpc-server-response-timeout` and
+
+`pool.mover.xrootd.tpc-server-response-timeout`
+
+and
+
 `pool.mover.xrootd.tpc-server-response-timeout.unit`.
 
 These are set to 2 seconds to match the aggressive behavior of the SLAC
@@ -660,7 +647,6 @@ as well, using the admin command:
     \s <xrootd-door> xrootd set server response timeout
 
 This could conceivably be necessary under heavier load.
-
 
 ### Signed hash verification support
 
@@ -700,6 +686,11 @@ in all the relevant pool configurations:
 ```ini
 pool.mover.xrootd.tpc-authn-plugins=gsi,unix
 ```
+
+> As of 6.2, TLS is the preferred way of establishing a secured connection.  Signed has
+> verification has not been officially deprecated, however, and the choice to use it is
+> still available.
+
 
 <!--  [???]: #intouch-web
   []: http://people.web.psi.ch/feichtinger/doc/authz.pdf
