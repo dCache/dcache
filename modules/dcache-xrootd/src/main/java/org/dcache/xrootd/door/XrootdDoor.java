@@ -1157,6 +1157,18 @@ public class XrootdDoor
         }
     }
 
+    public void removeTpcPlaceholder(String key) {
+        synchronized (_tpcFdIndex) {
+            if (!key.equals(TPC_PLACEMENT)) {
+                XrootdTpcInfo info = _tpcInfo.remove(key);
+                if (info != null) {
+                    _tpcFdIndex.remove(info.getFd());
+                    _log.debug("key {} was removed.", key);
+                }
+            }
+        }
+    }
+
     public XrootdTpcInfo createOrGetRendezvousInfo(String key) {
         synchronized (_tpcFdIndex) {
             XrootdTpcInfo info = _tpcInfo.get(key);
