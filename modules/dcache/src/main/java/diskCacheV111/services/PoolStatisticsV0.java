@@ -4,6 +4,7 @@ package diskCacheV111.services;
 
 import static java.util.Arrays.asList;
 import static org.dcache.util.ByteUnit.BYTES;
+import static org.dcache.util.Files.checkFile;
 
 import com.google.common.escape.Escaper;
 import com.google.common.escape.Escapers;
@@ -227,11 +228,10 @@ public class PoolStatisticsV0 extends CellAdapter {
             }
 
         } else {
-            if ((!_dbBase.exists()) || (_createHtmlTree && !_htmlBase.exists())) {
-                throw new IllegalArgumentException(
-                      "Either <baseDirectory> or <htmlBase> doesn't exist");
+            checkFile(_dbBase);
+            if (_createHtmlTree) {
+                checkFile(_htmlBase);
             }
-
         }
     }
 
@@ -991,7 +991,8 @@ public class PoolStatisticsV0 extends CellAdapter {
 
         try {
             // copy the raw file into the html directory
-            Files.copy(diffFile.toPath(), new File(dir, "total.drw").toPath(), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(diffFile.toPath(), new File(dir, "total.drw").toPath(),
+                  StandardCopyOption.REPLACE_EXISTING);
             // load the raw data file
             Map<String, Map<String, long[]>> map = new DataStore(diffFile).getMap();
             // create todays html files
