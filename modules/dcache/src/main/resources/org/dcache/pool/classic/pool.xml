@@ -559,6 +559,29 @@
     </property>
   </bean>
 
+  <!-- this will eventually deprecate the preceding listener -->
+  <bean id="qos-message-handler" class="org.dcache.pool.qos.QoSMessageHandler"
+    init-method="initialize">
+    <description>For communication with the qos components</description>
+    <property name="executionService">
+      <bean class="org.dcache.util.CDCExecutorServiceDecorator">
+        <constructor-arg>
+          <bean class="java.util.concurrent.Executors" factory-method="newFixedThreadPool"
+            destroy-method="shutdownNow">
+            <constructor-arg value="${pool.qos.request-threads}"/>
+          </bean>
+        </constructor-arg>
+      </bean>
+    </property>
+    <property name="repository" ref="rep"/>
+    <property name="listener">
+      <bean class="org.dcache.pool.qos.BrokenFileNotifier">
+        <constructor-arg ref="corrupt-file-topic"/>
+        <constructor-arg value="${pool.name}"/>
+      </bean>
+    </property>
+  </bean>
+
   <bean id="pool-info-statistics-listener" class="org.dcache.pool.statistics.StatisticsListener"
         init-method="initialize">
     <property name="repository" ref="rep"/>

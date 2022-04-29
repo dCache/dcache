@@ -57,51 +57,63 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.qos.services.adjuster.adjusters;
+package org.dcache.qos.services.verifier.handlers;
 
-import com.google.common.collect.ImmutableList;
-import diskCacheV111.util.PnfsId;
-import org.dcache.pool.classic.Cancellable;
-import org.dcache.pool.repository.StickyRecord;
-import org.dcache.qos.data.QoSAction;
-import org.dcache.qos.services.adjuster.handlers.QoSAdjustTaskCompletionHandler;
-import org.dcache.qos.services.adjuster.util.QoSAdjusterTask;
-import org.dcache.qos.util.MessageGuard;
-import org.dcache.vehicles.FileAttributes;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.concurrent.ExecutorService;
+import org.dcache.poolmanager.PoolMonitor;
+import org.dcache.qos.services.verifier.data.PoolInfoDiff;
+import org.dcache.qos.services.verifier.data.PoolInfoMap;
+import org.dcache.qos.services.verifier.util.VerifierMapInitializer;
+import org.dcache.qos.util.PoolMonitorChangeHandler;
 
 /**
- * Parent class for adjusters. Generates a QOS session id for the remote messaging to identify
- * events originating here.
+ * Manages changes in pool monitor data for the {@link PoolInfoMap}.
  */
-public abstract class QoSAdjuster implements Cancellable {
+public final class PoolInfoChangeHandler extends
+      PoolMonitorChangeHandler<PoolInfoDiff, VerifierMapInitializer> {
 
-    protected static final Logger LOGGER = LoggerFactory.getLogger(QoSAdjuster.class);
-    protected static final Logger ACTIVITY_LOGGER = LoggerFactory.getLogger("org.dcache.qos-log");
-    protected static final ImmutableList<StickyRecord> ONLINE_STICKY_RECORD
-          = ImmutableList.of(new StickyRecord("system", StickyRecord.NON_EXPIRING));
+    private PoolInfoMap poolInfoMap;
+    private VerifyAndUpdateHandler handler;
 
-    protected PnfsId pnfsId;
-    protected FileAttributes attributes;
-    protected QoSAction action;
-    protected QoSAdjustTaskCompletionHandler completionHandler;
+    public PoolInfoDiff reloadAndScan(PoolMonitor poolMonitor) {
+        LOGGER.trace("Comparing current pool info to new psu.");
+        PoolInfoDiff diff = poolInfoMap.compare(poolMonitor);
 
-    public void adjustQoS(QoSAdjusterTask task) {
-        pnfsId = task.getPnfsId();
-        action = task.getAction();
-        attributes = task.getAttributes();
+        if (diff.isEmpty()) {
+            LOGGER.trace("reloadAndScan, nothing to do.");
+            lastRefresh = System.currentTimeMillis();
+            return diff;
+        }
 
-        /*
-         *  Generate the SESSION ID.   This is used by the QoS status endpoint
-         *  (requirements listener or QoS engine) to exclude location updates
-         *  which result from copies or actions initiated here (an optimization
-         *  so as not to resend redundant verification requests).
-         */
-        MessageGuard.setQoSSession();
+        LOGGER.trace("Cancelling pool operations for removed pools {}.", diff.getOldPools());
+        diff.getOldPools().stream().forEach(handler::cancelCurrentFileOpForPool);
 
-        runAdjuster(task);
+        LOGGER.trace("Cancelling pool operations for pools removed from groups {}.",
+              diff.getPoolsRemovedFromPoolGroup());
+        diff.getPoolsRemovedFromPoolGroup().keySet().stream()
+              .forEach(handler::cancelCurrentFileOpForPool);
+
+        LOGGER.trace("Applying diff to pool info map.");
+        poolInfoMap.apply(diff);
+        lastRefresh = System.currentTimeMillis();
+
+        LOGGER.trace("DIFF:\n{}", diff);
+        return diff;
     }
 
-    protected abstract void runAdjuster(QoSAdjusterTask task);
+    public void setMapInitializer(VerifierMapInitializer initializer) {
+        this.initializer = initializer;
+    }
+
+    public void setPoolInfoMap(PoolInfoMap poolInfoMap) {
+        this.poolInfoMap = poolInfoMap;
+    }
+
+    public void setUpdateHandler(VerifyAndUpdateHandler handler) {
+        this.handler = handler;
+    }
+
+    public void setUpdateService(ExecutorService service) {
+        updateService = service;
+    }
 }

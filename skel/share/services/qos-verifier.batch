@@ -1,0 +1,51 @@
+## QoS verifier service
+
+onerror shutdown
+
+check -strong qos.verifier.cell.name
+check -strong qos.verifier.cell.consume
+check -strong qos.verifier.cell.subscribe
+check -strong qos.pool-monitor-topic
+check -strong qos.home
+check -strong qos.db.verifier.connections.max
+check -strong qos.db.verifier.connections.idle
+check -strong qos.db.verifier.fetch-size
+check -strong qos.limits.verifier.submit-threads
+check -strong qos.limits.verifier.bulk-threads
+check -strong qos.limits.verifier.task-threads
+check -strong qos.limits.verifier.remove-threads
+check -strong qos.limits.verifier.max-running-operations
+check -strong qos.limits.verifier.cache-capacity
+check -strong qos.limits.verifier.operation-history
+check -strong qos.limits.verifier.operation-retries
+check -strong qos.limits.verifier.scan-period
+check -strong qos.limits.verifier.scan-period.unit
+check -strong qos.limits.verifier.reload-grace-period
+check -strong qos.limits.verifier.reload-grace-period.unit
+check -strong qos.limits.pool-info-expiry
+check -strong qos.limits.pool-info-expiry.unit
+check -strong qos.limits.startup-delay
+check -strong qos.limits.startup-delay.unit
+check -strong qos.limits.messages.max-batch-size
+check -strong qos.limits.messages.batch-timeout
+check -strong qos.limits.messages.batch-timeout.unit
+check -strong qos.pool-selection-strategy
+check -strong qos.service.pnfsmanager
+check -strong qos.service.pnfsmanager.timeout
+check -strong qos.service.pnfsmanager.timeout.unit
+check -strong qos.service.pool.timeout
+check -strong qos.service.pool.timeout.unit
+check -strong qos.service.requirements
+check -strong qos.service.requirements.timeout
+check -strong qos.service.requirements.timeout.unit
+check -strong qos.service.adjustment
+check -strong qos.service.adjustment.timeout
+check -strong qos.service.adjustment.timeout.unit
+check -strong qos.service.scanner
+check -strong qos.service.scanner.timeout
+check -strong qos.service.scanner.timeout.unit
+
+create org.dcache.cells.UniversalSpringCell ${qos.verifier.cell.name} \
+        "classpath:org/dcache/qos/qos-verifier.xml \
+        -subscribe=${qos.verifier.cell.subscribe} \
+        -consume=${qos.verifier.cell.consume}"

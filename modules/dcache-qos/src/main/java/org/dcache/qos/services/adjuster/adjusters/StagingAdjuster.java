@@ -129,27 +129,13 @@ public final class StagingAdjuster extends QoSAdjuster {
     }
 
     /**
-     * Polled by main map thread.  If the future is done, this will trigger the completion handler.
+     * Called on the executor when the future completes.
      */
-    public void poll() {
-        synchronized (this) {
-            if (future == null) {
-                completionHandler.taskFailed(pnfsId, Optional.empty(),
-                      new CacheException(CacheException.SERVICE_UNAVAILABLE,
-                            "no future returned by message send."));
-                return;
-            }
-        }
-
+    private void handleCompletion() {
         PinManagerPinMessage migrationReply = null;
         Object error = null;
 
         try {
-            LOGGER.debug("poll, checking pin request future.isDone() for {}.", pnfsId);
-            if (!future.isDone()) {
-                return;
-            }
-
             migrationReply = getUninterruptibly(future);
             if (migrationReply.getReturnCode() != 0) {
                 error = migrationReply.getErrorObject();
@@ -189,7 +175,7 @@ public final class StagingAdjuster extends QoSAdjuster {
                   QOS_PIN_REQUEST_ID,
                   QOS_PIN_TEMP_LIFETIME);
             future = pinManager.send(message, Long.MAX_VALUE);
-
+            future.addListener(this::handleCompletion, executorService);
             LOGGER.debug("handleStaging, sent pin manager request for {}.", pnfsId);
         } catch (URISyntaxException e) {
             completionHandler.taskFailed(pnfsId, Optional.empty(),

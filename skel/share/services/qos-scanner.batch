@@ -1,0 +1,47 @@
+## QoS scanner service
+
+onerror shutdown
+check -strong qos.scanner.cell.name
+check -strong qos.scanner.cell.consume
+check -strong qos.scanner.cell.subscribe
+check -strong qos.pool-monitor-topic
+check -strong qos.home
+check -strong qos.db.namespace.connections.max
+check -strong qos.db.namespace.connections.idle
+check -strong qos.db.namespace.fetch-size
+check -strong qos.plugins.storage-info-extractor
+check -strong qos.limits.scanner.submit-threads
+check -strong qos.limits.scanner.task-threads
+check -strong qos.limits.pool-info-expiry
+check -strong qos.limits.pool-info-expiry.unit
+check -strong qos.limits.scanner.down-grace-period
+check -strong qos.limits.scanner.down-grace-period.unit
+check -strong qos.limits.scanner.restart-grace-period
+check -strong qos.limits.scanner.restart-grace-period.unit
+check -strong qos.limits.scanner.pool-op-init-grace-period
+check -strong qos.limits.scanner.pool-op-init-grace-period.unit
+check -strong qos.limits.scanner.pool-op-max-idle-time
+check -strong qos.limits.scanner.pool-op-max-idle-time.unit
+check -strong qos.limits.startup-delay
+check -strong qos.limits.startup-delay.unit
+check -strong qos.limits.scanner.scan-period
+check -strong qos.limits.scanner.scan-period.unit
+check -strong qos.limits.scanner.online-window
+check -strong qos.limits.scanner.online-window.unit
+check -strong qos.limits.scanner.enable.nearline-scan
+check -strong qos.limits.scanner.nearline-window
+check -strong qos.limits.scanner.nearline-window.unit
+check -strong qos.limits.scanner.online-batch-size
+check -strong qos.limits.scanner.nearline-batch-size
+check -strong qos.pool-selection-strategy
+check -strong qos.service.scanner
+check -strong qos.service.scanner.timeout
+check -strong qos.service.scanner.timeout.unit
+check -strong qos.service.verification
+check -strong qos.service.verification.timeout
+check -strong qos.service.verification.timeout.unit
+
+create org.dcache.cells.UniversalSpringCell ${qos.scanner.cell.name} \
+        "classpath:org/dcache/qos/qos-scanner.xml \
+        -subscribe=${qos.scanner.cell.subscribe} \
+        -consume=${qos.scanner.cell.consume}"

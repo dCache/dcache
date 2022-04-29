@@ -57,51 +57,73 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.qos.services.adjuster.adjusters;
+package org.dcache.qos.services.verifier.data;
 
-import com.google.common.collect.ImmutableList;
-import diskCacheV111.util.PnfsId;
-import org.dcache.pool.classic.Cancellable;
-import org.dcache.pool.repository.StickyRecord;
-import org.dcache.qos.data.QoSAction;
-import org.dcache.qos.services.adjuster.handlers.QoSAdjustTaskCompletionHandler;
-import org.dcache.qos.services.adjuster.util.QoSAdjusterTask;
-import org.dcache.qos.util.MessageGuard;
-import org.dcache.vehicles.FileAttributes;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.Set;
+import java.util.regex.Pattern;
+import org.dcache.qos.data.PoolQoSStatus;
 
 /**
- * Parent class for adjusters. Generates a QOS session id for the remote messaging to identify
- * events originating here.
+ * Used for matching pool information entries.
  */
-public abstract class QoSAdjuster implements Cancellable {
+public final class PoolInfoFilter {
 
-    protected static final Logger LOGGER = LoggerFactory.getLogger(QoSAdjuster.class);
-    protected static final Logger ACTIVITY_LOGGER = LoggerFactory.getLogger("org.dcache.qos-log");
-    protected static final ImmutableList<StickyRecord> ONLINE_STICKY_RECORD
-          = ImmutableList.of(new StickyRecord("system", StickyRecord.NON_EXPIRING));
+    private Set<String> status;
+    private Pattern pools;
+    private Long lastUpdateBefore;
+    private Long lastUpdateAfter;
 
-    protected PnfsId pnfsId;
-    protected FileAttributes attributes;
-    protected QoSAction action;
-    protected QoSAdjustTaskCompletionHandler completionHandler;
+    public boolean matches(PoolInformation poolInfo) {
+        if (pools != null && !pools.matcher(poolInfo.getName()).find()) {
+            return false;
+        }
 
-    public void adjustQoS(QoSAdjusterTask task) {
-        pnfsId = task.getPnfsId();
-        action = task.getAction();
-        attributes = task.getAttributes();
+        if (lastUpdateBefore != null
+              && lastUpdateBefore <= poolInfo.getLastUpdate()) {
+            return false;
+        }
 
-        /*
-         *  Generate the SESSION ID.   This is used by the QoS status endpoint
-         *  (requirements listener or QoS engine) to exclude location updates
-         *  which result from copies or actions initiated here (an optimization
-         *  so as not to resend redundant verification requests).
-         */
-        MessageGuard.setQoSSession();
+        if (lastUpdateAfter != null
+              && lastUpdateAfter >= poolInfo.getLastUpdate()) {
+            return false;
+        }
 
-        runAdjuster(task);
+        if (this.status != null) {
+            if (!poolInfo.isInitialized()
+                  && this.status.contains(PoolInformation.UNINITIALIZED)) {
+                return true;
+            }
+
+            PoolQoSStatus status = poolInfo.getStatus();
+            if (status == null) {
+                if (this.status.contains(PoolInformation.UNINITIALIZED)) {
+                    return true;
+                }
+            } else if (!this.status.contains(status.name())) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
-    protected abstract void runAdjuster(QoSAdjusterTask task);
+    public void setLastUpdateAfter(Long lastUpdateAfter) {
+        this.lastUpdateAfter = lastUpdateAfter;
+    }
+
+    public void setLastUpdateBefore(Long lastUpdateBefore) {
+        this.lastUpdateBefore = lastUpdateBefore;
+    }
+
+    public void setPools(String expression) {
+        if (expression != null) {
+            pools = Pattern.compile(expression);
+        }
+    }
+
+    public void setStatus(String[] status) {
+        if (status != null) {
+            this.status = Set.of(status);
+        }
+    }
 }

@@ -57,51 +57,77 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.qos.services.adjuster.adjusters;
+package org.dcache.qos.services.verifier.handlers;
 
-import com.google.common.collect.ImmutableList;
 import diskCacheV111.util.PnfsId;
-import org.dcache.pool.classic.Cancellable;
-import org.dcache.pool.repository.StickyRecord;
+import java.io.Serializable;
+import java.util.Set;
+import java.util.concurrent.ScheduledExecutorService;
+import org.dcache.qos.data.FileQoSUpdate;
 import org.dcache.qos.data.QoSAction;
-import org.dcache.qos.services.adjuster.handlers.QoSAdjustTaskCompletionHandler;
-import org.dcache.qos.services.adjuster.util.QoSAdjusterTask;
-import org.dcache.qos.util.MessageGuard;
-import org.dcache.vehicles.FileAttributes;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.dcache.qos.services.verifier.data.VerifyOperation;
+import org.dcache.qos.services.verifier.data.VerifyOperationState;
 
 /**
- * Parent class for adjusters. Generates a QOS session id for the remote messaging to identify
- * events originating here.
+ * Internal API used by task and maps.
  */
-public abstract class QoSAdjuster implements Cancellable {
+public interface VerifyAndUpdateHandler {
 
-    protected static final Logger LOGGER = LoggerFactory.getLogger(QoSAdjuster.class);
-    protected static final Logger ACTIVITY_LOGGER = LoggerFactory.getLogger("org.dcache.qos-log");
-    protected static final ImmutableList<StickyRecord> ONLINE_STICKY_RECORD
-          = ImmutableList.of(new StickyRecord("system", StickyRecord.NON_EXPIRING));
+    /**
+     * @return executor to which the task is submitted.
+     */
+    ScheduledExecutorService getTaskExecutor();
 
-    protected PnfsId pnfsId;
-    protected FileAttributes attributes;
-    protected QoSAction action;
-    protected QoSAdjustTaskCompletionHandler completionHandler;
+    /**
+     * Stores the operation after some preliminary processing.
+     */
+    void handleUpdate(FileQoSUpdate data);
 
-    public void adjustQoS(QoSAdjusterTask task) {
-        pnfsId = task.getPnfsId();
-        action = task.getAction();
-        attributes = task.getAttributes();
+    /**
+     * Main (possibly iteratively called) method for verifying the status of a file.
+     *
+     * @param pnfsId of the file to verify.
+     */
+    void handleVerification(PnfsId pnfsId);
 
-        /*
-         *  Generate the SESSION ID.   This is used by the QoS status endpoint
-         *  (requirements listener or QoS engine) to exclude location updates
-         *  which result from copies or actions initiated here (an optimization
-         *  so as not to resend redundant verification requests).
-         */
-        MessageGuard.setQoSSession();
+    /**
+     * In response to scanned verification.
+     *
+     * @param pool   being scanned.
+     * @param failed status of the scan.
+     */
+    void updateScanRecord(String pool, boolean failed);
 
-        runAdjuster(task);
-    }
+    /**
+     * Callback (response) from the adjuster service concerning adjustment request.
+     *
+     * @param pnfsId    of the file.
+     * @param opState   of the verification.
+     * @param action    requested of the adjuster service.
+     * @param exception if any (can be <code>null</code>).
+     */
+    void handleQoSActionCompleted(PnfsId pnfsId,
+          VerifyOperationState opState,
+          QoSAction action,
+          Serializable exception);
 
-    protected abstract void runAdjuster(QoSAdjusterTask task);
+    /**
+     * Internal callback which aborts operation and registers an unretriable error.
+     *
+     * @param operation  data for the verification.
+     * @param pool       currently being accessed for the file.
+     * @param tried      previously tried pools.
+     * @param maxRetries after which the operation is aborted.
+     */
+    void operationAborted(VerifyOperation operation,
+          String pool,
+          Set<String> tried,
+          int maxRetries);
+
+    /**
+     * In case of pool state change.
+     *
+     * @param pool cancel the file operation if it involves this pool.
+     */
+    void cancelCurrentFileOpForPool(String pool);
 }

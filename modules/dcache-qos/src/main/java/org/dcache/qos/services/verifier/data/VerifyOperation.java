@@ -297,10 +297,15 @@ public final class VerifyOperation implements Comparable<VerifyOperation> {
         state = READY;
         exception = null;
 
-        if (retry || needed < 2) {
+        if (retry) {
             lastUpdate = arrived;
         } else {
-            lastUpdate = System.currentTimeMillis();
+            tried = null;
+            if (needed < 2) {
+                lastUpdate = arrived;
+            } else {
+                lastUpdate = System.currentTimeMillis();
+            }
         }
     }
 

@@ -57,51 +57,90 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.qos.services.adjuster.adjusters;
+package org.dcache.qos.services.verifier.util;
 
-import com.google.common.collect.ImmutableList;
-import diskCacheV111.util.PnfsId;
-import org.dcache.pool.classic.Cancellable;
-import org.dcache.pool.repository.StickyRecord;
-import org.dcache.qos.data.QoSAction;
-import org.dcache.qos.services.adjuster.handlers.QoSAdjustTaskCompletionHandler;
-import org.dcache.qos.services.adjuster.util.QoSAdjusterTask;
-import org.dcache.qos.util.MessageGuard;
-import org.dcache.vehicles.FileAttributes;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.concurrent.TimeUnit;
+import org.dcache.qos.services.verifier.data.PoolInfoMap;
+import org.dcache.qos.services.verifier.data.VerifyOperationDelegatingMap;
+import org.dcache.qos.util.MapInitializer;
+import org.dcache.qos.util.PoolMonitorChangeHandler;
 
 /**
- * Parent class for adjusters. Generates a QOS session id for the remote messaging to identify
- * events originating here.
+ * Initialization sequence waits for the pool monitor, runs the diff and applies it to the pool info
+ * map, enables delivery of messages, initializes the operation map, and starts the watchdog;
+ * finally it reloads checkpointed operations.
  */
-public abstract class QoSAdjuster implements Cancellable {
+public final class VerifierMapInitializer extends MapInitializer {
 
-    protected static final Logger LOGGER = LoggerFactory.getLogger(QoSAdjuster.class);
-    protected static final Logger ACTIVITY_LOGGER = LoggerFactory.getLogger("org.dcache.qos-log");
-    protected static final ImmutableList<StickyRecord> ONLINE_STICKY_RECORD
-          = ImmutableList.of(new StickyRecord("system", StickyRecord.NON_EXPIRING));
+    private PoolInfoMap poolInfoMap;
+    private VerifyOperationDelegatingMap verifyOperationMap;
+    private PoolMonitorChangeHandler poolMonitorChangeHandler;
 
-    protected PnfsId pnfsId;
-    protected FileAttributes attributes;
-    protected QoSAction action;
-    protected QoSAdjustTaskCompletionHandler completionHandler;
+    public synchronized void shutDown() {
+        if (verifyOperationMap.isRunning()) {
+            LOGGER.info("Shutting down file operation map.");
+            verifyOperationMap.shutdown();
+        }
 
-    public void adjustQoS(QoSAdjusterTask task) {
-        pnfsId = task.getPnfsId();
-        action = task.getAction();
-        attributes = task.getAttributes();
-
-        /*
-         *  Generate the SESSION ID.   This is used by the QoS status endpoint
-         *  (requirements listener or QoS engine) to exclude location updates
-         *  which result from copies or actions initiated here (an optimization
-         *  so as not to resend redundant verification requests).
-         */
-        MessageGuard.setQoSSession();
-
-        runAdjuster(task);
+        super.shutDown();
     }
 
-    protected abstract void runAdjuster(QoSAdjusterTask task);
+    public void run() {
+        if (isInitialized()) {
+            return;
+        }
+
+        poolMonitorChangeHandler.setRefreshService(initService);
+        poolMonitorChangeHandler.setEnabled(true);
+
+        /*
+         * If there is a problem getting the pool monitor update,
+         * this will now wait indefinitely.
+         */
+        waitForPoolMonitor();
+
+        /*
+         *  Synchronous sequence of initialization procedures;
+         *  order must be maintained.
+         */
+        LOGGER.info("Received pool monitor; loading pool information.");
+        poolInfoMap.apply(poolInfoMap.compare(poolMonitor));
+
+        LOGGER.info("Pool maps initialized.");
+        messageGuard.enable();
+
+        LOGGER.info("Messages are now activated; starting file operation consumer.");
+        verifyOperationMap.initialize();
+
+        LOGGER.info("File operation consumer is running; activating admin commands.");
+        setInitialized();
+
+        LOGGER.info("Starting the periodic pool monitor refresh check.");
+        poolMonitorChangeHandler.startWatchdog();
+
+        LOGGER.info("Resetting RUNNING operations to READY.");
+        verifyOperationMap.reload();
+    }
+
+    public void setVerifyOperationMap(VerifyOperationDelegatingMap verifyOperationMap) {
+        this.verifyOperationMap = verifyOperationMap;
+    }
+
+    public void setPoolInfoMap(PoolInfoMap poolInfoMap) {
+        this.poolInfoMap = poolInfoMap;
+    }
+
+    public void setChangeHandler(PoolMonitorChangeHandler changeHandler) {
+        this.poolMonitorChangeHandler = changeHandler;
+    }
+
+    @Override
+    protected long getRefreshTimeout() {
+        return poolMonitorChangeHandler.getRefreshTimeout();
+    }
+
+    @Override
+    protected TimeUnit getRefreshTimeoutUnit() {
+        return poolMonitorChangeHandler.getRefreshTimeoutUnit();
+    }
 }

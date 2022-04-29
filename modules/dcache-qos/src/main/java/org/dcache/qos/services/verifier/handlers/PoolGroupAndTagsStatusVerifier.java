@@ -57,51 +57,33 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.qos.services.adjuster.adjusters;
+package org.dcache.qos.services.verifier.handlers;
 
-import com.google.common.collect.ImmutableList;
-import diskCacheV111.util.PnfsId;
-import org.dcache.pool.classic.Cancellable;
-import org.dcache.pool.repository.StickyRecord;
-import org.dcache.qos.data.QoSAction;
-import org.dcache.qos.services.adjuster.handlers.QoSAdjustTaskCompletionHandler;
-import org.dcache.qos.services.adjuster.util.QoSAdjusterTask;
-import org.dcache.qos.util.MessageGuard;
-import org.dcache.vehicles.FileAttributes;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.Set;
+import org.dcache.qos.services.verifier.util.EvictingLocationExtractor;
+import org.dcache.qos.services.verifier.util.LocationSelector;
+import org.dcache.qos.services.verifier.util.PoolTagLocationExtractor;
 
 /**
- * Parent class for adjusters. Generates a QOS session id for the remote messaging to identify
- * events originating here.
+ * Implementation which uses pool tags and pool group to determine eviction, and pool tags for
+ * selection partitioning.  The location selector accesses the pool info which is processed from the
+ * pool monitor/pool selection unit.
  */
-public abstract class QoSAdjuster implements Cancellable {
+public final class PoolGroupAndTagsStatusVerifier extends FileStatusVerifier {
 
-    protected static final Logger LOGGER = LoggerFactory.getLogger(QoSAdjuster.class);
-    protected static final Logger ACTIVITY_LOGGER = LoggerFactory.getLogger("org.dcache.qos-log");
-    protected static final ImmutableList<StickyRecord> ONLINE_STICKY_RECORD
-          = ImmutableList.of(new StickyRecord("system", StickyRecord.NON_EXPIRING));
+    private LocationSelector locationSelector;
 
-    protected PnfsId pnfsId;
-    protected FileAttributes attributes;
-    protected QoSAction action;
-    protected QoSAdjustTaskCompletionHandler completionHandler;
-
-    public void adjustQoS(QoSAdjusterTask task) {
-        pnfsId = task.getPnfsId();
-        action = task.getAction();
-        attributes = task.getAttributes();
-
-        /*
-         *  Generate the SESSION ID.   This is used by the QoS status endpoint
-         *  (requirements listener or QoS engine) to exclude location updates
-         *  which result from copies or actions initiated here (an optimization
-         *  so as not to resend redundant verification requests).
-         */
-        MessageGuard.setQoSSession();
-
-        runAdjuster(task);
+    public void setLocationSelector(LocationSelector locationSelector) {
+        this.locationSelector = locationSelector;
     }
 
-    protected abstract void runAdjuster(QoSAdjusterTask task);
+    @Override
+    protected LocationSelector getLocationSelector() {
+        return locationSelector;
+    }
+
+    @Override
+    protected EvictingLocationExtractor getEvictingLocationExtractor(Set<String> partitionKeys) {
+        return new PoolTagLocationExtractor(partitionKeys, poolInfoMap);
+    }
 }

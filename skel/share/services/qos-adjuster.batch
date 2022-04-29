@@ -1,0 +1,26 @@
+## QoS services
+
+onerror shutdown
+check -strong qos.adjuster.cell.name
+check -strong qos.adjuster.cell.consume
+check -strong qos.transition-completed-topic
+check -strong qos.home
+check -strong qos.limits.adjuster.submit-threads
+check -strong qos.limits.adjuster.task-threads
+check -strong qos.limits.adjuster.task-history
+check -strong qos.limits.adjuster.task-retries
+check -strong qos.limits.adjuster.scan-period
+check -strong qos.limits.adjuster.scan-period.unit
+check -strong qos.service.pinmanager
+check -strong qos.service.pinmanager.timeout
+check -strong qos.service.pinmanager.timeout.unit
+check -strong qos.service.pool.timeout
+check -strong qos.service.pool.timeout.unit
+check -strong qos.service.verification
+check -strong qos.service.verification.timeout
+check -strong qos.service.verification.timeout.unit
+
+create org.dcache.cells.UniversalSpringCell ${qos.adjuster.cell.name} \
+        "classpath:org/dcache/qos/qos-adjuster.xml \
+        -subscribe=${qos.adjuster.cell.subscribe} \
+        -consume=${qos.adjuster.cell.consume}"

@@ -236,6 +236,13 @@
     <property name="destination" value="${frontend.service.pinmanager}"/>
   </bean>
 
+  <bean id="qos-engine" class="org.dcache.cells.CellStub">
+    <description>QoS Engine cell stub</description>
+    <property name="timeout" value="${frontend.service.qos.timeout}"/>
+    <property name="timeoutUnit" value="${frontend.service.qos.timeout.unit}"/>
+    <property name="destination" value="${frontend.service.qos}"/>
+  </bean>
+
   <bean id="bulk-service" class="org.dcache.cells.CellStub">
     <description>Bulk request service cell stub</description>
     <property name="timeout" value="${frontend.service.bulk-service.timeout}"/>

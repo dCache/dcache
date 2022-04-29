@@ -57,51 +57,40 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.qos.services.adjuster.adjusters;
+package org.dcache.qos.services.verifier.util;
 
-import com.google.common.collect.ImmutableList;
+import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
-import org.dcache.pool.classic.Cancellable;
-import org.dcache.pool.repository.StickyRecord;
-import org.dcache.qos.data.QoSAction;
-import org.dcache.qos.services.adjuster.handlers.QoSAdjustTaskCompletionHandler;
-import org.dcache.qos.services.adjuster.util.QoSAdjusterTask;
-import org.dcache.qos.util.MessageGuard;
-import org.dcache.vehicles.FileAttributes;
+import java.util.function.Consumer;
+import org.dcache.qos.services.verifier.handlers.VerifyAndUpdateHandler;
+import org.dcache.qos.util.ErrorAwareTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Parent class for adjusters. Generates a QOS session id for the remote messaging to identify
- * events originating here.
+ * Runs the verification handling.
  */
-public abstract class QoSAdjuster implements Cancellable {
+public final class VerificationTask extends ErrorAwareTask {
 
-    protected static final Logger LOGGER = LoggerFactory.getLogger(QoSAdjuster.class);
-    protected static final Logger ACTIVITY_LOGGER = LoggerFactory.getLogger("org.dcache.qos-log");
-    protected static final ImmutableList<StickyRecord> ONLINE_STICKY_RECORD
-          = ImmutableList.of(new StickyRecord("system", StickyRecord.NON_EXPIRING));
+    private static final Logger LOGGER = LoggerFactory.getLogger(VerificationTask.class);
+    private static final Consumer<CacheException> ERROR_HANDLER = e
+          -> LOGGER.error("Error during fire and forget:", e);
 
-    protected PnfsId pnfsId;
-    protected FileAttributes attributes;
-    protected QoSAction action;
-    protected QoSAdjustTaskCompletionHandler completionHandler;
+    private final PnfsId pnfsId;
+    private final VerifyAndUpdateHandler handler;
 
-    public void adjustQoS(QoSAdjusterTask task) {
-        pnfsId = task.getPnfsId();
-        action = task.getAction();
-        attributes = task.getAttributes();
-
-        /*
-         *  Generate the SESSION ID.   This is used by the QoS status endpoint
-         *  (requirements listener or QoS engine) to exclude location updates
-         *  which result from copies or actions initiated here (an optimization
-         *  so as not to resend redundant verification requests).
-         */
-        MessageGuard.setQoSSession();
-
-        runAdjuster(task);
+    public VerificationTask(PnfsId pnfsId, VerifyAndUpdateHandler handler) {
+        this.pnfsId = pnfsId;
+        this.handler = handler;
     }
 
-    protected abstract void runAdjuster(QoSAdjusterTask task);
+    @Override
+    public void run() {
+        handler.handleVerification(pnfsId);
+    }
+
+    public void submit() {
+        setErrorHandler(ERROR_HANDLER);
+        handler.getTaskExecutor().submit(toFireAndForgetTask());
+    }
 }
