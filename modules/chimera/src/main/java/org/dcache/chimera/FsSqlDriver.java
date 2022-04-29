@@ -1353,6 +1353,7 @@ public class FsSqlDriver {
                       ret.setATime(rs.getTimestamp("iatime").getTime());
                       ret.setCTime(rs.getTimestamp("ictime").getTime());
                       ret.setMTime(rs.getTimestamp("imtime").getTime());
+                      ret.setCrTime(ret.getMTime());
                       ret.setUid(rs.getInt("iuid"));
                       ret.setGid(rs.getInt("igid"));
                       ret.setMode(rs.getInt("imode"));
