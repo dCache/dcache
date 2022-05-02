@@ -3,6 +3,8 @@ package org.dcache.restful.srr;
 import com.google.common.base.Strings;
 import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.poolManager.PoolSelectionUnit;
+import diskCacheV111.pools.PoolCostInfo;
+import diskCacheV111.pools.PoolCostInfo.PoolSpaceInfo;
 import diskCacheV111.services.space.Space;
 import diskCacheV111.services.space.message.GetSpaceTokensMessage;
 import diskCacheV111.util.CacheException;
@@ -16,6 +18,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.dcache.cells.CellStub;
@@ -210,14 +213,17 @@ public class SrrBuilder {
             totalSpace += pools.stream()
                   .map(PoolSelectionUnit.SelectionEntity::getName)
                   .map(costModule::getPoolCostInfo)
-                  .mapToLong(p -> p.getSpaceInfo().getTotalSpace())
+                  .filter(Objects::nonNull)
+                  .map(PoolCostInfo::getSpaceInfo)
+                  .mapToLong(PoolSpaceInfo::getTotalSpace)
                   .sum();
 
             usedSpace += pools.stream()
                   .map(PoolSelectionUnit.SelectionEntity::getName)
                   .map(costModule::getPoolCostInfo)
-                  .mapToLong(p -> p.getSpaceInfo().getTotalSpace() - p.getSpaceInfo().getFreeSpace()
-                        - p.getSpaceInfo().getRemovableSpace())
+                  .filter(Objects::nonNull)
+                  .map(PoolCostInfo::getSpaceInfo)
+                  .mapToLong(p -> p.getTotalSpace() - p.getFreeSpace() - p.getRemovableSpace())
                   .sum();
 
             Storageshare share = new Storageshare()
