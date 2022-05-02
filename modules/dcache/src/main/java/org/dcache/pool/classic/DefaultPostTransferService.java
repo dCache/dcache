@@ -19,6 +19,7 @@ package org.dcache.pool.classic;
 
 import static org.dcache.util.Exceptions.messageOrClassName;
 
+import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import diskCacheV111.util.CacheException;
@@ -49,6 +50,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.core.KafkaTemplate;
 
 public class DefaultPostTransferService extends AbstractCellComponent implements
@@ -149,7 +151,13 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
 
     private void sendBillingInfo(MoverInfoMessage moverInfoMessage) {
         _billing.notify(moverInfoMessage);
-        _kafkaSender.accept(moverInfoMessage);
+
+        try {
+            _kafkaSender.accept(moverInfoMessage);
+        } catch (KafkaException e) {
+            LOGGER.warn(Throwables.getRootCause(e).getMessage());
+
+        }
     }
 
     public MoverInfoMessage generateBillingMessage(Mover<?> mover, long fileSize) {

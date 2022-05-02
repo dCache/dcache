@@ -34,6 +34,7 @@ import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_writable;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_xset;
 
 import com.google.common.base.Splitter;
+import com.google.common.base.Throwables;
 import com.google.common.collect.Range;
 import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.util.CacheException;
@@ -113,6 +114,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.core.KafkaTemplate;
 
 /**
@@ -582,7 +584,12 @@ public class XrootdDoor
         }
         _billingStub.notify(infoRemove);
 
-        _kafkaSender.accept(infoRemove);
+        try {
+            _kafkaSender.accept(infoRemove);
+        } catch (KafkaException e) {
+            _log.warn(Throwables.getRootCause(e).getMessage());
+
+        }
     }
 
     /**

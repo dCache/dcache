@@ -15,6 +15,7 @@ import static org.dcache.namespace.FileType.REGULAR;
 import static org.dcache.util.MathUtils.addWithInfinity;
 import static org.dcache.util.MathUtils.subWithInfinity;
 
+import com.google.common.base.Throwables;
 import com.google.common.collect.Sets;
 import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.Longs;
@@ -86,6 +87,7 @@ import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+import org.springframework.kafka.KafkaException;
 
 /**
  * Facade for transfer related operations. Encapsulates information about and typical operations of
@@ -1183,9 +1185,13 @@ public class Transfer implements Comparable<Transfer> {
 
         msg.setMoverInfo(moverInfoMessage);
 
-        _kafkaSender.accept(msg);
-    }
+        try {
+            _kafkaSender.accept(msg);
+        } catch (KafkaException e) {
+            _log.warn(Throwables.getRootCause(e).getMessage());
 
+        }
+    }
 
     private static long getTimeoutFor(long deadline) {
         return subWithInfinity(deadline, System.currentTimeMillis());

@@ -150,6 +150,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.stringtemplate.v4.AutoIndentWriter;
 import org.stringtemplate.v4.ST;
@@ -1097,7 +1098,12 @@ public class DcacheResourceFactory
         infoRemove.setClient(Subjects.getOrigin(subject).getAddress().getHostAddress());
         _billingStub.notify(infoRemove);
 
-        _kafkaSender.accept(infoRemove);
+        try {
+            _kafkaSender.accept(infoRemove);
+        } catch (KafkaException e) {
+            LOGGER.warn(Throwables.getRootCause(e).getMessage());
+
+        }
     }
 
     /**

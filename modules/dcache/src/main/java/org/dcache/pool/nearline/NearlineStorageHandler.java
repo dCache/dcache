@@ -27,6 +27,7 @@ import static org.dcache.namespace.FileAttribute.STORAGEINFO;
 import static org.dcache.util.Exceptions.messageOrClassName;
 
 import com.google.common.base.Functions;
+import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -120,6 +121,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.core.KafkaTemplate;
 
 /**
@@ -1172,8 +1174,12 @@ public class NearlineStorageHandler
 
             billingStub.notify(infoMsg);
 
-            _kafkaSender.accept(infoMsg);
+            try {
+                _kafkaSender.accept(infoMsg);
+            } catch (KafkaException e) {
+                LOGGER.warn(Throwables.getRootCause(e).getMessage());
 
+            }
             flushRequests.removeAndCallback(pnfsId, cause);
         }
 
@@ -1377,9 +1383,12 @@ public class NearlineStorageHandler
             addFromNearlineStorage(infoMsg, storage);
 
             billingStub.notify(infoMsg);
+            try {
+                _kafkaSender.accept(infoMsg);
+            } catch (KafkaException e) {
+                LOGGER.warn(Throwables.getRootCause(e).getMessage());
 
-            _kafkaSender.accept(infoMsg);
-
+            }
             stageRequests.removeAndCallback(pnfsId, cause);
         }
 
