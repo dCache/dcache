@@ -86,8 +86,8 @@
 
 
 
-        <version.spring-integration-kafka>3.2.1.RELEASE</version.spring-integration-kafka>
-        <version.spring_kafka>2.4.6.RELEASE</version.spring_kafka>
+        <version.spring-integration-kafka>5.5.11</version.spring-integration-kafka>
+        <version.spring_kafka>2.8.5</version.spring_kafka>
         <version.kafka>3.1.0</version.kafka>
 
         <!-- BouncyCastle seems to change the naming convention of
