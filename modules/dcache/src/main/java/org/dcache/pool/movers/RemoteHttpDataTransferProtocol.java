@@ -265,18 +265,27 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
         return _context;
     }
 
+    private Set<Checksum> checksumsFromResponse(HttpResponse response) {
+          String rfc3230 = headerValue(response, "Digest");
+          return Checksums.decodeRfc3230(rfc3230);
+    }
+
+    private boolean acceptChecksums(HttpResponse response) {
+          Set<Checksum> checksums = checksumsFromResponse(response);
+          checksums.forEach(_integrityChecker);
+          return !checksums.isEmpty();
+    }
+
     private void receiveFile(final RemoteHttpDataTransferProtocolInfo info)
           throws ThirdPartyTransferFailedCacheException {
-        Set<Checksum> checksums;
+        boolean haveReceivedChecksum;
 
         long deadline = System.currentTimeMillis() + GET_RETRY_DURATION;
 
         HttpClientContext context = storeContext(new HttpClientContext());
         try {
             try (CloseableHttpResponse response = doGet(info, context, deadline)) {
-                String rfc3230 = headerValue(response, "Digest");
-                checksums = Checksums.decodeRfc3230(rfc3230);
-                checksums.forEach(_integrityChecker);
+                haveReceivedChecksum = acceptChecksums(response);
 
                 HttpEntity entity = response.getEntity();
                 if (entity == null) {
@@ -319,26 +328,14 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
 
         // Work-around for Dynafed, which only supplies checksum information on
         // HEAD requests.
-        if (checksums.isEmpty() && info.isVerificationRequired()) {
+        if (!haveReceivedChecksum && info.isVerificationRequired()) {
             HttpHead head = buildHeadRequest(info, deadline);
             head.addHeader("Want-Digest", WANT_DIGEST_VALUE);
 
             try {
                 try (CloseableHttpResponse response = _client.execute(head)) {
-
-                    String rfc3230 = headerValue(response, "Digest");
-
-                    checkThirdPartyTransferSuccessful(rfc3230 != null,
-                          "no checksums in HEAD response");
-
-                    checksums = Checksums.decodeRfc3230(rfc3230);
-
-                    checkThirdPartyTransferSuccessful(!checksums.isEmpty(),
-                          "no useful checksums in HEAD response: %s", rfc3230);
-
-                    // Ensure integrety.  If we're lucky, this won't trigger
-                    // rescanning the uploaded file.
-                    checksums.forEach(_integrityChecker);
+                    haveReceivedChecksum = acceptChecksums(response);
+                    checkThirdPartyTransferSuccessful(!haveReceivedChecksum, "no checksum in HEAD response");
                 }
             } catch (IOException e) {
                 throw new ThirdPartyTransferFailedCacheException(
@@ -653,8 +650,8 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                             LOGGER.debug("HEAD response did not contain Content-Length");
                         }
 
-                        String rfc3230 = headerValue(response, "Digest");
-                        checkChecksums(info, rfc3230, attributes.getChecksumsIfPresent());
+                        Set<Checksum> remoteChecksums = checksumsFromResponse(response);
+                        checkChecksums(info, remoteChecksums, attributes.getChecksumsIfPresent());
                         return;
                     } catch (IOException e) {
                         throw new ThirdPartyTransferFailedCacheException("failed to " +
@@ -711,10 +708,9 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     }
 
     private void checkChecksums(RemoteHttpDataTransferProtocolInfo info,
-          String rfc3230, Optional<Set<Checksum>> knownChecksums)
+          Set<Checksum> remoteChecksums, Optional<Set<Checksum>> knownChecksums)
           throws ThirdPartyTransferFailedCacheException {
-        Map<ChecksumType, Checksum> checksums =
-              uniqueIndex(Checksums.decodeRfc3230(rfc3230), Checksum::getType);
+        Map<ChecksumType, Checksum> checksums = uniqueIndex(remoteChecksums, Checksum::getType);
 
         boolean verified = false;
         if (knownChecksums.isPresent()) {
@@ -729,9 +725,11 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
         }
 
         if (info.isVerificationRequired() && !verified) {
+            String describe = remoteChecksums.stream()
+                    .map(Object::toString)
+                    .collect(Collectors.joining(","));
             throw new ThirdPartyTransferFailedCacheException(
-                  "no useful checksum in HEAD response: " +
-                        (rfc3230 == null ? "(none sent)" : rfc3230));
+                  "no useful checksum in HEAD response: {" + describe + "}");
         }
     }
 
