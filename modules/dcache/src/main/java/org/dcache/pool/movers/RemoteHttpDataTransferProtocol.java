@@ -1,5 +1,6 @@
 package org.dcache.pool.movers;
 
+import static com.google.common.base.Strings.padStart;
 import static com.google.common.collect.Maps.uniqueIndex;
 import static diskCacheV111.util.ThirdPartyTransferFailedCacheException.checkThirdPartyTransferSuccessful;
 import static dmg.util.Exceptions.getMessageWithCauses;
@@ -28,6 +29,7 @@ import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -66,6 +68,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static java.util.Objects.requireNonNull;
+import java.util.regex.Pattern;
 
 /**
  * This class implements transfers of data between a pool and some remote HTTP server.  Both writing
@@ -192,6 +195,12 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     private static final String AUTH_BEARER = "Bearer ";
 
     private static final String WANT_DIGEST_VALUE = Checksums.buildGenericWantDigest();
+    private static final Pattern MATCH_HEXADECIMAL = Pattern.compile("[0-9a-f]+");
+
+    private static final Map<String,ChecksumType> OC_CHECKSUM_TYPE = Map.of(
+        "MD5", ChecksumType.MD5_TYPE,
+        "SHA1", ChecksumType.SHA1,
+        "Adler32", ChecksumType.ADLER32);
 
     private volatile MoverChannel<RemoteHttpDataTransferProtocolInfo> _channel;
     private Consumer<Checksum> _integrityChecker;
@@ -265,9 +274,85 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
         return _context;
     }
 
+    private Optional<Checksum> decodeContentMd5(HttpResponse response) {
+        int statusCode = response.getStatusLine().getStatusCode();
+        if (statusCode == HttpStatus.SC_PARTIAL_CONTENT) {
+            // Here, we assume that if the remote server replies with 206 then the entity is not
+            // the complete file, which would mean that any Content-MD5 header value is not useful.
+            return Optional.empty();
+        }
+
+        String contentEncoding = headerValue(response, "Content-Encoding");
+        if (contentEncoding != null && !contentEncoding.equals("identity")) {
+            // The entity is compressed (or otherwise encoded), which means the Content-MD5, if
+            // present, describes the encoded version and not the decoded (raw) version.  Therefore,
+            // the checksum is not useful for verifying data integrity within dCache.
+            return Optional.empty();
+        }
+
+        String contentRange = headerValue(response, "Content-Range");
+        if (contentRange != null) {
+            // Here, we assume that the presence of any "Content-Range" implies a partial response.
+            // We could do more: parse the response and check whether the range represents the
+            // whole file.
+            return Optional.empty();
+        }
+
+        String headerValue = headerValue(response, "Content-MD5");
+        if (!MATCH_HEXADECIMAL.matcher(headerValue).matches()) {
+            LOGGER.warn("Invalid Content-MD5 header value \"{}\"", headerValue);
+            return Optional.empty();
+        }
+        return Optional.ofNullable(headerValue).map(v -> new Checksum(ChecksumType.MD5_TYPE, v));
+    }
+
+    private Optional<Checksum> decodeOcChecksum(HttpResponse response) {
+        String headerValue = headerValue(response, "OC-Checksum");
+        if (headerValue == null) {
+            return Optional.empty();
+        }
+
+        int idx = headerValue.indexOf(':');
+        if (idx == -1) {
+            LOGGER.warn("Remote server responded with a bad OC-Checksum value \"{}\"", headerValue);
+            return Optional.empty();
+        }
+
+        String typeLabel = headerValue.substring(0, idx);
+        ChecksumType type = OC_CHECKSUM_TYPE.get(typeLabel);
+        if (type == null) {
+            LOGGER.warn("Remote server responded with unknown OC-Checksum algorithm \"{}\"", headerValue);
+            return Optional.empty();
+        }
+
+        String value = headerValue.substring(idx+1);
+        if (!MATCH_HEXADECIMAL.matcher(value).matches()) {
+            LOGGER.warn("Invalid OC-Checksum header {} value \"{}\"", typeLabel, value);
+            return Optional.empty();
+        }
+
+        value = padStart(value, type.getNibbles(), '0');
+        Checksum checksum = new Checksum(type, value);
+        return Optional.of(checksum);
+    }
+
     private Set<Checksum> checksumsFromResponse(HttpResponse response) {
           String rfc3230 = headerValue(response, "Digest");
-          return Checksums.decodeRfc3230(rfc3230);
+          Set<Checksum> digestChecksums = Checksums.decodeRfc3230(rfc3230);
+
+          Optional<Checksum> contentMd5Checksum = decodeContentMd5(response);
+
+          Optional<Checksum> ocChecksum = decodeOcChecksum(response);
+
+          if (contentMd5Checksum.isEmpty() && ocChecksum.isEmpty()) {
+              return digestChecksums;
+          }
+
+          Set<Checksum> combined = new HashSet<>();
+          combined.addAll(digestChecksums);
+          contentMd5Checksum.ifPresent(combined::add);
+          ocChecksum.ifPresent(combined::add);
+          return combined;
     }
 
     private boolean acceptChecksums(HttpResponse response) {
