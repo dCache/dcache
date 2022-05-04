@@ -53,7 +53,6 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
@@ -1312,6 +1311,12 @@ public class NFSv41Door extends AbstractCellComponent implements
             deviceid4 ds = waitForRedirect(NFS_REQUEST_BLOCKING).getDeviceId();
             return new deviceid4[]{ds};
         }
+
+        @Override
+        public synchronized boolean hasMover() {
+            // for read request we don't re-send mover kill
+            return !shutdownInProgress && super.hasMover();
+        }
     }
 
     private class WriteTransfer extends NfsTransfer {
@@ -1383,6 +1388,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         protected ListenableFuture<Void> _redirectFuture;
         protected AtomicReference<ChimeraNFSException> _errorHolder = new AtomicReference<>();
         private final NFS4Client _client;
+        protected boolean shutdownInProgress;
 
         NfsTransfer(PnfsHandler pnfs, NFS4Client client, NFS4State openStateId,
               Inode nfsInode, Subject ioSubject) throws ChimeraNFSException {
@@ -1551,6 +1557,8 @@ public class NFSv41Door extends AbstractCellComponent implements
 
                 _log.debug("Shutting down transfer: {}", this);
                 killMover(0, "killed by door: returning layout");
+                shutdownInProgress = true;
+
                 // wait for clean mover shutdown only for writes only
                 if (isWrite() && !waitForMover(NFS_REQUEST_BLOCKING)) {
                     throw new DelayException("Mover not stopped");
