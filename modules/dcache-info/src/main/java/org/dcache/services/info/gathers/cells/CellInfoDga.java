@@ -2,6 +2,7 @@ package org.dcache.services.info.gathers.cells;
 
 import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellPath;
+import java.util.concurrent.TimeUnit;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.gathers.MessageSender;
@@ -20,8 +21,8 @@ public class CellInfoDga extends SkelListBasedActivity {
      * getcellinfos requests to the *same* domain, and a delay of at least 100 ms between successive
      * requests of information from any domain.
      */
-    private static int MIN_LIST_REFRESH_PERIOD = 120000;
-    private static int SUCC_MSG_DELAY = 100;
+    private static final long MIN_LIST_REFRESH_PERIOD = TimeUnit.MINUTES.toMillis(2);
+    private static final long SUCC_MSG_DELAY = 100L;
 
     private final CellMessageAnswerable _handler;
 

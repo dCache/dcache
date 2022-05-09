@@ -9,6 +9,7 @@ import dmg.cells.nucleus.UOID;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.services.info.gathers.DgaFactoryService;
@@ -34,9 +35,9 @@ public class SrmDgaFactoryService implements DgaFactoryService, EnvironmentAware
         // LinkgroupDetailsDga (mistakenly) provides all information about all linkgroups.
         //addActivity(new LinkgroupListDga(60));
         activity.add(new LinkgroupDetailsDga(_spacemanager, sender,
-              300)); // every five minutes, as this may be a heavy-weight operation.
+              TimeUnit.MINUTES.toSeconds(5))); // every five minutes, as this may be a heavy-weight operation.
         activity.add(new SrmSpaceDetailsDga(_spacemanager, sender,
-              300)); // every five minutes, as this may be a heavy-weight operation.
+              TimeUnit.MINUTES.toSeconds(5))); // every five minutes, as this may be a heavy-weight operation.
 
         return activity;
     }

@@ -39,7 +39,7 @@ public class SrmSpaceDetailsDga extends SkelPeriodicActivity {
      *
      * @param interval how often the list of spaces should be updated, in seconds.
      */
-    public SrmSpaceDetailsDga(CellPath spacemanager, MessageSender sender, int interval) {
+    public SrmSpaceDetailsDga(CellPath spacemanager, MessageSender sender, long interval) {
         super(interval);
 
         _sender = sender;

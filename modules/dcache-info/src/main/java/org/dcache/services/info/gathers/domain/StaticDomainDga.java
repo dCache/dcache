@@ -2,6 +2,7 @@ package org.dcache.services.info.gathers.domain;
 
 import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellPath;
+import java.util.concurrent.TimeUnit;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.gathers.MessageSender;
@@ -27,8 +28,8 @@ public class StaticDomainDga extends SkelListBasedActivity {
      * Minimum of two minutes between successive calls to the same domain, and a delay of at least
      * 100 ms between successive requests of information from any domain.
      */
-    private static final int MIN_LIST_REFRESH_PERIOD = 120000;
-    private static final int SUCC_MSG_DELAY = 100;
+    private static final long MIN_LIST_REFRESH_PERIOD = TimeUnit.MINUTES.toMillis(2);
+    private static final long SUCC_MSG_DELAY = 100L;
 
     public StaticDomainDga(StateExhibitor exhibitor, MessageSender sender,
           CellMessageAnswerable handler) {

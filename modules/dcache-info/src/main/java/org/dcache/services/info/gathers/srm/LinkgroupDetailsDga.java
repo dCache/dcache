@@ -41,7 +41,7 @@ public class LinkgroupDetailsDga extends SkelPeriodicActivity {
      *
      * @param interval how often the list of linkgroups should be updated, in seconds.
      */
-    public LinkgroupDetailsDga(CellPath spacemanager, MessageSender sender, int interval) {
+    public LinkgroupDetailsDga(CellPath spacemanager, MessageSender sender, long interval) {
         super(interval);
         _sender = sender;
         _metricLifetime = Math.round(interval * SAFETY_FACTOR);

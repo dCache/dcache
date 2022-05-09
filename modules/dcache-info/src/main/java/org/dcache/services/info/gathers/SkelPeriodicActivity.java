@@ -1,6 +1,7 @@
 package org.dcache.services.info.gathers;
 
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Implements a skeleton Schedulable Class that is triggered periodically.
@@ -23,7 +24,8 @@ public class SkelPeriodicActivity implements Schedulable {
     public SkelPeriodicActivity(long period) {
         _period = period;
         _nextTrigger = new Date(
-              (long) (System.currentTimeMillis() + Math.random() * _period * 1000));
+              (long) (System.currentTimeMillis() + Math.random() * TimeUnit.SECONDS.toMillis(
+                    _period)));
     }
 
     @Override
@@ -33,7 +35,7 @@ public class SkelPeriodicActivity implements Schedulable {
 
     @Override
     public void trigger() {
-        _nextTrigger.setTime(System.currentTimeMillis() + _period * 1000);
+        _nextTrigger.setTime(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(_period));
     }
 
 

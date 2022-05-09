@@ -62,7 +62,7 @@ public class DataGatheringScheduler implements Runnable, EnvironmentAware, CellL
         private final Schedulable _dga;
 
         /**
-         * The delay until this DataGatheringActivity should be next triggered
+         * The time when this DataGatheringActivity should be next triggered
          */
         private Date _nextTriggered;
 
@@ -93,10 +93,11 @@ public class DataGatheringScheduler implements Runnable, EnvironmentAware, CellL
                 LOGGER_RA.error("registered dga returned null Date");
                 nextTrigger = new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(5));
             } else {
-                // Safety!  Check we wont trigger too quickly
-                if (nextTrigger.getTime() - System.currentTimeMillis() < MINIMUM_DGA_DELAY) {
+                // Safety!  Check we won't trigger too quickly
+                long timeUntilNextTrigger = nextTrigger.getTime() - System.currentTimeMillis();
+                if (timeUntilNextTrigger < MINIMUM_DGA_DELAY) {
                     LOGGER_RA.warn("DGA {} triggering too quickly ({}ms): engaging safety.",
-                          _dga, nextTrigger.getTime() - System.currentTimeMillis());
+                          _dga, timeUntilNextTrigger);
                     nextTrigger = new Date(System.currentTimeMillis() + MINIMUM_DGA_DELAY);
                 }
             }
