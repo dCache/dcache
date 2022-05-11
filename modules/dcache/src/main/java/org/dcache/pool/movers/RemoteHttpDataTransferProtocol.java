@@ -275,6 +275,11 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     }
 
     private Optional<Checksum> decodeContentMd5(HttpResponse response) {
+        String headerValue = headerValue(response, "Content-MD5");
+        if (headerValue == null) {
+            return Optional.empty();
+        }
+
         int statusCode = response.getStatusLine().getStatusCode();
         if (statusCode == HttpStatus.SC_PARTIAL_CONTENT) {
             // Here, we assume that if the remote server replies with 206 then the entity is not
@@ -298,7 +303,6 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
             return Optional.empty();
         }
 
-        String headerValue = headerValue(response, "Content-MD5");
         if (!MATCH_HEXADECIMAL.matcher(headerValue).matches()) {
             LOGGER.warn("Invalid Content-MD5 header value \"{}\"", headerValue);
             return Optional.empty();
