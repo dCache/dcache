@@ -42,7 +42,7 @@ public abstract class SkelListBasedActivity implements Schedulable {
     /**
      * Time between sending successive messages, in milliseconds
      */
-    private static final int SUCCESSIVE_MSG_DELAY = 100;
+    private static final int SUCCESSIVE_MSG_DELAY = 10000;
 
     /**
      * For how long should the resulting metrics live? (in seconds)
