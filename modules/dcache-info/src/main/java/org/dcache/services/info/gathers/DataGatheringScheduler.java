@@ -95,7 +95,7 @@ public class DataGatheringScheduler implements Runnable, EnvironmentAware, CellL
             } else {
                 // Safety!  Check we wont trigger too quickly
                 if (nextTrigger.getTime() - System.currentTimeMillis() < MINIMUM_DGA_DELAY) {
-                    LOGGER_RA.warn("DGA {} triggering too quickly ({}ms): engaging safety.",
+                    LOGGER_RA.info("DGA {} triggering too quickly ({}ms): engaging safety.",
                           _dga, nextTrigger.getTime() - System.currentTimeMillis());
                     nextTrigger = new Date(System.currentTimeMillis() + MINIMUM_DGA_DELAY);
                 }
