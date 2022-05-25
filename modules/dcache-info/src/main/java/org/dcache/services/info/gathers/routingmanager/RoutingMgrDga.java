@@ -31,7 +31,7 @@ public class RoutingMgrDga extends SkelListBasedActivity {
      * information from any domain.
      */
     private static long MIN_LIST_REFRESH_PERIOD = TimeUnit.MINUTES.toMillis(5);
-    private static long SUCC_MSG_DELAY = 100L;
+    private static long SUCC_MSG_DELAY = TimeUnit.SECONDS.toMillis(5);
 
     private final CellMessageAnswerable _handler;
 
