@@ -316,13 +316,13 @@ public class UserAdminShell
                           .filter(cellPredicate)
                           .sorted(CASE_INSENSITIVE_ORDER)
                           .map(cell -> cell + "@" + domain)
-                          .collect(toList()));
+                          .collect(toList()), MoreExecutors.directExecutor());
         /* Log and ignore any errors. */
         return catchingAsync(future, Throwable.class,
               t -> {
                   LOGGER.debug("Failed to query the System cell of domain {}: {}", domain, t);
                   return immediateFuture(emptyList());
-              });
+              }, MoreExecutors.directExecutor());
     }
 
     /**
@@ -333,7 +333,8 @@ public class UserAdminShell
               _poolManager.send("psu ls pool", String.class),
               (String s) -> Stream.of(s.split("\n"))
                     .filter(predicate)
-                    .collect(toList()));
+                    .collect(toList()),
+              MoreExecutors.directExecutor());
     }
 
     /**
@@ -353,7 +354,8 @@ public class UserAdminShell
     private ListenableFuture<List<String>> getPoolGroups() {
         return transform(
               _poolManager.send("psu ls pgroup", String.class),
-              (String s) -> asList(s.split("\n")));
+              (String s) -> asList(s.split("\n")),
+              MoreExecutors.directExecutor());
     }
 
     /**
@@ -367,11 +369,13 @@ public class UserAdminShell
               poolGroups,
               (List<String> groups) ->
                     allAsList(
-                          groups.stream().filter(predicate).map(this::getPools).collect(toList())));
+                          groups.stream().filter(predicate).map(this::getPools).collect(toList())),
+              MoreExecutors.directExecutor());
 
         /* Flatten these to form a list of pools. */
         return transform(pools,
-              (List<Stream<String>> l) -> l.stream().flatMap(s -> s).distinct().collect(toList()));
+              (List<Stream<String>> l) -> l.stream().flatMap(s -> s).distinct().collect(toList()),
+              MoreExecutors.directExecutor());
     }
 
     /**
@@ -390,7 +394,7 @@ public class UserAdminShell
         Supplier<Future<Map<String, Collection<String>>>> domains =
               Suppliers.memoize(() -> transform(_cellStub.send(new CellPath("RoutingMgr"),
                           new GetAllDomainsRequest(), GetAllDomainsReply.class),
-                    GetAllDomainsReply::getDomains));
+                    GetAllDomainsReply::getDomains, MoreExecutors.directExecutor()));
 
         List<ListenableFuture<List<String>>> futures = new ArrayList<>();
         for (String pattern : patterns) {
@@ -420,7 +424,7 @@ public class UserAdminShell
                           (List<String> pools) ->
                                 pools.stream()
                                       .sorted(CASE_INSENSITIVE_ORDER)
-                                      .collect(toList())));
+                                      .collect(toList()), MoreExecutors.directExecutor()));
                 } else {
                     /* Find the pools of each matching pool group.
                      */
@@ -431,7 +435,7 @@ public class UserAdminShell
                                       pools.stream()
                                             .filter(matchesPool)
                                             .sorted(CASE_INSENSITIVE_ORDER)
-                                            .collect(toList())));
+                                            .collect(toList()), MoreExecutors.directExecutor()));
                 }
                 continue;
             }

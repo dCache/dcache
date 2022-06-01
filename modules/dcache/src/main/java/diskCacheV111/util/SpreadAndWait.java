@@ -3,6 +3,7 @@ package diskCacheV111.util;
 
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.MoreExecutors;
 import dmg.cells.nucleus.CellPath;
 import java.io.Serializable;
 import java.util.Collections;
@@ -33,7 +34,8 @@ public class SpreadAndWait<T extends Serializable> {
                   public void onFailure(Throwable t) {
                       SpreadAndWait.this.failure();
                   }
-              });
+              },
+              MoreExecutors.directExecutor());
         _pending++;
     }
 

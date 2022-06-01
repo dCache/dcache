@@ -62,6 +62,7 @@ import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
@@ -673,7 +674,7 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware {
             public void onFailure(Throwable t) {
                 result.values().forEach(f -> f.setException(t));
             }
-        });
+        }, MoreExecutors.directExecutor());
         return result;
     }
 

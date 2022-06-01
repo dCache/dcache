@@ -11,6 +11,7 @@ import static org.dcache.cells.HAServiceLeadershipManager.HA_NOT_LEADER_MSG;
 
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
@@ -321,7 +322,7 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
               Arrays.stream(_deleteNotificationTargets)
                     .map(a -> Futures.catchingAsync(
                           _notificationStub.send(a, new PnfsDeleteEntryNotificationMessage(pnfsId)),
-                          Exception.class, e -> immediateFailedFuture(failureFor.apply(a, e))))
+                          Exception.class, e -> immediateFailedFuture(failureFor.apply(a, e)), MoreExecutors.directExecutor()))
                     .collect(toList()));
     }
 

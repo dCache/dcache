@@ -28,6 +28,7 @@ import static java.util.stream.Collectors.toSet;
 import com.google.common.base.Function;
 import com.google.common.collect.Ordering;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import diskCacheV111.vehicles.IoDoorEntry;
 import diskCacheV111.vehicles.IoDoorInfo;
 import diskCacheV111.vehicles.IoJobInfo;
@@ -85,19 +86,19 @@ public class TransferCollector {
         return transform(
               query(loginManagers, "get children -binary", LoginManagerChildrenInfo.class,
                     "Failed to query login manager: {}", null),
-              removeNulls());
+              removeNulls(), MoreExecutors.directExecutor());
     }
 
     public ListenableFuture<Collection<IoDoorInfo>> collectDoorInfo(Set<CellPath> doors) {
         return transform(query(doors, "get door info -binary", IoDoorInfo.class,
                     "Failed to query door: ", null),
-              removeNulls());
+              removeNulls(), MoreExecutors.directExecutor());
     }
 
     public ListenableFuture<Collection<IoJobInfo>> collectMovers(Set<CellPath> pools) {
         return transform(query(pools, "mover ls -binary", IoJobInfo[].class,
                     "Failed to query pool: {}", new IoJobInfo[0]),
-              flatten());
+              flatten(), MoreExecutors.directExecutor());
     }
 
     public ListenableFuture<List<Transfer>> collectTransfers() {
@@ -107,11 +108,13 @@ public class TransferCollector {
               collectLoginManagerInfo(getLoginManagers(loginBrokerInfo));
         ListenableFuture<Collection<IoDoorInfo>> doorInfo =
               transformAsync(loginManagerInfo,
-                    (Collection<LoginManagerChildrenInfo> l) -> collectDoorInfo(getDoors(l)));
+                    (Collection<LoginManagerChildrenInfo> l) -> collectDoorInfo(getDoors(l)),
+                    MoreExecutors.directExecutor());
         return transformAsync(doorInfo,
               (Collection<IoDoorInfo> l) ->
                     transform(collectMovers(getPools(l)),
-                          (Collection<IoJobInfo> movers) -> getTransfers(l, movers)));
+                          (Collection<IoJobInfo> movers) -> getTransfers(l, movers), MoreExecutors.directExecutor()),
+              MoreExecutors.directExecutor());
     }
 
     public static Set<CellPath> getPools(Collection<IoDoorInfo> movers) {
@@ -186,7 +189,7 @@ public class TransferCollector {
                           t -> {
                               LOGGER.debug(errorMsg, t.toString());
                               return immediateFuture(defaultValue);
-                          }))
+                          }, MoreExecutors.directExecutor()))
                     .collect(toList());
         return allAsList(futures);
     }

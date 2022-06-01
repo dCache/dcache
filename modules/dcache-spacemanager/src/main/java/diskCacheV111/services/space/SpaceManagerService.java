@@ -39,6 +39,7 @@ import static java.util.stream.Collectors.toList;
 import com.google.common.primitives.Longs;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import diskCacheV111.poolManager.PoolPreferenceLevel;
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.services.space.message.GetFileSpaceTokensMessage;
@@ -446,7 +447,7 @@ public final class SpaceManagerService
         ListenableFuture<PoolMgrGetHandler> result = forward(envelope, messageToForward);
         ListenableFuture<PoolMgrGetHandler> resultWithSilentTimeout =
               catchingAsync(result, TimeoutCacheException.class,
-                    t -> Futures.immediateFuture(null));
+                    t -> Futures.immediateFuture(null), MoreExecutors.directExecutor());
         return new FutureReply<>(resultWithSilentTimeout);
     }
 

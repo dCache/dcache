@@ -518,7 +518,7 @@ public class CellStub
                       throw CacheExceptionFactory.exceptionOf(msg);
                   }
                   return Futures.immediateFuture(f.apply(msg));
-              });
+              }, MoreExecutors.directExecutor());
     }
 
     /**
@@ -539,7 +539,7 @@ public class CellStub
                       throw CacheExceptionFactory.exceptionOf(msg);
                   }
                   return f.apply(msg);
-              });
+              }, MoreExecutors.directExecutor());
     }
 
     /**

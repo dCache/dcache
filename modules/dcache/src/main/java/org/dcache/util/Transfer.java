@@ -976,7 +976,7 @@ public class Transfer implements Comparable<Transfer> {
                   (PoolMgrSelectReadPoolMsg msg) -> {
                       setReadPoolSelectionContext(msg.getContext());
                       return msg;
-                  });
+                  }, MoreExecutors.directExecutor());
         }
 
         setStatusUntil("PoolManager: Selecting pool", reply);
@@ -1036,7 +1036,7 @@ public class Transfer implements Comparable<Transfer> {
             // invalidate pool selection to let the door to start over
             clearPoolSelection();
             return immediateFailedFuture(x);
-        });
+        }, MoreExecutors.directExecutor());
 
         setStatusUntil("Pool " + pool + ": Creating mover", reply);
         return CellStub.transformAsync(reply, msg -> {
@@ -1308,19 +1308,20 @@ public class Transfer implements Comparable<Transfer> {
                   public ListenableFuture<Void> retryWhen(ListenableFuture<Void> future) {
                       if (getPool() == null) {
                           if (!isWrite()) {
-                              future = transformAsync(future, readNameSpaceEntry);
+                              future = transformAsync(future, readNameSpaceEntry, MoreExecutors.directExecutor());
                           }
-                          future = transformAsync(future, selectPool);
+                          future = transformAsync(future, selectPool, MoreExecutors.directExecutor());
                       }
 
                       start = System.currentTimeMillis();
-                      return catchingAsync(transformAsync(future, startMover), CacheException.class,
-                            this);
+                      return catchingAsync(transformAsync(future, startMover, MoreExecutors.directExecutor()), CacheException.class,
+                            this, MoreExecutors.directExecutor());
                   }
               };
 
         return catchingAsync(transformAsync(
-              selectPoolAsync(getTimeoutFor(deadLine)), startMover), CacheException.class, retry);
+              selectPoolAsync(getTimeoutFor(deadLine)), startMover, MoreExecutors.directExecutor()),
+              CacheException.class, retry, MoreExecutors.directExecutor());
     }
 
     /**

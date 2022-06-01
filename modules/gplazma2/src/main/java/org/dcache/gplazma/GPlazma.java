@@ -4,6 +4,7 @@ import static com.google.common.collect.Iterables.concat;
 import static com.google.common.collect.Iterables.removeIf;
 import static java.util.Objects.requireNonNull;
 
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
 import java.lang.reflect.Modifier;
@@ -407,7 +408,7 @@ public class GPlazma {
             manager = new ServiceManager(
                   concat(authenticationPlugins, mappingPlugins, accountPlugins, sessionPlugins,
                         identityPlugins));
-            manager.addListener(this);
+            manager.addListener(this, MoreExecutors.directExecutor());
         }
 
         @Override

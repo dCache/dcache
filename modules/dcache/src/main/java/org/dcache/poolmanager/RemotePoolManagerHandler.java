@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2016 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 - 2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -57,7 +57,7 @@ public class RemotePoolManagerHandler implements SerializablePoolManagerHandler 
             return (ListenableFuture<T>) Futures.transform(
                   submit(endpoint, new CellPath(destination), "xrc ls", RestoreHandlerInfo[].class,
                         timeout),
-                  a -> new PoolManagerGetRestoreHandlerInfo(asList(a)));
+                  a -> new PoolManagerGetRestoreHandlerInfo(asList(a)), MoreExecutors.directExecutor());
         }
         return submit(endpoint, new CellPath(destination), msg, timeout);
     }

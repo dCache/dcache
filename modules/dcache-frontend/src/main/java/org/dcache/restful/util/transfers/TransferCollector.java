@@ -66,6 +66,7 @@ import static com.google.common.util.concurrent.Futures.transform;
 
 import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import diskCacheV111.util.TransferInfo;
 import diskCacheV111.vehicles.IoDoorInfo;
 import diskCacheV111.vehicles.IoJobInfo;
@@ -144,7 +145,8 @@ public class TransferCollector extends CellMessagingCollector<Map<String, Transf
                     IoDoorInfo.class,
                     "door",
                     null),
-              TransferCollectionUtils.removeNulls());
+              TransferCollectionUtils.removeNulls(),
+              MoreExecutors.directExecutor());
     }
 
     private ListenableFuture<Collection<LoginManagerChildrenInfo>>
@@ -154,7 +156,8 @@ public class TransferCollector extends CellMessagingCollector<Map<String, Transf
                     LoginManagerChildrenInfo.class,
                     "login manager",
                     null),
-              TransferCollectionUtils.removeNulls());
+              TransferCollectionUtils.removeNulls(),
+              MoreExecutors.directExecutor());
     }
 
     private ListenableFuture<Collection<IoJobInfo>>
@@ -164,7 +167,8 @@ public class TransferCollector extends CellMessagingCollector<Map<String, Transf
                     IoJobInfo[].class,
                     "pool",
                     new IoJobInfo[0]),
-              TransferCollectionUtils.flatten());
+              TransferCollectionUtils.flatten(),
+              MoreExecutors.directExecutor());
     }
 
     private <T> ListenableFuture<List<T>> query(Collection<CellPath> cells,
@@ -184,7 +188,7 @@ public class TransferCollector extends CellMessagingCollector<Map<String, Transf
                                     t.toString());
                               return immediateFuture(
                                     defaultValue);
-                          }))
+                          }, MoreExecutors.directExecutor()))
                     .collect(Collectors.toList());
         return allAsList(futures);
     }

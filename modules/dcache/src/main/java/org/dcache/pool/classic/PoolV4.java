@@ -14,6 +14,7 @@ import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFutureTask;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.RateLimiter;
 import diskCacheV111.pools.PoolCellInfo;
 import diskCacheV111.pools.PoolCostInfo;
@@ -1109,7 +1110,8 @@ public class PoolV4
                   public void onFailure(Throwable t) {
                       reply.fail(msg, t);
                   }
-              });
+              },
+              MoreExecutors.directExecutor());
         return reply;
     }
 
