@@ -194,6 +194,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
+        _log.info("channel inactive event received on {}.", ctx.channel());
         writeLock.lock();
         try {
             /* close leftover descriptors */
@@ -221,22 +222,22 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
                          *  in case there is no reconnect, in which case the channel is then released.
                          */
                         _server.scheduleReconnectTimerForMover(descriptor);
-                        _log.debug("{} channeInactive, starting timer for reconnect with mover {}.",
+                        _log.debug("{} channelInactive, starting timer for reconnect with mover {}.",
                               ctx.channel(), descriptor.getChannel().getMoverUuid());
                     }
                 }
             }
         } finally {
             writeLock.unlock();
-            ;
         }
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable t) {
         if (t instanceof ClosedChannelException) {
-            _log.info("Connection {} unexpectedly closed.", ctx.channel());
+            _log.info("Connection {} unexpectedly closed.", ctx.channel());
         } else if (t instanceof Exception) {
+            _log.info("Exception on connection {}: {}.", ctx.channel(), t.toString());
             writeLock.lock();
             try {
                 for (FileDescriptor descriptor : _descriptors) {
