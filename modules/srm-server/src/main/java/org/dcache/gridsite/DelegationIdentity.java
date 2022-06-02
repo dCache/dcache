@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 - 2020 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,7 +17,6 @@
  */
 package org.dcache.gridsite;
 
-import static com.google.common.base.CharMatcher.JAVA_LETTER_OR_DIGIT;
 import static com.google.common.base.CharMatcher.anyOf;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
@@ -39,7 +38,7 @@ public class DelegationIdentity {
     private final String _delegationId;
 
     private static final CharMatcher VALID_DELEGATION_ID_CHARACTERS =
-          JAVA_LETTER_OR_DIGIT.or(anyOf("-_(){}[]?!%$^&*'#@~="));
+          CharMatcher.forPredicate(Character::isLetterOrDigit).or(anyOf("-_(){}[]?!%$^&*'#@~="));
 
     public DelegationIdentity(String dn, String delegationId) throws DelegationException {
         _dn = requireNonNull(dn);
