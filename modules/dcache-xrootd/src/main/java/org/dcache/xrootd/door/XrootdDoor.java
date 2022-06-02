@@ -58,6 +58,8 @@ import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
+import dmg.util.command.Command;
+import dmg.util.command.Option;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.net.InetSocketAddress;
@@ -70,6 +72,7 @@ import java.util.Map;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
@@ -94,7 +97,6 @@ import org.dcache.namespace.PermissionHandler;
 import org.dcache.namespace.PosixPermissionHandler;
 import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.poolmanager.PoolMonitor;
-import org.dcache.util.Args;
 import org.dcache.util.Checksum;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.PingMoversTask;
@@ -1071,55 +1073,69 @@ public class XrootdDoor
         }
     }
 
-    /**
-     * To allow the transfer monitoring in the httpd cell to recognize us as a door, we have to
-     * emulate LoginManager.  To emulate LoginManager we list ourselves as our child.
-     */
-    public static final String hh_get_children = "[-binary]";
+    @Command(name = "get children", hint = "Allow the transfer monitoring in the httpd "
+          + "cell to recognize this as a door.",
+          description = "Emulates LoginManager by listing this door as its own child.")
+    class GetChildren implements Callable<Serializable> {
 
-    public Object ac_get_children(Args args) {
-        boolean binary = args.hasOption("binary");
-        if (binary) {
-            String[] list = new String[]{getCellName()};
-            return new LoginManagerChildrenInfo(getCellName(), getCellDomainName(), list);
-        } else {
-            return getCellName();
-        }
-    }
+        @Option(name = "binary", usage = "Return as serialized object.")
+        boolean binary;
 
-    public static final String hh_get_door_info = "[-binary]";
-    public static final String fh_get_door_info =
-          "Provides information about the door and current transfers";
-
-    public Object ac_get_door_info(Args args) {
-        List<IoDoorEntry> entries = new ArrayList<>();
-        for (Transfer transfer : _transfers.values()) {
-            entries.add(transfer.getIoDoorEntry());
-        }
-
-        IoDoorInfo doorInfo = new IoDoorInfo(getCellName(), getCellDomainName());
-        doorInfo.setProtocol(XROOTD_PROTOCOL_STRING, XROOTD_PROTOCOL_VERSION);
-        doorInfo.setOwner("");
-        doorInfo.setProcess("");
-        doorInfo.setIoDoorEntries(entries.toArray(IoDoorEntry[]::new));
-        return args.hasOption("binary") ? doorInfo : doorInfo.toString();
-    }
-
-    public static final String hh_kill_mover =
-          " <pool> <moverid> # kill transfer on the pool";
-
-    public String ac_kill_mover_$_2(Args args) throws NumberFormatException {
-        int mover = Integer.parseInt(args.argv(1));
-        String pool = args.argv(0);
-
-        for (Transfer transfer : _transfers.values()) {
-            if (transfer.getMoverId() == mover && transfer.getPool() != null && transfer.getPool()
-                  .getName().equals(pool)) {
-
-                transfer.killMover(0, "killed by door 'kill mover' command");
-                return "Kill request to the mover " + mover + " has been submitted";
+        @Override
+        public Serializable call() throws Exception {
+            if (binary) {
+                String[] list = new String[]{getCellName()};
+                return new LoginManagerChildrenInfo(getCellName(), getCellDomainName(), list);
+            } else {
+                return getCellName();
             }
         }
-        return "mover " + mover + " not found on the pool " + pool;
+    }
+
+    @Command(name = "get door info", hint = "Information about the door.",
+          description = "Includes current transfers.")
+    class GetDoorInfo implements Callable<Serializable> {
+
+        @Option(name = "binary", usage = "Return as serialized object.")
+        boolean binary;
+
+        @Override
+        public Serializable call() throws Exception {
+            List<IoDoorEntry> entries = new ArrayList<>();
+            for (Transfer transfer : _transfers.values()) {
+                entries.add(transfer.getIoDoorEntry());
+            }
+
+            IoDoorInfo doorInfo = new IoDoorInfo(getCellName(), getCellDomainName());
+            doorInfo.setProtocol(XROOTD_PROTOCOL_STRING, XROOTD_PROTOCOL_VERSION);
+            doorInfo.setOwner("");
+            doorInfo.setProcess("");
+            doorInfo.setIoDoorEntries(entries.toArray(IoDoorEntry[]::new));
+            return binary ? doorInfo : doorInfo.toString();
+        }
+    }
+
+    @Command(name = "kill mover", hint = "Kill transfer on the pool.",
+          description = "Submits request to kill mover to the pool.")
+    class KillMover implements Callable<String> {
+
+        @Option(name = "pool", required = true, usage = "Where the mover is running.")
+        String pool;
+
+        @Option(name = "id", required = true, usage = "Id of the mover.")
+        Integer id;
+
+        @Override
+        public String call() throws Exception {
+            for (Transfer transfer : _transfers.values()) {
+                if (transfer.getMoverId() == id && transfer.getPool() != null && transfer.getPool()
+                      .getName().equals(pool)) {
+                    transfer.killMover(0, "killed by door 'kill mover' command");
+                    return String.format("Kill request to the mover %s has been submitted to %s.",
+                          id, pool);
+                }
+            }
+            return String.format("Mover %s not found on pool %s.", id, pool);
+        }
     }
 }
