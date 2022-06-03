@@ -2,7 +2,7 @@ CHAPTER 18. THE BULK SERVICE
 ===============================
 
 The purpose of the bulk service is to manage mass file system operations involving lists of files
-and directories, the latter possibly treated recursively.  In one sense it is meant to incorporate 
+and directories, the latter possibly treated recursively.  In one sense it is meant to incorporate
 into dCache proper some of the functionality provided by SRM (such as prestaging of files).
 
 -----
@@ -11,89 +11,150 @@ into dCache proper some of the functionality provided by SRM (such as prestaging
 
 ## Configuring
 
-The service can run in a shared domain, but it is probably best to isolate it in its own.  
+The service can run in a shared domain, but it is probably best to isolate it in its own.
 
 ```
 [bulkDomain]
 [bulkDomain/bulk]
-[bulkDomain/ping]
 ```
+The bulk service has not yet been rendered replicable, but this should not be
+difficult and may be in future versions.
 
-The module comes with an internal service (``ping``) which can be enabled, but this is 
-strictly for the convenience of testing without requiring the test jobs to do
-any real work (to simulate how jobs that wait synchronously –– such as
-those which stage from tape –– perform under load, for instance); 
-the ``ping`` service is not relevant to running in a production environment.
-
-The rule-of-thumb for memory requirements is described in the properties file:
+The new version of bulk (version 2, as of dCache 8.2) requires a database consisting of
+three tables.  As is customary, before the first startup of the service, be
+sure to create the database (e.g., using the postgres command-line tool):
 
 ```
-#       Given approximately 1KB of memory for a job, multiply this figure
-#       by 2, and you will have a minimal memory requirement for just the
-#       queues in which jobs could be present for a longer period of time.
-#       Thus the default value given below means 2GB (in which
-#       case the domain JVM should be given somewhat more than 2GB
-#       of heap memory).
+createdb -U <user> bulk
 ```
 
-The service has a number of settings for controlling the size of the queues;
-adjusting these upwards will also mean making sure the JVM is given enough
-heap memory to accommodate them.
+The rest of the configuration takes place automatically on startup.
 
-See the ``bulk.properties`` file for further information on settings.
+While things like thread queue sizes, cache expiration, consumer sweep interval and
+such can be adjusted as desired using the service properties, bulk is configured
+to run out of the box for most purposes.  See the ``bulk.properties`` file
+for further information on settings.
 
-## Requests, Jobs, and Fairness
+A number of user-facing (policy) settings can also be controlled from the admin
+shell without requiring service restart (see below).
 
-The bulk service receives requests from the frontend service 
-(see the User Manual [Chapter 3. Frontend](frontend.md#bulk-operations])) 
-via dCache messaging and processes them on a first-come-first-served basis. 
-Only a fixed number of requests can be running at a given time. 
-A very simple algorithm is used that loops through the active requests 
-and picks one job at a time from each until the maximum number of running 
-jobs is reached.   Any given user is allowed to have only a fixed number of 
-requests active at a given time (this is adjustable). 
+## Requests
+
+A bulk request consists of a list of targets (file paths) and an activity that
+should be applied to each, along with options for directory expansion or
+recursion, pre- and post-processing of the request.
+
+The submission of a request by a user occurs via RESTful interfaces;
+currently, there is a general resource, ``bulk-requests``, and two resources
+which specifically support the WLCG Tape API, ``stage`` and ``release``.
+For the differences, along with a description of the options controlling
+the execution of the request, see the User Manual [Chapter 3. Frontend: Bulk Requests].
+
+The bulk service receives these requests from the frontend service via dCache messaging.
+The order in which they are processed is determined by a scheduler.  Currently, only
+one such scheduler has been implemented,
+
+```
+bulk.request-scheduler=org.dcache.services.bulk.manager.scheduler.LeastRecentFirstScheduler
+```
+
+which selects the least recent requests to run in order of arrival (first-come first-served).
+
+Only a fixed number of requests can be running at a given time; the default corresponds
+to the number of threads made available for processing container jobs,
+
+```
+bulk.limits.container-processing-threads=110
+```
+
+but can be adjusted upwards or downwards via the admin shell command ``request policy,``
+in which case the thread pool will be either over- or under-subscribed; this adjustment
+may be desirable under certain conditions (for example, increasing when there are many small
+high-latency jobs or decreasing when there are many large low-latency jobs). The number
+of requests which can be active or queued at a given time per user is also configurable.
+
+## Activities
+
+An activity consists of some kind of action which can be taken on a file path.  Depending
+on the activity, there may be a restriction as to whether it can take a directory target
+(these are hard-coded).
+
+Activities are defined via an SPI ("Service Provider Interface") as plugins to
+the service.  The following are presently available:
+
+- **DELETE** : file deletion, with or without removal of empty directories.
+- **PIN/UNPIN** : by default, the pin uses the request id, but can optionally be given
+a different id. The default lifetime is five minutes (the same as for the NFS dot-command).
+- **STAGE/RELEASE** : specialized WLCG versions of PIN/UNPIN.
+- **UPDATE_QOS** : disk-to-tape and tape-to-disk transitions; communicates with
+the [QoS Engine](config-qos-engine.md).
+- **LOG_TARGET** : logs metadata for each target at the INFO level.
+
+Each activity is associated with
+
+- a permit count (used in connection with a semaphore for throttling execution);
+- two thread queues, one for the execution of the container job,
+and the other for the execution of callbacks on activity futures;
+- a retry policy (currently the only retry policy is a NOP, i.e., no retry).
+
+The permits are configurable using either the property or the admin shell
+command ``request policy``.
+
+Should other retry policies become available, these can be set via a property.
+
+The number and distribution of thread executors is hard-coded for the activities, but their
+respective sizes can be adjusted using the properties:
+
+    ```
+    bulk.limits.container-processing-threads=110
+    bulk.limits.activity-callback-threads=50
+    ```
+
+## Container Design
+
+Version 2 of the bulk service has introduced improvements for better scalability and recovery.
+
+All requests are now processed by a single container job which executes the targets serially
+while the callbacks on any target futures are executed asynchronously.  A container can
+be configured to store initial target information in the database either when the target
+is acted upon (on the fly) or in advance (= _prestore_).  The latter incurs some overhead,
+particularly for jobs in excess of 10K targets, but may be desirable for tasks
+like pinning where the time to completion is long, because it allows any queued targets to be seen
+ahead of time.  All of the WLCG operations are hard-coded to prestore, but the general
+default is no prestorage.
+
+In order to handle directories consistently, a container will queue them and delay their processing
+until all regular file targets have completed.  Directories are always processed
+serially depth-first.
+
+The following illustrates the structure of the service and its interactions when processing
+a request.
+
+![Bulk Design v2](images/bulk-design-v2.png)
+
+Cancellation is best effort, in the sense that the cessation of the bulk activity is
+not guaranteed to stop the activity in other dCache components.  Flushing, for instance,
+cannot be easily cancelled.
 
 ## Storage and Recovery
 
-Requests are serialized and written out to a file when they are received.  Upon
-completion, the request is updated and marked complete if it is to be retained
-(the option exists to remove a request immediately upon completion, and can
-be selected for successful, failed or both for any given request).
-Request and job information is otherwise stored in memory.  When the service
-fails or goes down, an attempt will be made to replay incomplete requests upon
-restart.  Since job and request state is not persistent, every such request 
-is treated as if it were idempotent, and rerun in its entirety; the original
-queueing order for the incomplete requests (based on timestamp) is, however,
-preserved.  In the future, depending on need/demand, we may review whether to
-implement finer grained checkpointing.
+Requests are stored when they are received. When the service fails or goes down,
+an attempt will be made to replay incomplete requests upon restart.  This replay will leave
+untouched request targets that are already in some terminal state (COMPLETED, FAILED, CANCELLED)
+and will retry only those that had not reached completion or had not yet been acted upon.
+If the request was doing directory expansion, the directories are walked again and missing
+targets are added if any.
 
-## Job plugins
-
-Job types are defined via an SPI ("Service Provider Interface") as plugins to
-the service.  Aside from two built-in test jobs which simply list directories
-using either breadth-first or depth-first tree walks, three plugins to the
-service are currently provided:
-
-- **Pin/Unpin**: the pin is issued on behalf of the user.  The default lifetime is
-             five minutes (the same as for the NFS dot-command).
-- **QoS**:  for issuing disk-to-tape and tape-to-disk transitions.
-- **Delete**: file deletion, with or without removal of empty directories.
-
-The arguments and defaults for each of these tasks can be inspected via the
-``admin`` shell (see below).
-
-New types of jobs require implementing a job class which 
-extends``org.dcache.services.bulk.job.SingleTargetJob``
-as well as a job provider class 
-implementing ``org.dcache.services.bulk.job.BulkJobProvider``.   A job type
-can receive dCache endpoints to the ``namespace``, ``poolmanager``, ``pinmanager`` 
-and ``poolmonitor`` by implementing the appropriate -``Aware`` interface.  Every
-job inherits access to the file path, attributes, and user subject and restriction.
-This makes it fairly straightforward to add new plugins in the future.
-
-## Admin commands
+## Admin Commands
 
 The bulk service comes with a full set of admin shell commands which allow one
-to list the running jobs and stored requests, to launch and cancel requests,
-to list the available plugin types and to inspect the arguments used when
-submitting a request of a particular type.
+to list the requests and targets, to launch and cancel requests and individual targets,
+to list the available activity types and inspect their arguments, and to monitor the
+state of the service itself.  The ``request reset`` command removes all request targets
+from the database, returns the state to QUEUED and resubmits the request (i.e., this
+is a clean-slate retry of the request).
+
+Particularly useful are the following policy properties which can be changed without
+requiring service restart using the admin shell command ``request policy``:
+
+![Bulk Request Policy Command](images/bulk-request-policy.png)

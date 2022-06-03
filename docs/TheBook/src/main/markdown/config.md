@@ -37,10 +37,11 @@ Individual services:
 
 - [The Bulk Service](config-bulk.md)
    - [Configuring](config-bulk.md#configuring)
-   - [Requests, Jobs, and Fairness](config-bulk.md#requests-jobs-and-fairness)
+   - [Requests](config-bulk.md#requests)
+   - [Activities](config-bulk.md#activities)
+   - [Container Design](config-bulk.md#container-design)
    - [Storage and Recovery](config-bulk.md#storage-and-recovery)
-   - [Job plugins](config-bulk.md#job-plugins)
-   - [Admin commands](config-bulk.md#admin-commands)
+   - [Admin Commands](config-bulk.md#admin-commands)
 
 - [The Cleaner Service](config-cleaner.md)
     - [Configuration](config-cleaner.md#configuration)
@@ -106,6 +107,18 @@ Individual services:
      - [Handling of QoS Transitions for Resilient Files](config-resilience.md#handling-of-qos-transitions-for-resilient-files)
      - [Some typical scenarios part - what happens when ...?](config-resilience.md#some-typical-scenarios-part-1-what-happens-when-)
      - [Some typical scenarios part - how do I ...?](config-resilience.md#some-typical-scenarios-part-2-how-do-i-)
+
+- [dCache QoS Service](config-qos-engine.md)
+     - [Introduction to the qos service](config-qos-engine.md#introduction-to-the-qos-service)
+     - [Configuring the qos service](config-qos-engine.md#configuring-the-qos-service)
+     - [QoS Definitions](config-qos-engine.md#qos-definitions)
+     - [QoS Home](config-qos-engine.md#qos-home)
+     - [Admin Commands](config-qos-engine.md#admin-commands)
+     - [Tuning](config-qos-engine.md#tuning)
+     - [QoS's View of Pool Status](config-qos-engine.md#qos-s-view-of-pool-status)
+     - [Automatic Staging of Missing CUSTODIAL ONLINE replicas](config-qos-engine.md#automatic-staging-of-missing-custodial-online-replicas)
+     - [Some typical scenarios part 1 - what happens when ...?](config-qos-engine.md#some-typical-scenarios-part-1-what-happens-when-)
+     - [Some typical scenarios part 2 - how do I ...?](config-qos-engine.md#some-typical-scenarios-part-2-how-do-i-)
 
 - [dCache Storage Resource Manager](config-SRM.md)
      - [Configuring the srm service](config-SRM.md#configuring-the-srm-service)

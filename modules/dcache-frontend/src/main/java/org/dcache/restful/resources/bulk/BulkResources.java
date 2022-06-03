@@ -71,6 +71,7 @@ import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import io.swagger.annotations.Example;
 import io.swagger.annotations.ExampleProperty;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -81,6 +82,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.PATCH;
@@ -101,11 +103,12 @@ import org.dcache.services.bulk.BulkRequest;
 import org.dcache.services.bulk.BulkRequest.Depth;
 import org.dcache.services.bulk.BulkRequestCancelMessage;
 import org.dcache.services.bulk.BulkRequestClearMessage;
+import org.dcache.services.bulk.BulkRequestInfo;
 import org.dcache.services.bulk.BulkRequestListMessage;
 import org.dcache.services.bulk.BulkRequestMessage;
 import org.dcache.services.bulk.BulkRequestStatus;
-import org.dcache.services.bulk.BulkRequestStatus.Status;
 import org.dcache.services.bulk.BulkRequestStatusMessage;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.stereotype.Component;
 
@@ -153,10 +156,10 @@ public final class BulkResources {
         Subject subject = getSubject();
         Restriction restriction = getRestriction();
 
-        Set<Status> filter;
+        Set<BulkRequestStatus> filter;
         if (Strings.emptyToNull(status) != null) {
             filter = new HashSet<>();
-            Splitter.on(",").split(status).forEach(o -> filter.add(Status.valueOf(o)));
+            Splitter.on(",").split(status).forEach(o -> filter.add(BulkRequestStatus.valueOf(o)));
         } else {
             filter = null;
         }
@@ -190,9 +193,10 @@ public final class BulkResources {
     @Produces(MediaType.APPLICATION_JSON)
     public Response submit(
           @ApiParam(value = "Description of the request, which defines the following: "
-                + "target, target_prefix, activity, cancel_on_failure, "
-                + "clear_on_success, clear_on_failure, delay_clear, expand-directories "
-                + "(NONE, TARGETS, ALL), and arguments (map of name:value "
+                + "target (list), target_prefix, activity, cancel_on_failure, "
+                + "clear_on_success, clear_on_failure, delay_clear, expand_directories "
+                + "(NONE, TARGETS, ALL), pre_store (store all targets first), "
+                + "and arguments (map of name:value "
                 + "pairs) if required.", required = true)
                 String requestPayload) {
         Subject subject = getSubject();
@@ -221,8 +225,8 @@ public final class BulkResources {
      * NOTE: users logged in with the admin role can obtain info on any request.
      *
      * @param id of the request.
-     * @return Object which describes the status of the request. See {@link BulkRequestStatus} for
-     * the data fields.
+     * @return Object which describes the status of the request. See {@link BulkRequestInfo} for the
+     * data fields.
      */
     @GET
     @ApiOperation("Get the status information for an individual bulk request.")
@@ -235,15 +239,19 @@ public final class BulkResources {
     })
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public BulkRequestStatus getBulkRequestStatus(@ApiParam("The unique id of the request.")
-    @PathParam("id") String id) {
+    public BulkRequestInfo getBulkRequestStatus(@ApiParam("The unique id of the request.")
+    @PathParam("id") String id,
+          @ApiParam("Offset for the target list (max length = 10K).")
+          @DefaultValue("0")
+          @QueryParam("offset") long offset) {
         Subject subject = getSubject();
         Restriction restriction = getRestriction();
 
         BulkRequestStatusMessage message = new BulkRequestStatusMessage(id, restriction);
         message.setSubject(subject);
+        message.setOffset(offset);
         message = service.send(message);
-        return message.getStatus();
+        return message.getInfo();
     }
 
     /**
@@ -286,6 +294,10 @@ public final class BulkResources {
 
         JSONObject reqPayload = new JSONObject(requestPayload);
 
+        if (!reqPayload.has("action")) {
+            throw new BadRequestException("no action provided.");
+        }
+
         String action = reqPayload.getString("action");
 
         if (!"cancel".equalsIgnoreCase(action)) {
@@ -294,14 +306,24 @@ public final class BulkResources {
 
         BulkRequestCancelMessage message = new BulkRequestCancelMessage(id, restriction);
         message.setSubject(subject);
-        service.send(message);
 
+        if (reqPayload.has("paths")) {
+            JSONArray paths = reqPayload.getJSONArray("paths");
+            List<String> targetPaths = new ArrayList<>();
+            int len = paths.length();
+            for (int i = 0; i < len; ++i) {
+                targetPaths.add(paths.getString(i));
+            }
+            message.setTargetPaths(targetPaths);
+        }
+
+        service.send(message);
         return Response.ok().build();
     }
 
     /**
      * If the bulk operation was in state started then all dCache activity triggered by this bulk
-     * request is stopped.
+     * request is stopped, unless cancelIfRunning is true.
      * <p>
      * The bulk request is cleared.  No further activity will take place for this request.  The
      * server will respond to subsequent GET requests targeting this resource with a 404 (Not Found)
@@ -324,18 +346,21 @@ public final class BulkResources {
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response clearRequest(@ApiParam("The unique id of the request.")
-    @PathParam("id") String id) {
+    @PathParam("id") String id, @ApiParam("If request is still being processed, cancel it first.")
+    @DefaultValue("false")
+    @QueryParam("cancelIfRunning") boolean cancelIfRunning) {
         Subject subject = getSubject();
         Restriction restriction = getRestriction();
 
         BulkRequestClearMessage message = new BulkRequestClearMessage(id, restriction);
+        message.setCancelIfRunning(cancelIfRunning);
         message.setSubject(subject);
         service.send(message);
 
         return Response.noContent().build();
     }
 
-    private Subject getSubject() {
+    public static Subject getSubject() {
         if (RequestUser.isAnonymous()) {
             throw new NotAuthorizedException("User cannot be anonymous.");
         }
@@ -347,7 +372,7 @@ public final class BulkResources {
         return RequestUser.getSubject();
     }
 
-    private Restriction getRestriction() {
+    public static Restriction getRestriction() {
         if (RequestUser.isAdmin()) {
             return Restrictions.none();
         }
@@ -363,18 +388,20 @@ public final class BulkResources {
      * NB:  the argument attributes are all expressed in the document in kebab-case and that is how
      * they are defined in the Bulk service as well.
      */
-     @VisibleForTesting
-     static BulkRequest toBulkRequest(String requestPayload) {
+    @VisibleForTesting
+    static BulkRequest toBulkRequest(String requestPayload) {
+        if (Strings.emptyToNull(requestPayload) == null) {
+            throw new BadRequestException("empty request payload.");
+        }
+
         Map map = new Gson().fromJson(requestPayload, Map.class);
         BulkRequest request = new BulkRequest();
 
         request.setArguments((Map<String, String>) map.remove("arguments"));
+        request.setTarget((List<String>) map.remove("target"));
 
         String value = removeEntry(map, "activity");
         request.setActivity(value);
-
-        value = removeEntry(map, "target");
-        request.setTarget(value);
 
         value = removeEntry(map, "target_prefix", "target-prefix", "targetPrefix");
         request.setTargetPrefix(value);
@@ -395,6 +422,9 @@ public final class BulkResources {
 
         value = removeEntry(map, "cancel_on_failure", "cancel-on-failure", "cancelOnFailure");
         request.setCancelOnFailure(Boolean.valueOf(value));
+
+        value = removeEntry(map, "pre_store", "pre-store", "prestore");
+        request.setPrestore(Boolean.valueOf(value));
 
         if (!map.isEmpty()) {
             throw new BadRequestException("unsupported arguments: " + map.keySet());

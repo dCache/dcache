@@ -59,6 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk;
 
+import java.util.List;
 import org.dcache.auth.attributes.Restriction;
 
 /**
@@ -69,6 +70,8 @@ public class BulkRequestCancelMessage extends BulkServiceMessage {
     private static final long serialVersionUID = -7362655973765754365L;
     private final String requestId;
 
+    private List<String> targetPaths;
+
     public BulkRequestCancelMessage(String requestId, Restriction restriction) {
         super(restriction);
         this.requestId = requestId;
@@ -76,5 +79,13 @@ public class BulkRequestCancelMessage extends BulkServiceMessage {
 
     public String getRequestId() {
         return requestId;
+    }
+
+    public List<String> getTargetPaths() {
+        return targetPaths;
+    }
+
+    public void setTargetPaths(List<String> targetPaths) {
+        this.targetPaths = targetPaths;
     }
 }

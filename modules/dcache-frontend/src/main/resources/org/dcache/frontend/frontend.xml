@@ -203,7 +203,6 @@
   <bean id="pool-info-collector" class="org.dcache.restful.util.pool.PoolDiagnosticInfoCollector">
         <description>Collects pool info from from pools.</description>
         <property name="service" ref="pool-info-service"/>
-
   </bean>
 
   <bean id="pool-info-processor" class="org.dcache.restful.util.pool.PoolDataRequestProcessor">
@@ -300,6 +299,17 @@
         <property name="lifetimeUnit" value="${frontend.restore-requests.lifetime.unit}"/>
       </bean>
     </property>
+  </bean>
+
+  <bean id="archive-info-collector" class="org.dcache.restful.util.wlcg.ArchiveInfoCollector">
+    <description>Collects file locality info from from pool manager.</description>
+    <property name="poolMonitor" ref="pool-monitor"/>
+    <property name="service">
+      <bean class="org.dcache.util.BoundedCachedExecutor" destroy-method="shutdownNow">
+        <constructor-arg value="${frontend.service.wlcg.file-locality-collector-threads}"/>
+      </bean>
+    </property>
+    <property name="maxPaths" value="${frontend.service.wlcg.file-locality-max-files}"/>
   </bean>
 
   <bean id="restore-info-service" class="org.dcache.restful.services.restores.RestoresInfoServiceImpl">
@@ -590,6 +600,11 @@
     <bean class="org.dcache.restful.resources.transfers.TransferResources" scope="request">
         <property name="unlimitedOperationVisibility" value="${frontend.authz.unlimited-operation-visibility}"/>
     </bean>
+    <bean class="org.dcache.restful.resources.wlcg.ArchiveInfoResources" scope="request"/>
+    <bean class="org.dcache.restful.resources.wlcg.StageResources" scope="request">
+      <property name="supportedSitenames" value="${frontend.stage.supported-sitenames"/>
+    </bean>
+    <bean class="org.dcache.restful.resources.wlcg.ReleaseResources" scope="request"/>
     <bean class="org.dcache.restful.resources.EventResources" scope="request">
         <property name="maximumDisconnectTimeout"
 		  value="#{T(java.util.concurrent.TimeUnit).SECONDS.convert(

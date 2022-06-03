@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--  COPYRIGHT STATUS:-->
+<!--  Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and-->
+<!--  software are sponsored by the U.S. Department of Energy under Contract No.-->
+<!--  DE-AC02-76CH03000. Therefore, the U.S. Government retains a  world-wide-->
+<!--  non-exclusive, royalty-free license to publish or reproduce these documents-->
+<!--  and software for U.S. Government purposes.  All documents and software-->
+<!--  available from this server are protected under the U.S. and Foreign-->
+<!--  Copyright Laws, and FNAL reserves all rights.-->
+
+<!--  Distribution of the software available from this server is free of-->
+<!--  charge subject to the user following the terms of the Fermitools-->
+<!--  Software Legal Information.-->
+
+<!--  Redistribution and/or modification of the software shall be accompanied-->
+<!--  by the Fermitools Software Legal Information  (including the copyright-->
+<!--  notice).-->
+
+<!--  The user is asked to feed back problems, benefits, and/or suggestions-->
+<!--  about the software to the Fermilab Software Providers.-->
+
+<!--  Neither the name of Fermilab, the  URA, nor the names of the contributors-->
+<!--  may be used to endorse or promote products derived from this software-->
+<!--  without specific prior written permission.-->
+
+<!--  DISCLAIMER OF LIABILITY (BSD):-->
+
+<!--  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS-->
+<!--  "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT-->
+<!--  LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS-->
+<!--  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL FERMILAB,-->
+<!--  OR THE URA, OR THE U.S. DEPARTMENT of ENERGY, OR CONTRIBUTORS BE LIABLE-->
+<!--  FOR  ANY  DIRECT, INDIRECT,  INCIDENTAL, SPECIAL, EXEMPLARY, OR-->
+<!--  CONSEQUENTIAL DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT-->
+<!--  OF SUBSTITUTE  GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR-->
+<!--  BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY  OF-->
+<!--  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING-->
+<!--  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS-->
+<!--  SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.-->
+
+<!--  Liabilities of the Government:-->
+
+<!--  This software is provided by URA, independent from its Prime Contract-->
+<!--  with the U.S. Department of Energy. URA is acting independently from-->
+<!--  the Government and in its own private capacity and is not acting on-->
+<!--  behalf of the U.S. Government, nor as its contractor nor its agent.-->
+<!--  Correspondingly, it is understood and agreed that the U.S. Government-->
+<!--  has no connection to this software and in no manner whatsoever shall-->
+<!--  be liable for nor assume any responsibility or obligation for any claim,-->
+<!--  cost, or damages arising out of or resulting from the use of the software-->
+<!--  available from this server.-->
+
+<!--  Export Control:-->
+
+<!--  All documents and software available from this server are subject to U.S.-->
+<!--  export control laws.  Anyone downloading information from this server is-->
+<!--  obligated to secure any necessary Government licenses before exporting-->
+<!--  documents or software obtained from this server.-->
+
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet author="arossi" id="1.1">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="bulk_request"/>
+        </preConditions>
+        <dropTable cascadeConstraints="true" tableName="bulk_request"/>
+        <rollback/>
+    </changeSet>
+
+    <changeSet author="arossi" id="1.2">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="request_permissions"/>
+        </preConditions>
+        <dropTable cascadeConstraints="true" tableName="request_permissions"/>
+        <rollback/>
+    </changeSet>
+
+    <changeSet author="arossi" id="1.3">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="request_target"/>
+        </preConditions>
+        <dropTable cascadeConstraints="true" tableName="request_target"/>
+        <rollback/>
+    </changeSet>
+
+    <changeSet author="arossi" id="1.4">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="bulk_request"/>
+            </not>
+        </preConditions>
+
+        <createTable tableName="bulk_request">
+            <column name="seq_no" type="bigint" autoIncrement="true">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="id" type="varchar(64)">
+                <constraints primaryKey="true" nullable="false" primaryKeyName="idx_request_id"/>
+            </column>
+            <column name="owner" type="varchar(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="arrived_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="started_at" type="timestamp">
+                <constraints nullable="true"/>
+            </column>
+            <column name="last_modified" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="varchar(16)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="activity" type="varchar(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="expand_directories" type="varchar(8)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="url_prefix" type="varchar(256)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="target_prefix" type="varchar(256)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="target" type="text">
+                <constraints nullable="false"/>
+            </column>
+            <column name="clear_on_success" type="boolean"/>
+            <column name="clear_on_failure" type="boolean"/>
+            <column name="cancel_on_failure" type="boolean"/>
+            <column name="delay_clear" type="int"/>
+            <column name="arguments" type="text">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="bulk_request"
+                     indexName="idx_request_owner">
+            <column name="owner"/>
+        </createIndex>
+
+        <createIndex tableName="bulk_request"
+                     indexName="idx_request_arrived">
+            <column name="arrived_at"/>
+        </createIndex>
+
+        <createIndex tableName="bulk_request"
+                     indexName="idx_request_modified">
+            <column name="last_modified"/>
+        </createIndex>
+
+        <createIndex tableName="bulk_request"
+                    indexName="idx_request_status">
+            <column name="status"/>
+        </createIndex>
+
+        <createIndex tableName="bulk_request"
+          indexName="idx_request_activity">
+            <column name="activity"/>
+        </createIndex>
+        <rollback/>
+    </changeSet>
+
+    <changeSet author="arossi" id="1.5">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="request_permissions"/>
+            </not>
+        </preConditions>
+
+        <createTable tableName="request_permissions">
+            <column name="id" type="varchar(64)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="idx_request_perm_id"/>
+            </column>
+            <column name="subject" type="text">
+                <constraints nullable="false"/>
+            </column>
+            <column name="restriction" type="text">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint baseColumnNames="id" baseTableName="request_permissions"
+          constraintName="request_permissions_id_fkey"
+          deferrable="false"
+          initiallyDeferred="false"
+          onDelete="CASCADE"
+          referencedColumnNames="id"
+          referencedTableName="bulk_request"/>
+        <rollback/>
+    </changeSet>
+
+    <changeSet author="arossi" id="1.6">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="request_target"/>
+            </not>
+        </preConditions>
+
+        <!--
+            A note on pnfsid.  While this should be a unique value, bulk adopts a strategy
+            of using a non-unique 'placeholder' pnfsid for batch or aborted targets where that value
+            is unknown, permitting us to preserve the non-null requirement on that column and
+            and thus index on it.  For this reason, path rather than pnfsid is part of the
+            composite key.
+          -->
+        <createTable tableName="request_target">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="pid" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="rid" type="varchar(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="pnfsid" type="varchar(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="path" type="varchar(256)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="type" type="varchar(16)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="activity" type="varchar(32)"> <!-- denormalized from request -->
+                <constraints nullable="false"/>
+            </column>
+            <column name="state" type="varchar(16)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="started_at" type="timestamp">
+                <constraints nullable="true"/>
+            </column>
+            <column name="last_updated" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="error_type" type="varchar(64)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="error_message" type="text">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey columnNames="rid, path" constraintName="i_target_pkey"
+          tableName="request_target"/>
+
+        <addForeignKeyConstraint baseColumnNames="rid" baseTableName="request_target"
+          constraintName="request_target_rid_fkey"
+          deferrable="false"
+          initiallyDeferred="false"
+          onDelete="CASCADE"
+          onUpdate="CASCADE"
+          referencedColumnNames="id"
+          referencedTableName="bulk_request"/>
+
+        <createIndex tableName="request_target"
+          indexName="idx_target_pid">
+            <column name="pid"/>
+        </createIndex>
+
+        <createIndex tableName="request_target"
+          indexName="idx_target_pnfsid">
+            <column name="pnfsid"/>
+        </createIndex>
+
+        <createIndex tableName="request_target"
+          indexName="idx_target_type">
+            <column name="type"/>
+        </createIndex>
+
+        <createIndex tableName="request_target"
+          indexName="idx_target_activity">
+            <column name="activity"/>
+        </createIndex>
+
+        <createIndex tableName="request_target"
+          indexName="idx_target_state">
+            <column name="state"/>
+        </createIndex>
+
+        <createIndex tableName="request_target"
+          indexName="idx_target_created">
+            <column name="created_at"/>
+        </createIndex>
+
+        <createIndex tableName="request_target"
+          indexName="idx_target_last_updated">
+            <column name="last_updated"/>
+        </createIndex>
+        <rollback/>
+    </changeSet>
+
+    <changeSet author="arossi" id="2.0">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists columnName="prestore" tableName="bulk_request"/>
+            </not>
+        </preConditions>
+        <comment>add prestore column to request target</comment>
+        <addColumn tableName="bulk_request"><column name="prestore" type="boolean"/></addColumn>
+    </changeSet>
+
+    <changeSet author="arossi" id="2.1" runInTransaction="false">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <not>
+                    <indexExists indexName="idx_request_prestore"/>
+                </not>
+            </and>
+        </preConditions>
+        <sql splitStatements="false">
+            CREATE INDEX CONCURRENTLY idx_request_prestore on bulk_request(prestore);
+        </sql>
+    </changeSet>
+</databaseChangeLog>

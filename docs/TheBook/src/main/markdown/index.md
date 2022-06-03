@@ -53,6 +53,8 @@ dCache Book
 
         - [resilience service](config-resilience.md)
 
+        - [qos service](config-qos-engine.md)
+
         - spacemanager service
 
         - [srm service](config-SRM.md)

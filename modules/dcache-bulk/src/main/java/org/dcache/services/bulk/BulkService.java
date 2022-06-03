@@ -59,21 +59,37 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk;
 
+import static org.dcache.services.bulk.job.AbstractRequestContainerJob.findAbsolutePath;
+import static org.dcache.services.bulk.util.BulkRequestTarget.computeFsPath;
+
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.Message;
 import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.Reply;
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
+import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
+import org.dcache.cells.CellStub;
 import org.dcache.cells.MessageReply;
-import org.dcache.services.bulk.handlers.BulkSubmissionHandler;
-import org.dcache.services.bulk.queue.BulkServiceQueue;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.services.bulk.BulkRequest.Depth;
+import org.dcache.services.bulk.activity.BulkActivityFactory;
+import org.dcache.services.bulk.handler.BulkSubmissionHandler;
+import org.dcache.services.bulk.manager.BulkRequestManager;
 import org.dcache.services.bulk.store.BulkRequestStore;
 import org.dcache.services.bulk.util.BulkServiceStatistics;
 import org.slf4j.Logger;
@@ -81,37 +97,53 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 /**
- * Handles incoming messages.  Handles restart reloading. Provides components for request and job
- * processing.
+ * Bulk service façade.  Handles incoming messages.  Handles restart reloading.
  */
-public class BulkService implements CellLifeCycleAware, CellMessageReceiver {
+public final class BulkService implements CellLifeCycleAware, CellMessageReceiver {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkService.class);
+    private static final String TARGET_COUNT_ERROR_FORMAT = "The number of targets %s exceeds "
+          + "maximum %s for directory expansion %s.";
 
+    /**
+     * Error message as per WLCG Tape REST API (v1) reference document.
+     */
+    private static final String INVALID_TARGET =
+          "The file %s does not belong to the %s request %s. No modification has been "
+                + "made to this request.";
+
+    private BulkRequestManager requestManager;
+    private BulkActivityFactory activityFactory;
     private BulkRequestStore requestStore;
-    private BulkServiceQueue queue;
     private BulkSubmissionHandler submissionHandler;
-
-    private ExecutorService incomingExecutorService;
     private BulkServiceStatistics statistics;
+    private ExecutorService incomingExecutorService;
+    private CellStub namespace;
+    private Depth allowedDepth;
     private int maxRequestsPerUser;
+    private int maxFlatTargets;
+    private int maxShallowTargets;
+    private int maxRecursiveTargets;
 
     @Override
     public void afterStart() {
         /*
-         * Maintaining checkpoints on jobs that have been launched
-         * is currently unimplemented (it presents several notable
-         * complications).
-         *
-         * Since individual jobs are thus considered lost on restart, we
-         * must treat all unfinished requests as if they were idempotent.
-         *
-         * We thus reload the requests from the persistent store into memory,
-         * resetting any requests with non-terminal states to QUEUED
-         * (the latter is taken care of by the underlying implementation.)
-         *
+         *  Done here to guarantee providers are loaded before manager runs.
+         */
+        LOGGER.info("Initializing the activity factory.");
+        activityFactory.initialize();
+
+        /*
+         *  In case the service is starting up at same time as namespace, which
+         *  is necessary for processing request targets.
+         */
+        waitForNamespace();
+
+        /*
+         * See store specifics for how reload is handled, but the minimal contract is
+         * that all incomplete requests be reset to the QUEUED state.
          * There is no danger in a race here because the state of the
-         * requests is not checked until the job queue is initialized
+         * requests is not checked until the request job manager is initialized
          * and started.
          */
         try {
@@ -119,46 +151,48 @@ public class BulkService implements CellLifeCycleAware, CellMessageReceiver {
                   + "incomplete requests will be reset to QUEUED.");
             requestStore.load();
         } catch (BulkServiceException e) {
-            LOGGER.error("There was a problem reloading requests {}.", e.toString());
+            LOGGER.error("There was a problem reloading requests: {}.", e.toString());
         }
 
-        LOGGER.info("Initializing the job queue.");
-        queue.initialize();
+        try {
+            LOGGER.info("Initializing the job manager.");
+            requestManager.initialize();
+        } catch (Exception e) {
+            LOGGER.error("There was a problem initializing the job queue: {}.", e.toString());
+        }
 
-        LOGGER.info("Signalling the job queue.");
-        queue.signal();
+        LOGGER.info("Signalling the job manager.");
+        requestManager.signal();
 
         LOGGER.info("Service startup completed.");
     }
 
-    @Override
-    public void beforeStop() {
-        try {
-            requestStore.save();
-        } catch (BulkServiceException e) {
-            LOGGER.warn("Problem storing on shutdown: {}.", e.toString());
-        }
-    }
-
     public Reply messageArrived(BulkRequestMessage message) {
         LOGGER.trace("received BulkRequestMessage {}", message);
-
         MessageReply<Message> reply = new MessageReply<>();
         incomingExecutorService.execute(() -> {
             try {
                 BulkRequest request = message.getRequest();
                 Subject subject = message.getSubject();
+                Restriction restriction = message.getRestriction();
                 checkQuota(subject);
-                checkRestrictions(message.getRestriction(), request.getId());
-                request.setId(UUID.randomUUID().toString());
-                requestStore.store(subject, message.getRestriction(), request, null);
-                queue.signal();
+                String requestId = UUID.randomUUID().toString();
+                request.setId(requestId);
+                checkRestrictions(restriction, requestId);
+                checkActivity(request);
+                checkDepthConstraints(request);
+                requestStore.store(subject, restriction, request);
                 statistics.incrementRequestsReceived(request.getActivity());
+                requestManager.signal();
                 message.setRequestUrl(request.getUrlPrefix() + "/" + request.getId());
                 reply.reply(message);
             } catch (BulkServiceException e) {
                 LOGGER.error("messageArrived(BulkRequestMessage) {}: {}", message, e.toString());
                 reply.fail(message, e);
+            } catch (Exception e) {
+                reply.fail(message, e);
+                Thread thisThread = Thread.currentThread();
+                thisThread.getUncaughtExceptionHandler().uncaughtException(thisThread, e);
             }
         });
         return reply;
@@ -180,6 +214,10 @@ public class BulkService implements CellLifeCycleAware, CellMessageReceiver {
                 LOGGER.error("messageArrived(BulkRequestListMessage) {}: {}", message,
                       e.toString());
                 reply.fail(message, e);
+            } catch (Exception e) {
+                reply.fail(message, e);
+                Thread thisThread = Thread.currentThread();
+                thisThread.getUncaughtExceptionHandler().uncaughtException(thisThread, e);
             }
         });
         return reply;
@@ -191,18 +229,24 @@ public class BulkService implements CellLifeCycleAware, CellMessageReceiver {
         MessageReply<Message> reply = new MessageReply<>();
         incomingExecutorService.execute(() -> {
             try {
+                Subject subject = message.getSubject();
                 String requestId = message.getRequestId();
                 checkRestrictions(message.getRestriction(), requestId);
                 /*
                  *  Checks permissions and presence of request.
                  */
-                BulkRequestStatus status = requestStore.getStatus(message.getSubject(), requestId);
-                message.setStatus(status);
+                BulkRequestInfo status = requestStore.getRequestInfo(subject, requestId,
+                      message.getOffset());
+                message.setInfo(status);
                 reply.reply(message);
             } catch (BulkServiceException e) {
                 LOGGER.error("messageArrived(BulkRequestStatusMessage) {}: {}", message,
                       e.toString());
                 reply.fail(message, e);
+            } catch (Exception e) {
+                reply.fail(message, e);
+                Thread thisThread = Thread.currentThread();
+                thisThread.getUncaughtExceptionHandler().uncaughtException(thisThread, e);
             }
         });
         return reply;
@@ -214,17 +258,28 @@ public class BulkService implements CellLifeCycleAware, CellMessageReceiver {
         MessageReply<Message> reply = new MessageReply<>();
         incomingExecutorService.execute(() -> {
             try {
+                Subject subject = message.getSubject();
                 String requestId = message.getRequestId();
                 checkRestrictions(message.getRestriction(), requestId);
+                List<String> targetPaths = message.getTargetPaths();
                 /*
                  *  Checks permissions and presence of request.
                  */
-                submissionHandler.cancelRequest(message.getSubject(), requestId);
+                if (targetPaths == null || targetPaths.isEmpty()) {
+                    submissionHandler.cancelRequest(subject, requestId);
+                } else {
+                    validateTargets(requestId, subject, targetPaths);
+                    submissionHandler.cancelTargets(subject, requestId, targetPaths);
+                }
                 reply.reply(message);
             } catch (BulkServiceException e) {
                 LOGGER.error("messageArrived(BulkRequestCancelMessage) {}: {}", message,
                       e.toString());
                 reply.fail(message, e);
+            } catch (Exception e) {
+                reply.fail(message, e);
+                Thread thisThread = Thread.currentThread();
+                thisThread.getUncaughtExceptionHandler().uncaughtException(thisThread, e);
             }
         });
         return reply;
@@ -237,41 +292,79 @@ public class BulkService implements CellLifeCycleAware, CellMessageReceiver {
         incomingExecutorService.execute(() -> {
             try {
                 String requestId = message.getRequestId();
+                Subject subject = message.getSubject();
                 checkRestrictions(message.getRestriction(), requestId);
                 /*
                  *  Checks permissions and presence of request.
                  */
-                submissionHandler.clearRequest(message.getSubject(), requestId);
+                submissionHandler.clearRequest(subject, requestId, message.isCancelIfRunning());
                 reply.reply(message);
             } catch (BulkServiceException e) {
                 LOGGER.error("messageArrived(BulkRequestClearMessage) {}: {}", message,
                       e.toString());
                 reply.fail(message, e);
+            } catch (Exception e) {
+                reply.fail(message, e);
+                Thread thisThread = Thread.currentThread();
+                thisThread.getUncaughtExceptionHandler().uncaughtException(thisThread, e);
             }
         });
         return reply;
     }
 
-    public BulkServiceQueue getQueue() {
-        return queue;
+    public synchronized int getMaxFlatTargets() {
+        return maxFlatTargets;
+    }
+
+    public synchronized int getMaxShallowTargets() {
+        return maxShallowTargets;
+    }
+
+    public synchronized int getMaxRecursiveTargets() {
+        return maxRecursiveTargets;
+    }
+
+    public synchronized int getMaxRequestsPerUser() {
+        return maxRequestsPerUser;
+    }
+
+    public synchronized Depth getAllowedDepth() {
+        return allowedDepth;
     }
 
     @Required
-    public void setQueue(BulkServiceQueue queue) {
-        this.queue = queue;
-    }
-
-    public BulkSubmissionHandler getSubmissionHandler() {
-        return submissionHandler;
+    public synchronized void setAllowedDepth(Depth allowedDepth) {
+        this.allowedDepth = allowedDepth;
     }
 
     @Required
-    public void setSubmissionHandler(BulkSubmissionHandler submissionHandler) {
-        this.submissionHandler = submissionHandler;
+    public synchronized void setMaxFlatTargets(int maxFlatTargets) {
+        this.maxFlatTargets = maxFlatTargets;
     }
 
-    public BulkRequestStore getRequestStore() {
-        return requestStore;
+    @Required
+    public synchronized void setMaxShallowTargets(int maxShallowTargets) {
+        this.maxShallowTargets = maxShallowTargets;
+    }
+
+    @Required
+    public synchronized void setMaxRecursiveTargets(int maxRecursiveTargets) {
+        this.maxRecursiveTargets = maxRecursiveTargets;
+    }
+
+    @Required
+    public synchronized void setMaxRequestsPerUser(int maxRequestsPerUser) {
+        this.maxRequestsPerUser = maxRequestsPerUser;
+    }
+
+    @Required
+    public void setActivityFactory(BulkActivityFactory activityFactory) {
+        this.activityFactory = activityFactory;
+    }
+
+    @Required
+    public void setNamespace(CellStub namespace) {
+        this.namespace = namespace;
     }
 
     @Required
@@ -280,13 +373,18 @@ public class BulkService implements CellLifeCycleAware, CellMessageReceiver {
     }
 
     @Required
-    public void setIncomingExecutorService(ExecutorService incomingExecutorService) {
-        this.incomingExecutorService = incomingExecutorService;
+    public void setRequestManager(BulkRequestManager requestManager) {
+        this.requestManager = requestManager;
     }
 
     @Required
-    public void setMaxRequestsPerUser(int maxRequestsPerUser) {
-        this.maxRequestsPerUser = maxRequestsPerUser;
+    public void setSubmissionHandler(BulkSubmissionHandler submissionHandler) {
+        this.submissionHandler = submissionHandler;
+    }
+
+    @Required
+    public void setIncomingExecutorService(ExecutorService incomingExecutorService) {
+        this.incomingExecutorService = incomingExecutorService;
     }
 
     @Required
@@ -294,36 +392,146 @@ public class BulkService implements CellLifeCycleAware, CellMessageReceiver {
         this.statistics = statistics;
     }
 
-    /**
-     * This may be subject to change.
-     *
-     * @param restriction from the incoming message
-     * @param requestId
-     * @throws BulkPermissionDeniedException
-     * @throws BulkRequestStorageException
-     */
-    private void checkRestrictions(Restriction restriction,
-          String requestId)
-          throws BulkPermissionDeniedException,
-          BulkRequestStorageException {
-        Optional<Restriction> option = requestStore.getRestriction(requestId);
-        Restriction original = option.orElse(null);
+    private void checkActivity(BulkRequest request) throws BulkServiceException {
+        String activity = request.getActivity();
+        if (!activityFactory.isValidActivity(activity)) {
+            throw new BulkServiceException(activity + " is not a recognized activity.");
+        }
+    }
 
+    private synchronized void checkDepthConstraints(BulkRequest request)
+          throws BulkPermissionDeniedException {
+        switch (request.getExpandDirectories()) {
+            case ALL:
+                switch (allowedDepth) {
+                    case ALL:
+                        checkTargetCount(request);
+                        return;
+                    default:
+                        throw new BulkPermissionDeniedException(
+                              "full directory recursion not permitted.");
+                }
+            case TARGETS:
+                switch (allowedDepth) {
+                    case ALL:
+                    case TARGETS:
+                        checkTargetCount(request);
+                        return;
+                    default:
+                        throw new BulkPermissionDeniedException(
+                              "processing children of a directory not permitted.");
+                }
+            default:
+                checkTargetCount(request);
+                return;
+        }
+    }
+
+    private synchronized void checkQuota(Subject subject) throws BulkQuotaExceededException,
+          BulkStorageException {
+        String user = BulkRequestStore.uidGidKey(subject);
+        if (requestStore.countNonTerminated(user) >= maxRequestsPerUser) {
+            throw new BulkQuotaExceededException(user);
+        }
+        statistics.addUserRequest(user);
+    }
+
+    private void checkRestrictions(Restriction restriction, String requestId)
+          throws BulkPermissionDeniedException, BulkStorageException {
         if (restriction == null || Restrictions.none().equals(restriction)) {
             return;
         }
+
+        Optional<Restriction> option = requestStore.getRestriction(requestId);
+        Restriction original = option.orElse(null);
 
         if (original != null && !original.isSubsumedBy(restriction)) {
             throw new BulkPermissionDeniedException(requestId);
         }
     }
 
-    private void checkQuota(Subject subject) throws BulkQuotaExceededException,
-          BulkRequestStorageException {
-        String user = BulkRequestStore.uidGidKey(subject);
-        if (requestStore.countNonTerminated(user) >= maxRequestsPerUser) {
-            throw new BulkQuotaExceededException(user);
+    private synchronized void checkTargetCount(BulkRequest request)
+          throws BulkPermissionDeniedException {
+        int listSize = request.getTarget().size();
+        switch (request.getExpandDirectories()) {
+            case NONE:
+                if (listSize > maxFlatTargets) {
+                    throw new BulkPermissionDeniedException(
+                          String.format(TARGET_COUNT_ERROR_FORMAT, listSize, maxFlatTargets,
+                                Depth.NONE.name()));
+                }
+                break;
+            case TARGETS:
+                if (listSize > maxShallowTargets) {
+                    throw new BulkPermissionDeniedException(
+                          String.format(TARGET_COUNT_ERROR_FORMAT, listSize, maxShallowTargets,
+                                Depth.TARGETS.name()));
+                }
+                break;
+            case ALL:
+                if (listSize > maxRecursiveTargets) {
+                    throw new BulkPermissionDeniedException(
+                          String.format(TARGET_COUNT_ERROR_FORMAT, listSize, maxRecursiveTargets,
+                                Depth.ALL.name()));
+                }
+                break;
         }
-        statistics.addUserRequest(user);
+    }
+
+    private void waitForNamespace() {
+        PnfsHandler handler = new PnfsHandler(namespace);
+        handler.setSubject(Subjects.ROOT);
+        handler.setRestriction(Restrictions.none());
+
+        LOGGER.info("pinging PnfsManager ...");
+        while (true) {
+            try {
+                handler.getFileAttributes(FsPath.ROOT,
+                      Collections.unmodifiableSet(EnumSet.of(FileAttribute.PNFSID)));
+            } catch (TimeoutCacheException e) {
+                LOGGER.info("PnfsManager unavailable, waiting 5 seconds.");
+                try {
+                    Thread.sleep(TimeUnit.SECONDS.toMillis(5));
+                } catch (InterruptedException ie) {
+                    LOGGER.info("Sleep 5 seconds interrupted.");
+                    break;
+                }
+                continue;
+            } catch (CacheException e) {
+                LOGGER.error("Error trying to contact PnfsManager.", e.toString());
+            }
+            break;
+        }
+    }
+
+    private void validateTargets(String requestId, Subject subject, List<String> paths)
+          throws BulkServiceException {
+        Optional<BulkRequest> optional = requestStore.getRequest(requestId);
+        if (optional.isEmpty()) {
+            throw new BulkRequestNotFoundException(requestId);
+        }
+
+        BulkRequest request = optional.get();
+        if (!requestStore.isRequestSubject(subject, requestId)) {
+            throw new BulkPermissionDeniedException("request not owned by user.");
+        }
+
+        /*
+         *  We cannot guarantee a path does not belong to the request if the
+         *  request is not flat, so we ignore those cases.
+         */
+        if (request.getExpandDirectories() != Depth.NONE) {
+            return;
+        }
+
+        String prefix = request.getTargetPrefix();
+        Set<FsPath> submitted = request.getTarget().stream().map(p -> computeFsPath(prefix, p))
+              .collect(Collectors.toSet());
+        for (String path : paths) {
+            if (!submitted.contains(findAbsolutePath(prefix, path))) {
+                throw new BulkServiceException(String.format(INVALID_TARGET,
+                      path, request.getActivity(), request.getId()));
+            }
+        }
     }
 }

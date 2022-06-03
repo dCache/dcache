@@ -68,6 +68,7 @@ public class BulkRequestClearMessage extends BulkServiceMessage {
 
     private static final long serialVersionUID = 957050116233062328L;
     private final String requestId;
+    private boolean cancelIfRunning;
 
     public BulkRequestClearMessage(String requestId, Restriction restriction) {
         super(restriction);
@@ -76,5 +77,13 @@ public class BulkRequestClearMessage extends BulkServiceMessage {
 
     public String getRequestId() {
         return requestId;
+    }
+
+    public boolean isCancelIfRunning() {
+        return cancelIfRunning;
+    }
+
+    public void setCancelIfRunning(boolean cancelIfRunning) {
+        this.cancelIfRunning = cancelIfRunning;
     }
 }

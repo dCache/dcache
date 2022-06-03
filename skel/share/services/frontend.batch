@@ -47,6 +47,8 @@ check -strong frontend.service.pool-history
 check -strong frontend.service.qos.timeout
 check -strong frontend.service.qos.timeout.unit
 check -strong frontend.service.qos
+check -strong frontend.service.wlcg.file-locality-collector-threads
+check -strong frontend.service.wlcg.file-locality-max-files
 check -strong frontend.authn.accept-client-cert
 check -strong frontend.authn.require-client-cert
 check -strong frontend.authn.basic

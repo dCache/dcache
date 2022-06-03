@@ -22,7 +22,6 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.google.common.base.Throwables;
 import java.net.URI;
-import java.util.Collections;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotFoundException;
@@ -85,20 +84,22 @@ public class ErrorResponseProvider implements ExceptionMapper<Exception> {
     }
 
     private Response buildResponse(Status status, String jsonMessage) {
-        return buildResponse(status.getStatusCode(), null, jsonMessage, null);
+        return buildResponse(status.getStatusCode(), status.getReasonPhrase(), jsonMessage, null);
     }
 
+    /*
+     * RFC 7807: https://datatracker.ietf.org/doc/html/rfc7807.
+     */
     private Response buildResponse(int status, String reasonPhrase, String jsonMessage,
           URI location) {
         JSONObject error = new JSONObject();
         error.put("status", String.valueOf(status));
-        error.put("message", jsonMessage);
-        JSONObject json = new JSONObject();
-        json.put("errors", Collections.singletonList(error));
+        error.put("title", reasonPhrase);
+        error.put("detail", jsonMessage);
 
         return (reasonPhrase == null ? Response.status(status)
               : Response.status(status, reasonPhrase))
-              .entity(json.toString())
+              .entity(error.toString())
               .location(location)
               .build();
     }
