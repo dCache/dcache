@@ -520,7 +520,7 @@ public class HttpPoolRequestHandlerTests {
                     null, null, path,
                     new URI("http", "localhost", path, null)));
         given(channel.getFileAttributes()).willReturn(file.getFileAttributes());
-        given(channel.release()).willReturn(Futures.immediateCheckedFuture(null));
+        given(channel.release()).willReturn(Futures.immediateFuture(null));
         given(_server.openFile(eq(file.getUuid()), anyBoolean())).willReturn(channel);
     }
 
@@ -568,7 +568,7 @@ public class HttpPoolRequestHandlerTests {
 
         given(channel.release()).willAnswer((i) -> {
             file.getFileAttributes().setChecksums(checksums.getChecksums());
-            return Futures.immediateCheckedFuture(null);
+            return Futures.immediateFuture(null);
         });
 
         given(channel.getFileAttributes()).willReturn(file.getFileAttributes());

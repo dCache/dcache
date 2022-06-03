@@ -66,7 +66,7 @@ documents or software obtained from this server.
 
 package org.dcache.srm;
 
-import com.google.common.util.concurrent.CheckedFuture;
+import com.google.common.util.concurrent.ListenableFuture;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
@@ -153,7 +153,7 @@ public interface AbstractStorageElement {
      * @param overwrite       allow overwrite if true
      * @return Opaque file identifier expected as a argument to several other methods
      */
-    CheckedFuture<String, ? extends SRMException> prepareToPut(SRMUser user,
+    ListenableFuture<String> prepareToPut(SRMUser user,
           URI surl,
           @Nullable Long size,
           @Nullable String accessLatency,
@@ -198,7 +198,7 @@ public interface AbstractStorageElement {
      *                     token can take place
      * @param allowStaging whether the request should be allowed to stage from tape.
      */
-    CheckedFuture<Pin, ? extends SRMException> pinFile(SRMUser user,
+    ListenableFuture<Pin> pinFile(SRMUser user,
           URI surl,
           String clientHost,
           long pinLifetime,
@@ -367,7 +367,7 @@ public interface AbstractStorageElement {
      * @param pinId  Unique id received during pinFile operation (?)
      * @return A promise of an ID of the pin that was released
      */
-    CheckedFuture<String, ? extends SRMException> unPinFile(
+    ListenableFuture<String> unPinFile(
           SRMUser user, String fileId, String pinId);
 
     /**
@@ -379,7 +379,7 @@ public interface AbstractStorageElement {
      * @param requestToken id given to the storage  during pinFile operation
      * @return A promise of an ID of the pin that was released
      */
-    CheckedFuture<String, ? extends SRMException> unPinFileBySrmRequestId(
+    ListenableFuture<String> unPinFileBySrmRequestId(
           SRMUser user, String fileId, String requestToken);
 
     /**
@@ -389,7 +389,7 @@ public interface AbstractStorageElement {
      * @param fileId Storage Element internal file ID
      * @return A promise of an ID of the pin that was released
      */
-    CheckedFuture<String, ? extends SRMException> unPinFile(
+    ListenableFuture<String> unPinFile(
           SRMUser user, String fileId);
 
     /**

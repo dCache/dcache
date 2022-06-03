@@ -4,8 +4,8 @@ import com.google.common.base.Throwables;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.google.common.util.concurrent.CheckedFuture;
 import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TimeoutCacheException;
@@ -27,9 +27,9 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
 
     private final LoginStrategy _inner;
 
-    private final LoadingCache<Principal, CheckedFuture<Principal, CacheException>> _forwardCache;
-    private final LoadingCache<Principal, CheckedFuture<Set<Principal>, CacheException>> _reverseCache;
-    private final LoadingCache<Subject, CheckedFuture<LoginReply, CacheException>> _loginCache;
+    private final LoadingCache<Principal, ListenableFuture<Principal>> _forwardCache;
+    private final LoadingCache<Principal, ListenableFuture<Set<Principal>>> _reverseCache;
+    private final LoadingCache<Subject, ListenableFuture<LoginReply>> _loginCache;
 
     private final long _time;
     private final TimeUnit _unit;
@@ -76,7 +76,9 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
     @Override
     public LoginReply login(Subject subject) throws CacheException {
         try {
-            return _loginCache.get(subject).checkedGet();
+            return _loginCache.get(subject).get();
+        } catch (InterruptedException e) {
+            throw new TimeoutCacheException("Request interrupted");
         } catch (ExecutionException e) {
             Throwables.propagateIfPossible(e.getCause(), CacheException.class);
             throw new RuntimeException(e.getCause());
@@ -89,7 +91,9 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
     @Override
     public Principal map(Principal principal) throws CacheException {
         try {
-            return _forwardCache.get(principal).checkedGet();
+            return _forwardCache.get(principal).get();
+        } catch (InterruptedException e) {
+            throw new TimeoutCacheException("Request interrupted");
         } catch (ExecutionException e) {
             Throwables.propagateIfPossible(e.getCause(), CacheException.class);
             throw new RuntimeException(e.getCause());
@@ -102,7 +106,9 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
     @Override
     public Set<Principal> reverseMap(Principal principal) throws CacheException {
         try {
-            return _reverseCache.get(principal).checkedGet();
+            return _reverseCache.get(principal).get();
+        } catch (InterruptedException e) {
+            throw new TimeoutCacheException("Request interrupted");
         } catch (ExecutionException e) {
             Throwables.propagateIfPossible(e.getCause(), CacheException.class);
             throw new RuntimeException(e.getCause());
@@ -112,53 +118,41 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
         }
     }
 
-    private class ForwardFetcher extends
-          CacheLoader<Principal, CheckedFuture<Principal, CacheException>> {
+    private class ForwardFetcher extends CacheLoader<Principal, ListenableFuture<Principal>> {
 
         @Override
-        public CheckedFuture<Principal, CacheException> load(Principal f)
-              throws TimeoutCacheException {
+        public ListenableFuture<Principal> load(Principal f) throws CacheException {
             try {
-                Principal p = _inner.map(f);
-                return Futures.immediateCheckedFuture(p);
-            } catch (TimeoutCacheException e) {
-                throw e;
+                return Futures.immediateFuture(_inner.map(f));
             } catch (CacheException e) {
-                return Futures.immediateFailedCheckedFuture(e);
+                Throwables.propagateIfPossible(e, TimeoutCacheException.class);
+                return Futures.immediateFailedFuture(e);
             }
         }
     }
 
-    private class ReverseFetcher extends
-          CacheLoader<Principal, CheckedFuture<Set<Principal>, CacheException>> {
+    private class ReverseFetcher extends CacheLoader<Principal, ListenableFuture<Set<Principal>>> {
 
         @Override
-        public CheckedFuture<Set<Principal>, CacheException> load(Principal f)
-              throws TimeoutCacheException {
+        public ListenableFuture<Set<Principal>> load(Principal f) throws CacheException {
             try {
-                Set<Principal> s = _inner.reverseMap(f);
-                return Futures.immediateCheckedFuture(s);
-            } catch (TimeoutCacheException e) {
-                throw e;
+                return Futures.immediateFuture(_inner.reverseMap(f));
             } catch (CacheException e) {
-                return Futures.immediateFailedCheckedFuture(e);
+                Throwables.propagateIfPossible(e, TimeoutCacheException.class);
+                return Futures.immediateFailedFuture(e);
             }
         }
     }
 
-    private class LoginFetcher extends
-          CacheLoader<Subject, CheckedFuture<LoginReply, CacheException>> {
+    private class LoginFetcher extends CacheLoader<Subject, ListenableFuture<LoginReply>> {
 
         @Override
-        public CheckedFuture<LoginReply, CacheException> load(Subject f)
-              throws TimeoutCacheException {
+        public ListenableFuture<LoginReply> load(Subject f) throws CacheException {
             try {
-                LoginReply s = _inner.login(f);
-                return Futures.immediateCheckedFuture(s);
-            } catch (TimeoutCacheException e) {
-                throw e;
+                return Futures.immediateFuture(_inner.login(f));
             } catch (CacheException e) {
-                return Futures.immediateFailedCheckedFuture(e);
+                Throwables.propagateIfPossible(e, TimeoutCacheException.class);
+                return Futures.immediateFailedFuture(e);
             }
         }
     }
@@ -184,37 +178,37 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
         sb.append("Login:\n");
         for (Subject s : _loginCache.asMap().keySet()) {
             try {
-                CheckedFuture<LoginReply, CacheException> out = _loginCache.getIfPresent(s);
+                ListenableFuture<LoginReply> out = _loginCache.getIfPresent(s);
                 if (out != null) {
                     sb.append("   ").append(Subjects.toString(s)).append(" => ");
-                    sb.append(out.checkedGet()).append('\n');
+                    sb.append(out.get()).append('\n');
                 }
-            } catch (CacheException e) {
-                sb.append(e.toString()).append('\n');
+            } catch (ExecutionException | InterruptedException e) {
+                sb.append(Throwables.getRootCause(e)).append('\n');
             }
         }
         sb.append("Map:\n");
         for (Principal p : _forwardCache.asMap().keySet()) {
             try {
-                CheckedFuture<Principal, CacheException> out = _forwardCache.getIfPresent(p);
+                ListenableFuture<Principal> out = _forwardCache.getIfPresent(p);
                 if (out != null) {
                     sb.append("   ").append(p).append(" => ");
-                    sb.append(out.checkedGet()).append('\n');
+                    sb.append(out.get()).append('\n');
                 }
-            } catch (CacheException e) {
-                sb.append(e.toString()).append('\n');
+            } catch (ExecutionException | InterruptedException e) {
+                sb.append(Throwables.getRootCause(e)).append('\n');
             }
         }
         sb.append("ReverseMap:\n");
         for (Principal p : _reverseCache.asMap().keySet()) {
             try {
-                CheckedFuture<Set<Principal>, CacheException> out = _reverseCache.getIfPresent(p);
+                ListenableFuture<Set<Principal>> out = _reverseCache.getIfPresent(p);
                 if (out != null) {
                     sb.append("   ").append(p).append(" => ");
-                    sb.append(out.checkedGet()).append('\n');
+                    sb.append(out.get()).append('\n');
                 }
-            } catch (CacheException e) {
-                sb.append(e.toString()).append('\n');
+            } catch (ExecutionException | InterruptedException e) {
+                sb.append(Throwables.getRootCause(e)).append('\n');
             }
         }
         return sb.toString();
