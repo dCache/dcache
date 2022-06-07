@@ -21,7 +21,7 @@ public class CellInfoDga extends SkelListBasedActivity {
      * requests of information from any domain.
      */
     private static int MIN_LIST_REFRESH_PERIOD = 120000;
-    private static int SUCC_MSG_DELAY = 100;
+    private static int SUCC_MSG_DELAY = 2000;
 
     private final CellMessageAnswerable _handler;
 
