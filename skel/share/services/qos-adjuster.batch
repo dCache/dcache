@@ -1,8 +1,8 @@
 ## QoS services
 
 onerror shutdown
-check -strong qos.adjuster.cell.name
-check -strong qos.adjuster.cell.consume
+check -strong qos-adjuster.cell.name
+check -strong qos-adjuster.cell.consume
 check -strong qos.transition-completed-topic
 check -strong qos.home
 check -strong qos.limits.adjuster.submit-threads
@@ -20,7 +20,7 @@ check -strong qos.service.verification
 check -strong qos.service.verification.timeout
 check -strong qos.service.verification.timeout.unit
 
-create org.dcache.cells.UniversalSpringCell ${qos.adjuster.cell.name} \
+create org.dcache.cells.UniversalSpringCell ${qos-adjuster.cell.name} \
         "classpath:org/dcache/qos/qos-adjuster.xml \
-        -subscribe=${qos.adjuster.cell.subscribe} \
-        -consume=${qos.adjuster.cell.consume}"
+        -subscribe=${qos-adjuster.cell.subscribe} \
+        -consume=${qos-adjuster.cell.consume}"

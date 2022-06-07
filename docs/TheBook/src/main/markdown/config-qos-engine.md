@@ -83,7 +83,13 @@ No further configuration is necessary, as the table will then be automatically b
 Liquibase on startup.  As usual, the property
 
 ```
-qos.db.verifier.host=${dcache.db.host}
+qos-verifier.db.host=${dcache.db.host}
+```
+
+or
+
+```
+qos.db.host=${dcache.db.host}
 ```
 
 should be set to point to the host where the PostgreSql instance is running.

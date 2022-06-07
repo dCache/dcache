@@ -105,17 +105,17 @@
       <bean class="com.zaxxer.hikari.HikariConfig">
         <constructor-arg>
           <bean class="org.dcache.util.configuration.ConfigurationPropertiesFactoryBean">
-            <property name="prefix" value="qos.db.verifier.hikari-properties"/>
+            <property name="prefix" value="qos-verifier.db.hikari-properties"/>
             <property name="staticEnvironment">
               <map>
-                <entry key="jdbcUrl" value="${qos.db.verifier.url}"/>
-                <entry key="username" value="${qos.db.verifier.user}"/>
+                <entry key="jdbcUrl" value="${qos-verifier.db.url}"/>
+                <entry key="username" value="${qos-verifier.db.user}"/>
                 <entry key="password"
-                  value="#{ T(diskCacheV111.util.Pgpass).getPassword('${qos.db.verifier.password.file}', '${qos.db.verifier.url}', '${qos.db.verifier.user}', '${qos.db.verifier.password}') }"/>
+                  value="#{ T(diskCacheV111.util.Pgpass).getPassword('${qos-verifier.db.password.file}', '${qos-verifier.db.url}', '${qos-verifier.db.user}', '${qos-verifier.db.password}') }"/>
                 <entry key="autoCommit" value="true"/>
                 <entry key="transactionIsolation" value="TRANSACTION_READ_COMMITTED"/>
-                <entry key="minimumIdle" value="${qos.db.verifier.connections.idle}"/>
-                <entry key="maximumPoolSize" value="${qos.db.verifier.connections.max}"/>
+                <entry key="minimumIdle" value="${qos-verifier.db.connections.idle}"/>
+                <entry key="maximumPoolSize" value="${qos-verifier.db.connections.max}"/>
               </map>
             </property>
           </bean>
@@ -127,14 +127,14 @@
   <bean id="verifier-liquibase" class="org.dcache.util.SpringLiquibase">
     <description>Verifier database schema manager.</description>
     <property name="dataSource" ref="verifier-data-source"/>
-    <property name="changeLog" value="classpath:${qos.db.verifier.schema.changelog}"/>
-    <property name="shouldUpdate" value="${qos.db.verifier.schema.auto}"/>
+    <property name="changeLog" value="classpath:${qos-verifier.db.schema.changelog}"/>
+    <property name="shouldUpdate" value="${qos-verifier.db.schema.auto}"/>
   </bean>
 
   <bean id="verifier-dao" class="org.dcache.qos.services.verifier.data.db.JdbcVerifyOperationDao">
     <description>Verifier data access object handler.</description>
     <property name="dataSource" ref="verifier-data-source"/>
-    <property name="fetchSize" value="${qos.db.verifier.fetch-size}"/>
+    <property name="fetchSize" value="${qos-verifier.db.fetch-size}"/>
   </bean>
 
   <bean id="verification-supplier-executor" class="org.dcache.util.CDCExecutorServiceDecorator">

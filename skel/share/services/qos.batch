@@ -12,9 +12,9 @@ check -strong qos.home
 check -strong qos.db.namespace.connections.max
 check -strong qos.db.namespace.connections.idle
 check -strong qos.db.namespace.fetch-size
-check -strong qos.db.verifier.connections.max
-check -strong qos.db.verifier.connections.idle
-check -strong qos.db.verifier.fetch-size
+check -strong qos.db.connections.max
+check -strong qos.db.connections.idle
+check -strong qos.db.fetch-size
 check -strong qos.plugins.storage-info-extractor
 check -strong qos.limits.requirements.submit-threads
 check -strong qos.limits.verifier.submit-threads
