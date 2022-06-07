@@ -55,6 +55,7 @@ import static org.dcache.xrootd.util.TriedRc.ENOENT;
 import static org.dcache.xrootd.util.TriedRc.IOERR;
 
 import com.google.common.base.Strings;
+import com.google.common.base.Throwables;
 import com.google.common.net.InetAddresses;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileExistsCacheException;
@@ -225,13 +226,24 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable t) {
         if (t instanceof ClosedChannelException) {
-            _log.info("Connection closed");
+            _log.info("Connection unexpectedly closed on {}, cause {}.", ctx.channel(),
+                  Throwables.getRootCause(t).toString());
         } else if (t instanceof RuntimeException || t instanceof Error) {
             Thread me = Thread.currentThread();
             me.getUncaughtExceptionHandler().uncaughtException(me, t);
         } else if (!isHealthCheck() || !(t instanceof IOException)) {
-            _log.warn(t.toString());
+            _log.warn("exception caught on {}: {}, cause {}.", ctx.channel(), t.getMessage(),
+                  Throwables.getRootCause(t).toString());
+        } else {
+            _log.info("IO exception caught during health check on {}: {}, cause {}.", ctx.channel(),
+                  t.getMessage(), Throwables.getRootCause(t).toString());
         }
+    }
+
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        _log.info("channel inactive event received on {}.", ctx.channel());
+        ctx.fireChannelInactive();
     }
 
     /**
