@@ -698,7 +698,9 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
         List<BulkRequestTargetInfo> targets =
               requestTargetDao.get(requestTargetDao.where().rid(requestId).offset(offset)
                           .sorter("id"), REQUEST_INFO_TARGET_LIMIT)
-                    .stream().map(this::toRequestTargetInfo).collect(Collectors.toList());
+                    .stream().filter(t -> !t.getPath().equals(ROOT_REQUEST_PATH))
+                    .map(this::toRequestTargetInfo)
+                    .collect(Collectors.toList());
         info.setTargets(targets);
         int size = targets.size();
         if (size == REQUEST_INFO_TARGET_LIMIT) {
