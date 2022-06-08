@@ -190,7 +190,7 @@ public abstract class AbstractRequestContainerJob
 
         synchronized (waiting) {
             LOGGER.debug("cancel {}:  waiting {}.", rid, waiting.size());
-            waiting.values().forEach(BatchedResult::cancel);
+            waiting.values().forEach(r->r.cancel(activity));
             LOGGER.debug("cancel {}:  waiting targets cancelled.", rid);
             waiting.clear();
         }
@@ -206,7 +206,7 @@ public abstract class AbstractRequestContainerJob
             for (Iterator<BatchedResult> i = waiting.values().iterator(); i.hasNext(); ) {
                 BatchedResult result = i.next();
                 if (result.getTarget().getId() == id) {
-                    result.cancel();
+                    result.cancel(activity);
                     i.remove();
                     break;
                 }

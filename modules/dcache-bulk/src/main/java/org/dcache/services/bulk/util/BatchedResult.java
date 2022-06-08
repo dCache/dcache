@@ -60,6 +60,7 @@ documents or software obtained from this server.
 package org.dcache.services.bulk.util;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import org.dcache.services.bulk.activity.BulkActivity;
 
 /**
  * In-memory placeholder for results of batched operations which associates the target with the
@@ -75,9 +76,9 @@ public final class BatchedResult<T> {
         this.target = target;
     }
 
-    public boolean cancel() {
+    public void cancel(BulkActivity activity) {
         future.cancel(true);
-        return target.cancel();
+        activity.cancel(target);
     }
 
     public ListenableFuture<T> getFuture() {
