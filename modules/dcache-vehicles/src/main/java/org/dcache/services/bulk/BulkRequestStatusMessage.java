@@ -68,17 +68,25 @@ public class BulkRequestStatusMessage extends BulkServiceMessage {
     private static final long serialVersionUID = 3470455902659932131L;
 
     private final String requestId;
+    private final String activity;
     private BulkRequestInfo requestInfo;
     private long offset;
 
     public BulkRequestStatusMessage(String requestId, Restriction restriction) {
+        this(requestId, null, restriction);
+    }
+
+    public BulkRequestStatusMessage(String requestId, String activity, Restriction restriction) {
         super(restriction);
         this.requestId = requestId;
+        this.activity = activity;
     }
 
     public String getRequestId() {
         return requestId;
     }
+
+    public String getActivity() { return activity; }
 
     public BulkRequestInfo getInfo() {
         return requestInfo;

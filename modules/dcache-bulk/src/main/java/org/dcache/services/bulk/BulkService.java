@@ -62,6 +62,7 @@ package org.dcache.services.bulk;
 import static org.dcache.services.bulk.job.AbstractRequestContainerJob.findAbsolutePath;
 import static org.dcache.services.bulk.util.BulkRequestTarget.computeFsPath;
 
+import com.google.common.base.Strings;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
@@ -232,9 +233,7 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
                 Subject subject = message.getSubject();
                 String requestId = message.getRequestId();
                 checkRestrictions(message.getRestriction(), requestId);
-                /*
-                 *  Checks permissions and presence of request.
-                 */
+                matchActivity(message.getActivity(), requestId);
                 BulkRequestInfo status = requestStore.getRequestInfo(subject, requestId,
                       message.getOffset());
                 message.setInfo(status);
@@ -261,10 +260,8 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
                 Subject subject = message.getSubject();
                 String requestId = message.getRequestId();
                 checkRestrictions(message.getRestriction(), requestId);
+                matchActivity(message.getActivity(), requestId);
                 List<String> targetPaths = message.getTargetPaths();
-                /*
-                 *  Checks permissions and presence of request.
-                 */
                 if (targetPaths == null || targetPaths.isEmpty()) {
                     submissionHandler.cancelRequest(subject, requestId);
                 } else {
@@ -294,9 +291,7 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
                 String requestId = message.getRequestId();
                 Subject subject = message.getSubject();
                 checkRestrictions(message.getRestriction(), requestId);
-                /*
-                 *  Checks permissions and presence of request.
-                 */
+                matchActivity(message.getActivity(), requestId);
                 submissionHandler.clearRequest(subject, requestId, message.isCancelIfRunning());
                 reply.reply(message);
             } catch (BulkServiceException e) {
@@ -475,6 +470,20 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
                                 Depth.ALL.name()));
                 }
                 break;
+        }
+    }
+
+    private void matchActivity(String activity, String requestId)
+          throws BulkServiceException {
+        Optional<BulkRequest> request = requestStore.getRequest(requestId);
+        if (request.isPresent()) {
+            if (Strings.emptyToNull(activity) != null && !request.get().getActivity()
+                  .equalsIgnoreCase(activity)) {
+                throw new BulkPermissionDeniedException(
+                      requestId + " activity does not match " + activity);
+            }
+        } else {
+            throw new BulkStorageException("request " + requestId + " is not valid");
         }
     }
 

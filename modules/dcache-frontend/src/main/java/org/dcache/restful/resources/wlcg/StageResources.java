@@ -114,6 +114,7 @@ import org.springframework.stereotype.Component;
 @Api(value = "stage", authorizations = {@Authorization("basicAuth")})
 @Path("/stage")
 public final class StageResources {
+    private static final String STAGE = "STAGE";
 
     @Context
     private HttpServletRequest request;
@@ -154,7 +155,7 @@ public final class StageResources {
         /*
          *  Page in the full request info.
          */
-        BulkRequestStatusMessage message = new BulkRequestStatusMessage(id, restriction);
+        BulkRequestStatusMessage message = new BulkRequestStatusMessage(id, STAGE, restriction);
         message.setSubject(subject);
         while (offset != -1) {
             message.setInfo(null);
@@ -210,7 +211,7 @@ public final class StageResources {
 
         Subject subject = getSubject();
         Restriction restriction = getRestriction();
-        BulkRequestCancelMessage message = new BulkRequestCancelMessage(id, restriction);
+        BulkRequestCancelMessage message = new BulkRequestCancelMessage(id, STAGE, restriction);
         message.setSubject(subject);
         message.setTargetPaths(targetPaths);
 
@@ -267,7 +268,7 @@ public final class StageResources {
         message = service.send(message);
 
         String requestUrl = message.getRequestUrl();
-        String id = requestUrl.substring(requestUrl.lastIndexOf("/")+1);
+        String id = requestUrl.substring(requestUrl.lastIndexOf("/") + 1);
         Map idObject = new HashMap();
         idObject.put("requestId", id);
 
@@ -306,7 +307,7 @@ public final class StageResources {
     @PathParam("id") String id) {
         Subject subject = getSubject();
         Restriction restriction = getRestriction();
-        BulkRequestClearMessage message = new BulkRequestClearMessage(id, restriction);
+        BulkRequestClearMessage message = new BulkRequestClearMessage(id, STAGE, restriction);
         message.setSubject(subject);
         message.setCancelIfRunning(true);
         service.send(message);
@@ -381,7 +382,7 @@ public final class StageResources {
         final JSONObject targetedMetadata = file.getJSONObject("targetedMetadata");
         final JSONObject metaDataForPath = new JSONObject();
 
-        for (String sitename: supportedSitenames) {
+        for (String sitename : supportedSitenames) {
             if (targetedMetadata.has(sitename)) {
                 metaDataForPath.put(sitename, targetedMetadata.getJSONObject(sitename));
             }
