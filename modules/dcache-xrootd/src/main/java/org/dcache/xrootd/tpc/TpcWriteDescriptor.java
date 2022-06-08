@@ -178,11 +178,11 @@ public final class TpcWriteDescriptor extends WriteDescriptor
                       .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
             } else if (error != null) {
                 userResponseCtx.writeAndFlush(
-                            new ErrorResponse<>(syncRequest, result, error))
+                            new ErrorResponse<>(userResponseCtx, syncRequest, result, error))
                       .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
             } else {
                 userResponseCtx.writeAndFlush(
-                            new ErrorResponse<>(syncRequest, errno, client.getError()))
+                            new ErrorResponse<>(userResponseCtx, syncRequest, errno, client.getError()))
                       .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
             }
         }
@@ -191,7 +191,7 @@ public final class TpcWriteDescriptor extends WriteDescriptor
     public synchronized XrootdResponse<StatRequest> handleStat(StatRequest msg)
           throws XrootdException {
         if (client.getError() != null) {
-            return new ErrorResponse<>(msg,
+            return new ErrorResponse<>(userResponseCtx, msg,
                   client.getErrno(),
                   client.getError());
         }
@@ -278,7 +278,7 @@ public final class TpcWriteDescriptor extends WriteDescriptor
     public synchronized XrootdResponse<SyncRequest> sync(SyncRequest syncRequest)
           throws IOException, InterruptedException {
         if (client.getError() != null) {
-            return new ErrorResponse<>(syncRequest,
+            return new ErrorResponse<>(userResponseCtx, syncRequest,
                   client.getErrno(),
                   client.getError());
         }
