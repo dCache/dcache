@@ -356,7 +356,8 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
             FsPath path = createFullPath(req.getPath());
 
             XrootdResponse response
-                  = conditionallyHandleThirdPartyRequest(req,
+                  = conditionallyHandleThirdPartyRequest(ctx,
+                  req,
                   loginSessionInfo,
                   opaque,
                   path,
@@ -487,21 +488,21 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
             return new RedirectResponse<>(req, host, address.getPort(),
                   opaqueString, "");
         } catch (ParseException e) {
-            return withError(req, kXR_ArgInvalid, "Path arguments do not parse");
+            return withError(ctx, req, kXR_ArgInvalid, "Path arguments do not parse");
         } catch (FileNotFoundCacheException e) {
-            return withError(req, xrootdErrorCode(e.getRc()), "No such file");
+            return withError(ctx, req, xrootdErrorCode(e.getRc()), "No such file");
         } catch (FileExistsCacheException e) {
-            return withError(req, kXR_NotAuthorized, "File already exists");
+            return withError(ctx, req, kXR_NotAuthorized, "File already exists");
         } catch (TimeoutCacheException e) {
-            return withError(req, xrootdErrorCode(e.getRc()), "Internal timeout");
+            return withError(ctx, req, xrootdErrorCode(e.getRc()), "Internal timeout");
         } catch (PermissionDeniedCacheException e) {
-            return withError(req, xrootdErrorCode(e.getRc()), e.getMessage());
+            return withError(ctx, req, xrootdErrorCode(e.getRc()), e.getMessage());
         } catch (FileIsNewCacheException e) {
-            return withError(req, xrootdErrorCode(e.getRc()), "File is locked by upload");
+            return withError(ctx, req, xrootdErrorCode(e.getRc()), "File is locked by upload");
         } catch (NotFileCacheException e) {
-            return withError(req, xrootdErrorCode(e.getRc()), "Not a file");
+            return withError(ctx, req, xrootdErrorCode(e.getRc()), "Not a file");
         } catch (CacheException e) {
-            return withError(req, xrootdErrorCode(e.getRc()),
+            return withError(ctx, req, xrootdErrorCode(e.getRc()),
                   String.format("Failed to open file (%s [%d])",
                         e.getMessage(), e.getRc()));
         } catch (InterruptedException e) {
@@ -510,9 +511,9 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
              * message will never reach the client, so saying that the
              * server shut down is okay.
              */
-            return withError(req, kXR_ServerError, "Server shutdown");
+            return withError(ctx, req, kXR_ServerError, "Server shutdown");
         } catch (XrootdException e) {
-            return withError(req, e.getError(), e.getMessage());
+            return withError(ctx, req, e.getError(), e.getMessage());
         }
     }
 
@@ -531,7 +532,8 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
      * only has been used, we allow rendezvous to take </p>
      */
     private XrootdResponse<OpenRequest>
-    conditionallyHandleThirdPartyRequest(OpenRequest req,
+    conditionallyHandleThirdPartyRequest(ChannelHandlerContext ctx,
+          OpenRequest req,
           LoginSessionInfo loginSessionInfo,
           Map<String, String> opaque,
           FsPath fsPath,
@@ -644,7 +646,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
                                 + "ERROR: {}.",
                           req, info, error);
                     _door.removeTpcPlaceholder(info.getFd());
-                    return withError(req, kXR_InvalidRequest,
+                    return withError(ctx, req, kXR_InvalidRequest,
                           "tpc rendezvous for " + tpcKey
                                 + ": " + error);
                 case CANCELLED:
@@ -654,7 +656,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
                                 + "CANCELLED: {}.",
                           req, info, error);
                     _door.removeTpcPlaceholder(info.getFd());
-                    return withError(req, kXR_InvalidRequest,
+                    return withError(ctx, req, kXR_InvalidRequest,
                           "tpc rendezvous for " + tpcKey
                                 + ": " + error);
             }
@@ -679,7 +681,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
                  * it, an error can be returned.
                  */
                 info.setStatus(Status.ERROR);
-                return withError(req, kXR_InvalidRequest,
+                return withError(ctx, req, kXR_InvalidRequest,
                       "not allowed to read file.");
             }
 
@@ -801,7 +803,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
         if (_door.removeTpcPlaceholder(fd)) {
             return withOk(msg);
         } else {
-            return withError(msg, kXR_FileNotOpen,
+            return withError(ctx, msg, kXR_FileNotOpen,
                   "Invalid file handle " + fd
                         + " for tpc source close.");
         }
@@ -1234,7 +1236,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
             }
 
             respond(_context,
-                  withError(_request, xrootdErrorCode(rc), errorMessage));
+                  withError(_context, _request, xrootdErrorCode(rc), errorMessage));
         }
 
         /**
@@ -1243,7 +1245,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
         @Override
         public void noroute(CellPath path) {
             respond(_context,
-                  withError(_request,
+                  withError(_context, _request,
                         kXR_ServerError,
                         "Could not contact PNFS Manager."));
         }
@@ -1272,7 +1274,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
         @Override
         public void timeout(String error) {
             respond(_context,
-                  withError(_request,
+                  withError(_context, _request,
                         kXR_ServerError,
                         "Timeout when trying to list directory!"));
         }
