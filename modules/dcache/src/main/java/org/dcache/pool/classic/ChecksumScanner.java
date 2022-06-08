@@ -1,5 +1,6 @@
 package org.dcache.pool.classic;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static dmg.util.CommandException.checkCommand;
 import static java.util.Objects.requireNonNull;
 import static org.dcache.util.Exceptions.messageOrClassName;
@@ -261,8 +262,14 @@ public class ChecksumScanner
         private void initializeFromSavedState() {
             String line;
             try {
-                line = Files.readAllLines(_scrubberStateFile.toPath(), Charset.defaultCharset())
-                      .get(0);
+                line = Files.readString(_scrubberStateFile.toPath(), Charset.defaultCharset());
+                if (isNullOrEmpty(line)) {
+                    _log.error("The scrubber saved state in {} cannot be loaded as it is empty!",
+                          _scrubberStateFile.toPath());
+                    _lastStart = System.currentTimeMillis();
+                    return;
+                }
+
             } catch (NoSuchFileException e) {
                 /**
                  * ignored - start immediately and check whole pool
