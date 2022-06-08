@@ -781,13 +781,13 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
                 Throwable cause = e.getCause();
                 if (cause instanceof CacheException) {
                     int rc = ((CacheException) cause).getRc();
-                    respond(ctx, withError(msg,
+                    respond(ctx, withError(ctx, msg,
                           CacheExceptionMapper.xrootdErrorCode(rc),
                           cause.getMessage()));
                 } else if (cause instanceof IOException) {
-                    respond(ctx, withError(msg, kXR_IOError, cause.getMessage()));
+                    respond(ctx, withError(ctx,msg, kXR_IOError, cause.getMessage()));
                 } else {
-                    respond(ctx, withError(msg, kXR_ServerError, cause.toString()));
+                    respond(ctx, withError(ctx,msg, kXR_ServerError, cause.toString()));
                 }
             } finally {
                 removeDescriptor(fd);
