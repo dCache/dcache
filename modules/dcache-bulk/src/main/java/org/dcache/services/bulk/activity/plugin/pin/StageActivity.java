@@ -59,12 +59,14 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.activity.plugin.pin;
 
+import static diskCacheV111.util.CacheException.INVALID_ARGS;
 import static org.dcache.services.bulk.activity.plugin.pin.StageActivityProvider.DISK_LIFETIME;
 
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
+import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.HttpProtocolInfo;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -106,9 +108,12 @@ public final class StageActivity extends PinManagerActivity {
         id = rid;
 
         try {
-            if (attributes == null) {
-                attributes = getAttributes(target);
-            }
+            /*
+             *  refetch the attributes because RP is not stored in the bulk database.
+             */
+            attributes = getAttributes(target);
+
+            checkStageable(attributes);
 
             PinManagerPinMessage message
                   = new PinManagerPinMessage(attributes, getProtocolInfo(), id,
@@ -146,5 +151,13 @@ public final class StageActivity extends PinManagerActivity {
         }
 
         return TimeUnit.SECONDS.toMillis(Duration.parse(ptString).get(ChronoUnit.SECONDS));
+    }
+
+    private void checkStageable(FileAttributes attributes) throws CacheException {
+        checkPinnable(attributes);
+
+        if (attributes.getRetentionPolicy() != RetentionPolicy.CUSTODIAL) {
+            throw new CacheException(INVALID_ARGS, "File not on tape.");
+        }
     }
 }

@@ -60,6 +60,7 @@ documents or software obtained from this server.
 package org.dcache.services.bulk.activity.plugin.pin;
 
 import static com.google.common.util.concurrent.Uninterruptibles.getUninterruptibly;
+import static diskCacheV111.util.CacheException.INVALID_ARGS;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import diskCacheV111.util.CacheException;
@@ -131,5 +132,13 @@ abstract class PinManagerActivity extends BulkActivity<Message> implements PinMa
         PinManagerUnpinMessage message = new PinManagerUnpinMessage(pnfsId);
         message.setRequestId(id);
         return message;
+    }
+
+    protected void checkPinnable(FileAttributes attributes) throws CacheException {
+        switch(attributes.getFileType()) {
+            case SPECIAL:
+            case DIR:
+                throw new CacheException(INVALID_ARGS, "Not a regular file.");
+        }
     }
 }

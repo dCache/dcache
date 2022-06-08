@@ -92,7 +92,8 @@ public abstract class BulkActivity<R> {
     }
 
     public static final Set<FileAttribute> MINIMALLY_REQUIRED_ATTRIBUTES
-          = Collections.unmodifiableSet(EnumSet.of(FileAttribute.PNFSID, FileAttribute.TYPE));
+          = Collections.unmodifiableSet(EnumSet.of(FileAttribute.PNFSID, FileAttribute.TYPE,
+          FileAttribute.RETENTION_POLICY));
 
     private static final BulkTargetRetryPolicy DEFAULT_RETRY_POLICY = new NoRetryPolicy();
 

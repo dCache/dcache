@@ -105,6 +105,8 @@ public final class PinActivity extends PinManagerActivity {
                 attributes = getAttributes(target);
             }
 
+            checkPinnable(attributes);
+
             PinManagerPinMessage message
                   = new PinManagerPinMessage(attributes, getProtocolInfo(), id,
                   lifetimeInMillis);
