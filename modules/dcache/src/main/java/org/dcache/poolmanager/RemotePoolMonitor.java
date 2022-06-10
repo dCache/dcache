@@ -58,6 +58,7 @@ public class RemotePoolMonitor
       implements PoolMonitor, CellLifeCycleAware, CellMessageReceiver, CellInfoProvider {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RemotePoolMonitor.class);
+    private static final int MAX_FETCH_RETRIES = 10;
 
     private long lastRefreshTime;
     private CellStub poolManagerStub;
@@ -81,27 +82,9 @@ public class RemotePoolMonitor
         pw.println("active refresh target = " + poolManagerStub);
     }
 
-
     @Override
-    public synchronized void afterStart() {
-        CellStub.addCallback(poolManagerStub.send(new PoolManagerGetPoolMonitor(),
-                    CellEndpoint.SendFlag.RETRY_ON_NO_ROUTE_TO_CELL),
-              new AbstractMessageCallback<PoolManagerGetPoolMonitor>() {
-                  @Override
-                  public void success(PoolManagerGetPoolMonitor message) {
-                      acceptMonitor(message.getPoolMonitor());
-                  }
-
-                  @Override
-                  public void timeout(String message) {
-                      afterStart();
-                  }
-
-                  @Override
-                  public void failure(int rc, Object error) {
-                  }
-              },
-              MoreExecutors.directExecutor());
+    public void afterStart() {
+        fetchMonitor(0);
     }
 
     @Override
@@ -174,6 +157,38 @@ public class RemotePoolMonitor
         lastRefreshTime = System.currentTimeMillis();
         refreshCount++;
         notifyAll();
+    }
+
+    private synchronized void fetchMonitor(int count) {
+        if (count < MAX_FETCH_RETRIES) {
+            int nextCount = count + 1;
+            CellStub.addCallback(poolManagerStub.send(new PoolManagerGetPoolMonitor(),
+                        CellEndpoint.SendFlag.RETRY_ON_NO_ROUTE_TO_CELL),
+                  new AbstractMessageCallback<>() {
+                      @Override
+                      public void success(PoolManagerGetPoolMonitor message) {
+                          acceptMonitor(message.getPoolMonitor());
+                      }
+
+                      @Override
+                      public void timeout(String message) {
+                          try {
+                              Thread.sleep(TimeUnit.SECONDS.toMillis(1));
+                              fetchMonitor(nextCount);
+                          } catch (InterruptedException e) {
+                              LOGGER.debug("Could not get Pool Monitor; sleep interrupted.");
+                          }
+                      }
+
+                      @Override
+                      public void failure(int rc, Object error) {
+                      }
+                  },
+                  MoreExecutors.directExecutor());
+        } else {
+            LOGGER.error("Could not get Pool Monitor; max retries {} exceeded.",
+                  MAX_FETCH_RETRIES);
+        }
     }
 
     private synchronized PoolMonitor getPoolMonitor() {
