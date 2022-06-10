@@ -60,6 +60,7 @@ documents or software obtained from this server.
 package org.dcache.services.collector;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Throwables;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.ServiceUnavailableException;
 import dmg.cells.nucleus.CellCommandListener;
@@ -244,12 +245,14 @@ public abstract class CellDataCollectingService<D, C extends CellMessagingCollec
                   e.getMessage(),
                   t == null ? "" : t.toString());
         } catch (RuntimeException ee) {
-            Thread thisThread = Thread.currentThread();
-            thisThread.getUncaughtExceptionHandler()
-                  .uncaughtException(thisThread, ee);
-            LOGGER.error("Uncaught runtime exception in update; this is most "
-                  + "likely a bug.  No further collection "
-                  + "has been scheduled.");
+            if ( !(Throwables.getRootCause(ee) instanceof InterruptedException)) {
+                Thread thisThread = Thread.currentThread();
+                thisThread.getUncaughtExceptionHandler()
+                      .uncaughtException(thisThread, ee);
+                LOGGER.error("Uncaught runtime exception in update; this is most "
+                      + "likely a bug.  No further collection "
+                      + "has been scheduled.");
+            }
             return;
         }
 
