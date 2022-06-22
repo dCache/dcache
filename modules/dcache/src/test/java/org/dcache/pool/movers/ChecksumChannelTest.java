@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import org.dcache.pool.repository.FileRepositoryChannel;
 import org.dcache.pool.repository.FileStore;
@@ -41,12 +42,15 @@ import org.junit.Test;
 
 public class ChecksumChannelTest {
 
+    private static final Checksum EMPTY_MD5_CHECKSUM = new Checksum(ChecksumType.MD5_TYPE,
+          "d41d8cd98f00b204e9800998ecf8427e");
 
     private ChecksumChannel chksumChannel;
 
     private final byte[] data = "\0Just\0A\0Short\0TestString\0To\0Verify\0\0Checksumming\0\0Works\12".getBytes(
           StandardCharsets.ISO_8859_1); // \12 is a octal 10, linefeed
     private final Checksum expectedChecksum = ChecksumType.MD5_TYPE.calculate(data);
+
     private int blocksize = 2;
     private int blockcount = data.length / blocksize;
     private ByteBuffer[] buffers = new ByteBuffer[blockcount];
@@ -317,6 +321,13 @@ public class ChecksumChannelTest {
         }
 
         assertThat(chksumChannel.getChecksums(), contains(expectedChecksum));
+    }
+
+    @Test
+    public void shouldNotFillUpRangeGapsWithZeroLengthFile() throws IOException {
+        chksumChannel.close();
+        Set<Checksum> results = chksumChannel.getChecksums();
+        assertThat(results, contains(EMPTY_MD5_CHECKSUM));
     }
 
     private Map<Long, ByteBuffer> getNonZeroBlocksFromByteArray(byte[] bytes) {
