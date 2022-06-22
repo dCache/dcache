@@ -18,7 +18,6 @@
 package org.dcache.pool.classic;
 
 import static com.google.common.collect.Iterables.concat;
-import static com.google.common.collect.Iterables.isEmpty;
 import static org.dcache.pool.classic.ChecksumModuleV1.PolicyFlag.ENFORCE_CRC;
 import static org.dcache.pool.classic.ChecksumModuleV1.PolicyFlag.GET_CRC_FROM_HSM;
 import static org.dcache.pool.classic.ChecksumModuleV1.PolicyFlag.ON_FLUSH;
@@ -41,6 +40,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.collect.Streams;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileCorruptedCacheException;
 import dmg.cells.nucleus.CellCommandListener;
@@ -310,10 +310,10 @@ public class ChecksumModuleV1
 
         @Option(name = "enforcecrc",
               category = "Transfer options",
-              usage =
-                    "If no checksum was calculated during the transfer and no checksum was provided "
-                          +
-                          "by the client, then a checksum will be computed from the uploaded file.",
+              usage = "Guarantee that at least one checksum is known for files by triggering a "
+                  + "post-transfer checksum calculation if no checksum was calculated during the "
+                  + "transfer.  Be aware that, if triggered, this will introduce a delay after the "
+                  + "transfer and that some clients may time out in the meantime.",
               values = {"", "on", "off"},
               valueSpec = "on|off")
         String enforceCrc;
@@ -471,18 +471,25 @@ public class ChecksumModuleV1
         return additionalChecksums;
     }
 
+    private EnumSet<ChecksumType> checksumTypesOf(Iterable<Checksum> checksums) {
+        return Streams.stream(checksums)
+            .map(Checksum::getType)
+            .collect(Collectors.toCollection(() -> EnumSet.noneOf(ChecksumType.class)));
+    }
+
     @Override
     public void enforcePostTransferPolicy(
           ReplicaDescriptor handle, Iterable<Checksum> actualChecksums)
           throws CacheException, IOException, InterruptedException {
         Iterable<Checksum> expectedChecksums = handle.getChecksums();
+        Set<ChecksumType> expectedTypes = checksumTypesOf(expectedChecksums);
+        Set<ChecksumType> actualTypes = checksumTypesOf(actualChecksums);
         if (hasPolicy(ON_WRITE)
-              || (hasPolicy(ENFORCE_CRC) && isEmpty(expectedChecksums) && isEmpty(
-              actualChecksums))) {
+                || (hasPolicy(ENFORCE_CRC) && actualTypes.isEmpty())
+                || !actualTypes.containsAll(expectedTypes)) {
             EnumSet<ChecksumType> types = EnumSet.copyOf(_defaultChecksumType);
-            expectedChecksums.forEach(c -> types.add(c.getType()));
-            actualChecksums.forEach(
-                  c -> types.add(c.getType())); // REVISIT do we really need to recalculate these?
+            types.addAll(expectedTypes);
+            types.addAll(actualTypes); // recalculate in order to check for data corruption.
 
             List<MessageDigest> digests = types.stream()
                   .map(ChecksumType::createMessageDigest)
