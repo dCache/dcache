@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 - 2020 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -57,11 +57,14 @@ import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.cells.services.login.LoginBrokerInfo;
+import dmg.cells.services.login.LoginBrokerPublisher;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
 import java.io.PrintWriter;
 import java.io.Serializable;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -69,6 +72,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.UUID;
@@ -80,6 +84,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import javax.annotation.concurrent.GuardedBy;
 import javax.security.auth.Subject;
 import org.dcache.acl.enums.AccessType;
 import org.dcache.auth.Origin;
@@ -178,6 +183,8 @@ public class XrootdDoor
     private Consumer<DoorRequestInfoMessage> _kafkaSender = (s) -> {
     };
 
+    @GuardedBy("this")
+    private Optional<LoginBrokerInfo> _loginBrokerInfo = Optional.empty();
 
     /**
      * Current xrootd transfers. The key is the xrootd file handle.
@@ -317,6 +324,16 @@ public class XrootdDoor
         this.triedHostsEnabled = triedHostsEnabled;
     }
 
+    @Required
+    public void setLoginBrokerPublisher(LoginBrokerPublisher lb) {
+        lb.addConsumer(this::acceptLoginBrokerInfo);
+    }
+
+    private synchronized void acceptLoginBrokerInfo(Optional<LoginBrokerInfo> info)
+    {
+        _loginBrokerInfo = info;
+    }
+
     public TimeUnit getMoverTimeoutUnit() {
         return _moverTimeoutUnit;
     }
@@ -346,6 +363,18 @@ public class XrootdDoor
         pw.println(String.format("Protocol Version %d.%d",
               XrootdProtocol.PROTOCOL_VERSION_MAJOR,
               XrootdProtocol.PROTOCOL_VERSION_MINOR));
+    }
+
+    /**
+     * Provide the public endpoint for this xrootd door, if known.
+     */
+    public Optional<InetSocketAddress> publicEndpoint() {
+        return _loginBrokerInfo.flatMap(i -> {
+                    List<InetAddress> addresses = i.getAddresses();
+                    return addresses.isEmpty()
+                            ? Optional.empty()
+                            : Optional.of(new InetSocketAddress(addresses.get(0), i.getPort()));
+                });
     }
 
     private XrootdTransfer

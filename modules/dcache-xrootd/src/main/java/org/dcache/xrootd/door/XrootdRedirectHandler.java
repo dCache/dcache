@@ -291,7 +291,6 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
          * introduces an artificial 1 second delay when processing such a response.
          */
 
-        InetSocketAddress localAddress = getDestinationAddress();
         InetSocketAddress remoteAddress = getSourceAddress();
         LoginSessionInfo loginSessionInfo = sessionInfo();
 
@@ -375,7 +374,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
                 transfer = _door.write(remoteAddress, path, triedHosts,
                       ioQueue, uuid, true, overwrite, size,
                       loginSessionInfo.getMaximumUploadSize(),
-                      localAddress,
+                      localAddress(),
                       loginSessionInfo.getSubject(),
                       loginSessionInfo.getRestriction(),
                       persistOnSuccessfulClose,
@@ -403,7 +402,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
                 }
 
                 transfer = _door.read(remoteAddress, path, triedHosts, ioQueue,
-                      uuid, localAddress, subject,
+                      uuid, localAddress(), subject,
                       loginSessionInfo.getRestriction(), opaque);
 
                 /*
@@ -477,6 +476,18 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
         } catch (XrootdException e) {
             return withError(ctx, req, e.getError(), e.getMessage());
         }
+    }
+
+    /**
+     * The door's endpoint to which a client may connect.
+     */
+    private InetSocketAddress localAddress()
+    {
+        /*
+         * Use the advertised endpoint, if possble, otherwise fall back to the
+         * address to which the client connected.
+         */
+        return _door.publicEndpoint().orElse(getDestinationAddress());
     }
 
     /**
