@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -98,6 +98,7 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Checksum;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
+import org.dcache.xrootd.LoginTokens;
 import org.dcache.xrootd.core.XrootdException;
 import org.dcache.xrootd.core.XrootdSession;
 import org.dcache.xrootd.protocol.XrootdProtocol;
@@ -446,8 +447,10 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
 
             _log.info("Redirecting to {}, {}", host, address);
 
+            String token = LoginTokens.encodeToken(localAddress());
+
             return new RedirectResponse<>(req, host, address.getPort(),
-                  opaqueString, "");
+                  opaqueString, token);
         } catch (ParseException e) {
             return withError(ctx, req, kXR_ArgInvalid, "Path arguments do not parse");
         } catch (FileNotFoundCacheException e) {

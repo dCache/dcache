@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 - 2020 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -67,6 +67,7 @@ import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.xrootd.AbstractXrootdRequestHandler;
 import org.dcache.xrootd.CacheExceptionMapper;
+import org.dcache.xrootd.LoginTokens;
 import org.dcache.xrootd.core.XrootdException;
 import org.dcache.xrootd.core.XrootdSessionIdentifier;
 import org.dcache.xrootd.core.XrootdSigverDecoder;
@@ -285,6 +286,10 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
         }
     }
 
+    private void acceptDoorAddress(InetSocketAddress addr) {
+        _redirectingDoor = addr;
+    }
+
     @Override
     protected XrootdResponse<LoginRequest> doOnLogin(ChannelHandlerContext ctx, LoginRequest msg)
           throws XrootdException {
@@ -296,6 +301,8 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
          * We also need to swap the decoder.
          */
         String sec;
+
+        LoginTokens.decodeToken(msg.getToken()).ifPresent(this::acceptDoorAddress);
 
         /**
          *   If TLS is on, we don't need authentication.
@@ -445,7 +452,8 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
 
                 int fd = addDescriptor(descriptor);
 
-                _redirectingDoor = protocolInfo.getDoorAddress();
+                protocolInfo.getDoorAddress().ifPresent(this::acceptDoorAddress);
+
                 file = null;
                 _hasOpenedFiles = true;
 

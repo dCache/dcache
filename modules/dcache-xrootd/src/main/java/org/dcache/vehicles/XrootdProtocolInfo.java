@@ -10,6 +10,7 @@ import dmg.cells.nucleus.CellPath;
 import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.util.EnumSet;
+import java.util.Optional;
 import java.util.UUID;
 import org.dcache.auth.attributes.Restriction;
 
@@ -125,8 +126,8 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
         return _uuid;
     }
 
-    public InetSocketAddress getDoorAddress() {
-        return _doorAddress;
+    public Optional<InetSocketAddress> getDoorAddress() {
+        return Optional.ofNullable(_doorAddress);
     }
 
     @Override

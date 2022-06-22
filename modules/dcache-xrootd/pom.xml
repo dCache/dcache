@@ -52,5 +52,10 @@
       <groupId>org.italiangrid</groupId>
       <artifactId>voms-api-java</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.github.npathai</groupId>
+      <artifactId>hamcrest-optional</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>
