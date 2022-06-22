@@ -254,8 +254,8 @@ public class ChecksumChannel extends ForwardingRepositoryChannel {
         synchronized (_dataRangeSet) {
             synchronized (_digests) {
                 try {
-
-                    if (_dataRangeSet.asRanges().size() != 1 || _nextChecksumOffset == 0) {
+                    if (_dataRangeSet.asRanges().size() > 1
+                            || (_dataRangeSet.asRanges().size() == 1 && _nextChecksumOffset == 0)) {
                         feedZerosToDigesterForRangeGaps();
                     }
 
