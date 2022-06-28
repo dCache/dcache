@@ -64,10 +64,12 @@ import diskCacheV111.vehicles.transferManager.RemoteTransferManagerMessage;
 import diskCacheV111.vehicles.transferManager.TransferCompleteMessage;
 import diskCacheV111.vehicles.transferManager.TransferFailedMessage;
 import diskCacheV111.vehicles.transferManager.TransferStatusQueryMessage;
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
+import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.CommandException;
 import dmg.util.CommandSyntaxException;
@@ -253,7 +255,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
           new BoundedCachedExecutor(r -> new Thread(r, "transfer-finaliser-" + nextThreadCount()), 1);
 
     private long _performanceMarkerPeriod;
-    private CellStub _transferManager;
+    private CellStub _genericTransferManager;
     private PnfsHandler _pnfs;
 
     /** The time when the most recent message was processed. */
@@ -264,7 +266,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
 
     @Required
     public void setTransferManagerStub(CellStub stub) {
-        _transferManager = stub;
+        _genericTransferManager = stub;
     }
 
     @Required
@@ -765,6 +767,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         private Optional<Instant> _discoveredTransferMissing = Optional.empty();
         private Optional<Instant> _failTransferAfter = Optional.empty();
         private long _size;
+        private CellStub _transferManager = _genericTransferManager;
 
         public RemoteTransfer(OutputStream out, Subject subject, Restriction restriction,
               FsPath path, URI destination, @Nullable Object credential,
@@ -890,7 +893,14 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
             message.setPnfsId(_pnfsId);
             message.setFileAttributes(attributes);
             try {
-                _id = _transferManager.sendAndWait(message).getId();
+                RemoteTransferManagerMessage response =
+                        _genericTransferManager.sendAndWait(message);
+                CellAddressCore managerAddress = response.getTransferManager();
+                if (managerAddress != null) {
+                    CellPath path = new CellPath(managerAddress);
+                    _transferManager = _genericTransferManager.withDestination(path);
+                }
+                _id = response.getId();
                 addDigestResponseHeader(attributes);
                 return _id;
             } catch (NoRouteToCellException | TimeoutCacheException e) {
