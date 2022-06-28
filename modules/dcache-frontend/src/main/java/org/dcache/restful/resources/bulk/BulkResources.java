@@ -373,6 +373,9 @@ public final class BulkResources {
         String string = removeEntry(map, String.class, "activity");
         request.setActivity(string);
 
+        string = removeEntry(map, String.class, "target");
+        request.setTarget(string);
+
         string = removeEntry(map, String.class, "target_prefix", "target-prefix", "targetPrefix");
         request.setTargetPrefix(string);
 
