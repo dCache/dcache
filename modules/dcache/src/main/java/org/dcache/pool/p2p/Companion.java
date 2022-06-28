@@ -374,9 +374,6 @@ class Companion {
             } finally {
                 setRequest(null);
             }
-            return channel.optionallyAs(ChecksumChannel.class)
-                  .map(ChecksumChannel::getChecksums)
-                  .orElseThrow(() -> new IllegalStateException("Missing ChecksumChannel"));
         } catch (ClosedChannelException | InterruptedIOException e) {
             // clear interrupted status
             Thread.interrupted();
@@ -384,6 +381,9 @@ class Companion {
         } finally {
             channel.close();
         }
+        return channel.optionallyAs(ChecksumChannel.class)
+              .map(ChecksumChannel::getChecksums)
+              .orElseThrow(() -> new IllegalStateException("Missing ChecksumChannel"));
     }
 
     private ReplicaDescriptor createReplicaEntry()

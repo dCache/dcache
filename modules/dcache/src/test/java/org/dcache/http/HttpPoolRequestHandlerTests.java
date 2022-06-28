@@ -568,6 +568,7 @@ public class HttpPoolRequestHandlerTests {
               });
 
         given(channel.release()).willAnswer((i) -> {
+            checksums.close();
             file.getFileAttributes().setChecksums(checksums.getChecksums());
             return Futures.immediateFuture(null);
         });
