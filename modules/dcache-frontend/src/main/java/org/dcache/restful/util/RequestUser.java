@@ -75,8 +75,16 @@ public class RequestUser implements ContainerRequestFilter, ContainerResponseFil
     }
 
     public static Long getSubjectUidForFileOperations(boolean isUnlimitedVisibility) {
-        return canViewFileOperations(isUnlimitedVisibility) ?
-              null : Subjects.getUid(getSubject());
+        if (canViewFileOperations(isUnlimitedVisibility)) {
+            return null;
+        }
+
+        Subject user = getSubject();
+        if (Subjects.isNobody(user)) {
+            throw new NotAuthorizedException("visibility limited to non-anonymous users.");
+        }
+
+        return Subjects.getUid(user);
     }
 
     public static void checkAuthenticated() throws NotAuthorizedException {
