@@ -172,8 +172,13 @@ public class TransferObserverV1
             cellName = transfer.door().getCellName();
             domainName = transfer.door().getDomainName();
             serialId = transfer.session().getSerialId();
-            setProtocol(transfer.door().getProtocolFamily(),
-                  transfer.door().getProtocolVersion());
+            var transferSpecificProtocol = transfer.session().getProtocol();
+            if (transferSpecificProtocol.isPresent()) {
+                setProtocol(transferSpecificProtocol.get());
+            } else {
+                setProtocol(transfer.door().getProtocolFamily(),
+                      transfer.door().getProtocolVersion());
+            }
             Subject subject = transfer.session().getSubject();
             if (subject == null) {
                 setUserInfo(new UserInfo());

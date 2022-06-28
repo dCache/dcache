@@ -178,6 +178,7 @@
     <bean id="resource-factory" class="org.dcache.webdav.DcacheResourceFactory">
         <description>Exposes dCache resources to Milton WebDAV library</description>
 
+        <property name="remoteTransferHandler" ref="remote-transfer-handler"/>
         <property name="pnfsStub" ref="pnfs-stub"/>
         <property name="spaceLookupCache">
             <bean class="org.dcache.space.ReservationCaches" factory-method="buildSpaceLookupCache">
