@@ -165,7 +165,10 @@ public class TransferCollector {
     }
 
     private static String getKey(IoDoorInfo info, IoDoorEntry entry) {
-        return info.getCellName() + "@" + info.getDomainName() + "#" + entry.getSerialId();
+        String address = entry.getIntermediate()
+                .map(Object::toString)
+                .orElseGet(() -> info.getCellName() + "@" + info.getDomainName());
+        return address + "#" + entry.getSerialId();
     }
 
     private static String getKey(IoJobInfo mover) {
