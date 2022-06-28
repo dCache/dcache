@@ -168,7 +168,13 @@ public final class TransferCollectionUtils {
         info.setCellName(door.getCellName());
         info.setDomainName(door.getDomainName());
         info.setSerialId(session.getSerialId());
-        info.setProtocol(door.getProtocolFamily(), door.getProtocolVersion());
+        var transferSpecificProtocol = session.getProtocol();
+
+        if (transferSpecificProtocol.isPresent()) {
+            info.setProtocol(transferSpecificProtocol.get());
+        } else {
+            info.setProtocol(door.getProtocolFamily(), door.getProtocolVersion());
+        }
 
         Subject subject = session.getSubject();
         if (subject == null) {
@@ -200,8 +206,10 @@ public final class TransferCollectionUtils {
     }
 
     private static String doorKey(IoDoorInfo info, IoDoorEntry entry) {
-        return info.getCellName() + "@" + info.getDomainName() + "#"
-              + entry.getSerialId();
+        String address = entry.getIntermediate()
+                .map(Object::toString)
+                .orElseGet(() -> info.getCellName() + "@" + info.getDomainName());
+        return address + "#" + entry.getSerialId();
     }
 
     private static String moverKey(IoJobInfo mover) {
