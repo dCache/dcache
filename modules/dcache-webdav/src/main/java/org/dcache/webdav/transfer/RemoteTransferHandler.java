@@ -55,6 +55,7 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.TimeoutCacheException;
+import diskCacheV111.vehicles.IoDoorEntry;
 import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
@@ -657,6 +658,11 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         pw.println("    Queued tasks: " + _activity.getWorkQueueSize());
     }
 
+    public void addTransfers(List<IoDoorEntry> transfers) {
+        _transfers.values().stream()
+                .map(RemoteTransfer::describe)
+                .forEachOrdered(transfers::add);
+    }
 
     /**
      * Start a transfer and block until that transfer is complete.
@@ -792,6 +798,25 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
             _wantDigest = wantDigest;
         }
 
+        private IoDoorEntry describe() {
+            // This may trigger DNS lookup; however, result should be cached by JVM.
+            String client = _endpoint.getRemoteAddress().getHostName();
+            StringBuilder status = new StringBuilder();
+            status.append(_direction == Direction.PULL ? "PULL from" : "PUSH to");
+            status.append(' ').append(_destination.getHost());
+            // Append transfer-manager state only if the mover doesn't exist.
+            if (_lastState != RECEIVED_FIRST_POOL_REPLY_STATE) {
+                status.append(": ").append(TransferManagerHandler.describeState(_lastState));
+            }
+            String pool = _pool.orElse("<unknown>");
+            long whenSubmitted = _whenSubmitted.toEpochMilli();
+            String protocol = "HTTP-TPC / " + _destination.getScheme().toLowerCase();
+            CellAddressCore managerAddress = _transferManager.getDestinationPath().getDestinationAddress();
+
+            return new IoDoorEntry(_id, _pnfsId, _path.toString(), _subject,
+                    pool, status.toString(), whenSubmitted, client,
+                    managerAddress, protocol);
+        }
 
         /**
          * Obtain the PnfsId of the local file, creating it as necessary.
