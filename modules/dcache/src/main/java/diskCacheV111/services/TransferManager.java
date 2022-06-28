@@ -223,6 +223,7 @@ public abstract class TransferManager extends AbstractCellComponent
             throw new CacheException(TransferManagerMessage.TOO_MANY_TRANSFERS,
                   "too many transfers!");
         }
+        message.setTransferManager(getCellAddress());
         new TransferManagerHandler(this, message, envelope.getSourcePath().revert(),
               executor).handle();
         return message;
