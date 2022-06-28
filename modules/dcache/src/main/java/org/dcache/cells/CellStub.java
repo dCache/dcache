@@ -68,6 +68,20 @@ public class CellStub
         setTimeoutUnit(unit);
     }
 
+    /**
+     * Create a derived CellStub with the stated destination.  The timeout and
+     * flags information are copied from this CellStub.  The new created
+     * CellStub operates independently from this CellStub.
+     * @param destination The desired destination
+     * @return A new CellStub with the desired destination.
+     */
+    public CellStub withDestination(CellPath destination) {
+        CellStub newStub = new CellStub(_endpoint, destination, _timeout,
+                _timeoutUnit);
+        newStub._flags = _flags;
+        return newStub;
+    }
+
     @Override
     public void setCellEndpoint(CellEndpoint endpoint) {
         _endpoint = endpoint;

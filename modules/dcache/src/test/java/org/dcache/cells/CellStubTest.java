@@ -17,8 +17,9 @@
  */
 package org.dcache.cells;
 
+import static dmg.cells.nucleus.CellEndpoint.SendFlag.PASS_THROUGH;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -28,7 +29,9 @@ import com.google.common.util.concurrent.MoreExecutors;
 import diskCacheV111.vehicles.Message;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellPath;
+import java.util.concurrent.Executor;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -78,4 +81,105 @@ public class CellStubTest {
         verifyNoMoreInteractions(callback);
     }
 
+    @Test
+    public void shouldNotSpontaneouslyAddFlags() {
+        stub.send(new Message());
+
+        ArgumentCaptor<CellMessage> envelope = ArgumentCaptor.forClass(CellMessage.class);
+        ArgumentCaptor<CellMessageAnswerable> callback = ArgumentCaptor.forClass(CellMessageAnswerable.class);
+        ArgumentCaptor<Executor> executor = ArgumentCaptor.forClass(Executor.class);
+        ArgumentCaptor<Long> timeout = ArgumentCaptor.forClass(Long.class);
+        ArgumentCaptor<CellEndpoint.SendFlag> flagArgs = ArgumentCaptor.forClass(CellEndpoint.SendFlag.class);
+        verify(endpoint).sendMessage(envelope.capture(), callback.capture(),
+                executor.capture(), timeout.capture(), flagArgs.capture());
+
+        assertThat(flagArgs.getAllValues(), empty());
+    }
+
+
+    @Test
+    public void shouldUsePassThroughFlagWhenSpecified() {
+        stub.setFlags(PASS_THROUGH);
+
+        stub.send(new Message());
+
+        ArgumentCaptor<CellMessage> envelope = ArgumentCaptor.forClass(CellMessage.class);
+        ArgumentCaptor<CellMessageAnswerable> callback = ArgumentCaptor.forClass(CellMessageAnswerable.class);
+        ArgumentCaptor<Executor> executor = ArgumentCaptor.forClass(Executor.class);
+        ArgumentCaptor<Long> timeout = ArgumentCaptor.forClass(Long.class);
+        ArgumentCaptor<CellEndpoint.SendFlag> flagArgs = ArgumentCaptor.forClass(CellEndpoint.SendFlag.class);
+        verify(endpoint).sendMessage(envelope.capture(), callback.capture(),
+                executor.capture(), timeout.capture(), flagArgs.capture());
+
+        assertThat(flagArgs.getAllValues(), contains(PASS_THROUGH));
+    }
+
+
+    @Test
+    public void shouldNotifyToNewDestination() {
+        CellStub newStub = stub.withDestination(new CellPath("destination-2"));
+
+        newStub.notify("test");
+
+        ArgumentCaptor<CellMessage> envelope = ArgumentCaptor.forClass(CellMessage.class);
+        verify(endpoint).sendMessage(envelope.capture());
+        CellMessage msg = envelope.getValue();
+        assertThat(msg.getMessageObject().toString(), is("test"));
+        assertThat(msg.getDestinationPath(), is(equalTo(new CellPath("destination-2"))));
+    }
+
+    @Test
+    public void shouldSendToNewDestination() {
+        CellStub newStub = stub.withDestination(new CellPath("destination-2"));
+        Message msg = new Message();
+
+        newStub.send(msg);
+
+        ArgumentCaptor<CellMessage> envelope = ArgumentCaptor.forClass(CellMessage.class);
+        ArgumentCaptor<CellMessageAnswerable> callback = ArgumentCaptor.forClass(CellMessageAnswerable.class);
+        ArgumentCaptor<Executor> executor = ArgumentCaptor.forClass(Executor.class);
+        ArgumentCaptor<Long> timeout = ArgumentCaptor.forClass(Long.class);
+        ArgumentCaptor<CellEndpoint.SendFlag> flagArgs = ArgumentCaptor.forClass(CellEndpoint.SendFlag.class);
+        verify(endpoint).sendMessage(envelope.capture(), callback.capture(),
+                executor.capture(), timeout.capture(), flagArgs.capture());
+        CellMessage capturedEnvelope = envelope.getValue();
+        assertThat(capturedEnvelope.getMessageObject(), is(msg));
+        assertThat(capturedEnvelope.getDestinationPath(),
+                is(equalTo(new CellPath("destination-2"))));
+    }
+
+    @Test
+    public void shouldNotSpontaneouslyAddFlagsToNewDestination() {
+        CellStub newStub = stub.withDestination(new CellPath("destination-2"));
+
+        newStub.send(new Message());
+
+        ArgumentCaptor<CellMessage> envelope = ArgumentCaptor.forClass(CellMessage.class);
+        ArgumentCaptor<CellMessageAnswerable> callback = ArgumentCaptor.forClass(CellMessageAnswerable.class);
+        ArgumentCaptor<Executor> executor = ArgumentCaptor.forClass(Executor.class);
+        ArgumentCaptor<Long> timeout = ArgumentCaptor.forClass(Long.class);
+        ArgumentCaptor<CellEndpoint.SendFlag> flagArgs = ArgumentCaptor.forClass(CellEndpoint.SendFlag.class);
+        verify(endpoint).sendMessage(envelope.capture(), callback.capture(),
+                executor.capture(), timeout.capture(), flagArgs.capture());
+
+        assertThat(flagArgs.getAllValues(), empty());
+    }
+
+    @Test
+    public void shouldPersistPassThroughFlagToNewDestination() {
+        stub.setFlags(PASS_THROUGH);
+        CellStub newStub = stub.withDestination(new CellPath("destination-2"));
+
+        newStub.send(new Message());
+
+        ArgumentCaptor<CellMessage> envelope = ArgumentCaptor.forClass(CellMessage.class);
+        ArgumentCaptor<CellMessageAnswerable> callback = ArgumentCaptor.forClass(CellMessageAnswerable.class);
+        ArgumentCaptor<Executor> executor = ArgumentCaptor.forClass(Executor.class);
+        ArgumentCaptor<Long> timeout = ArgumentCaptor.forClass(Long.class);
+        ArgumentCaptor<CellEndpoint.SendFlag> flagArgs = ArgumentCaptor.forClass(CellEndpoint.SendFlag.class);
+        verify(endpoint).sendMessage(envelope.capture(), callback.capture(),
+                executor.capture(), timeout.capture(), flagArgs.capture());
+
+        assertThat(flagArgs.getAllValues(), contains(PASS_THROUGH));
+    }
 }
