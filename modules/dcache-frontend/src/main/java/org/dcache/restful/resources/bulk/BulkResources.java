@@ -400,31 +400,50 @@ public final class BulkResources {
         request.setArguments((Map<String, String>) map.remove("arguments"));
         request.setTarget((List<String>) map.remove("target"));
 
-        String value = removeEntry(map, "activity");
-        request.setActivity(value);
+        String string = removeEntry(map, String.class, "activity");
+        request.setActivity(string);
 
-        value = removeEntry(map, "target_prefix", "target-prefix", "targetPrefix");
-        request.setTargetPrefix(value);
+        string = removeEntry(map, String.class, "target_prefix", "target-prefix", "targetPrefix");
+        request.setTargetPrefix(string);
 
-        value = removeEntry(map, "expand_directories", "expand-directories",
+        string = removeEntry(map, String.class, "expand_directories", "expand-directories",
               "expandDirectories");
         request.setExpandDirectories(
-              value == null ? Depth.NONE : Depth.valueOf(value.toUpperCase()));
+              string == null ? Depth.NONE : Depth.valueOf(string.toUpperCase()));
 
-        value = removeEntry(map, "delay_clear", "delay-clear", "delayClear");
-        request.setDelayClear(value == null ? 0 : Integer.parseInt(value));
+        string = removeEntry(map, String.class, "delay_clear", "delay-clear", "delayClear");
+        request.setDelayClear(string == null ? 0 : Integer.parseInt(string));
 
-        value = removeEntry(map, "clear_on_success", "clear-on-success", "clearOnSuccess");
-        request.setClearOnSuccess(Boolean.valueOf(value));
+        Object value = removeEntry(map, Object.class, "clear_on_success", "clear-on-success",
+              "clearOnSuccess");
+        if (value instanceof Boolean) {
+            request.setClearOnSuccess((boolean) value);
+        } else {
+            request.setClearOnSuccess(Boolean.valueOf(String.valueOf(value)));
+        }
 
-        value = removeEntry(map, "clear_on_failure", "clear-on-failure", "clearOnFailure");
-        request.setClearOnFailure(Boolean.valueOf(value));
+        value = removeEntry(map, Object.class, "clear_on_failure", "clear-on-failure",
+              "clearOnFailure");
+        if (value instanceof Boolean) {
+            request.setClearOnFailure((boolean) value);
+        } else {
+            request.setClearOnFailure(Boolean.valueOf(String.valueOf(value)));
+        }
 
-        value = removeEntry(map, "cancel_on_failure", "cancel-on-failure", "cancelOnFailure");
-        request.setCancelOnFailure(Boolean.valueOf(value));
+        value = removeEntry(map, Object.class, "cancel_on_failure", "cancel-on-failure",
+              "cancelOnFailure");
+        if (value instanceof Boolean) {
+            request.setCancelOnFailure((boolean) value);
+        } else {
+            request.setCancelOnFailure(Boolean.valueOf(String.valueOf(value)));
+        }
 
-        value = removeEntry(map, "pre_store", "pre-store", "prestore");
-        request.setPrestore(Boolean.valueOf(value));
+        value = removeEntry(map, Object.class, "pre_store", "pre-store", "prestore");
+        if (value instanceof Boolean) {
+            request.setPrestore((boolean) value);
+        } else {
+            request.setPrestore(Boolean.valueOf(String.valueOf(value)));
+        }
 
         if (!map.isEmpty()) {
             throw new BadRequestException("unsupported arguments: " + map.keySet());
@@ -433,10 +452,10 @@ public final class BulkResources {
         return request;
     }
 
-    private static String removeEntry(Map map, String... names) {
-        String value = null;
+    private static <T> T removeEntry(Map map, Class<T> clzz, String... names) {
+        T value = null;
         for (String name : names) {
-            String v = (String) map.remove(name);
+            T v = (T) map.remove(name);
             if (value == null) {
                 value = v;
             } else if (v != null) {
