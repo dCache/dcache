@@ -127,9 +127,11 @@ public final class PinActivity extends PinManagerActivity {
             String expire = arguments.get(LIFETIME.getName());
             String unit = arguments.get(LIFETIME_UNIT.getName());
 
+            Long value = (long)(Double.parseDouble(expire));
+
             lifetimeInMillis = expire == null ? defaultUnit.toMillis(defaultValue)
-                  : unit == null ? defaultUnit.toMillis(Long.valueOf(expire))
-                        : TimeUnit.valueOf(unit).toMillis(Long.valueOf(expire));
+                  : unit == null ? defaultUnit.toMillis(value)
+                        : TimeUnit.valueOf(unit).toMillis(value);
         }
 
         id = arguments == null ? null : arguments.get(PIN_REQUEST_ID.getName());

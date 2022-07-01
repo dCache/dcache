@@ -72,6 +72,7 @@ import io.swagger.annotations.Authorization;
 import io.swagger.annotations.Example;
 import io.swagger.annotations.ExampleProperty;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -397,7 +398,14 @@ public final class BulkResources {
         Map map = new Gson().fromJson(requestPayload, Map.class);
         BulkRequest request = new BulkRequest();
 
-        request.setArguments((Map<String, String>) map.remove("arguments"));
+        Map<String, Object> arguments = (Map<String, Object>) map.remove("arguments");
+        if (arguments != null) {
+            Map<String, String> stringified = new HashMap<>();
+            arguments.entrySet().stream()
+                  .forEach(e -> stringified.put(e.getKey(), String.valueOf(e.getValue())));
+            request.setArguments(stringified);
+        }
+
         request.setTarget((List<String>) map.remove("target"));
 
         String string = removeEntry(map, String.class, "activity");
