@@ -1,11 +1,11 @@
 package org.dcache.http;
 
 import static com.google.common.base.Preconditions.checkState;
-import static io.netty.handler.codec.http.HttpHeaders.Names.ACCEPT_RANGES;
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_RANGE;
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
-import static io.netty.handler.codec.http.HttpHeaders.Values.BYTES;
+import static io.netty.handler.codec.http.HttpHeaderNames.ACCEPT_RANGES;
+import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
+import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_RANGE;
+import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
+import static io.netty.handler.codec.http.HttpHeaderValues.BYTES;
 import static io.netty.handler.codec.http.HttpMethod.CONNECT;
 import static io.netty.handler.codec.http.HttpMethod.DELETE;
 import static io.netty.handler.codec.http.HttpMethod.GET;
@@ -130,7 +130,7 @@ public class HttpPoolRequestHandlerTests {
     public void shouldIncludeContentLengthForErrorResponse() throws Exception {
         whenClientMakes(a(OPTIONS).forUri("/path/to/file"));
 
-        assertThat(_response, hasHeader(CONTENT_LENGTH));
+        assertThat(_response, hasHeader(CONTENT_LENGTH.toString()));
     }
 
     @Test
@@ -142,7 +142,7 @@ public class HttpPoolRequestHandlerTests {
               forUri("/path/to/file?dcache-http-uuid=" + ANOTHER_UUID));
 
         assertThat(_response.status(), is(BAD_REQUEST));
-        assertThat(_response, hasHeader(CONTENT_LENGTH));
+        assertThat(_response, hasHeader(CONTENT_LENGTH.toString()));
     }
 
 
@@ -156,7 +156,7 @@ public class HttpPoolRequestHandlerTests {
               forUri("/path/to/another-file?dcache-http-uuid=" + SOME_UUID));
 
         assertThat(_response.status(), is(BAD_REQUEST));
-        assertThat(_response, hasHeader(CONTENT_LENGTH));
+        assertThat(_response, hasHeader(CONTENT_LENGTH.toString()));
     }
 
 
@@ -170,12 +170,12 @@ public class HttpPoolRequestHandlerTests {
               forUri("/path/to/file?dcache-http-uuid=" + SOME_UUID));
 
         assertThat(_response.status(), is(OK));
-        assertThat(_response, hasHeader(CONTENT_LENGTH, "100"));
+        assertThat(_response, hasHeader(CONTENT_LENGTH.toString(), "100"));
         assertThat(_response, hasHeader(CONTENT_DISPOSITION,
               "attachment;filename=file"));
         assertThat(_response, not(hasHeader(DIGEST)));
-        assertThat(_response, hasHeader(ACCEPT_RANGES, BYTES));
-        assertThat(_response, not(hasHeader(CONTENT_RANGE)));
+        assertThat(_response, hasHeader(ACCEPT_RANGES.toString(), BYTES.toString()));
+        assertThat(_response, not(hasHeader(CONTENT_RANGE.toString())));
 
         assertThat(_additionalWrites, hasSize(2));
         assertThat(_additionalWrites.get(0), isCompleteRead("/path/to/file"));
@@ -194,12 +194,12 @@ public class HttpPoolRequestHandlerTests {
               .forUri("/path/to/file?dcache-http-uuid=" + SOME_UUID));
 
         assertThat(_response.status(), is(OK));
-        assertThat(_response, hasHeader(CONTENT_LENGTH, "100"));
+        assertThat(_response, hasHeader(CONTENT_LENGTH.toString(), "100"));
         assertThat(_response, hasHeader(CONTENT_DISPOSITION,
               "attachment;filename=file"));
         assertThat(_response, hasHeader(DIGEST, "adler32=03da0195"));
-        assertThat(_response, hasHeader(ACCEPT_RANGES, BYTES));
-        assertThat(_response, not(hasHeader(CONTENT_RANGE)));
+        assertThat(_response, hasHeader(ACCEPT_RANGES.toString(), BYTES.toString()));
+        assertThat(_response, not(hasHeader(CONTENT_RANGE.toString())));
 
         assertThat(_additionalWrites, hasSize(2));
         assertThat(_additionalWrites.get(0), isCompleteRead("/path/to/file"));
@@ -217,12 +217,12 @@ public class HttpPoolRequestHandlerTests {
               forUri("/path/to/file%3Fhere?dcache-http-uuid=" + SOME_UUID));
 
         assertThat(_response.status(), is(OK));
-        assertThat(_response, hasHeader(CONTENT_LENGTH, "100"));
+        assertThat(_response, hasHeader(CONTENT_LENGTH.toString(), "100"));
         assertThat(_response, hasHeader(CONTENT_DISPOSITION,
               "attachment;filename=\"file?here\""));
         assertThat(_response, not(hasHeader(DIGEST)));
-        assertThat(_response, hasHeader(ACCEPT_RANGES, BYTES));
-        assertThat(_response, not(hasHeader(CONTENT_RANGE)));
+        assertThat(_response, hasHeader(ACCEPT_RANGES.toString(), BYTES.toString()));
+        assertThat(_response, not(hasHeader(CONTENT_RANGE.toString())));
 
         assertThat(_additionalWrites, hasSize(2));
         assertThat(_additionalWrites.get(0),
@@ -241,12 +241,12 @@ public class HttpPoolRequestHandlerTests {
               forUri("/path/to/file%5C%22here?dcache-http-uuid=" + SOME_UUID));
 
         assertThat(_response.status(), is(OK));
-        assertThat(_response, hasHeader(CONTENT_LENGTH, "100"));
+        assertThat(_response, hasHeader(CONTENT_LENGTH.toString(), "100"));
         assertThat(_response, hasHeader(CONTENT_DISPOSITION,
               "attachment;filename=\"file\\\\\\\"here\""));
         assertThat(_response, not(hasHeader(DIGEST)));
-        assertThat(_response, hasHeader(ACCEPT_RANGES, BYTES));
-        assertThat(_response, not(hasHeader(CONTENT_RANGE)));
+        assertThat(_response, hasHeader(ACCEPT_RANGES.toString(), BYTES.toString()));
+        assertThat(_response, not(hasHeader(CONTENT_RANGE.toString())));
 
         assertThat(_additionalWrites, hasSize(2));
         assertThat(_additionalWrites.get(0),
@@ -270,12 +270,12 @@ public class HttpPoolRequestHandlerTests {
                     + SOME_UUID));
 
         assertThat(_response.status(), is(OK));
-        assertThat(_response, hasHeader(CONTENT_LENGTH, "100"));
+        assertThat(_response, hasHeader(CONTENT_LENGTH.toString(), "100"));
         assertThat(_response, hasHeader(CONTENT_DISPOSITION,
               "attachment;filename*=UTF-8''%E1%9A%A0%E1%9B%87%E1%9A%BB"));
         assertThat(_response, not(hasHeader(DIGEST)));
-        assertThat(_response, hasHeader(ACCEPT_RANGES, BYTES));
-        assertThat(_response, not(hasHeader(CONTENT_RANGE)));
+        assertThat(_response, hasHeader(ACCEPT_RANGES.toString(), BYTES.toString()));
+        assertThat(_response, not(hasHeader(CONTENT_RANGE.toString())));
 
         assertThat(_additionalWrites, hasSize(2));
         assertThat(_additionalWrites.get(0),
@@ -294,9 +294,9 @@ public class HttpPoolRequestHandlerTests {
               forUri("/path/to/file?dcache-http-uuid=" + SOME_UUID));
 
         assertThat(_response.status(), is(PARTIAL_CONTENT));
-        assertThat(_response, hasHeader(ACCEPT_RANGES, "bytes"));
-        assertThat(_response, hasHeader(CONTENT_LENGTH, "500"));
-        assertThat(_response, hasHeader(CONTENT_RANGE, "bytes 0-499/1024"));
+        assertThat(_response, hasHeader(ACCEPT_RANGES.toString(), "bytes"));
+        assertThat(_response, hasHeader(CONTENT_LENGTH.toString(), "500"));
+        assertThat(_response, hasHeader(CONTENT_RANGE.toString(), "bytes 0-499/1024"));
         assertThat(_response, not(hasHeader(DIGEST)));
         assertThat(_response, not(hasHeader(CONTENT_DISPOSITION)));
 
@@ -318,9 +318,9 @@ public class HttpPoolRequestHandlerTests {
               .forUri("/path/to/file?dcache-http-uuid=" + SOME_UUID));
 
         assertThat(_response.status(), is(PARTIAL_CONTENT));
-        assertThat(_response, hasHeader(ACCEPT_RANGES, "bytes"));
-        assertThat(_response, hasHeader(CONTENT_LENGTH, "500"));
-        assertThat(_response, hasHeader(CONTENT_RANGE, "bytes 0-499/1024"));
+        assertThat(_response, hasHeader(ACCEPT_RANGES.toString(), "bytes"));
+        assertThat(_response, hasHeader(CONTENT_LENGTH.toString(), "500"));
+        assertThat(_response, hasHeader(CONTENT_RANGE.toString(), "bytes 0-499/1024"));
         assertThat(_response, hasHeader(DIGEST, "adler32=03da0195"));
         assertThat(_response, not(hasHeader(CONTENT_DISPOSITION)));
 
@@ -340,9 +340,9 @@ public class HttpPoolRequestHandlerTests {
               forUri("/path/to/file?dcache-http-uuid=" + SOME_UUID));
 
         assertThat(_response.status(), is(PARTIAL_CONTENT));
-        assertThat(_response, hasHeader(ACCEPT_RANGES, "bytes"));
-        assertThat(_response, hasHeader(CONTENT_LENGTH, "100"));
-        assertThat(_response, hasHeader(CONTENT_RANGE, "bytes 0-99/100"));
+        assertThat(_response, hasHeader(ACCEPT_RANGES.toString(), "bytes"));
+        assertThat(_response, hasHeader(CONTENT_LENGTH.toString(), "100"));
+        assertThat(_response, hasHeader(CONTENT_RANGE.toString(), "bytes 0-99/100"));
         assertThat(_response, not(hasHeader(DIGEST)));
         assertThat(_response, not(hasHeader(CONTENT_DISPOSITION)));
 
@@ -364,12 +364,12 @@ public class HttpPoolRequestHandlerTests {
               .forUri("/path/to/file?dcache-http-uuid=" + SOME_UUID));
 
         assertThat(_response.status(), is(PARTIAL_CONTENT));
-        assertThat(_response, hasHeader(ACCEPT_RANGES, "bytes"));
-        assertThat(_response, hasHeader(CONTENT_TYPE,
+        assertThat(_response, hasHeader(ACCEPT_RANGES.toString(), "bytes"));
+        assertThat(_response, hasHeader(CONTENT_TYPE.toString(),
               "multipart/byteranges; boundary=\"__AAAAAAAAAAAAAAAA__\""));
         assertThat(_response, hasHeader(DIGEST, "adler32=03da0195"));
-        assertThat(_response, hasHeader(CONTENT_LENGTH, "154"));
-        assertThat(_response, not(hasHeader(CONTENT_RANGE)));
+        assertThat(_response, hasHeader(CONTENT_LENGTH.toString(), "154"));
+        assertThat(_response, not(hasHeader(CONTENT_RANGE.toString())));
         assertThat(_response, not(hasHeader(CONTENT_DISPOSITION)));
 
         assertThat(_additionalWrites, hasSize(5));
@@ -397,7 +397,7 @@ public class HttpPoolRequestHandlerTests {
         whenClientMakes(a(DELETE).forUri("/path/to/file"));
 
         assertThat(_response.status(), is(NOT_IMPLEMENTED));
-        assertThat(_response, hasHeader(CONTENT_LENGTH));
+        assertThat(_response, hasHeader(CONTENT_LENGTH.toString()));
     }
 
     @Test
@@ -405,7 +405,7 @@ public class HttpPoolRequestHandlerTests {
         whenClientMakes(a(CONNECT).forUri("/path/to/file"));
 
         assertThat(_response.status(), is(NOT_IMPLEMENTED));
-        assertThat(_response, hasHeader(CONTENT_LENGTH));
+        assertThat(_response, hasHeader(CONTENT_LENGTH.toString()));
     }
 
     @Test
@@ -416,8 +416,8 @@ public class HttpPoolRequestHandlerTests {
               .forUri("/path/to/file?dcache-http-uuid=" + SOME_UUID));
 
         assertThat(_response.status(), is(OK));
-        assertThat(_response, hasHeader(CONTENT_LENGTH));
-        assertThat(_response, hasHeader(ACCEPT_RANGES, BYTES));
+        assertThat(_response, hasHeader(CONTENT_LENGTH.toString()));
+        assertThat(_response, hasHeader(ACCEPT_RANGES.toString(), BYTES.toString()));
     }
 
     @Test
@@ -425,7 +425,7 @@ public class HttpPoolRequestHandlerTests {
         whenClientMakes(a(OPTIONS).forUri("/path/to/file"));
 
         assertThat(_response.status(), is(NOT_IMPLEMENTED));
-        assertThat(_response, hasHeader(CONTENT_LENGTH));
+        assertThat(_response, hasHeader(CONTENT_LENGTH.toString()));
     }
 
     @Test
@@ -433,7 +433,7 @@ public class HttpPoolRequestHandlerTests {
         whenClientMakes(a(PATCH).forUri("/path/to/file"));
 
         assertThat(_response.status(), is(NOT_IMPLEMENTED));
-        assertThat(_response, hasHeader(CONTENT_LENGTH));
+        assertThat(_response, hasHeader(CONTENT_LENGTH.toString()));
     }
 
     @Test
@@ -441,7 +441,7 @@ public class HttpPoolRequestHandlerTests {
         whenClientMakes(a(POST).forUri("/path/to/file"));
 
         assertThat(_response.status(), is(NOT_IMPLEMENTED));
-        assertThat(_response, hasHeader(CONTENT_LENGTH));
+        assertThat(_response, hasHeader(CONTENT_LENGTH.toString()));
     }
 
     @Test
@@ -496,7 +496,7 @@ public class HttpPoolRequestHandlerTests {
         whenClientMakes(a(TRACE).forUri("/path/to/file"));
 
         assertThat(_response.status(), is(NOT_IMPLEMENTED));
-        assertThat(_response, hasHeader(CONTENT_LENGTH));
+        assertThat(_response, hasHeader(CONTENT_LENGTH.toString()));
     }
 
     private void givenPoolHas(FileInfo file) {
