@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2016 - 2020 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 - 2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -425,9 +425,9 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware {
                     return dispatch(request, toMessage);
             }
         } catch (ExecutionException e) {
-            Throwables.propagateIfInstanceOf(e.getCause(), SRMException.class);
-            Throwables.propagateIfInstanceOf(e.getCause(), CacheException.class);
-            Throwables.propagateIfInstanceOf(e.getCause(), NoRouteToCellException.class);
+            Throwables.throwIfInstanceOf(e.getCause(), SRMException.class);
+            Throwables.throwIfInstanceOf(e.getCause(), CacheException.class);
+            Throwables.throwIfInstanceOf(e.getCause(), NoRouteToCellException.class);
             Throwables.throwIfUnchecked(e);
             throw new RuntimeException(e);
         }

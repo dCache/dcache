@@ -359,7 +359,7 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware {
         } catch (PermissionDeniedCacheException e) {
             throw new PermissionDeniedChimeraFsException(e.getMessage());
         } catch (CacheException | IOException e) {
-            Throwables.propagateIfInstanceOf(e, ChimeraFsException.class);
+            Throwables.throwIfInstanceOf(e, ChimeraFsException.class);
             throw new ChimeraFsException(e.getMessage(), e);
         }
         return rc;
