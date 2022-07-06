@@ -88,7 +88,7 @@ public class RendezvousPoolManagerHandler implements SerializablePoolManagerHand
     }
 
     private static int hash(PnfsId pnfsId, CellAddressCore address) {
-        return Hashing.murmur3_32().newHasher()
+        return Hashing.murmur3_32_fixed().newHasher()
               .putObject(pnfsId, PnfsId.funnel())
               .putString(address.toString(), US_ASCII)
               .hash().asInt();
