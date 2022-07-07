@@ -699,7 +699,6 @@ public class Transfer implements Comparable<Transfer> {
             }
 
             FileAttributes attrs = msg.getFileAttributes();
-            attrs.setChecksums(new HashSet<>());
             setFileAttributes(attrs);
             setWrite(true);
         } finally {
@@ -852,7 +851,7 @@ public class Transfer implements Comparable<Transfer> {
             FileAttributes attr = FileAttributes.ofChecksum(checksum);
             _pnfs.setFileAttributes(_path, attr);
             synchronized (this) {
-                _fileAttributes.getChecksums().add(checksum);
+                _fileAttributes.addChecksums(Collections.singleton(checksum));
             }
         } finally {
             setStatus(null);

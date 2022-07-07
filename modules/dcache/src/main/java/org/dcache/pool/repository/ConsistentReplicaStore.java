@@ -244,10 +244,9 @@ public class ConsistentReplicaStore
 
                 LOGGER.warn("Recovering: Setting size of {} in name space to {}.", id, length);
             }
+            attributesInNameSpace.addChecksums(additionalChecksums);
             if (!additionalChecksums.isEmpty()) {
                 attributesToUpdate.setChecksums(additionalChecksums);
-                attributesInNameSpace.setChecksums(
-                      Sets.newHashSet(concat(namespaceChecksums, additionalChecksums)));
                 LOGGER.warn("Recovering: Setting checksum of {} in name space to {}.",
                       id, additionalChecksums);
             }

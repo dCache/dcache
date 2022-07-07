@@ -1,8 +1,6 @@
 package org.dcache.pool.repository.v5;
 
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.Iterables.concat;
-import static com.google.common.collect.Iterables.isEmpty;
 import static com.google.common.collect.Iterables.unmodifiableIterable;
 import static java.util.Objects.requireNonNull;
 import static org.dcache.namespace.FileAttribute.ACCESS_LATENCY;
@@ -13,7 +11,7 @@ import static org.dcache.namespace.FileAttribute.SIZE;
 import static org.dcache.namespace.FileAttribute.XATTR;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
+import com.google.common.collect.Lists;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileCorruptedCacheException;
 import diskCacheV111.util.PnfsHandler;
@@ -413,15 +411,7 @@ class WriteHandleImpl implements ReplicaDescriptor {
 
     @Override
     public synchronized void addChecksums(Iterable<Checksum> checksums) {
-        if (!isEmpty(checksums)) {
-            Iterable<Checksum> newChecksums;
-            if (_fileAttributes.isDefined(CHECKSUM)) {
-                newChecksums = concat(_fileAttributes.getChecksums(), checksums);
-            } else {
-                newChecksums = checksums;
-            }
-            _fileAttributes.setChecksums(Sets.newHashSet(newChecksums));
-        }
+        _fileAttributes.addChecksums(Lists.newArrayList(checksums));
     }
 
     @Override
