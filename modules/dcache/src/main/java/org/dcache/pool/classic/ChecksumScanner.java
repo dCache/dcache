@@ -24,6 +24,7 @@ import java.nio.file.OpenOption;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.Map;
@@ -65,7 +66,7 @@ public class ChecksumScanner
     /**
      * Errors found while running 'csm check'.
      */
-    private final Map<PnfsId, Iterable<Checksum>> _bad =
+    private final Map<PnfsId, Collection<Checksum>> _bad =
           new ConcurrentHashMap<>();
 
     private final Runnable listener = this::onConfigChange;
@@ -165,8 +166,8 @@ public class ChecksumScanner
     private class SingleScan extends Singleton {
 
         private volatile PnfsId _pnfsId;
-        private volatile Iterable<Checksum> _actualChecksums;
-        private volatile Iterable<Checksum> _expectedChecksums;
+        private volatile Collection<Checksum> _actualChecksums;
+        private volatile Collection<Checksum> _expectedChecksums;
 
         public SingleScan() {
             super("SingleScan");
@@ -607,7 +608,7 @@ public class ChecksumScanner
         @Override
         public String call() {
             StringBuilder builder = new StringBuilder();
-            for (Map.Entry<PnfsId, Iterable<Checksum>> e : _bad.entrySet()) {
+            for (Map.Entry<PnfsId, Collection<Checksum>> e : _bad.entrySet()) {
                 builder
                       .append(e.getKey())
                       .append(" -> ")

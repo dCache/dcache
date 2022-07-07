@@ -1,6 +1,5 @@
 package org.dcache.pool.repository.v5;
 
-import static com.google.common.collect.Iterables.unmodifiableIterable;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.collect.ImmutableSet;
@@ -9,6 +8,8 @@ import diskCacheV111.util.PnfsHandler;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.OpenOption;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
 import org.dcache.namespace.FileAttribute;
@@ -111,7 +112,7 @@ class ReadHandleImpl implements ReplicaDescriptor {
     }
 
     @Override
-    public synchronized Iterable<Checksum> getChecksums() throws CacheException {
+    public synchronized Collection<Checksum> getChecksums() throws CacheException {
         if (_fileAttributes.isUndefined(FileAttribute.CHECKSUM)) {
             Set<Checksum> checksums = _pnfs.getFileAttributes(
                   _entry.getPnfsId(), EnumSet.of(FileAttribute.CHECKSUM)).getChecksums();
@@ -124,7 +125,7 @@ class ReadHandleImpl implements ReplicaDescriptor {
                 }
             }
         }
-        return unmodifiableIterable(_fileAttributes.getChecksums());
+        return Collections.unmodifiableSet(_fileAttributes.getChecksums());
     }
 
     @Override

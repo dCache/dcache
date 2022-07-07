@@ -1,7 +1,6 @@
 package org.dcache.pool.repository.v5;
 
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.Iterables.unmodifiableIterable;
 import static java.util.Objects.requireNonNull;
 import static org.dcache.namespace.FileAttribute.ACCESS_LATENCY;
 import static org.dcache.namespace.FileAttribute.CHECKSUM;
@@ -20,6 +19,8 @@ import diskCacheV111.util.TimeoutCacheException;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.OpenOption;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -400,13 +401,13 @@ class WriteHandleImpl implements ModifiableReplicaDescriptor {
     }
 
     @Override
-    public synchronized Iterable<Checksum> getChecksums() throws CacheException {
+    public synchronized Collection<Checksum> getChecksums() throws CacheException {
         if (!_fileAttributes.isDefined(CHECKSUM)) {
             _fileAttributes.setChecksums(_pnfs
                   .getFileAttributes(_entry.getPnfsId(), EnumSet.of(CHECKSUM))
                   .getChecksums());
         }
-        return unmodifiableIterable(_fileAttributes.getChecksums());
+        return Collections.unmodifiableSet(_fileAttributes.getChecksums());
     }
 
     @Override

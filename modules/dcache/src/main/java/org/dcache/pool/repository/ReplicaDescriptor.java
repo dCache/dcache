@@ -3,6 +3,7 @@ package org.dcache.pool.repository;
 import diskCacheV111.util.CacheException;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Collection;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
 
@@ -67,7 +68,7 @@ public interface ReplicaDescriptor extends AutoCloseable {
      * name space lookup if checksums are not defined in the file attributes. The result of such a
      * lookup is cached.
      */
-    Iterable<Checksum> getChecksums() throws CacheException;
+    Collection<Checksum> getChecksums() throws CacheException;
 
     /**
      * Returns the current size of the replica.

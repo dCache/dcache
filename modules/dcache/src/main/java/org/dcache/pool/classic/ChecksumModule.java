@@ -22,6 +22,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileCorruptedCacheException;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Collection;
 import java.util.Set;
 import javax.annotation.Nonnull;
 import org.dcache.pool.repository.ModifiableReplicaDescriptor;
@@ -70,7 +71,7 @@ public interface ChecksumModule {
      * @throws InterruptedException        If the thread is interrupted
      */
     void enforcePostTransferPolicy(
-          ModifiableReplicaDescriptor handle, @Nonnull Iterable<Checksum> actualChecksums)
+          ModifiableReplicaDescriptor handle, @Nonnull Collection<Checksum> actualChecksums)
           throws CacheException, NoSuchAlgorithmException, IOException, InterruptedException;
 
     /**
@@ -116,6 +117,6 @@ public interface ChecksumModule {
      * @throws InterruptedException        If the thread is interrupted
      */
     @Nonnull
-    Iterable<Checksum> verifyChecksum(ReplicaDescriptor handle)
+    Collection<Checksum> verifyChecksum(ReplicaDescriptor handle)
           throws NoSuchAlgorithmException, IOException, InterruptedException, CacheException;
 }

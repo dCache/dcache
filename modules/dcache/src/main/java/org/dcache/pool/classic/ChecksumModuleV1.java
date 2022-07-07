@@ -37,7 +37,6 @@ import static org.dcache.util.ChecksumType.SHA512;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
@@ -472,17 +471,17 @@ public class ChecksumModuleV1
         return additionalChecksums;
     }
 
-    private EnumSet<ChecksumType> checksumTypesOf(Iterable<Checksum> checksums) {
-        return Streams.stream(checksums)
+    private EnumSet<ChecksumType> checksumTypesOf(Collection<Checksum> checksums) {
+        return checksums.stream()
             .map(Checksum::getType)
             .collect(Collectors.toCollection(() -> EnumSet.noneOf(ChecksumType.class)));
     }
 
     @Override
     public void enforcePostTransferPolicy(
-          ModifiableReplicaDescriptor handle, Iterable<Checksum> actualChecksums)
+          ModifiableReplicaDescriptor handle, Collection<Checksum> actualChecksums)
           throws CacheException, IOException, InterruptedException {
-        Iterable<Checksum> expectedChecksums = handle.getChecksums();
+        Collection<Checksum> expectedChecksums = handle.getChecksums();
         Set<ChecksumType> expectedTypes = checksumTypesOf(expectedChecksums);
         Set<ChecksumType> actualTypes = checksumTypesOf(actualChecksums);
         if (hasPolicy(ON_WRITE)
@@ -528,29 +527,29 @@ public class ChecksumModuleV1
 
     @Nonnull
     @Override
-    public Iterable<Checksum> verifyChecksum(ReplicaDescriptor handle)
+    public Collection<Checksum> verifyChecksum(ReplicaDescriptor handle)
           throws IOException, InterruptedException, CacheException {
         try (RepositoryChannel channel = handle.createChannel()) {
             return verifyChecksum(channel, handle.getChecksums(), Double.POSITIVE_INFINITY);
         }
     }
 
-    public Iterable<Checksum> verifyChecksumWithThroughputLimit(ReplicaDescriptor handle)
+    public Collection<Checksum> verifyChecksumWithThroughputLimit(ReplicaDescriptor handle)
           throws IOException, InterruptedException, CacheException {
         try (RepositoryChannel channel = handle.createChannel()) {
             return verifyChecksum(channel, handle.getChecksums(), getThroughputLimit());
         }
     }
 
-    private Iterable<Checksum> verifyChecksum(RepositoryChannel channel,
-          Iterable<Checksum> expectedChecksums, double throughputLimit)
+    private Collection<Checksum> verifyChecksum(RepositoryChannel channel,
+          Collection<Checksum> expectedChecksums, double throughputLimit)
           throws IOException, InterruptedException, CacheException {
         /*
          * REVISIT:
          * It makes more sense to populate file's checksum if it's missing. However, currently
          * the pool can't open an existing file for write to update the checksum.
          */
-        if (Iterables.isEmpty(expectedChecksums)) {
+        if (expectedChecksums.isEmpty()) {
             throw new CacheException("file has no checksums");
         }
 
@@ -564,7 +563,7 @@ public class ChecksumModuleV1
         return actualChecksums;
     }
 
-    private void compareChecksums(Iterable<Checksum> expected, Iterable<Checksum> actual)
+    private void compareChecksums(Collection<Checksum> expected, Collection<Checksum> actual)
           throws FileCorruptedCacheException {
         Map<ChecksumType, Checksum> checksumByType = Maps.newHashMap();
         for (Checksum checksum : concat(expected, actual)) {
