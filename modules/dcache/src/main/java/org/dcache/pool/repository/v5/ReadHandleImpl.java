@@ -128,23 +128,8 @@ class ReadHandleImpl implements ReplicaDescriptor {
     }
 
     @Override
-    public void addChecksums(Iterable<Checksum> checksums) {
-        throw new IllegalStateException("Read-only handle");
-    }
-
-    @Override
-    public void setLastAccessTime(long time) {
-        throw new IllegalStateException("Read-only handle");
-    }
-
-    @Override
     public long getReplicaSize() {
         return _entry.getReplicaSize();
-    }
-
-    @Override
-    public void commit() throws IllegalStateException, InterruptedException, CacheException {
-        // NOP
     }
 
     @Override

@@ -25,26 +25,6 @@ public interface ReplicaDescriptor extends AutoCloseable {
      */
 
     /**
-     * Commit changes on file.
-     * <p>
-     * The file must not be modified after the descriptor has been committed.
-     * <p>
-     * Committing adjusts space reservation to match the actual file size. It may cause the file
-     * size in the storage info and in PNFS to be updated. Committing sets the repository entry to
-     * its target state.
-     * <p>
-     * In case of problems, the descriptor is not closed and an exception is thrown.
-     * <p>
-     * Committing a descriptor multiple times causes an IllegalStateException.
-     *
-     * @throws IllegalStateException     if the descriptor is already committed or closed.
-     * @throws FileSizeMismatchException if file size does not match the expected size.
-     * @throws CacheException            if the repository or PNFS state could not be updated.
-     */
-    void commit()
-          throws IllegalStateException, InterruptedException, FileSizeMismatchException, CacheException;
-
-    /**
      * Closes the descriptor. Once descriptor is closed it can't be used any more.
      * <p>
      * If the descriptor was not committed, closing the descriptor will mark the replica broken or
@@ -88,25 +68,6 @@ public interface ReplicaDescriptor extends AutoCloseable {
      * lookup is cached.
      */
     Iterable<Checksum> getChecksums() throws CacheException;
-
-    /**
-     * Add checksums of the file.
-     * <p>
-     * The checksums are not in any way verified. Only valid checksums should be added. The
-     * checksums will be stored in the name space on commit or close.
-     *
-     * @param checksum Checksum of the file
-     */
-    void addChecksums(Iterable<Checksum> checksum);
-
-    /**
-     * Sets the last access time of the replica.
-     * <p>
-     * Only applicable to writes.
-     *
-     * @param time
-     */
-    void setLastAccessTime(long time);
 
     /**
      * Returns the current size of the replica.

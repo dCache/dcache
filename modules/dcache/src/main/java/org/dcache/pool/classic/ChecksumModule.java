@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013-2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Set;
 import javax.annotation.Nonnull;
+import org.dcache.pool.repository.ModifiableReplicaDescriptor;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.ReplicaRecord;
 import org.dcache.util.Checksum;
@@ -69,7 +70,7 @@ public interface ChecksumModule {
      * @throws InterruptedException        If the thread is interrupted
      */
     void enforcePostTransferPolicy(
-          ReplicaDescriptor handle, @Nonnull Iterable<Checksum> actualChecksums)
+          ModifiableReplicaDescriptor handle, @Nonnull Iterable<Checksum> actualChecksums)
           throws CacheException, NoSuchAlgorithmException, IOException, InterruptedException;
 
     /**
@@ -100,7 +101,7 @@ public interface ChecksumModule {
      * @throws IOException                 If an I/O error happened while computing the checksum
      * @throws InterruptedException        If the thread is interrupted
      */
-    void enforcePostRestorePolicy(ReplicaDescriptor handle, @Nonnull Set<Checksum> checksums)
+    void enforcePostRestorePolicy(ModifiableReplicaDescriptor handle, @Nonnull Set<Checksum> checksums)
           throws CacheException, NoSuchAlgorithmException, IOException, InterruptedException;
 
     /**

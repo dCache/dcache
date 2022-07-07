@@ -58,6 +58,7 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.assumption.Assumptions;
 import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.movers.ChecksumChannel;
+import org.dcache.pool.repository.ModifiableReplicaDescriptor;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.Repository;
@@ -289,7 +290,7 @@ class Companion {
     }
 
     private void transfer(String uri) {
-        ReplicaDescriptor handle;
+        ModifiableReplicaDescriptor handle;
         synchronized (this) {
             try {
                 handle = createReplicaEntry();
@@ -386,7 +387,7 @@ class Companion {
               .orElseThrow(() -> new IllegalStateException("Missing ChecksumChannel"));
     }
 
-    private ReplicaDescriptor createReplicaEntry()
+    private ModifiableReplicaDescriptor createReplicaEntry()
           throws CacheException {
         return _repository.createEntry(
               _fileAttributes,

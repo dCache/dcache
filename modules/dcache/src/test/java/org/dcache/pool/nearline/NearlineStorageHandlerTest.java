@@ -33,7 +33,7 @@ import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.nearline.spi.NearlineRequest;
 import org.dcache.pool.nearline.spi.NearlineStorage;
 import org.dcache.pool.repository.FileStore;
-import org.dcache.pool.repository.ReplicaDescriptor;
+import org.dcache.pool.repository.ModifiableReplicaDescriptor;
 import org.dcache.pool.repository.Repository;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
@@ -52,13 +52,13 @@ public class NearlineStorageHandlerTest {
     private PnfsHandler pnfs;
     private FileStore fileStore;
     private ChecksumModule csm;
-    private ReplicaDescriptor desc;
+    private ModifiableReplicaDescriptor desc;
 
     @Before
     public void setUp() throws Exception {
 
         repository = mock(Repository.class);
-        desc = mock(ReplicaDescriptor.class);
+        desc = mock(ModifiableReplicaDescriptor.class);
         pnfs = mock(PnfsHandler.class);
         fileStore = mock(FileStore.class);
         csm = mock(ChecksumModule.class);

@@ -72,6 +72,7 @@ import javax.annotation.concurrent.GuardedBy;
 import org.dcache.pool.PoolDataBeanProvider;
 import org.dcache.pool.classic.json.ChecksumModuleData;
 import org.dcache.pool.repository.FileStore;
+import org.dcache.pool.repository.ModifiableReplicaDescriptor;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.ReplicaRecord;
 import org.dcache.pool.repository.RepositoryChannel;
@@ -479,7 +480,7 @@ public class ChecksumModuleV1
 
     @Override
     public void enforcePostTransferPolicy(
-          ReplicaDescriptor handle, Iterable<Checksum> actualChecksums)
+          ModifiableReplicaDescriptor handle, Iterable<Checksum> actualChecksums)
           throws CacheException, IOException, InterruptedException {
         Iterable<Checksum> expectedChecksums = handle.getChecksums();
         Set<ChecksumType> expectedTypes = checksumTypesOf(expectedChecksums);
@@ -512,7 +513,7 @@ public class ChecksumModuleV1
     }
 
     @Override
-    public void enforcePostRestorePolicy(ReplicaDescriptor handle, Set<Checksum> expectedChecksums)
+    public void enforcePostRestorePolicy(ModifiableReplicaDescriptor handle, Set<Checksum> expectedChecksums)
           throws CacheException, IOException, InterruptedException {
         if (hasPolicy(GET_CRC_FROM_HSM)) {
             LOGGER.info("Obtained checksums {} for {} from HSM", expectedChecksums,

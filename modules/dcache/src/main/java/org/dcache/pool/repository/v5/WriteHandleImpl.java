@@ -29,7 +29,7 @@ import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.AllocatorAwareRepositoryChannel;
 import org.dcache.pool.repository.FileStore;
-import org.dcache.pool.repository.ReplicaDescriptor;
+import org.dcache.pool.repository.ModifiableReplicaDescriptor;
 import org.dcache.pool.repository.ReplicaRecord;
 import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.RepositoryChannel;
@@ -42,7 +42,7 @@ import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class WriteHandleImpl implements ReplicaDescriptor {
+class WriteHandleImpl implements ModifiableReplicaDescriptor {
 
     enum HandleState {
         OPEN, COMMITTED, CLOSED

@@ -106,6 +106,7 @@ import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.EntryChangeEvent;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.IllegalTransitionException;
+import org.dcache.pool.repository.ModifiableReplicaDescriptor;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.Repository;
@@ -1246,7 +1247,7 @@ public class NearlineStorageHandler
     private class StageRequestImpl extends AbstractRequest<PnfsId> implements StageRequest {
 
         private final StorageInfoMessage infoMsg;
-        private final ReplicaDescriptor descriptor;
+        private final ModifiableReplicaDescriptor descriptor;
         private ListenableFuture<Void> allocationFuture;
 
         public StageRequestImpl(NearlineStorage storage, AtomicReference<QueueStat> stats,

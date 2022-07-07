@@ -37,6 +37,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import org.dcache.cells.CellStub;
 import org.dcache.pool.movers.Mover;
+import org.dcache.pool.repository.ModifiableReplicaDescriptor;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.statistics.DirectedIoStatistics;
 import org.dcache.pool.statistics.IoStatistics;
@@ -103,11 +104,13 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
             try {
                 try {
                     if (mover.getIoMode().contains(StandardOpenOption.WRITE)) {
-                        handle.addChecksums(mover.getExpectedChecksums());
-                        _checksumModule.enforcePostTransferPolicy(handle,
+                        ModifiableReplicaDescriptor modHandle = (ModifiableReplicaDescriptor)handle;
+
+                        modHandle.addChecksums(mover.getExpectedChecksums());
+                        _checksumModule.enforcePostTransferPolicy(modHandle,
                               mover.getActualChecksums());
+                        modHandle.commit();
                     }
-                    handle.commit();
                 } finally {
                     handle.close();
                 }
