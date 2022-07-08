@@ -134,9 +134,12 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
                 }
             } catch (InterruptedException e) {
                 LOGGER.warn("interrupted.");
+            } finally {
+                /*
+                 *  Report exit even in the case of an uncaught exception.
+                 */
+                LOGGER.warn("exiting.");
             }
-
-            LOGGER.trace("exiting.");
         }
 
         public void signal() {

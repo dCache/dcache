@@ -70,6 +70,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.NamespaceHandlerAware;
 import diskCacheV111.util.PnfsHandler;
+import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -106,7 +107,8 @@ import org.slf4j.LoggerFactory;
  * map as waiting tasks with a callback listener.
  */
 public abstract class AbstractRequestContainerJob
-      implements Runnable, NamespaceHandlerAware, Comparable<AbstractRequestContainerJob> {
+      implements Runnable, NamespaceHandlerAware, Comparable<AbstractRequestContainerJob>,
+      UncaughtExceptionHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractRequestContainerJob.class);
 
@@ -318,6 +320,24 @@ public abstract class AbstractRequestContainerJob
         this.callback = callback;
     }
 
+    @Override
+    public void uncaughtException(Thread t, Throwable e) {
+        /*
+         * Don't leave the request in non-terminal state in case of uncaught exception.
+         * We also try to handle uncaught exceptions here, so as not to kill the
+         * manager thread.
+         */
+        containerState = ContainerState.STOP;
+        target.setErrorObject(e);
+        update(CANCELLED);
+        ThreadGroup group = t.getThreadGroup();
+        if (group != null) {
+            group.uncaughtException(t, e);
+        } else {
+            LOGGER.error("Uncaught exception: please report to team@dcache.org", e);
+        }
+    }
+
     public void update(State state) {
         if (target.setState(state)) {
             try {
@@ -475,5 +495,8 @@ public abstract class AbstractRequestContainerJob
 
     private synchronized void setRunThread(Thread runThread) {
         this.runThread = runThread;
+        if (runThread != null) {
+            this.runThread.setUncaughtExceptionHandler(this);
+        }
     }
 }
