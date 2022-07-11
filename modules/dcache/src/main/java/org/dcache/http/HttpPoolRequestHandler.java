@@ -1,13 +1,14 @@
 package org.dcache.http;
 
-import static io.netty.handler.codec.http.HttpHeaderNames.ACCEPT_RANGES;
-import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
-import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LOCATION;
-import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_MD5;
-import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_RANGE;
-import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
-import static io.netty.handler.codec.http.HttpHeaderNames.LOCATION;
-import static io.netty.handler.codec.http.HttpHeaderValues.BYTES;
+import static io.netty.handler.codec.http.HttpHeaders.Names.ACCEPT_RANGES;
+import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
+import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LOCATION;
+import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_MD5;
+import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_RANGE;
+import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
+import static io.netty.handler.codec.http.HttpHeaders.Names.LOCATION;
+import static io.netty.handler.codec.http.HttpHeaders.Values.BYTES;
+import static io.netty.handler.codec.http.HttpHeaders.is100ContinueExpected;
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
 import static io.netty.handler.codec.http.HttpResponseStatus.CREATED;
@@ -17,7 +18,6 @@ import static io.netty.handler.codec.http.HttpResponseStatus.METHOD_NOT_ALLOWED;
 import static io.netty.handler.codec.http.HttpResponseStatus.NOT_IMPLEMENTED;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpResponseStatus.PARTIAL_CONTENT;
-import static io.netty.handler.codec.http.HttpUtil.is100ContinueExpected;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static java.util.Objects.requireNonNull;
 import static org.dcache.util.Checksums.TO_RFC3230;
@@ -81,6 +81,8 @@ import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.dcache.http.HttpRequestHandler.createRedirectResponse;
+
 /**
  * HttpPoolRequestHandler - handle HTTP client - server communication.
  */
@@ -103,7 +105,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
     private static final CharMatcher TSPECIAL = CharMatcher.anyOf("()<>@,;:\\\"/[]?=");
 
     private static final List<String> SUPPORTED_CONTENT_HEADERS
-          = ImmutableList.of(CONTENT_LENGTH.toString(), CONTENT_MD5.toString());
+          = ImmutableList.of(CONTENT_LENGTH, CONTENT_MD5);
 
     /**
      * The mover channels that were opened.
@@ -564,7 +566,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
                 }
                 if (content instanceof LastHttpContent) {
                     checkContentHeader(((LastHttpContent) content).trailingHeaders().names(),
-                          Collections.singletonList(CONTENT_LENGTH.toString()));
+                          Collections.singletonList(CONTENT_LENGTH));
 
                     context.channel().config().setAutoRead(false);
 
@@ -729,9 +731,8 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
     /**
      * Reconstruct the URL of the resource targeted by the client when it made the request to the
      * WebDAV door.
-     *
      * @param request The HTTP request made to the pool
-     * @param params  The query parameters, taken from this request.
+     * @param params The query parameters, taken from this request.
      * @return Optionally the URL of the targeted resource.
      */
     private Optional<URI> buildReferrer(HttpRequest request, Map<String, List<String>> params) {
@@ -742,8 +743,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
         }
 
         if (refList.size() != 1) {
-            LOGGER.warn("Unexpected number of {} entries: {}", REFERRER_QUERY_PARAM,
-                  refList.size());
+            LOGGER.warn("Unexpected number of {} entries: {}", REFERRER_QUERY_PARAM, refList.size());
             return Optional.empty();
         }
 
@@ -756,6 +756,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
             LOGGER.warn("Ignoring bad referrer base \"{}\": {}", ref, e.getMessage());
             return Optional.empty();
         }
+
 
         URI requestToPool;
         try {
@@ -875,7 +876,6 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
     }
 
     private static class Redirect extends Exception {
-
         private final URI target;
 
         public Redirect(URI target, String message) {
@@ -895,8 +895,8 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
         public String toString() {
             String message = getMessage();
             return message == null
-                  ? "Redirect to " + target
-                  : "Redirect to " + target + ": " + getMessage();
+                    ? "Redirect to " + target
+                    : "Redirect to " + target + ": " + getMessage();
         }
     }
 }

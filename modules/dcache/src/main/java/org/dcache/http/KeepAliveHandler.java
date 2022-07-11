@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2015 - 2022 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2015 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -22,10 +22,10 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.LastHttpContent;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -76,7 +76,7 @@ public class KeepAliveHandler extends ChannelDuplexHandler {
                 return;
             }
 
-            _isLastRequestKeepAlive = HttpUtil.isKeepAlive((HttpRequest) message);
+            _isLastRequestKeepAlive = HttpHeaders.isKeepAlive((HttpRequest) message);
             _inflightKeepAlive.offerLast(_isLastRequestKeepAlive);
             _hasPreviousRequest = true;
         }
@@ -99,7 +99,7 @@ public class KeepAliveHandler extends ChannelDuplexHandler {
              * An upstream handler can request the connection be closed even if
              * the client make no such request.
              */
-            if (keepAlive && !HttpUtil.isKeepAlive(response)) {
+            if (keepAlive && !HttpHeaders.isKeepAlive(response)) {
                 _inflightKeepAlive.removeFirst();
                 _inflightKeepAlive.addFirst(Boolean.FALSE);
                 keepAlive = false;
@@ -116,7 +116,7 @@ public class KeepAliveHandler extends ChannelDuplexHandler {
              * "Connection: close" header with CONTINUE responses.
              */
             if (!is100Continue) {
-                HttpUtil.setKeepAlive(response, keepAlive);
+                HttpHeaders.setKeepAlive(response, keepAlive);
             }
         }
 

@@ -7,7 +7,6 @@ import static com.google.common.collect.Iterables.limit;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.dcache.http.HttpPoolRequestHandler.REFERRER_QUERY_PARAM;
 import static org.dcache.namespace.FileAttribute.ACCESS_LATENCY;
 import static org.dcache.namespace.FileAttribute.CHECKSUM;
 import static org.dcache.namespace.FileAttribute.CREATION_TIME;
@@ -78,7 +77,7 @@ import io.milton.http.exceptions.BadRequestException;
 import io.milton.resource.Resource;
 import io.milton.servlet.ServletRequest;
 import io.milton.servlet.ServletResponse;
-import io.netty.handler.codec.http.HttpHeaderValues;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.QueryStringDecoder;
 import io.netty.handler.codec.http.QueryStringEncoder;
 import java.io.IOException;
@@ -156,6 +155,8 @@ import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.stringtemplate.v4.AutoIndentWriter;
 import org.stringtemplate.v4.ST;
+
+import static org.dcache.http.HttpPoolRequestHandler.REFERRER_QUERY_PARAM;
 
 /**
  * This ResourceFactory exposes the dCache name space through the Milton WebDAV framework.
@@ -678,7 +679,7 @@ public class DcacheResourceFactory
                 return isRedirectOnReadEnabled();
             case PUT:
                 boolean expects100Continue =
-                      Objects.equal(request.getExpectHeader(), HttpHeaderValues.CONTINUE);
+                      Objects.equal(request.getExpectHeader(), HttpHeaders.Values.CONTINUE);
 
                 /* Has the client started sending the entity for a PUT request that
                  * is using the expect-100 protocol.  RFC 7231 says:
@@ -751,8 +752,7 @@ public class DcacheResourceFactory
                     transfer.relayData(inputStream);
                 } catch (EofException e) {
                     // REVISIT: do we wish to log diagnostic/forensic details of the transfer?
-                    LOGGER.info("Proxied upload of {} failed: client disconnected",
-                          transfer.getPnfsId());
+                    LOGGER.info("Proxied upload of {} failed: client disconnected", transfer.getPnfsId());
 
                     String explanation = "Client disconnected while proxying an upload.";
                     transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, explanation);
@@ -1147,7 +1147,7 @@ public class DcacheResourceFactory
 
         try {
             return new URI(request.getScheme(), null, request.getServerName(),
-                  request.getServerPort(), null, null, null);
+                    request.getServerPort(), null, null, null);
         } catch (URISyntaxException e) {
             throw new RuntimeException("Unable to build request URI: " + e);
         }
@@ -1160,7 +1160,7 @@ public class DcacheResourceFactory
         Map<String, List<String>> existingQuery = decoder.parameters();
 
         QueryStringEncoder encoder = new QueryStringEncoder("");
-        for (Map.Entry<String, List<String>> e : existingQuery.entrySet()) {
+        for (Map.Entry<String,List<String>> e : existingQuery.entrySet()) {
             e.getValue().forEach(v -> encoder.addParam(e.getKey(), v));
         }
         encoder.addParam(REFERRER_QUERY_PARAM, target.toASCIIString());
@@ -1169,7 +1169,7 @@ public class DcacheResourceFactory
         URI updatedLocation;
         try {
             updatedLocation = new URI(location.getScheme(), null, location.getHost(),
-                  location.getPort(), location.getPath(), null, null);
+                    location.getPort(), location.getPath(), null, null);
         } catch (URISyntaxException e) {
             LOGGER.warn("Bad URI when creating updated URL: {}", e.getMessage());
             return locationWithoutReferrer;
