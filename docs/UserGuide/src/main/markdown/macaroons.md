@@ -186,7 +186,7 @@ macaroon is allowed to do.  These are `READ_METADATA`,
   <dd>
     <p>Any request that attempts to update the metadata about the
     file: modifying the POSIX permissions, updating ACLs, updating
-    extended attributes.</p>
+    extended attributes, updating QoS or locality (staging).</p>
   </dd>
 
   <dt>LIST</dt>
