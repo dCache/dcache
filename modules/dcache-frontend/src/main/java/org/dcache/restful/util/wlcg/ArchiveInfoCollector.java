@@ -82,7 +82,7 @@ import java.util.concurrent.Future;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.poolmanager.PoolMonitor;
-import org.dcache.restful.providers.wlcg.ArchiveInfo;
+import org.dcache.restful.providers.tape.ArchiveInfo;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

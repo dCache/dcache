@@ -57,7 +57,7 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.providers.wlcg;
+package org.dcache.restful.providers.tape;
 
 import java.io.Serializable;
 import org.dcache.services.bulk.BulkRequestTargetInfo;

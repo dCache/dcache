@@ -600,11 +600,11 @@
     <bean class="org.dcache.restful.resources.transfers.TransferResources" scope="request">
         <property name="unlimitedOperationVisibility" value="${frontend.authz.unlimited-operation-visibility}"/>
     </bean>
-    <bean class="org.dcache.restful.resources.wlcg.ArchiveInfoResources" scope="request"/>
-    <bean class="org.dcache.restful.resources.wlcg.StageResources" scope="request">
+    <bean class="org.dcache.restful.resources.tape.ArchiveInfoResources" scope="request"/>
+    <bean class="org.dcache.restful.resources.tape.StageResources" scope="request">
       <property name="supportedSitenames" value="${frontend.stage.supported-sitenames"/>
     </bean>
-    <bean class="org.dcache.restful.resources.wlcg.ReleaseResources" scope="request"/>
+    <bean class="org.dcache.restful.resources.tape.ReleaseResources" scope="request"/>
     <bean class="org.dcache.restful.resources.EventResources" scope="request">
         <property name="maximumDisconnectTimeout"
 		  value="#{T(java.util.concurrent.TimeUnit).SECONDS.convert(

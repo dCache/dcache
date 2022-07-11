@@ -57,91 +57,107 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.resources.wlcg;
+package org.dcache.restful.providers.tape;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
-import io.swagger.annotations.Authorization;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import org.dcache.cells.CellStub;
-import org.dcache.restful.providers.wlcg.ArchiveInfo;
-import org.dcache.restful.util.HandlerBuilders;
-import org.dcache.restful.util.wlcg.ArchiveInfoCollector;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.springframework.stereotype.Component;
+import org.dcache.services.bulk.BulkRequestInfo;
 
 /**
- * <p>RESTful API to WLCG archiveinfo.</p>
+ * <p> As per the WLCG TAPE API v1:
  *
- * @version v1.0
+ * <table>
+ *     <tr>
+ *         <td>id</td>
+ *         <td>The id of the stage request.</td>
+ *     </tr>
+ *     <tr>
+ *         <td>createdAt</td>
+ *         <td>The time when the server received the request.</td>
+ *     </tr>
+ *     <tr>
+ *         <td>startedAt</td>
+ *         <td>the timestamp at which the first file belonging to the request has started;
+ *             if not set, should be same as createdAt.</td>
+ *     </tr>
+ *     <tr>
+ *         <td>completedAt</td>
+ *         <td>Indicates when the last file was finished.</td>
+ *     </tr>
+ *     <tr>
+ *         <td>files</td>
+ *         <td>The files that got submitted and their state/disk residency.</td>
+ *     </tr>
+ * </table>
  */
-@Component
-@Api(value = "archiveinfo", authorizations = {@Authorization("basicAuth")})
-@Path("/archiveinfo")
-public final class ArchiveInfoResources {
+public class StageRequestInfo implements Serializable {
 
-    @Context
-    private HttpServletRequest request;
+    private static final long serialVersionUID = 1269517713600606880L;
+    private String id;
+    private Long createdAt;
+    private Long startedAt;
+    private Long completedAt;
+    private List<StagedFileInfo> files;
 
-    @Inject
-    @Named("pnfs-stub")
-    private CellStub pnfsManager;
+    public StageRequestInfo() {}
 
-    @Inject
-    private ArchiveInfoCollector archiveInfoCollector;
+    public StageRequestInfo(BulkRequestInfo info) {
+        id = info.getId();
+        createdAt = info.getArrivedAt();
+        startedAt = info.getStartedAt();
 
-    /**
-     * Return the file locality information for a list of file paths.
-     * <p>
-     * NOTE:  users logged in with the admin role will be submitting the request as ROOT (0:0).
-     *
-     * @return list of ArchiveInfo objects.
-     */
-    @POST
-    @ApiOperation(value = "Return the file locality information for a list of file paths.")
-    @ApiResponses({
-          @ApiResponse(code = 201, message = "Created"),
-          @ApiResponse(code = 400, message = "Bad request"),
-          @ApiResponse(code = 401, message = "Unauthorized"),
-          @ApiResponse(code = 403, message = "Forbidden"),
-          @ApiResponse(code = 429, message = "Too many requests"),
-          @ApiResponse(code = 500, message = "Internal Server Error")
-    })
-    @Consumes({MediaType.APPLICATION_JSON})
-    @Produces(MediaType.APPLICATION_JSON)
-    public List<ArchiveInfo> getArchiveInfo(
-          @ApiParam(value = "List of paths for which to return archive info (file locality).",
-                required = true)
-                String requestPayload) {
-        JSONObject jsonPayload = new JSONObject(requestPayload);
-        if (!jsonPayload.has("paths")) {
-            throw new BadRequestException("request had no paths.");
+        if (startedAt == null) {
+            startedAt = createdAt;
         }
 
-        JSONArray jsonArray = jsonPayload.getJSONArray("paths");
-        int len = Math.min(jsonArray.length(), archiveInfoCollector.getMaxPaths());
-
-        List<String> paths = new ArrayList<>();
-        for (int i = 0; i < len; ++i) {
-            paths.add(jsonArray.getString(i));
+        switch (info.getStatus()) {
+            case CANCELLED:
+            case COMPLETED:
+                completedAt = info.getLastModified();
         }
 
-        return archiveInfoCollector.getInfo(HandlerBuilders.roleAwarePnfsHandler(pnfsManager),
-              paths);
+        files = new ArrayList<>();
+        info.getTargets().stream().map(StagedFileInfo::new).forEach(files::add);
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public Long getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Long createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Long getStartedAt() {
+        return startedAt;
+    }
+
+    public void setStartedAt(Long startedAt) {
+        this.startedAt = startedAt;
+    }
+
+    public Long getCompletedAt() {
+        return completedAt;
+    }
+
+    public void setCompletedAt(Long completedAt) {
+        this.completedAt = completedAt;
+    }
+
+    public List<StagedFileInfo> getFiles() {
+        return files;
+    }
+
+    public void setFiles(List<StagedFileInfo> files) {
+        this.files = files;
     }
 }

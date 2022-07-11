@@ -57,7 +57,7 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.resources.wlcg;
+package org.dcache.restful.resources.tape;
 
 import static org.dcache.restful.resources.bulk.BulkResources.getRestriction;
 import static org.dcache.restful.resources.bulk.BulkResources.getSubject;
@@ -90,7 +90,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import org.dcache.auth.attributes.Restriction;
-import org.dcache.restful.providers.wlcg.StageRequestInfo;
+import org.dcache.restful.providers.tape.StageRequestInfo;
 import org.dcache.restful.util.bulk.BulkServiceCommunicator;
 import org.dcache.services.bulk.BulkRequest;
 import org.dcache.services.bulk.BulkRequest.Depth;
@@ -106,13 +106,13 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.stereotype.Component;
 
 /**
- * <p>RESTful API to WLCG stage (Bulk).</p>
+ * <p>RESTful API to stage (Bulk).</p>
  *
  * @version v1.0
  */
 @Component
-@Api(value = "stage", authorizations = {@Authorization("basicAuth")})
-@Path("/stage")
+@Api(value = "tape", authorizations = {@Authorization("basicAuth")})
+@Path("tape/stage")
 public final class StageResources {
     private static final String STAGE = "STAGE";
 

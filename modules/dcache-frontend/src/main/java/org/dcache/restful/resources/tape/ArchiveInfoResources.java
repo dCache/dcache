@@ -57,10 +57,7 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.resources.wlcg;
-
-import static org.dcache.restful.util.RequestUser.getRestriction;
-import static org.dcache.restful.util.RequestUser.getSubject;
+package org.dcache.restful.resources.tape;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -69,56 +66,54 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import javax.inject.Inject;
-import javax.security.auth.Subject;
+import javax.inject.Named;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import org.dcache.auth.attributes.Restriction;
-import org.dcache.restful.util.bulk.BulkServiceCommunicator;
-import org.dcache.services.bulk.BulkRequest;
-import org.dcache.services.bulk.BulkRequest.Depth;
-import org.dcache.services.bulk.BulkRequestMessage;
+import org.dcache.cells.CellStub;
+import org.dcache.restful.providers.tape.ArchiveInfo;
+import org.dcache.restful.util.HandlerBuilders;
+import org.dcache.restful.util.wlcg.ArchiveInfoCollector;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.stereotype.Component;
 
 /**
- * <p>RESTful API to WLCG release (Bulk).</p>
+ * <p>RESTful API to archiveinfo.</p>
  *
  * @version v1.0
  */
 @Component
-@Api(value = "release", authorizations = {@Authorization("basicAuth")})
-@Path("/release")
-public final class ReleaseResources {
+@Api(value = "tape", authorizations = {@Authorization("basicAuth")})
+@Path("tape/archiveinfo")
+public final class ArchiveInfoResources {
 
     @Context
     private HttpServletRequest request;
 
     @Inject
-    private BulkServiceCommunicator service;
+    @Named("pnfs-stub")
+    private CellStub pnfsManager;
+
+    @Inject
+    private ArchiveInfoCollector archiveInfoCollector;
 
     /**
-     * Release files belonging to a bulk STAGE request.
+     * Return the file locality information for a list of file paths.
      * <p>
      * NOTE:  users logged in with the admin role will be submitting the request as ROOT (0:0).
      *
-     * @return response which includes a location HTTP response header with a value that is the
-     * absolute URL for the resource associated with this bulk request.
+     * @return list of ArchiveInfo objects.
      */
     @POST
-    @ApiOperation(value = "RELEASE files associated with a STAGE request.")
+    @ApiOperation(value = "Return the file locality information for a list of file paths.")
     @ApiResponses({
           @ApiResponse(code = 201, message = "Created"),
           @ApiResponse(code = 400, message = "Bad request"),
@@ -127,65 +122,26 @@ public final class ReleaseResources {
           @ApiResponse(code = 429, message = "Too many requests"),
           @ApiResponse(code = 500, message = "Internal Server Error")
     })
-    @Path("/{id}")
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces(MediaType.APPLICATION_JSON)
-    public Response release(
-          @PathParam("id") String id,
-          @ApiParam(value = "List of file paths to release. If any path does not belong to the "
-                + "stage request corresponding to the id, this request will fail.", required = true)
+    public List<ArchiveInfo> getArchiveInfo(
+          @ApiParam(value = "List of paths for which to return archive info (file locality).",
+                required = true)
                 String requestPayload) {
-
-        JSONObject reqPayload = new JSONObject(requestPayload);
-        JSONArray paths = reqPayload.getJSONArray("paths");
-        if (paths == null) {
-            throw new BadRequestException("release request contains no paths.");
+        JSONObject jsonPayload = new JSONObject(requestPayload);
+        if (!jsonPayload.has("paths")) {
+            throw new BadRequestException("request had no paths.");
         }
 
-        int len = paths.length();
-        List<String> targetPaths = new ArrayList<>();
+        JSONArray jsonArray = jsonPayload.getJSONArray("paths");
+        int len = Math.min(jsonArray.length(), archiveInfoCollector.getMaxPaths());
+
+        List<String> paths = new ArrayList<>();
         for (int i = 0; i < len; ++i) {
-            targetPaths.add(paths.getString(i));
+            paths.add(jsonArray.getString(i));
         }
 
-        Subject subject = getSubject();
-        Restriction restriction = getRestriction();
-
-        /*
-         *  For WLCG, this is a fire-and-forget request, so it does not need to
-         *  stick around once it completes.
-         */
-        BulkRequest request = toEphemeralBulkRequest(id, "RELEASE", targetPaths);
-
-        /*
-         *  Frontend sets the URL.  The backend service provides the UUID.
-         */
-        request.setUrlPrefix(this.request.getRequestURL().toString());
-
-        BulkRequestMessage message = new BulkRequestMessage(request, restriction);
-        message.setSubject(subject);
-        service.send(message);
-
-        /*
-         *  WLCG says response should always be OK to this request.
-         */
-        return Response.ok().build();
-    }
-
-    private static BulkRequest toEphemeralBulkRequest(String id, String activity,
-          List<String> targetPaths) {
-        BulkRequest request = new BulkRequest();
-        request.setPrestore(false);
-        request.setExpandDirectories(Depth.NONE);
-        request.setCancelOnFailure(true);
-        request.setClearOnFailure(true);
-        request.setClearOnSuccess(true);
-        request.setDelayClear(0);
-        request.setActivity(activity);
-        request.setTarget(targetPaths);
-        Map<String, String> arguments = new HashMap<>();
-        arguments.put("id", id);
-        request.setArguments(arguments);
-        return request;
+        return archiveInfoCollector.getInfo(HandlerBuilders.roleAwarePnfsHandler(pnfsManager),
+              paths);
     }
 }

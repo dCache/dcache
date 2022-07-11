@@ -57,107 +57,67 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.providers.wlcg;
+package org.dcache.restful.providers.tape;
 
+import diskCacheV111.util.FileLocality;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-import org.dcache.services.bulk.BulkRequestInfo;
 
 /**
- * <p> As per the WLCG TAPE API v1:
- *
- * <table>
- *     <tr>
- *         <td>id</td>
- *         <td>The id of the stage request.</td>
- *     </tr>
- *     <tr>
- *         <td>createdAt</td>
- *         <td>The time when the server received the request.</td>
- *     </tr>
- *     <tr>
- *         <td>startedAt</td>
- *         <td>the timestamp at which the first file belonging to the request has started;
- *             if not set, should be same as createdAt.</td>
- *     </tr>
- *     <tr>
- *         <td>completedAt</td>
- *         <td>Indicates when the last file was finished.</td>
- *     </tr>
- *     <tr>
- *         <td>files</td>
- *         <td>The files that got submitted and their state/disk residency.</td>
- *     </tr>
- * </table>
+ *  Specialized for WLCG archiveinfo, encapsulates path, file locality and error message.
  */
-public class StageRequestInfo implements Serializable {
+public class ArchiveInfo implements Serializable {
 
-    private static final long serialVersionUID = 1269517713600606880L;
-    private String id;
-    private Long createdAt;
-    private Long startedAt;
-    private Long completedAt;
-    private List<StagedFileInfo> files;
+    private static final long serialVersionUID = 3273661715952056706L;
+    private String path;
+    private String error;
+    private String locality;
 
-    public StageRequestInfo() {}
+    public String getPath() {
+        return path;
+    }
 
-    public StageRequestInfo(BulkRequestInfo info) {
-        id = info.getId();
-        createdAt = info.getArrivedAt();
-        startedAt = info.getStartedAt();
+    public void setPath(String path) {
+        this.path = path;
+    }
 
-        if (startedAt == null) {
-            startedAt = createdAt;
+    public String getError() {
+        return error;
+    }
+
+    public void setError(String error) {
+        this.error = error;
+    }
+
+    public String getLocality() {
+        return locality;
+    }
+
+    public void setLocality(String locality) {
+        this.locality = locality;
+    }
+
+    public void setLocality(FileLocality locality) {
+        switch(locality) {
+            case NEARLINE:
+                this.locality = "TAPE";
+                break;
+            case ONLINE:
+                this.locality = "DISK";
+                break;
+            case ONLINE_AND_NEARLINE:
+                this.locality = "DISK_AND_TAPE";
+                break;
+            case NONE:
+                this.locality = "NONE";
+                break;
+            case LOST:
+                this.locality = "LOST";
+                break;
+            case UNAVAILABLE:
+                this.locality = "UNAVAILABLE";
+                break;
+            default:
+                throw new RuntimeException("unsupported locality " + locality);
         }
-
-        switch (info.getStatus()) {
-            case CANCELLED:
-            case COMPLETED:
-                completedAt = info.getLastModified();
-        }
-
-        files = new ArrayList<>();
-        info.getTargets().stream().map(StagedFileInfo::new).forEach(files::add);
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public Long getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Long createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public Long getStartedAt() {
-        return startedAt;
-    }
-
-    public void setStartedAt(Long startedAt) {
-        this.startedAt = startedAt;
-    }
-
-    public Long getCompletedAt() {
-        return completedAt;
-    }
-
-    public void setCompletedAt(Long completedAt) {
-        this.completedAt = completedAt;
-    }
-
-    public List<StagedFileInfo> getFiles() {
-        return files;
-    }
-
-    public void setFiles(List<StagedFileInfo> files) {
-        this.files = files;
     }
 }

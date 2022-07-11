@@ -80,8 +80,8 @@ import javax.ws.rs.ext.Provider;
             @Tag(name = "selection", description = "Query links and link groups"),
             @Tag(name = "spacemanager", description = "Ensuring enough capacity for uploads"),
             @Tag(name = "srr", description = "Support for the Storage Resource Reporting standard"),
-            @Tag(name = "transfers", description = "The movement of data between dCache and clients"),
-            @Tag(name = "wlcg", description = "Support for the WLCG TAPE API"),
+            @Tag(name = "tape", description = "Support for the TAPE API (bulk)"),
+            @Tag(name = "transfers", description = "The movement of data between dCache and clients")
       }
 )
 @Provider
