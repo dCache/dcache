@@ -34,6 +34,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import org.dcache.util.NDC;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -53,6 +54,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
       CellInfoProvider {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HsmCleaner.class);
+    private static final String CLEANER_TYPE = "HSM-Cleaner";
 
     /**
      * Utility class to keep track of timeouts.
@@ -184,13 +186,16 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
      * Called when a file was successfully deleted from the HSM.
      */
     protected void onSuccess(URI uri) {
+        NDC.push(CLEANER_TYPE);
         try {
-            LOGGER.debug("HSM-ChimeraCleaner: remove entries from the trash-table. ilocation={}",
+            LOGGER.debug("remove entries from the trash-table. ilocation={}",
                   uri);
             _db.update("DELETE FROM t_locationinfo_trash WHERE ilocation=? AND itype=0",
                   uri.toString());
         } catch (DataAccessException e) {
             LOGGER.error("Error when deleting from the trash-table: {}", e.getMessage());
+        } finally {
+            NDC.pop();
         }
     }
 
@@ -211,11 +216,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
      */
     public synchronized void submit(URI location) {
         String hsm = location.getAuthority();
-        Set<URI> locations = _locationsToDelete.get(hsm);
-        if (locations == null) {
-            locations = new HashSet<>();
-            _locationsToDelete.put(hsm, locations);
-        }
+        Set<URI> locations = _locationsToDelete.computeIfAbsent(hsm, k -> new HashSet<>());
         locations.add(location);
         flush(hsm);
     }
@@ -259,6 +260,9 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
             PoolRemoveFilesFromHSMMessage message = new PoolRemoveFilesFromHSMMessage(name, hsm,
                   locations);
 
+            LOGGER.info("{} sending {} delete locations for hsm {} to pool {}", CLEANER_TYPE,
+                  locations.size(), hsm, name);
+
             _poolStub.notify(new CellPath(name), message);
 
             Timeout timeout = new Timeout(hsm, name);
@@ -268,7 +272,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
             /* If there is no available pool, then we report failure on
              * all files.
              */
-            LOGGER.warn("No pools attached to {} are available", hsm);
+            LOGGER.warn("No pools attached to HSM {} are available", hsm);
 
             Iterator<URI> i = _locationsToDelete.get(hsm).iterator();
             while (i.hasNext()) {
@@ -304,7 +308,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
          * entries.
          */
         if (msg.getReturnCode() != 0) {
-            LOGGER.error("Received failure from pool: {}", msg.getErrorObject());
+            LOGGER.error("{} received failure from pool: {}", CLEANER_TYPE, msg.getErrorObject());
             return;
         }
 
@@ -313,13 +317,17 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
         Collection<URI> success = msg.getSucceeded();
         Collection<URI> failures = msg.getFailed();
 
+        LOGGER.info("Pool delete responses for hsm {}: {} success, {} failures", hsm,
+              success.size(), failures.size());
+
         if (locations == null) {
             /* Seems we got a reply for something this instance did
              * not request. We log this as a warning, but otherwise
              * ignore it.
              */
             LOGGER.warn(
-                  "Received confirmation from a pool, for an action this cleaner did not request.");
+                  "Received confirmation from a pool, for an action this {} did not request.",
+                  CLEANER_TYPE);
             return;
         }
 
@@ -351,50 +359,59 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
      */
     @Override
     protected void runDelete() throws InterruptedException {
-        int locationsCached = _locationsToDelete.values().stream().map(Set::size)
-              .reduce(0, Integer::sum);
-        int queryLimit = _maxCachedDeleteLocations - locationsCached;
+        NDC.push(CLEANER_TYPE);
+        try {
+            LOGGER.info("New run...");
 
-        LOGGER.debug("Locations cached: {} (max cached: {}), query limit: {}, offset: {}",
-              locationsCached, _maxCachedDeleteLocations, queryLimit, _dbLastSeenTimestamp);
+            int locationsCached = _locationsToDelete.values().stream().map(Set::size)
+                  .reduce(0, Integer::sum);
+            int queryLimit = _maxCachedDeleteLocations - locationsCached;
 
-        if (queryLimit <= 0) {
-            LOGGER.debug(
-                  "The number of cached hsm locations is already the maximum permissible size. " +
-                        "Not adding further entries.");
-            _locationsToDelete.keySet().forEach(
-                  h -> flush(h)); // avoid not processing the remaining requests and being stuck
-            return;
-        }
+            LOGGER.debug("Locations cached: {} (max cached: {}), query limit: {}, offset: {}",
+                  locationsCached, _maxCachedDeleteLocations, queryLimit, _dbLastSeenTimestamp);
 
-        AtomicInteger noRequestsCollected = new AtomicInteger();
-        Timestamp graceTime = Timestamp.from(Instant.now().minusSeconds(_gracePeriod.getSeconds()));
+            if (queryLimit <= 0) {
+                LOGGER.debug(
+                      "The number of cached hsm locations is already the maximum permissible size. "
+                            +
+                            "Not adding further entries.");
+                _locationsToDelete.keySet().forEach(
+                      this::flush); // avoid not processing the remaining requests and being stuck
+                return;
+            }
 
-        _db.query(
-              "SELECT ilocation, ictime FROM t_locationinfo_trash WHERE itype=0 AND ictime<? AND ictime>? ORDER BY ictime ASC LIMIT ?",
-              rs -> {
-                  try {
-                      Preconditions.checkState(_hasHaLeadership,
-                            "HA leadership was lost while reading from trashtable. Aborting operation.");
+            AtomicInteger noRequestsCollected = new AtomicInteger();
+            Timestamp graceTime = Timestamp.from(
+                  Instant.now().minusSeconds(_gracePeriod.getSeconds()));
 
-                      URI uri = new URI(rs.getString("ilocation"));
-                      submit(uri);
+            _db.query(
+                  "SELECT ilocation, ictime FROM t_locationinfo_trash WHERE itype=0 AND ictime<? AND ictime>? ORDER BY ictime ASC LIMIT ?",
+                  rs -> {
+                      try {
+                          Preconditions.checkState(_hasHaLeadership,
+                                "HA leadership was lost while reading from trashtable. Aborting operation.");
 
-                      Timestamp ctime = rs.getTimestamp("ictime");
-                      _dbLastSeenTimestamp = ctime;
+                          URI uri = new URI(rs.getString("ilocation"));
+                          submit(uri);
 
-                      noRequestsCollected.getAndIncrement();
+                          Timestamp ctime = rs.getTimestamp("ictime");
+                          _dbLastSeenTimestamp = ctime;
 
-                  } catch (URISyntaxException e) {
-                      throw new DataIntegrityViolationException(
-                            "Invalid URI in database: " + e.getMessage(), e);
-                  }
-              },
-              graceTime, _dbLastSeenTimestamp, queryLimit);
+                          noRequestsCollected.getAndIncrement();
 
-        if (_dbLastSeenTimestamp.getTime() != 0 && noRequestsCollected.get() < queryLimit) {
-            // We have reached the end of the database and should start at the beginning next run
-            _dbLastSeenTimestamp = new Timestamp(0);
+                      } catch (URISyntaxException e) {
+                          throw new DataIntegrityViolationException(
+                                "Invalid URI in database: " + e.getMessage(), e);
+                      }
+                  },
+                  graceTime, _dbLastSeenTimestamp, queryLimit);
+
+            if (_dbLastSeenTimestamp.getTime() != 0 && noRequestsCollected.get() < queryLimit) {
+                // We have reached the end of the database and should start at the beginning next run
+                _dbLastSeenTimestamp = new Timestamp(0);
+            }
+        } finally {
+            NDC.pop();
         }
     }
 
