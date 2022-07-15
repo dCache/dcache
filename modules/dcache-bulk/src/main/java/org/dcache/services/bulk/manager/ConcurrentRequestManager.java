@@ -64,6 +64,7 @@ import static org.dcache.services.bulk.BulkRequestStatus.STARTED;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
+import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -138,7 +139,7 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
                 /*
                  *  Report exit even in the case of an uncaught exception.
                  */
-                LOGGER.warn("exiting.");
+                LOGGER.warn("ConcurrentRequestProcessor exiting...");
             }
         }
 
@@ -494,6 +495,11 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
                   "Problem activating request for {}: {}; aborting.", request.getId(),
                   e.toString());
             requestStore.abort(request, e);
+        } catch (RuntimeException e) {
+            requestStore.abort(request, e);
+            Thread thisThread = Thread.currentThread();
+            UncaughtExceptionHandler ueh = thisThread.getUncaughtExceptionHandler();
+            ueh.uncaughtException(thisThread, e);
         }
     }
 
@@ -503,14 +509,20 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
         LOGGER.trace("submitting job {} to executor, target {}.", key,
               job.getTarget());
         job.setCallback(this);
-        if (isJobValid(job)) { /* possibly cancelled in flight */
-            job.update(State.RUNNING);
-            try {
-                targetStore.update(id, State.RUNNING, null);
-            } catch (BulkStorageException e) {
-                LOGGER.error("updateJobState", e.toString());
+        try {
+            if (isJobValid(job)) { /* possibly cancelled in flight */
+                job.update(State.RUNNING);
+                    targetStore.update(id, State.RUNNING, null);
+                job.getActivity().getActivityExecutor().submit(new FireAndForgetTask(job));
             }
-            job.getActivity().getActivityExecutor().submit(new FireAndForgetTask(job));
+        } catch (BulkStorageException e) {
+            LOGGER.error("updateJobState", e.toString());
+        } catch (RuntimeException e) {
+            job.getTarget().setErrorObject(e);
+            job.cancel();
+            Thread thisThread = Thread.currentThread();
+            UncaughtExceptionHandler ueh = thisThread.getUncaughtExceptionHandler();
+            ueh.uncaughtException(thisThread, e);
         }
     }
 
