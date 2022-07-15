@@ -65,6 +65,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.TreeMultimap;
+import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -89,6 +90,7 @@ import org.dcache.services.bulk.BulkRequestStorageException;
 import org.dcache.services.bulk.BulkServiceException;
 import org.dcache.services.bulk.handlers.BulkRequestCompletionHandler;
 import org.dcache.services.bulk.handlers.BulkSubmissionHandler;
+import org.dcache.services.bulk.job.BulkJobWrapper;
 import org.dcache.services.bulk.job.BulkJob;
 import org.dcache.services.bulk.job.BulkRequestJob;
 import org.dcache.services.bulk.job.SingleTargetJob;
@@ -409,6 +411,11 @@ public class BulkServiceQueue implements SignalAware {
                   "Problem activating request for {}: {}; aborting.", request.getId(),
                   e.toString());
             requestStore.abort(request.getId(), e);
+        } catch (RuntimeException e) {
+            requestStore.abort(request.getId(), e);
+            Thread thisThread = Thread.currentThread();
+            UncaughtExceptionHandler ueh = thisThread.getUncaughtExceptionHandler();
+            ueh.uncaughtException(thisThread, e);
         }
     }
 
@@ -443,7 +450,7 @@ public class BulkServiceQueue implements SignalAware {
         }
         LOGGER.trace("submitting job {} to executor.", job.getKey());
         runningQueue.offer(job);
-        job.setFuture(bulkJobExecutorService.submit(new FireAndForgetTask(job)));
+        job.setFuture(bulkJobExecutorService.submit(new BulkJobWrapper(job, completionHandler)));
     }
 
     private void updateReadyStats() {
@@ -475,9 +482,9 @@ public class BulkServiceQueue implements SignalAware {
                 }
             } catch (InterruptedException e) {
                 LOGGER.warn("interrupted.");
+            } finally {
+                LOGGER.trace("JobProcessor exiting...");
             }
-
-            LOGGER.trace("exiting.");
         }
 
         /*
@@ -1024,6 +1031,11 @@ public class BulkServiceQueue implements SignalAware {
                 }
             } catch (BulkServiceException e) {
                 LOGGER.error("Failed to post-process {}: {}.", job.getKey(), e.toString());
+            } catch (RuntimeException e) {
+                LOGGER.error("Failed to post-process {}", job.getKey());
+                Thread thisThread = Thread.currentThread();
+                UncaughtExceptionHandler ueh = thisThread.getUncaughtExceptionHandler();
+                ueh.uncaughtException(thisThread, e);
             }
 
             statistics.activeRequests(activeRequests());
