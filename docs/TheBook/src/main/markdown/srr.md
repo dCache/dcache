@@ -1,5 +1,93 @@
-Storage Descriptor / SRR
-========================
+# Storage Resource Reporting / Storage Descriptor
+
+## WLCG Storage Resource Reporting
+
+The WLCG Storage Resource Reporting (SRR) is JSON based file that describes storage resources according
+to WCLG operational team specified [format](https://raw.githubusercontent.com/sjones-hep-ph-liv-ac-uk/json_info_system/master/srr/v4.2/schema/srrschema_4.2.json).
+
+The dCache implementation is integrated into **frontend** service and exposed as REST-API. To access
+SRR reporting a frontend service must be defined, if not exist:
+
+```
+[srrDomain]
+
+[srrDomain/frontend]
+frontend.authn.basic=true
+frontend.authn.protocol=http
+frontend.authz.anonymous-operations=READONLY
+frontend.srr.shares=user:/cms,store:/cms
+```
+
+> NOTE: By default, the access to SRR information is restricted to localhost only and listens on port 3880
+
+If desired, the access to the srr information can be made public as with corresponding configuration:
+
+```
+frontend.srr.public=true
+```
+
+To access/inspect SRR information a simple `curl` command can be used:
+
+```
+$ curl http://localhost:3880/api/v1/srr
+
+{
+  "storageservice" : {
+    "name" : "TEST",
+    "id" : "dcache-se",
+    "servicetype" : "multidisk",
+    "implementation" : "dCache",
+    "implementationversion" : "7.2.6",
+    "qualitylevel" : "production",
+    "latestupdate" : 1658136506,
+    "storagecapacity" : {
+      "online" : {
+        "totalsize" : 11223418619294662,
+        "usedsize" : 9799559662614017
+      }
+    },
+    ....
+}
+
+```
+
+The storage shares that represent `space reservations` are published automatically under names that matches
+`space storage description`. To publish shares that represent pool groups an explicit configuration is required.
+The `frontend.srr.shares` controls which pools groups should be published, for example:
+
+```
+frontend.srr.shares=user:/cms,store:/cms
+```
+
+publishes pool groups user and store for VO cms and will produce output like:
+
+```json
+    "storageshares" : [ {
+      "name" : "store",
+      "timestamp" : 1601977212,
+      "totalsize" : 5973622320626816,
+      "usedsize" : 4904609242438918,
+      "assignedendpoints" : [ "all" ],
+      "vos" : [ "/cms" ]
+    }, {
+      "name" : "user",
+      "timestamp" : 1601977212,
+      "totalsize" : 4078599175816242,
+      "usedsize" : 4025729976567280,
+      "assignedendpoints" : [ "all" ],
+      "vos" : [ "/cms" ]
+    } ]
+```
+
+The WLCG SRR uses the following info-provider properties to control the generated json output:
+
+```
+info-provider.se-unique-id=
+info-provider.se-name=
+info-provider.dcache-architecture=
+nfo-provider.dcache-quality-level=
+storage-descriptor.door.tag=
+```
 
 The Storage Descriptor format, also known as a Storage Resource
 Reporting (SRR) record, is a JSON object that describes a storage
@@ -17,7 +105,9 @@ any of the supported transfer protocols.  Through the file's
 permissions, it is also possible to control who is able to obtain this
 information.
 
-## How the file is generated
+## Legacy storage descriptor
+
+### How the file is generated
 
 dCache is supplied with a script called `dcache-storage-descriptor`.
 Running this script will combine static information (from dCache
@@ -39,11 +129,11 @@ To maintain the liveliness of the information, it is recommended to
 run the `dcache-storage-descriptor` script periodically using a cron
 job.  This cron job could also upload the file into dCache.
 
-## Setting up dCache for Storage Descriptor
+### Setting up dCache for Storage Descriptor
 
 The following steps are needed to enable Storage Descriptor.
 
-### 1. Ensure services are running
+#### 1. Ensure services are running
 
 There are two dCache services on which the `dcache-storage-descriptor`
 script relies: `info` and `httpd`.
@@ -61,7 +151,7 @@ files need to be updated so they are running.  There are no
 requirements on the domains within which these services run, nor on
 the hosts on which these domains run.
 
-### 2. Review the storage-descriptor properties.
+#### 2. Review the storage-descriptor properties
 
 The `dcache-storage-descriptor` script uses dCache's standard
 configuration system to adjust how it collects information and to
@@ -90,7 +180,7 @@ listed in the defaults file
 `/usr/share/dcache/defaults/storage-descriptor.properties`, and
 consider which values should be adjusted.
 
-### 3. Configure doors
+#### 3. Configure doors
 
 The Storage Descriptor format includes information about which
 endpoints are available in your dCache instance.  The loginbroker
@@ -110,7 +200,7 @@ the dCache configuration or dynamically through the admin interface.
 The former is persistent when restarting dCache while the latter does
 not require restarting the door's domain.
 
-#### Using dCache configuration
+##### Using dCache configuration
 
 Each door has its own property for controlling which tags are
 published; for example, WebDAV doors use the `webdav.loginbroker.tags`
@@ -149,7 +239,7 @@ webdav.loginbroker.tags = dcache-view
 Note that any changes to configuration properties requires the
 corresponding domains to be restarted before they have an effect.
 
-#### Using the admin interface.
+##### Using the admin interface
 
 Connect to the door using the `\c` command:
 
@@ -244,7 +334,7 @@ IO queue     :
 Note that this change is not permanent: restarting the domain will
 return the tags to their configured values.
 
-### 4. Configure tape information
+#### 4. Configure tape information
 
 If a site has no tape storage to report, this step may be skipped.
 
@@ -267,7 +357,7 @@ liveliness of this information.
 Note: this tape-info file has the same format as for GLUE-based tape
 storage accounting.  A common file may be used to satisfy both uses.
 
-### 5. Install dependencies
+#### 5. Install dependencies
 
 The `dcache-storage-descriptor` script requires the `xsltproc`
 command.  As this is not included as a dependency in the dCache
@@ -287,7 +377,7 @@ In Debian-derived distributions, this is usually located within the
 apt install xsltproc
 ```
 
-### 6. Run the script manually
+#### 6. Run the script manually
 
 As a simple test, try running the script manually.  This should be
 sufficient to provide a JSON file:
@@ -325,7 +415,7 @@ Once the Storage Descriptor output has been generated, it may be
 inspected.  In particular, look for any `example.org` entries, which
 point that further configuration is necessary.
 
-### 7. Configure cron
+#### 7. Configure cron
 
 Configure cron to run a small script that generates the Storage
 Descriptor output and uploads this into dCache.
@@ -367,7 +457,7 @@ of dCache User Guide's WebDAV chapter.
 **Please note that the path to the script and the output of the result
   depend on the package you are running and your configuration.**
 
-### 8. Ensure file is readable through HTTP
+#### 8. Ensure file is readable through HTTP
 
 The Storage Descriptor file may be stored anywhere in dCache
 namespace; however, WLCG currently require that the file be readable
@@ -377,7 +467,7 @@ Currently, WLCG will read the file using an X.509 robot credential
 with VOMS asserting WLCG experiment VO membership.  File permissions
 and ownership should be chosen to allow read access for such clients.
 
-## Configurable properties of dCache Storage Descriptor
+### Configurable properties of dCache Storage Descriptor
 
 Below is table that comprises list of configurable storage's
 properties and their definitions. _Note that any value that with
@@ -396,67 +486,3 @@ or the package._
 | storage-descriptor.door.tag | Login-provider tag. The tag that doors identify themselves with before they are published. | storage-descriptor | |
 | storage-descriptor.output.path | Output path. The location where the JSON output is written. | `/var/spool/dcache/storage-descriptor.json` or `${dcache.home}/var/spool/dcache/storage-descriptor.json` | |
 | storage-descriptor.xslt.path | XSLT path. The location of the XSLT stylesheet that transforms the info service's XML into the Storage Descriptor JSON format. | `${dcache.paths.share}`/xml/xslt/storage-descriptor.xsl | |
-
-## WLCG Storage Resource Reporting
-
-The WLCG Storage Resource Reporting (SRR) is JSON based file that describes storage resources according
-to WCLG operational team specified [format](https://raw.githubusercontent.com/sjones-hep-ph-liv-ac-uk/json_info_system/master/srr/v4.2/schema/srrschema_4.2.json).
-
-The dCache implementation is integrated into **frontend** service and exposed as REST-API. To access
-SRR reporting a frontend service must be defined, if not exist:
-
-```
-[srrDomain]
-
-[srrdDomain/frontend]
-frontend.authn.basic=true
-frontend.authn.protocol=http
-frontend.authz.anonymous-operations=READONLY
-frontend.srr.shares=user:/cms,store:/cms
-```
-
-> NOTE: By default, the access to SRR information is restricted to localhost only.
-
-If desired, the access to the srr information can be made public as with corresponding configuration:
-
-```
-frontend.srr.public=true
-```
-
-The service produces desired json output which contains `storageshares` that represented by space reservations
-and pool groups, if configured. The `frontend.srr.shares` controls which pools groups should be published, for
-example:
-
-```
-frontend.srr.shares=user:/cms,store:/cms
-```
-
-publishes pool groups user and store for VO cms and will produce output like:
-
-```json
-    "storageshares" : [ {
-      "name" : "store",
-      "timestamp" : 1601977212,
-      "totalsize" : 5973622320626816,
-      "usedsize" : 4904609242438918,
-      "assignedendpoints" : [ "all" ],
-      "vos" : [ "/cms" ]
-    }, {
-      "name" : "user",
-      "timestamp" : 1601977212,
-      "totalsize" : 4078599175816242,
-      "usedsize" : 4025729976567280,
-      "assignedendpoints" : [ "all" ],
-      "vos" : [ "/cms" ]
-    } ]
-```
-
-The WLCG SRR uses the following info-provider properties to control the generated json output:
-
-```
-info-provider.se-unique-id=
-info-provider.se-name=
-info-provider.dcache-architecture=
-nfo-provider.dcache-quality-level=
-storage-descriptor.door.tag=
-```
