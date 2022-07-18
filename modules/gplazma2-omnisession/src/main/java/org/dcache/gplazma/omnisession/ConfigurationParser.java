@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2021 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2021-2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -39,6 +39,7 @@ import org.dcache.gplazma.omnisession.ParsedConfiguration.ParsedLine;
 import org.dcache.gplazma.omnisession.PrincipalPredicates.PredicateParserException;
 import org.dcache.util.ByteSizeParser;
 import org.dcache.util.ByteUnits;
+import org.dcache.util.files.LineBasedParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

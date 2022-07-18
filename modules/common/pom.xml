@@ -52,5 +52,15 @@
       <groupId>com.github.nitram509</groupId>
       <artifactId>jmacaroons</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.github.npathai</groupId>
+      <artifactId>hamcrest-optional</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.google.jimfs</groupId>
+      <artifactId>jimfs</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>

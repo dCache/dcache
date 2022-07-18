@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2021 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2021-2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -32,6 +32,8 @@ import java.util.stream.Collectors;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
+import org.dcache.util.files.LineByLineParser;
+import org.dcache.util.files.ParsableFile;
 
 /**
  * A generic session plugin that supports configuring simple session information.

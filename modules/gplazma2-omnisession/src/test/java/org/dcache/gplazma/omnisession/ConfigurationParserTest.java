@@ -35,7 +35,7 @@ import org.dcache.auth.attributes.PrefixRestriction;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.omnisession.LineBasedParser.UnrecoverableParsingException;
+import org.dcache.util.files.LineBasedParser.UnrecoverableParsingException;
 import org.dcache.util.PrincipalSetMaker;
 import org.junit.Test;
 
