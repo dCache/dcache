@@ -414,8 +414,23 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
         assertTrue("original file is gone!", fileInode.exists());
     }
 
-    @Ignore("broken test, normal filesystems do not allow directory hard-links. Why does chimera?")
-    @Test
+    @Test(expected = FileNotFoundChimeraFsException.class)
+    public void testHardLinkOfMissingParent() throws Exception {
+
+        FsInode dir = new FsInode(_fs, 1111);
+
+        _fs.createHLink(dir, _rootInode, "directoryAsHardLink");
+    }
+
+    @Test(expected = FileNotFoundChimeraFsException.class)
+    public void testHardLinkOfMissingInode() throws Exception {
+
+        FsInode dir = new FsInode(_fs, 1111);
+
+        _fs.createHLink(_rootInode, dir, "directoryAsHardLink");
+    }
+
+    @Test(expected = PermissionDeniedChimeraFsException.class)
     public void testDirHardLink() throws Exception {
 
         FsInode base = _rootInode.mkdir("junit");

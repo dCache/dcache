@@ -246,6 +246,8 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
             throw new NotDirException("parent not a directory");
         } catch (FileExistsChimeraFsException e) {
             throw new ExistException("path already exists");
+        } catch (PermissionDeniedChimeraFsException e) {
+            throw new PermException("hard link not allowed for directory");
         }
     }
 

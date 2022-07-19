@@ -306,11 +306,7 @@ public class Shell extends ShellApplication {
                 + "relative then the value is resolved relative to the "
                 + "current directory.\n"
                 + "\n"
-                + "When creating hard links, <target> must exist.  By "
-                + "default, hard links are not allowed for directory "
-                + "targets: symbolic links are preferred.  This is to avoid "
-                + "loops in the namespace.  Exercise extreme caution if this "
-                + "veto is overridden.\n"
+                + "When creating hard links, <target> must exist."
                 + "\n"
                 + "Symbolic links can hold arbitrary text; if later "
                 + "resolved, a relative link is interpreted in relation to "
@@ -330,11 +326,6 @@ public class Shell extends ShellApplication {
 
         @Option(name = "f", usage = "remove <link name> if it exists.")
         boolean force;
-
-        @Option(name = "d", usage = "allow hard link directories: use with extreme "
-              + "caution.  The command may still fail if the filesystem does "
-              + "not support directory hard links.")
-        boolean allowDirectory;
 
         private File link;
 
@@ -363,7 +354,7 @@ public class Shell extends ShellApplication {
                     optionallyForce(() -> fs.createLink(linkParent, linkName, targetArgument));
                 } else {
                     FsInode target = lookup(new File(targetArgument));
-                    checkCommandArgument(!target.isDirectory() || allowDirectory,
+                    checkCommandArgument(!target.isDirectory(),
                           "%s is a directory", targetArgument);
 
                     optionallyForce(() -> fs.createHLink(linkParent, target, linkName));
