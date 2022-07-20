@@ -8,10 +8,10 @@ import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.command.Command;
 import dmg.util.command.DelayedCommand;
-import java.io.File;
-import java.io.IOException;
 import java.io.PrintWriter;
-import java.text.ParseException;
+import java.nio.file.Path;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Collection;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -19,6 +19,8 @@ import java.util.concurrent.TimeUnit;
 import org.dcache.poolmanager.PoolLinkGroupInfo;
 import org.dcache.poolmanager.RemotePoolMonitor;
 import org.dcache.poolmanager.Utils;
+import org.dcache.util.files.LineByLineParser;
+import org.dcache.util.files.ParsableFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -38,10 +40,8 @@ public class LinkGroupLoader
 
     private long updateLinkGroupsPeriod;
 
-    private File authorizationFileName;
+    private ParsableFile<Map<String,LinkGroupAuthorizationRecord>> authorizationFile;
     private long latestUpdateTime = System.currentTimeMillis();
-    private LinkGroupAuthorizationFile linkGroupAuthorizationFile;
-    private long authorizationFileLastUpdateTimestamp;
 
     private RemotePoolMonitor poolMonitor;
     private SpaceManagerDatabase db;
@@ -64,8 +64,10 @@ public class LinkGroupLoader
     }
 
     @Required
-    public void setAuthorizationFileName(File authorizationFileName) {
-        this.authorizationFileName = authorizationFileName;
+    public void setAuthorizationFileName(Path authorizationFileName) {
+        authorizationFile = new ParsableFile(
+                new LineByLineParser(LinkGroupAuthorizationFileParser::new),
+                authorizationFileName);
     }
 
     public long getLatestUpdateTime() {
@@ -90,7 +92,7 @@ public class LinkGroupLoader
     @Override
     public void getInfo(PrintWriter printWriter) {
         printWriter.append("updateLinkGroupsPeriod = ").println(updateLinkGroupsPeriod);
-        printWriter.append("authorizationFileName = ").println(authorizationFileName);
+        printWriter.append("authorizationFileName = ").println(authorizationFile.getPath());
     }
 
     @Override
@@ -111,27 +113,6 @@ public class LinkGroupLoader
         }
     }
 
-    private void loadLinkGroupAuthorizationFile() {
-        File file = authorizationFileName;
-        if (file == null) {
-            return;
-        }
-        if (!file.exists()) {
-            linkGroupAuthorizationFile = null;
-        }
-        long lastModified = file.lastModified();
-        if (linkGroupAuthorizationFile == null
-              || lastModified >= authorizationFileLastUpdateTimestamp) {
-            authorizationFileLastUpdateTimestamp = lastModified;
-            try {
-                linkGroupAuthorizationFile =
-                      new LinkGroupAuthorizationFile(file);
-            } catch (IOException | ParseException e) {
-                LOGGER.error("Failed to read {}: {}", file, e.toString());
-            }
-        }
-    }
-
     private int updateLinkGroups()
           throws InterruptedException, RemoteAccessException, DataAccessException, TransactionException {
         long currentTime = System.currentTimeMillis();
@@ -139,7 +120,6 @@ public class LinkGroupLoader
               Utils.linkGroupInfos(poolMonitor.getPoolSelectionUnit(), poolMonitor.getCostModule())
                     .values();
         if (!linkGroupInfos.isEmpty()) {
-            loadLinkGroupAuthorizationFile();
             for (PoolLinkGroupInfo info : linkGroupInfos) {
                 saveLinkGroup(currentTime, info);
             }
@@ -154,20 +134,16 @@ public class LinkGroupLoader
           throws InterruptedException {
         String linkGroupName = info.getName();
         long avalSpaceInBytes = info.getAvailableSpaceInBytes();
-        VOInfo[] vos = null;
         boolean onlineAllowed = info.isOnlineAllowed();
         boolean nearlineAllowed = info.isNearlineAllowed();
         boolean replicaAllowed = info.isReplicaAllowed();
         boolean outputAllowed = info.isOutputAllowed();
         boolean custodialAllowed = info.isCustodialAllowed();
-        if (linkGroupAuthorizationFile != null) {
-            LinkGroupAuthorizationRecord record =
-                  linkGroupAuthorizationFile
-                        .getLinkGroupAuthorizationRecord(linkGroupName);
-            if (record != null) {
-                vos = record.getVOInfoArray();
-            }
-        }
+        VOInfo[] vos = authorizationFile.get()
+                .flatMap(f -> Optional.ofNullable(f.get(linkGroupName)))
+                .map(LinkGroupAuthorizationRecord::getVOInfoArray)
+                .orElse(null);
+
         while (true) {
             try {
                 db.updateLinkGroup(linkGroupName,
