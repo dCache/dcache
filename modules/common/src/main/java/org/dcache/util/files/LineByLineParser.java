@@ -20,10 +20,10 @@ package org.dcache.util.files;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.dcache.util.files.LineBasedParser.UnrecoverableParsingException;
+import org.dcache.util.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
  *
  * @param <T> The type of state represented the parsed file.
  */
-public class LineByLineParser<T> implements Function<Path, Optional<T>> {
+public class LineByLineParser<T> implements Function<Path, Result<T,String>> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LineByLineParser.class);
 
@@ -47,7 +47,7 @@ public class LineByLineParser<T> implements Function<Path, Optional<T>> {
     }
 
     @Override
-    public Optional<T> apply(Path file) {
+    public Result<T,String> apply(Path file) {
         LineBasedParser<T> parser = parserFactory.get();
 
         int lineNumber = 1;
@@ -58,12 +58,13 @@ public class LineByLineParser<T> implements Function<Path, Optional<T>> {
             }
         } catch (IOException e) {
             LOGGER.warn("{}: {}", file, e.toString());
-            return Optional.empty();
+            return Result.failure(file + " " + e);
         } catch (UnrecoverableParsingException e) {
             LOGGER.warn("{}:{} {}", file, lineNumber, e.getMessage());
-            return Optional.empty();
+            return Result.failure(file + ":" + lineNumber + " " + e.getMessage());
         }
 
-        return Optional.of(parser.build());
+        T result = parser.build();
+        return Result.success(result);
     }
 }

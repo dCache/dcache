@@ -24,7 +24,6 @@ import com.google.common.base.Strings;
 import java.nio.file.FileSystems;
 import java.security.Principal;
 import java.util.List;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -32,6 +31,7 @@ import java.util.stream.Collectors;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
+import org.dcache.util.Result;
 import org.dcache.util.files.LineByLineParser;
 import org.dcache.util.files.ParsableFile;
 
@@ -42,7 +42,7 @@ public class OmniSessionPlugin implements GPlazmaSessionPlugin {
 
     private static final String OMNISESSION_FILE = "gplazma.omnisession.file";
 
-    private final Supplier<Optional<Configuration>> file;
+    private final Supplier<Result<Configuration,String>> file;
 
     public OmniSessionPlugin(Properties properties) {
         this(configFileFrom(properties));
@@ -62,7 +62,7 @@ public class OmniSessionPlugin implements GPlazmaSessionPlugin {
     }
 
     @VisibleForTesting
-    OmniSessionPlugin(Supplier<Optional<Configuration>> file) {
+    OmniSessionPlugin(Supplier<Result<Configuration,String>> file) {
         this.file = file;
     }
 
@@ -70,7 +70,7 @@ public class OmniSessionPlugin implements GPlazmaSessionPlugin {
     public void session(Set<Principal> principals, Set<Object> sessionAttributes)
           throws AuthenticationException {
         Configuration config = file.get()
-              .orElseThrow(() -> new AuthenticationException("bad config file"));
+                .orElseThrow(error -> new AuthenticationException("bad config file"));
 
         List<LoginAttribute> attributes = config.attributesFor(principals);
 

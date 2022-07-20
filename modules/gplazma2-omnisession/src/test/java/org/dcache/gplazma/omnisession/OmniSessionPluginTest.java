@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2021 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2021-2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -18,6 +18,7 @@
 package org.dcache.gplazma.omnisession;
 
 import static java.util.Arrays.asList;
+import static java.util.Objects.requireNonNull;
 import static org.dcache.util.PrincipalSetMaker.aSetOfPrincipals;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -29,7 +30,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import org.dcache.auth.attributes.HomeDirectory;
@@ -38,6 +38,7 @@ import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
 import org.dcache.util.PrincipalSetMaker;
+import org.dcache.util.Result;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.BDDMockito;
@@ -67,7 +68,7 @@ public class OmniSessionPluginTest {
 
     @Test(expected = AuthenticationException.class)
     public void shouldRaiseErrorFileIsUnreadable() throws Exception {
-        given(aPlugin().thatFailedToParse());
+        given(aPlugin().thatFailedToParse("badly formatted file"));
 
         whenCalledWith(aSetOfPrincipals().withUsername("paul"));
     }
@@ -164,10 +165,10 @@ public class OmniSessionPluginTest {
 
         private final Configuration configuration = mock(Configuration.class);
 
-        private boolean isBad;
+        private String error;
 
-        public MemoryBackedPluginBuilder thatFailedToParse() {
-            isBad = true;
+        public MemoryBackedPluginBuilder thatFailedToParse(String error) {
+            this.error = requireNonNull(error);
             return this;
         }
 
@@ -186,8 +187,9 @@ public class OmniSessionPluginTest {
 
         @Override
         public GPlazmaSessionPlugin build() {
-            Optional<Configuration> parseResult =
-                  isBad ? Optional.empty() : Optional.of(configuration);
+            Result<Configuration,String> parseResult = error == null
+                    ? Result.success(configuration)
+                    : Result.failure(error);
             return new OmniSessionPlugin(() -> parseResult);
         }
     }

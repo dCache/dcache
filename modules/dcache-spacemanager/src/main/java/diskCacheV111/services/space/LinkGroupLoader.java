@@ -139,7 +139,7 @@ public class LinkGroupLoader
         boolean replicaAllowed = info.isReplicaAllowed();
         boolean outputAllowed = info.isOutputAllowed();
         boolean custodialAllowed = info.isCustodialAllowed();
-        VOInfo[] vos = authorizationFile.get()
+        VOInfo[] vos = authorizationFile.get().getSuccess()
                 .flatMap(f -> Optional.ofNullable(f.get(linkGroupName)))
                 .map(LinkGroupAuthorizationRecord::getVOInfoArray)
                 .orElse(null);

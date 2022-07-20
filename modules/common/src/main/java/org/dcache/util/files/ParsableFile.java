@@ -26,13 +26,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.dcache.util.Result;
 
 /**
  * This object represents a some generic file that may be parsed to obtain an object that represents
@@ -56,29 +55,29 @@ import org.slf4j.LoggerFactory;
  *
  * @param <T> The type of Object that represents the file's contents.
  */
-public class ParsableFile<T> implements Supplier<Optional<T>> {
+public class ParsableFile<T> implements Supplier<Result<T,String>> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ParsableFile.class);
 
     private final Path file;
-    private final Function<Path, Optional<T>> parser;
+    private final Function<Path, Result<T,String>> parser;
 
     private Instant whenStatProhibitionEnds = Instant.MIN;
     private Instant mtimeWhenFileParsed = Instant.MIN;
 
-    private Optional<T> info = Optional.empty();
+    private Result<T,String> info = Result.failure("file not yet parsed");
 
     private final Clock clock;
 
     @Nullable
     private String lastError;
 
-    public ParsableFile(Function<Path, Optional<T>> parser, Path file) {
+    public ParsableFile(Function<Path, Result<T,String>> parser, Path file) {
         this(Clock.systemUTC(), parser, file);
     }
 
     @VisibleForTesting
-    ParsableFile(Clock clock, Function<Path, Optional<T>> parser, Path file) {
+    ParsableFile(Clock clock, Function<Path, Result<T,String>> parser, Path file) {
         this.clock = clock;
         this.parser = requireNonNull(parser);
         this.file = requireNonNull(file);
@@ -96,7 +95,7 @@ public class ParsableFile<T> implements Supplier<Optional<T>> {
      * @return Optionally the current parsed content of the file.
      */
     @Override
-    public synchronized Optional<T> get() {
+    public synchronized Result<T,String> get() {
         /* REVISIT: the current model serialises all threads, with operations
          * such as stat and parsing a file delaying any other (concurrent)
          * threads.  A future version could do better; for example, by having
@@ -122,15 +121,14 @@ public class ParsableFile<T> implements Supplier<Optional<T>> {
                 LOGGER.warn("Failed to stat {}: {}", file, thisError);
                 lastError = thisError;  // suppress logging the same error
             }
-            info = Optional.empty();
+            info = Result.failure("Failed to stat " + file + ":" + thisError);
             return info;
         }
 
         if (fileMTime.isAfter(mtimeWhenFileParsed)) {
             mtimeWhenFileParsed = fileMTime;
             LOGGER.info("Reloading {}", file);
-            info = parser.apply(file);
-            info.ifPresent(Objects::requireNonNull);
+            info = requireNonNull(parser.apply(file));
         }
 
         return info;

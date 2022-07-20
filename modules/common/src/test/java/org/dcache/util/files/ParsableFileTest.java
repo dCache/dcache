@@ -17,13 +17,12 @@
  */
 package org.dcache.util.files;
 
-import static com.github.npathai.hamcrestopt.OptionalMatchers.isEmpty;
-import static com.github.npathai.hamcrestopt.OptionalMatchers.isPresentAnd;
 import static com.google.common.base.Preconditions.checkState;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.Objects.requireNonNull;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.theInstance;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -44,11 +43,15 @@ import java.time.Instant;
 import java.time.temporal.TemporalUnit;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Optional;
 import java.util.function.Function;
+import org.dcache.util.Result;
+import org.hamcrest.Description;
+import org.hamcrest.Matcher;
+import org.hamcrest.TypeSafeMatcher;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
+
 
 public class ParsableFileTest {
 
@@ -68,9 +71,9 @@ public class ParsableFileTest {
         var parser = given(aParser().thatReturns(model));
         var file = givenParsableFileOf(parser, path);
 
-        Optional<Model> received = file.get();
+        Result<Model,String> received = file.get();
 
-        assertThat(received, isPresentAnd(is(theInstance(model))));
+        assertThat(received, isSuccessfulAnd(is(theInstance(model))));
         verify(parser).apply(path);
     }
 
@@ -92,9 +95,9 @@ public class ParsableFileTest {
         givenFileHasBeenRead(file);
         verify(parser).apply(path);
 
-        Optional<Model> received = file.get();
+        Result<Model,String> received = file.get();
 
-        assertThat(received, isPresentAnd(is(theInstance(model))));
+        assertThat(received, isSuccessfulAnd(is(theInstance(model))));
         verifyNoMoreInteractions(parser);
     }
 
@@ -110,10 +113,10 @@ public class ParsableFileTest {
         var model2 = givenAModel();
         givenParser(parser).nowReturns(model2);
 
-        Optional<Model> received = file.get();
+        Result<Model,String> received = file.get();
 
         verify(parser).apply(path);
-        assertThat(received, isPresentAnd(is(theInstance(model2))));
+        assertThat(received, isSuccessfulAnd(is(theInstance(model2))));
     }
 
     @Test
@@ -125,10 +128,10 @@ public class ParsableFileTest {
         givenFileHasBeenRead(file);
         givenTimeHasAdvacedBy(2, SECONDS);
 
-        Optional<Model> received = file.get();
+        Result<Model,String> received = file.get();
 
         verify(parser).apply(path);
-        assertThat(received, isPresentAnd(is(theInstance(model))));
+        assertThat(received, isSuccessfulAnd(is(theInstance(model))));
     }
 
     @Test
@@ -140,18 +143,18 @@ public class ParsableFileTest {
         givenFileHasBeenRead(file);
         givenTimeHasAdvacedBy(2, SECONDS);
         givenFileTouched(path);
-        givenParser(parser).nowReturnsEmpty();
+        givenParser(parser).nowReturnsFailure("Cannot parse");
 
-        Optional<Model> received = file.get();
+        Result<Model,String> received = file.get();
 
         verify(parser).apply(path);
-        assertThat(received, isEmpty());
+        assertThat(received, isFailureAnd(containsString("Cannot parse")));
     }
 
     @Test
     public void shouldReloadFileUpdatedFromBadToGood() throws Exception {
         var path = given(aFile().withName("omnisession.conf").withContent("INVALID DATA"));
-        var parser = given(aParser().thatReturnsEmpty());
+        var parser = given(aParser().thatReturnsFailure("Cannot parse file."));
         var file = givenParsableFileOf(parser, path);
         givenFileHasBeenRead(file);
         givenTimeHasAdvacedBy(2, SECONDS);
@@ -159,19 +162,19 @@ public class ParsableFileTest {
         var model = givenAModel();
         givenParser(parser).nowReturns(model);
 
-        Optional<Model> received = file.get();
+        Result<Model,String> received = file.get();
 
         verify(parser).apply(path);
-        assertThat(received, isPresentAnd(is(theInstance(model))));
+        assertThat(received, isSuccessfulAnd(is(theInstance(model))));
     }
 
     @Test
     public void shouldReturnEmptyIfFileDoesNotExist() throws Exception {
         var path = given(aFile().withName("omnisession.conf").thatDoesNotExist());
-        var parser = given(aParser().thatReturnsEmpty());
+        var parser = given(aParser().thatReturnsFailure("No such file."));
         var file = givenParsableFileOf(parser, path);
 
-        Optional<Model> received = file.get();
+        Result<Model,String> received = file.get();
 
         verify(parser, never()).apply(any());
     }
@@ -179,7 +182,7 @@ public class ParsableFileTest {
     @Test
     public void shouldReturnContentsRereadingNewlyWrittenFile() throws Exception {
         var path = given(aFile().withName("omnisession.conf").thatDoesNotExist());
-        var parser = given(aParser().thatReturnsEmpty());
+        var parser = given(aParser().thatReturnsFailure("No such file."));
         var file = givenParsableFileOf(parser, path);
         givenFileHasBeenRead(file);
         givenTimeHasAdvacedBy(2, SECONDS);
@@ -187,10 +190,10 @@ public class ParsableFileTest {
         var model = givenAModel();
         givenParser(parser).nowReturns(model);
 
-        Optional<Model> received = file.get();
+        Result<Model,String> received = file.get();
 
         verify(parser).apply(path);
-        assertThat(received, isPresentAnd(is(theInstance(model))));
+        assertThat(received, isSuccessfulAnd(is(theInstance(model))));
     }
 
     private Path given(FileBuilder builder) throws IOException {
@@ -201,11 +204,11 @@ public class ParsableFileTest {
         testClock.advance(amount, unit);
     }
 
-    private Function<Path, Optional<Model>> given(ParserBuilder builder) {
+    private Function<Path, Result<Model,String>> given(ParserBuilder builder) {
         return builder.build();
     }
 
-    private MockAdjuster givenParser(Function<Path, Optional<Model>> mock) {
+    private MockAdjuster givenParser(Function<Path, Result<Model,String>> mock) {
         return new MockAdjuster(mock);
     }
 
@@ -239,7 +242,7 @@ public class ParsableFileTest {
         return new ParserBuilder();
     }
 
-    private ParsableFile givenParsableFileOf(Function<Path, Optional<Model>> parser, Path path) {
+    private ParsableFile givenParsableFileOf(Function<Path, Result<Model,String>> parser, Path path) {
         return new ParsableFile(testClock, parser, path);
     }
 
@@ -293,10 +296,10 @@ public class ParsableFileTest {
 
     private class ParserBuilder<Model> {
 
-        private final Function<Path, Optional<Model>> parser = mock(Function.class);
+        private final Function<Path, Result<Model,String>> parser = mock(Function.class);
 
         public ParserBuilder thatReturns(Model model) {
-            when(parser.apply(any())).thenReturn(Optional.of(model));
+            when(parser.apply(any())).thenReturn(Result.success(model));
             return this;
         }
 
@@ -305,12 +308,12 @@ public class ParsableFileTest {
             return this;
         }
 
-        public ParserBuilder thatReturnsEmpty() {
-            when(parser.apply(any())).thenReturn(Optional.empty());
+        public ParserBuilder thatReturnsFailure(String error) {
+            when(parser.apply(any())).thenReturn(Result.failure(error));
             return this;
         }
 
-        public Function<Path, Optional<Model>> build() {
+        public Function<Path, Result<Model,String>> build() {
             return parser;
         }
     }
@@ -321,22 +324,51 @@ public class ParsableFileTest {
      */
     private class MockAdjuster {
 
-        private final Function<Path, Optional<Model>> mock;
+        private final Function<Path, Result<Model,String>> mock;
 
-        MockAdjuster(Function<Path, Optional<Model>> mock) {
+        MockAdjuster(Function<Path, Result<Model,String>> mock) {
             this.mock = mock;
         }
 
         public void nowReturns(Model model) {
             Mockito.reset(mock);
-            when(mock.apply(any())).thenReturn(Optional.of(model));
+            when(mock.apply(any())).thenReturn(Result.success(model));
         }
 
-        public void nowReturnsEmpty() {
+        public void nowReturnsFailure(String error) {
             Mockito.reset(mock);
-            when(mock.apply(any())).thenReturn(Optional.empty());
+            when(mock.apply(any())).thenReturn(Result.failure(error));
         }
     }
+
+    public static <S,F> Matcher<Result<S,F>> isSuccessfulAnd(Matcher<? super S> matcher) {
+        return new TypeSafeMatcher<Result<S,F>>() {
+            @Override
+            protected boolean matchesSafely(Result<S, F> item) {
+                return item.isSuccessful() && matcher.matches(item.getSuccess().get());
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText("is successful and ").appendDescriptionOf(matcher);
+            }
+        };
+    }
+
+    public static <S,F> Matcher<Result<S,F>> isFailureAnd(Matcher<? super F> matcher) {
+        return new TypeSafeMatcher<Result<S,F>>() {
+            @Override
+            protected boolean matchesSafely(Result<S,F> item) {
+                return item.isFailure() && matcher.matches(item.getFailure().get());
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText("is failure and ").appendDescriptionOf(matcher);
+            }
+        };
+    }
+
 
     /**
      * The model representing the file's contents.
