@@ -84,6 +84,10 @@ public class ParsableFile<T> implements Supplier<Optional<T>> {
         this.file = requireNonNull(file);
     }
 
+    public Path getPath() {
+        return file;
+    }
+
     /**
      * Return an immutable object representing the file's contents at the time this method is
      * called.  If there is a problem reading the contents then the returned value is empty,
