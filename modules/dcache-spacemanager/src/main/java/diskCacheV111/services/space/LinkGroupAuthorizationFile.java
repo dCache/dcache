@@ -4,10 +4,8 @@ import diskCacheV111.util.VOInfo;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,24 +24,8 @@ public class LinkGroupAuthorizationFile {
         }
     }
 
-    public Collection<LinkGroupAuthorizationRecord> getLinkGroupAuthiorizationRecords() {
-        return records.values();
-    }
-
     public LinkGroupAuthorizationRecord getLinkGroupAuthorizationRecord(String LinkGroupName) {
-        //records.get
         return records.get(LinkGroupName);
-    }
-
-    public void addLinkGroupAuthiorizationRecord(final LinkGroupAuthorizationRecord record) {
-        records.put(record.getLinkGroupName(), record);
-    }
-
-    public void dump(PrintStream out) {
-        for (LinkGroupAuthorizationRecord record : records.values()) {
-            out.println(record.toString());
-            out.println();
-        }
     }
 
     private static final int OUTSIDE_STATE = 0;
@@ -90,7 +72,6 @@ public class LinkGroupAuthorizationFile {
                 }
                 VOInfo voinfo = new VOInfo(line);
                 voinfos.add(voinfo);
-
             }
         }
 

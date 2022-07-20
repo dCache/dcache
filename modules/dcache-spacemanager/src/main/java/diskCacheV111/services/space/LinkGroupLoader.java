@@ -2,9 +2,7 @@ package diskCacheV111.services.space;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.VOInfo;
-import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.CellIdentityAware;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.cells.nucleus.NoRouteToCellException;
@@ -33,8 +31,7 @@ import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.transaction.TransactionException;
 
 public class LinkGroupLoader
-      implements CellCommandListener, CellLifeCycleAware, CellInfoProvider, CellIdentityAware,
-      Runnable {
+      implements CellCommandListener, CellLifeCycleAware, CellInfoProvider, Runnable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LinkGroupLoader.class);
     private static final long EAGER_LINKGROUP_UPDATE_PERIOD = 1000;
@@ -50,13 +47,6 @@ public class LinkGroupLoader
     private SpaceManagerDatabase db;
 
     private ScheduledExecutorService executor;
-
-    private CellAddressCore cellAddress;
-
-    @Override
-    public void setCellAddress(CellAddressCore address) {
-        cellAddress = address;
-    }
 
     @Required
     public void setUpdateLinkGroupsPeriod(long updateLinkGroupsPeriod) {
