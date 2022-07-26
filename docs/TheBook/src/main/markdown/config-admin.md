@@ -79,7 +79,12 @@ breaks) and should have a standard format, such as:
 
 > **NOTE**
 >
-> You may omit the part behind the equal sign as it is just a comment and not used by dCache.
+> The standard format for SSH keys as documented on [`sshd(8)`](https://man7.org/linux/man-pages/man8/sshd.8.html#AUTHORIZED_KEYS_FILE_FORMAT) states that a trailing
+> comment field must be included with each key and that it isn't considered for anything. An example of such comment would be `/Users/JohnDoe/.ssh/id_dsa` above.
+> As specified in `sshd(8)`, the main use for the comment is aiding in the identification of the public key contained on that very same line. The catch with the
+> SSH access to dCache's admin shell is that, despite what one might expect, this comment **must** adhere to a specific format for the key to be considered.
+> This comment **must** be of the form `admin@foobar`, where `foobar` can be any string. In other words, the comment has to specify `admin` as the user of a
+> typical SSH [destination](https://man7.org/linux/man-pages/man1/ssh.1.html#DESCRIPTION) string.
 
 Now you can login to the admin interface by
 
