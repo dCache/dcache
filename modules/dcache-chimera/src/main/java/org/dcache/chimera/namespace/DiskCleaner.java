@@ -11,6 +11,7 @@ import static org.dcache.cells.HAServiceLeadershipManager.HA_NOT_LEADER_MSG;
 
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
@@ -24,6 +25,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.CommandException;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
+import dmg.util.command.Option;
 import java.io.PrintWriter;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -200,7 +202,7 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
     }
 
     /**
-     * Returns a list of dinstinct pool names from the trash-table.
+     * Returns a list of distinct pool names from the trash-table.
      *
      * @return list of pool names
      */
@@ -210,13 +212,23 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
     }
 
     /**
+     * Delete all entries from the trash-table for the given pool.
+     *
+     * @param poolname name of the pool
+     */
+    int forgetTargetsOnPool(final String poolname) {
+        return _db.update("DELETE FROM t_locationinfo_trash WHERE ilocation=? AND itype=1",
+              poolname);
+    }
+
+    /**
      * Delete entries from the trash-table. Pool name and the file names are input parameters.
      *
      * @param poolname name of the pool
      * @param filelist file list for this pool
      */
     void removeFiles(final String poolname, final List<String> filelist) {
-        if(filelist == null || filelist.isEmpty()) {
+        if (filelist == null || filelist.isEmpty()) {
             LOGGER.info("Unexpected empty delete file list.");
             return;
         }
@@ -310,7 +322,7 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
               Arrays.stream(_deleteNotificationTargets)
                     .map(a -> Futures.catchingAsync(
                           _notificationStub.send(a, new PnfsDeleteEntryNotificationMessage(pnfsId)),
-                          Exception.class, e -> immediateFailedFuture(failureFor.apply(a, e))))
+                          Exception.class, e -> immediateFailedFuture(failureFor.apply(a, e)), MoreExecutors.directExecutor()))
                     .collect(toList()));
     }
 
@@ -456,6 +468,34 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
             }
             runDelete(Arrays.asList(new String[]{poolName}));
             return "";
+        }
+    }
+
+    @Command(name = "forget pool",
+          hint = "Let cleaner forget the pool",
+          description = "Forget this pool: remove all trash table entries for this pool, which no longer exists.")
+    public class ForgetPoolCommand implements Callable<String> {
+
+        @Argument(usage = "name of the pool to be forgotten")
+        String poolName;
+
+        @Option(name = "f", usage = "force forget pool, even when it is not currently blacklisted")
+        boolean force;
+
+        @Override
+        public String call()
+              throws CacheException, InterruptedException, NoRouteToCellException, CommandException {
+            checkCommand(_hasHaLeadership, HA_NOT_LEADER_MSG);
+            if (!force && !_poolsBlackList.containsKey(poolName)) {
+                return
+                      "This pool is not currently blacklisted due to being unavailable. If you really "
+                            + "want to forget the pool nonetheless, please use the 'force' option.";
+            }
+            int removed = forgetTargetsOnPool(poolName);
+            String info = "Removed " + removed + " delete targets from pool " + poolName
+                  + "  from the trash table.";
+            LOGGER.info(info);
+            return info;
         }
     }
 

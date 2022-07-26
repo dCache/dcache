@@ -145,11 +145,13 @@ import org.dcache.util.list.DirectoryListPrinter;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.webdav.owncloud.OwncloudClients;
+import org.dcache.webdav.transfer.RemoteTransferHandler;
 import org.eclipse.jetty.io.EofException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.stringtemplate.v4.AutoIndentWriter;
 import org.stringtemplate.v4.ST;
@@ -239,6 +241,7 @@ public class DcacheResourceFactory
     private String _staticContentPath;
     private ReloadableTemplate _template;
     private ImmutableMap<String, String> _templateConfig;
+    private RemoteTransferHandler _remoteTransferHandler;
 
     private TransferRetryPolicy _retryPolicy;
 
@@ -279,6 +282,11 @@ public class DcacheResourceFactory
     @Required
     public void setRedirectToHttps(boolean redirectToHttps) {
         _redirectToHttps = redirectToHttps;
+    }
+
+    @Required
+    public void setRemoteTransferHandler(RemoteTransferHandler handler) {
+        _remoteTransferHandler = requireNonNull(handler);
     }
 
     /**
@@ -1097,7 +1105,12 @@ public class DcacheResourceFactory
         infoRemove.setClient(Subjects.getOrigin(subject).getAddress().getHostAddress());
         _billingStub.notify(infoRemove);
 
-        _kafkaSender.accept(infoRemove);
+        try {
+            _kafkaSender.accept(infoRemove);
+        } catch (KafkaException e) {
+            LOGGER.warn(Throwables.getRootCause(e).getMessage());
+
+        }
     }
 
     /**
@@ -1388,6 +1401,7 @@ public class DcacheResourceFactory
 
     public Object ac_get_door_info(Args args) {
         List<IoDoorEntry> transfers = new ArrayList<>();
+        _remoteTransferHandler.addTransfers(transfers);
         for (Transfer transfer : _transfers.values()) {
             transfers.add(transfer.getIoDoorEntry());
         }

@@ -292,10 +292,15 @@ public class Task {
      * FSM Action
      */
     synchronized void cancelCopy() {
+        cancelCopy(_cancelReason.orElse(null));
+    }
+
+    synchronized void cancelCopy(String reason) {
         CellStub.addCallback(_parameters.pool.send(_target,
                     new PoolMigrationCancelMessage(_uuid,
                           _source,
-                          getPnfsId())),
+                          getPnfsId(),
+                          reason)),
               new Callback<>("cancel_"), _parameters.executor);
     }
 

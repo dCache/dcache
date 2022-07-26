@@ -17,9 +17,9 @@
  */
 package diskCacheV111.util;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
-import java.util.Set;
 import org.dcache.util.Checksum;
 
 /**
@@ -33,8 +33,8 @@ public class FileCorruptedCacheException extends CacheException {
 
     private static final long serialVersionUID = 6022529795888425409L;
 
-    private final Set<Checksum> _expectedChecksums;
-    private final Set<Checksum> _actualChecksums;
+    private final Collection<Checksum> _expectedChecksums;
+    private final Collection<Checksum> _actualChecksums;
     private final Long _expectedSize;
     private final Long _actualSize;
 
@@ -58,8 +58,8 @@ public class FileCorruptedCacheException extends CacheException {
         this(Collections.singleton(expectedChecksum), Collections.singleton(actualChecksum));
     }
 
-    public FileCorruptedCacheException(Set<Checksum> expectedChecksums,
-          Set<Checksum> actualChecksums) {
+    public FileCorruptedCacheException(Collection<Checksum> expectedChecksums,
+          Collection<Checksum> actualChecksums) {
         super(FILE_CORRUPTED,
               "Checksum mismatch (expected=" + expectedChecksums + ", actual=" + actualChecksums
                     + ')');
@@ -78,11 +78,11 @@ public class FileCorruptedCacheException extends CacheException {
         _actualSize = actualSize;
     }
 
-    public Optional<Set<Checksum>> getExpectedChecksums() {
+    public Optional<Collection<Checksum>> getExpectedChecksums() {
         return Optional.ofNullable(_expectedChecksums);
     }
 
-    public Optional<Set<Checksum>> getActualChecksums() {
+    public Optional<Collection<Checksum>> getActualChecksums() {
         return Optional.ofNullable(_actualChecksums);
     }
 

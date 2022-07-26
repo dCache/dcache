@@ -172,3 +172,7 @@ This is only a partial, first-step toward a full-blown QoS infrastructure,
 but at least allows Resilience to manage such transitions for resilient
 files.  For other files, the current mechanism remains (QoS state maintained
 by the Frontend resource).
+
+##### RESTful QoS transitions as of 8.1
+
+The restful commands now communicate with the [QoS Engine](config-qos-engine.md)

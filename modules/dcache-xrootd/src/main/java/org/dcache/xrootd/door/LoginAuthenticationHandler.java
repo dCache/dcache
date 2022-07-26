@@ -42,10 +42,10 @@ public class LoginAuthenticationHandler
     private LoginStrategy _loginStrategy;
     private CertificateFactory _cf;
 
-    public LoginAuthenticationHandler(AuthenticationFactory authenticationFactory,
+    public LoginAuthenticationHandler(String protocol, AuthenticationFactory authenticationFactory,
           ProxyDelegationClient proxyDelegationClient,
           LoginStrategy loginStrategy) {
-        super(authenticationFactory, proxyDelegationClient);
+        super(protocol, authenticationFactory, proxyDelegationClient);
         _loginStrategy = loginStrategy;
         _cf = CertificateFactories.newX509CertificateFactory();
     }

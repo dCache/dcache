@@ -34,9 +34,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -81,6 +83,8 @@ public class LoginBrokerPublisher
     private boolean _readEnabled = true;
     private boolean _writeEnabled = true;
     private List<InetAddress> _lastAddresses = Collections.emptyList();
+    private final List<Consumer<Optional<LoginBrokerInfo>>> _consumers =
+            new CopyOnWriteArrayList<>(asList(this::sendUpdate));
 
     /**
      * Tags to advertise. For thread safety, the list must not be modified. Instead it has to be
@@ -186,8 +190,8 @@ public class LoginBrokerPublisher
         }
     }
 
-    private synchronized Optional<LoginBrokerInfo> createLoginBrokerInfo(
-          List<InetAddress> addresses) {
+    private synchronized Optional<LoginBrokerInfo> createLoginBrokerInfo() {
+        List<InetAddress> addresses = getAddresses();
         _lastAddresses = addresses;
         if (_task != null && !addresses.isEmpty()) {
             Collection<String> readPaths = _readEnabled ? _readPaths : Collections.emptyList();
@@ -216,7 +220,8 @@ public class LoginBrokerPublisher
     }
 
     private void sendUpdate() {
-        sendUpdate(createLoginBrokerInfo(getAddressSupplier().get()));
+        Optional<LoginBrokerInfo> info = createLoginBrokerInfo();
+        _consumers.forEach(c -> c.accept(info));
     }
 
     public synchronized void messageArrived(NoRouteToCellException e) {
@@ -236,7 +241,7 @@ public class LoginBrokerPublisher
     }
 
     public LoginBrokerInfo messageArrived(LoginBrokerInfoRequest msg) {
-        return createLoginBrokerInfo(getAddressSupplier().get()).orElse(null);
+        return createLoginBrokerInfo().orElse(null);
     }
 
     @Override
@@ -311,8 +316,8 @@ public class LoginBrokerPublisher
         }
     }
 
-    public synchronized Supplier<List<InetAddress>> getAddressSupplier() {
-        return _addresses;
+    private synchronized List<InetAddress> getAddresses() {
+        return _addresses.get();
     }
 
     public synchronized void setAddressSupplier(Supplier<List<InetAddress>> addresses) {
@@ -476,6 +481,10 @@ public class LoginBrokerPublisher
     private void scheduleTask() {
         _task = _executor.scheduleWithFixedDelay(
               new FireAndForgetTask(this::sendUpdate), 0, _brokerUpdateTime, _brokerUpdateTimeUnit);
+    }
+
+    public void addConsumer(Consumer<Optional<LoginBrokerInfo>> consumer) {
+        _consumers.add(consumer);
     }
 
     public static Supplier<List<InetAddress>> createSingleAddressSupplier(InetAddress address) {

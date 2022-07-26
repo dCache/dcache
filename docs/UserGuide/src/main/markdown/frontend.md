@@ -1,4 +1,4 @@
-Chapter 3. Frontend
+Chapter 4. Frontend
 ===================
 
 **Table of Contents**
@@ -2633,39 +2633,34 @@ guaranteed.
 
 ## Bulk Requests
 
-The following bulk requests are available through the frontend REST API:
+A bulk request targets a list of files and/or directories.  The latter can
+be targeted without expansion (``expandDirectories=NONE``, default), with shallow expansion
+(``expandDirectories=TARGETS``, immediate children), or recursively expanded
+(``expandDirectories=ALL``).
 
-- `` GET https://<host>:3880/api/v1/bulk-requests`` 
-   –– returns a list, optionally filtered by ``status``, of requests owned by the user.
-   
-- `` POST https://<host>:3880/api/v1/bulk-requests`` 
-   –– submits a request on behalf of the user.
-   
-- `` GET https://<host>:3880/api/v1/bulk-requests/<id>``
-   –– returns the status info for the request identified by the path.
-   
--  ``PATCH https://<host>:3880/api/v1/bulk-requests/<id>``
-   –– takes some action on the request identified by the path.  Currently,
-      only ``{'action':'cancel'}`` is available.
-      
--  ``DELETE https://<host>:3880/api/v1/bulk-requests/<id>``
-   –– clears the request metadata and resources from the the service.  If
-      the request is in a running state, it must be cancelled first or 
-      deletion will fail.
+The currently available general request types include ``pin``, ``unpin``,
+``qos`` (disk-tape transitioning), and ``delete``.  In addition, there are specialized
+versions of pin and unpin for the WLCG Tape API: ``stage`` and ``release``.
 
-A bulk request targets a list of files and/or directories.  The latter can 
-be targeted without expansion, with shallow expansion (immediate
-children), or recursively expanded.  The currently available request types
-include ``pin``, ``unpin``, ``qos`` (disk-tape transitioning), and ``delete``.  
-A request is for only one type of action (they cannot be combined).  
+A request is for only one type of action (they cannot be combined).
 
-As an example, here is the command-line ``curl`` for submitting a request to 
-pin all files in the target directory for one hour:
+![Bulk / WLCG Endpoints](images/bulk-resource-endpoints.png)
 
-```
-curl -X POST "https://fndcatemp1.fnal.gov:3880/api/v1/bulk-requests" -H  "accept: application/json" -H  "content-type: application/json" -d "{\"target\":\"/pnfs/fs/usr/arossi/test\",\"activity\":\"PIN\",\"expandDirectories\":\"ALL\",\"arguments\":{\"lifetime\":\"1\",\"lifetime-unit\":\"HOURS\"}}"
-```
+The following summarizes the options which are available for bulk requests and
+what values they automatically are given for the WLCG Tape API requests:
+
+![Bulk Request Options](images/bulk-wlcg-1.png)
+
+The following two tables compare the usage for the ``bulk-request`` and WLCG resources, respectively:
+
+![Bulk vs WLCG (1)](images/bulk-wlcg-2.png)
+
+![Bulk vs WLCG (2)](images/bulk-wlcg-3.png)
+
+Please note that the JSON returned for GET on bulk-requests differs from that returned for WLCG stage:
+
+![JSON for Bulk vs WLCG GET](images/bulk-wlcg-4.png)
 
 Full specification of these commands can be obtained by inspecting the
-SWAGGER page which is available from the frontend 
+SWAGGER page which is available from the frontend
 at ``https://<host>:3880/api/v1``.

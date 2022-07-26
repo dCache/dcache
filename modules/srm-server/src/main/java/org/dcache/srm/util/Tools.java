@@ -10,6 +10,10 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CancellationException;
+import org.dcache.srm.SRMAbortedException;
+import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMInternalErrorException;
 
 /**
  * @author timur
@@ -53,4 +57,19 @@ public class Tools {
         return protList.toArray(String[]::new);
     }
 
+    public static SRMException toSRMException(Throwable from) {
+        if (from instanceof SRMException) {
+            return (SRMException) from;
+        }
+        if (from instanceof InterruptedException) {
+            return new SRMInternalErrorException("SRM is shutting down.", from);
+        }
+        if (from instanceof CancellationException) {
+            return new SRMAbortedException("Request was aborted.", from);
+        }
+        if (from.getCause() instanceof SRMException) {
+            return (SRMException) from.getCause();
+        }
+        return new SRMInternalErrorException(from);
+    }
 }

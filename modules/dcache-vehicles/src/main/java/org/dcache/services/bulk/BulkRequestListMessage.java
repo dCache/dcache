@@ -63,7 +63,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import org.dcache.auth.attributes.Restriction;
-import org.dcache.services.bulk.BulkRequestStatus.Status;
 
 /**
  * To acquire a list of requests submitted by the user.  May optionally be filtered by status.
@@ -72,19 +71,19 @@ public class BulkRequestListMessage extends BulkServiceMessage {
 
     private static final long serialVersionUID = -3921177984889456203L;
 
-    private final Set<Status> status;
+    private final Set<BulkRequestStatus> status;
     private List<String> requests;
 
     public BulkRequestListMessage(Restriction restriction) {
         this(null, restriction);
     }
 
-    public BulkRequestListMessage(Set<Status> status, Restriction restriction) {
+    public BulkRequestListMessage(Set<BulkRequestStatus> status, Restriction restriction) {
         super(restriction);
         this.status = status == null ? Collections.emptySet() : status;
     }
 
-    public Set<Status> getStatus() {
+    public Set<BulkRequestStatus> getStatus() {
         return status;
     }
 

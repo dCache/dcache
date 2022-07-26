@@ -62,6 +62,7 @@ package org.dcache.restful.resources.bulk;
 import static org.dcache.restful.resources.bulk.BulkResources.toBulkRequest;
 import static org.junit.Assert.assertEquals;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import javax.ws.rs.BadRequestException;
 import org.dcache.services.bulk.BulkRequest;
@@ -74,7 +75,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class BulkRequestJsonParseTest {
 
-    static final String JSON_FORMAT = "{'activity':'%s', 'target':'%s',"
+    static final String JSON_FORMAT = "{'activity':'%s', 'target': %s,"
           + "'arguments':{'lifetime':'%s','lifetime-unit':'%s'},"
           + "'%s':'%s', '%s':'%s', '%s':'%s'}";
 
@@ -82,7 +83,8 @@ public class BulkRequestJsonParseTest {
     BulkRequest bulkRequest;
 
     String activity;
-    String target;
+    List<String> jsonTarget;
+    List<String> javaTarget;
     Integer lifetime;
     TimeUnit lifetimeUnit;
     Boolean clearOnSuccess;
@@ -92,7 +94,8 @@ public class BulkRequestJsonParseTest {
     @Before
     public void setUp() {
         activity = "PIN";
-        target = "/pnfs/fs/usr/test/testdir";
+        jsonTarget = List.of("'/pnfs/fs/usr/test/tape/300'","'/pnfs/fs/usr/test/tape/301'");
+        javaTarget = List.of("/pnfs/fs/usr/test/tape/300","/pnfs/fs/usr/test/tape/301");
         lifetime = 1;
         lifetimeUnit = TimeUnit.MINUTES;
         clearOnSuccess = true;
@@ -119,9 +122,16 @@ public class BulkRequestJsonParseTest {
         whenParsed();
     }
 
+    @Test
+    public void shouldSucceedWithMultipleTargetAttribute() throws Exception {
+        givenJsonWithArrayTargetAttribute();
+        whenParsed();
+        assertThatRequestIsValid();
+    }
+
     private void assertThatRequestIsValid() {
         assertEquals(activity, bulkRequest.getActivity());
-        assertEquals(target, bulkRequest.getTarget());
+        assertEquals(javaTarget, bulkRequest.getTarget());
         assertEquals((int) lifetime, Integer.parseInt(bulkRequest.getArguments().get("lifetime")));
         assertEquals(lifetimeUnit,
               TimeUnit.valueOf(bulkRequest.getArguments().get("lifetime-unit")));
@@ -131,26 +141,32 @@ public class BulkRequestJsonParseTest {
     }
 
     private void givenJsonWithMixedAttributeStyle() {
-        requestJson = String.format(JSON_FORMAT, activity, target, lifetime, lifetimeUnit,
+        requestJson = String.format(JSON_FORMAT, activity, jsonTarget, lifetime, lifetimeUnit,
               "clearOnSuccess", clearOnSuccess, "clear_on_failure", clearOnFailure,
               "expand-directories", expandDirectories);
     }
 
     private void givenJsonWithAttributeDefinedTwice() {
         /* clearOnSuccess = clear_on_success */
-        requestJson = String.format(JSON_FORMAT, activity, target, lifetime, lifetimeUnit,
+        requestJson = String.format(JSON_FORMAT, activity, jsonTarget, lifetime, lifetimeUnit,
               "clearOnSuccess", clearOnSuccess, "clear_on_success", clearOnFailure,
               "expand-directories", expandDirectories);
     }
 
     private void givenJsonWithUnsupportedAttribute() {
         /* cancelOnSuccess is nonsense */
-        requestJson = String.format(JSON_FORMAT, activity, target, lifetime, lifetimeUnit,
+        requestJson = String.format(JSON_FORMAT, activity, jsonTarget, lifetime, lifetimeUnit,
               "cancelOnSuccess", clearOnSuccess, "clear_on_failure", clearOnFailure,
               "expand-directories", expandDirectories);
     }
 
-    private void whenParsed() throws Exception {
+    private void givenJsonWithArrayTargetAttribute() {
+        requestJson = String.format(JSON_FORMAT, activity, jsonTarget, lifetime, lifetimeUnit,
+              "clear_on_success", clearOnSuccess, "clear_on_failure", clearOnFailure,
+              "expand-directories", expandDirectories);
+    }
+
+    private void whenParsed() {
         bulkRequest = toBulkRequest(requestJson);
     }
 }

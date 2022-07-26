@@ -2040,11 +2040,6 @@ public class PoolSelectionUnitV2
     public void removeFromPoolGroup(String groupName, String poolName) {
         wlock();
         try {
-            Pool pool = _pools.get(poolName);
-            if (pool == null) {
-                throw new IllegalArgumentException("Pool not found : "
-                      + poolName);
-            }
 
             PGroup group = _pGroups.get(groupName);
             if (group == null) {
@@ -2052,13 +2047,32 @@ public class PoolSelectionUnitV2
                       + groupName);
             }
 
-            if (group._poolList.get(poolName) == null) {
-                throw new IllegalArgumentException(poolName + " not member of "
-                      + groupName);
-            }
+            if (poolName.charAt(0) == '@') {
+                PGroup nestedGroup = _pGroups.get(poolName.substring(1));
+                if (nestedGroup == null) {
+                    throw new IllegalArgumentException("Group not found : " + poolName);
+                }
 
-            group._poolList.remove(poolName);
-            pool._pGroupList.remove(groupName);
+                if (!group._pgroupList.remove(nestedGroup)) {
+                    throw new IllegalArgumentException(nestedGroup + " not a subgroup of "
+                          + groupName);
+                }
+            } else {
+
+                Pool pool = _pools.get(poolName);
+                if (pool == null) {
+                    throw new IllegalArgumentException("Pool not found : "
+                          + poolName);
+                }
+
+                if (group._poolList.get(poolName) == null) {
+                    throw new IllegalArgumentException(poolName + " not member of "
+                          + groupName);
+                }
+
+                group._poolList.remove(poolName);
+                pool._pGroupList.remove(groupName);
+            }
         } finally {
             wunlock();
         }
@@ -2154,6 +2168,7 @@ public class PoolSelectionUnitV2
     //
     // relations
     //
+
     public void addToPoolGroup(String pGroupName, String poolName) {
 
         wlock();
@@ -2166,13 +2181,23 @@ public class PoolSelectionUnitV2
                 throw new IllegalArgumentException(
                       "Manual adding into dynamic pool is not allowed");
             }
-            Pool pool = _pools.get(poolName);
-            if (pool == null) {
-                throw new IllegalArgumentException("Not found : " + poolName);
-            }
 
-            pool._pGroupList.put(group.getName(), group);
-            group._poolList.put(pool.getName(), pool);
+            if (poolName.charAt(0) == '@') {
+                var groupName = poolName.substring(1);
+                PGroup subGroup = _pGroups.get(groupName);
+                if (subGroup == null) {
+                    throw new IllegalArgumentException("Subgroup not found : " + groupName);
+                }
+                group.addSubgroup(subGroup);
+            } else {
+                Pool pool = _pools.get(poolName);
+                if (pool == null) {
+                    throw new IllegalArgumentException("Pool not found: : " + poolName);
+                }
+
+                pool._pGroupList.put(group.getName(), group);
+                group._poolList.put(pool.getName(), pool);
+            }
         } finally {
             wunlock();
         }
@@ -2530,7 +2555,7 @@ public class PoolSelectionUnitV2
         return "";
     }
 
-    public static final String hh_psu_addto_pgroup = "<pool group> <pool>";
+    public static final String hh_psu_addto_pgroup = "<pool group> <pool|@pgroup>";
 
     @AffectsSetup
     public String ac_psu_addto_pgroup_$_2(Args args) {
@@ -2753,7 +2778,7 @@ public class PoolSelectionUnitV2
         return "";
     }
 
-    public static final String hh_psu_removefrom_pgroup = "<pool group> <pool>";
+    public static final String hh_psu_removefrom_pgroup = "<pool group> <pool|@pgroup>";
 
     @AffectsSetup
     public String ac_psu_removefrom_pgroup_$_2(Args args) {

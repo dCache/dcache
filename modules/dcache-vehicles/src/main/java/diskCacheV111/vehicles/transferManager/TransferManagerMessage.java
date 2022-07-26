@@ -2,6 +2,7 @@ package diskCacheV111.vehicles.transferManager;
 
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
+import dmg.cells.nucleus.CellAddressCore;
 import javax.annotation.Nullable;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
@@ -39,6 +40,10 @@ public abstract class TransferManagerMessage extends Message {
     private PnfsId pnfsId;
     @Nullable
     private FileAttributes attributes;
+
+    // The identity of the transfer-manager supporting this transfer, if known.
+    @Nullable
+    private CellAddressCore transferManager;
 
     public TransferManagerMessage(
           String pnfsPath,
@@ -181,7 +186,14 @@ public abstract class TransferManagerMessage extends Message {
         this.credentialId = credentialId;
     }
 
-}
+    public void setTransferManager(CellAddressCore address) {
+        this.transferManager = requireNonNull(address);
+    }
 
+    @Nullable // May be null on back-ported branches (8.1, 8.0, 7.2)
+    public CellAddressCore getTransferManager() {
+        return transferManager;
+    }
+}
 
 

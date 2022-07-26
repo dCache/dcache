@@ -10,6 +10,7 @@ import dmg.cells.nucleus.CellAddressCore;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -219,5 +220,22 @@ public class Pool extends PoolCore implements SelectionPool {
     @Override
     public Optional<String> getCanonicalHostName() {
         return Optional.ofNullable(_hostName);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Pool group = (Pool) o;
+        return getName().equals(group.getName());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getName());
     }
 }

@@ -65,16 +65,23 @@ import javax.ws.rs.ext.Provider;
       tags = {
             @Tag(name = "alarms", description = "The log of internal problems"),
             @Tag(name = "billing", description = "The log of (significant) client activity"),
+            @Tag(name = "bulk", description = "Processing of multiple file/path requests in bulk"),
             @Tag(name = "cells", description = "The running components within dCache"),
+            @Tag(name = "doors", description = "Information about doors"),
+            @Tag(name = "events", description = "Support for SSE clients receiving dCache events"),
             @Tag(name = "identity", description = "Information about users"),
+            @Tag(name = "labels", description = "Creation of and listing of virtual directories"),
             @Tag(name = "namespace", description = "Files, directories and similar objects"),
             @Tag(name = "poolmanager", description = "Data placement and selection decisions"),
             @Tag(name = "pools", description = "File data storage"),
             @Tag(name = "qos", description = "Managing how data is stored and handled"),
+            @Tag(name = "quota", description = "Display of user and group quotas"),
+            @Tag(name = "restore", description = "The staging of data from tape to disk"),
+            @Tag(name = "selection", description = "Query links and link groups"),
             @Tag(name = "spacemanager", description = "Ensuring enough capacity for uploads"),
-            @Tag(name = "transfers", description = "The movement of data between dCache and clients"),
-            @Tag(name = "events", description = "Support for SSE clients receiving dCache events"),
-            @Tag(name = "doors", description = "Information about doors")
+            @Tag(name = "srr", description = "Support for the Storage Resource Reporting standard"),
+            @Tag(name = "tape", description = "Support for the TAPE API (bulk)"),
+            @Tag(name = "transfers", description = "The movement of data between dCache and clients")
       }
 )
 @Provider

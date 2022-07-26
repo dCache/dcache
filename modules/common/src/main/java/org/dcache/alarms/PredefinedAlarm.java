@@ -86,7 +86,11 @@ public enum PredefinedAlarm implements Alarm {
     RESILIENCE_LOC_SYNC_ISSUE,
     RESILIENCE_PGROUP_ISSUE,
     CLIENT_CONNECTION_REJECTED,
-    HSM_STARTUP_FAILED;
+    HSM_STARTUP_FAILED,
+    FAILED_QOS_OPERATION,
+    LOST_FILE,
+    POOL_LOCATION_SYNC_ISSUE,
+    POOL_GROUP_ISSUE;
 
     @Override
     public String getType() {

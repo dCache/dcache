@@ -249,10 +249,6 @@ public final class QoSAdjusterTask extends ErrorAwareTask implements Cancellable
         return status == Status.DONE || status == Status.CANCELLED;
     }
 
-    public synchronized void poll() {
-        adjuster.poll();
-    }
-
     public void relayMessage(PoolMigrationCopyFinishedMessage message) {
         if (!message.getPnfsId().equals(pnfsId)) {
             return;

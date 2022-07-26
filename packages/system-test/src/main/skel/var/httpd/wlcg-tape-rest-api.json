@@ -1,0 +1,11 @@
+{
+  "sitename": "dcache-systest",
+  "description": "This is the dCache WLCG TAPE REST API endpoint for localhost system tests",
+  "endpoints":[
+      {
+        "uri":"https://example.org:3880/api/v1/tape",
+        "version":"v1",
+        "metadata": {
+        }
+      } ]
+}

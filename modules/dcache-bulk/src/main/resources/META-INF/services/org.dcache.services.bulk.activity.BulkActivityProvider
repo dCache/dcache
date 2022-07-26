@@ -1,0 +1,7 @@
+org.dcache.services.bulk.activity.plugin.delete.DeleteActivityProvider
+org.dcache.services.bulk.activity.plugin.pin.PinActivityProvider
+org.dcache.services.bulk.activity.plugin.pin.UnpinActivityProvider
+org.dcache.services.bulk.activity.plugin.qos.UpdateQoSActivityProvider
+org.dcache.services.bulk.activity.plugin.log.LogTargetActivityProvider
+org.dcache.services.bulk.activity.plugin.pin.ReleaseActivityProvider
+org.dcache.services.bulk.activity.plugin.pin.StageActivityProvider

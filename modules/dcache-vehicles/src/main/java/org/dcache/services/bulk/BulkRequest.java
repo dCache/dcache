@@ -59,8 +59,11 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Generic bulk request.  It is up to the request store to map the request to an appropriate id and
@@ -74,9 +77,10 @@ public class BulkRequest implements Serializable {
         NONE, TARGETS, ALL
     }
 
+    private Long seqNo;
     private String urlPrefix;
     private String id;
-    private String target;
+    private List<String> target;
     private String targetPrefix;
     private String activity;
     private boolean clearOnSuccess;
@@ -85,6 +89,29 @@ public class BulkRequest implements Serializable {
     private Integer delayClear;
     private Map<String, String> arguments;
     private Depth expandDirectories;
+
+    private boolean prestore;
+
+    @JsonIgnore
+    private BulkRequestStatusInfo statusInfo;
+
+    public int hashCode() {
+        return Objects.hashCode(id);
+    }
+
+    public boolean equals(Object other) {
+        if (!(other instanceof BulkRequest)) {
+            return false;
+        }
+
+        BulkRequest otherRequest = (BulkRequest) other;
+
+        if (id == null || otherRequest.id == null) {
+            return false;
+        }
+
+        return id.equals(otherRequest.id);
+    }
 
     public String getActivity() {
         return activity;
@@ -106,7 +133,11 @@ public class BulkRequest implements Serializable {
         return id;
     }
 
-    public String getTarget() {
+    public Long getSeqNo() {
+        return seqNo;
+    }
+
+    public List<String> getTarget() {
         return target;
     }
 
@@ -129,6 +160,8 @@ public class BulkRequest implements Serializable {
     public boolean isClearOnSuccess() {
         return clearOnSuccess;
     }
+
+    public boolean isPrestore() { return prestore; }
 
     public void setActivity(String activity) {
         this.activity = activity;
@@ -162,7 +195,15 @@ public class BulkRequest implements Serializable {
         this.id = id;
     }
 
-    public void setTarget(String target) {
+    public void setPrestore(boolean prestore) {
+        this.prestore = prestore;
+    }
+
+    public void setSeqNo(Long seqNo) {
+        this.seqNo = seqNo;
+    }
+
+    public void setTarget(List<String> target) {
         this.target = target;
     }
 
@@ -172,5 +213,13 @@ public class BulkRequest implements Serializable {
 
     public void setUrlPrefix(String urlPrefix) {
         this.urlPrefix = urlPrefix;
+    }
+
+    public BulkRequestStatusInfo getStatusInfo() {
+        return statusInfo;
+    }
+
+    public void setStatusInfo(BulkRequestStatusInfo statusInfo) {
+        this.statusInfo = statusInfo;
     }
 }

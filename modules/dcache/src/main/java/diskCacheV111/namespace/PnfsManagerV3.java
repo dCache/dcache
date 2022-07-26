@@ -2731,7 +2731,8 @@ public class PnfsManagerV3
                       envelope.revertDirection();
                       sendMessage(envelope);
                   }
-              });
+              },
+              MoreExecutors.directExecutor());
     }
 
     public void processFlushMessage(PoolFileFlushedMessage pnfsMessage) {

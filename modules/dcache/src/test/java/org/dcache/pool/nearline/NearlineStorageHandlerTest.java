@@ -4,6 +4,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -12,6 +13,8 @@ import static org.mockito.Mockito.when;
 import com.google.common.util.concurrent.MoreExecutors;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileExistsCacheException;
+import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
@@ -30,7 +33,7 @@ import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.nearline.spi.NearlineRequest;
 import org.dcache.pool.nearline.spi.NearlineStorage;
 import org.dcache.pool.repository.FileStore;
-import org.dcache.pool.repository.ReplicaDescriptor;
+import org.dcache.pool.repository.ModifiableReplicaDescriptor;
 import org.dcache.pool.repository.Repository;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
@@ -49,11 +52,13 @@ public class NearlineStorageHandlerTest {
     private PnfsHandler pnfs;
     private FileStore fileStore;
     private ChecksumModule csm;
+    private ModifiableReplicaDescriptor desc;
 
     @Before
     public void setUp() throws Exception {
 
         repository = mock(Repository.class);
+        desc = mock(ModifiableReplicaDescriptor.class);
         pnfs = mock(PnfsHandler.class);
         fileStore = mock(FileStore.class);
         csm = mock(ChecksumModule.class);
@@ -250,6 +255,36 @@ public class NearlineStorageHandlerTest {
     }
 
     @Test
+    public void testFailExceptionallyActiveFlush() throws CacheException {
+        var attr = given(aFile()
+              .withStorageClass("a:b", "foo")
+              .withSize(34567));
+
+        doThrow(new IllegalStateException("injected")).when(desc).close();
+        nsh.flush("foo", Set.of(attr.getPnfsId()), hsmMigrationRequestCallack);
+        var requests = givenAllFlushesActive();
+
+        requests.forEach(r -> r.failed(1, "injected"));
+        assertThat(nsh.getActiveStoreJobs(), is(0));
+        verify(hsmMigrationRequestCallack).failed(any(), any());
+    }
+
+    @Test
+    public void testFailExceptionallyActiveStage() throws CacheException {
+        var attr = given(aFile()
+              .withStorageClass("a:b", "foo")
+              .withSize(34567));
+
+        doThrow(new IllegalStateException("injected")).when(desc).close();
+        nsh.stage("foo", attr, hsmMigrationRequestCallack);
+        var requests = givenAllStagesActive();
+
+        requests.forEach(r -> r.failed(1, "injected"));
+        assertThat(nsh.getActiveFetchJobs(), is(0));
+        verify(hsmMigrationRequestCallack).failed(any(), any());
+    }
+
+    @Test
     public void testCompleteActiveStage() throws CacheException {
         var attr = given(aFile()
               .withStorageClass("a:b", "foo")
@@ -287,6 +322,36 @@ public class NearlineStorageHandlerTest {
         requests.forEach(r -> r.completed(Set.of(URI.create("foo://bar/271"))));
         assertThat(nsh.getActiveStoreJobs(), is(0));
         verify(hsmMigrationRequestCallack, times(1)).completed(any(), any());
+    }
+
+    @Test
+    public void testFlushQueueStateOnError() throws CacheException {
+        var attr = given(aFile()
+              .withStorageClass("a:b", "foo")
+              .withSize(34567));
+
+
+        when(repository.openEntry(any(), any())).thenThrow(new FileNotInCacheException("injected"));
+        nsh.flush("foo", Set.of(attr.getPnfsId()), hsmMigrationRequestCallack);
+
+        assertThat(nsh.getActiveStoreJobs(), is(0));
+        assertThat(nsh.getStoreQueueSize(), is(0));
+        verify(hsmMigrationRequestCallack).failed(any(), any());
+    }
+
+    @Test
+    public void testStageQueueStateOnError() throws CacheException {
+        var attr = given(aFile()
+              .withStorageClass("a:b", "foo")
+              .withSize(34567));
+
+
+        when(repository.createEntry(any(), any(), any(), any(), any(), any())).thenThrow(new FileExistsCacheException("injected"));
+        nsh.stage("foo", attr, hsmMigrationRequestCallack);
+
+        assertThat(nsh.getActiveFetchJobs(), is(0));
+        assertThat(nsh.getFetchQueueSize(), is(0));
+        verify(hsmMigrationRequestCallack).failed(any(), any());
     }
 
     @Test
@@ -344,7 +409,6 @@ public class NearlineStorageHandlerTest {
             var fa = faBuilder.build();
             var id = fa.getPnfsId();
 
-            var desc = mock(ReplicaDescriptor.class);
             when(desc.getFileAttributes()).thenReturn(fa);
 
             when(repository.openEntry(eq(id), any())).thenReturn(desc);

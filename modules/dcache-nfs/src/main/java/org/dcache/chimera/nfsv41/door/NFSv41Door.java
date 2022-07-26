@@ -1,5 +1,6 @@
 package org.dcache.chimera.nfsv41.door;
 
+import static com.google.common.net.InetAddresses.toAddrString;
 import static dmg.util.CommandException.checkCommand;
 import static java.util.stream.Collectors.toList;
 import static org.dcache.chimera.nfsv41.door.ExceptionUtils.asNfsException;
@@ -53,7 +54,6 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
@@ -432,6 +432,7 @@ public class NFSv41Door extends AbstractCellComponent implements
               .withPort(_port)
               .withTCP()
               .withAutoPublish()
+              .withSubjectPropagation()
               .withWorkerThreadIoStrategy();
 
         if (_enableRpcsecGss) {
@@ -841,7 +842,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             for (device_error4 de : ioerr.ffie_errors) {
                 PoolDS ds = _poolDeviceMap.getByDeviceId(de.de_deviceid);
                 String pool = ds == null ? "an unknown pool" : ("pool " + ds.getName());
-                _log.error("Client reports error {} on {} for op {}",
+                _log.error("Client {} reports error {} on {} for op {}", toAddrString(context.getRemoteSocketAddress().getAddress()),
                       nfsstat.toString(de.de_status), pool, nfs_opnum4.toString(de.de_opnum));
 
                 // rise an alarm when client can't connect to the pool
@@ -849,7 +850,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                     _log.error(
                           AlarmMarkerFactory.getMarker(PredefinedAlarm.CLIENT_CONNECTION_REJECTED,
                                 pool),
-                          "Client failed to connect to {}", pool);
+                          "Client {} failed to connect to {}", toAddrString(context.getRemoteSocketAddress().getAddress()), pool);
                 }
             }
         }
@@ -1311,6 +1312,12 @@ public class NFSv41Door extends AbstractCellComponent implements
             deviceid4 ds = waitForRedirect(NFS_REQUEST_BLOCKING).getDeviceId();
             return new deviceid4[]{ds};
         }
+
+        @Override
+        public synchronized boolean hasMover() {
+            // for read request we don't re-send mover kill
+            return !shutdownInProgress && super.hasMover();
+        }
     }
 
     private class WriteTransfer extends NfsTransfer {
@@ -1382,6 +1389,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         protected ListenableFuture<Void> _redirectFuture;
         protected AtomicReference<ChimeraNFSException> _errorHolder = new AtomicReference<>();
         private final NFS4Client _client;
+        protected boolean shutdownInProgress;
 
         NfsTransfer(PnfsHandler pnfs, NFS4Client client, NFS4State openStateId,
               Inode nfsInode, Subject ioSubject) throws ChimeraNFSException {
@@ -1550,6 +1558,8 @@ public class NFSv41Door extends AbstractCellComponent implements
 
                 _log.debug("Shutting down transfer: {}", this);
                 killMover(0, "killed by door: returning layout");
+                shutdownInProgress = true;
+
                 // wait for clean mover shutdown only for writes only
                 if (isWrite() && !waitForMover(NFS_REQUEST_BLOCKING)) {
                     throw new DelayException("Mover not stopped");

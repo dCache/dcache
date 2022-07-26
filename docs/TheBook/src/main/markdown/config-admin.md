@@ -70,16 +70,18 @@ the file `authorized_keys2` which should be placed in the directory
 `admin.paths.authorized-keys`. Each key has to be one line (no line
 breaks) and should have a standard format, such as:
 
-    ssh-dss AAAAB3....GWvM= /Users/JohnDoe/.ssh/id_dsa
+
+    ssh-rsa AAAAB3....GWvM= admin@localhost
 
 
 > **IMPORTANT**
 >
 > Please make sure that the copied key is still in one line. Any line-break will prevent the key from being read.
-
-> **NOTE**
 >
-> You may omit the part behind the equal sign as it is just a comment and not used by dCache.
+> DSA keys are deprecated and will not work.
+>
+> The key's comment (the part behind the equal sign) should match the admin user's name, e.g., admin@localhost
+
 
 Now you can login to the admin interface by
 

@@ -31,11 +31,11 @@
     <property name="timeoutUnit" value="${bulk.service.poolmanager.timeout.unit}"/>
   </bean>
 
-  <bean id="ping-service" class="org.dcache.cells.CellStub">
-    <description>Ping test service cell stub</description>
-    <property name="destination" value="${bulk.service.ping}"/>
-    <property name="timeout" value="${bulk.service.ping.timeout}"/>
-    <property name="timeoutUnit" value="${bulk.service.ping.timeout.unit}"/>
+  <bean id="qos-engine-stub" class="org.dcache.cells.CellStub">
+    <description>QoS Engine communication stub</description>
+    <property name="destination" value="${bulk.service.qos}"/>
+    <property name="timeout" value="${bulk.service.qos.timeout}"/>
+    <property name="timeoutUnit" value="${bulk.service.qos.timeout.unit}"/>
   </bean>
 
   <bean id="pool-monitor" class="org.dcache.poolmanager.RemotePoolMonitor">
@@ -58,51 +58,40 @@
     <description>Used to execute request message handling</description>
     <constructor-arg>
       <bean class="org.dcache.util.BoundedCachedExecutor">
-        <constructor-arg value="${bulk.limits.message-handler-threads}"/>
+        <constructor-arg value="${bulk.limits.incoming-request-threads}"/>
       </bean>
     </constructor-arg>
   </bean>
 
-  <bean id="job-executor"
-        class="org.dcache.util.CDCExecutorServiceDecorator"
-        destroy-method="shutdownNow">
-    <description>Used to execute jobs.</description>
+  <bean id="container-job-executor"
+    class="org.dcache.util.CDCExecutorServiceDecorator"
+    destroy-method="shutdownNow">
+    <description>Used to execute jobs that are executed by a batch container.</description>
     <constructor-arg>
       <bean class="org.dcache.util.BoundedCachedExecutor">
-        <constructor-arg value="${bulk.limits.job-execution-threads}"/>
+        <constructor-arg value="${bulk.limits.container-processing-threads}"/>
       </bean>
     </constructor-arg>
   </bean>
 
-  <bean id="job-callback-executor"
-        class="org.dcache.util.CDCExecutorServiceDecorator"
-        destroy-method="shutdownNow">
-    <description>Used to the callbacks to jobs which send and wait for replies.</description>
+  <bean id="activity-callback-executor"
+    class="org.dcache.util.CDCExecutorServiceDecorator"
+    destroy-method="shutdownNow">
+    <description>Used to execute the future callbacks to jobs which send and wait for replies.</description>
     <constructor-arg>
       <bean class="org.dcache.util.BoundedCachedExecutor">
-        <constructor-arg value="${bulk.limits.job-callback-threads}"/>
+        <constructor-arg value="${bulk.limits.activity-callback-threads}"/>
       </bean>
     </constructor-arg>
   </bean>
 
-  <bean id="cleanup-executor"
-        class="org.dcache.util.CDCExecutorServiceDecorator"
-        destroy-method="shutdownNow">
-    <description>Used to execute jobs.</description>
+  <bean id="cancellation-executor"
+    class="org.dcache.util.CDCScheduledExecutorServiceDecorator"
+    destroy-method="shutdownNow">
+    <description>Used to run delayed clear requests.</description>
     <constructor-arg>
-      <bean class="org.dcache.util.BoundedCachedExecutor">
-        <constructor-arg value="${bulk.limits.job-cleanup-threads}"/>
-      </bean>
-    </constructor-arg>
-  </bean>
-
-  <bean id="processor-executor"
-        class="org.dcache.util.CDCExecutorServiceDecorator"
-        destroy-method="shutdownNow">
-    <description>Used to execute jobs.</description>
-    <constructor-arg>
-      <bean class="org.dcache.util.BoundedCachedExecutor">
-        <constructor-arg value="3"/> <!-- three queue processors -->
+      <bean class="java.util.concurrent.ScheduledThreadPoolExecutor">
+        <constructor-arg value="${bulk.limits.cancellation-threads}"/>
       </bean>
     </constructor-arg>
   </bean>
@@ -110,83 +99,229 @@
   <bean id="delayed-clear-executor"
         class="org.dcache.util.CDCScheduledExecutorServiceDecorator"
         destroy-method="shutdownNow">
-    <description>Used to execute delayed clear requests.</description>
+    <description>Used to run delayed clear requests.</description>
     <constructor-arg>
       <bean class="java.util.concurrent.ScheduledThreadPoolExecutor">
-        <constructor-arg value="${bulk.limits.request-store-clear-threads}"/>
+        <constructor-arg value="${bulk.limits.delay-clear-threads}"/>
       </bean>
     </constructor-arg>
   </bean>
 
-  <bean id="request-store" class="org.dcache.services.bulk.store.file.FileBulkRequestStore">
-    <description>In-memory storage with file back-up for requests</description>
-    <constructor-arg name="storageDir" value="${bulk.store.request-store-dir}"/>
-    <constructor-arg name="delegate">
-        <bean class="org.dcache.services.bulk.store.memory.InMemoryBulkRequestStore"/>
+  <bean id="bulk-data-source" class="com.zaxxer.hikari.HikariDataSource"
+    destroy-method="close">
+    <description>Encapsulates the bulk database connection pool and properties.</description>
+    <constructor-arg>
+      <bean class="com.zaxxer.hikari.HikariConfig">
+        <constructor-arg>
+          <bean class="org.dcache.util.configuration.ConfigurationPropertiesFactoryBean">
+            <property name="prefix" value="qos.db.verifier.hikari-properties"/>
+            <property name="staticEnvironment">
+              <map>
+                <entry key="jdbcUrl" value="${bulk.db.url}"/>
+                <entry key="username" value="${bulk.db.user}"/>
+                <entry key="password"
+                  value="#{ T(diskCacheV111.util.Pgpass).getPassword('${bulk.db.password.file}', '${bulk.db.url}', '${bulk.db.user}', '${bulk.db.password}') }"/>
+                <entry key="autoCommit" value="true"/>
+                <entry key="transactionIsolation" value="TRANSACTION_READ_COMMITTED"/>
+                <entry key="minimumIdle" value="${bulk.db.connections.idle}"/>
+                <entry key="maximumPoolSize" value="${bulk.db.connections.max}"/>
+              </map>
+            </property>
+          </bean>
+        </constructor-arg>
+      </bean>
     </constructor-arg>
+  </bean>
+
+  <bean id="bulk-liquibase" class="org.dcache.util.SpringLiquibase">
+    <description>Bulk database schema manager.</description>
+    <property name="dataSource" ref="bulk-data-source"/>
+    <property name="changeLog" value="classpath:${bulk.db.schema.changelog}"/>
+    <property name="shouldUpdate" value="${bulk.db.schema.auto}"/>
+  </bean>
+
+  <bean id="bulk-jdbc-dao-utils" class="org.dcache.services.bulk.store.jdbc.JdbcBulkDaoUtils">
+    <description>Bulk data access shared methods.</description>
+    <property name="fetchSize" value="${bulk.db.fetch-size}"/>
+  </bean>
+
+  <bean id="bulk-request-dao"
+    class="org.dcache.services.bulk.store.jdbc.request.JdbcBulkRequestDao">
+    <description>Bulk request data access object handler.</description>
+    <property name="dataSource" ref="bulk-data-source"/>
+    <property name="utils" ref="bulk-jdbc-dao-utils"/>
+  </bean>
+
+  <bean id="bulk-request-permissions-dao"
+    class="org.dcache.services.bulk.store.jdbc.request.JdbcBulkRequestPermissionsDao">
+    <description>Bulk request permissions access object handler.</description>
+    <property name="dataSource" ref="bulk-data-source"/>
+    <property name="utils" ref="bulk-jdbc-dao-utils"/>
+  </bean>
+
+  <bean id="bulk-request-target-dao"
+    class="org.dcache.services.bulk.store.jdbc.rtarget.JdbcRequestTargetDao">
+    <description>Bulk request target data access object handler.</description>
+    <property name="dataSource" ref="bulk-data-source"/>
+    <property name="utils" ref="bulk-jdbc-dao-utils"/>
+  </bean>
+
+  <bean id="request-store" class="org.dcache.services.bulk.store.jdbc.request.JdbcBulkRequestStore"
+    init-method="initialize">
+    <description>RDBMS implementation of request storage interface</description>
+    <property name="requestDao" ref="bulk-request-dao"/>
+    <property name="requestTargetDao" ref="bulk-request-target-dao"/>
+    <property name="requestPermissionsDao" ref="bulk-request-permissions-dao"/>
     <property name="scheduler" ref="delayed-clear-executor"/>
+    <property name="targetStore" ref="target-store"/>
+    <property name="expiry" value="${bulk.limits.request-cache-expiration}"/>
+    <property name="expiryUnit" value="${bulk.limits.request-cache-expiration.unit}"/>
+    <property name="capacity" value="${bulk.limits.container-processing-threads}"/>
   </bean>
 
-  <bean id="job-store" class="org.dcache.services.bulk.store.memory.InMemoryBulkJobStore">
-      <description>In-memory Storage for jobs</description>
+  <bean id="target-store" class="org.dcache.services.bulk.store.jdbc.rtarget.JdbcBulkTargetStore">
+    <description>RDBMS implementation of target storage interface</description>
+    <property name="targetDao" ref="bulk-request-target-dao"/>
   </bean>
 
-  <bean id="job-factory" class="org.dcache.services.bulk.job.BulkJobFactory">
-    <description>Factory for creating various types of bulk jobs; uses SPI to load providers.</description>
+  <bean id="qos-response-receiver" class="org.dcache.services.bulk.activity.plugin.qos.QoSResponseReceiver">
+    <description>Relays messages received from the qos-engine concerning update completion.</description>
+  </bean>
+
+  <bean id="activity-factory" class="org.dcache.services.bulk.activity.BulkActivityFactory">
+    <description>Factory for creating various types of bulk activities.</description>
     <property name="pnfsManager" ref="pnfs-manager-stub"/>
     <property name="pinManager" ref="pin-manager-stub"/>
     <property name="poolManager" ref="pool-manager-stub"/>
+    <property name="qosEngine" ref="qos-engine-stub"/>
     <property name="poolMonitor" ref="pool-monitor"/>
-    <property name="pingService" ref="ping-service"/>
+    <property name="qoSResponseReceiver" ref="qos-response-receiver"/>
+    <!-- while it is possible to specify these separately, for now,
+         all activities share the same two executors -->
+    <property name="activityExecutors">
+      <map>
+        <entry key="DELETE" value-ref="container-job-executor"/>
+        <entry key="PIN" value-ref="container-job-executor"/>
+        <entry key="STAGE" value-ref="container-job-executor"/>
+        <entry key="UNPIN" value-ref="container-job-executor"/>
+        <entry key="RELEASE" value-ref="container-job-executor"/>
+        <entry key="UPDATE_QOS" value-ref="container-job-executor"/>
+        <entry key="LOG_TARGET" value-ref="container-job-executor"/>
+      </map>
+    </property>
+    <property name="callbackExecutors">
+      <map>
+        <entry key="DELETE" value-ref="activity-callback-executor"/>
+        <entry key="PIN" value-ref="activity-callback-executor"/>
+        <entry key="STAGE" value-ref="activity-callback-executor"/>
+        <entry key="UNPIN" value-ref="activity-callback-executor"/>
+        <entry key="RELEASE" value-ref="activity-callback-executor"/>
+        <entry key="UPDATE_QOS" value-ref="activity-callback-executor"/>
+        <entry key="LOG_TARGET" value-ref="activity-callback-executor"/>
+      </map>
+    </property>
+    <property name="maxPermits">
+      <map>
+        <entry key="DELETE" value="${bulk.plugin!delete.max-permits}"/>
+        <entry key="PIN" value="${bulk.plugin!pin.max-permits}"/>
+        <entry key="STAGE" value="${bulk.plugin!stage.max-permits}"/>
+        <entry key="UNPIN" value="${bulk.plugin!unpin.max-permits}"/>
+        <entry key="RELEASE" value="${bulk.plugin!release.max-permits}"/>
+        <entry key="UPDATE_QOS" value="${bulk.plugin!update-qos.max-permits}"/>
+        <entry key="LOG_TARGET" value="${bulk.plugin!log-target.max-permits}"/>
+      </map>
+    </property>
+    <property name="retryPolicies">
+      <map>
+        <entry key="DELETE"><bean class="${bulk.plugin!delete.retry-policy}"/></entry>
+        <entry key="PIN"><bean class="${bulk.plugin!pin.retry-policy}"/></entry>
+        <entry key="STAGE"><bean class="${bulk.plugin!stage.retry-policy}"/></entry>
+        <entry key="UNPIN"><bean class="${bulk.plugin!unpin.retry-policy}"/></entry>
+        <entry key="RELEASE"><bean class="${bulk.plugin!release.retry-policy}"/></entry>
+        <entry key="UPDATE_QOS"><bean class="${bulk.plugin!update-qos.retry-policy}"/></entry>
+        <entry key="LOG_TARGET"><bean class="${bulk.plugin!log-target.retry-policy}"/></entry>
+      </map>
+    </property>
+  </bean>
+
+  <bean id="job-factory" class="org.dcache.services.bulk.job.RequestContainerJobFactory">
+    <description>Constructs jobs from activities and targets</description>
+    <property name="activityFactory" ref="activity-factory"/>
+    <property name="listHandler" ref="list-handler"/>
+    <property name="pnfsManager" ref="pnfs-manager-stub"/>
+    <property name="requestStore" ref="request-store"/>
+    <property name="targetStore" ref="target-store"/>
   </bean>
 
   <bean id="statistics" class="org.dcache.services.bulk.util.BulkServiceStatistics">
-    <description>Tracks request and jobs states (counts), sweeper state, etc.</description>
+    <description>Tracks request and target states (counts), sweeper state, etc.</description>
+    <property name="targetStore" ref="target-store"/>
   </bean>
 
-  <bean name="job-queue" class="org.dcache.services.bulk.queue.BulkServiceQueue">
-    <description>The central queuing mechanism for jobs from requests.</description>
+  <bean id="request-handler" class="org.dcache.services.bulk.handler.BulkRequestHandler">
+    <description>Handles submission, cancellation and completion of requests.</description>
     <property name="requestStore" ref="request-store"/>
-    <property name="bulkJobExecutorService" ref="job-executor"/>
-    <property name="cleanupExecutorService" ref="cleanup-executor"/>
-    <property name="processorExecutorService" ref="processor-executor"/>
-    <property name="maxRunningJobs" value="${bulk.limits.max-running-jobs}"/>
-    <property name="maxQueuedJobs" value="${bulk.limits.max-queued-jobs}"/>
-    <property name="avgJobsPerRequest" value="${bulk.limits.avg-jobs-per-request}"/>
-    <property name="timeout" value="${bulk.limits.queue-sweep-interval}"/>
-    <property name="timeoutUnit" value="${bulk.limits.queue-sweep-interval.unit}"/>
-    <property name="completionHandler" ref="handler"/>
-    <property name="submissionHandler" ref="handler"/>
+    <property name="targetStore" ref="target-store"/>
     <property name="statistics" ref="statistics"/>
-  </bean>
-
-  <bean name="handler" class="org.dcache.services.bulk.handlers.BulkRequestHandler">
-    <description>Interacts with the queue, job factory and stores.</description>
-    <property name="requestStore" ref="request-store"/>
-    <property name="queue" ref="job-queue"/>
-    <property name="jobStore" ref="job-store"/>
     <property name="jobFactory" ref="job-factory"/>
+    <property name="requestManager" ref="request-manager"/>
+    <property name="cancelExecutor" ref="cancellation-executor"/>
+  </bean>
+
+  <bean id="scheduler-provider" class="org.dcache.services.bulk.manager.scheduler.BulkSchedulerProvider">
+    <description>Furnishes the request and job schedulers to the job processor.</description>
+    <property name="requestScheduler">
+      <bean class="${bulk.request-scheduler}"/>
+    </property>
+    <property name="requestStore" ref="request-store"/>
+  </bean>
+
+  <bean id="request-manager" class="org.dcache.services.bulk.manager.ConcurrentRequestManager">
+    <description>Core of the service which manages the request and target job lifecycle.</description>
     <property name="statistics" ref="statistics"/>
-    <property name="listHandler" ref="list-handler"/>
-    <property name="callbackExecutorService" ref="job-callback-executor"/>
+    <property name="targetStore" ref="target-store"/>
+    <property name="requestStore" ref="request-store"/>
+    <property name="completionHandler" ref="request-handler"/>
+    <property name="submissionHandler" ref="request-handler"/>
+    <property name="schedulerProvider" ref="scheduler-provider"/>
+    <property name="processorExecutorService">
+      <bean class="org.dcache.util.CDCExecutorServiceDecorator" destroy-method="shutdownNow">
+        <constructor-arg>
+          <bean class="org.dcache.util.BoundedCachedExecutor">
+            <constructor-arg value="1"/>
+          </bean>
+        </constructor-arg>
+      </bean>
+    </property>
+    <property name="maxActiveRequests" value="${bulk.limits.container-processing-threads}"/>
+    <property name="timeout" value="${bulk.limits.sweep-interval}"/>
+    <property name="timeoutUnit" value="${bulk.limits.sweep-interval.unit}"/>
   </bean>
 
   <bean id="bulk-service" class="org.dcache.services.bulk.BulkService">
-    <description>Initializes queue; handles incoming messages.</description>
+    <description>Initializes and starts the request manager; handles incoming messages.</description>
     <property name="incomingExecutorService" ref="incoming-thread-executor"/>
     <property name="maxRequestsPerUser" value="${bulk.limits.max-requests-per-user}"/>
-    <property name="queue" ref="job-queue"/>
+    <property name="maxFlatTargets" value="${bulk.limits.max.targets-per-flat-request}"/>
+    <property name="maxShallowTargets" value="${bulk.limits.max.targets-per-shallow-request}"/>
+    <property name="maxRecursiveTargets" value="${bulk.limits.max.targets-per-recursive-request}"/>
+    <property name="allowedDepth" value="${bulk.allowed-directory-expansion}"/>
     <property name="requestStore" ref="request-store"/>
-    <property name="submissionHandler" ref="handler"/>
+    <property name="activityFactory" ref="activity-factory"/>
     <property name="statistics" ref="statistics"/>
+    <property name="namespace" ref="pnfs-manager-stub"/>
+    <property name="submissionHandler" ref="request-handler"/>
+    <property name="requestManager" ref="request-manager"/>
   </bean>
 
-  <bean id="admin-commands" class="org.dcache.services.bulk.admin.BulkServiceCommands">
+  <bean id="admin-commands" class="org.dcache.services.bulk.BulkServiceCommands">
     <description>Holds the various commands for administrative purposes.</description>
     <property name="service" ref="bulk-service"/>
-    <property name="jobFactory" ref="job-factory"/>
-    <property name="jobStore" ref="job-store"/>
-    <property name="requestHandler" ref="handler"/>
-    <property name="cancelExecutor" ref="incoming-thread-executor"/>
+    <property name="activityFactory" ref="activity-factory"/>
+    <property name="requestStore" ref="request-store"/>
+    <property name="targetStore" ref="target-store"/>
+    <property name="requestManager" ref="request-manager"/>
+    <property name="submissionHandler" ref="request-handler"/>
+    <property name="statistics" ref="statistics"/>
   </bean>
 </beans>

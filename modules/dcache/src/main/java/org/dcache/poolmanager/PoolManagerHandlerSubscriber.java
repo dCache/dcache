@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2016 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 - 2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -30,6 +30,7 @@ import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TimeoutCacheException;
@@ -96,7 +97,7 @@ public class PoolManagerHandlerSubscriber
     public synchronized void start() {
         current = transformAsync(startGate,
               ignored -> CellStub.transform(query(new PoolMgrGetHandler()),
-                    PoolMgrGetHandler::getHandler));
+                    PoolMgrGetHandler::getHandler), MoreExecutors.directExecutor());
 
         Futures.addCallback(current, new FutureCallback<SerializablePoolManagerHandler>() {
             @Override
@@ -108,7 +109,7 @@ public class PoolManagerHandlerSubscriber
                             ListenableFuture<SerializablePoolManagerHandler> next =
                                   CellStub.transform(query(new PoolMgrGetUpdatedHandler(
                                         handler.getVersion())), PoolMgrGetHandler::getHandler);
-                            Futures.addCallback(next, this);
+                            Futures.addCallback(next, this, MoreExecutors.directExecutor());
                         }
                     } catch (Throwable t) {
                         current = Futures.immediateFailedFuture(t);
@@ -126,7 +127,7 @@ public class PoolManagerHandlerSubscriber
                     current = Futures.immediateFailedFuture(t);
                 }
             }
-        });
+        }, MoreExecutors.directExecutor());
     }
 
     @Override
@@ -146,7 +147,7 @@ public class PoolManagerHandlerSubscriber
     @GuardedBy("this")
     private ListenableFuture<PoolMgrGetHandler> query(PoolMgrGetHandler request) {
         return catchingAsync(poolManager.send(request, POLLING_PERIOD, RETRY_ON_NO_ROUTE_TO_CELL),
-              TimeoutCacheException.class, t -> retryQuery(request));
+              TimeoutCacheException.class, t -> retryQuery(request), MoreExecutors.directExecutor());
 
     }
 
@@ -209,7 +210,7 @@ public class PoolManagerHandlerSubscriber
 
     private <T extends Message> ListenableFuture<T> withCurrent(
           AsyncFunction<SerializablePoolManagerHandler, T> f) {
-        return transformAsync(current(), f);
+        return transformAsync(current(), f, MoreExecutors.directExecutor());
     }
 
     private void withCurrent(Consumer<SerializablePoolManagerHandler> f, CellEndpoint endpoint,
@@ -228,6 +229,6 @@ public class PoolManagerHandlerSubscriber
                       envelope.revertDirection();
                       endpoint.sendMessage(envelope);
                   }
-              });
+              }, MoreExecutors.directExecutor());
     }
 }

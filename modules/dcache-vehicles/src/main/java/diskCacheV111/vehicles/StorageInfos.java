@@ -21,7 +21,7 @@ import static com.google.common.collect.Iterables.transform;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
-import com.google.common.collect.Sets;
+import com.google.common.collect.Lists;
 import java.util.Map;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Checksum;
@@ -95,7 +95,7 @@ public class StorageInfos {
         attributes.setHsm(info.getHsm());
         String cFlag = info.getKey("flag-c");
         if (cFlag != null) {
-            attributes.setChecksums(Sets.newHashSet(
+            attributes.setChecksums(Lists.newArrayList(
                   transform(Splitter.on(',').trimResults().omitEmptyStrings().split(cFlag),
                         Checksum::parseChecksum)));
         }

@@ -8,6 +8,7 @@ import dmg.cells.nucleus.UOID;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.services.info.gathers.DgaFactoryService;
@@ -31,7 +32,7 @@ public class TopoDgaFactoryService implements DgaFactoryService, EnvironmentAwar
         Set<Schedulable> activity = new HashSet<>();
 
         activity.add(new SingleMessageDga(sender, _topo, "gettopomap",
-              new TopoMapHandler(sum, msgMetaRepo), 120));
+              new TopoMapHandler(sum, msgMetaRepo), TimeUnit.MINUTES.toSeconds(2)));
 
         return activity;
     }

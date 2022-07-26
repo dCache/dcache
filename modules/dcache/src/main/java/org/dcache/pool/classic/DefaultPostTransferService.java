@@ -19,6 +19,7 @@ package org.dcache.pool.classic;
 
 import static org.dcache.util.Exceptions.messageOrClassName;
 
+import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import diskCacheV111.util.CacheException;
@@ -36,6 +37,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import org.dcache.cells.CellStub;
 import org.dcache.pool.movers.Mover;
+import org.dcache.pool.repository.ModifiableReplicaDescriptor;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.statistics.DirectedIoStatistics;
 import org.dcache.pool.statistics.IoStatistics;
@@ -49,6 +51,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.core.KafkaTemplate;
 
 public class DefaultPostTransferService extends AbstractCellComponent implements
@@ -101,11 +104,13 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
             try {
                 try {
                     if (mover.getIoMode().contains(StandardOpenOption.WRITE)) {
-                        handle.addChecksums(mover.getExpectedChecksums());
-                        _checksumModule.enforcePostTransferPolicy(handle,
+                        ModifiableReplicaDescriptor modHandle = (ModifiableReplicaDescriptor)handle;
+
+                        modHandle.addChecksums(mover.getExpectedChecksums());
+                        _checksumModule.enforcePostTransferPolicy(modHandle,
                               mover.getActualChecksums());
+                        modHandle.commit();
                     }
-                    handle.commit();
                 } finally {
                     handle.close();
                 }
@@ -149,7 +154,13 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
 
     private void sendBillingInfo(MoverInfoMessage moverInfoMessage) {
         _billing.notify(moverInfoMessage);
-        _kafkaSender.accept(moverInfoMessage);
+
+        try {
+            _kafkaSender.accept(moverInfoMessage);
+        } catch (KafkaException e) {
+            LOGGER.warn(Throwables.getRootCause(e).getMessage());
+
+        }
     }
 
     public MoverInfoMessage generateBillingMessage(Mover<?> mover, long fileSize) {

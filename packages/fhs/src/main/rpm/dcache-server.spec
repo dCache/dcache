@@ -114,11 +114,11 @@ rm -rf "$RPM_BUILD_ROOT"
 %attr(-,dcache,dcache) /var/log/dcache
 %attr(-,dcache,dcache) /var/lib/dcache/config
 %attr(700,dcache,dcache) /var/lib/dcache/alarms
-%attr(700,dcache,dcache) /var/lib/dcache/bulk
 %attr(700,dcache,dcache) /var/lib/dcache/credentials
 %attr(700,dcache,dcache) /var/lib/dcache/httpd
 %attr(700,dcache,dcache) /var/lib/dcache/pool-history
 %attr(700,dcache,dcache) /var/lib/dcache/resilience
+%attr(700,dcache,dcache) /var/lib/dcache/qos
 %attr(700,dcache,dcache) /var/lib/dcache/statistics
 %attr(700,dcache,dcache) /var/lib/dcache/nfs
 %attr(750,dcache,dcache) /var/lib/dcache/billing

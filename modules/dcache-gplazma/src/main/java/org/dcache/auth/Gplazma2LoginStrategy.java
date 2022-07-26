@@ -3,21 +3,15 @@ package org.dcache.auth;
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
-import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.EnvironmentAware;
-import dmg.util.Formats;
-import dmg.util.Replaceable;
 import java.io.File;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Properties;
+import static java.util.Objects.requireNonNull;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -29,10 +23,6 @@ import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.GPlazma;
 import org.dcache.gplazma.NoSuchPrincipalException;
-import org.dcache.gplazma.configuration.ConfigurationLoadingStrategy;
-import org.dcache.gplazma.configuration.FromFileConfigurationLoadingStrategy;
-import org.dcache.gplazma.loader.DcacheAwarePluginFactory;
-import org.dcache.gplazma.loader.PluginFactory;
 import org.dcache.gplazma.monitor.LoginResult;
 import org.dcache.gplazma.monitor.LoginResultPrinter;
 import org.dcache.gplazma.monitor.RecordingLoginMonitor;
@@ -45,8 +35,7 @@ import org.springframework.beans.factory.annotation.Required;
 /**
  * A LoginStrategy that delegates login requests to an instance of org.dcache.gplazma.GPlazma.
  */
-public class Gplazma2LoginStrategy
-      implements LoginStrategy, EnvironmentAware, CellCommandListener {
+public class Gplazma2LoginStrategy implements LoginStrategy, CellCommandListener {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Gplazma2LoginStrategy.class);
 
@@ -67,8 +56,6 @@ public class Gplazma2LoginStrategy
 
     private String _configurationFile;
     private GPlazma _gplazma;
-    private Map<String, Object> _environment = Collections.emptyMap();
-    private PluginFactory _factory;
     private Function<FsPath, PrefixRestriction> _createPrefixRestriction;
 
     static {
@@ -99,47 +86,12 @@ public class Gplazma2LoginStrategy
     }
 
     @Required
-    public void setNameSpace(NameSpaceProvider namespace) {
-        _factory = new DcacheAwarePluginFactory(namespace);
+    public void setGplazma(GPlazma gplazma) {
+        _gplazma = requireNonNull(gplazma);
     }
 
     public String getConfigurationFile() {
         return _configurationFile;
-    }
-
-    @Override
-    public void setEnvironment(Map<String, Object> environment) {
-        _environment = environment;
-    }
-
-    public Map<String, Object> getEnvironment() {
-        return _environment;
-    }
-
-    public Properties getEnvironmentAsProperties() {
-        Replaceable replaceable = name -> Objects.toString(_environment.get(name), null);
-
-        Properties properties = new Properties();
-        for (Map.Entry<String, Object> e : _environment.entrySet()) {
-            String key = e.getKey();
-            String value = String.valueOf(e.getValue());
-            properties.put(key, Formats.replaceKeywords(value, replaceable));
-        }
-
-        return properties;
-    }
-
-    public void init() {
-        ConfigurationLoadingStrategy configuration =
-              new FromFileConfigurationLoadingStrategy(_configurationFile);
-        _gplazma =
-              new GPlazma(configuration, getEnvironmentAsProperties(), _factory);
-    }
-
-    public void shutdown() {
-        if (_gplazma != null) {
-            _gplazma.shutdown();
-        }
     }
 
     private LoginReply convertLoginReply(org.dcache.gplazma.LoginReply gPlazmaLoginReply) {

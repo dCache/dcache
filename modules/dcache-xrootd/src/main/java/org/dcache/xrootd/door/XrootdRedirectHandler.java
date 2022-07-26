@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -55,6 +55,7 @@ import static org.dcache.xrootd.util.TriedRc.ENOENT;
 import static org.dcache.xrootd.util.TriedRc.IOERR;
 
 import com.google.common.base.Strings;
+import com.google.common.base.Throwables;
 import com.google.common.net.InetAddresses;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileExistsCacheException;
@@ -83,6 +84,7 @@ import java.util.OptionalLong;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
 import org.dcache.auth.LoginReply;
@@ -96,10 +98,10 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Checksum;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
+import org.dcache.xrootd.LoginTokens;
 import org.dcache.xrootd.core.XrootdException;
 import org.dcache.xrootd.core.XrootdSession;
 import org.dcache.xrootd.protocol.XrootdProtocol;
-import org.dcache.xrootd.protocol.messages.AwaitAsyncResponse;
 import org.dcache.xrootd.protocol.messages.CloseRequest;
 import org.dcache.xrootd.protocol.messages.DirListRequest;
 import org.dcache.xrootd.protocol.messages.DirListResponse;
@@ -117,6 +119,7 @@ import org.dcache.xrootd.protocol.messages.StatRequest;
 import org.dcache.xrootd.protocol.messages.StatResponse;
 import org.dcache.xrootd.protocol.messages.StatxRequest;
 import org.dcache.xrootd.protocol.messages.StatxResponse;
+import org.dcache.xrootd.protocol.messages.WaitRetryResponse;
 import org.dcache.xrootd.protocol.messages.XrootdResponse;
 import org.dcache.xrootd.tpc.XrootdTpcInfo;
 import org.dcache.xrootd.tpc.XrootdTpcInfo.Cgi;
@@ -193,6 +196,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
     private final LoginSessionInfo _defaultLoginSessionInfo;
     private final Deque<LoginSessionInfo> _logins;
     private final FsPath _rootPath;
+    private final AtomicInteger openRetry = new AtomicInteger(0);
 
     /**
      * Custom entries for kXR_Qconfig requests.
@@ -223,13 +227,24 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable t) {
         if (t instanceof ClosedChannelException) {
-            _log.info("Connection closed");
+            _log.info("Connection unexpectedly closed on {}, cause {}.", ctx.channel(),
+                  Throwables.getRootCause(t).toString());
         } else if (t instanceof RuntimeException || t instanceof Error) {
             Thread me = Thread.currentThread();
             me.getUncaughtExceptionHandler().uncaughtException(me, t);
         } else if (!isHealthCheck() || !(t instanceof IOException)) {
-            _log.warn(t.toString());
+            _log.warn("exception caught on {}: {}, cause {}.", ctx.channel(), t.getMessage(),
+                  Throwables.getRootCause(t).toString());
+        } else {
+            _log.info("IO exception caught during health check on {}: {}, cause {}.", ctx.channel(),
+                  t.getMessage(), Throwables.getRootCause(t).toString());
         }
+    }
+
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        _log.info("channel inactive event received on {}.", ctx.channel());
+        ctx.fireChannelInactive();
     }
 
     /**
@@ -240,10 +255,10 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
      * For third-party copy where dCache is the source, the interactions are as follows:
      * <p>
      * 1.  The client opens the file to check availability (the 'placement' stage).  An OK response
-     * is followed by the client closing the file. 2.  The client opens the file again with
-     * rendezvous metadata.  The client will close the file only when notified by the destination
-     * server that the transfer has completed. 3.  The destination server will open the file for the
-     * actual read.
+     * is followed by the client closing the file. 2. Full TPC:  The client opens the file again
+     * with rendezvous metadata.  The client will close the file only when notified by the
+     * destination server that the transfer has completed. If TPC Lite (delegation), #2 is skipped.
+     * 3.  The destination server will open the file for the actual read.
      * <p>
      * The order of 2, 3 is not deterministic; hence the response here must provide for the
      * possibility that the destination server attempts an open before the client specifies a
@@ -256,15 +271,14 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
      * seconds; otherwise, if the request matches and occurs within the ttl, the mover will be
      * started and the destination redirected to the pool. Response to the client will carry a file
      * handle but will not actually open a mover.  The close from the client is handled at the door
-     * by removing the rendezvous information.
+     * by removing the rendezvous information.  All of this is skipped if the third-party client has
+     * been delegated a credential, in which case it connects and is treated as if it were a normal
+     * two-party read.
      * <p>
      * Third-party copy where dCache is the destination should proceed with the usual upload
      * transfer creation, but when the client is redirected to the pool and calls kXR_open there, a
      * third-party client will be started which does read requests from the source and then writes
      * the data to the mover channel.
-     * <p>
-     * NOTE:  with the changed TPC Lite protocol, the client is not required to open the source
-     * again during the copy phase (2) if delegation is being used.
      */
     @Override
     protected XrootdResponse<OpenRequest> doOnOpen(ChannelHandlerContext ctx, OpenRequest req) {
@@ -278,7 +292,6 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
          * introduces an artificial 1 second delay when processing such a response.
          */
 
-        InetSocketAddress localAddress = getDestinationAddress();
         InetSocketAddress remoteAddress = getSourceAddress();
         LoginSessionInfo loginSessionInfo = sessionInfo();
 
@@ -302,7 +315,8 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
             FsPath path = createFullPath(req.getPath());
 
             XrootdResponse response
-                  = conditionallyHandleThirdPartyRequest(req,
+                  = conditionallyHandleThirdPartyRequest(ctx,
+                  req,
                   loginSessionInfo,
                   opaque,
                   path,
@@ -361,7 +375,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
                 transfer = _door.write(remoteAddress, path, triedHosts,
                       ioQueue, uuid, true, overwrite, size,
                       loginSessionInfo.getMaximumUploadSize(),
-                      localAddress,
+                      localAddress(),
                       loginSessionInfo.getSubject(),
                       loginSessionInfo.getRestriction(),
                       persistOnSuccessfulClose,
@@ -389,7 +403,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
                 }
 
                 transfer = _door.read(remoteAddress, path, triedHosts, ioQueue,
-                      uuid, localAddress, subject,
+                      uuid, localAddress(), subject,
                       loginSessionInfo.getRestriction(), opaque);
 
                 /*
@@ -433,24 +447,26 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
 
             _log.info("Redirecting to {}, {}", host, address);
 
+            String token = LoginTokens.encodeToken(localAddress());
+
             return new RedirectResponse<>(req, host, address.getPort(),
-                  opaqueString, "");
+                  opaqueString, token);
         } catch (ParseException e) {
-            return withError(req, kXR_ArgInvalid, "Path arguments do not parse");
+            return withError(ctx, req, kXR_ArgInvalid, "Path arguments do not parse");
         } catch (FileNotFoundCacheException e) {
-            return withError(req, xrootdErrorCode(e.getRc()), "No such file");
+            return withError(ctx, req, xrootdErrorCode(e.getRc()), "No such file");
         } catch (FileExistsCacheException e) {
-            return withError(req, kXR_NotAuthorized, "File already exists");
+            return withError(ctx, req, kXR_NotAuthorized, "File already exists");
         } catch (TimeoutCacheException e) {
-            return withError(req, xrootdErrorCode(e.getRc()), "Internal timeout");
+            return withError(ctx, req, xrootdErrorCode(e.getRc()), "Internal timeout");
         } catch (PermissionDeniedCacheException e) {
-            return withError(req, xrootdErrorCode(e.getRc()), e.getMessage());
+            return withError(ctx, req, xrootdErrorCode(e.getRc()), e.getMessage());
         } catch (FileIsNewCacheException e) {
-            return withError(req, xrootdErrorCode(e.getRc()), "File is locked by upload");
+            return withError(ctx, req, xrootdErrorCode(e.getRc()), "File is locked by upload");
         } catch (NotFileCacheException e) {
-            return withError(req, xrootdErrorCode(e.getRc()), "Not a file");
+            return withError(ctx, req, xrootdErrorCode(e.getRc()), "Not a file");
         } catch (CacheException e) {
-            return withError(req, xrootdErrorCode(e.getRc()),
+            return withError(ctx, req, xrootdErrorCode(e.getRc()),
                   String.format("Failed to open file (%s [%d])",
                         e.getMessage(), e.getRc()));
         } catch (InterruptedException e) {
@@ -459,10 +475,22 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
              * message will never reach the client, so saying that the
              * server shut down is okay.
              */
-            return withError(req, kXR_ServerError, "Server shutdown");
+            return withError(ctx, req, kXR_ServerError, "Server shutdown");
         } catch (XrootdException e) {
-            return withError(req, e.getError(), e.getMessage());
+            return withError(ctx, req, e.getError(), e.getMessage());
         }
+    }
+
+    /**
+     * The door's endpoint to which a client may connect.
+     */
+    private InetSocketAddress localAddress()
+    {
+        /*
+         * Use the advertised endpoint, if possble, otherwise fall back to the
+         * address to which the client connected.
+         */
+        return _door.publicEndpoint().orElse(getDestinationAddress());
     }
 
     /**
@@ -476,12 +504,12 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
      * need to wait for the rendezvous destination check by comparing the open from the source.</p>
      *
      * <p>There is also the case where no delegated proxy exists but
-     * a different authentication protocol (like ZTN/scitokens) is being used.  It seems that even
-     * with delegation in this case the initiating client does not call open. A check for authz in
-     * the opaque data has been added (03/21/2021).</p>
+     * a different authentication protocol (like ZTN/scitokens) is being used.  If --tpc delegate
+     * only has been used, we allow rendezvous to take </p>
      */
     private XrootdResponse<OpenRequest>
-    conditionallyHandleThirdPartyRequest(OpenRequest req,
+    conditionallyHandleThirdPartyRequest(ChannelHandlerContext ctx,
+          OpenRequest req,
           LoginSessionInfo loginSessionInfo,
           Map<String, String> opaque,
           FsPath fsPath,
@@ -514,101 +542,109 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
             return null;  // proceed as usual with mover + redirect
         }
 
-        if (opaque.containsKey(Cgi.AUTHZ.key())) {
-            _log.debug("{} –– request contains authorization token.", req);
-            return null;  // proceed as usual with mover + redirect
-        }
-
-        enforceClientTlsIfDestinationRequiresItForTpc(opaque);
-
         /*
-         * Check the session for the delegated credential to avoid hanging
-         * in the case that tpc cgi have been passed by the destination
-         * server even with TPC with delegation.
+         * Check the session for the delegated credential first, to avoid hanging
+         * in the case that tpc cgi have been passed anyway by the destination server
+         * to the TPC client.
          */
         if (req.getSession().getDelegatedCredential() != null) {
             _log.debug("{} –– third-party request with delegation.", req);
             return null;  // proceed as usual with mover + redirect
         }
 
-        String slfn = req.getPath();
+        enforceClientTlsIfDestinationRequiresItForTpc(opaque);
 
+        String slfn = req.getPath();
         XrootdTpcInfo info = _door.createOrGetRendezvousInfo(tpcKey);
 
         /*
-         *  The request originated from the TPC destination server.
-         *  If the client has not yet opened the file here,
+         *  The request originated from the destination TPC client.
+         *  If the initiating client has not yet opened the file here,
          *  tells the destination to wait.  If the verification, including
          *  time to live, fails, the request is cancelled.  Otherwise,
          *  the destination is allowed to open the mover and get the
          *  normal redirect response.
          *
-         *  Note that the tpc info is created by either the client or the
-         *  server, whichever gets here first.  Verification of the key
+         *  Note that the tpc info is created by either the initiating client or the
+         *  destination client, whichever gets here first.  Verification of the key
          *  itself is implicit (it has been found in the map); correctness is
          *  further satisfied by matching org, host and file name.
          */
         if (opaque.containsKey("tpc.org")) {
-            info.addInfoFromOpaque(slfn, opaque);
+            if (opaque.containsKey(Cgi.AUTHZ.key())) {
+                /*
+                 * Since it possesses a bearer token, this means that --tpc delegate only
+                 * was called, and therefore that the client will not do a second
+                 * open with the tpcKey on the source. Thus we should
+                 * remove the key and return immediately.
+                 */
+                _door.removeTpcPlaceholder(tpcKey);
+                _log.debug("{} –– request contains authorization token.", req);
+                return null;  // proceed as usual with mover + redirect
+            }
+
+            info.addInfoFromOpaque(slfn, opaque); /** updates the status **/
             switch (info.verify(remoteHost, slfn, opaque.get("tpc.org"))) {
                 case READY:
                     _log.debug("Open request {} from destination server, info {}: "
                                 + "OK to proceed.",
                           req, info);
                     /*
-                     *  This means that the destination server open arrived
-                     *  second, the client server open succeeded with
+                     *  This means that the tpc client open arrived
+                     *  second, the initiating client open succeeded with
                      *  the correct permissions; proceed as usual
                      *  with mover + redirect.
                      */
                     return null;
                 case PENDING:
                     _log.debug("Open request {} from destination server, info {}: "
-                                + "PENDING client open.",
+                                + "PENDING client open; sending WAIT-RETRY.",
                           req, info);
                     /*
-                     *  This means that the destination server open arrived
-                     *  first; return a wait-retry reply.
+                     *  This means that the tpc client open arrived
+                     *  first, the initiating client open has not yet taken place;
+                     *  tell the tpc client to wait and retry.
+                     *
+                     *  Keep track of the retries and fail after 10.
                      */
-                    return new AwaitAsyncResponse<>(req, 3);
-                case CANCELLED:
-                    String error = info.isExpired() ? "ttl expired" : "dst, path or org"
-                          + " did not match";
-                    _log.warn("Open request {} from destination server, info {}: "
-                                + "CANCELLED: {}.",
-                          req, info, error);
-                    _door.removeTpcPlaceholder(info.getFd());
-                    return withError(req, kXR_InvalidRequest,
-                          "tpc rendezvous for " + tpcKey
-                                + ": " + error);
+                    if (openRetry.incrementAndGet() < 10) {
+                        return new WaitRetryResponse<>(req, 1);
+                    }
+                    /*  fall through to ERROR condition */
                 case ERROR:
                     /*
                      *  This means that the destination server requested open
                      *  before the client did, and the client did not have
                      *  read permissions on this file.
                      */
-                    error = "invalid open request (file permissions).";
+                    String error = "invalid open request (file permissions).";
                     _log.warn("Open request {} from destination server, info {}: "
                                 + "ERROR: {}.",
                           req, info, error);
                     _door.removeTpcPlaceholder(info.getFd());
-                    return withError(req, kXR_InvalidRequest,
+                    return withError(ctx, req, kXR_InvalidRequest,
+                          "tpc rendezvous for " + tpcKey
+                                + ": " + error);
+                case CANCELLED:
+                    error = info.isExpired() ? "ttl expired" : "dst, path or org"
+                          + " did not match";
+                    _log.warn("Open request {} from destination server, info {}: "
+                                + "CANCELLED: {}.",
+                          req, info, error);
+                    _door.removeTpcPlaceholder(info.getFd());
+                    return withError(ctx, req, kXR_InvalidRequest,
                           "tpc rendezvous for " + tpcKey
                                 + ": " + error);
             }
         }
 
         /*
-         *  The request originated from the TPC client, indicating door
-         *  is the source.
+         *  The request originated from the client, indicating that this door is the source.
          */
         if (opaque.containsKey("tpc.dst")) {
             _log.debug("Open request {} from client to door as source, "
                   + "info {}: OK.", req, info);
-            FileStatus status = _door.getFileStatus(fsPath,
-                  subject,
-                  restriction,
-                  remoteHost);
+            FileStatus status = _door.getFileStatus(fsPath, subject, restriction, remoteHost);
             int flags = status.getFlags();
 
             if ((flags & kXR_readable) != kXR_readable) {
@@ -617,32 +653,20 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
                  * it, an error can be returned.
                  */
                 info.setStatus(Status.ERROR);
-                return withError(req, kXR_InvalidRequest,
+                return withError(ctx, req, kXR_InvalidRequest,
                       "not allowed to read file.");
             }
 
-            info.addInfoFromOpaque(slfn, opaque);
+            info.addInfoFromOpaque(slfn, opaque); /** updates the status **/
             return new OpenResponse(req, info.getFd(),
                   null, null,
                   status);
         }
 
         /*
-         *  The request originated from the TPC client, indicating door
-         *  is the destination.
-         *
-         *  First check for TLS capability if this is required.
-         *
-         *  Remove the rendezvous info (not needed),
-         *  allow mover to start and redirect the client to the pool.
-         *
-         *  It is not necessary to delegate the tpc information through the
-         *  protocol, particularly the rendezvous key, because it is part of
-         *  the opaque data, and if any of the opaque tpc info is missing
-         *  from redirected call to the pool, the transfer will fail.
-         *
-         *  However, the calling method will need to fetch a delegated
-         *  proxy credential and add that to the protocol.
+         *  The request originated from the client, indicating that this door is the destination.
+         *  There is no need for tpcInfo stored on the destination, so we remove it and
+         *  allow the write mover to be started on the selected pool.
          */
         if (opaque.containsKey("tpc.src")) {
             _log.debug("Open request {} from client to door as destination: OK;"
@@ -751,7 +775,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
         if (_door.removeTpcPlaceholder(fd)) {
             return withOk(msg);
         } else {
-            return withError(msg, kXR_FileNotOpen,
+            return withError(ctx, msg, kXR_FileNotOpen,
                   "Invalid file handle " + fd
                         + " for tpc source close.");
         }
@@ -1184,7 +1208,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
             }
 
             respond(_context,
-                  withError(_request, xrootdErrorCode(rc), errorMessage));
+                  withError(_context, _request, xrootdErrorCode(rc), errorMessage));
         }
 
         /**
@@ -1193,7 +1217,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
         @Override
         public void noroute(CellPath path) {
             respond(_context,
-                  withError(_request,
+                  withError(_context, _request,
                         kXR_ServerError,
                         "Could not contact PNFS Manager."));
         }
@@ -1222,7 +1246,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
         @Override
         public void timeout(String error) {
             respond(_context,
-                  withError(_request,
+                  withError(_context, _request,
                         kXR_ServerError,
                         "Timeout when trying to list directory!"));
         }
@@ -1289,8 +1313,8 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
     }
 
     /**
-     * Stack of maximum depth = 2.   The first object present is considered the main login info.
-     * The second is valid only once and then should be discarded.  This is to allow for passing (or
+     * Stack of maximum depth = 2.   The first object present is considered the main login info. The
+     * second is valid only once and then should be discarded.  This is to allow for passing (or
      * not) multiple authorization tokens on the same session/connection.
      *
      * @return current info.

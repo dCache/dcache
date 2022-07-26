@@ -72,6 +72,7 @@ import org.dcache.pool.repository.DuplicateEntryException;
 import org.dcache.pool.repository.EntryChangeEvent;
 import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.LimitedAllocator;
+import org.dcache.pool.repository.ModifiableReplicaDescriptor;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.ReplicaRecord;
 import org.dcache.pool.repository.ReplicaState;
@@ -631,7 +632,7 @@ public class ReplicaRepository
     }
 
     @Override
-    public ReplicaDescriptor createEntry(FileAttributes fileAttributes,
+    public ModifiableReplicaDescriptor createEntry(FileAttributes fileAttributes,
           ReplicaState transferState,
           ReplicaState targetState,
           List<StickyRecord> stickyRecords,

@@ -178,6 +178,7 @@
     <bean id="resource-factory" class="org.dcache.webdav.DcacheResourceFactory">
         <description>Exposes dCache resources to Milton WebDAV library</description>
 
+        <property name="remoteTransferHandler" ref="remote-transfer-handler"/>
         <property name="pnfsStub" ref="pnfs-stub"/>
         <property name="spaceLookupCache">
             <bean class="org.dcache.space.ReservationCaches" factory-method="buildSpaceLookupCache">
@@ -262,6 +263,12 @@
         <property name="templateConfig" ref="template-config"/>
     </bean>
 
+    <bean id="well-known-producer-factory-provider"
+      class="org.dcache.services.httpd.wellknown.WellKnownProducerFactoryProvider"
+      init-method="initialize">
+      <description>Loads the factories for producers of well-known endpoint content.</description>
+    </bean>
+
     <bean id="handlers" class="org.eclipse.jetty.server.handler.HandlerList">
       <description>List of handlers for HTTP requests</description>
       <property name="handlers">
@@ -296,6 +303,15 @@
                       </bean>
                   </property>
               </bean>
+            <bean class="org.eclipse.jetty.server.handler.ContextHandler">
+              <property name="contextPath" value="/.well-known"/>
+              <property name="allowNullPathInfo" value="true"/>
+              <property name="handler">
+                <bean class="org.dcache.services.httpd.handlers.WellKnownHandler">
+                  <property name="factoryProvider" ref="well-known-producer-factory-provider"/>
+                </bean>
+              </property>
+            </bean>
               <bean class="org.dcache.webdav.owncloud.OwnCloudHandler"/>
               <bean class="org.dcache.webdav.LoggingHandler">
                   <property name="handler">

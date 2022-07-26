@@ -20,8 +20,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 import javax.annotation.concurrent.GuardedBy;
 import org.dcache.pool.repository.ForwardingRepositoryChannel;
@@ -54,6 +52,7 @@ public class ChecksumChannel extends ForwardingRepositoryChannel {
     /**
      * Cached checksum after getChecksums is called the first time.
      */
+    @GuardedBy("this")
     private Set<Checksum> _finalChecksums;
 
     /**
@@ -71,20 +70,6 @@ public class ChecksumChannel extends ForwardingRepositoryChannel {
      * Flag to indicate whether it is still possible to calculated a checksum
      */
     private volatile boolean _isChecksumViable = true;
-
-    /**
-     * Flag to indicate whether we still allow writing to the channel. This flag is set to false
-     * after getChecksums has been called.
-     */
-    @GuardedBy("_ioStateLock")
-    private boolean _isWritable = true;
-
-    /**
-     * Lock to protect _isWritable field.
-     */
-    private final ReentrantReadWriteLock _ioStateLock = new ReentrantReadWriteLock();
-    private final Lock _ioStateReadLock = _ioStateLock.readLock();
-    private final Lock _ioStateWriteLock = _ioStateLock.writeLock();
 
     /**
      * Buffer to be used for reading data back from the inner channel for checksum calculations.
@@ -151,22 +136,15 @@ public class ChecksumChannel extends ForwardingRepositoryChannel {
 
     @Override
     public int write(ByteBuffer buffer, long position) throws IOException {
-        _ioStateReadLock.lock();
-        try {
-            checkState(_isWritable, "ChecksumChannel must not be written to after getChecksums");
-
-            int bytes;
-            if (_isChecksumViable) {
-                ByteBuffer readOnly = buffer.asReadOnlyBuffer();
-                bytes = _channel.write(buffer, position);
-                updateChecksum(readOnly, position, bytes);
-            } else {
-                bytes = _channel.write(buffer, position);
-            }
-            return bytes;
-        } finally {
-            _ioStateReadLock.unlock();
+        int bytes;
+        if (_isChecksumViable) {
+            ByteBuffer readOnly = buffer.asReadOnlyBuffer();
+            bytes = _channel.write(buffer, position);
+            updateChecksum(readOnly, position, bytes);
+        } else {
+            bytes = _channel.write(buffer, position);
         }
+        return bytes;
     }
 
     @Override
@@ -178,43 +156,27 @@ public class ChecksumChannel extends ForwardingRepositoryChannel {
 
     @Override
     public int write(ByteBuffer src) throws IOException {
-        _ioStateReadLock.lock();
-        try {
-
-            checkState(_isWritable, "ChecksumChannel must not be written to after getChecksums");
-
-            int bytes;
-            if (_isChecksumViable) {
-                bytes = writeWithChecksumUpdate(src);
-            } else {
-                bytes = _channel.write(src);
-            }
-            return bytes;
-        } finally {
-            _ioStateReadLock.unlock();
+        int bytes;
+        if (_isChecksumViable) {
+            bytes = writeWithChecksumUpdate(src);
+        } else {
+            bytes = _channel.write(src);
         }
+        return bytes;
     }
 
     @Override
     public long write(ByteBuffer[] srcs, int offset, int length)
           throws IOException {
-        _ioStateReadLock.lock();
-        try {
-
-            checkState(_isWritable, "ChecksumChannel must not be written to after getChecksums");
-
-            long bytes = 0;
-            if (_isChecksumViable) {
-                for (int i = offset; i < offset + length; i++) {
-                    bytes += writeWithChecksumUpdate(srcs[i]);
-                }
-            } else {
-                bytes = _channel.write(srcs, offset, length);
+        long bytes = 0;
+        if (_isChecksumViable) {
+            for (int i = offset; i < offset + length; i++) {
+                bytes += writeWithChecksumUpdate(srcs[i]);
             }
-            return bytes;
-        } finally {
-            _ioStateReadLock.unlock();
+        } else {
+            bytes = _channel.write(srcs, offset, length);
         }
+        return bytes;
     }
 
     @Override
@@ -222,40 +184,44 @@ public class ChecksumChannel extends ForwardingRepositoryChannel {
         return write(srcs, 0, srcs.length);
     }
 
-    /**
-     * @return final checksum of this channel
-     */
-    public Set<Checksum> getChecksums() {
-        if (!_isChecksumViable) {
-            return Collections.emptySet();
-        }
-
+    @Override
+    public synchronized void close() throws IOException {
         if (_finalChecksums == null) {
             _finalChecksums = finalizeChecksums();
         }
+
+        super.close();
+    }
+
+    /**
+     * Provide the checksums calculated from writing data to this channel.
+     * Calling this method is only valid after the channel has been closed.
+     * @return on-the-fly checksums of this channel.
+     */
+    public synchronized Set<Checksum> getChecksums() {
+        checkState(!isOpen(), "Checksums are only available after the channel is closed.");
         return _finalChecksums;
     }
 
     /**
-     * Returns the computed digest or null if overlapping writes have been detected.
-     *
-     * @return Checksum
+     * Complete checksum calculation.  For non-sparse files, this method is
+     * trivial.  For sparse files, any gaps are assumed to be zero bytes and the
+     * checksum is calculated accordingly.  If there is any problem then this
+     * method returns an empty set.
+     * @return Checksums for this channel.
      */
     private Set<Checksum> finalizeChecksums() {
 
-        _ioStateWriteLock.lock();
-        try {
-            _isWritable = false;
-        } finally {
-            _ioStateWriteLock.unlock();
+        if (!_isChecksumViable) {
+            return Collections.emptySet();
         }
 
         // we need to synchronize on rangeSet and digest get exclusive access
         synchronized (_dataRangeSet) {
             synchronized (_digests) {
                 try {
-
-                    if (_dataRangeSet.asRanges().size() != 1 || _nextChecksumOffset == 0) {
+                    if (_dataRangeSet.asRanges().size() > 1
+                            || (_dataRangeSet.asRanges().size() == 1 && _nextChecksumOffset == 0)) {
                         feedZerosToDigesterForRangeGaps();
                     }
 

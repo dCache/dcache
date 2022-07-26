@@ -21,13 +21,12 @@ import static org.dcache.xrootd.plugins.authn.ztn.ZTNCredential.PROTOCOL;
 import java.util.Properties;
 import org.dcache.xrootd.plugins.AuthenticationFactory;
 import org.dcache.xrootd.plugins.AuthenticationProvider;
-import org.dcache.xrootd.plugins.InvalidHandlerConfigurationException;
 
 public class BearerTokenZTNAuthnProvider implements AuthenticationProvider {
 
     @Override
     public AuthenticationFactory createFactory(String plugin, Properties properties)
-          throws ClassNotFoundException, InvalidHandlerConfigurationException {
+          throws ClassNotFoundException {
         return PROTOCOL.equals(plugin) ?
               new BearerTokenZTNAuthnFactory(properties) : null;
     }

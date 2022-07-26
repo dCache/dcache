@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2007-2021 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2007-2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -18,7 +18,6 @@
 package org.dcache.pool.classic;
 
 import static com.google.common.collect.Iterables.concat;
-import static com.google.common.collect.Iterables.isEmpty;
 import static org.dcache.pool.classic.ChecksumModuleV1.PolicyFlag.ENFORCE_CRC;
 import static org.dcache.pool.classic.ChecksumModuleV1.PolicyFlag.GET_CRC_FROM_HSM;
 import static org.dcache.pool.classic.ChecksumModuleV1.PolicyFlag.ON_FLUSH;
@@ -38,9 +37,9 @@ import static org.dcache.util.ChecksumType.SHA512;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.collect.Streams;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileCorruptedCacheException;
 import dmg.cells.nucleus.CellCommandListener;
@@ -54,7 +53,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -73,6 +71,7 @@ import javax.annotation.concurrent.GuardedBy;
 import org.dcache.pool.PoolDataBeanProvider;
 import org.dcache.pool.classic.json.ChecksumModuleData;
 import org.dcache.pool.repository.FileStore;
+import org.dcache.pool.repository.ModifiableReplicaDescriptor;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.ReplicaRecord;
 import org.dcache.pool.repository.RepositoryChannel;
@@ -109,7 +108,7 @@ public class ChecksumModuleV1
         ON_FLUSH,
 
         /**
-         * Validate checsum after restore from HSM.
+         * Validate checksum after restore from HSM.
          */
         ON_RESTORE,
 
@@ -311,10 +310,10 @@ public class ChecksumModuleV1
 
         @Option(name = "enforcecrc",
               category = "Transfer options",
-              usage =
-                    "If no checksum was calculated during the transfer and no checksum was provided "
-                          +
-                          "by the client, then a checksum will be computed from the uploaded file.",
+              usage = "Guarantee that at least one checksum is known for files by triggering a "
+                  + "post-transfer checksum calculation if no checksum was calculated during the "
+                  + "transfer.  Be aware that, if triggered, this will introduce a delay after the "
+                  + "transfer and that some clients may time out in the meantime.",
               values = {"", "on", "off"},
               valueSpec = "on|off")
         String enforceCrc;
@@ -344,12 +343,6 @@ public class ChecksumModuleV1
         @Option(name = "v",
               usage = "Verbose.")
         boolean verbose;
-
-        @Option(name = "frequently",
-              metaVar = "IGNORED_VALUE",
-              usage = "This option is accepted but ignored.  It exists only " +
-                    "for backwards compatibility with older dCache pool 'setup' files")
-        String ignoredValue;
 
         private void updatePolicy(String value, PolicyFlag flag) {
             if (value != null) {
@@ -478,18 +471,25 @@ public class ChecksumModuleV1
         return additionalChecksums;
     }
 
+    private EnumSet<ChecksumType> checksumTypesOf(Collection<Checksum> checksums) {
+        return checksums.stream()
+            .map(Checksum::getType)
+            .collect(Collectors.toCollection(() -> EnumSet.noneOf(ChecksumType.class)));
+    }
+
     @Override
     public void enforcePostTransferPolicy(
-          ReplicaDescriptor handle, Iterable<Checksum> actualChecksums)
-          throws CacheException, NoSuchAlgorithmException, IOException, InterruptedException {
-        Iterable<Checksum> expectedChecksums = handle.getChecksums();
+          ModifiableReplicaDescriptor handle, Collection<Checksum> actualChecksums)
+          throws CacheException, IOException, InterruptedException {
+        Collection<Checksum> expectedChecksums = handle.getChecksums();
+        Set<ChecksumType> expectedTypes = checksumTypesOf(expectedChecksums);
+        Set<ChecksumType> actualTypes = checksumTypesOf(actualChecksums);
         if (hasPolicy(ON_WRITE)
-              || (hasPolicy(ENFORCE_CRC) && isEmpty(expectedChecksums) && isEmpty(
-              actualChecksums))) {
+                || (hasPolicy(ENFORCE_CRC) && actualTypes.isEmpty())
+                || !actualTypes.containsAll(expectedTypes)) {
             EnumSet<ChecksumType> types = EnumSet.copyOf(_defaultChecksumType);
-            expectedChecksums.forEach(c -> types.add(c.getType()));
-            actualChecksums.forEach(
-                  c -> types.add(c.getType())); // REVISIT do we really need to recalculate these?
+            types.addAll(expectedTypes);
+            types.addAll(actualTypes); // recalculate in order to check for data corruption.
 
             List<MessageDigest> digests = types.stream()
                   .map(ChecksumType::createMessageDigest)
@@ -505,15 +505,15 @@ public class ChecksumModuleV1
 
     @Override
     public void enforcePreFlushPolicy(ReplicaDescriptor handle)
-          throws CacheException, InterruptedException, NoSuchAlgorithmException, IOException {
+          throws CacheException, InterruptedException, IOException {
         if (hasPolicy(ON_FLUSH)) {
             verifyChecksum(handle);
         }
     }
 
     @Override
-    public void enforcePostRestorePolicy(ReplicaDescriptor handle, Set<Checksum> expectedChecksums)
-          throws CacheException, NoSuchAlgorithmException, IOException, InterruptedException {
+    public void enforcePostRestorePolicy(ModifiableReplicaDescriptor handle, Set<Checksum> expectedChecksums)
+          throws CacheException, IOException, InterruptedException {
         if (hasPolicy(GET_CRC_FROM_HSM)) {
             LOGGER.info("Obtained checksums {} for {} from HSM", expectedChecksums,
                   handle.getFileAttributes().getPnfsId());
@@ -527,29 +527,29 @@ public class ChecksumModuleV1
 
     @Nonnull
     @Override
-    public Iterable<Checksum> verifyChecksum(ReplicaDescriptor handle)
-          throws NoSuchAlgorithmException, IOException, InterruptedException, CacheException {
+    public Collection<Checksum> verifyChecksum(ReplicaDescriptor handle)
+          throws IOException, InterruptedException, CacheException {
         try (RepositoryChannel channel = handle.createChannel()) {
             return verifyChecksum(channel, handle.getChecksums(), Double.POSITIVE_INFINITY);
         }
     }
 
-    public Iterable<Checksum> verifyChecksumWithThroughputLimit(ReplicaDescriptor handle)
-          throws IOException, InterruptedException, NoSuchAlgorithmException, CacheException {
+    public Collection<Checksum> verifyChecksumWithThroughputLimit(ReplicaDescriptor handle)
+          throws IOException, InterruptedException, CacheException {
         try (RepositoryChannel channel = handle.createChannel()) {
             return verifyChecksum(channel, handle.getChecksums(), getThroughputLimit());
         }
     }
 
-    private Iterable<Checksum> verifyChecksum(RepositoryChannel channel,
-          Iterable<Checksum> expectedChecksums, double throughputLimit)
-          throws NoSuchAlgorithmException, IOException, InterruptedException, CacheException {
+    private Collection<Checksum> verifyChecksum(RepositoryChannel channel,
+          Collection<Checksum> expectedChecksums, double throughputLimit)
+          throws IOException, InterruptedException, CacheException {
         /*
          * REVISIT:
          * It makes more sense to populate file's checksum if it's missing. However, currently
          * the pool can't open an existing file for write to update the checksum.
          */
-        if (Iterables.isEmpty(expectedChecksums)) {
+        if (expectedChecksums.isEmpty()) {
             throw new CacheException("file has no checksums");
         }
 
@@ -563,7 +563,7 @@ public class ChecksumModuleV1
         return actualChecksums;
     }
 
-    private void compareChecksums(Iterable<Checksum> expected, Iterable<Checksum> actual)
+    private void compareChecksums(Collection<Checksum> expected, Collection<Checksum> actual)
           throws FileCorruptedCacheException {
         Map<ChecksumType, Checksum> checksumByType = Maps.newHashMap();
         for (Checksum checksum : concat(expected, actual)) {
@@ -585,10 +585,10 @@ public class ChecksumModuleV1
     /**
      * Compute the checksum for a file with a limit on how many bytes/second to checksum.
      *
-     * @param file            the file to compute a checksum for.
+     * @param channel         the RepositoryChannel
      * @param digests         the digests to update with the file's content
      * @param throughputLimit a limit on how many bytes/second that may be checksummed.
-     * @return the computed checksum.
+     * @return the set of computed checksums.
      * @throws IOException
      * @throws InterruptedException
      */

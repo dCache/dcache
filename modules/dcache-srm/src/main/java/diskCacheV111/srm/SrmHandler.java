@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2016 - 2020 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 - 2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -62,6 +62,7 @@ import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
@@ -424,9 +425,9 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware {
                     return dispatch(request, toMessage);
             }
         } catch (ExecutionException e) {
-            Throwables.propagateIfInstanceOf(e.getCause(), SRMException.class);
-            Throwables.propagateIfInstanceOf(e.getCause(), CacheException.class);
-            Throwables.propagateIfInstanceOf(e.getCause(), NoRouteToCellException.class);
+            Throwables.throwIfInstanceOf(e.getCause(), SRMException.class);
+            Throwables.throwIfInstanceOf(e.getCause(), CacheException.class);
+            Throwables.throwIfInstanceOf(e.getCause(), NoRouteToCellException.class);
             Throwables.throwIfUnchecked(e);
             throw new RuntimeException(e);
         }
@@ -673,7 +674,7 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware {
             public void onFailure(Throwable t) {
                 result.values().forEach(f -> f.setException(t));
             }
-        });
+        }, MoreExecutors.directExecutor());
         return result;
     }
 

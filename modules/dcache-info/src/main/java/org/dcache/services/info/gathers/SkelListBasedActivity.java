@@ -3,6 +3,7 @@ package org.dcache.services.info.gathers;
 import java.util.Date;
 import java.util.Set;
 import java.util.Stack;
+import java.util.concurrent.TimeUnit;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.stateInfo.ListVisitor;
@@ -37,12 +38,12 @@ public abstract class SkelListBasedActivity implements Schedulable {
     /**
      * Minimum time between fetching a fresh list (or querying the same list-item), in milliseconds
      */
-    private static final int MINIMUM_LIST_REFRESH_PERIOD = 60000;
+    private static final long MINIMUM_LIST_REFRESH_PERIOD = TimeUnit.MINUTES.toMillis(1);
 
     /**
      * Time between sending successive messages, in milliseconds
      */
-    private static final int SUCCESSIVE_MSG_DELAY = 100;
+    private static final long SUCCESSIVE_MSG_DELAY = TimeUnit.SECONDS.toMillis(10);
 
     /**
      * For how long should the resulting metrics live? (in seconds)
@@ -72,12 +73,12 @@ public abstract class SkelListBasedActivity implements Schedulable {
     /**
      * Minimum time between fetching a fresh list (or querying the same list-item), in milliseconds
      */
-    private final int _minimumListRefreshPeriod;
+    private final long _minimumListRefreshPeriod;
 
     /**
      * Time between sending successive messages, in milliseconds
      */
-    private final int _successiveMsgDelay;
+    private final long _successiveMsgDelay;
 
     private final StateExhibitor _exhibitor;
 
@@ -88,15 +89,7 @@ public abstract class SkelListBasedActivity implements Schedulable {
      * @param parentPath all list items must satisfy parentPath.isParentOf(item)
      */
     protected SkelListBasedActivity(StateExhibitor exhibitor, StatePath parentPath) {
-        _parentPath = parentPath;
-        _exhibitor = exhibitor;
-
-        updateStack();  // Bring in initial work.
-
-        _minimumListRefreshPeriod = MINIMUM_LIST_REFRESH_PERIOD;
-        _successiveMsgDelay = SUCCESSIVE_MSG_DELAY;
-
-        randomiseDelay(); // Randomise our initial offset.
+        this(exhibitor, parentPath, MINIMUM_LIST_REFRESH_PERIOD, SUCCESSIVE_MSG_DELAY);
     }
 
     /**
@@ -111,7 +104,7 @@ public abstract class SkelListBasedActivity implements Schedulable {
      *                                 milliseconds.
      */
     protected SkelListBasedActivity(StateExhibitor exhibitor, StatePath parentPath,
-          int minimumListRefreshPeriod, int successiveMsgDelay) {
+          long minimumListRefreshPeriod, long successiveMsgDelay) {
         _parentPath = parentPath;
         _exhibitor = exhibitor;
         updateStack();  // Bring in initial work.
@@ -152,7 +145,8 @@ public abstract class SkelListBasedActivity implements Schedulable {
     public void trigger() {
         Date now = new Date();
 
-        _nextSendMsg = new Date(System.currentTimeMillis() + _successiveMsgDelay);
+        _nextSendMsg = new Date(
+              System.currentTimeMillis() + _successiveMsgDelay);
 
         if (!_outstandingWork.empty() || now.before(_whenListRefresh)) {
             return;
@@ -163,10 +157,9 @@ public abstract class SkelListBasedActivity implements Schedulable {
         /**
          *  Calculate the earliest we would like to do this again.
          */
-        long timeToSendAllMsgs = (long) (_outstandingWork.size() * _successiveMsgDelay);
-        long listRefreshPeriod =
-              timeToSendAllMsgs < _minimumListRefreshPeriod ? _minimumListRefreshPeriod
-                    : timeToSendAllMsgs;
+        long timeToSendAllMsgs = _outstandingWork.size() * _successiveMsgDelay;
+        long listRefreshPeriod = Math.max(timeToSendAllMsgs, _minimumListRefreshPeriod);
+
         _whenListRefresh = new Date(System.currentTimeMillis() + listRefreshPeriod);
 
         /**
@@ -179,14 +172,11 @@ public abstract class SkelListBasedActivity implements Schedulable {
 
 
     /**
-     * Query dCache's current state and add the new Set to to our _outstandingWork Stack.
+     * Query dCache's current state and add the new Set to our _outstandingWork Stack.
      */
     private void updateStack() {
         Set<String> items = ListVisitor.getDetails(_exhibitor, _parentPath);
-
-        for (String item : items) {
-            _outstandingWork.add(item);
-        }
+        _outstandingWork.addAll(items);
 
         LOGGER.trace("fresh to-do list obtained for {}", getClass().getSimpleName());
         LOGGER.trace("list now contains {} items", _outstandingWork.size());

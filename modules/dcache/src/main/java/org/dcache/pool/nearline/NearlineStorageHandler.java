@@ -27,6 +27,7 @@ import static org.dcache.namespace.FileAttribute.STORAGEINFO;
 import static org.dcache.util.Exceptions.messageOrClassName;
 
 import com.google.common.base.Functions;
+import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -83,6 +84,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.annotation.concurrent.Immutable;
@@ -104,6 +106,7 @@ import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.EntryChangeEvent;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.IllegalTransitionException;
+import org.dcache.pool.repository.ModifiableReplicaDescriptor;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.Repository;
@@ -119,6 +122,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.core.KafkaTemplate;
 
 /**
@@ -512,7 +516,6 @@ public class NearlineStorageHandler
         AbstractRequest(NearlineStorage storage, @Nonnull AtomicReference<QueueStat> queueStat) {
             this.storage = storage;
             this.queueStat = queueStat;
-            incQueued();
         }
 
         // Implements NearlineRequest#setIncluded
@@ -522,6 +525,10 @@ public class NearlineStorageHandler
 
         public long getCreatedAt() {
             return createdAt;
+        }
+
+        public void onQueued() {
+            incQueued();
         }
 
         protected synchronized <T> ListenableFuture<T> register(ListenableFuture<T> future) {
@@ -744,6 +751,7 @@ public class NearlineStorageHandler
                     try {
                         R newRequest = createRequest(storage, file);
                         newRequests.add(newRequest);
+                        newRequest.onQueued();
                         return newRequest;
                     } catch (Exception e) {
                         state.decrement();
@@ -1013,7 +1021,11 @@ public class NearlineStorageHandler
 
         @Override
         public void failed(Exception cause) {
-            descriptor.close();
+            try {
+                descriptor.close();
+            } catch (Exception e) {
+                cause.addSuppressed(e);
+            }
             /* ListenableFuture#get throws ExecutionException */
             if (cause instanceof ExecutionException) {
                 done(cause.getCause());
@@ -1139,7 +1151,7 @@ public class NearlineStorageHandler
             }
         }
 
-        private void done(Throwable cause) {
+        private void done(@Nullable Throwable cause) {
             PnfsId pnfsId = getFileAttributes().getPnfsId();
             if (cause != null) {
                 if (cause instanceof InterruptedException
@@ -1163,8 +1175,12 @@ public class NearlineStorageHandler
 
             billingStub.notify(infoMsg);
 
-            _kafkaSender.accept(infoMsg);
+            try {
+                _kafkaSender.accept(infoMsg);
+            } catch (KafkaException e) {
+                LOGGER.warn(Throwables.getRootCause(e).getMessage());
 
+            }
             flushRequests.removeAndCallback(pnfsId, cause);
         }
 
@@ -1231,7 +1247,7 @@ public class NearlineStorageHandler
     private class StageRequestImpl extends AbstractRequest<PnfsId> implements StageRequest {
 
         private final StorageInfoMessage infoMsg;
-        private final ReplicaDescriptor descriptor;
+        private final ModifiableReplicaDescriptor descriptor;
         private ListenableFuture<Void> allocationFuture;
 
         public StageRequestImpl(NearlineStorage storage, AtomicReference<QueueStat> stats,
@@ -1334,7 +1350,7 @@ public class NearlineStorageHandler
             }
         }
 
-        private void done(Throwable cause) {
+        private void done(@Nullable Throwable cause) {
             PnfsId pnfsId = getFileAttributes().getPnfsId();
             if (cause != null) {
                 deallocateSpace();
@@ -1350,7 +1366,15 @@ public class NearlineStorageHandler
                 }
                 LOGGER.warn("Stage of {} failed with {}.", pnfsId, cause.toString());
             }
-            descriptor.close();
+            try {
+                descriptor.close();
+            } catch (Exception e) {
+                if (cause == null) {
+                    cause = e;
+                } else {
+                    cause.addSuppressed(e);
+                }
+            }
             if (cause instanceof CacheException) {
                 infoMsg.setResult(((CacheException) cause).getRc(), cause.getMessage());
             } else if (cause != null) {
@@ -1360,9 +1384,12 @@ public class NearlineStorageHandler
             addFromNearlineStorage(infoMsg, storage);
 
             billingStub.notify(infoMsg);
+            try {
+                _kafkaSender.accept(infoMsg);
+            } catch (KafkaException e) {
+                LOGGER.warn(Throwables.getRootCause(e).getMessage());
 
-            _kafkaSender.accept(infoMsg);
-
+            }
             stageRequests.removeAndCallback(pnfsId, cause);
         }
 

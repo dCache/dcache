@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import org.dcache.pool.repository.FileRepositoryChannel;
 import org.dcache.pool.repository.FileStore;
@@ -40,12 +41,15 @@ import org.junit.Test;
 
 public class ChecksumChannelTest {
 
+    private static final Checksum EMPTY_MD5_CHECKSUM = new Checksum(ChecksumType.MD5_TYPE,
+          "d41d8cd98f00b204e9800998ecf8427e");
 
     private ChecksumChannel chksumChannel;
 
     private final byte[] data = "\0Just\0A\0Short\0TestString\0To\0Verify\0\0Checksumming\0\0Works\12".getBytes(
           StandardCharsets.ISO_8859_1); // \12 is a octal 10, linefeed
     private final Checksum expectedChecksum = ChecksumType.MD5_TYPE.calculate(data);
+
     private int blocksize = 2;
     private int blockcount = data.length / blocksize;
     private ByteBuffer[] buffers = new ByteBuffer[blockcount];
@@ -78,6 +82,7 @@ public class ChecksumChannelTest {
         ByteBuffer buffer = ByteBuffer.wrap(data);
 
         chksumChannel.write(buffer, 0);
+        chksumChannel.close();
 
         assertThat(chksumChannel.getChecksums(), contains(expectedChecksum));
     }
@@ -87,6 +92,7 @@ public class ChecksumChannelTest {
         ByteBuffer buffer = ByteBuffer.wrap(data);
 
         chksumChannel.write(buffer, 0);
+        chksumChannel.close();
 
         assertThat(chksumChannel.getChecksums(), contains(expectedChecksum));
         assertThat(chksumChannel.getChecksums(), contains(expectedChecksum));
@@ -97,6 +103,7 @@ public class ChecksumChannelTest {
         for (int block = 0; block < blockcount; block++) {
             chksumChannel.write(buffers[block], block * blocksize);
         }
+        chksumChannel.close();
 
         assertThat(chksumChannel.getChecksums(), contains(expectedChecksum));
     }
@@ -107,6 +114,7 @@ public class ChecksumChannelTest {
         for (int i = 0; i < blockcount; i++) {
             chksumChannel.write(buffers[blockorder[i]], blockorder[i] * blocksize);
         }
+        chksumChannel.close();
 
         assertThat(chksumChannel.getChecksums(), contains(expectedChecksum));
     }
@@ -118,6 +126,7 @@ public class ChecksumChannelTest {
             chksumChannel.position(blockorder[i] * blocksize);
             chksumChannel.write(buffers[blockorder[i]]);
         }
+        chksumChannel.close();
 
         assertThat(chksumChannel.getChecksums(), contains(expectedChecksum));
     }
@@ -125,6 +134,7 @@ public class ChecksumChannelTest {
     @Test
     public void shouldSucceedIfWrittenInOrderWithMultipleBuffers() throws IOException {
         chksumChannel.write(buffers);
+        chksumChannel.close();
 
         assertThat(chksumChannel.getChecksums(), contains(expectedChecksum));
     }
@@ -137,23 +147,26 @@ public class ChecksumChannelTest {
         System.arraycopy(this.buffers, 0, buffers, 1, blockcount);
 
         chksumChannel.write(buffers, 1, blockcount);
+        chksumChannel.close();
 
         assertThat(chksumChannel.getChecksums(), contains(expectedChecksum));
     }
 
     @Test
-    public void shouldReturnNullDigestOnDoubleWrites() throws IOException {
+    public void shouldReturnEmptyDigestOnDoubleWrites() throws IOException {
         chksumChannel.write(buffers[0], 0);
         buffers[0].rewind();
         chksumChannel.write(buffers[0], 0);
+        chksumChannel.close();
 
         assertThat(chksumChannel.getChecksums(), empty());
     }
 
     @Test
-    public void shouldReturnNullDigestOnPartlyOverlappingWrites() throws IOException {
+    public void shouldReturnEmptyDigestOnPartlyOverlappingWrites() throws IOException {
         chksumChannel.write(buffers[1], blocksize);
         chksumChannel.write(buffers[0], blocksize - 1);
+        chksumChannel.close();
 
         if (blocksize == 1) {
             fail("Pick a blocksize > 1 for testing correct handling of partly overlapping writes!");
@@ -197,6 +210,7 @@ public class ChecksumChannelTest {
         csc.write(buffers[1], 1);
         csc.write(buffers[3], 3);
         csc.write(buffers[2], 2);
+        csc.close();
 
         assertThat(csc.getChecksums(), not(empty()));
     }
@@ -262,13 +276,14 @@ public class ChecksumChannelTest {
             writer.join();
         }
 
+        chksumChannel.close();
+
         assertThat(chksumChannel.getChecksums(), contains(expectedChecksum));
     }
 
     @Test(expected = IllegalStateException.class)
-    public void shouldThrowIllegalStateExceptionOnWritesAfterGetChecksum() throws IOException {
+    public void shouldThrowIllegalStateExceptionOnGetChecksumBeforeClose() throws IOException {
         chksumChannel.getChecksums();
-        chksumChannel.write(buffers[0], 0);
     }
 
     @Test
@@ -293,6 +308,7 @@ public class ChecksumChannelTest {
             writeBuffer.rewind();
         }
         chksumChannel.write(writeBuffer, 0);
+        chksumChannel.close();
         assertThat(chksumChannel.getChecksums(), not(empty()));
         assertThat(chksumChannel.getChecksums(), contains(notNullValue()));
     }
@@ -305,17 +321,25 @@ public class ChecksumChannelTest {
         when(chksumChannel._channel.read(any(), anyLong())).thenReturn(2);
         when(chksumChannel._channel.size()).thenReturn(2L * Integer.MAX_VALUE + 2);
         chksumChannel.write(buffers[0], 2L * Integer.MAX_VALUE);
+        chksumChannel.close();
         assertThat(chksumChannel.getChecksums(), is(not(empty())));
     }
 
     @Test
-    public void shouldFillUpRangeGapsWithZerosOnGetChecksum() throws IOException {
+    public void shouldFillUpRangeGapsWithZeros() throws IOException {
         Map<Long, ByteBuffer> nonZeroBlocksFromByteArray = getNonZeroBlocksFromByteArray(data);
         for (Long position : nonZeroBlocksFromByteArray.keySet()) {
             chksumChannel.write(nonZeroBlocksFromByteArray.get(position), position);
         }
-
+        chksumChannel.close();
         assertThat(chksumChannel.getChecksums(), contains(expectedChecksum));
+    }
+
+    @Test
+    public void shouldNotFillUpRangeGapsWithZeroLengthFile() throws IOException {
+        chksumChannel.close();
+        Set<Checksum> results = chksumChannel.getChecksums();
+        assertThat(results, contains(EMPTY_MD5_CHECKSUM));
     }
 
     private Map<Long, ByteBuffer> getNonZeroBlocksFromByteArray(byte[] bytes) {

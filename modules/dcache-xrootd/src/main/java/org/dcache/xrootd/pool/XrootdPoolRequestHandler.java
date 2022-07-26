@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 - 2020 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -67,6 +67,7 @@ import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.xrootd.AbstractXrootdRequestHandler;
 import org.dcache.xrootd.CacheExceptionMapper;
+import org.dcache.xrootd.LoginTokens;
 import org.dcache.xrootd.core.XrootdException;
 import org.dcache.xrootd.core.XrootdSessionIdentifier;
 import org.dcache.xrootd.core.XrootdSigverDecoder;
@@ -195,6 +196,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
+        _log.info("channel inactive event received on {}.", ctx.channel());
         writeLock.lock();
         try {
             /* close leftover descriptors */
@@ -222,22 +224,22 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
                          *  in case there is no reconnect, in which case the channel is then released.
                          */
                         _server.scheduleReconnectTimerForMover(descriptor);
-                        _log.debug("{} channeInactive, starting timer for reconnect with mover {}.",
+                        _log.debug("{} channelInactive, starting timer for reconnect with mover {}.",
                               ctx.channel(), descriptor.getChannel().getMoverUuid());
                     }
                 }
             }
         } finally {
             writeLock.unlock();
-            ;
         }
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable t) {
         if (t instanceof ClosedChannelException) {
-            _log.info("Connection {} unexpectedly closed.", ctx.channel());
+            _log.info("Connection {} unexpectedly closed.", ctx.channel());
         } else if (t instanceof Exception) {
+            _log.info("Exception on connection {}: {}.", ctx.channel(), t.toString());
             writeLock.lock();
             try {
                 for (FileDescriptor descriptor : _descriptors) {
@@ -284,6 +286,10 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
         }
     }
 
+    private void acceptDoorAddress(InetSocketAddress addr) {
+        _redirectingDoor = addr;
+    }
+
     @Override
     protected XrootdResponse<LoginRequest> doOnLogin(ChannelHandlerContext ctx, LoginRequest msg)
           throws XrootdException {
@@ -295,6 +301,8 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
          * We also need to swap the decoder.
          */
         String sec;
+
+        LoginTokens.decodeToken(msg.getToken()).ifPresent(this::acceptDoorAddress);
 
         /**
          *   If TLS is on, we don't need authentication.
@@ -444,7 +452,8 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
 
                 int fd = addDescriptor(descriptor);
 
-                _redirectingDoor = protocolInfo.getDoorAddress();
+                protocolInfo.getDoorAddress().ifPresent(this::acceptDoorAddress);
+
                 file = null;
                 _hasOpenedFiles = true;
 
@@ -780,13 +789,13 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
                 Throwable cause = e.getCause();
                 if (cause instanceof CacheException) {
                     int rc = ((CacheException) cause).getRc();
-                    respond(ctx, withError(msg,
+                    respond(ctx, withError(ctx, msg,
                           CacheExceptionMapper.xrootdErrorCode(rc),
                           cause.getMessage()));
                 } else if (cause instanceof IOException) {
-                    respond(ctx, withError(msg, kXR_IOError, cause.getMessage()));
+                    respond(ctx, withError(ctx,msg, kXR_IOError, cause.getMessage()));
                 } else {
-                    respond(ctx, withError(msg, kXR_ServerError, cause.toString()));
+                    respond(ctx, withError(ctx,msg, kXR_ServerError, cause.toString()));
                 }
             } finally {
                 removeDescriptor(fd);

@@ -7,12 +7,14 @@ import static com.google.common.base.Preconditions.checkState;
 import static java.util.stream.Collectors.toList;
 
 import com.google.common.base.Splitter;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFutureTask;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.RateLimiter;
 import diskCacheV111.pools.PoolCellInfo;
 import diskCacheV111.pools.PoolCostInfo;
@@ -126,6 +128,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.core.KafkaTemplate;
 
 public class PoolV4
@@ -605,7 +608,12 @@ public class PoolV4
                 msg.setResult(0, event.getWhy());
                 _billingStub.notify(msg);
 
-                _kafkaSender.accept(msg);
+                try {
+                    _kafkaSender.accept(msg);
+                } catch (KafkaException e) {
+                    LOGGER.warn(Throwables.getRootCause(e).getMessage());
+
+                }
             }
         }
     }
@@ -1102,7 +1110,8 @@ public class PoolV4
                   public void onFailure(Throwable t) {
                       reply.fail(msg, t);
                   }
-              });
+              },
+              MoreExecutors.directExecutor());
         return reply;
     }
 

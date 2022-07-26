@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:context="http://www.springframework.org/schema/context"
+  xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/context
+           http://www.springframework.org/schema/context/spring-context.xsd">
+
+  <context:property-placeholder/>
+  <context:annotation-config/>
+
+  <!-- ****************************************  ENDPOINTS ***************************************** -->
+
+  <bean id="verification-service" class="org.dcache.cells.CellStub">
+    <description>Communication stub for the verifier service.</description>
+    <property name="destination" value="${qos.service.verification}"/>
+    <property name="timeout" value="${qos.service.verification.timeout}"/>
+    <property name="timeoutUnit" value="${qos.service.verification.timeout.unit}"/>
+    <property name="flags"
+      value="#{ T(dmg.cells.nucleus.CellEndpoint.SendFlag).RETRY_ON_NO_ROUTE_TO_CELL }"/>
+  </bean>
+
+  <!-- *****************************************  CLIENTS ****************************************** -->
+
+  <bean id="verification-client" class="org.dcache.qos.remote.clients.RemoteQoSVerificationClient">
+    <description>Client for communication with a remote verifier service.</description>
+    <property name="verificationService" ref="verification-service"/>
+  </bean>
+
+  <bean id="scanner-client" class="org.dcache.qos.local.clients.LocalQoSScannerClient">
+    <description>Client for signaling receipt of completion messages to the underlying maps.</description>
+    <property name="poolCompletionHandler" ref="pool-completion-handler"/>
+    <property name="sysCompletionHandler" ref="system-completion-handler"/>
+  </bean>
+
+  <!-- ******************************************* SHARED ******************************************* -->
+
+  <bean id="message-backlog-handler" class="org.dcache.qos.util.SerializingBacklogHandler"
+    init-method="initialize" destroy-method="shutdown">
+    <description>Handles message backlog when receivers are temporarily unavailable.</description>
+    <constructor-arg value="${qos.home}/backlogged-messages"/>
+    <property name="receivers">
+      <set></set>
+    </property>
+  </bean>
+
+  <bean id="message-guard" class="org.dcache.qos.util.MessageGuard">
+    <description>Validates messages for handling; will ignore messages is message handling is
+                 paused or if they originate with the qos service itself.</description>
+    <property name="backlogHandler" ref="message-backlog-handler"/>
+  </bean>
+
+  <!-- **************************************** QOS SCANNER ***************************************** -->
+
+  <bean id="namespace-permission-handler" class="org.dcache.namespace.ChainedPermissionHandler">
+    <description>Permission handler for requests to the namespace database.</description>
+    <property name="chain">
+      <list>
+        <bean class="org.dcache.namespace.ACLPermissionHandler"/>
+        <bean class="org.dcache.namespace.PosixPermissionHandler"/>
+      </list>
+    </property>
+  </bean>
+
+  <bean id="namespace-data-source" class="org.dcache.db.AlarmEnabledDataSource" destroy-method="close">
+    <description>Wraps the namespace connection pool with an alarm handler.</description>
+    <constructor-arg value="${qos.db.namespace.url}"/>
+    <constructor-arg value="QoSNamespaceDb"/>
+    <constructor-arg ref="namespace-connection-pool"/>
+  </bean>
+
+  <bean id="namespace-connection-pool" class="com.zaxxer.hikari.HikariDataSource" destroy-method="close">
+    <description>Encapsulates the namespace database connection pool and properties.</description>
+    <constructor-arg>
+      <bean class="com.zaxxer.hikari.HikariConfig">
+        <constructor-arg>
+          <bean class="org.dcache.util.configuration.ConfigurationPropertiesFactoryBean">
+            <property name="prefix" value="qos.db.namespace.hikari-properties"/>
+            <property name="staticEnvironment">
+              <map>
+                <entry key="jdbcUrl" value="${qos.db.namespace.url}"/>
+                <entry key="username" value="${qos.db.namespace.user}"/>
+                <entry key="password"
+                  value="#{ T(diskCacheV111.util.Pgpass).getPassword('${qos.db.namespace.password.file}', '${qos.db.namespace.url}', '${qos.db.namespace.user}', '${qos.db.namespace.password}') }"/>
+                <entry key="minimumIdle" value="${qos.db.namespace.connections.idle}"/>
+                <entry key="maximumPoolSize" value="${qos.db.namespace.connections.max}"/>
+                <entry key="transactionIsolation" value="TRANSACTION_READ_COMMITTED"/>
+              </map>
+            </property>
+          </bean>
+        </constructor-arg>
+      </bean>
+    </constructor-arg>
+  </bean>
+
+  <bean id="namespace-tx-manager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+    <description>Namespace database transaction manager.</description>
+    <property name="dataSource" ref="namespace-data-source"/>
+  </bean>
+
+  <bean id="file-system" class="org.dcache.chimera.JdbcFs" depends-on="namespace-liquibase">
+    <description>File system implementation (Chimera).</description>
+    <constructor-arg ref="namespace-data-source"/>
+    <constructor-arg ref="namespace-tx-manager"/>
+  </bean>
+  
+  <bean id="extractor" class="${qos.plugins.storage-info-extractor}">
+    <description>Namespace database storage info extractor.</description>
+    <!-- these are placeholder values which do not effect how qos works, so the dcache defaults are fine -->
+    <constructor-arg value="#{ T(diskCacheV111.util.AccessLatency).getAccessLatency('NEARLINE') }"/>
+    <constructor-arg
+      value="#{ T(diskCacheV111.util.RetentionPolicy).getRetentionPolicy('CUSTODIAL') }"/>
+  </bean>
+
+  <bean id="namespace-liquibase" class="org.dcache.util.SpringLiquibase">
+    <description>Namespace database schema manager.</description>
+    <property name="dataSource" ref="namespace-data-source"/>
+    <property name="changeLog" value="classpath:${qos.db.namespace.schema.changelog}"/>
+    <property name="shouldUpdate" value="${qos.db.namespace.schema.auto}"/>
+  </bean>
+
+  <bean id="name-space-provider"
+    class="org.dcache.chimera.namespace.ChimeraNameSpaceProvider">
+    <description>Implements provider API for namespace access.</description>
+    <property name="fileSystem" ref="file-system"/>
+    <property name="extractor" ref="extractor"/>
+    <property name="permissionHandler" ref="namespace-permission-handler"/>
+    <!-- these are placeholder values which do not effect how qos works, so the dcache defaults are fine -->
+    <property name="inheritFileOwnership" value="false"/>
+    <property name="verifyAllLookups" value="true"/>
+    <property name="aclEnabled" value="false"/>
+    <property name="allowMoveToDirectoryWithDifferentStorageClass" value="true"/>
+  </bean>
+
+  <bean id="scanner-namespace-access" class="org.dcache.qos.services.scanner.namespace.LocalNamespaceAccess">
+    <description>Specialized database access for qos scanning.</description>
+    <property name="connectionPool" ref="namespace-data-source"/>
+    <property name="fetchSize" value="${qos.db.namespace.fetch-size}"/>
+    <property name="verificationListener" ref="verification-client"/>
+  </bean>
+
+  <bean id="scanner-namespace-handler" class="org.dcache.qos.services.scanner.handlers.NamespaceOpHandler">
+    <description>The main handler that manages the scanning operations.</description>
+    <property name="namespace" ref="scanner-namespace-access"/>
+    <property name="poolTaskCompletionHandler" ref="pool-completion-handler"/>
+    <property name="sysTaskCompletionHandler" ref="system-completion-handler"/>
+    <property name="scanResponseListener" ref="scanner-client"/>
+    <property name="verificationListener" ref="verification-client"/>
+    <property name="poolTaskService">
+      <bean class="org.dcache.util.BoundedCachedExecutor" destroy-method="shutdownNow">
+        <constructor-arg value="${qos.limits.scanner.task-threads}"/>
+      </bean>
+    </property>
+    <property name="systemTaskService">
+      <bean class="org.dcache.util.BoundedCachedExecutor" destroy-method="shutdownNow">
+        <constructor-arg value="${qos.limits.scanner.task-threads}"/>
+      </bean>
+    </property>
+    <property name="updateService">
+      <bean class="org.dcache.util.BoundedCachedExecutor" destroy-method="shutdownNow">
+        <constructor-arg value="${qos.limits.scanner.submit-threads}"/>
+      </bean>
+    </property>
+  </bean>
+
+  <bean id="scanner-receiver" class="org.dcache.qos.remote.receivers.QoSScannerReceiver">
+    <description>Handles incoming scan request responses.</description>
+    <property name="messageGuard" ref="message-guard"/>
+    <property name="handler" ref="scanner-namespace-handler"/>
+  </bean>
+
+  <bean id="scanner-counters" class="org.dcache.qos.services.scanner.util.QoSScannerCounters"
+    init-method="initialize">
+    <description>Tracks pool and system operation statistics.</description>
+    <property name="statisticsPath" value="${qos.home}/scanner-statistics"/>
+  </bean>
+
+  <bean id="pool-operation-map" class="org.dcache.qos.services.scanner.data.PoolOperationMap"
+    destroy-method="shutdown">
+    <description>Map of pool-specific operations which run location scans in response to state changes.</description>
+    <property name="timeout" value="${qos.limits.scanner.scan-period}"/>
+    <property name="timeoutUnit" value="${qos.limits.scanner.scan-period.unit}"/>
+    <property name="downGracePeriod" value="${qos.limits.scanner.down-grace-period}"/>
+    <property name="downGracePeriodUnit" value="${qos.limits.scanner.down-grace-period.unit}"/>
+    <property name="restartGracePeriod" value="${qos.limits.scanner.restart-grace-period}"/>
+    <property name="restartGracePeriodUnit"
+      value="${qos.limits.scanner.restart-grace-period.unit}"/>
+    <property name="initializationGracePeriod"
+      value="${qos.limits.scanner.pool-op-init-grace-period}"/>
+    <property name="initializationGracePeriodUnit"
+      value="${qos.limits.scanner.pool-op-init-grace-period.unit}"/>
+    <property name="maxRunningIdleTime" value="${qos.limits.scanner.pool-op-max-idle-time}"/>
+    <property name="maxRunningIdleTimeUnit"
+      value="${qos.limits.scanner.pool-op-max-idle-time.unit}"/>
+    <property name="excludedPoolsFile" value="${qos.home}/excluded-pools"/>
+    <property name="maxConcurrentRunning" value="${qos.limits.scanner.task-threads}"/>
+    <property name="handler" ref="scanner-namespace-handler"/>
+    <property name="counters" ref="scanner-counters"/>
+  </bean>
+
+  <bean id="system-operation-map" class="org.dcache.qos.services.scanner.data.SystemOperationMap"
+    destroy-method="shutdown">
+    <description>Map of system-wide operations which run scans periodically.</description>
+    <property name="timeout" value="${qos.limits.scanner.scan-period}"/>
+    <property name="timeoutUnit" value="${qos.limits.scanner.scan-period.unit}"/>
+    <property name="maxConcurrentRunning" value="${qos.limits.scanner.task-threads}"/>
+    <property name="nearlineBatchSize" value="${qos.limits.scanner.nearline-batch-size}"/>
+    <property name="nearlineRescanEnabled" value="${qos.limits.scanner.enable.nearline-scan}"/>
+    <property name="nearlineRescanWindow" value="${qos.limits.scanner.nearline-window}"/>
+    <property name="nearlineRescanWindowUnit" value="${qos.limits.scanner.nearline-window.unit}"/>
+    <property name="onlineBatchSize"  value="${qos.limits.scanner.online-batch-size}"/>
+    <property name="onlineRescanWindow" value="${qos.limits.scanner.online-window}"/>
+    <property name="onlineRescanWindowUnit" value="${qos.limits.scanner.online-window.unit}"/>
+    <property name="handler" ref="scanner-namespace-handler"/>
+    <property name="counters" ref="scanner-counters"/>
+  </bean>
+
+  <bean id="system-completion-handler"
+    class="org.dcache.qos.services.scanner.handlers.SysTaskCompletionHandler">
+    <description>Handles responses updating system scans.</description>
+    <property name="map" ref="system-operation-map"/>
+  </bean>
+
+  <bean id="pool-completion-handler"
+    class="org.dcache.qos.services.scanner.handlers.PoolTaskCompletionHandler">
+    <description>Handles responses updating pool scans.</description>
+    <property name="map" ref="pool-operation-map"/>
+  </bean>
+
+  <bean id="scanner-map-initializer"
+    class="org.dcache.qos.services.scanner.util.ScannerMapInitializer"
+    init-method="initialize">
+    <description>Initializes internal maps in the proper order.</description>
+    <property name="initDelay" value="${qos.limits.startup-delay}"/>
+    <property name="initDelayUnit" value="${qos.limits.startup-delay.unit}"/>
+    <property name="initService">
+      <bean class="java.util.concurrent.ScheduledThreadPoolExecutor" destroy-method="shutdownNow">
+        <constructor-arg value="2"/>
+      </bean>
+    </property>
+    <property name="messageGuard" ref="message-guard"/>
+    <property name="poolOperationMap" ref="pool-operation-map"/>
+    <property name="systemOperationMap" ref="system-operation-map"/>
+    <property name="changeHandler" ref="pool-operation-change-handler"/>
+  </bean>
+
+  <bean id="pool-operation-change-handler"
+    class="org.dcache.qos.services.scanner.handlers.PoolOpChangeHandler"
+    destroy-method="stopWatchdog">
+    <description>Processes Pool Monitor updates and refreshes/triggers the pool operations on that basis.</description>
+    <property name="mapInitializer" ref="scanner-map-initializer"/>
+    <property name="poolOperationMap" ref="pool-operation-map"/>
+    <property name="updateService">
+      <bean class="java.util.concurrent.Executors" factory-method="newSingleThreadExecutor"
+        destroy-method="shutdownNow">
+      </bean>
+    </property>
+    <property name="refreshTimeout" value="${qos.limits.pool-info-expiry}"/>
+    <property name="refreshTimeoutUnit" value="${qos.limits.pool-info-expiry.unit}"/>
+  </bean>
+
+  <bean id="scanner-admin" class="org.dcache.qos.services.scanner.admin.QoSScannerAdmin">
+    <description>Commands for monitoring, launching and canceling scan requests.</description>
+    <property name="executor">
+      <bean class="org.dcache.util.BoundedCachedExecutor" destroy-method="shutdownNow">
+        <constructor-arg value="5"/>
+      </bean>
+    </property>
+    <property name="messageGuard" ref="message-guard"/>
+    <property name="initializer" ref="scanner-map-initializer"/>
+    <property name="poolOperationMap" ref="pool-operation-map"/>
+    <property name="systemScanOperationMap" ref="system-operation-map"/>
+    <property name="namespaceAccess" ref="scanner-namespace-access"/>
+    <property name="dataDir" value="${qos.home}"/>
+    <property name="counters" ref="scanner-counters"/>
+  </bean>
+</beans>

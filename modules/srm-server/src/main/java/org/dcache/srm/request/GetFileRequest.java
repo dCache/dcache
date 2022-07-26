@@ -72,11 +72,13 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
-import com.google.common.util.concurrent.CheckedFuture;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import java.net.URI;
+import java.util.concurrent.ExecutionException;
 import org.apache.axis.types.UnsignedLong;
 import org.dcache.srm.AbstractStorageElement;
+import org.dcache.srm.AbstractStorageElement.Pin;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMException;
@@ -87,6 +89,7 @@ import org.dcache.srm.SRMUser;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.State;
+import org.dcache.srm.util.Tools;
 import org.dcache.srm.v2_2.TGetRequestFileStatus;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
@@ -323,7 +326,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
     protected void pinFile(GetRequest request) {
         URI surl = getSurl();
         LOGGER.info("Pinning {}", surl);
-        CheckedFuture<AbstractStorageElement.Pin, ? extends SRMException> future =
+        ListenableFuture<Pin> future =
               getStorage().pinFile(
                     request.getUser(),
                     surl,
@@ -360,12 +363,12 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                         LOGGER.info(
                               "State changed to final state, unpinning fileId = {} pinId = {}.",
                               fileId, pinId);
-                        CheckedFuture<String, ? extends SRMException> future = storage.unPinFile(
+                        ListenableFuture<String> future = storage.unPinFile(
                               null, fileId, pinId);
                         future.addListener(() -> {
                             try {
-                                LOGGER.debug("Unpinned (pinId={}).", future.checkedGet());
-                            } catch (SRMException e) {
+                                LOGGER.debug("Unpinned (pinId={}).", future.get());
+                            } catch (Exception e) {
                                 LOGGER.error("Unpinning failed: {}", e.getMessage());
                             }
                         }, MoreExecutors.directExecutor());
@@ -534,10 +537,10 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
     private static class ThePinCallbacks implements Runnable {
 
         private final long fileRequestJobId;
-        private final CheckedFuture<AbstractStorageElement.Pin, ? extends SRMException> future;
+        private final ListenableFuture<AbstractStorageElement.Pin> future;
 
         public ThePinCallbacks(long fileRequestJobId,
-              CheckedFuture<AbstractStorageElement.Pin, ? extends SRMException> future) {
+              ListenableFuture<AbstractStorageElement.Pin> future) {
             this.fileRequestJobId = fileRequestJobId;
             this.future = future;
         }
@@ -553,7 +556,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                 GetFileRequest fr = getGetFileRequest();
                 fr.wlock();
                 try {
-                    AbstractStorageElement.Pin pin = future.checkedGet();
+                    AbstractStorageElement.Pin pin = future.get();
                     LOGGER.debug("File pinned (pinId={}).", pin.pinId);
                     State state = fr.getState();
                     if (state == State.INPROGRESS) {
@@ -562,10 +565,11 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                         fr.setPinId(pin.pinId);
                         Scheduler.getScheduler(fr.getSchedulerId()).execute(fr);
                     }
-                } catch (SRMException e) {
+                } catch (InterruptedException | ExecutionException e) {
+                    SRMException se = Tools.toSRMException(e);
                     fr.setStateAndStatusCode(State.FAILED,
-                          e.getMessage(),
-                          e.getStatusCode());
+                          se.getMessage(),
+                          se.getStatusCode());
                 } finally {
                     fr.wunlock();
                 }

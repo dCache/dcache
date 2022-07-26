@@ -11,6 +11,7 @@ import com.google.common.base.Joiner;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
@@ -168,7 +169,7 @@ public class Rebalancer
             addCallback(
                   transformAsync(
                         cancelAll(pools, "\"rebalance pgroup\" admin command, cancelling old jobs"),
-                        ignored -> startAllPoolsOrFail(pools, command)),
+                        ignored -> startAllPoolsOrFail(pools, command), MoreExecutors.directExecutor()),
                   new FutureCallback<Object>() {
                       @Override
                       public void onSuccess(Object ignored) {
@@ -180,7 +181,8 @@ public class Rebalancer
                       public void onFailure(Throwable t) {
                           reply(t);
                       }
-                  }
+                  },
+                  MoreExecutors.directExecutor()
             );
 
             return this;
@@ -189,14 +191,14 @@ public class Rebalancer
         protected ListenableFuture<Object> startAllPoolsOrFail(Collection<SelectionPool> pools,
               String command) {
             return catchingAsync(sendToAll(pools, command), Exception.class,
-                  t -> cancelAllPoolsAndFail(pools, t));
+                  t -> cancelAllPoolsAndFail(pools, t), MoreExecutors.directExecutor());
         }
 
         protected <V> ListenableFuture<V> cancelAllPoolsAndFail(Collection<SelectionPool> pools,
               Exception t) {
             return Futures.transformAsync(
                   cancelAll(pools, "\"rebalance pgroup\" admin command, aborting failed command"),
-                  ignored -> immediateFailedFuture(t));
+                  ignored -> immediateFailedFuture(t), MoreExecutors.directExecutor());
         }
     }
 
@@ -224,7 +226,7 @@ public class Rebalancer
                       public void onFailure(Throwable t) {
                           reply(t);
                       }
-                  });
+                  }, MoreExecutors.directExecutor());
             return this;
         }
     }

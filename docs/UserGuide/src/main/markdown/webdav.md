@@ -1,4 +1,4 @@
-Chapter 6. WebDAV
+Chapter 7. WebDAV
 =================
 
 **Table of Contents**
@@ -399,6 +399,9 @@ There are three ways of discovering or otherwise influencing checksums
 for files stored in dCache: RFC 3230 headers, WebDAV properties, and
 Content-MD5 headers.
 
+The supported checksums in dCache are the following:
+`ADLER32`, `MD5`, `MD4`, `SHA-1`, `SHA-256`, `SHA-512`.
+
 #### RFC 3230
 
 RFC 3230 allows the client to request that a file's checksum is sent
@@ -406,9 +409,9 @@ as part of the server's response.  This is done by specifying the
 `Want-Digest` request header with a value describing which checksum
 algorithms are acceptable to the client; for example, the request
 header `Want-Digest: ADLER32` requests the server provides the ADLER32
-checksum in the response, while `Want-Digest: MD5,ADLER32;q=0.5`
-indicates the client would prefer the MD5 checksum but to supply the
-ADLER32 if the MD5 checksum is unavailable.
+checksum in the response, while `Want-Digest: SHA-256,SHA;q=0.5`
+indicates the client would prefer the SHA-256 checksum but to supply the
+-SHA-1 if the SHA-256 checksum is unavailable.
 
 dCache supports RFC 3230 requests on HEAD, GET, PUT and some COPY
 requests.

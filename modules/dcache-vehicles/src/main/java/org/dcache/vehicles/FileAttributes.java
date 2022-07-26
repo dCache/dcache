@@ -230,8 +230,7 @@ public class FileAttributes implements Serializable, Cloneable {
             }
 
             if (isDefined(CHECKSUM)) {
-                Set<Checksum> checksums = new HashSet<>(getChecksums());
-                clone.setChecksums(checksums);
+                clone.setChecksums(getChecksums());
             }
 
             if (isDefined(OWNER)) {
@@ -526,9 +525,21 @@ public class FileAttributes implements Serializable, Cloneable {
         _acl = acl;
     }
 
-    public void setChecksums(Set<Checksum> checksums) {
+    public void setChecksums(Collection<Checksum> checksums) {
         define(CHECKSUM);
-        _checksums = checksums;
+        _checksums = new HashSet<>(checksums);
+    }
+
+    public void addChecksums(@Nonnull Collection<Checksum> checksums) {
+        if (checksums.isEmpty()) {
+            return;
+        }
+
+        if (isUndefined(CHECKSUM)) {
+            setChecksums(checksums);
+        } else {
+            _checksums.addAll(checksums);
+        }
     }
 
     public void setFileType(FileType fileType) {

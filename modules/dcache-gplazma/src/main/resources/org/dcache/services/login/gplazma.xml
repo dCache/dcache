@@ -2,9 +2,13 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:util="http://www.springframework.org/schema/util"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-           http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
-
+                           http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/context
+                           http://www.springframework.org/schema/context/spring-context.xsd
+                           http://www.springframework.org/schema/util
+                           http://www.springframework.org/schema/util/spring-util.xsd">
   <context:property-placeholder/>
 
   <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
@@ -43,10 +47,33 @@
     <constructor-arg ref="pnfs-handler"/>
   </bean>
 
-  <bean id="login-strategy" class="org.dcache.auth.Gplazma2LoginStrategy" init-method="init" destroy-method="shutdown">
+  <bean id="propertyFactory" class="org.dcache.auth.PropertyFactory"/>
+
+  <bean id="gplazma" class="org.dcache.gplazma.GPlazma"
+	destroy-method="shutdown">
+    <constructor-arg>
+      <bean class="org.dcache.gplazma.configuration.FromFileConfigurationLoadingStrategy">
+	<constructor-arg value="${gplazma.configuration.file}"/>
+      </bean>
+    </constructor-arg>
+    <constructor-arg>
+      <bean factory-bean="propertyFactory" factory-method="build"/>
+    </constructor-arg>
+    <constructor-arg>
+      <bean class="org.dcache.gplazma.loader.DcacheAwarePluginFactory">
+	<constructor-arg ref="namespace"/>
+      </bean>
+    </constructor-arg>
+    <property name="observers">
+      <util:list>
+	<bean class="org.dcache.gplazma.RecordFailedLogins"/>
+      </util:list>
+    </property>
+  </bean>
+
+  <bean id="login-strategy" class="org.dcache.auth.Gplazma2LoginStrategy">
     <description>Interfaces with gPlazma</description>
-    <property name="configurationFile" value="${gplazma.configuration.file}"/>
-    <property name="nameSpace" ref="namespace"/>
+    <property name="gplazma" ref="gplazma"/>
     <property name="uploadPath" value="${gplazma.authz.upload-directory}"/>
   </bean>
 </beans>

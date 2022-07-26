@@ -72,14 +72,16 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
-import com.google.common.util.concurrent.CheckedFuture;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import java.net.URI;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.apache.axis.types.UnsignedLong;
 import org.dcache.srm.AbstractStorageElement;
+import org.dcache.srm.AbstractStorageElement.Pin;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMAuthorizationException;
@@ -92,6 +94,7 @@ import org.dcache.srm.SRMUser;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.State;
+import org.dcache.srm.util.Tools;
 import org.dcache.srm.v2_2.TBringOnlineRequestFileStatus;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
@@ -307,7 +310,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
         }
         URI surl = getSurl();
         LOGGER.info("Pinning {}", surl);
-        CheckedFuture<AbstractStorageElement.Pin, ? extends SRMException> future =
+        ListenableFuture<Pin> future =
               getStorage().pinFile(
                     request.getUser(),
                     surl,
@@ -342,12 +345,12 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                         LOGGER.info(
                               "State changed to final state, unpinning fileId = {} pinId = {}.",
                               fileId, pinId);
-                        CheckedFuture<String, ? extends SRMException> future = storage.unPinFile(
+                        ListenableFuture<String> future = storage.unPinFile(
                               null, fileId, pinId);
                         future.addListener(() -> {
                             try {
-                                LOGGER.debug("File unpinned (pinId={}).", future.checkedGet());
-                            } catch (SRMException e) {
+                                LOGGER.debug("File unpinned (pinId={}).", future.get());
+                            } catch (Exception e) {
                                 LOGGER.error("Unpinning failed: {}", e.getMessage());
                             }
 
@@ -403,18 +406,18 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
         }
 
         LOGGER.debug("srmReleaseFile, unpinning fileId={} pinId={}", fileId, pinId);
-        CheckedFuture<String, ? extends SRMException> future =
+        ListenableFuture<String> future =
               getStorage().unPinFile(user, fileId, pinId);
         try {
-            future.checkedGet(60, TimeUnit.SECONDS);
+            future.get(60, TimeUnit.SECONDS);
             setPinId(null);
             saveJob(true);
             return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
         } catch (TimeoutException e) {
             throw new SRMInternalErrorException("Operation timed out.");
-        } catch (SRMException e) {
+        } catch (InterruptedException | ExecutionException e) {
             return new TReturnStatus(TStatusCode.SRM_FAILURE,
-                  "Failed to unpin SURL: " + e.getMessage());
+                  "Failed to unpin SURL: " + Tools.toSRMException(e).getMessage());
         }
     }
 
@@ -498,10 +501,10 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
     private static class ThePinCallbacks implements Runnable {
 
         private final long fileRequestJobId;
-        private final CheckedFuture<AbstractStorageElement.Pin, ? extends SRMException> future;
+        private final ListenableFuture<AbstractStorageElement.Pin> future;
 
         public ThePinCallbacks(long fileRequestJobId,
-              CheckedFuture<AbstractStorageElement.Pin, ? extends SRMException> future) {
+              ListenableFuture<AbstractStorageElement.Pin> future) {
             this.fileRequestJobId = fileRequestJobId;
             this.future = future;
         }
@@ -550,7 +553,13 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
          * about which exceptions the statement can throw.
          */
         private AbstractStorageElement.Pin getPin() throws SRMException {
-            return future.checkedGet();
+            try {
+                return future.get();
+            } catch (ExecutionException e) {
+                throw Tools.toSRMException(e.getCause());
+            } catch (InterruptedException e) {
+                throw Tools.toSRMException(e);
+            }
         }
     }
 
@@ -570,14 +579,14 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
             return new TReturnStatus(TStatusCode.SRM_FAILURE, e.getMessage());
         }
 
-        CheckedFuture<String, ? extends SRMException> future =
+        ListenableFuture<String> future =
               storage.unPinFileBySrmRequestId(user, fileId, requestToken);
         try {
-            future.checkedGet(60, TimeUnit.SECONDS);
+            future.get(60, TimeUnit.SECONDS);
         } catch (TimeoutException e) {
             throw new SRMInternalErrorException("Operation timed out");
-        } catch (SRMException e) {
-            return new TReturnStatus(TStatusCode.SRM_FAILURE, "Failed to unpin: " + e.getMessage());
+        } catch (InterruptedException | ExecutionException e) {
+            return new TReturnStatus(TStatusCode.SRM_FAILURE, "Failed to unpin: " + Tools.toSRMException(e).getMessage());
         }
         return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
     }
@@ -597,13 +606,13 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
             return new TReturnStatus(TStatusCode.SRM_FAILURE, e.getMessage());
         }
 
-        CheckedFuture<String, ? extends SRMException> future = storage.unPinFile(user, fileId);
+        ListenableFuture<String> future = storage.unPinFile(user, fileId);
         try {
-            future.checkedGet(60, TimeUnit.SECONDS);
+            future.get(60, TimeUnit.SECONDS);
         } catch (TimeoutException e) {
             throw new SRMInternalErrorException("Operation timed out");
-        } catch (SRMException e) {
-            return new TReturnStatus(TStatusCode.SRM_FAILURE, "Failed to unpin: " + e.getMessage());
+        } catch (InterruptedException | ExecutionException e) {
+            return new TReturnStatus(TStatusCode.SRM_FAILURE, "Failed to unpin: " + Tools.toSRMException(e).getMessage());
         }
         return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
     }

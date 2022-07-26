@@ -4,6 +4,7 @@ import diskCacheV111.pools.PoolV2Mode;
 import dmg.cells.nucleus.CellAddressCore;
 import java.net.UnknownHostException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -193,6 +194,8 @@ public interface PoolSelectionUnit {
         boolean isPrimary();
 
         boolean isResilient();
+
+        List<? extends SelectionPool> getPools();
     }
 
     interface SelectionLinkGroup extends SelectionEntity {

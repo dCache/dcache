@@ -175,7 +175,7 @@ public class SrmTransferAgent extends AbstractFileTransferAgent {
                         onCancel();
                     }
                 }
-            });
+            }, MoreExecutors.directExecutor());
         }
 
         private void onCancel() {

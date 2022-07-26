@@ -6,6 +6,7 @@ import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
@@ -124,7 +125,7 @@ public abstract class AsynchronousRedirectedTransfer<T> extends Transfer {
                 public void onFailure(Throwable t) {
                     executor.execute(() -> monitor.doAbort(t));
                 }
-            });
+            }, MoreExecutors.directExecutor());
             return future;
         }
 

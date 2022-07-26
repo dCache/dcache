@@ -496,6 +496,12 @@
   -moz-box-shadow: 11px 11px 12px 0px rgba(0,0,0,0.75);
 }
 
+.markdown-body div.float-right {
+  max-width: 30%;
+  float: right;
+  padding-left: 10px;
+}
+
 .markdown-body img[align=right] {
   padding-left: 20px;
 }

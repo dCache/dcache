@@ -68,34 +68,32 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import org.dcache.services.bulk.store.BulkTargetStore;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
- * Provides activity statistics since last restart via the CellInfo interface.
+ * Provides activity statistics via the CellInfo interface.
  */
-public class BulkServiceStatistics implements CellInfoProvider {
+public final class BulkServiceStatistics implements CellInfoProvider {
 
     private static final String LAST_START = "Running since: %s";
-    private static final String UP_TIME = "Uptime %s days, %s hours," + " %s minutes, %s seconds";
+    private static final String UP_TIME = "Uptime %s days, %s hours, %s minutes, %s seconds";
     private static final String LAST_SWEEP = "Last job sweep at %s";
     private static final String LAST_SWEEP_DURATION = "Last job sweep took %s seconds";
     private static final String STATS_FORMAT = "%-20s :    %10s";
 
     private final Date started = new Date();
 
-    private final AtomicLong requestsCompleted = new AtomicLong(0);
-    private final AtomicLong requestsCancelled = new AtomicLong(0);
-    private final AtomicLong jobsAborted = new AtomicLong(0);
-    private final AtomicLong jobsCompleted = new AtomicLong(0);
-    private final AtomicLong jobsFailed = new AtomicLong(0);
-    private final AtomicLong jobsCancelled = new AtomicLong(0);
+    private final AtomicLong requestsCompleted = new AtomicLong(0L);
+    private final AtomicLong requestsCancelled = new AtomicLong(0L);
+    private final AtomicLong jobsAborted = new AtomicLong(0L);
     private final Map<String, AtomicLong> requestTypes = new TreeMap<>();
     private final Map<String, AtomicLong> userRequests = new TreeMap<>();
 
+    private BulkTargetStore targetStore;
+
     private long lastSweep = started.getTime();
     private long lastSweepDuration = 0;
-    private int runningJobs = 0;
-    private int waitingJobs = 0;
-    private int queuedJobs = 0;
     private int activeRequests = 0;
 
     public void activeRequests(int count) {
@@ -111,18 +109,7 @@ public class BulkServiceStatistics implements CellInfoProvider {
         counter.incrementAndGet();
     }
 
-    public void currentlyQueuedJobs(int count) {
-        queuedJobs = count;
-    }
-
-    public void currentlyRunningJobs(int count) {
-        runningJobs = count;
-    }
-
-    public void currentlyWaitingJobs(int count) {
-        waitingJobs = count;
-    }
-
+    @Override
     public void getInfo(PrintWriter pw) {
         Duration duration = Duration.between(started.toInstant(), Instant.now());
 
@@ -139,57 +126,47 @@ public class BulkServiceStatistics implements CellInfoProvider {
               TimeUnit.MILLISECONDS.toSeconds(lastSweepDuration)));
         pw.println();
 
+        Map<String, Long> counts = targetStore.countsByState();
+        pw.println("------------------ TARGETS BY STATE ------------------");
+        counts.entrySet()
+              .forEach(e -> pw.println(String.format(STATS_FORMAT, e.getKey(), e.getValue())));
+        long aborted = jobsAborted.get();
+        if (aborted > 0) {
+            pw.println(String.format(STATS_FORMAT, "ABORTED", aborted));
+        }
+        pw.println();
+
         long received = requestTypes.values().stream().mapToLong(AtomicLong::get).sum();
 
-        pw.println("-------------------- REQUEST INFO --------------------");
+        pw.println("------------ REQUEST TOTALS (since start) ------------");
         pw.println(String.format(STATS_FORMAT, "Requests received", received));
         pw.println(String.format(STATS_FORMAT, "Requests completed", requestsCompleted.get()));
         pw.println(String.format(STATS_FORMAT, "Requests cancelled", requestsCancelled.get()));
+        pw.println(String.format(STATS_FORMAT, "Active requests", activeRequests));
         pw.println();
 
-        pw.println("------------------- REQUEST DETAILS ------------------");
+        pw.println("--------------- REQUESTS (since start) ---------------");
         requestTypes.entrySet().stream()
               .forEach(entry ->
                     pw.println(
                           String.format(STATS_FORMAT, entry.getKey(), entry.getValue().get())));
-
         pw.println();
+    }
 
-        pw.println("---------------------- JOB INFO ----------------------");
-        pw.println(String.format(STATS_FORMAT, "Jobs completed", jobsCompleted.get()));
-        pw.println(String.format(STATS_FORMAT, "Jobs failed", jobsFailed.get()));
-        pw.println(String.format(STATS_FORMAT, "Jobs cancelled", jobsCancelled.get()));
-        pw.println(String.format(STATS_FORMAT, "Jobs aborted", jobsAborted.get()));
-        pw.println();
-
-        pw.println("---------------------- USER INFO ---------------------");
+    public String getOwnerCounts() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("----------------- USERS (since start) ----------------\n");
         userRequests.entrySet().stream()
               .forEach(entry ->
-                    pw.println(
-                          String.format(STATS_FORMAT, entry.getKey(), entry.getValue().get())));
-        pw.println();
-
-        pw.println("--------------------- QUEUE  INFO --------------------");
-        pw.println(String.format(STATS_FORMAT, "Running jobs", runningJobs));
-        pw.println(String.format(STATS_FORMAT, "Waiting jobs", waitingJobs));
-        pw.println(String.format(STATS_FORMAT, "Queued jobs", queuedJobs));
-        pw.println(String.format(STATS_FORMAT, "Active requests", activeRequests));
+                    builder.append(
+                                String.format(STATS_FORMAT, entry.getKey(), entry.getValue().get()))
+                          .append("\n"));
+        builder.append("\n");
+        return builder.toString();
     }
 
     public void incrementJobsAborted() {
         jobsAborted.incrementAndGet();
-    }
-
-    public void incrementJobsCancelled() {
-        jobsCancelled.incrementAndGet();
-    }
-
-    public void incrementJobsCompleted() {
-        jobsCompleted.incrementAndGet();
-    }
-
-    public void incrementJobsFailed() {
-        jobsFailed.incrementAndGet();
     }
 
     public void incrementRequestsCancelled() {
@@ -207,5 +184,10 @@ public class BulkServiceStatistics implements CellInfoProvider {
     public void sweepFinished(long duration) {
         lastSweep = System.currentTimeMillis();
         lastSweepDuration = duration;
+    }
+
+    @Required
+    public void setTargetStore(BulkTargetStore targetStore) {
+        this.targetStore = targetStore;
     }
 }

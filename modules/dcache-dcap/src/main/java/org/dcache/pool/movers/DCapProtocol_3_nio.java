@@ -25,7 +25,6 @@ import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.SocketChannel;
 import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -52,7 +51,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
      */
     private static final long MAX_REQUEST_SIZE = MiB.toBytes(8);
 
-    private final Map<String, Object> _context;
     private final CellEndpoint _cell;
 
     private Args _args;
@@ -71,8 +69,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
 
     private final MoverIoBuffer _defaultBufferSize = new MoverIoBuffer(KiB.toBytes(256),
           KiB.toBytes(256), KiB.toBytes(256));
-    private final MoverIoBuffer _maxBufferSize = new MoverIoBuffer(MiB.toBytes(1), MiB.toBytes(1),
-          MiB.toBytes(1));
 
     private Consumer<Checksum> _integrityChecker;
 
@@ -90,49 +86,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         factory =
               new ProtocolConnectionPoolFactory(port, new DCapChallengeReader());
 
-    }
-
-    private void initialiseBuffer(MoverIoBuffer bufferSize) {
-        try {
-            _bigBuffer = _bigBuffer
-                  == null ? ByteBuffer.allocate(bufferSize.getIoBufferSize()) :
-                  _bigBuffer;
-        } catch (OutOfMemoryError om) {
-            _bigBuffer = ByteBuffer.allocate(KiB.toBytes(32));
-        }
-    }
-
-    private MoverIoBuffer prepareBufferSize(StorageInfo storage) {
-        MoverIoBuffer bufferSize = new MoverIoBuffer(_defaultBufferSize);
-        String tmp;
-        try {
-            tmp = storage.getKey("send");
-            if (tmp != null) {
-                bufferSize.setSendBufferSize(
-                      Math.min(Integer.parseInt(tmp), _maxBufferSize.getSendBufferSize()));
-            }
-        } catch (NumberFormatException e) { /* bad values are ignored */
-
-        }
-        try {
-            tmp = storage.getKey("receive");
-            if (tmp != null) {
-                bufferSize.setRecvBufferSize(
-                      Math.min(Integer.parseInt(tmp), _maxBufferSize.getRecvBufferSize()));
-            }
-        } catch (NumberFormatException e) { /* bad values are ignored */
-
-        }
-        try {
-            tmp = storage.getKey("bsize");
-            if (tmp != null) {
-                bufferSize.setIoBufferSize(
-                      Math.min(Integer.parseInt(tmp), _maxBufferSize.getIoBufferSize()));
-            }
-        } catch (NumberFormatException e) { /* bad values are ignored */
-
-        }
-        return bufferSize;
     }
 
     @Override
@@ -243,40 +196,9 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
     public DCapProtocol_3_nio(CellEndpoint cell) {
 
         _cell = cell;
-        _context = _cell.getDomainContext();
         //
         _log.info(
               "DCapProtocol_3 (nio) created $Id: DCapProtocol_3_nio.java,v 1.17 2007-10-02 13:35:52 tigran Exp $");
-    }
-
-    private void configureBufferSizes() {
-        //
-        // we are created for each request. So our data
-        // is not shared.
-        //
-        _defaultBufferSize.setBufferSize(
-              getParameterInt("defaultSendBufferSize", _defaultBufferSize.getSendBufferSize()),
-              getParameterInt("defaultRecvBufferSize", _defaultBufferSize.getRecvBufferSize()),
-              getParameterInt("defaultIoBufferSize", _defaultBufferSize.getIoBufferSize())
-        );
-        _maxBufferSize.setBufferSize(
-              getParameterInt("maxSendBufferSize", _maxBufferSize.getSendBufferSize()),
-              getParameterInt("maxRecvBufferSize", _maxBufferSize.getRecvBufferSize()),
-              getParameterInt("maxIoBufferSize", _maxBufferSize.getIoBufferSize())
-        );
-        _log.info("Setup : Defaults Buffer Sizes  : {}", _defaultBufferSize);
-        _log.info("Setup : Max Buffer Sizes       : {}", _maxBufferSize);
-
-    }
-
-    private synchronized int getParameterInt(String name, int defaultValue) {
-        String stringValue = (String) _context.get("dCap3-" + name);
-        stringValue = stringValue == null ? _args.getOpt(name) : stringValue;
-        try {
-            return stringValue == null ? defaultValue : Integer.parseInt(stringValue);
-        } catch (NumberFormatException e) {
-            return defaultValue;
-        }
     }
 
     @Override
@@ -317,7 +239,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
           ProtocolInfo protocol,
           Set<? extends OpenOption> access)
           throws Exception {
-        configureBufferSizes();
 
         if (!(protocol instanceof DCapProtocolInfo)) {
             throw new
@@ -343,11 +264,9 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
             }
         } catch (NumberFormatException e) { /* bad values are ignored */}
         _log.info("ioError = {}", _ioError);
-//        gets the buffervalues of the storageInfo keys
-        MoverIoBuffer bufferSize = prepareBufferSize(storage);
+        MoverIoBuffer bufferSize = new MoverIoBuffer(_defaultBufferSize);
         _log.info("Client : Buffer Sizes : {}", bufferSize);
-//        allocates the _bigBuffer
-        initialiseBuffer(bufferSize);
+        _bigBuffer = ByteBuffer.allocate(bufferSize.getIoBufferSize());
 
         SocketChannel socketChannel = null;
         DCapOutputByteBuffer cntOut = new DCapOutputByteBuffer(KiB.toBytes(1));

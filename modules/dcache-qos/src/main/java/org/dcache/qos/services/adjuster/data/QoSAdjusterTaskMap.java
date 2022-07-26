@@ -70,8 +70,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
@@ -114,7 +114,7 @@ public final class QoSAdjusterTaskMap extends RunnableModule implements CellInfo
     private QoSAdjusterCounters counters;
     private QoSHistory history;
 
-    private ScheduledExecutorService executorService;
+    private ExecutorService executorService;
 
     /*
      *  A callback.  Note that this creates a cyclical dependency in the spring context.
@@ -284,8 +284,6 @@ public final class QoSAdjusterTaskMap extends RunnableModule implements CellInfo
                 signalled.set(0);
                 long start = System.currentTimeMillis();
 
-                pollWaiting();
-
                 scan();
 
                 long end = System.currentTimeMillis();
@@ -381,7 +379,7 @@ public final class QoSAdjusterTaskMap extends RunnableModule implements CellInfo
         this.factory = factory;
     }
 
-    public void setExecutorService(ScheduledExecutorService executorService) {
+    public void setExecutorService(ExecutorService executorService) {
         this.executorService = executorService;
     }
 
@@ -517,15 +515,6 @@ public final class QoSAdjusterTaskMap extends RunnableModule implements CellInfo
             history.add(task.getPnfsId(), task.toHistoryString(), task.getException() != null);
             counters.recordTask(task);
             taskHandler.notifyAdjustmentCompleted(task);
-        }
-    }
-
-    private void pollWaiting() {
-        read.lock();
-        try {
-            waitingQueue.stream().forEach(QoSAdjusterTask::poll);
-        } finally {
-            read.unlock();
         }
     }
 

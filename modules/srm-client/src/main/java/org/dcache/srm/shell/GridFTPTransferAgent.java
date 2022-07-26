@@ -234,7 +234,7 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
                         onCancel();
                     }
                 }
-            });
+            }, MoreExecutors.directExecutor());
 
         }
 

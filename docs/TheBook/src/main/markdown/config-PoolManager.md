@@ -177,6 +177,21 @@ Will create pool group `zone-A-pools` and any existing pool as well as any new p
 >
 > Pools can't be manually added into dynamic groups with `psu addto pgroup` admin command.
 
+#### Nested Pool Groups
+
+Pool groups can be grouped together into nested pool groups. The special symbol `@` used as prefix
+to `psu addto pgroup` indicates, that the added object is a group:
+
+    Example:
+
+    psu create pgroup group-foo
+    psu create pgroup group-bar
+    psu create pgroup group-foo-bar
+    psu addto pgroup group-foo-bar @group-foo
+    psu addto pgroup group-foo-bar @group-bar
+
+The pool list of the nested group will be dynamically updated as soon as subgroup is updated.
+
 #### Storage Classes
 
 The storage class is a string of the form `StoreName:StorageGroup@type-of-storage-system`, where `type-of-storage-system` denotes the type of storage system in use, and `StoreName`:`StorageGroup` is a string describing the storage class in a syntax which depends on the storage system. In general use `type-of-storage-system=osm`.

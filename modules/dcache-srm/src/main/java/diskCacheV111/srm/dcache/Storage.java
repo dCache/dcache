@@ -68,7 +68,7 @@ package diskCacheV111.srm.dcache;
 import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Iterables.isEmpty;
 import static com.google.common.collect.Maps.filterKeys;
-import static com.google.common.util.concurrent.Futures.immediateFailedCheckedFuture;
+import static com.google.common.util.concurrent.Futures.immediateFailedFuture;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -93,8 +93,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Range;
-import com.google.common.util.concurrent.CheckedFuture;
 import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.services.space.Space;
@@ -525,7 +525,7 @@ public final class Storage
     }
 
     @Override
-    public CheckedFuture<Pin, ? extends SRMException> pinFile(SRMUser user,
+    public ListenableFuture<Pin> pinFile(SRMUser user,
           URI surl,
           String clientHost,
           long pinLifetime,
@@ -535,7 +535,7 @@ public final class Storage
               ? PinningActivityPolicy.ALLOW_STAGING
               : PinningActivityPolicy.DENY_STAGING;
         try {
-            return Futures.makeChecked(PinCompanion.pinFile(asDcacheUser(user).getSubject(),
+            return PinCompanion.pinFile(asDcacheUser(user).getSubject(),
                         getPath(surl),
                         clientHost,
                         pinLifetime,
@@ -546,57 +546,50 @@ public final class Storage
                         _pnfsStub,
                         _poolManagerStub,
                         _pinManagerStub,
-                        _executor),
-                  new ToSRMException());
+                        _executor);
         } catch (SRMAuthorizationException | SRMInvalidPathException e) {
-            return Futures.immediateFailedCheckedFuture(e);
+            return Futures.immediateFailedFuture(e);
         }
     }
 
     @Override
-    public CheckedFuture<String, ? extends SRMException> unPinFile(SRMUser user, String fileId,
+    public ListenableFuture<String> unPinFile(SRMUser user, String fileId,
           String pinId) {
         if (PinCompanion.isFakePinId(pinId)) {
-            return Futures.immediateCheckedFuture(null);
+            return Futures.immediateFuture(null);
         }
 
         try {
             Subject subject = (user == null) ? Subjects.ROOT : asDcacheUser(user).getSubject();
-            return Futures.makeChecked(
-                  UnpinCompanion.unpinFile(
+            return UnpinCompanion.unpinFile(
                         subject, new PnfsId(fileId), Long.parseLong(pinId), _pinManagerStub,
-                        _executor),
-                  new ToSRMException());
+                        _executor);
         } catch (SRMAuthorizationException e) {
-            return Futures.immediateFailedCheckedFuture(e);
+            return Futures.immediateFailedFuture(e);
         }
     }
 
     @Override
-    public CheckedFuture<String, ? extends SRMException> unPinFileBySrmRequestId(
+    public ListenableFuture<String> unPinFileBySrmRequestId(
           SRMUser user, String fileId, String requestToken) {
         try {
-            return Futures.makeChecked(
-                  UnpinCompanion.unpinFileBySrmRequestId(
+            return UnpinCompanion.unpinFileBySrmRequestId(
                         asDcacheUser(user).getSubject(), new PnfsId(fileId), requestToken,
-                        _pinManagerStub, _executor),
-                  new ToSRMException());
+                        _pinManagerStub, _executor);
         } catch (SRMAuthorizationException e) {
-            return Futures.immediateFailedCheckedFuture(e);
+            return Futures.immediateFailedFuture(e);
         }
     }
 
     @Override
-    public CheckedFuture<String, ? extends SRMException> unPinFile(
+    public ListenableFuture<String> unPinFile(
           SRMUser user, String fileId) {
         try {
-            return Futures.makeChecked(
-                  UnpinCompanion.unpinFile(
+            return UnpinCompanion.unpinFile(
                         asDcacheUser(user).getSubject(), new PnfsId(fileId), _pinManagerStub,
-                        _executor),
-                  new ToSRMException());
+                        _executor);
         } catch (SRMAuthorizationException e) {
-            return Futures.immediateFailedCheckedFuture(e);
+            return Futures.immediateFailedFuture(e);
         }
     }
 
@@ -998,7 +991,7 @@ public final class Storage
     private static final int IPv6_SIZE = 16;
 
     @Override
-    public CheckedFuture<String, ? extends SRMException> prepareToPut(
+    public ListenableFuture<String> prepareToPut(
           final SRMUser srmUser, URI surl,
           Long size, String accessLatency, String retentionPolicy, String spaceToken,
           boolean overwrite) {
@@ -1010,7 +1003,7 @@ public final class Storage
 
             if (spaceToken != null) {
                 if (!_isSpaceManagerEnabled) {
-                    return immediateFailedCheckedFuture(
+                    return immediateFailedFuture(
                           new SRMNotSupportedException(SPACEMANAGER_DISABLED_MESSAGE));
                 }
 
@@ -1023,24 +1016,24 @@ public final class Storage
                 try {
                     Optional<Space> optionalSpace = spaces.get(spaceToken);
                     if (!optionalSpace.isPresent()) {
-                        return immediateFailedCheckedFuture(new SRMInvalidRequestException(
+                        return immediateFailedFuture(new SRMInvalidRequestException(
                               "The space token " + spaceToken
                                     + " does not refer to an existing known space reservation."));
                     }
                     Space space = optionalSpace.get();
                     if (space.getExpirationTime() != null
                           && space.getExpirationTime() < System.currentTimeMillis()) {
-                        return immediateFailedCheckedFuture(new SRMSpaceLifetimeExpiredException(
+                        return immediateFailedFuture(new SRMSpaceLifetimeExpiredException(
                               "Space reservation associated with the space token " + spaceToken
                                     + " is expired."));
                     }
                     if (size != null && space.getAvailableSpaceInBytes() < size) {
-                        return immediateFailedCheckedFuture(new SRMExceedAllocationException(
+                        return immediateFailedFuture(new SRMExceedAllocationException(
                               "Space associated with the space token " + spaceToken
                                     + " is not enough to hold SURL."));
                     }
                 } catch (ExecutionException e) {
-                    return immediateFailedCheckedFuture(new SRMException(
+                    return immediateFailedFuture(new SRMException(
                           "Failure while querying space reservation: " + e.getCause()
                                 .getMessage()));
                 }
@@ -1107,9 +1100,9 @@ public final class Storage
                           }
                       }
                   }, _executor);
-            return Futures.makeChecked(future, new ToSRMException());
+            return future;
         } catch (SRMAuthorizationException | SRMInvalidPathException e) {
-            return immediateFailedCheckedFuture(e);
+            return immediateFailedFuture(e);
         }
     }
 
@@ -2347,23 +2340,6 @@ public final class Storage
             throw new SRMAuthorizationException("Authorization failed");
         }
         return dcacheUser;
-    }
-
-    private static class ToSRMException implements Function<Exception, SRMException> {
-
-        @Override
-        public SRMException apply(Exception from) {
-            if (from instanceof InterruptedException) {
-                return new SRMInternalErrorException("SRM is shutting down.", from);
-            }
-            if (from instanceof CancellationException) {
-                return new SRMAbortedException("Request was aborted.", from);
-            }
-            if (from.getCause() instanceof SRMException) {
-                return (SRMException) from.getCause();
-            }
-            return new SRMInternalErrorException(from);
-        }
     }
 
     private static class GetHostByAddressCacheLoader extends CacheLoader<InetAddress, String> {

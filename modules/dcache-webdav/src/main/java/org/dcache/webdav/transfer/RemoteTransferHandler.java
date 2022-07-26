@@ -55,6 +55,7 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.TimeoutCacheException;
+import diskCacheV111.vehicles.IoDoorEntry;
 import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
@@ -66,10 +67,12 @@ import diskCacheV111.vehicles.transferManager.RemoteTransferManagerMessage;
 import diskCacheV111.vehicles.transferManager.TransferCompleteMessage;
 import diskCacheV111.vehicles.transferManager.TransferFailedMessage;
 import diskCacheV111.vehicles.transferManager.TransferStatusQueryMessage;
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
+import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.CommandException;
 import dmg.util.CommandSyntaxException;
@@ -267,7 +270,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
     private final Map<Long, RemoteTransfer> _transfers = new ConcurrentHashMap<>();
 
     private long _performanceMarkerPeriod;
-    private CellStub _transferManager;
+    private CellStub _genericTransferManager;
     private PnfsHandler _pnfs;
     private final ScheduledExecutorService _scheduler = Executors.newScheduledThreadPool(1);
     private final BoundedExecutor _activity =
@@ -281,7 +284,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
 
     @Required
     public void setTransferManagerStub(CellStub stub) {
-        _transferManager = stub;
+        _genericTransferManager = stub;
     }
 
     @Required
@@ -655,6 +658,11 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         pw.println("    Queued tasks: " + _activity.getWorkQueueSize());
     }
 
+    public void addTransfers(List<IoDoorEntry> transfers) {
+        _transfers.values().stream()
+                .map(RemoteTransfer::describe)
+                .forEachOrdered(transfers::add);
+    }
 
     /**
      * Start a transfer and block until that transfer is complete.
@@ -750,6 +758,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         private long _size;
         private ScheduledFuture<?> _sendingMarkers;
         private AsyncContext _async;
+        private CellStub _transferManager = _genericTransferManager;
 
         public RemoteTransfer(Subject subject, Restriction restriction,
               FsPath path, URI destination, @Nullable Object credential,
@@ -789,6 +798,25 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
             _wantDigest = wantDigest;
         }
 
+        private IoDoorEntry describe() {
+            // This may trigger DNS lookup; however, result should be cached by JVM.
+            String client = _endpoint.getRemoteAddress().getHostName();
+            StringBuilder status = new StringBuilder();
+            status.append(_direction == Direction.PULL ? "PULL from" : "PUSH to");
+            status.append(' ').append(_destination.getHost());
+            // Append transfer-manager state only if the mover doesn't exist.
+            if (_lastState != RECEIVED_FIRST_POOL_REPLY_STATE) {
+                status.append(": ").append(TransferManagerHandler.describeState(_lastState));
+            }
+            String pool = _pool.orElse("<unknown>");
+            long whenSubmitted = _whenSubmitted.toEpochMilli();
+            String protocol = "HTTP-TPC / " + _destination.getScheme().toLowerCase();
+            CellAddressCore managerAddress = _transferManager.getDestinationPath().getDestinationAddress();
+
+            return new IoDoorEntry(_id, _pnfsId, _path.toString(), _subject,
+                    pool, status.toString(), whenSubmitted, client,
+                    managerAddress, protocol);
+        }
 
         /**
          * Obtain the PnfsId of the local file, creating it as necessary.
@@ -881,7 +909,14 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
             message.setPnfsId(_pnfsId);
             message.setFileAttributes(attributes);
             try {
-                _id = _transferManager.sendAndWait(message).getId();
+                RemoteTransferManagerMessage response =
+                        _genericTransferManager.sendAndWait(message);
+                CellAddressCore managerAddress = response.getTransferManager();
+                if (managerAddress != null) {
+                    CellPath path = new CellPath(managerAddress);
+                    _transferManager = _genericTransferManager.withDestination(path);
+                }
+                _id = response.getId();
                 _transfers.put(_id, this);
                 addDigestResponseHeader(attributes);
             } catch (NoRouteToCellException | TimeoutCacheException e) {

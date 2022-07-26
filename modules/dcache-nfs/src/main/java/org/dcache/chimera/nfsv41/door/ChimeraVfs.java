@@ -246,6 +246,8 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
             throw new NotDirException("parent not a directory");
         } catch (FileExistsChimeraFsException e) {
             throw new ExistException("path already exists");
+        } catch (PermissionDeniedChimeraFsException e) {
+            throw new PermException("hard link not allowed for directory");
         }
     }
 
@@ -419,6 +421,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
 
                 // allow set size only for newly created files
                 if (fsInode.type() == FsInodeType.INODE
+                      && fsInode.getLevel() == 0 // exclude layer files
                       && chimeraStat.getState() != FileState.CREATED) {
                     throw new PermException("Can't change size of existing file");
                 }
@@ -483,6 +486,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
         stat.setATime(pStat.getATime());
         stat.setCTime(pStat.getCTime());
         stat.setMTime(pStat.getMTime());
+        stat.setBTime(pStat.getCrTime());
 
         stat.setGid(pStat.getGid());
         stat.setUid(pStat.getUid());

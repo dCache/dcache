@@ -59,105 +59,22 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk;
 
-import java.io.Serializable;
+public enum BulkRequestStatus {
+    QUEUED("Request has been submitted to the service and awaits processing."),
+    STARTED("Request has been set to active and has begun processing."),
+    COMPLETED("All targets of the request have reached terminal state."),
+    CANCELLING(
+          "Request has been cancelled by the user or admin but has not completed "
+                + "cancelling all targets."),
+    CANCELLED("Request has been fully cancelled by the user or admin.");
 
-/**
- * Generic bulk status.  In addition to the required fields, tracks timestamps.
- */
-public class BulkRequestStatus implements Serializable {
+    private String description;
 
-    private static final long serialVersionUID = -7992364565691790254L;
-
-    public enum Status {
-        QUEUED, STARTED, COMPLETED, CANCELLING, CANCELLED
+    BulkRequestStatus(String description) {
+        this.description = description;
     }
 
-    private long firstArrived;
-    private long lastModified;
-    private Status status;
-    private int targets;
-    private int processed;
-    private BulkFailures failures;
-
-    public long getFirstArrived() {
-        return firstArrived;
-    }
-
-    public long getLastModified() {
-        return lastModified;
-    }
-
-    public Status getStatus() {
-        return status;
-    }
-
-    public void setStatus(Status status) {
-        this.status = status;
-        lastModified = System.currentTimeMillis();
-    }
-
-    public int getTargets() {
-        return targets;
-    }
-
-    public void targetAdded() {
-        ++targets;
-    }
-
-    public void setFirstArrived(long firstArrived) {
-        this.firstArrived = firstArrived;
-    }
-
-    public void setLastModified(long lastModified) {
-        this.lastModified = lastModified;
-    }
-
-    public void setTargets(int targets) {
-        this.targets = targets;
-        lastModified = System.currentTimeMillis();
-    }
-
-    public int getProcessed() {
-        return processed;
-    }
-
-    public void setProcessed(int processed) {
-        this.processed = processed;
-        lastModified = System.currentTimeMillis();
-    }
-
-    public BulkFailures getFailures() {
-        return failures;
-    }
-
-    public void setFailures(BulkFailures failures) {
-        this.failures = failures;
-        lastModified = System.currentTimeMillis();
-    }
-
-    public void targetAborted(String target, Throwable exception) {
-        if (target != null) {
-            addException(target, exception);
-        }
-
-        lastModified = System.currentTimeMillis();
-    }
-
-    public void targetCompleted(String target, Throwable exception) {
-        if (target != null) {
-            ++processed;
-            addException(target, exception);
-        }
-
-        lastModified = System.currentTimeMillis();
-    }
-
-    private void addException(String target, Throwable exception) {
-        if (exception != null) {
-            if (failures == null) {
-                failures = new BulkFailures();
-            }
-            failures.put(target, exception);
-        }
+    public String getDescription() {
+        return description;
     }
 }

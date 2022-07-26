@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 -2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -46,6 +46,7 @@ import com.google.common.collect.SetMultimap;
 import com.google.common.net.UrlEscapers;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.MoreExecutors;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.ExpandWith;
@@ -2372,7 +2373,7 @@ public class SrmShell extends ShellApplication {
                     FileTransfer failedTransfer = removeOngoingTransfer(id);
                     completedTransfers.put(id, failedTransfer);
                 }
-            });
+            }, MoreExecutors.directExecutor());
 
             return "[" + id + "] transfer started.";
         }
@@ -2435,7 +2436,7 @@ public class SrmShell extends ShellApplication {
                     FileTransfer failedTransfer = removeOngoingTransfer(id);
                     completedTransfers.put(id, failedTransfer);
                 }
-            });
+            }, MoreExecutors.directExecutor());
 
             return "[" + id + "] transfer started.";
         }

@@ -57,6 +57,7 @@ import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.FlatFileStore;
 import org.dcache.pool.repository.IllegalTransitionException;
+import org.dcache.pool.repository.ModifiableReplicaDescriptor;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.ReplicaStore;
@@ -147,7 +148,7 @@ public class RepositorySubsystemTest
             @Override
             protected void run()
                   throws CacheException, IOException, InterruptedException {
-                ReplicaDescriptor handle =
+                ModifiableReplicaDescriptor handle =
                       repository.createEntry(attributes,
                             ReplicaState.FROM_CLIENT,
                             state,
@@ -475,7 +476,7 @@ public class RepositorySubsystemTest
             protected void run()
                   throws CacheException, InterruptedException {
                 List<StickyRecord> stickyRecords = Collections.emptyList();
-                ReplicaDescriptor handle = repository.createEntry(attributes5, FROM_STORE, CACHED,
+                ModifiableReplicaDescriptor handle = repository.createEntry(attributes5, FROM_STORE, CACHED,
                       stickyRecords,
                       EnumSet.noneOf(OpenFlags.class), OptionalLong.empty());
                 try {
@@ -783,7 +784,7 @@ public class RepositorySubsystemTest
                   InterruptedException,
                   IOException {
                 List<StickyRecord> stickyRecords = Collections.emptyList();
-                ReplicaDescriptor handle =
+                ModifiableReplicaDescriptor handle =
                       repository.createEntry(attributes4, transferState,
                             finalState, stickyRecords, EnumSet.noneOf(OpenFlags.class),
                             OptionalLong.empty());

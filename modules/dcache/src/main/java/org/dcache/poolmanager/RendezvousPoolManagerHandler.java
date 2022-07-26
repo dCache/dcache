@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2016 - 2020 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 - 2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -88,7 +88,7 @@ public class RendezvousPoolManagerHandler implements SerializablePoolManagerHand
     }
 
     private static int hash(PnfsId pnfsId, CellAddressCore address) {
-        return Hashing.murmur3_32().newHasher()
+        return Hashing.murmur3_32_fixed().newHasher()
               .putObject(pnfsId, PnfsId.funnel())
               .putString(address.toString(), US_ASCII)
               .hash().asInt();
@@ -106,7 +106,8 @@ public class RendezvousPoolManagerHandler implements SerializablePoolManagerHand
                               l.stream()
                                     .filter(Objects::nonNull)
                                     .flatMap(Stream::of)
-                                    .collect(toList())));
+                                    .collect(toList())),
+                        MoreExecutors.directExecutor());
         } else {
             return submit(endpoint, new CellPath(backendFor(msg)), msg, timeout);
         }

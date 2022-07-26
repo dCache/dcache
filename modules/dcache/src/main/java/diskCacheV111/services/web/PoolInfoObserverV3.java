@@ -2,6 +2,7 @@ package diskCacheV111.services.web;
 
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.MoreExecutors;
 import diskCacheV111.poolManager.PoolManagerCellInfo;
 import diskCacheV111.pools.PoolCellInfo;
 import diskCacheV111.util.CacheException;
@@ -141,7 +142,8 @@ public class PoolInfoObserverV3 extends AbstractCell {
                           LOGGER.warn("Failed to query {}: {}", pool, t.getMessage());
                           latch.countDown();
                       }
-                  });
+                  },
+                  MoreExecutors.directExecutor());
         }
 
         latch.await();

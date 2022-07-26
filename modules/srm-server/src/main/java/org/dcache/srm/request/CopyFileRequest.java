@@ -75,7 +75,7 @@ package org.dcache.srm.request;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.util.concurrent.CheckedFuture;
+import com.google.common.util.concurrent.ListenableFuture;
 import java.net.URI;
 import java.util.Objects;
 import org.apache.axis.types.UnsignedLong;
@@ -87,6 +87,7 @@ import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.State;
+import org.dcache.srm.util.Tools;
 import org.dcache.srm.v2_2.TCopyRequestFileStatus;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
@@ -420,7 +421,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements
         if (getDestinationFileId() == null) {
             addHistoryEvent("Doing name space lookup.");
             LOGGER.debug("calling storage.prepareToPut({})", getLocalDestinationPath());
-            CheckedFuture<String, ? extends SRMException> future =
+            ListenableFuture<String> future =
                   getStorage().prepareToPut(
                         getUser(),
                         getDestinationSurl(),
@@ -455,7 +456,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements
         if (getDestinationFileId() == null) {
             addHistoryEvent("Doing name space lookup.");
             LOGGER.debug("calling storage.prepareToPut({})", getLocalDestinationPath());
-            CheckedFuture<String, ? extends SRMException> future =
+            ListenableFuture<String> future =
                   getStorage().prepareToPut(
                         getUser(), getDestinationSurl(), size,
                         Objects.toString(getContainerRequest().getTargetAccessLatency(), null),
@@ -742,10 +743,10 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements
     private static class PutCallbacks implements Runnable {
 
         private final long fileRequestJobId;
-        private final CheckedFuture<String, ? extends SRMException> future;
+        private final ListenableFuture<String> future;
 
         public PutCallbacks(long fileRequestJobId,
-              CheckedFuture<String, ? extends SRMException> future) {
+              ListenableFuture<String> future) {
             this.fileRequestJobId = fileRequestJobId;
             this.future = future;
         }
@@ -755,7 +756,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements
             try {
                 CopyFileRequest fr = Job.getJob(fileRequestJobId, CopyFileRequest.class);
                 try {
-                    String fileId = future.checkedGet();
+                    String fileId = future.get();
                     State state = fr.getState();
                     if (state == State.INPROGRESS) {
                         LOGGER.debug("PutCallbacks success for file {}", fr.getDestinationSurl());
@@ -763,11 +764,17 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements
                         fr.saveJob(true);
                         Scheduler.getScheduler(fr.getSchedulerId()).execute(fr);
                     }
-                } catch (SRMException e) {
+                } catch (Exception e) {
+                    SRMException se;
+                    if (e instanceof SRMException) {
+                        se = (SRMException) e;
+                    } else {
+                        se = Tools.toSRMException(e);
+                    }
                     fr.setStateAndStatusCode(
                           State.FAILED,
-                          e.getMessage(),
-                          e.getStatusCode());
+                          se.getMessage(),
+                          se.getStatusCode());
                 }
             } catch (IllegalStateTransition e) {
                 LOGGER.error("Illegal State Transition: {}", e.getMessage());

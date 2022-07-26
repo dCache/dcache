@@ -65,26 +65,42 @@ import org.dcache.auth.attributes.Restriction;
  * Single generic bulk message type which serves various activities.
  */
 public class BulkRequestStatusMessage extends BulkServiceMessage {
-
     private static final long serialVersionUID = 3470455902659932131L;
 
     private final String requestId;
-    private BulkRequestStatus status;
+    private final String activity;
+    private BulkRequestInfo requestInfo;
+    private long offset;
 
     public BulkRequestStatusMessage(String requestId, Restriction restriction) {
+        this(requestId, null, restriction);
+    }
+
+    public BulkRequestStatusMessage(String requestId, String activity, Restriction restriction) {
         super(restriction);
         this.requestId = requestId;
+        this.activity = activity;
     }
 
     public String getRequestId() {
         return requestId;
     }
 
-    public BulkRequestStatus getStatus() {
-        return status;
+    public String getActivity() { return activity; }
+
+    public BulkRequestInfo getInfo() {
+        return requestInfo;
     }
 
-    public void setStatus(BulkRequestStatus status) {
-        this.status = status;
+    public void setInfo(BulkRequestInfo requestInfo) {
+        this.requestInfo = requestInfo;
+    }
+
+    public long getOffset() {
+        return offset;
+    }
+
+    public void setOffset(long offset) {
+        this.offset = offset;
     }
 }

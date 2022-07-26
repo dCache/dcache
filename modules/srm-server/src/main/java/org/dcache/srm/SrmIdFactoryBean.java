@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2019 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -35,11 +35,11 @@ public class SrmIdFactoryBean implements FactoryBean<String>, CellIdentityAware 
 
     @Override
     public void setCellAddress(CellAddressCore address) {
-        this.id = Hashing.murmur3_32().hashString(address.toString(), US_ASCII).toString();
+        this.id = Hashing.murmur3_32_fixed().hashString(address.toString(), US_ASCII).toString();
     }
 
     @Override
-    public String getObject() throws Exception {
+    public String getObject() {
         return id;
     }
 

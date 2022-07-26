@@ -69,7 +69,7 @@ public interface Repository
      * @throws FileInCacheException if an entry with the same ID already exists.
      * @throws CacheException       in case of other errors
      */
-    ReplicaDescriptor createEntry(FileAttributes fileAttributes,
+    ModifiableReplicaDescriptor createEntry(FileAttributes fileAttributes,
           ReplicaState transferState,
           ReplicaState targetState,
           List<StickyRecord> sticky,

@@ -1,9 +1,6 @@
 package org.dcache.pool.repository.v5;
 
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.Iterables.concat;
-import static com.google.common.collect.Iterables.isEmpty;
-import static com.google.common.collect.Iterables.unmodifiableIterable;
 import static java.util.Objects.requireNonNull;
 import static org.dcache.namespace.FileAttribute.ACCESS_LATENCY;
 import static org.dcache.namespace.FileAttribute.CHECKSUM;
@@ -13,7 +10,7 @@ import static org.dcache.namespace.FileAttribute.SIZE;
 import static org.dcache.namespace.FileAttribute.XATTR;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
+import com.google.common.collect.Lists;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileCorruptedCacheException;
 import diskCacheV111.util.PnfsHandler;
@@ -22,6 +19,8 @@ import diskCacheV111.util.TimeoutCacheException;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.OpenOption;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -31,7 +30,7 @@ import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.AllocatorAwareRepositoryChannel;
 import org.dcache.pool.repository.FileStore;
-import org.dcache.pool.repository.ReplicaDescriptor;
+import org.dcache.pool.repository.ModifiableReplicaDescriptor;
 import org.dcache.pool.repository.ReplicaRecord;
 import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.RepositoryChannel;
@@ -44,7 +43,7 @@ import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class WriteHandleImpl implements ReplicaDescriptor {
+class WriteHandleImpl implements ModifiableReplicaDescriptor {
 
     enum HandleState {
         OPEN, COMMITTED, CLOSED
@@ -402,26 +401,18 @@ class WriteHandleImpl implements ReplicaDescriptor {
     }
 
     @Override
-    public synchronized Iterable<Checksum> getChecksums() throws CacheException {
+    public synchronized Collection<Checksum> getChecksums() throws CacheException {
         if (!_fileAttributes.isDefined(CHECKSUM)) {
             _fileAttributes.setChecksums(_pnfs
                   .getFileAttributes(_entry.getPnfsId(), EnumSet.of(CHECKSUM))
                   .getChecksums());
         }
-        return unmodifiableIterable(_fileAttributes.getChecksums());
+        return Collections.unmodifiableSet(_fileAttributes.getChecksums());
     }
 
     @Override
     public synchronized void addChecksums(Iterable<Checksum> checksums) {
-        if (!isEmpty(checksums)) {
-            Iterable<Checksum> newChecksums;
-            if (_fileAttributes.isDefined(CHECKSUM)) {
-                newChecksums = concat(_fileAttributes.getChecksums(), checksums);
-            } else {
-                newChecksums = checksums;
-            }
-            _fileAttributes.setChecksums(Sets.newHashSet(newChecksums));
-        }
+        _fileAttributes.addChecksums(Lists.newArrayList(checksums));
     }
 
     @Override

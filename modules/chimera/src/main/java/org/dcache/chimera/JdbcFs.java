@@ -328,6 +328,26 @@ public class JdbcFs implements FileSystemProvider {
 
         return inTransaction(status -> {
             try {
+
+
+                Stat parentStat = parent.stat();
+                if (parentStat == null) {
+                    throw FileNotFoundChimeraFsException.of(parent);
+                }
+
+                if ((parentStat.getMode() & UnixPermission.F_TYPE) != UnixPermission.S_IFDIR) {
+                    throw new NotDirChimeraException(parent);
+                }
+
+                Stat inodeStat = inode.stat();
+                if (inodeStat == null) {
+                    throw FileNotFoundChimeraFsException.of(inode);
+                }
+
+                if ((inodeStat.getMode() & UnixPermission.F_TYPE) == UnixPermission.S_IFDIR) {
+                    throw new PermissionDeniedChimeraFsException("hard link not allowed for directory");
+                }
+
                 _sqlDriver.createEntryInParent(parent, name, inode);
                 _sqlDriver.incNlink(inode);
                 _sqlDriver.incNlink(parent);

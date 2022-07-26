@@ -2,6 +2,7 @@ package org.dcache.services.info.gathers.routingmanager;
 
 import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellPath;
+import java.util.concurrent.TimeUnit;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.gathers.MessageSender;
@@ -29,8 +30,8 @@ public class RoutingMgrDga extends SkelListBasedActivity {
      * requests to the *same* domain, and a delay of at least 100 ms between successive requests of
      * information from any domain.
      */
-    private static int MIN_LIST_REFRESH_PERIOD = 300000;
-    private static int SUCC_MSG_DELAY = 100;
+    private static long MIN_LIST_REFRESH_PERIOD = TimeUnit.MINUTES.toMillis(5);
+    private static long SUCC_MSG_DELAY = TimeUnit.SECONDS.toMillis(5);
 
     private final CellMessageAnswerable _handler;
 

@@ -83,7 +83,7 @@ class Link implements SelectionLink, Serializable {
             if (o instanceof Pool) {
                 list.add((Pool) o);
             } else if (o instanceof PGroup) {
-                list.addAll(((PGroup) o)._poolList.values());
+                list.addAll(((PGroup)o).getPools());
             }
         }
         return list;

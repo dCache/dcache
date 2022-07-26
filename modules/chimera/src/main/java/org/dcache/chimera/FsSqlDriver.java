@@ -813,11 +813,11 @@ public class FsSqlDriver {
      * @param inode
      * @return
      */
-    boolean isIoEnabled(FsInode inode) {
+    boolean isIoEnabled(FsInode inode) throws FileNotFoundChimeraFsException {
         /* Since we access t_inodes anyway and the cost of transferring the entire row
          * is negligible, we fill the stat cache as a side effect.
          */
-        return _jdbc.query("SELECT * FROM t_inodes WHERE inumber=?",
+        Boolean enabled = _jdbc.query("SELECT * FROM t_inodes WHERE inumber=?",
               ps -> ps.setLong(1, inode.ino()),
               rs -> {
                   if (rs.next()) {
@@ -827,6 +827,10 @@ public class FsSqlDriver {
                       return false;
                   }
               });
+        if (enabled == null) {
+            throw FileNotFoundChimeraFsException.of(inode);
+        }
+        return enabled;
     }
 
     void setInodeIo(FsInode inode, boolean enable) {
@@ -839,9 +843,9 @@ public class FsSqlDriver {
 
     int write(FsInode inode, int level, long beginIndex, byte[] data, int offset, int len) {
         if (level == 0) {
-            int n = _jdbc.queryForObject("SELECT count(*) FROM t_inodes_data WHERE inumber=?",
+            Integer n = _jdbc.queryForObject("SELECT count(*) FROM t_inodes_data WHERE inumber=?",
                   Integer.class, inode.ino());
-            if (n > 0) {
+            if (n != null && n > 0) {
                 // entry exist, update only
                 _jdbc.update("UPDATE t_inodes_data SET ifiledata=? WHERE inumber=?",
                       ps -> {
@@ -864,10 +868,10 @@ public class FsSqlDriver {
                       ps.setLong(2, inode.ino());
                   });
         } else {
-            int n = _jdbc.queryForObject(
+            Integer n = _jdbc.queryForObject(
                   "SELECT count(*) FROM t_level_" + level + " WHERE inumber=?", Integer.class,
                   inode.ino());
-            if (n == 0) {
+            if (n != null && n == 0) {
                 // if level does not exist, create it
                 Timestamp now = new Timestamp(System.currentTimeMillis());
                 _jdbc.update("INSERT INTO t_level_" + level
@@ -896,7 +900,8 @@ public class FsSqlDriver {
         return len;
     }
 
-    int read(FsInode inode, int level, long beginIndex, byte[] data, int offset, int len) {
+    int read(FsInode inode, int level, long beginIndex, byte[] data, int offset, int len)
+          throws FileNotFoundChimeraFsException {
         ResultSetExtractor<Integer> extractor = rs -> {
             try {
                 int count = 0;
@@ -916,13 +921,19 @@ public class FsSqlDriver {
                 throw new LobRetrievalFailureException(e.getMessage(), e);
             }
         };
+        Integer ifiledata;
         if (level == 0) {
-            return _jdbc.query("SELECT ifiledata FROM t_inodes_data WHERE inumber=?", extractor,
+            ifiledata = _jdbc.query("SELECT ifiledata FROM t_inodes_data WHERE inumber=?",
+                  extractor,
                   inode.ino());
         } else {
-            return _jdbc.query("SELECT ifiledata FROM t_level_" + level + " WHERE inumber=?",
+            ifiledata = _jdbc.query("SELECT ifiledata FROM t_level_" + level + " WHERE inumber=?",
                   extractor, inode.ino());
         }
+        if (ifiledata == null) {
+            throw FileNotFoundChimeraFsException.ofLevel(inode, level);
+        }
+        return ifiledata;
     }
 
     /**
@@ -1165,7 +1176,6 @@ public class FsSqlDriver {
      * @param tagName
      * @param dir
      * @param isUpdate
-     * @param isOrign
      */
     void assignTagToDir(long tagId, String tagName, FsInode dir, boolean isUpdate) {
         if (isUpdate) {
@@ -1312,8 +1322,9 @@ public class FsSqlDriver {
      * @param len
      * @return
      */
-    int getTag(FsInode inode, String tagName, byte[] data, int offset, int len) {
-        return _jdbc.query(
+    int getTag(FsInode inode, String tagName, byte[] data, int offset, int len)
+          throws FileNotFoundChimeraFsException {
+        Integer count = _jdbc.query(
               "SELECT i.ivalue,i.isize FROM t_tags t JOIN t_tags_inodes i ON t.itagid = i.itagid " +
                     "WHERE t.inumber=? AND t.itagname=?",
               ps -> {
@@ -1334,6 +1345,10 @@ public class FsSqlDriver {
                   }
                   return 0;
               });
+        if (count == null) {
+            throw FileNotFoundChimeraFsException.ofTag(inode, tagName);
+        }
+        return count;
     }
 
     Stat statTag(FsInode dir, String name) throws ChimeraFsException {
@@ -1353,6 +1368,7 @@ public class FsSqlDriver {
                       ret.setATime(rs.getTimestamp("iatime").getTime());
                       ret.setCTime(rs.getTimestamp("ictime").getTime());
                       ret.setMTime(rs.getTimestamp("imtime").getTime());
+                      ret.setCrTime(ret.getMTime());
                       ret.setUid(rs.getInt("iuid"));
                       ret.setGid(rs.getInt("igid"));
                       ret.setMode(rs.getInt("imode"));
@@ -1376,13 +1392,18 @@ public class FsSqlDriver {
      * @param tagName
      * @return true, if inode is the origin of the tag
      */
-    boolean isTagOwner(FsInode dir, String tagName) {
-        return _jdbc.query("SELECT isorign FROM t_tags WHERE inumber=? AND itagname=?",
+    boolean isTagOwner(FsInode dir, String tagName) throws FileNotFoundChimeraFsException {
+        Boolean isTagOwner = _jdbc.query(
+              "SELECT isorign FROM t_tags WHERE inumber=? AND itagname=?",
               ps -> {
                   ps.setLong(1, dir.ino());
                   ps.setString(2, tagName);
               },
               rs -> rs.next() && rs.getInt("isorign") == 1);
+        if (isTagOwner == null) {
+            throw FileNotFoundChimeraFsException.ofTag(dir, tagName);
+        }
+        return isTagOwner;
     }
 
     void createTags(FsInode inode, int uid, int gid, int mode, Map<String, byte[]> tags) {
@@ -1959,9 +1980,8 @@ public class FsSqlDriver {
      *
      * @param inode file system object.
      * @return a set of extended attribute names.
-     * @throws ChimeraFsException
      */
-    Set<String> listXattrs(FsInode inode) throws ChimeraFsException {
+    Set<String> listXattrs(FsInode inode) {
         Set<String> names = new HashSet<>();
         _jdbc.query("SELECT ikey FROM t_xattr where inumber=?",
               (rs) -> {
@@ -1988,13 +2008,14 @@ public class FsSqlDriver {
         setInodeAttributes(inode, 0, new Stat());
     }
 
-    Long getLabel(String labelname) throws ChimeraFsException {
+    Long getLabel(String labelname) {
         return _jdbc.queryForObject("SELECT label_id FROM t_labels where labelname=?",
               (rs, rn) -> {
                   return (rs.getLong("label_id"));
               }, labelname);
 
     }
+
     /**
      * Attache a given label to  a given file system object.
      *
@@ -2007,11 +2028,11 @@ public class FsSqlDriver {
         KeyHolder keyHolder = new GeneratedKeyHolder();
         try {
 
-            int l = _jdbc.queryForObject(
+            Integer l = _jdbc.queryForObject(
                   "SELECT count(*) FROM t_labels WHERE labelname=?",
                   Integer.class, labelname);
 
-            if (l == 0) {
+            if (l != null && l == 0) {
                 _jdbc.update(
                       con -> {
                           PreparedStatement ps = con.prepareStatement(
@@ -2031,11 +2052,11 @@ public class FsSqlDriver {
 
                 Long label_id = getLabel(labelname);
 
-                int n = _jdbc.queryForObject(
+                Integer n = _jdbc.queryForObject(
                       "SELECT count(*) FROM t_labels_ref WHERE inumber=? and label_id = ?",
-                      Integer.class, inode.ino(),label_id);
+                      Integer.class, inode.ino(), label_id);
 
-                if (n == 0) {
+                if (n != null && n == 0) {
                     _jdbc.update("INSERT INTO t_labels_ref (label_id, inumber) VALUES (?,?)",
                           label_id, inode.ino());
                 }
@@ -2119,7 +2140,7 @@ public class FsSqlDriver {
      * @return a set of labels.
      * @throws ChimeraFsException
      */
-    Set<String> getLabels(FsInode inode) throws ChimeraFsException {
+    Set<String> getLabels(FsInode inode) {
         Set<String> labels = new HashSet<>();
         _jdbc.query("SELECT labelname FROM t_labels WHERE label_id IN" +
                     "(SELECT label_id FROM t_labels_ref WHERE inumber = ?)",
@@ -2143,11 +2164,11 @@ public class FsSqlDriver {
               "DELETE FROM t_labels_ref WHERE inumber = ? and  label_id in (SELECT label_id FROM t_labels WHERE  labelname = ? )",
               inode.ino(), labelname);
 
-        int k = _jdbc.queryForObject(
+        Integer k = _jdbc.queryForObject(
               "SELECT count(*) FROM t_labels_ref WHERE  label_id in (SELECT label_id FROM t_labels WHERE  labelname = ?)",
               Integer.class, labelname);
 
-        if (k == 0) {
+        if (k != null && k == 0) {
             _jdbc.update("DELETE FROM t_labels WHERE labelname = ?", labelname);
 
         }

@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 - 2020 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -34,6 +34,7 @@ import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_writable;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_xset;
 
 import com.google.common.base.Splitter;
+import com.google.common.base.Throwables;
 import com.google.common.collect.Range;
 import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.util.CacheException;
@@ -56,9 +57,14 @@ import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.cells.services.login.LoginBrokerInfo;
+import dmg.cells.services.login.LoginBrokerPublisher;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
+import dmg.util.command.Command;
+import dmg.util.command.Option;
 import java.io.PrintWriter;
 import java.io.Serializable;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -66,9 +72,11 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
@@ -76,6 +84,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import javax.annotation.concurrent.GuardedBy;
 import javax.security.auth.Subject;
 import org.dcache.acl.enums.AccessType;
 import org.dcache.auth.Origin;
@@ -93,7 +102,6 @@ import org.dcache.namespace.PermissionHandler;
 import org.dcache.namespace.PosixPermissionHandler;
 import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.poolmanager.PoolMonitor;
-import org.dcache.util.Args;
 import org.dcache.util.Checksum;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.PingMoversTask;
@@ -113,6 +121,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.core.KafkaTemplate;
 
 /**
@@ -174,6 +183,8 @@ public class XrootdDoor
     private Consumer<DoorRequestInfoMessage> _kafkaSender = (s) -> {
     };
 
+    @GuardedBy("this")
+    private Optional<LoginBrokerInfo> _loginBrokerInfo = Optional.empty();
 
     /**
      * Current xrootd transfers. The key is the xrootd file handle.
@@ -313,6 +324,16 @@ public class XrootdDoor
         this.triedHostsEnabled = triedHostsEnabled;
     }
 
+    @Required
+    public void setLoginBrokerPublisher(LoginBrokerPublisher lb) {
+        lb.addConsumer(this::acceptLoginBrokerInfo);
+    }
+
+    private synchronized void acceptLoginBrokerInfo(Optional<LoginBrokerInfo> info)
+    {
+        _loginBrokerInfo = info;
+    }
+
     public TimeUnit getMoverTimeoutUnit() {
         return _moverTimeoutUnit;
     }
@@ -342,6 +363,18 @@ public class XrootdDoor
         pw.println(String.format("Protocol Version %d.%d",
               XrootdProtocol.PROTOCOL_VERSION_MAJOR,
               XrootdProtocol.PROTOCOL_VERSION_MINOR));
+    }
+
+    /**
+     * Provide the public endpoint for this xrootd door, if known.
+     */
+    public Optional<InetSocketAddress> publicEndpoint() {
+        return _loginBrokerInfo.flatMap(i -> {
+                    List<InetAddress> addresses = i.getAddresses();
+                    return addresses.isEmpty()
+                            ? Optional.empty()
+                            : Optional.of(new InetSocketAddress(addresses.get(0), i.getPort()));
+                });
     }
 
     private XrootdTransfer
@@ -582,7 +615,12 @@ public class XrootdDoor
         }
         _billingStub.notify(infoRemove);
 
-        _kafkaSender.accept(infoRemove);
+        try {
+            _kafkaSender.accept(infoRemove);
+        } catch (KafkaException e) {
+            _log.warn(Throwables.getRootCause(e).getMessage());
+
+        }
     }
 
     /**
@@ -1037,6 +1075,18 @@ public class XrootdDoor
         }
     }
 
+    public void removeTpcPlaceholder(String key) {
+        synchronized (_tpcFdIndex) {
+            if (!key.equals(TPC_PLACEMENT)) {
+                XrootdTpcInfo info = _tpcInfo.remove(key);
+                if (info != null) {
+                    _tpcFdIndex.remove(info.getFd());
+                    _log.debug("key {} was removed.", key);
+                }
+            }
+        }
+    }
+
     public boolean removeTpcPlaceholder(int fd) {
         synchronized (_tpcFdIndex) {
             String tpc = _tpcFdIndex.remove(fd);
@@ -1052,55 +1102,69 @@ public class XrootdDoor
         }
     }
 
-    /**
-     * To allow the transfer monitoring in the httpd cell to recognize us as a door, we have to
-     * emulate LoginManager.  To emulate LoginManager we list ourselves as our child.
-     */
-    public static final String hh_get_children = "[-binary]";
+    @Command(name = "get children", hint = "Allow the transfer monitoring in the httpd "
+          + "cell to recognize this as a door.",
+          description = "Emulates LoginManager by listing this door as its own child.")
+    class GetChildren implements Callable<Serializable> {
 
-    public Object ac_get_children(Args args) {
-        boolean binary = args.hasOption("binary");
-        if (binary) {
-            String[] list = new String[]{getCellName()};
-            return new LoginManagerChildrenInfo(getCellName(), getCellDomainName(), list);
-        } else {
-            return getCellName();
-        }
-    }
+        @Option(name = "binary", usage = "Return as serialized object.")
+        boolean binary;
 
-    public static final String hh_get_door_info = "[-binary]";
-    public static final String fh_get_door_info =
-          "Provides information about the door and current transfers";
-
-    public Object ac_get_door_info(Args args) {
-        List<IoDoorEntry> entries = new ArrayList<>();
-        for (Transfer transfer : _transfers.values()) {
-            entries.add(transfer.getIoDoorEntry());
-        }
-
-        IoDoorInfo doorInfo = new IoDoorInfo(getCellName(), getCellDomainName());
-        doorInfo.setProtocol(XROOTD_PROTOCOL_STRING, XROOTD_PROTOCOL_VERSION);
-        doorInfo.setOwner("");
-        doorInfo.setProcess("");
-        doorInfo.setIoDoorEntries(entries.toArray(IoDoorEntry[]::new));
-        return args.hasOption("binary") ? doorInfo : doorInfo.toString();
-    }
-
-    public static final String hh_kill_mover =
-          " <pool> <moverid> # kill transfer on the pool";
-
-    public String ac_kill_mover_$_2(Args args) throws NumberFormatException {
-        int mover = Integer.parseInt(args.argv(1));
-        String pool = args.argv(0);
-
-        for (Transfer transfer : _transfers.values()) {
-            if (transfer.getMoverId() == mover && transfer.getPool() != null && transfer.getPool()
-                  .getName().equals(pool)) {
-
-                transfer.killMover(0, "killed by door 'kill mover' command");
-                return "Kill request to the mover " + mover + " has been submitted";
+        @Override
+        public Serializable call() throws Exception {
+            if (binary) {
+                String[] list = new String[]{getCellName()};
+                return new LoginManagerChildrenInfo(getCellName(), getCellDomainName(), list);
+            } else {
+                return getCellName();
             }
         }
-        return "mover " + mover + " not found on the pool " + pool;
+    }
+
+    @Command(name = "get door info", hint = "Information about the door.",
+          description = "Includes current transfers.")
+    class GetDoorInfo implements Callable<Serializable> {
+
+        @Option(name = "binary", usage = "Return as serialized object.")
+        boolean binary;
+
+        @Override
+        public Serializable call() throws Exception {
+            List<IoDoorEntry> entries = new ArrayList<>();
+            for (Transfer transfer : _transfers.values()) {
+                entries.add(transfer.getIoDoorEntry());
+            }
+
+            IoDoorInfo doorInfo = new IoDoorInfo(getCellName(), getCellDomainName());
+            doorInfo.setProtocol(XROOTD_PROTOCOL_STRING, XROOTD_PROTOCOL_VERSION);
+            doorInfo.setOwner("");
+            doorInfo.setProcess("");
+            doorInfo.setIoDoorEntries(entries.toArray(IoDoorEntry[]::new));
+            return binary ? doorInfo : doorInfo.toString();
+        }
+    }
+
+    @Command(name = "kill mover", hint = "Kill transfer on the pool.",
+          description = "Submits request to kill mover to the pool.")
+    class KillMover implements Callable<String> {
+
+        @Option(name = "pool", required = true, usage = "Where the mover is running.")
+        String pool;
+
+        @Option(name = "id", required = true, usage = "Id of the mover.")
+        Integer id;
+
+        @Override
+        public String call() throws Exception {
+            for (Transfer transfer : _transfers.values()) {
+                if (transfer.getMoverId() == id && transfer.getPool() != null && transfer.getPool()
+                      .getName().equals(pool)) {
+                    transfer.killMover(0, "killed by door 'kill mover' command");
+                    return String.format("Kill request to the mover %s has been submitted to %s.",
+                          id, pool);
+                }
+            }
+            return String.format("Mover %s not found on pool %s.", id, pool);
+        }
     }
 }

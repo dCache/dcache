@@ -35,6 +35,7 @@
             <groupId>org.dcache</groupId>
             <artifactId>dcache-nearline-spi</artifactId>
             <version>${version.dcache}</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 

@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2018 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2018 - 2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,32 +17,28 @@
  */
 package org.dcache.kafka;
 
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.support.ProducerListener;
+import org.springframework.lang.Nullable;
 
-public class LoggingProducerListener implements ProducerListener {
+public class LoggingProducerListener<K, V> implements ProducerListener<K, V> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggingProducerListener.class);
 
-
     @Override
-    public void onSuccess(String topic, Integer partition, Object key, Object value,
-          RecordMetadata recordMetadata) {
-        //forced by interface
+    public void onSuccess(ProducerRecord<K, V> record, RecordMetadata recordMetadata) {
+        LOGGER.info("Successful!");
     }
 
     @Override
-    public void onError(String topic, Integer partition, Object key, Object value,
-          Exception exception) {
-        LOGGER.error(
-              "Unable to send message to topic {} on  partition {}, with key {} and value {} : {}",
-              topic, partition, key, value, exception.getMessage());
+    public void onError(ProducerRecord<K, V> producerRecord,
+          @Nullable RecordMetadata recordMetadata, Exception exception) {
+        LOGGER.error("Producer exception occurred while publishing message : {}, exception : {}",
+              producerRecord, exception);
     }
 
-    @Override
-    public boolean isInterestedInSuccess() {
-        return false;
-    }
+
 }

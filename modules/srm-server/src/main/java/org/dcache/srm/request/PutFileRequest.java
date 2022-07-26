@@ -66,10 +66,11 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
-import com.google.common.util.concurrent.CheckedFuture;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import java.net.URI;
 import java.util.Objects;
+import java.util.concurrent.ExecutionException;
 import javax.annotation.Nullable;
 import org.apache.axis.types.UnsignedLong;
 import org.dcache.srm.SRM;
@@ -83,6 +84,7 @@ import org.dcache.srm.SRMUser;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.State;
+import org.dcache.srm.util.Tools;
 import org.dcache.srm.v2_2.TAccessLatency;
 import org.dcache.srm.v2_2.TPutRequestFileStatus;
 import org.dcache.srm.v2_2.TRetentionPolicy;
@@ -315,7 +317,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
 
                 addHistoryEvent("Doing name space lookup.");
                 SRMUser user = getUser();
-                CheckedFuture<String, ? extends SRMException> future =
+                ListenableFuture<String> future =
                       getStorage().prepareToPut(
                             user,
                             getSurl(),
@@ -528,13 +530,13 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
 
     private static class PutCallbacks implements Runnable {
 
-        private final CheckedFuture<String, ? extends SRMException> future;
+        private final ListenableFuture<String> future;
         private final long fileRequestJobId;
         private final SRMUser user;
         private final URI surl;
 
         public PutCallbacks(SRMUser user, long fileRequestJobId, URI surl,
-              CheckedFuture<String, ? extends SRMException> future) {
+              ListenableFuture<String> future) {
             this.user = user;
             this.fileRequestJobId = fileRequestJobId;
             this.surl = surl;
@@ -547,7 +549,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                 PutFileRequest fr = Job.getJob(fileRequestJobId, PutFileRequest.class);
 
                 try {
-                    String fileId = future.checkedGet();
+                    String fileId = future.get();
 
                     State state = fr.getState();
                     switch (state) {
@@ -569,11 +571,12 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                                   fr.latestHistoryEvent());
                             break;
                     }
-                } catch (SRMException e) {
+                } catch (SRMException | InterruptedException | ExecutionException e) {
+                    SRMException se = Tools.toSRMException(e);
                     fr.setStateAndStatusCode(
                           State.FAILED,
-                          e.getMessage(),
-                          e.getStatusCode());
+                          se.getMessage(),
+                          se.getStatusCode());
                 }
             } catch (IllegalStateTransition ist) {
                 if (!ist.getFromState().isFinal()) {
@@ -581,10 +584,10 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                 }
             } catch (SRMInvalidRequestException e) {
                 try {
-                    String fileId = future.checkedGet();
+                    String fileId = future.get();
                     SRM.getSRM().getStorage().abortPut(user, fileId, surl,
                           "Request was aborted while being prepared.");
-                } catch (SRMException ignored) {
+                } catch (Exception ignored) {
                 }
             }
         }

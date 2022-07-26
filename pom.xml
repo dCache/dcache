@@ -1,7 +1,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.dcache</groupId>
-    <version>8.1.0-SNAPSHOT</version>
+    <version>8.2.0-SNAPSHOT</version>
     <artifactId>dcache-parent</artifactId>
     <packaging>pom</packaging>
 
@@ -62,13 +62,13 @@
 
         <version.slf4j>1.7.32</version.slf4j>
         <version.milton>2.7.3.0-dcache-1</version.milton>
-        <version.spring>5.2.2.RELEASE</version.spring>
+        <version.spring>5.2.22.RELEASE</version.spring>
         <!-- Remember to sync aspectj version in dcache.properties -->
         <version.aspectj>1.9.2</version.aspectj>
         <version.smc>6.6.0</version.smc>
         <version.xerces>2.12.0</version.xerces>
         <version.jetty>9.4.43.v20210629</version.jetty>
-        <version.xrootd4j>4.2.5</version.xrootd4j>
+        <version.xrootd4j>4.3.1</version.xrootd4j>
         <version.jersey>2.28</version.jersey>
         <version.dcache-view>2.0.2</version.dcache-view>
         <version.netty>4.1.71.Final</version.netty>
@@ -86,9 +86,9 @@
 
 
 
-        <version.spring-integration-kafka>3.2.1.RELEASE</version.spring-integration-kafka>
-        <version.spring_kafka>2.4.0.RELEASE</version.spring_kafka>
-        <version.kafka>2.4.0</version.kafka>
+        <version.spring-integration-kafka>5.5.11</version.spring-integration-kafka>
+        <version.spring_kafka>2.8.5</version.spring_kafka>
+        <version.kafka>3.1.0</version.kafka>
 
         <!-- BouncyCastle seems to change the naming convention of
              their ArtifactId fairly often.  Here is a summary of
@@ -126,7 +126,7 @@
         <url>https://github.com/dCache/dcache</url>
         <connection>scm:git:https://github.com/dCache/dcache.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/dCache/dcache.git</developerConnection>
-      <tag>HEAD</tag>
+      <tag>8.2</tag>
   </scm>
 
     <repositories>
@@ -254,7 +254,7 @@
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>24.1.1-jre</version>
+                <version>31.1-jre</version>
             </dependency>
             <dependency>
                 <groupId>eu.eu-emi.security</groupId>
@@ -328,7 +328,7 @@
             <dependency>
                 <groupId>org.opensaml</groupId>
                 <artifactId>opensaml</artifactId>
-                <version>2.4.1</version>
+                <version>2.6.5</version>
                 <exclusions>
                     <exclusion>
                         <!-- We manually pull in a different variant -->
@@ -781,7 +781,7 @@
             <dependency>
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
-                <version>2.8.0</version>
+                <version>2.8.9</version>
             </dependency>
 
             <dependency>

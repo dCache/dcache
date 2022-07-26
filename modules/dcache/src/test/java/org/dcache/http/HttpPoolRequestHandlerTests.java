@@ -68,6 +68,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -520,7 +521,7 @@ public class HttpPoolRequestHandlerTests {
                     null, null, path,
                     new URI("http", "localhost", path, null)));
         given(channel.getFileAttributes()).willReturn(file.getFileAttributes());
-        given(channel.release()).willReturn(Futures.immediateCheckedFuture(null));
+        given(channel.release()).willReturn(Futures.immediateFuture(null));
         given(_server.openFile(eq(file.getUuid()), anyBoolean())).willReturn(channel);
     }
 
@@ -567,8 +568,9 @@ public class HttpPoolRequestHandlerTests {
               });
 
         given(channel.release()).willAnswer((i) -> {
+            checksums.close();
             file.getFileAttributes().setChecksums(checksums.getChecksums());
-            return Futures.immediateCheckedFuture(null);
+            return Futures.immediateFuture(null);
         });
 
         given(channel.getFileAttributes()).willReturn(file.getFileAttributes());
@@ -613,13 +615,13 @@ public class HttpPoolRequestHandlerTests {
 
         public FileInfo withAdler32(String value) {
             Checksum checksum = new Checksum(ChecksumType.ADLER32, value);
-            _attributes.setChecksums(Sets.newHashSet(checksum));
+            _attributes.setChecksums(Collections.singleton(checksum));
             return this;
         }
 
         public FileInfo withMD5(String value) {
             Checksum checksum = new Checksum(ChecksumType.MD5_TYPE, value);
-            _attributes.setChecksums(Sets.newHashSet(checksum));
+            _attributes.setChecksums(Collections.singleton(checksum));
             return this;
         }
 
