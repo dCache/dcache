@@ -92,6 +92,27 @@
       <constructor-arg name="force" value="${xrootd.security.force-signing}"/>
   </bean>
 
+  <bean id="protocol-flags" class="org.dcache.xrootd.util.ServerProtocolFlags">
+    <property name="allowsAnonymousGPFile" value="false"/>
+    <property name="dataServer" value="false"/>
+    <property name="loadBalancingServer" value="false"/>
+    <property name="managerRole" value="true"/>
+    <property name="metaServerRole" value="false"/>
+    <property name="proxyServerRole" value="false"/>
+    <property name="mode" value="${xrootd.security.tls.mode}"/>
+    <property name="requiresTLSForData" value="${xrootd.security.tls.require-data}"/>
+    <property name="requiresTLSForGPF" value="${xrootd.security.tls.require-gpf}"/>
+    <property name="requiresTLSForLogin" value="${xrootd.security.tls.require-login}"/>
+    <property name="requiresTLSForSession" value="${xrootd.security.tls.require-session}"/>
+    <property name="requiresTLSForTPC" value="${xrootd.security.tls.require-tpc}"/>
+    <property name="serverRole" value="false"/>
+    <property name="supervisorRole" value="false"/>
+    <property name="supportsGPFile" value="false"/>
+    <property name="supportsPersistOnClose" value="false"/>
+    <property name="supportsPGReadWrite" value="false"/>
+    <property name="supportsTLS" value="true"/>
+  </bean>
+
   <bean id="server" class="org.dcache.xrootd.door.NettyXrootdServer"
         init-method="start" destroy-method="stop">
     <description>Netty based Xrootd service</description>
@@ -117,28 +138,7 @@
     </property>
     <property name="expectedProxyProtocol" value="${xrootd.enable.proxy-protocol}"/>
     <property name="signingPolicy" ref="signing-policy"/>
-    <property name="serverProtocolFlags">
-        <bean class="org.dcache.xrootd.util.ServerProtocolFlags">
-          <property name="allowsAnonymousGPFile" value="false"/>
-          <property name="dataServer" value="false"/>
-          <property name="loadBalancingServer" value="false"/>
-          <property name="managerRole" value="true"/>
-          <property name="metaServerRole" value="false"/>
-          <property name="proxyServerRole" value="false"/>
-          <property name="mode" value="${xrootd.security.tls.mode}"/>
-          <property name="requiresTLSForData" value="${xrootd.security.tls.require-data}"/>
-          <property name="requiresTLSForGPF" value="${xrootd.security.tls.require-gpf}"/>
-          <property name="requiresTLSForLogin" value="${xrootd.security.tls.require-login}"/>
-          <property name="requiresTLSForSession" value="${xrootd.security.tls.require-session}"/>
-          <property name="requiresTLSForTPC" value="${xrootd.security.tls.require-tpc}"/>
-          <property name="serverRole" value="false"/>
-          <property name="supervisorRole" value="false"/>
-          <property name="supportsGPFile" value="false"/>
-          <property name="supportsPersistOnClose" value="false"/>
-          <property name="supportsPGReadWrite" value="false"/>
-          <property name="supportsTLS" value="true"/>
-        </bean>
-    </property>
+    <property name="serverProtocolFlags" ref="protocol-flags"/>
   </bean>
 
   <bean id="pnfs" class="diskCacheV111.util.PnfsHandler">
@@ -195,6 +195,21 @@
     <property name="poolMonitor" ref="pool-monitor"/>
     <property name="triedHostsEnabled" value="${xrootd.enable.tried-hosts}"/>
     <property name="loginBrokerPublisher" ref="lb"/>
+    <property name="proxied" value="${xrootd.net.proxy-transfers}"/>
+    <property name="portRange">
+      <bean class="org.dcache.util.NettyPortRange">
+        <constructor-arg value="${xrootd.net.proxy.port.min}"/>
+        <constructor-arg value="${xrootd.net.proxy.port.max}"/>
+      </bean>
+    </property>
+    <property name="serverProtocolFlags" ref="protocol-flags"/>
+    <property name="sslHandlerFactories" ref="ssl-handler-factories"/>
+    <property name="proxyTimerExecutor">
+      <bean class="java.util.concurrent.ScheduledThreadPoolExecutor" destroy-method="shutdown">
+        <constructor-arg value="1"/>
+      </bean>
+    </property>
+    <property name="proxyResponseTimeoutInSeconds" value="${xrootd.net.proxy.response-timeout-in-secs}"/>
   </bean>
 
   <bean id="pool-manager-handler" class="org.dcache.poolmanager.PoolManagerHandlerSubscriber">

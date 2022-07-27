@@ -27,6 +27,7 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress> {
     private InetSocketAddress _doorAddress;
     private int _fileHandle;
     private Serializable _delegatedCredential;
+    private boolean proxiedTransfer;
     private final XrootdTpcInfo tpcInfo;
     private final Restriction restriction;
 
@@ -63,6 +64,10 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress> {
         _doorAddress = doorAddress;
     }
 
+    public void setProxiedTransfer(boolean proxiedTransfer) {
+        this.proxiedTransfer = proxiedTransfer;
+    }
+
     public void setDelegatedCredential(Serializable _delegatedCredential) {
         this._delegatedCredential = _delegatedCredential;
     }
@@ -92,7 +97,7 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress> {
     }
 
     private XrootdProtocolInfo createXrootdProtocolInfo() {
-        InetSocketAddress client = getClientAddress();
+        InetSocketAddress client = proxiedTransfer ? _doorAddress : getClientAddress();
         return new XrootdProtocolInfo(XrootdDoor.XROOTD_PROTOCOL_STRING,
               XrootdProtocol.PROTOCOL_VERSION_MAJOR,
               XrootdProtocol.PROTOCOL_VERSION_MINOR,

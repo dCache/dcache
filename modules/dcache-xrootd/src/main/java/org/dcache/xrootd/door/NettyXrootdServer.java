@@ -76,6 +76,7 @@ public class NettyXrootdServer implements CellIdentityAware {
     private String sessionPrefix;
     private EventLoopGroup _acceptGroup;
     private EventLoopGroup _socketGroup;
+    private EventLoopGroup _proxyGroup;
     private Map<String, String> _queryConfig;
     private Map<String, String> _appIoQueues;
     private CellAddressCore _myAddress;
@@ -200,6 +201,13 @@ public class NettyXrootdServer implements CellIdentityAware {
         _socketGroup = new NioEventLoopGroup(0, new CDCThreadFactory(
               new ThreadFactoryBuilder().setNameFormat("xrootd-net-%d").build()));
 
+        if (_door.isProxied()) {
+            _proxyGroup = new NioEventLoopGroup(0, new CDCThreadFactory(
+                  new ThreadFactoryBuilder().setNameFormat("xrootd-proxy-client-%d")
+                        .build()));
+            _door.setProxyGroups(_acceptGroup, _socketGroup, _proxyGroup);
+        }
+
         ServerBootstrap bootstrap = new ServerBootstrap()
               .group(_acceptGroup, _socketGroup)
               .channel(NioServerSocketChannel.class)
@@ -290,9 +298,16 @@ public class NettyXrootdServer implements CellIdentityAware {
         _acceptGroup.shutdownGracefully(1, 3, TimeUnit.SECONDS);
         _socketGroup.shutdownGracefully(1, 3, TimeUnit.SECONDS);
 
+        if (_proxyGroup != null) {
+            _proxyGroup.shutdownGracefully(1, 3, TimeUnit.SECONDS);
+        }
+
         try {
             _acceptGroup.terminationFuture().sync();
             _socketGroup.terminationFuture().sync();
+            if (_proxyGroup != null) {
+                _proxyGroup.terminationFuture().sync();
+            }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }

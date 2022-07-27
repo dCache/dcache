@@ -25,6 +25,8 @@ import static org.dcache.namespace.FileAttribute.SIZE;
 import static org.dcache.namespace.FileAttribute.STORAGEINFO;
 import static org.dcache.namespace.FileAttribute.TYPE;
 import static org.dcache.util.TransferRetryPolicy.tryOnce;
+import static org.dcache.xrootd.plugins.tls.SSLHandlerFactory.CLIENT_TLS;
+import static org.dcache.xrootd.plugins.tls.SSLHandlerFactory.SERVER_TLS;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_isDir;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_offline;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_other;
@@ -62,10 +64,12 @@ import dmg.cells.services.login.LoginBrokerPublisher;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
+import io.netty.channel.EventLoopGroup;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -104,6 +108,7 @@ import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.Checksum;
 import org.dcache.util.FireAndForgetTask;
+import org.dcache.util.NettyPortRange;
 import org.dcache.util.PingMoversTask;
 import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
@@ -111,11 +116,16 @@ import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
 import org.dcache.vehicles.XrootdProtocolInfo;
+import org.dcache.xrootd.door.proxy.NettyXrootProxyAdapter;
+import org.dcache.xrootd.plugins.ChannelHandlerFactory;
+import org.dcache.xrootd.plugins.tls.SSLHandlerFactory;
 import org.dcache.xrootd.protocol.XrootdProtocol;
+import org.dcache.xrootd.security.TLSSessionInfo;
 import org.dcache.xrootd.tpc.XrootdTpcInfo;
 import org.dcache.xrootd.tpc.XrootdTpcInfoCleanerTask;
 import org.dcache.xrootd.util.FileStatus;
 import org.dcache.xrootd.util.ParseException;
+import org.dcache.xrootd.util.ServerProtocolFlags;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -192,7 +202,20 @@ public class XrootdDoor
     private final Map<Integer, XrootdTransfer> _transfers =
           new ConcurrentHashMap<>();
 
+    private final Map<String, XrootdTpcInfo> _tpcInfo = new HashMap<>();
+    private final Map<Integer, String> _tpcFdIndex = new HashMap<>();
+
     private boolean triedHostsEnabled;
+
+    private ServerProtocolFlags serverProtocolFlags;
+    private List<ChannelHandlerFactory> sslHandlerFactories;
+    private EventLoopGroup acceptGroup;
+    private EventLoopGroup socketGroup;
+    private EventLoopGroup clientGroup;
+    private ScheduledExecutorService proxyTimerExecutor;
+    private boolean proxied;
+    private NettyPortRange portRange;
+    private int proxyResponseTimeoutInSeconds;
 
     @Autowired(required = false)
     private void setKafkaTemplate(
@@ -200,8 +223,35 @@ public class XrootdDoor
         _kafkaSender = kafkaTemplate::sendDefault;
     }
 
-    private final Map<String, XrootdTpcInfo> _tpcInfo = new HashMap<>();
-    private final Map<Integer, String> _tpcFdIndex = new HashMap<>();
+    public void setProxyGroups(EventLoopGroup acceptGroup, EventLoopGroup socketGroup,
+          EventLoopGroup clientGroup) {
+        this.acceptGroup = acceptGroup;
+        this.socketGroup = socketGroup;
+        this.clientGroup = clientGroup;
+    }
+
+    public NettyPortRange getPortRange() {
+        return portRange;
+    }
+
+    public boolean isProxied() {
+        return proxied;
+    }
+
+    @Required
+    public void setPortRange(NettyPortRange portRange) {
+        this.portRange = portRange;
+    }
+
+    @Required
+    public void setProxied(boolean proxied) {
+        this.proxied = proxied;
+    }
+
+    @Required
+    public void setProxyResponseTimeoutInSeconds(int proxyResponseTimeoutInSeconds) {
+        this.proxyResponseTimeoutInSeconds = proxyResponseTimeoutInSeconds;
+    }
 
     @Required
     public void setPnfsStub(CellStub pnfsStub) {
@@ -226,6 +276,22 @@ public class XrootdDoor
     @Required
     public void setPoolMonitor(PoolMonitor poolMonitor) {
         _poolMonitor = poolMonitor;
+    }
+
+    @Required
+    public void setServerProtocolFlags(ServerProtocolFlags serverProtocolFlags) {
+        this.serverProtocolFlags = serverProtocolFlags;
+    }
+
+    @Required
+    public void setSslHandlerFactories(
+          List<ChannelHandlerFactory> sslHandlerFactories) {
+        this.sslHandlerFactories = sslHandlerFactories;
+    }
+
+    @Required
+    public void setProxyTimerExecutor(ScheduledExecutorService proxyTimerExecutor) {
+        this.proxyTimerExecutor = proxyTimerExecutor;
     }
 
     /**
@@ -370,11 +436,11 @@ public class XrootdDoor
      */
     public Optional<InetSocketAddress> publicEndpoint() {
         return _loginBrokerInfo.flatMap(i -> {
-                    List<InetAddress> addresses = i.getAddresses();
-                    return addresses.isEmpty()
-                            ? Optional.empty()
-                            : Optional.of(new InetSocketAddress(addresses.get(0), i.getPort()));
-                });
+            List<InetAddress> addresses = i.getAddresses();
+            return addresses.isEmpty()
+                  ? Optional.empty()
+                  : Optional.of(new InetSocketAddress(addresses.get(0), i.getPort()));
+        });
     }
 
     private XrootdTransfer
@@ -414,6 +480,7 @@ public class XrootdDoor
         transfer.setFileHandle(_handleCounter.getAndIncrement());
         transfer.setKafkaSender(_kafkaSender);
         transfer.setTriedHosts(tried);
+        transfer.setProxiedTransfer(proxied);
         return transfer;
     }
 
@@ -1100,6 +1167,24 @@ public class XrootdDoor
             _log.debug("fhandle {} is invalid.", fd);
             return false;
         }
+    }
+
+    /**
+     * Create a proxy adapter for the pool so that transfers are relayed through the door (node).
+     * This method constructs the proxy but does not start it.
+     */
+    public NettyXrootProxyAdapter createProxy(InetSocketAddress poolAddress)
+          throws UnknownHostException {
+        TLSSessionInfo tlsSessionInfo = new TLSSessionInfo(serverProtocolFlags);
+        SSLHandlerFactory factory
+              = SSLHandlerFactory.getHandlerFactory(SERVER_TLS, sslHandlerFactories);
+        tlsSessionInfo.setServerSslHandlerFactory(factory);
+        factory = SSLHandlerFactory.getHandlerFactory(CLIENT_TLS, sslHandlerFactories);
+        tlsSessionInfo.setClientSslHandlerFactory(factory);
+        NettyXrootProxyAdapter adapter = new NettyXrootProxyAdapter(acceptGroup, socketGroup,
+              clientGroup, portRange, InetAddress.getLocalHost(), poolAddress, tlsSessionInfo,
+              proxyResponseTimeoutInSeconds, proxyTimerExecutor);
+        return adapter;
     }
 
     @Command(name = "get children", hint = "Allow the transfer monitoring in the httpd "

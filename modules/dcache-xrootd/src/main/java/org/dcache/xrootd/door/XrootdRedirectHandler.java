@@ -24,6 +24,7 @@ import static org.dcache.xrootd.protocol.XrootdProtocol.UUID_PREFIX;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ArgInvalid;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ArgMissing;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_FileNotOpen;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_IOError;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_InvalidRequest;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_NotAuthorized;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_Qcksum;
@@ -428,28 +429,11 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
             /*
              * ok, open was successful
              */
-            InetSocketAddress address = transfer.getRedirect();
-
-            /*
-             *  Do not use the IP address as host name, as this will block
-             *  TLS from working.
-             *
-             *  According to https://tools.ietf.org/html/rfc5280#section-4.2.1.6
-             *  an IP is required to be in the list of Subject Alternative Names
-             *  in the host certificate, but these are rarely added in practice.
-             *  TLS enforces the RFC and this is a workaround.
-             */
-            String host = address.getHostName();
-            if (InetAddresses.isInetAddress(host)) {
-                _log.warn("Unable to resolve IP address {} "
-                      + "to a canonical name", host);
-            }
-
-            _log.info("Redirecting to {}, {}", host, address);
+            InetSocketAddress address = getRedirect(transfer);
 
             String token = LoginTokens.encodeToken(localAddress());
 
-            return new RedirectResponse<>(req, host, address.getPort(),
+            return new RedirectResponse<>(req, address.getHostName(), address.getPort(),
                   opaqueString, token);
         } catch (ParseException e) {
             return withError(ctx, req, kXR_ArgInvalid, "Path arguments do not parse");
@@ -478,19 +462,54 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
             return withError(ctx, req, kXR_ServerError, "Server shutdown");
         } catch (XrootdException e) {
             return withError(ctx, req, e.getError(), e.getMessage());
+        } catch (IOException e) {
+            return withError(ctx, req, kXR_IOError, e.getMessage());
         }
     }
 
     /**
      * The door's endpoint to which a client may connect.
      */
-    private InetSocketAddress localAddress()
-    {
+    private InetSocketAddress localAddress() {
         /*
          * Use the advertised endpoint, if possble, otherwise fall back to the
          * address to which the client connected.
          */
         return _door.publicEndpoint().orElse(getDestinationAddress());
+    }
+
+    /**
+     * @return address to which to redirect client.  This will be the pool address or the proxy
+     * address on the door node.
+     */
+    private InetSocketAddress getRedirect(XrootdTransfer transfer) throws IOException {
+        InetSocketAddress poolAddress = transfer.getRedirect();
+        InetSocketAddress redirectAddress;
+
+        if (_door.isProxied()) {
+            redirectAddress = _door.createProxy(poolAddress).start();
+        } else {
+            redirectAddress = poolAddress;
+        }
+
+        /*
+         *  Do not use the IP address as host name, as this will block
+         *  TLS from working.
+         *
+         *  According to https://tools.ietf.org/html/rfc5280#section-4.2.1.6
+         *  an IP is required to be in the list of Subject Alternative Names
+         *  in the host certificate, but these are rarely added in practice.
+         *  TLS enforces the RFC and this is a workaround.
+         */
+        String host = redirectAddress.getHostName();
+        if (InetAddresses.isInetAddress(host)) {
+            _log.warn("Unable to resolve IP address {} "
+                  + "to a canonical name", host);
+        }
+
+        _log.info("Redirecting to {}, {}", host, redirectAddress.getPort());
+
+        return redirectAddress;
     }
 
     /**
@@ -1330,5 +1349,4 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
 
         return _logins.peek();
     }
-
 }
