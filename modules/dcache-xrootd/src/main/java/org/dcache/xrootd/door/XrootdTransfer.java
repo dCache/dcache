@@ -78,7 +78,11 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress> {
 
     @Override
     protected ProtocolInfo getProtocolInfoForPoolManager() {
-        return createProtocolInfo();
+        ProtocolInfo info = createProtocolInfo();
+        if (proxiedTransfer) {
+            ((XrootdProtocolInfo)info).setSocketAddress(_doorAddress);
+        }
+        return info;
     }
 
     @Override
@@ -97,11 +101,10 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress> {
     }
 
     private XrootdProtocolInfo createXrootdProtocolInfo() {
-        InetSocketAddress client = proxiedTransfer ? _doorAddress : getClientAddress();
         return new XrootdProtocolInfo(XrootdDoor.XROOTD_PROTOCOL_STRING,
               XrootdProtocol.PROTOCOL_VERSION_MAJOR,
               XrootdProtocol.PROTOCOL_VERSION_MINOR,
-              client,
+              getClientAddress(),
               new CellPath(getCellName(), getDomainName()),
               getPnfsId(),
               _fileHandle,
