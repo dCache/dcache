@@ -464,6 +464,71 @@ hosts to the Pool Manager to ask that they be excluded from selection.
 
 See ``xrootd.properties`` for further information.
 
+### Proxying transfers through the door
+
+Support for internal protected networks
+for data transfer to and from pools can be achieved
+using the Pool Selection Unit; Xroot generally
+relies on this configuration to do the right thing.
+For some sites, however, this can become rather
+complicated and unwieldy.
+
+With release 8.2, dCache xroot will support (as do FTP and NFS)
+proxying transfers through the door.  This should be helpful
+in those cases where use of the pool manager configuration for this purpose
+is not desirable or feasible.
+
+An xroot door is either proxying or not (currently it cannot
+detect the conditions under which a transfer should be proxied;
+this may be modified in future releases).  To create a proxying
+door, simply set ``xrootd.net.proxy-transfers=true`` (default is ``false``); e.g.:
+
+```
+[xrootd-1096-${host.name}Domain]
+dcache.java.memory.heap=2048m
+dcache.java.memory.direct=2048m
+[xrootd-1096-${host.name}Domain/xrootd]
+xrootd.cell.name=xrootd-1096-${host.name}
+xrootd.net.port=1096
+xrootd.authz.write-paths=/
+xrootd.authz.read-paths=/
+xrootd.net.proxy-transfers=true
+```
+
+If the door uses proxying, then when an open request arrives, a proxy instance will be
+launched on a new port and the client redirected to it as if it were the pool endpoint.
+The proxy serves as both façade and client to the pool by intercepting requests
+from the initiating client and passing them on to the pool transfer service, and similarly
+relaying responses from the pool back to the client.  The connections between client and proxy
+on the one hand and proxy and pool on the other are independently established
+(this is necessary to support TLS, should that be requested or required), but after login
+is complete, all subsequent requests and replies are passed through the proxy without
+further interpretation.
+
+As with pools, one can define the range from which proxy ports are selected:
+
+```
+xrootd.net.proxy.port.min=${dcache.net.wan.port.min}
+xrootd.net.proxy.port.max=${dcache.net.wan.port.max}
+
+```
+
+One can also control how long the proxy will wait for a response from the pool:
+
+```
+xrootd.net.proxy.response-timeout-in-secs=30
+```
+
+> CAVEAT:  Since the purpose of proxying is to allow transfers to and from
+> pools that are not accessible to the client, the door itself must obviously be able
+> to connect to the pool; it thus makes sense that it would ask the Pool Manager to
+> select the pool on the basis of the door's address, not the address of the client.
+> This, however, has consequences for the use of the pool manager configuration
+> to partition pool groups via client addresses.  At present, we have no clear
+> solution to this conundrum, so you are advised to be aware that when
+> proxying is on, such partitioning may be defeated for transfers that go
+> through that specific door.
+
 ### Other configuration options
 
 The `xrootd-door` has several other configuration properties. You can
