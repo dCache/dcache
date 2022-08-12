@@ -84,46 +84,6 @@ public class OidcAuthPluginTest {
         jwt = null;
     }
 
-    @Test(expected=IllegalArgumentException.class)
-    public void shouldThrowExceptionIfHostnamesPropertyMissing() throws Exception {
-        Properties properties = new Properties();
-
-        OidcAuthPlugin.buildHosts(properties, aClient().build(), Duration.ofSeconds(2));
-    }
-
-    @Test
-    public void shouldReturnEmptyIdentityProviderFromEmptyHostnamePropertyValue() throws Exception {
-        Properties properties = new Properties();
-        properties.setProperty("gplazma.oidc.hostnames", "");
-
-        var identityProvides = OidcAuthPlugin.buildHosts(properties, aClient().build(),
-                Duration.ofSeconds(2));
-
-        assertThat(identityProvides, is(empty()));
-    }
-
-    @Test(expected=IllegalArgumentException.class)
-    public void shouldThrowExceptionIfHostnamePropertyValueContainsInvalidHost() throws Exception {
-        Properties properties = new Properties();
-        properties.setProperty("gplazma.oidc.hostnames", "-oidc.example.org");
-
-        OidcAuthPlugin.buildHosts(properties, aClient().build(), Duration.ofSeconds(2));
-    }
-
-    @Test
-    public void shouldReturnIdentityProviderFromSingleHostnamePropertyValue() throws Exception {
-        Properties properties = new Properties();
-        properties.setProperty("gplazma.oidc.hostnames", "oidc.example.org");
-
-        var identityProviders = OidcAuthPlugin.buildHosts(properties, aClient().build(),
-                Duration.ofSeconds(2));
-
-        assertThat(identityProviders, hasSize(1));
-        IdentityProvider provider = identityProviders.iterator().next();
-        assertThat(provider.getName(), is(equalTo("oidc.example.org")));
-        assertThat(provider.getIssuerEndpoint(), is(equalTo(URI.create("https://oidc.example.org/"))));
-    }
-
     @Test
     public void shouldReturnEmptySetFromBuildProvidersWithNoPrefixEntries() throws Exception {
         Properties properties = new Properties();

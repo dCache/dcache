@@ -56,7 +56,6 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
     private final static String HTTP_TIMEOUT = "gplazma.oidc.http.timeout";
     private final static String HTTP_TIMEOUT_UNIT = "gplazma.oidc.http.timeout.unit";
     private final static String OIDC_ALLOWED_AUDIENCES = "gplazma.oidc.audience-targets";
-    private final static String OIDC_HOSTNAMES = "gplazma.oidc.hostnames";
     private final static String OIDC_PROVIDER_PREFIX = "gplazma.oidc.provider!";
 
     private static final String DEFAULT_PROFILE_NAME = "oidc";
@@ -117,9 +116,8 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
         Duration discoveryCacheDuration = asDuration(properties, DISCOVERY_CACHE_REFRESH);
 
         JsonHttpClient client = buildClientFromProperties(properties);
-        Set<IdentityProvider> providers = new HashSet<>();
-        providers.addAll(buildHosts(properties, client.getClient(), discoveryCacheDuration));
-        providers.addAll(buildProviders(properties, client.getClient(), discoveryCacheDuration));
+        Set<IdentityProvider> providers =
+            buildProviders(properties, client.getClient(), discoveryCacheDuration);
         checkArgument(!providers.isEmpty(), "No OIDC providers configured");
 
         var queryUserInfo = new QueryUserInfoEndpoint(properties, client, providers);
@@ -138,31 +136,6 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
         return new JsonHttpClient(asInt(properties, HTTP_CONCURRENT_ACCESS),
               asInt(properties, HTTP_PER_ROUTE_CONCURRENT_ACCESS),
               soTimeout);
-    }
-
-    @VisibleForTesting
-    static Set<IdentityProvider> buildHosts(Properties properties, HttpClient client,
-            Duration discoveryCacheDuration) {
-        String oidcHostnamesProperty = properties.getProperty(OIDC_HOSTNAMES);
-        checkArgument(oidcHostnamesProperty != null, OIDC_HOSTNAMES + " not defined");
-
-        Map<Boolean, Set<String>> validHosts = Arrays.stream(oidcHostnamesProperty.split("\\s+"))
-              .filter(not(String::isEmpty))
-              .collect(
-                    Collectors.groupingBy(InternetDomainName::isValid,
-                          Collectors.toSet())
-              );
-
-        Set<String> badHosts = validHosts.get(Boolean.FALSE);
-        checkArgument(badHosts == null, "Invalid hosts in %s: %s",
-              OIDC_HOSTNAMES, Joiner.on(", ").join(nullToEmpty(badHosts)));
-
-        Set<String> goodHosts = validHosts.get(Boolean.TRUE);
-        return goodHosts == null
-              ? Collections.emptySet()
-              : goodHosts.stream()
-                    .map(h -> createIdentityProvider(h, "https://" + h + "/", client, discoveryCacheDuration))
-                    .collect(Collectors.toSet());
     }
 
     @VisibleForTesting
