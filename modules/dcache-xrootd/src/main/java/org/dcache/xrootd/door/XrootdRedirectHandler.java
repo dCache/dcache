@@ -24,6 +24,7 @@ import static org.dcache.xrootd.protocol.XrootdProtocol.UUID_PREFIX;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ArgInvalid;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ArgMissing;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_FileNotOpen;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_IOError;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_InvalidRequest;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_NotAuthorized;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_Qcksum;
@@ -202,6 +203,13 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
      */
     private final Map<String, String> _queryConfig;
 
+    /**
+     * The thread associated with the open call.
+     * This is held here in case an inactive event occurs on the channel
+     * and the thread is waiting for the redirect.
+     */
+    private volatile Thread onOpenThread;
+
     public XrootdRedirectHandler(XrootdDoor door, FsPath rootPath, ExecutorService executor,
           Map<String, String> queryConfig,
           Map<String, String> appIoQueues) {
@@ -243,6 +251,11 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         _log.info("channel inactive event received on {}.", ctx.channel());
+
+        /**
+         * If the doOnOpen call has not yet returned, interrupt its thread.
+         */
+        interruptOnOpenThread();
         ctx.fireChannelInactive();
     }
 
@@ -292,6 +305,13 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
          */
 
         InetSocketAddress localAddress = getDestinationAddress();
+
+        /**
+         * Register this thread, so that it can be interrupted.
+         * (If and when the above suggestion is implemented, this will no longer be necessary.)
+         */
+        setOnOpenThread();
+
         InetSocketAddress remoteAddress = getSourceAddress();
         LoginSessionInfo loginSessionInfo = sessionInfo();
 
@@ -476,6 +496,8 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
             return withError(ctx, req, kXR_ServerError, "Server shutdown");
         } catch (XrootdException e) {
             return withError(ctx, req, e.getError(), e.getMessage());
+        } finally {
+            unsetOnOpenThread();
         }
     }
 
@@ -1317,4 +1339,19 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
         return _logins.peek();
     }
 
+    private synchronized void setOnOpenThread() {
+        onOpenThread = Thread.currentThread();
+    }
+
+    private synchronized void unsetOnOpenThread() {
+        onOpenThread = null;
+    }
+
+    private synchronized void interruptOnOpenThread() {
+        if (onOpenThread != null) {
+            _log.info("{} called interruptOnOpenThread; interrupting {}.", Thread.currentThread(),
+                  onOpenThread);
+            onOpenThread.interrupt();
+        }
+    }
 }
