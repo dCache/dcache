@@ -275,11 +275,6 @@
         <scope>test</scope>
     </dependency>
 
-    <dependency>
-        <groupId>org.python</groupId>
-        <artifactId>jython</artifactId>
-        <scope>test</scope>
-    </dependency>
       <dependency>
           <groupId>com.google.code.gson</groupId>
           <artifactId>gson</artifactId>
