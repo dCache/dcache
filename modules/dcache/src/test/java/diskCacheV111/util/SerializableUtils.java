@@ -2,6 +2,7 @@ package diskCacheV111.util;
 
 import static org.junit.Assert.assertEquals;
 
+import com.google.common.io.BaseEncoding;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -10,7 +11,6 @@ import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.curator.shaded.com.google.common.io.BaseEncoding;
 
 /**
  * This class contains various utility methods for serialising and deserialising objects. It is

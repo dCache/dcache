@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014-2021 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014-2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -39,6 +39,7 @@ import static org.dcache.webdav.transfer.CopyFilter.CredentialSource.NONE;
 import static org.dcache.webdav.transfer.CopyFilter.CredentialSource.OIDC;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 import com.google.common.collect.EvictingQueue;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.InetAddresses;
@@ -120,7 +121,6 @@ import javax.servlet.AsyncContext;
 import javax.servlet.ServletResponseWrapper;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.curator.shaded.com.google.common.base.Splitter;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.OpenIdCredential;
 import org.dcache.auth.attributes.Restriction;

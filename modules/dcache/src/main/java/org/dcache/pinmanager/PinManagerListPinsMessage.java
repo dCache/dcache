@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2020 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2020 - 2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -18,6 +18,7 @@
  */
 package org.dcache.pinmanager;
 
+import com.google.common.collect.ImmutableMap;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
 import java.io.Serializable;
@@ -25,7 +26,6 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import org.apache.curator.shaded.com.google.common.collect.ImmutableMap;
 import org.dcache.pinmanager.model.Pin;
 
 /**

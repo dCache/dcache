@@ -60,6 +60,7 @@ documents or software obtained from this server.
 package org.dcache.chimera;
 
 import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableMap;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.PermissionDeniedCacheException;
@@ -86,7 +87,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
 import javax.sql.DataSource;
-import org.apache.curator.shaded.com.google.common.collect.ImmutableMap;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;

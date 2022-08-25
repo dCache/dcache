@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2019 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2019 - 2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,6 +17,7 @@
  */
 package org.dcache.pool.repository.inotify;
 
+import com.google.common.base.Splitter;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
 import diskCacheV111.namespace.EventReceiver;
@@ -28,7 +29,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import org.apache.curator.shaded.com.google.common.base.Splitter;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.namespace.events.EventType;

@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2018 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2018 - 2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -21,6 +21,7 @@ package diskCacheV111.namespace;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.collect.Range;
+import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
 import com.google.common.net.UrlEscapers;
 import diskCacheV111.util.CacheException;
@@ -35,7 +36,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
-import org.apache.curator.shaded.com.google.common.hash.Hashing;
 import org.dcache.auth.Subjects;
 import org.dcache.namespace.CreateOption;
 import org.dcache.namespace.FileAttribute;
