@@ -811,8 +811,10 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         }
 
         private IoDoorEntry describe() {
+            @Nullable
+            InetSocketAddress remoteAddress = _endpoint.getRemoteAddress();
             // This may trigger DNS lookup; however, result should be cached by JVM.
-            String client = _endpoint.getRemoteAddress().getHostName();
+            String client = remoteAddress == null ? "(disconnected)" : remoteAddress.getHostName();
             StringBuilder status = new StringBuilder();
             status.append(_direction == Direction.PULL ? "PULL from" : "PUSH to");
             status.append(' ').append(_destination.getHost());
