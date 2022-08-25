@@ -977,21 +977,13 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                      * the transfer manager to send a message notifying us that
                      * the transfer has completed.
                      */
-                } catch (MissingResourceCacheException e) {
-                    /* Tried to cancel a transfer, but the transfer-manager
-                     * reported there is no such transfer.  Either the transfer
-                     * complete message was lost or the transfer-service was
-                     * restarted.  As the client has cancelled the transfer and
-                     * there is no transfer, we have nothing further to do.
+                } catch (NoRouteToCellException | CacheException e) {
+                    /* We tried to cancel a transfer, but the transfer-manager reported some kind
+                     * of problem.  There's no guarantee that this failure is transitory, so
+                     * retrying may not help.  Instead, we just fail the transfer.
                      */
                     completed("client went away, but failed to cancel transfer: "
                           + e.getMessage());
-                } catch (NoRouteToCellException | CacheException e) {
-                    LOGGER.error("Failed to cancel transfer id={}: {}", _id, e.toString());
-
-                    // Our attempt to kill the transfer failed.  We leave the
-                    // performance markers going as they will trigger further
-                    // attempts to kill the transfer.
                 } catch (InterruptedException e) {
                     completed("dCache is shutting down");
                 }
