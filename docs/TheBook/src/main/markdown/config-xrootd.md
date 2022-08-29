@@ -126,6 +126,118 @@ To read it back into ROOT from dCache:
    	TXNetFile*             //pnfs/<example.org>/data/test.root
   	 KEY: TH1F     testhisto;1     test
 
+
+## Pool memory requirements
+
+In general, each `xroot` connection to the pool will require approximately 8 MiB
+of Java direct memory.  This is a consequence of several factors.  First, the
+default `XRD_CPCHUNKSIZE` is 8 MiB, and the xrootd client requires the server
+to read off the entire frame + body of a message on the connection, which
+dCache currently holds in memory as a single request.  Second, our Netty implementations
+of both the xroot framework and the mover channel use the default preference for Java NIO
+[= "new I/O" or "non-blocking I/O"] which avoids buffer-to-buffer copying from user to kernel
+space and back, so the direct memory requirements are greater.
+
+This would mean that to sustain 1000 concurrent connections, you would need
+a minimum of 8 GiB of direct memory, e.g.:
+
+```
+[${host.name}-5Domain]
+dcache.java.memory.heap=...
+dcache.java.memory.direct=8192m
+```
+If these are all write requests, the requirement is actually pushed up to around 12 GiB.
+
+There are several possible approaches to mitigating the allocation of this
+much memory on each pool. The first would be to lower the ``XRD_CPCHUNKSIZE``
+so that the client is sending smaller frames.  This would allow more concurrent
+sharing of direct memory.  Obviously, this is not uniformly enforceable
+on the connecting clients, so in essence is not a real solution.
+
+The second possibility is to try to lower the corresponding dCache max frame size.
+By default, this is also 8 MiB (to match the xrootd native default).
+
+Going from 8 MiB to 128 KiB, for instance, by doing
+
+```
+pool.mover.xrootd.frame-size=131072
+```
+
+will also cut down individual connection consumption; this, however, is mostly
+useful for reads, since writes are currently implemented to read off the
+entire xroot frame (and thus the entire chunk sent by the client).
+
+For reads, the following comparison should serve to illustrate
+what the lower buffer sizes can accomplish:
+
+```
+70 clients/connections
+8M frame/buffer size
+
+PEAK DIRECT MEMORY USAGE = 720 MiB
+```
+
+vs.
+
+```
+70 clients/connections
+128K frame/buffer size
+
+PEAK DIRECT MEMORY USAGE = 16 MiB
+```
+
+So the savings here is pretty significant.
+
+As mentioned above, however, writes profit less from manipulation of the frame size.
+Writing 100mb files in parallel, with 1 GiB of direct memory allocated to the JVM, for instance:
+
+```
+8 MiB:    out of memory at 55 concurrent transfers
+```
+
+vs.
+
+```
+128 KiB:  out of memory at 82 concurrent transfers
+```
+
+In either case, it does not appear that individual bandwidth is greatly affected:
+
+```
+       8M           128K
+
+read:  111.1MB/s vs 111.1MB/s
+write: 70.42MB/s vs 69.93MB/s
+```
+
+High concurrent transfers, however, may have a somewhat more pronounced affect.
+
+The third and final approach to handling connection concurrency is
+to limit the number of active movers on the pool by creating protocol-specific
+I/O queues.
+
+As an example, the following would configure an xroot-specific queue limited to 1000 movers
+(be sure to do `save` to write these to the setup file):
+
+```
+\s <pools> mover queue create XRootD -order=LIFO
+\s <pools> mover set max active -queue=XRootD 1000
+\s <pools> jtm set timeout -queue=XRootD -lastAccess=14400 -total=432000
+\s <pools> save
+```
+
+One would also need to add the following corresponding property to the dcache configuration
+on the door(s):
+
+```
+xrootd.mover.queue=XRootD
+```
+
+It is suggested that the first approach to protecting pools from out-of-memory errors be
+some combination of increased allocation and throttling via I/O queues; decreasing
+the `pool.mover.xrootd.frame-size` should be reserved as a last resort.
+
+
 ## XROOT security
 
 ### Read-Write access
