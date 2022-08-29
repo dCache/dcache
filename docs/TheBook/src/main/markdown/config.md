@@ -125,6 +125,7 @@ Individual services:
 - [dCache as XRoot-Server](config-xrootd.md)
      - [Setting up](config-xrootd.md#setting-up)
      - [Quick tests](config-xrootd.md#quick-tests)
+     - [Pool memory requirements](config-xrootd.md#pool-memory-requirements)
      - [Xroot security](config-xrootd.md#xroot-security)
      - [Third-party transfer](config-xrootd.md#xrootd-third-party-transfer)
 
