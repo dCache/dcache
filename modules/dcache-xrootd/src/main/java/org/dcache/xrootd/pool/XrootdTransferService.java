@@ -146,6 +146,7 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
     }
 
     private int maxFrameSize;
+    private int maxWriteBufferSize;
     private List<ChannelHandlerFactory> plugins;
     private List<ChannelHandlerFactory> accessLogPlugins;
     private List<ChannelHandlerFactory> tpcClientPlugins;
@@ -320,6 +321,11 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
     }
 
     @Required
+    public void setMaxWriteBufferSize(int maxWriteBufferSize) {
+        this.maxWriteBufferSize = maxWriteBufferSize;
+    }
+
+    @Required
     public void setTpcClientChunkSize(int tpcClientChunkSize) {
         this.tpcClientChunkSize = tpcClientChunkSize;
     }
@@ -401,7 +407,11 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
         pipeline.addLast("handshake",
               new XrootdHandshakeHandler(XrootdProtocol.DATA_SERVER));
         pipeline.addLast("encoder", new XrootdEncoder());
-        pipeline.addLast("decoder", new XrootdDecoder());
+        XrootdDecoder decoder = new XrootdDecoder();
+        if (maxWriteBufferSize > 0) {
+            decoder.setMaxWriteBufferSize(maxWriteBufferSize);
+        }
+        pipeline.addLast("decoder", decoder);
         if (LOGGER.isDebugEnabled()) {
             pipeline.addLast("logger", new LoggingHandler());
         }

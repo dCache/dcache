@@ -55,6 +55,7 @@ check -strong pool.mover.xrootd.tpc-server-response-timeout
 check -strong pool.mover.xrootd.tpc-server-response-timeout.unit
 check -strong pool.mover.xrootd.tpc-client-chunk-size
 check -strong pool.mover.xrootd.frame-size
+check -strong pool.mover.xrootd.write-buffer-size
 check -strong pool.mover.xrootd.port.min
 check -strong pool.mover.xrootd.port.max
 check pool.mover.xrootd.plugins
