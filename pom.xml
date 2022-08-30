@@ -82,6 +82,7 @@
         <version.jackson>2.12.1</version.jackson>
         <version.jna>5.4.0</version.jna>
         <version.fst>2.56</version.fst>
+        <jmh.version>1.35</jmh.version>
 
 
 
@@ -1005,6 +1006,16 @@
                 <artifactId>hamcrest</artifactId>
                 <version>2.2</version>
             </dependency>
+            <dependency>
+                <groupId>org.openjdk.jmh</groupId>
+                <artifactId>jmh-core</artifactId>
+                <version>${jmh.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.openjdk.jmh</groupId>
+                <artifactId>jmh-generator-annprocess</artifactId>
+                <version>${jmh.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -1481,6 +1492,7 @@
         <module>modules/acl</module>
         <module>modules/chimera</module>
         <module>modules/missingfiles-semsg</module>
+        <module>modules/benchmarks</module>
         <module>plugins</module>
         <module>docs</module>
         <module>packages</module>
