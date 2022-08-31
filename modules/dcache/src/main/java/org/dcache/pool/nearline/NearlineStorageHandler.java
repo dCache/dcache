@@ -1435,7 +1435,7 @@ public class NearlineStorageHandler
 
         public void failed(Exception cause) {
             if (cause instanceof InterruptedException || cause instanceof CancellationException) {
-                cause = new TimeoutCacheException("Stage was cancelled.", cause);
+                cause = new TimeoutCacheException("Remove was cancelled.", cause);
             }
             LOGGER.warn("Remove of {} failed with {}.", uri, cause.toString());
             removeRequests.removeAndCallback(uri, cause);
@@ -1582,6 +1582,21 @@ public class NearlineStorageHandler
         @Override
         public String call() {
             return removeRequests.printJobQueue(Comparator.naturalOrder());
+        }
+    }
+
+    @Command(name = "rm kill",
+          hint = "remove/cancel request from tape remove queue",
+          description = "Remove and cancel the requests to remove a file from HSM.\n\n")
+    class RemoveKillCommand implements Callable<String> {
+
+        @Argument(metaVar = "HSM uri")
+        String uri;
+
+        @Override
+        public String call() {
+            removeRequests.cancel(URI.create(uri));
+            return "Kill initialized";
         }
     }
 
