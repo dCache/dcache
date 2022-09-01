@@ -12,6 +12,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.function.Supplier;
 import java.util.List;
 import java.util.Properties;
 import org.dcache.gplazma.configuration.Configuration;
@@ -22,14 +23,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * @author timur
+ * REVISIT: it is unclear whether these tests are meant to verify the behaviour
+ * of the (generic) ConfigurationParser or the PAM-style configuration.
  */
 public class ConfigurationParserTests {
 
     private static final Logger logger = LoggerFactory.getLogger(ConfigurationParserTests.class);
 
-    private static final String PAMConfigParserFactory =
-          "org.dcache.gplazma.configuration.parser.PAMStyleConfigurationParserFactory";
     // configurations to test with
     private static final String EMPTY_CONFIG_1 = "";
 
@@ -110,12 +110,11 @@ public class ConfigurationParserTests {
     // Once classic configuration reader is implemented
     // private static final String TEST_CLASSIC_CONFIG = "";
 
-    private ConfigurationParserFactory pamConfigParserFactory;
+    private PAMStyleConfigurationParserFactory pamConfigParserFactory;
 
     @Before
     public void setup() throws FactoryConfigurationException {
-        pamConfigParserFactory = ConfigurationParserFactory.getInstance(
-              PAMConfigParserFactory);
+        pamConfigParserFactory = new PAMStyleConfigurationParserFactory();
 
         ONEARGPROPERTIES.put("key1", "value1");
 
@@ -132,16 +131,16 @@ public class ConfigurationParserTests {
     @Test
     public void testDefaultFactoryGetInstanceReturnsAFactory()
           throws FactoryConfigurationException {
-        ConfigurationParserFactory factory =
-              ConfigurationParserFactory.getInstance();
+        Supplier<ConfigurationParser> factory =
+              ConfigurationParserFactories.getInstance();
         assertNotNull(factory);
-        ConfigurationParser parser = factory.newConfigurationParser();
+        ConfigurationParser parser = factory.get();
         assertNotNull(parser);
     }
 
     @Test
     public void testEmptyConfig() throws ParseException {
-        ConfigurationParser parser = pamConfigParserFactory.newConfigurationParser();
+        ConfigurationParser parser = pamConfigParserFactory.get();
         Configuration configuration =
               parser.parse(EMPTY_CONFIG_1);
         List<ConfigurationItem> configItemList =
@@ -156,7 +155,7 @@ public class ConfigurationParserTests {
 
     @Test(expected = ParseException.class)
     public void testInvalidConfig() throws ParseException {
-        ConfigurationParser parser = pamConfigParserFactory.newConfigurationParser();
+        ConfigurationParser parser = pamConfigParserFactory.get();
         Configuration configuration =
               parser.parse(INVALID_CONFIG);
         logger.error("Parsed INVALID_CONFIG is \n{}", configuration);
@@ -166,7 +165,7 @@ public class ConfigurationParserTests {
 
     @Test(expected = ParseException.class)
     public void testInvalidConfigWrongType() throws ParseException {
-        ConfigurationParser parser = pamConfigParserFactory.newConfigurationParser();
+        ConfigurationParser parser = pamConfigParserFactory.get();
         Configuration configuration =
               parser.parse(INVALID_CONFIG_WRONG_TYPE);
         logger.error("Parsed INVALID_CONFIG_WRONG_TYPE is \n{}", configuration);
@@ -175,7 +174,7 @@ public class ConfigurationParserTests {
 
     @Test(expected = ParseException.class)
     public void testInvalidConfigWrongControl() throws ParseException {
-        ConfigurationParser parser = pamConfigParserFactory.newConfigurationParser();
+        ConfigurationParser parser = pamConfigParserFactory.get();
         Configuration configuration =
               parser.parse(INVALID_CONFIG_WRONG_CONTROL);
         logger.error("Parsed INVALID_CONFIG_WRONG_CONTROL is \n{}", configuration);
@@ -184,7 +183,7 @@ public class ConfigurationParserTests {
 
     @Test
     public void testConfig() throws ParseException {
-        ConfigurationParser parser = pamConfigParserFactory.newConfigurationParser();
+        ConfigurationParser parser = pamConfigParserFactory.get();
         Configuration configuration =
               parser.parse(TEST_CONFIG);
         List<ConfigurationItem> configItemList =

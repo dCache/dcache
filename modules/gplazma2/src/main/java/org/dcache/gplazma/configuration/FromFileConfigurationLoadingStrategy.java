@@ -3,8 +3,9 @@ package org.dcache.gplazma.configuration;
 import static com.google.common.base.Preconditions.checkArgument;
 import java.io.File;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import org.dcache.gplazma.configuration.parser.ConfigurationParser;
-import org.dcache.gplazma.configuration.parser.ConfigurationParserFactory;
+import org.dcache.gplazma.configuration.parser.ConfigurationParserFactories;
 import org.dcache.gplazma.configuration.parser.FactoryConfigurationException;
 import org.dcache.gplazma.configuration.parser.ParseException;
 
@@ -60,9 +61,9 @@ public class FromFileConfigurationLoadingStrategy
           FactoryConfigurationException {
         configurationFileLastModified = configurationFile.lastModified();
         configurationFileLastChecked = System.currentTimeMillis();
-        ConfigurationParserFactory parserFactory =
-              ConfigurationParserFactory.getInstance();
-        ConfigurationParser parser = parserFactory.newConfigurationParser();
+        Supplier<ConfigurationParser> parserFactory =
+              ConfigurationParserFactories.getInstance();
+        ConfigurationParser parser = parserFactory.get();
         return parser.parse(configurationFile);
     }
 }
