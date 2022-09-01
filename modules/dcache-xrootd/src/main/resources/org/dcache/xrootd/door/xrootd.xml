@@ -202,6 +202,7 @@
         <constructor-arg value="${xrootd.net.proxy.port.max}"/>
       </bean>
     </property>
+    <property name="internalAddress" value="${xrootd.net.internal}"/>
     <property name="serverProtocolFlags" ref="protocol-flags"/>
     <property name="sslHandlerFactories" ref="ssl-handler-factories"/>
     <property name="proxyTimerExecutor">

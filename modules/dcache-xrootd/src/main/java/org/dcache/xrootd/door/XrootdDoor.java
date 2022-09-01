@@ -109,6 +109,7 @@ import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.Checksum;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.NettyPortRange;
+import org.dcache.util.NetworkUtils;
 import org.dcache.util.PingMoversTask;
 import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
@@ -216,6 +217,7 @@ public class XrootdDoor
     private boolean proxied;
     private NettyPortRange portRange;
     private int proxyResponseTimeoutInSeconds;
+    private InetAddress _internalAddress;
 
     @Autowired(required = false)
     private void setKafkaTemplate(
@@ -476,6 +478,7 @@ public class XrootdDoor
         transfer.setClientAddress(client);
         transfer.setUUID(uuid);
         transfer.setDoorAddress(local);
+        transfer.setInternalAddress(new InetSocketAddress(_internalAddress, 0));
         transfer.setIoQueue(ioQueue == null ? _ioQueue : ioQueue);
         transfer.setFileHandle(_handleCounter.getAndIncrement());
         transfer.setKafkaSender(_kafkaSender);
@@ -803,6 +806,11 @@ public class XrootdDoor
             callback.failure(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                   ree.getMessage());
         }
+    }
+
+    public void setInternalAddress(String ipString)
+          throws IllegalArgumentException, UnknownHostException {
+        _internalAddress = NetworkUtils.getInternalAddress(ipString);
     }
 
     /**

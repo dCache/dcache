@@ -25,6 +25,7 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress> {
 
     private UUID _uuid;
     private InetSocketAddress _doorAddress;
+    private InetSocketAddress _internalAddress;
     private int _fileHandle;
     private Serializable _delegatedCredential;
     private boolean proxiedTransfer;
@@ -64,6 +65,10 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress> {
         _doorAddress = doorAddress;
     }
 
+    public synchronized void setInternalAddress(InetSocketAddress internalAddress) {
+        _internalAddress = internalAddress;
+    }
+
     public void setProxiedTransfer(boolean proxiedTransfer) {
         this.proxiedTransfer = proxiedTransfer;
     }
@@ -80,7 +85,7 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress> {
     protected ProtocolInfo getProtocolInfoForPoolManager() {
         ProtocolInfo info = createProtocolInfo();
         if (proxiedTransfer) {
-            ((XrootdProtocolInfo)info).setSocketAddress(_doorAddress);
+            ((XrootdProtocolInfo)info).setSocketAddress(_internalAddress);
         }
         return info;
     }

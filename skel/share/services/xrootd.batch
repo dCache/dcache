@@ -7,6 +7,7 @@ onerror shutdown
 check -strong xrootd.cell.name
 check xrootd.cell.consume
 check xrootd.cell.subscribe
+check xrootd.net.internal
 check -strong xrootd.net.port
 check -strong xrootd.net.listen
 check -strong xrootd.net.backlog

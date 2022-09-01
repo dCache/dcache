@@ -7,6 +7,7 @@ import static com.google.common.collect.Iterables.limit;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.dcache.http.HttpPoolRequestHandler.REFERRER_QUERY_PARAM;
 import static org.dcache.namespace.FileAttribute.ACCESS_LATENCY;
 import static org.dcache.namespace.FileAttribute.CHECKSUM;
 import static org.dcache.namespace.FileAttribute.CREATION_TIME;
@@ -29,7 +30,6 @@ import static org.dcache.webdav.InsufficientStorageException.checkStorageSuffici
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 import com.google.common.base.Splitter;
-import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
@@ -37,7 +37,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
-import com.google.common.net.InetAddresses;
 import com.google.common.net.MediaType;
 import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.services.space.Space;
@@ -135,6 +134,7 @@ import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Checksums;
 import org.dcache.util.Exceptions;
+import org.dcache.util.NetworkUtils;
 import org.dcache.util.PingMoversTask;
 import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.Transfer;
@@ -155,8 +155,6 @@ import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.stringtemplate.v4.AutoIndentWriter;
 import org.stringtemplate.v4.ST;
-
-import static org.dcache.http.HttpPoolRequestHandler.REFERRER_QUERY_PARAM;
 
 /**
  * This ResourceFactory exposes the dCache name space through the Milton WebDAV framework.
@@ -565,16 +563,7 @@ public class DcacheResourceFactory
 
     public void setInternalAddress(String ipString)
           throws IllegalArgumentException, UnknownHostException {
-        if (!Strings.isNullOrEmpty(ipString)) {
-            InetAddress address = InetAddresses.forString(ipString);
-            if (address.isAnyLocalAddress()) {
-                throw new IllegalArgumentException(
-                      "Wildcard address is not a valid local address: " + address);
-            }
-            _internalAddress = address;
-        } else {
-            _internalAddress = InetAddress.getLocalHost();
-        }
+        _internalAddress = NetworkUtils.getInternalAddress(ipString);
     }
 
     public String getInternalAddress() {

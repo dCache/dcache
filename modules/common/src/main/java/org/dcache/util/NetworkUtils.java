@@ -13,6 +13,7 @@ import static java.util.stream.Collectors.toList;
 import com.google.common.base.Predicate;
 import com.google.common.base.Splitter;
 import com.google.common.base.Stopwatch;
+import com.google.common.base.Strings;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.Collections2;
@@ -353,6 +354,20 @@ public abstract class NetworkUtils {
                 }
             }
             return localAddress;
+        }
+    }
+
+    public static InetAddress getInternalAddress(String ipString)
+          throws IllegalArgumentException, UnknownHostException {
+        if (!Strings.isNullOrEmpty(ipString)) {
+            InetAddress address = InetAddresses.forString(ipString);
+            if (address.isAnyLocalAddress()) {
+                throw new IllegalArgumentException(
+                      "Wildcard address is not a valid local address: " + address);
+            }
+            return address;
+        } else {
+            return InetAddress.getLocalHost();
         }
     }
 
