@@ -1,6 +1,8 @@
 package org.dcache.gplazma.configuration.parser;
 
 import java.util.function.Supplier;
+import org.dcache.gplazma.configuration.Configuration;
+import org.dcache.util.files.LineBasedParser;
 
 /**
  * Class containing utility methods for creating ConfigurationParser objects.
@@ -22,10 +24,10 @@ public final class ConfigurationParserFactories {
      * @return a supplier of ConfigurationParser objects.
      * @throws FactoryConfigurationException if there was a problem creating the supplier
      */
-    public static Supplier<ConfigurationParser> getInstance()
+    public static Supplier<LineBasedParser<Configuration>> getInstance()
           throws FactoryConfigurationException {
         try {
-            return (Supplier<ConfigurationParser>) FactoryFinder.find(DEFAULT_PROPERTY_NAME,
+            return (Supplier<LineBasedParser<Configuration>>) FactoryFinder.find(DEFAULT_PROPERTY_NAME,
                   DEFAULT_FACTORY);
         } catch (ClassNotFoundException | IllegalAccessException | InstantiationException cnfe) {
             throw new FactoryConfigurationException("configuration error: " + cnfe,

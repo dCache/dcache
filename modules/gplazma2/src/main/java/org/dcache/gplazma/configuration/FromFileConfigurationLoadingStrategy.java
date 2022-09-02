@@ -2,12 +2,16 @@ package org.dcache.gplazma.configuration;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
-import org.dcache.gplazma.configuration.parser.ConfigurationParser;
 import org.dcache.gplazma.configuration.parser.ConfigurationParserFactories;
 import org.dcache.gplazma.configuration.parser.FactoryConfigurationException;
 import org.dcache.gplazma.configuration.parser.ParseException;
+import org.dcache.util.files.LineBasedParser;
+import org.dcache.util.files.LineBasedParser.UnrecoverableParsingException;
 
 /**
  * This loading strategy loads the configuration from file, if file has been updated. This class is
@@ -21,11 +25,13 @@ public class FromFileConfigurationLoadingStrategy
     private static final long CONFIGURATION_UPDATE_FREQUENCY_MILLIS =
           TimeUnit.SECONDS.toMillis(1);
 
+    private final Supplier<LineBasedParser<Configuration>> parserFactory;
     private final File configurationFile;
     private long configurationFileLastModified;
     private long configurationFileLastChecked;
 
-    public FromFileConfigurationLoadingStrategy(String configurationFileName) {
+    public FromFileConfigurationLoadingStrategy(String configurationFileName)
+            throws FactoryConfigurationException {
         checkArgument(configurationFileName != null && !configurationFileName.isBlank(),
                   "configuration file argument wasn't specified correctly");
 
@@ -33,6 +39,7 @@ public class FromFileConfigurationLoadingStrategy
 
         checkArgument(configurationFile.exists(),
                   "configuration file does not exists at %s", configurationFileName);
+        parserFactory = ConfigurationParserFactories.getInstance();
     }
 
     /**
@@ -57,13 +64,21 @@ public class FromFileConfigurationLoadingStrategy
      * @return configuration loaded from the configuration file
      */
     @Override
-    public Configuration load() throws ParseException,
-          FactoryConfigurationException {
+    public Configuration load() throws ParseException {
         configurationFileLastModified = configurationFile.lastModified();
         configurationFileLastChecked = System.currentTimeMillis();
-        Supplier<ConfigurationParser> parserFactory =
-              ConfigurationParserFactories.getInstance();
-        ConfigurationParser parser = parserFactory.get();
-        return parser.parse(configurationFile);
+
+        try {
+            var parser = parserFactory.get();
+            for (String line : Files.readAllLines(configurationFile.toPath(),
+                    Charset.defaultCharset())) {
+                parser.accept(line);
+            }
+            return parser.build();
+        } catch (UnrecoverableParsingException e) {
+            throw new ParseException(e.getMessage(), e);
+        } catch (IOException e) {
+            throw new ParseException("GPlazma Configuration parsing failed", e);
+        }
     }
 }

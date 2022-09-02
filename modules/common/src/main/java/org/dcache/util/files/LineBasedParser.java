@@ -36,6 +36,10 @@ public interface LineBasedParser<T> {
         public UnrecoverableParsingException(String message) {
             super(requireNonNull(message));
         }
+
+        public UnrecoverableParsingException(String message, Throwable cause) {
+            super(requireNonNull(message), cause);
+        }
     }
 
     /**

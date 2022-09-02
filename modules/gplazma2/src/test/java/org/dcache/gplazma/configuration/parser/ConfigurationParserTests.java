@@ -15,8 +15,11 @@ import static org.junit.Assert.assertTrue;
 import java.util.function.Supplier;
 import java.util.List;
 import java.util.Properties;
+import java.util.stream.Collectors;
 import org.dcache.gplazma.configuration.Configuration;
 import org.dcache.gplazma.configuration.ConfigurationItem;
+import org.dcache.util.files.LineBasedParser;
+import org.dcache.util.files.LineBasedParser.UnrecoverableParsingException;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -129,63 +132,48 @@ public class ConfigurationParserTests {
     }
 
     @Test
-    public void testDefaultFactoryGetInstanceReturnsAFactory()
-          throws FactoryConfigurationException {
-        Supplier<ConfigurationParser> factory =
+    public void testDefaultFactoryGetInstanceReturnsAFactory() throws Exception {
+        Supplier<LineBasedParser<Configuration>> factory =
               ConfigurationParserFactories.getInstance();
         assertNotNull(factory);
-        ConfigurationParser parser = factory.get();
+        LineBasedParser<Configuration> parser = factory.get();
         assertNotNull(parser);
     }
 
     @Test
-    public void testEmptyConfig() throws ParseException {
-        ConfigurationParser parser = pamConfigParserFactory.get();
-        Configuration configuration =
-              parser.parse(EMPTY_CONFIG_1);
+    public void testEmptyConfig() throws Exception {
+        Configuration configuration = parseConfiguration(pamConfigParserFactory,
+                EMPTY_CONFIG_1);
         List<ConfigurationItem> configItemList =
               configuration.getConfigurationItemList();
         assertTrue(configItemList.isEmpty());
-        configuration =
-              parser.parse(EMPTY_CONFIG_2);
+
+        configuration = parseConfiguration(pamConfigParserFactory,
+                EMPTY_CONFIG_2);
         configItemList =
               configuration.getConfigurationItemList();
         assertTrue(configItemList.isEmpty());
     }
 
-    @Test(expected = ParseException.class)
-    public void testInvalidConfig() throws ParseException {
-        ConfigurationParser parser = pamConfigParserFactory.get();
-        Configuration configuration =
-              parser.parse(INVALID_CONFIG);
-        logger.error("Parsed INVALID_CONFIG is \n{}", configuration);
-
-
+    @Test(expected = UnrecoverableParsingException.class)
+    public void testInvalidConfig() throws Exception {
+        parseConfiguration(pamConfigParserFactory, INVALID_CONFIG);
     }
 
-    @Test(expected = ParseException.class)
-    public void testInvalidConfigWrongType() throws ParseException {
-        ConfigurationParser parser = pamConfigParserFactory.get();
-        Configuration configuration =
-              parser.parse(INVALID_CONFIG_WRONG_TYPE);
-        logger.error("Parsed INVALID_CONFIG_WRONG_TYPE is \n{}", configuration);
-
+    @Test(expected = UnrecoverableParsingException.class)
+    public void testInvalidConfigWrongType() throws Exception {
+        parseConfiguration(pamConfigParserFactory, INVALID_CONFIG_WRONG_TYPE);
     }
 
-    @Test(expected = ParseException.class)
-    public void testInvalidConfigWrongControl() throws ParseException {
-        ConfigurationParser parser = pamConfigParserFactory.get();
-        Configuration configuration =
-              parser.parse(INVALID_CONFIG_WRONG_CONTROL);
-        logger.error("Parsed INVALID_CONFIG_WRONG_CONTROL is \n{}", configuration);
-
+    @Test(expected = UnrecoverableParsingException.class)
+    public void testInvalidConfigWrongControl() throws Exception {
+        parseConfiguration(pamConfigParserFactory, INVALID_CONFIG_WRONG_CONTROL);
     }
 
     @Test
-    public void testConfig() throws ParseException {
-        ConfigurationParser parser = pamConfigParserFactory.get();
-        Configuration configuration =
-              parser.parse(TEST_CONFIG);
+    public void testConfig() throws Exception {
+        Configuration configuration = parseConfiguration(pamConfigParserFactory,
+                TEST_CONFIG);
         List<ConfigurationItem> configItemList =
               configuration.getConfigurationItemList();
 
@@ -194,5 +182,15 @@ public class ConfigurationParserTests {
         logger.debug("Parsed TEST_CONFIG is \n{}", configuration);
 
         assertArrayEquals(TEST_CONFIG_ARRAY, configItemArray);
+    }
+
+    private Configuration parseConfiguration(Supplier<LineBasedParser<Configuration>> parserFactory,
+            String contents) throws UnrecoverableParsingException {
+        var parser = parserFactory.get();
+        List<String> lines = contents.lines().collect(Collectors.toList());
+        for (String line : lines) {
+            parser.accept(line);
+        }
+        return parser.build();
     }
 }

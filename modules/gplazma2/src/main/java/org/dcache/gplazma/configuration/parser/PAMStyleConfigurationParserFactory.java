@@ -19,13 +19,16 @@ package org.dcache.gplazma.configuration.parser;
 
 import java.util.function.Supplier;
 
+import org.dcache.gplazma.configuration.Configuration;
+import org.dcache.util.files.LineBasedParser;
+
 /**
  * Provide a new ConfigurationParser, assuming a PAM-style configuration.
  */
-public class PAMStyleConfigurationParserFactory implements Supplier<ConfigurationParser> {
+public class PAMStyleConfigurationParserFactory implements Supplier<LineBasedParser<Configuration>> {
 
     @Override
-    public ConfigurationParser get() {
+    public LineBasedParser<Configuration> get() {
         return new PAMStyleConfigurationParser();
     }
 }

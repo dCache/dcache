@@ -16,6 +16,7 @@ import org.dcache.gplazma.configuration.Configuration;
 import org.dcache.gplazma.configuration.ConfigurationItem;
 import org.dcache.gplazma.configuration.ConfigurationItemControl;
 import org.dcache.gplazma.configuration.ConfigurationItemType;
+import org.dcache.util.files.LineBasedParser;
 import org.dcache.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +24,7 @@ import org.slf4j.LoggerFactory;
 /**
  * @author timur
  */
-public class PAMStyleConfigurationParser implements ConfigurationParser {
+public class PAMStyleConfigurationParser implements LineBasedParser<Configuration> {
 
     private static final Logger logger =
           LoggerFactory.getLogger(PAMStyleConfigurationParser.class);
@@ -42,69 +43,26 @@ public class PAMStyleConfigurationParser implements ConfigurationParser {
     // is a comment and is ignored by the parser
     private static final String COMMENT_START = "#";
 
-    /**
-     * @param configuration a string containing configuration, not a file name
-     * @return Configuration based on the configuration
-     * @throws ParseException
-     */
+    private final List<ConfigurationItem> configItemList = new ArrayList<>();
+
+    private int offset;
+
     @Override
-    public Configuration parse(String configuration) throws ParseException {
-
-        requireNonNull(configuration, "Configuration must not be NULL");
-
-        return parse(new BufferedReader(new StringReader(configuration)));
-    }
-
-    /**
-     * @param configurationFile a file containing configuration
-     * @return Configuration based on the configuration
-     * @throws ParseException
-     */
-    @Override
-    public Configuration parse(File configurationFile) throws ParseException {
-
-        requireNonNull(configurationFile, "ConfigurationFile must not be NULL.");
-
+    public void accept(String line) throws UnrecoverableParsingException {
+        offset++;
         try {
-            return parse(
-                  Files.newBufferedReader(configurationFile.toPath(), Charset.defaultCharset()));
-        } catch (IOException e) {
-            throw new ParseException("GPlazma Configuration parsing failed", e);
-        }
-    }
-
-    /**
-     * @param bufferedReader, a reader of the configuration,
-     * @return Configuration based on the configuration
-     * @throws ParseException line number reported in the exception will be correct if the
-     *                        bufferedReader was initially pointing to the first char in the
-     *                        underlying char stream
-     */
-    @Override
-    public Configuration parse(BufferedReader bufferedReader)
-          throws ParseException {
-        List<ConfigurationItem> configItemList =
-              new ArrayList<>();
-        int offset = 0;
-        String line;
-        try {
-            while ((line = bufferedReader.readLine()) != null) {
-                try {
-                    ConfigurationItem configItem = parseLine(line);
-                    if (configItem != null) {
-                        configItemList.add(configItem);
-                    }
-
-                } catch (ParseException pe) {
-                    pe.setOffset(offset);
-                    throw pe;
-                }
-                offset++;
+            ConfigurationItem configItem = parseLine(line);
+            if (configItem != null) {
+                configItemList.add(configItem);
             }
-        } catch (IOException ioe) {
-            throw new ParseException("GPlazma Configuration parsing failed", ioe,
-                  offset);
+        } catch (UnrecoverableParsingException e) {
+            throw new UnrecoverableParsingException(e.getMessage() + " [offset=" + offset + "]",
+                    e.getCause());
         }
+    }
+
+    @Override
+    public Configuration build() {
         return new Configuration(configItemList);
     }
 
@@ -115,7 +73,7 @@ public class PAMStyleConfigurationParser implements ConfigurationParser {
      * @return instance of ConfigurationItem or null if line is empty or contains comments
      * @throws ParseException if the syntax is incorrect
      */
-    private ConfigurationItem parseLine(String line) throws ParseException {
+    private ConfigurationItem parseLine(String line) throws UnrecoverableParsingException {
         String trimmed = line.trim();
 
         if (trimmed.isEmpty() || trimmed.startsWith(COMMENT_START)) {
@@ -130,7 +88,7 @@ public class PAMStyleConfigurationParser implements ConfigurationParser {
         }
 
         if (splitLine.length < MIN_SPLIT_RESULTS) {
-            throw new ParseException("Syntax violation for line \"" + line + '"');
+            throw new UnrecoverableParsingException("Syntax violation for line \"" + line + '"');
         }
 
         try {
@@ -159,9 +117,7 @@ public class PAMStyleConfigurationParser implements ConfigurationParser {
                   properties);
 
         } catch (IllegalArgumentException iae) {
-            throw new ParseException("Syntax violation for line \"" + line + '"', iae);
+            throw new UnrecoverableParsingException("Syntax violation for line \"" + line + '"', iae);
         }
-
     }
-
 }
