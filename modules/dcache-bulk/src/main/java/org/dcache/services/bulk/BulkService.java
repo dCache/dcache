@@ -205,10 +205,9 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
         MessageReply<Message> reply = new MessageReply<>();
         incomingExecutorService.execute(() -> {
             try {
-                List<String> requests = requestStore.getRequestUrls(message.getSubject(),
-                            message.getStatus())
-                      .stream()
-                      .collect(Collectors.toList());
+                List<BulkRequestSummary> requests = requestStore.getRequestSummaries(
+                            message.getStatus(), message.getOwners(), message.getPath())
+                      .stream().collect(Collectors.toList());
                 message.setRequests(requests);
                 reply.reply(message);
             } catch (BulkServiceException e) {

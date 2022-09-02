@@ -141,6 +141,7 @@ public interface BulkTargetStore {
      */
     boolean exists(String rid, FsPath path);
 
+
     /**
      * @param filter on the target.
      * @param limit  max targets to return (can be <code>null</code>).
@@ -165,6 +166,13 @@ public interface BulkTargetStore {
      * @throws BulkStorageException
      */
     Optional<BulkRequestTarget> getTarget(long id) throws BulkStorageException;
+
+    /**
+     * @param targetPath to match
+     * @return all requests whose targets include this path as either parent or full path.
+     * @throws BulkStorageException
+     */
+    List<String> ridsOf(String targetPath);
 
     /**
      * Store the target.

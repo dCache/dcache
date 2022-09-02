@@ -109,6 +109,7 @@ import org.dcache.services.bulk.BulkRequestListMessage;
 import org.dcache.services.bulk.BulkRequestMessage;
 import org.dcache.services.bulk.BulkRequestStatus;
 import org.dcache.services.bulk.BulkRequestStatusMessage;
+import org.dcache.services.bulk.BulkRequestSummary;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.stereotype.Component;
@@ -130,43 +131,50 @@ public final class BulkResources {
     private BulkServiceCommunicator service;
 
     /**
-     * @return List of absolute URLs of bulk requests made by this user and that have not been
-     * cleared. If the client includes no query string then the response contains all bulk requests
-     * made by this user that have not been cleared.  If the user has made no bulk requests or all
-     * bulk requests have been cleared then the response is an empty array. If the client specified
-     * a query string then the response contains  all bulk requests that match the query string
-     * arguments and have not been cleared.  If the user has no bulk requests that match the query
-     * string and have not been cleared then the response is an empty array.
+     * @return List of bulk request summaries that have not been cleared.
+     * If the client includes no query string then the response contains all bulk requests
+     * that have not been cleared.  If the client specified a query string then the response
+     * contains all bulk requests that match the query string arguments and have not been cleared.
      * <p>
-     * NOTE: users logged in with the admin role will see all users' requests.
      * @status A comma-separated list of non-repeating elements, each of which is one of: queued,
      * started, completed, cancelled.
+     * @owner A comma-separated list of owners to match; unspecified returns all requests.
      */
     @GET
-    @ApiOperation("Get the status of bulk operations submitted by the user.")
+    @ApiOperation("Get the summary info of current bulk operations.")
     @ApiResponses({
           @ApiResponse(code = 400, message = "Bad request"),
-          @ApiResponse(code = 401, message = "Not authorized"),
           @ApiResponse(code = 500, message = "Internal Server Error")
     })
     @Produces(MediaType.APPLICATION_JSON)
-    public List<String> getRequests(@ApiParam("A comma-separated list of non-repeating elements, "
-          + "each of which is one of: queued, started, completed, "
-          + "cancelled.")
-    @QueryParam("status") String status) {
-        Subject subject = getSubject();
-        Restriction restriction = getRestriction();
+    public List<BulkRequestSummary> getRequests(
+          @ApiParam("A comma-separated list of non-repeating elements, "
+                + "each of which is one of: queued, started, completed, "
+                + "cancelled.")
+          @QueryParam("status") String status,
+          @ApiParam("A comma-separated list of owners to match; unspecified returns all requests.")
+          @QueryParam("owner") String owner,
+          @ApiParam("A path to match (as parent or full path); unspecified returns all requests.")
+          @QueryParam("path") String path) {
 
-        Set<BulkRequestStatus> filter;
+        final Set<BulkRequestStatus> statusSet;
         if (Strings.emptyToNull(status) != null) {
-            filter = new HashSet<>();
-            Splitter.on(",").split(status).forEach(o -> filter.add(BulkRequestStatus.valueOf(o)));
+            statusSet = new HashSet<>();
+            Splitter.on(",").split(status).forEach(o -> statusSet.add(BulkRequestStatus.valueOf(o)));
         } else {
-            filter = null;
+            statusSet = null;
         }
 
-        BulkRequestListMessage message = new BulkRequestListMessage(filter, restriction);
-        message.setSubject(subject);
+        final Set<String> ownerSet;
+        if (Strings.emptyToNull(owner) != null) {
+            ownerSet = new HashSet<>();
+            Splitter.on(",").split(owner).forEach(ownerSet::add);
+        } else {
+            ownerSet = null;
+        }
+
+        BulkRequestListMessage message = new BulkRequestListMessage(statusSet, ownerSet, path);
+
         message = service.send(message);
 
         return message.getRequests();

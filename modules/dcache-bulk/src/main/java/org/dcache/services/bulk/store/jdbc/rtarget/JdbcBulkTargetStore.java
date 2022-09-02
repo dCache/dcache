@@ -83,6 +83,8 @@ public final class JdbcBulkTargetStore implements BulkTargetStore {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JdbcBulkTargetStore.class);
 
+    private static final String MATCH_PATH = "select rid from request_target where path LIKE ?";
+
     private JdbcRequestTargetDao targetDao;
 
     @Override
@@ -180,6 +182,12 @@ public final class JdbcBulkTargetStore implements BulkTargetStore {
             return Optional.empty();
         }
         return Optional.of(list.get(0));
+    }
+
+    @Override
+    public List<String> ridsOf(String targetPath) {
+        return targetDao.getJdbcTemplate()
+              .queryForList(MATCH_PATH, String.class, "%" + targetPath + "%");
     }
 
     @Required

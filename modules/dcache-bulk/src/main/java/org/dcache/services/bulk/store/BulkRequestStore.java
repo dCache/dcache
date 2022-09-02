@@ -72,6 +72,7 @@ import org.dcache.services.bulk.BulkPermissionDeniedException;
 import org.dcache.services.bulk.BulkRequest;
 import org.dcache.services.bulk.BulkRequestInfo;
 import org.dcache.services.bulk.BulkRequestStatus;
+import org.dcache.services.bulk.BulkRequestSummary;
 import org.dcache.services.bulk.BulkStorageException;
 import org.dcache.services.bulk.util.BulkRequestFilter;
 
@@ -176,13 +177,14 @@ public interface BulkRequestStore {
     Optional<BulkRequest> getRequest(String id) throws BulkStorageException;
 
     /**
-     * @param subject of request user.
      * @param status  match only the requests with these statuses.
+     * @param owners  match only the requests with these owners.
+     * @param path match only the requests with targets whose paths equal or contain this path.
      * @return set of the corresponding request urls.
      * @throws BulkStorageException
      */
-    Set<String> getRequestUrls(Subject subject, Set<BulkRequestStatus> status)
-          throws BulkStorageException;
+    Set<BulkRequestSummary> getRequestSummaries(Set<BulkRequestStatus> status, Set<String> owners,
+          String path) throws BulkStorageException;
 
     /**
      * @param id unique id for request.

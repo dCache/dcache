@@ -77,6 +77,7 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -95,6 +96,7 @@ import org.dcache.services.bulk.BulkRequestInfo;
 import org.dcache.services.bulk.BulkRequestNotFoundException;
 import org.dcache.services.bulk.BulkRequestStatus;
 import org.dcache.services.bulk.BulkRequestStatusInfo;
+import org.dcache.services.bulk.BulkRequestSummary;
 import org.dcache.services.bulk.BulkRequestTargetInfo;
 import org.dcache.services.bulk.BulkStorageException;
 import org.dcache.services.bulk.store.BulkRequestStore;
@@ -316,14 +318,35 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
     }
 
     @Override
-    public Set<String> getRequestUrls(Subject subject, Set<BulkRequestStatus> status) {
-        String user = BulkRequestStore.uidGidKey(subject);
-        LOGGER.trace("getRequestUrls {}, {}.", user, status);
-        return requestDao.get(requestDao.where().status(status).user(user), Integer.MAX_VALUE)
-              .stream()
-              .map(r -> r.getUrlPrefix()
-                    + "/" + r.getId())
-              .collect(Collectors.toSet());
+    public Set<BulkRequestSummary> getRequestSummaries(Set<BulkRequestStatus> status,
+          Set<String> owners, String path) {
+        LOGGER.trace("getRequestSummaries {}, {}, {}.", status, owners, path);
+
+        /*
+         *  Filter out the request ids by target paths first.
+         */
+        String[] rids = path == null ? null : targetStore.ridsOf(path).toArray(String[]::new);
+
+        String[] users = owners == null ? null : owners.toArray(String[]::new);
+
+        List<BulkRequest> requests =
+              requestDao.get(requestDao.where().requestIds(rids).status(status).user(users),
+                    Integer.MAX_VALUE);
+        Set<BulkRequestSummary> summaries = new HashSet<>();
+
+        for (BulkRequest r : requests) {
+            try {
+                summaries.add(new BulkRequestSummary(r.getUrlPrefix() + "/" + r.getId(),
+                      r.getActivity(),
+                      r.getStatusInfo(),
+                      targetStore.countUnprocessed(r.getId())));
+            } catch (BulkStorageException e) {
+                LOGGER.error("Unable to retrieve unprocessed count for {}: {}.", r.getId(),
+                      e.getMessage());
+            }
+        }
+
+        return summaries;
     }
 
     @Override

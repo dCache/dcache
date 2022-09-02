@@ -59,46 +59,83 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import org.dcache.auth.attributes.Restrictions;
+import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * To acquire a list of requests submitted by the user.  May optionally be filtered by status.
  */
-public class BulkRequestListMessage extends BulkServiceMessage {
+public class BulkRequestSummary implements Serializable {
 
-    private static final long serialVersionUID = -3921177984889456203L;
+    private static final long serialVersionUID = -6792282420261895941L;
 
-    private final Set<BulkRequestStatus> status;
-    private final Set<String> owners;
-    private final String path;
-    private List<BulkRequestSummary> requests;
+    private String url;
+    private String owner;
+    private String activity;
+    private String status;
+    private int    active;
 
-    public BulkRequestListMessage(Set<BulkRequestStatus> status, Set<String> owners, String path) {
-        super(Restrictions.none());
-        this.status = status == null ? Collections.emptySet() : status;
-        this.owners = owners == null ? Collections.emptySet() : owners;
-        this.path = path;
+    public BulkRequestSummary() {}
+
+    public BulkRequestSummary(String url, String activity, BulkRequestStatusInfo statusInfo,
+          int active) {
+        this.url = url;
+        this.owner = statusInfo.getUser();
+        this.activity = activity;
+        this.status = statusInfo.getStatus().name();
+        this.active = active;
     }
 
-    public String getPath() {
-        return path;
+    public int getActive() {
+        return active;
     }
 
-    public Set<BulkRequestStatus> getStatus() {
+    public String getUrl() {
+        return url;
+    }
+
+    public String getOwner() {
+        return owner;
+    }
+
+    public String getActivity() {
+        return activity;
+    }
+
+    public String getStatus() {
         return status;
     }
 
-    public Set<String> getOwners() { return owners; }
-
-    public List<BulkRequestSummary> getRequests() {
-        return requests;
+    public void setUrl(String url) {
+        this.url = url;
     }
 
-    public void setRequests(List<BulkRequestSummary> requests) {
-        this.requests = requests;
+    public void setOwner(String owner) {
+        this.owner = owner;
+    }
+
+    public void setActivity(String activity) {
+        this.activity = activity;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        return other instanceof BulkRequestSummary && Objects.equals(url,
+              ((BulkRequestSummary) other).url);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(url);
+    }
+
+    public String toString() {
+        return new StringBuilder(url).append("[").append(owner).append(", ").append(activity)
+              .append(", ").append(status).append(", ").append(active).append("]").toString();
     }
 }
 
