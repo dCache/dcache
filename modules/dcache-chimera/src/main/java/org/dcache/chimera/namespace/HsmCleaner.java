@@ -5,7 +5,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.dcache.cells.HAServiceLeadershipManager.HA_NOT_LEADER_MSG;
 
 import com.google.common.base.Preconditions;
-import com.google.common.base.Strings;
 import diskCacheV111.vehicles.PoolRemoveFilesFromHSMMessage;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
@@ -415,6 +414,30 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
         }
     }
 
+    protected Map<String, Long> getDeleteLocationCountPerHsm() {
+        HashMap<String, Long> deleteLocationsPerHsm = new HashMap<>();
+        Timestamp graceTime = Timestamp.from(
+              Instant.now().minusSeconds(_gracePeriod.getSeconds()));
+        _db.query(
+              "SELECT ilocation, ictime FROM t_locationinfo_trash WHERE itype=0 AND ictime<?",
+              rs -> {
+                  try {
+                      URI uri = new URI(rs.getString("ilocation"));
+                      String theHsm = uri.getAuthority();
+
+                      long newCount = deleteLocationsPerHsm.getOrDefault(theHsm, 0L) + 1L;
+                      deleteLocationsPerHsm.put(theHsm, newCount);
+
+                  } catch (URISyntaxException e) {
+                      LOGGER.warn("Invalid URI in database: {}", e.getMessage());
+                      long newUnknownCount = deleteLocationsPerHsm.getOrDefault(null, 0L) + 1L;
+                      deleteLocationsPerHsm.put(null, newUnknownCount);
+                  }
+              },
+              graceTime);
+        return deleteLocationsPerHsm;
+    }
+
     public void init() {
         setSuccessSink(uri -> _executor.execute(() -> onSuccess(uri)));
         setFailureSink(uri -> _executor.execute(() -> onFailure(uri)));
@@ -428,51 +451,37 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
     public void notLeader() {
         super.notLeader();
         // All not yet sent but cached requests can be cleared
-        Iterator<String> keyIterator = _locationsToDelete.keySet().iterator();
-        while (keyIterator.hasNext()) {
-            String hsm = keyIterator.next();
-            if (!_requestTimeoutPerHsm.containsKey(hsm)) {
-                keyIterator.remove();
-            }
-        }
+        _locationsToDelete.keySet().removeIf(hsm -> !_requestTimeoutPerHsm.containsKey(hsm));
         _dbLastSeenTimestamp = new Timestamp(0);
     }
 
     ////////////////////////////////////////////////////////////////////////////
 
-    @Command(name = "requests ls",
-          hint = "Lists delete requests.")
-    public class RequestsLsCommand implements Callable<String> {
-
-        @Argument(required = false, usage = "HSM instance for which to list delete requests")
-        String hsm;
+    @Command(name = "requests count",
+          hint = "Counts delete requests per hsm.")
+    public class RequestsCountCommand implements Callable<String> {
 
         @Override
         public String call() {
             StringBuilder sb = new StringBuilder();
-            if (Strings.isNullOrEmpty(hsm)) {
-                sb.append(String.format("%-15s %s %s\n",
-                      "HSM Instance", "Files", "Pool"));
-                for (Map.Entry<String, Set<URI>> e : _locationsToDelete.entrySet()) {
-                    Timeout timeout = _requestTimeoutPerHsm.get(e.getKey());
+            sb.append(String.format("%-15s %s %s\n",
+                  "HSM Instance", "Files", "Pool"));
 
-                    if (timeout == null) {
-                        sb.append(String.format("%-15s %5d\n",
-                              e.getKey(),
-                              e.getValue().size()));
-                    } else {
-                        sb.append(String.format("%-15s %5d %s\n",
-                              e.getKey(),
-                              e.getValue().size(),
-                              timeout.getPool()));
-                    }
-                }
-            } else {
-                Collection<URI> locations = _locationsToDelete.get(hsm);
-                if (locations != null) {
-                    for (URI location : locations) {
-                        sb.append(location).append('\n');
-                    }
+            Map<String, Long> deleteLocationsPerHsm = getDeleteLocationCountPerHsm();
+
+            for (Map.Entry<String, Long> e : deleteLocationsPerHsm.entrySet()) {
+                Timeout timeout = _requestTimeoutPerHsm.get(e.getKey());
+                String theHsm = e.getKey() == null ? "unknown" : e.getKey();
+
+                if (timeout == null) {
+                    sb.append(String.format("%-15s %5d\n",
+                          theHsm,
+                          e.getValue()));
+                } else {
+                    sb.append(String.format("%-15s %5d %s\n",
+                          theHsm,
+                          e.getValue(),
+                          timeout.getPool()));
                 }
             }
             return sb.toString();
