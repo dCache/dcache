@@ -10,7 +10,7 @@ public class ParseException extends GPlazmaInternalException {
 
     private static final long serialVersionUID = 8146460786081822785L;
 
-    public ParseException(String message, Throwable cause) {
-        super(message, cause);
+    public ParseException(String message) {
+        super(message);
     }
 }
