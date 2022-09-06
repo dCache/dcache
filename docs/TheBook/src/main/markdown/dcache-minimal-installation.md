@@ -89,7 +89,7 @@ For the minimal instalation of dCache the following cells must be configured in 
 
 
 
-# Minimal set up example - Grouping CELLs - Single process:
+# Configurations for Minimal set  - Single process:
 
 - Shared JVM
 - Shared CPU
@@ -217,11 +217,12 @@ systemctl list-dependencies dcache.target
 
 ```
 
-In the next  step, we will split the services into three domains.
-There is nothing special about having three domains. At one extreme, dCache will work correctly if everything
-runs in a single domain. On the other extreme, you can configure dCache to run each service in a separate
+So now you can upload a file ----
+
+
+dCache will work correctly if everything runs in a single domain. dCache could be configured  to run each service in a separate
 domain. Although the latter deployment is the most flexible, there is some overhead in having many domains,
-so the optimal approach is usually somewhere in between these two extremes.
+so the optimal approach is usually somewhere in between.
  The difference is that, when a dCache instance
 spans multiple domains, there needs to be some mechanism for sending messages between services located
 in different domains.
@@ -231,9 +232,15 @@ from one domain to the other are sent.
 To reduce the number of TCP connections, domains may be configured to be core domains or satellite
 domains. Core domains have tunnels to all other core domains. Satellite domains have tunnels to all core
 domains.
-The simplest deployment has a single core domain and all other domains as satellite domains. This is a
+The simplest deployment has a single core domain and all other domains as satellite domains, mostly POOL CELLS. This is a
 spoke deployment, where messages from a service in any satellite domain is sent directly to the core domain,
 but messages between services in different satellite domains are relayed through the core domain.
+ In the following example we will add a new Pool domains or we call them satellite domain.
+ 
+  > dcache pool create /srv/dcache/pool-A poolA poolsDomainA
+
+  > dcache pool create /srv/dcache/pool-B poolB poolsDomainB
+
 
 # Grouping CELLs - In different processes:
 
