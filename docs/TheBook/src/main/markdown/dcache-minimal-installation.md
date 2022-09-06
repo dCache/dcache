@@ -241,7 +241,7 @@ but messages between services in different satellite domains are relayed through
   > dcache pool create /srv/dcache/pool-B poolB poolsDomainB
 
 
-# Grouping CELLs - In different processes:
+# Grouping CELLs - core Domain and pools as satellite:
 
  - Independent JVMs
  - Shared CPU
