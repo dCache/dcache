@@ -116,7 +116,6 @@ dcache.enable.space-reservation = false
  pnfsmanager.default-access-latency = ONLINE
 
 [dCacheDomain/poolmanager]
-[dCacheDomain/billing]
 [dCacheDomain/webdav]
  webdav.authn.basic = true
  
@@ -262,8 +261,7 @@ dcache.broker.scheme = core
 
 [corelDomain/poolmanager]
 
-[doorsDomain]
-[doors/webdav]
+[corelDomain/webdav]
  webdav.authn.basic = true
  
 [poolsDomainA]
