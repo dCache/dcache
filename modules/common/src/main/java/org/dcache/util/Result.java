@@ -111,6 +111,50 @@ public abstract class Result<S,F> {
         return getSuccess().get();
     }
 
+    @Override
+    public final int hashCode() {
+        return map(Object::hashCode, Object::hashCode);
+    }
+
+    /**
+     * Return true if this Result is successful and the result of the operation
+     * is equal to the supplied argument.  Return false if this result is a
+     * failure or if this result is a success but the result does not match the
+     * argument.
+     * @param other the value to test.
+     * @return true iff successful and the result matches.
+     */
+    private boolean successfulAndEquals(Object other) {
+        return map(s -> s.equals(other), f -> Boolean.FALSE);
+    }
+
+    /**
+     * Return true if this Result is a failure and the failure description
+     * is equal to the supplied argument.  Return false if this result is a
+     * success or if this result is a failure but the failure description does
+     * not match the argument.
+     * @param other the value to test.
+     * @return true iff successful and the result matches.
+     */
+    private boolean failureAndEquals(Object other) {
+        return map(s -> Boolean.FALSE, f -> f.equals(other));
+    }
+
+    @Override
+    public final boolean equals(Object other) {
+        if (other == this) {
+            return true;
+        }
+
+        if (!(other instanceof Result)) {
+            return false;
+        }
+
+        Result<?,?> otherResult = (Result<?,?>) other;
+
+        return map(otherResult::successfulAndEquals, otherResult::failureAndEquals);
+    }
+
     /**
      * Create and return a new Result object that represents a success.  The
      * returned object uses the argument to this method when describing this
