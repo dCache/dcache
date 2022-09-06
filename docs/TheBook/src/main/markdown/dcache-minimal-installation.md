@@ -271,7 +271,7 @@ dcache.broker.scheme = core
 pool.name=pool1
 pool.path=/srv/dcache/pool-1
 pool.wait-for-files=${pool.path}/data
-```
+
 
 [poolsDomainB]
 [poolsDomainB/pool]
@@ -282,37 +282,6 @@ pool.wait-for-files=${pool.path}/data
 
 
 
-
-
-```ini
-dcache.enable.space-reservation = false
-
-[corelDomain]
-dcache.broker.scheme = core
-[corelDomain/zookeeper]
-[corelDomain/pnfsmanager]
- pnfsmanager.default-retention-policy = REPLICA
- pnfsmanager.default-access-latency = ONLINE
-
-[corelDomain/poolmanager]
-
-[doorsDomain]
-[doors/webdav]
- webdav.authn.basic = true
- 
-[poolsDomainA]
-[poolsDomainA/pool]
-pool.name=pool1
-pool.path=/srv/dcache/pool-1
-pool.wait-for-files=${pool.path}/data
-```
-
-[poolsDomainB]
-[poolsDomainB/pool]
-pool.name=pool1
-pool.path=/srv/dcache/pool-1
-pool.wait-for-files=${pool.path}/data
-```
 
 ```ini
 dcache status
