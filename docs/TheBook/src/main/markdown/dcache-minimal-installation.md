@@ -5,8 +5,8 @@
 
    #### Hardware:
 - Contemporary CPU
-- At least 1 GiB of RAM
-- At least 500 MiB free disk space
+- At least 1 GiB of RAM -???
+- At least 500 MiB free disk space -???
    
  #### Software:
 - OpenJDK 11
@@ -66,7 +66,7 @@ The folder **/usr/share/dcache/defaults** contains the default settings of the d
 ### Four main components in dCache
 -------------
 
-All components are CELLs and they are independent and can interact with each other by sending messages.
+All components in dCache are CELLs and they are independent and can interact with each other by sending messages.
 For the minimal instalation of dCache the following cells must be configured in **/etc/dcache/dcache.conf** file.
 
 
@@ -83,15 +83,13 @@ For the minimal instalation of dCache the following cells must be configured in 
 #### POOL
  - Data storage nodes, talk all protocols
 
-Billing cell not clear?
-
 #### Zookeeper
  - A distributed directory and coordination service that dCache relies on.
 
 
 
 
-# Grouping CELLs - Single process:
+# Minimal set up example - Grouping CELLs - Single process:
 
 - Shared JVM
 - Shared CPU
@@ -175,6 +173,8 @@ pool.wait-for-files=${pool.path}/data
 ```
 
 
+So we have added a new cell pool to the dCacheDomain.
+
 ## Starting dCache
 
 There are two ways to start dCache: 1) using sysV-like daemon, 2) Using systemd service.
@@ -210,12 +210,10 @@ our simple installation with just one domain hosting several services this would
 systemctl list-dependencies dcache.target
 |dcache.target
 |● ├─dcache@coreDomain.service
-|● ├─dcache@NamespaceDomain.service
+|● ├─dcache@NamespaceDomain.service --???
 |● ├─dcache@zookeeperDomain.service
 |● ├─dcache@poolDomain.service
 |● └─dcache@poolmanagerDomain.service
-
-
 
 ```
 
