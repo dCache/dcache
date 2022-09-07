@@ -2843,6 +2843,7 @@ public class PnfsManagerV3
                 requested.add(FileAttribute.OWNER);
                 requested.add(FileAttribute.OWNER_GROUP);
                 requested.add(FileAttribute.XATTR);
+                requested.add(FileAttribute.CREATION_TIME);
             }
             FileAttributes attrs =
                   _nameSpaceProvider.getFileAttributes(subject,

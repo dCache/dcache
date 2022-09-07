@@ -7,6 +7,7 @@ import static com.google.common.util.concurrent.Futures.immediateFailedFuture;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static com.google.common.util.concurrent.Futures.transformAsync;
 import static java.util.Objects.requireNonNull;
+import static org.dcache.namespace.FileAttribute.CREATION_TIME;
 import static org.dcache.namespace.FileAttribute.PNFSID;
 import static org.dcache.namespace.FileAttribute.SIZE;
 import static org.dcache.namespace.FileAttribute.STORAGEINFO;
@@ -745,7 +746,7 @@ public class Transfer implements Comparable<Transfer> {
     }
 
     private ListenableFuture<Void> readNameSpaceEntryAsync(boolean allowWrite, long timeout) {
-        Set<FileAttribute> attr = EnumSet.of(PNFSID, TYPE, STORAGEINFO, SIZE);
+        Set<FileAttribute> attr = EnumSet.of(PNFSID, TYPE, STORAGEINFO, SIZE, CREATION_TIME);
         attr.addAll(_additionalAttributes);
         attr.addAll(PoolMgrSelectReadPoolMsg.getRequiredAttributes());
         Set<AccessMask> mask;
