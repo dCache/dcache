@@ -47,6 +47,7 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -171,21 +172,23 @@ public class CredentialServiceClient
 
         return HttpRequest.newBuilder()
                 .uri(URI.create(tokenEndPoint(host)))
-                .POST(HttpRequest.BodyPublishers.ofString(
-                        String.format(
-                                "grant_type=%s" +
-                                        "&audience=%s" +
-                                        "&subject_token=%s" +
-                                        "&subject_token_type=%s" +
-                                        "&scope=%s",
-                                GRANT_TYPE,
-                                clientId,
-                                token,
-                                TOKEN_TYPE,
-                                SCOPE)
-                ))
-                .header("Authorization", "Basic " + java.util.Base64.getEncoder()
-                        .encodeToString(
+                .POST(
+                        HttpRequest.BodyPublishers.ofString(
+                                String.format(
+                                        "grant_type=%s" +
+                                                "&audience=%s" +
+                                                "&subject_token=%s" +
+                                                "&subject_token_type=%s" +
+                                                "&scope=%s",
+                                        GRANT_TYPE,
+                                        clientId,
+                                        token,
+                                        TOKEN_TYPE,
+                                        SCOPE)
+                        )
+                )
+                .header("Authorization", "Basic " +
+                        Base64.getEncoder().encodeToString(
                                 UTF_8.encode(
                                         clientId + ":" + (clientSecret == null ? "null" : clientSecret)
                                 ).array()
@@ -195,9 +198,9 @@ public class CredentialServiceClient
                 .build();
     }
 
-    private JSONObject delegateOpenIdCredential(java.net.http.HttpClient client, HttpRequest post)
+    private JSONObject delegateOpenIdCredential(HttpClient client, HttpRequest post)
             throws IOException, InterruptedException {
-        HttpResponse<byte[]> response = client.send(post, java.net.http.HttpResponse.BodyHandlers.ofByteArray());
+        HttpResponse<byte[]> response = client.send(post, HttpResponse.BodyHandlers.ofByteArray());
         if (response.statusCode() == 200) {
             ByteArrayOutputStream os = new ByteArrayOutputStream();
             os.writeBytes(response.body());
