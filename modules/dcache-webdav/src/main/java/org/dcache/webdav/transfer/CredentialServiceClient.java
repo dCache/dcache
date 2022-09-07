@@ -39,6 +39,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.security.KeyStoreException;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
@@ -49,18 +52,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.auth.AuthenticationException;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.auth.BasicScheme;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.protocol.BasicHttpContext;
 import org.dcache.auth.OpenIdClientSecret;
 import org.dcache.auth.StaticOpenIdCredential;
 import org.dcache.auth.StaticOpenIdCredential.Builder;
@@ -108,7 +99,7 @@ public class CredentialServiceClient
     }
 
     public X509Credential getDelegatedCredential(String dn, String primaryFqan,
-          int minimumValidity, TimeUnit units) throws InterruptedException, ErrorResponseException {
+          int minimumValidity, TimeUnit units) throws InterruptedException {
         Instant deadline = Instant.now().plus(Duration.ofMillis(units.toMillis(minimumValidity)));
 
         Optional<X509Credential> bestCredential = Optional.empty();
@@ -149,7 +140,7 @@ public class CredentialServiceClient
     public StaticOpenIdCredential getDelegatedCredential(String token,
           ImmutableMap<String, OpenIdClientSecret> clientSecrets)
           throws InterruptedException, ErrorResponseException {
-        HttpClient client = HttpClientBuilder.create().build();
+        HttpClient client = HttpClient.newHttpClient();
         List<String> failures = new ArrayList<>();
         for (Map.Entry<String, OpenIdClientSecret> entry : clientSecrets.entrySet()) {
             String host = entry.getKey();
@@ -164,48 +155,56 @@ public class CredentialServiceClient
                             secret));
 
                 return createOidcCredential(host, id, secret, json);
-            } catch (AuthenticationException | IOException | JSONException e) {
-                failures.add(String.format("[%s -> %s]", host, e.toString()));
+            } catch (IOException | JSONException e) {
+                failures.add(String.format("[%s -> %s]", host, e));
             }
         }
 
-        LOGGER.warn("OIDC delegation failed: {}",
-              failures.stream().collect(Collectors.joining(", ")));
+        LOGGER.warn("OIDC delegation failed: {}", String.join(", ", failures));
         throw new ErrorResponseException(Status.SC_INTERNAL_SERVER_ERROR,
               "Error performing OpenId-Connect delegation");
 
     }
 
-    private HttpPost buildRequest(String token, String host, String clientId, String clientSecret)
-          throws UnsupportedEncodingException, AuthenticationException {
-        UsernamePasswordCredentials clientCreds = new UsernamePasswordCredentials(clientId,
-              clientSecret);
-        BasicScheme scheme = new BasicScheme(UTF_8);
+    private HttpRequest buildRequest(String token, String host, String clientId, String clientSecret)
+            throws UnsupportedEncodingException{
 
-        HttpPost post = new HttpPost(tokenEndPoint(host));
-        List<NameValuePair> params = new ArrayList<>();
-        params.add(new BasicNameValuePair("grant_type", GRANT_TYPE));
-        params.add(new BasicNameValuePair("audience", clientId));
-        params.add(new BasicNameValuePair("subject_token", token));
-        params.add(new BasicNameValuePair("subject_token_type", TOKEN_TYPE));
-        params.add(new BasicNameValuePair("scope", SCOPE));
-
-        post.setEntity(new UrlEncodedFormEntity(params));
-        post.addHeader(scheme.authenticate(clientCreds, post, new BasicHttpContext()));
-        return post;
+        return HttpRequest.newBuilder()
+                .uri(URI.create(tokenEndPoint(host)))
+                .POST(HttpRequest.BodyPublishers.ofString(
+                        String.format(
+                                "grant_type=%s" +
+                                        "&audience=%s" +
+                                        "&subject_token=%s" +
+                                        "&subject_token_type=%s" +
+                                        "&scope=%s",
+                                GRANT_TYPE,
+                                clientId,
+                                token,
+                                TOKEN_TYPE,
+                                SCOPE)
+                ))
+                .header("Authorization", "Basic " + java.util.Base64.getEncoder()
+                        .encodeToString(
+                                UTF_8.encode(
+                                        clientId + ":" + (clientSecret == null ? "null" : clientSecret)
+                                ).array()
+                        )
+                )
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .build();
     }
 
-    private JSONObject delegateOpenIdCredential(HttpClient client, HttpPost post)
-          throws IOException {
-        HttpResponse response = client.execute(post);
-        if (response.getStatusLine().getStatusCode() == 200) {
+    private JSONObject delegateOpenIdCredential(java.net.http.HttpClient client, HttpRequest post)
+            throws IOException, InterruptedException {
+        HttpResponse<byte[]> response = client.send(post, java.net.http.HttpResponse.BodyHandlers.ofByteArray());
+        if (response.statusCode() == 200) {
             ByteArrayOutputStream os = new ByteArrayOutputStream();
-            response.getEntity().writeTo(os);
-            return new JSONObject(new String(os.toByteArray(), UTF_8));
+            os.writeBytes(response.body());
+            return new JSONObject(os.toString(UTF_8));
         } else {
             throw new IOException("Http Request Error (" +
-                  response.getStatusLine().getStatusCode() + "): [" +
-                  response.getStatusLine().getReasonPhrase() + "]");
+                  response.statusCode() + ")");
         }
     }
 
