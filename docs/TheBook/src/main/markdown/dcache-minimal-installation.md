@@ -174,6 +174,54 @@ pool.wait-for-files=${pool.path}/data
 
 So we have added a new cell pool to the dCacheDomain.
 
+Configuring dCache users
+The gplazma service is responsible for user authentication, following a scheme inspired by PAM. If you don’t
+know PAM, this process may seem rather daunting, later chapters will go into authentication in considerable
+depth.
+The dCache RPM comes with a default gPlazma configuration file /etc/dcache/gplazma.conf; however,
+that configuration is intended for users with X.509 credentials. X.509 credentials require a certificate au-
+thority; which require considerable effort to set up.
+Therefore, in this initial configuration, we adopt something simpler: username + password authentication.
+So, delete the current /etc/dcache/gplazma.conf file and create a new one with the following contents:
+> auth     map    account
+session
+sufficient
+sufficient
+requisite
+requisite
+htpasswd
+multimap
+banfile
+authzdb
+The first column is the phases of the authentication process. Each login attempt follows four phases: auth,
+map, account and session. auth verifies user’s identity. map converts this identity to some dCache user.
+account checks if the user is allowed to use dCache right now. Finally, session adds some additional infor-
+mation.
+
+This configuration tells gPlazma to use the htpasswd plugin to check any passwords, the multimap plugin to
+convert usernames into uid and gid values, the banfile plugin to check if the user is allowed to use dCache,
+and finally use the authzdb plugin to add various session information.
+The sufficient and requisite labels describe how to handle errors. For more details on this, see the
+gplazma chapter.
+
+This ability to split login steps between different plugins may make the process seem complicated; however,
+it is also very powerful and allows dCache to work with many different authentication schemes.
+For the next step, we need to create the configuration for these four plugins. We will create two users: a
+regular user (”tester”) and an admin user (”admin”).
+The htpasswd plugin uses the Apache HTTPD server’s file format to record username and passwords. This
+file may be maintained by the htpasswd command.
+Let us create a new password file (/etc/dcache/htpasswd) and add these two users (”tester” and ”admin”)
+with passwords TooManySecrets and dickerelch respectively:
+> touch /etc/dcache/htpasswd
+> htpasswd -bm /etc/dcache/htpasswd tester TooManySecrets
+> |Adding password for user tester
+> htpasswd -bm /etc/dcache/htpasswd admin dickerelch
+> |Adding password for user admin
+Next, we need to tell dCache which uid and gids these users should be assigned. To do this, create the file
+/etc/dcache/multi-mapfile with the following content:
+> username:tester uid:1000 gid:1000,true
+> username:admin uid:0 gid:0,true
+
 ## Starting dCache
 
 There are two ways to start dCache: 1) using sysV-like daemon, 2) Using systemd service.
