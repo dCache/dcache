@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2001 - 2017 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2001 - 2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -97,6 +97,16 @@ public class ForwardingApplicationContext implements ApplicationContext {
     }
 
     @Override
+    public <T> ObjectProvider<T> getBeanProvider(Class<T> aClass, boolean b) {
+        return inner.getBeanProvider(aClass, b);
+    }
+
+    @Override
+    public <T> ObjectProvider<T> getBeanProvider(ResolvableType resolvableType, boolean b) {
+        return inner.getBeanProvider(resolvableType, b);
+    }
+
+    @Override
     public String[] getBeanNamesForType(ResolvableType rt) {
         return inner.getBeanNamesForType(rt);
     }
@@ -142,6 +152,12 @@ public class ForwardingApplicationContext implements ApplicationContext {
     public <A extends Annotation> A findAnnotationOnBean(String string, Class<A> type)
           throws NoSuchBeanDefinitionException {
         return inner.findAnnotationOnBean(string, type);
+    }
+
+    @Override
+    public <A extends Annotation> A findAnnotationOnBean(String s, Class<A> aClass, boolean b)
+          throws NoSuchBeanDefinitionException {
+        return null;
     }
 
     @Override

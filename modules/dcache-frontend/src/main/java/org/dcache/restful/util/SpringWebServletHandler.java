@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2001 - 2017 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2001 - 2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -19,10 +19,14 @@ package org.dcache.restful.util;
 
 import static org.springframework.web.context.WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE;
 
+import java.lang.annotation.Annotation;
 import javax.servlet.ServletContext;
 import org.eclipse.jetty.servlet.ServletHandler;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.core.ResolvableType;
 import org.springframework.web.context.WebApplicationContext;
 
 /**
@@ -59,6 +63,22 @@ public class SpringWebServletHandler extends ServletHandler implements Applicati
         @Override
         public ServletContext getServletContext() {
             return SpringWebServletHandler.this.getServletContext();
+        }
+
+        @Override
+        public <T> ObjectProvider<T> getBeanProvider(Class<T> aClass, boolean b) {
+            return SpringWebServletHandler.this.context.getBeanProvider(aClass, b);
+        }
+
+        @Override
+        public <T> ObjectProvider<T> getBeanProvider(ResolvableType resolvableType, boolean b) {
+            return SpringWebServletHandler.this.context.getBeanProvider(resolvableType, b);
+        }
+
+        @Override
+        public <A extends Annotation> A findAnnotationOnBean(String s, Class<A> aClass, boolean b)
+              throws NoSuchBeanDefinitionException {
+            return SpringWebServletHandler.this.context.findAnnotationOnBean(s, aClass, b);
         }
     }
 }
