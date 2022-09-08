@@ -225,14 +225,13 @@ public class StorageClassContainer
         switch (order) {
             case LIFO:
                 ready.stream()
-                      .sorted(Comparator.comparing(StorageClassInfo::getLastSubmitted)
-                            .reversed())
+                      .sorted(Comparator.reverseOrder())
                       .limit(flushLimit)
                       .forEach(i -> i.flush(Integer.MAX_VALUE));
                 break;
             default:
                 ready.stream()
-                      .sorted(Comparator.comparing(StorageClassInfo::getLastSubmitted))
+                      .sorted()
                       .limit(flushLimit)
                       .forEach(i -> i.flush(Integer.MAX_VALUE));
                 break;
