@@ -7,6 +7,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Arrays;
+import java.util.function.Predicate;
 import java.util.Map;
 import java.util.OptionalLong;
 import java.util.regex.Matcher;
@@ -19,7 +20,7 @@ import org.slf4j.LoggerFactory;
  * @author karsten
  */
 class AuthzMapLineParser implements
-      LineParser<AuthzMapLineParser.StringPredicate, AuthzMapLineParser.UserAuthzInformation> {
+      LineParser<Predicate<String>, AuthzMapLineParser.UserAuthzInformation> {
 
     private static final Logger _log = LoggerFactory.getLogger(AuthzMapLineParser.class);
 
@@ -67,7 +68,7 @@ class AuthzMapLineParser implements
     }
 
     @Override
-    public Map.Entry<StringPredicate, UserAuthzInformation> accept(String line) {
+    public Map.Entry<Predicate<String>, UserAuthzInformation> accept(String line) {
         line = line.trim();
         if (line.isEmpty() || line.startsWith("#") || line.startsWith("version 2.")) {
             return null;
@@ -89,27 +90,13 @@ class AuthzMapLineParser implements
                       : OptionalLong.of(SIZE_PARSER.parse(maxUploadValue));
                 UserAuthzInformation info = new UserAuthzInformation(key, access,
                       Long.parseLong(uid), gids, home, root, fsroot, maxUpload);
-                return new SimpleImmutableEntry<>(new StringPredicate(key), info);
+                return new SimpleImmutableEntry<>(key::equals, info);
             }
             _log.warn("Ignored malformed line in AuthzDB-File: '{}'", line);
         } catch (NumberFormatException e) {
             _log.warn("Ignored malformed line '{}': {}", line, e.getMessage());
         }
         return null;
-    }
-
-    public static class StringPredicate implements MapPredicate<String> {
-
-        private final String _string;
-
-        public StringPredicate(String string) {
-            _string = string;
-        }
-
-        @Override
-        public boolean matches(String object) {
-            return _string.equals(object);
-        }
     }
 
     public static class UserAuthzInformation {

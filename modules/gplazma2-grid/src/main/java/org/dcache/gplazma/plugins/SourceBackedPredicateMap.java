@@ -7,6 +7,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Predicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,12 +23,12 @@ class SourceBackedPredicateMap<TKey, TValue> implements PredicateMap<TKey, TValu
 
     private static final Logger _log = LoggerFactory.getLogger(SourceBackedPredicateMap.class);
 
-    private final Map<MapPredicate<TKey>, TValue> _predicateValueMap = new LinkedHashMap<>();
+    private final Map<Predicate<TKey>, TValue> _predicateValueMap = new LinkedHashMap<>();
     private final LineSource _source;
-    private final LineParser<? extends MapPredicate<TKey>, TValue> _parser;
+    private final LineParser<? extends Predicate<TKey>, TValue> _parser;
 
     protected SourceBackedPredicateMap(LineSource source,
-          LineParser<? extends MapPredicate<TKey>, TValue> parser) {
+          LineParser<? extends Predicate<TKey>, TValue> parser) {
         _source = source;
         _parser = parser;
     }
@@ -52,8 +53,8 @@ class SourceBackedPredicateMap<TKey, TValue> implements PredicateMap<TKey, TValu
         }
 
         List<TValue> result = new LinkedList<>();
-        for (Entry<MapPredicate<TKey>, TValue> predicateEntry : _predicateValueMap.entrySet()) {
-            if (predicateEntry.getKey().matches(key)) {
+        for (Entry<Predicate<TKey>, TValue> predicateEntry : _predicateValueMap.entrySet()) {
+            if (predicateEntry.getKey().test(key)) {
                 result.add(predicateEntry.getValue());
             }
         }
@@ -65,7 +66,7 @@ class SourceBackedPredicateMap<TKey, TValue> implements PredicateMap<TKey, TValu
         _predicateValueMap.clear();
 
         for (String line : data) {
-            Map.Entry<? extends MapPredicate<TKey>, TValue> entry = _parser.accept(line);
+            Map.Entry<? extends Predicate<TKey>, TValue> entry = _parser.accept(line);
             if (entry != null) {
                 _predicateValueMap.put(entry.getKey(), entry.getValue());
             }

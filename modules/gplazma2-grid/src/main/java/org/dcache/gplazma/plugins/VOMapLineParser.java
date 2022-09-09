@@ -2,6 +2,7 @@ package org.dcache.gplazma.plugins;
 
 import com.google.common.base.Strings;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.dcache.auth.FQAN;
@@ -15,8 +16,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author karsten
  */
-class VOMapLineParser
-      implements LineParser<VOMapLineParser.DNFQANPredicate, String> {
+class VOMapLineParser implements LineParser<Predicate<NameRolePair>, String> {
 
     private static final Logger _log = LoggerFactory.getLogger(VOMapLineParser.class);
 
@@ -41,7 +41,7 @@ class VOMapLineParser
     private static final int RM_KEY_GROUP = 3;
 
     @Override
-    public Map.Entry<DNFQANPredicate, String> accept(String line) {
+    public Map.Entry<Predicate<NameRolePair>, String> accept(String line) {
         if (Strings.isNullOrEmpty(line.trim()) || line.startsWith("#")) {
             return null;
         }
@@ -59,7 +59,7 @@ class VOMapLineParser
         return null;
     }
 
-    static class DNFQANPredicate implements MapPredicate<NameRolePair> {
+    static class DNFQANPredicate implements Predicate<NameRolePair> {
 
         private final Pattern _dnPattern;
         private final FQAN _fqan;
@@ -70,7 +70,7 @@ class VOMapLineParser
         }
 
         @Override
-        public boolean matches(NameRolePair dnfqan) {
+        public boolean test(NameRolePair dnfqan) {
             String dn = Strings.nullToEmpty(dnfqan.getName());
             FQAN fqan = new FQAN(Strings.nullToEmpty(dnfqan.getRole()));
             return _dnPattern.matcher(dn).matches() &&
@@ -79,18 +79,18 @@ class VOMapLineParser
     }
 
     private static final class DNFQANStringEntry
-          implements Map.Entry<DNFQANPredicate, String> {
+          implements Map.Entry<Predicate<NameRolePair>, String> {
 
-        private final DNFQANPredicate _key;
+        private final Predicate<NameRolePair> _key;
         private String _value;
 
-        public DNFQANStringEntry(DNFQANPredicate key, String value) {
+        public DNFQANStringEntry(Predicate<NameRolePair> key, String value) {
             _key = key;
             _value = value;
         }
 
         @Override
-        public DNFQANPredicate getKey() {
+        public Predicate<NameRolePair> getKey() {
             return _key;
         }
 
