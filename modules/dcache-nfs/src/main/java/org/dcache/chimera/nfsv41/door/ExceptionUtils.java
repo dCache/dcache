@@ -5,6 +5,7 @@ import static diskCacheV111.util.CacheException.ERROR_IO_DISK;
 import static diskCacheV111.util.CacheException.FILE_CORRUPTED;
 import static diskCacheV111.util.CacheException.FILE_IN_CACHE;
 import static diskCacheV111.util.CacheException.FILE_NOT_FOUND;
+import static diskCacheV111.util.CacheException.INVALID_ARGS;
 import static diskCacheV111.util.CacheException.NO_POOL_CONFIGURED;
 import static diskCacheV111.util.CacheException.NO_POOL_ONLINE;
 import static diskCacheV111.util.CacheException.PERMISSION_DENIED;
@@ -74,6 +75,7 @@ public class ExceptionUtils {
             case ERROR_IO_DISK:
             case FILE_IN_CACHE:
             case FILE_CORRUPTED:
+            case INVALID_ARGS:
                 return new NfsIoException(e.getMessage(), e);
             case FILE_NOT_FOUND:
                 return new NoEntException(e.getMessage(), e);

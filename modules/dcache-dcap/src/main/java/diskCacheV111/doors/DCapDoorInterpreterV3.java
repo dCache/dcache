@@ -2077,6 +2077,12 @@ public class DCapDoorInterpreterV3
                           "EPERM", "Permission denied: " + error);
                     removeUs();
                     return;
+                case CacheException.INVALID_ARGS:
+                    _log.error("Pool selection failed: invalid configuration: {}", error);
+                    sendReply("poolMgrGetPoolArrived", 33, "Invalid argument: " + error,
+                          "EINVAL", "Invalid argument: " + error);
+                    removeUs();
+                    return;
                 case CacheException.OUT_OF_DATE:
                     again(true);
                     return;
