@@ -188,11 +188,7 @@ public class CredentialServiceClient
                         )
                 )
                 .header("Authorization", "Basic " +
-                        Base64.getEncoder().encodeToString(
-                                UTF_8.encode(
-                                        clientId + ":" + (clientSecret == null ? "null" : clientSecret)
-                                ).array()
-                        )
+                        Base64.getEncoder().encodeToString((clientId + ":" + clientSecret).getBytes(UTF_8))
                 )
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .build();
