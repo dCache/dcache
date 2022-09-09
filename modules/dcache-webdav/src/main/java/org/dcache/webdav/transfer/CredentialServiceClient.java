@@ -39,6 +39,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -49,10 +50,12 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import org.dcache.auth.OpenIdClientSecret;
 import org.dcache.auth.StaticOpenIdCredential;
 import org.dcache.auth.StaticOpenIdCredential.Builder;
@@ -169,22 +172,21 @@ public class CredentialServiceClient
 
     private HttpRequest buildRequest(String token, String host, String clientId, String clientSecret)
             throws UnsupportedEncodingException{
+        Map<String, String> postParams = new HashMap<>();
+        postParams.put("grant_type", GRANT_TYPE);
+        postParams.put("audience", clientId);
+        postParams.put("subject_token", token);
+        postParams.put("subject_token_type", TOKEN_TYPE);
+        postParams.put("scope", SCOPE);
 
         return HttpRequest.newBuilder()
                 .uri(URI.create(tokenEndPoint(host)))
                 .POST(
                         HttpRequest.BodyPublishers.ofString(
-                                String.format(
-                                        "grant_type=%s" +
-                                                "&audience=%s" +
-                                                "&subject_token=%s" +
-                                                "&subject_token_type=%s" +
-                                                "&scope=%s",
-                                        GRANT_TYPE,
-                                        clientId,
-                                        token,
-                                        TOKEN_TYPE,
-                                        SCOPE)
+                                postParams.entrySet()
+                                        .stream()
+                                        .map(entry -> entry.getKey() + "=" + URLEncoder.encode(entry.getValue(), UTF_8))
+                                        .collect(Collectors.joining("&"))
                         )
                 )
                 .header("Authorization", "Basic " +
