@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory;
  * @param <TValue> type of values
  * @author karsten
  */
-class SourceBackedPredicateMap<TKey, TValue> {
+class SourceBackedPredicateMap<TKey, TValue> implements PredicateMap<TKey, TValue> {
 
     private static final Logger _log = LoggerFactory.getLogger(SourceBackedPredicateMap.class);
 
@@ -38,6 +38,7 @@ class SourceBackedPredicateMap<TKey, TValue> {
      * @param key Key to be used to find corresponding values
      * @return Collection of matching values
      */
+    @Override
     public synchronized List<TValue> getValuesForPredicatesMatching(TKey key) {
 
         if (_source.hasChanged()) {

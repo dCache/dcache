@@ -35,7 +35,7 @@ public class VoRoleMapPlugin implements GPlazmaMappingPlugin {
     private static final String VOROLEMAP =
           "gplazma.vorolemap.file";
 
-    private final SourceBackedPredicateMap<NameRolePair, String> _map;
+    private final PredicateMap<NameRolePair, String> _map;
 
     public VoRoleMapPlugin(Properties properties) throws IOException {
         String path = properties.getProperty(VOROLEMAP);
@@ -51,7 +51,7 @@ public class VoRoleMapPlugin implements GPlazmaMappingPlugin {
      *
      * @param map map of dnfqans to usernames
      */
-    VoRoleMapPlugin(SourceBackedPredicateMap<NameRolePair, String> map) {
+    VoRoleMapPlugin(PredicateMap<NameRolePair, String> map) {
         _map = map;
     }
 

@@ -24,8 +24,7 @@ public class CachedAuthzMapTest {
     private final static URL TEST_FIXTURE =
           Resources.getResource("org/dcache/gplazma/plugins/authzdb-parser.fixture");
 
-    private SourceBackedPredicateMap<String, UserAuthzInformation>
-    loadFixture(URL fixture)
+    private PredicateMap<String, UserAuthzInformation> loadFixture(URL fixture)
           throws IOException {
         return new SourceBackedPredicateMap<>(
               new MemoryLineSource(Resources.readLines(fixture, Charset.defaultCharset())),

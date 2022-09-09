@@ -36,13 +36,11 @@ public class AuthzDbPluginTest {
     private final static URL TEST_FIXTURE =
           Resources.getResource("org/dcache/gplazma/plugins/authzdb.fixture");
 
-    private SourceBackedPredicateMap<String, UserAuthzInformation> testFixture;
+    private PredicateMap<String, UserAuthzInformation> testFixture;
 
     @Before
-    public void setup()
-          throws IOException {
-        testFixture =
-              new SourceBackedPredicateMap<>(new MemoryLineSource(
+    public void setup() throws IOException {
+        testFixture = new SourceBackedPredicateMap<>(new MemoryLineSource(
                     Resources.readLines(TEST_FIXTURE, Charset.defaultCharset())),
                     new AuthzMapLineParser());
     }

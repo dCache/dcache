@@ -348,7 +348,7 @@ public class VoRoleMapPluginTest {
 
         VOMapLineParser parser = new VOMapLineParser();
 
-        SourceBackedPredicateMap<NameRolePair, String> map =
+        PredicateMap<NameRolePair, String> map =
               new SourceBackedPredicateMap<>(_source,
                     parser);
 

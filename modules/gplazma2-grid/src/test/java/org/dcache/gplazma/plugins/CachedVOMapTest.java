@@ -31,8 +31,7 @@ public class CachedVOMapTest {
     private final static URL TEST_FIXTURE_NDGF =
           Resources.getResource("org/dcache/gplazma/plugins/vorolemap-ndgf.fixture");
 
-    private SourceBackedPredicateMap<NameRolePair, String>
-    loadFixture(URL fixture)
+    private PredicateMap<NameRolePair, String> loadFixture(URL fixture)
           throws IOException {
         return new SourceBackedPredicateMap<>(
               new MemoryLineSource(Resources.readLines(fixture, Charset.defaultCharset())),

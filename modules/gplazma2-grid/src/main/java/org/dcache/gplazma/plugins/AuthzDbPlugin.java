@@ -62,7 +62,7 @@ public class AuthzDbPlugin
     private final ImmutableList<PrincipalType> _uidOrder;
     private final ImmutableList<PrincipalType> _gidOrder;
 
-    private final SourceBackedPredicateMap<String, UserAuthzInformation> _map;
+    private final PredicateMap<String, UserAuthzInformation> _map;
 
     public AuthzDbPlugin(Properties properties) throws IOException {
         String path = properties.getProperty(AUTHZDB);
@@ -84,7 +84,7 @@ public class AuthzDbPlugin
      *
      * @param map map of usernames to user information (e.q. uid/gid)
      */
-    AuthzDbPlugin(SourceBackedPredicateMap<String, UserAuthzInformation> map,
+    AuthzDbPlugin(PredicateMap<String, UserAuthzInformation> map,
           ImmutableList<PrincipalType> uidOrder,
           ImmutableList<PrincipalType> gidOrder) {
         _map = map;
