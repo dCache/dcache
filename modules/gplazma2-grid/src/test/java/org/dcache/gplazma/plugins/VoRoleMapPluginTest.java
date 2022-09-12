@@ -25,7 +25,7 @@ import org.junit.Test;
 
 public class VoRoleMapPluginTest {
 
-    private LineSource _source;
+    private PredicateMap<NameRolePair, String> _map;
     private VoRoleMapFileMaker _content;
     private Set<Principal> _principals;
 
@@ -345,14 +345,7 @@ public class VoRoleMapPluginTest {
 
     private void whenMapPluginCalledWith(Set<Principal> principals) throws AuthenticationException {
         _principals = principals;
-
-        VOMapLineParser parser = new VOMapLineParser();
-
-        PredicateMap<NameRolePair, String> map =
-              new SourceBackedPredicateMap<>(_source,
-                    parser);
-
-        GPlazmaMappingPlugin plugin = new VoRoleMapPlugin(map);
+        GPlazmaMappingPlugin plugin = new VoRoleMapPlugin(_map);
         plugin.map(_principals);
     }
 
@@ -393,7 +386,9 @@ public class VoRoleMapPluginTest {
         }
 
         private void update() {
-            _source = new MemoryLineSource(_lines);
+            VOMapLineParser parser = new VOMapLineParser();
+            _lines.forEach(parser::accept);
+            _map = parser.build();
         }
     }
 }

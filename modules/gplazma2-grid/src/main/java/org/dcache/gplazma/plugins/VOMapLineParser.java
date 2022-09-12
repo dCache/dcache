@@ -1,7 +1,6 @@
 package org.dcache.gplazma.plugins;
 
 import com.google.common.base.Strings;
-import java.util.Map;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -16,7 +15,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author karsten
  */
-class VOMapLineParser implements LineParser<Predicate<NameRolePair>, String> {
+class VOMapLineParser extends PredicateMapParser<NameRolePair,String> {
 
     private static final Logger _log = LoggerFactory.getLogger(VOMapLineParser.class);
 
@@ -41,22 +40,23 @@ class VOMapLineParser implements LineParser<Predicate<NameRolePair>, String> {
     private static final int RM_KEY_GROUP = 3;
 
     @Override
-    public Map.Entry<Predicate<NameRolePair>, String> accept(String line) {
+    public void accept(String line) {
+
         if (Strings.isNullOrEmpty(line.trim()) || line.startsWith("#")) {
-            return null;
+            return;
         }
 
         Matcher matcher = ROLE_MAP_FILE_LINE_PATTERN.matcher(line);
-        if (matcher.matches()) {
-            String dn = matcher.group(RM_DN_GROUP).replace("\"", "");
-            String vorole =
-                  Strings.nullToEmpty(matcher.group(RM_FQAN_GROUP));
-            FQAN fqan = new FQAN(vorole.replace("\"", ""));
-            return new DNFQANStringEntry(new DNFQANPredicate(dn, fqan),
-                  matcher.group(RM_KEY_GROUP));
+        if (!matcher.matches()) {
+            _log.warn("Ignored malformed line in VORoleMap-File: '{}'", line);
+            return;
         }
-        _log.warn("Ignored malformed line in VORoleMap-File: '{}'", line);
-        return null;
+
+        String dn = matcher.group(RM_DN_GROUP).replace("\"", "");
+        String vorole = Strings.nullToEmpty(matcher.group(RM_FQAN_GROUP));
+        FQAN fqan = new FQAN(vorole.replace("\"", ""));
+
+        accept(new DNFQANPredicate(dn, fqan), matcher.group(RM_KEY_GROUP));
     }
 
     static class DNFQANPredicate implements Predicate<NameRolePair> {
@@ -76,33 +76,5 @@ class VOMapLineParser implements LineParser<Predicate<NameRolePair>, String> {
             return _dnPattern.matcher(dn).matches() &&
                   (_fqan.toString().isEmpty() || _fqan.equals(fqan));
         }
-    }
-
-    private static final class DNFQANStringEntry
-          implements Map.Entry<Predicate<NameRolePair>, String> {
-
-        private final Predicate<NameRolePair> _key;
-        private String _value;
-
-        public DNFQANStringEntry(Predicate<NameRolePair> key, String value) {
-            _key = key;
-            _value = value;
-        }
-
-        @Override
-        public Predicate<NameRolePair> getKey() {
-            return _key;
-        }
-
-        @Override
-        public String getValue() {
-            return _value;
-        }
-
-        @Override
-        public String setValue(String value) {
-            return _value = value;
-        }
-
     }
 }
