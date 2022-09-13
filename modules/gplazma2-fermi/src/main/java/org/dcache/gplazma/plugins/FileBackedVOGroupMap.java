@@ -67,8 +67,11 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 import javax.annotation.concurrent.GuardedBy;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.util.Glob;
@@ -84,12 +87,16 @@ public class FileBackedVOGroupMap {
     private static final Logger LOGGER
           = LoggerFactory.getLogger(FileBackedVOGroupMap.class);
 
+
+    private static final Comparator<Glob> BY_LENGTH_REVERSED = Comparator
+          .comparing(Glob::toString).reversed();
+
     private final Map<String, VOGroupEntry> cache = new HashMap<>();
     /**
      * the vo group map file may contain wildcard FQAN match patterns, allow second cache for these
      * for efficiency
      */
-    private final Map<Glob, VOGroupEntry> globCache = new HashMap<>();
+    private Map<Glob, VOGroupEntry> globCache;
     private final File file;
     private final Path path;
     private long lastModified;
@@ -132,20 +139,26 @@ public class FileBackedVOGroupMap {
                   file.getAbsolutePath());
         } else if (lastModified < file.lastModified()) {
             cache.clear();
-            globCache.clear();
             GsonBuilder builder = new GsonBuilder();
             try (FileReader reader = new FileReader(file)) {
                 VOGroupEntry[] info = builder.create()
                       .fromJson(reader,
                             VOGroupEntry[].class);
+                HashMap<Glob, VOGroupEntry> tmpGlobCache = new HashMap<>();
                 for (VOGroupEntry e : info) {
                     Glob glob = new Glob(e.getFqan());
                     if (glob.isGlob()) {
-                        globCache.put(glob, e);
+                        tmpGlobCache.put(glob, e);
                     } else {
                         cache.put(e.getFqan(), e);
                     }
                 }
+                globCache = tmpGlobCache
+                      .entrySet()
+                      .stream()
+                      .sorted(Map.Entry.comparingByKey(BY_LENGTH_REVERSED))
+                      .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
+                            (e1, e2)->e1, LinkedHashMap::new));
                 lastModified = file.lastModified();
                 ++reloadCount;
             } catch (IOException e) {
