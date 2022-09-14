@@ -46,7 +46,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import org.dcache.cells.CellStub;
 import org.dcache.util.CacheExceptionFactory;
-import org.dcache.util.NDC;
 import org.dcache.util.TimeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,7 +64,6 @@ import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 public class DiskCleaner extends AbstractCleaner implements CellCommandListener, CellInfoProvider {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DiskCleaner.class);
-    private static final String CLEANER_TYPE = "Disk-Cleaner";
 
     private final ConcurrentHashMap<String, Long> _poolsBlackList = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Long> _poolsBeingCleaned = new ConcurrentHashMap<>();
@@ -104,7 +102,6 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
      */
     @Override
     protected void runDelete() throws InterruptedException {
-        NDC.push(CLEANER_TYPE);
         try {
             LOGGER.info("New run...");
 
@@ -147,8 +144,6 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
             LOGGER.info("Cleaner was interrupted");
         } catch (RuntimeException e) {
             LOGGER.error("Bug detected", e);
-        } finally {
-            NDC.pop();
         }
     }
 
@@ -191,14 +186,12 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
     private void runDelete(String pool) {
         if (!_poolsBlackList.containsKey(pool)) {
             try {
-                LOGGER.info("{} now processing pool {}", CLEANER_TYPE, pool);
                 cleanPoolComplete(pool);
             } catch (NoRouteToCellException | CacheException e) {
-                LOGGER.warn("{} failed to remove files from {}: {}", CLEANER_TYPE, pool,
+                LOGGER.warn("failed to remove files from pool {}: {}", pool,
                       e.getMessage());
             } catch (InterruptedException e) {
-                LOGGER.warn("{} was interrupted while deleting files from pool {}: {}",
-                      CLEANER_TYPE, pool,
+                LOGGER.warn("cleaner was interrupted while deleting files from pool {}: {}", pool,
                       e.getMessage());
             }
         }
@@ -232,7 +225,7 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
      */
     void removeFiles(final String poolname, final List<String> filelist) {
         if (filelist == null || filelist.isEmpty()) {
-            LOGGER.info("{}: Unexpected empty delete file list.", CLEANER_TYPE);
+            LOGGER.info("unexpected empty delete file list.");
             return;
         }
         _db.batchUpdate(

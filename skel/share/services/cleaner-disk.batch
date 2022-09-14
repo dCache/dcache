@@ -1,0 +1,27 @@
+# Starts the chimera disk cleaner
+
+onerror shutdown
+
+check -strong cleaner-disk.cell.name
+check cleaner-disk.cell.consume
+check cleaner-disk.cell.subscribe
+check -strong cleaner-disk.service.pool.retry-period
+check -strong cleaner-disk.service.pool.retry-period.unit
+check -strong cleaner-disk.service.pool.timeout
+check -strong cleaner-disk.service.pool.timeout.unit
+check -strong cleaner-disk.service.spacemanager
+check -strong cleaner-disk.enable.space-reservation
+check -strong cleaner-disk.limits.period
+check -strong cleaner-disk.limits.period.unit
+check -strong cleaner-disk.limits.threads
+check cleaner-disk.destination.remove-notification
+check -strong cleaner-disk.db.user
+check -strong cleaner-disk.db.url
+check cleaner-disk.db.password
+
+
+create org.dcache.cells.UniversalSpringCell ${cleaner-disk.cell.name} \
+        "classpath:org/chimera/chimera-cleaner-disk.xml \
+         -consume=${cleaner-disk.cell.consume} \
+         -subscribe=${cleaner-disk.cell.subscribe} \
+         "

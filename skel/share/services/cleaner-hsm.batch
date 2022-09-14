@@ -1,0 +1,27 @@
+# Starts the Chimera hsm cleaner
+
+onerror shutdown
+
+check -strong cleaner-hsm.cell.name
+check cleaner-hsm.cell.consume
+check cleaner-hsm.cell.subscribe
+check -strong cleaner-hsm.service.pool.timeout
+check -strong cleaner-hsm.service.pool.timeout.unit
+check -strong cleaner-hsm.service.spacemanager
+check -strong cleaner-hsm.enable.space-reservation
+check -strong cleaner-hsm.limits.period
+check -strong cleaner-hsm.limits.period.unit
+check -strong cleaner-hsm.limits.batch-size
+check -strong cleaner-hsm.limits.max-cached-locations
+check -strong cleaner-hsm.limits.threads
+check cleaner-hsm.destination.remove-notification
+check -strong cleaner-hsm.db.user
+check -strong cleaner-hsm.db.url
+check cleaner-hsm.db.password
+
+
+create org.dcache.cells.UniversalSpringCell ${cleaner-hsm.cell.name} \
+        "classpath:org/chimera/chimera-cleaner-hsm.xml \
+         -consume=${cleaner-hsm.cell.consume} \
+         -subscribe=${cleaner-hsm.cell.subscribe} \
+         "
