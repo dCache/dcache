@@ -332,7 +332,7 @@ dcache.enable.space-reservation = false
  pnfsmanager.default-retention-policy = REPLICA
  pnfsmanager.default-access-latency = ONLINE
 
-[dCacheDomain/cleaner]
+[dCacheDomain/cleaner-disk]
 [dCacheDomain/poolmanager]
 [dCacheDomain/billing]
 [dCacheDomain/gplazma]
@@ -748,7 +748,7 @@ dcache.enable.space-reservation = false
  pnfsmanager.default-retention-policy = REPLICA
  pnfsmanager.default-access-latency = ONLINE
 
-[dCacheDomain/cleaner]
+[dCacheDomain/cleaner-disk]
 [dCacheDomain/poolmanager]
 [dCacheDomain/billing]
 [dCacheDomain/gplazma]
@@ -1512,7 +1512,7 @@ dcache.enable.space-reservation = false
  pnfsmanager.default-retention-policy = REPLICA
  pnfsmanager.default-access-latency = ONLINE
 
-[centralDomain/cleaner]
+[centralDomain/cleaner-disk]
 [centralDomain/poolmanager]
 [centralDomain/billing]
 [centralDomain/gplazma]
@@ -2437,7 +2437,7 @@ On the central node, the layout file should read:
  pnfsmanager.default-retention-policy = REPLICA
  pnfsmanager.default-access-latency = ONLINE
 
-[centralDomain/cleaner]
+[centralDomain/cleaner-disk]
 [centralDomain/poolmanager]
 [centralDomain/billing]
 [centralDomain/gplazma]

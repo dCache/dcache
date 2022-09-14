@@ -315,12 +315,12 @@ late-coming users.  (Default is FIFO.)
 
 #### The namespace layout
 
-In order to allow dCache to remove files from attached TSSes, the “cleaner.enable.hsm = true” must be added immediately underneath the \[namespaceDomain/cleaner\] service declaration:
+In order to allow dCache to remove files from attached TSSes, `cleaner-hsm` cell must be added:
 
 ```ini
 [namespaceDomain]
-[namespaceDomain/cleaner]
-cleaner.enable.hsm = true
+...
+[namespaceDomain/cleaner-hsm]
 ```
 
 ### What happens next
