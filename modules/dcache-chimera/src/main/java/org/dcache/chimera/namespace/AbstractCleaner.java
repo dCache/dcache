@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2017 - 2020 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2017 - 2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -38,7 +38,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
  */
 public abstract class AbstractCleaner implements LeaderLatchListener {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(DiskCleaner.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractCleaner.class);
 
     protected ScheduledThreadPoolExecutor _executor;
     private ScheduledFuture<?> _cleanerTask;
@@ -59,7 +59,7 @@ public abstract class AbstractCleaner implements LeaderLatchListener {
     protected TimeUnit _refreshIntervalUnit;
 
     /**
-     * Time period that cleaner have to wait before deleted file is removed by cleaner.
+     * Time period that cleaner has to wait before a deleted file is removed by cleaner.
      */
     protected Duration _gracePeriod;
 
