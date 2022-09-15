@@ -19,12 +19,12 @@ import java.util.concurrent.TimeoutException;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileNotFoundChimeraFsException;
 import org.dcache.nfs.ChimeraNFSException;
+import org.dcache.nfs.status.AccessException;
 import org.dcache.nfs.status.DelayException;
 import org.dcache.nfs.status.LayoutTryLaterException;
 import org.dcache.nfs.status.NfsIoException;
 import org.dcache.nfs.status.NoEntException;
 import org.dcache.nfs.status.NoSpcException;
-import org.dcache.nfs.status.PermException;
 import org.dcache.nfs.status.ServerFaultException;
 
 /**
@@ -80,7 +80,7 @@ public class ExceptionUtils {
             case NO_POOL_ONLINE:
                 return new LayoutTryLaterException(e.getMessage(), e);
             case PERMISSION_DENIED:
-                return new PermException(e.getMessage(), e);
+                return new AccessException(e.getMessage(), e);
             case NO_POOL_CONFIGURED:
             case RESOURCE:
                 return new NoSpcException(e.getMessage(), e);
