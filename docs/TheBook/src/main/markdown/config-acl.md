@@ -212,14 +212,17 @@ Specifying `d` in an ACE's inheritance flags does not affect whether this ACE is
 
 If a subdirectory is created in a directory with an ACE with `d` in the ACE's inheritance flag then the ACE is copied to the newly created subdirectory's ACL. This ACE copy will have the `d` inheritance flag specified. If the `f` inheritance flag is specified then this, too, will be copied.
 
-**o**
-The `o` flag may only be used when the ACE also has the `f`, `d` or both `f` and `d` inheritance flags.
+**o or r**
+The `o` flag may only be used when the ACE also has the `f`, `d` or both `f` and `d` inheritance flags. The `o` flag is the same as the `r` flag.
 
 Specifying `o` in the inheritance flag will suppress the ACE. No user operations will be authorised or denied as a result of such an ACE.
 
 When a file or directory inherits from an ACE with `o` in the inheritance flags then the `o` is *not* present in the newly created file or directory's ACE. Since the newly created file or directory will not have the `o` in it's inheritance flags the ACE will take effect.
 
 An `o` in the inheritance flag allows child files or directories to inherit authorisation behaviour that is different from the parent directory.
+
+**g**
+The `g` inheritance flag indicates this ACE refers to a group.
 
 ### Accessing ACL over NFS mount
 
