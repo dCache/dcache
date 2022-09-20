@@ -298,7 +298,11 @@ public class ALRPStorageUnitQoSProvider implements QoSRequirementsProvider, Cell
         return pnfsHandler;
     }
 
-    private synchronized PoolSelectionUnit poolSelectionUnit() {
+    private synchronized PoolSelectionUnit poolSelectionUnit() throws QoSException {
+        if (poolMonitor == null) {
+            throw new QoSException("QoSRequirementsProvider: pool monitor not yet available.");
+        }
+
         return poolMonitor.getPoolSelectionUnit();
     }
 
