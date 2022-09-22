@@ -47,9 +47,24 @@ public abstract class PredicateMapParser<K,V> implements LineBasedParser<Predica
 
     @Override
     public PredicateMap<K,V> build() {
-        return k -> predicates.entrySet().stream()
-                            .filter(e -> e.getKey().test(k))
+        return k -> {
+            K normalisedKey = normalise(k);
+            return predicates.entrySet().stream()
+                            .filter(e -> e.getKey().test(normalisedKey))
                             .map(Map.Entry::getValue)
                             .collect(Collectors.toList());
+        };
+    }
+
+    /**
+     * Provide subclasses with the ability to normalise input.  For performance
+     * reasons, it may make sense to normalise the key before passing it the
+     * predicates, otherwise each predicate call would need to normalise its
+     * input.
+     * @param key The input data
+     * @return The normalised input data.
+     */
+    K normalise(K key) {
+        return key;
     }
 }

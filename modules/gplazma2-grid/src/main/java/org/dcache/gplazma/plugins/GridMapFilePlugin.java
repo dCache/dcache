@@ -9,34 +9,33 @@ import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 import java.security.Principal;
 import java.util.AbstractMap.SimpleImmutableEntry;
-import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+
 import javax.security.auth.kerberos.KerberosPrincipal;
+
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.util.GridMapFile;
-import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 
+import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 
 /**
  * Maps GlobusPrincipal and KerberosPrincipal to UserNamePrincipal using a classic grid-mapfile.
  * <p>
  * The plugin is silently skipped if principals already contains a user name principal.
  */
-public class GridMapFilePlugin
-      implements GPlazmaMappingPlugin {
-
-    private final GridMapFile _gridMapFile;
+public class GridMapFilePlugin implements GPlazmaMappingPlugin {
 
     private static final String GRIDMAP = "gplazma.gridmap.file";
+
+    private final PredicateMap<String,String> _gridMapFile;
 
     public GridMapFilePlugin(Properties properties) {
         String path = properties.getProperty(GRIDMAP);
         checkArgument(path != null, "Undefined property: " + GRIDMAP);
-        _gridMapFile = new GridMapFile(path);
+        _gridMapFile = new FileBackedPredicateMap(path, GridMapFileParser::new);
     }
 
     private Map.Entry<Principal, String> getMappingFor(Set<Principal> principals) {
@@ -45,8 +44,8 @@ public class GridMapFilePlugin
         for (Principal principal : principals) {
             if (principal instanceof GlobusPrincipal ||
                   principal instanceof KerberosPrincipal) {
-                Collection<String> names =
-                      _gridMapFile.getMappedUsernames(principal.getName());
+                String pName = principal.getName();
+                var names = _gridMapFile.getValuesForPredicatesMatching(pName);
                 if (!names.isEmpty()) {
                     String name;
                     if (loginName == null) {
@@ -69,8 +68,6 @@ public class GridMapFilePlugin
         if (any(principals, instanceOf(UserNamePrincipal.class))) {
             return;
         }
-
-        _gridMapFile.refresh();
 
         Map.Entry<Principal, String> entry = getMappingFor(principals);
         checkAuthentication(entry != null, "no mapping");
