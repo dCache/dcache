@@ -26,9 +26,9 @@ public class CachedAuthzMapTest {
 
     private PredicateMap<String, UserAuthzInformation> loadFixture(URL fixture)
           throws IOException {
-        return new SourceBackedPredicateMap<>(
-              new MemoryLineSource(Resources.readLines(fixture, Charset.defaultCharset())),
-              new AuthzMapLineParser());
+        AuthzPredicateMapLineParser parser = new AuthzPredicateMapLineParser();
+        Resources.readLines(fixture, Charset.defaultCharset()).forEach(parser::accept);
+        return parser.build();
     }
 
     @Test

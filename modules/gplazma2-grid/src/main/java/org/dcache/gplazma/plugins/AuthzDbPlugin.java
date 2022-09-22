@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.OptionalLong;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
 import org.dcache.auth.LoginGidPrincipal;
@@ -47,15 +46,9 @@ import org.dcache.gplazma.plugins.AuthzMapLineParser.UserAuthzInformation;
 public class AuthzDbPlugin
       implements GPlazmaMappingPlugin, GPlazmaSessionPlugin {
 
-    private static final long REFRESH_PERIOD =
-          TimeUnit.SECONDS.toMillis(10);
-
-    private static final String AUTHZDB =
-          "gplazma.authzdb.file";
-    private static final String UID =
-          "gplazma.authzdb.uid";
-    private static final String GID =
-          "gplazma.authzdb.gid";
+    private static final String AUTHZDB = "gplazma.authzdb.file";
+    private static final String UID = "gplazma.authzdb.uid";
+    private static final String GID = "gplazma.authzdb.gid";
 
     enum PrincipalType {UID, GID, LOGIN, USER, GROUP}
 
@@ -73,8 +66,7 @@ public class AuthzDbPlugin
         checkArgument(uid != null, "Undefined property: " + UID);
         checkArgument(gid != null, "Undefined property: " + GID);
 
-        _map = new SourceBackedPredicateMap<>(new FileLineSource(path, REFRESH_PERIOD),
-              new AuthzMapLineParser());
+        _map = new FileBackedPredicateMap(path, AuthzPredicateMapLineParser::new);
         _uidOrder = parseOrder(uid);
         _gidOrder = parseOrder(gid);
     }

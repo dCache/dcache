@@ -5,10 +5,8 @@ import static org.dcache.util.ByteUnits.isoSymbol;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
-import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Arrays;
-import java.util.function.Predicate;
-import java.util.Map;
+import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -19,8 +17,7 @@ import org.slf4j.LoggerFactory;
 /**
  * @author karsten
  */
-class AuthzMapLineParser implements
-      LineParser<Predicate<String>, AuthzMapLineParser.UserAuthzInformation> {
+class AuthzMapLineParser {
 
     private static final Logger _log = LoggerFactory.getLogger(AuthzMapLineParser.class);
 
@@ -39,8 +36,6 @@ class AuthzMapLineParser implements
                 + SOME_WS + "(" + UID + ")" + SOME_WS + "(" + GID + ")"
                 + SOME_WS + "(" + PATH + ")" + SOME_WS + "(" + PATH + ")"
                 + "(?:" + SOME_WS + "(" + PATH + "))?");
-    private static final Pattern MAX_UPLOAD_VALUE = Pattern.compile(
-          "(?<value>\\d*(?:\\.\\d*)?)(?<scale>.*)?");
     private static final int UM_KEY_GROUP = 1;
     private static final int UM_ACCESS_GROUP = 2;
     private static final int UM_UID_GROUP = 4;
@@ -67,36 +62,39 @@ class AuthzMapLineParser implements
         }
     }
 
-    @Override
-    public Map.Entry<Predicate<String>, UserAuthzInformation> accept(String line) {
+    public Optional<UserAuthzInformation> parseLine(String line) {
         line = line.trim();
         if (line.isEmpty() || line.startsWith("#") || line.startsWith("version 2.")) {
-            return null;
+            return Optional.empty();
         }
 
         Matcher matcher = USER_MAP_FILE_LINE_PATTERN.matcher(line);
-        try {
-            if (matcher.lookingAt()) {
-                final String key = matcher.group(UM_KEY_GROUP);
-                final String access = matcher.group(UM_ACCESS_GROUP);
-                final String uid = matcher.group(UM_UID_GROUP);
-                final long[] gids = toLongs(matcher.group(UM_GID_GROUP).split(","));
-                final String home = stripQuotes(matcher.group(UM_HOME_GROUP));
-                final String root = stripQuotes(matcher.group(UM_ROOT_GROUP));
-                final String fsroot = stripQuotes(matcher.group(UM_FS_ROOT_GROUP));
-                String maxUploadValue = matcher.group("maxupload");
-                OptionalLong maxUpload = maxUploadValue == null
-                      ? OptionalLong.empty()
-                      : OptionalLong.of(SIZE_PARSER.parse(maxUploadValue));
-                UserAuthzInformation info = new UserAuthzInformation(key, access,
-                      Long.parseLong(uid), gids, home, root, fsroot, maxUpload);
-                return new SimpleImmutableEntry<>(key::equals, info);
-            }
+        if (!matcher.lookingAt()) {
             _log.warn("Ignored malformed line in AuthzDB-File: '{}'", line);
+            return Optional.empty();
+        }
+
+        final String key = matcher.group(UM_KEY_GROUP);
+        final String access = matcher.group(UM_ACCESS_GROUP);
+        final String uid = matcher.group(UM_UID_GROUP);
+        final long[] gids = toLongs(matcher.group(UM_GID_GROUP).split(","));
+        final String home = stripQuotes(matcher.group(UM_HOME_GROUP));
+        final String root = stripQuotes(matcher.group(UM_ROOT_GROUP));
+        final String fsroot = stripQuotes(matcher.group(UM_FS_ROOT_GROUP));
+        OptionalLong maxUpload;
+        try {
+            String maxUploadValue = matcher.group("maxupload");
+            maxUpload = maxUploadValue == null
+                  ? OptionalLong.empty()
+                  : OptionalLong.of(SIZE_PARSER.parse(maxUploadValue));
         } catch (NumberFormatException e) {
             _log.warn("Ignored malformed line '{}': {}", line, e.getMessage());
+            return Optional.empty();
         }
-        return null;
+
+        UserAuthzInformation info = new UserAuthzInformation(key, access,
+              Long.parseLong(uid), gids, home, root, fsroot, maxUpload);
+        return Optional.of(info);
     }
 
     public static class UserAuthzInformation {

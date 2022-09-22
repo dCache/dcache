@@ -40,9 +40,9 @@ public class AuthzDbPluginTest {
 
     @Before
     public void setup() throws IOException {
-        testFixture = new SourceBackedPredicateMap<>(new MemoryLineSource(
-                    Resources.readLines(TEST_FIXTURE, Charset.defaultCharset())),
-                    new AuthzMapLineParser());
+        AuthzPredicateMapLineParser parser = new AuthzPredicateMapLineParser();
+        Resources.readLines(TEST_FIXTURE, Charset.defaultCharset()).forEach(parser::accept);
+        testFixture = parser.build();
     }
 
     public void check(PrincipalSetMaker input,

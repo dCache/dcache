@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2021 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2021-2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -54,12 +54,12 @@ public class AuthzdbToOmnisession {
                     continue;
                 }
 
-                var entry = parser.accept(line);
+                var entry = parser.parseLine(line);
 
-                if (entry == null) {
+                if (entry.isEmpty()) {
                     sb.append(line);
                 } else {
-                    var info = entry.getValue();
+                    var info = entry.get();
                     sb.append("username:").append(info.getUsername());
 
                     if (info.isReadOnly()) {
