@@ -345,6 +345,13 @@
     <property name="queues" value="${pool.queues}"/>
   </bean>
 
+  <bean id="transfer-lifecycle" class="org.dcache.pool.movers.TransferLifeCycle">
+    <description>Transfer lifecycle</description>
+    <property name="enabled" value="${pool.enable.firefly}" />
+    <property name="fireflyDestination" value="${pool.firefly.destination}" />
+    <property name="excludes" value="${pool.firefly.excludes}" />
+  </bean>
+
   <bean id="default-transfer-service" class="org.dcache.pool.classic.MoverMapTransferService"
           destroy-method="shutdown" depends-on="rep">
       <description>Generic transfer service</description>
@@ -394,6 +401,7 @@
       <property name="maxWriteBufferSize" value="#{ byteSizeParser.parse('${pool.mover.xrootd.write-buffer-size}') }"/>
       <property name="readReconnectTimeout" value="${pool.mover.xrootd.read-reconnect-timeout}"/>
       <property name="readReconnectTimeoutUnit" value="${pool.mover.xrootd.read-reconnect-timeout.unit}"/>
+      <property name="transferLifeCycle" ref="transfer-lifecycle" />
       <property name="accessLogPlugins">
         <bean class="org.dcache.xrootd.spring.ChannelHandlerFactoryFactoryBean">
           <property name="plugins" value="access-log"/>
@@ -463,6 +471,7 @@
         <property name="chunkSize" value="${pool.mover.http.chunk-size}"/>
         <property name="connectTimeout" value="${pool.mover.http.timeout.connect}"/>
         <property name="connectTimeoutUnit" value="${pool.mover.http.timeout.connect.unit}"/>
+        <property name="transferLifeCycle" ref="transfer-lifecycle" />
         <property name="doorStub" ref="doorStub"/>
         <property name="portRange">
             <bean class="org.dcache.util.NettyPortRange">
@@ -517,6 +526,7 @@
        <property name="billingStub" ref="billing-stub"/>
        <property name="poolName" value="${pool.name}"/>
        <property name="checksumModule" ref="csm"/>
+       <property name="transferLifeCycle" ref="transfer-lifecycle" />
   </bean>
 
 

@@ -131,9 +131,9 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
      * Attach mover tho the client's NFSv41 session.
      *
      * @param session to attach to
+     * @return true if mover is new attached to the session.
      */
     synchronized boolean attachSession(NFSv41Session session) {
-
         if (_session == null) {
             _session = session;
             _session.getClient().attachState(_state);

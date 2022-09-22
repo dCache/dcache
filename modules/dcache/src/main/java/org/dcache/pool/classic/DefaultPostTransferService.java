@@ -24,6 +24,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
+import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.MoverInfoMessage;
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellInfoProvider;
@@ -37,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import org.dcache.cells.CellStub;
 import org.dcache.pool.movers.Mover;
+import org.dcache.pool.movers.TransferLifeCycle;
 import org.dcache.pool.repository.ModifiableReplicaDescriptor;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.statistics.DirectedIoStatistics;
@@ -71,6 +73,8 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
     private Consumer<MoverInfoMessage> _kafkaSender = (s) -> {
     };
 
+    private TransferLifeCycle transferLifeCycle;
+
     @Required
     public void setBillingStub(CellStub billing) {
         _billing = billing;
@@ -90,6 +94,10 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
     @Qualifier("transfer")
     public void setKafkaTemplate(KafkaTemplate kafkaTemplate) {
         _kafkaSender = kafkaTemplate::sendDefault;
+    }
+
+    public void setTransferLifeCycle(TransferLifeCycle transferLifeCycle) {
+        this.transferLifeCycle = transferLifeCycle;
     }
 
     public void init() {
@@ -228,6 +236,12 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
         } else {
             finished.setReply(mover.getErrorCode(), mover.getErrorMessage());
         }
+
+        mover.getLocalEndpoint().ifPresent(e ->
+                transferLifeCycle.onEnd(((IpProtocolInfo) mover.getProtocolInfo()).getSocketAddress(),
+                        e,
+                        mover.getProtocolInfo(),
+                        mover.getSubject()));
 
         _door.notify(mover.getPathToDoor(), finished);
     }
