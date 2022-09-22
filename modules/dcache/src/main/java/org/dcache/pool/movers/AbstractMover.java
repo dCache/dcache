@@ -30,6 +30,7 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import dmg.cells.nucleus.CellPath;
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.net.InetSocketAddress;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.CompletionHandler;
 import java.nio.file.OpenOption;
@@ -80,6 +81,8 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
     private final Set<Checksum> _checksums = new HashSet<>();
     private volatile ChecksumChannel _checksumChannel;
     private volatile Optional<RepositoryChannel> _channel = Optional.empty();
+
+    private volatile InetSocketAddress _localAddress;
 
     public AbstractMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor,
           TransferService<M> transferService) {
@@ -350,4 +353,12 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
     }
 
     protected abstract String getStatus();
+
+    public void setLocalEndpoint(InetSocketAddress addr) {
+        _localAddress = addr;
+    }
+    @Override
+    public InetSocketAddress getLocalEndpoint() {
+        return _localAddress;
+    }
 }

@@ -389,7 +389,9 @@ public class NfsTransferService
         if (mover == null) {
             throw new BadStateidException("No mover associated with given stateid: " + stateid);
         }
-        mover.attachSession(context.getSession());
+        if (mover.attachSession(context.getSession())) {
+            mover.setLocalEndpoint(context.getRemoteSocketAddress());
+        }
         return mover;
     }
 

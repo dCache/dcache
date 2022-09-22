@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013 - 2019 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013 - 2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -25,6 +25,7 @@ import com.google.common.util.concurrent.SettableFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TimeoutCacheException;
+import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import dmg.cells.nucleus.CDC;
@@ -68,6 +69,7 @@ import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.NettyPortRange;
+import org.dcache.util.NetworkUtils;
 import org.dcache.util.TryCatchTemplate;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
@@ -165,6 +167,8 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
 
     private final List<io.netty.util.concurrent.Future<?>> shutdownFutures = new ArrayList<>();
 
+    private TransferLifeCycle transferLifeCycle;
+
     public NettyTransferService(String name) {
         this.name = name;
     }
@@ -229,6 +233,14 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
     @Required
     public void setPortRange(NettyPortRange portRange) {
         this.portRange = portRange;
+    }
+
+    public void setTransferLifeCycle(TransferLifeCycle transferLifeCycle) {
+        this.transferLifeCycle = transferLifeCycle;
+    }
+
+    public TransferLifeCycle getTransferLifeCycle() {
+        return transferLifeCycle;
     }
 
     public NettyPortRange getPortRange() {
@@ -422,6 +434,15 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
                     throw new IllegalStateException("UUID conflict");
                 }
                 conditionallyStartServer();
+
+                mover.setLocalEndpoint(getServerAddress());
+                InetSocketAddress bindIp = getServerAddress();
+                InetSocketAddress localTransferEndpoint = new InetSocketAddress(NetworkUtils.getLocalAddress(
+                      ((IpProtocolInfo)mover.getProtocolInfo()).getSocketAddress().getAddress()
+                ), bindIp.getPort());
+                transferLifeCycle.onStart(((IpProtocolInfo)mover.getProtocolInfo()).getSocketAddress(),
+                      localTransferEndpoint, mover.getProtocolInfo(), mover.getSubject());
+
                 setCancellable(channel);
                 sendAddressToDoor(mover, getServerAddress().getPort());
             }

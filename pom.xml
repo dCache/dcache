@@ -1016,6 +1016,11 @@
                 <artifactId>jmh-generator-annprocess</artifactId>
                 <version>${jmh.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.github.erosb</groupId>
+                <artifactId>everit-json-schema</artifactId>
+                <version>1.14.1</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

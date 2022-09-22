@@ -191,6 +191,11 @@ public interface Mover<T extends ProtocolInfo> {
     }
 
     /**
+     * Returns the {@link InetSocketAddress} of the local endpoint used by clients to access the mover.
+     */
+    InetSocketAddress getLocalEndpoint();
+
+    /**
      * Provide the expected total number of bytes transferred for this transfer, if known.  Returns
      * null if this value is unknown.
      */

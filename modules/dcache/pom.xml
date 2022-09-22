@@ -366,6 +366,12 @@
           <groupId>com.fasterxml.jackson.core</groupId>
           <artifactId>jackson-core</artifactId>
       </dependency>
+
+      <dependency>
+        <groupId>com.github.erosb</groupId>
+        <artifactId>everit-json-schema</artifactId>
+        <scope>test</scope>
+      </dependency>
   </dependencies>
 
   <build>
