@@ -98,10 +98,12 @@ Let us create a new password file (/etc/dcache/htpasswd) and add these two users
 with passwords TooManySecrets and dickerelch respectively:
 
 > touch /etc/dcache/htpasswd
-> htpasswd -bm /etc/dcache/htpasswd tester TooManySecrets
+> htpasswd -bm /etc/dcache/htpasswd tester tester12#
+> 
 > Adding password for user tester
 > 
 > htpasswd -bm /etc/dcache/htpasswd admin dickerelch
+> 
 > Adding password for user admin
 
 
@@ -316,8 +318,10 @@ domain.
 When a dCache instance spans multiple domains, there needs to be some mechanism for sending messages between services located
 in different domains.
 
-This is done by establishing tunnels between domains. A tunnel is a TCP connection over which all messages
-from one domain to the other are sent.
+The domains communicate with each other via TCP using connections that are
+established at start-up. The topology is controlled by the location manager service. When configured, all
+domains connect with a core domain, which routes all messages to the appropriate domains. This forms a
+star topology.
 To reduce the number of TCP connections, domains may be configured to be core domains or satellite
 domains.
 
@@ -365,7 +369,9 @@ pool.wait-for-files=${pool.path}/data
 **NOTE**
 > [corelDomain]
 > dcache.broker.scheme = core
-> indicates that coreDomain is a core domain and if the satilite poolA will need to send a mesage to sattilite poolB   ????
+> indicates that coreDomain is a core domain and if the satilite poolA will need to connect to coreDomain to send a  a mesage to sattilite poolB.
+
+
 
 Now in /var/log/dcache/ there will be created a log file for each domain
 
