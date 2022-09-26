@@ -56,39 +56,7 @@ section.
 
 
 
-### Configuration files
 
-In the setup of dCache, there are three main places for configuration files:
-
--   **/usr/share/dcache/defaults**
--   **/etc/dcache/dcache.conf**
--   **/etc/dcache/layouts**
-
-The folder **/usr/share/dcache/defaults** contains the default settings of the dCache. If one of the default configuration values needs to be changed, copy the default setting of this value from one of the files in **/usr/share/dcache/defaults** to the file **/etc/dcache/dcache.conf**, which initially is empty and update the value.
-
-### Four main components in dCache
--------------
-
-All components in dCache are CELLs and they are independent and can interact with each other by sending messages.
-Such architecture today knows as Microservices with message queue.
-For the minimal instalation of dCache the following cells must be configured in **/etc/dcache/dcache.conf** file.
-
-
-#### DOOR 
- - User entry points (WebDav, NFS, FTP, DCAP, XROOT) 
- 
-#### PoolManager
-- The heart of a dCache System is the poolmanager. When a user performs an action on a file - reading or writing - a transfer request is sent to the dCache system. The poolmanager then decides how to handle this request.
-
-#### PNFSManager
-- The namespace provides a single rooted hierarchical file system view of the stored data.
-- metadata DB, POSIX layer
-
-#### POOL
- - Data storage nodes, talk all protocols
-
-#### Zookeeper
- - A distributed directory and coordination service that dCache relies on.
 
 
 ### Configuring dCache users
@@ -148,6 +116,43 @@ Now we need to add the ** /etc/grid-security/certificates** folder.
 > mkdir -p /etc/grid-security/certificates 
 
 
+### Four main components in dCache
+-------------
+
+All components in dCache are CELLs and they are independent and can interact with each other by sending messages.
+Such architecture today knows as Microservices with message queue.
+For the minimal instalation of dCache the following cells must be configured in **/etc/dcache/dcache.conf** file.
+
+
+#### DOOR 
+ - User entry points (WebDav, NFS, FTP, DCAP, XROOT) 
+ 
+#### PoolManager
+- The heart of a dCache System is the poolmanager. When a user performs an action on a file - reading or writing - a transfer request is sent to the dCache system. The poolmanager then decides how to handle this request.
+
+#### PNFSManager
+- The namespace provides a single rooted hierarchical file system view of the stored data.
+- metadata DB, POSIX layer
+
+#### POOL
+ - Data storage nodes, talk all protocols
+
+#### Zookeeper
+ - A distributed directory and coordination service that dCache relies on.
+
+
+### Configuration files
+
+In the setup of dCache, there are three main places for configuration files:
+
+-   **/usr/share/dcache/defaults**
+-   **/etc/dcache/dcache.conf**
+-   **/etc/dcache/layouts**
+
+The folder **/usr/share/dcache/defaults** contains the default settings of the dCache. If one of the default configuration values needs to be changed, copy the default setting of this value from one of the files in **/usr/share/dcache/defaults** to the file **/etc/dcache/dcache.conf**, which initially is empty and update the value.
+
+
+
 # Configurations for Minimal set  - Single process:
 
 - Shared JVM
@@ -157,12 +162,7 @@ Now we need to add the ** /etc/grid-security/certificates** folder.
 - A process called DOMAIN
 
 
-By default, the layout file is located in the
-/etc/dcache/layouts directory, with a filename formed by concatenating this machine’s hostname with
-.conf. For example, if the machine is called dcache.example.org then the default layout file path is
-/etc/dcache/layouts/dcache.example.org.conf.
-
-But for this tutorial we will create a mylayout.conf where the confugurations would be stored.
+For this tutorial we will create a mylayout.conf where the confugurations would be stored.
 
 First we update the file /etc/dcache/dcache.conf, appending the following line:
 
@@ -203,6 +203,8 @@ Therefore the values for `pnfsmanager.default-retention-policy` and `pnfsmanager
 
 > `dcache.broker.scheme = none`
 >  tells the domain that it is running stand-alone, and should not attempt to contact other domains. We will cover these in the next section, where we > will have to set configuration for different domains.
+
+>  webdav.authn.basic = true
 
 
 
@@ -306,8 +308,6 @@ So now you can upload a file:
 
 
 
-
-
 # Grouping CELLs - core Domain and pools as satellite:
 
 
@@ -319,11 +319,10 @@ in different domains.
 This is done by establishing tunnels between domains. A tunnel is a TCP connection over which all messages
 from one domain to the other are sent.
 To reduce the number of TCP connections, domains may be configured to be core domains or satellite
-domains. Core domains have tunnels to all other core domains. Satellite domains have tunnels to all core
 domains.
 
 The simplest deployment has a single core domain and all other domains as satellite domains, mostly POOL CELLS.
-In the following example we will add a new Pool domains or we call them satellite domain.
+In the following example we will add a new Pool domains as satellite  domains. 
  
   > dcache pool create /srv/dcache/pool-A poolA poolsDomainA
 
@@ -356,7 +355,6 @@ pool.name=poolA
 pool.path=/srv/dcache/pool-A
 pool.wait-for-files=${pool.path}/data
 
-
 [poolsDomainB]
 [poolsDomainB/pool]
 pool.name=poolB
@@ -364,15 +362,19 @@ pool.path=/srv/dcache/pool-B
 pool.wait-for-files=${pool.path}/data
 ```
 
+**NOTE**
+> [corelDomain]
+> dcache.broker.scheme = core
+> indicates that coreDomain is a core domain and if the satilite poolA will need to send a mesage to sattilite poolB   ????
 
-
+Now in /var/log/dcache/ there will be created a log file for each domain
 
 ```ini
 dcache status
 |DOMAIN
-|centralDomain
-|doorsDomain
-|poolsDomain
+|coreDomain
+|poolBDomain
+|poolADomain
 STATUS PID USER
 LOG
 stopped
