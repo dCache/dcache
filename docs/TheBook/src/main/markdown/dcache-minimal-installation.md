@@ -153,7 +153,7 @@ The folder **/usr/share/dcache/defaults** contains the default settings of the d
 
 
 
-# Configurations for Minimal set  - Single process:
+### Configurations for Minimal set  - Single process:
 
 - Shared JVM
 - Shared CPU
