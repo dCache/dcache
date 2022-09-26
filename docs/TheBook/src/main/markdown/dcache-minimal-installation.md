@@ -89,93 +89,6 @@ For the minimal instalation of dCache the following cells must be configured in 
  - A distributed directory and coordination service that dCache relies on.
 
 
-
-
-# Configurations for Minimal set  - Single process:
-
-- Shared JVM
-- Shared CPU
-- Shared Log files
-- All components run the same version
-- A process called DOMAIN
-
-
-```ini
-dcache.layout = mylayout
-```
-
-Now, create the file `/etc/dcache/layouts/mylayout.conf` with the
-following contents:
-
-```ini
-dcache.enable.space-reservation = false
-
-[dCacheDomain]
- dcache.broker.scheme = none
-[dCacheDomain/zookeeper]
-[dCacheDomain/pnfsmanager]
- pnfsmanager.default-retention-policy = REPLICA
- pnfsmanager.default-access-latency = ONLINE
-
-[dCacheDomain/poolmanager]
-[dCacheDomain/webdav]
- webdav.authn.basic = true
- 
-
-```
-
-> **NOTE**
->
-> In this first installation of dCache your dCache will not be connected to a tape sytem. 
-> Therefore the values for pnfsmanager.default-retention-policy and pnfsmanager.default-access-latency must be changed in the file **/etc/dcache/dcache.conf**. ????
-
-
->
->     pnfsmanager.default-retention-policy=REPLICA
->     pnfsmanager.default-access-latency=ONLINE
-
-
-Now we can add a new cell: Pool using the following command. POOL is ...
-
- > dcache pool create /srv/dcache/pool-A poolA dCacheDomain
-
-The `dcache` script provides an easy way to create the pool directory
-structure and add the pool service to a domain.  In the following
-example, we will create a pool using storage located at
-`/srv/dcache/pool-1` and add this pool to the `dCacheDomain` domain.
-
-```console-root
-mkdir -p /srv/dcache
-dcache pool create /srv/dcache/pool-1 pool1 dCacheDomain
-|Created a pool in /srv/dcache/pool-1. The pool was added to dCacheDomain
-|in file:/etc/dcache/layouts/mylayout.conf.
-```
-
-Now if we open  `/etc/dcache/layouts/mylayout.conf` file, it should be updated to have
-an additional `pool` service:
-
-```ini
-dcache.enable.space-reservation = false
-[dCacheDomain]
- dcache.broker.scheme = none
-[dCacheDomain/zookeeper]
-[dCacheDomain/pnfsmanager]
- pnfsmanager.default-retention-policy = REPLICA
- pnfsmanager.default-access-latency = ONLINE
-
-[dCacheDomain/poolmanager]
-[dCacheDomain/webdav]
- webdav.authn.basic = true
-
-[dCacheDomain/pool]
-pool.name=pool1
-pool.path=/srv/dcache/pool-1
-pool.wait-for-files=${pool.path}/data
-```
-
-
-So we have added a new cell pool to the dCacheDomain.
-
 ### Configuring dCache users
 
 The dCache RPM comes with a default gPlazma configuration file /etc/dcache/gplazma.conf; however,
@@ -232,6 +145,112 @@ Now we need to add the ** /etc/grid-security/certificates** folder.
 
 
 > mkdir -p /etc/grid-security/certificates 
+
+
+# Configurations for Minimal set  - Single process:
+
+- Shared JVM
+- Shared CPU
+- Shared Log files
+- All components run the same version
+- A process called DOMAIN
+
+
+By default, the layout file is located in the
+/etc/dcache/layouts directory, with a filename formed by concatenating this machine’s hostname with
+.conf. For example, if the machine is called dcache.example.org then the default layout file path is
+/etc/dcache/layouts/dcache.example.org.conf.
+
+But for this tutorial we will create a mylayout.conf where the confugurations would be stored.
+
+First we update the file /etc/dcache/dcache.conf, appending the following line:
+
+
+```ini
+dcache.layout = mylayout
+```
+
+Now, create the file `/etc/dcache/layouts/mylayout.conf` with the
+following contents:
+
+```ini
+dcache.enable.space-reservation = false
+
+[dCacheDomain]
+ dcache.broker.scheme = none
+[dCacheDomain/zookeeper]
+[dCacheDomain/pnfsmanager]
+ pnfsmanager.default-retention-policy = REPLICA
+ pnfsmanager.default-access-latency = ONLINE
+
+[dCacheDomain/poolmanager]
+[dCacheDomain/webdav]
+ webdav.authn.basic = true
+ 
+
+```
+
+> **NOTE**
+>
+> In this first installation of dCache your dCache will not be connected to a tape sytem. 
+> Therefore the values for pnfsmanager.default-retention-policy and pnfsmanager.default-access-latency must be changed in the file **/etc/dcache/dcache.conf**. ????
+
+
+> In this example `dcache.broker.scheme = none` tells the domain that it is running stand-alone, and should not attempt to contact other domains.  
+> The simplest deployment of dCache, so to say in real world, has a single core domain and all other domains as satellite domains, mostly POOL CELLS.
+>  To make it is more clear we need to understand that in dCahe all services are communicating with messages,   where messages from a service in any  > satellite domain is sent directly to the core domain, but messages between services in different satellite domains are relayed through the core 
+>   domain.
+
+
+
+>
+>     pnfsmanager.default-retention-policy=REPLICA
+>     pnfsmanager.default-access-latency=ONLINE
+
+
+Now we can add a new cell: Pool which is a service responsible for storing the contents of files and there must be always at least one pool.
+
+We will use the following command:
+
+ > dcache pool create /srv/dcache/pool-A poolA dCacheDomain
+
+The `dcache` script provides an easy way to create the pool directory
+structure and add the pool service to a domain.  In the following
+example, we will create a pool using storage located at
+`/srv/dcache/pool-1` and add this pool to the `dCacheDomain` domain.
+
+```console-root
+mkdir -p /srv/dcache
+dcache pool create /srv/dcache/pool-1 pool1 dCacheDomain
+|Created a pool in /srv/dcache/pool-1. The pool was added to dCacheDomain
+|in file:/etc/dcache/layouts/mylayout.conf.
+```
+
+Now if we open  `/etc/dcache/layouts/mylayout.conf` file, it should be updated to have
+an additional `pool` service:
+
+```ini
+dcache.enable.space-reservation = false
+[dCacheDomain]
+ dcache.broker.scheme = none
+[dCacheDomain/zookeeper]
+[dCacheDomain/pnfsmanager]
+ pnfsmanager.default-retention-policy = REPLICA
+ pnfsmanager.default-access-latency = ONLINE
+
+[dCacheDomain/poolmanager]
+[dCacheDomain/webdav]
+ webdav.authn.basic = true
+
+[dCacheDomain/pool]
+pool.name=pool1
+pool.path=/srv/dcache/pool-1
+pool.wait-for-files=${pool.path}/data
+```
+
+
+So we have added a new cell pool to the dCacheDomain.
+
 
 
 
