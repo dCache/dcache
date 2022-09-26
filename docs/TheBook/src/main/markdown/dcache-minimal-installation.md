@@ -1,5 +1,6 @@
 
-   
+ dCache mission is  to provide a system for storing and retrieving huge amounts of data, distributed among a large number of heterogeneous
+server nodes, under a single virtual filesystem tree with a variety of standard access methods.
      
 ### Minimum System Requirements
 
@@ -69,6 +70,7 @@ The folder **/usr/share/dcache/defaults** contains the default settings of the d
 -------------
 
 All components in dCache are CELLs and they are independent and can interact with each other by sending messages.
+Such architecture today knows as Microservices with message queue.
 For the minimal instalation of dCache the following cells must be configured in **/etc/dcache/dcache.conf** file.
 
 
@@ -129,13 +131,12 @@ with passwords TooManySecrets and dickerelch respectively:
 
 > touch /etc/dcache/htpasswd
 > htpasswd -bm /etc/dcache/htpasswd tester TooManySecrets
-> 
-> |Adding password for user tester
+> Adding password for user tester
 > 
 > htpasswd -bm /etc/dcache/htpasswd admin dickerelch
-> 
-> |Adding password for user admin
-> 
+> Adding password for user admin
+
+
 Next, we need to tell dCache which uid and gids these users should be assigned. To do this, create the file
 /etc/dcache/multi-mapfile with the following content:
 > username:tester uid:1000 gid:1000,true
@@ -200,18 +201,14 @@ Therefore the values for `pnfsmanager.default-retention-policy` and `pnfsmanager
 >     pnfsmanager.default-access-latency=ONLINE
 
 
-> `dcache.broker.scheme = none` tells the domain that it is running stand-alone, and should not attempt to contact other domains. We will cover these in the next section, where we will have to set configuration for different domains.
-
-
+> `dcache.broker.scheme = none`
+>  tells the domain that it is running stand-alone, and should not attempt to contact other domains. We will cover these in the next section, where we > will have to set configuration for different domains.
 
 
 
 
 Now we can add a new cell: Pool which is a service responsible for storing the contents of files and there must be always at least one pool.
 
-We will use the following command:
-
- > dcache pool create /srv/dcache/pool-1 pool1 dCacheDomain
 
 The `dcache` script provides an easy way to create the pool directory
 structure and add the pool service to a domain.  In the following
@@ -224,6 +221,11 @@ dcache pool create /srv/dcache/pool-1 pool1 dCacheDomain
 |Created a pool in /srv/dcache/pool-1. The pool was added to dCacheDomain
 |in file:/etc/dcache/layouts/mylayout.conf.
 ```
+
+No we will use the following command:
+
+ > dcache pool create /srv/dcache/pool-1 pool1 dCacheDomain
+
 
 Now if we open  `/etc/dcache/layouts/mylayout.conf` file, it should be updated to have
 an additional `pool` service:
@@ -282,7 +284,6 @@ To inspect all generated units of dcache.target the systemd list-dependencies co
 our simple installation with just one domain hosting several services this would look like
 
 > systemctl list-dependencies dcache.target
-> systemctl status dcache@* 
 
 ```console-root
 systemctl list-dependencies dcache.target
@@ -295,16 +296,24 @@ systemctl list-dependencies dcache.target
 
 ```
 
+> systemctl status dcache@* 
+
+
+
 So now you can upload a file:
 
 > curl -u admin:admin -L -T /bin/bash http://localhost:2880/home/tester/test-file
 
 
+
+
+
+# Grouping CELLs - core Domain and pools as satellite:
+
+
 dCache will work correctly if everything runs in a single domain. dCache could be configured  to run each service in a separate
-domain. Although the latter deployment is the most flexible, there is some overhead in having many domains,
-so the optimal approach is usually somewhere in between.
- The difference is that, when a dCache instance
-spans multiple domains, there needs to be some mechanism for sending messages between services located
+domain. 
+When a dCache instance spans multiple domains, there needs to be some mechanism for sending messages between services located
 in different domains.
 
 This is done by establishing tunnels between domains. A tunnel is a TCP connection over which all messages
@@ -312,18 +321,13 @@ from one domain to the other are sent.
 To reduce the number of TCP connections, domains may be configured to be core domains or satellite
 domains. Core domains have tunnels to all other core domains. Satellite domains have tunnels to all core
 domains.
-The simplest deployment has a single core domain and all other domains as satellite domains, mostly POOL CELLS. This is a
-spoke deployment, where messages from a service in any satellite domain is sent directly to the core domain,
-but messages between services in different satellite domains are relayed through the core domain.
 
- In the following example we will add a new Pool domains or we call them satellite domain.
+The simplest deployment has a single core domain and all other domains as satellite domains, mostly POOL CELLS.
+In the following example we will add a new Pool domains or we call them satellite domain.
  
   > dcache pool create /srv/dcache/pool-A poolA poolsDomainA
 
   > dcache pool create /srv/dcache/pool-B poolB poolsDomainB
-
-
-# Grouping CELLs - core Domain and pools as satellite:
 
  - Independent JVMs
  - Shared CPU
@@ -348,15 +352,15 @@ dcache.broker.scheme = core
  
 [poolsDomainA]
 [poolsDomainA/pool]
-pool.name=pool1
-pool.path=/srv/dcache/pool-1
+pool.name=poolA
+pool.path=/srv/dcache/pool-A
 pool.wait-for-files=${pool.path}/data
 
 
 [poolsDomainB]
 [poolsDomainB/pool]
-pool.name=pool1
-pool.path=/srv/dcache/pool-1
+pool.name=poolB
+pool.path=/srv/dcache/pool-B
 pool.wait-for-files=${pool.path}/data
 ```
 
@@ -374,9 +378,9 @@ LOG
 stopped
 dcache /var/log/dcache/centralDomain.log
 stopped
-dcache /var/log/dcache/doorsDomain.log
+dcache /var/log/dcache/poolsDomainA.log
 stopped
-dcache /var/log/dcache/poolsDomain.log
+dcache /var/log/dcache/poolsDomainB.log
 
 ```
 
