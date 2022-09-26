@@ -190,29 +190,28 @@ dcache.enable.space-reservation = false
 
 ```
 
-> **NOTE**
->
-> In this first installation of dCache your dCache will not be connected to a tape sytem. 
-> Therefore the values for pnfsmanager.default-retention-policy and pnfsmanager.default-access-latency must be changed in the file **/etc/dcache/dcache.conf**. ????
+**Note**
+
+In this first installation of dCache your dCache will not be connected to a tape sytem. 
+Therefore the values for `pnfsmanager.default-retention-policy` and `pnfsmanager.default-access-latency` must be changed in the file **/etc/dcache/dcache.conf**. ????
 
 
-> In this example `dcache.broker.scheme = none` tells the domain that it is running stand-alone, and should not attempt to contact other domains.  
-> The simplest deployment of dCache, so to say in real world, has a single core domain and all other domains as satellite domains, mostly POOL CELLS.
->  To make it is more clear we need to understand that in dCahe all services are communicating with messages,   where messages from a service in any  > satellite domain is sent directly to the core domain, but messages between services in different satellite domains are relayed through the core 
->   domain.
-
-
-
->
 >     pnfsmanager.default-retention-policy=REPLICA
 >     pnfsmanager.default-access-latency=ONLINE
+
+
+> `dcache.broker.scheme = none` tells the domain that it is running stand-alone, and should not attempt to contact other domains. We will cover these in the next section, where we will have to set configuration for different domains.
+
+
+
+
 
 
 Now we can add a new cell: Pool which is a service responsible for storing the contents of files and there must be always at least one pool.
 
 We will use the following command:
 
- > dcache pool create /srv/dcache/pool-A poolA dCacheDomain
+ > dcache pool create /srv/dcache/pool-1 pool1 dCacheDomain
 
 The `dcache` script provides an easy way to create the pool directory
 structure and add the pool service to a domain.  In the following
@@ -316,6 +315,7 @@ domains.
 The simplest deployment has a single core domain and all other domains as satellite domains, mostly POOL CELLS. This is a
 spoke deployment, where messages from a service in any satellite domain is sent directly to the core domain,
 but messages between services in different satellite domains are relayed through the core domain.
+
  In the following example we will add a new Pool domains or we call them satellite domain.
  
   > dcache pool create /srv/dcache/pool-A poolA poolsDomainA
