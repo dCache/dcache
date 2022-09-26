@@ -135,7 +135,7 @@ dcache.enable.space-reservation = false
 >     pnfsmanager.default-access-latency=ONLINE
 
 
-Now we can add a new cell: Pool using the following command.
+Now we can add a new cell: Pool using the following command. POOL is ...
 
  > dcache pool create /srv/dcache/pool-A poolA dCacheDomain
 
@@ -216,8 +216,11 @@ with passwords TooManySecrets and dickerelch respectively:
 
 > touch /etc/dcache/htpasswd
 > htpasswd -bm /etc/dcache/htpasswd tester TooManySecrets
+> 
 > |Adding password for user tester
+> 
 > htpasswd -bm /etc/dcache/htpasswd admin dickerelch
+> 
 > |Adding password for user admin
 > 
 Next, we need to tell dCache which uid and gids these users should be assigned. To do this, create the file
@@ -225,14 +228,12 @@ Next, we need to tell dCache which uid and gids these users should be assigned. 
 > username:tester uid:1000 gid:1000,true
 > username:admin uid:0 gid:0,true
 
-Now we need to add the ** ** folder.
+Now we need to add the ** /etc/grid-security/certificates** folder.
 
 
 > mkdir -p /etc/grid-security/certificates 
 
-> systemctl start dcache@poolB.service 
 
-> systemctl status dcache@poolB.service 
 
 ## Starting dCache
 
@@ -276,7 +277,9 @@ systemctl list-dependencies dcache.target
 
 ```
 
-So now you can upload a file ----
+So now you can upload a file:
+
+> curl -u admin:admin -L -T /bin/bash http://localhost:2880/home/tester/test-file
 
 
 dCache will work correctly if everything runs in a single domain. dCache could be configured  to run each service in a separate
