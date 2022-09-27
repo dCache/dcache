@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2016 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 - 2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -361,7 +361,7 @@ public class IGTFInfo {
             checkMutable();
             switch (type) {
                 case POLICY:
-                    Map<String, String> pr = Splitter.on(',').trimResults().
+                    Map<String, String> pr = Splitter.on(',').trimResults().omitEmptyStrings().
                           withKeyValueSeparator(Splitter.on('=').trimResults()).split(value);
                     IGTFInfo.this.policyRequires = ImmutableMap.copyOf(pr);
                     break;
