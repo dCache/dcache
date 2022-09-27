@@ -85,7 +85,7 @@ The WLCG SRR uses the following info-provider properties to control the generate
 info-provider.se-unique-id=
 info-provider.se-name=
 info-provider.dcache-architecture=
-nfo-provider.dcache-quality-level=
+info-provider.dcache-quality-level=
 storage-descriptor.door.tag=
 ```
 
