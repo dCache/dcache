@@ -213,18 +213,18 @@ without the bottleneck of a single dCache service.
 
 ### `cleaner`
 
-Cleaner is fully replicable. Several instances must share the same database. The
-configuration should be synchronized such that all instances are configured the
-same way.
+`cleaner-disk` and `cleaner-hsm` are both fully replicable. Several instances
+must share the same database. The configuration should be synchronized such
+that all instances of the same type are configured the same way.
 
-When there are several `cleaner` instances in an installation, they
-negotiate a leader by means of ZooKeeper. Only this leader is active for all
-cleaner operations at any point in time. Should the leader disappear, another
-cleaner instance will take over.
+When there are several `cleaner-disk` or `cleaner-hsm` instances in an installation,
+they negotiate a leader by means of ZooKeeper. Only this leader is active for all
+`cleaner-disk`/`cleaner-hsm` operations at any point in time. Should the leader
+disappear, another cleaner instance of the same type will take over.
 
 This high availability (HA) role and the participants may be queried:
 ```
-\c cleaner@domain
+\c cleaner-disk@domain
 ha get role
 ha show participants
 ```
