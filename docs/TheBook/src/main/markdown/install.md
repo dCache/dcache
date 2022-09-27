@@ -342,7 +342,7 @@ dcache.enable.space-reservation = false
 
 This tells dCache to run a single domain (Java Virtual Machine
 process) called `dCacheDomain`.  Within that single process, dCache
-will start the `pnfsmanager`, `cleaner`, `poolmanager`, `billing`,
+will start the `pnfsmanager`, `cleaner-disk`, `poolmanager`, `billing`,
 `gplazma` and `webdav` services.
 
 As the line `dcache.enable.space-reservation = false` appears before
@@ -382,14 +382,14 @@ domain (`dCacheDomain`) which will host all eight configured services:
 
 ```console-root
 dcache services
-|DOMAIN       SERVICE     CELL          PROXIED REPLICABLE
-|dCacheDomain zookeeper   zookeeper     -       No
-|dCacheDomain pnfsmanager PnfsManager   -       Yes
-|dCacheDomain cleaner     cleaner       -       No
-|dCacheDomain poolmanager PoolManager   -       Yes
-|dCacheDomain billing     billing       -       Yes
-|dCacheDomain gplazma     gPlazma       -       Yes
-|dCacheDomain webdav      WebDAV-dcache No      No
+|DOMAIN       SERVICE      CELL          PROXIED REPLICABLE
+|dCacheDomain zookeeper    zookeeper     -       No
+|dCacheDomain pnfsmanager  PnfsManager   -       Yes
+|dCacheDomain cleaner-disk cleaner-disk  -       Yes
+|dCacheDomain poolmanager  PoolManager   -       Yes
+|dCacheDomain billing      billing       -       Yes
+|dCacheDomain gplazma      gPlazma       -       Yes
+|dCacheDomain webdav       WebDAV-dcache No      No
 ```
 
 The output includes a line for each service running on this machine.
@@ -489,10 +489,10 @@ or servers:
 
 ```console-root
 dcache database ls
-|DOMAIN       CELL        DATABASE HOST      USER   MIN- MAX-CONNS MANAGEABLE AUTO
-|dCacheDomain PnfsManager chimera  localhost dcache      30        Yes        Yes
-|dCacheDomain cleaner     chimera  localhost dcache      10        No         No
-|TOTAL                                              0    40
+|DOMAIN       CELL         DATABASE HOST      USER   MIN- MAX-CONNS MANAGEABLE AUTO
+|dCacheDomain PnfsManager  chimera  localhost dcache      30        Yes        Yes
+|dCacheDomain cleaner-disk chimera  localhost dcache      10        No         No
+|TOTAL                                               0    40
 ```
 
 The output shows a line for each service that accesses a database.
@@ -548,15 +548,15 @@ The columns have the following meaning:
 </dl>
 
 In our case, `dCacheDomain` has two services that require access to a
-database: `PnfsManager` and `cleaner`.  Both services access the
+database: `PnfsManager` and `cleaner-disk`.  Both services access the
 `chimera` database on the local machine (`localhost`) authenticating
 as database-user `dcache`.
 
 By default, the `PnfsManager` service will manage the `chimera`
-database, updating the schema as needed.  The `cleaner` service will
+database, updating the schema as needed.  The `cleaner-disk` service will
 simply fail to start if the database schema is not up-to-date.
 Therefore, it is important that `PnfsManager` is started before
-`cleaner` (`PnfsManager` appears first in the layout file) or to use
+`cleaner-disk` (`PnfsManager` appears first in the layout file) or to use
 manual database updates.
 
 We will run the database operations manually, to exercise the manual
@@ -1058,7 +1058,7 @@ may look slightly different.
 [dcache] (local) admin > \l
 acm
 billing
-cleaner
+cleaner-disk
 gPlazma
 PnfsManager
 pool1
@@ -1304,18 +1304,18 @@ One feature of dCache is that the data stored in dCache is not deleted
 as part of the above command, but is done in a lazy fashion.  The
 purpose is to avoid that users who delete large numbers of files keep
 pools busy, preventing attempts to read other data stored on those
-pools.  Instead, the data of deleted files is removed by the cleaner
+pools.  Instead, the data of deleted files is removed by the cleaner-disk
 service so as it doesn't stress pools.
 
 Therefore, if you are quick enough, you can still see the delete
 file's data stored as a file with the PNFS-ID of the file
 (`0000F3BF2D92435E4D9A9EFA1470F1214A0D` in our example).
 
-You can use the `rundelete` admin command to force cleaner to
+You can use the `rundelete` admin command to force cleaner-disk to
 garbage-collect any deleted file's data; e.g.,
 
 ```console-root
-ssh -p 22224 admin@localhost '\s cleaner rundelete'
+ssh -p 22224 admin@localhost '\s cleaner-disk rundelete'
 |Password authentication
 |Password:
 ```
@@ -1357,7 +1357,7 @@ Here is an example from the billing file:
 08.05 07:47:55 [pool:pool1:transfer] [0000FA09235CA0974697AB93F00FFEA61620,964544] [/home/tester/test-file-1] <Unknown>:<Unknown>@osm 964544 74 false {Http-1.1:0:0:0:0:0:0:0:1:0:WebDAV-dcache:dCacheDomain:/home/tester/test-file-1} [door:WebDAV-dcache@dCacheDomain:AAWPWe0LXwA:1564991275384000] {0:""}
 08.05 07:47:55 [door:WebDAV-dcache@dCacheDomain:request] ["tester":1000:1000:0:0:0:0:0:0:0:1] [0000FA09235CA0974697AB93F00FFEA61620,964544] [/home/tester/test-file-1] <Unknown>:<Unknown>@osm 205 0 {0:""}
 08.05 07:48:19 [door:WebDAV-dcache@dCacheDomain:remove] ["tester":1000:1000:unknown] [0000FA09235CA0974697AB93F00FFEA61620,964544] [/home/tester/test-file-1] <Unknown> 0 0 {0:""}
-08.05 07:48:38 [pool:pool1@dCacheDomain:remove] [0000FA09235CA0974697AB93F00FFEA61620,964544] [Unknown] <Unknown>:<Unknown>@osm {0:"cleaner@dCacheDomain [PoolRemoveFiles]"}
+08.05 07:48:38 [pool:pool1@dCacheDomain:remove] [0000FA09235CA0974697AB93F00FFEA61620,964544] [Unknown] <Unknown>:<Unknown>@osm {0:"cleaner-disk@dCacheDomain [PoolRemoveFiles]"}
 ```
 
 Lines that start with a hash (`#`) symbol are comments; the
@@ -1388,7 +1388,7 @@ file's data being deleted by the pool.
 
 ```
 08.05 07:48:19 [door:WebDAV-dcache@dCacheDomain:remove] ["tester":1000:1000:unknown] [0000FA09235CA0974697AB93F00FFEA61620,964544] [/home/tester/test-file-1] <Unknown> 0 0 {0:""}
-08.05 07:48:38 [pool:pool1@dCacheDomain:remove] [0000FA09235CA0974697AB93F00FFEA61620,964544] [Unknown] <Unknown>:<Unknown>@osm {0:"cleaner@dCacheDomain [PoolRemoveFiles]"}
+08.05 07:48:38 [pool:pool1@dCacheDomain:remove] [0000FA09235CA0974697AB93F00FFEA61620,964544] [Unknown] <Unknown>:<Unknown>@osm {0:"cleaner-disk@dCacheDomain [PoolRemoveFiles]"}
 ```
 
 ### Access log file
@@ -1544,16 +1544,16 @@ deployed:
 
 ```console-root
 dcache services
-|DOMAIN        SERVICE     CELL          PROXIED REPLICABLE
-|centralDomain zookeeper   zookeeper     -       No
-|centralDomain pnfsmanager PnfsManager   -       Yes
-|centralDomain cleaner     cleaner       -       No
-|centralDomain poolmanager PoolManager   -       Yes
-|centralDomain admin       admin         -       No
-|centralDomain billing     billing       -       Yes
-|centralDomain gplazma     gPlazma       -       Yes
-|doorsDomain   webdav      WebDAV-dcache No      No
-|poolsDomain   pool        pool1         -       No
+|DOMAIN        SERVICE      CELL          PROXIED REPLICABLE
+|centralDomain zookeeper    zookeeper     -       No
+|centralDomain pnfsmanager  PnfsManager   -       Yes
+|centralDomain cleaner-disk cleaner-disk  -       No
+|centralDomain poolmanager  PoolManager   -       Yes
+|centralDomain admin        admin         -       No
+|centralDomain billing      billing       -       Yes
+|centralDomain gplazma      gPlazma       -       Yes
+|doorsDomain   webdav       WebDAV-dcache No      No
+|poolsDomain   pool         pool1         -       No
 ```
 
 Start dCache:
