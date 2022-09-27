@@ -49,6 +49,9 @@ public abstract class OpScopedPrincipal implements Principal, Serializable {
             return true;
         }
 
+        if (other == null) {
+            return false;
+        }
         return this.getClass().equals(other.getClass())
               && ((Principal) other).getName().equals(name);
     }
