@@ -339,6 +339,7 @@ In the following example we will add a new Pool domains as satellite  domains.
 
 
 ```ini
+
 dcache.enable.space-reservation = false
 
 [corelDomain]
@@ -397,6 +398,112 @@ dcache /var/log/dcache/poolsDomainB.log
 # Grouping CELLs - On a different hosts:
 - Share-nothing option
 - Components can run different, but compatible versions.
+- Better throughput
+
+
+
+1. less /etc/dcache/layouts/dcache-head-test01.conf
+
+```ini
+
+dcache.enable.space-reservation = false
+
+[${host.name}_coreDomain]
+
+dcache.broker.scheme = core
+
+
+[${host.name}_coreDomain/zookeeper]
+[${host.name}_coreDomain/poolmanager]
+[${host.name}_coreDomain/pnfsmanager]
+
+ pnfsmanager.default-retention-policy = REPLICA
+ pnfsmanager.default-access-latency = ONLINE
+ 
+ [${host.name}_coreDomain/webdav]
+  webdav.authn.basic = true
+
+
+[poolsDomainA]
+[poolsDomainA/pool]
+pool.name=poolA
+pool.path=/srv/dcache/pool-A
+pool.wait-for-files=${pool.path}/data
+
+```
+
+2. less /etc/dcache/layouts/dcache-head-test02.conf
+
+
+
+```ini
+
+
+[poolsDomainA]
+[poolsDomainA/pool]
+pool.name=poolA
+pool.path=/srv/dcache/pool-A
+pool.wait-for-files=${pool.path}/data
+
+```
+
+
+2. less /etc/dcache/layouts/dcache-head-test03.conf
+
+
+
+```ini
+
+
+[poolsDomainB]
+[poolsDomainB/pool]
+pool.name=poolB
+pool.path=/srv/dcache/pool-B
+pool.wait-for-files=${pool.path}/data
+
+```
+> let us upload a file
+
+> curl -u admin:admin -v -L -T /bin/bash http://localhost:2880/home/tester/test-file
+
+
+3. real instalation example
+
+```ini
+[${host.name}_gplazmaDomain]
+[${host.name}_gplazmaDomain/gplazma]
+gplazma.ldap.group-member=uniqueMember
+gplazma.ldap.organization=ou=RGY,o=DESY,c=DE
+gplazma.ldap.tree.groups=group
+gplazma.ldap.url=ldap://it-ldap-slave.desy.de
+gplazma.ldap.userfilter=(uid=%s)
+gplazma.roles.admin-gid=5339
+
+[${host.name}_messageDomain]
+dcache.broker.scheme=core
+dcache.java.memory.heap=4096m
+
+[${host.name}_namespaceDomain]
+[${host.name}_namespaceDomain/pnfsmanager]
+chimera.db.url=jdbc:postgresql://${chimera.db.host}/${chimera.db.name}?prepareThreshold=3&targetServerType=master&ApplicationName=${pnfsmanager.cell.name}
+pnfsmanager.db.connections.max=16
+
+
+[${host.name}_coreDomain]
+dcache.broker.scheme=core
+dcache.java.memory.heap=4096m
+
+[${host.name}_coreDomain/poolmanager]
+
+
+[${host.name}_coreDomain/pnfsmanager]
+chimera.db.url=jdbc:postgresql://${chimera.db.host}/${chimera.db.name}?prepareThreshold=3&targetServerType=master&ApplicationName=${pnfsmanager.cell.name}
+pnfsmanager.db.connections.max=16
+
+
+```
+
+
 
 ```ini
 
