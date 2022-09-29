@@ -48,6 +48,7 @@
       <property name="updateQuotaIntervalUnit" value="${pnfsmanager.quota.update.interval.time.unit}"/>
       <property name="quotaSystem" ref="quota-system"/>
       <property name="quotaEnabled" value="${pnfsmanager.enable.quota}"/>
+      <property name="useParentHashOnCreate" value="${pnfsmanager.use-parent-hash-on-create}"/>
   </bean>
 
     <bean id="data-source" class="org.dcache.db.AlarmEnabledDataSource" destroy-method="close">
