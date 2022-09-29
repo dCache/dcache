@@ -507,7 +507,8 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
         InetSocketAddress redirectAddress;
 
         if (_door.isProxied()) {
-            redirectAddress = _door.createProxy(poolAddress).start();
+            redirectAddress = _door.createProxy(poolAddress)
+                  .start(transfer.getClientAddress().getAddress());
         } else {
             redirectAddress = poolAddress;
         }
