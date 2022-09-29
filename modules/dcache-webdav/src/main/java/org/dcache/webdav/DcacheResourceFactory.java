@@ -37,6 +37,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
+import com.google.common.net.InetAddresses;
 import com.google.common.net.MediaType;
 import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.services.space.Space;
@@ -1411,10 +1412,10 @@ public class DcacheResourceFactory
         transfer.setPoolStub(_poolStub);
         transfer.setBillingStub(_billingStub);
         transfer.setIoQueue(_ioQueue);
-        List<InetSocketAddress> addresses = Subjects.getOrigin(subject).getClientChain().stream().
-              map(a -> new InetSocketAddress(a, PROTOCOL_INFO_UNKNOWN_PORT)).
-              collect(Collectors.toList());
-        transfer.setClientAddresses(addresses);
+        transfer.setClientAddresses(List.of(
+              new InetSocketAddress(InetAddresses.forUriString(
+                    ServletRequest.getRequest().getRemoteAddr()),  ServletRequest.getRequest().getRemotePort())
+        ));
         transfer.setOverwriteAllowed(_isOverwriteAllowed);
         transfer.setKafkaSender(_kafkaSender);
     }
