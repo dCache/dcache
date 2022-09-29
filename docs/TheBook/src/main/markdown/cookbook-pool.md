@@ -296,6 +296,58 @@ To vacate the pool <sourcePool>, we first mark the pool `read-only` to avoid tha
     (<sourcePool>) admin > rep ls
     (<sourcePool>) admin >
 
+#### Migrating a pool which belongs to a -resilient/-primary pool group
+
+If Resilience is configured and running, there are some extra steps involved
+to guarantee the procedure will not cause thrashing (that is, to stop the removal of the original file
+from triggering an automatic replication on another pool).
+
+Let us here assume that we want to (a) add a `new-pool` to the resilient pool group `resilient-group`,
+and (b) vacate `old-pool` by moving all its replicas/files to `new-pool`. The procedure to follow
+is:
+
+1. Make the old pool read-only:
+
+   `\s old-pool pool disable -rdonly`
+
+2. Mark this pool as excluded in Resilience:
+
+   `\s Resilience pool exclude old-pool`
+
+3. Add the new pool to the pool manager configuration:
+
+   `\sp psu create pool new-pool`
+
+4. Add this pool to the pool group:
+
+   `\sp psu addto pgroup resilient-group new-pool`
+
+5. Mark this pool as excluded in Resilience:
+
+   `\s Resilience pool exclude new-pool`
+
+6. Run the migration move:
+
+   `\s old-pool migration move new-pool`
+
+7. Remove the old pool from the configuration (it should now be empty):
+
+   `\sp psu removefrom pgroup resilient-group old-pool`
+
+   `\sp psu remove pool old-pool`
+
+8. Include the new pool:
+
+   `\s Resilience pool include new-pool`
+
+It is then recommended you do:
+
+    \s Resilience pool scan new-pool
+
+This is because there is a race condition which may cause a very small percentage of the migrated
+replicas not to have their sticky bit set.  This problem could not be corrected in Resilience,
+but has been in the QoS Engine (available in 8.1 and later).
+
 #### Caching recently accessed files
 
 Say we want to cache all files belonging to the storage group `atlas:default` and accessed within the last month on a set of low-cost cache pools defined by the pool group `cache_pools`. We can achieve this through the following command.
