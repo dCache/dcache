@@ -76,6 +76,7 @@ import java.net.InetSocketAddress;
 import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 import org.dcache.util.NettyPortRange;
+import org.dcache.util.NetworkUtils;
 import org.dcache.xrootd.core.XrootdEncoder;
 import org.dcache.xrootd.core.XrootdHandshakeHandler;
 import org.dcache.xrootd.security.TLSSessionInfo;
@@ -117,7 +118,6 @@ public class NettyXrootProxyAdapter {
     private final EventLoopGroup socketGroup;
     private final EventLoopGroup clientGroup;
     private final NettyPortRange portRange;
-    private final InetAddress localAddress;
     private final InetSocketAddress poolAddress;
     private final TLSSessionInfo tlsSessionInfo;
     private final ScheduledExecutorService executorService;
@@ -126,14 +126,13 @@ public class NettyXrootProxyAdapter {
     private final int responseTimeoutInSeconds;
 
     public NettyXrootProxyAdapter(EventLoopGroup acceptGroup, EventLoopGroup socketGroup,
-          EventLoopGroup clientGroup, NettyPortRange portRange, InetAddress localAddress,
-          InetSocketAddress poolAddress, TLSSessionInfo tlsSessionInfo, int responseTimeoutInSeconds,
+          EventLoopGroup clientGroup, NettyPortRange portRange, InetSocketAddress poolAddress,
+          TLSSessionInfo tlsSessionInfo, int responseTimeoutInSeconds,
           ScheduledExecutorService executorService) {
         this.acceptGroup = acceptGroup;
         this.socketGroup = socketGroup;
         this.clientGroup = clientGroup;
         this.portRange = portRange;
-        this.localAddress = localAddress;
         this.poolAddress = poolAddress;
         this.tlsSessionInfo = tlsSessionInfo;
         this.responseTimeoutInSeconds = responseTimeoutInSeconds;
@@ -149,7 +148,7 @@ public class NettyXrootProxyAdapter {
         return responseTimeoutInSeconds;
     }
 
-    public InetSocketAddress start() throws IOException {
+    public InetSocketAddress start(InetAddress clientAddress) throws IOException {
         ServerBootstrap bootstrap = new ServerBootstrap()
               .group(acceptGroup, socketGroup)
               .channel(NioServerSocketChannel.class)
@@ -162,8 +161,15 @@ public class NettyXrootProxyAdapter {
                   }
               });
 
+        /*
+         *  On dual stack deployments like BNL's, it is possible
+         *  that only the IPv4 address is exposed to the outside.
+         *  In this case, we need to make sure the proxy is reachable.
+         */
+        InetAddress proxyAddress = NetworkUtils.getLocalAddress(clientAddress);
+
         InetSocketAddress redirectEndpoint = (InetSocketAddress) portRange.bind(bootstrap,
-              localAddress).localAddress();
+              proxyAddress).localAddress();
 
         LOGGER.info("Proxy {} started, listening on {}.", proxyId, redirectEndpoint);
 

@@ -1190,7 +1190,7 @@ public class XrootdDoor
         factory = SSLHandlerFactory.getHandlerFactory(CLIENT_TLS, sslHandlerFactories);
         tlsSessionInfo.setClientSslHandlerFactory(factory);
         NettyXrootProxyAdapter adapter = new NettyXrootProxyAdapter(acceptGroup, socketGroup,
-              clientGroup, portRange, InetAddress.getLocalHost(), poolAddress, tlsSessionInfo,
+              clientGroup, portRange, poolAddress, tlsSessionInfo,
               proxyResponseTimeoutInSeconds, proxyTimerExecutor);
         return adapter;
     }
