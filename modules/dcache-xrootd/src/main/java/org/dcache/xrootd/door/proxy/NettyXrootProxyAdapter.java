@@ -125,6 +125,8 @@ public class NettyXrootProxyAdapter {
 
     private final int responseTimeoutInSeconds;
 
+    private Channel proxyChannel;
+
     public NettyXrootProxyAdapter(EventLoopGroup acceptGroup, EventLoopGroup socketGroup,
           EventLoopGroup clientGroup, NettyPortRange portRange, InetSocketAddress poolAddress,
           TLSSessionInfo tlsSessionInfo, int responseTimeoutInSeconds,
@@ -153,7 +155,7 @@ public class NettyXrootProxyAdapter {
               .group(acceptGroup, socketGroup)
               .channel(NioServerSocketChannel.class)
               .childOption(ChannelOption.TCP_NODELAY, false)
-              .childOption(ChannelOption.SO_KEEPALIVE, true)
+              .childOption(ChannelOption.SO_KEEPALIVE, false)
               .childHandler(new ChannelInitializer<>() {
                   @Override
                   protected void initChannel(Channel ch) throws Exception {
@@ -167,13 +169,15 @@ public class NettyXrootProxyAdapter {
          *  In this case, we need to make sure the proxy is reachable.
          */
         InetAddress proxyAddress = NetworkUtils.getLocalAddress(clientAddress);
-
-        InetSocketAddress redirectEndpoint = (InetSocketAddress) portRange.bind(bootstrap,
-              proxyAddress).localAddress();
+        proxyChannel = portRange.bind(bootstrap, proxyAddress);
+        InetSocketAddress redirectEndpoint = (InetSocketAddress) proxyChannel.localAddress();
 
         LOGGER.info("Proxy {} started, listening on {}.", proxyId, redirectEndpoint);
-
         return redirectEndpoint;
+    }
+
+    public void shutdown() throws InterruptedException {
+        proxyChannel.close().sync();
     }
 
     private void initChannel(Channel ch) throws Exception {
@@ -188,4 +192,6 @@ public class NettyXrootProxyAdapter {
         pipeline.addLast("receiver", requestHandler);
         pipeline.addLast("errorHandler", errorHandler);
     }
+
+
 }

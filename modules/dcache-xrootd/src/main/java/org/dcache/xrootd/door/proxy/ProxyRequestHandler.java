@@ -110,6 +110,7 @@ public class ProxyRequestHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ProxyRequestHandler.class);
 
+    private final NettyXrootProxyAdapter adapter;
     private final String proxyId;
     private final ProxyResponseHandler responseHandler;
     private final ProxyErrorHandler errorHandler;
@@ -122,6 +123,7 @@ public class ProxyRequestHandler extends ChannelInboundHandlerAdapter {
     ProxyRequestHandler(NettyXrootProxyAdapter proxyAdapter, EventLoopGroup clientGroup,
           InetSocketAddress poolAddress, TLSSessionInfo tlsSessionInfo,
           ScheduledExecutorService executorService) throws Exception {
+        adapter = proxyAdapter;
         proxyId = proxyAdapter.getProxyId();
         this.tlsSessionInfo = tlsSessionInfo;
         ProxyResponseDecoder decoder = new ProxyResponseDecoder(proxyId);
@@ -221,6 +223,7 @@ public class ProxyRequestHandler extends ChannelInboundHandlerAdapter {
 
     void shutdown() throws InterruptedException {
         responseHandler.shutDown();
+        adapter.shutdown();
         LOGGER.debug("ProxyRequestHandler {}, shutdown.", proxyId);
     }
 
