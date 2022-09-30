@@ -5,6 +5,7 @@ import static java.nio.file.Files.readAllBytes;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import diskCacheV111.pools.PoolV2Mode;
@@ -157,176 +158,176 @@ public class PoolSelectionUnitV2Test {
 
     @Test
     public void testThatReadWithSpecificValuesMatchesTapePools() {
-        whenMatchIsCalledWith("read tape.dcache-devel-test@enstore * 127.0.0.1 Http/1");
+        whenMatchIsCalledWith("read -storageClass=tape.dcache-devel-test -hsm=enstore 127.0.0.1 Http/1");
         assertThatPoolsAre(TAPE_POOLS);
     }
 
     @Test
     public void testThatReadWithProtocolDefaultMatchesTapePools() {
-        whenMatchIsCalledWith("read tape.dcache-devel-test@enstore * 127.0.0.1 */*");
+        whenMatchIsCalledWith("read -storageClass=tape.dcache-devel-test -hsm=enstore 127.0.0.1 */*");
         assertThatPoolsAre(TAPE_POOLS);
     }
 
     @Test
     public void testThatReadWithProtocolGlobMatchesTapePools() {
-        whenMatchIsCalledWith("read tape.dcache-devel-test@enstore * 127.0.0.1 *");
+        whenMatchIsCalledWith("read -storageClass=tape.dcache-devel-test -hsm=enstore 127.0.0.1 *");
         assertThatPoolsAre(TAPE_POOLS);
     }
 
     @Test
     public void testThatReadWithNetDefaultIPv4MatchesTapePools() {
-        whenMatchIsCalledWith("read tape.dcache-devel-test@enstore * 0.0.0.0/0.0.0.0 Http/1");
+        whenMatchIsCalledWith("read -storageClass=tape.dcache-devel-test -hsm=enstore 0.0.0.0/0.0.0.0 Http/1");
         assertThatPoolsAre(TAPE_POOLS);
     }
 
     @Test
     public void testThatReadWithNetDefaultIPv6MatchesTapePools() {
-        whenMatchIsCalledWith("read tape.dcache-devel-test@enstore * ::/0 Http/1");
+        whenMatchIsCalledWith("read -storageClass=tape.dcache-devel-test -hsm=enstore ::/0 Http/1");
         assertThatPoolsAre(TAPE_POOLS);
     }
 
     @Test
     public void testThatReadWithNetGlobMatchesTapePools() {
-        whenMatchIsCalledWith("read tape.dcache-devel-test@enstore * * Http/1");
+        whenMatchIsCalledWith("read -storageClass=tape.dcache-devel-test -hsm=enstore * Http/1");
         assertThatPoolsAre(TAPE_POOLS);
     }
 
     @Test
     public void testThatReadWithAllGlobsMatchesTapePools() {
-        whenMatchIsCalledWith("read tape.dcache-devel-test@enstore * * *");
+        whenMatchIsCalledWith("read -storageClass=tape.dcache-devel-test -hsm=enstore * *");
         assertThatPoolsAre(TAPE_POOLS);
     }
 
     @Test
     public void testThatWriteWithSpecificValuesMatchesTapePools() {
-        whenMatchIsCalledWith("write tape.dcache-devel-test@enstore * 127.0.0.1 Http/1");
+        whenMatchIsCalledWith("write -storageClass=tape.dcache-devel-test -hsm=enstore 127.0.0.1 Http/1");
         assertThatPoolsAre(TAPE_POOLS);
     }
 
     @Test
     public void testThatWriteWithProtocolDefaultMatchesTapePools() {
-        whenMatchIsCalledWith("write tape.dcache-devel-test@enstore * 127.0.0.1 */*");
+        whenMatchIsCalledWith("write -storageClass=tape.dcache-devel-test -hsm=enstore 127.0.0.1 */*");
         assertThatPoolsAre(TAPE_POOLS);
     }
 
     @Test
     public void testThatWriteWithProtocolGlobMatchesTapePools() {
-        whenMatchIsCalledWith("write tape.dcache-devel-test@enstore * 127.0.0.1 *");
+        whenMatchIsCalledWith("write -storageClass=tape.dcache-devel-test -hsm=enstore 127.0.0.1 *");
         assertThatPoolsAre(TAPE_POOLS);
     }
 
     @Test
     public void testThatWriteWithNetDefaultIPv4MatchesTapePools() {
-        whenMatchIsCalledWith("write tape.dcache-devel-test@enstore * 0.0.0.0/0.0.0.0 Http/1");
+        whenMatchIsCalledWith("write -storageClass=tape.dcache-devel-test -hsm=enstore 0.0.0.0/0.0.0.0 Http/1");
         assertThatPoolsAre(TAPE_POOLS);
     }
 
     @Test
     public void testThatWriteWithNetDefaultIPv6MatchesTapePools() {
-        whenMatchIsCalledWith("write tape.dcache-devel-test@enstore * ::/0 Http/1");
+        whenMatchIsCalledWith("write -storageClass=tape.dcache-devel-test -hsm=enstore ::/0 Http/1");
         assertThatPoolsAre(TAPE_POOLS);
     }
 
     @Test
     public void testThatWriteWithNetGlobMatchesTapePools() {
-        whenMatchIsCalledWith("write tape.dcache-devel-test@enstore * * Http/1");
+        whenMatchIsCalledWith("write -storageClass=tape.dcache-devel-test -hsm=enstore * Http/1");
         assertThatPoolsAre(TAPE_POOLS);
     }
 
     @Test
     public void testThatWriteWithAllGlobsMatchesTapePools() {
-        whenMatchIsCalledWith("write tape.dcache-devel-test@enstore * * *");
+        whenMatchIsCalledWith("write -storageClass=tape.dcache-devel-test -hsm=enstore * *");
         assertThatPoolsAre(TAPE_POOLS);
     }
 
     @Test
     public void testThatP2PWithSpecificValuesMatchesTapePools() {
-        whenMatchIsCalledWith("p2p tape.dcache-devel-test@enstore * 127.0.0.1 Http/1");
+        whenMatchIsCalledWith("p2p -storageClass=tape.dcache-devel-test -hsm=enstore 127.0.0.1 Http/1");
         assertThatPoolsAre(TAPE_POOLS);
     }
 
     @Test
     public void testThatP2PWithProtocolDefaultMatchesTapePools() {
-        whenMatchIsCalledWith("p2p tape.dcache-devel-test@enstore * 127.0.0.1 */*");
+        whenMatchIsCalledWith("p2p -storageClass=tape.dcache-devel-test -hsm=enstore 127.0.0.1 */*");
         assertThatPoolsAre(TAPE_POOLS);
     }
 
     @Test
     public void testThatP2PWithProtocolGlobMatchesTapePools() {
-        whenMatchIsCalledWith("p2p tape.dcache-devel-test@enstore * 127.0.0.1 *");
+        whenMatchIsCalledWith("p2p -storageClass=tape.dcache-devel-test -hsm=enstore 127.0.0.1 *");
         assertThatPoolsAre(TAPE_POOLS);
     }
 
     @Test
     public void testThatP2PWithNetDefaultIPv4MatchesTapePools() {
-        whenMatchIsCalledWith("p2p tape.dcache-devel-test@enstore * 0.0.0.0/0.0.0.0 Http/1");
+        whenMatchIsCalledWith("p2p -storageClass=tape.dcache-devel-test -hsm=enstore 0.0.0.0/0.0.0.0 Http/1");
         assertThatPoolsAre(TAPE_POOLS);
     }
 
     @Test
     public void testThatP2PWithNetDefaultIPv6MatchesTapePools() {
-        whenMatchIsCalledWith("p2p tape.dcache-devel-test@enstore * ::/0 Http/1");
+        whenMatchIsCalledWith("p2p -storageClass=tape.dcache-devel-test -hsm=enstore ::/0 Http/1");
         assertThatPoolsAre(TAPE_POOLS);
     }
 
     @Test
     public void testThatP2PWithNetGlobMatchesTapePools() {
-        whenMatchIsCalledWith("p2p tape.dcache-devel-test@enstore * * Http/1");
+        whenMatchIsCalledWith("p2p -storageClass=tape.dcache-devel-test -hsm=enstore * Http/1");
         assertThatPoolsAre(TAPE_POOLS);
     }
 
     @Test
     public void testThatP2PWithAllGlobsMatchesTapePools() {
-        whenMatchIsCalledWith("p2p tape.dcache-devel-test@enstore * * *");
+        whenMatchIsCalledWith("p2p -storageClass=tape.dcache-devel-test -hsm=enstore * *");
         assertThatPoolsAre(TAPE_POOLS);
     }
 
     @Test
     public void testThatCacheWithSpecificValuesMatchesStagePools() {
-        whenMatchIsCalledWith("cache tape.dcache-devel-test@enstore * 127.0.0.1 Http/1");
+        whenMatchIsCalledWith("cache -storageClass=tape.dcache-devel-test -hsm=enstore 127.0.0.1 Http/1");
         assertThatPoolsAre(STAGE_POOLS);
     }
 
     @Test
     public void testThatCacheWithProtocolDefaultMatchesStagePools() {
-        whenMatchIsCalledWith("cache tape.dcache-devel-test@enstore * 127.0.0.1 */*");
+        whenMatchIsCalledWith("cache -storageClass=tape.dcache-devel-test -hsm=enstore 127.0.0.1 */*");
         assertThatPoolsAre(STAGE_POOLS);
     }
 
     @Test
     public void testThatCacheWithProtocolGlobMatchesStagePools() {
-        whenMatchIsCalledWith("cache tape.dcache-devel-test@enstore * 127.0.0.1 *");
+        whenMatchIsCalledWith("cache -storageClass=tape.dcache-devel-test -hsm=enstore 127.0.0.1 *");
         assertThatPoolsAre(STAGE_POOLS);
     }
 
     @Test
     public void testThatCacheWithNetDefaultIPv4MatchesStagePools() {
-        whenMatchIsCalledWith("cache tape.dcache-devel-test@enstore * 0.0.0.0/0.0.0.0 Http/1");
+        whenMatchIsCalledWith("cache -storageClass=tape.dcache-devel-test -hsm=enstore 0.0.0.0/0.0.0.0 Http/1");
         assertThatPoolsAre(STAGE_POOLS);
     }
 
     @Test
     public void testThatCacheWithNetDefaultIPv6MatchesStagePools() {
-        whenMatchIsCalledWith("cache tape.dcache-devel-test@enstore * ::/0 Http/1");
+        whenMatchIsCalledWith("cache -storageClass=tape.dcache-devel-test -hsm=enstore ::/0 Http/1");
         assertThatPoolsAre(STAGE_POOLS);
     }
 
     @Test
     public void testThatCacheWithNetGlobMatchesTapeStage() {
-        whenMatchIsCalledWith("cache tape.dcache-devel-test@enstore * * Http/1");
+        whenMatchIsCalledWith("cache -storageClass=tape.dcache-devel-test -hsm=enstore * Http/1");
         assertThatPoolsAre(STAGE_POOLS);
     }
 
     @Test
     public void testThatCacheWithAllGlobsMatchesTapePools() {
-        whenMatchIsCalledWith("cache tape.dcache-devel-test@enstore * * *");
+        whenMatchIsCalledWith("cache -storageClass=tape.dcache-devel-test -hsm=enstore * *");
         assertThatPoolsAre(STAGE_POOLS);
     }
 
     @Test
     public void testThatReadWithUnmappedNetIPv5DefaultFails() {
         givenIPv4DefaultIsMissingFromConfiguration();
-        whenMatchIsCalledWith("read tape.dcache-devel-test@enstore * 0.0.0.0/0.0.0.0 *");
+        whenMatchIsCalledWith("read -storageClass=tape.dcache-devel-test -hsm=enstore 0.0.0.0/0.0.0.0 *");
         /*
          *  It would be preferable here to throw an exception, but this would
          *  require the defaults to be mapped, which would not be backward compatible.
@@ -337,7 +338,7 @@ public class PoolSelectionUnitV2Test {
     @Test
     public void testThatReadWithUnmappedNetIPv6DefaultFails() {
         givenIPv6DefaultIsMissingFromConfiguration();
-        whenMatchIsCalledWith("read tape.dcache-devel-test@enstore * ::/0 *");
+        whenMatchIsCalledWith("read -storageClass=tape.dcache-devel-test -hsm=enstore ::/0 *");
         /*
          *  It would be preferable here to throw an exception, but this would
          *  require the defaults to be mapped, which would not be backward compatible.
@@ -348,7 +349,7 @@ public class PoolSelectionUnitV2Test {
     @Test
     public void testThatReadWithGlobValueFailsWhenIPv6DefaultMissing() {
         givenIPv6DefaultIsMissingFromConfiguration();
-        whenMatchIsCalledWith("read tape.dcache-devel-test@enstore * * *");
+        whenMatchIsCalledWith("read -storageClass=tape.dcache-devel-test -hsm=enstore * *");
         /*
          *  It would be preferable here to throw an exception, but this would
          *  require the defaults to be mapped, which would not be backward compatible.
@@ -359,7 +360,7 @@ public class PoolSelectionUnitV2Test {
     @Test
     public void testThatReadWithUnmappedProtocolDefaultFails() {
         givenProtocolDefaultIsMissingFromConfiguration();
-        whenMatchIsCalledWith("read tape.dcache-devel-test@enstore * 127.0.0.1 */*");
+        whenMatchIsCalledWith("read -storageClass=tape.dcache-devel-test -hsm=enstore 127.0.0.1 */*");
         /*
          *  It would be preferable here to throw an exception, but this would
          *  require the defaults to be mapped, which would not be backward compatible.
@@ -370,7 +371,7 @@ public class PoolSelectionUnitV2Test {
     @Test
     public void testThatReadWithGlobValueFailsWhenProtocolDefaultMissing() {
         givenProtocolDefaultIsMissingFromConfiguration();
-        whenMatchIsCalledWith("read tape.dcache-devel-test@enstore * 127.0.0.1 */*");
+        whenMatchIsCalledWith("read -storageClass=tape.dcache-devel-test -hsm=enstore 127.0.0.1 */*");
         /*
          *  It would be preferable here to throw an exception, but this would
          *  require the defaults to be mapped, which would not be backward compatible.
@@ -436,6 +437,10 @@ public class PoolSelectionUnitV2Test {
 
     private void whenMatchIsCalledWith(String params) {
         Args args = new Args(params);
-        levels = (PoolPreferenceLevel[]) psu.ac_psux_match_$_5(args);
+        try {
+            levels = (PoolPreferenceLevel[]) psu.ac_psux_match_$_3(args);
+        } catch (Exception e) {
+            assertNull("Unexpected exception", e);
+        }
     }
 }

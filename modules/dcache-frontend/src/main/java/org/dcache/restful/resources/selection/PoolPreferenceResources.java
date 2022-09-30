@@ -136,8 +136,12 @@ public final class PoolPreferenceResources {
           @DefaultValue("none")
           @QueryParam("linkGroup") String linkGroup) {
         try {
-            String command = "psux match " + type + " " + store + " "
-                  + dcache + " " + net + " " + protocol
+            // REVISIT -- change the API parameters
+            String storageClass = store.substring(0, store.indexOf("@"));
+            String hsm = store.substring(store.indexOf("@")+1);
+
+            String command = "psux match -storageClass=" + storageClass + " -hsm=" + hsm
+                  + " -cacheClass=" + dcache + " " + type + " " + net + " " + protocol
                   + (linkGroup.equals("none") ?
                   "" : " -linkGroup=" + linkGroup);
 
