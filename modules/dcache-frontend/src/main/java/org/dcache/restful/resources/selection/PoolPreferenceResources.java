@@ -82,7 +82,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import org.dcache.cells.CellStub;
-import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.selection.PreferenceResult;
 import org.json.JSONException;
 import org.slf4j.Logger;
@@ -103,9 +102,6 @@ public final class PoolPreferenceResources {
     private static final Logger LOGGER = LoggerFactory.getLogger(PoolPreferenceResources.class);
 
     @Inject
-    private PoolMonitor poolMonitor;
-
-    @Inject
     @Named("pool-manager-stub")
     private CellStub poolManager;
 
@@ -116,38 +112,45 @@ public final class PoolPreferenceResources {
           @ApiResponse(code = 500, message = "Internal Server Error"),
     })
     @Produces(MediaType.APPLICATION_JSON)
-    public List<PreferenceResult> match(@ApiParam(value = "The operation type.",
-          allowableValues = "READ,CACHE,WRITE,P2P,ANY")
-    @DefaultValue("READ")
-    @QueryParam("type") String type,
-          @ApiParam("The name of the matching store unit.")
+    public List<PreferenceResult> match(
+          @ApiParam(value = "The I/O direction.", allowableValues = "READ,CACHE,WRITE,P2P")
+          @DefaultValue("READ")
+          @QueryParam("ioDirection") String ioDirection,
+          @ApiParam("The name of the storage class.")
+          @QueryParam("storageClass") String storageClass,
+          @ApiParam("The name of the hsm type.")
+          @QueryParam("hsm") String hsm,
+          @ApiParam("The name of the cache class.")
+          @DefaultValue("")
+          @QueryParam("cacheClass") String cacheClass,
+          @ApiParam("The link group unit.")
+          @DefaultValue("")
+          @QueryParam("linkGroup") String linkGroup,
+          @ApiParam("The pnfsId of a file.")
+          @DefaultValue("")
+          @QueryParam("pnfsId") String pnfsId,
+          @ApiParam("The path of a file.")
+          @DefaultValue("")
+          @QueryParam("path") String path,
+          @ApiParam("The name of the net unit.")
           @DefaultValue("*")
-          @QueryParam("store") String store,
-          @ApiParam("The name of the matching dcache unit.")
-          @DefaultValue("*")
-          @QueryParam("dcache") String dcache,
-          @DefaultValue("*")
-          @ApiParam("The name of the matching net unit.")
           @QueryParam("net") String net,
+          @ApiParam("The name of the protocol unit.")
           @DefaultValue("*")
-          @ApiParam("The matching protocol unit.")
-          @QueryParam("protocol") String protocol,
-          @ApiParam("The linkgroup unit, or 'none' for a request outside of a linkgroup.")
-          @DefaultValue("none")
-          @QueryParam("linkGroup") String linkGroup) {
+          @QueryParam("protocol") String protocol) {
         try {
-            // REVISIT -- change the API parameters
-            String storageClass = store.substring(0, store.indexOf("@"));
-            String hsm = store.substring(store.indexOf("@")+1);
-
-            String command = "psux match -storageClass=" + storageClass + " -hsm=" + hsm
-                  + " -cacheClass=" + dcache + " " + type + " " + net + " " + protocol
-                  + (linkGroup.equals("none") ?
-                  "" : " -linkGroup=" + linkGroup);
+            StringBuilder command = new StringBuilder("psux match ")
+                  .append(ioDirection)
+                  .append(storageClass == null ? "" : " -storageClass=" + storageClass)
+                  .append(hsm == null ? "" : " -hsm=" + hsm)
+                  .append(cacheClass.isBlank() ? "" : " -cacheClass=" + cacheClass)
+                  .append(linkGroup.isBlank() ? "" : " -linkGroup=" + linkGroup)
+                  .append(pnfsId.isBlank() ? "" : " -pnfsId=" + pnfsId)
+                  .append(path.isBlank() ? "" : " -path=" + path)
+                  .append(" ").append(net).append(" ").append(protocol);
 
             PoolPreferenceLevel[] poolPreferenceLevels =
-                  poolManager.sendAndWait(command,
-                        PoolPreferenceLevel[].class);
+                  poolManager.sendAndWait(command.toString(), PoolPreferenceLevel[].class);
 
             List<PreferenceResult> results = new ArrayList<>();
 
