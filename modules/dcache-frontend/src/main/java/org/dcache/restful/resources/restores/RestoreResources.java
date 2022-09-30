@@ -136,8 +136,14 @@ public final class RestoreResources {
           @QueryParam("offset") Integer offset,
           @ApiParam("The maximum number of restores to return.")
           @QueryParam("limit") Integer limit,
-          @ApiParam("Select only restores that affect this PNFS-ID.")
+          @ApiParam("Select only restores that affect this pnfsId.")
           @QueryParam("pnfsid") String pnfsid,
+          @ApiParam("Select only restores that affect this path.")
+          @QueryParam("path") String path,
+          @ApiParam("Select only restores that affect this owner.")
+          @QueryParam("owner") String owner,
+          @ApiParam("Select only restores that affect this group.")
+          @QueryParam("group") String group,
           @ApiParam("Select only restores triggered by clients from this subnet.")
           @QueryParam("subnet") String subnet,
           @ApiParam("Select only restores on this pool.")
@@ -152,14 +158,8 @@ public final class RestoreResources {
                 throw new ForbiddenException("Restores can only be accessed by admin users.");
             }
 
-            return service.get(token,
-                  offset,
-                  limit,
-                  pnfsid,
-                  subnet,
-                  pool,
-                  status,
-                  sort);
+            return service.get(token, offset, limit, pnfsid, path, owner, group, subnet, pool,
+                  status, sort);
         } catch (CacheException e) {
             LOGGER.warn(Exceptions.meaningfulMessage(e));
             throw new InternalServerErrorException(e);

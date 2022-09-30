@@ -75,6 +75,9 @@ public interface RestoresInfoService {
      * @param offset Return items beginning at this index.
      * @param limit  Return at most this number of items.
      * @param pnfsid Filter on pnfsid.
+     * @param path Filter on path.
+     * @param owner Filter on owner.
+     * @param group Filter on group.
      * @param subnet Filter on subnet.
      * @param pool   Filter on pool.
      * @param status Filter on status.
@@ -85,6 +88,9 @@ public interface RestoresInfoService {
           Integer offset,
           Integer limit,
           String pnfsid,
+          String path,
+          String owner,
+          String group,
           String subnet,
           String pool,
           String status,
