@@ -6,6 +6,9 @@ import static diskCacheV111.poolManager.PoolSelectionUnit.UnitType.PROTOCOL;
 import static diskCacheV111.poolManager.PoolSelectionUnit.UnitType.STORE;
 import static java.util.Comparator.comparing;
 import static java.util.Objects.requireNonNull;
+import static org.dcache.namespace.FileAttribute.CACHECLASS;
+import static org.dcache.namespace.FileAttribute.HSM;
+import static org.dcache.namespace.FileAttribute.STORAGECLASS;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
@@ -64,6 +67,10 @@ public class PoolSelectionUnitV2
     private static final String __version = "$Id: PoolSelectionUnitV2.java,v 1.42 2007-10-25 14:03:54 tigran Exp $";
     private static final Logger LOGGER = LoggerFactory.getLogger(PoolSelectionUnitV2.class);
     private static final String NO_NET = "<no net>";
+
+    private static final String DEFAULT_PROTOCOL_UNIT = "*/*";
+    private static final String DEFAULT_IPV4_NET_UNIT = "0.0.0.0/0.0.0.0";
+    private static final String DEFAULT_IPV6_NET_UNIT = "::/0";
 
     @Override
     public String getVersion() {
@@ -571,8 +578,26 @@ public class PoolSelectionUnitV2
               "Predicate argument cannot be null.");
 
         StorageInfo storageInfo = fileAttributes.getStorageInfo();
-        String storeUnitName = storageInfo.getStorageClass() + "@" + storageInfo.getHsm();
+        String storageClass = storageInfo.getStorageClass();
+        String hsm = storageInfo.getHsm();
         String dCacheUnitName = storageInfo.getCacheClass();
+
+        /*
+         *  The preference level build requires these to be present in the file attributes.
+         */
+        if (fileAttributes.isUndefined(STORAGECLASS)) {
+            fileAttributes.setStorageClass(storageClass);
+        }
+
+        if (fileAttributes.isUndefined(HSM)) {
+            fileAttributes.setHsm(hsm);
+        }
+
+        if (fileAttributes.isUndefined(CACHECLASS)) {
+            fileAttributes.setCacheClass(dCacheUnitName);
+        }
+
+        String storeUnitName = storageClass + "@" + hsm;
 
         Map<String, String> variableMap = storageInfo.getMap();
 
@@ -656,15 +681,15 @@ public class PoolSelectionUnitV2
                 //
                 if (unit == null) {
                     LOGGER.debug("no matching protocol unit found for: {}", protocolUnitName);
-                    throw new IllegalArgumentException("Unit not found : "
-                          + protocolUnitName);
+                    /* for backward compatibility, do not throw exception */
+                } else {
+                    LOGGER.debug("matching protocol unit found: {}", unit);
+                    list.add(unit);
                 }
-                LOGGER.debug("matching protocol unit found: {}", unit);
-                list.add(unit);
             }
             if (dCacheUnitName != null) {
                 Unit unit = _units.get(dCacheUnitName);
-                if (unit == null) {
+                if (unit == null || unit.getType() != DCACHE) {
                     LOGGER.debug("no matching dCache unit found for: {}", dCacheUnitName);
                     throw new IllegalArgumentException("Unit not found : "
                           + dCacheUnitName);
@@ -674,14 +699,21 @@ public class PoolSelectionUnitV2
             }
             if (netUnitName != null) {
                 try {
-                    Unit unit = _netHandler.match(netUnitName);
+                    Unit unit;
+                    if (DEFAULT_IPV4_NET_UNIT.equals(netUnitName)
+                          || DEFAULT_IPV6_NET_UNIT.equals(netUnitName)) {
+                        unit = _units.get(netUnitName);
+                    } else {
+                        unit = _netHandler.match(netUnitName);
+                    }
+
                     if (unit == null) {
                         LOGGER.debug("no matching net unit found for: {}", netUnitName);
-                        throw new IllegalArgumentException(
-                              "Unit not matched : " + netUnitName);
+                        /* for backward compatibility, do not throw exception */
+                    } else {
+                        LOGGER.debug("matching net unit found: {}", unit);
+                        list.add(unit);
                     }
-                    LOGGER.debug("matching net unit found: {}", unit);
-                    list.add(unit);
                 } catch (UnknownHostException uhe) {
                     throw new IllegalArgumentException(
                           "NetUnit not resolved : " + netUnitName);
@@ -1614,8 +1646,8 @@ public class PoolSelectionUnitV2
           String protocolUnit) {
         StorageInfo info = GenericStorageInfo.valueOf(storeUnit, dCacheUnit);
         return match(DirectionType.valueOf(direction.toUpperCase()),
-              netUnit.equals("*") ? null : netUnit,
-              protocolUnit.equals("*") ? null : protocolUnit,
+              netUnit.equals("*") ? DEFAULT_IPV6_NET_UNIT : netUnit,
+              protocolUnit.equals("*") ? DEFAULT_PROTOCOL_UNIT : protocolUnit,
               FileAttributes.ofStorageInfo(info), linkGroup, p -> false);
     }
 
