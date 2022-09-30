@@ -116,12 +116,20 @@ public final class RestoresInfoServiceImpl extends
                 case "pnfsid":
                     comparator = Comparator.comparing(RestoreInfo::getPnfsId);
                     break;
+                case "path":
+                    comparator = Comparator.comparing(RestoreInfo::getPath);
+                    break;
+                case "owner":
+                    comparator = Comparator.comparing(RestoreInfo::getOwner);
+                    break;
+                case "group":
+                    comparator = Comparator.comparing(RestoreInfo::getOwnerGroup);
+                    break;
                 case "subnet":
                     comparator = Comparator.comparing(RestoreInfo::getSubnet);
                     break;
                 case "pool":
-                    comparator = Comparator.comparing(
-                          RestoreInfo::getPoolCandidate);
+                    comparator = Comparator.comparing(RestoreInfo::getPoolCandidate);
                     break;
                 case "status":
                     comparator = Comparator.comparing(RestoreInfo::getStatus);
@@ -137,8 +145,7 @@ public final class RestoresInfoServiceImpl extends
                     break;
                 default:
                     throw new IllegalArgumentException(
-                          "sort field " + sort.getName()
-                                + " not supported.");
+                          "sort field " + sort.getName() + " not supported.");
             }
 
             if (sort.isReverse()) {
@@ -149,26 +156,27 @@ public final class RestoresInfoServiceImpl extends
         };
     }
 
-    private static Predicate<RestoreInfo> getFilter(String pnfsid,
-          String subnet,
-          String pool,
-          String status) {
+    private static Predicate<RestoreInfo> getFilter(String pnfsid, String path, String owner,
+          String group, String subnet, String pool, String status) {
         Predicate<RestoreInfo> matchesPnfsid =
               (info) -> pnfsid == null || Strings.nullToEmpty
-                          (String.valueOf(info.getPnfsId()))
-                    .contains(pnfsid);
+                    (String.valueOf(info.getPnfsId())).contains(pnfsid);
+        Predicate<RestoreInfo> matchesPath =
+              (info) -> path == null || Strings.nullToEmpty(info.getPath()).contains(path);
+        Predicate<RestoreInfo> matchesOwner =
+              (info) -> owner == null || Strings.nullToEmpty(info.getOwner()).contains(owner);
+        Predicate<RestoreInfo> matchesGroup =
+              (info) -> group == null || Strings.nullToEmpty(info.getOwnerGroup()).contains(group);
         Predicate<RestoreInfo> matchesSubnet =
-              (info) -> subnet == null || Strings.nullToEmpty(info.getSubnet())
-                    .contains(subnet);
+              (info) -> subnet == null || Strings.nullToEmpty(info.getSubnet()).contains(subnet);
         Predicate<RestoreInfo> matchesPool =
-              (info) -> pool == null || Strings.nullToEmpty(info.getPoolCandidate())
-                    .contains(pool);
+              (info) -> pool == null || Strings.nullToEmpty(info.getPoolCandidate()).contains(pool);
         Predicate<RestoreInfo> matchesStatus =
-              (info) -> status == null || Strings.nullToEmpty(info.getStatus())
-                    .contains(status);
-        return matchesPnfsid.and(matchesSubnet).and(matchesPool).and(matchesStatus);
-    }
+              (info) -> status == null || Strings.nullToEmpty(info.getStatus()).contains(status);
 
+        return matchesPnfsid.and(matchesPath).and(matchesOwner).and(matchesGroup).and(matchesSubnet)
+              .and(matchesPool).and(matchesStatus);
+    }
 
     /**
      * <p>Data store providing snapshots.</p>
@@ -177,16 +185,10 @@ public final class RestoresInfoServiceImpl extends
           access = new SnapshotDataAccess<>();
 
     @Override
-    public SnapshotList<RestoreInfo> get(UUID token,
-          Integer offset,
-          Integer limit,
-          String pnfsid,
-          String subnet,
-          String pool,
-          String status,
-          String sort)
-          throws CacheException {
-        Predicate<RestoreInfo> filter = getFilter(pnfsid, subnet, pool, status);
+    public SnapshotList<RestoreInfo> get(UUID token, Integer offset, Integer limit, String pnfsid,
+          String path, String owner, String group, String subnet, String pool, String status,
+          String sort) throws CacheException {
+        Predicate<RestoreInfo> filter = getFilter(pnfsid, path, owner, group, subnet, pool, status);
 
         if (Strings.isNullOrEmpty(sort)) {
             sort = "pool,started";
@@ -207,13 +209,12 @@ public final class RestoresInfoServiceImpl extends
         try {
             for (RestoreHandlerInfo restore : refreshed) {
                 RestoreInfo info = new RestoreInfo(restore);
-                collector.setPath(info);
+                collector.setNamespaceInfo(info);
                 newInfo.put(info.getKey(), info);
             }
         } catch (CacheException e) {
             Throwable t = e.getCause();
-            LOGGER.warn("Update could not complete: {}, {}.",
-                  e.getMessage(),
+            LOGGER.warn("Update could not complete: {}, {}.", e.getMessage(),
                   t == null ? "" : t.toString());
         }
 

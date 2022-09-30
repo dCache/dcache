@@ -62,13 +62,17 @@ package org.dcache.restful.util.restores;
 import diskCacheV111.poolManager.RestoreRequestsReceiver;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.RestoreHandlerInfo;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
+import org.dcache.namespace.FileAttribute;
 import org.dcache.restful.providers.restores.RestoreInfo;
 import org.dcache.util.collector.CellMessagingCollector;
+import org.dcache.vehicles.FileAttributes;
 import org.springframework.beans.factory.annotation.Required;
 
 /**
@@ -76,6 +80,9 @@ import org.springframework.beans.factory.annotation.Required;
  */
 public class RestoreCollector extends
       CellMessagingCollector<List<RestoreHandlerInfo>> {
+
+    private static final Set<FileAttribute> REQUIRED = Set.of(FileAttribute.OWNER,
+          FileAttribute.OWNER_GROUP);
 
     private RestoreRequestsReceiver receiver;
     private CellStub pnfsStub;
@@ -96,8 +103,12 @@ public class RestoreCollector extends
         super.initialize(timeout, timeUnit);
     }
 
-    public void setPath(RestoreInfo info) throws CacheException {
-        info.setPath(pnfsHandler.getPathByPnfsId(info.getPnfsId()).toString());
+    public void setNamespaceInfo(RestoreInfo info) throws CacheException {
+        PnfsId pnfsId = info.getPnfsId();
+        info.setPath(pnfsHandler.getPathByPnfsId(pnfsId).toString());
+        FileAttributes attributes = pnfsHandler.getFileAttributes(pnfsId, REQUIRED);
+        info.setOwner(String.valueOf(attributes.getOwner()));
+        info.setOwnerGroup(String.valueOf(attributes.getGroup()));
     }
 
     @Required
