@@ -72,11 +72,17 @@ public class RestoreInfo implements Comparable<RestoreInfo>, InvalidatableItem, 
     @ApiModelProperty("Identifies the transfer.")
     private String key;
 
-    @ApiModelProperty("PNFS-ID of staged file.")
+    @ApiModelProperty("PnfsId of staged file.")
     private PnfsId pnfsId;
 
     @ApiModelProperty("Path of staged file.")
     private String path;
+
+    @ApiModelProperty("Owner of the staged file.")
+    private String owner;
+
+    @ApiModelProperty("Owner group of the staged file.")
+    private String ownerGroup;
 
     @ApiModelProperty("Net identifier of the staging host.")
     private String subnet;
@@ -145,6 +151,14 @@ public class RestoreInfo implements Comparable<RestoreInfo>, InvalidatableItem, 
         return key;
     }
 
+    public String getOwner() {
+        return owner;
+    }
+
+    public String getOwnerGroup() {
+        return ownerGroup;
+    }
+
     public String getPath() {
         return path;
     }
@@ -197,6 +211,14 @@ public class RestoreInfo implements Comparable<RestoreInfo>, InvalidatableItem, 
 
     public void setKey(String key) {
         this.key = key;
+    }
+
+    public void setOwner(String owner) {
+        this.owner = owner;
+    }
+
+    public void setOwnerGroup(String ownerGroup) {
+        this.ownerGroup = ownerGroup;
     }
 
     public void setPath(String path) {
