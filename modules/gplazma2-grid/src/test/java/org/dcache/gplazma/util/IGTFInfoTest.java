@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2016 - 2020 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 - 2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -124,4 +124,10 @@ public class IGTFInfoTest {
         assertThat(policy.getVersion(), is(equalTo(new Version("1.78-1"))));
     }
 
+    @Test(expected = IGTFInfo.ParserException.class)
+    public void shouldFailWithParserException() throws Exception {
+        IGTFInfo.Builder builder = IGTFInfo.builder(POLICY);
+        builder.setRequires("");
+        builder.build();
+    }
 }
