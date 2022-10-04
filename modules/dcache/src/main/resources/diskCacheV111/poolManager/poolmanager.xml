@@ -33,6 +33,7 @@
 
   <bean id="psu" class="diskCacheV111.poolManager.PoolSelectionUnitV2">
     <description>Pool selection unit</description>
+    <property name="pnfsHandler" ref="pnfs"/>
   </bean>
 
   <bean id="cm" class="diskCacheV111.poolManager.CostModuleV1">

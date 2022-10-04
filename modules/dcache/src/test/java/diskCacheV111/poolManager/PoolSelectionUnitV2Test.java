@@ -5,6 +5,7 @@ import static java.nio.file.Files.readAllBytes;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import diskCacheV111.pools.PoolV2Mode;
@@ -436,6 +437,10 @@ public class PoolSelectionUnitV2Test {
 
     private void whenMatchIsCalledWith(String params) {
         Args args = new Args(params);
-        levels = (PoolPreferenceLevel[]) psu.ac_psux_match_$_5(args);
+        try {
+            levels = (PoolPreferenceLevel[]) psu.ac_psux_match_$_5(args);
+        } catch (Exception e) {
+            assertNull("Unexpected exception", e);
+        }
     }
 }

@@ -82,7 +82,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import org.dcache.cells.CellStub;
-import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.selection.PreferenceResult;
 import org.json.JSONException;
 import org.slf4j.Logger;
@@ -103,9 +102,6 @@ public final class PoolPreferenceResources {
     private static final Logger LOGGER = LoggerFactory.getLogger(PoolPreferenceResources.class);
 
     @Inject
-    private PoolMonitor poolMonitor;
-
-    @Inject
     @Named("pool-manager-stub")
     private CellStub poolManager;
 
@@ -117,33 +113,40 @@ public final class PoolPreferenceResources {
     })
     @Produces(MediaType.APPLICATION_JSON)
     public List<PreferenceResult> match(@ApiParam(value = "The operation type.",
-          allowableValues = "READ,CACHE,WRITE,P2P,ANY")
+          allowableValues = "READ,CACHE,WRITE,P2P")
     @DefaultValue("READ")
     @QueryParam("type") String type,
-          @ApiParam("The name of the matching store unit.")
+          @ApiParam("The matching storage unit <storageClass@hsm>.")
           @DefaultValue("*")
           @QueryParam("store") String store,
-          @ApiParam("The name of the matching dcache unit.")
+          @ApiParam("The matching cache class.")
           @DefaultValue("*")
           @QueryParam("dcache") String dcache,
+          @ApiParam("The matching net unit.")
           @DefaultValue("*")
-          @ApiParam("The name of the matching net unit.")
           @QueryParam("net") String net,
-          @DefaultValue("*")
           @ApiParam("The matching protocol unit.")
+          @DefaultValue("*")
           @QueryParam("protocol") String protocol,
-          @ApiParam("The linkgroup unit, or 'none' for a request outside of a linkgroup.")
-          @DefaultValue("none")
-          @QueryParam("linkGroup") String linkGroup) {
+          @ApiParam("The matching link group unit.")
+          @DefaultValue("")
+          @QueryParam("linkGroup") String linkGroup,
+          @ApiParam("The pnfsId of a matching file.")
+          @DefaultValue("")
+          @QueryParam("pnfsId") String pnfsId,
+          @ApiParam("The path of a matching file.")
+          @DefaultValue("")
+          @QueryParam("path") String path) {
         try {
-            String command = "psux match " + type + " " + store + " "
-                  + dcache + " " + net + " " + protocol
-                  + (linkGroup.equals("none") ?
-                  "" : " -linkGroup=" + linkGroup);
+            StringBuilder command = new StringBuilder("psux match ")
+                  .append(type).append(" ").append(store).append(" ").append(dcache)
+                  .append(" ").append(net).append(" ").append(protocol)
+                  .append(linkGroup.isBlank() ? "" : " -linkGroup=" + linkGroup)
+                  .append(pnfsId.isBlank() ? "" : " -pnfsId=" + pnfsId)
+                  .append(path.isBlank() ? "" : " -path=" + path);
 
-            PoolPreferenceLevel[] poolPreferenceLevels =
-                  poolManager.sendAndWait(command,
-                        PoolPreferenceLevel[].class);
+            PoolPreferenceLevel[] poolPreferenceLevels = poolManager.sendAndWait(command.toString(),
+                  PoolPreferenceLevel[].class);
 
             List<PreferenceResult> results = new ArrayList<>();
 
