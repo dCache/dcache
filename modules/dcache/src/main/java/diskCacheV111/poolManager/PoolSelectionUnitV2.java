@@ -14,10 +14,14 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import com.google.common.base.Splitter;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import diskCacheV111.pools.PoolV2Mode;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import dmg.cells.nucleus.CellAddressCore;
@@ -54,6 +58,7 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Args;
 import org.dcache.util.Glob;
 import org.dcache.vehicles.FileAttributes;
@@ -67,6 +72,10 @@ public class PoolSelectionUnitV2
     private static final String __version = "$Id: PoolSelectionUnitV2.java,v 1.42 2007-10-25 14:03:54 tigran Exp $";
     private static final Logger LOGGER = LoggerFactory.getLogger(PoolSelectionUnitV2.class);
     private static final String NO_NET = "<no net>";
+
+    private static final Set<FileAttribute> STORAGE_INFO = Set.of(FileAttribute.CACHECLASS,
+          FileAttribute.STORAGECLASS, FileAttribute.HSM, FileAttribute.OWNER,
+          FileAttribute.OWNER_GROUP);
 
     private static final String DEFAULT_PROTOCOL_UNIT = "*/*";
     private static final String DEFAULT_IPV4_NET_UNIT = "0.0.0.0/0.0.0.0";
@@ -100,6 +109,8 @@ public class PoolSelectionUnitV2
     private final Lock _psuWriteLock = _psuReadWriteLock.writeLock();
 
     private final NetHandler _netHandler = new NetHandler();
+
+    private transient PnfsHandler _pnfsHandler;
 
     @Override
     public Map<String, SelectionLink> getLinks() {
@@ -1225,6 +1236,10 @@ public class PoolSelectionUnitV2
         } finally {
             wunlock();
         }
+    }
+
+    public void setPnfsHandler(PnfsHandler pnfsHandler) {
+        _pnfsHandler = pnfsHandler;
     }
 
     public String setPool(String glob, String mode) {
@@ -2780,13 +2795,13 @@ public class PoolSelectionUnitV2
         return listUnits(more, detail, args.getArguments());
     }
 
-    public static final String hh_psu_match = "[-linkGroup=<link group>] "
-          + "read|cache|write|p2p <store unit>|* <store unit>|* "
+    public static final String hh_psu_match = "[-linkGroup=<link group>] [-pnfsId=<pnfsid>] "
+          + "[-path=<path>] read|cache|write|p2p <store unit>|* <store unit>|* "
           + "<store unit>|* <protocol unit>|* ";
 
     public String ac_psu_match_$_5(Args args) throws Exception {
-        return matchLinkGroups(args.getOpt("linkGroup"), args.argv(0),
-              args.argv(1), args.argv(2), args.argv(3), args.argv(4));
+        String[] param = getMatchLinkGroupsParameters(args);
+        return matchLinkGroups(param[0],param[1],param[2],param[3],param[4],param[5]);
     }
 
     public static final String hh_psu_match2 = "<unit> [...] [-net=<net unit>}";
@@ -3097,14 +3112,13 @@ public class PoolSelectionUnitV2
         return listUnitGroupXml(groupName);
     }
 
-    public static final String hh_psux_match = "[-linkGroup=<link group>] "
-          + "read|cache|write <store unit>|* <store unit>|* "
+    public static final String hh_psux_match = "[-linkGroup=<link group>] [-pnfsId=<pnfsid>] "
+          + "[-path=<path>] read|cache|write <store unit>|* <store unit>|* "
           + "<store unit>|* <protocol unit>|* ";
 
-    public Object ac_psux_match_$_5(Args args) {
-        return matchLinkGroupsXml(args.getOpt("linkGroup"),
-              args.argv(0), args.argv(1), args.argv(2), args.argv(3),
-              args.argv(4));
+    public Object ac_psux_match_$_5(Args args) throws Exception {
+        String[] param = getMatchLinkGroupsParameters(args);
+        return matchLinkGroupsXml(param[0],param[1],param[2],param[3],param[4],param[5]);
     }
 
     private void writeObject(ObjectOutputStream stream) throws IOException {
@@ -3114,5 +3128,47 @@ public class PoolSelectionUnitV2
         } finally {
             runlock();
         }
+    }
+
+    private String[] getMatchLinkGroupsParameters(Args args) throws CommandException, CacheException {
+        String linkGroup = args.getOpt("linkGroup");
+        String pnfsid = args.getOpt("pnfsId");
+        String path = args.getOpt("path");
+        String ioDirection = args.argv(0);
+        String storageUnit = args.argv(1);
+        String cacheClass = args.argv(2);
+        String netUnit = args.argv(3);
+        String protocol = args.argv(4);
+
+        FileAttributes storageAttributes = null;
+
+        if (Strings.emptyToNull(pnfsid) != null) {
+            if (ioDirection.equalsIgnoreCase("WRITE")) {
+                throw new CommandException("WRITE direction not allowed with -pnfsId.");
+            }
+            storageAttributes = _pnfsHandler.getFileAttributes(new PnfsId(pnfsid), STORAGE_INFO);
+        } else if (Strings.emptyToNull(path) != null) {
+            if (ioDirection.equalsIgnoreCase("WRITE")) {
+                throw new CommandException("WRITE direction not allowed with -path.");
+            }
+            storageAttributes = _pnfsHandler.getFileAttributes(path, STORAGE_INFO);
+        }
+
+        if (storageAttributes != null) {
+            String storageClass = storageAttributes.getStorageClass();
+            String hsm = storageAttributes.getHsm();
+            storageUnit = storageClass + "@" + hsm;
+
+            cacheClass = storageAttributes.getCacheClass();
+            if (cacheClass == null) {
+                cacheClass = "*";
+            }
+        }
+
+        if (storageUnit == null || "*".equals(storageUnit)) {
+            throw new CommandException("storage unit must be provided.");
+        }
+
+        return new String[] {linkGroup, ioDirection, storageUnit, cacheClass, netUnit, protocol};
     }
 }
