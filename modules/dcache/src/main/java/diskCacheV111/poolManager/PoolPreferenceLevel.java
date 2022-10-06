@@ -2,6 +2,7 @@
 
 package diskCacheV111.poolManager;
 
+import com.google.common.base.MoreObjects;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,5 +37,14 @@ public class PoolPreferenceLevel implements Serializable {
         }
 
         return prioPools;
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+              .add("tag", _tag)
+              .add("pools", _list)
+              .omitNullValues()
+              .toString();
     }
 }
