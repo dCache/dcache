@@ -765,7 +765,7 @@ public class ChimeraNameSpaceProvider
         } catch (FileNotFoundChimeraFsException e) {
             throw new FileNotFoundCacheException("No such file: " + pnfsId);
         } catch (ChimeraFsException e) {
-            LOGGER.error("Exception in addCacheLocation {}", e);
+            LOGGER.error("Exception in addCacheLocation {}", e.getMessage());
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
         }
     }
@@ -1247,7 +1247,7 @@ public class ChimeraNameSpaceProvider
         } catch (FileNotFoundChimeraFsException e) {
             throw new FileNotFoundCacheException("No such file or directory: " + pnfsId);
         } catch (IOException e) {
-            LOGGER.error("Exception in setFileAttributes: {}", e);
+            LOGGER.error("Exception in setFileAttributes: {}", e.getMessage());
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
         }
 
@@ -1305,7 +1305,7 @@ public class ChimeraNameSpaceProvider
         } catch (FileNotFoundChimeraFsException e) {
             throw new FileNotFoundCacheException("No such file or directory: " + path);
         } catch (IOException e) {
-            LOGGER.error("Exception in list: {}", e);
+            LOGGER.error("Exception in list: {}", e.getMessage());
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
         }
     }
@@ -1344,7 +1344,7 @@ public class ChimeraNameSpaceProvider
         } catch (FileNotFoundChimeraFsException e) {
             throw new FileNotFoundCacheException("No such file or directory: " + path);
         } catch (IOException e) {
-            LOGGER.error("Exception in list: {}", e);
+            LOGGER.error("Exception in list: {}", e.getMessage());
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
         }
     }
