@@ -22,13 +22,10 @@ class LinkMap {
     private final Map<String, LinkMapEntry> _linkHash = new HashMap<>();
 
     Iterator<Link> iterator() {
-        List<Link> list = new ArrayList<>();
-        for (LinkMapEntry e : _linkHash.values()) {
-            if (e._counter <= 0) {
-                list.add(e._link);
-            }
-        }
-        return list.iterator();
+        return _linkHash.values().stream()
+              .filter(e -> e._counter <= 0)
+              .map(e -> e._link)
+              .iterator();
     }
 
     void addLink(Link link) {
