@@ -444,6 +444,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
     }
 
     ////////////////////////////////////////////////////////////////////////////
+    /////  HSM admin commands /////
 
     @Command(name = "requests count",
           hint = "Counts delete requests per hsm.")
@@ -542,8 +543,6 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
         }
     }
 
-    /////  HSM admin commands /////
-
     @Command(name = "rundelete",
           hint = "Runs the HSM Cleaner.")
     public class RundeleteHsmCommand implements Callable<String> {
@@ -579,6 +578,30 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
                   },
                   pnfsId);
             return "";
+        }
+    }
+
+    @Command(name = "forget pnfsid",
+          hint = "Let cleaner forget the given hsm-resident pnfsid",
+          description = "Removes the given pnfsid from the hsm cleaner's trash table.")
+    public class ForgetPnfsidCommand implements Callable<String> {
+
+        @Argument(usage = "pnfsid of the file to clean")
+        String pnfsId;
+
+        @Override
+        public String call() throws CommandException {
+            int returnVal;
+            try {
+                LOGGER.debug("Admin-triggered remove of pnfsid from hsm cleaner {}", pnfsId);
+                returnVal = _db.update(
+                      "DELETE FROM t_locationinfo_trash WHERE ipnfsid=? AND itype=0", pnfsId);
+            } catch (DataAccessException e) {
+                return "Error when deleting pnfsid " + pnfsId + " from the hsm trash table: "
+                      + e.getMessage();
+            }
+            return returnVal == 0 ? "PnfsId " + pnfsId + " not found in the hsm trash table."
+                  : "Successfully deleted pnfsid " + pnfsId + " from the hsm trash table.";
         }
     }
 
