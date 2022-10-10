@@ -10,9 +10,9 @@ import dmg.util.command.Command;
 import dmg.util.command.DelayedCommand;
 import java.io.PrintWriter;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Collection;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -40,7 +40,7 @@ public class LinkGroupLoader
 
     private long updateLinkGroupsPeriod;
 
-    private ParsableFile<Map<String,LinkGroupAuthorizationRecord>> authorizationFile;
+    private Optional<ParsableFile<Map<String, LinkGroupAuthorizationRecord>>> authorizationFile;
     private long latestUpdateTime = System.currentTimeMillis();
 
     private RemotePoolMonitor poolMonitor;
@@ -65,9 +65,13 @@ public class LinkGroupLoader
 
     @Required
     public void setAuthorizationFileName(Path authorizationFileName) {
-        authorizationFile = new ParsableFile(
-                new LineByLineParser(LinkGroupAuthorizationFileParser::new),
-                authorizationFileName);
+        if (authorizationFileName == null) {
+            authorizationFile = Optional.empty();
+            return;
+        }
+        authorizationFile = Optional.of(new ParsableFile(
+              new LineByLineParser(LinkGroupAuthorizationFileParser::new),
+              authorizationFileName));
     }
 
     public long getLatestUpdateTime() {
@@ -92,7 +96,8 @@ public class LinkGroupLoader
     @Override
     public void getInfo(PrintWriter printWriter) {
         printWriter.append("updateLinkGroupsPeriod = ").println(updateLinkGroupsPeriod);
-        printWriter.append("authorizationFileName = ").println(authorizationFile.getPath());
+        printWriter.append("authorizationFileName = ")
+              .println(authorizationFile.isPresent() ? authorizationFile.get().getPath() : "-");
     }
 
     @Override
@@ -139,10 +144,11 @@ public class LinkGroupLoader
         boolean replicaAllowed = info.isReplicaAllowed();
         boolean outputAllowed = info.isOutputAllowed();
         boolean custodialAllowed = info.isCustodialAllowed();
-        VOInfo[] vos = authorizationFile.get().getSuccess()
-                .flatMap(f -> Optional.ofNullable(f.get(linkGroupName)))
-                .map(LinkGroupAuthorizationRecord::getVOInfoArray)
-                .orElse(null);
+        VOInfo[] vos = authorizationFile.isEmpty() ? null :
+              authorizationFile.get().get().getSuccess()
+                    .flatMap(f -> Optional.ofNullable(f.get(linkGroupName)))
+                    .map(LinkGroupAuthorizationRecord::getVOInfoArray)
+                    .orElse(null);
 
         while (true) {
             try {
