@@ -324,8 +324,8 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
         }
 
         if (!failures.isEmpty()) {
-            LOGGER.warn("Failed to delete {} files from HSM {}. Will try again later.",
-                  failures.size(), hsm);
+            LOGGER.warn("Pool reported that it failed to delete {} files from HSM {}. "
+                  + "Will try again later.", failures.size(), hsm);
         }
 
         for (URI location : success) {
@@ -339,6 +339,9 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
             assert location.getAuthority().equals(hsm);
             if (locations.remove(location)) {
                 _failureSink.accept(location);
+                // remove location from cache for now, as the failure might not be transient
+                _locationsToDelete.get(hsm).remove(location);
+
             }
         }
 
