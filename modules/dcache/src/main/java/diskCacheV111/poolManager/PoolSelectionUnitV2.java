@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
+import com.google.common.collect.Streams;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
@@ -1838,22 +1839,15 @@ public class PoolSelectionUnitV2
 
         rlock();
         try {
-            for (int i = 0; i < _netHandler._netList.length; i++) {
-                Map<Long, NetUnit> map = _netHandler._netList[i];
-                if (map == null) {
-                    continue;
-                }
-                String stringMask = _netHandler.bitsToString(i);
-                sb.append(stringMask).append("/").append(i).append("\n");
-                for (NetUnit net : map.values()) {
-                    sb.append("   ").append(net.getHostAddress().getHostName());
-                    if (i > 0) {
-                        sb.append("/").append(stringMask);
-                    }
-                    sb.append("\n");
-                }
-
-            }
+            Streams.concat(_netHandler._netList.stream(), _netHandler._netListV6.stream())
+                  .forEach(u -> {
+                      sb.append(u.getHostAddress().getHostAddress());
+                      int mask = u.getMask();
+                      if (mask > 0) {
+                          sb.append('/').append(mask);
+                      }
+                      sb.append('\n');
+                  });
         } finally {
             runlock();
         }

@@ -89,21 +89,6 @@ public class NetHandlerTest {
         assertEquals(IPV6_MASKED_SUBNET, result.getCanonicalName());
     }
 
-    /**
-     * Test of bitsToString method, of class NetHandler.
-     */
-    @Test
-    public void testBitsToString() {
-        int bits = Integer.parseInt(IPV4_NETMASK);
-        String expResult = IPV4_NETMASK;
-        String result = netHandler.bitsToString(bits);
-        assertEquals(expResult, result);
-        bits = Integer.parseInt(IPV6_NETMASK);
-        expResult = IPV6_NETMASK;
-        result = netHandler.bitsToString(bits);
-        assertEquals(expResult, result);
-    }
-
     @Test
     public void testAddMatch() throws UnknownHostException {
         assertCIDRSubnetMatches("0.0.0.0/0", "131.169.252.76");
@@ -119,6 +104,32 @@ public class NetHandlerTest {
         assertCIDRSubnetMatches("131.169.252.0/25", "131.169.252.76");
         assertCIDRSubnetMatches("131.169.252.76/31", "131.169.252.76");
         assertCIDRSubnetMatches("131.169.252.76/32", "131.169.252.76");
+    }
+
+    @Test
+    public void testLinkLocal() throws UnknownHostException {
+        NetHandler nh = new NetHandler();
+
+        nh.add(new NetUnit("::/0"));
+        assertNotNull("Link local doesn't match", nh.match("fe80::1c5d:a7b5:adff:261"));
+    }
+
+    @Test
+    public void testGlocalIPv6Local() throws UnknownHostException {
+        NetHandler nh = new NetHandler();
+
+        nh.add(new NetUnit("::/0"));
+        assertNotNull("Global IPv6 doesn't match", nh.match("2001:638:700:10c0::1:82"));
+    }
+
+    @Test
+    public void testNetUnitOrdering() throws UnknownHostException {
+        NetHandler nh = new NetHandler();
+
+        nh.add(new NetUnit("10.0.0.0/24"));
+        nh.add(new NetUnit("10.0.1.0/8"));
+        nh.add(new NetUnit("10.2.0.0/16"));
+        assertEquals("Wrong selection order", new NetUnit("10.2.0.0/16"), nh.match("10.2.1.4"));
     }
 
     private void assertCIDRSubnetMatches(String subnet, String ip) {
