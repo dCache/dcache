@@ -213,14 +213,20 @@ public class PinRequestProcessor
         if (!task.isValidIn(delay)) {
             fail(task, CacheException.TIMEOUT, "Pin request TTL exceeded: " + reason);
         } else {
+            if (!isInStatePINNING(task.getPnfsId(), task.getRequestId())) {
+                LOGGER.info("Dropping pin request for pnfsid {}, requestId {} as it has "
+                      + "meanwhile been unpinned.", task.getPnfsId(), task.getRequestId());
+                return;
+            }
             _scheduledExecutor.schedule(() -> {
                 try {
                     rereadNameSpaceEntry(task);
                 } catch (CacheException e) {
-                    fail(task, e.getRc(), "Retry (because " + reason + ") failed: " + e.getMessage());
+                    fail(task, e.getRc(),
+                          "Retry (because " + reason + ") failed: " + e.getMessage());
                 } catch (RuntimeException e) {
                     fail(task, CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                            "Retry (because " + reason + ") failed: " + e);
+                          "Retry (because " + reason + ") failed: " + e);
                 }
             }, delay, MILLISECONDS);
         }
@@ -441,7 +447,8 @@ public class PinRequestProcessor
                                * it a chance to be updated and
                                * then retry.
                                */
-                              retry(task, RETRY_DELAY, "pool " + poolName + " declared itself disabled");
+                              retry(task, RETRY_DELAY,
+                                    "pool " + poolName + " declared itself disabled");
                               break;
                           case CacheException.FILE_NOT_IN_REPOSITORY:
                               /* Pnfs manager had stale location
@@ -537,6 +544,10 @@ public class PinRequestProcessor
         task.setPin(pin);
     }
 
+    @Transactional(isolation = REPEATABLE_READ)
+    protected boolean isInStatePINNING(PnfsId pnfsid, String requestId) {
+        return _dao.get(_dao.where().pnfsId(pnfsid).requestId(requestId).state(PINNING)) != null;
+    }
 
     @Transactional(isolation = REPEATABLE_READ)
     protected void refreshTimeout(PinTask task, Date date)
