@@ -1,2 +1,0 @@
-sophies readme.txt
-test
