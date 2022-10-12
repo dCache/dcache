@@ -2,6 +2,7 @@ package diskCacheV111.poolManager;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import java.util.Comparator;
+import java.util.function.ToIntFunction;
 
 class LinkComparator implements Comparator<Link> {
 
@@ -13,30 +14,32 @@ class LinkComparator implements Comparator<Link> {
 
     @Override
     public int compare(Link link1, Link link2) {
+
+        ToIntFunction<Link> toPref;
+
         switch (_type) {
             case READ:
-                // read
-                return link1.getReadPref() == link2.getReadPref() ? link1.getName()
-                      .compareTo(link2.getName()) : link1
-                      .getReadPref() > link2.getReadPref() ? -1 : 1;
+                toPref = l -> l.getReadPref();
+                break;
             case CACHE:
-                // cache
-                return link1.getCachePref() == link2.getCachePref() ? link1.getName()
-                      .compareTo(link2.getName()) : link1
-                      .getCachePref() > link2.getCachePref() ? -1 : 1;
+                toPref = l -> l.getCachePref();
+                break;
             case WRITE:
-                // write
-                return link1.getWritePref() == link2.getWritePref() ? link1.getName()
-                      .compareTo(link2.getName()) : link1
-                      .getWritePref() > link2.getWritePref() ? -1 : 1;
+                toPref = l -> l.getWritePref();
+                break;
             case P2P:
-                // p2p
-                int pref1 = link1.getP2pPref() < 0 ? link1.getReadPref() : link1.getP2pPref();
-                int pref2 = link2.getP2pPref() < 0 ? link2.getReadPref() : link2.getP2pPref();
-                return pref1 == pref2 ? link1.getName().compareTo(link2.getName())
-                      : pref1 > pref2 ? -1 : 1;
+                // Backward compatibility: if p2p preference is negative, then use read pref.
+                toPref = l -> l.getP2pPref() < 0 ? l.getReadPref() : l.getP2pPref();
+                break;
+            default:
+                throw new IllegalArgumentException("Wrong comparator mode");
         }
-        throw new IllegalArgumentException("Wrong comparator mode");
+
+        int pref1 = toPref.applyAsInt(link1);
+        int pref2 = toPref.applyAsInt(link2);
+
+        return pref1 == pref2 ? link1.getName().compareTo(link2.getName())
+              : pref1 > pref2 ? -1 : 1;
     }
 
 }
