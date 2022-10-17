@@ -546,6 +546,14 @@ stay tuned for further developments in those areas.
 >practical to make the pools require TLS by setting
 >``pool.mover.xrootd.security.tls.mode=STRICT``.
 
+> **Host cert and key**
+>
+> These are required to be there when the SSHHandlerFactory (which provides
+> TLS support) is loaded at startup.  If either pool.mover.xrootd.security.tls.mode
+> or xrootd.security.tls.mode is set to either OPTIONAL or STRICT, the host cert
+> and key will be required, or the domain will not start.  You can start pools or
+> doors without a host cert/key by setting these properties to OFF.
+
 ###  Multiple authentication protocol chaining and defaults
 
 As of 8.1, dCache now supports the chaining of authentication plugins/protocols on the door.
