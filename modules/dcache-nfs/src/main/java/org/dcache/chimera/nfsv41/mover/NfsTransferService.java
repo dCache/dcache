@@ -39,6 +39,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import javax.annotation.Nullable;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
 import org.dcache.chimera.nfsv41.common.StatsDecoratedOperationExecutor;
@@ -383,13 +384,11 @@ public class NfsTransferService
         return _activeIO.remove(mover.getStateId()) != null;
     }
 
-    NfsMover getMoverByStateId(CompoundContext context, stateid4 stateid)
-          throws ChimeraNFSException {
+    @Nullable NfsMover getMoverByStateId(CompoundContext context, stateid4 stateid) {
         NfsMover mover = _activeIO.get(stateid);
-        if (mover == null) {
-            throw new BadStateidException("No mover associated with given stateid: " + stateid);
+        if (mover != null) {
+            mover.attachSession(context.getSession());
         }
-        mover.attachSession(context.getSession());
         return mover;
     }
 
