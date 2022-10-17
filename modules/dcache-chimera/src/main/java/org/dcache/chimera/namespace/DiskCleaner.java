@@ -175,10 +175,13 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
                 CompletableFuture<Void> cf = CompletableFuture.runAsync(
                       () -> {
                           _poolsBeingCleaned.put(pool, System.currentTimeMillis());
-                          runDelete(pool);
-                          runNotification();
-                          _poolsBeingCleaned.remove(pool);
-                          LOGGER.info("Finished deleting from pool {}", pool);
+                          try {
+                              runDelete(pool);
+                              runNotification();
+                          } finally {
+                              _poolsBeingCleaned.remove(pool);
+                              LOGGER.info("Finished deleting from pool {}", pool);
+                          }
                       }, _executor);
                 futures.add(cf);
             } else {
@@ -573,8 +576,8 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
         int threadPoolSize = _executor.getCorePoolSize();
         pw.printf("Cleaning up to %d pools in parallel\n",
               threadPoolSize == 1 ? 1 : threadPoolSize - 1);
-        pw.printf("Pools currently being cleaned: [%s]\n",
-              _poolsBeingCleaned.entrySet().stream().map(e -> e.getKey()).collect(joining(", ")));
+        pw.printf("Pools currently being cleaned: %d [%s]\n", _poolsBeingCleaned.size(),
+              String.join(", ", _poolsBeingCleaned.keySet()));
     }
 
 }
