@@ -206,6 +206,8 @@ public class PnfsManagerV3
     private long updateQuotaInterval;
     private boolean quotaEnabled;
 
+    private boolean useParentHashOnCreate;
+
 
     /**
      * Whether to use folding.
@@ -306,6 +308,10 @@ public class PnfsManagerV3
     @Required
     public void setQuotaEnabled(boolean quotaEnabled) {
         this.quotaEnabled = quotaEnabled;
+    }
+
+    public void setUseParentHashOnCreate(boolean useParentHashOnCreate) {
+        this.useParentHashOnCreate = useParentHashOnCreate;
     }
 
     @Required
@@ -2562,8 +2568,21 @@ public class PnfsManagerV3
             index = (int) (Math.abs((long) pnfsId.hashCode()) % _threads);
             LOGGER.info("Using thread [{}] {}", pnfsId, index);
         } else if (path != null) {
-            index = (int) (Math.abs((long) path.hashCode()) % _threads);
-            LOGGER.info("Using thread [{}] {}", path, index);
+            if (message instanceof PnfsCreateEntryMessage && useParentHashOnCreate) {
+                try {
+                    FsPath parentPath = FsPath.create(path).parent();
+                    index = (int) (Math.abs((long) parentPath
+                          .toString()
+                          .hashCode()) % _threads);
+                    LOGGER.info("Using parent hash to select thread [{}] {}", path, index);
+                } catch (IllegalStateException e) {
+                    index = (int) (Math.abs((long) path.hashCode()) % _threads);
+                    LOGGER.info("Using thread [{}] {}", path, index);
+                }
+            } else {
+                index = (int) (Math.abs((long) path.hashCode()) % _threads);
+                LOGGER.info("Using thread [{}] {}", path, index);
+            }
         } else {
             index = _random.nextInt(_fifos.length);
             LOGGER.info("Using random thread {}", index);
