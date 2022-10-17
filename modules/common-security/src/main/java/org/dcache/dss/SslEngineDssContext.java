@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2015 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2015 - 2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -34,6 +34,7 @@ import java.security.cert.CertificateFactory;
 import java.util.Collections;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
+import javax.net.ssl.SSLEngineResult.Status;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.security.auth.Subject;
@@ -124,12 +125,13 @@ public class SslEngineDssContext implements DssContext {
         SSLEngineResult result;
         do {
             count++;
-            LOGGER.debug("Wrapping: buffer posn={}, limit={}, capacity={}, remaining={}",
-                  data.position(), data.limit(), data.capacity(), data.remaining());
+            LOGGER.debug("Wrapping: buffer posn={}, limit={}, capacity={}, remaining={}, chunk={}",
+                  data.position(), data.limit(), data.capacity(), data.remaining(), count);
             result = engine.wrap(data, outToken);
             LOGGER.debug("Result: status={}, seq={}, consumed={}, produced={}, remaining={}",
                   result.getStatus(), result.sequenceNumber(), result.bytesConsumed(),
                   result.bytesProduced(), data.remaining());
+
             switch (result.getStatus()) {
                 case BUFFER_UNDERFLOW:
                     throw new RuntimeException();
@@ -148,13 +150,7 @@ public class SslEngineDssContext implements DssContext {
                 case CLOSED:
                     throw new EOFException();
             }
-        } while (result.getStatus() != SSLEngineResult.Status.OK);
-
-        if (data.hasRemaining()) {
-            throw new RuntimeException("SSLEngine did not wrap all data:"
-                  + " c=" + count + ", in=" + data.limit() + " r=" + data.remaining()
-                  + " out=" + outToken.position());
-        }
+        } while (data.hasRemaining() || result.getStatus() != Status.OK);
     }
 
     @Override
