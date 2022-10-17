@@ -76,6 +76,7 @@ import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.dcache.pinmanager.PinManagerPinMessage;
+import org.dcache.services.bulk.BulkServiceException;
 import org.dcache.services.bulk.util.BulkRequestTarget;
 import org.dcache.vehicles.FileAttributes;
 
@@ -90,7 +91,12 @@ public final class PinActivity extends PinManagerActivity {
 
     public void cancel(BulkRequestTarget target) {
         super.cancel(target);
-        pinManager.send(unpinMessage(id, target));
+        try {
+            pinManager.send(unpinMessage(id, target));
+        } catch (CacheException e) {
+            target.setErrorObject(new BulkServiceException("unable to fetch pnfsid of target in "
+                  + "order to cancel pinning.", e));
+        }
     }
 
     @Override
