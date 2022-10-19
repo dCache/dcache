@@ -97,6 +97,11 @@ public class HttpsTransferService extends HttpTransferService {
     }
 
     @Override
+    protected boolean canZeroCopy() {
+        return false;
+    }
+
+    @Override
     protected void addChannelHandlers(ChannelPipeline pipeline) {
         SSLEngine engine = _sslContext.newEngine(pipeline.channel().alloc());
         engine.setWantClientAuth(false);
