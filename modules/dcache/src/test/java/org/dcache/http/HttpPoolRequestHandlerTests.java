@@ -120,7 +120,7 @@ public class HttpPoolRequestHandlerTests {
     @Before
     public void setup() {
         _server = mock(NettyTransferService.class);
-        _handler = new HttpPoolRequestHandler(_server, SOME_CHUNK_SIZE);
+        _handler = new HttpPoolRequestHandler(_server, SOME_CHUNK_SIZE, false);
         _channel = new EmbeddedChannel(_handler);
         _files = Maps.newHashMap();
         _additionalWrites = new ArrayList<>();

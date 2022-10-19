@@ -36,6 +36,7 @@ import diskCacheV111.util.FileCorruptedCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.HttpByteRange;
 import diskCacheV111.vehicles.HttpProtocolInfo;
+import diskCacheV111.vehicles.ProtocolInfo;
 import dmg.util.HttpException;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -43,6 +44,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
+import io.netty.channel.FileRegion;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.DefaultHttpResponse;
@@ -54,7 +56,6 @@ import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.QueryStringDecoder;
-import io.netty.handler.stream.ChunkedInput;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import java.io.IOException;
@@ -73,6 +74,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.movers.NettyTransferService;
+import org.dcache.pool.movers.RepositoryFileRegion;
 import org.dcache.pool.repository.OutOfDiskException;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
@@ -80,8 +82,6 @@ import org.dcache.util.Checksums;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.dcache.http.HttpRequestHandler.createRedirectResponse;
 
 /**
  * HttpPoolRequestHandler - handle HTTP client - server communication.
@@ -121,6 +121,11 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
     private final int _chunkSize;
 
     /**
+     * Whatever handler should use zero-copy capability.
+     */
+    private final boolean _useZeroCopy;
+
+    /**
      * The file being uploaded. Even though we only keep the file open for the processing of a
      * single HTTP message, that one message may have been split into several chunks. Hence we have
      * to keep a reference to the file in between channel events.
@@ -149,9 +154,11 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
         }
     }
 
-    public HttpPoolRequestHandler(NettyTransferService<HttpProtocolInfo> server, int chunkSize) {
+    public HttpPoolRequestHandler(NettyTransferService<HttpProtocolInfo> server, int chunkSize,
+          boolean useZeroCopy) {
         _server = server;
         _chunkSize = chunkSize;
+        _useZeroCopy = useZeroCopy;
     }
 
     private static Optional<String> wantDigest(HttpRequest request) {
@@ -783,13 +790,22 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
      * @return ChunkedInput View upon the file suitable for sending with netty and representing the
      * requested parts.
      */
-    private ChunkedInput read(NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file,
+    private Object read(NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file,
           long lowerRange, long upperRange) {
         /* need to count position 0 as well */
         long length = (upperRange - lowerRange) + 1;
 
+        if (_useZeroCopy) {
+            return asFileRegion(file, lowerRange, length);
+        }
         return new ReusableChunkedNioFile(file, lowerRange, length, _chunkSize);
     }
+
+    private FileRegion asFileRegion(NettyTransferService<? extends ProtocolInfo>.NettyMoverChannel file,
+        long offset, long length) {
+            return new RepositoryFileRegion(file, offset, length);
+    }
+
 
     private static String buildDigest(
           NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file) {

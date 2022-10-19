@@ -153,6 +153,13 @@ public class HttpTransferService extends NettyTransferService<HttpProtocolInfo> 
         addChannelHandlers(ch.pipeline());
     }
 
+    /**
+     * Indicates whatever under laying socket setup supports in-kernel zero-copy
+     */
+    protected boolean canZeroCopy() {
+        return true;
+    }
+
     protected void addChannelHandlers(ChannelPipeline pipeline) {
         // construct HttpRequestDecoder as netty defaults, except configurable chunk size
         pipeline.addLast("decoder", new HttpRequestDecoder(4096, 8192, getChunkSize(), true));
@@ -175,6 +182,6 @@ public class HttpTransferService extends NettyTransferService<HttpProtocolInfo> 
 
         pipeline.addLast("cors", new CorsHandler(corsConfigBuilder().build()));
 
-        pipeline.addLast("transfer", new HttpPoolRequestHandler(this, chunkSize));
+        pipeline.addLast("transfer", new HttpPoolRequestHandler(this, chunkSize, canZeroCopy()));
     }
 }
