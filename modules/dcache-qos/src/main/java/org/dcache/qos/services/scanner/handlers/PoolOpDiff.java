@@ -60,7 +60,6 @@ documents or software obtained from this server.
 package org.dcache.qos.services.scanner.handlers;
 
 import com.google.common.collect.HashMultimap;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
 import diskCacheV111.poolManager.StorageUnit;
 import diskCacheV111.pools.PoolV2Mode;
@@ -114,7 +113,7 @@ public final class PoolOpDiff {
     /*
      *  (pool, tags)
      */
-    private final Map<String, ImmutableMap<String, String>> tagsChanged
+    private final Map<String, Map<String, String>> tagsChanged
           = new HashMap<>();
 
     public Collection<String> getConstraintsChanged() {
@@ -161,7 +160,7 @@ public final class PoolOpDiff {
         return poolsRmved;
     }
 
-    public Map<String, ImmutableMap<String, String>> getTagsChanged() {
+    public Map<String, Map<String, String>> getTagsChanged() {
         return tagsChanged;
     }
 
