@@ -924,7 +924,7 @@ public final class BulkServiceCommands implements CellCommandListener {
             request.setDelayClear(delayClear);
             request.setExpandDirectories(Depth.valueOf(expand.toUpperCase()));
             request.setId(UUID.randomUUID().toString());
-            request.setPrestore(prestore);
+            request.setPrestore(activity.equalsIgnoreCase("STAGE") || prestore);
 
             if (arguments != null) {
                 request.setArguments(Splitter.on(',')
