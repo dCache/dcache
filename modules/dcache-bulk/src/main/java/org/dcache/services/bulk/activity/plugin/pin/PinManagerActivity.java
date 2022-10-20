@@ -81,7 +81,6 @@ import org.dcache.vehicles.FileAttributes;
 
 abstract class PinManagerActivity extends BulkActivity<Message> implements PinManagerAware,
       NamespaceHandlerAware {
-
     protected CellStub pinManager;
     protected PnfsHandler pnfsHandler;
 
@@ -122,10 +121,13 @@ abstract class PinManagerActivity extends BulkActivity<Message> implements PinMa
         return pnfsHandler.getFileAttributes(path, MINIMALLY_REQUIRED_ATTRIBUTES);
     }
 
-    protected PinManagerUnpinMessage unpinMessage(String id, BulkRequestTarget target) {
-        PinManagerUnpinMessage message = new PinManagerUnpinMessage(target.getPnfsId());
-        message.setRequestId(id);
-        return message;
+    protected PinManagerUnpinMessage unpinMessage(String id, BulkRequestTarget target)
+          throws CacheException {
+        PnfsId pnfsId = target.getPnfsId();
+        if (pnfsId == null) {
+            pnfsId = getAttributes(target.getPath()).getPnfsId();
+        }
+        return unpinMessage(id, pnfsId);
     }
 
     protected PinManagerUnpinMessage unpinMessage(String id, PnfsId pnfsId) {
