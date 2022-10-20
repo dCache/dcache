@@ -84,7 +84,7 @@ final class PoolInformation {
     private PoolQoSStatus status;
     private PoolV2Mode mode;
     private boolean excluded;
-    private ImmutableMap<String, String> tags;
+    private Map<String, String> tags;
     private PoolCostInfo costInfo;
     private long lastUpdate;
 
@@ -143,7 +143,7 @@ final class PoolInformation {
         return status;
     }
 
-    synchronized ImmutableMap<String, String> getTags() {
+    synchronized Map<String, String> getTags() {
         return tags;
     }
 
