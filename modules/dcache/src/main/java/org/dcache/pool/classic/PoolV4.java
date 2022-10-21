@@ -1342,7 +1342,7 @@ public class PoolV4
 
             poolManagerMessage.setHostName(NetworkUtils.getCanonicalHostName());
             poolManagerMessage.setTagMap(_tags);
-            if (_hsmSet != null) {
+            if (_hasTapeBackend && (_hsmSet != null)) {
                 poolManagerMessage.setHsmInstances(new TreeSet<>(_hsmSet
                       .getHsmInstances()));
             }
