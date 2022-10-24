@@ -130,9 +130,15 @@ public final class PoolOpChangeHandler extends
         diff.getPoolsRemovedFromPoolGroup().entries()
               .forEach(e -> scanPoolRemovedFromPoolGroup(e, currentPsu));
 
-        LOGGER.trace("Scanning pool groups pointing to new units {}.",
-              diff.getNewUnits());
-        diff.getNewUnits().forEach(u -> scanPoolsWithStorageUnitModified(u.getName(), currentPsu));
+        LOGGER.trace("Scanning pool groups pointing to units added to unit groups {}.",
+              diff.getUnitsAddedToPoolGroup());
+        diff.getUnitsAddedToPoolGroup().values()
+              .forEach(u -> scanPoolsWithStorageUnitModified(u, currentPsu));
+
+        LOGGER.trace("Scanning pool groups pointing to units removed from unit groups {}.",
+              diff.getUnitsRemovedFromPoolGroup());
+        diff.getUnitsRemovedFromPoolGroup().values()
+              .forEach(u -> scanPoolsWithStorageUnitModified(u, currentPsu));
 
         LOGGER.trace("Scanning pool groups with units whose "
                     + "constraints have changed; new constraints {}.",
@@ -407,7 +413,7 @@ public final class PoolOpChangeHandler extends
         PoolV2Mode mode = psu.getPool(pool).getPoolMode();
         poolOperationMap.add(pool);
         poolOperationMap.updateStatus(pool, PoolQoSStatus.valueOf(mode));
-        scanPool(pool, addedTo, mode);
+        scanPool(pool, addedTo, null, mode);
     }
 
     /**
