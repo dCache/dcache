@@ -327,7 +327,7 @@ class Companion {
     }
 
     private Set<Checksum> copy(String uri, ReplicaDescriptor handle)
-          throws IOException, InterruptedException {
+          throws IOException, InterruptedException, CacheException {
         RepositoryChannel channel = handle.createChannel();
         try {
             HttpGet get = new HttpGet(uri);

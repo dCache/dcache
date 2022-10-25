@@ -51,7 +51,7 @@ public interface ReplicaDescriptor extends AutoCloseable {
      * @return repository channel.
      * @throws IOException if repository channel can't be created.
      */
-    RepositoryChannel createChannel() throws IOException;
+    RepositoryChannel createChannel() throws IOException, CacheException;
 
     /**
      * Returns the file attributes of the file represented by this replica.

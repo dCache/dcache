@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import com.google.common.collect.ImmutableSet;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileCorruptedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import java.io.IOException;
 import java.net.URI;
@@ -73,11 +74,12 @@ class ReadHandleImpl implements ReplicaDescriptor {
     }
 
     @Override
-    public RepositoryChannel createChannel() throws IOException {
+    public RepositoryChannel createChannel() throws IOException, CacheException {
         RepositoryChannel channel = _entry.openChannel(_openOptions);
         long fileSizeAlloc = channel.size();
         if (_fileAttributes.getSize() != fileSizeAlloc) {
-            IOException ex = new IOException("Failed to read the file, because file is Broken.");
+            FileCorruptedCacheException ex = new FileCorruptedCacheException(
+                  "Failed to read the file, because file is Broken.");
             try {
                 _entry.update("Filesystem and pool database file sizes are inconsistent",
                       r -> r.setState(ReplicaState.BROKEN));
