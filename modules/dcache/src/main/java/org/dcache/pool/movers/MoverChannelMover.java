@@ -19,6 +19,7 @@ package org.dcache.pool.movers;
 
 import static com.google.common.base.Preconditions.checkState;
 
+import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -75,7 +76,7 @@ public abstract class MoverChannelMover<P extends ProtocolInfo, M extends MoverC
      * @throws IllegalStateException   if called more than once
      */
     public synchronized MoverChannel<P> open()
-          throws DiskErrorCacheException, InterruptedIOException {
+          throws DiskErrorCacheException, InterruptedIOException, CacheException {
         checkState(_wrappedChannel == null);
         _wrappedChannel = new MoverChannel<>(this, openChannel());
         return _wrappedChannel;
