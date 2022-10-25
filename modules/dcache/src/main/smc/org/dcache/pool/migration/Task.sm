@@ -208,6 +208,14 @@ Entry
                              String.format("Pool %s failed (no route to cell)",
                                            ctxt.getTarget()));
                 }
+         copy_failure(rc: Integer, cause: Object)
+                [ rc == FILE_CORRUPTED ]
+                Failed
+                {
+                        failPermanently(rc,
+                              String.format("Pool %s failed (%s)",
+                                            ctxt.getTarget(), cause));
+                        }
         copy_failure(rc: Integer, cause: Object)
                 Failed
                 {
@@ -228,7 +236,7 @@ Entry
                 {
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
-                [ message.getReturnCode() == FILE_NOT_FOUND ]
+                [ message.getReturnCode() == FILE_NOT_FOUND || message.getReturnCode() == FILE_CORRUPTED ]
                 Failed
                 {
                         failPermanently(message.getReturnCode(),
@@ -329,7 +337,7 @@ Exit
                 {
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
-                [ message.getReturnCode() == FILE_NOT_FOUND ]
+                [ message.getReturnCode() == FILE_NOT_FOUND || message.getReturnCode() == FILE_CORRUPTED ]
                 Failed
                 {
                         failPermanently(message.getReturnCode(),
