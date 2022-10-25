@@ -329,7 +329,7 @@ public class NfsTransferService
     @Override
     public Cancellable executeMover(final NfsMover mover,
             final CompletionHandler<Void, Void> completionHandler)
-            throws DiskErrorCacheException, InterruptedIOException {
+            throws DiskErrorCacheException, InterruptedIOException, CacheException {
         final Cancellable cancellableMover = mover.enable(completionHandler);
         notifyDoorWithRedirect(mover);
 
