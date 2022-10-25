@@ -22,8 +22,7 @@ public class CopyManagerMessage extends Message {
 
     private static final long serialVersionUID = -1490534904266183106L;
 
-    public CopyManagerMessage(String srcPnfsPath, String dstPnfsPath, long id, int bufferSize,
-          int tcpBufferSize) {
+    public CopyManagerMessage(String srcPnfsPath, String dstPnfsPath, long id) {
         super();
         setId(id);
         this.srcPnfsPath = srcPnfsPath;
