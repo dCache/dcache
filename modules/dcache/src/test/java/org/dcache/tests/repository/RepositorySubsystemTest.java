@@ -128,7 +128,7 @@ public class RepositorySubsystemTest
     private final CellAddressCore address = new CellAddressCore("pool", "test");
 
     private void createFile(ReplicaDescriptor descriptor, long size)
-          throws IOException {
+          throws IOException, CacheException {
         try (RepositoryChannel channel = descriptor.createChannel()) {
             channel.write(ByteBuffer.allocate((int) size));
         }
@@ -491,7 +491,7 @@ public class RepositorySubsystemTest
         };
     }
 
-    @Test(expected = IOException.class)
+    @Test(expected = CacheException.class)
     public void testFileIsBroken()
           throws IOException, IllegalTransitionException,
           CacheException, InterruptedException {

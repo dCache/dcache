@@ -24,6 +24,7 @@ import com.google.common.base.Strings;
 import com.google.common.reflect.TypeToken;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
+import diskCacheV111.util.FileCorruptedCacheException;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -271,7 +272,8 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
      * @throws InterruptedIOException  if the mover was cancelled
      * @throws DiskErrorCacheException If the file could not be opened
      */
-    public RepositoryChannel openChannel() throws DiskErrorCacheException, InterruptedIOException {
+    public RepositoryChannel openChannel()
+          throws DiskErrorCacheException, InterruptedIOException, CacheException {
         RepositoryChannel channel;
         try {
             channel = _handle.createChannel();
@@ -282,7 +284,9 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
             throw new DiskErrorCacheException(
                   "File could not be opened; please check the file system: "
                         + messageOrClassName(e), e);
+
         }
+
 
         synchronized (_checksumTypes) {
             _checksumChannel = channel.optionallyAs(ChecksumChannel.class).orElse(null);

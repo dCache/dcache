@@ -84,7 +84,7 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
      * @throws DiskErrorCacheException
      */
     public Cancellable enable(final CompletionHandler<Void, Void> completionHandler)
-          throws DiskErrorCacheException, InterruptedIOException {
+          throws DiskErrorCacheException, InterruptedIOException, CacheException {
 
         open();
         _completionHandler = completionHandler;
