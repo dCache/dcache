@@ -18,9 +18,17 @@
  */
 package org.dcache.chimera.namespace;
 
+import static dmg.util.CommandException.checkCommand;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.dcache.cells.HAServiceLeadershipManager.HA_NOT_LEADER_MSG;
+
 import dmg.cells.nucleus.CellPath;
+import dmg.util.CommandException;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -107,6 +115,42 @@ public abstract class AbstractCleaner implements LeaderLatchListener {
     @Required
     public void setGracePeriod(Duration gracePeriod) {
         _gracePeriod = gracePeriod;
+    }
+
+    @Command(name = "set refresh",
+          hint = "Alters refresh rate and triggers a new run. Minimum rate is every 5 seconds." +
+                "If no time is provided, the old one is kept.")
+    public class SetRefreshCommand implements Callable<String> {
+
+        @Argument(required = false, usage = "refresh time in seconds")
+        Long refreshInterval;
+
+        @Override
+        public String call() throws CommandException {
+            checkCommand(_hasHaLeadership, HA_NOT_LEADER_MSG);
+            if (refreshInterval == null) {
+                return "Refresh interval unchanged: " + _refreshInterval + " "
+                      + _refreshIntervalUnit;
+            }
+            if (refreshInterval < 5) {
+                throw new IllegalArgumentException("Time must be greater than 5 seconds");
+            }
+
+            setRefreshInterval(refreshInterval);
+            setRefreshIntervalUnit(SECONDS);
+
+            if (_cleanerTask != null) {
+                _cleanerTask.cancel(true);
+            }
+            _cleanerTask = _executor.scheduleWithFixedDelay(() -> {
+                try {
+                    runDelete();
+                } catch (InterruptedException e) {
+                    LOGGER.info("Cleaner was interrupted");
+                }
+            }, _refreshInterval, _refreshInterval, _refreshIntervalUnit);
+            return "Refresh set to " + _refreshInterval + " " + _refreshIntervalUnit;
+        }
     }
 
     protected abstract void runDelete() throws InterruptedException;
