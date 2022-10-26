@@ -367,6 +367,7 @@ public final class PoolInfoResources {
     @PathParam("pool") String pool,
           @ApiParam("Select transfers of a specific type "
                 + "(flush, stage, remove).")
+          @DefaultValue("flush,stage,remove")
           @QueryParam("type") String typeList,
           @ApiParam("The number of items to skip.")
           @DefaultValue("0")
@@ -394,8 +395,7 @@ public final class PoolInfoResources {
         int count = 0;
 
         try {
-            String[] types = typeList == null ? new String[0] :
-                  typeList.split(",");
+            String[] types = typeList.split(",");
             for (String type : types) {
                 switch (type) {
                     case "flush":
