@@ -102,7 +102,7 @@ public class HAServiceLeadershipManager implements CellIdentityAware, CellComman
         return zkLeaderLatch.hasLeadership();
     }
 
-    private void releaseLeadership() {
+    private synchronized void releaseLeadership() {
         try {
             zkLeaderLatch.close(LeaderLatch.CloseMode.NOTIFY_LEADER);
         } catch (Exception e) {
