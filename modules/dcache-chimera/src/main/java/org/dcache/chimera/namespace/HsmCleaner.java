@@ -361,6 +361,11 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
     protected void runDelete() throws InterruptedException {
         NDC.push(CLEANER_TYPE);
         try {
+            if (!_hasHaLeadership) {
+                LOGGER.warn("Delete run triggered despite not having leadership. "
+                      + "We assume this is a transient problem.");
+                return;
+            }
             LOGGER.info("New run...");
 
             int locationsCached = _locationsToDelete.values().stream().map(Set::size)
@@ -425,7 +430,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
     }
 
     @Override
-    public void notLeader() {
+    public synchronized void notLeader() {
         super.notLeader();
         // All not yet sent but cached requests can be cleared
         Iterator<String> keyIterator = _locationsToDelete.keySet().iterator();

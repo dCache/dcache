@@ -107,6 +107,11 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
     protected void runDelete() throws InterruptedException {
         NDC.push(CLEANER_TYPE);
         try {
+            if (!_hasHaLeadership) {
+                LOGGER.warn("Delete run triggered despite not having leadership. "
+                      + "We assume this is a transient problem.");
+                return;
+            }
             LOGGER.info("New run...");
 
             LOGGER.debug("INFO: Refresh Interval : {} {}", _refreshInterval, _refreshIntervalUnit);
