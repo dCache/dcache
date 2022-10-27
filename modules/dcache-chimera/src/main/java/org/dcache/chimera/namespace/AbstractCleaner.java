@@ -167,13 +167,13 @@ public abstract class AbstractCleaner implements LeaderLatchListener {
     }
 
     @Override
-    public void isLeader() {
+    public synchronized void isLeader() {
         _hasHaLeadership = true;
         scheduleCleanerTask();
     }
 
     @Override
-    public void notLeader() {
+    public synchronized void notLeader() {
         _hasHaLeadership = false;
         cancelCleanerTask();
     }

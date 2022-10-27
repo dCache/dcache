@@ -112,6 +112,11 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
      */
     @Override
     protected void runDelete() throws InterruptedException {
+        if (!_hasHaLeadership) {
+            LOGGER.warn("Delete run triggered despite not having leadership. "
+                  + "We assume this is a transient problem.");
+            return;
+        }
         try {
             LOGGER.info("New run...");
 
