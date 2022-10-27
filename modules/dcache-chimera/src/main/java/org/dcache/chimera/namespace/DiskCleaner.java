@@ -69,10 +69,12 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
 
     private ScheduledFuture<?> _cleanerTask;
 
+    protected CellPath[] _deleteNotificationTargets;
+    private CellStub _notificationStub;
+
     private long _recoverTimer;
     private TimeUnit _recoverTimerUnit;
     private int _processAtOnce;
-    private CellStub _notificationStub;
 
     @Required
     public void setRecoverTimer(long recoverTimer) {
@@ -92,6 +94,15 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
     @Required
     public void setNotificationStub(CellStub stub) {
         _notificationStub = stub;
+    }
+
+
+    @Required
+    public void setReportRemove(String[] reportRemove) {
+        _deleteNotificationTargets = Arrays.stream(reportRemove)
+              .filter(t -> !t.isEmpty())
+              .map(CellPath::new)
+              .toArray(CellPath[]::new);
     }
 
     /**

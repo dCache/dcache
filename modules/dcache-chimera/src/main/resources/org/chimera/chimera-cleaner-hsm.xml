@@ -74,12 +74,6 @@
         <property name="timeoutUnit" value="${cleaner-hsm.service.pool.timeout.unit}"/>
     </bean>
 
-    <bean id="notification-stub" class="org.dcache.cells.CellStub">
-        <description>Notification stub</description>
-        <property name="timeout" value="${cleaner-hsm.service.pool.timeout}"/>
-        <property name="timeoutUnit" value="${cleaner-hsm.service.pool.timeout.unit}"/>
-    </bean>
-
     <bean id="pool-Information-Base" class="org.dcache.chimera.namespace.PoolInformationBase">
         <description>PoolInformationBase</description>
     </bean>
@@ -100,7 +94,6 @@
         <property name="dataSource" ref="data-source"/>
         <property name="executor" ref="scheduled-thread-pool"/>
         <property name="poolInformationBase" ref="pool-Information-Base"/>
-        <property name="reportRemove" value="${cleaner-hsm.destination.remove-notification}"/>
         <property name="refreshInterval" value="${cleaner-hsm.limits.period}"/>
         <property name="refreshIntervalUnit" value="${cleaner-hsm.limits.period.unit}"/>
         <property name="gracePeriod"

@@ -20,7 +20,6 @@ import java.net.URISyntaxException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,6 +32,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import org.dcache.util.TimeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -612,12 +612,11 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
     public void getInfo(PrintWriter pw) {
         pw.printf("Cleaning Interval: %s\n", _refreshInterval);
         pw.printf("Cleaning Interval Unit: %s\n", _refreshIntervalUnit);
+        pw.printf("Cleanup grace period: %s\n", TimeUtils.describe(_gracePeriod).orElse("-"));
         pw.printf("Timeout for cleaning requests to HSM-pools: %s\n", _hsmTimeout);
         pw.printf("Timeout Unit for cleaning requests to HSM-pools: %s\n", _hsmTimeoutUnit);
         pw.printf("Maximum number of cached delete locations:   %d\n", _maxCachedDeleteLocations);
         pw.printf("Maximum number of files to include in a single request:   %d\n",
               _maxFilesPerRequest);
-        pw.printf("Delete notification targets:  %s\n",
-              Arrays.toString(_deleteNotificationTargets));
     }
 }

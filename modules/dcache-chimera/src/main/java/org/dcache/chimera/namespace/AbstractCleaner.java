@@ -22,12 +22,10 @@ import static dmg.util.CommandException.checkCommand;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.dcache.cells.HAServiceLeadershipManager.HA_NOT_LEADER_MSG;
 
-import dmg.cells.nucleus.CellPath;
 import dmg.util.CommandException;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -62,7 +60,6 @@ public abstract class AbstractCleaner implements LeaderLatchListener {
      */
     protected PoolInformationBase _pools;
     protected JdbcTemplate _db;
-    protected CellPath[] _deleteNotificationTargets;
     protected long _refreshInterval;
     protected TimeUnit _refreshIntervalUnit;
 
@@ -92,14 +89,6 @@ public abstract class AbstractCleaner implements LeaderLatchListener {
     public void setDataSource(DataSource dataSource) {
         _dataSource = dataSource;
         _db = new JdbcTemplate(_dataSource);
-    }
-
-    @Required
-    public void setReportRemove(String[] reportRemove) {
-        _deleteNotificationTargets = Arrays.stream(reportRemove)
-              .filter(t -> !t.isEmpty())
-              .map(CellPath::new)
-              .toArray(CellPath[]::new);
     }
 
     @Required
