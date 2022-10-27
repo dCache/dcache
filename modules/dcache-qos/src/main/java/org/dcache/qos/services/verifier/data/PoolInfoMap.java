@@ -719,7 +719,7 @@ public class PoolInfoMap {
         Collection<StorageUnit> newUnits = diff.getNewUnits();
         for (StorageUnit unit : newUnits) {
             String name = unit.getName();
-            StorageUnitInfoExtractor.getPrimaryGroupsFor(name, psu)
+            StorageUnitInfoExtractor.getPoolGroupsFor(name, psu, false)
                   .stream()
                   .forEach(g -> diff.unitsAdded.put(g, name));
         }
