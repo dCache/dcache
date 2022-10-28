@@ -39,6 +39,12 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
         try {
 
             NfsMover mover = nfsTransferService.getMoverByStateId(context, _args.opwrite.stateid);
+            if (mover == null) {
+                res.status = nfsstat.NFSERR_BAD_STATEID;
+                _log.debug("No mover associated with given stateid: ", _args.opwrite.stateid);
+                return;
+            }
+
             if (!mover.getIoMode().contains(StandardOpenOption.WRITE)) {
                 throw new PermException("an attempt to write without IO mode enabled");
             }

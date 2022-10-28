@@ -136,8 +136,11 @@ public class PinManagerCLI
     }
 
     @Command(name = "unpin", hint = "unpin a file",
-          description = "Unpin a previously pinned file. Either a specific pin or all " +
-                "pins on a specific file can be removed.")
+          description = "Unpin a previously pinned file. Either a specific pin or all "
+                + "pins on a specific file can be removed..\n"
+                + "\n"
+                + "<pin> may either be a specific pin ID, or the symbol '*' when one wants "
+                + "to remove all pins for the given pnfsid.")
     public class UnpinCommand implements Callable<String> {
 
         @Argument(index = 0, valueSpec = "*|PIN")

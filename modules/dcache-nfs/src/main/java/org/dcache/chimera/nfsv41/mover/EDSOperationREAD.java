@@ -45,6 +45,11 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
             int count = _args.opread.count.value;
 
             NfsMover mover = nfsTransferService.getMoverByStateId(context, _args.opread.stateid);
+            if (mover == null) {
+                res.status = nfsstat.NFSERR_BAD_STATEID;
+                _log.debug("No mover associated with given stateid: ", _args.opread.stateid);
+                return;
+            }
 
             ByteBuffer bb = BUFFERS.get();
             bb.clear().limit(count);
@@ -64,9 +69,6 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
             _log.debug("MOVER: {}@{} read, {} requested.", bytesRead, offset,
                   _args.opread.count.value);
 
-        } catch (ChimeraNFSException he) {
-            res.status = he.getStatus();
-            _log.debug(he.getMessage());
         } catch (IOException ioe) {
             _log.error("DSREAD: ", ioe);
             res.status = nfsstat.NFSERR_IO;

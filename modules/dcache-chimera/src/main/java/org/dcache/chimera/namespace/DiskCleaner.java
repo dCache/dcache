@@ -4,7 +4,6 @@ import static com.google.common.base.Throwables.throwIfInstanceOf;
 import static com.google.common.util.concurrent.Futures.allAsList;
 import static com.google.common.util.concurrent.Futures.immediateFailedFuture;
 import static dmg.util.CommandException.checkCommand;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
 import static org.dcache.cells.HAServiceLeadershipManager.HA_NOT_LEADER_MSG;
 
@@ -498,42 +497,6 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
         }
     }
 
-    @Command(name = "set refresh",
-          hint = "Alters refresh rate and triggers a new run. Minimum rate is every 5 seconds." +
-                "If no time is provided, the old one is kept.")
-    public class SetRefreshCommand implements Callable<String> {
-
-        @Argument(required = false, usage = "refresh time in seconds")
-        Long refreshInterval;
-
-        @Override
-        public String call() throws CommandException {
-            checkCommand(_hasHaLeadership, HA_NOT_LEADER_MSG);
-            if (refreshInterval == null) {
-                return "Refresh interval unchanged: " + _refreshInterval + " "
-                      + _refreshIntervalUnit;
-            }
-            if (refreshInterval < 5) {
-                throw new IllegalArgumentException("Time must be greater than 5 seconds");
-            }
-
-            setRefreshInterval(refreshInterval);
-            setRecoverTimerUnit(SECONDS);
-
-            if (_cleanerTask != null) {
-                _cleanerTask.cancel(true);
-            }
-            _cleanerTask = _executor.scheduleWithFixedDelay(() -> {
-                try {
-                    runDelete();
-                } catch (InterruptedException e) {
-                    LOGGER.info("Cleaner was interrupted");
-                }
-            }, _refreshInterval, _refreshInterval, _refreshIntervalUnit);
-            return "Refresh set to " + _refreshInterval + " " + _refreshIntervalUnit;
-        }
-    }
-
     @Command(name = "set processedAtOnce",
           hint = "Changes the number of files sent to a pool for processing at once.")
     public class SetProcessedAtOnceCommand implements Callable<String> {
@@ -554,8 +517,8 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
 
     @Override
     public void getInfo(PrintWriter pw) {
-        pw.printf("Refresh Interval: %s\n", _refreshInterval);
-        pw.printf("Refresh Interval Unit: %s\n", _refreshIntervalUnit);
+        pw.printf("Cleaning Interval: %s\n", _refreshInterval);
+        pw.printf("Cleaning Interval Unit: %s\n", _refreshIntervalUnit);
         pw.printf("Cleanup grace period: %s\n", TimeUtils.describe(_gracePeriod).orElse("-"));
         pw.printf("Reply Timeout:  %d\n", _poolStub.getTimeout());
         pw.printf("Number of files processed at once:  %d\n", _processAtOnce);

@@ -1372,9 +1372,7 @@ public final class Storage
             CopyManagerMessage copyRequest =
                   new CopyManagerMessage(actualFromFilePath.toString(),
                         actualToFilePath.toString(),
-                        id,
-                        config.getBuffer_size(),
-                        config.getTcp_buffer_size());
+                        id);
             copyRequest.setSubject(user.getSubject());
             copyRequest.setRestriction(user.getRestriction());
             _transferManagerStub.sendAndWait(copyRequest);

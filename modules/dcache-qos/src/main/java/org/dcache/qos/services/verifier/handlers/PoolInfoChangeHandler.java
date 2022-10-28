@@ -88,6 +88,11 @@ public final class PoolInfoChangeHandler extends
         LOGGER.trace("Cancelling pool operations for removed pools {}.", diff.getOldPools());
         diff.getOldPools().stream().forEach(handler::cancelCurrentFileOpForPool);
 
+        LOGGER.trace("Cancelling pool operations for pools of removed groups {}.",
+              diff.getOldGroups());
+        diff.getOldGroups().forEach(group -> poolInfoMap.getPoolsOfGroup(group)
+              .forEach(handler::cancelCurrentFileOpForPool));
+
         LOGGER.trace("Cancelling pool operations for pools removed from groups {}.",
               diff.getPoolsRemovedFromPoolGroup());
         diff.getPoolsRemovedFromPoolGroup().keySet().stream()

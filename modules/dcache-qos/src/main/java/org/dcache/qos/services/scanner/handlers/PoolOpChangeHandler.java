@@ -61,6 +61,7 @@ package org.dcache.qos.services.scanner.handlers;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
@@ -69,9 +70,11 @@ import diskCacheV111.poolManager.StorageUnit;
 import diskCacheV111.poolManager.StorageUnitInfoExtractor;
 import diskCacheV111.pools.PoolV2Mode;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.dcache.poolmanager.PoolInfo;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.qos.data.PoolQoSStatus;
 import org.dcache.qos.services.scanner.data.PoolFilter;
@@ -130,9 +133,15 @@ public final class PoolOpChangeHandler extends
         diff.getPoolsRemovedFromPoolGroup().entries()
               .forEach(e -> scanPoolRemovedFromPoolGroup(e, currentPsu));
 
-        LOGGER.trace("Scanning pool groups pointing to new units {}.",
-              diff.getNewUnits());
-        diff.getNewUnits().forEach(u -> scanPoolsWithStorageUnitModified(u.getName(), currentPsu));
+        LOGGER.trace("Scanning pool groups pointing to units added to unit groups {}.",
+              diff.getUnitsAddedToPoolGroup());
+        diff.getUnitsAddedToPoolGroup().values()
+              .forEach(u -> scanPoolsWithStorageUnitModified(u, currentPsu));
+
+        LOGGER.trace("Scanning pool groups pointing to units removed from unit groups {}.",
+              diff.getUnitsRemovedFromPoolGroup());
+        diff.getUnitsRemovedFromPoolGroup().values()
+              .forEach(u -> scanPoolsWithStorageUnitModified(u, currentPsu));
 
         LOGGER.trace("Scanning pool groups with units whose "
                     + "constraints have changed; new constraints {}.",
@@ -226,6 +235,9 @@ public final class PoolOpChangeHandler extends
         LOGGER.trace("comparing pool mode");
         comparePoolMode(diff, commonPools, nextPsu);
 
+        LOGGER.trace("comparing pool tags");
+        comparePoolTags(diff, commonPools, currentPoolMonitor, nextPoolMonitor);
+
         return diff;
     }
 
@@ -310,6 +322,24 @@ public final class PoolOpChangeHandler extends
             Sets.difference(curr, next).stream().filter((p) -> !diff.oldPools.contains(p))
                   .forEach((p) -> diff.poolsRmved.put(p, group));
         }
+    }
+
+    private void comparePoolTags(PoolOpDiff diff, Set<String> common, PoolMonitor current,
+          PoolMonitor next) {
+        CostModule currentCostModule = current.getCostModule();
+        CostModule nextCostModule = next.getCostModule();
+
+        diff.getNewPools()
+              .forEach(p -> diff.getTagsChanged().put(p, getPoolTags(p, nextCostModule)));
+
+        common.forEach(p -> {
+            Map<String, String> newTags = getPoolTags(p, nextCostModule);
+            Map<String, String> oldTags = getPoolTags(p, currentCostModule);
+            if (oldTags == null || (newTags != null
+                  && !oldTags.equals(newTags))) {
+                diff.getTagsChanged().put(p, newTags);
+            }
+        });
     }
 
     private Set<String> compareStorageUnits(PoolOpDiff diff,
@@ -398,6 +428,14 @@ public final class PoolOpChangeHandler extends
         return Sets.intersection(next, curr);
     }
 
+    private Map<String, String> getPoolTags(String pool, CostModule costModule) {
+        PoolInfo poolInfo = costModule.getPoolInfo(pool);
+        if (poolInfo == null) {
+            return null;
+        }
+        return poolInfo.getTags();
+    }
+
     /**
      * Scans the "new" pool, also making sure all files have the sticky bit.
      */
@@ -407,7 +445,7 @@ public final class PoolOpChangeHandler extends
         PoolV2Mode mode = psu.getPool(pool).getPoolMode();
         poolOperationMap.add(pool);
         poolOperationMap.updateStatus(pool, PoolQoSStatus.valueOf(mode));
-        scanPool(pool, addedTo, mode);
+        scanPool(pool, addedTo, null, mode);
     }
 
     /**

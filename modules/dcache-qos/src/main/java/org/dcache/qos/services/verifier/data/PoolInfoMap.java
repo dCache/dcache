@@ -719,7 +719,7 @@ public class PoolInfoMap {
         Collection<StorageUnit> newUnits = diff.getNewUnits();
         for (StorageUnit unit : newUnits) {
             String name = unit.getName();
-            StorageUnitInfoExtractor.getPrimaryGroupsFor(name, psu)
+            StorageUnitInfoExtractor.getPoolGroupsFor(name, psu, false)
                   .stream()
                   .forEach(g -> diff.unitsAdded.put(g, name));
         }
@@ -821,9 +821,8 @@ public class PoolInfoMap {
                 diff.getModeChanged().put(pool, newMode);
             }
 
-            ImmutableMap<String, String> newTags
-                  = getPoolTags(pool, costModule);
-            ImmutableMap<String, String> oldTags = info.getTags();
+            Map<String, String> newTags = getPoolTags(pool, costModule);
+            Map<String, String> oldTags = info.getTags();
             if (oldTags == null ||
                   (newTags != null && !oldTags.equals(newTags))) {
                 diff.getTagsChanged().put(pool, newTags);
@@ -1061,7 +1060,7 @@ public class PoolInfoMap {
      **/
     private PoolInformation setPoolInfo(String pool,
           PoolV2Mode mode,
-          ImmutableMap<String, String> tags,
+          Map<String, String> tags,
           PoolCostInfo cost) {
         PoolInformation entry = poolInfo.getOrDefault(pool, new PoolInformation(pool));
         entry.update(mode, tags, cost);

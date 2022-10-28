@@ -2044,13 +2044,13 @@ public class FsSqlDriver {
                       }, keyHolder);
                 Long label_id = (Long) keyHolder.getKeys().get("label_id");
 
-                //TODO change to WHERE NOT EXISTS
                 _jdbc.update("INSERT INTO t_labels_ref (label_id, inumber) VALUES (?,?)",
                       label_id, inode.ino());
 
             } else {
 
                 Long label_id = getLabel(labelname);
+
 
                 Integer n = _jdbc.queryForObject(
                       "SELECT count(*) FROM t_labels_ref WHERE inumber=? and label_id = ?",
@@ -2060,6 +2060,21 @@ public class FsSqlDriver {
                     _jdbc.update("INSERT INTO t_labels_ref (label_id, inumber) VALUES (?,?)",
                           label_id, inode.ino());
                 }
+
+                _jdbc.update(
+                      "INSERT INTO t_labels_ref (label_id, inumber) (SELECT * FROM (VALUES (?,?)) v  WHERE NOT EXISTS "
+                            +
+                            "(SELECT label_id FROM t_labels_ref WHERE label_id = ?  and inumber=?))",
+                      ps -> {
+                          ps.setLong(1, label_id);
+                          ps.setLong(2, inode.ino());
+                          ps.setLong(3, label_id);
+                          ps.setLong(4, inode.ino());
+
+                      });
+
+
+
             }
 
         } catch (EmptyResultDataAccessException e) {
