@@ -182,7 +182,7 @@ public class NfsTransferService
               _embededDS);
 
         // Make mover validation schedule to match nfs state handler lease timeout.
-        deadMoverIdleTime = Duration.ofSeconds(_embededDS.getStateHandler().getLeaseTime())
+        deadMoverIdleTime = _embededDS.getStateHandler().getLeaseTime()
               .multipliedBy(LEASE_MISSES);
         _cleanerExecutor.scheduleAtFixedRate(new MoverValidator(), deadMoverIdleTime.toSeconds(),
               deadMoverIdleTime.toSeconds(), TimeUnit.SECONDS);

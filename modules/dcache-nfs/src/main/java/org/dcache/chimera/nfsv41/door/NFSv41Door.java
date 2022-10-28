@@ -44,6 +44,7 @@ import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -471,7 +472,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                           "state-handler-id");
 
                     NFSv4StateHandler stateHandler = new NFSv4StateHandler(
-                          NFSv4Defaults.NFS4_LEASE_TIME,
+                          Duration.ofSeconds(NFSv4Defaults.NFS4_LEASE_TIME),
                           stateHandlerId,
                           _clientStore);
 
