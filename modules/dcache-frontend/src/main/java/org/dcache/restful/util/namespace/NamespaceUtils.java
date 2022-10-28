@@ -275,7 +275,7 @@ public final class NamespaceUtils {
             attributes.add(FileAttribute.RETENTION_POLICY);
         }
 
-        if (checksum) {
+        if (checksum || optional) {
             attributes.add(FileAttribute.CHECKSUM);
         }
 

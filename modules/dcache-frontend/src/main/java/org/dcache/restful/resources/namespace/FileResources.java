@@ -158,6 +158,9 @@ public class FileResources {
           @QueryParam("labels") boolean isLabels,
           @ApiParam("Whether or not to list checksum values.")
           @QueryParam("checksum") boolean isChecksum,
+          @ApiParam("Whether or not to print optional attributes")
+          @DefaultValue("false")
+	  @QueryParam("optional") boolean isOptional,
           @ApiParam("Limit number of replies in directory listing.")
           @QueryParam("limit") String limit,
           @ApiParam("Number of entries to skip in directory listing.")
@@ -168,7 +171,7 @@ public class FileResources {
                     isLocations,
                     isQos,
                     isChecksum,
-                    false);
+                    isOptional);
         PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager);
         FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new);
         try {
@@ -177,7 +180,7 @@ public class FileResources {
             NamespaceUtils.chimeraToJsonAttributes(path.name(), fileAttributes,
                   namespaceAttributes,
                   isLocality, isLocations, isLabels,
-                  false, isXattr, isChecksum,
+                  isOptional, isXattr, isChecksum,
                   request, poolMonitor);
             if (isQos) {
                 NamespaceUtils.addQoSAttributes(fileAttributes,
@@ -220,7 +223,7 @@ public class FileResources {
                           childrenAttributes,
                           entry.getFileAttributes(),
                           isLocality, isLocations, isLabels,
-                          false, isXattr, isChecksum,
+                          isOptional, isXattr, isChecksum,
                           request, poolMonitor);
                     childrenAttributes.setFileName(fName);
                     if (isQos) {
