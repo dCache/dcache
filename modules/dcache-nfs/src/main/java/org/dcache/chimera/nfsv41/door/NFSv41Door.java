@@ -8,12 +8,14 @@ import static org.dcache.util.TransferRetryPolicy.alwaysRetry;
 
 import com.google.common.collect.Sets;
 import com.google.common.io.BaseEncoding;
+import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import diskCacheV111.namespace.EventNotifier;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FileNotInCacheException;
+import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
@@ -98,6 +100,7 @@ import org.dcache.nfs.ExportFile;
 import org.dcache.nfs.FsExport;
 import org.dcache.nfs.InetAddressMatcher;
 import org.dcache.nfs.nfsstat;
+import org.dcache.nfs.status.BadHandleException;
 import org.dcache.nfs.status.BadLayoutException;
 import org.dcache.nfs.status.BadStateidException;
 import org.dcache.nfs.status.DelayException;
@@ -1199,6 +1202,38 @@ public class NFSv41Door extends AbstractCellComponent implements
         }
     }
 
+    @Command(name = "show open files", hint = "show all opened files",
+          description = "Show open files and corresponding NFS client IPs. Not every open"
+                + " has a layout (mover).")
+    public class ShowOpenFilesCmd implements Callable<String> {
+
+        @Override
+        public String call() throws IOException {
+
+            StringBuilder sb = new StringBuilder("Open files:").append("\n\n");
+            _nfs4.getStateHandler().getFileTracker()
+                  .getOpenFiles()
+                  .forEach((i, l) -> {
+                      try {
+                          FsInode inode = _chimeraVfs.inodeFromBytes(i.getFileId());
+                          PnfsId pnfsId = new PnfsId(inode.getId());
+                          FsPath p = _pnfsHandler.getPathByPnfsId(pnfsId);
+                          sb.append(pnfsId).append(" (").append(p).append("):").append("\n");
+                          l.forEach(c -> sb.append("  ")
+                                .append(c.getId()).append(" (")
+                                .append(
+                                      InetAddresses.toUriString(c.getRemoteAddress().getAddress()))
+                                .append(":").append(c.getRemoteAddress().getPort())
+                                .append(")")
+                                .append("\n\n"));
+                      } catch (BadHandleException | CacheException | ChimeraFsException e) {
+                          sb.append("Error: ").append(e);
+                      }
+                  });
+
+            return sb.toString();
+        }
+    }
     @Command(name = "show proxyio", hint = "show proxy-io transfers",
           description = "Show active proxy-io transfers.")
     public class ShowProxyIoTransfersCmd implements Callable<String> {
