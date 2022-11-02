@@ -86,3 +86,5 @@ This part contains guides for specific tasks a system administrator might want t
     - [Multi-Node with Firewalls](cookbook-net.md#multi-node-with-firewalls)
     - [GridFTP Connections via two or more Network Interfaces](cookbook-net.md#gridftp-connections-via-two-or-more-network-interfaces)
     - [GridFTP with Pools in a Private Subnet](cookbook-net.md#gridftp-with-pools-in-a-private-subnet)
+
+- [Debugging](cookbook-debugging.md)
