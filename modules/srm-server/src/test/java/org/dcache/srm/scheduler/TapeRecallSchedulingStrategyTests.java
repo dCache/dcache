@@ -52,7 +52,7 @@ public class TapeRecallSchedulingStrategyTests {
     /**
      * time safety margin in milliseconds
      */
-    private static final long TIME_SAFETY_MARGIN = 5;
+    private static final long TIME_SAFETY_MARGIN = 20;
 
     TapeRecallSchedulingStrategy strategy;
     TapeRecallSchedulingRequirementsChecker requirementsChecker;
@@ -352,7 +352,7 @@ public class TapeRecallSchedulingStrategyTests {
 
     @Test
     public void shouldOnlySelectTapesWithCooldownSinceLastJobArrival() throws Exception {
-        requirementsChecker.setMinJobWaitingTime(Duration.ofMinutes(5));
+        requirementsChecker.setMinJobWaitingTime(Duration.ofMinutes(15));
 
         tapeInfoProvider.addTapeFileInfo("/tape/file10.txt", new TapefileInfo(10, "tape1"));
         tapeInfoProvider.addTapeFileInfo("/tape/file11.txt", new TapefileInfo(10, "tape1"));
