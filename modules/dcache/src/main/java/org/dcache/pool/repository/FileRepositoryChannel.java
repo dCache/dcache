@@ -19,7 +19,6 @@ public class FileRepositoryChannel implements RepositoryChannel {
     private static final FileAttribute<?>[] NO_ATTRIBUTES = new FileAttribute<?>[0];
 
     private final FileChannel _fileChannel;
-    private final Path _path;
 
     /*
      * Cached value of files size. If value is -1, then we have to get file size
@@ -42,7 +41,6 @@ public class FileRepositoryChannel implements RepositoryChannel {
      */
     public FileRepositoryChannel(Path path, Set<? extends OpenOption> openOptions)
           throws FileNotFoundException, IOException {
-        _path = path;
         _fileChannel = FileChannel.open(path, openOptions, NO_ATTRIBUTES);
         _fileSize = !openOptions.contains(StandardOpenOption.WRITE) ? _fileChannel.size() : -1;
     }
