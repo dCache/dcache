@@ -59,6 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.qos.util;
 
+import com.google.common.annotations.VisibleForTesting;
 import diskCacheV111.vehicles.Message;
 import java.io.File;
 import java.io.FileInputStream;
@@ -67,6 +68,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -118,16 +120,7 @@ public final class SerializingBacklogHandler implements BackloggedMessageHandler
         public void run() {
             while (!Thread.interrupted()) {
                 try {
-                    Collection<Message> data = new ArrayList<>();
-
-                    /*
-                     * take blocks until non-empty; it is synchronized
-                     */
-                    data.add(queue.take());
-
-                    queue.drainTo(data, 1000);
-
-                    data.stream().forEach(this::saveToBacklog);
+                    consume();
                 } catch (InterruptedException ignored) {
                     break;
                 }
@@ -144,7 +137,20 @@ public final class SerializingBacklogHandler implements BackloggedMessageHandler
             super.stop();
         }
 
-        private void saveToBacklog(Message message) {
+        private void consume() throws InterruptedException {
+            Collection<Serializable> data = new ArrayList<>();
+
+            /*
+             * take blocks until non-empty; it is synchronized
+             */
+            data.add(queue.take());
+
+            queue.drainTo(data, 1000);
+
+            data.stream().forEach(this::saveToBacklog);
+        }
+
+        private void saveToBacklog(Serializable message) {
             try {
                 String name = UUID.randomUUID().toString() + MESSAGE_SUFFIX;
                 serializeToDisk(new File(backlogStore, name), message);
@@ -219,6 +225,16 @@ public final class SerializingBacklogHandler implements BackloggedMessageHandler
         }
     }
 
+    @VisibleForTesting
+    public void consume() throws InterruptedException {
+        consumer.consume();
+    }
+
+    @VisibleForTesting
+    public void reload() {
+        reloader.run();
+    }
+
     public void setReceivers(Set<Consumer<Message>> messageReceivers) {
         this.messageReceivers.addAll(messageReceivers);
     }
@@ -244,7 +260,7 @@ public final class SerializingBacklogHandler implements BackloggedMessageHandler
         }
     }
 
-    private void serializeToDisk(File file, Message message) throws QoSException {
+    private void serializeToDisk(File file, Serializable message) throws QoSException {
         try (ObjectOutputStream ostream = new ObjectOutputStream(new FileOutputStream(file))) {
             ostream.writeObject(message);
         } catch (IOException e) {
