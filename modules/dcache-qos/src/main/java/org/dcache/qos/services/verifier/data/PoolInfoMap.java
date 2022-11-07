@@ -193,11 +193,14 @@ public class PoolInfoMap {
     private final Lock write = lock.writeLock();
     private final Lock read = lock.readLock();
 
+    private int verifyWarnings = 0;
+
     /**
      * Called on a dedicated thread. Applies a diff under write lock.
      */
     public void apply(PoolInfoDiff diff) {
         write.lock();
+        verifyWarnings = 0;
         try {
             /*
              *  -- Remove stale pools, pool groups and storage units.
@@ -289,6 +292,7 @@ public class PoolInfoMap {
                     verifyConstraints(pg.getName());
                 } catch (IllegalStateException e) {
                     sendPoolGroupMisconfiguredAlarm(pg.getName());
+                    ++verifyWarnings;
                 }
             });
         } finally {
@@ -360,6 +364,11 @@ public class PoolInfoMap {
         } finally {
             read.unlock();
         }
+    }
+
+    @VisibleForTesting
+    public int verifyWarnings() {
+        return verifyWarnings;
     }
 
     public Set<String> getExcludedLocationNames(Collection<String> members) {
@@ -671,6 +680,24 @@ public class PoolInfoMap {
         } finally {
             write.unlock();
         }
+    }
+
+    @VisibleForTesting
+        /* Only used by unit test */
+    public boolean hasGroup(String group) {
+        return markers.get(group) != null;
+    }
+
+    @VisibleForTesting
+        /* Only used by unit test */
+    public boolean hasPool(String pool) {
+        return pools.contains(pool);
+    }
+
+    @VisibleForTesting
+        /* Only used by unit test */
+    public boolean hasUnit(String unit) {
+        return constraints.containsKey(unit);
     }
 
     @VisibleForTesting
