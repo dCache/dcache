@@ -44,7 +44,6 @@ This part contains guides for specific tasks a system administrator might want t
     - [Examples](cookbook-pool.md#examples)
     - [Renaming a Pool](cookbook-pool.md#renaming-a-pool)
     - [Pinning Files to a Pool](cookbook-pool.md#pinning-files-to-a-pool)
-    - [Running pool with CEPH backend](cookbook-pool.md#running-pools-with-ceph-backends)
     - [Keeping metadata on MongoDB](cookbook-pool.md#keeping-metadata-on-mongodb)
     - [Handling orphan movers](cookbook-pool.md#handling-orphan-movers)
 

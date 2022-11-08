@@ -816,11 +816,6 @@
             </dependency>
             <dependency>
                 <groupId>org.dcache</groupId>
-                <artifactId>rados4j</artifactId>
-                <version>0.0.4</version>
-            </dependency>
-            <dependency>
-                <groupId>org.dcache</groupId>
                 <artifactId>ldap4testing</artifactId>
                 <version>1.0</version>
             </dependency>

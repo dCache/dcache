@@ -301,10 +301,6 @@
         <artifactId>jimfs</artifactId>
         <scope>test</scope>
     </dependency>
-    <dependency>
-        <groupId>org.dcache</groupId>
-        <artifactId>rados4j</artifactId>
-    </dependency>
 
     <!-- used by alarms, needs to be deployed -->
     <dependency>

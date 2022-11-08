@@ -457,53 +457,6 @@ This command does:
 
 3.  All new copies of the file will become `sticky`.
 
-## Running pools with CEPH backends
-
-dCache pools can be configured to store files on locally mounted file systems or use CEPH as a back-end. The property `pool.backend` is used to control which back-end should be used:
-
-```ini
-pool.backend = ceph
-```
-
-dCache uses CEPH's block devices interface, know as `RBD`, to store data. The dCache pools map one-to-one onto CEPH pools. The CEPH pool must be manually created and, if required, configured before dCache can use it.
-
-```console-root
-rados mkpool <pool-name>
-```
-
-By default, the CEPH pool name is expected to match the dCache pool name. This can be changed by using
-
-```ini
-pool.backend.ceph.pool-name = ceph-pool-to-use
-```
-
-dCache uses a locally configured ceph client to operate. The location to client configuration files is controlled by `pool.backend.ceph.config` property and defaults to _/etc/ceph/ceph.conf_.
-
-For authentication, the property `pool.backend.ceph.cluster` is used to set the cluser name to use, and for a cluster name of "CLNAME", the corresponding file `/etc/ceph/ceph.client.CLNAME.keyring` is used as the key ring.
-
-In order to support HSM with CEPH-backended pools, the HSM script interface provides URI-like syntax to pass file locations to the HSM script:
-
-    rbd://<ceph-pool>/<pnfsid>
-
-for instance:
-
-    rbd://dcache-pool-A/00000051ADCB3BA14799844556CD3AF0A9DF
-
-The HSM script is responsible to read, write and delete RBD image on GET, PUT and DELETE.
-
-In order to improve the performance of the backend, tests point to the RBD caching configuration (in `/etc/ceph/ceph.conf`) as the most promisting starting point:
-
-    # Start out in write-through mode, and switch to write-back after the
-    # first flush request is received. Enabling this is a conservative but
-    # safe setting in case VMs running on rbd are too old to send flushes,
-    # like the virtio driver in Linux before 2.6.32.
-    # Type: Boolean
-    # Required: No
-    # (Default: true)
-    ;rbd cache writethrough until flush = true
-    rbd cache writethrough until flush = false
-
-
 ## Keeping metadata on MongoDB
 
 In order to speed up database operations for metadata, dCache pools (starting from version 3.2) can store their metadata on an external MongoDB instance. For production scenarios, a dedicated, performance-optimized and well-maintained MongoDB cluster is required. 
