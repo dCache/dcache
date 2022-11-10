@@ -348,9 +348,9 @@ public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
         }
 
         public void run() {
+            Thread currentThread = Thread.currentThread();
             try {
-                Thread thread = Thread.currentThread();
-                if (bind(thread)) {
+                if (bind(currentThread)) {
                     boolean isSuccess = false;
                     T result = null;
                     try {
@@ -386,7 +386,7 @@ public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
                     }
                 }
             } catch (Throwable e) {
-                thread.getUncaughtExceptionHandler().uncaughtException(thread, e);
+                currentThread.getUncaughtExceptionHandler().uncaughtException(currentThread, e);
             }
         }
 
