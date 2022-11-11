@@ -19,6 +19,8 @@ check -strong bulk.limits.max.targets-per-shallow-request
 check -strong bulk.limits.max.targets-per-recursive-request
 check -strong bulk.limits.sweep-interval
 check -strong bulk.limits.sweep-interval.unit
+check -strong bulk.limits.counts-update-interval
+check -strong bulk.limits.counts-update-interval.unit
 check -strong bulk.service.pnfsmanager
 check -strong bulk.service.pnfsmanager.timeout
 check -strong bulk.service.pnfsmanager.timeout.unit

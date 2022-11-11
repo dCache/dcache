@@ -322,4 +322,55 @@
             CREATE INDEX CONCURRENTLY idx_request_prestore on bulk_request(prestore);
         </sql>
     </changeSet>
+
+    <changeSet author="arossi" id="3.0">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="counts_by_state"/>
+            </not>
+        </preConditions>
+
+        <createTable tableName="counts_by_state">
+            <column name="state" type="varchar(16)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="idx_counts_state_id"/>
+            </column>
+            <column name="count" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <insert tableName="counts_by_state">
+            <column name="state" value="ACTIVE"/>
+            <column name="count" value="0"/>
+        </insert>
+        <insert tableName="counts_by_state">
+            <column name="state" value="CREATED"/>
+            <column name="count" value="0"/>
+        </insert>
+        <insert tableName="counts_by_state">
+            <column name="state" value="READY"/>
+            <column name="count" value="0"/>
+        </insert>
+        <insert tableName="counts_by_state">
+            <column name="state" value="RUNNING"/>
+            <column name="count" value="0"/>
+        </insert>
+        <insert tableName="counts_by_state">
+            <column name="state" value="CANCELLED"/>
+            <column name="count" value="0"/>
+        </insert>
+        <insert tableName="counts_by_state">
+            <column name="state" value="COMPLETED"/>
+            <column name="count" value="0"/>
+        </insert>
+        <insert tableName="counts_by_state">
+            <column name="state" value="FAILED"/>
+            <column name="count" value="0"/>
+        </insert>
+        <insert tableName="counts_by_state">
+            <column name="state" value="SKIPPED"/>
+            <column name="count" value="0"/>
+        </insert>
+        <rollback/>
+    </changeSet>
 </databaseChangeLog>

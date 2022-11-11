@@ -81,6 +81,7 @@ import java.util.stream.Stream;
 import org.dcache.db.JdbcCriterion;
 import org.dcache.db.JdbcUpdate;
 import org.dcache.services.bulk.BulkStorageException;
+import org.dcache.services.bulk.util.BulkRequestTarget;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -99,6 +100,12 @@ public final class JdbcBulkDaoUtils {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JdbcBulkDaoUtils.class);
 
+    private static final String SELECT_COUNTS_BY_STATE =
+          "SELECT * FROM counts_by_state";
+
+    private static final String UPDATE_STATE_COUNT =
+          "UPDATE counts_by_state SET count = ? WHERE state = ?";
+
     public static <T> Set<T> toSetOrNull(T[] array) {
         return array == null ? null : Arrays.stream(array).collect(Collectors.toSet());
     }
@@ -115,6 +122,16 @@ public final class JdbcBulkDaoUtils {
         LOGGER.trace("count {} ({}).", sql, criterion.getArguments());
         return support.getJdbcTemplate()
               .queryForObject(sql, criterion.getArgumentsAsArray(), Integer.class);
+    }
+
+    public Map<String, Long> countsByState(JdbcDaoSupport support) {
+        LOGGER.trace("countStates.");
+        SqlRowSet rowSet = support.getJdbcTemplate().queryForRowSet(SELECT_COUNTS_BY_STATE);
+        Map<String, Long> counts = new HashMap<>();
+        while (rowSet.next()) {
+            counts.put(rowSet.getString(1), rowSet.getLong(2));
+        }
+        return counts;
     }
 
     public Map<String, Long> countGrouped(JdbcCriterion criterion, String tableName,
@@ -194,7 +211,8 @@ public final class JdbcBulkDaoUtils {
         try {
             support.getJdbcTemplate().update(
                   con -> {
-                      PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+                      PreparedStatement ps = con.prepareStatement(sql,
+                            Statement.RETURN_GENERATED_KEYS);
                       Collection<Object> arguments = update.getArguments();
 
                       int i = 1;
@@ -239,5 +257,16 @@ public final class JdbcBulkDaoUtils {
         LOGGER.trace("update {} ({}, {}).", sql, update.getArguments(), criterion.getArguments());
         return support.getJdbcTemplate().update(sql,
               concatArguments(update.getArguments(), criterion.getArguments()));
+    }
+
+    public void updateCounts(int countActive, Map<String, Long> countsByState,
+          JdbcDaoSupport support) {
+        LOGGER.trace("updateCounts {} : {}.", countActive, countsByState);
+        support.getJdbcTemplate().update(UPDATE_STATE_COUNT, countActive, "ACTIVE");
+        Arrays.stream(BulkRequestTarget.State.values()).forEach(state -> {
+            Long count = countsByState.get(state);
+            support.getJdbcTemplate()
+                  .update(String.format(UPDATE_STATE_COUNT, count == null ? 0L : count, state));
+        });
     }
 }
