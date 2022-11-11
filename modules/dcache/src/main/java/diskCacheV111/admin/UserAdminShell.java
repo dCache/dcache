@@ -87,6 +87,7 @@ import org.dcache.namespace.FileType;
 import org.dcache.util.Args;
 import org.dcache.util.Glob;
 import org.dcache.util.NetLoggerBuilder;
+import dmg.util.PagedCommandResult;
 import org.dcache.util.Version;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryStream;
@@ -488,6 +489,15 @@ public class UserAdminShell
         return (_instance == null ? "" : ("[" + _instance + "] ")) +
               (_currentPosition == null ? "(local) " : ("(" + _currentPosition.remoteName + ") ")) +
               getUser() + " > ";
+    }
+
+    /**
+     *  Returns the interactive prompt requesting whether the user desires more results or not.
+     */
+    public String getYesNoPrompt() {
+        return (_instance == null ? "" : ("[" + _instance + "] ")) +
+              (_currentPosition == null ? "(local) " : ("(" + _currentPosition.remoteName + ") ")) +
+              getUser() + " Continue? [Y/N] > ";
     }
 
     /**
@@ -1124,6 +1134,11 @@ public class UserAdminShell
         if (or == null) {
             return "";
         }
+
+        if (or instanceof PagedCommandResult) {
+            return (PagedCommandResult) or;
+        }
+
         String r = or.toString();
         if (r.length() < 1) {
             return "";

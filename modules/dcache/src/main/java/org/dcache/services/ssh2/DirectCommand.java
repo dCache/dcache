@@ -79,6 +79,7 @@ import org.apache.sshd.server.ExitCallback;
 import org.apache.sshd.server.channel.ChannelSession;
 import org.apache.sshd.server.command.Command;
 import org.dcache.cells.CellStub;
+import dmg.util.PagedCommandResult;
 import org.dcache.util.Strings;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.slf4j.Logger;
@@ -172,12 +173,26 @@ public class DirectCommand implements Command, Runnable {
         for (String command : commands) {
             Object error = null;
             try {
-                Object result = shell.executeCommand(command);
-                String s = Strings.toString(result);
-                if (!s.isEmpty()) {
-                    outWriter.println(s);
+                while (true) {
+                    Object result = shell.executeCommand(command);
+                    String s;
+                    if (result instanceof PagedCommandResult) {
+                        s = ((PagedCommandResult) result).getPartialResult();
+                    } else {
+                        s = Strings.toString(result);
+                    }
+                    if (!s.isEmpty()) {
+                        outWriter.println(s);
+                    }
+                    outWriter.flush();
+                    if (result instanceof PagedCommandResult) {
+                        PagedCommandResult pagedResult = (PagedCommandResult) result;
+                        pagedResult.setCommand(command);
+                        command = pagedResult.nextCommand();
+                    } else {
+                        break;
+                    }
                 }
-                outWriter.flush();
             } catch (IllegalArgumentException e) {
                 error = e.toString();
             } catch (SerializationException e) {
