@@ -129,7 +129,7 @@ public final class BulkServiceCommands implements CellCommandListener {
     /**
      * (policy configuration property:  value)
      */
-    private static final String FORMAT_REQUEST_POLICY = "%-40s : %10s";
+    private static final String FORMAT_REQUEST_POLICY = "%-40s : %10s\n";
 
     /**
      * createdAt | startedAt| completedAt | state | target
@@ -825,17 +825,17 @@ public final class BulkServiceCommands implements CellCommandListener {
             }
 
             return new StringBuilder().append(
-                        String.format(FORMAT_REQUEST_POLICY, "Maximum concurrent (active) requests\n",
+                        String.format(FORMAT_REQUEST_POLICY, "Maximum concurrent (active) requests",
                               requestManager.getMaxActiveRequests()))
-                  .append(String.format(FORMAT_REQUEST_POLICY, "Maximum requests per user\n",
+                  .append(String.format(FORMAT_REQUEST_POLICY, "Maximum requests per user",
                         service.getMaxRequestsPerUser()))
-                  .append(String.format(FORMAT_REQUEST_POLICY, "Maximum expansion depth\n",
+                  .append(String.format(FORMAT_REQUEST_POLICY, "Maximum expansion depth",
                         service.getAllowedDepth()))
-                  .append(String.format(FORMAT_REQUEST_POLICY, "Maximum flat targets\n",
+                  .append(String.format(FORMAT_REQUEST_POLICY, "Maximum flat targets",
                         service.getMaxFlatTargets()))
-                  .append(String.format(FORMAT_REQUEST_POLICY, "Maximum shallow targets\n",
+                  .append(String.format(FORMAT_REQUEST_POLICY, "Maximum shallow targets",
                         service.getMaxShallowTargets()))
-                  .append(String.format(FORMAT_REQUEST_POLICY, "Maximum recursive targets\n",
+                  .append(String.format(FORMAT_REQUEST_POLICY, "Maximum recursive targets",
                         service.getMaxRecursiveTargets())).toString();
         }
     }
