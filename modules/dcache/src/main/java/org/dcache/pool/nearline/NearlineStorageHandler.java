@@ -1203,9 +1203,14 @@ public class NearlineStorageHandler
                 try {
                     pnfs.getFileAttributes(pnfsId, EnumSet.noneOf(FileAttribute.class));
                 } catch (FileNotFoundCacheException e) {
-                    // Remove file asynchronously to prevent request cancellation from
-                    // interrupting the state update.
-                    executor.execute(() -> removeFile(pnfsId));
+                    // Remove the file after flush canceled.
+                    addCallback(new NopCompletionHandler<>() {
+                        @Override
+                        public void failed(Throwable exc, PnfsId file) {
+                            removeFile(file);
+                        }
+                    });
+
                     throw new FileNotFoundCacheException(
                           "File not found in name space during pre-flush check.", e);
                 }
@@ -1225,9 +1230,13 @@ public class NearlineStorageHandler
                 try {
                     path = pnfs.getPathByPnfsId(pnfsId);
                 } catch (FileNotFoundCacheException e) {
-                    // Remove file asynchronously to prevent request cancellation from
-                    // interrupting the state update.
-                    executor.execute(() -> removeFile(pnfsId));
+                    // Remove the file after flush canceled.
+                    addCallback(new NopCompletionHandler<>() {
+                        @Override
+                        public void failed(Throwable exc, PnfsId file) {
+                            removeFile(file);
+                        }
+                    });
                     throw new FileNotFoundCacheException(
                           "File not found in name space during pre-flush check.", e);
                 }
