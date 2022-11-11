@@ -180,11 +180,12 @@ public interface BulkRequestStore {
      * @param status  match only the requests with these statuses.
      * @param owners  match only the requests with these owners.
      * @param path match only the requests with targets whose paths equal or contain this path.
-     * @return set of the corresponding request urls.
+     * @param seqNo match only the requests with seqNo greater or equal to this one.
+     * @return list of the corresponding request urls.
      * @throws BulkStorageException
      */
-    Set<BulkRequestSummary> getRequestSummaries(Set<BulkRequestStatus> status, Set<String> owners,
-          String path) throws BulkStorageException;
+    List<BulkRequestSummary> getRequestSummaries(Set<BulkRequestStatus> status, Set<String> owners,
+          String path, Long seqNo) throws BulkStorageException;
 
     /**
      * @param id unique id for request.

@@ -74,13 +74,15 @@ public class BulkRequestListMessage extends BulkServiceMessage {
     private final Set<BulkRequestStatus> status;
     private final Set<String> owners;
     private final String path;
+    private final long offset;
     private List<BulkRequestSummary> requests;
 
-    public BulkRequestListMessage(Set<BulkRequestStatus> status, Set<String> owners, String path) {
+    public BulkRequestListMessage(Set<BulkRequestStatus> status, Set<String> owners, String path, long offset) {
         super(Restrictions.none());
         this.status = status == null ? Collections.emptySet() : status;
         this.owners = owners == null ? Collections.emptySet() : owners;
         this.path = path;
+        this.offset = offset;
     }
 
     public String getPath() {
@@ -95,6 +97,10 @@ public class BulkRequestListMessage extends BulkServiceMessage {
 
     public List<BulkRequestSummary> getRequests() {
         return requests;
+    }
+
+    public long getOffset() {
+        return offset;
     }
 
     public void setRequests(List<BulkRequestSummary> requests) {

@@ -75,9 +75,9 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -120,7 +120,7 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
     protected static final Logger LOGGER
           = LoggerFactory.getLogger(JdbcBulkRequestStore.class);
 
-    private static final Integer REQUEST_INFO_TARGET_LIMIT = 10000;
+    private static final Integer FETCH_SIZE = 10000;
 
     class RequestLoader extends CacheLoader<String, Optional<BulkRequest>> {
 
@@ -318,8 +318,8 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
     }
 
     @Override
-    public Set<BulkRequestSummary> getRequestSummaries(Set<BulkRequestStatus> status,
-          Set<String> owners, String path) {
+    public List<BulkRequestSummary> getRequestSummaries(Set<BulkRequestStatus> status,
+          Set<String> owners, String path, Long seqNo) {
         LOGGER.trace("getRequestSummaries {}, {}, {}.", status, owners, path);
 
         /*
@@ -330,13 +330,15 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
         String[] users = owners == null ? null : owners.toArray(String[]::new);
 
         List<BulkRequest> requests =
-              requestDao.get(requestDao.where().requestIds(rids).status(status).user(users),
-                    Integer.MAX_VALUE);
-        Set<BulkRequestSummary> summaries = new HashSet<>();
+              requestDao.get(
+                    requestDao.where().sorter("seq_no").seqNo(seqNo).requestIds(rids).status(status)
+                          .user(users), FETCH_SIZE);
+        List<BulkRequestSummary> summaries = new ArrayList<>();
 
         for (BulkRequest r : requests) {
             try {
-                summaries.add(new BulkRequestSummary(r.getUrlPrefix() + "/" + r.getId(),
+                summaries.add(new BulkRequestSummary(r.getSeqNo(),
+                      r.getUrlPrefix() + "/" + r.getId(),
                       r.getActivity(),
                       r.getStatusInfo(),
                       targetStore.countUnprocessed(r.getId())));
@@ -716,17 +718,17 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
         info.setStartedAt(status.getStartedAt());
         info.setTargetPrefix(stored.getTargetPrefix());
         /*
-         *  Order by id from offset.  Limit is 10000 per swatch.
+         *  Order by id from offset.  Limit is 25000 per swatch.
          */
         List<BulkRequestTargetInfo> targets =
               requestTargetDao.get(requestTargetDao.where().rid(requestId).offset(offset)
-                          .sorter("id"), REQUEST_INFO_TARGET_LIMIT)
+                          .sorter("id"), FETCH_SIZE)
                     .stream().filter(t -> !t.getPath().equals(ROOT_REQUEST_PATH))
                     .map(this::toRequestTargetInfo)
                     .collect(Collectors.toList());
         info.setTargets(targets);
         int size = targets.size();
-        if (size == REQUEST_INFO_TARGET_LIMIT) {
+        if (size == FETCH_SIZE) {
             info.setNextSeqNo(targets.get(size - 1).getSeqNo() + 1);
         } else {
             info.setNextSeqNo(NO_FURTHER_ENTRIES);

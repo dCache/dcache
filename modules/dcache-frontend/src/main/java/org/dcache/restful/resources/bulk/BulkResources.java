@@ -141,7 +141,9 @@ public final class BulkResources {
      * @owner A comma-separated list of owners to match; unspecified returns all requests.
      */
     @GET
-    @ApiOperation("Get the summary info of current bulk operations.")
+    @ApiOperation("Get the summary info of current bulk operations.  If the number of requests "
+          + "returned equals 10K, retry using the offset (highest returned seqNo + 1) "
+          + "to fetch more requests.")
     @ApiResponses({
           @ApiResponse(code = 400, message = "Bad request"),
           @ApiResponse(code = 500, message = "Internal Server Error")
@@ -154,6 +156,9 @@ public final class BulkResources {
           @QueryParam("status") String status,
           @ApiParam("A comma-separated list of owners to match; unspecified returns all requests.")
           @QueryParam("owner") String owner,
+          @ApiParam("Offset for the request list (max length = 10K).")
+          @DefaultValue("0")
+          @QueryParam("offset") long offset,
           @ApiParam("A path to match (as parent or full path); unspecified returns all requests.")
           @QueryParam("path") String path) {
 
@@ -173,8 +178,7 @@ public final class BulkResources {
             ownerSet = null;
         }
 
-        BulkRequestListMessage message = new BulkRequestListMessage(statusSet, ownerSet, path);
-
+        BulkRequestListMessage message = new BulkRequestListMessage(statusSet, ownerSet, path, offset);
         message = service.send(message);
 
         return message.getRequests();
@@ -238,7 +242,9 @@ public final class BulkResources {
      * data fields.
      */
     @GET
-    @ApiOperation("Get the status information for an individual bulk request.")
+    @ApiOperation("Get the status information for an individual bulk request. If the number of "
+          + "request targets equals 10K, retry using the offset (highest returned seqNo + 1) "
+          + "to fetch more targets.")
     @ApiResponses({
           @ApiResponse(code = 400, message = "Bad request"),
           @ApiResponse(code = 401, message = "Unauthorized"),
