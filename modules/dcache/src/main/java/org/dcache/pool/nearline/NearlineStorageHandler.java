@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 - 2021 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -377,15 +377,14 @@ public class NearlineStorageHandler
     public void flush(String hsmType,
           Iterable<PnfsId> files,
           CompletionHandler<Void, PnfsId> callback) {
-        try {
-            NearlineStorage nearlineStorage = hsmSet.getNearlineStorageByType(hsmType);
-            checkArgument(nearlineStorage != null, "No such nearline storage: " + hsmType);
-            flushRequests.addAll(nearlineStorage, files, callback);
-        } catch (RuntimeException e) {
-            for (PnfsId pnfsId : files) {
-                callback.failed(e, pnfsId);
-            }
+
+        NearlineStorage nearlineStorage = hsmSet.getNearlineStorageByType(hsmType);
+        if (nearlineStorage == null) {
+            var error = new IllegalArgumentException("No such nearline storage: " + hsmType);
+            files.forEach(l -> callback.failed(error, l));
+            return;
         }
+        flushRequests.addAll(nearlineStorage, files, callback);
     }
 
     /**
@@ -400,13 +399,14 @@ public class NearlineStorageHandler
     public void stage(String hsmInstance,
           FileAttributes file,
           CompletionHandler<Void, PnfsId> callback) {
-        try {
-            NearlineStorage nearlineStorage = hsmSet.getNearlineStorageByName(hsmInstance);
-            checkArgument(nearlineStorage != null, "No such nearline storage: " + hsmInstance);
-            stageRequests.addAll(nearlineStorage, Collections.singleton(file), callback);
-        } catch (RuntimeException e) {
-            callback.failed(e, file.getPnfsId());
+
+        NearlineStorage nearlineStorage = hsmSet.getNearlineStorageByName(hsmInstance);
+        if (nearlineStorage == null) {
+            var error = new IllegalArgumentException("No such nearline storage: " + hsmInstance);
+            callback.failed(error, file.getPnfsId());
+            return;
         }
+        stageRequests.addAll(nearlineStorage, Collections.singleton(file), callback);
     }
 
     /**
@@ -419,15 +419,14 @@ public class NearlineStorageHandler
     public void remove(String hsmInstance,
           Iterable<URI> files,
           CompletionHandler<Void, URI> callback) {
-        try {
-            NearlineStorage nearlineStorage = hsmSet.getNearlineStorageByName(hsmInstance);
-            checkArgument(nearlineStorage != null, "No such nearline storage: " + hsmInstance);
-            removeRequests.addAll(nearlineStorage, files, callback);
-        } catch (RuntimeException e) {
-            for (URI location : files) {
-                callback.failed(e, location);
-            }
+
+        NearlineStorage nearlineStorage = hsmSet.getNearlineStorageByName(hsmInstance);
+        if (nearlineStorage == null) {
+            var error = new IllegalArgumentException("No such nearline storage: " + hsmInstance);
+            files.forEach(l -> callback.failed(error, l));
+            return;
         }
+        removeRequests.addAll(nearlineStorage, files, callback);
     }
 
     public int getActiveFetchJobs() {
