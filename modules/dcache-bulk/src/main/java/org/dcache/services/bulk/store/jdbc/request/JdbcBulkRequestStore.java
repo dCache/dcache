@@ -100,6 +100,7 @@ import org.dcache.services.bulk.BulkRequestSummary;
 import org.dcache.services.bulk.BulkRequestTargetInfo;
 import org.dcache.services.bulk.BulkStorageException;
 import org.dcache.services.bulk.store.BulkRequestStore;
+import org.dcache.services.bulk.store.jdbc.JdbcBulkDaoUtils;
 import org.dcache.services.bulk.store.jdbc.rtarget.JdbcBulkTargetStore;
 import org.dcache.services.bulk.store.jdbc.rtarget.JdbcRequestTargetDao;
 import org.dcache.services.bulk.util.BulkRequestFilter;
@@ -138,6 +139,7 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
     private final Map<String, String> userOfActiveRequest = new HashMap<>();
 
     private LoadingCache<String, Optional<BulkRequest>> requestCache;
+    private JdbcBulkDaoUtils utils;
     private JdbcBulkRequestDao requestDao;
     private JdbcBulkRequestPermissionsDao requestPermissionsDao;
     private JdbcBulkTargetStore targetStore;
@@ -151,11 +153,19 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
      */
     private ScheduledExecutorService scheduler;
 
+    /**
+     * For updating counts to the counts table.
+     */
+    private ScheduledExecutorService countUpdater;
+    private long updateInterval;
+    private TimeUnit updateIntervalUnit;
+
     public void initialize() {
         requestCache = CacheBuilder.newBuilder()
               .expireAfterAccess(expiry, expiryUnit)
               .maximumSize(capacity)
               .build(new RequestLoader());
+        countUpdater.schedule(this::updateCounts, updateInterval, updateIntervalUnit);
     }
 
     @Override
@@ -509,8 +519,28 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
     }
 
     @Required
+    public void setCountUpdater(ScheduledExecutorService countUpdater) {
+        this.countUpdater = countUpdater;
+    }
+
+    @Required
+    public void setUpdateInterval(long updateInterval) {
+        this.updateInterval = updateInterval;
+    }
+
+    @Required
+    public void setUpdateIntervalUnit(TimeUnit updateIntervalUnit) {
+        this.updateIntervalUnit = updateIntervalUnit;
+    }
+
+    @Required
     public void setRequestPermissionsDao(JdbcBulkRequestPermissionsDao requestPermissionsDao) {
         this.requestPermissionsDao = requestPermissionsDao;
+    }
+
+    @Required
+    public void setUtils(JdbcBulkDaoUtils utils) {
+        this.utils = utils;
     }
 
     @Override
@@ -751,6 +781,16 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
             info.setErrorMessage(root.getMessage());
         }
         return info;
+    }
+
+    private void updateCounts() {
+        try {
+            utils.updateCounts(countActive(), targetStore.countsByState(), requestDao);
+        } catch (BulkStorageException e) {
+            LOGGER.error("Problem updating counts by state: {}.", e.toString());
+        }
+
+        countUpdater.schedule(this::updateCounts, updateInterval, updateIntervalUnit);
     }
 
     private BulkRequest valid(String id) throws BulkStorageException {

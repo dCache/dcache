@@ -207,7 +207,7 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
                 throw new InterruptedException();
             }
 
-            updateJobStatistics(start);
+            statistics.sweepFinished(System.currentTimeMillis() - start);
 
             LOGGER.trace("doRun() completed");
         }
@@ -254,15 +254,6 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
                 userRequests().values().stream().filter(this::isTerminated)
                       .forEach(requestJobs::remove);
             }
-        }
-
-        private void updateJobStatistics(long start) {
-            try {
-                statistics.activeRequests(requestStore.countActive());
-            } catch (BulkStorageException e) {
-                LOGGER.error("problem finding number of active requests: {}.", e.toString());
-            }
-            statistics.sweepFinished(System.currentTimeMillis() - start);
         }
 
         private ListMultimap<String, String> userRequests() {

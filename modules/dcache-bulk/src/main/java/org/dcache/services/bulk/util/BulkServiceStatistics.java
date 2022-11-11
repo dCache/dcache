@@ -68,7 +68,8 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import org.dcache.services.bulk.store.BulkTargetStore;
+import org.dcache.services.bulk.store.jdbc.JdbcBulkDaoUtils;
+import org.dcache.services.bulk.store.jdbc.request.JdbcBulkRequestDao;
 import org.springframework.beans.factory.annotation.Required;
 
 /**
@@ -90,15 +91,11 @@ public final class BulkServiceStatistics implements CellInfoProvider {
     private final Map<String, AtomicLong> requestTypes = new TreeMap<>();
     private final Map<String, AtomicLong> userRequests = new TreeMap<>();
 
-    private BulkTargetStore targetStore;
+    private JdbcBulkDaoUtils utils;
+    private JdbcBulkRequestDao requestDao;
 
     private long lastSweep = started.getTime();
     private long lastSweepDuration = 0;
-    private int activeRequests = 0;
-
-    public void activeRequests(int count) {
-        activeRequests = count;
-    }
 
     public void addUserRequest(String user) {
         AtomicLong counter = userRequests.get(user);
@@ -126,10 +123,13 @@ public final class BulkServiceStatistics implements CellInfoProvider {
               TimeUnit.MILLISECONDS.toSeconds(lastSweepDuration)));
         pw.println();
 
-        Map<String, Long> counts = targetStore.countsByState();
         pw.println("------------------ TARGETS BY STATE ------------------");
+        Map<String, Long> counts = utils.countsByState(requestDao);
+        Long active = counts.remove("ACTIVE");
+
         counts.entrySet()
               .forEach(e -> pw.println(String.format(STATS_FORMAT, e.getKey(), e.getValue())));
+
         long aborted = jobsAborted.get();
         if (aborted > 0) {
             pw.println(String.format(STATS_FORMAT, "ABORTED", aborted));
@@ -142,7 +142,7 @@ public final class BulkServiceStatistics implements CellInfoProvider {
         pw.println(String.format(STATS_FORMAT, "Requests received", received));
         pw.println(String.format(STATS_FORMAT, "Requests completed", requestsCompleted.get()));
         pw.println(String.format(STATS_FORMAT, "Requests cancelled", requestsCancelled.get()));
-        pw.println(String.format(STATS_FORMAT, "Active requests", activeRequests));
+        pw.println(String.format(STATS_FORMAT, "Active requests", active == null ? 0 : active));
         pw.println();
 
         pw.println("--------------- REQUESTS (since start) ---------------");
@@ -187,7 +187,12 @@ public final class BulkServiceStatistics implements CellInfoProvider {
     }
 
     @Required
-    public void setTargetStore(BulkTargetStore targetStore) {
-        this.targetStore = targetStore;
+    public void setRequestDao(JdbcBulkRequestDao requestDao) {
+        this.requestDao = requestDao;
+    }
+
+    @Required
+    public void setDaoUtils(JdbcBulkDaoUtils utils) {
+        this.utils = utils;
     }
 }
