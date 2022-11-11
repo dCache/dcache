@@ -433,6 +433,10 @@ public final class BulkServiceCommands implements CellCommandListener {
             Long afterStart = getTimestamp(after);
 
             activities = toSetOrNull(activity);
+            if (activities != null) {
+                activities = activities.stream().map(String::toUpperCase)
+                      .collect(Collectors.toSet());
+            }
             owners = toSetOrNull(owner);
             urlPrefixes = toSetOrNull(urlPrefix);
             targets = toSetOrNull(target);
@@ -714,8 +718,7 @@ public final class BulkServiceCommands implements CellCommandListener {
         Integer limit = 10000;
 
         @Option(name = "count",
-              usage = "Return only the number of matching requests. More results can be "
-                    + "manually paged using the seqNo as offset.")
+              usage = "Return only the number of matching requests.")
         boolean count = false;
 
 
@@ -1045,7 +1048,7 @@ public final class BulkServiceCommands implements CellCommandListener {
 
         @Option(name = "type",
               separator = ",",
-              valueSpec = "DIR|FILE|LINK|SPECIAL",
+              valueSpec = "DIR|REGULAR|LINK|SPECIAL",
               usage = "File type of the target.")
         String[] type;
 
@@ -1054,8 +1057,7 @@ public final class BulkServiceCommands implements CellCommandListener {
         boolean excludeRoot = true;
 
         @Option(name = "limit",
-              usage = "Return no more than this many results (maximum 10000).  More results can be "
-                    + "manually paged using the seqNo as offset.")
+              usage = "Return no more than this many results (maximum 10000).")
         Integer limit = 10000;
 
         @Option(name = "count",
@@ -1067,7 +1069,14 @@ public final class BulkServiceCommands implements CellCommandListener {
         public String call() throws Exception {
             Set<String> ids = toSetOrNull(id);
             Set<String> activities = toSetOrNull(activity);
+            if (activities != null) {
+                activities = activities.stream().map(String::toUpperCase)
+                      .collect(Collectors.toSet());
+            }
             Set<String> types = toSetOrNull(type);
+            if (types != null) {
+                types = types.stream().map(String::toUpperCase).collect(Collectors.toSet());
+            }
             Set<String> pnfsids = toSetOrNull(pnfsid);
             Set<String> paths = toSetOrNull(path);
             Set<State> states = null;
