@@ -898,11 +898,6 @@ public final class BulkServiceCommands implements CellCommandListener {
               usage = "Remove request from storage if all targets succeeded.")
         Boolean clearOnSuccess = false;
 
-        @Option(name = "delayClear",
-              usage = "Wait in seconds before clearing (one of the clear options must be "
-                    + "true for this to have effect).")
-        Integer delayClear = 0;
-
         @Option(name = "prestore",
               usage = "Store all targets first before performing the activity on them. (This applies "
                     + "to recursive as well as non-recursive, and usually results in significantly "
@@ -924,7 +919,6 @@ public final class BulkServiceCommands implements CellCommandListener {
             request.setCancelOnFailure(cancelOnFailure);
             request.setClearOnSuccess(clearOnSuccess);
             request.setClearOnFailure(clearOnFailure);
-            request.setDelayClear(delayClear);
             request.setExpandDirectories(Depth.valueOf(expand.toUpperCase()));
             request.setId(UUID.randomUUID().toString());
             request.setPrestore(activity.equalsIgnoreCase("STAGE") || prestore);

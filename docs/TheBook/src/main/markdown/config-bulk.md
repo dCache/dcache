@@ -136,6 +136,12 @@ Cancellation is best effort, in the sense that the cessation of the bulk activit
 not guaranteed to stop the activity in other dCache components.  Flushing, for instance,
 cannot be easily cancelled.
 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ NOTE: The user-driven attribute 'delay' for indicating how long to wait
+       before clearing a request on success or failure has been deprecated
+       and is no longer supported.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 ## Storage and Recovery
 
 Requests are stored when they are received. When the service fails or goes down,

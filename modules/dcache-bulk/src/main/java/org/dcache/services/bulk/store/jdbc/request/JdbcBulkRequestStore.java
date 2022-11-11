@@ -83,7 +83,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
@@ -145,11 +144,6 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
     private long expiry;
     private TimeUnit expiryUnit;
     private long capacity;
-
-    /**
-     * For handling delayed clear requests.
-     */
-    private ScheduledExecutorService scheduler;
 
     public void initialize() {
         requestCache = CacheBuilder.newBuilder()
@@ -506,11 +500,6 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
     }
 
     @Required
-    public void setScheduler(ScheduledExecutorService scheduler) {
-        this.scheduler = scheduler;
-    }
-
-    @Required
     public void setRequestPermissionsDao(JdbcBulkRequestPermissionsDao requestPermissionsDao) {
         this.requestPermissionsDao = requestPermissionsDao;
     }
@@ -684,17 +673,9 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
     }
 
     private void clear(BulkRequest request) {
-        Integer delay = request.getDelayClear();
         String requestId = request.getId();
-        if (delay == null || delay == 0) {
-            requestDao.delete(requestDao.where().requestIds(requestId));
-            requestCache.invalidate(requestId);
-        } else {
-            scheduler.schedule(() -> {
-                requestDao.delete(requestDao.where().requestIds(requestId));
-                requestCache.invalidate(requestId);
-            }, delay, TimeUnit.SECONDS);
-        }
+        requestDao.delete(requestDao.where().requestIds(requestId));
+        requestCache.invalidate(requestId);
     }
 
     private BulkRequest get(String id) throws BulkStorageException {

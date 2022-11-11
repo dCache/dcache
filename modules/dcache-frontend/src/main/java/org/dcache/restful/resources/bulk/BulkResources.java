@@ -433,9 +433,6 @@ public final class BulkResources {
         request.setExpandDirectories(
               string == null ? Depth.NONE : Depth.valueOf(string.toUpperCase()));
 
-        string = removeEntry(map, String.class, "delay_clear", "delay-clear", "delayClear");
-        request.setDelayClear(string == null ? 0 : Integer.parseInt(string));
-
         Object value = removeEntry(map, Object.class, "clear_on_success", "clear-on-success",
               "clearOnSuccess");
         if (value instanceof Boolean) {

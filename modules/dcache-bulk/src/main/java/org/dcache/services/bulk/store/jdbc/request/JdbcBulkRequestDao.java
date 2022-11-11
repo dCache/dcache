@@ -160,7 +160,6 @@ public final class JdbcBulkRequestDao extends JdbcDaoSupport {
         request.setClearOnFailure(rs.getBoolean("clear_on_failure"));
         request.setCancelOnFailure(rs.getBoolean("cancel_on_failure"));
         request.setPrestore(rs.getBoolean("prestore"));
-        request.setDelayClear(rs.getInt("delay_clear"));
         String args = rs.getString("arguments");
         if (Strings.emptyToNull(args) != null) {
             request.setArguments(Splitter.on(",").withKeyValueSeparator(":").split(args));
@@ -233,7 +232,7 @@ public final class JdbcBulkRequestDao extends JdbcDaoSupport {
         return set().activity(request.getActivity()).arguments(request.getArguments())
               .cancelOnFailure(request.isCancelOnFailure()).id(request.getId())
               .clearOnSuccess(request.isClearOnSuccess()).clearOnFailure(request.isClearOnFailure())
-              .prestore(request.isPrestore()).delayClear(request.getDelayClear())
+              .prestore(request.isPrestore())
               .depth(request.getExpandDirectories())
               .target(Joiner.on(",").join(request.getTarget()))
               .targetPrefix(request.getTargetPrefix()).urlPrefix(request.getUrlPrefix()).user(user)

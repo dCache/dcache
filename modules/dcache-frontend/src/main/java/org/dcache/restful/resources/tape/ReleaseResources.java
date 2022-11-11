@@ -180,7 +180,6 @@ public final class ReleaseResources {
         request.setCancelOnFailure(true);
         request.setClearOnFailure(true);
         request.setClearOnSuccess(true);
-        request.setDelayClear(0);
         request.setActivity(activity);
         request.setTarget(targetPaths);
         Map<String, String> arguments = new HashMap<>();

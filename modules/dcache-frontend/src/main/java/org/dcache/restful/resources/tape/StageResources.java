@@ -325,7 +325,6 @@ public final class StageResources {
         request.setCancelOnFailure(false);
         request.setClearOnFailure(false);
         request.setClearOnSuccess(false);
-        request.setDelayClear(0);
         request.setActivity("STAGE");
 
         JSONObject reqPayload = new JSONObject(requestPayload);

@@ -172,7 +172,6 @@
     <property name="requestDao" ref="bulk-request-dao"/>
     <property name="requestTargetDao" ref="bulk-request-target-dao"/>
     <property name="requestPermissionsDao" ref="bulk-request-permissions-dao"/>
-    <property name="scheduler" ref="delayed-clear-executor"/>
     <property name="targetStore" ref="target-store"/>
     <property name="expiry" value="${bulk.limits.request-cache-expiration}"/>
     <property name="expiryUnit" value="${bulk.limits.request-cache-expiration.unit}"/>

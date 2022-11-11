@@ -2664,3 +2664,9 @@ Please note that the JSON returned for GET on bulk-requests differs from that re
 Full specification of these commands can be obtained by inspecting the
 SWAGGER page which is available from the frontend
 at ``https://<host>:3880/api/v1``.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ NOTE: The user-driven attribute 'delay' for indicating how long to wait
+       before clearing a request on success or failure has been deprecated
+       and is no longer supported.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

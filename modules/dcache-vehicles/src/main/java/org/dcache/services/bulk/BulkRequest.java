@@ -86,7 +86,6 @@ public class BulkRequest implements Serializable {
     private boolean clearOnSuccess;
     private boolean clearOnFailure;
     private boolean cancelOnFailure;
-    private Integer delayClear;
     private Map<String, String> arguments;
     private Depth expandDirectories;
 
@@ -119,10 +118,6 @@ public class BulkRequest implements Serializable {
 
     public Map<String, String> getArguments() {
         return arguments;
-    }
-
-    public Integer getDelayClear() {
-        return delayClear;
     }
 
     public Depth getExpandDirectories() {
@@ -181,10 +176,6 @@ public class BulkRequest implements Serializable {
 
     public void setClearOnSuccess(boolean clearOnSuccess) {
         this.clearOnSuccess = clearOnSuccess;
-    }
-
-    public void setDelayClear(Integer delayClear) {
-        this.delayClear = delayClear;
     }
 
     public void setExpandDirectories(Depth expandDirectories) {
