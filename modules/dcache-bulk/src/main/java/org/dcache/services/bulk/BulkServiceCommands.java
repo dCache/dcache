@@ -65,9 +65,11 @@ import static org.dcache.services.bulk.store.jdbc.JdbcBulkDaoUtils.toSetOrNull;
 import com.google.common.base.Splitter;
 import diskCacheV111.util.PnfsId;
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.util.PagedCommandResult;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
+import java.io.Serializable;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.time.Instant;
@@ -75,6 +77,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -179,6 +182,8 @@ public final class BulkServiceCommands implements CellCommandListener {
     private static final DateTimeFormatter DATE_FORMATTER
           = DateTimeFormatter.ofPattern(DATE_FORMAT).withZone(ZoneId.systemDefault());
 
+    private static final int MAX_PARTIAL_RESULT = 5000;
+
     private static class Sorter implements Comparator<String> {
 
         private final SortOrder sortOrder;
@@ -205,6 +210,42 @@ public final class BulkServiceCommands implements CellCommandListener {
             }
 
             return 0;
+        }
+    }
+
+    private static class PagedRequestResult extends PagedCommandResult {
+
+        private static final long serialVersionUID = -1206477896319388141L;
+
+        PagedRequestResult(String partialResult, long offset) {
+            super(partialResult, offset);
+        }
+
+        @Override
+        public String nextCommand() {
+            if (command.contains("-seqNo=")) {
+                return command.replaceFirst("-seqNo=[\\d]+", " -seqNo=" + offset);
+            }
+
+            return command + " -seqNo=" + offset;
+        }
+    }
+
+    private static class PagedTargetResult extends PagedCommandResult {
+
+        private static final long serialVersionUID = -1206477896319388141L;
+
+        PagedTargetResult(String partialResult, long offset) {
+            super(partialResult, offset);
+        }
+
+        @Override
+        public String nextCommand() {
+            if (command.contains("-offset=")) {
+                return command.replaceFirst("-offset=[\\d]+", " -offset=" + offset);
+            }
+
+            return command + " -offset=" + offset;
         }
     }
 
@@ -331,7 +372,7 @@ public final class BulkServiceCommands implements CellCommandListener {
         FULL, TARGET, SHORT
     }
 
-    abstract class FilteredRequest implements Callable<String> {
+    abstract class FilteredRequest implements Callable<Serializable> {
 
         protected Set<String> ids;
         protected Set<String> activities;
@@ -650,18 +691,18 @@ public final class BulkServiceCommands implements CellCommandListener {
     @Command(name = "request info",
           hint = "Get status information on a particular request.",
           description = "Prints request status and lists the current targets with their metadata.")
-    class RequestInfo implements Callable<String> {
+    class RequestInfo implements Callable<Serializable> {
 
         @Argument(usage = "the id of the request.")
         String id;
 
         @Option(name = "offset",
               usage = "Offset into the target list:  targets must have this sequence number or "
-                    + "greater to be included (only 10K targets in the list at a time).")
+                    + "greater to be included (only 5K targets in the list at a time).")
         long offset = 0L;
 
         @Override
-        public String call() throws Exception {
+        public Serializable call() throws Exception {
             Subject subject = Subjects.ROOT;
             BulkRequestInfo info = requestStore.getRequestInfo(subject, id, offset);
             Long startedAt = info.getStartedAt();
@@ -679,8 +720,14 @@ public final class BulkServiceCommands implements CellCommandListener {
                   .append(String.format(FORMAT_TARGET_INFO, "CREATED", "STARTED", "COMPLETED",
                         "STATE", "TARGET")).append("\n");
             info.getTargets().forEach(tinfo -> builder.append(format(tinfo)).append("\n"));
-            builder.append("next offset: ").append(info.getNextSeqNo()).append("\n");
-            return builder.toString();
+
+            int len = info.getTargets().size();
+
+            if (len == MAX_PARTIAL_RESULT) {
+                return builder.toString();
+            }
+
+            return new PagedTargetResult(builder.toString(), info.getNextSeqNo());
         }
 
         private String format(BulkRequestTargetInfo info) {
@@ -714,16 +761,17 @@ public final class BulkServiceCommands implements CellCommandListener {
         Boolean t = false;
 
         @Option(name = "limit",
-              usage = "Return no more than this many results (maximum 10000).")
-        Integer limit = 10000;
+              usage = "Return no more than this many results at a time (maximum 5000).")
+        Integer limit = MAX_PARTIAL_RESULT;
 
         @Option(name = "count",
               usage = "Return only the number of matching requests.")
         boolean count = false;
 
+        String partialResult;
 
         @Override
-        public String call() throws Exception {
+        public Serializable call() throws Exception {
             configureFilters();
 
             if (count) {
@@ -733,29 +781,42 @@ public final class BulkServiceCommands implements CellCommandListener {
             RequestListOption option = l ? RequestListOption.FULL
                   : t ? RequestListOption.TARGET : RequestListOption.SHORT;
 
-            String requests = requestStore.find(Optional.of(rFilter), limit)
-                  .stream().map(request -> formatRequest(request, requestStore, option))
-                  .collect(joining("\n"));
+            Collection<BulkRequest> results = requestStore.find(Optional.of(rFilter),
+                  limit > MAX_PARTIAL_RESULT ? MAX_PARTIAL_RESULT : limit);
+            int len = results.size();
 
-            if (requests.isEmpty()) {
+            if (len == 0) {
                 return "No requests.";
             }
 
+            String requests = results.stream()
+                  .map(request -> formatRequest(request, requestStore, option))
+                  .collect(joining("\n"));
+
             switch (option) {
                 case FULL:
-                    return String.format(FORMAT_REQUEST_FULL, "SEQNO", "ARRIVED", "STARTED",
-                          "MODIFIED", "OWNER", "ACTIVITY", "DEPTH", "STATUS", "PRESTORE",
-                          "URL PREF",
-                          "ID") + "\n" + requests;
+                    partialResult =
+                          String.format(FORMAT_REQUEST_FULL, "SEQNO", "ARRIVED", "STARTED",
+                                "MODIFIED", "OWNER", "ACTIVITY", "DEPTH", "STATUS", "PRESTORE",
+                                "URL PREF",
+                                "ID") + "\n" + requests;
+                    break;
                 case TARGET:
-                    return String.format(FORMAT_REQUEST_TARGET, "URL PREF", "ID", "TARGET")
+                    partialResult = String.format(FORMAT_REQUEST_TARGET, "URL PREF", "ID", "TARGET")
                           + "\n" + requests;
+                    break;
                 case SHORT:
                 default:
-                    return
-                          String.format(FORMAT_REQUEST, "SEQNO", "ARRIVED", "MODIFIED", "OWNER",
-                                "STATUS", "ID") + "\n" + requests;
+                    partialResult = String.format(FORMAT_REQUEST, "SEQNO", "ARRIVED", "MODIFIED",
+                          "OWNER", "STATUS", "ID") + "\n" + requests;
             }
+
+            if (len < MAX_PARTIAL_RESULT) {
+                return partialResult;
+            }
+
+            long offset = results.toArray(BulkRequest[]::new)[len - 1].getSeqNo();
+            return new PagedRequestResult(partialResult, offset);
         }
     }
 
@@ -1000,7 +1061,7 @@ public final class BulkServiceCommands implements CellCommandListener {
     @Command(name = "target ls",
           hint = "List the current target in the store.",
           description = "Optional filters can be applied.")
-    class TargetLs implements Callable<String> {
+    class TargetLs implements Callable<Serializable> {
 
         @Option(name = "l", usage = "Print the full listing.")
         Boolean l = false;
@@ -1051,16 +1112,18 @@ public final class BulkServiceCommands implements CellCommandListener {
         boolean excludeRoot = true;
 
         @Option(name = "limit",
-              usage = "Return no more than this many results (maximum 10000).")
-        Integer limit = 10000;
+              usage = "Return no more than this many results at a time (maximum 5000).")
+        Integer limit = MAX_PARTIAL_RESULT;
 
         @Option(name = "count",
               usage = "Return only the number of matching targets; will automatically display "
                     + "counts grouped by states if states are provided.")
         boolean count = false;
 
+        String partialResult;
+
         @Override
-        public String call() throws Exception {
+        public Serializable call() throws Exception {
             Set<String> ids = toSetOrNull(id);
             Set<String> activities = toSetOrNull(activity);
             if (activities != null) {
@@ -1096,19 +1159,30 @@ public final class BulkServiceCommands implements CellCommandListener {
                 return targetStore.count(filter) + " matching targets.";
             }
 
-            String targets = targetStore.find(filter, limit).stream()
-                  .map(target -> formatTarget(target, l)).collect(joining("\n"));
+            List<BulkRequestTarget> results = targetStore.find(filter,
+                  limit > MAX_PARTIAL_RESULT ? MAX_PARTIAL_RESULT : limit);
+            int len = results.size();
 
-            if (targets.isEmpty()) {
+            if (len == 0) {
                 return "No targets.";
             }
+
+            String targets = results.stream().map(target -> formatTarget(target, l))
+                  .collect(joining("\n"));
 
             String header =
                   l ? String.format(FORMAT_TARGET_FULL, "SEQNO", "CREATED", "UPDATED", "REQUEST",
                         "ACTIVITY", "STATE", "TYPE", "PNFSID", "PATH") :
                         String.format(FORMAT_TARGET, "SEQNO", "STARTED", "REQUEST", "PNFSID");
 
-            return header + "\n" + targets;
+            partialResult = header + "\n" + targets;
+
+            if (len < MAX_PARTIAL_RESULT) {
+                return partialResult;
+            }
+
+            offset = results.get(len - 1).getId() + 1;
+            return new PagedTargetResult(partialResult, offset);
         }
     }
 
