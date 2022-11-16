@@ -96,17 +96,6 @@
     </constructor-arg>
   </bean>
 
-  <bean id="delayed-clear-executor"
-        class="org.dcache.util.CDCScheduledExecutorServiceDecorator"
-        destroy-method="shutdownNow">
-    <description>Used to run delayed clear requests.</description>
-    <constructor-arg>
-      <bean class="java.util.concurrent.ScheduledThreadPoolExecutor">
-        <constructor-arg value="${bulk.limits.delay-clear-threads}"/>
-      </bean>
-    </constructor-arg>
-  </bean>
-
   <bean id="bulk-data-source" class="com.zaxxer.hikari.HikariDataSource"
     destroy-method="close">
     <description>Encapsulates the bulk database connection pool and properties.</description>
