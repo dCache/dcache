@@ -11,6 +11,7 @@ import dmg.util.CommandException;
 import dmg.util.CommandExitException;
 import dmg.util.CommandPanicException;
 import dmg.util.CommandSyntaxException;
+import dmg.util.PagedCommandResult;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,7 +28,6 @@ import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
 import org.apache.sshd.server.channel.ChannelSession;
 import org.apache.sshd.server.command.Command;
-import dmg.util.PagedCommandResult;
 import org.dcache.util.Strings;
 import org.fusesource.jansi.Ansi;
 import org.slf4j.Logger;
@@ -256,8 +256,13 @@ public class AnsiTerminalCommand implements Command, Runnable {
                 } else {
                     if (result instanceof PagedCommandResult) {
                         pagedResult = (PagedCommandResult) result;
-                        pagedResult.setCommand(command);
                         result = pagedResult.getPartialResult();
+                        if (pagedResult.isEOL()) {
+                            pagedResult = null;
+                            command = null;
+                        } else {
+                            pagedResult.setCommand(command);
+                        }
                     } else {
                         pagedResult = null;
                         command = null;

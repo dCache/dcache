@@ -187,11 +187,13 @@ public class DirectCommand implements Command, Runnable {
                     outWriter.flush();
                     if (result instanceof PagedCommandResult) {
                         PagedCommandResult pagedResult = (PagedCommandResult) result;
-                        pagedResult.setCommand(command);
-                        command = pagedResult.nextCommand();
-                    } else {
-                        break;
+                        if (!pagedResult.isEOL()) {
+                            pagedResult.setCommand(command);
+                            command = pagedResult.nextCommand();
+                            continue;
+                        }
                     }
+                    break;
                 }
             } catch (IllegalArgumentException e) {
                 error = e.toString();

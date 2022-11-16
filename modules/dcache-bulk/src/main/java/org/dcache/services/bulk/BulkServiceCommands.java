@@ -59,6 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk;
 
+import static dmg.util.PagedCommandResult.EOL;
 import static java.util.stream.Collectors.joining;
 import static org.dcache.services.bulk.store.jdbc.JdbcBulkDaoUtils.toSetOrNull;
 
@@ -119,7 +120,8 @@ public final class BulkServiceCommands implements CellCommandListener {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkServiceCommands.class);
 
     /**
-     * seqno | arrived | started | modified | owner | activity | depth | prestore | status : urlPrefix/id
+     * seqno | arrived | started | modified | owner | activity | depth | prestore | status :
+     * urlPrefix/id
      */
     private static final String FORMAT_REQUEST_FULL
           = "%-12s | %-19s | %19s | %19s | %12s | %15s | %7s | %11s | %8s | %s/%s";
@@ -691,7 +693,7 @@ public final class BulkServiceCommands implements CellCommandListener {
     @Command(name = "request info",
           hint = "Get status information on a particular request.",
           description = "Prints request status and lists the current targets with their metadata.")
-    class RequestInfo implements Callable<Serializable> {
+    class RequestInfo implements Callable<PagedTargetResult> {
 
         @Argument(usage = "the id of the request.")
         String id;
@@ -702,7 +704,7 @@ public final class BulkServiceCommands implements CellCommandListener {
         long offset = 0L;
 
         @Override
-        public Serializable call() throws Exception {
+        public PagedTargetResult call() throws Exception {
             Subject subject = Subjects.ROOT;
             BulkRequestInfo info = requestStore.getRequestInfo(subject, id, offset);
             Long startedAt = info.getStartedAt();
@@ -724,7 +726,7 @@ public final class BulkServiceCommands implements CellCommandListener {
             int len = info.getTargets().size();
 
             if (len == MAX_PARTIAL_RESULT) {
-                return builder.toString();
+                return new PagedTargetResult(builder.toString(), EOL);
             }
 
             return new PagedTargetResult(builder.toString(), info.getNextSeqNo());
@@ -771,11 +773,12 @@ public final class BulkServiceCommands implements CellCommandListener {
         String partialResult;
 
         @Override
-        public Serializable call() throws Exception {
+        public PagedRequestResult call() throws Exception {
             configureFilters();
 
             if (count) {
-                return requestStore.count(rFilter) + " matching requests.";
+                return new PagedRequestResult(requestStore.count(rFilter) + " matching requests.",
+                      EOL);
             }
 
             RequestListOption option = l ? RequestListOption.FULL
@@ -786,7 +789,7 @@ public final class BulkServiceCommands implements CellCommandListener {
             int len = results.size();
 
             if (len == 0) {
-                return "No requests.";
+                return new PagedRequestResult("No requests.", EOL);
             }
 
             String requests = results.stream()
@@ -812,7 +815,7 @@ public final class BulkServiceCommands implements CellCommandListener {
             }
 
             if (len < MAX_PARTIAL_RESULT) {
-                return partialResult;
+                return new PagedRequestResult(partialResult, EOL);
             }
 
             long offset = results.toArray(BulkRequest[]::new)[len - 1].getSeqNo();
@@ -902,7 +905,6 @@ public final class BulkServiceCommands implements CellCommandListener {
     }
 
 
-
     @Command(name = "request reset",
           hint = "Reset requests to be rerun.",
           description =
@@ -960,9 +962,10 @@ public final class BulkServiceCommands implements CellCommandListener {
         Boolean clearOnSuccess = false;
 
         @Option(name = "prestore",
-              usage = "Store all targets first before performing the activity on them. (This applies "
-                    + "to recursive as well as non-recursive, and usually results in significantly "
-                    + "lower throughput.)")
+              usage =
+                    "Store all targets first before performing the activity on them. (This applies "
+                          + "to recursive as well as non-recursive, and usually results in significantly "
+                          + "lower throughput.)")
         Boolean prestore = false;
 
         @Option(name = "arguments",
@@ -1061,7 +1064,7 @@ public final class BulkServiceCommands implements CellCommandListener {
     @Command(name = "target ls",
           hint = "List the current target in the store.",
           description = "Optional filters can be applied.")
-    class TargetLs implements Callable<Serializable> {
+    class TargetLs implements Callable<PagedTargetResult> {
 
         @Option(name = "l", usage = "Print the full listing.")
         Boolean l = false;
@@ -1123,7 +1126,7 @@ public final class BulkServiceCommands implements CellCommandListener {
         String partialResult;
 
         @Override
-        public Serializable call() throws Exception {
+        public PagedTargetResult call() throws Exception {
             Set<String> ids = toSetOrNull(id);
             Set<String> activities = toSetOrNull(activity);
             if (activities != null) {
@@ -1151,12 +1154,15 @@ public final class BulkServiceCommands implements CellCommandListener {
 
             if (count) {
                 if (states != null) {
-                    return String.format(FORMAT_COUNTS + "\n", "STATE", "COUNT") +
-                          targetStore.counts(filter, excludeRoot, "state").entrySet().stream()
-                                .map(e -> String.format(FORMAT_COUNTS, e.getKey(), e.getValue()))
-                                .collect(joining("\n"));
+                    return new PagedTargetResult(
+                          String.format(FORMAT_COUNTS + "\n", "STATE", "COUNT") +
+                                targetStore.counts(filter, excludeRoot, "state").entrySet().stream()
+                                      .map(e -> String.format(FORMAT_COUNTS, e.getKey(),
+                                            e.getValue()))
+                                      .collect(joining("\n")), EOL);
                 }
-                return targetStore.count(filter) + " matching targets.";
+                return new PagedTargetResult(targetStore.count(filter) + " matching targets.",
+                      EOL);
             }
 
             List<BulkRequestTarget> results = targetStore.find(filter,
@@ -1164,7 +1170,7 @@ public final class BulkServiceCommands implements CellCommandListener {
             int len = results.size();
 
             if (len == 0) {
-                return "No targets.";
+                return new PagedTargetResult("No targets.", EOL);
             }
 
             String targets = results.stream().map(target -> formatTarget(target, l))
@@ -1178,7 +1184,7 @@ public final class BulkServiceCommands implements CellCommandListener {
             partialResult = header + "\n" + targets;
 
             if (len < MAX_PARTIAL_RESULT) {
-                return partialResult;
+                return new PagedTargetResult(partialResult, EOL);
             }
 
             offset = results.get(len - 1).getId() + 1;

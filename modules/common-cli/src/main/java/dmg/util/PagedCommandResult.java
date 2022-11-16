@@ -66,6 +66,7 @@ import java.io.Serializable;
  * return partial results to the interpreter shell.
  */
 public abstract class PagedCommandResult implements Serializable {
+    public static final long EOL = -1L;
 
     protected final long offset;
     protected String command;
@@ -88,5 +89,9 @@ public abstract class PagedCommandResult implements Serializable {
 
     public void setCommand(String command) {
         this.command = command;
+    }
+
+    public boolean isEOL() {
+        return offset == EOL;
     }
 }
