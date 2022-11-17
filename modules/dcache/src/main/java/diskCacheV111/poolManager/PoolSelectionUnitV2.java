@@ -15,6 +15,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -94,8 +96,13 @@ public class PoolSelectionUnitV2
     private final Map<String, LinkGroup> _linkGroups = new HashMap<>();
     private final Map<String, UGroup> _uGroups = new HashMap<>();
     private final Map<String, Unit> _units = new HashMap<>();
+    private final Cache<String, PoolPreferenceLevel[]> cachedMatchValue =
+          CacheBuilder.newBuilder()
+                .maximumSize(100000)
+                .build();
     private boolean _useRegex;
     private boolean _allPoolsActive;
+    public  boolean _cachingEnabeled;
 
     /**
      * Ok, this is the critical part of PoolManager, but (!!!) the whole select path is READ-ONLY,
@@ -108,8 +115,12 @@ public class PoolSelectionUnitV2
     private final Lock _psuWriteLock = _psuReadWriteLock.writeLock();
 
     private final NetHandler _netHandler = new NetHandler();
-
     private transient PnfsHandler _pnfsHandler;
+
+    public void setCachingEnabeled(boolean cachingEnabeled) {
+        _cachingEnabeled = cachingEnabeled;
+    }
+
 
     @Override
     public Map<String, SelectionLink> getLinks() {
@@ -624,6 +635,8 @@ public class PoolSelectionUnitV2
         String hsm = storageInfo.getHsm();
         String dCacheUnitName = storageInfo.getCacheClass();
 
+
+
         /*
          *  The preference level build requires these to be present in the file attributes.
          */
@@ -642,11 +655,42 @@ public class PoolSelectionUnitV2
         String storeUnitName = storageClass + "@" + hsm;
 
         Map<String, String> variableMap = storageInfo.getMap();
+        String netUnitGroup = null;
 
         LOGGER.debug(
               "running match: type={} store={} dCacheUnit={} net={} protocol={} keys={} locations={} linkGroup={}",
               type, storeUnitName, dCacheUnitName, netUnitName, protocolUnitName,
               variableMap, storageInfo.locations(), linkGroupName);
+
+
+
+        String cacheKey = null;
+        if (_cachingEnabeled) {
+
+            try {
+                Unit unit = _netHandler.match(netUnitName);
+                netUnitGroup = unit._uGroupList.values()
+                      .stream()
+                      .map(UGroup::getName).findFirst().get();
+
+                LOGGER.debug("this IP address   belongs to {} in uGroup {} " + netUnitName + netUnitGroup);
+
+
+            } catch (UnknownHostException e) {
+                LOGGER.error("Caching did not work, please check the configuration " + e);
+            }
+
+            cacheKey = type.toString() + storeUnitName + dCacheUnitName +
+                  netUnitGroup + protocolUnitName + linkGroupName;
+
+            PoolPreferenceLevel[] cachedMatchValueTmp = cachedMatchValue.getIfPresent(cacheKey);
+            if (cachedMatchValueTmp != null) {
+                //counter = counter + 1;
+                //System.out.println("counter " + counter);
+                return cachedMatchValueTmp;
+
+            }
+        }
 
         PoolPreferenceLevel[] result = null;
         rlock();
@@ -670,7 +714,9 @@ public class PoolSelectionUnitV2
         if (LOGGER.isDebugEnabled()) {
             logResult(result);
         }
-
+        if (_cachingEnabeled){
+            cachedMatchValue.put(cacheKey, result);
+        }
         return result;
     }
 
@@ -2600,7 +2646,11 @@ public class PoolSelectionUnitV2
     }
 
     protected void wlock() {
+
         _psuWriteLock.lock();
+        if (_cachingEnabeled) {
+            cachedMatchValue.invalidateAll();
+        }
     }
 
     protected void wunlock() {

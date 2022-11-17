@@ -327,6 +327,35 @@ public class PoolSelectionUnitTest {
     }
 
 
+    @Test
+    public void testTheSameCached() throws CommandException {
+
+        _ci.command("psu set allpoolsactive on");
+        FileAttributes fileAttributes = new FileAttributes();
+        StorageInfos.injectInto(GenericStorageInfo.valueOf("*", "*"), fileAttributes);
+
+        _psu._cachingEnabeled = true;
+
+        PoolPreferenceLevel[] preferenceRes1 = _psu.match(
+              DirectionType.READ,  // operation
+              "131.169.214.149", // net unit
+              null,  // protocol
+              fileAttributes,
+              null, // linkGroup
+              defaultExclude);
+
+        PoolPreferenceLevel[] preferenceRes2 = _psu.match(
+              DirectionType.READ,  // operation
+              "131.169.214.149", // net unit
+              null,  // protocol
+              fileAttributes,
+              null, // linkGroup
+              defaultExclude);
+
+        assertTrue(preferenceRes1 == preferenceRes2);// not equal, same
+
+    }
+
     /*
      * test case: check that write with unknow storage group goes only to default-write pool
      */
