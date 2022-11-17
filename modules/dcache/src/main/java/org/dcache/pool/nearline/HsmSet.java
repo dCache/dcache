@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014-2022 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014-2023 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -32,19 +32,28 @@ import dmg.util.Formats;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.CommandLine;
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.ServiceLoader;
+import java.util.ServiceLoader.Provider;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import javax.annotation.PreDestroy;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
@@ -79,8 +88,21 @@ public class HsmSet
         CellDynamicCommandProvider {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HsmSet.class);
-    private static final ServiceLoader<NearlineStorageProvider> PROVIDERS =
-          ServiceLoader.load(NearlineStorageProvider.class);
+
+    /**
+     * Nearline storage provides that are part of the dCache on located in standard plugin classpath.
+     */
+    private static final Map<String, NearlineStorageProvider> EMBEDDED_PROVIDERS =
+          ServiceLoader.load(NearlineStorageProvider.class)
+          .stream()
+          .map(Provider::get)
+          .collect(Collectors.toUnmodifiableMap(NearlineStorageProvider::getName, Function.identity()));
+
+    /**
+     * Nearline storage provides that dynamically at the runtime.
+     */
+    private final Map<String, NearlineStorageProvider> dynamicProviders = new ConcurrentHashMap<>();
+
     private static final String DEFAULT_PROVIDER = "script";
 
     private final ConcurrentMap<String, HsmInfo> _newConfig = Maps.newConcurrentMap();
@@ -95,17 +117,19 @@ public class HsmSet
     private String _poolName;
 
     /**
-     * Looks for a specific available provided.
-     *
+     * Looks for an embedded on dynamically loaded configured provided.
      * @param name of the nearline storage provider to find.
      * @return nearline storage provider.
-     * @throws NoSuchElementException if provider with a given name not found.
+     * @throws IllegalArgumentException if provider with a given name not found.
      */
     private NearlineStorageProvider findProvider(String name) {
-        for (NearlineStorageProvider provider : PROVIDERS) {
-            if (provider.getName().equals(name)) {
-                return provider;
-            }
+        var p = EMBEDDED_PROVIDERS.get(name);
+        if (p != null) {
+            return p;
+        }
+        p = dynamicProviders.get(name);
+        if (p != null) {
+            return p;
         }
         throw new NoSuchElementException("No such nearline storage provider: " + name);
     }
@@ -349,6 +373,99 @@ public class HsmSet
         return description;
     }
 
+    @Command(name = "hsm load provider", hint = "Load a provider from the specified directory",
+          description = "Loads an external provider. The provided path should point to a directory"
+                + " containing jar files. If the directory contains a provider with a name that already"
+                + " configured, then new provider will not be installed.")
+    public class LoadProvider implements Callable<String> {
+
+        @Argument(usage = "Path to directory containing provider.")
+        private String path;
+
+        @Override
+        public String call() throws CommandException {
+
+            ColumnWriter writer = new ColumnWriter();
+            writer.header("PROVIDER").left("provider").space();
+            writer.header("DESCRIPTION").left("description");
+
+
+            var f = new File(path);
+            if (!f.exists()) {
+                throw new CommandException(1, "No such directory: " + path);
+            }
+
+            if (!f.isDirectory()) {
+                throw new CommandException(1, "Provided path is not a directory: " + path);
+            }
+
+            var v = Arrays.stream(f.listFiles())
+                  .map(p -> {
+                      try {
+                          return p.toURL();
+                      } catch (MalformedURLException e) {
+                          throw new RuntimeException(e);
+                      }
+                  })
+                  .toArray(URL[]::new);
+
+            URLClassLoader classLoader = URLClassLoader.newInstance(
+                  v, Thread.currentThread().getContextClassLoader()
+            );
+
+            var newProviderLoader = ServiceLoader.load(NearlineStorageProvider.class, classLoader);
+
+            for (var p : newProviderLoader) {
+                if (EMBEDDED_PROVIDERS.containsKey(p.getName())) {
+                    // skip as classloader sees all of them
+                    continue;
+                }
+
+                var old = dynamicProviders.putIfAbsent(p.getName(), p);
+                if (old == null) {
+                    writer.row()
+                          .value("provider", p.getName())
+                          .value("description", p.getDescription());
+                }
+            }
+
+            return "New providers: \n" + writer;
+        }
+    }
+
+    @Command(name = "hsm unload provider", hint = "Unload user provided nearline storage provider",
+    description = "Unloads user loaded provide. After unloading, the provider can be used anymore."
+          + " The system behaviour in undefined, if plugin is removed while corresponding hsm still"
+          + " in use.")
+    public class UnloadProvider implements Callable<String> {
+
+        @Argument(usage = "Provider name to unload")
+        private String provider;
+
+        @Override
+        public String call() throws CommandException {
+
+            ColumnWriter writer = new ColumnWriter();
+            writer.header("PROVIDER").left("provider").space();
+            writer.header("DESCRIPTION").left("description");
+
+            var p = dynamicProviders.remove(provider);
+            if (p != null) {
+                dynamicProviders.remove(p.getName());
+                writer.row()
+                      .value("provider", p.getName())
+                      .value("description", p.getDescription());
+                try {
+                    ((URLClassLoader) (p.getClass().getClassLoader())).close();
+                } catch (IOException e) {
+                    throw new CommandException(1, "Can't unload " + provider + " : " + e.getMessage());
+                }
+            }
+
+            return "Removed providers: \n" + writer;
+        }
+    }
+
     @AffectsSetup
     @Command(name = "hsm create", hint = "create nearline storage",
           description =
@@ -528,11 +645,19 @@ public class HsmSet
         public String call() {
             ColumnWriter writer = new ColumnWriter();
             writer.header("PROVIDER").left("provider").space();
-            writer.header("DESCRIPTION").left("description");
-            for (NearlineStorageProvider provider : PROVIDERS) {
+            writer.header("DESCRIPTION").left("description").space();
+            writer.header("DYNAMIC").right("dynamic");
+            for (NearlineStorageProvider provider : EMBEDDED_PROVIDERS.values()) {
                 writer.row()
                       .value("provider", provider.getName())
-                      .value("description", provider.getDescription());
+                      .value("description", provider.getDescription())
+                      .value("dynamic", "no");
+            }
+            for (NearlineStorageProvider provider : dynamicProviders.values()) {
+                writer.row()
+                      .value("provider", provider.getName())
+                      .value("description", provider.getDescription())
+                      .value("dynamic", "yes");
             }
             return writer.toString();
         }
