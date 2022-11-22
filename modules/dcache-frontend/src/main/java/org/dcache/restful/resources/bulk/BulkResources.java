@@ -72,11 +72,13 @@ import io.swagger.annotations.Authorization;
 import io.swagger.annotations.Example;
 import io.swagger.annotations.ExampleProperty;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
@@ -414,7 +416,7 @@ public final class BulkResources {
             request.setArguments(stringified);
         }
 
-        request.setTarget((List<String>) map.remove("target"));
+        request.setTarget(extractTarget(map));
 
         String string = removeEntry(map, String.class, "activity");
         request.setActivity(string);
@@ -466,6 +468,30 @@ public final class BulkResources {
         }
 
         return request;
+    }
+
+    /*
+     *  These checks are for backward compatibility with Bulk 1 (version 7.2), which was,
+     *  unfortunately, ambiguously typed.  For Bulk 2 the practice should be to
+     *  specify the target as a JSON array.
+     */
+    private static List<String> extractTarget(Map map) {
+        Object target = map.remove("target");
+        if (target instanceof String) {
+            String stringTarget = (String)target;
+            stringTarget = stringTarget.replaceAll("\"", "")
+                  .replaceAll("[\\s]", "");
+            if (stringTarget.contains("[")) {
+                int open = stringTarget.indexOf("[");
+                int close = stringTarget.indexOf("]");
+                stringTarget = stringTarget.substring(open+1, close);
+            }
+            return Arrays.stream(stringTarget.split("[,]")).collect(Collectors.toList());
+        } else if (target instanceof String[]) {
+            return Arrays.stream(((String) target).split("[,]")).collect(Collectors.toList());
+        } else {
+            return (List<String>) target;
+        }
     }
 
     private static <T> T removeEntry(Map map, Class<T> clzz, String... names) {
