@@ -378,7 +378,7 @@
          (select * from request_target where rid = ? order by id limit ?)
          because otherwise the optimizer chooses to do a full table scan with
          a filter on the rid -->
-    <changeSet author="arossi" id="4.0" runInTransaction="false">
+    <changeSet author="arossi" id="4.0" runInTransaction="false" dbms="postgresql">
         <preConditions onFail="MARK_RAN">
             <and>
                 <not>
