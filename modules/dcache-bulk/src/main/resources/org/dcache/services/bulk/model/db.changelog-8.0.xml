@@ -378,7 +378,7 @@
          (select * from request_target where rid = ? order by id limit ?)
          because otherwise the optimizer chooses to do a full table scan with
          a filter on the rid -->
-    <changeSet author="arossi" id="4.0" runInTransaction="false" dbms="postgresql">
+    <changeSet author="arossi" id="4.0" runInTransaction="false">
         <preConditions onFail="MARK_RAN">
             <and>
                 <not>
@@ -386,8 +386,10 @@
                 </not>
             </and>
         </preConditions>
-        <sql splitStatements="false">
-            CREATE INDEX CONCURRENTLY idx_target_id_rid on request_target(id,rid);
-        </sql>
+        <createIndex tableName="request_target"
+          indexName="idx_target_id_rid">
+            <column name="id"/>
+            <column name="rid"/>
+        </createIndex>
     </changeSet>
 </databaseChangeLog>
