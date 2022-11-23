@@ -264,9 +264,9 @@ public final class JdbcBulkDaoUtils {
         LOGGER.trace("updateCounts {} : {}.", countActive, countsByState);
         support.getJdbcTemplate().update(UPDATE_STATE_COUNT, countActive, "ACTIVE");
         Arrays.stream(BulkRequestTarget.State.values()).forEach(state -> {
-            Long count = countsByState.get(state);
-            support.getJdbcTemplate()
-                  .update(String.format(UPDATE_STATE_COUNT, count == null ? 0L : count, state));
+            String key = state.name();
+            Long count = countsByState.get(key);
+            support.getJdbcTemplate().update(UPDATE_STATE_COUNT, count == null ? 0L : count, key);
         });
     }
 }
