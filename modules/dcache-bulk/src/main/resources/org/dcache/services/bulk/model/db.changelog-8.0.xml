@@ -373,4 +373,23 @@
         </insert>
         <rollback/>
     </changeSet>
+
+    <!-- necessary to support paging on target:
+         (select * from request_target where rid = ? order by id limit ?)
+         because otherwise the optimizer chooses to do a full table scan with
+         a filter on the rid -->
+    <changeSet author="arossi" id="4.0" runInTransaction="false">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <not>
+                    <indexExists indexName="idx_target_id_rid"/>
+                </not>
+            </and>
+        </preConditions>
+        <createIndex tableName="request_target"
+          indexName="idx_target_id_rid">
+            <column name="id"/>
+            <column name="rid"/>
+        </createIndex>
+    </changeSet>
 </databaseChangeLog>
