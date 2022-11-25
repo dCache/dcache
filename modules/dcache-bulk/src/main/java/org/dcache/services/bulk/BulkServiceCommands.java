@@ -725,7 +725,7 @@ public final class BulkServiceCommands implements CellCommandListener {
 
             int len = info.getTargets().size();
 
-            if (len == MAX_PARTIAL_RESULT) {
+            if (len < MAX_PARTIAL_RESULT) {
                 return new PagedTargetResult(builder.toString(), EOL);
             }
 
