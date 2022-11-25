@@ -126,6 +126,22 @@ public abstract class FileStatusVerifier {
 
     public QoSAction verify(FileQoSRequirements requirements, VerifyOperation operation)
           throws InterruptedException {
+        /*
+         *  If the parent source is DRAINING, we increase the required number of disk copies
+         *  by one if the disk requirement is non-zero.
+         *
+         *  NOTE:  we do not need to force the source to be the parent, because the parent
+         *         pool is still readable.  In the case where a file has a single copy
+         *         resident on the parent, the parent will be automatically chosen.
+         */
+        String parent = operation.getParent();
+        if (parent!= null && poolInfoMap.isPoolDraining(parent)) {
+            int disk = requirements.getRequiredDisk();
+            if (disk > 0) { /* do not create a persistent copy in the case of cached-only replicas */
+                requirements.setRequiredDisk(disk + 1);
+            }
+        }
+
         VerifiedLocations locations = classifyLocations(requirements, operation.getPoolGroup());
         Optional<QoSAction> optional;
 

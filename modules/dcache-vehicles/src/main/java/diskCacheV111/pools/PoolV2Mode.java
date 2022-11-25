@@ -28,37 +28,22 @@ public class PoolV2Mode implements Serializable {
                 DISABLED_STAGE |
                 DISABLED_P2P_CLIENT;
 
+    public static final int DRAINING = DISABLED_RDONLY | 0x200;
+
     private static final int RESILIENCE_ENABLED = 0x7F;
     private static final int RESILIENCE_DISABLED = 0x80;
 
     public static final int REPOSITORY_LOADING = 0x100;
     public static final int DISABLED_RDONLY_REPOSITORY_LOADING =
-          DISABLED_RDONLY |
-                REPOSITORY_LOADING;
+          DISABLED_RDONLY | REPOSITORY_LOADING;
     public static final int DISABLED_STRICT_REPOSITORY_LOADING =
-          DISABLED_STRICT |
-                REPOSITORY_LOADING;
+          DISABLED_STRICT | REPOSITORY_LOADING;
 
     private static final String[] __modeString = {
           "fetch", "store", "stage", "p2p-client", "p2p-server", "dead"
     };
 
     private int _mode = ENABLED;
-
-    /*
-     *  For convenience.
-     */
-    public synchronized boolean isResilienceEnabled() {
-        return !((_mode & RESILIENCE_DISABLED) == RESILIENCE_DISABLED);
-    }
-
-    public synchronized void setResilienceEnabled(boolean isResilienceEnabled) {
-        if (isResilienceEnabled) {
-            _mode &= RESILIENCE_ENABLED;
-        } else {
-            _mode |= RESILIENCE_DISABLED;
-        }
-    }
 
     @Override
     public String toString() {
@@ -84,6 +69,9 @@ public class PoolV2Mode implements Serializable {
                 }
                 sb.append(modeString);
             }
+        }
+        if (isDisabled(DRAINING)) {
+            sb.append(",draining");
         }
         if (!isResilienceEnabled()) {
             sb.append(",noresilience");
@@ -125,6 +113,21 @@ public class PoolV2Mode implements Serializable {
 
     public synchronized boolean isEnabled() {
         return isEnabled(_mode);
+    }
+
+    /*
+     *  For convenience.
+     */
+    public synchronized boolean isResilienceEnabled() {
+        return !((_mode & RESILIENCE_DISABLED) == RESILIENCE_DISABLED);
+    }
+
+    public synchronized void setResilienceEnabled(boolean isResilienceEnabled) {
+        if (isResilienceEnabled) {
+            _mode &= RESILIENCE_ENABLED;
+        } else {
+            _mode |= RESILIENCE_DISABLED;
+        }
     }
 
     @Override

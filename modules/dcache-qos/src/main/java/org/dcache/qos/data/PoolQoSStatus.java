@@ -79,7 +79,15 @@ public enum PoolQoSStatus {
     /**
      * normal read-write operations are possible
      */
-    READ_ONLY;          /**  equivalent to disabled for writing by clients */
+    READ_ONLY,
+    /**
+     * equivalent to disabled for writing by clients
+     */
+    DRAINING;
+    /**
+     * equivalent to disabled for writing by clients and qos,
+     * but action needs to be taken to copy all its files elsewhere.
+     */
 
     /**
      * This status tells qos whether action (scanning) needs to be taken with respect to the pool.
@@ -101,6 +109,16 @@ public enum PoolQoSStatus {
               poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD) ||
               poolMode.isDisabled(PoolV2Mode.DISABLED_FETCH)) {
             return DOWN;
+        }
+
+        /*
+         *  This is a special READ_ONLY state which must be treated by qos
+         *  like a DOWN pool, but from which the source of the new replica
+         *  need not be taken from another pool (hence, singleton
+         *  replicas on this pool will not raise an alarm).
+         */
+        if (poolMode.isDisabled(PoolV2Mode.DRAINING)) {
+            return DRAINING;
         }
 
         /*
@@ -128,6 +146,7 @@ public enum PoolQoSStatus {
     public QoSMessageType toMessageType() {
         switch (this) {
             case DOWN:
+            case DRAINING:
             case UNINITIALIZED:
                 return QoSMessageType.POOL_STATUS_DOWN;
             default:

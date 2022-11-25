@@ -1077,6 +1077,11 @@ Once pools are added to this group, the behavior will be as indicated above.
 
 ### Exclude a pool from qos handling
 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+NOTE:  With version 9.0, the use of 'exclude' is deprecated for migration.
+       See below for the new procedure.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 During normal operation, QoS should be expected to handle gracefully situations
 where a pool with many files, for one reason or another, goes offline. Such an incident,
 even if the "grace period" value were set to 0, in initiating a large scan,
@@ -1107,8 +1112,8 @@ use in the wrong circumstances may easily lead to inconsistent state.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 WARNING:  Only use 'pool exclude' for temporary situations where the intention
           is eventually to restore the excluded location(s) to qos management;
-          or when the locations on those pools are actually being migrated or
-          deleted from the namespace.
+          or when the locations on those pools are actually to be deleted
+          from the namespace.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If, for instance, one set a pool to `EXCLUDED`, then removed the pool,
@@ -1124,15 +1129,14 @@ but caution should be taken when applying it.
 _Note that once a pool is excluded, it can no longer be scanned, even manually,
 until it is explicitly included again._
 
-### Rebalance or migrate a pool (group)
+### Rebalance a pool (group)
 
 Rebalancing should be required less often on pools belonging to a primary pool
-group; but if you should decide to rebalance this kind of pool group, or need
-to migrate files from one pool group to another, be sure to disable qos on all
-those pools. One could do this by stopping qos altogether, but this of course
-would stop the processing of other groups not involved in the operation.
-The alternative is to use the `exclude` command one or more times with expressions
-matching the pools you are interested in:
+group; but if you should decide to rebalance this kind of pool group, be sure
+to disable qos on all those pools. One could do this by stopping qos altogether,
+but this of course would stop the processing of other groups not involved
+in the operation. The alternative is to use the `exclude` command one or more times
+with expressions matching the pools you are interested in:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 \s qos-scanner pool exclude <exp1>
@@ -1144,7 +1148,7 @@ Note that the exclusion of a pool will survive a restart of the service because
 excluded pools are written out to a file (`excluded-pools`; see above) which is
 read back in on initialization.
 
-When rebalancing or migration is completed, pools can be set back to active
+When rebalancing is completed, pools can be set back to active
 qos control:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1158,9 +1162,32 @@ window elapses, a manual scan is required.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 BEST PRACTICE:  Disable qos on the potential source and target pools
-                by setting them to EXCLUDED before doing a rebalance
-                or migration.
+                by setting them to EXCLUDED before doing a rebalance.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+### Migrating files off of a pool (dCache 9.0+)
+
+Instead of the clumsy and less reliable procedure involved in rebalancing above,
+QoS can now handle the copying of all persistent replicas to other pools
+(whether of a primary/resilient pool group or globally).
+
+To achieve this, do the following:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+\s <pool-to-decommission> pool disable -draining
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You will then see that pool scheduled for a scan as if it were in the `DOWN`
+state.  There will be, however, no issues with using the replicas on that
+pool as source for a new copy, because the new pool state `DRAINING` is
+the same as `READ_ONLY` (`-rdonly`), but with an extra bit to alert QoS to
+treat it as if it were offline.
+
+When the scan has completed, all persistent (but not cached) replicas will
+have been replicated on other pools, thus leaving the source pool free to
+be taken offline or to be manually purged of its replicas.  One could even
+conceivably `rep rm -force` all replicas on it, and set it back to enabled,
+with no issues arising for QoS replica management.
 
 ### Manually schedule or cancel a pool scan
 

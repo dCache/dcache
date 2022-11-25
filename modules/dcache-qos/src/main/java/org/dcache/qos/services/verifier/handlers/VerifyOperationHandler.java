@@ -349,7 +349,7 @@ public class VerifyOperationHandler implements VerifyAndUpdateHandler {
             }
 
             /*
-             *  Refresh to pool group on the basis of the current replica locations.
+             *  Refresh pool group on the basis of the current replica locations.
              *  If the verification results in an adjustment, the updated group will
              *  be included in the underlying store update.
              */

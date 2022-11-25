@@ -1653,6 +1653,11 @@ public class PoolV4
         @Option(name = "rdonly", usage = "equivalent to -store -stage -p2p-client")
         boolean rdonly;
 
+        @Option(name = "draining", usage = "equivalent to -store -stage -p2p-client, "
+              + "with an additional flag to indicate to QoS to treat this pool as "
+              + "offline (and thus to make an additional replica of all files on it).")
+        boolean draining;
+
         @Option(name = "strict", usage = "disallows everything")
         boolean strict;
 
@@ -1671,6 +1676,9 @@ public class PoolV4
             int modeBits = PoolV2Mode.DISABLED;
             if (strict) {
                 modeBits |= PoolV2Mode.DISABLED_STRICT;
+            }
+            if (draining) {
+                modeBits |= PoolV2Mode.DRAINING;
             }
             if (stage) {
                 modeBits |= PoolV2Mode.DISABLED_STAGE;

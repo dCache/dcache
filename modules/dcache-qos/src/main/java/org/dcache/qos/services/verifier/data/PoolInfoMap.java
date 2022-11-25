@@ -593,6 +593,16 @@ public class PoolInfoMap {
         }
     }
 
+    public boolean isPoolDraining(String pool) {
+        read.lock();
+        try {
+            PoolInformation info = poolInfo.get(pool);
+            return info.getMode().isDisabled(PoolV2Mode.DRAINING);
+        } finally {
+            read.unlock();
+        }
+    }
+
     public boolean isPoolViable(String pool, boolean writable) {
         read.lock();
         try {

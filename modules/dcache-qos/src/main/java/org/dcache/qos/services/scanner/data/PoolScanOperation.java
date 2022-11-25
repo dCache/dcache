@@ -160,15 +160,26 @@ public final class PoolScanOperation extends ScanOperation<PoolScanTask> {
             case DOWN:
                 switch (currStatus) {
                     case READ_ONLY:
+                    case DRAINING:
                     case ENABLED:
                         return NextAction.DOWN_TO_UP;
                     case DOWN:
+                        return NextAction.NOP;
+                }
+            case DRAINING:
+                switch (currStatus) {
+                    case READ_ONLY:
+                    case ENABLED:
+                    case DOWN:
+                        return NextAction.DOWN_TO_UP;
+                    case DRAINING:
                         return NextAction.NOP;
                 }
             case READ_ONLY:
             case ENABLED:
                 switch (currStatus) {
                     case DOWN:
+                    case DRAINING:
                         return NextAction.UP_TO_DOWN;
                     case READ_ONLY:
                     case ENABLED:
@@ -192,7 +203,7 @@ public final class PoolScanOperation extends ScanOperation<PoolScanTask> {
                  *  viable readable status, and handling this transition will
                  *  unnecessarily provoke an immediate system-wide scan.
                  */
-                if (currStatus == PoolQoSStatus.DOWN) {
+                if (currStatus == PoolQoSStatus.DOWN || currStatus == PoolQoSStatus.DRAINING) {
                     if (exceedsGracePeriod()) {
                         return NextAction.UP_TO_DOWN;
                     }

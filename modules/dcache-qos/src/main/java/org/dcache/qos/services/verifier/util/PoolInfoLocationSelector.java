@@ -99,6 +99,7 @@ public final class PoolInfoLocationSelector implements LocationSelector {
             }
             return locations.iterator().next();
         }
+
         return selectSource(locations, operation.getTried());
     }
 
