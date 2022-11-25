@@ -140,32 +140,7 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
          */
         waitForNamespace();
 
-        /*
-         * See store specifics for how reload is handled, but the minimal contract is
-         * that all incomplete requests be reset to the QUEUED state.
-         * There is no danger in a race here because the state of the
-         * requests is not checked until the request job manager is initialized
-         * and started.
-         */
-        try {
-            LOGGER.info("Loading requests into the request store/queue; "
-                  + "incomplete requests will be reset to QUEUED.");
-            requestStore.load();
-        } catch (BulkServiceException e) {
-            LOGGER.error("There was a problem reloading requests: {}.", e.toString());
-        }
-
-        try {
-            LOGGER.info("Initializing the job manager.");
-            requestManager.initialize();
-        } catch (Exception e) {
-            LOGGER.error("There was a problem initializing the job queue: {}.", e.toString());
-        }
-
-        LOGGER.info("Signalling the job manager.");
-        requestManager.signal();
-
-        LOGGER.info("Service startup completed.");
+        incomingExecutorService.execute(() -> initialize());
     }
 
     public Reply messageArrived(BulkRequestMessage message) {
@@ -471,6 +446,35 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
                 }
                 break;
         }
+    }
+
+    private void initialize() {
+        /*
+         * See store specifics for how reload is handled, but the minimal contract is
+         * that all incomplete requests be reset to the QUEUED state.
+         * There is no danger in a race here because the state of the
+         * requests is not checked until the request job manager is initialized
+         * and started.
+         */
+        try {
+            LOGGER.info("Loading requests into the request store/queue; "
+                  + "incomplete requests will be reset to QUEUED.");
+            requestStore.load();
+        } catch (BulkServiceException e) {
+            LOGGER.error("There was a problem reloading requests: {}.", e.toString());
+        }
+
+        try {
+            LOGGER.info("Initializing the job manager.");
+            requestManager.initialize();
+        } catch (Exception e) {
+            LOGGER.error("There was a problem initializing the job queue: {}.", e.toString());
+        }
+
+        LOGGER.info("Signalling the job manager.");
+        requestManager.signal();
+
+        LOGGER.info("Service startup completed.");
     }
 
     private void matchActivity(String activity, String requestId)
