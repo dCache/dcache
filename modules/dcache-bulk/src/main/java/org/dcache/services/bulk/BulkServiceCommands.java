@@ -184,7 +184,7 @@ public final class BulkServiceCommands implements CellCommandListener {
     private static final DateTimeFormatter DATE_FORMATTER
           = DateTimeFormatter.ofPattern(DATE_FORMAT).withZone(ZoneId.systemDefault());
 
-    private static final int MAX_PARTIAL_RESULT = 5000;
+    private static final int MAX_PARTIAL_RESULT = 10000;
 
     private static class Sorter implements Comparator<String> {
 
