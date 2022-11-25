@@ -332,5 +332,14 @@
     <property name="requestManager" ref="request-manager"/>
     <property name="submissionHandler" ref="request-handler"/>
     <property name="statistics" ref="statistics"/>
+    <property name="executor">
+      <bean class="org.dcache.util.CDCExecutorServiceDecorator" destroy-method="shutdownNow">
+        <constructor-arg>
+          <bean class="org.dcache.util.BoundedCachedExecutor">
+            <constructor-arg value="1"/>
+          </bean>
+        </constructor-arg>
+      </bean>
+    </property>
   </bean>
 </beans>

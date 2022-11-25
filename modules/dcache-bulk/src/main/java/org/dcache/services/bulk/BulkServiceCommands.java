@@ -83,6 +83,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
 import org.dcache.auth.Subjects;
@@ -854,13 +855,17 @@ public final class BulkServiceCommands implements CellCommandListener {
             List<String> ids = requestIds();
             StringBuilder requests = new StringBuilder();
             for (String id : ids) {
-                requestStore.reset(id);
-                requests.append("\t")
-                      .append(id)
-                      .append("\n");
+                executor.submit(()-> {
+                    try {
+                        requestStore.reset(id);
+                    } catch (BulkStorageException e) {
+                        LOGGER.error("could not reset {}: {}.", id, e.toString());
+                    }
+                });
+                requests.append("\t").append(id).append("\n");
             }
 
-            return "Reset:\n" + requests;
+            return "Resetting:\n" + requests + "\nCheck pinboard for any errors.";
         }
     }
 
@@ -1125,10 +1130,16 @@ public final class BulkServiceCommands implements CellCommandListener {
     private BulkActivityFactory activityFactory;
     private BulkTargetStore targetStore;
     private BulkServiceStatistics statistics;
+    private ExecutorService executor;
 
     @Required
     public void setActivityFactory(BulkActivityFactory activityFactory) {
         this.activityFactory = activityFactory;
+    }
+
+    @Required
+    public void setExecutor(ExecutorService executor) {
+        this.executor = executor;
     }
 
     @Required
