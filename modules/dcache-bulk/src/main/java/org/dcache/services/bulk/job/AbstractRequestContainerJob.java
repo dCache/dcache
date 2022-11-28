@@ -62,6 +62,7 @@ package org.dcache.services.bulk.job;
 import static org.dcache.services.bulk.activity.BulkActivity.MINIMALLY_REQUIRED_ATTRIBUTES;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.CANCELLED;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.COMPLETED;
+import static org.dcache.services.bulk.util.BulkRequestTarget.State.FAILED;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.READY;
 import static org.dcache.services.bulk.util.BulkRequestTarget.computeFsPath;
 
@@ -148,6 +149,8 @@ public abstract class AbstractRequestContainerJob
     protected PnfsHandler pnfsHandler;
     protected Semaphore semaphore;
 
+    protected volatile ContainerState containerState;
+
     private final long pid;
     private final TargetType targetType;
     private final BulkRequestTarget target;
@@ -159,7 +162,6 @@ public abstract class AbstractRequestContainerJob
     private SignalAware callback;
 
     private Thread runThread;
-    private volatile ContainerState containerState;
 
     AbstractRequestContainerJob(BulkActivity activity, BulkRequestTarget target,
           BulkRequest request) {
@@ -296,6 +298,9 @@ public abstract class AbstractRequestContainerJob
             }
         } catch (InterruptedException e) {
             LOGGER.debug("run {} interrupted", rid);
+            /*
+             *  If the state has not already been set to terminal, do so.
+             */
             containerState = ContainerState.STOP;
             update(CANCELLED);
         }
@@ -329,7 +334,7 @@ public abstract class AbstractRequestContainerJob
          */
         containerState = ContainerState.STOP;
         target.setErrorObject(e);
-        update(CANCELLED);
+        update(FAILED);
         ThreadGroup group = t.getThreadGroup();
         if (group != null) {
             group.uncaughtException(t, e);

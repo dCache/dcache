@@ -114,6 +114,12 @@ public final class RequestContainerJob extends AbstractRequestContainerJob {
     protected void processFileTargets() throws InterruptedException {
         List<String> requestTargets = request.getTarget();
 
+        if (requestTargets.isEmpty()) {
+            containerState = ContainerState.STOP;
+            update(FAILED);
+            return;
+        }
+
         for (String tgt : requestTargets) {
             checkForRequestCancellation();
             FsPath path = computeFsPath(targetPrefix, tgt);

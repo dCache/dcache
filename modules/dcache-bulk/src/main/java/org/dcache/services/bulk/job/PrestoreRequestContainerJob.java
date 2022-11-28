@@ -142,6 +142,11 @@ public final class PrestoreRequestContainerJob extends AbstractRequestContainerJ
 
     @Override
     protected void preprocessTargets() throws InterruptedException {
+        if (request.getTarget().isEmpty()) {
+            containerState = ContainerState.STOP;
+            update(FAILED);
+            return;
+        }
         storeAll(request.getTarget());
     }
 
@@ -331,6 +336,12 @@ public final class PrestoreRequestContainerJob extends AbstractRequestContainerJ
          *  For later processing.
          */
         semaphore.release(activity.getMaxPermits());
+
+        if (targetInfo.isEmpty()) {
+            containerState = containerState.STOP;
+            update(FAILED);
+            return;
+        }
 
         /*
          *  This must be done serially to preserve sequence numbers of directories

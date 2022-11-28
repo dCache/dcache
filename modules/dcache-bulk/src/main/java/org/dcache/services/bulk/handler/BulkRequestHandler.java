@@ -251,6 +251,10 @@ public final class BulkRequestHandler implements BulkSubmissionHandler,
                     case COMPLETED:
                         LOGGER.debug("already terminated: {}.", id);
                         return;
+                    case QUEUED:
+                        /* cancel all targets*/
+                        targetStore.cancelAll(id);
+                        break;
                 }
             } else {
                 throw new IllegalStateException("request status for " + id
