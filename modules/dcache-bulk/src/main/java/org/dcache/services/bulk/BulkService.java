@@ -421,7 +421,8 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
 
     private synchronized void checkTargetCount(BulkRequest request)
           throws BulkPermissionDeniedException {
-        int listSize = request.getTarget().size();
+        List<String> targets = request.getTarget();
+        int listSize = targets == null ? 0 : targets.size();
         switch (request.getExpandDirectories()) {
             case NONE:
                 if (listSize > maxFlatTargets) {

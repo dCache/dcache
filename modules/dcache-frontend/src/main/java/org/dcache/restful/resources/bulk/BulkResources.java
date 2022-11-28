@@ -416,7 +416,11 @@ public final class BulkResources {
             request.setArguments(stringified);
         }
 
-        request.setTarget(extractTarget(map));
+        List<String> targets = extractTarget(map);
+        if (targets.isEmpty()) {
+            throw new BadRequestException("request contains no targets.");
+        }
+        request.setTarget(targets);
 
         String string = removeEntry(map, String.class, "activity");
         request.setActivity(string);
