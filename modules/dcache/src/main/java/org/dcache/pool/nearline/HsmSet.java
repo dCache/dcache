@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014-2021 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014-2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -40,6 +40,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -93,13 +94,20 @@ public class HsmSet
     @Value("${pool.name}")
     private String _poolName;
 
+    /**
+     * Looks for a specific available provided.
+     *
+     * @param name of the nearline storage provider to find.
+     * @return nearline storage provider.
+     * @throws NoSuchElementException if provider with a given name not found.
+     */
     private NearlineStorageProvider findProvider(String name) {
         for (NearlineStorageProvider provider : PROVIDERS) {
             if (provider.getName().equals(name)) {
                 return provider;
             }
         }
-        throw new IllegalArgumentException("No such nearline storage provider: " + name);
+        throw new NoSuchElementException("No such nearline storage provider: " + name);
     }
 
     /**
@@ -151,13 +159,14 @@ public class HsmSet
         /**
          * Constructs an HsmInfo object.
          *
+         * @param provider Nearline Storage Provider to use.
          * @param instance A unique instance name.
          * @param type     The HSM type, e.g. OSM or enstore.
          */
-        public HsmInfo(String instance, String type, String provider) {
+        public HsmInfo(NearlineStorageProvider provider, String instance, String type) {
+            _provider = provider;
             _instance = instance;
             _type = type.toLowerCase();
-            _provider = findProvider(provider);
             _nearlineStorage = _provider.createNearlineStorage(_type, _instance);
         }
 
@@ -382,13 +391,20 @@ public class HsmSet
         @Override
         public String call() throws CommandException {
             String instance = (this.instance == null) ? type : this.instance;
+            NearlineStorageProvider nearlineStorageProvider;
+            try {
+                nearlineStorageProvider = findProvider(provider);
+            } catch (NoSuchElementException e) {
+                throw new CommandException(1, "No such nearline storage provider: " + provider);
+            }
+
             if (_isReadingSetup) {
                 if (_newConfig.containsKey(instance)) {
                     throw new CommandException("Nearline storage already exists: " + instance);
                 }
                 HsmInfo info = _hsm.get(instance);
                 if (info == null) {
-                    info = new HsmInfo(instance, type, provider);
+                    info = new HsmInfo(nearlineStorageProvider, instance, type);
                 }
                 info.scanOptions(options);
                 _newConfig.put(instance, info);
@@ -396,7 +412,7 @@ public class HsmSet
                 if (_hsm.containsKey(instance)) {
                     throw new CommandException("Nearline storage already exists: " + instance);
                 }
-                HsmInfo info = new HsmInfo(instance, type, provider);
+                HsmInfo info = new HsmInfo(nearlineStorageProvider, instance, type);
                 info.scanOptions(options);
                 try {
                     info.start();
