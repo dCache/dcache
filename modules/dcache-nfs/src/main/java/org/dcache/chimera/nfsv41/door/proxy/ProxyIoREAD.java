@@ -8,6 +8,8 @@ import org.dcache.nfs.nfsstat;
 import org.dcache.nfs.status.AccessException;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.nfs.v4.CompoundContext;
+import org.dcache.nfs.v4.NFS4Client;
+import org.dcache.nfs.v4.NFS4State;
 import org.dcache.nfs.v4.OperationREAD;
 import org.dcache.nfs.v4.Stateids;
 import org.dcache.nfs.v4.xdr.READ4res;
@@ -73,16 +75,24 @@ public class ProxyIoREAD extends AbstractNFSv4Operation {
                     readResult = oneUseProxyIoAdapter.read(bb, offset);
                 }
             } else {
+                final NFS4Client client;
                 if (context.getMinorversion() == 0) {
+                    /* if we need to run proxy-io with NFSv4.0 */
+                    client = context.getStateHandler().getClientIdByStateId(stateid);
                     /*
                      *  The NFSv4.0 spec requires to update lease time as long as client
                      * needs the file. This is done through READ, WRITE and RENEW
-                     * opertations. With introduction of sessions in v4.1 update of the
+                     * operations. With introduction of sessions in v4.1 update of the
                      * lease time done through SEQUENCE operation.
                      */
                     context.getStateHandler().updateClientLeaseTime(stateid);
+
+                } else {
+                    client = context.getSession().getClient();
                 }
-                proxyIoAdapter = proxyIoFactory.getOrCreateProxy(inode, stateid, context, false);
+
+                final NFS4State openStateId = client.state(stateid).getOpenState();
+                proxyIoAdapter = proxyIoFactory.getOrCreateProxy(inode, openStateId.stateid(), context, false);
                 readResult = proxyIoAdapter.read(bb, offset);
             }
 
