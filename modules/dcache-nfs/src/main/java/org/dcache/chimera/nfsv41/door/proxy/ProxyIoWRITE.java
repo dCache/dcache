@@ -8,6 +8,8 @@ import org.dcache.nfs.nfsstat;
 import org.dcache.nfs.status.AccessException;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.nfs.v4.CompoundContext;
+import org.dcache.nfs.v4.NFS4Client;
+import org.dcache.nfs.v4.NFS4State;
 import org.dcache.nfs.v4.OperationWRITE;
 import org.dcache.nfs.v4.Stateids;
 import org.dcache.nfs.v4.xdr.WRITE4res;
@@ -75,23 +77,23 @@ public class ProxyIoWRITE extends AbstractNFSv4Operation {
                     writeResult = oneUseProxyIoAdapter.write(data, offset);
                 }
             } else {
-
-                /**
-                 * NOTICE, we check for minor version here, even if 4.1 requests
-                 * should not reach this place. Just keep it consistent for the future.
-                 * is not supported
-                 */
-
+                final NFS4Client client;
                 if (context.getMinorversion() == 0) {
+                    /* if we need to run proxy-io with NFSv4.0 */
+                    client = context.getStateHandler().getClientIdByStateId(stateid);
                     /*
                      *  The NFSv4.0 spec requires to update lease time as long as client
                      * needs the file. This is done through READ, WRITE and RENEW
-                     * opertations. With introduction of sessions in v4.1 update of the
+                     * operations. With introduction of sessions in v4.1 update of the
                      * lease time done through SEQUENCE operation.
                      */
                     context.getStateHandler().updateClientLeaseTime(stateid);
+                } else {
+                    client = context.getSession().getClient();
                 }
-                ProxyIoAdapter proxyIoAdapter = proxyIoFactory.getOrCreateProxy(inode, stateid,
+
+                final NFS4State openStateId = client.state(stateid).getOpenState();
+                ProxyIoAdapter proxyIoAdapter = proxyIoFactory.getOrCreateProxy(inode, openStateId.stateid(),
                       context, true);
                 writeResult = proxyIoAdapter.write(data, offset);
             }
