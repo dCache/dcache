@@ -439,9 +439,12 @@ public class XrootdDoor
     public Optional<InetSocketAddress> publicEndpoint() {
         return _loginBrokerInfo.flatMap(i -> {
             List<InetAddress> addresses = i.getAddresses();
-            return addresses.isEmpty()
-                  ? Optional.empty()
-                  : Optional.of(new InetSocketAddress(addresses.get(0), i.getPort()));
+            for (InetAddress addr : addresses) {
+                if (!addr.isLinkLocalAddress() && !addr.isLoopbackAddress()) {
+                    return Optional.of(new InetSocketAddress(addr, i.getPort()));
+                }
+            }
+            return Optional.empty();
         });
     }
 
