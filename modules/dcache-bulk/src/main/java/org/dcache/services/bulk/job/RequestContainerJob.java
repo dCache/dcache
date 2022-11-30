@@ -115,7 +115,7 @@ public final class RequestContainerJob extends AbstractRequestContainerJob {
 
     @Override
     protected void processFileTargets() throws InterruptedException {
-        List<String> requestTargets = getInitialTargetPaths();
+        List<String> requestTargets = request.getTarget();
 
         if (requestTargets.isEmpty()) {
             containerState = ContainerState.STOP;
@@ -246,17 +246,13 @@ public final class RequestContainerJob extends AbstractRequestContainerJob {
 
         BulkRequestTarget target = toTarget(pid, path, Optional.ofNullable(attributes),
               error == null ? RUNNING : FAILED, error);
-
         BatchedResult result = new BatchedResult(target, future);
 
-        if (error == null) {
-            LOGGER.error("register, incrementing {} {}.", target.getId(), target.getState());
-            try {
-                targetStore.storeOrUpdate(target);
-            } catch (BulkStorageException e) {
-                LOGGER.error("{}, could not store target from result {}, {}, {}: {}.", rid, result,
-                      attributes, e.toString());
-            }
+        try {
+            targetStore.storeOrUpdate(target);
+        } catch (BulkStorageException e) {
+            LOGGER.error("{}, could not store target from result {}, {}, {}: {}.", rid, result,
+                  attributes, e.toString());
         }
 
         synchronized (waiting) {

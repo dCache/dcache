@@ -92,7 +92,6 @@ import org.dcache.services.bulk.activity.BulkActivityFactory;
 import org.dcache.services.bulk.handler.BulkSubmissionHandler;
 import org.dcache.services.bulk.manager.BulkRequestManager;
 import org.dcache.services.bulk.store.BulkRequestStore;
-import org.dcache.services.bulk.store.BulkTargetStore;
 import org.dcache.services.bulk.util.BulkServiceStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -117,7 +116,6 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
     private BulkRequestManager requestManager;
     private BulkActivityFactory activityFactory;
     private BulkRequestStore requestStore;
-    private BulkTargetStore targetStore;
     private BulkSubmissionHandler submissionHandler;
     private BulkServiceStatistics statistics;
     private ExecutorService incomingExecutorService;
@@ -355,11 +353,6 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
     }
 
     @Required
-    public void setTargetStore(BulkTargetStore targetStore) {
-        this.targetStore = targetStore;
-    }
-
-    @Required
     public void setIncomingExecutorService(ExecutorService incomingExecutorService) {
         this.incomingExecutorService = incomingExecutorService;
     }
@@ -546,8 +539,8 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
         }
 
         String prefix = request.getTargetPrefix();
-        Set<FsPath> submitted = targetStore.getInitialTargetPaths(requestId, false).stream()
-              .map(p -> computeFsPath(prefix, p)).collect(Collectors.toSet());
+        Set<FsPath> submitted = request.getTarget().stream().map(p -> computeFsPath(prefix, p))
+              .collect(Collectors.toSet());
         for (String path : paths) {
             if (!submitted.contains(findAbsolutePath(prefix, path))) {
                 throw new BulkServiceException(String.format(INVALID_TARGET,

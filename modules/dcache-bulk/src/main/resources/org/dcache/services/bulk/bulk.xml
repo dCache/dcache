@@ -309,7 +309,6 @@
     <property name="namespace" ref="pnfs-manager-stub"/>
     <property name="submissionHandler" ref="request-handler"/>
     <property name="requestManager" ref="request-manager"/>
-    <property name="targetStore" ref="target-store"/>
   </bean>
 
   <bean id="admin-commands" class="org.dcache.services.bulk.BulkServiceCommands">

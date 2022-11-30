@@ -67,7 +67,6 @@ import static org.dcache.services.bulk.BulkRequestStatus.STARTED;
 import static org.dcache.services.bulk.util.BulkRequestTarget.NON_TERMINAL;
 import static org.dcache.services.bulk.util.BulkRequestTarget.PLACEHOLDER_PNFSID;
 import static org.dcache.services.bulk.util.BulkRequestTarget.ROOT_REQUEST_PATH;
-import static org.dcache.services.bulk.util.BulkRequestTarget.State.CREATED;
 
 import com.google.common.base.Throwables;
 import com.google.common.cache.CacheBuilder;
@@ -439,19 +438,12 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
     @Override
     public void load() throws BulkStorageException {
         LOGGER.trace("load called.");
+        requestTargetDao.delete(requestTargetDao.where().state(NON_TERMINAL));
         /*
-         *  Deletion of the bulk request job (parent = -1) is necessary to avoid processing
+         *  deletion of the bulk request job (parent = -1) is necessary to avoid processing
          *  a placeholder target as if it represented a real namespace entry.
-         *
-         *  We can safely delete all non-terminal discovered targets as they are produced
-         *  from recursion and will be found again.
-         *
-         *  Update non-terminal initial nodes to created.
          */
         requestTargetDao.delete(requestTargetDao.where().pid(PID.ROOT));
-        requestTargetDao.delete(requestTargetDao.where().pid(PID.DISCOVERED).state(NON_TERMINAL));
-        requestTargetDao.update(requestTargetDao.where().pid(PID.INITIAL).state(NON_TERMINAL),
-              requestTargetDao.set().state(CREATED).errorObject(null));
         requestDao.update(requestDao.where().status(STARTED, CANCELLING),
               requestDao.set().status(QUEUED));
     }
@@ -469,16 +461,10 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
     @Override
     public void reset(String id) throws BulkStorageException {
         /**
-         *  Start from scratch:
-         *  - delete ROOT
-         *  - delete DISCOVERED
-         *  - set INITIAL to CREATED
+         *  Eliminate <i>all</i> targets for request; start from scratch.
          */
         LOGGER.trace("reset {}.", id);
-        requestTargetDao.delete(requestTargetDao.where().pid(PID.ROOT).rid(id));
-        requestTargetDao.delete(requestTargetDao.where().pid(PID.DISCOVERED).rid(id));
-        requestTargetDao.update(requestTargetDao.where().pid(PID.INITIAL).rid(id),
-              requestTargetDao.set().state(CREATED).errorObject(null));
+        targetStore.delete(id);
         requestDao.update(requestDao.where().requestIds(id),
               requestDao.set().status(QUEUED));
         try {

@@ -117,15 +117,4 @@
             ALTER TABLE request_target ALTER COLUMN error TYPE varchar(256);
         </sql>
     </changeSet>
-
-    <changeSet author="arossi" id="4.3" runInTransaction="false">
-        <preConditions onFail="MARK_RAN">
-            <and>
-                <columnExists tableName="bulk_request" columnName="target"/>
-            </and>
-        </preConditions>
-        <sql splitStatements="false">
-            ALTER TABLE bulk_request DROP COLUMN target;
-        </sql>
-    </changeSet>
 </databaseChangeLog>

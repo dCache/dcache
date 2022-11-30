@@ -59,11 +59,14 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.store.jdbc.request;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import org.dcache.services.bulk.BulkRequest;
@@ -152,6 +155,7 @@ public final class JdbcBulkRequestDao extends JdbcDaoSupport {
         request.setExpandDirectories(Depth.valueOf(rs.getString("expand_directories")));
         request.setUrlPrefix(rs.getString("url_prefix"));
         request.setTargetPrefix(rs.getString("target_prefix"));
+        request.setTarget(new ArrayList<>(Arrays.asList(rs.getString("target").split(","))));
         request.setClearOnSuccess(rs.getBoolean("clear_on_success"));
         request.setClearOnFailure(rs.getBoolean("clear_on_failure"));
         request.setCancelOnFailure(rs.getBoolean("cancel_on_failure"));
@@ -232,6 +236,7 @@ public final class JdbcBulkRequestDao extends JdbcDaoSupport {
               .clearOnSuccess(request.isClearOnSuccess()).clearOnFailure(request.isClearOnFailure())
               .prestore(request.isPrestore())
               .depth(request.getExpandDirectories())
+              .target(Joiner.on(",").join(request.getTarget()))
               .targetPrefix(request.getTargetPrefix()).urlPrefix(request.getUrlPrefix()).user(user)
               .status(BulkRequestStatus.QUEUED).arrivedAt(System.currentTimeMillis());
     }

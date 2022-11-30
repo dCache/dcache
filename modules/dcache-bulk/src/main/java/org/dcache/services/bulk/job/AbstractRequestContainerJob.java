@@ -75,7 +75,6 @@ import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -195,7 +194,7 @@ public abstract class AbstractRequestContainerJob
 
         synchronized (waiting) {
             LOGGER.debug("cancel {}:  waiting {}.", rid, waiting.size());
-            waiting.values().forEach(r -> r.cancel(activity));
+            waiting.values().forEach(r->r.cancel(activity));
             LOGGER.debug("cancel {}:  waiting targets cancelled.", rid);
             waiting.clear();
         }
@@ -416,10 +415,6 @@ public abstract class AbstractRequestContainerJob
             case DIR:
                 handleDirTarget(pid, path, dirAttributes);
         }
-    }
-
-    protected List<String> getInitialTargetPaths() {
-         return targetStore.getInitialTargetPaths(rid, true);
     }
 
     protected boolean hasBeenCancelled(PID pid, FsPath path, FileAttributes attributes) {
