@@ -151,7 +151,7 @@ public abstract class AbstractRequestContainerJob
 
     protected volatile ContainerState containerState;
 
-    private final long pid;
+    private final Long pid;
     private final TargetType targetType;
     private final BulkRequestTarget target;
     private final Subject subject;

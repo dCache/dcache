@@ -558,6 +558,8 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
             requestPermissionsDao.insert(
                   requestPermissionsDao.set().id(request.getId()).subject(subject)
                         .restriction(restriction));
+
+            requestTargetDao.insertInitialTargets(request);
         } catch (BulkStorageException e) {
             throw new BulkStorageException("store failed for " + request.getId(), e);
         }

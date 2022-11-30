@@ -207,7 +207,7 @@ public final class PrestoreRequestContainerJob extends AbstractRequestContainerJ
             LOGGER.error("addInfo {}, path {}, error {}.", rid, path, e.getMessage());
             BulkRequestTarget t = toTarget(path, Optional.ofNullable(null), FAILED, e);
             try {
-                targetStore.store(t);
+                targetStore.storeOrUpdate(t);
             } catch (BulkStorageException ex) {
                 LOGGER.error("addInfo {}, path {}, could not store, error {}.", rid, path,
                       ex.getMessage());
@@ -312,7 +312,7 @@ public final class PrestoreRequestContainerJob extends AbstractRequestContainerJ
                 return;
             }
             BulkRequestTarget target = toTarget(path, Optional.of(attributes), CREATED, null);
-            targetStore.store(target);
+            targetStore.storeOrUpdate(target);
         } catch (BulkStorageException e) {
             LOGGER.error("{}, could not store target {}, {}: {}.", rid, path, attributes,
                   e.toString());

@@ -82,11 +82,13 @@ import org.dcache.db.JdbcCriterion;
 import org.dcache.db.JdbcUpdate;
 import org.dcache.services.bulk.BulkStorageException;
 import org.dcache.services.bulk.util.BulkRequestTarget;
+import org.dcache.services.bulk.util.BulkRequestTarget.State;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.ParameterizedPreparedStatementSetter;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.support.JdbcDaoSupport;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -203,33 +205,13 @@ public final class JdbcBulkDaoUtils {
 
     public Optional<KeyHolder> insert(JdbcUpdate update, String tableName, JdbcDaoSupport support) {
         LOGGER.trace("insert {}.", update);
-
         String sql = "INSERT INTO " + tableName + " " + update.getInsert();
+        return insert(sql, update.getArguments(), support);
+    }
 
-        KeyHolder keyHolder = new GeneratedKeyHolder();
-
-        try {
-            support.getJdbcTemplate().update(
-                  con -> {
-                      PreparedStatement ps = con.prepareStatement(sql,
-                            Statement.RETURN_GENERATED_KEYS);
-                      Collection<Object> arguments = update.getArguments();
-
-                      int i = 1;
-                      for (Object argument : arguments) {
-                          ps.setObject(i++, argument);
-                      }
-
-                      LOGGER.trace("insert {}.", ps);
-                      return ps;
-                  }, keyHolder);
-        } catch (DuplicateKeyException e) {
-            LOGGER.trace("insert {}, {}.", update, e.toString());
-            return Optional.empty();
-        }
-
-        LOGGER.trace("insert {}, succeeded.", update);
-        return Optional.of(keyHolder);
+    public <T> void insertBatch(List<T> targets, String sql,
+          ParameterizedPreparedStatementSetter<T> setter, JdbcDaoSupport support) {
+        support.getJdbcTemplate().batchUpdate(sql, targets, 100, setter);
     }
 
     public String serializeToBase64(String field, Serializable serializable)
@@ -263,10 +245,44 @@ public final class JdbcBulkDaoUtils {
           JdbcDaoSupport support) {
         LOGGER.trace("updateCounts {} : {}.", countActive, countsByState);
         support.getJdbcTemplate().update(UPDATE_STATE_COUNT, countActive, "ACTIVE");
-        Arrays.stream(BulkRequestTarget.State.values()).forEach(state -> {
+        for (State state : BulkRequestTarget.State.values()) {
             String key = state.name();
             Long count = countsByState.get(key);
-            support.getJdbcTemplate().update(UPDATE_STATE_COUNT, count == null ? 0L : count, key);
-        });
+            support.getJdbcTemplate()
+                  .update(UPDATE_STATE_COUNT, count == null ? 0L : count, key);
+        }
+    }
+
+    public Optional<KeyHolder> upsert(String sql, Collection<Object> arguments,
+          JdbcDaoSupport support) {
+        LOGGER.trace("upsert {}, {}.", sql, arguments);
+        return insert(sql, arguments, support);
+    }
+
+    private Optional<KeyHolder> insert(String sql, Collection<Object> arguments,
+          JdbcDaoSupport support) {
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+
+        try {
+            support.getJdbcTemplate().update(
+                  con -> {
+                      PreparedStatement ps = con.prepareStatement(sql,
+                            Statement.RETURN_GENERATED_KEYS);
+
+                      int i = 1;
+                      for (Object argument : arguments) {
+                          ps.setObject(i++, argument);
+                      }
+
+                      LOGGER.trace("insert {}.", ps);
+                      return ps;
+                  }, keyHolder);
+        } catch (DuplicateKeyException e) {
+            LOGGER.trace("insert {}, {}.", arguments, e.toString());
+            return Optional.empty();
+        }
+
+        LOGGER.trace("insert {}, succeeded.", arguments);
+        return Optional.of(keyHolder);
     }
 }
