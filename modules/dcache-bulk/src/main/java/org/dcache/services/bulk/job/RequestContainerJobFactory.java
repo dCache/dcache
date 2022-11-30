@@ -60,7 +60,6 @@ documents or software obtained from this server.
 package org.dcache.services.bulk.job;
 
 import static org.dcache.services.bulk.util.BulkRequestTarget.PLACEHOLDER_PNFSID;
-import static org.dcache.services.bulk.util.BulkRequestTarget.ROOT_REQUEST_PARENT;
 import static org.dcache.services.bulk.util.BulkRequestTarget.ROOT_REQUEST_PATH;
 
 import diskCacheV111.util.PnfsHandler;
@@ -77,6 +76,7 @@ import org.dcache.services.bulk.activity.BulkActivityFactory;
 import org.dcache.services.bulk.store.BulkRequestStore;
 import org.dcache.services.bulk.store.BulkTargetStore;
 import org.dcache.services.bulk.util.BulkRequestTarget;
+import org.dcache.services.bulk.util.BulkRequestTarget.PID;
 import org.dcache.services.bulk.util.BulkRequestTargetBuilder;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
@@ -112,7 +112,7 @@ public final class RequestContainerJobFactory {
         attributes.setPnfsId(PLACEHOLDER_PNFSID);
         BulkRequestTarget target = BulkRequestTargetBuilder.builder()
               .activity(activity.getName())
-              .rid(request.getId()).pid(ROOT_REQUEST_PARENT).attributes(attributes)
+              .rid(request.getId()).pid(PID.ROOT).attributes(attributes)
               .path(ROOT_REQUEST_PATH).build();
 
         PnfsHandler pnfsHandler = new PnfsHandler(pnfsManager);

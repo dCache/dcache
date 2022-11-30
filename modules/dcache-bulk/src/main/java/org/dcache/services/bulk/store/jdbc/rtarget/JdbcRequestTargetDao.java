@@ -79,6 +79,7 @@ import org.dcache.namespace.FileType;
 import org.dcache.services.bulk.BulkRequest;
 import org.dcache.services.bulk.store.jdbc.JdbcBulkDaoUtils;
 import org.dcache.services.bulk.util.BulkRequestTarget;
+import org.dcache.services.bulk.util.BulkRequestTarget.PID;
 import org.dcache.services.bulk.util.BulkRequestTarget.State;
 import org.dcache.services.bulk.util.BulkRequestTargetBuilder;
 import org.dcache.vehicles.FileAttributes;
@@ -107,7 +108,7 @@ public final class JdbcRequestTargetDao extends JdbcDaoSupport {
 
     static final ParameterizedPreparedStatementSetter<TargetPlaceholder> SETTER = (ps, target) -> {
         Instant now = Instant.now();
-        ps.setBigDecimal(1, BigDecimal.ZERO); // DEPRECATED, will be removed REVISIT
+        ps.setInt(1, PID.INITIAL.ordinal());
         ps.setString(2, target.rid);
         ps.setString(3, "?");
         ps.setString(4, target.path);
@@ -210,7 +211,7 @@ public final class JdbcRequestTargetDao extends JdbcDaoSupport {
 
         return BulkRequestTargetBuilder.builder()
               .id(rs.getLong("id"))
-              .pid(rs.getLong("pid"))
+              .pid(PID.values()[rs.getInt("pid")])
               .rid(rs.getString("rid"))
               .activity(rs.getString("activity"))
               .state(State.valueOf(rs.getString("state")))

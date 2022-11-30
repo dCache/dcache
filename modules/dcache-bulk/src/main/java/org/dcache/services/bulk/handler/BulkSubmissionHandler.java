@@ -59,30 +59,15 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.handler;
 
-import diskCacheV111.util.FsPath;
 import java.util.List;
 import javax.security.auth.Subject;
 import org.dcache.services.bulk.BulkRequest;
 import org.dcache.services.bulk.BulkServiceException;
-import org.dcache.services.bulk.util.BulkRequestTarget;
-import org.dcache.vehicles.FileAttributes;
 
 /**
  * Defines the basic submission methods for interacting with the queue.
  */
 public interface BulkSubmissionHandler {
-
-    /**
-     * Unrecoverable internal failure.  This usually means that the target has not yet been
-     * processed into a job.
-     *
-     * @param parent     target of failed request
-     * @param path       of target
-     * @param attributes of target
-     * @param exception  error
-     */
-    void abortRequestTarget(BulkRequestTarget parent, FsPath path, FileAttributes attributes,
-          Throwable exception) throws BulkServiceException;
 
     /**
      * Services request (from user) to cancel the request.

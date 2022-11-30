@@ -219,9 +219,11 @@ public final class JdbcBulkRequestDao extends JdbcDaoSupport {
         Timestamp now = new Timestamp(System.currentTimeMillis());
         switch (status) {
             case COMPLETED:
-                return getJdbcTemplate().update(UPDATE_COMPLETED_IF_DONE, new Object[]{now, id});
+                return getJdbcTemplate().update(UPDATE_COMPLETED_IF_DONE,
+                      new Object[]{now, id});
             case CANCELLED:
-                return getJdbcTemplate().update(UPDATE_CANCELLED_IF_DONE, new Object[]{now, id});
+                return getJdbcTemplate().update(UPDATE_CANCELLED_IF_DONE,
+                      new Object[]{now, id});
             default:
                 return 0;
         }
