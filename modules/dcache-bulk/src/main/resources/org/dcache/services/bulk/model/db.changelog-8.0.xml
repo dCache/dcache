@@ -392,4 +392,60 @@
             <column name="rid"/>
         </createIndex>
     </changeSet>
+
+    <changeSet author="arossi" id="4.1" runInTransaction="false">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <columnExists tableName="request_target" columnName="pid"/>
+            </and>
+        </preConditions>
+        <sql splitStatements="false">
+            ALTER TABLE request_target ALTER COLUMN pid TYPE integer;
+        </sql>
+    </changeSet>
+
+    <!-- The following changes are necessary for consistency.
+         While '0' was not previously used, '-1' was, and this now
+         corresponds to the enum value '0'.  Unfortunately there is no
+         way of distinguishing recursively found from original targets
+         in the prior implementation, but not observing that distinction
+         will result in replays of incomplete requests which for PIN, UNPIN,
+         and DELETE will be idempotent or will just fail because the file has
+         already been deleted.
+
+         It may be advisable to run this update offline using
+         `dcache database update`, depending on the size of the current
+         request_target table. -->
+    <changeSet author="arossi" id="4.1.1" runInTransaction="false">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <columnExists tableName="request_target" columnName="pid"/>
+            </and>
+        </preConditions>
+        <sql splitStatements="false">
+            UPDATE request_target SET pid = 1 WHERE pid = 0;
+        </sql>
+    </changeSet>
+
+    <changeSet author="arossi" id="4.1.2" runInTransaction="false">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <columnExists tableName="request_target" columnName="pid"/>
+            </and>
+        </preConditions>
+        <sql splitStatements="false">
+            UPDATE request_target SET pid = 0 WHERE pid = -1;
+        </sql>
+    </changeSet>
+
+    <changeSet author="arossi" id="4.2" runInTransaction="false">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <columnExists tableName="request_target" columnName="error"/>
+            </and>
+        </preConditions>
+        <sql splitStatements="false">
+            ALTER TABLE request_target ALTER COLUMN error TYPE varchar(256);
+        </sql>
+    </changeSet>
 </databaseChangeLog>
