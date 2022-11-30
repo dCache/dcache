@@ -143,12 +143,15 @@ public final class PrestoreRequestContainerJob extends AbstractRequestContainerJ
 
     @Override
     protected void preprocessTargets() throws InterruptedException {
-        if (request.getTarget().isEmpty()) {
+        List<String> requestTargets = getInitialTargetPaths();
+
+        if (requestTargets.isEmpty()) {
             containerState = ContainerState.STOP;
             update(FAILED);
             return;
         }
-        storeAll(request.getTarget());
+
+        storeAll(requestTargets);
     }
 
     @Override
@@ -290,14 +293,18 @@ public final class PrestoreRequestContainerJob extends AbstractRequestContainerJ
             return;
         }
 
-        target.setErrorObject(error);
-        BatchedResult result = new BatchedResult(target, future);
-
-        try {
-            targetStore.update(target.getId(), RUNNING, error);
-        } catch (BulkStorageException e) {
-            LOGGER.error("{}, could not update target {},: {}.", rid, target, e.toString());
+        if (error == null) {
+            target.setState(RUNNING);
+            try {
+                targetStore.update(target.getId(), RUNNING, error);
+            } catch (BulkStorageException e) {
+                LOGGER.error("{}, could not update target {},: {}.", rid, target, e.toString());
+            }
+        } else {
+            target.setErrorObject(error);
         }
+
+        BatchedResult result = new BatchedResult(target, future);
 
         synchronized (waiting) {
             waiting.put(target.getPath(), result);
@@ -312,8 +319,8 @@ public final class PrestoreRequestContainerJob extends AbstractRequestContainerJ
             if (hasBeenCancelled(pid, path, attributes)) {
                 return;
             }
-            BulkRequestTarget target = toTarget(pid, path, Optional.of(attributes), CREATED, null);
-            targetStore.storeOrUpdate(target);
+            targetStore.storeOrUpdate(toTarget(pid, path, Optional.of(attributes),
+                  CREATED, null));
         } catch (BulkStorageException e) {
             LOGGER.error("{}, could not store target {}, {}: {}.", rid, path, attributes,
                   e.toString());
