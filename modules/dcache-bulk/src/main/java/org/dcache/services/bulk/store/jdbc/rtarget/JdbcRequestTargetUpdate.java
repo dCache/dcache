@@ -71,6 +71,7 @@ import diskCacheV111.util.PnfsId;
 import java.sql.Timestamp;
 import org.dcache.db.JdbcUpdate;
 import org.dcache.namespace.FileType;
+import org.dcache.services.bulk.util.BulkRequestTarget.PID;
 import org.dcache.services.bulk.util.BulkRequestTarget.State;
 
 /**
@@ -121,12 +122,8 @@ public final class JdbcRequestTargetUpdate extends JdbcUpdate {
         return this;
     }
 
-    public JdbcRequestTargetUpdate pid(Long pid) {
-        if (pid != null) {
-            set("pid", pid);
-        } else {
-            set("pid", 0L);  // REVISIT will be deprecated
-        }
+    public JdbcRequestTargetUpdate pid(PID pid) {
+        set("pid", pid == null ? PID.INITIAL.ordinal() : pid.ordinal());
         return this;
     }
 

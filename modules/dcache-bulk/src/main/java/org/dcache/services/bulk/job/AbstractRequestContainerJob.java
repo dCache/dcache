@@ -91,6 +91,7 @@ import org.dcache.services.bulk.activity.BulkActivity.TargetType;
 import org.dcache.services.bulk.store.BulkTargetStore;
 import org.dcache.services.bulk.util.BatchedResult;
 import org.dcache.services.bulk.util.BulkRequestTarget;
+import org.dcache.services.bulk.util.BulkRequestTarget.PID;
 import org.dcache.services.bulk.util.BulkRequestTarget.State;
 import org.dcache.services.bulk.util.BulkRequestTargetBuilder;
 import org.dcache.util.SignalAware;
@@ -100,6 +101,7 @@ import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.annotation.meta.field;
 
 /**
  * Base class for the implementations. Acts as a container for a list of targets which may or may
@@ -151,7 +153,6 @@ public abstract class AbstractRequestContainerJob
 
     protected volatile ContainerState containerState;
 
-    private final Long pid;
     private final TargetType targetType;
     private final BulkRequestTarget target;
     private final Subject subject;
@@ -170,7 +171,6 @@ public abstract class AbstractRequestContainerJob
         this.target = target;
         this.subject = activity.getSubject();
         this.restriction = activity.getRestriction();
-        pid = target.getId();
         waiting = new HashMap<>();
         cancelledPaths = new HashSet<>();
         rid = request.getId();
@@ -462,8 +462,11 @@ public abstract class AbstractRequestContainerJob
 
     protected BulkRequestTarget toTarget(FsPath path, Optional<FileAttributes> attributes,
           State state, Object errorObject) {
+        /* REVISIT pid should be INITIAL or DISCOVERED on basis of recursion.  INITIAL is
+         *  a placeholder until we add retrieval of initial paths from target table.
+         */
         return BulkRequestTargetBuilder.builder().attributes(attributes.orElse(null))
-              .activity(activity.getName()).pid(pid).rid(rid).state(state)
+              .activity(activity.getName()).pid(PID.INITIAL).rid(rid).state(state)
               .createdAt(System.currentTimeMillis()).error(errorObject).path(path)
               .build();
     }

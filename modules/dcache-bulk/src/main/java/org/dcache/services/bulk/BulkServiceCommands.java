@@ -104,6 +104,7 @@ import org.dcache.services.bulk.store.BulkRequestStore;
 import org.dcache.services.bulk.store.BulkTargetStore;
 import org.dcache.services.bulk.util.BulkRequestFilter;
 import org.dcache.services.bulk.util.BulkRequestTarget;
+import org.dcache.services.bulk.util.BulkRequestTarget.PID;
 import org.dcache.services.bulk.util.BulkRequestTarget.State;
 import org.dcache.services.bulk.util.BulkServiceStatistics;
 import org.dcache.services.bulk.util.BulkTargetFilter;
@@ -1080,8 +1081,10 @@ public final class BulkServiceCommands implements CellCommandListener {
         long offset = 0L;
 
         @Option(name = "pid",
-              usage = "Id of the parent of the target.")
-        Long pid;
+              valueSpec = "ROOT|INITIAL|DISCOVERED",
+              usage = "Node type of the target.")
+
+        String pid;
 
         @Option(name = "rid",
               separator = ",",
@@ -1154,7 +1157,9 @@ public final class BulkServiceCommands implements CellCommandListener {
                 }
             }
 
-            BulkTargetFilter filter = new BulkTargetFilter(ids, offset, pid, pnfsids, paths,
+            PID nodeType = pid == null ? null : PID.valueOf(pid);
+
+            BulkTargetFilter filter = new BulkTargetFilter(ids, offset, nodeType, pnfsids, paths,
                   activities, types, states);
 
             if (count) {

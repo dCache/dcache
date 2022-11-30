@@ -66,7 +66,6 @@ import static org.dcache.services.bulk.BulkRequestStatus.QUEUED;
 import static org.dcache.services.bulk.BulkRequestStatus.STARTED;
 import static org.dcache.services.bulk.util.BulkRequestTarget.NON_TERMINAL;
 import static org.dcache.services.bulk.util.BulkRequestTarget.PLACEHOLDER_PNFSID;
-import static org.dcache.services.bulk.util.BulkRequestTarget.ROOT_REQUEST_PARENT;
 import static org.dcache.services.bulk.util.BulkRequestTarget.ROOT_REQUEST_PATH;
 
 import com.google.common.base.Throwables;
@@ -105,6 +104,7 @@ import org.dcache.services.bulk.store.jdbc.rtarget.JdbcBulkTargetStore;
 import org.dcache.services.bulk.store.jdbc.rtarget.JdbcRequestTargetDao;
 import org.dcache.services.bulk.util.BulkRequestFilter;
 import org.dcache.services.bulk.util.BulkRequestTarget;
+import org.dcache.services.bulk.util.BulkRequestTarget.PID;
 import org.dcache.services.bulk.util.BulkRequestTarget.State;
 import org.dcache.services.bulk.util.BulkRequestTargetBuilder;
 import org.dcache.vehicles.FileAttributes;
@@ -183,7 +183,7 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
         attributes.setPnfsId(PLACEHOLDER_PNFSID);
 
         BulkRequestTarget target = BulkRequestTargetBuilder.builder().rid(requestId)
-              .pid(ROOT_REQUEST_PARENT).activity(request.getActivity())
+              .pid(PID.ROOT).activity(request.getActivity())
               .path(ROOT_REQUEST_PATH).attributes(attributes).error(exception).build();
 
         try {
@@ -443,7 +443,7 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
          *  deletion of the bulk request job (parent = -1) is necessary to avoid processing
          *  a placeholder target as if it represented a real namespace entry.
          */
-        requestTargetDao.delete(requestTargetDao.where().pid(ROOT_REQUEST_PARENT));
+        requestTargetDao.delete(requestTargetDao.where().pid(PID.ROOT));
         requestDao.update(requestDao.where().status(STARTED, CANCELLING),
               requestDao.set().status(QUEUED));
     }
@@ -735,10 +735,9 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
          *  Order by id from offset.  Limit is 10000 per swatch.
          */
         List<BulkRequestTargetInfo> targets =
-              requestTargetDao.get(requestTargetDao.where().rid(requestId).offset(offset)
-                          .sorter("id"), FETCH_SIZE)
-                    .stream().filter(t -> !t.getPath().equals(ROOT_REQUEST_PATH))
-                    .map(this::toRequestTargetInfo)
+              requestTargetDao.get(
+                          requestTargetDao.where().rid(requestId).offset(offset).notRootRequest()
+                                .sorter("id"), FETCH_SIZE).stream().map(this::toRequestTargetInfo)
                     .collect(Collectors.toList());
         info.setTargets(targets);
         int size = targets.size();
