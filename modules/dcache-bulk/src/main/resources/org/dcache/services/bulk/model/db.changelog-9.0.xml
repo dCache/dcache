@@ -113,4 +113,15 @@
         </preConditions>
         <modifyDataType tableName="request_target" columnName="error" newDataType="varchar(256)"/>
     </changeSet>
+
+    <changeSet author="arossi" id="4.3" runInTransaction="false">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <columnExists tableName="bulk_request" columnName="target"/>
+            </and>
+        </preConditions>
+        <sql splitStatements="false">
+            ALTER TABLE bulk_request DROP COLUMN target;
+        </sql>
+    </changeSet>
 </databaseChangeLog>

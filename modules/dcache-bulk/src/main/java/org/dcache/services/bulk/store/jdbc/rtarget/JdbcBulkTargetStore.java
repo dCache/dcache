@@ -66,10 +66,12 @@ import diskCacheV111.util.FsPath;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.dcache.namespace.FileType;
 import org.dcache.services.bulk.BulkStorageException;
 import org.dcache.services.bulk.store.BulkTargetStore;
 import org.dcache.services.bulk.util.BulkRequestTarget;
+import org.dcache.services.bulk.util.BulkRequestTarget.PID;
 import org.dcache.services.bulk.util.BulkRequestTarget.State;
 import org.dcache.services.bulk.util.BulkTargetFilter;
 import org.slf4j.Logger;
@@ -143,21 +145,6 @@ public final class JdbcBulkTargetStore implements BulkTargetStore {
         return targetDao.countStates();
     }
 
-    /**
-     * Note that targets are not deleted singly by this implementation, but deleted by cascade on
-     * request id when clear is called, or en bloc during load (non-terminated targets) or reset.
-     *
-     * <p>Targets are left in the store to keep track of those processed,
-     * in case of interruption and restart.
-     *
-     * <p>The mass deletion by request id without elimination of the request itself
-     * provided by this method is only called on reset().
-     */
-    @Override
-    public void delete(String rid) throws BulkStorageException {
-        targetDao.delete(targetDao.where().rid(rid));
-    }
-
     @Override
     public boolean exists(String rid, FsPath path) {
         return targetDao.count(targetDao.where().rid(rid).path(path)) > 0;
@@ -167,6 +154,17 @@ public final class JdbcBulkTargetStore implements BulkTargetStore {
     public List<BulkRequestTarget> find(BulkTargetFilter jobFilter, Integer limit)
           throws BulkStorageException {
         return targetDao.get(targetDao.where().filter(jobFilter).sorter("id"), limit);
+    }
+
+    @Override
+    public List<String> getInitialTargetPaths(String requestId, boolean nonterminal) {
+        JdbcRequestTargetCriterion criterion = targetDao.where().rid(requestId).pid(PID.INITIAL)
+              .sorter("id");
+        if (nonterminal) {
+            criterion.state(NON_TERMINAL);
+        }
+        return targetDao.get(criterion, Integer.MAX_VALUE).stream()
+              .map(t -> t.getPath().toString()).collect(Collectors.toList());
     }
 
     @Override

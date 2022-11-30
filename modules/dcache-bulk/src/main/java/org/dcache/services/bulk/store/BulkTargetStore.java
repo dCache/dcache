@@ -129,18 +129,11 @@ public interface BulkTargetStore {
     Map<String, Long> countsByState();
 
     /**
-     * @param rid remove all jobs belonging to this request.
-     * @throws BulkStorageException
-     */
-    void delete(String rid) throws BulkStorageException;
-
-    /**
      * @param rid of the request.
      * @param path of the target.
      * @return true if it exists in the store, false otherwise.
      */
     boolean exists(String rid, FsPath path);
-
 
     /**
      * @param filter on the target.
@@ -150,6 +143,13 @@ public interface BulkTargetStore {
      */
     List<BulkRequestTarget> find(BulkTargetFilter filter, Integer limit)
           throws BulkStorageException;
+
+    /**
+     * @param requestId of the request the targets belong to.
+     * @param nonterminal only the initial targets which have not yet run.
+     * @return paths of the targets
+     */
+    List<String> getInitialTargetPaths(String requestId, boolean nonterminal);
 
     /**
      * @param type  REGULAR or DIR.

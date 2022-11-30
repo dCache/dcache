@@ -139,13 +139,6 @@ public final class JdbcBulkRequestUpdate extends JdbcUpdate {
         return this;
     }
 
-    public JdbcBulkRequestUpdate target(String target) {
-        if (Strings.emptyToNull(target) != null) {
-            set("target", target);
-        }
-        return this;
-    }
-
     public JdbcBulkRequestUpdate targetPrefix(String targetPrefix) {
         if (Strings.emptyToNull(targetPrefix) != null) {
             set("target_prefix", targetPrefix);
