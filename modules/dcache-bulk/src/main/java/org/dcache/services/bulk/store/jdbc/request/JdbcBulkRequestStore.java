@@ -83,7 +83,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
@@ -100,7 +99,6 @@ import org.dcache.services.bulk.BulkRequestSummary;
 import org.dcache.services.bulk.BulkRequestTargetInfo;
 import org.dcache.services.bulk.BulkStorageException;
 import org.dcache.services.bulk.store.BulkRequestStore;
-import org.dcache.services.bulk.store.jdbc.JdbcBulkDaoUtils;
 import org.dcache.services.bulk.store.jdbc.rtarget.JdbcBulkTargetStore;
 import org.dcache.services.bulk.store.jdbc.rtarget.JdbcRequestTargetDao;
 import org.dcache.services.bulk.util.BulkRequestFilter;
@@ -108,6 +106,7 @@ import org.dcache.services.bulk.util.BulkRequestTarget;
 import org.dcache.services.bulk.util.BulkRequestTarget.PID;
 import org.dcache.services.bulk.util.BulkRequestTarget.State;
 import org.dcache.services.bulk.util.BulkRequestTargetBuilder;
+import org.dcache.services.bulk.util.BulkServiceStatistics;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -140,7 +139,6 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
     private final Map<String, String> userOfActiveRequest = new HashMap<>();
 
     private LoadingCache<String, Optional<BulkRequest>> requestCache;
-    private JdbcBulkDaoUtils utils;
     private JdbcBulkRequestDao requestDao;
     private JdbcBulkRequestPermissionsDao requestPermissionsDao;
     private JdbcBulkTargetStore targetStore;
@@ -149,19 +147,13 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
     private TimeUnit expiryUnit;
     private long capacity;
 
-    /**
-     * For updating counts to the counts table.
-     */
-    private ScheduledExecutorService countUpdater;
-    private long updateInterval;
-    private TimeUnit updateIntervalUnit;
+    private BulkServiceStatistics statistics;
 
     public void initialize() {
         requestCache = CacheBuilder.newBuilder()
               .expireAfterAccess(expiry, expiryUnit)
               .maximumSize(capacity)
               .build(new RequestLoader());
-        countUpdater.schedule(this::updateCounts, updateInterval, updateIntervalUnit);
     }
 
     @Override
@@ -268,6 +260,7 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
     @Override
     public int countActive() throws BulkStorageException {
         int count = requestDao.count(requestDao.where().status(STARTED));
+        statistics.setActive(count);
         LOGGER.trace("count active requests returning {}.", count);
         return count;
     }
@@ -473,6 +466,11 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
          *  - delete ROOT
          *  - delete DISCOVERED
          *  - set INITIAL to CREATED
+         *
+         *  NOTE that without actually querying the database, we cannot know whether
+         *  to decrement state counts here or not, since the reset may have been issued
+         *  after a restart.  Hence all terminal target states shown is statistics are
+         *  cumulative from start up.
          */
         LOGGER.trace("reset {}.", id);
         requestTargetDao.delete(requestTargetDao.where().pid(PID.ROOT).rid(id));
@@ -525,28 +523,13 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
     }
 
     @Required
-    public void setCountUpdater(ScheduledExecutorService countUpdater) {
-        this.countUpdater = countUpdater;
-    }
-
-    @Required
-    public void setUpdateInterval(long updateInterval) {
-        this.updateInterval = updateInterval;
-    }
-
-    @Required
-    public void setUpdateIntervalUnit(TimeUnit updateIntervalUnit) {
-        this.updateIntervalUnit = updateIntervalUnit;
-    }
-
-    @Required
     public void setRequestPermissionsDao(JdbcBulkRequestPermissionsDao requestPermissionsDao) {
         this.requestPermissionsDao = requestPermissionsDao;
     }
 
     @Required
-    public void setUtils(JdbcBulkDaoUtils utils) {
-        this.utils = utils;
+    public void setStatistics(BulkServiceStatistics statistics) {
+        this.statistics = statistics;
     }
 
     @Override
@@ -780,16 +763,6 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
             info.setErrorMessage(root.getMessage());
         }
         return info;
-    }
-
-    private void updateCounts() {
-        try {
-            utils.updateCounts(countActive(), targetStore.countsByState(), requestDao);
-        } catch (BulkStorageException e) {
-            LOGGER.error("Problem updating counts by state: {}.", e.toString());
-        }
-
-        countUpdater.schedule(this::updateCounts, updateInterval, updateIntervalUnit);
     }
 
     private BulkRequest valid(String id) throws BulkStorageException {

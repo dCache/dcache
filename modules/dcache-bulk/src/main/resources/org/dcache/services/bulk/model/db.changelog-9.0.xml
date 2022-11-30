@@ -124,4 +124,15 @@
             ALTER TABLE bulk_request DROP COLUMN target;
         </sql>
     </changeSet>
+
+    <changeSet author="arossi" id="4.4" runInTransaction="false">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <tableExists tableName="counts_by_state"/>
+            </and>
+        </preConditions>
+        <sql splitStatements="false">
+            DROP TABLE counts_by_state;
+        </sql>
+    </changeSet>
 </databaseChangeLog>

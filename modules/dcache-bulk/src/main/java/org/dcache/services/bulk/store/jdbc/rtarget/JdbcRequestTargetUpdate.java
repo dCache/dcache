@@ -91,6 +91,10 @@ public final class JdbcRequestTargetUpdate extends JdbcUpdate {
         return this;
     }
 
+    public String getStateName() {
+        return (String)updates().get("state");
+    }
+
     public JdbcRequestTargetUpdate createdAt(long createdAt) {
         Timestamp now = new Timestamp(createdAt);
         set("created_at", now);

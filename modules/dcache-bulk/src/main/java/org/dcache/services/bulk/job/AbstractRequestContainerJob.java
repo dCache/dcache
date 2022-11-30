@@ -64,6 +64,7 @@ import static org.dcache.services.bulk.util.BulkRequestTarget.State.CANCELLED;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.COMPLETED;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.FAILED;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.READY;
+import static org.dcache.services.bulk.util.BulkRequestTarget.State.RUNNING;
 import static org.dcache.services.bulk.util.BulkRequestTarget.computeFsPath;
 
 import com.google.common.collect.Range;
@@ -95,6 +96,7 @@ import org.dcache.services.bulk.util.BulkRequestTarget;
 import org.dcache.services.bulk.util.BulkRequestTarget.PID;
 import org.dcache.services.bulk.util.BulkRequestTarget.State;
 import org.dcache.services.bulk.util.BulkRequestTargetBuilder;
+import org.dcache.services.bulk.util.BulkServiceStatistics;
 import org.dcache.util.SignalAware;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryStream;
@@ -148,6 +150,7 @@ public abstract class AbstractRequestContainerJob
      */
     protected final AtomicLong id = new AtomicLong(0L);
 
+    protected final BulkServiceStatistics statistics;
     protected BulkTargetStore targetStore;
     protected PnfsHandler pnfsHandler;
     protected Semaphore semaphore;
@@ -166,12 +169,13 @@ public abstract class AbstractRequestContainerJob
     private Thread runThread;
 
     AbstractRequestContainerJob(BulkActivity activity, BulkRequestTarget target,
-          BulkRequest request) {
+          BulkRequest request, BulkServiceStatistics statistics) {
         this.request = request;
         this.activity = activity;
         this.target = target;
         this.subject = activity.getSubject();
         this.restriction = activity.getRestriction();
+        this.statistics = statistics;
         waiting = new HashMap<>();
         cancelledPaths = new HashSet<>();
         rid = request.getId();
@@ -186,6 +190,7 @@ public abstract class AbstractRequestContainerJob
         containerState = ContainerState.STOP;
 
         target.cancel();
+        statistics.decrement(RUNNING.name());
 
         LOGGER.debug("cancel {}:  target state is now {}.", rid, target.getState());
 
@@ -197,6 +202,7 @@ public abstract class AbstractRequestContainerJob
             LOGGER.debug("cancel {}:  waiting {}.", rid, waiting.size());
             waiting.values().forEach(r -> r.cancel(activity));
             LOGGER.debug("cancel {}:  waiting targets cancelled.", rid);
+            statistics.decrement(RUNNING.name(), waiting.size());
             waiting.clear();
         }
 
@@ -212,6 +218,7 @@ public abstract class AbstractRequestContainerJob
                 BatchedResult result = i.next();
                 if (result.getTarget().getId() == id) {
                     result.cancel(activity);
+                    statistics.decrement(RUNNING.name());
                     i.remove();
                     break;
                 }
@@ -290,6 +297,7 @@ public abstract class AbstractRequestContainerJob
                     semaphore = new Semaphore(1); /* synchronous */
                     processDirTargets();
                     containerState = ContainerState.STOP;
+                    statistics.decrement(RUNNING.name());
                     update(COMPLETED);
                     break;
                 default:
@@ -334,6 +342,7 @@ public abstract class AbstractRequestContainerJob
          * manager thread.
          */
         containerState = ContainerState.STOP;
+        statistics.decrement(RUNNING.name());
         target.setErrorObject(e);
         update(FAILED);
         ThreadGroup group = t.getThreadGroup();

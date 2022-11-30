@@ -84,8 +84,6 @@ import javax.ws.rs.HEAD;
 import org.dcache.db.JdbcCriterion;
 import org.dcache.db.JdbcUpdate;
 import org.dcache.services.bulk.BulkStorageException;
-import org.dcache.services.bulk.util.BulkRequestTarget;
-import org.dcache.services.bulk.util.BulkRequestTarget.State;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -243,18 +241,6 @@ public final class JdbcBulkDaoUtils {
               criterion.getArguments());
         return support.getJdbcTemplate().update(sql,
               concatArguments(update.getArguments(), criterion.getArguments()));
-    }
-
-    public void updateCounts(int countActive, Map<String, Long> countsByState,
-          JdbcDaoSupport support) {
-        LOGGER.trace("updateCounts {} : {}.", countActive, countsByState);
-        support.getJdbcTemplate().update(UPDATE_STATE_COUNT, countActive, "ACTIVE");
-        for (State state : BulkRequestTarget.State.values()) {
-            String key = state.name();
-            Long count = countsByState.get(key);
-            support.getJdbcTemplate()
-                  .update(UPDATE_STATE_COUNT, count == null ? 0L : count, key);
-        }
     }
 
     public Optional<KeyHolder> upsert(String sql, Collection<Object> arguments,

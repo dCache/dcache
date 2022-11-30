@@ -153,6 +153,7 @@
     <description>Bulk request target data access object handler.</description>
     <property name="dataSource" ref="bulk-data-source"/>
     <property name="utils" ref="bulk-jdbc-dao-utils"/>
+    <property name="statistics" ref="statistics"/>
   </bean>
 
   <bean id="request-store" class="org.dcache.services.bulk.store.jdbc.request.JdbcBulkRequestStore"
@@ -165,14 +166,7 @@
     <property name="expiry" value="${bulk.limits.request-cache-expiration}"/>
     <property name="expiryUnit" value="${bulk.limits.request-cache-expiration.unit}"/>
     <property name="capacity" value="${bulk.limits.container-processing-threads}"/>
-    <property name="countUpdater">
-      <bean class="java.util.concurrent.ScheduledThreadPoolExecutor">
-        <constructor-arg value="1"/>
-      </bean>
-    </property>
-    <property name="updateInterval" value="${bulk.limits.counts-update-interval}"/>
-    <property name="updateIntervalUnit" value="${bulk.limits.counts-update-interval.unit}"/>
-    <property name="utils" ref="bulk-jdbc-dao-utils"/>
+    <property name="statistics" ref="statistics"/>
   </bean>
 
   <bean id="target-store" class="org.dcache.services.bulk.store.jdbc.rtarget.JdbcBulkTargetStore">
@@ -247,12 +241,11 @@
     <property name="pnfsManager" ref="pnfs-manager-stub"/>
     <property name="requestStore" ref="request-store"/>
     <property name="targetStore" ref="target-store"/>
+    <property name="statistics" ref="statistics"/>
   </bean>
 
   <bean id="statistics" class="org.dcache.services.bulk.util.BulkServiceStatistics">
     <description>Tracks request and target states (counts), sweeper state, etc.</description>
-    <property name="requestDao" ref="bulk-request-dao"/>
-    <property name="daoUtils" ref="bulk-jdbc-dao-utils"/>
   </bean>
 
   <bean id="request-handler" class="org.dcache.services.bulk.handler.BulkRequestHandler">

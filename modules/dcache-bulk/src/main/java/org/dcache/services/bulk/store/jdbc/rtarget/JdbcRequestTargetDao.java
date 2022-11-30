@@ -82,6 +82,7 @@ import org.dcache.services.bulk.util.BulkRequestTarget;
 import org.dcache.services.bulk.util.BulkRequestTarget.PID;
 import org.dcache.services.bulk.util.BulkRequestTarget.State;
 import org.dcache.services.bulk.util.BulkRequestTargetBuilder;
+import org.dcache.services.bulk.util.BulkServiceStatistics;
 import org.dcache.vehicles.FileAttributes;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.ParameterizedPreparedStatementSetter;
@@ -120,6 +121,7 @@ public final class JdbcRequestTargetDao extends JdbcDaoSupport {
     };
 
     private JdbcBulkDaoUtils utils;
+    private BulkServiceStatistics statistics;
 
     public int count(JdbcRequestTargetCriterion criterion) {
         return utils.count(criterion, TABLE_NAME, this);
@@ -177,6 +179,11 @@ public final class JdbcRequestTargetDao extends JdbcDaoSupport {
         this.utils = utils;
     }
 
+    @Required
+    public void setStatistics(BulkServiceStatistics statistics) {
+        this.statistics = statistics;
+    }
+
     public BulkRequestTarget toRequestTarget(ResultSet rs, int row) throws SQLException {
         FileAttributes attributes = new FileAttributes();
 
@@ -224,7 +231,9 @@ public final class JdbcRequestTargetDao extends JdbcDaoSupport {
     }
 
     public int update(JdbcRequestTargetCriterion criterion, JdbcRequestTargetUpdate update) {
-        return utils.update(criterion, update, TABLE_NAME, this);
+        int count = utils.update(criterion, update, TABLE_NAME, this);
+        statistics.increment(update.getStateName(), count);
+        return count;
     }
 
     public JdbcRequestTargetCriterion where() {

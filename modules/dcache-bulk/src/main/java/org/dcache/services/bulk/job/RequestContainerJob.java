@@ -81,6 +81,7 @@ import org.dcache.services.bulk.util.BatchedResult;
 import org.dcache.services.bulk.util.BulkRequestTarget;
 import org.dcache.services.bulk.util.BulkRequestTarget.PID;
 import org.dcache.services.bulk.util.BulkRequestTarget.State;
+import org.dcache.services.bulk.util.BulkServiceStatistics;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -108,8 +109,8 @@ public final class RequestContainerJob extends AbstractRequestContainerJob {
     private final Queue<DirTarget> dirs;
 
     public RequestContainerJob(BulkActivity activity, BulkRequestTarget target,
-          BulkRequest request) {
-        super(activity, target, request);
+          BulkRequest request, BulkServiceStatistics statistics) {
+        super(activity, target, request, statistics);
         dirs = new ConcurrentLinkedQueue<>();
     }
 
@@ -162,6 +163,7 @@ public final class RequestContainerJob extends AbstractRequestContainerJob {
         FsPath path = completedTarget.getPath();
         PID pid = completedTarget.getPid();
         completedTarget.resetToReady();
+        statistics.decrement(completedTarget.getState().name());
         try {
             perform(pid, path, attributes);
         } catch (InterruptedException e) {
@@ -175,6 +177,7 @@ public final class RequestContainerJob extends AbstractRequestContainerJob {
 
         BulkRequestTarget completedTarget = result.getTarget();
         State state = completedTarget.getState();
+        statistics.decrement(RUNNING.name());
 
         try {
             if (state == FAILED && activity.getRetryPolicy().shouldRetry(completedTarget)) {
@@ -226,7 +229,7 @@ public final class RequestContainerJob extends AbstractRequestContainerJob {
         try {
             future = activity.perform(rid, id.getAndIncrement(), path, attributes);
         } catch (BulkServiceException | UnsupportedOperationException e) {
-            LOGGER.error("{}, perform failed for {}: {}", rid, path, e.toString());
+            LOGGER.error("{}, perform failed for {}: {}", rid, path, e.getMessage());
             future = Futures.immediateFailedFuture(e);
             register(pid, path, future, attributes, e);
             return future;
@@ -250,9 +253,9 @@ public final class RequestContainerJob extends AbstractRequestContainerJob {
         BatchedResult result = new BatchedResult(target, future);
 
         if (error == null) {
-            LOGGER.error("register, incrementing {} {}.", target.getId(), target.getState());
             try {
                 targetStore.storeOrUpdate(target);
+                statistics.increment(RUNNING.name());
             } catch (BulkStorageException e) {
                 LOGGER.error("{}, could not store target from result {}, {}, {}: {}.", rid, result,
                       attributes, e.toString());

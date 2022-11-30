@@ -78,6 +78,7 @@ import org.dcache.services.bulk.store.BulkTargetStore;
 import org.dcache.services.bulk.util.BulkRequestTarget;
 import org.dcache.services.bulk.util.BulkRequestTarget.PID;
 import org.dcache.services.bulk.util.BulkRequestTargetBuilder;
+import org.dcache.services.bulk.util.BulkServiceStatistics;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
@@ -97,6 +98,7 @@ public final class RequestContainerJobFactory {
     private CellStub pnfsManager;
     private ListDirectoryHandler listHandler;
     private BulkTargetStore targetStore;
+    private BulkServiceStatistics statistics;
 
     public AbstractRequestContainerJob createRequestJob(BulkRequest request)
           throws BulkServiceException {
@@ -122,9 +124,9 @@ public final class RequestContainerJobFactory {
         LOGGER.trace("createRequestJob {}, creating batch request job.", request.getId());
         AbstractRequestContainerJob containerJob;
         if (request.isPrestore()) {
-            containerJob = new PrestoreRequestContainerJob(activity, target, request);
+            containerJob = new PrestoreRequestContainerJob(activity, target, request, statistics);
         } else {
-            containerJob = new RequestContainerJob(activity, target, request);
+            containerJob = new RequestContainerJob(activity, target, request, statistics);
         }
 
         containerJob.setNamespaceHandler(pnfsHandler);
@@ -152,6 +154,11 @@ public final class RequestContainerJobFactory {
     @Required
     public void setRequestStore(BulkRequestStore requestStore) {
         this.requestStore = requestStore;
+    }
+
+    @Required
+    public void setStatistics(BulkServiceStatistics statistics) {
+        this.statistics = statistics;
     }
 
     @Required

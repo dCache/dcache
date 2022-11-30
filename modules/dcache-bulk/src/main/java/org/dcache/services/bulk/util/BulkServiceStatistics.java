@@ -59,6 +59,12 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.util;
 
+import static org.dcache.services.bulk.util.BulkRequestTarget.State.CANCELLED;
+import static org.dcache.services.bulk.util.BulkRequestTarget.State.COMPLETED;
+import static org.dcache.services.bulk.util.BulkRequestTarget.State.FAILED;
+import static org.dcache.services.bulk.util.BulkRequestTarget.State.RUNNING;
+import static org.dcache.services.bulk.util.BulkRequestTarget.State.SKIPPED;
+
 import dmg.cells.nucleus.CellInfoProvider;
 import java.io.PrintWriter;
 import java.time.Duration;
@@ -67,10 +73,8 @@ import java.util.Date;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import org.dcache.services.bulk.store.jdbc.JdbcBulkDaoUtils;
-import org.dcache.services.bulk.store.jdbc.request.JdbcBulkRequestDao;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Provides activity statistics via the CellInfo interface.
@@ -85,14 +89,17 @@ public final class BulkServiceStatistics implements CellInfoProvider {
 
     private final Date started = new Date();
 
+    private final AtomicInteger activeRequests = new AtomicInteger(0);
     private final AtomicLong requestsCompleted = new AtomicLong(0L);
     private final AtomicLong requestsCancelled = new AtomicLong(0L);
-    private final AtomicLong jobsAborted = new AtomicLong(0L);
     private final Map<String, AtomicLong> requestTypes = new TreeMap<>();
     private final Map<String, AtomicLong> userRequests = new TreeMap<>();
-
-    private JdbcBulkDaoUtils utils;
-    private JdbcBulkRequestDao requestDao;
+    private final Map<String, AtomicLong> counts
+          = Map.of(RUNNING.name(), new AtomicLong(0L),
+          CANCELLED.name(), new AtomicLong(0L),
+          COMPLETED.name(), new AtomicLong(0L),
+          FAILED.name(), new AtomicLong(0L),
+          SKIPPED.name(), new AtomicLong(0L));
 
     private long lastSweep = started.getTime();
     private long lastSweepDuration = 0;
@@ -124,16 +131,9 @@ public final class BulkServiceStatistics implements CellInfoProvider {
         pw.println();
 
         pw.println("------------------ TARGETS BY STATE ------------------");
-        Map<String, Long> counts = utils.countsByState(requestDao);
-        Long active = counts.remove("ACTIVE");
-
-        counts.entrySet()
-              .forEach(e -> pw.println(String.format(STATS_FORMAT, e.getKey(), e.getValue())));
-
-        long aborted = jobsAborted.get();
-        if (aborted > 0) {
-            pw.println(String.format(STATS_FORMAT, "ABORTED", aborted));
-        }
+        pw.println("         (cumulative from last service start)");
+        counts.entrySet().stream().filter(e->!e.getKey().equals(RUNNING.name()))
+              .forEach(e -> pw.println(String.format(STATS_FORMAT, e.getKey(), e.getValue().get())));
         pw.println();
 
         long received = requestTypes.values().stream().mapToLong(AtomicLong::get).sum();
@@ -142,7 +142,6 @@ public final class BulkServiceStatistics implements CellInfoProvider {
         pw.println(String.format(STATS_FORMAT, "Requests received", received));
         pw.println(String.format(STATS_FORMAT, "Requests completed", requestsCompleted.get()));
         pw.println(String.format(STATS_FORMAT, "Requests cancelled", requestsCancelled.get()));
-        pw.println(String.format(STATS_FORMAT, "Active requests", active == null ? 0 : active));
         pw.println();
 
         pw.println("--------------- REQUESTS (since start) ---------------");
@@ -150,6 +149,14 @@ public final class BulkServiceStatistics implements CellInfoProvider {
               .forEach(entry ->
                     pw.println(
                           String.format(STATS_FORMAT, entry.getKey(), entry.getValue().get())));
+        pw.println();
+
+        pw.println("---------------- REQUESTS  (current) -----------------");
+        pw.println(String.format(STATS_FORMAT, "Active", activeRequests.get()));
+        pw.println();
+
+        pw.println("----------------- TARGETS  (current) -----------------");
+        pw.println(String.format(STATS_FORMAT, RUNNING.name(), counts.get(RUNNING.name())));
         pw.println();
     }
 
@@ -165,10 +172,6 @@ public final class BulkServiceStatistics implements CellInfoProvider {
         return builder.toString();
     }
 
-    public void incrementJobsAborted() {
-        jobsAborted.incrementAndGet();
-    }
-
     public void incrementRequestsCancelled() {
         requestsCancelled.incrementAndGet();
     }
@@ -177,22 +180,44 @@ public final class BulkServiceStatistics implements CellInfoProvider {
         requestsCompleted.incrementAndGet();
     }
 
+    public void increment(String targetState) {
+        AtomicLong counter = counts.get(targetState);
+        if (counter != null) {
+            counter.incrementAndGet();
+        }
+    }
+
+    public void increment(String targetState, long by) {
+        AtomicLong counter = counts.get(targetState);
+        if (counter != null) {
+            counter.addAndGet(by);
+        }
+    }
+
+    public synchronized void decrement(String targetState) {
+        AtomicLong counter = counts.get(targetState);
+        if (counter != null) {
+            counter.decrementAndGet();
+        }
+    }
+
+    public synchronized void decrement(String targetState, long by) {
+        AtomicLong counter = counts.get(targetState);
+        if (counter != null) {
+            counter.addAndGet(-by);
+        }
+    }
+
     public void incrementRequestsReceived(String activity) {
         requestTypes.computeIfAbsent(activity, v -> new AtomicLong(0)).incrementAndGet();
+    }
+
+    public void setActive(int count) {
+        activeRequests.set(count);
     }
 
     public void sweepFinished(long duration) {
         lastSweep = System.currentTimeMillis();
         lastSweepDuration = duration;
-    }
-
-    @Required
-    public void setRequestDao(JdbcBulkRequestDao requestDao) {
-        this.requestDao = requestDao;
-    }
-
-    @Required
-    public void setDaoUtils(JdbcBulkDaoUtils utils) {
-        this.utils = utils;
     }
 }

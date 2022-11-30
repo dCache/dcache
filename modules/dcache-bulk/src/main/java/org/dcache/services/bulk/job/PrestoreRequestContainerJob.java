@@ -84,6 +84,7 @@ import org.dcache.services.bulk.util.BatchedResult;
 import org.dcache.services.bulk.util.BulkRequestTarget;
 import org.dcache.services.bulk.util.BulkRequestTarget.PID;
 import org.dcache.services.bulk.util.BulkRequestTarget.State;
+import org.dcache.services.bulk.util.BulkServiceStatistics;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -121,8 +122,8 @@ public final class PrestoreRequestContainerJob extends AbstractRequestContainerJ
     private final Queue<BulkRequestTarget> readyTargets;
 
     public PrestoreRequestContainerJob(BulkActivity activity, BulkRequestTarget target,
-          BulkRequest request) {
-        super(activity, target, request);
+          BulkRequest request, BulkServiceStatistics statistics) {
+        super(activity, target, request, statistics);
         targetInfo = new ConcurrentLinkedQueue<>();
         readyTargets = new ConcurrentLinkedQueue<>();
     }
@@ -150,7 +151,6 @@ public final class PrestoreRequestContainerJob extends AbstractRequestContainerJ
             update(FAILED);
             return;
         }
-
         storeAll(requestTargets);
     }
 
@@ -194,6 +194,7 @@ public final class PrestoreRequestContainerJob extends AbstractRequestContainerJ
           throws BulkStorageException {
         BulkRequestTarget completedTarget = result.getTarget();
         completedTarget.resetToReady();
+        statistics.decrement(completedTarget.getState().name());
         try {
             perform(completedTarget);
         } catch (InterruptedException e) {
@@ -210,6 +211,7 @@ public final class PrestoreRequestContainerJob extends AbstractRequestContainerJ
         } catch (CacheException e) {
             LOGGER.error("addInfo {}, path {}, error {}.", rid, path, e.getMessage());
             BulkRequestTarget t = toTarget(pid, path, Optional.ofNullable(null), FAILED, e);
+            statistics.increment(FAILED.name());
             try {
                 targetStore.storeOrUpdate(t);
             } catch (BulkStorageException ex) {
@@ -226,6 +228,7 @@ public final class PrestoreRequestContainerJob extends AbstractRequestContainerJ
 
         BulkRequestTarget completedTarget = result.getTarget();
         State state = completedTarget.getState();
+        statistics.decrement(RUNNING.name());
 
         try {
             if (state == FAILED && activity.getRetryPolicy().shouldRetry(completedTarget)) {
@@ -256,6 +259,7 @@ public final class PrestoreRequestContainerJob extends AbstractRequestContainerJ
         if (target != null) {
             targetStore.update(target.getId(), READY, null);
         }
+
         return Optional.ofNullable(target);
     }
 
