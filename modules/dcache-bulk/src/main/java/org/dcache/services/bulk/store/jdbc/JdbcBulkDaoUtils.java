@@ -59,14 +59,12 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.store.jdbc;
 
-import com.google.common.base.Throwables;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.net.SocketException;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -80,7 +78,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.ws.rs.HEAD;
 import org.dcache.db.JdbcCriterion;
 import org.dcache.db.JdbcUpdate;
 import org.dcache.services.bulk.BulkStorageException;
@@ -90,7 +87,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DuplicateKeyException;
-import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ParameterizedPreparedStatementSetter;
 import org.springframework.jdbc.core.RowMapper;
@@ -185,6 +181,7 @@ public final class JdbcBulkDaoUtils {
     public <T> List<T> get(JdbcCriterion criterion, int limit, String tableName,
           JdbcDaoSupport support, RowMapper<T> mapper) {
         LOGGER.trace("get {}, limit {}.", criterion, limit);
+
         Boolean reverse = criterion.reverse();
         String direction = reverse == null || !reverse ? "ASC" : "DESC";
         String sql = "SELECT * FROM " + tableName + " WHERE " + criterion.getPredicate()
@@ -239,8 +236,7 @@ public final class JdbcBulkDaoUtils {
         LOGGER.trace("update {} : {}.", criterion, update);
         String sql = "UPDATE " + tableName + " SET " + update.getUpdate() + " WHERE "
               + criterion.getPredicate();
-        LOGGER.trace("update {} ({}, {}).", sql, update.getArguments(),
-              criterion.getArguments());
+        LOGGER.trace("update {} ({}, {}).", sql, update.getArguments(), criterion.getArguments());
         return support.getJdbcTemplate().update(sql,
               concatArguments(update.getArguments(), criterion.getArguments()));
     }

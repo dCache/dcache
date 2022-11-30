@@ -63,6 +63,7 @@ import static org.dcache.services.bulk.BulkRequestStatus.CANCELLED;
 import static org.dcache.services.bulk.BulkRequestStatus.CANCELLING;
 import static org.dcache.services.bulk.BulkRequestStatus.COMPLETED;
 
+import diskCacheV111.util.FsPath;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -80,7 +81,9 @@ import org.dcache.services.bulk.manager.BulkRequestManager;
 import org.dcache.services.bulk.store.BulkRequestStore;
 import org.dcache.services.bulk.store.BulkTargetStore;
 import org.dcache.services.bulk.util.BulkRequestTarget;
+import org.dcache.services.bulk.util.BulkRequestTargetBuilder;
 import org.dcache.services.bulk.util.BulkServiceStatistics;
+import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -105,6 +108,25 @@ public final class BulkRequestHandler implements BulkSubmissionHandler,
     private BulkRequestStore requestStore;
     private BulkServiceStatistics statistics;
     private ExecutorService cancelExecutor;
+
+    /**
+     * Caused by an internal issue.
+     * <p>
+     * Essentially a premature failure.
+     */
+    @Override
+    public void abortRequestTarget(BulkRequestTarget parent, FsPath path, FileAttributes attributes,
+          Throwable exception)
+          throws BulkServiceException {
+        LOGGER.trace("requestTargetAborted {}, {}, {}; calling abort on request store",
+              parent, path, exception.toString());
+        targetStore.abort(
+              BulkRequestTargetBuilder.builder().rid(parent.getRid()).pid(parent.getId())
+                    .activity(parent.getActivity()).path(path).attributes(attributes)
+                    .error(exception).build());
+        requestManager.signal();
+        statistics.incrementJobsAborted();
+    }
 
     @Override
     public void cancelRequest(Subject subject, String id) throws BulkServiceException {

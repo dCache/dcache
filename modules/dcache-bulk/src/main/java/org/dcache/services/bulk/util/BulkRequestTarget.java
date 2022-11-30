@@ -90,14 +90,11 @@ public final class BulkRequestTarget {
     }
 
     public static final FsPath ROOT_REQUEST_PATH = computeFsPath(null, "=request_target=");
+    public static final long ROOT_REQUEST_PARENT = -1L;
     public static final PnfsId PLACEHOLDER_PNFSID = new PnfsId("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
 
     public enum State {
         CREATED, READY, RUNNING, CANCELLED, COMPLETED, FAILED, SKIPPED
-    }
-
-    public enum PID {
-        ROOT, INITIAL, DISCOVERED
     }
 
     private static final String INVALID_STATE_TRANSITION =
@@ -115,7 +112,7 @@ public final class BulkRequestTarget {
     }
 
     private Long id;
-    private PID pid;
+    private Long pid;
     private String rid;
     private FsPath path;
     private String activity;  /** denormalized from request **/
@@ -215,7 +212,7 @@ public final class BulkRequestTarget {
         return lastUpdated;
     }
 
-    public PID getPid() {
+    public Long getPid() {
         return pid;
     }
 
@@ -286,7 +283,7 @@ public final class BulkRequestTarget {
         this.path = path;
     }
 
-    public void setPid(PID pid) {
+    public void setPid(Long pid) {
         this.pid = pid;
     }
 

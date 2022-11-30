@@ -64,7 +64,7 @@ import diskCacheV111.util.PnfsId;
 import java.sql.Timestamp;
 import org.dcache.db.JdbcCriterion;
 import org.dcache.namespace.FileType;
-import org.dcache.services.bulk.util.BulkRequestTarget.PID;
+import org.dcache.services.bulk.util.BulkRequestTarget;
 import org.dcache.services.bulk.util.BulkRequestTarget.State;
 import org.dcache.services.bulk.util.BulkTargetFilter;
 
@@ -85,7 +85,7 @@ public final class JdbcRequestTargetCriterion extends JdbcCriterion {
     }
 
     public JdbcRequestTargetCriterion notRootRequest() {
-        addClause("pid != ?", PID.ROOT.ordinal());
+        addClause("pid != ?", BulkRequestTarget.ROOT_REQUEST_PARENT);
         return this;
     }
 
@@ -96,9 +96,9 @@ public final class JdbcRequestTargetCriterion extends JdbcCriterion {
         return this;
     }
 
-    public JdbcRequestTargetCriterion pid(PID pid) {
+    public JdbcRequestTargetCriterion pid(Long pid) {
         if (pid != null) {
-            addClause("pid = ?", pid.ordinal());
+            addClause("pid = ?", pid);
         }
         return this;
     }
