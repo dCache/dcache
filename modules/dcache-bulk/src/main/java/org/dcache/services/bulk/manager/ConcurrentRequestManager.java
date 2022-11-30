@@ -503,11 +503,8 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
         try {
             if (isJobValid(job)) { /* possibly cancelled in flight */
                 job.update(State.RUNNING);
-                    targetStore.update(id, State.RUNNING, null);
                 job.getActivity().getActivityExecutor().submit(new FireAndForgetTask(job));
             }
-        } catch (BulkStorageException e) {
-            LOGGER.error("updateJobState", e.toString());
         } catch (RuntimeException e) {
             job.getTarget().setErrorObject(e);
             job.cancel();
