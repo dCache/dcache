@@ -550,6 +550,8 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
             requestPermissionsDao.insert(
                   requestPermissionsDao.set().id(request.getId()).subject(subject)
                         .restriction(restriction));
+
+            requestTargetDao.insertInitialTargets(request);
         } catch (BulkStorageException e) {
             throw new BulkStorageException("store failed for " + request.getId(), e);
         }
@@ -730,7 +732,7 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
         info.setStartedAt(status.getStartedAt());
         info.setTargetPrefix(stored.getTargetPrefix());
         /*
-         *  Order by id from offset.  Limit is 25000 per swatch.
+         *  Order by id from offset.  Limit is 10000 per swatch.
          */
         List<BulkRequestTargetInfo> targets =
               requestTargetDao.get(requestTargetDao.where().rid(requestId).offset(offset)

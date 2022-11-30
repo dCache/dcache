@@ -59,24 +59,31 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.store.jdbc.rtarget;
 
+import static org.dcache.services.bulk.util.BulkRequestTarget.State.CREATED;
+import static org.dcache.services.bulk.util.BulkRequestTarget.State.FAILED;
 import static org.dcache.services.bulk.util.BulkRequestTarget.computeFsPath;
 
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
+import org.dcache.services.bulk.BulkRequest;
 import org.dcache.services.bulk.store.jdbc.JdbcBulkDaoUtils;
 import org.dcache.services.bulk.util.BulkRequestTarget;
 import org.dcache.services.bulk.util.BulkRequestTarget.State;
 import org.dcache.services.bulk.util.BulkRequestTargetBuilder;
 import org.dcache.vehicles.FileAttributes;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.jdbc.core.ParameterizedPreparedStatementSetter;
 import org.springframework.jdbc.core.support.JdbcDaoSupport;
 import org.springframework.jdbc.support.KeyHolder;
 
@@ -85,7 +92,31 @@ import org.springframework.jdbc.support.KeyHolder;
  */
 public final class JdbcRequestTargetDao extends JdbcDaoSupport {
 
-    private static final String TABLE_NAME = "request_target";
+    static class TargetPlaceholder {
+        String rid;
+        String path;
+        String activity;
+        String state;
+    }
+
+    static final String TABLE_NAME = "request_target";
+
+    static final String BATCH_INSERT = "INSERT INTO " + TABLE_NAME + " ("
+          + "pid, rid, pnfsid, path, type, activity, state, created_at, last_updated) "
+          + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+    static final ParameterizedPreparedStatementSetter<TargetPlaceholder> SETTER = (ps, target) -> {
+        Instant now = Instant.now();
+        ps.setBigDecimal(1, BigDecimal.ZERO); // DEPRECATED, will be removed REVISIT
+        ps.setString(2, target.rid);
+        ps.setString(3, "?");
+        ps.setString(4, target.path);
+        ps.setString(5, "?");
+        ps.setString(6, target.activity);
+        ps.setString(7, target.state);
+        ps.setTimestamp(8, Timestamp.from(now));
+        ps.setTimestamp(9, Timestamp.from(now));
+    };
 
     private JdbcBulkDaoUtils utils;
 
@@ -111,6 +142,29 @@ public final class JdbcRequestTargetDao extends JdbcDaoSupport {
 
     public Optional<KeyHolder> insert(JdbcRequestTargetUpdate update) {
         return utils.insert(update, TABLE_NAME, this);
+    }
+
+    public void insertInitialTargets(BulkRequest request) {
+        List<TargetPlaceholder> targets = new ArrayList<>();
+        for (String target : request.getTarget()) {
+            TargetPlaceholder t = new TargetPlaceholder();
+            t.rid = request.getId();
+            t.activity = request.getActivity();
+            String path = target.trim();
+            if (path.isEmpty()) {
+                t.path = "invalid (empty) path";
+                t.state = FAILED.name();
+            } else {
+                t.path = target;
+                t.state = CREATED.name();
+            }
+            targets.add(t);
+        }
+        utils.insertBatch(targets, BATCH_INSERT, SETTER, this);
+    }
+
+    public Optional<KeyHolder> insertOrUpdate(JdbcRequestTargetUpdate update) {
+        return utils.upsert(update.getInsertOrUpdateSql(), update.getArguments(), this);
     }
 
     public JdbcRequestTargetUpdate set() {

@@ -197,18 +197,26 @@ public final class JdbcBulkTargetStore implements BulkTargetStore {
 
     @Override
     public boolean store(BulkRequestTarget target) throws BulkStorageException {
-        String requestId = target.getRid();
-        FsPath path = target.getPath();
-        /*
-         *  If the target exists for the request, do not create another with a new id.
-         *  Restarts will thus leave untouched the completed targets in the store.
-         */
-        if (targetDao.count(targetDao.where().rid(requestId).path(path)) > 0) {
-            return false;
-        }
+        targetDao.insert(prepareUpdate(target))
+              .ifPresent(keyHolder -> target.setId((Long) keyHolder.getKeys().get("id")));
+        return target.getId() != null;
+    }
 
+    @Override
+    public void storeOrUpdate(BulkRequestTarget target) throws BulkStorageException {
+        targetDao.insertOrUpdate(prepareUpdate(target))
+              .ifPresent(keyHolder -> target.setId((Long) keyHolder.getKeys().get("id")));
+    }
+
+    @Override
+    public void update(long id, State state, Throwable errorObject) throws BulkStorageException {
+        targetDao.update(targetDao.where().id(id),
+              targetDao.set().state(state).errorObject(errorObject));
+    }
+
+    private JdbcRequestTargetUpdate prepareUpdate(BulkRequestTarget target) {
         JdbcRequestTargetUpdate update = targetDao.set().pid(target.getPid())
-              .rid(requestId).pnfsid(target.getPnfsId()).path(path)
+              .rid(target.getRid()).pnfsid(target.getPnfsId()).path(target.getPath())
               .type(target.getType()).activity(target.getActivity())
               .state(target.getState());
 
@@ -228,15 +236,6 @@ public final class JdbcBulkTargetStore implements BulkTargetStore {
                 update.createdAt(target.getCreatedAt());
         }
 
-        targetDao.insert(update)
-              .ifPresent(keyHolder -> target.setId((long) keyHolder.getKeys().get("id")));
-
-        return true;
-    }
-
-    @Override
-    public void update(long id, State state, Throwable errorObject) throws BulkStorageException {
-        targetDao.update(targetDao.where().id(id),
-              targetDao.set().state(state).errorObject(errorObject));
+        return update;
     }
 }

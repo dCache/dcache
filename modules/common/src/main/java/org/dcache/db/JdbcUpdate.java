@@ -30,7 +30,7 @@ import javax.annotation.Nullable;
  */
 public abstract class JdbcUpdate {
 
-    final Map<String, Object> updates = new LinkedHashMap<>();
+    protected final Map<String, Object> updates = new LinkedHashMap<>();
 
     /**
      * @return the column, value pairs.

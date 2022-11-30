@@ -59,6 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.store.jdbc.rtarget;
 
+import static java.util.stream.Collectors.joining;
+import static org.dcache.services.bulk.store.jdbc.rtarget.JdbcRequestTargetDao.TABLE_NAME;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.FAILED;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.RUNNING;
 
@@ -122,6 +124,8 @@ public final class JdbcRequestTargetUpdate extends JdbcUpdate {
     public JdbcRequestTargetUpdate pid(Long pid) {
         if (pid != null) {
             set("pid", pid);
+        } else {
+            set("pid", 0L);  // REVISIT will be deprecated
         }
         return this;
     }
@@ -163,5 +167,17 @@ public final class JdbcRequestTargetUpdate extends JdbcUpdate {
             set("activity", activity);
         }
         return this;
+    }
+
+    /**
+     * REVISIT  this syntax is specific to POSTGRES;
+     *          we need eventually to push this into a postgres-specific package.
+     */
+    public String getInsertOrUpdateSql() {
+        return "INSERT INTO " + TABLE_NAME + " " + getInsert() +
+              " ON CONFLICT ON CONSTRAINT i_target_pkey DO UPDATE SET " + updates.keySet().stream()
+              .collect(joining(",", "(", ")")) + " = " + updates.keySet().stream()
+              .map(a -> "EXCLUDED." + a)
+              .collect(joining(",", "(", ")"));
     }
 }
