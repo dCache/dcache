@@ -82,6 +82,7 @@ import org.dcache.services.bulk.BulkStorageException;
 import org.dcache.services.bulk.activity.BulkActivity;
 import org.dcache.services.bulk.util.BatchedResult;
 import org.dcache.services.bulk.util.BulkRequestTarget;
+import org.dcache.services.bulk.util.BulkRequestTarget.PID;
 import org.dcache.services.bulk.util.BulkRequestTarget.State;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
@@ -127,17 +128,17 @@ public final class PrestoreRequestContainerJob extends AbstractRequestContainerJ
     }
 
     @Override
-    protected void handleDirTarget(FsPath path, FileAttributes attributes)
+    protected void handleDirTarget(PID pid, FsPath path, FileAttributes attributes)
           throws InterruptedException {
         checkForRequestCancellation();
-        store(path, attributes);
+        store(pid, path, attributes);
     }
 
     @Override
-    protected void handleFileTarget(FsPath path, FileAttributes attributes)
+    protected void handleFileTarget(PID pid, FsPath path, FileAttributes attributes)
           throws InterruptedException {
         checkForRequestCancellation();
-        store(path, attributes);
+        store(pid, path, attributes);
     }
 
     @Override
@@ -198,14 +199,14 @@ public final class PrestoreRequestContainerJob extends AbstractRequestContainerJ
         }
     }
 
-    private void addInfo(String target) {
+    private void addInfo(PID pid, String target) {
         FsPath path = computeFsPath(targetPrefix, target);
         try {
             targetInfo.add(new TargetInfo(path, pnfsHandler.getFileAttributes(path,
                   MINIMALLY_REQUIRED_ATTRIBUTES)));
         } catch (CacheException e) {
             LOGGER.error("addInfo {}, path {}, error {}.", rid, path, e.getMessage());
-            BulkRequestTarget t = toTarget(path, Optional.ofNullable(null), FAILED, e);
+            BulkRequestTarget t = toTarget(pid, path, Optional.ofNullable(null), FAILED, e);
             try {
                 targetStore.storeOrUpdate(t);
             } catch (BulkStorageException ex) {
@@ -261,7 +262,7 @@ public final class PrestoreRequestContainerJob extends AbstractRequestContainerJ
         FsPath path = target.getPath();
         FileAttributes attributes = target.getAttributes();
 
-        if (hasBeenCancelled(path, attributes)) {
+        if (hasBeenCancelled(target.getPid(), path, attributes)) {
             return Futures.immediateCancelledFuture();
         }
 
@@ -285,7 +286,7 @@ public final class PrestoreRequestContainerJob extends AbstractRequestContainerJ
           throws InterruptedException {
         checkForRequestCancellation();
 
-        if (hasBeenCancelled(target.getPath(), target.getAttributes())) {
+        if (hasBeenCancelled(target.getPid(), target.getPath(), target.getAttributes())) {
             return;
         }
 
@@ -304,14 +305,14 @@ public final class PrestoreRequestContainerJob extends AbstractRequestContainerJ
         }
     }
 
-    private void store(FsPath path, FileAttributes attributes) throws InterruptedException {
+    private void store(PID pid, FsPath path, FileAttributes attributes) throws InterruptedException {
         checkForRequestCancellation();
         LOGGER.debug("store {}, path {}.", rid, path);
         try {
-            if (hasBeenCancelled(path, attributes)) {
+            if (hasBeenCancelled(pid, path, attributes)) {
                 return;
             }
-            BulkRequestTarget target = toTarget(path, Optional.of(attributes), CREATED, null);
+            BulkRequestTarget target = toTarget(pid, path, Optional.of(attributes), CREATED, null);
             targetStore.storeOrUpdate(target);
         } catch (BulkStorageException e) {
             LOGGER.error("{}, could not store target {}, {}: {}.", rid, path, attributes,
@@ -323,7 +324,7 @@ public final class PrestoreRequestContainerJob extends AbstractRequestContainerJ
         for (String target : targets) {
             checkForRequestCancellation();
             semaphore.acquire();
-            activity.getActivityExecutor().submit(() -> addInfo(target)); /* RELEASES SEMAPHORE */
+            activity.getActivityExecutor().submit(() -> addInfo(PID.INITIAL, target)); /* RELEASES SEMAPHORE */
         }
 
         /*
@@ -351,9 +352,9 @@ public final class PrestoreRequestContainerJob extends AbstractRequestContainerJ
             LOGGER.debug("storeAll {}, path {}.", rid, info.path);
             try {
                 if (depth != Depth.NONE && info.attributes.getFileType() == FileType.DIR) {
-                    expandDepthFirst(info.path, info.attributes);
+                    expandDepthFirst(PID.INITIAL, info.path, info.attributes);
                 } else if (info.attributes.getFileType() != FileType.SPECIAL) {
-                    store(info.path, info.attributes);
+                    store(PID.INITIAL, info.path, info.attributes);
                 }
             } catch (CacheException e) {
                 LOGGER.error("storeAll {}, path {}, error {}.", rid, info.path, e.getMessage());

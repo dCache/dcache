@@ -368,7 +368,7 @@ public abstract class AbstractRequestContainerJob
               Range.closedOpen(0, Integer.MAX_VALUE), MINIMALLY_REQUIRED_ATTRIBUTES);
     }
 
-    protected void expandDepthFirst(FsPath path, FileAttributes dirAttributes)
+    protected void expandDepthFirst(PID pid, FsPath path, FileAttributes dirAttributes)
           throws CacheException, InterruptedException {
         checkForRequestCancellation();
 
@@ -385,20 +385,20 @@ public abstract class AbstractRequestContainerJob
                         case ALL:
                             LOGGER.debug("expandDepthFirst {}, found directory {}, "
                                   + "expand ALL.", rid, childPath);
-                            expandDepthFirst(childPath, childAttributes);
+                            expandDepthFirst(PID.DISCOVERED, childPath, childAttributes);
                             break;
                         case TARGETS:
                             switch (targetType) {
                                 case BOTH:
                                 case DIR:
-                                    handleDirTarget(childPath, childAttributes);
+                                    handleDirTarget(PID.DISCOVERED, childPath, childAttributes);
                             }
                             break;
                     }
                     break;
                 case LINK:
                 case REGULAR:
-                    handleFileTarget(childPath, childAttributes);
+                    handleFileTarget(PID.DISCOVERED, childPath, childAttributes);
                     break;
                 case SPECIAL:
                 default:
@@ -413,14 +413,15 @@ public abstract class AbstractRequestContainerJob
         switch (targetType) {
             case BOTH:
             case DIR:
-                handleDirTarget(path, dirAttributes);
+                handleDirTarget(pid, path, dirAttributes);
         }
     }
 
-    protected boolean hasBeenCancelled(FsPath path, FileAttributes attributes) {
+    protected boolean hasBeenCancelled(PID pid, FsPath path, FileAttributes attributes) {
         synchronized (cancelledPaths) {
             if (cancelledPaths.remove(path.toString())) {
-                BulkRequestTarget target = toTarget(path, Optional.of(attributes), CANCELLED, null);
+                BulkRequestTarget target = toTarget(pid, path, Optional.of(attributes), CANCELLED,
+                      null);
                 try {
                     if (!targetStore.store(target)) {
                         targetStore.update(target.getId(), CANCELLED, null);
@@ -460,7 +461,7 @@ public abstract class AbstractRequestContainerJob
         }
     }
 
-    protected BulkRequestTarget toTarget(FsPath path, Optional<FileAttributes> attributes,
+    protected BulkRequestTarget toTarget(PID pid, FsPath path, Optional<FileAttributes> attributes,
           State state, Object errorObject) {
         /* REVISIT pid should be INITIAL or DISCOVERED on basis of recursion.  INITIAL is
          *  a placeholder until we add retrieval of initial paths from target table.
@@ -471,10 +472,10 @@ public abstract class AbstractRequestContainerJob
               .build();
     }
 
-    protected abstract void handleFileTarget(FsPath path, FileAttributes attributes)
+    protected abstract void handleFileTarget(PID pid, FsPath path, FileAttributes attributes)
           throws InterruptedException;
 
-    protected abstract void handleDirTarget(FsPath path, FileAttributes attributes)
+    protected abstract void handleDirTarget(PID pid, FsPath path, FileAttributes attributes)
           throws InterruptedException;
 
     protected abstract void processFileTargets() throws InterruptedException;
