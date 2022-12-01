@@ -209,7 +209,7 @@ public final class JdbcBulkTargetStore implements BulkTargetStore {
     }
 
     @Override
-    public void update(long id, State state, Throwable errorObject) throws BulkStorageException {
+    public void update(Long id, State state, Throwable errorObject) throws BulkStorageException {
         targetDao.update(targetDao.where().id(id),
               targetDao.set().state(state).errorObject(errorObject));
     }
