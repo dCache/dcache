@@ -135,4 +135,14 @@
             DROP TABLE counts_by_state;
         </sql>
     </changeSet>
+
+    <changeSet author="arossi" id="4.5" runInTransaction="false">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <columnExists tableName="request_target" columnName="error_message"/>
+            </and>
+        </preConditions>
+        <modifyDataType tableName="request_target" columnName="error_message" newDataType="varchar(256)"/>
+    </changeSet>
+
 </databaseChangeLog>
