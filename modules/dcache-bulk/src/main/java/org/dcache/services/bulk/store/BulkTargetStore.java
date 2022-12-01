@@ -199,5 +199,5 @@ public interface BulkTargetStore {
      * @param errorObject
      * @throws BulkStorageException
      */
-    void update(long id, State state, Throwable errorObject) throws BulkStorageException;
+    void update(Long id, State state, Throwable errorObject) throws BulkStorageException;
 }
