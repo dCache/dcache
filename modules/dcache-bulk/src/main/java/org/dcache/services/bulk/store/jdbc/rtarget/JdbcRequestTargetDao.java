@@ -62,10 +62,10 @@ package org.dcache.services.bulk.store.jdbc.rtarget;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.CREATED;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.FAILED;
 import static org.dcache.services.bulk.util.BulkRequestTarget.computeFsPath;
+import static org.dcache.util.Strings.truncate;
 
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
-import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -158,7 +158,7 @@ public final class JdbcRequestTargetDao extends JdbcDaoSupport {
                 t.path = "invalid (empty) path";
                 t.state = FAILED.name();
             } else {
-                t.path = target;
+                t.path = truncate(target, 256, true);
                 t.state = CREATED.name();
             }
             targets.add(t);

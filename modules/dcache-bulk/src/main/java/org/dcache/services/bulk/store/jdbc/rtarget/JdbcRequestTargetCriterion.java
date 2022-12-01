@@ -59,9 +59,11 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.store.jdbc.rtarget;
 
-import diskCacheV111.util.FsPath;
+import static org.dcache.util.Strings.truncate;
+
 import diskCacheV111.util.PnfsId;
 import java.sql.Timestamp;
+import java.util.Arrays;
 import org.dcache.db.JdbcCriterion;
 import org.dcache.namespace.FileType;
 import org.dcache.services.bulk.util.BulkRequestTarget.PID;
@@ -150,12 +152,9 @@ public final class JdbcRequestTargetCriterion extends JdbcCriterion {
         return this;
     }
 
-    public JdbcRequestTargetCriterion path(FsPath path) {
-        addClause("path = ?", path.name());
-        return this;
-    }
-
     public JdbcRequestTargetCriterion path(String[] path) {
+        path = Arrays.stream(path).map(p -> truncate(p, 256,true))
+              .toArray(String[]::new);
         addOrClause("path = ?", path);
         return this;
     }

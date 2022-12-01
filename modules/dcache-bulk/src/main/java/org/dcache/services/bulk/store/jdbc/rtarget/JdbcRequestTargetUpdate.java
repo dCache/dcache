@@ -63,6 +63,7 @@ import static java.util.stream.Collectors.joining;
 import static org.dcache.services.bulk.store.jdbc.rtarget.JdbcRequestTargetDao.TABLE_NAME;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.FAILED;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.RUNNING;
+import static org.dcache.util.Strings.truncate;
 
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
@@ -121,7 +122,7 @@ public final class JdbcRequestTargetUpdate extends JdbcUpdate {
         if (errorObject != null) {
             Throwable root = Throwables.getRootCause(errorObject);
             set("error_type", root.getClass().getCanonicalName());
-            set("error_message", root.getMessage());
+            set("error_message", truncate(root.getMessage(), 256, false));
         }
         return this;
     }
@@ -149,7 +150,7 @@ public final class JdbcRequestTargetUpdate extends JdbcUpdate {
 
     public JdbcRequestTargetUpdate path(FsPath path) {
         if (path != null) {
-            set("path", path.toString());
+            set("path", truncate(path.toString(), 256,true));
         }
         return this;
     }

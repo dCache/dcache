@@ -59,7 +59,6 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.store;
 
-import diskCacheV111.util.FsPath;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -127,13 +126,6 @@ public interface BulkTargetStore {
      * @return a map of the combined results of target counts grouped by state.
      */
     Map<String, Long> countsByState();
-
-    /**
-     * @param rid of the request.
-     * @param path of the target.
-     * @return true if it exists in the store, false otherwise.
-     */
-    boolean exists(String rid, FsPath path);
 
     /**
      * @param filter on the target.

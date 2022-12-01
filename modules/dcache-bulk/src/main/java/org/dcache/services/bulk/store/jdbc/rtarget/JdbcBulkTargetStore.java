@@ -61,8 +61,8 @@ package org.dcache.services.bulk.store.jdbc.rtarget;
 
 import static org.dcache.services.bulk.util.BulkRequestTarget.NON_TERMINAL;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.CREATED;
+import static org.dcache.util.Strings.truncate;
 
-import diskCacheV111.util.FsPath;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -146,11 +146,6 @@ public final class JdbcBulkTargetStore implements BulkTargetStore {
     }
 
     @Override
-    public boolean exists(String rid, FsPath path) {
-        return targetDao.count(targetDao.where().rid(rid).path(path)) > 0;
-    }
-
-    @Override
     public List<BulkRequestTarget> find(BulkTargetFilter jobFilter, Integer limit)
           throws BulkStorageException {
         return targetDao.get(targetDao.where().filter(jobFilter).sorter("id"), limit);
@@ -184,6 +179,7 @@ public final class JdbcBulkTargetStore implements BulkTargetStore {
 
     @Override
     public List<String> ridsOf(String targetPath) {
+        targetPath = truncate(targetPath, 256,true);
         return targetDao.getJdbcTemplate()
               .queryForList(MATCH_PATH, String.class, "%" + targetPath + "%");
     }

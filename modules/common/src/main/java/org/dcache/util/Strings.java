@@ -586,4 +586,22 @@ public final class Strings {
         Hashing.sha256().hashBytes(in.getBytes(UTF_8)).writeBytesTo(hashBytes, 0, hashBytes.length);
         return Base64.getEncoder().withoutPadding().encodeToString(hashBytes);
     }
+
+    /**
+     * Convenience method for taking a substring from either the front forward or end backwards.
+     *
+     * @param dataString to be truncated
+     * @param numChars maximum length allowed
+     * @param fromEnd truncate preserving the final chars if true, else the initial chars.
+     * @return
+     */
+    public static String truncate(String dataString, int numChars, boolean fromEnd) {
+        int len = com.google.common.base.Strings.nullToEmpty(dataString).length();
+        if (len <= numChars) {
+            return dataString;
+        }
+
+        int from = fromEnd ? len - numChars : 0;
+        return dataString.substring(from, from + numChars);
+    }
 }
