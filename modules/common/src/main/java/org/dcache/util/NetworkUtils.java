@@ -5,7 +5,6 @@ import static com.google.common.base.Predicates.and;
 import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Iterators.concat;
-import static com.google.common.collect.Iterators.forEnumeration;
 import static com.google.common.collect.Iterators.transform;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -345,7 +344,7 @@ public abstract class NetworkUtils {
                 NetworkInterface byInetAddress = NetworkInterface.getByInetAddress(localAddress);
                 try {
                     return Ordering.natural().onResultOf(InetAddressScope::of).min(
-                          Iterators.filter(forEnumeration(byInetAddress.getInetAddresses()),
+                          Iterators.filter(byInetAddress.getInetAddresses().asIterator(),
                                 and(greaterThanOrEquals(intendedScope),
                                       hasProtocolFamily(protocolFamily),
                                       isNotMulticast())));
@@ -544,11 +543,11 @@ public abstract class NetworkUtils {
                 return Lists.newArrayList(
                       transform(
                             concat(
-                                  transform(forEnumeration(NetworkInterface.getNetworkInterfaces()),
+                                  transform(NetworkInterface.getNetworkInterfaces().asIterator(),
                                         (i) -> {
                                             try {
                                                 if (i.isUp()) {
-                                                    return forEnumeration(i.getInetAddresses());
+                                                    return i.getInetAddresses().asIterator();
                                                 }
                                             } catch (SocketException ignored) {
                                             }
