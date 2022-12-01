@@ -522,23 +522,25 @@ The defaults have been modified so that dCache can be used out of the box in mos
 without further concern to configure doors and pools.   To summarize, for the door:
 
 ```
-xrootd.plugins=gplazma:gsi,gplazma:ztn,gplazma:none,authz:scitokens
+xrootd.plugins=gplazma:ztn,gplazma:gsi,gplazma:none,authz:scitokens
 xrootd.security.tls.mode=OPTIONAL
 xrootd.plugin!scitokens.strict=false
 ```
 
 These defaults guarantee that the client
 
-1. will try GSI without TLS first if it has a certificate;
-2. if it tries ZTN it must turn on/request TLS or that protocol will be rejected (xroots:// must be used)
-3. if those fail, it can be logged in anonymously and potentially receive further authorization
+1. will try ZTN first, because if it has no discoverable cert keys and no proxy,
+   the client will fail a GSI request unless `export XrdSecGSICREATEPROXY=0` is set;
+2. will then try GSI if it has no token;
+3. if it tries ZTN it must turn on/request TLS or that protocol will be rejected (xroots:// must be used)
+4. if those fail, it can be logged in anonymously and potentially receive further authorization
    downstream from another token;
-4. if ZTN succeeds and there is no authorization token on the path URL, the ZTN token
+5. if ZTN succeeds and there is no authorization token on the path URL, the ZTN token
    will be used as fallback (the scitoken requirement is not strict);
-5. third-party-copy will succeed with dCache doors as sources because the third-party
+6. third-party-copy will succeed with dCache doors as sources because the third-party
    client can connect using the rendezvous token without further authentication
    (gplazma:none).
-6. NOTE:  it is possible to use GSI rather than ZTN and als provide a scitoken/JWT token on the path
+7. NOTE:  it is possible to use GSI rather than ZTN and als provide a scitoken/JWT token on the path
    URL; TLS must be activated in this case.  The usage scenario for this would, however, be rare.
 
 Of course, these remain configurable in case of special requirements.
