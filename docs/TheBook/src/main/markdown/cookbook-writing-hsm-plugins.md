@@ -335,7 +335,7 @@ For a more complicated example, check out the `script` driver. It demonstrates
 configurable concurrency. The main class is
 [ScriptNearlineStorage](https://github.com/dCache/dcache/blob/2.16/modules/dcache/src/main/java/org/dcache/pool/nearline/script/ScriptNearlineStorage.java).
 
-For a full blown asynchronous driver, check out the [`endit` driver]
-(https://github.com/gbehrmann/dcache-endit-provider) developed at NDGF to
-interface with the [Endit](https://github.com/maswan/endit) tape integration
+For a full blown asynchronous driver, check out the [Endit Provider]
+(https://github.com/neicnordic/dcache-endit-provider/) developed at NDGF to
+interface with the [Endit](https://github.com/neicnordic/endit/) tape integration
 system.
