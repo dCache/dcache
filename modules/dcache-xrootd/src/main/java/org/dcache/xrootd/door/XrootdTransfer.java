@@ -93,6 +93,9 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress> {
     @Override
     protected ProtocolInfo getProtocolInfoForPool() {
         XrootdProtocolInfo info = createXrootdProtocolInfo();
+        if (proxiedTransfer) {
+            info.setSocketAddress(_doorAddress);
+        }
         info.setDelegatedCredential(_delegatedCredential);
         info.setRestriction(restriction);
         /*
