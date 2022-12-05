@@ -111,7 +111,7 @@ public final class BulkRequestTarget {
         return key.split(KEY_SEPARATOR);
     }
 
-    private long id;
+    private Long id;
     private Long pid;
     private String rid;
     private FsPath path;
@@ -200,7 +200,7 @@ public final class BulkRequestTarget {
         return createdAt;
     }
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
@@ -271,7 +271,7 @@ public final class BulkRequestTarget {
         }
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 

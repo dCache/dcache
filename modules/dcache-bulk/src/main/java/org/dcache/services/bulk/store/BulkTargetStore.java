@@ -184,6 +184,14 @@ public interface BulkTargetStore {
      boolean store(BulkRequestTarget target) throws BulkStorageException;
 
     /**
+     * Store or update the target if it already exists.
+     *
+     * @param target to store.
+     * @throws BulkStorageException
+     */
+    void storeOrUpdate(BulkRequestTarget target) throws BulkStorageException;
+
+    /**
      * Update the status of the target.
      *
      * @param id
@@ -191,5 +199,5 @@ public interface BulkTargetStore {
      * @param errorObject
      * @throws BulkStorageException
      */
-    void update(long id, State state, Throwable errorObject) throws BulkStorageException;
+    void update(Long id, State state, Throwable errorObject) throws BulkStorageException;
 }

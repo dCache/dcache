@@ -216,12 +216,6 @@ public final class RequestContainerJob extends AbstractRequestContainerJob {
             return Futures.immediateCancelledFuture();
         }
 
-        if (targetStore.exists(rid, path)) {
-            LOGGER.debug("{}, {} has already had {} performed on it; skipping.", rid, path,
-                  activity.getName());
-            return Futures.immediateFuture(null);
-        }
-
         semaphore.acquire();
 
         ListenableFuture future;
@@ -251,7 +245,7 @@ public final class RequestContainerJob extends AbstractRequestContainerJob {
         BatchedResult result = new BatchedResult(target, future);
 
         try {
-            targetStore.store(target);
+            targetStore.storeOrUpdate(target);
         } catch (BulkStorageException e) {
             LOGGER.error("{}, could not store target from result {}, {}, {}: {}.", rid, result,
                   attributes, e.toString());
