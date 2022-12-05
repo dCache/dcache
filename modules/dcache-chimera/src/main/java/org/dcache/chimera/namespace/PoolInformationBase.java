@@ -74,13 +74,18 @@ public class PoolInformationBase implements CellMessageReceiver {
      */
     public synchronized void remove(String name) {
         PoolInformation pool = _pools.remove(name);
-        if (pool != null) {
-            for (String hsm : pool.getHsmInstances()) {
-                Collection<PoolInformation> pools = _hsmToPool.get(hsm);
-                pools.remove(pool);
-                if (pools.isEmpty()) {
-                    _hsmToPool.remove(hsm);
-                }
+        if (pool == null) {
+            return;
+        }
+        Collection<String> hsms = pool.getHsmInstances();
+        if (hsms == null) {
+            return;
+        }
+        for (String hsm : hsms) {
+            Collection<PoolInformation> pools = _hsmToPool.get(hsm);
+            pools.remove(pool);
+            if (pools.isEmpty()) {
+                _hsmToPool.remove(hsm);
             }
         }
     }
