@@ -4,8 +4,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Predicates.and;
 import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.Iterables.filter;
-import static com.google.common.collect.Iterators.concat;
-import static com.google.common.collect.Iterators.transform;
+import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
@@ -18,7 +17,6 @@ import com.google.common.base.Suppliers;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import com.google.common.net.InetAddresses;
 import java.net.DatagramSocket;
@@ -37,7 +35,6 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
@@ -102,11 +99,9 @@ public abstract class NetworkUtils {
 
     /**
      * A supplier that returns all Internet addresses of network interfaces that are both up and not
-     * a loopback interface. REVISIT: LocalAddressSupplier and AnyAddressSupplier are essentially
-     * the same and should be merged.
+     * a loopback interface.
      */
-    public static class AnyAddressSupplier implements
-          java.util.function.Supplier<List<InetAddress>> {
+    public static class AnyAddressSupplier extends LocalAddressSupplier {
 
         private List<InetAddress> _previous = Collections.emptyList();
 
@@ -114,29 +109,8 @@ public abstract class NetworkUtils {
         public List<InetAddress> get() {
             NDC.push("NIC auto-discovery");
             try {
-                ArrayList<InetAddress> addresses = new ArrayList<>();
                 Stopwatch stopwatch = Stopwatch.createStarted();
-                try {
-                    Enumeration<NetworkInterface> interfaces =
-                          NetworkInterface.getNetworkInterfaces();
-                    while (interfaces.hasMoreElements()) {
-                        NetworkInterface i = interfaces.nextElement();
-                        try {
-                            if (i.isUp() && !i.isLoopback()) {
-                                Enumeration<InetAddress> e = i.getInetAddresses();
-                                while (e.hasMoreElements()) {
-                                    addresses.add(
-                                          NetworkUtils.withCanonicalAddress(e.nextElement()));
-                                }
-                            }
-                        } catch (SocketException e) {
-                            logger.warn("Not publishing NIC {}: {}", i.getName(), e.getMessage());
-                        }
-                    }
-                } catch (SocketException e) {
-                    logger.warn("Not publishing NICs: {}", e.getMessage());
-                }
-
+                List<InetAddress> addresses = super.get();
                 logger.debug("Scan took {}", stopwatch);
                 logChanges(addresses);
                 return addresses;
@@ -524,6 +498,27 @@ public abstract class NetworkUtils {
         return new HostListAddressSupplier(list);
     }
 
+    private static boolean isUp(NetworkInterface i) {
+        try {
+            return i.isUp();
+        } catch (SocketException e) {
+            return false;
+        }
+    }
+
+    /**
+     * if address hols a reference to the interface, then this reverence will be preserved
+     * during serialization/deserialization, thus have a performance impact.
+     */
+    private static InetAddress interfaceFreeCopy(InetAddress src) {
+
+        var bytes = src.getAddress();
+        try {
+            return InetAddress.getByAddress(bytes);
+        } catch (UnknownHostException e) {
+            throw new RuntimeException("Failed to create new instance of InetAddress", e);
+        }
+    }
 
     /**
      * A supplier that returns all Internet addresses of network interfaces that are up.  REVISIT:
@@ -536,31 +531,18 @@ public abstract class NetworkUtils {
             try {
                 /*
                  * Get IP addresses from all interfaces. As InetAddress objects returned by
-                 * NetworkInterface contain interface names, deerialization of them will
+                 * NetworkInterface contain interface names, deserialization of them will
                  * trigger interface re-discovery. Re-create InetAddress objects with address
                  * information only.
                  */
-                return Lists.newArrayList(
-                      transform(
-                            concat(
-                                  transform(NetworkInterface.getNetworkInterfaces().asIterator(),
-                                        (i) -> {
-                                            try {
-                                                if (i.isUp()) {
-                                                    return i.getInetAddresses().asIterator();
-                                                }
-                                            } catch (SocketException ignored) {
-                                            }
-                                            return Collections.emptyIterator();
-                                        })),
-                            (InetAddress input) -> {
-                                try {
-                                    return InetAddress.getByAddress(input.getAddress());
-                                } catch (UnknownHostException e) {
-                                    throw new RuntimeException(
-                                          "Failed to create new instance of InetAddress", e);
-                                }
-                            }));
+                return NetworkInterface.networkInterfaces()
+                      .filter(NetworkUtils::isUp)
+                      .flatMap(NetworkInterface::inetAddresses)
+                      .filter(not(InetAddress::isLinkLocalAddress))
+                      .filter(not(InetAddress::isLoopbackAddress))
+                      .map(NetworkUtils::interfaceFreeCopy)
+                      .collect(toList());
+
             } catch (SocketException e) {
                 logger.error("Failed to resolve local network addresses: {}", e.toString());
                 return Collections.emptyList();
