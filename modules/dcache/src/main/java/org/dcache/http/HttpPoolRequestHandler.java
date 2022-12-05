@@ -58,6 +58,7 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.QueryStringDecoder;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.handler.timeout.IdleStateHandler;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -433,7 +434,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
              */
             context.write(new HttpGetResponse(fileSize, file, digest))
                   .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
-            context.write(read(file, 0, fileSize - 1))
+            context.write(read(context, file, 0, fileSize - 1))
                   .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
             ChannelFuture writeAndFlush = context.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
 
@@ -451,7 +452,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
             context.write(new HttpPartialContentResponse(range.getLower(), range.getUpper(),
                         fileSize, digest))
                   .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
-            context.write(read(file, range.getLower(), range.getUpper()))
+            context.write(read(context, file, range.getLower(), range.getUpper()))
                   .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
 
             // File is released when the client disconnects.  We're assuming that, after this, the
@@ -483,7 +484,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
                 HttpByteRange range = ranges.get(i);
                 context.write(fragmentMarkers[i])
                       .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
-                context.write(read(file, range.getLower(), range.getUpper()))
+                context.write(read(context, file, range.getLower(), range.getUpper()))
                       .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
             }
 
@@ -790,12 +791,14 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
      * @return ChunkedInput View upon the file suitable for sending with netty and representing the
      * requested parts.
      */
-    private Object read(NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file,
+    private Object read(ChannelHandlerContext context, NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file,
           long lowerRange, long upperRange) {
         /* need to count position 0 as well */
         long length = (upperRange - lowerRange) + 1;
 
         if (_useZeroCopy) {
+            // disable timeout manager as zero-copy can't keep idle counters in sync
+            context.channel().pipeline().remove(IdleStateHandler.class);
             return asFileRegion(file, lowerRange, length);
         }
         return new ReusableChunkedNioFile(file, lowerRange, length, _chunkSize);
