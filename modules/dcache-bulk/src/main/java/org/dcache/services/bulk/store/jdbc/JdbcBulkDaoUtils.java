@@ -103,9 +103,6 @@ public final class JdbcBulkDaoUtils {
     private static final String SELECT_COUNTS_BY_STATE =
           "SELECT * FROM counts_by_state";
 
-    private static final String UPDATE_STATE_COUNT =
-          "UPDATE counts_by_state SET count = ? WHERE state = ?";
-
     public static <T> Set<T> toSetOrNull(T[] array) {
         return array == null ? null : Arrays.stream(array).collect(Collectors.toSet());
     }
