@@ -1,5 +1,6 @@
 package diskCacheV111.vehicles;
 
+import com.google.common.collect.ImmutableSet;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolV2Mode;
 import java.io.Serializable;
@@ -16,7 +17,7 @@ public class PoolManagerPoolUpMessage extends PoolManagerMessage {
 
     private String _hostName;
     private Map<String, String> _tagMap;
-    private Set<String> _hsmInstances;
+    private Set<String> _hsmInstances = ImmutableSet.of();
     private String _message = "";
     private int _code;
 
