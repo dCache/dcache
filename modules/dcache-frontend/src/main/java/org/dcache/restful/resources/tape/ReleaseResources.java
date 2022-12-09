@@ -90,6 +90,7 @@ import org.dcache.services.bulk.BulkRequest;
 import org.dcache.services.bulk.BulkRequest.Depth;
 import org.dcache.services.bulk.BulkRequestMessage;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.stereotype.Component;
 
@@ -136,16 +137,25 @@ public final class ReleaseResources {
                 + "stage request corresponding to the id, this request will fail.", required = true)
                 String requestPayload) {
 
-        JSONObject reqPayload = new JSONObject(requestPayload);
-        JSONArray paths = reqPayload.getJSONArray("paths");
-        if (paths == null) {
-            throw new BadRequestException("release request contains no paths.");
-        }
+        JSONArray paths;
+        List<String> targetPaths;
 
-        int len = paths.length();
-        List<String> targetPaths = new ArrayList<>();
-        for (int i = 0; i < len; ++i) {
-            targetPaths.add(paths.getString(i));
+        try {
+            JSONObject reqPayload = new JSONObject(requestPayload);
+            paths = reqPayload.getJSONArray("paths");
+
+            if (paths == null) {
+                throw new BadRequestException("release request contains no paths.");
+            }
+
+            int len = paths.length();
+            targetPaths = new ArrayList<>();
+            for (int i = 0; i < len; ++i) {
+                targetPaths.add(paths.getString(i));
+            }
+        } catch (JSONException e) {
+            throw new BadRequestException(
+                  String.format("badly formed json object (%s): %s.", requestPayload, e));
         }
 
         Subject subject = getSubject();

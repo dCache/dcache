@@ -63,6 +63,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -405,7 +406,14 @@ public final class BulkResources {
             throw new BadRequestException("empty request payload.");
         }
 
-        Map map = new Gson().fromJson(requestPayload, Map.class);
+        Map map;
+        try {
+            map = new Gson().fromJson(requestPayload, Map.class);
+        } catch (JsonParseException e) {
+            throw new BadRequestException(
+                  String.format("badly formed json object (%s): %s.", requestPayload, e));
+        }
+
         BulkRequest request = new BulkRequest();
 
         Map<String, Object> arguments = (Map<String, Object>) map.remove("arguments");
@@ -425,7 +433,8 @@ public final class BulkResources {
         String string = removeEntry(map, String.class, "activity");
         request.setActivity(string);
 
-        string = removeEntry(map, String.class, "target_prefix", "target-prefix", "targetPrefix");
+        string = removeEntry(map, String.class, "target_prefix", "target-prefix",
+              "targetPrefix");
         request.setTargetPrefix(string);
 
         string = removeEntry(map, String.class, "expand_directories", "expand-directories",
