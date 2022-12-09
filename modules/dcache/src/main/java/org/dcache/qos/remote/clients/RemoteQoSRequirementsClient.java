@@ -60,7 +60,9 @@ documents or software obtained from this server.
 package org.dcache.qos.remote.clients;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
+import dmg.cells.nucleus.NoRouteToCellException;
 import java.io.Serializable;
 import java.util.concurrent.ExecutionException;
 import org.dcache.cells.CellStub;
@@ -108,11 +110,9 @@ public final class RemoteQoSRequirementsClient implements QoSRequirementsListene
     }
 
     @Override
-    public void fileQoSRequirementsModified(FileQoSRequirements newRequirements) {
-        /*
-         *  Fire and forget. The sender will need to listen for a response.
-         */
-        requirementsService.send(new QoSRequirementsModifiedMessage(newRequirements));
+    public void fileQoSRequirementsModified(FileQoSRequirements newRequirements)
+          throws CacheException, NoRouteToCellException, InterruptedException {
+        requirementsService.sendAndWait(new QoSRequirementsModifiedMessage(newRequirements));
     }
 
     @Override

@@ -69,6 +69,7 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.util.NamespaceHandlerAware;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
+import dmg.cells.nucleus.NoRouteToCellException;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -148,7 +149,12 @@ public class UpdateQoSActivity extends BulkActivity<QoSTransitionCompletedMessag
 
         RemoteQoSRequirementsClient client = new RemoteQoSRequirementsClient();
         client.setRequirementsService(qosEngine);
-        client.fileQoSRequirementsModified(requirements);
+
+        try {
+            client.fileQoSRequirementsModified(requirements);
+        } catch (CacheException | InterruptedException | NoRouteToCellException e) {
+            return Futures.immediateFailedFuture(e);
+        }
 
         return future;
     }

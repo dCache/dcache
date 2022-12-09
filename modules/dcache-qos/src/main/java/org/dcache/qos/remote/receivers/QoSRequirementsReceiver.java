@@ -151,12 +151,13 @@ public final class QoSRequirementsReceiver implements CellMessageReceiver, Consu
         return reply;
     }
 
-    public void messageArrived(QoSRequirementsModifiedMessage message) {
+    public QoSRequirementsModifiedMessage messageArrived(QoSRequirementsModifiedMessage message) {
         if (messageGuard.getStatus("QoSRequirementsModifiedMessage", message)
               == Status.DISABLED) {
-            return;
+            return message;
         }
         fileStatusHandler.handleQoSModification(message.getRequirements());
+        return message;
     }
 
     public void messageArrived(QoSCancelRequirementsModifiedMessage message) {
