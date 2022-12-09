@@ -82,6 +82,7 @@ import org.dcache.restful.providers.tape.ArchiveInfo;
 import org.dcache.restful.util.HandlerBuilders;
 import org.dcache.restful.util.wlcg.ArchiveInfoCollector;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.stereotype.Component;
 
@@ -128,17 +129,26 @@ public final class ArchiveInfoResources {
           @ApiParam(value = "List of paths for which to return archive info (file locality).",
                 required = true)
                 String requestPayload) {
-        JSONObject jsonPayload = new JSONObject(requestPayload);
-        if (!jsonPayload.has("paths")) {
-            throw new BadRequestException("request had no paths.");
-        }
 
-        JSONArray jsonArray = jsonPayload.getJSONArray("paths");
-        int len = Math.min(jsonArray.length(), archiveInfoCollector.getMaxPaths());
+        List<String> paths;
 
-        List<String> paths = new ArrayList<>();
-        for (int i = 0; i < len; ++i) {
-            paths.add(jsonArray.getString(i));
+        try {
+            JSONObject jsonPayload = new JSONObject(requestPayload);
+
+            if (!jsonPayload.has("paths")) {
+                throw new BadRequestException("request had no paths.");
+            }
+
+            JSONArray jsonArray = jsonPayload.getJSONArray("paths");
+            int len = Math.min(jsonArray.length(), archiveInfoCollector.getMaxPaths());
+
+            paths = new ArrayList<>();
+            for (int i = 0; i < len; ++i) {
+                paths.add(jsonArray.getString(i));
+            }
+        } catch (JSONException e) {
+            throw new BadRequestException(
+                  String.format("badly formed json object (%s): %s.", requestPayload, e));
         }
 
         return archiveInfoCollector.getInfo(HandlerBuilders.roleAwarePnfsHandler(pnfsManager),
