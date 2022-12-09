@@ -110,7 +110,7 @@ public final class JdbcRequestTargetCriterion extends JdbcCriterion {
         return this;
     }
 
-    public JdbcRequestTargetCriterion rids(String[] rid) {
+    public JdbcRequestTargetCriterion rids(String ... rid) {
         addOrClause("rid = ?", rid);
         return this;
     }
@@ -147,19 +147,21 @@ public final class JdbcRequestTargetCriterion extends JdbcCriterion {
         return this;
     }
 
-    public JdbcRequestTargetCriterion pnfsids(String[] pnfsids) {
+    public JdbcRequestTargetCriterion pnfsids(String ... pnfsids) {
         addOrClause("pnfsid = ?", pnfsids);
         return this;
     }
 
-    public JdbcRequestTargetCriterion path(String[] path) {
-        path = Arrays.stream(path).map(p -> truncate(p, 256,true))
-              .toArray(String[]::new);
+    public JdbcRequestTargetCriterion path(String ... path) {
+        if (path != null) {
+            path = Arrays.stream(path).map(p -> truncate(p, 256, true))
+                  .toArray(String[]::new);
+        }
         addOrClause("path = ?", path);
         return this;
     }
 
-    public JdbcRequestTargetCriterion activity(String[] activity) {
+    public JdbcRequestTargetCriterion activity(String ... activity) {
         addOrClause("activity = ?", activity);
         return this;
     }
@@ -169,7 +171,7 @@ public final class JdbcRequestTargetCriterion extends JdbcCriterion {
         return this;
     }
 
-    public JdbcRequestTargetCriterion type(String[] types) {
+    public JdbcRequestTargetCriterion type(String ... types) {
         addOrClause("type = ?", types);
         return this;
     }
