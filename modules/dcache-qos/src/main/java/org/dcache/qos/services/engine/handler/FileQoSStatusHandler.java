@@ -67,8 +67,10 @@ import static org.dcache.qos.data.QoSMessageType.QOS_MODIFIED;
 import static org.dcache.qos.data.QoSMessageType.QOS_MODIFIED_CANCELED;
 import static org.dcache.qos.services.engine.util.QoSEngineCounters.QOS_ACTION_COMPLETED;
 
+import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import dmg.cells.nucleus.CellInfoProvider;
+import dmg.cells.nucleus.NoRouteToCellException;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.util.concurrent.ExecutorService;
@@ -167,10 +169,9 @@ public final class FileQoSStatusHandler implements CellInfoProvider, QoSActionCo
                 LOGGER.debug("handleQoSModification calling fileQoSStatusChanged for {}, {}.",
                       pnfsId, QOS_MODIFIED);
                 fileQoSStatusChanged(new FileQoSUpdate(pnfsId, null, QOS_MODIFIED));
-            } catch (QoSException e) {
+            } catch (QoSException | CacheException | NoRouteToCellException | InterruptedException e) {
                 LOGGER.error("Failed to handle QoS requirements for {}: {}.",
-                      requirements.getPnfsId(),
-                      e.toString());
+                      requirements.getPnfsId(), e.getMessage());
                 handleActionCompleted(pnfsId, VOID, e.toString());
             }
         });
