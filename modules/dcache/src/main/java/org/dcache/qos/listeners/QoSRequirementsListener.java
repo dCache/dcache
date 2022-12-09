@@ -59,7 +59,9 @@ documents or software obtained from this server.
  */
 package org.dcache.qos.listeners;
 
+import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
+import dmg.cells.nucleus.NoRouteToCellException;
 import org.dcache.qos.QoSException;
 import org.dcache.qos.data.FileQoSRequirements;
 import org.dcache.qos.data.FileQoSUpdate;
@@ -81,7 +83,8 @@ public interface QoSRequirementsListener {
      * @param newRequirements describing principally how many peristent disk and tape copies are
      *                        required.
      */
-    void fileQoSRequirementsModified(FileQoSRequirements newRequirements) throws QoSException;
+    void fileQoSRequirementsModified(FileQoSRequirements newRequirements)
+          throws QoSException, CacheException, NoRouteToCellException, InterruptedException;
 
     /**
      * A client sends this when it wishes to cancel a modification requirement.

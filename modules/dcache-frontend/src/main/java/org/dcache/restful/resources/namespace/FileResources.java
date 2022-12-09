@@ -531,6 +531,8 @@ public class FileResources {
         } catch (NoAttributeCacheException e) {
             throw new WebApplicationException(Response.status(409, "No such attribute")
                   .build());
+        } catch (NoRouteToCellException | InterruptedException e) {
+            throw new InternalServerErrorException(e.toString());
         } catch (UnsupportedOperationException |
               URISyntaxException |
               JSONException |
