@@ -597,6 +597,9 @@ public class PoolInfoMap {
         read.lock();
         try {
             PoolInformation info = poolInfo.get(pool);
+            if (info == null || info.getMode() == null) {
+                return false;
+            }
             return info.getMode().isDisabled(PoolV2Mode.DRAINING);
         } finally {
             read.unlock();
