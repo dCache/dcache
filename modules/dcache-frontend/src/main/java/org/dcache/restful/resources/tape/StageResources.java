@@ -101,6 +101,7 @@ import org.dcache.services.bulk.BulkRequestMessage;
 import org.dcache.services.bulk.BulkRequestStatusMessage;
 import org.dcache.services.bulk.BulkRequestTargetInfo;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.stereotype.Component;
@@ -327,43 +328,49 @@ public final class StageResources {
         request.setClearOnSuccess(false);
         request.setActivity("STAGE");
 
-        JSONObject reqPayload = new JSONObject(requestPayload);
+        try {
+            JSONObject reqPayload = new JSONObject(requestPayload);
 
-        JSONArray fileset = reqPayload.getJSONArray("files");
-        if (fileset == null || fileset.length() == 0) {
-            throw new BadRequestException("request contains no files.");
-        }
-        reqPayload.remove("files");
-
-        if (reqPayload.length() != 0) {
-            throw new BadRequestException("unrecognized payload element(s): " + reqPayload.names());
-        }
-
-        List<String> paths = new ArrayList<>();
-        JSONObject jsonLifetimes = new JSONObject();
-        JSONObject jsonMetadata = new JSONObject();
-
-        int len = fileset.length();
-        for (int i = 0; i < len; ++i) {
-            JSONObject file = fileset.getJSONObject(i);
-            if (!file.has("path")) {
-                throw new BadRequestException("file object " + i + " has no path.");
+            JSONArray fileset = reqPayload.getJSONArray("files");
+            if (fileset == null || fileset.length() == 0) {
+                throw new BadRequestException("request contains no files.");
             }
-            String path = file.getString("path");
-            paths.add(path);
-            if (file.has("diskLifetime")) {
-                jsonLifetimes.put(path, file.getString("diskLifetime"));
-            }
-            if (file.has("targetedMetadata")) {
-                getTargetedMetadataForPath(file).ifPresent(mdata ->
-                      jsonMetadata.put(path, mdata.toString()));
-            }
-        }
+            reqPayload.remove("files");
 
-        request.setTarget(paths);
-        Map<String, String> arguments = new HashMap<>();
-        arguments.put("diskLifetime", jsonLifetimes.toString());
-        arguments.put("targetedMetadata", jsonMetadata.toString());
+            if (reqPayload.length() != 0) {
+                throw new BadRequestException(
+                      "unrecognized payload element(s): " + reqPayload.names());
+            }
+
+            List<String> paths = new ArrayList<>();
+            JSONObject jsonLifetimes = new JSONObject();
+            JSONObject jsonMetadata = new JSONObject();
+
+            int len = fileset.length();
+            for (int i = 0; i < len; ++i) {
+                JSONObject file = fileset.getJSONObject(i);
+                if (!file.has("path")) {
+                    throw new BadRequestException("file object " + i + " has no path.");
+                }
+                String path = file.getString("path");
+                paths.add(path);
+                if (file.has("diskLifetime")) {
+                    jsonLifetimes.put(path, file.getString("diskLifetime"));
+                }
+                if (file.has("targetedMetadata")) {
+                    getTargetedMetadataForPath(file).ifPresent(mdata ->
+                          jsonMetadata.put(path, mdata.toString()));
+                }
+            }
+
+            request.setTarget(paths);
+            Map<String, String> arguments = new HashMap<>();
+            arguments.put("diskLifetime", jsonLifetimes.toString());
+            arguments.put("targetedMetadata", jsonMetadata.toString());
+        } catch (JSONException e) {
+            throw new BadRequestException(
+                  String.format("badly formed json object (%s): %s.", requestPayload, e));
+        }
 
         return request;
     }
