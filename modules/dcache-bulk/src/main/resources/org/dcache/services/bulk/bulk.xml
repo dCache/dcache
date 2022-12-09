@@ -52,9 +52,7 @@
     </constructor-arg>
   </bean>
 
-  <bean id="incoming-thread-executor"
-        class="org.dcache.util.CDCExecutorServiceDecorator"
-        destroy-method="shutdownNow">
+  <bean id="incoming-thread-executor" class="org.dcache.util.CDCExecutorServiceDecorator">
     <description>Used to execute request message handling</description>
     <constructor-arg>
       <bean class="org.dcache.util.BoundedCachedExecutor">
@@ -63,9 +61,7 @@
     </constructor-arg>
   </bean>
 
-  <bean id="container-job-executor"
-    class="org.dcache.util.CDCExecutorServiceDecorator"
-    destroy-method="shutdownNow">
+  <bean id="container-job-executor" class="org.dcache.util.CDCExecutorServiceDecorator">
     <description>Used to execute jobs that are executed by a batch container.</description>
     <constructor-arg>
       <bean class="org.dcache.util.BoundedCachedExecutor">
@@ -74,9 +70,7 @@
     </constructor-arg>
   </bean>
 
-  <bean id="activity-callback-executor"
-    class="org.dcache.util.CDCExecutorServiceDecorator"
-    destroy-method="shutdownNow">
+  <bean id="activity-callback-executor" class="org.dcache.util.CDCExecutorServiceDecorator">
     <description>Used to execute the future callbacks to jobs which send and wait for replies.</description>
     <constructor-arg>
       <bean class="org.dcache.util.BoundedCachedExecutor">
@@ -85,9 +79,7 @@
     </constructor-arg>
   </bean>
 
-  <bean id="cancellation-executor"
-    class="org.dcache.util.CDCScheduledExecutorServiceDecorator"
-    destroy-method="shutdownNow">
+  <bean id="cancellation-executor" class="org.dcache.util.CDCScheduledExecutorServiceDecorator">
     <description>Used to run delayed clear requests.</description>
     <constructor-arg>
       <bean class="java.util.concurrent.ScheduledThreadPoolExecutor">
@@ -96,8 +88,23 @@
     </constructor-arg>
   </bean>
 
-  <bean id="bulk-data-source" class="com.zaxxer.hikari.HikariDataSource"
-    destroy-method="close">
+  <bean id="manager-executor"  class="org.dcache.util.CDCExecutorServiceDecorator">
+    <constructor-arg>
+      <bean class="org.dcache.util.BoundedCachedExecutor">
+        <constructor-arg value="1"/>
+      </bean>
+    </constructor-arg>
+  </bean>
+
+  <bean id="reset-executor" class="org.dcache.util.CDCExecutorServiceDecorator">
+    <constructor-arg>
+      <bean class="org.dcache.util.BoundedCachedExecutor">
+        <constructor-arg value="1"/>
+      </bean>
+    </constructor-arg>
+  </bean>
+
+  <bean id="bulk-data-source" class="com.zaxxer.hikari.HikariDataSource">
     <description>Encapsulates the bulk database connection pool and properties.</description>
     <constructor-arg>
       <bean class="com.zaxxer.hikari.HikariConfig">
@@ -274,15 +281,7 @@
     <property name="completionHandler" ref="request-handler"/>
     <property name="submissionHandler" ref="request-handler"/>
     <property name="schedulerProvider" ref="scheduler-provider"/>
-    <property name="processorExecutorService">
-      <bean class="org.dcache.util.CDCExecutorServiceDecorator" destroy-method="shutdownNow">
-        <constructor-arg>
-          <bean class="org.dcache.util.BoundedCachedExecutor">
-            <constructor-arg value="1"/>
-          </bean>
-        </constructor-arg>
-      </bean>
-    </property>
+    <property name="processorExecutorService" ref="manager-executor"/>
     <property name="maxActiveRequests" value="${bulk.limits.container-processing-threads}"/>
     <property name="timeout" value="${bulk.limits.sweep-interval}"/>
     <property name="timeoutUnit" value="${bulk.limits.sweep-interval.unit}"/>
@@ -314,14 +313,22 @@
     <property name="requestManager" ref="request-manager"/>
     <property name="submissionHandler" ref="request-handler"/>
     <property name="statistics" ref="statistics"/>
-    <property name="executor">
-      <bean class="org.dcache.util.CDCExecutorServiceDecorator" destroy-method="shutdownNow">
-        <constructor-arg>
-          <bean class="org.dcache.util.BoundedCachedExecutor">
-            <constructor-arg value="1"/>
-          </bean>
-        </constructor-arg>
-      </bean>
+    <property name="executor" ref="reset-executor"/>
+  </bean>
+
+  <bean id="shutdownManager" class="org.dcache.services.bulk.util.BulkShutdownManager" destroy-method="shutdown">
+    <property name="executorList">
+      <list>
+        <ref bean="incoming-thread-executor"/>
+        <ref bean="container-job-executor"/>
+        <ref bean="activity-callback-executor"/>
+        <ref bean="cancellation-executor"/>
+        <ref bean="manager-executor"/>
+        <ref bean="reset-executor"/>
+      </list>
     </property>
+    <property name="dataSource" ref="bulk-data-source"/>
+    <property name="await" value="${bulk.limits.shutdown-manager-wait}"/>
+    <property name="awaitUnit" value="${bulk.limits.shutdown-manager-wait.unit}"/>
   </bean>
 </beans>
