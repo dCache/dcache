@@ -120,6 +120,8 @@ dCache Book
     - [Advanced Tuning](cookbook-advanced.md)
 
     - [Complex Network Configuration](cookbook-net.md)
+    
+    - [Debugging](cookbook-debugging.md)
 
 -   [Chapter IV. Reference](reference.md)
 
