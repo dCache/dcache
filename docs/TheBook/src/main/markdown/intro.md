@@ -118,6 +118,13 @@ dCache is scalable storage software. This means that (in most cases) the perform
 
 Most cells communicate in such a way that they don't rely on in which domain they are running. This allows a site to move cells from one domain to another or to create new domain definitions with some subset of available cells. Although this is possible, it is rare that redefining domains or defining new domains is necessary. Starting or stopping domains is usually sufficient for managing load.
 
+> **NOTE**
+>
+> - Each domain **must** have a dCache instance unique name. Therefore each cell has a unique fully qualified name like `cellName@domainName`.
+> - In muti-domain setup at least one domain **must** be a `core` domain. In HA mode, 2 cores are sufficient.
+> - All domains connected to the same ZooKeeper are part of a single dCache instance.
+
+
 ## Protocols Supported by dCache
 
 |                              |dCap  |FTP   |xrootd|NFSv4.1| WebDAV | SRM |
