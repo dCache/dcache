@@ -60,37 +60,19 @@ documents or software obtained from this server.
 package org.dcache.restful.providers.wellknown;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileNotFoundCacheException;
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Properties;
+import org.dcache.services.httpd.wellknown.AbstractWellKnownProducerFactory;
 import org.dcache.services.httpd.wellknown.WellKnownContentProducer;
-import org.dcache.services.httpd.wellknown.WellKnownJsonProducer;
-import org.dcache.services.httpd.wellknown.WellKnownProducerFactory;
+import org.dcache.services.httpd.wellknown.WellKnownSerializedContentProducer;
 import org.json.JSONObject;
 
 /**
  *  Supports the wlcg-tape-rest-api.path endpoint.
  */
-public class WellKnownWlcgProducerFactory implements WellKnownProducerFactory {
+public class WellKnownWlcgProducerFactory extends AbstractWellKnownProducerFactory {
     private static final String PATH = "frontend.wellknown!wlcg-tape-rest-api.path";
-
-    private JSONObject content;
-
-    @Override
-    public void configure(Properties properties) throws CacheException {
-        String file = properties.getProperty(PATH, null);
-        if (file == null) {
-            throw new FileNotFoundCacheException(PATH);
-        }
-
-        try {
-            content = new JSONObject(Files.readString(Path.of(file)));
-        } catch (IOException e) {
-            throw new CacheException(e.toString());
-        }
-    }
 
     @Override
     public String getEndpoint() {
@@ -98,9 +80,31 @@ public class WellKnownWlcgProducerFactory implements WellKnownProducerFactory {
     }
 
     @Override
-    public WellKnownContentProducer createProducer() {
-        WellKnownJsonProducer jsonProducer = new WellKnownJsonProducer();
-        jsonProducer.setContent(content);
-        return jsonProducer;
+    protected Serializable createContent() throws CacheException {
+        try {
+            return new JSONObject(Files.readString(path)).toString(4);
+        } catch (IOException e) {
+            throw new CacheException(e.toString());
+        }
+    }
+
+    @Override
+    protected WellKnownContentProducer createContentProducer() {
+        return new WellKnownSerializedContentProducer() {
+            @Override
+            public String getCharacterEncoding() {
+                return "UTF-8";
+            }
+
+            @Override
+            public String getContentType() {
+                return "application/json";
+            }
+        };
+    }
+
+    @Override
+    protected String getPathPropertyName() {
+        return PATH;
     }
 }

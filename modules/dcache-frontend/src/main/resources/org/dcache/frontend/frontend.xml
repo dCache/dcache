@@ -357,6 +357,12 @@
         </property>
     </bean>
 
+    <bean id="well-known-producer-factory-provider"
+      class="org.dcache.services.httpd.wellknown.WellKnownProducerFactoryProvider"
+      init-method="initialize">
+      <description>Loads the factories for producers of well-known endpoint content.</description>
+    </bean>
+
     <bean id="handlers" class="org.eclipse.jetty.server.handler.HandlerList">
         <description>List of handlers for HTTP requests</description>
         <property name="handlers">
@@ -403,7 +409,16 @@
                         </bean>
                     </property>
                 </bean>
-                <bean class="org.dcache.restful.LoggingHandler">
+                <bean class="org.eclipse.jetty.server.handler.ContextHandler">
+                  <property name="contextPath" value="/.well-known"/>
+                  <property name="allowNullPathInfo" value="true"/>
+                  <property name="handler">
+                    <bean class="org.dcache.services.httpd.handlers.WellKnownHandler">
+                      <property name="factoryProvider" ref="well-known-producer-factory-provider"/>
+                    </bean>
+                  </property>
+                </bean>
+                  <bean class="org.dcache.restful.LoggingHandler">
                     <property name="handler" ref="authentication-handler"/>
                 </bean>
             </list>
