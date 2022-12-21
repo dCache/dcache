@@ -57,64 +57,53 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.services.httpd.handlers;
+package org.dcache.services.httpd.wellknown.security;
 
-import dmg.util.HttpRequest;
+import diskCacheV111.util.CacheException;
 import java.io.IOException;
-import java.util.Optional;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import org.dcache.services.httpd.exceptions.OnErrorException;
-import org.dcache.services.httpd.util.StandardHttpRequest;
+import java.io.Serializable;
+import java.nio.file.Files;
+import org.dcache.services.httpd.wellknown.AbstractWellKnownProducerFactory;
 import org.dcache.services.httpd.wellknown.WellKnownContentProducer;
-import org.dcache.services.httpd.wellknown.WellKnownForwardingProducer;
-import org.dcache.services.httpd.wellknown.WellKnownProducer;
-import org.dcache.services.httpd.wellknown.WellKnownProducerFactory;
-import org.dcache.services.httpd.wellknown.WellKnownProducerFactoryProvider;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.dcache.services.httpd.wellknown.WellKnownSerializedContentProducer;
 
 /**
- * Provides response for .well-known path requests.
+ *  Supports the security.txt endpoint.
  */
-public class WellKnownHandler extends AbstractHandler {
-
-    private WellKnownProducerFactoryProvider factoryProvider;
+public class WellKnownSecurityTxtProducerFactory extends AbstractWellKnownProducerFactory {
+    private static final String PATH = "dcache.wellknown!security-txt.uri";
 
     @Override
-    public void handle(String target, Request baseRequest,
-          HttpServletRequest request, HttpServletResponse response)
-          throws IOException, ServletException {
+    public String getEndpoint() {
+        return "security.txt";
+    }
+
+    @Override
+    protected Serializable createContent() throws CacheException {
         try {
-            HttpRequest proxy = new StandardHttpRequest(request, response);
-            String[] tokens = proxy.getRequestTokens();
-            Optional<WellKnownProducerFactory> factory = factoryProvider.getFactory(tokens[1]);
-            if (factory.isEmpty()) {
-                throw new OnErrorException("No such endpoint");
-            }
-
-            WellKnownProducer producer = factory.get().createProducer();
-            if (producer instanceof WellKnownContentProducer) {
-                WellKnownContentProducer contentProducer = (WellKnownContentProducer)producer;
-                response.setContentType(contentProducer.getContentType());
-                response.setCharacterEncoding(contentProducer.getCharacterEncoding());
-                response.setStatus(HttpServletResponse.SC_OK);
-                proxy.getPrintWriter().print(contentProducer.getContent());
-                proxy.getPrintWriter().flush();
-                baseRequest.setHandled(true);
-            } else if (producer instanceof WellKnownForwardingProducer) {
-                response.sendRedirect(((WellKnownForwardingProducer)producer).getForwardingAddress());
-                baseRequest.setHandled(true);
-            }
-
-        } catch (Exception t) {
-            throw new ServletException("WellKnownHandler", t);
+            return Files.readString(path);
+        } catch (IOException e) {
+            throw new CacheException(e.toString());
         }
     }
 
-    public void setFactoryProvider(
-          WellKnownProducerFactoryProvider factoryProvider) {
-        this.factoryProvider = factoryProvider;
+    @Override
+    protected WellKnownContentProducer createContentProducer() {
+        return new WellKnownSerializedContentProducer() {
+            @Override
+            public String getCharacterEncoding() {
+                return "UTF-8";
+            }
+
+            @Override
+            public String getContentType() {
+                return "text/plain";
+            }
+        };
+    }
+
+    @Override
+    protected String getPathPropertyName() {
+        return PATH;
     }
 }

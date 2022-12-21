@@ -59,10 +59,12 @@ documents or software obtained from this server.
  */
 package org.dcache.services.httpd.wellknown;
 
+import java.io.Serializable;
+
 /**
  *  Should be implemented by the producers for specific well-known endpoints.
  */
-public interface WellKnownContentProducer {
+public interface WellKnownContentProducer extends WellKnownProducer {
 
     /**
      * @return the appropriate encoding for the content.
@@ -77,5 +79,10 @@ public interface WellKnownContentProducer {
     /**
      * @return the content to write to the response.
      */
-    String getContent();
+    Serializable getContent();
+
+    /**
+     * @param content to write to the response.
+     */
+    void setContent(Serializable content);
 }

@@ -57,64 +57,65 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.services.httpd.handlers;
+package org.dcache.services.httpd.wellknown;
 
-import dmg.util.HttpRequest;
-import java.io.IOException;
-import java.util.Optional;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import org.dcache.services.httpd.exceptions.OnErrorException;
-import org.dcache.services.httpd.util.StandardHttpRequest;
-import org.dcache.services.httpd.wellknown.WellKnownContentProducer;
-import org.dcache.services.httpd.wellknown.WellKnownForwardingProducer;
-import org.dcache.services.httpd.wellknown.WellKnownProducer;
-import org.dcache.services.httpd.wellknown.WellKnownProducerFactory;
-import org.dcache.services.httpd.wellknown.WellKnownProducerFactoryProvider;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
+import java.io.Serializable;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Path;
+import java.util.Properties;
+import org.dcache.util.CacheExceptionFactory;
 
 /**
- * Provides response for .well-known path requests.
+ * Supports the wlcg-tape-rest-api.path endpoint.
  */
-public class WellKnownHandler extends AbstractHandler {
+public abstract class AbstractWellKnownProducerFactory implements WellKnownProducerFactory {
 
-    private WellKnownProducerFactoryProvider factoryProvider;
+    protected Path path;
+    private String forwardingAddress;
 
     @Override
-    public void handle(String target, Request baseRequest,
-          HttpServletRequest request, HttpServletResponse response)
-          throws IOException, ServletException {
-        try {
-            HttpRequest proxy = new StandardHttpRequest(request, response);
-            String[] tokens = proxy.getRequestTokens();
-            Optional<WellKnownProducerFactory> factory = factoryProvider.getFactory(tokens[1]);
-            if (factory.isEmpty()) {
-                throw new OnErrorException("No such endpoint");
-            }
-
-            WellKnownProducer producer = factory.get().createProducer();
-            if (producer instanceof WellKnownContentProducer) {
-                WellKnownContentProducer contentProducer = (WellKnownContentProducer)producer;
-                response.setContentType(contentProducer.getContentType());
-                response.setCharacterEncoding(contentProducer.getCharacterEncoding());
-                response.setStatus(HttpServletResponse.SC_OK);
-                proxy.getPrintWriter().print(contentProducer.getContent());
-                proxy.getPrintWriter().flush();
-                baseRequest.setHandled(true);
-            } else if (producer instanceof WellKnownForwardingProducer) {
-                response.sendRedirect(((WellKnownForwardingProducer)producer).getForwardingAddress());
-                baseRequest.setHandled(true);
-            }
-
-        } catch (Exception t) {
-            throw new ServletException("WellKnownHandler", t);
+    public void configure(Properties properties) throws CacheException {
+        String propertyName = getPathPropertyName();
+        String propertyValue = properties.getProperty(propertyName, null);
+        if (propertyValue == null) {
+            throw new FileNotFoundCacheException(propertyName);
         }
+
+        try {
+            URI uri = new URI(propertyValue);
+            if ("https".equals(uri.getScheme()) && uri.getHost() != null) {
+                forwardingAddress = uri.toURL().toString();
+                return;
+            }
+        } catch (URISyntaxException | MalformedURLException e) {
+            throw CacheExceptionFactory.exceptionOf(CacheException.INVALID_ARGS, e.getMessage());
+        }
+
+        path = Path.of(propertyValue);
     }
 
-    public void setFactoryProvider(
-          WellKnownProducerFactoryProvider factoryProvider) {
-        this.factoryProvider = factoryProvider;
+    @Override
+    public WellKnownProducer createProducer() throws CacheException {
+        if (path != null) {
+            WellKnownContentProducer producer = createContentProducer();
+            producer.setContent(createContent());
+            return producer;
+        } else if (forwardingAddress != null) {
+            return new WellKnownResponseProducer(forwardingAddress);
+        }
+
+        throw CacheExceptionFactory.exceptionOf(CacheException.INVALID_ARGS,
+              "no producer content or forwarding address.");
     }
+
+    protected abstract Serializable createContent() throws CacheException;
+
+    protected abstract WellKnownContentProducer createContentProducer();
+
+    protected abstract String getPathPropertyName();
+
 }

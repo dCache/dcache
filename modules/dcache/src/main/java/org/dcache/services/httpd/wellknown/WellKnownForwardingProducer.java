@@ -57,64 +57,15 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.services.httpd.handlers;
-
-import dmg.util.HttpRequest;
-import java.io.IOException;
-import java.util.Optional;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import org.dcache.services.httpd.exceptions.OnErrorException;
-import org.dcache.services.httpd.util.StandardHttpRequest;
-import org.dcache.services.httpd.wellknown.WellKnownContentProducer;
-import org.dcache.services.httpd.wellknown.WellKnownForwardingProducer;
-import org.dcache.services.httpd.wellknown.WellKnownProducer;
-import org.dcache.services.httpd.wellknown.WellKnownProducerFactory;
-import org.dcache.services.httpd.wellknown.WellKnownProducerFactoryProvider;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
+package org.dcache.services.httpd.wellknown;
 
 /**
- * Provides response for .well-known path requests.
+ *  Should be implemented by the producers for specific well-known endpoints.
  */
-public class WellKnownHandler extends AbstractHandler {
+public interface WellKnownForwardingProducer extends WellKnownProducer {
 
-    private WellKnownProducerFactoryProvider factoryProvider;
-
-    @Override
-    public void handle(String target, Request baseRequest,
-          HttpServletRequest request, HttpServletResponse response)
-          throws IOException, ServletException {
-        try {
-            HttpRequest proxy = new StandardHttpRequest(request, response);
-            String[] tokens = proxy.getRequestTokens();
-            Optional<WellKnownProducerFactory> factory = factoryProvider.getFactory(tokens[1]);
-            if (factory.isEmpty()) {
-                throw new OnErrorException("No such endpoint");
-            }
-
-            WellKnownProducer producer = factory.get().createProducer();
-            if (producer instanceof WellKnownContentProducer) {
-                WellKnownContentProducer contentProducer = (WellKnownContentProducer)producer;
-                response.setContentType(contentProducer.getContentType());
-                response.setCharacterEncoding(contentProducer.getCharacterEncoding());
-                response.setStatus(HttpServletResponse.SC_OK);
-                proxy.getPrintWriter().print(contentProducer.getContent());
-                proxy.getPrintWriter().flush();
-                baseRequest.setHandled(true);
-            } else if (producer instanceof WellKnownForwardingProducer) {
-                response.sendRedirect(((WellKnownForwardingProducer)producer).getForwardingAddress());
-                baseRequest.setHandled(true);
-            }
-
-        } catch (Exception t) {
-            throw new ServletException("WellKnownHandler", t);
-        }
-    }
-
-    public void setFactoryProvider(
-          WellKnownProducerFactoryProvider factoryProvider) {
-        this.factoryProvider = factoryProvider;
-    }
+    /**
+     * @return the forwarding address to use for eventual content
+     */
+    String getForwardingAddress();
 }

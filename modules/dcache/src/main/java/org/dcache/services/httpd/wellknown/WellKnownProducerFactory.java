@@ -82,5 +82,5 @@ public interface WellKnownProducerFactory {
     /**
      * @return the producer for this endpoint's well-known content.
      */
-    WellKnownContentProducer createProducer();
+    WellKnownProducer createProducer() throws CacheException;
 }

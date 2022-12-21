@@ -59,30 +59,21 @@ documents or software obtained from this server.
  */
 package org.dcache.services.httpd.wellknown;
 
-import org.json.JSONObject;
+import java.io.Serializable;
 
 /**
  *  For returning JSON content.
  */
-public class WellKnownJsonProducer implements WellKnownContentProducer {
-    private JSONObject content;
+public abstract class WellKnownSerializedContentProducer implements WellKnownContentProducer {
+    private Serializable content;
 
     @Override
-    public String getCharacterEncoding() {
-        return "UTF-8";
+    public Serializable getContent() {
+        return content;
     }
 
     @Override
-    public String getContentType() {
-        return "application/json";
-    }
-
-    @Override
-    public String getContent() {
-        return content == null ? null : content.toString(4);
-    }
-
-    public void setContent(JSONObject content) {
+    public void setContent(Serializable content) {
         this.content = content;
     }
 }
