@@ -684,6 +684,22 @@ xrootd.net.proxy.response-timeout-in-secs=30
 > proxying is on, such partitioning may be defeated for transfers that go
 > through that specific door.
 
+> BEST PRACTICE:  Memory consumption (Java direct memory, not heap) for a proxied
+> door is somewhat higher than normal, since it not only has double the connections
+> from the outside (one for the initial request, the second for the redirect to
+> the proxy), but must also sustain the passage of data packets through it
+> (and on to the pool).  For the default chunk size used for xrootd (8 MiB),
+> there seems to be required approximately 28MiB  of direct memory per transfer.
+> Hence the dCache default (512MiB) will very likely be insufficient.  This needs
+> to be adjusted according to expected traffic, but keep in mind that something
+> like 500 _concurrent_ transfers through the proxy door would require
+> setting it to at least 16GiB on the door domain, e.g.:
+
+```
+[xrootd-1095-${host.name}Domain]
+dcache.java.memory.direct=16384m
+```
+
 ### Other configuration options
 
 The `xrootd-door` has several other configuration properties. You can
