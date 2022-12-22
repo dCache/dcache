@@ -622,11 +622,9 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
 
     @Override
     public void getInfo(PrintWriter pw) {
-        pw.printf("Cleaning Interval: %s\n", _refreshInterval);
-        pw.printf("Cleaning Interval Unit: %s\n", _refreshIntervalUnit);
+        pw.printf("Cleaning Interval: %s %s\n", _refreshInterval, _refreshIntervalUnit);
         pw.printf("Cleanup grace period: %s\n", TimeUtils.describe(_gracePeriod).orElse("-"));
-        pw.printf("Timeout for cleaning requests to HSM-pools: %s\n", _hsmTimeout);
-        pw.printf("Timeout Unit for cleaning requests to HSM-pools: %s\n", _hsmTimeoutUnit);
+        pw.printf("Timeout for cleaning requests to HSM-pools: %s %s\n", _hsmTimeout, _hsmTimeoutUnit);
         pw.printf("Maximum number of cached delete locations:   %d\n", _maxCachedDeleteLocations);
         pw.printf("Maximum number of files to include in a single request:   %d\n",
               _maxFilesPerRequest);

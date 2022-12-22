@@ -104,8 +104,6 @@
         <property name="refreshIntervalUnit" value="${cleaner-disk.limits.period.unit}"/>
         <property name="gracePeriod"
           value="#{ T(org.dcache.util.TimeUtils).durationOf('${cleaner-disk.service.grace-period}', '${cleaner-disk.service.grace-period.unit}')}"/>
-        <property name="recoverTimer" value="${cleaner-disk.service.pool.retry-period}"/>
-        <property name="recoverTimerUnit" value="${cleaner-disk.service.pool.retry-period.unit}"/>
         <property name="processAtOnce" value="${cleaner-disk.limits.batch-size}"/>
         <property name="notificationStub" ref="notification-stub"/>
     </bean>

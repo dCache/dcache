@@ -14,7 +14,6 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PnfsDeleteEntryNotificationMessage;
-import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
@@ -34,15 +33,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 import org.dcache.cells.CellStub;
 import org.dcache.util.CacheExceptionFactory;
 import org.dcache.util.TimeUtils;
@@ -64,27 +61,12 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DiskCleaner.class);
 
-    private final ConcurrentHashMap<String, Long> _poolsBlackList = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Long> _poolsBeingCleaned = new ConcurrentHashMap<>();
-
-    private ScheduledFuture<?> _cleanerTask;
 
     protected CellPath[] _deleteNotificationTargets;
     private CellStub _notificationStub;
 
-    private long _recoverTimer;
-    private TimeUnit _recoverTimerUnit;
     private int _processAtOnce;
-
-    @Required
-    public void setRecoverTimer(long recoverTimer) {
-        _recoverTimer = recoverTimer;
-    }
-
-    @Required
-    public void setRecoverTimerUnit(TimeUnit recoverTimerUnit) {
-        _recoverTimerUnit = recoverTimerUnit;
-    }
 
     @Required
     public void setProcessAtOnce(int processAtOnce) {
@@ -120,38 +102,19 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
         try {
             LOGGER.info("New run...");
 
-            // get list of pool names from the trash_table
-            List<String> poolList = getPoolList();
-
-            LOGGER.debug("List of pools from the trash-table : {}", poolList);
-
-            // if there are some pools in the blackPoolList (i.e.,
-            // pools that are down/do not exist), extract them from the
-            // poolList
-            if (!_poolsBlackList.isEmpty()) {
-                LOGGER.debug("{} pools are currently blacklisted.", _poolsBlackList.size());
-
-                for (Map.Entry<String, Long> blackListEntry : _poolsBlackList.entrySet()) {
-                    String poolName = blackListEntry.getKey();
-                    long valueTime = blackListEntry.getValue();
-
-                    // check, if it is time to remove pool from the black list
-                    if ((valueTime != 0)
-                          && (_recoverTimer > 0)
-                          && ((System.currentTimeMillis() - valueTime) > _recoverTimerUnit.toMillis(
-                          _recoverTimer))) {
-                        _poolsBlackList.remove(poolName);
-                        LOGGER.debug("Removed the following pool from the black list: {}",
-                              poolName);
-                    }
-                }
-
-                poolList.removeAll(_poolsBlackList.keySet());
+            final List<String> poolList = getPoolList();
+            if (poolList.isEmpty()) {
+                return;
             }
+            List<String> pools = _pools.getPools().stream().filter(p -> !p.isDisabled())
+                  .map(PoolInformation::getName).filter(poolList::contains)
+                  .collect(Collectors.toList());
 
-            if (!poolList.isEmpty()) {
-                LOGGER.debug("The following pools are cleaned: {}", poolList);
-                runDelete(poolList);
+            if (!pools.isEmpty()) {
+                LOGGER.debug("The following pools are cleaned: {}", pools);
+                runDelete(pools);
+            } else {
+                LOGGER.info("No pools available for cleaning.");
             }
         } catch (DataAccessException e) {
             LOGGER.error("Database failure: {}", e.getMessage());
@@ -202,7 +165,7 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
     }
 
     private void runDelete(String pool) {
-        if (!_poolsBlackList.containsKey(pool)) {
+        if (_pools.isPoolAvailable(pool)) {
             try {
                 cleanPoolComplete(pool);
             } catch (NoRouteToCellException | CacheException e) {
@@ -292,22 +255,13 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
             }
         } catch (NoRouteToCellException | CacheException e) {
             LOGGER.info("blacklisting pool {}", poolName);
-            _poolsBlackList.put(poolName, System.currentTimeMillis());
+            _pools.remove(poolName);
             throw e;
         }
     }
 
     public void messageArrived(NoRouteToCellException e) {
         LOGGER.warn(e.getMessage());
-    }
-
-    public void messageArrived(PoolManagerPoolUpMessage poolUpMessage) {
-        String poolName = poolUpMessage.getPoolName();
-        if (poolUpMessage.getPoolMode().isEnabled()) {
-            _poolsBlackList.remove(poolName);
-        } else {
-            _poolsBlackList.put(poolName, System.currentTimeMillis());
-        }
     }
 
     private void runNotification() {
@@ -400,38 +354,6 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
         }
     }
 
-    @Command(name = "ls blacklist",
-          hint = "list blacklisted pools",
-          description = "Show a list of blacklisted pools. A blacklisted pool is a pool that is down or does not exist.")
-    public class LsBlacklistCommand implements Callable<String> {
-
-        @Override
-        public String call() {
-            StringBuilder sb = new StringBuilder();
-            for (String pool : _poolsBlackList.keySet()) {
-                sb.append(pool).append("\n");
-            }
-            return sb.toString();
-        }
-    }
-
-    @Command(name = "remove from blacklist",
-          hint = "remove a pool from the blacklist")
-    public class RemoveFromBlacklistCommand implements Callable<String> {
-
-        @Argument(usage = "The name of the pool to be removed from the blacklist.")
-        String poolName;
-
-        @Override
-        public String call() throws CommandException {
-            checkCommand(_hasHaLeadership, HA_NOT_LEADER_MSG);
-            if (_poolsBlackList.remove(poolName) != null) {
-                return "Pool " + poolName + " is removed from the Black List ";
-            }
-            return "Pool " + poolName + " was not found in the Black List ";
-        }
-    }
-
     @Command(name = "clean file",
           hint = "clean this file (file will be deleted from DISK)")
     public class CleanFileCommand implements Callable<String> {
@@ -477,7 +399,7 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
         public String call()
               throws CacheException, InterruptedException, NoRouteToCellException, CommandException {
             checkCommand(_hasHaLeadership, HA_NOT_LEADER_MSG);
-            if (_poolsBlackList.containsKey(poolName)) {
+            if (!_pools.isPoolAvailable(poolName)) {
                 return "This pool is not available for the moment and therefore will not be cleaned.";
             }
             runDelete(Arrays.asList(poolName));
@@ -500,7 +422,7 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
         public String call()
               throws CacheException, InterruptedException, NoRouteToCellException, CommandException {
             checkCommand(_hasHaLeadership, HA_NOT_LEADER_MSG);
-            if (!force && !_poolsBlackList.containsKey(poolName)) {
+            if (!force && _pools.isPoolAvailable(poolName)) {
                 return
                       "This pool is not currently blacklisted due to being unavailable. If you really "
                             + "want to forget the pool nonetheless, please use the 'force' option.";
@@ -533,10 +455,9 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
 
     @Override
     public void getInfo(PrintWriter pw) {
-        pw.printf("Cleaning Interval: %s\n", _refreshInterval);
-        pw.printf("Cleaning Interval Unit: %s\n", _refreshIntervalUnit);
+        pw.printf("Cleaning Interval: %s %s\n", _refreshInterval, _refreshIntervalUnit);
         pw.printf("Cleanup grace period: %s\n", TimeUtils.describe(_gracePeriod).orElse("-"));
-        pw.printf("Reply Timeout:  %d\n", _poolStub.getTimeout());
+        pw.printf("Pool reply timeout:  %d %s\n", _poolStub.getTimeout(), _poolStub.getTimeoutUnit());
         pw.printf("Number of files processed at once:  %d\n", _processAtOnce);
         pw.printf("Delete notification targets:  %s\n",
               Arrays.toString(_deleteNotificationTargets));

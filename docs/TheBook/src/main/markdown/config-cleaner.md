@@ -20,8 +20,6 @@ The `cleaner-disk` is responsible for removing disk-resident file replicas.
 The property `cleaner-disk.limits.threads` controls the number of pools processed in parallel.
 The `cleaner-disk.limits.batch-size` property places an upper limit on the number of files' data to be deleted in a message. If more than this number of files are to be deleted then the pool will receive multiple messages.
 
-The `cleaner-disk` maintains a list of pools that it was unable to contact: pools are either offline or sufficiently overloaded that they couldn't respond in time. A `cleaner-disk` cell will periodically try to delete data on pools in this list, but between such retries these pools are excluded from cleaner activity. This period can be configured via `cleaner-disk.service.pool.retry-period`.
-
 ### HSM Cleaner
 
 The `cleaner-hsm` is responsible for removing tape-resident file replicas by instructing HSM-attached pools to remove deleted files' data stored in the HSM. To enable this feature, the property must be enabled at all the pools that are supposed to delete files from an HSM.

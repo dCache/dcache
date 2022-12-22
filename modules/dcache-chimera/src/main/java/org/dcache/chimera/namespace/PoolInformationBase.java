@@ -25,14 +25,12 @@ public class PoolInformationBase implements CellMessageReceiver {
     /**
      * Map of all pools currently up.
      */
-    private final Map<String, PoolInformation> _pools =
-          new HashMap<>();
+    private final Map<String, PoolInformation> _pools = new HashMap<>();
 
     /**
      * Map from HSM instance name to the set of pools attached to that HSM.
      */
-    private final Map<String, Collection<PoolInformation>> _hsmToPool =
-          new HashMap<>();
+    private final Map<String, Collection<PoolInformation>> _hsmToPool = new HashMap<>();
 
     /**
      *
@@ -64,6 +62,10 @@ public class PoolInformationBase implements CellMessageReceiver {
             }
         }
         return null;
+    }
+
+    public synchronized boolean isPoolAvailable(String poolName) {
+        return _pools.containsKey(poolName) && !_pools.get(poolName).isDisabled();
     }
 
     /**
@@ -105,11 +107,8 @@ public class PoolInformationBase implements CellMessageReceiver {
         /* Update HSM to pool map.
          */
         for (String hsm : pool.getHsmInstances()) {
-            Collection<PoolInformation> pools = _hsmToPool.get(hsm);
-            if (pools == null) {
-                pools = new ArrayList<>();
-                _hsmToPool.put(hsm, pools);
-            }
+            Collection<PoolInformation> pools = _hsmToPool.computeIfAbsent(hsm,
+                  k -> new ArrayList<>());
             pools.add(pool);
         }
     }
