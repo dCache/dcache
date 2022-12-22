@@ -306,12 +306,20 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
         }
 
         String hsm = msg.getHsm();
+        String poolName = msg.getPoolName();
         Collection<URI> locations = _locationsToDelete.get(hsm);
         Collection<URI> success = msg.getSucceeded();
         Collection<URI> failures = msg.getFailed();
 
-        LOGGER.info("Pool delete responses for HSM {}: {} success, {} failures", hsm,
-              success.size(), failures.size());
+        boolean isStaleReply = false;
+        HsmCleaner.Timeout currHsmTimeout = _requestTimeoutPerHsm.get(hsm);
+        if (currHsmTimeout == null || !poolName.equals(currHsmTimeout.getPool())) {
+            LOGGER.warn(
+                  "Received a remove reply from pool {}, which is no longer waited for. "
+                        + "The cleaner pool timeout might be too small.",
+                  poolName);
+            isStaleReply = true;
+        }
 
         if (locations == null) {
             /* Seems we got a reply for something this instance did
@@ -319,14 +327,12 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
              * ignore it.
              */
             LOGGER.warn(
-                  "Received confirmation from a pool, for an action this cleaner did not request.");
+                  "Received confirmation from a pool for an action this cleaner did not request.");
             return;
         }
 
-        if (!failures.isEmpty()) {
-            LOGGER.warn("Pool reported that it failed to delete {} files from HSM {}. "
-                  + "Will try again later.", failures.size(), hsm);
-        }
+        LOGGER.info("Pool delete responses for HSM {}: {} success, {} failures", hsm,
+              success.size(), failures.size());
 
         for (URI location : success) {
             assert location.getAuthority().equals(hsm);
@@ -345,8 +351,10 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
             }
         }
 
-        removeHsmRequestTimeout(hsm);
-        flush(hsm);
+        if (!isStaleReply) {
+            removeHsmRequestTimeout(hsm);
+            flush(hsm);
+        }
     }
 
     /**
@@ -371,8 +379,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
         if (queryLimit <= 0) {
             LOGGER.debug(
                   "The number of cached HSM locations is already the maximum permissible size. "
-                        +
-                        "Not adding further entries.");
+                        + "Not adding further entries.");
             _locationsToDelete.keySet().forEach(
                   this::flush); // avoid not processing the remaining requests and being stuck
             return;
