@@ -34,7 +34,7 @@ When a pool reports back to `cleaner-hsm` that it was unable to delete certain f
 
 ## Database
 
-Cleaner services use a database called `t_locationinfo_trash`, often referred to as 'trash table'.
+Cleaner services use a database table called `t_locationinfo_trash`, often referred to as 'trash table'.
 The field `ipnfsid` contains the pnfsid and `ilocation` the pool on which a replica is located.
 The field `itype` stores the kind of delete entry:
 - `0`: `hsm`
