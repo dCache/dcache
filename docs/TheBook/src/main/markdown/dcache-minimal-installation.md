@@ -72,13 +72,12 @@ which require considerable effort to set up. For this tutorial the certificates 
  ```ini
 auth    optional    x509
 auth    optional    voms
-auth    sufficient  htpasswd
-map     optional    vorolemap
-map     optional    gridmap
-map     requisite   authzdb
+auth    optional    htpasswd
+map     sufficient    vorolemap
+map     sufficient    gridmap
+map     sufficient    authzdb
 session requisite   roles
-session requisite   authzdb
-                              
+session requisite   authzdb                              
 ```
 
 The first column is the phases of the authentication process. Each login attempt follows four phases: **auth**,
@@ -86,17 +85,15 @@ The first column is the phases of the authentication process. Each login attempt
 account checks if the user is allowed to use dCache right now. Finally, **session** adds some additional infor-
 mation.
 
-This configuration tells gPlazma to use the htpasswd plugin to check any passwords, the multimap plugin to
+This configuration tells gPlazma to use the **htpasswd** plugin to check any passwords, the **multimap** plugin to
 convert usernames into uid and gid values, the banfile plugin to check if the user is allowed to use dCache,
-and finally use the authzdb plugin to add various session information.
-The sufficient and requisite labels describe how to handle errors. For more details on this, see the
-gplazma chapter.
+and finally use the **authzdb** plugin to add various session information.
 
-This ability to split login steps between different plugins may make the process seem complicated; however,
-it is also very powerful and allows dCache to work with many different authentication schemes.
 
-The **optional** and **sufficient** labels describe how to handle errors. For more details on this, see the
-gplazma chapter.
+
+
+The **optional**, **sufficient** and **requisite** labels describe how to handle errors. 
+
 This ability to split login steps between different plugins may make the process seem complicated; however,
 it is also very powerful and allows dCache to work with many different authentication schemes.
 
@@ -111,15 +108,15 @@ with passwords TooManySecrets and dickerelch respectively:
 > touch /etc/dcache/htpasswd
 > htpasswd -bm /etc/dcache/htpasswd tester tester12
 > 
-> Adding password for user tester
+> Adding password for user tester--??
 > 
 > htpasswd -bm /etc/dcache/htpasswd admin dickerelch
 > 
-> Adding password for user admin
+> Adding password for user admin--??
 
 
 Next, we need to tell dCache which uid and gids these users should be assigned. To do this, create the file
-/etc/dcache/multi-mapfile with the following content:
+**/etc/dcache/multi-mapfile** with the following content:
 > username:tester uid:1000 gid:1000,true
 > username:admin uid:0 gid:0,true
 
