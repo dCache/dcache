@@ -96,22 +96,6 @@ This ability to split login steps between different plugins may make the process
 it is also very powerful and allows dCache to work with many different authentication schemes.
 
 
-## Deafault version  will be deleted
-
-which require considerable effort to set up.
-Therefore, in this initial configuration, we adopt something simpler: username + password authentication.
-So, delete the current /etc/dcache/gplazma.conf file and create a new one with the following contents:
-
-
-
-```ini
-auth     sufficient  htpasswd
-map      sufficient  multimap
-account  requisite   banfile
-session  requisite   authzdb
-```
-
-
 
 For the next step, we need to create the configuration for these four plugins. We will create two users: a
 regular user (”tester”) and an admin user (”admin”).
@@ -121,7 +105,7 @@ Let us create a new password file (/etc/dcache/htpasswd) and add these two users
 with passwords TooManySecrets and dickerelch respectively:
 
 > touch /etc/dcache/htpasswd
-> htpasswd -bm /etc/dcache/htpasswd tester tester12#
+> htpasswd -bm /etc/dcache/htpasswd tester tester12
 > 
 > Adding password for user tester
 > 
