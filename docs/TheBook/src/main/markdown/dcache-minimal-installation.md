@@ -95,6 +95,10 @@ gplazma chapter.
 This ability to split login steps between different plugins may make the process seem complicated; however,
 it is also very powerful and allows dCache to work with many different authentication schemes.
 
+The sufficient and requisite labels describe how to handle errors. For more details on this, see the
+gplazma chapter.
+This ability to split login steps between different plugins may make the process seem complicated; however,
+it is also very powerful and allows dCache to work with many different authentication schemes.
 
 
 For the next step, we need to create the configuration for these four plugins. We will create two users: a
