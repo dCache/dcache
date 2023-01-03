@@ -96,8 +96,13 @@ Second column describes how to handel errors. There are three different options:
 
 the third column defines plugins that should be used.
 
+
+
 In this example the configuration tells that the user identity verification is optional and the verification process in case of the failer should continue to the next step. 
-This configuration tells gPlazma to use the ***xo5** plugin to .., **voms** for and  ...**htpasswd** plugin to check any passwords.
+This configuration tells gPlazma to use the ***xo5** plugin used to extracts X.509 certificate chains from the credentials of
+a user to be used by other plug-ins. **voms** can be used to verify X.509 credentialsr and  ...**htpasswd** plugin to check any passwords.
+
+
 
 if we had the following configuration:
 ```ini
@@ -109,6 +114,11 @@ The authorisation phase will conitinue with pahse **map** ignoring the next two 
 
 the next step is the **map**, here the **gridmap** plugin to
 convert usernames into uid and gid values.
+
+GridMap
+file.
+The authzdb plug-in takes a username and maps it to UID+GID using the storage-authzdb
+Properties
 
 
 the **banfile** plugin to check if the user is allowed to use dCache,
