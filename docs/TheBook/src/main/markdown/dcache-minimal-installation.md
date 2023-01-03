@@ -73,26 +73,48 @@ which require considerable effort to set up. For this tutorial the certificates 
 auth    optional    x509
 auth    optional    voms
 auth    optional    htpasswd
-map     sufficient    vorolemap
 map     sufficient    gridmap
 map     sufficient    authzdb
+account  requisite  banfile
 session requisite   roles
 session requisite   authzdb                              
 ```
 
+
+
 The first column is the phases of the authentication process. Each login attempt follows four phases: **auth**,
-**map**, account-? and **session**. **auth** verifies user’s identity. **map** converts this identity to some dCache user.
-account checks if the user is allowed to use dCache right now. Finally, **session** adds some additional infor-
+**map**, **account** and **session**. 
+
+
+**auth** - verifies user’s identity. 
+**map** - converts this identity to some dCache user.
+**account ** -checks if the user is allowed to use dCache right now. Finally, **session** adds some additional infor-
 mation.
 
-This configuration tells gPlazma to use the **htpasswd** plugin to check any passwords, the **multimap** plugin to
-convert usernames into uid and gid values, the banfile plugin to check if the user is allowed to use dCache,
-and finally use the **authzdb** plugin to add various session information.
+Second column describes how to handel errors. There are three different options: **optional, sufficient and requisite**.
 
 
+the third column defines plugins that should be used.
+
+In this example the configuration tells that the user identity verification is optional and the verification process in case of the failer should continue to the next step. 
+This configuration tells gPlazma to use the ***xo5** plugin to .., **voms** for and  ...**htpasswd** plugin to check any passwords.
+
+if we had the following configuration:
+```ini
+auth    suficient    htpasswd
+auth    optional    x509
+auth    optional    voms
+```
+The authorisation phase will conitinue with pahse **map** ignoring the next two oprions.
+
+the next step is the **map**, here the **gridmap** plugin to
+convert usernames into uid and gid values.
 
 
-The **optional**, **sufficient** and **requisite** labels describe how to handle errors. 
+the **banfile** plugin to check if the user is allowed to use dCache,
+and finally use the **authzdb** plugin to add various session information. ??????????
+
+
 
 This ability to split login steps between different plugins may make the process seem complicated; however,
 it is also very powerful and allows dCache to work with many different authentication schemes.
