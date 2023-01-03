@@ -95,7 +95,7 @@ gplazma chapter.
 This ability to split login steps between different plugins may make the process seem complicated; however,
 it is also very powerful and allows dCache to work with many different authentication schemes.
 
-The sufficient and requisite labels describe how to handle errors. For more details on this, see the
+The **optional** and **sufficient** labels describe how to handle errors. For more details on this, see the
 gplazma chapter.
 This ability to split login steps between different plugins may make the process seem complicated; however,
 it is also very powerful and allows dCache to work with many different authentication schemes.
