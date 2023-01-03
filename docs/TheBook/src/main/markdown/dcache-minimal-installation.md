@@ -12,7 +12,10 @@ server nodes, under a single virtual filesystem tree with a variety of standard 
  #### Software:
 - OpenJDK 11
  > yum install java-11-openjdk
+ > dnf install java-11-openjdk-devel
+ 
 - Postgres SQL Server 9.5 or later
+ > dnf -y install postgresql-server
 
 - ZooKeeper version 3.5 (in case of a standalone ZooKeeper installation)
 
@@ -27,6 +30,7 @@ To allow local users to access PostgreSQL without requiring a password, make sur
 are the only uncommented lines in the file **/var/lib/pgsql/10/data/pg_hba.conf**
 
 > **NOTE**: the path to **/pg_hba.conf** is different for PostgreSQL 13 and higher versions.
+> **/var/lib/pgsql/data/pg_hba.conf**
 
       ...
     # TYPE  DATABASE    USER        IP-ADDRESS        IP-MASK           METHOD
@@ -36,7 +40,7 @@ are the only uncommented lines in the file **/var/lib/pgsql/10/data/pg_hba.conf*
    
    
    ### Creating PostgreSQL users and databases    
-
+> systemctl enable --now postgresql
 
 > createuser -U postgres --no-superuser --no-createrole --createdb --no-password dcache
 > 
@@ -52,10 +56,7 @@ All dCache packages are available directly from our website’s dCache releases 
 section.
 
 >     
->    rpm -ivh https://www.dcache.org/old/downloads/1.9/repo/7.2/dcache-7.2.19-1.noarch.rpm 
-
-
-
+>   rpm -ivh https://www.dcache.org/old/downloads/1.9/repo/8.2/dcache-8.2.9-1.noarch.rpm
 
 
 
@@ -63,7 +64,41 @@ section.
 
 The dCache RPM comes with a default gPlazma configuration file /etc/dcache/gplazma.conf; however,
 that configuration is intended for users with X.509 credentials. X.509 credentials require a certificate au-
-thority; which require considerable effort to set up.
+thority, 
+which require considerable effort to set up. For this tutorial the certificates have been installed on our vm.
+
+> vi etc/dcache/gplazma.conf
+                              
+ ```ini
+auth    optional    x509
+auth    optional    voms
+auth    sufficient  htpasswd
+map     optional    vorolemap
+map     optional    gridmap
+map     requisite   authzdb
+session requisite   roles
+session requisite   authzdb
+                              
+```
+
+The first column is the phases of the authentication process. Each login attempt follows four phases: **auth**,
+**map**, account-? and **session**. auth verifies user’s identity. map converts this identity to some dCache user.
+account checks if the user is allowed to use dCache right now. Finally, session adds some additional infor-
+mation.
+
+This configuration tells gPlazma to use the htpasswd plugin to check any passwords, the multimap plugin to
+convert usernames into uid and gid values, the banfile plugin to check if the user is allowed to use dCache,
+and finally use the authzdb plugin to add various session information.
+The sufficient and requisite labels describe how to handle errors. For more details on this, see the
+gplazma chapter.
+
+This ability to split login steps between different plugins may make the process seem complicated; however,
+it is also very powerful and allows dCache to work with many different authentication schemes.
+
+
+## Deafault version  will be deleted
+
+which require considerable effort to set up.
 Therefore, in this initial configuration, we adopt something simpler: username + password authentication.
 So, delete the current /etc/dcache/gplazma.conf file and create a new one with the following contents:
 
@@ -76,19 +111,7 @@ account  requisite   banfile
 session  requisite   authzdb
 ```
 
-The first column is the phases of the authentication process. Each login attempt follows four phases: auth,
-map, account and session. auth verifies user’s identity. map converts this identity to some dCache user.
-account checks if the user is allowed to use dCache right now. Finally, session adds some additional infor-
-mation.
 
-This configuration tells gPlazma to use the htpasswd plugin to check any passwords, the multimap plugin to
-convert usernames into uid and gid values, the banfile plugin to check if the user is allowed to use dCache,
-and finally use the authzdb plugin to add various session information.
-The sufficient and requisite labels describe how to handle errors. For more details on this, see the
-gplazma chapter.
-
-This ability to split login steps between different plugins may make the process seem complicated; however,
-it is also very powerful and allows dCache to work with many different authentication schemes.
 
 For the next step, we need to create the configuration for these four plugins. We will create two users: a
 regular user (”tester”) and an admin user (”admin”).
