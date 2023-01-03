@@ -82,8 +82,8 @@ session requisite   authzdb
 ```
 
 The first column is the phases of the authentication process. Each login attempt follows four phases: **auth**,
-**map**, account-? and **session**. auth verifies user’s identity. map converts this identity to some dCache user.
-account checks if the user is allowed to use dCache right now. Finally, session adds some additional infor-
+**map**, account-? and **session**. **auth** verifies user’s identity. **map** converts this identity to some dCache user.
+account checks if the user is allowed to use dCache right now. Finally, **session** adds some additional infor-
 mation.
 
 This configuration tells gPlazma to use the htpasswd plugin to check any passwords, the multimap plugin to
