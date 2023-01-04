@@ -181,13 +181,15 @@ with passwords TooManySecrets and dickerelch respectively:
 
 > touch /etc/dcache/htpasswd
 > htpasswd -bm /etc/dcache/htpasswd tester tester12
+> 
 > htpasswd -bm /etc/dcache/htpasswd admin dickerelch
-
+>
 
 
 Next, we need to tell dCache which uid and gids these users should be assigned. To do this, create the file
 **/etc/dcache/multi-mapfile** with the following content:
 > username:tester uid:1000 gid:1000,true
+> 
 > username:admin uid:0 gid:0,true
 
 gPlazma requires the CA- and VOMS-root-certificates, that it should use, to be
