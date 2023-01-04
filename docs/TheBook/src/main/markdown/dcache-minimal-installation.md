@@ -76,38 +76,71 @@ grid-security/.
 However, X.509 credentials require a certificate authority, 
 which require considerable effort to set up. For this tutorial the certificates have been installed on our vm.
 
-> vi etc/dcache/gplazma.conf
+>
+Gplazma is configured by the PAM-style: the first column is the phases of the authentication process. Each login attempt follows four phases: **auth**, **map**, **account** and **session**.  Second column describes how to handel errors. There are three different options: **optional**,  **sufficient**, **required** and **requisite**. The third column defines plugins that should be used. In order to serve different needs, gPlazma utilises plug-ins as back-end for its tasks
+and services.
+During the login process they will be executed in the order auth, map, account and
+session. The identity plugins are not used during login, but later on to map from UID+GID back to user
+names (e.g., for NFS). Within these groups they are used in the order they are specified.
+
+A complete configuration file will look something like this:
+
+ >vi etc/dcache/gplazma.conf
                               
  ```ini
-auth    optional    x509
-auth    optional    voms
-auth    optional    htpasswd
-map     sufficient    gridmap
-map     sufficient    authzdb
-account  requisite  banfile
-session requisite   roles
-session requisite   authzdb                              
+auth    optional    x509 #1
+auth    optional    voms #2
+auth    optional    htpasswd #3
+map     sufficient    gridmap #4
+map     sufficient    authzdb authzdb=/etc/grid-security/authzdb #5
+account  requisite  banfile #6
+session requisite   authzdb #7                             
 ```
 
 
 
-The first column is the phases of the authentication process. Each login attempt follows four phases: **auth**,
-**map**, **account** and **session**. 
 
+**auth** - verifies user’s identity. (auth-plug-ins are used to read the users public and private credentials and ask some authority, if those
+are valid for accessing the system.
+)
+**map** - converts this identity to some dCache user. (This may also be
+done in several steps (e.g., the vorolemap plug-in maps the users DN+FQAN to a username which is then
+mapped to UID/GIDs by the authzdb plug-in.
+)
+**account** -checks if the user is allowed to use dCache right now. 
 
-**auth** - verifies user’s identity. 
-**map** - converts this identity to some dCache user.
-**account** -checks if the user is allowed to use dCache right now. Finally, **session** adds some additional information.
-
-Second column describes how to handel errors. There are three different options: **optional, sufficient and requisite**.
-
-
-The third column defines plugins that should be used. In order to serve different needs, gPlazma utilises plug-ins as back-end for its tasks
-and services.
+Finally, **session** adds some additional information, for example the user’s home directory.
 
 
 
-In this example the configuration tells that the user identity verification is optional and the verification process in case of the failer should continue to the next step. 
+---identity identity plug-ins are responsible for mapping UID and GID to user names and vice versa during
+the work with dCache. --???
+
+
+
+
+**optional** The success or failure of this plug-in is only important if it is the only plug-in in the stack associated
+with this type.
+**suﬀicient** Success of such a plug-in is enough to satisfy the authentication requirements of the stack of
+plug-ins (if a prior required plug-in has failed the success of this one is ignored). A failure of this plug-in is
+not deemed as fatal for the login attempt. If the plug-in succeeds gPlazma immediately proceeds with the
+next plug-in type or returns control to the door if this was the last stack.
+**required** Failure of such a plug-in will ultimately lead to **gPlazma** returning failure but only after the
+remaining plug-ins for this type have been invoked.
+**requisite** Like required, however, in the case that such a plug-in returns a failure, control is directly
+returned to the door.
+
+
+In this example the following is happening 
+
+If user comes with grid
+certificate and VOMS role: extract user’s DN (1), extract and verify VOMS attributes (2), map DN+Role
+to a local account, example dn:"/C=DE/O=GermanGrid/OU=DESY/CN= NAme Surname" (3). **htpasswd** plugin to check any passwords (4).
+After this point in
+both cases we talk to NIS to get uid and gids for a local account (5) and, finally, adding users home directory
+(6).
+
+the configuration tells that the user identity verification is optional and the verification process in case of the failer should continue to the next step. 
 This configuration tells gPlazma to use the **x509** plugin used to extracts X.509 certificate chains from the credentials of
 a user to be used by other plug-ins. **voms** can be used to verify X.509 credentialsr and **htpasswd** plugin to check any passwords.
 
