@@ -66,8 +66,14 @@ gPlazma (Grid-Aware Pluggable Authorization Management) is a part of dCache,
 providing services for access control, which are used by door-cells in order to
 implement their access control system.
 
-The dCache RPM comes with a default gPlazma configuration file /etc/dcache/gplazma.conf; however,
-that configuration is intended for users with X.509 credentials. X.509 credentials require a certificate authority, 
+The dCache RPM comes with a default gPlazma configuration file /etc/dcache/gplazma.conf.
+
+ gPlazma requires the CA- and VOMS-root-certificates, that it should use, to be
+present in /etc/grid-security/certificates/ and /etc/grid-security/
+vomsdir respectively.
+In some cases, gPlazma requires X.509-host-certificates to be present in /etc/
+grid-security/.
+However, X.509 credentials require a certificate authority, 
 which require considerable effort to set up. For this tutorial the certificates have been installed on our vm.
 
 > vi etc/dcache/gplazma.conf
