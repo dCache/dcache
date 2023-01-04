@@ -1,5 +1,5 @@
 
- dCache mission is  to provide a system for storing and retrieving huge amounts of data, distributed among a large number of heterogeneous
+ dCache mission is to provide a system for storing and retrieving huge amounts of data, distributed among a large number of heterogeneous
 server nodes, under a single virtual filesystem tree with a variety of standard access methods.
      
 ### Minimum System Requirements
@@ -77,12 +77,22 @@ which require considerable effort to set up. For this tutorial the certificates 
 Gplazma is configured by the PAM-style: the first column is the phases of the authentication process. Each login attempt follows four phases: **auth**, **map**, **account** and **session**.  Second column describes how to handel errors. There are three different options: **optional**,  **sufficient**, **required** and **requisite**. The third column defines plugins that should be used.  as back-end for its tasks
 and services.
 
+
+Phases
+
+
+
+
+suﬀicient Success of such a plug-in is enough to satisfy the authentication requirements of the stack of
+plug-ins (if a prior required plug-in has failed the success of this one is ignored). A failure of this plug-in is
+not deemed as fatal for the login attempt. If the plug-in succeeds gPlazma2 immediately proceeds with the
+next plug-in type or returns control to the door if this was the last stack.
+required Failure of such a plug-in will ultimately lead to gPlazma2 returning failure but only after the
+remaining plug-ins for this type have been invoked.
+
 During the login process they will be executed in the order auth, map, account and
 session. The identity plugins are not used during login, but later on to map from UID+GID back to user
 names (e.g., for NFS). Within these groups they are used in the order they are specified.
-
-
-
 
 
 
@@ -94,21 +104,61 @@ A complete configuration file will look something like this:
 
 cat >/etc/dcache/gplazma.conf <<EOF
 auth    optional    x509 #1.1
-auth    optional    voms #1.1
-auth    sufficient  htpasswd #1
+auth    optional    voms #1.2
+auth    optional  htpasswd #1
 
 map     optional    vorolemap #2.1
 map     optional    gridmap #2.2
 map     requisite   authzdb #2.3
 
-session requisite   roles #3
-session requisite   authzdb #3
+session requisite   roles #3.2
+session requisite   authzdb #3.2
 EOF                            
 ```
 
 
+#1  phase **auth** - verifies user’s identity. auth-plug-ins are used to read the users public and private credentials and ask some authority, if those are valid for accessing the system.
+
+This configuration tells gPlazma to use the **x.509** plugin used to extracts X.509 certificate chains from the credentials of
+a user to be used by other plug-ins(1.1).
+If user comes with grid
+certificate and VOMS role: extract user’s DN (1.2), checks if the username and password exist in database (1.3).
+
+**optional** here means,the success or failure of this plug-in is only important if it is the only plug-in in the stack associated
+with this type.
+
+ #2 **map** - converts this identity to some dCache user.
+                                              
+ #2.1 the “grid-mapfile”-file, the client-certificate’s DN is mapped to a
+virtual user-name, which is not to be confused with an actual UNIX user-name.                      
+
+                                              
+ ```ini
+cat >/etc/grid-security/grid-mapfile <<EOF
+"/C=DE/ST=Hamburg/O=dCache.ORG/CN=Kermit the frog" kermit
+EOF 
+ ```
+ 
+#2.2 the vorolemap plug-in maps the users DN+FQAN to a username which is then
+mapped to UID/GIDs by the authzdb plug-in.
+                                          
+  ```ini
+
+cat >/etc/grid-security/grid-vorolemap <<EOF
+"*" "/desy" desyuser
+EOF
+ ```
+ **suﬀicient** Success of such a plug-in is enough to satisfy the authentication requirements of the stack of
+plug-ins (if a prior required plug-in has failed the success of this one is ignored). A failure of this plug-in is
+not deemed as fatal for the login attempt. If the plug-in succeeds gPlazma2 immediately proceeds with the
+next plug-in type or returns control to the door if this was the last stack.
+
+ 
+ #2.3 Using the “storage-authzdb-style”-file, this virtual user-name is then mapped to
+the actual UNIX user-ID 4 and group-IDs 4
 
 
+```ini
 cat >/etc/grid-security/storage-authzdb <<EOF
 version 2.1
 
@@ -116,76 +166,26 @@ authorize admin    read-write    0    0 / / /
 authorize desyuser read-write 1000 2000 / / /
 authorize kermit   read-write 1000 1000 / / /
 EOF
-
-
-
-#1 **auth** - verifies user’s identity. (auth-plug-ins are used to read the users public and private credentials and ask some authority, if those
-are valid for accessing the system.
-)
-
- #2 **map** - converts this identity to some dCache user. (This may also be
-done in several steps (e.g., the vorolemap plug-in maps the users DN+FQAN to a username which is then
-mapped to UID/GIDs by the authzdb plug-in.
-)
-                                              
-
-cat >/etc/grid-security/grid-mapfile <<EOF
-"/C=DE/ST=Hamburg/O=dCache.ORG/CN=Kermit the frog" kermit
-EOF
-
-cat >/etc/grid-security/grid-vorolemap <<EOF
-"*" "/desy" desyuser
-EOF
+```
  
- 
-**account** -checks if the user is allowed to use dCache right now. 
 
 Finally, **session** adds some additional information, for example the user’s home directory.
 
+-------
 
+Modifiers
+optional The success or failure of this plug-in is only important if it is the only plug-in in the stack associated
+with this type.
+suﬀicient Success of such a plug-in is enough to satisfy the authentication requirements of the stack of
+plug-ins (if a prior required plug-in has failed the success of this one is ignored). A failure of this plug-in is
+not deemed as fatal for the login attempt. If the plug-in succeeds gPlazma2 immediately proceeds with the
+next plug-in type or returns control to the door if this was the last stack.
+required Failure of such a plug-in will ultimately lead to gPlazma2 returning failure but only after the
+remaining plug-ins for this type have been invoked.
+requisite Like required, however, in the case that such a plug-in returns a failure, control is directly
+returned to the door.
 
-
-
-
-
-
-
-In this example the following is happening 
-
-If user comes with grid
-certificate and VOMS role: extract user’s DN (1), extract and verify VOMS attributes (2), map DN+Role
-to a local account, example dn:"/C=DE/O=GermanGrid/OU=DESY/CN= NAme Surname" (3). **htpasswd** plugin to check any passwords (4).
-After this point in
-both cases we talk to NIS to get uid and gids for a local account (5) and, finally, adding users home directory
-(6).
-
-the configuration tells that the user identity verification is optional and the verification process in case of the failer should continue to the next step. 
-This configuration tells gPlazma to use the **x509** plugin used to extracts X.509 certificate chains from the credentials of
-a user to be used by other plug-ins. **voms** can be used to verify X.509 credentialsr and **htpasswd** plugin to check any passwords.
-
-
-
-if we had the following configuration:
-```ini
-auth    suficient    htpasswd
-auth    optional    x509
-auth    optional    voms
-```
-The authorisation phase will conitinue with pahse **map** ignoring the next two oprions.
-
-the next step is the **map**, here the **gridmap** plugin to
-convert usernames into uid and gid values.
-
-GridMap
-file.
-The authzdb plug-in takes a username and maps it to UID+GID using the storage-authzdb
-Properties
-
-
-the **banfile** plugin to check if the user is allowed to use dCache,
-and finally use the **authzdb** plugin to add various session information. ??????????
-
-
+-----
 
 This ability to split login steps between different plugins may make the process seem complicated; however,
 it is also very powerful and allows dCache to work with many different authentication schemes.
@@ -211,14 +211,7 @@ Next, we need to tell dCache which uid and gids these users should be assigned. 
 > 
 > username:admin uid:0 gid:0,true
 
-gPlazma requires the CA- and VOMS-root-certificates, that it should use, to be
-present in /etc/grid-security/certificates/ and /etc/grid-security/
-vomsdir respectively.
 
-Now we need to add the ** /etc/grid-security/certificates** folder.
-
-
-> mkdir -p /etc/grid-security/certificates 
 
 
 ### Four main components in dCache
