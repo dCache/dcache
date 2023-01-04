@@ -62,9 +62,12 @@ section.
 
 ### Configuring dCache users
 
+gPlazma (Grid-Aware Pluggable Authorization Management) is a part of dCache,
+providing services for access control, which are used by door-cells in order to
+implement their access control system.
+
 The dCache RPM comes with a default gPlazma configuration file /etc/dcache/gplazma.conf; however,
-that configuration is intended for users with X.509 credentials. X.509 credentials require a certificate au-
-thority, 
+that configuration is intended for users with X.509 credentials. X.509 credentials require a certificate authority, 
 which require considerable effort to set up. For this tutorial the certificates have been installed on our vm.
 
 > vi etc/dcache/gplazma.conf
@@ -88,19 +91,19 @@ The first column is the phases of the authentication process. Each login attempt
 
 **auth** - verifies user’s identity. 
 **map** - converts this identity to some dCache user.
-**account ** -checks if the user is allowed to use dCache right now. Finally, **session** adds some additional infor-
-mation.
+**account** -checks if the user is allowed to use dCache right now. Finally, **session** adds some additional information.
 
 Second column describes how to handel errors. There are three different options: **optional, sufficient and requisite**.
 
 
-the third column defines plugins that should be used.
+The third column defines plugins that should be used. In order to serve different needs, gPlazma utilises plug-ins as back-end for its tasks
+and services.
 
 
 
 In this example the configuration tells that the user identity verification is optional and the verification process in case of the failer should continue to the next step. 
-This configuration tells gPlazma to use the ***xo5** plugin used to extracts X.509 certificate chains from the credentials of
-a user to be used by other plug-ins. **voms** can be used to verify X.509 credentialsr and  ...**htpasswd** plugin to check any passwords.
+This configuration tells gPlazma to use the **x509** plugin used to extracts X.509 certificate chains from the credentials of
+a user to be used by other plug-ins. **voms** can be used to verify X.509 credentialsr and **htpasswd** plugin to check any passwords.
 
 
 
@@ -139,18 +142,18 @@ with passwords TooManySecrets and dickerelch respectively:
 
 > touch /etc/dcache/htpasswd
 > htpasswd -bm /etc/dcache/htpasswd tester tester12
-> 
-> Adding password for user tester--??
-> 
 > htpasswd -bm /etc/dcache/htpasswd admin dickerelch
-> 
-> Adding password for user admin--??
+
 
 
 Next, we need to tell dCache which uid and gids these users should be assigned. To do this, create the file
 **/etc/dcache/multi-mapfile** with the following content:
 > username:tester uid:1000 gid:1000,true
 > username:admin uid:0 gid:0,true
+
+gPlazma requires the CA- and VOMS-root-certificates, that it should use, to be
+present in /etc/grid-security/certificates/ and /etc/grid-security/
+vomsdir respectively.
 
 Now we need to add the ** /etc/grid-security/certificates** folder.
 
