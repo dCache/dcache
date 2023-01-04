@@ -4,10 +4,7 @@ server nodes, under a single virtual filesystem tree with a variety of standard 
      
 ### Minimum System Requirements
 
-   #### Hardware:
-- Contemporary CPU
-- At least 1 GiB of RAM -???
-- At least 500 MiB free disk space -???
+ 
    
  #### Software:
 - OpenJDK 11
@@ -39,7 +36,8 @@ are the only uncommented lines in the file **/var/lib/pgsql/10/data/pg_hba.conf*
     host    all         all         ::1/128                             trust    
    
    
-   ### Creating PostgreSQL users and databases    
+   ### Creating PostgreSQL users and databases 
+   
 > systemctl enable --now postgresql
 
 > createuser -U postgres --no-superuser --no-createrole --createdb --no-password dcache
@@ -71,64 +69,85 @@ The dCache RPM comes with a default gPlazma configuration file /etc/dcache/gplaz
  gPlazma requires the CA- and VOMS-root-certificates, that it should use, to be
 present in /etc/grid-security/certificates/ and /etc/grid-security/
 vomsdir respectively.
-In some cases, gPlazma requires X.509-host-certificates to be present in /etc/
-grid-security/.
+In some cases, gPlazma requires X.509-host-certificates to be present in /etc/grid-security/.
 However, X.509 credentials require a certificate authority, 
 which require considerable effort to set up. For this tutorial the certificates have been installed on our vm.
 
->
-Gplazma is configured by the PAM-style: the first column is the phases of the authentication process. Each login attempt follows four phases: **auth**, **map**, **account** and **session**.  Second column describes how to handel errors. There are three different options: **optional**,  **sufficient**, **required** and **requisite**. The third column defines plugins that should be used. In order to serve different needs, gPlazma utilises plug-ins as back-end for its tasks
+
+Gplazma is configured by the PAM-style: the first column is the phases of the authentication process. Each login attempt follows four phases: **auth**, **map**, **account** and **session**.  Second column describes how to handel errors. There are three different options: **optional**,  **sufficient**, **required** and **requisite**. The third column defines plugins that should be used.  as back-end for its tasks
 and services.
+
 During the login process they will be executed in the order auth, map, account and
 session. The identity plugins are not used during login, but later on to map from UID+GID back to user
 names (e.g., for NFS). Within these groups they are used in the order they are specified.
+
+
+
+
+
 
 A complete configuration file will look something like this:
 
  >vi etc/dcache/gplazma.conf
                               
  ```ini
-auth    optional    x509 #1
-auth    optional    voms #2
-auth    optional    htpasswd #3
-map     sufficient    gridmap #4
-map     sufficient    authzdb authzdb=/etc/grid-security/authzdb #5
-account  requisite  banfile #6
-session requisite   authzdb #7                             
+
+cat >/etc/dcache/gplazma.conf <<EOF
+auth    optional    x509 #1.1
+auth    optional    voms #1.1
+auth    sufficient  htpasswd #1
+
+map     optional    vorolemap #2.1
+map     optional    gridmap #2.2
+map     requisite   authzdb #2.3
+
+session requisite   roles #3
+session requisite   authzdb #3
+EOF                            
 ```
 
 
 
 
-**auth** - verifies user’s identity. (auth-plug-ins are used to read the users public and private credentials and ask some authority, if those
+cat >/etc/grid-security/storage-authzdb <<EOF
+version 2.1
+
+authorize admin    read-write    0    0 / / /
+authorize desyuser read-write 1000 2000 / / /
+authorize kermit   read-write 1000 1000 / / /
+EOF
+
+
+
+#1 **auth** - verifies user’s identity. (auth-plug-ins are used to read the users public and private credentials and ask some authority, if those
 are valid for accessing the system.
 )
-**map** - converts this identity to some dCache user. (This may also be
+
+ #2 **map** - converts this identity to some dCache user. (This may also be
 done in several steps (e.g., the vorolemap plug-in maps the users DN+FQAN to a username which is then
 mapped to UID/GIDs by the authzdb plug-in.
 )
+                                              
+
+cat >/etc/grid-security/grid-mapfile <<EOF
+"/C=DE/ST=Hamburg/O=dCache.ORG/CN=Kermit the frog" kermit
+EOF
+
+cat >/etc/grid-security/grid-vorolemap <<EOF
+"*" "/desy" desyuser
+EOF
+ 
+ 
 **account** -checks if the user is allowed to use dCache right now. 
 
 Finally, **session** adds some additional information, for example the user’s home directory.
 
 
 
----identity identity plug-ins are responsible for mapping UID and GID to user names and vice versa during
-the work with dCache. --???
 
 
 
 
-**optional** The success or failure of this plug-in is only important if it is the only plug-in in the stack associated
-with this type.
-**suﬀicient** Success of such a plug-in is enough to satisfy the authentication requirements of the stack of
-plug-ins (if a prior required plug-in has failed the success of this one is ignored). A failure of this plug-in is
-not deemed as fatal for the login attempt. If the plug-in succeeds gPlazma immediately proceeds with the
-next plug-in type or returns control to the door if this was the last stack.
-**required** Failure of such a plug-in will ultimately lead to **gPlazma** returning failure but only after the
-remaining plug-ins for this type have been invoked.
-**requisite** Like required, however, in the case that such a plug-in returns a failure, control is directly
-returned to the door.
 
 
 In this example the following is happening 
