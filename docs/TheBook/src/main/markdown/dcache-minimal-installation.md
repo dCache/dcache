@@ -477,7 +477,25 @@ dcache /var/log/dcache/poolsDomainB.log
 
 ```
 
+in genrel the rules are following
 
+
+- each domain is a single java process
+- each domain MUST have a dCache instance unique name
+- all domains connected to the same zookeeper are part of a single
+  dCache instance
+- in muti-domain setup at lease one domain MUST be `core` domain. In HA mode, 2 cores are sufficient
+  ( all quorum related functionality utilises zookeeper, thus dCache itself doesn't  require odd number of 'cores')
+- cells have full qualified name like `cellname@domain`
+- replicable cells have the same `cellname`, for example: PoolManager@centralDomain-1, PoolManager@centralDomain-2
+- Some cells are `well-known` and can be addressed by their short names (cellname),
+   for example: PoolManager vs PoolManager@centralDomain. This is actually how HA is working. The messaging system will
+  pick one of the existing `PoolManager`s
+- pool names (cellnames) MUST be unique within dCache insance
+
+Looks like your provided setup is conform to rules above, thus a valid HA setup.
+BTW, you can specify all db servers in `chimera.db.host` property. dCache will pick
+the one which is in master mode without additional `pgPool` or 'pgBouncer`.
 
 # Grouping CELLs - On a different hosts:
 - Share-nothing option
