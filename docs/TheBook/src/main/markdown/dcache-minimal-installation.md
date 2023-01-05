@@ -14,27 +14,28 @@ server nodes, under a single virtual filesystem tree with a variety of standard 
 - Postgres SQL Server 9.5 or later
  > dnf -y install postgresql-server
 
-- ZooKeeper version 3.5 (in case of a standalone ZooKeeper installation)
+- ZooKeeper version 3.7 (in case of a standalone ZooKeeper installation)
 
 ### Installing PostgreSQL
 
-To keep this simple, we are assuming the database will run on the same machine as the dCache services that
+To keep this simple, we are assuming that the database will run on the same machine as the dCache services that
 use it.
 
-The simplest configuration is to allow password-less access to the database. Hier we assumes this to be the case.
+The simplest configuration is to allow password-less access to the database. 
+ 
 
 To allow local users to access PostgreSQL without requiring a password, make sure the following three lines
 are the only uncommented lines in the file **/var/lib/pgsql/10/data/pg_hba.conf**
 
 > **NOTE**: the path to **/pg_hba.conf** is different for PostgreSQL 13 and higher versions.
-> **/var/lib/pgsql/data/pg_hba.conf**
+> It is**/var/lib/pgsql/data/pg_hba.conf**
 
       ...
     # TYPE  DATABASE    USER        IP-ADDRESS        IP-MASK           METHOD
     local   all         all                                             trust
     host    all         all         127.0.0.1/32                        trust
     host    all         all         ::1/128                             trust    
-   
+   ...
    
    ### Creating PostgreSQL users and databases 
    
@@ -60,45 +61,33 @@ section.
 
 ### Configuring dCache users
 
-gPlazma (Grid-Aware Pluggable Authorization Management) is a part of dCache,
+In this tutorial , we will used gPlazma (Grid-Aware Pluggable Authorization Management) service is a part of dCache,
 providing services for access control, which are used by door-cells in order to
 implement their access control system.
 
-The dCache RPM comes with a default gPlazma configuration file /etc/dcache/gplazma.conf.
+The dCache RPM comes with a default gPlazma configuration file **/etc/dcache/gplazma.conf**.
 
  gPlazma requires the CA- and VOMS-root-certificates, that it should use, to be
 present in /etc/grid-security/certificates/ and /etc/grid-security/
 vomsdir respectively.
 In some cases, gPlazma requires X.509-host-certificates to be present in /etc/grid-security/.
 However, X.509 credentials require a certificate authority, 
-which require considerable effort to set up. For this tutorial the certificates have been installed on our vm.
+which require considerable effort to set up. For this tutorial the certificates have been installed on our VMs.
 
 
-Gplazma is configured by the PAM-style: the first column is the phases of the authentication process. Each login attempt follows four phases: **auth**, **map**, **account** and **session**.  Second column describes how to handel errors. There are three different options: **optional**,  **sufficient**, **required** and **requisite**. The third column defines plugins that should be used.  as back-end for its tasks
-and services.
+Gplazma is configured by the PAM-style: the first column is the phases of the authentication process. Each login attempt follows four phases: **auth**, **map**, **account** and **session**.  Second column describes how to handle errors. There are four different options: **optional** -,  **sufficient**, **required** and **requisite**. The third column defines plugins that should be used.  as back-end for its tasks
+and services. 
 
-
-Phases
-
-
-
-
-suﬀicient Success of such a plug-in is enough to satisfy the authentication requirements of the stack of
-plug-ins (if a prior required plug-in has failed the success of this one is ignored). A failure of this plug-in is
-not deemed as fatal for the login attempt. If the plug-in succeeds gPlazma2 immediately proceeds with the
-next plug-in type or returns control to the door if this was the last stack.
-required Failure of such a plug-in will ultimately lead to gPlazma2 returning failure but only after the
-remaining plug-ins for this type have been invoked.
-
-During the login process they will be executed in the order auth, map, account and
-session. The identity plugins are not used during login, but later on to map from UID+GID back to user
-names (e.g., for NFS). Within these groups they are used in the order they are specified.
+Lets have a look on a complete configuration example and go through   each phase.
 
 
 
-A complete configuration file will look something like this:
 
- >vi etc/dcache/gplazma.conf
+
+
+
+
+>vi etc/dcache/gplazma.conf
                               
  ```ini
 
@@ -117,14 +106,18 @@ EOF
 ```
 
 
+During the login process they will be executed in the order **auth**, **map**, **account???** and
+**session**. The identity plugins are not used during login, but later on to map from UID+GID back to user (e.g ??). Within these groups they are used in the order they are specified.
+
+
+
 **#1**  phase **auth** - verifies user’s identity. auth-plug-ins are used to read the users public and private credentials and ask some authority, if those are valid for accessing the system.
 
-This configuration tells gPlazma to use the **x.509** plugin used to extracts X.509 certificate chains from the credentials of
-a user to be used by other plug-ins(**1.1**).
+**#1.1** This configuration tells gPlazma to use the **x.509** plugin used to extracts X.509 certificate chains from the credentials of a user to be used by other plug-ins
 If user comes with grid
-certificate and VOMS role: extract user’s DN (**1.2**), checks if the username and password exist in database (**1.3**).
+certificate and VOMS role: extract user’s DN (**#1.2**), checks if the username and password exist in database (**#1.3**).
 
-**optional** here means,the success or failure of this plug-in is only important if it is the only plug-in in the stack associated
+**optional** here means, the success or failure of this plug-in is only important if it is the only plug-in in the stack associated
 with this type.
 
  **#2** **map** - converts this identity to some dCache user.
@@ -182,20 +175,7 @@ authorize kermit   read-write 1000 1000 / / /
 EOF
 ```
  
-```console-root
- 
- <pre>[centos@os-46-install1 ~]$ sudo journalctl -f -u dcache@dCacheDomain.service
-Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  |   +--gridmap OPTIONAL:FAIL (no mapping) =&gt; OK
-Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  |   |
-Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  |   +--authzdb REQUISITE:FAIL (no mappable principal) =&gt; FAIL (ends the phase)
-Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  |
-Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  +--(ACCOUNT) skipped
-Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  |
-Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  +--(SESSION) skipped
-Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  |
-Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  +--(VALIDATION) skipped
-Jan 05 13:45:15 os-46-install1.novalocal dcache@dCacheDomain[25977]: 05 Jan 2023 13:45:15 (pool1) [] The file system containing the data files appears to have less free space (40,453,738,496 bytes) than expected (40,453,779,120 bytes); reducing the pool size to 40,455,127,376 bytes to compensate. Notice that this does not leave any space for the meta data. If such data is stored on the same file system, then it is paramount that the pool size is reconfigured to leave enough space for the meta data.
-```
+
 
 Finally, **session** adds some additional information, for example the user’s home directory.
 
@@ -214,7 +194,7 @@ with passwords TooManySecrets and dickerelch respectively:
 > touch /etc/dcache/htpasswd
 > htpasswd -bm /etc/dcache/htpasswd tester tester12
 > 
-> htpasswd -bm /etc/dcache/htpasswd admin dickerelch
+> htpasswd -bm /etc/dcache/htpasswd admin admin
 >
 
 
@@ -294,6 +274,8 @@ dcache.enable.space-reservation = false
 [dCacheDomain/pnfsmanager]
  pnfsmanager.default-retention-policy = REPLICA
  pnfsmanager.default-access-latency = ONLINE
+
+[dCacheDomain/gplazma]
 
 [dCacheDomain/poolmanager]
 [dCacheDomain/webdav]
@@ -406,7 +388,7 @@ our simple installation with just one domain hosting several services this would
 ```console-root
 systemctl list-dependencies dcache.target
 |dcache.target
-|● ├─dcache@coreDomain.service
+|● ├─dcache@dCacheDomain.service
 
 
 ```
@@ -419,17 +401,13 @@ So now you can upload a file:
 
 > curl -u admin:admin -L -T /bin/bash http://localhost:2880/home/tester/test-file
 
+
+We can have a look on a log to see what are the messages we are getting
+
+>journalctl -f -u dcache@dCacheDomain.service
+
 ```console-root
-sudo journalctl -f -u dcache@dCacheDomain.service
-Jan 05 13:44:07 os-46-install1.novalocal dcache@dCacheDomain[25977]: WARNING: Use --illegal-access=warn to enable warnings of further illegal reflective access operations
-Jan 05 13:44:07 os-46-install1.novalocal dcache@dCacheDomain[25977]: WARNING: All illegal access operations will be denied in a future release
-Jan 05 13:44:12 os-46-install1.novalocal dcache@dCacheDomain[25977]: 05 Jan 2023 13:44:12 (WebDAV-os-46-install1) [NIC auto-discovery] Adding [os-46-install1.novalocal/[fe80::f816:3eff:fed9:6db5], os-46-install1.desy.de/131.169.46.136]
-Jan 05 13:44:15 os-46-install1.novalocal dcache@dCacheDomain[25977]: 05 Jan 2023 13:44:15 (PoolManager) [pool1 PoolManagerPoolUp] Pool pool1 changed from mode disabled()  to disabled(fetch,store,stage,p2p-client,p2p-server).
-Jan 05 13:44:15 os-46-install1.novalocal dcache@dCacheDomain[25977]: 05 Jan 2023 13:44:15 (pool1) [] Pool mode changed to disabled(fetch,store,stage,p2p-client,p2p-server): Awaiting initialization
-Jan 05 13:44:15 os-46-install1.novalocal dcache@dCacheDomain[25977]: 05 Jan 2023 13:44:15 (PoolManager) [pool1 PoolManagerPoolUp] Pool pool1 changed from mode disabled(fetch,store,stage,p2p-client,p2p-server)  to disabled(store,stage,p2p-client,loading).
-Jan 05 13:44:15 os-46-install1.novalocal dcache@dCacheDomain[25977]: 05 Jan 2023 13:44:15 (pool1) [] Pool mode changed to disabled(store,stage,p2p-client,loading): Loading...
-Jan 05 13:44:15 os-46-install1.novalocal dcache@dCacheDomain[25977]: 05 Jan 2023 13:44:15 (pool1) [] Reading inventory from Inotify[Checksum[IoStatistics[data=/srv/dcache/pool-1/data;meta=/srv/dcache/pool-1/meta]]].
-Jan 05 13:44:15 os-46-install1.novalocal dcache@dCacheDomain[25977]: 05 Jan 2023 13:44:15 (PoolManager) [pool1 PoolManagerPoolUp] Pool pool1 changed from mode disabled(store,stage,p2p-client,loading)  to enabled.
+
 Jan 05 13:44:15 os-46-install1.novalocal dcache@dCacheDomain[25977]: 05 Jan 2023 13:44:15 (pool1) [] Pool mode changed to enabled
 ```
 
@@ -441,6 +419,9 @@ we can see the file on the pool
 0000441B2048C3434F6282C1E1E4EAC9D8CA
 
 ```
+
+
+
 
 
 
@@ -461,50 +442,54 @@ domains.
 
 The simplest deployment has a single core domain and all other domains as satellite domains, mostly POOL CELLS.
 In the following example we will add a new Pool domains as satellite  domains. 
- 
-  > dcache pool create /srv/dcache/pool-A poolA poolsDomainA
 
-  > dcache pool create /srv/dcache/pool-B poolB poolsDomainB
+In this case we have :
 
  - Independent JVMs
  - Shared CPU
  - Per-process Log file
  - All components run the same version (you can run different versions if needed)
+ 
+  > dcache pool create /srv/dcache/pool-1 pool1 poolsDomain1
+
+  > dcache pool create /srv/dcache/pool-2 pool2 poolsDomain2
+
+Please note, that we are still on the same node
 
 
 ```ini
 
 dcache.enable.space-reservation = false
 
-[corelDomain]
+[coreDomain]
 dcache.broker.scheme = core
-[corelDomain/zookeeper]
-[corelDomain/pnfsmanager]
+[coreDomain/zookeeper]
+[coreDomain/pnfsmanager]
  pnfsmanager.default-retention-policy = REPLICA
  pnfsmanager.default-access-latency = ONLINE
 
-[corelDomain/poolmanager]
+[coreDomain/poolmanager]
 
-[corelDomain/webdav]
+[coreDomain/webdav]
  webdav.authn.basic = true
  
-[poolsDomainA]
-[poolsDomainA/pool]
-pool.name=poolA
-pool.path=/srv/dcache/pool-A
+[poolsDomain1]
+[poolsDomain1/pool1]
+pool.name=pool1
+pool.path=/srv/dcache/pool-1
 pool.wait-for-files=${pool.path}/data
 
-[poolsDomainB]
-[poolsDomainB/pool]
-pool.name=poolB
-pool.path=/srv/dcache/pool-B
+[poolsDomain2]
+[poolsDomain2/pool2]
+pool.name=pool2
+pool.path=/srv/dcache/pool-2
 pool.wait-for-files=${pool.path}/data
 ```
 
 **NOTE**
 > [corelDomain]
 > dcache.broker.scheme = core
-> indicates that coreDomain is a core domain and if the satilite poolA will need to connect to coreDomain to send a  a mesage to sattilite poolB.
+> indicates that coreDomain is a core domain and if the satilite pool2 will need to connect to coreDomain to send a  a mesage to satellite pool2.
 
 
 
@@ -514,55 +499,58 @@ systemctl list-dependencies dcache.target
 |dcache.target
 |● ├─dcache@coreDomain.service
 |● ├─dcache@NamespaceDomain.service --???
-|● ├─dcache@zookeeperDomain.service
+|● ├─dcache@zookeeperDomain.service--??
 |● ├─dcache@poolDomain.service
 |● └─dcache@poolmanagerDomain.service
 
 ```
 
-Now in /var/log/dcache/ there will be created a log file for each domain
+Now in **/var/log/dcache/** there will be created a log file for each domain
 
 ```ini
 dcache status
 |DOMAIN
 |coreDomain
-|poolBDomain
-|poolADomain
+|pool1Domain
+|pool2Domain
 STATUS PID USER
 LOG
 stopped
-dcache /var/log/dcache/centralDomain.log
+dcache /var/log/dcache/coreDomain.log
 stopped
-dcache /var/log/dcache/poolsDomainA.log
+dcache /var/log/dcache/poolsDomain1.log
 stopped
-dcache /var/log/dcache/poolsDomainB.log
+dcache /var/log/dcache/poolsDomain1.log
 
 ```
 
-in genrel the rules are following
+Should be still updated ?????.
+
+In general when grouping cells the rules to be followed are are following
 
 
 - each domain is a single java process
 - each domain MUST have a dCache instance unique name
 - all domains connected to the same zookeeper are part of a single
   dCache instance
-- in muti-domain setup at lease one domain MUST be `core` domain. In HA mode, 2 cores are sufficient
+- in muti-domain setup at lease one domain MUST be `core` domain.
+In HA mode, 2 cores are sufficient, we will cover this at the end of the tutorial ???
   ( all quorum related functionality utilises zookeeper, thus dCache itself doesn't  require odd number of 'cores')
 - cells have full qualified name like `cellname@domain`
-- replicable cells have the same `cellname`, for example: PoolManager@centralDomain-1, PoolManager@centralDomain-2
+- replicable cells have the same `cellname`, for example: PoolManager@centralDomain-1, PoolManager@centralDomain-2 ????
 - Some cells are `well-known` and can be addressed by their short names (cellname),
    for example: PoolManager vs PoolManager@centralDomain. This is actually how HA is working. The messaging system will
   pick one of the existing `PoolManager`s
 - pool names (cellnames) MUST be unique within dCache insance
 
-Looks like your provided setup is conform to rules above, thus a valid HA setup.
-BTW, you can specify all db servers in `chimera.db.host` property. dCache will pick
-the one which is in master mode without additional `pgPool` or 'pgBouncer`.
 
 # Grouping CELLs - On a different hosts:
+
 - Share-nothing option
 - Components can run different, but compatible versions.
 - Better throughput
+- Zookeeper should be used ???
+
 
 
 
@@ -588,8 +576,8 @@ dcache.broker.scheme = core
   webdav.authn.basic = true
 
 
-[poolsDomainA]
-[poolsDomainA/pool]
+[${host.name}_poolsDomainA]
+[${host.name}_poolsDomainA/pool]
 pool.name=poolA
 pool.path=/srv/dcache/pool-A
 pool.wait-for-files=${pool.path}/data
@@ -603,30 +591,47 @@ pool.wait-for-files=${pool.path}/data
 ```ini
 
 
-[poolsDomainA]
-[poolsDomainA/pool]
-pool.name=poolA
-pool.path=/srv/dcache/pool-A
-pool.wait-for-files=${pool.path}/data
-
-```
-
-
-2. less /etc/dcache/layouts/dcache-head-test03.conf
-
-
-
-```ini
-
-
-[poolsDomainB]
-[poolsDomainB/pool]
+[${host.name}_poolsDomainB]
+[${host.name}_poolsDomainB/pool]
 pool.name=poolB
 pool.path=/srv/dcache/pool-B
 pool.wait-for-files=${pool.path}/data
 
 ```
-> let us upload a file
+
+
+3. less /etc/dcache/layouts/dcache-head-test03.conf
+
+
+????????
+
+```ini
+
+
+[${host.name}_poolsDomainC]
+[${host.name}_poolsDomainC/pool]
+pool.name=poolC
+pool.path=/srv/dcache/pool-C
+pool.wait-for-files=${pool.path}/data
+
+```
+
+Marina: this examples will be changed
+
+```ini
+
+
+zookeeper
+[zookeeperkDomain]
+dcache.broker.scheme=
+dcache.broker.plain.port=???
+[zookeeperkDomain/zookeeper]
+
+```
+
+
+
+> let us upload a file e.g????
 
 > curl -u admin:admin -v -L -T /bin/bash http://localhost:2880/home/tester/test-file
 
