@@ -627,6 +627,9 @@ dcache.broker.scheme=
 dcache.broker.plain.port=???
 [zookeeperkDomain/zookeeper]
 
+dcache.zookeeper.connection = 
+    cluster-box1:2181,cluster-box2:2182,cluster-box3:2181/instance1
+
 ```
 
 
