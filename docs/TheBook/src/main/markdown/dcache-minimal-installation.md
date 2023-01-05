@@ -153,6 +153,20 @@ plug-ins (if a prior required plug-in has failed the success of this one is igno
 not deemed as fatal for the login attempt. If the plug-in succeeds gPlazma2 immediately proceeds with the
 next plug-in type or returns control to the door if this was the last stack.
 
+```console-root
+[centos@os-46-install1 ~]$ sudo journalctl -f -u dcache@dCacheDomain.service
+Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  |   +--gridmap OPTIONAL:FAIL (no mapping) => OK
+Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  |   |
+Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  |   +--authzdb REQUISITE:FAIL (no mappable principal) => FAIL (ends the phase)
+Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  |
+Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  +--(ACCOUNT) skipped
+Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  |
+Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  +--(SESSION) skipped
+Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  |
+Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  +--(VALIDATION) skipped
+Jan 05 13:45:15 os-46-install1.novalocal dcache@dCacheDomain[25977]: 05 Jan 2023 13:45:15 (pool1) [] The file system containing the data files appears to have less free space (40,453,738,496 bytes) than expected (40,453,779,120 bytes); reducing the pool size to 40,455,127,376 bytes to compensate. Notice that this does not leave any space for the meta data. If such data is stored on the same file system, then it is paramount that the pool size is reconfigured to leave enough space for the meta data.
+ ```
+
  
  **#2.3** Using the “storage-authzdb-style”-file, this virtual user-name is then mapped to
 the actual UNIX user-ID 4 and group-IDs 4
@@ -168,6 +182,20 @@ authorize kermit   read-write 1000 1000 / / /
 EOF
 ```
  
+```console-root
+ 
+ <pre>[centos@os-46-install1 ~]$ sudo journalctl -f -u dcache@dCacheDomain.service
+Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  |   +--gridmap OPTIONAL:FAIL (no mapping) =&gt; OK
+Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  |   |
+Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  |   +--authzdb REQUISITE:FAIL (no mappable principal) =&gt; FAIL (ends the phase)
+Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  |
+Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  +--(ACCOUNT) skipped
+Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  |
+Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  +--(SESSION) skipped
+Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  |
+Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  +--(VALIDATION) skipped
+Jan 05 13:45:15 os-46-install1.novalocal dcache@dCacheDomain[25977]: 05 Jan 2023 13:45:15 (pool1) [] The file system containing the data files appears to have less free space (40,453,738,496 bytes) than expected (40,453,779,120 bytes); reducing the pool size to 40,455,127,376 bytes to compensate. Notice that this does not leave any space for the meta data. If such data is stored on the same file system, then it is paramount that the pool size is reconfigured to leave enough space for the meta data.
+```
 
 Finally, **session** adds some additional information, for example the user’s home directory.
 
