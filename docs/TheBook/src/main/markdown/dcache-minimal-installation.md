@@ -405,6 +405,15 @@ Jan 05 13:44:15 os-46-install1.novalocal dcache@dCacheDomain[25977]: 05 Jan 2023
 Jan 05 13:44:15 os-46-install1.novalocal dcache@dCacheDomain[25977]: 05 Jan 2023 13:44:15 (pool1) [] Pool mode changed to enabled
 ```
 
+we can see the file on the pool
+
+
+```console-root
+[centos@os-46-install1 ~]$ ls /srv/dcache/pool-1/data
+0000441B2048C3434F6282C1E1E4EAC9D8CA
+
+```
+
 
 
 # Grouping CELLs - core Domain and pools as satellite:
