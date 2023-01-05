@@ -325,6 +325,9 @@ dcache pool create /srv/dcache/pool-1 pool1 dCacheDomain
 No we will use the following command:
 
  > dcache pool create /srv/dcache/pool-1 pool1 dCacheDomain
+ result
+> Created a pool in /srv/dcache/pool-1. The pool was added to dCacheDomain
+in file:/etc/dcache/layouts/mylayout.conf.
 
 
 Now if we open  `/etc/dcache/layouts/mylayout.conf` file, it should be updated to have
@@ -342,6 +345,8 @@ dcache.enable.space-reservation = false
 [dCacheDomain/poolmanager]
 [dCacheDomain/webdav]
  webdav.authn.basic = true
+ 
+[dCacheDomain/gplazma]
 
 [dCacheDomain/pool]
 pool.name=pool1
@@ -403,6 +408,20 @@ systemctl list-dependencies dcache.target
 So now you can upload a file:
 
 > curl -u admin:admin -L -T /bin/bash http://localhost:2880/home/tester/test-file
+
+```console-root
+sudo journalctl -f -u dcache@dCacheDomain.service
+Jan 05 13:44:07 os-46-install1.novalocal dcache@dCacheDomain[25977]: WARNING: Use --illegal-access=warn to enable warnings of further illegal reflective access operations
+Jan 05 13:44:07 os-46-install1.novalocal dcache@dCacheDomain[25977]: WARNING: All illegal access operations will be denied in a future release
+Jan 05 13:44:12 os-46-install1.novalocal dcache@dCacheDomain[25977]: 05 Jan 2023 13:44:12 (WebDAV-os-46-install1) [NIC auto-discovery] Adding [os-46-install1.novalocal/[fe80::f816:3eff:fed9:6db5], os-46-install1.desy.de/131.169.46.136]
+Jan 05 13:44:15 os-46-install1.novalocal dcache@dCacheDomain[25977]: 05 Jan 2023 13:44:15 (PoolManager) [pool1 PoolManagerPoolUp] Pool pool1 changed from mode disabled()  to disabled(fetch,store,stage,p2p-client,p2p-server).
+Jan 05 13:44:15 os-46-install1.novalocal dcache@dCacheDomain[25977]: 05 Jan 2023 13:44:15 (pool1) [] Pool mode changed to disabled(fetch,store,stage,p2p-client,p2p-server): Awaiting initialization
+Jan 05 13:44:15 os-46-install1.novalocal dcache@dCacheDomain[25977]: 05 Jan 2023 13:44:15 (PoolManager) [pool1 PoolManagerPoolUp] Pool pool1 changed from mode disabled(fetch,store,stage,p2p-client,p2p-server)  to disabled(store,stage,p2p-client,loading).
+Jan 05 13:44:15 os-46-install1.novalocal dcache@dCacheDomain[25977]: 05 Jan 2023 13:44:15 (pool1) [] Pool mode changed to disabled(store,stage,p2p-client,loading): Loading...
+Jan 05 13:44:15 os-46-install1.novalocal dcache@dCacheDomain[25977]: 05 Jan 2023 13:44:15 (pool1) [] Reading inventory from Inotify[Checksum[IoStatistics[data=/srv/dcache/pool-1/data;meta=/srv/dcache/pool-1/meta]]].
+Jan 05 13:44:15 os-46-install1.novalocal dcache@dCacheDomain[25977]: 05 Jan 2023 13:44:15 (PoolManager) [pool1 PoolManagerPoolUp] Pool pool1 changed from mode disabled(store,stage,p2p-client,loading)  to enabled.
+Jan 05 13:44:15 os-46-install1.novalocal dcache@dCacheDomain[25977]: 05 Jan 2023 13:44:15 (pool1) [] Pool mode changed to enabled
+```
 
 
 
@@ -469,6 +488,18 @@ pool.wait-for-files=${pool.path}/data
 > indicates that coreDomain is a core domain and if the satilite poolA will need to connect to coreDomain to send a  a mesage to sattilite poolB.
 
 
+
+
+```console-root
+systemctl list-dependencies dcache.target
+|dcache.target
+|● ├─dcache@coreDomain.service
+|● ├─dcache@NamespaceDomain.service --???
+|● ├─dcache@zookeeperDomain.service
+|● ├─dcache@poolDomain.service
+|● └─dcache@poolmanagerDomain.service
+
+```
 
 Now in /var/log/dcache/ there will be created a log file for each domain
 
