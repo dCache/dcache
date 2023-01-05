@@ -154,7 +154,7 @@ not deemed as fatal for the login attempt. If the plug-in succeeds gPlazma2 imme
 next plug-in type or returns control to the door if this was the last stack.
 
  
- #2.3 Using the “storage-authzdb-style”-file, this virtual user-name is then mapped to
+ **#2.3** Using the “storage-authzdb-style”-file, this virtual user-name is then mapped to
 the actual UNIX user-ID 4 and group-IDs 4
 
 
@@ -171,21 +171,6 @@ EOF
 
 Finally, **session** adds some additional information, for example the user’s home directory.
 
--------
-
-Modifiers
-optional The success or failure of this plug-in is only important if it is the only plug-in in the stack associated
-with this type.
-suﬀicient Success of such a plug-in is enough to satisfy the authentication requirements of the stack of
-plug-ins (if a prior required plug-in has failed the success of this one is ignored). A failure of this plug-in is
-not deemed as fatal for the login attempt. If the plug-in succeeds gPlazma2 immediately proceeds with the
-next plug-in type or returns control to the door if this was the last stack.
-required Failure of such a plug-in will ultimately lead to gPlazma2 returning failure but only after the
-remaining plug-ins for this type have been invoked.
-requisite Like required, however, in the case that such a plug-in returns a failure, control is directly
-returned to the door.
-
------
 
 This ability to split login steps between different plugins may make the process seem complicated; however,
 it is also very powerful and allows dCache to work with many different authentication schemes.
@@ -394,10 +379,7 @@ our simple installation with just one domain hosting several services this would
 systemctl list-dependencies dcache.target
 |dcache.target
 |● ├─dcache@coreDomain.service
-|● ├─dcache@NamespaceDomain.service --???
-|● ├─dcache@zookeeperDomain.service
-|● ├─dcache@poolDomain.service
-|● └─dcache@poolmanagerDomain.service
+
 
 ```
 
