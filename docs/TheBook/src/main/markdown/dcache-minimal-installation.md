@@ -117,19 +117,19 @@ EOF
 ```
 
 
-#1  phase **auth** - verifies user’s identity. auth-plug-ins are used to read the users public and private credentials and ask some authority, if those are valid for accessing the system.
+**#1**  phase **auth** - verifies user’s identity. auth-plug-ins are used to read the users public and private credentials and ask some authority, if those are valid for accessing the system.
 
 This configuration tells gPlazma to use the **x.509** plugin used to extracts X.509 certificate chains from the credentials of
-a user to be used by other plug-ins(1.1).
+a user to be used by other plug-ins(**1.1**).
 If user comes with grid
-certificate and VOMS role: extract user’s DN (1.2), checks if the username and password exist in database (1.3).
+certificate and VOMS role: extract user’s DN (**1.2**), checks if the username and password exist in database (**1.3**).
 
 **optional** here means,the success or failure of this plug-in is only important if it is the only plug-in in the stack associated
 with this type.
 
- #2 **map** - converts this identity to some dCache user.
+ **#2** **map** - converts this identity to some dCache user.
                                               
- #2.1 the “grid-mapfile”-file, the client-certificate’s DN is mapped to a
+ **#2.1** the “grid-mapfile”-file, the client-certificate’s DN is mapped to a
 virtual user-name, which is not to be confused with an actual UNIX user-name.                      
 
                                               
@@ -139,7 +139,7 @@ cat >/etc/grid-security/grid-mapfile <<EOF
 EOF 
  ```
  
-#2.2 the vorolemap plug-in maps the users DN+FQAN to a username which is then
+**#2.2** the vorolemap plug-in maps the users DN+FQAN to a username which is then
 mapped to UID/GIDs by the authzdb plug-in.
                                           
   ```ini
