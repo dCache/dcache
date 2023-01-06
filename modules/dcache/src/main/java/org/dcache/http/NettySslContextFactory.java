@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2021 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2021 - 2023 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -18,32 +18,15 @@
 
 package org.dcache.http;
 
-import dmg.cells.nucleus.CDC;
 import io.netty.handler.ssl.SslContext;
-import org.dcache.ssl.CanlContextFactory;
 
 /**
  * Netty SslContext context factory which uses native OpenSsl if available, but falls back to Java
  * if not.
  */
-public class NettySslContextFactoryBean extends AbstractSslContextFactoryBean<SslContext> {
+public class NettySslContextFactory extends AbstractSslContextFactory<SslContext> {
 
-    @Override
-    public SslContext getObject() throws Exception {
-        return CanlContextFactory.custom()
-              .withCertificateAuthorityPath(serverCaPath)
-              .withCrlCheckingMode(crlCheckingMode)
-              .withOcspCheckingMode(ocspCheckingMode)
-              .withCertificatePath(serverCertificatePath)
-              .withKeyPath(serverKeyPath)
-              .withLazy(false)
-              .withLoggingContext(new CDC()::restore)
-              .buildWithCaching(SslContext.class)
-              .call();
-    }
-
-    @Override
-    public Class<?> getObjectType() {
-        return SslContext.class;
+    public NettySslContextFactory() {
+        super(SslContext.class);
     }
 }
