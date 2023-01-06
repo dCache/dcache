@@ -60,14 +60,7 @@ public class P2PClient
     private InetAddress _interface;
     private TlsMode _p2pTlsMode;
 
-    private SSLContext _sslContext;
-
-    // TODO: cross zone behaves as ALYWAYS as long as we can't distinct zones
-    private Supplier<SSLContext> getContextIfNeeded = () -> {
-
-        return _p2pTlsMode == TlsMode.NEVER ? null : _sslContext;
-    };
-
+    private Callable<SSLContext> _sslContext;
 
     public synchronized void setExecutor(ScheduledExecutorService executor) {
         _executor = executor;
@@ -93,7 +86,7 @@ public class P2PClient
         return _companions.size();
     }
 
-    public synchronized void setSslContext(SSLContext sslContext) {
+    public synchronized void setSslContext(Callable<SSLContext> sslContext) {
         _sslContext = sslContext;
     }
 
@@ -243,6 +236,15 @@ public class P2PClient
 
         Callback cb = new Callback(callback);
 
+        SSLContext context = null;
+        if (_p2pTlsMode != TlsMode.NEVER) {
+            try {
+                context = _sslContext.call();
+            } catch (Exception e) {
+                throw new IOException(e.getMessage(), e);
+            }
+        }
+
         Companion companion =
               new Companion(_executor, _interface, _repository,
                     _checksumModule,
@@ -254,7 +256,7 @@ public class P2PClient
                     targetState, stickyRecords,
                     cb, forceSourceMode,
                     atime,
-                    getContextIfNeeded
+                    context
               );
 
         int id = addCompanion(companion);

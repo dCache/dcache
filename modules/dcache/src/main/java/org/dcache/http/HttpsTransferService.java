@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2017-2020 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2017-2023 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -31,6 +31,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import javax.net.ssl.SSLEngine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,9 +42,9 @@ public class HttpsTransferService extends HttpTransferService {
 
     private static final String PROTOCOL_HTTPS = "https";
 
-    private SslContext _sslContext;
+    private Callable<SslContext> _sslContext;
 
-    public void setSslContext(SslContext sslContext) {
+    public void setSslContext(Callable<SslContext> sslContext) {
         _sslContext = sslContext;
     }
 
@@ -97,8 +98,8 @@ public class HttpsTransferService extends HttpTransferService {
     }
 
     @Override
-    protected void addChannelHandlers(ChannelPipeline pipeline) {
-        SSLEngine engine = _sslContext.newEngine(pipeline.channel().alloc());
+    protected void addChannelHandlers(ChannelPipeline pipeline) throws Exception {
+        SSLEngine engine = _sslContext.call().newEngine(pipeline.channel().alloc());
         engine.setWantClientAuth(false);
         pipeline.addLast("ssl", new SslHandler(engine));
         super.addChannelHandlers(pipeline);
