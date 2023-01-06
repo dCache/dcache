@@ -39,7 +39,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 import javax.net.ssl.SSLContext;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
@@ -190,7 +189,7 @@ class Companion {
           CacheFileAvailable callback,
           boolean forceSourceMode,
           Long atime,
-          Supplier<SSLContext> getContextIfNeeded) {
+          SSLContext sslContext) {
         _fsm = new CompanionContext(this);
 
         _executor = executor;
@@ -207,7 +206,7 @@ class Companion {
               "Destination domain name is unknown.");
         _fileAttributes = requireNonNull(fileAttributes, "File attributes is missing.");
 
-        _sslContext = getContextIfNeeded.get();
+        _sslContext = sslContext;
 
         if (!_fileAttributes.isDefined(FileAttribute.PNFSID)) {
             throw new IllegalArgumentException(

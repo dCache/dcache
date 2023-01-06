@@ -254,7 +254,7 @@ public class P2PClient
                     targetState, stickyRecords,
                     cb, forceSourceMode,
                     atime,
-                    getContextIfNeeded
+                    getContextIfNeeded.get()
               );
 
         int id = addCompanion(companion);
