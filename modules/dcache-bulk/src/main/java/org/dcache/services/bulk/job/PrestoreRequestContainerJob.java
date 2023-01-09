@@ -166,6 +166,23 @@ public final class PrestoreRequestContainerJob extends AbstractRequestContainerJ
                 LOGGER.error("run {}, error getting next file target: {}.", rid, e.toString());
             }
         }
+
+        /*
+         *  Make sure LINK types are handled like files, since we allow them
+         *  on expansion, but also from initial targets.
+         */
+        while (true) {
+            try {
+                checkForRequestCancellation();
+                target = next(FileType.LINK);
+                if (target.isEmpty()) {
+                    break;
+                }
+                perform(target.get());
+            } catch (BulkStorageException e) {
+                LOGGER.error("run {}, error getting next file target: {}.", rid, e.toString());
+            }
+        }
     }
 
     @Override
