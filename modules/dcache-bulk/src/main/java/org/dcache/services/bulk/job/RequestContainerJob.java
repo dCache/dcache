@@ -209,7 +209,7 @@ public final class RequestContainerJob extends AbstractRequestContainerJob {
             } else if (attributes.getFileType() != FileType.SPECIAL) {
                 perform(pid, path, attributes);
             }
-        } catch (CacheException e) {
+        } catch (BulkServiceException | CacheException e) {
             LOGGER.error("handleTarget {}, path {}, error {}.", rid, path, e.getMessage());
             register(pid, path, Futures.immediateFailedFuture(e), attributes, e);
         }

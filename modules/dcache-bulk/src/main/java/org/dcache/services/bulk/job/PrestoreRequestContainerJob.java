@@ -384,7 +384,7 @@ public final class PrestoreRequestContainerJob extends AbstractRequestContainerJ
                 } else if (info.attributes.getFileType() != FileType.SPECIAL) {
                     store(PID.INITIAL, info.path, info.attributes);
                 }
-            } catch (CacheException e) {
+            } catch (BulkServiceException | CacheException e) {
                 LOGGER.error("storeAll {}, path {}, error {}.", rid, info.path, e.getMessage());
             }
         }
