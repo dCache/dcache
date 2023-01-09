@@ -67,6 +67,7 @@ import org.dcache.util.CDCThreadFactory;
 import org.dcache.util.NetworkUtils;
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
 import org.dcache.vehicles.XrootdProtocolInfo;
+import org.dcache.xrootd.OutboundExceptionHandler;
 import org.dcache.xrootd.core.XrootdDecoder;
 import org.dcache.xrootd.core.XrootdEncoder;
 import org.dcache.xrootd.core.XrootdHandshakeHandler;
@@ -403,7 +404,7 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
         super.initChannel(ch);
 
         ChannelPipeline pipeline = ch.pipeline();
-
+        pipeline.addLast("outerrors", new OutboundExceptionHandler());
         pipeline.addLast("handshake",
               new XrootdHandshakeHandler(XrootdProtocol.DATA_SERVER));
         pipeline.addLast("encoder", new XrootdEncoder());
