@@ -64,6 +64,7 @@ import static org.dcache.services.bulk.util.BulkRequestTarget.State.CANCELLED;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.COMPLETED;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.FAILED;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.READY;
+import static org.dcache.services.bulk.util.BulkRequestTarget.State.SKIPPED;
 import static org.dcache.services.bulk.util.BulkRequestTarget.computeFsPath;
 
 import com.google.common.collect.Range;
@@ -369,7 +370,7 @@ public abstract class AbstractRequestContainerJob
     }
 
     protected void expandDepthFirst(FsPath path, FileAttributes dirAttributes)
-          throws CacheException, InterruptedException {
+          throws CacheException, InterruptedException, BulkStorageException {
         checkForRequestCancellation();
 
         DirectoryStream stream = getDirectoryListing(path);
@@ -414,6 +415,16 @@ public abstract class AbstractRequestContainerJob
             case BOTH:
             case DIR:
                 handleDirTarget(path, dirAttributes);
+                break;
+            case FILE:
+                /*
+                 * Because we now store all initial targets immediately,
+                 * we need to mark such a directory as SKIPPED; otherwise
+                 * the request will not complete on the basis of querying for
+                 * completed targets and finding this one unhandled.
+                 */
+                targetStore.storeOrUpdate(toTarget(path, Optional.of(dirAttributes),
+                          SKIPPED, null));
         }
     }
 
