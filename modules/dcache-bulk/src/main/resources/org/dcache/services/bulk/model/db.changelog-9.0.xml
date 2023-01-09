@@ -145,4 +145,13 @@
         <modifyDataType tableName="request_target" columnName="error_message" newDataType="varchar(256)"/>
     </changeSet>
 
+    <changeSet author="arossi" id="4.6" runInTransaction="false">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <columnExists tableName="bulk_request" columnName="delay_clear"/>
+            </and>
+        </preConditions>
+        <dropColumn tableName="bulk_request" columnName="delay_clear"/>
+    </changeSet>
+
 </databaseChangeLog>
