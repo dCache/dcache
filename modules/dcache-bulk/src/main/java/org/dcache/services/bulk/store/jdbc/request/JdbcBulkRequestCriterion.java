@@ -75,9 +75,22 @@ public final class JdbcBulkRequestCriterion extends JdbcCriterion {
         sorter = "arrived_at";
     }
 
+    public JdbcBulkRequestCriterion joinOnTarget() {
+        addJoin("bulk_request.id = request_target.rid");
+        return this;
+    }
+
     public JdbcBulkRequestCriterion seqNo(Long seqNo) {
         if (seqNo != null) {
             addClause("seq_no >= ?", seqNo);
+        }
+        return this;
+    }
+
+    public JdbcBulkRequestCriterion pnfsId(String pnfsid) {
+        if (pnfsid != null) {
+            addClause("request_target.pnfsid = ?", pnfsid);
+            joinOnTarget();
         }
         return this;
     }
@@ -93,7 +106,7 @@ public final class JdbcBulkRequestCriterion extends JdbcCriterion {
     }
 
     public JdbcBulkRequestCriterion activity(String... activity) {
-        addOrClause("activity = ?", (Object[]) activity);
+        addOrClause("bulk_request.activity = ?", (Object[]) activity);
         return this;
     }
 

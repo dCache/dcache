@@ -73,6 +73,7 @@ import org.dcache.services.bulk.BulkRequestStatus;
 import org.dcache.services.bulk.BulkRequestStatusInfo;
 import org.dcache.services.bulk.BulkStorageException;
 import org.dcache.services.bulk.store.jdbc.JdbcBulkDaoUtils;
+import org.dcache.services.bulk.store.jdbc.rtarget.JdbcRequestTargetDao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -84,9 +85,14 @@ import org.springframework.jdbc.support.KeyHolder;
  */
 public final class JdbcBulkRequestDao extends JdbcDaoSupport {
 
+    public static final String TABLE_NAME = "bulk_request";
+
     private static final Logger LOGGER = LoggerFactory.getLogger(JdbcBulkRequestDao.class);
 
-    private static final String TABLE_NAME = "bulk_request";
+    private static final String SELECT = "SELECT bulk_request.*";
+
+    private static final String JOINED_TABLE_NAMES =
+          TABLE_NAME + ", " + JdbcRequestTargetDao.TABLE_NAME;
 
     /**
      * Update queries which permit the avoidance of fetch-and-set semantics requiring in-memory
@@ -118,6 +124,9 @@ public final class JdbcBulkRequestDao extends JdbcDaoSupport {
     }
 
     public List<BulkRequest> get(JdbcBulkRequestCriterion criterion, int limit) {
+        if (criterion.isJoined()) {
+            return utils.get(SELECT, criterion, limit, JOINED_TABLE_NAMES, this, this::toRequest);
+        }
         return utils.get(criterion, limit, TABLE_NAME, this, this::toRequest);
     }
 

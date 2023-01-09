@@ -80,6 +80,12 @@ import org.dcache.services.bulk.util.BulkRequestTarget.State;
  */
 public final class JdbcRequestTargetUpdate extends JdbcUpdate {
 
+    public String getUpdate() {
+        return updates.keySet().stream()
+              .map(s -> s + " = ?")
+              .collect(joining(","));
+    }
+
     public JdbcRequestTargetUpdate state(State state) {
         if (state != null) {
             set("state", state.name());

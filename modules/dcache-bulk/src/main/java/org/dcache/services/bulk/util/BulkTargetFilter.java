@@ -73,7 +73,6 @@ public final class BulkTargetFilter {
     private final Set<String> activities;
     private final Set<State> states;
     private final Set<String> types;
-    private final Set<String> paths;
     private final Long offset;
     private final PID pid;
 
@@ -89,13 +88,12 @@ public final class BulkTargetFilter {
      * @param types      file type of targets.
      */
     public BulkTargetFilter(Set<String> requestIds, Long offset, PID pid,
-          Set<String> pnfsIds, Set<String> paths, Set<String> activities, Set<String> types,
+          Set<String> pnfsIds, Set<String> activities, Set<String> types,
           Set<State> states) {
         this.rids = requestIds;
         this.offset = offset;
         this.pid = pid;
         this.pnfsIds = pnfsIds;
-        this.paths = paths;
         this.activities = activities;
         this.states = states;
         this.types = types;
@@ -115,10 +113,6 @@ public final class BulkTargetFilter {
 
     public String[] getPnfsIds() {
         return getArray(pnfsIds);
-    }
-
-    public String[] getPaths() {
-        return getArray(paths);
     }
 
     public String[] getActivities() {

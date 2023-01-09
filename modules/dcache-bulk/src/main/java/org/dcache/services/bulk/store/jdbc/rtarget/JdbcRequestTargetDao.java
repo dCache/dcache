@@ -94,14 +94,14 @@ import org.springframework.jdbc.support.KeyHolder;
  */
 public final class JdbcRequestTargetDao extends JdbcDaoSupport {
 
+    public static final String TABLE_NAME = "request_target";
+
     static class TargetPlaceholder {
         String rid;
         String path;
         String activity;
         String state;
     }
-
-    static final String TABLE_NAME = "request_target";
 
     static final String BATCH_INSERT = "INSERT INTO " + TABLE_NAME + " ("
           + "pid, rid, pnfsid, path, type, activity, state, created_at, last_updated) "

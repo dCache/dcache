@@ -64,6 +64,7 @@ import static org.dcache.services.bulk.BulkRequestStatus.CANCELLED;
 import static org.dcache.services.bulk.BulkRequestStatus.CANCELLING;
 import static org.dcache.services.bulk.BulkRequestStatus.QUEUED;
 import static org.dcache.services.bulk.BulkRequestStatus.STARTED;
+import static org.dcache.services.bulk.activity.BulkActivity.MINIMALLY_REQUIRED_ATTRIBUTES;
 import static org.dcache.services.bulk.util.BulkRequestTarget.NON_TERMINAL;
 import static org.dcache.services.bulk.util.BulkRequestTarget.PLACEHOLDER_PNFSID;
 import static org.dcache.services.bulk.util.BulkRequestTarget.ROOT_REQUEST_PATH;
@@ -75,6 +76,9 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -88,6 +92,8 @@ import java.util.stream.Collectors;
 import javax.security.auth.Subject;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restriction;
+import org.dcache.auth.attributes.Restrictions;
+import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileType;
 import org.dcache.services.bulk.BulkPermissionDeniedException;
 import org.dcache.services.bulk.BulkRequest;
@@ -148,6 +154,8 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
     private long capacity;
 
     private BulkServiceStatistics statistics;
+
+    private PnfsHandler pnfsHandler;
 
     public void initialize() {
         requestCache = CacheBuilder.newBuilder()
@@ -318,20 +326,16 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
 
     @Override
     public List<BulkRequestSummary> getRequestSummaries(Set<BulkRequestStatus> status,
-          Set<String> owners, String path, Long seqNo) {
+          Set<String> owners, String path, Long seqNo) throws BulkStorageException {
         LOGGER.trace("getRequestSummaries {}, {}, {}.", status, owners, path);
 
-        /*
-         *  Filter out the request ids by target paths first.
-         */
-        String[] rids = path == null ? null : targetStore.ridsOf(path).toArray(String[]::new);
-
+        String pnfsId = path == null ? null : getPnfsidFor(path).toString();
         String[] users = owners == null ? null : owners.toArray(String[]::new);
 
-        List<BulkRequest> requests =
-              requestDao.get(
-                    requestDao.where().sorter("seq_no").seqNo(seqNo).requestIds(rids).status(status)
-                          .user(users), FETCH_SIZE);
+        List<BulkRequest> requests = requestDao.get(
+              requestDao.where().sorter("seq_no").seqNo(seqNo).pnfsId(pnfsId).status(status)
+                    .user(users), FETCH_SIZE);
+
         List<BulkRequestSummary> summaries = new ArrayList<>();
 
         for (BulkRequest r : requests) {
@@ -505,6 +509,13 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
     @Required
     public void setExpiryUnit(TimeUnit expiryUnit) {
         this.expiryUnit = expiryUnit;
+    }
+
+    @Required
+    public void setPnfsManager(CellStub pnfsManager) {
+        pnfsHandler = new PnfsHandler(pnfsManager);
+        pnfsHandler.setSubject(Subjects.ROOT);
+        pnfsHandler.setRestriction(Restrictions.none());
     }
 
     @Required
@@ -715,6 +726,14 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
             Throwable cause = e.getCause();
             throw new BulkStorageException(
                   cause == null ? e.getMessage() : cause.getMessage());
+        }
+    }
+
+    private PnfsId getPnfsidFor(String path) throws BulkStorageException {
+        try {
+            return pnfsHandler.getFileAttributes(path, MINIMALLY_REQUIRED_ATTRIBUTES).getPnfsId();
+        } catch (CacheException e) {
+            throw new BulkStorageException("could not retrieve pnfsid for " + path, e);
         }
     }
 

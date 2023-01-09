@@ -73,8 +73,6 @@ public final class BulkRequestFilter {
     private final Set<String> owner;
     private final Set<String> urlPrefix;
     private final Set<String> id;
-    private final Set<String> target;
-    private final Set<String> targetPrefix;
     private final Set<String> activity;
     private final Set<BulkRequestStatus> statuses;
     private final Boolean cancelOnFailure;
@@ -88,14 +86,14 @@ public final class BulkRequestFilter {
 
     public BulkRequestFilter(Set<BulkRequestStatus> statuses) {
         this(null, null, null, null, null, null,
-              null, null, statuses, null, null,
+              statuses, null, null,
               null, null, null, null);
     }
 
     public BulkRequestFilter(Long before, Long after, Set<String> owner, Set<String> urlPrefix,
-          Set<String> id, Set<String> target, Set<String> targetPrefix, Set<String> activity,
-          Set<BulkRequestStatus> statuses, Boolean cancelOnFailure, Boolean clearOnSuccess,
-          Boolean clearOnFailure, Boolean delayClear, Depth expandDirectories, Boolean prestore) {
+          Set<String> id, Set<String> activity, Set<BulkRequestStatus> statuses, Boolean cancelOnFailure,
+          Boolean clearOnSuccess, Boolean clearOnFailure, Boolean delayClear, Depth expandDirectories,
+          Boolean prestore) {
         this.before = before;
         this.after = after;
         this.activity = activity;
@@ -108,8 +106,6 @@ public final class BulkRequestFilter {
         this.owner = owner;
         this.urlPrefix = urlPrefix;
         this.id = id;
-        this.target = target;
-        this.targetPrefix = targetPrefix;
         this.prestore = prestore;
     }
 
@@ -161,14 +157,6 @@ public final class BulkRequestFilter {
 
     public BulkRequestStatus[] getStatuses() {
         return statuses == null ? null : statuses.toArray(BulkRequestStatus[]::new);
-    }
-
-    public String[] getTarget() {
-        return target == null ? null : target.toArray(String[]::new);
-    }
-
-    public String[] getTargetPrefix() {
-        return targetPrefix == null ? null : targetPrefix.toArray(String[]::new);
     }
 
     public String[] getUrlPrefix() {

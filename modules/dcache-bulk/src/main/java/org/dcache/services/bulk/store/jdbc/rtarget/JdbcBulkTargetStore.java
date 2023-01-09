@@ -61,7 +61,6 @@ package org.dcache.services.bulk.store.jdbc.rtarget;
 
 import static org.dcache.services.bulk.util.BulkRequestTarget.NON_TERMINAL;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.CREATED;
-import static org.dcache.util.Strings.truncate;
 
 import java.util.List;
 import java.util.Map;
@@ -84,8 +83,6 @@ import org.springframework.beans.factory.annotation.Required;
 public final class JdbcBulkTargetStore implements BulkTargetStore {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JdbcBulkTargetStore.class);
-
-    private static final String MATCH_PATH = "select rid from request_target where path LIKE ?";
 
     private JdbcRequestTargetDao targetDao;
 
@@ -175,13 +172,6 @@ public final class JdbcBulkTargetStore implements BulkTargetStore {
             return Optional.empty();
         }
         return Optional.of(list.get(0));
-    }
-
-    @Override
-    public List<String> ridsOf(String targetPath) {
-        targetPath = truncate(targetPath, 256,true);
-        return targetDao.getJdbcTemplate()
-              .queryForList(MATCH_PATH, String.class, "%" + targetPath + "%");
     }
 
     @Required

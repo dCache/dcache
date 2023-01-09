@@ -382,8 +382,6 @@ public final class BulkServiceCommands implements CellCommandListener {
         protected Set<String> activities;
         protected Set<String> owners;
         protected Set<String> urlPrefixes;
-        protected Set<String> targets;
-        protected Set<String> targetPrefixes;
         protected Set<BulkRequestStatus> statuses;
         protected Depth depth;
 
@@ -417,16 +415,6 @@ public final class BulkServiceCommands implements CellCommandListener {
               separator = ",",
               usage = "The url preceding the <id> part of the request identifier.")
         String[] urlPrefix;
-
-        @Option(name = "target",
-              separator = ",",
-              usage = "The request target (path).")
-        String[] target;
-
-        @Option(name = "targetPrefix",
-              separator = ",",
-              usage = "The request targetPrefix.")
-        String[] targetPrefix;
 
         @Option(name = "activity",
               separator = ",",
@@ -484,8 +472,7 @@ public final class BulkServiceCommands implements CellCommandListener {
             }
             owners = toSetOrNull(owner);
             urlPrefixes = toSetOrNull(urlPrefix);
-            targets = toSetOrNull(target);
-            targetPrefixes = toSetOrNull(targetPrefix);
+
             if (status != null) {
                 statuses = toSetOrNull(status).stream().map(String::toUpperCase)
                       .map(BulkRequestStatus::valueOf)
@@ -497,7 +484,7 @@ public final class BulkServiceCommands implements CellCommandListener {
             }
 
             rFilter = new BulkRequestFilter(beforeStart, afterStart, owners, urlPrefixes, ids,
-                  targets, targetPrefixes, activities, statuses, cancelOnFailure, clearOnSuccess,
+                  activities, statuses, cancelOnFailure, clearOnSuccess,
                   clearOnFailure, delayClear, depth, prestore);
             rFilter.setSeqNo(seqNo);
         }
@@ -529,7 +516,6 @@ public final class BulkServiceCommands implements CellCommandListener {
                   && owner == null
                   && urlPrefix == null
                   && id == null
-                  && target == null
                   && activity == null
                   && clearOnFailure == null
                   && clearOnSuccess == null
@@ -1096,11 +1082,6 @@ public final class BulkServiceCommands implements CellCommandListener {
               usage = "The pnfsid of the target.")
         String[] pnfsid;
 
-        @Option(name = "path",
-              separator = ",",
-              usage = "The path of the target.")
-        String[] path;
-
         @Option(name = "activity",
               separator = ",",
               usage = "The activity of the target/request.")
@@ -1146,7 +1127,6 @@ public final class BulkServiceCommands implements CellCommandListener {
                 types = types.stream().map(String::toUpperCase).collect(Collectors.toSet());
             }
             Set<String> pnfsids = toSetOrNull(pnfsid);
-            Set<String> paths = toSetOrNull(path);
             Set<State> states = null;
             if (state != null) {
                 if (Arrays.asList(state).contains("ALL")) {
@@ -1159,7 +1139,7 @@ public final class BulkServiceCommands implements CellCommandListener {
 
             PID nodeType = pid == null ? null : PID.valueOf(pid);
 
-            BulkTargetFilter filter = new BulkTargetFilter(ids, offset, nodeType, pnfsids, paths,
+            BulkTargetFilter filter = new BulkTargetFilter(ids, offset, nodeType, pnfsids,
                   activities, types, states);
 
             if (count) {
