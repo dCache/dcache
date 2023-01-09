@@ -173,12 +173,12 @@ public final class JdbcBulkDaoUtils {
         }
     }
 
-    public <T> List<T> get(JdbcCriterion criterion, int limit, String tableName,
+    public <T> List<T> get(String select, JdbcCriterion criterion, int limit, String tableName,
           JdbcDaoSupport support, RowMapper<T> mapper) {
-        LOGGER.trace("get {}, limit {}.", criterion, limit);
+        LOGGER.trace("get {}, {}, limit {}.", select, criterion, limit);
         Boolean reverse = criterion.reverse();
         String direction = reverse == null || !reverse ? "ASC" : "DESC";
-        String sql = "SELECT * FROM " + tableName + " WHERE " + criterion.getPredicate()
+        String sql = select + " FROM " + tableName + " WHERE " + criterion.getPredicate()
               + " ORDER BY " + criterion.orderBy() + " " + direction + " LIMIT " + limit;
 
         LOGGER.trace("get {} ({}).", sql, criterion.getArguments());
@@ -186,6 +186,11 @@ public final class JdbcBulkDaoUtils {
         template.setFetchSize(fetchSize);
 
         return template.query(sql, criterion.getArgumentsAsArray(), mapper);
+    }
+
+    public <T> List<T> get(JdbcCriterion criterion, int limit, String tableName,
+          JdbcDaoSupport support, RowMapper<T> mapper) {
+        return get("SELECT *", criterion, limit, tableName, support, mapper);
     }
 
     public <T> List<T> get(String sql, List args, int limit, JdbcDaoSupport support,

@@ -22,7 +22,10 @@ import static java.util.Arrays.asList;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.function.Function;
 
 /**
  * Base class providing common SQL processing for queries.
@@ -31,6 +34,7 @@ public abstract class JdbcCriterion {
 
     final StringBuilder predicate = new StringBuilder();
     final List<Object> arguments = new ArrayList<>();
+    final Set<String> joined = new HashSet<>();
 
     /**
      * Used for GROUP BY.
@@ -67,12 +71,31 @@ public abstract class JdbcCriterion {
         return classifier;
     }
 
+    public boolean isJoined() {
+        return !joined.isEmpty();
+    }
+
     public Boolean reverse() {
         return reverse;
     }
 
     public String toString() {
         return "JdbcCriterion{(" + predicate + ")(" + arguments + ")}";
+    }
+
+    /**
+     * @param clause joining the tables.
+     */
+    protected void addJoin(String clause) {
+        if (!joined.contains(clause)) {
+            if (predicate.length() > 0) {
+                predicate.append(" AND ");
+            }
+
+            predicate.append(clause);
+
+            joined.add(clause);
+        }
     }
 
     /**
@@ -102,6 +125,10 @@ public abstract class JdbcCriterion {
      * @param arguments corresponding to the placeholders.
      */
     protected void addOrClause(String clause, Object... arguments) {
+        addOrClause(clause, o -> o.toString(), arguments);
+    }
+
+    protected void addOrClause(String clause, Function mapper, Object... arguments) {
         if (arguments == null || arguments.length == 0) {
             return;
         }
@@ -124,6 +151,6 @@ public abstract class JdbcCriterion {
             predicate.append(")");
         }
 
-        this.arguments.addAll(asList(Arrays.stream(arguments).map(Object::toString).toArray()));
+        this.arguments.addAll(asList(Arrays.stream(arguments).map(mapper).toArray()));
     }
 }
