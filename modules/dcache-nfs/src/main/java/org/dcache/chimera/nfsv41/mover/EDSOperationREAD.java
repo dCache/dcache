@@ -2,17 +2,23 @@ package org.dcache.chimera.nfsv41.mover;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.nfsstat;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.nfs.v4.CompoundContext;
-import org.dcache.nfs.v4.NFSv4Defaults;
 import org.dcache.nfs.v4.xdr.READ4res;
 import org.dcache.nfs.v4.xdr.READ4resok;
 import org.dcache.nfs.v4.xdr.nfs_argop4;
 import org.dcache.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.nfs.v4.xdr.nfs_resop4;
+import org.dcache.oncrpc4j.grizzly.GrizzlyUtils;
+import org.dcache.oncrpc4j.rpc.OncRpcException;
+import org.dcache.oncrpc4j.xdr.Xdr;
+import org.dcache.oncrpc4j.xdr.XdrEncodingStream;
 import org.dcache.pool.repository.RepositoryChannel;
+import org.dcache.util.ByteUnit;
+import org.glassfish.grizzly.Buffer;
+import org.glassfish.grizzly.memory.MemoryManager;
+import org.glassfish.grizzly.memory.PooledMemoryManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,13 +26,17 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
 
     private static final Logger _log = LoggerFactory.getLogger(EDSOperationREAD.class.getName());
 
-    // Bind a direct buffer to each thread.
-    private static final ThreadLocal<ByteBuffer> BUFFERS = new ThreadLocal<ByteBuffer>() {
-        @Override
-        protected ByteBuffer initialValue() {
-            return ByteBuffer.allocateDirect((int) NFSv4Defaults.NFS4_MAXIOBUFFERSIZE);
-        }
-    };
+    // one pool with 1MB chunks (max NFS rsize)
+    private final static MemoryManager<? extends Buffer> POOLED_BUFFER_ALLOCATOR =
+          new PooledMemoryManager(
+                ByteUnit.MiB.toBytes(1), // base chunk size
+                1, // number of pools
+                2, // grow facter per pool, ignored, see above
+                GrizzlyUtils.getDefaultWorkerPoolSize(), // expected concurrency
+                PooledMemoryManager.DEFAULT_HEAP_USAGE_PERCENTAGE,
+                PooledMemoryManager.DEFAULT_PREALLOCATED_BUFFERS_PERCENTAGE,
+                true  // direct buffers
+          );
 
     private final NfsTransferService nfsTransferService;
 
@@ -51,17 +61,22 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
                 return;
             }
 
-            ByteBuffer bb = BUFFERS.get();
+            var gBuffer = POOLED_BUFFER_ALLOCATOR.allocate(count);
+            gBuffer.allowBufferDispose(true);
+            ByteBuffer bb = gBuffer.toByteBuffer();
             bb.clear().limit(count);
-            RepositoryChannel fc = mover.getMoverChannel();
 
-            bb.rewind();
+            RepositoryChannel fc = mover.getMoverChannel();
             int bytesRead = fc.read(bb, offset);
 
+            if (bytesRead > 0) {
+                // the positions of Buffer and ByteBuffer are independent, thus keep it in sync manually
+                gBuffer.position(bytesRead);
+            }
+            gBuffer.flip();
+
             res.status = nfsstat.NFS_OK;
-            res.resok4 = new READ4resok();
-            bb.flip();
-            res.resok4.data = bb;
+            res.resok4 = new ShallowREAD4resok(gBuffer);
             if (bytesRead == -1 || offset + bytesRead == fc.size()) {
                 res.resok4.eof = true;
             }
@@ -75,6 +90,21 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
         } catch (Exception e) {
             _log.error("DSREAD: ", e);
             res.status = nfsstat.NFSERR_SERVERFAULT;
+        }
+    }
+
+    // version of READ4resok that uses shallow encoding to avoid extra copy
+    private static class ShallowREAD4resok extends READ4resok {
+
+        private final Buffer buf;
+        public ShallowREAD4resok(Buffer buf) {
+            this.buf = buf;
+        }
+
+        public void xdrEncode(XdrEncodingStream xdr)
+              throws OncRpcException, IOException {
+            xdr.xdrEncodeBoolean(eof);
+            ((Xdr)xdr).xdrEncodeShallowByteBuffer(buf);
         }
     }
 }
