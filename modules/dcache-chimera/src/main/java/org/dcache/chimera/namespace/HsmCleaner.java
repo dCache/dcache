@@ -313,28 +313,33 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
         }
 
         String hsm = msg.getHsm();
+        String poolName = msg.getPoolName();
         Collection<URI> locations = _locationsToDelete.get(hsm);
         Collection<URI> success = msg.getSucceeded();
         Collection<URI> failures = msg.getFailed();
 
-        LOGGER.info("Pool delete responses for hsm {}: {} success, {} failures", hsm,
-              success.size(), failures.size());
+        boolean isStaleReply = false;
+        HsmCleaner.Timeout currHsmTimeout = _requestTimeoutPerHsm.get(hsm);
+        if (currHsmTimeout == null || !poolName.equals(currHsmTimeout.getPool())) {
+            LOGGER.warn(
+                  "Received a remove reply from pool {}, which is no longer waited for. "
+                        + "The cleaner pool timeout might be too small.",
+                  poolName);
+            isStaleReply = true;
+        }
 
         if (locations == null) {
             /* Seems we got a reply for something this instance did
              * not request. We log this as a warning, but otherwise
              * ignore it.
              */
-            LOGGER.warn(
-                  "Received confirmation from a pool, for an action this {} did not request.",
+            LOGGER.warn("Received confirmation from a pool for an action this {} did not request.",
                   CLEANER_TYPE);
             return;
         }
 
-        if (!failures.isEmpty()) {
-            LOGGER.warn("Failed to delete {} files from HSM {}. Will try again later.",
-                  failures.size(), hsm);
-        }
+        LOGGER.info("Pool delete responses for HSM {}: {} success, {} failures", hsm,
+              success.size(), failures.size());
 
         for (URI location : success) {
             assert location.getAuthority().equals(hsm);
@@ -350,8 +355,10 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
             }
         }
 
-        removeHsmRequestTimeout(hsm);
-        flush(hsm);
+        if (!isStaleReply) {
+            removeHsmRequestTimeout(hsm);
+            flush(hsm);
+        }
     }
 
     /**
