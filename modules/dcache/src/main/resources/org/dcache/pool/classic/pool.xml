@@ -285,14 +285,22 @@
   </bean>
 
 
-    <bean id="ssl-context-builder" class="org.dcache.http.NettySslContextFactoryBean">
-        <description>SSL Context factory</description>
+    <bean id="ssl-context-builder-parent" abstract="true" class="org.dcache.http.AbstractSslContextSupplier">
+        <description>Abstract SSL Context factory</description>
         <property name="serverCertificatePath" value="${pool.mover.https.hostcert.cert}"/>
         <property name="serverKeyPath" value="${pool.mover.https.hostcert.key}"/>
         <property name="serverCaPath" value="${pool.mover.https.capath}"/>
         <property name="crlCheckingMode" value="${pool.authn.crl-mode}"/>
         <property name="ocspCheckingMode" value="${pool.authn.ocsp-mode}"/>
     </bean>
+
+  <bean id="netty-ssl-context-builder" class="org.dcache.http.NettySslContextFactory" parent="ssl-context-builder-parent">
+    <description>SSL Context factory for Netty</description>
+  </bean>
+
+  <bean id="jdk-ssl-context-builder" class="org.dcache.http.JdkSslContextFactory" parent="ssl-context-builder-parent">
+    <description>SSL Context factory for JDK</description>
+  </bean>
 
   <bean id="migration" class="org.dcache.pool.migration.MigrationModule"
         destroy-method="cancelAll">
@@ -747,7 +755,7 @@
 
         <bean id="p2p" parent="p2p-parent">
             <description>Pool to pool transfer manager with encryption</description>
-            <property name="sslContext" ref="ssl-context-builder"/>
+            <property name="sslContext" ref="jdk-ssl-context-builder"/>
             <property name="tlsMode" value="${pool.enable.encrypted.p2p-transfers}"/>
         </bean>
 
@@ -757,7 +765,7 @@
 
         <bean id="p2p" parent="p2p-parent">
             <description>Pool to pool transfer manager with encryption</description>
-            <property name="sslContext" ref="ssl-context-builder"/>
+            <property name="sslContext" ref="jdk-ssl-context-builder"/>
             <property name="tlsMode" value="${pool.enable.encrypted.p2p-transfers}"/>
         </bean>
 
@@ -780,7 +788,7 @@
         </bean>
 
         <bean id="https-transfer-service" parent="http-transfer-service-parent" class="org.dcache.http.HttpsTransferService">
-            <property name="sslContext" ref="ssl-context-builder" />
+            <property name="sslContext" ref="netty-ssl-context-builder" />
         </bean>
     </beans>
 
