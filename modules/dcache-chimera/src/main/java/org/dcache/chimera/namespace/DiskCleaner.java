@@ -161,6 +161,9 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
      * @throws InterruptedException
      */
     private void runDelete(List<String> poolList) throws InterruptedException {
+        // Expensive operation, thus triggered once per runDelete rather than per pool
+        deleteInodeEntries();
+
         boolean runAsync = _executor.getCorePoolSize() > 1;
         List<CompletableFuture<Void>> futures = new ArrayList<>();
 
@@ -175,7 +178,6 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
                           _poolsBeingCleaned.put(pool, System.currentTimeMillis());
                           try {
                               runDelete(pool);
-                              runNotification();
                           } finally {
                               _poolsBeingCleaned.remove(pool);
                               LOGGER.info("Finished deleting from pool {}", pool);
@@ -184,7 +186,6 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
                 futures.add(cf);
             } else {
                 runDelete(pool);
-                runNotification();
                 LOGGER.info("Finished deleting from pool {}", pool);
             }
         }
@@ -292,7 +293,12 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
         }
     }
 
-    private void runNotification() {
+    /**
+     * Deletes all pnfsid entries from the trash table that are of itype=2 (inode) and for which
+     * there are no other trash table entries on disk or hsm (types 0 and 1). As this is the final
+     * delete operation for a pnfsid, it also sends a delete notification for each.
+     */
+    private void deleteInodeEntries() {
         final String QUERY =
               "SELECT ipnfsid FROM t_locationinfo_trash t1 " +
                     "WHERE itype=2 AND NOT EXISTS (SELECT 1 FROM t_locationinfo_trash t2 WHERE t2.ipnfsid=t1.ipnfsid AND t2.itype <> 2)";
@@ -526,7 +532,8 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
         pw.printf("Refresh Interval: %s\n", _refreshInterval);
         pw.printf("Refresh Interval Unit: %s\n", _refreshIntervalUnit);
         pw.printf("Cleanup grace period: %s\n", TimeUtils.describe(_gracePeriod).orElse("-"));
-        pw.printf("Reply Timeout:  %d\n", _poolStub.getTimeout());
+        pw.printf("Pool reply timeout:  %d %s\n", _poolStub.getTimeout(),
+              _poolStub.getTimeoutUnit());
         pw.printf("Number of files processed at once:  %d\n", _processAtOnce);
         pw.printf("Delete notification targets:  %s\n",
               Arrays.toString(_deleteNotificationTargets));
