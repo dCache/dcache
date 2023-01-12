@@ -61,23 +61,51 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
                 return;
             }
 
-            var gBuffer = POOLED_BUFFER_ALLOCATOR.allocate(count);
-            gBuffer.allowBufferDispose(true);
-            ByteBuffer bb = gBuffer.toByteBuffer();
-            bb.clear().limit(count);
-
             RepositoryChannel fc = mover.getMoverChannel();
-            int bytesRead = fc.read(bb, offset);
+            var gBuffer = POOLED_BUFFER_ALLOCATOR.allocate(count);
+            int bytesToRead = count;
 
-            if (bytesRead > 0) {
-                // the positions of Buffer and ByteBuffer are independent, thus keep it in sync manually
-                gBuffer.position(bytesRead);
+            int rc = -1;
+            if (gBuffer.isComposite()) {
+                // composite buffers built out of array of simple buffers, thus we have to fill
+                // each buffer manually
+                var bArray = gBuffer.toBufferArray();
+                Buffer[] bufs = bArray.getArray();
+                int size = bArray.size();
+
+                for(int i = 0; i < size; i++) {
+
+                    ByteBuffer directChunk = bufs[i].toByteBuffer();
+                    directChunk.clear().limit(Math.min(directChunk.capacity(), bytesToRead));
+                    rc = fc.read(directChunk, offset + count - bytesToRead);
+                    if (rc < 0) {
+                        break;
+                    }
+
+                    // the positions of Buffer and ByteBuffer are independent, thus keep it in sync manually
+                    gBuffer.position(gBuffer.position() + directChunk.position());
+                    directChunk.flip();
+
+                    bytesToRead -= rc;
+                }
+            } else {
+
+                ByteBuffer directBuffer = gBuffer.toByteBuffer();
+                directBuffer.clear().limit(count);
+                rc = fc.read(directBuffer, offset);
+                if (rc > 0) {
+                    // the positions of Buffer and ByteBuffer are independent, thus keep it in sync manually
+                    gBuffer.position(directBuffer.position());
+                    bytesToRead -= rc;
+                }
             }
+
+            int bytesRead = count - bytesToRead;
             gBuffer.flip();
 
             res.status = nfsstat.NFS_OK;
             res.resok4 = new ShallowREAD4resok(gBuffer);
-            if (bytesRead == -1 || offset + bytesRead == fc.size()) {
+            if (rc == -1 || offset + bytesRead == fc.size()) {
                 res.resok4.eof = true;
             }
 
