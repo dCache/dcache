@@ -201,12 +201,7 @@ it is also very powerful and allows dCache to work with many different authentic
 
 
 
-Next, we need to tell dCache which uid and gids these users should be assigned. To do this, create the file
-**/etc/dcache/multi-mapfile** with the following content:
 
-> username:tester uid:1000 gid:1000,true
-> 
-> username:admin uid:0 gid:0,true
 
 
 
