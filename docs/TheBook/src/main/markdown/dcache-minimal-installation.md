@@ -302,8 +302,7 @@ Therefore the values for `pnfsmanager.default-retention-policy` and `pnfsmanager
 >  tells the domain that it is running stand-alone, and should not attempt to contact other domains. We will cover these in the next example, where  configurations for different domains  will be explained.
 
 >  webdav.authn.basic = true
->  
-> webdav.authn.basic = ${webdav.authn.basic-for-${webdav.authn.protocol}} **?????**
+ **?????**
 
 
 
