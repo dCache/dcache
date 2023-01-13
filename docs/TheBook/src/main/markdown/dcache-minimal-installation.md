@@ -230,7 +230,7 @@ For the minimal instalation of dCache the following cells must be configured in 
 - metadata DB, POSIX layer
 
 #### POOL
- - Data storage nodes, talk all protocols
+ - Data storage nodes, talks all protocols
 
 #### Zookeeper
  - A distributed directory and coordination service that dCache relies on.
@@ -648,6 +648,12 @@ pool.path=/srv/dcache/pool-A
 pool.wait-for-files=${pool.path}/data
 ```
 
+By default dcache.broker.scheme proprty is satellite so you do not need to set it.
+
+Let us check the log, to see if it is enabled.
+> journalctl -u dcache@poolsDomainA.service
+
+
 
 Now we can do a file migration from one pool to another. To do so we will need to add a new service to our core domain, which will be the **admin** service.
 
@@ -675,6 +681,7 @@ dcache.broker.scheme = core
 [${host.name}_coreDomain/admin]
 
 ...
+
 
 Using **admin** you can get information about all services and perform different operations on them. In this example we will use migration move command to move a file from one pol to other.   
 
