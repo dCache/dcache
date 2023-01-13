@@ -43,15 +43,39 @@ session  sufficient  authzdb
 # oidc:<oidc toquen?>       username:dteam001
 
 # exemple DN #
-"dn:/DC=org/DC=terena/DC=tcs/C=ES/O=Port dInformacio Cientifica/CN=Elena Planas eplanas@pic.es"      username:dteam001
+"dn:/DC=org/DC=terena/DC=tcs/C=ES/O=Port dInformacio Cientifica/CN=Kermit Frog Planas kermit@desy.de"      username:dteam001
 
 #### IAM WLCG ####
-#eplanas
+#kermit
 oidc:6d30bb78-6a87-47e8-a670-d7805cdc3c44  username:wlcg001
 
 #### idp-test ####
-#eplanas
+#kermit
 oidc:6c9a1786-4acd-421c-a21c-0dc6eff0cebd@PIC  username:dteam001
 
 ...
-   
+
+
+**frontend**
+```
+############################################
+# Domain: frontend-dccore15Domain
+[frontend-${host.name}Domain]
+dcache.java.memory.heap=1024m
+dcache.java.options.extra=-Dcom.sun.management.jmxremote.port=7071 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false
+# Cell: frontend
+[frontend-${host.name}Domain/frontend]
+frontend.authn.accept-client-cert=false
+frontend.authn.protocol=https
+frontend.authz.anonymous-operations=READONLY
+frontend.authz.unlimited-operation-visibility=true
+frontend.root=/pnfs/pic.es/data/dteam
+frontend.service.pool-info.timeout=5
+frontend.service.pool-info.update-threads=20
+frontend.static!dcache-view.endpoints.webdav=
+frontend.static!dcache-view.oidc-authz-endpoint-extra=-
+frontend.static!dcache-view.oidc-authz-endpoint-list=
+frontend.static!dcache-view.oidc-client-id-list=dcache-view
+frontend.static!dcache-view.oidc-provider-name-list=DESY
+frontend.static!dcache-view.org-name=desy.de
+ ```  
