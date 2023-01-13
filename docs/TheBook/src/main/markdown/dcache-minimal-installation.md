@@ -28,7 +28,7 @@ To allow local users to access PostgreSQL without requiring a password, make sur
 are the only uncommented lines in the file **/var/lib/pgsql/10/data/pg_hba.conf**
 
 > **NOTE**: the path to **/pg_hba.conf** is different for PostgreSQL 13 and higher versions.
-> It is**/var/lib/pgsql/data/pg_hba.conf**
+> It is **/var/lib/pgsql/data/pg_hba.conf**
 
       ...
     # TYPE  DATABASE    USER        IP-ADDRESS        IP-MASK           METHOD
@@ -78,13 +78,7 @@ which require considerable effort to set up. For this tutorial the certificates 
 Gplazma is configured by the PAM-style: the first column is the phases of the authentication process. Each login attempt follows four phases: **auth**, **map**, **account** and **session**.  Second column describes how to handle errors. There are four different options: **optional** -,  **sufficient**, **required** and **requisite**. The third column defines plugins that should be used.  as back-end for its tasks
 and services. 
 
-Lets have a look on a complete configuration example and go through   each phase.
-
-
-
-
-
-
+Lets have a look on a complete configuration example and go through the each phase.
 
 
 >vi etc/dcache/gplazma.conf
@@ -111,11 +105,24 @@ During the login process they will be executed in the order **auth**, **map**, *
 
 
 
-**#1**  phase **auth** - verifies user’s identity. auth-plug-ins are used to read the users public and private credentials and ask some authority, if those are valid for accessing the system.
+  **auth**  phase - verifies user’s identity. auth-plug-ins are used to read the users public and private credentials and ask some authority, if those are valid for accessing the system.
 
 **#1.1** This configuration tells gPlazma to use the **x.509** plugin used to extracts X.509 certificate chains from the credentials of a user to be used by other plug-ins
 If user comes with grid
-certificate and VOMS role: extract user’s DN (**#1.2**), checks if the username and password exist in database (**#1.3**).
+certificate and VOMS role: extract user’s DN (**#1.2**), checks if the username and password exist in database (**#1.3**), which should be added to
+
+password file **/etc/dcache/htpasswd**.
+The htpasswd plugin uses the Apache HTTPD server’s file format to record username and passwords. This
+file may be maintained by the htpasswd command.
+Let us create a new password file (/etc/dcache/htpasswd) and add these two users (”tester” and ”admin”)
+with passwords TooManySecrets and dickerelch respectively:
+
+> touch /etc/dcache/htpasswd
+> htpasswd -bm /etc/dcache/htpasswd tester tester12
+> 
+> htpasswd -bm /etc/dcache/htpasswd admin admin
+>
+
 
 **optional** here means, the success or failure of this plug-in is only important if it is the only plug-in in the stack associated
 with this type.
@@ -123,7 +130,7 @@ with this type.
  **#2** **map** - converts this identity to some dCache user.
                                               
  **#2.1** the “grid-mapfile”-file, the client-certificate’s DN is mapped to a
-virtual user-name, which is not to be confused with an actual UNIX user-name.                      
+virtual user-name.                      
 
                                               
  ```ini
@@ -141,10 +148,31 @@ cat >/etc/grid-security/grid-vorolemap <<EOF
 "*" "/desy" desyuser
 EOF
  ```
+ 
+ 
+ 
+ 
+ **#2.3** Using the “storage-authzdb-style”-file, this virtual user-name is then mapped to
+the actual UNIX user-ID 4 and group-IDs 4
+
+
+```ini
+cat >/etc/grid-security/storage-authzdb <<EOF
+version 2.1
+
+authorize admin    read-write    0    0 / / /
+authorize desyuser read-write 1000 2000 / / /
+authorize kermit   read-write 1000 1000 / / /
+EOF
+```
+
+
  **suﬀicient** Success of such a plug-in is enough to satisfy the authentication requirements of the stack of
 plug-ins (if a prior required plug-in has failed the success of this one is ignored). A failure of this plug-in is
 not deemed as fatal for the login attempt. If the plug-in succeeds gPlazma2 immediately proceeds with the
 next plug-in type or returns control to the door if this was the last stack.
+
+Here is an example of the output of this 3 phases.
 
 ```console-root
 [centos@os-46-install1 ~]$ sudo journalctl -f -u dcache@dCacheDomain.service
@@ -161,19 +189,6 @@ Jan 05 13:45:15 os-46-install1.novalocal dcache@dCacheDomain[25977]: 05 Jan 2023
  ```
 
  
- **#2.3** Using the “storage-authzdb-style”-file, this virtual user-name is then mapped to
-the actual UNIX user-ID 4 and group-IDs 4
-
-
-```ini
-cat >/etc/grid-security/storage-authzdb <<EOF
-version 2.1
-
-authorize admin    read-write    0    0 / / /
-authorize desyuser read-write 1000 2000 / / /
-authorize kermit   read-write 1000 1000 / / /
-EOF
-```
  
 
 
@@ -184,22 +199,11 @@ This ability to split login steps between different plugins may make the process
 it is also very powerful and allows dCache to work with many different authentication schemes.
 
 
-For the next step, we need to create the configuration for these four plugins. We will create two users: a
-regular user (”tester”) and an admin user (”admin”).
-The htpasswd plugin uses the Apache HTTPD server’s file format to record username and passwords. This
-file may be maintained by the htpasswd command.
-Let us create a new password file (/etc/dcache/htpasswd) and add these two users (”tester” and ”admin”)
-with passwords TooManySecrets and dickerelch respectively:
-
-> touch /etc/dcache/htpasswd
-> htpasswd -bm /etc/dcache/htpasswd tester tester12
-> 
-> htpasswd -bm /etc/dcache/htpasswd admin admin
->
 
 
 Next, we need to tell dCache which uid and gids these users should be assigned. To do this, create the file
 **/etc/dcache/multi-mapfile** with the following content:
+
 > username:tester uid:1000 gid:1000,true
 > 
 > username:admin uid:0 gid:0,true
@@ -295,9 +299,11 @@ Therefore the values for `pnfsmanager.default-retention-policy` and `pnfsmanager
 
 
 > `dcache.broker.scheme = none`
->  tells the domain that it is running stand-alone, and should not attempt to contact other domains. We will cover these in the next section, where we > will have to set configuration for different domains.
+>  tells the domain that it is running stand-alone, and should not attempt to contact other domains. We will cover these in the next example, where  configurations for different domains  will be explained.
 
 >  webdav.authn.basic = true
+
+> webdav.authn.basic = ${webdav.authn.basic-for-${webdav.authn.protocol}} ?????
 
 
 
@@ -352,6 +358,8 @@ pool.wait-for-files=${pool.path}/data
 
 So we have added a new cell pool to the dCacheDomain.
 
+It is important to undretsand that in this case we have one domain.
+
 
 
 
@@ -393,13 +401,19 @@ systemctl list-dependencies dcache.target
 
 ```
 
+To check the status we use the following command:
+
 > systemctl status dcache@* 
 
+To stop and restart dcache.target command are:
+
+> systemctl restart dcache.target
+> systemctl stop dcache.target
 
 
 So now you can upload a file:
 
-> curl -u admin:admin -L -T /bin/bash http://localhost:2880/home/tester/test-file
+> curl -u admin:dickerelch -L -T /bin/bash http://localhost:2880/home/tester/test-file
 
 
 We can have a look on a log to see what are the messages we are getting
@@ -410,6 +424,8 @@ We can have a look on a log to see what are the messages we are getting
 
 Jan 05 13:44:15 os-46-install1.novalocal dcache@dCacheDomain[25977]: 05 Jan 2023 13:44:15 (pool1) [] Pool mode changed to enabled
 ```
+
+
 
 we can see the file on the pool
 
@@ -437,10 +453,10 @@ The domains communicate with each other via TCP using connections that are
 established at start-up. The topology is controlled by the location manager service. When configured, all
 domains connect with a core domain, which routes all messages to the appropriate domains. This forms a
 star topology.
-To reduce the number of TCP connections, domains may be configured to be core domains or satellite
+To reduce the number of TCP connections, domains may be configured to be **core**, **none** domains or **satellite**
 domains.
 
-The simplest deployment has a single core domain and all other domains as satellite domains, mostly POOL CELLS.
+The simplest deployment has a single core domain and all other domains as satellite domains, mostly POOL cells.
 In the following example we will add a new Pool domains as satellite  domains. 
 
 In this case we have :
@@ -450,9 +466,14 @@ In this case we have :
  - Per-process Log file
  - All components run the same version (you can run different versions if needed)
  
-  > dcache pool create /srv/dcache/pool-1 pool1 poolsDomain1
 
-  > dcache pool create /srv/dcache/pool-2 pool2 poolsDomain2
+we will add two new pool domains:
+
+ > dcache pool create /srv/dcache/pool-1 pool1 poolsDomain1
+ > 
+ > dcache pool create /srv/dcache/pool-2 pool2 poolsDomain2
+ 
+
 
 Please note, that we are still on the same node
 
@@ -492,18 +513,25 @@ pool.wait-for-files=${pool.path}/data
 > indicates that coreDomain is a core domain and if the satilite pool2 will need to connect to coreDomain to send a  a mesage to satellite pool2.
 
 
-
+ 
 
 ```console-root
 systemctl list-dependencies dcache.target
 |dcache.target
 |● ├─dcache@coreDomain.service
-|● ├─dcache@NamespaceDomain.service --???
-|● ├─dcache@zookeeperDomain.service--??
-|● ├─dcache@poolDomain.service
-|● └─dcache@poolmanagerDomain.service
+|● ├─dcache@poolsDomain1.service 
+|● ├─dcache@poolsDomain2.service
+
 
 ```
+
+We reload and restart dcache- ???
+
+systemctl restart dcache.target
+
+ > systemctl daemon-reload
+ > 
+ > systemctl restart dcache.target
 
 Now in **/var/log/dcache/** there will be created a log file for each domain
 
@@ -520,19 +548,35 @@ dcache /var/log/dcache/coreDomain.log
 stopped
 dcache /var/log/dcache/poolsDomain1.log
 stopped
-dcache /var/log/dcache/poolsDomain1.log
+dcache /var/log/dcache/poolsDomain2.log
 
 ```
 
-Should be still updated ?????.
+To check wethre pools have been enabeled we will use
 
-In general when grouping cells the rules to be followed are are following
+
+>  journalctl -u dcache@poolsDomain1.service
+>  
+>  journalctl -u dcache@poolsDomain2.service
+
+
+
+Cells specifique properties could be found in **/usr/share/dcache/defaults/**
+
+
+
+
+
+In general when grouping cells the rules to be followed are are following:
 
 
 - each domain is a single java process
 - each domain MUST have a dCache instance unique name
 - all domains connected to the same zookeeper are part of a single
   dCache instance
+ - pool names (cellnames) MUST be unique within dCache insance
+  
+  
 - in muti-domain setup at lease one domain MUST be `core` domain.
 In HA mode, 2 cores are sufficient, we will cover this at the end of the tutorial ???
   ( all quorum related functionality utilises zookeeper, thus dCache itself doesn't  require odd number of 'cores')
@@ -541,7 +585,7 @@ In HA mode, 2 cores are sufficient, we will cover this at the end of the tutoria
 - Some cells are `well-known` and can be addressed by their short names (cellname),
    for example: PoolManager vs PoolManager@centralDomain. This is actually how HA is working. The messaging system will
   pick one of the existing `PoolManager`s
-- pool names (cellnames) MUST be unique within dCache insance
+
 
 
 # Grouping CELLs - On a different hosts:
@@ -549,7 +593,7 @@ In HA mode, 2 cores are sufficient, we will cover this at the end of the tutoria
 - Share-nothing option
 - Components can run different, but compatible versions.
 - Better throughput
-- Zookeeper should be used ???
+- Zookeeper should be used 
 
 
 
@@ -566,78 +610,151 @@ dcache.broker.scheme = core
 
 
 [${host.name}_coreDomain/zookeeper]
-[${host.name}_coreDomain/poolmanager]
+[${host.name}_coreDomain/zookeeper]
 [${host.name}_coreDomain/pnfsmanager]
-
  pnfsmanager.default-retention-policy = REPLICA
  pnfsmanager.default-access-latency = ONLINE
- 
- [${host.name}_coreDomain/webdav]
-  webdav.authn.basic = true
 
+[${host.name}_coreDomain/poolmanager]
+[${host.name}_coreDomain/webdav]
+ webdav.authn.basic = true
 
-[${host.name}_poolsDomainA]
-[${host.name}_poolsDomainA/pool]
-pool.name=poolA
-pool.path=/srv/dcache/pool-A
+[${host.name}_coreDomain/gplazma]
+
+[${host.name}_coreDomain/pool]
+pool.name=pool1
+pool.path=/srv/dcache/pool-1
 pool.wait-for-files=${pool.path}/data
+
+[${host.name}_coreDomain/pool]
+pool.name=pool2
+pool.path=/srv/dcache/pool-2
+pool.wait-for-files=${pool.path}/data
+
 
 ```
 
 2. less /etc/dcache/layouts/dcache-head-test02.conf
 
-
-
 ```ini
 
+dcache.zookeeper.connection = os-46-install1.desy.de
 
-[${host.name}_poolsDomainB]
-[${host.name}_poolsDomainB/pool]
-pool.name=poolB
-pool.path=/srv/dcache/pool-B
+
+[poolsDomainA]
+[poolsDomainA/pool]
+pool.name=poolA
+pool.path=/srv/dcache/pool-A
 pool.wait-for-files=${pool.path}/data
-
 ```
 
 
-3. less /etc/dcache/layouts/dcache-head-test03.conf
+Now we can do a file migration from one pool to another. To do so we will need to add a new service to our core domain, which will be the **admin** service.
 
-
-????????
 
 ```ini
 
+dcache.enable.space-reservation = false
 
-[${host.name}_poolsDomainC]
-[${host.name}_poolsDomainC/pool]
-pool.name=poolC
-pool.path=/srv/dcache/pool-C
-pool.wait-for-files=${pool.path}/data
+[${host.name}_coreDomain]
 
-```
-
-Marina: this examples will be changed
-
-```ini
+dcache.broker.scheme = core
 
 
+[${host.name}_coreDomain/zookeeper]
+[${host.name}_coreDomain/zookeeper]
+[${host.name}_coreDomain/pnfsmanager]
+ pnfsmanager.default-retention-policy = REPLICA
+ pnfsmanager.default-access-latency = ONLINE
+
+[${host.name}_coreDomain/poolmanager]
+[${host.name}_coreDomain/webdav]
+ webdav.authn.basic = true
+
+[${host.name}_coreDomain/gplazma]
+[${host.name}_coreDomain/admin]
+
+...
+
+Using **admin** you can get infomation about all services and perform different operations on them. In this axample we will use migartion move command to move a file from one pol to other.   
+
+```console-root
+
+[os-46-install1] (pool1@dCacheDomain) admin > \l
+acm
+gPlazma
+PnfsManager
+pool1
+pool2
+PoolManager
+WebDAV-os-46-install1
 zookeeper
-[zookeeperkDomain]
-dcache.broker.scheme=
-dcache.broker.plain.port=???
-[zookeeperkDomain/zookeeper]
+...
 
-dcache.zookeeper.connection = 
-    cluster-box1:2181,cluster-box2:2182,cluster-box3:2181/instance1
+After adding a new pool domain on dcache-head-test2 we will see the newlly added PoolA cell in admin interface.
 
+```console-root
+[os-46-install1] (pool1@dCacheDomain) admin > \l
+acm
+gPlazma
+PnfsManager
+pool1
+pool2
+poolA
+PoolManager
+WebDAV-os-46-install1
+zookeeper
 ```
 
 
 
-> let us upload a file e.g????
 
-> curl -u admin:admin -v -L -T /bin/bash http://localhost:2880/home/tester/test-file
+Now we will migrate the file using the folllowing command:
 
+> migration move -target=pool -- poolA 
+
+
+```console-root
+[os-46-install1] (local) admin > \c pool1
+[os-46-install1] (pool1@dCacheDomain) admin > rep ls
+000078AB06BD15FE4F30A4BFA0CBF2350008 <C-------X--L(0)[0]> 1388880 si={<Unknown>:<Unknown>}
+0000441B2048C3434F6282C1E1E4EAC9D8CA <C-------X--L(0)[0]> 1388880 si={<Unknown>:<Unknown>}
+0000D769014D0D934AF588E2B8C0463EDA25 <C-------X--L(0)[5]> 1388880 si={<Unknown>:<Unknown>}
+
+[os-46-install1] (pool1@dCacheDomain) admin > migration move -target=pool -- poolA
+[os-46-install1] (pool1@dCacheDomain) admin > migration move -target=pool -- poolA
+
+
+
+```
+
+We cann monitor the migration process 
+
+```console-root
+[os-46-install1] (pool1@dCacheDomain) admin > migration info 2
+Command    : migration move -target=pool -- poolA
+State      : RUNNING
+Queued     : 2
+Attempts   : 3
+Targets    : poolA
+Completed  : 0 files; 0 bytes; 0%
+Total      : 4166640 bytes
+Concurrency: 1
+Running tasks:
+[67] 0000D769014D0D934AF588E2B8C0463EDA25: TASK.Copying -> [poolA@local]
+Most recent errors:
+16:10:16 [63] 000078AB06BD15FE4F30A4BFA0CBF2350008: PnfsManager failed (No such file or directory with PNFSID: 000078AB06BD15FE4F30A4BFA0CBF2350008)
+16:10:26 [65] 0000441B2048C3434F6282C1E1E4EAC9D8CA: PnfsManager failed (No such file or directory with PNFSID: 0000441B2048C3434F6282C1E1E4EAC9D8CA)
+
+[os-46-install1] (pool1@dCacheDomain) admin > \l poolA
+poolA
+
+[os-46-install1] (pool1@dCacheDomain) admin > \c poolA
+[os-46-install1] (poolA@poolsDomainA) admin > rep ls
+0000D769014D0D934AF588E2B8C0463EDA25 <-----------L(0)[0]> 0 si={<Unknown>:<Unknown>}
+
+
+```
 
 3. real instalation example
 
@@ -677,23 +794,6 @@ pnfsmanager.db.connections.max=16
 
 
 
-```ini
-
-[core-${host.name}]
-
-
-
-[core-${host.name}/poolmanager]
-
-[core-${host.name}/pnfsmanager]
-
-
-[core-${host.name}/nfs]
-chimera.db.url=jdbc:postgresql://${chimera.db.host}/${chimera.db.name}?prepareThreshold=3&targetServerType=master&ApplicationName=${nfs.cell.name}
-
-[admin]
-[core-${host.name}/admin]
-```
 
 
 
