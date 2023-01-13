@@ -302,8 +302,8 @@ Therefore the values for `pnfsmanager.default-retention-policy` and `pnfsmanager
 >  tells the domain that it is running stand-alone, and should not attempt to contact other domains. We will cover these in the next example, where  configurations for different domains  will be explained.
 
 >  webdav.authn.basic = true
-
-> webdav.authn.basic = ${webdav.authn.basic-for-${webdav.authn.protocol}} ?????
+>  
+> webdav.authn.basic = ${webdav.authn.basic-for-${webdav.authn.protocol}} **?????**
 
 
 
@@ -510,7 +510,7 @@ pool.wait-for-files=${pool.path}/data
 **NOTE**
 > [corelDomain]
 > dcache.broker.scheme = core
-> indicates that coreDomain is a core domain and if the satilite pool2 will need to connect to coreDomain to send a  a mesage to satellite pool2.
+> indicates that **coreDomain** is a core domain and if the **satellite pool2** will need to connect to coreDomain to send a  a message to satellite pool2.
 
 
  
@@ -525,7 +525,7 @@ systemctl list-dependencies dcache.target
 
 ```
 
-We reload and restart dcache- ???
+We reload and restart dcache everytime wenn we add new configurations:
 
 systemctl restart dcache.target
 
@@ -578,10 +578,10 @@ In general when grouping cells the rules to be followed are are following:
   
   
 - in muti-domain setup at lease one domain MUST be `core` domain.
-In HA mode, 2 cores are sufficient, we will cover this at the end of the tutorial ???
+In HA mode, 2 cores are sufficient, we will cover this at the end of the tutorial **???**
   ( all quorum related functionality utilises zookeeper, thus dCache itself doesn't  require odd number of 'cores')
 - cells have full qualified name like `cellname@domain`
-- replicable cells have the same `cellname`, for example: PoolManager@centralDomain-1, PoolManager@centralDomain-2 ????
+- replicable cells have the same `cellname`, for example: PoolManager@centralDomain-1, PoolManager@centralDomain-2 **????**
 - Some cells are `well-known` and can be addressed by their short names (cellname),
    for example: PoolManager vs PoolManager@centralDomain. This is actually how HA is working. The messaging system will
   pick one of the existing `PoolManager`s
@@ -676,7 +676,7 @@ dcache.broker.scheme = core
 
 ...
 
-Using **admin** you can get infomation about all services and perform different operations on them. In this axample we will use migartion move command to move a file from one pol to other.   
+Using **admin** you can get information about all services and perform different operations on them. In this example we will use migration move command to move a file from one pol to other.   
 
 ```console-root
 
@@ -691,7 +691,7 @@ WebDAV-os-46-install1
 zookeeper
 ...
 
-After adding a new pool domain on dcache-head-test2 we will see the newlly added PoolA cell in admin interface.
+After adding a new pool domain on dcache-head-test2 we will see the newly added **PoolA** cell in admin interface.
 
 ```console-root
 [os-46-install1] (pool1@dCacheDomain) admin > \l
@@ -709,7 +709,7 @@ zookeeper
 
 
 
-Now we will migrate the file using the folllowing command:
+Now we will migrate the file using the following command:
 
 > migration move -target=pool -- poolA 
 
@@ -756,7 +756,7 @@ poolA
 
 ```
 
-3. real instalation example
+3. real installation example
 
 ```ini
 [${host.name}_gplazmaDomain]
