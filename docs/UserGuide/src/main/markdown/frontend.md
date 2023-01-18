@@ -2653,6 +2653,12 @@ what values they automatically are given for the WLCG Tape API requests:
 
 The following two tables compare the usage for the ``bulk-request`` and WLCG resources, respectively:
 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ NOTE:  In the following charts, the resource URL is out of date.  The current
+        WLCG resources are all prefixed by '/tape'; i.e., '/tape/stage',
+        '/tape/release', and '/tape/archiveinfo'.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 ![Bulk vs WLCG (1)](images/bulk-wlcg-2.png)
 
 ![Bulk vs WLCG (2)](images/bulk-wlcg-3.png)
