@@ -9,6 +9,7 @@ server nodes, under a single virtual filesystem tree with a variety of standard 
  #### Software:
 - OpenJDK 11
  > yum install java-11-openjdk
+ > 
  > dnf install java-11-openjdk-devel
  
 - Postgres SQL Server 9.5 or later
@@ -20,6 +21,10 @@ server nodes, under a single virtual filesystem tree with a variety of standard 
 
 To keep this simple, we are assuming that the database will run on the same machine as the dCache services that
 use it.
+
+> postgresql-setup --initdb
+> 
+> systemctl enable --now postgresql 
 
 The simplest configuration is to allow password-less access to the database. 
  
