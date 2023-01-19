@@ -44,14 +44,14 @@ are the only uncommented lines in the file **/var/lib/pgsql/10/data/pg_hba.conf*
    
    ### Creating PostgreSQL users and databases 
    
-> systemctl enable --now postgresql
+> systemctl reload postgresql
 
 > createuser -U postgres --no-superuser --no-createrole --createdb --no-password dcache
 > 
 > createdb -U dcache chimera
 
-And run the command `dcache database update`.
 
+And after installing dcache we run the command `dcache database update`. ???
 
 
 ### Installing dCache
@@ -315,17 +315,12 @@ structure and add the pool service to a domain.  In the following
 example, we will create a pool using storage located at
 `/srv/dcache/pool-1` and add this pool to the `dCacheDomain` domain.
 
-```console-root
-mkdir -p /srv/dcache
-dcache pool create /srv/dcache/pool-1 pool1 dCacheDomain
-|Created a pool in /srv/dcache/pool-1. The pool was added to dCacheDomain
-|in file:/etc/dcache/layouts/mylayout.conf.
-```
+
 
 No we will use the following command:
 
  > dcache pool create /srv/dcache/pool-1 pool1 dCacheDomain
- result
+ >
 > Created a pool in /srv/dcache/pool-1. The pool was added to dCacheDomain
 in file:/etc/dcache/layouts/mylayout.conf.
 
@@ -368,13 +363,7 @@ There are two ways to start dCache: 1) using sysV-like daemon, 2) Using systemd 
 
 ##### Using sysV -like daemon
 
- The the 2nd one is preferred and enforced by default when the hosts operating system supports it. To change this behavior set
-
-dcache.systemd.strict=false
-
-> dcache start
-
-> dcache status
+ 
 
 
 The domain log file (/var/log/dcache/dCacheDomain.log) also contains some details, logged as dCache
@@ -408,6 +397,7 @@ To stop and restart dcache.target command are:
 
 > systemctl restart dcache.target
 > systemctl stop dcache.target
+> journalctl -f -u dcache@dCacheDomain
 
 
 So now you can upload a file:
