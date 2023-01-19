@@ -123,7 +123,7 @@ Let us create a new password file (/etc/dcache/htpasswd) and add these two users
 with passwords TooManySecrets and dickerelch respectively:
 
 > touch /etc/dcache/htpasswd
-> htpasswd -bm /etc/dcache/htpasswd tester tester12
+> 
 > 
 > htpasswd -bm /etc/dcache/htpasswd admin admin
 >
@@ -291,7 +291,7 @@ dcache.enable.space-reservation = false
 **Note**
 
 In this first installation of dCache your dCache will not be connected to a tape sytem. 
-Therefore the values for `pnfsmanager.default-retention-policy` and `pnfsmanager.default-access-latency` must be changed in the file **/etc/dcache/dcache.conf**. ????
+Therefore the values for `pnfsmanager.default-retention-policy` and `pnfsmanager.default-access-latency` must be changed in the file **/etc/dcache/dcache.conf**.
 
 
 >     pnfsmanager.default-retention-policy=REPLICA
@@ -302,7 +302,7 @@ Therefore the values for `pnfsmanager.default-retention-policy` and `pnfsmanager
 >  tells the domain that it is running stand-alone, and should not attempt to contact other domains. We will cover these in the next example, where  configurations for different domains  will be explained.
 
 >  webdav.authn.basic = true
- **?????**
+ 
 
 
 
