@@ -106,7 +106,7 @@ EOF
 
 
 During the login process they will be executed in the order **auth**, **map**, **account** and
-**session**. The identity plugins are not used during login, but later on to map from UID+GID back to user (e.g ??). Within these groups they are used in the order they are specified.
+**session**. The identity plugins are not used during login, but later on to map from UID+GID back to user. Within these groups they are used in the order they are specified.
 
 
 
@@ -396,9 +396,15 @@ To check the status we use the following command:
 To stop and restart dcache.target command are:
 
 > systemctl restart dcache.target
+> 
 > systemctl stop dcache.target
+> 
 > journalctl -f -u dcache@dCacheDomain
 
+
+> touch /etc/dcache/htpasswd 
+>
+> htpasswd -bm /etc/dcache/htpasswd admin dickerelch
 
 So now you can upload a file:
 
