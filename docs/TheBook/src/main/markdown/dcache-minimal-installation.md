@@ -51,7 +51,7 @@ are the only uncommented lines in the file **/var/lib/pgsql/10/data/pg_hba.conf*
 > createdb -U dcache chimera
 
 
-And after installing dcache we run the command `dcache database update`. ???
+And after installing dcache we run the command `dcache database update`.
 
 
 ### Installing dCache
