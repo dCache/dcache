@@ -105,7 +105,7 @@ EOF
 ```
 
 
-During the login process they will be executed in the order **auth**, **map**, **account???** and
+During the login process they will be executed in the order **auth**, **map**, **account** and
 **session**. The identity plugins are not used during login, but later on to map from UID+GID back to user (e.g ??). Within these groups they are used in the order they are specified.
 
 
@@ -563,18 +563,11 @@ In general when grouping cells the rules to be followed are are following:
 - each domain MUST have a dCache instance unique name
 - all domains connected to the same zookeeper are part of a single
   dCache instance
- - pool names (cellnames) MUST be unique within dCache insance
-  
+ - pool names (cellnames) MUST be unique within dCache insance  
   
 - in muti-domain setup at lease one domain MUST be `core` domain.
-In HA mode, 2 cores are sufficient, we will cover this at the end of the tutorial **???**
-  ( all quorum related functionality utilises zookeeper, thus dCache itself doesn't  require odd number of 'cores')
-- cells have full qualified name like `cellname@domain`
-- replicable cells have the same `cellname`, for example: PoolManager@centralDomain-1, PoolManager@centralDomain-2 **????**
-- Some cells are `well-known` and can be addressed by their short names (cellname),
-   for example: PoolManager vs PoolManager@centralDomain. This is actually how HA is working. The messaging system will
-  pick one of the existing `PoolManager`s
 
+- cells have full qualified name like `cellname@domain`
 
 
 # Grouping CELLs - On a different hosts:
