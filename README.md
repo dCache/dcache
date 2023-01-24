@@ -34,7 +34,7 @@ which provides a quick and easy way to get a working dCache.  Running
 system-test requires no special privileges and all the generated files
 reside within the code-base.
 
-There are also packages of stable releases at https://www.dcache.org/downloads/1.9/.
+There are also packages of stable releases at https://www.dcache.org/downloads/.
 
 License
 =======
