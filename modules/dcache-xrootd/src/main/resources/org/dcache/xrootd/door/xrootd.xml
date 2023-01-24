@@ -194,6 +194,7 @@
     <property name="executor" ref="scheduled-thread-pool"/>
     <property name="poolMonitor" ref="pool-monitor"/>
     <property name="triedHostsEnabled" value="${xrootd.enable.tried-hosts}"/>
+    <property name="anonymousAccess" value="${xrootd.authz.anonymous-operations}"/>
   </bean>
 
   <bean id="pool-manager-handler" class="org.dcache.poolmanager.PoolManagerHandlerSubscriber">
