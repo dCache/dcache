@@ -96,6 +96,8 @@ import javax.security.auth.Subject;
 import org.dcache.acl.enums.AccessType;
 import org.dcache.auth.Origin;
 import org.dcache.auth.Subjects;
+import org.dcache.auth.UnionLoginStrategy;
+import org.dcache.auth.UnionLoginStrategy.AccessLevel;
 import org.dcache.auth.attributes.Activity;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.CellStub;
@@ -221,6 +223,8 @@ public class XrootdDoor
     private NettyPortRange portRange;
     private int proxyResponseTimeoutInSeconds;
     private InetAddress _internalAddress;
+
+    private UnionLoginStrategy.AccessLevel anonymousUserAccess = AccessLevel.NONE;
 
     @Autowired(required = false)
     private void setKafkaTemplate(
@@ -423,6 +427,15 @@ public class XrootdDoor
                     _tpcFdIndex)),
               TPC_EVICT_DELAY, TPC_EVICT_DELAY,
               TimeUnit.MILLISECONDS);
+    }
+
+    @Required
+    public void setAnonymousAccess(AccessLevel level) {
+        anonymousUserAccess = level;
+    }
+
+    public AccessLevel getAnonymousUserAccess() {
+        return anonymousUserAccess;
     }
 
     public boolean isTriedHostsEnabled() {

@@ -159,7 +159,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
 
         LoginSessionInfo(LoginReply reply) {
             subject = reply.getSubject();
-            restriction = reply.getRestriction();
+            restriction = computeRestriction(reply);
             userRootPath = reply.getLoginAttributes().stream()
                   .filter(RootDirectory.class::isInstance)
                   .findFirst()
@@ -189,6 +189,21 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
 
         public boolean isLoggedIn() {
             return loggedIn;
+        }
+
+        private Restriction computeRestriction(LoginReply reply) {
+            if (!Subjects.isNobody(subject)) {
+                return reply.getRestriction();
+            }
+
+            switch(_door.getAnonymousUserAccess()) {
+                case READONLY:
+                    return Restrictions.readOnly();
+                case FULL:
+                    return Restrictions.none();
+                default:
+                    return Restrictions.denyAll();
+            }
         }
     }
 
