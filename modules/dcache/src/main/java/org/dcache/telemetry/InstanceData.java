@@ -119,8 +119,8 @@ public class InstanceData implements CellLifeCycleAware {
 
         } catch (CacheException | InterruptedException | NoRouteToCellException e) {
             LOGGER.error(
-                  "Could not get storage information; set storage to -1.0. This was caused by: ",
-                  e);
+                  "Could not get storage information; set storage to -1.0. This was caused by: {}",
+                    e.toString());
         }
 
         return space;
