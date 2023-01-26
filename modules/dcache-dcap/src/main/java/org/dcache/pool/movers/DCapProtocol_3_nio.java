@@ -273,69 +273,31 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
 
         _sessionId = dcapProtocolInfo.getSessionId();
 
-        if (!dcapProtocolInfo.isPassive()) {
+        try (Listen listen = factory.acquireListen(bufferSize.getRecvBufferSize())) {
+            InetAddress localAddress = NetworkUtils.
+                  getLocalAddress(dcapProtocolInfo.getSocketAddress().getAddress());
+            InetSocketAddress socketAddress = new InetSocketAddress(localAddress,
+                  listen.getPort());
 
-            socketChannel = SocketChannel.open();
-            socketChannel.configureBlocking(true);
+            byte[] challenge = UUID.randomUUID().toString().getBytes();
+            PoolPassiveIoFileMessage<byte[]> msg = new PoolPassiveIoFileMessage<>("pool",
+                  socketAddress, challenge);
+            msg.setId(dcapProtocolInfo.getSessionId());
+            _log.info("waiting for client to connect ({}:{})", localAddress,
+                  listen.getPort());
 
-            Socket socket = socketChannel.socket();
-            socket.setKeepAlive(true);
-            socket.setTcpNoDelay(true);
-            if (bufferSize.getRecvBufferSize() > 0) {
-                socket.setReceiveBufferSize(bufferSize
-                      .getRecvBufferSize());
-            }
-            if (bufferSize.getSendBufferSize() > 0) {
-                socket.setSendBufferSize(bufferSize
-                      .getSendBufferSize());
-            }
+            CellPath cellpath = dcapProtocolInfo.door();
+            _cell.sendMessage(new CellMessage(cellpath, msg));
+            DCapProrocolChallenge dcapChallenge = new DCapProrocolChallenge(_sessionId,
+                  challenge);
+            socketChannel = listen.getSocket(dcapChallenge);
+        }
 
-            socketChannel.connect(dcapProtocolInfo.getSocketAddress());
-
-            if (_logSocketIO.isDebugEnabled()) {
-                _logSocketIO.debug("Socket OPEN remote = {}:{} local = {}:{}",
-                      socket.getInetAddress(), socket.getPort(),
-                      socket.getLocalAddress(), socket.getLocalPort());
-            }
-            _log.info("Using : Buffer Sizes (send/recv/io) : {}/{}/{}", socket.getSendBufferSize(),
-                  socket.getReceiveBufferSize(),
-                  _bigBuffer.capacity());
-            _log.info("Connected to {}", dcapProtocolInfo.getSocketAddress());
-
-            //
-            // send the sessionId and our (for now) 0 byte security challenge.
-            //
-            _bigBuffer.clear();
-            _bigBuffer.putInt(_sessionId).putInt(0);
-            _bigBuffer.flip();
-            socketChannel.write(_bigBuffer);
-        } else { // passive connection
-            try (Listen listen = factory.acquireListen(bufferSize.getRecvBufferSize())) {
-                InetAddress localAddress = NetworkUtils.
-                      getLocalAddress(dcapProtocolInfo.getSocketAddress().getAddress());
-                InetSocketAddress socketAddress = new InetSocketAddress(localAddress,
-                      listen.getPort());
-
-                byte[] challenge = UUID.randomUUID().toString().getBytes();
-                PoolPassiveIoFileMessage<byte[]> msg = new PoolPassiveIoFileMessage<>("pool",
-                      socketAddress, challenge);
-                msg.setId(dcapProtocolInfo.getSessionId());
-                _log.info("waiting for client to connect ({}:{})", localAddress,
-                      listen.getPort());
-
-                CellPath cellpath = dcapProtocolInfo.door();
-                _cell.sendMessage(new CellMessage(cellpath, msg));
-                DCapProrocolChallenge dcapChallenge = new DCapProrocolChallenge(_sessionId,
-                      challenge);
-                socketChannel = listen.getSocket(dcapChallenge);
-            }
-
-            Socket socket = socketChannel.socket();
-            socket.setKeepAlive(true);
-            socket.setTcpNoDelay(true);
-            if (bufferSize.getSendBufferSize() > 0) {
-                socket.setSendBufferSize(bufferSize.getSendBufferSize());
-            }
+        Socket socket = socketChannel.socket();
+        socket.setKeepAlive(true);
+        socket.setTcpNoDelay(true);
+        if (bufferSize.getSendBufferSize() > 0) {
+            socket.setSendBufferSize(bufferSize.getSendBufferSize());
         }
 
         //
