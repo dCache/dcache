@@ -13,7 +13,9 @@ public class DCapProtocolInfo implements IpProtocolInfo {
     private long _bytesTransferred;
     private int _sessionId;
     private boolean _writeAllowed;
-    private boolean _isPassive;
+
+    // backward compatibility
+    private final boolean _isPassive = true;
     private CellPath _door;
 
     private static final long serialVersionUID = 7432555710192378884L;
@@ -99,10 +101,6 @@ public class DCapProtocolInfo implements IpProtocolInfo {
 
     public boolean isPassive() {
         return _isPassive;
-    }
-
-    public void isPassive(boolean passive) {
-        _isPassive = passive;
     }
 
     public CellPath door() {
