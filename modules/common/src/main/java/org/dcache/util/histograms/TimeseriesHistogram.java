@@ -60,6 +60,7 @@ documents or software obtained from this server.
 package org.dcache.util.histograms;
 
 import static java.util.Objects.requireNonNull;
+import static org.dcache.util.MathUtils.nanToZero;
 
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
@@ -85,12 +86,12 @@ public class TimeseriesHistogram extends HistogramModel
 
     @Override
     public void add(Double value, Long timestamp) {
-        update(value, UpdateOperation.SUM, timestamp);
+        update(nanToZero(value), UpdateOperation.SUM, timestamp);
     }
 
     @Override
     public void average(Double value, Long timestamp) {
-        update(value, UpdateOperation.AVERAGE, timestamp);
+        update(nanToZero(value), UpdateOperation.AVERAGE, timestamp);
     }
 
     @Override
@@ -147,7 +148,7 @@ public class TimeseriesHistogram extends HistogramModel
 
     @Override
     public void replace(Double value, Long timestamp) {
-        update(value, UpdateOperation.REPLACE, timestamp);
+        update(nanToZero(value), UpdateOperation.REPLACE, timestamp);
     }
 
     /**
@@ -177,7 +178,7 @@ public class TimeseriesHistogram extends HistogramModel
     }
 
     private int findTimebinIndex(long timestamp) {
-        return (int) FastMath.floor((timestamp - lowestBin) / binSize);
+        return (int) FastMath.floor(nanToZero((timestamp - lowestBin) / binSize));
     }
 
     private int rotateBuffer(int binIndex) {
