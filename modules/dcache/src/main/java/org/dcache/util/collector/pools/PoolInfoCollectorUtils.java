@@ -60,6 +60,7 @@ documents or software obtained from this server.
 package org.dcache.util.collector.pools;
 
 import static org.dcache.services.history.pools.PoolListingService.ALL;
+import static org.dcache.util.MathUtils.nanToZero;
 
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
@@ -352,8 +353,8 @@ public final class PoolInfoCollectorUtils {
             double currentBinSize = h.getBinSize();
             int numBins = currentData.size();
             for (int bin = 0; bin < numBins; ++bin) {
-                int groupBin = (int) FastMath.floor(
-                      (bin * currentBinSize) / binSize);
+                int groupBin = (int) FastMath.floor(nanToZero(
+                      (bin * currentBinSize) / binSize));
                 dataArray[groupBin] += currentData.get(bin);
             }
         }
