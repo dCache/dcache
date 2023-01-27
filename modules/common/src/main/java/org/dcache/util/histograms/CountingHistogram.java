@@ -60,6 +60,7 @@ documents or software obtained from this server.
 package org.dcache.util.histograms;
 
 import static java.util.Objects.requireNonNull;
+import static org.dcache.util.MathUtils.nanToZero;
 
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
@@ -126,8 +127,8 @@ public class CountingHistogram extends HistogramModel {
          */
         Double min = FastMath.min(0.0D, metadata.getMinValue().orElse(0.0D));
 
-        double maxIndex = max == null ? binCount - 1 : FastMath.floor((max - min) / binSize);
-        binWidth = (int) FastMath.ceil(maxIndex / (binCount - 1));
+        double maxIndex = max == null ? binCount - 1 : FastMath.floor(nanToZero((max - min) / binSize));
+        binWidth = (int) FastMath.ceil(nanToZero(maxIndex / (binCount - 1)));
 
         /**
          * Re-adjust size on the basis of the adjusted width.
@@ -145,7 +146,7 @@ public class CountingHistogram extends HistogramModel {
               binSize, binCount, min, max, maxIndex);
 
         for (Double d : data) {
-            ++histogram[(int) FastMath.floor((d - min) / binSize)];
+            ++histogram[(int) FastMath.floor(nanToZero((d - min) / binSize))];
         }
 
         data = new ArrayList<>();
@@ -158,7 +159,7 @@ public class CountingHistogram extends HistogramModel {
         setHighestFromLowest();
         int computedCount = (int) binSize == 0 ?
               binCount :
-              (int) FastMath.ceil((highestBin - lowestBin) / binSize) + 1;
+              (int) FastMath.ceil(nanToZero((highestBin - lowestBin) / binSize)) + 1;
 
         if (computedCount > binCount) {
             throw new RuntimeException("bin count " + binCount
