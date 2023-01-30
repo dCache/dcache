@@ -116,9 +116,10 @@ public final class BulkRequestTarget {
 
     private Long id;
     private PID pid;
-    private String rid;
+    private Long rid;
+    private String ruid;
     private FsPath path;
-    private String activity;  /** denormalized from request **/
+    private String activity;
     private State state;
     private long createdAt;
     private Long startedAt;
@@ -208,7 +209,7 @@ public final class BulkRequestTarget {
     }
 
     public String getKey() {
-        return String.format(KEY_FORMAT, rid, id);
+        return String.format(KEY_FORMAT, ruid, id);
     }
 
     public long getLastUpdated() {
@@ -231,8 +232,12 @@ public final class BulkRequestTarget {
         return retried;
     }
 
-    public String getRid() {
+    public Long getRid() {
         return rid;
+    }
+
+    public String getRuid() {
+        return ruid;
     }
 
     public Long getStartedAt() {
@@ -290,8 +295,12 @@ public final class BulkRequestTarget {
         this.pid = pid;
     }
 
-    public void setRid(String rid) {
+    public void setRid(Long rid) {
         this.rid = rid;
+    }
+
+    public void setRuid(String ruid) {
+        this.ruid = ruid;
     }
 
     public void setRetried(int retried) {
@@ -358,7 +367,7 @@ public final class BulkRequestTarget {
 
     @Override
     public String toString() {
-        return String.format(TARGET_FORMAT, id, pid, rid, activity,
+        return String.format(TARGET_FORMAT, id, pid, ruid, activity,
               state, new Timestamp(createdAt), startedAt == null ? null : new Timestamp(startedAt),
               new Timestamp(lastUpdated), retried, getType(), getPnfsId(), path, errorObject);
     }

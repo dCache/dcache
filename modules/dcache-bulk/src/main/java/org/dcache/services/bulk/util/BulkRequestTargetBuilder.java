@@ -75,7 +75,7 @@ public final class BulkRequestTargetBuilder {
         return new BulkRequestTargetBuilder();
     }
 
-    public BulkRequestTargetBuilder id(long id) {
+    public BulkRequestTargetBuilder id(Long id) {
         target.setId(id);
         return this;
     }
@@ -85,8 +85,13 @@ public final class BulkRequestTargetBuilder {
         return this;
     }
 
-    public BulkRequestTargetBuilder rid(String rid) {
+    public BulkRequestTargetBuilder rid(Long rid) {
         target.setRid(rid);
+        return this;
+    }
+
+    public BulkRequestTargetBuilder ruid(String ruid) {
+        target.setRuid(ruid);
         return this;
     }
 

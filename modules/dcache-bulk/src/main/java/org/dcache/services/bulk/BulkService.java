@@ -154,15 +154,15 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
                 Subject subject = message.getSubject();
                 Restriction restriction = message.getRestriction();
                 checkQuota(subject);
-                String requestId = UUID.randomUUID().toString();
-                request.setId(requestId);
-                checkRestrictions(restriction, requestId);
+                String uid = UUID.randomUUID().toString();
+                request.setUid(uid);
+                checkRestrictions(restriction, uid);
                 checkActivity(request);
                 checkDepthConstraints(request);
                 requestStore.store(subject, restriction, request);
                 statistics.incrementRequestsReceived(request.getActivity());
                 requestManager.signal();
-                message.setRequestUrl(request.getUrlPrefix() + "/" + request.getId());
+                message.setRequestUrl(request.getUrlPrefix() + "/" + request.getUid());
                 reply.reply(message);
             } catch (BulkServiceException e) {
                 LOGGER.error("messageArrived(BulkRequestMessage) {}: {}", message, e.toString());
@@ -208,10 +208,10 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
         incomingExecutorService.execute(() -> {
             try {
                 Subject subject = message.getSubject();
-                String requestId = message.getRequestId();
-                checkRestrictions(message.getRestriction(), requestId);
-                matchActivity(message.getActivity(), requestId);
-                BulkRequestInfo status = requestStore.getRequestInfo(subject, requestId,
+                String uuid = message.getRequestUuid();
+                checkRestrictions(message.getRestriction(), uuid);
+                matchActivity(message.getActivity(), uuid);
+                BulkRequestInfo status = requestStore.getRequestInfo(subject, uuid,
                       message.getOffset());
                 message.setInfo(status);
                 reply.reply(message);
@@ -235,15 +235,15 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
         incomingExecutorService.execute(() -> {
             try {
                 Subject subject = message.getSubject();
-                String requestId = message.getRequestId();
-                checkRestrictions(message.getRestriction(), requestId);
-                matchActivity(message.getActivity(), requestId);
+                String uuid = message.getRequestUuid();
+                checkRestrictions(message.getRestriction(), uuid);
+                matchActivity(message.getActivity(), uuid);
                 List<String> targetPaths = message.getTargetPaths();
                 if (targetPaths == null || targetPaths.isEmpty()) {
-                    submissionHandler.cancelRequest(subject, requestId);
+                    submissionHandler.cancelRequest(subject, uuid);
                 } else {
-                    validateTargets(requestId, subject, targetPaths);
-                    submissionHandler.cancelTargets(subject, requestId, targetPaths);
+                    validateTargets(uuid, subject, targetPaths);
+                    submissionHandler.cancelTargets(subject, uuid, targetPaths);
                 }
                 reply.reply(message);
             } catch (BulkServiceException e) {
@@ -265,11 +265,11 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
         MessageReply<Message> reply = new MessageReply<>();
         incomingExecutorService.execute(() -> {
             try {
-                String requestId = message.getRequestId();
+                String uuid = message.getRequestUuid();
                 Subject subject = message.getSubject();
-                checkRestrictions(message.getRestriction(), requestId);
-                matchActivity(message.getActivity(), requestId);
-                submissionHandler.clearRequest(subject, requestId, message.isCancelIfRunning());
+                checkRestrictions(message.getRestriction(), uuid);
+                matchActivity(message.getActivity(), uuid);
+                submissionHandler.clearRequest(subject, uuid, message.isCancelIfRunning());
                 reply.reply(message);
             } catch (BulkServiceException e) {
                 LOGGER.error("messageArrived(BulkRequestClearMessage) {}: {}", message,
@@ -413,17 +413,17 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
         statistics.addUserRequest(user);
     }
 
-    private void checkRestrictions(Restriction restriction, String requestId)
+    private void checkRestrictions(Restriction restriction, String uuid)
           throws BulkPermissionDeniedException, BulkStorageException {
         if (restriction == null || Restrictions.none().equals(restriction)) {
             return;
         }
 
-        Optional<Restriction> option = requestStore.getRestriction(requestId);
+        Optional<Restriction> option = requestStore.getRestriction(uuid);
         Restriction original = option.orElse(null);
 
         if (original != null && !original.isSubsumedBy(restriction)) {
-            throw new BulkPermissionDeniedException(requestId);
+            throw new BulkPermissionDeniedException(uuid);
         }
     }
 
@@ -485,17 +485,17 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
         LOGGER.info("Service startup completed.");
     }
 
-    private void matchActivity(String activity, String requestId)
+    private void matchActivity(String activity, String uuid)
           throws BulkServiceException {
-        Optional<BulkRequest> request = requestStore.getRequest(requestId);
+        Optional<BulkRequest> request = requestStore.getRequest(uuid);
         if (request.isPresent()) {
             if (Strings.emptyToNull(activity) != null && !request.get().getActivity()
                   .equalsIgnoreCase(activity)) {
                 throw new BulkPermissionDeniedException(
-                      requestId + " activity does not match " + activity);
+                      uuid + " activity does not match " + activity);
             }
         } else {
-            throw new BulkStorageException("request " + requestId + " is not valid");
+            throw new BulkStorageException("request " + uuid + " is not valid");
         }
     }
 
@@ -525,15 +525,15 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
         }
     }
 
-    private void validateTargets(String requestId, Subject subject, List<String> paths)
+    private void validateTargets(String uuid, Subject subject, List<String> paths)
           throws BulkServiceException {
-        Optional<BulkRequest> optional = requestStore.getRequest(requestId);
+        Optional<BulkRequest> optional = requestStore.getRequest(uuid);
         if (optional.isEmpty()) {
-            throw new BulkRequestNotFoundException(requestId);
+            throw new BulkRequestNotFoundException(uuid);
         }
 
         BulkRequest request = optional.get();
-        if (!requestStore.isRequestSubject(subject, requestId)) {
+        if (!requestStore.isRequestSubject(subject, uuid)) {
             throw new BulkPermissionDeniedException("request not owned by user.");
         }
 
@@ -546,12 +546,13 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
         }
 
         String prefix = request.getTargetPrefix();
-        Set<FsPath> submitted = targetStore.getInitialTargetPaths(requestId, false).stream()
-              .map(p -> computeFsPath(prefix, p)).collect(Collectors.toSet());
+        Set<FsPath> submitted = targetStore.getInitialTargets(request.getId(), false)
+              .stream().map(p -> computeFsPath(prefix, p.getPath().toString()))
+              .collect(Collectors.toSet());
         for (String path : paths) {
             if (!submitted.contains(findAbsolutePath(prefix, path))) {
                 throw new BulkServiceException(String.format(INVALID_TARGET,
-                      path, request.getActivity(), request.getId()));
+                      path, request.getActivity(), request.getUid()));
             }
         }
     }

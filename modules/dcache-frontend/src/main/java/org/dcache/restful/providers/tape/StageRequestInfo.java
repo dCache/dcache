@@ -103,7 +103,7 @@ public class StageRequestInfo implements Serializable {
     public StageRequestInfo() {}
 
     public StageRequestInfo(BulkRequestInfo info) {
-        id = info.getId();
+        id = info.getUid();
         createdAt = info.getArrivedAt();
         startedAt = info.getStartedAt();
 

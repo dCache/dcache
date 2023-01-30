@@ -459,7 +459,7 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
     @Override
     public void submit(AbstractRequestContainerJob job) {
         synchronized (requestJobs) {
-            requestJobs.put(job.getTarget().getRid(), job);
+            requestJobs.put(job.getTarget().getRuid(), job);
         }
 
         processor.signal();
@@ -470,20 +470,20 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
      *   submit() above.
      */
     void activateRequest(BulkRequest request) {
-        LOGGER.trace("activateRequest {}.", request.getId());
+        LOGGER.trace("activateRequest {}.", request.getUid());
         try {
             submissionHandler.submitRequestJob(request);
-            LOGGER.debug("activateRequest, updating {} to STARTED.", request.getId());
-            requestStore.update(request.getId(), STARTED);
+            LOGGER.debug("activateRequest, updating {} to STARTED.", request.getUid());
+            requestStore.update(request.getUid(), STARTED);
         } catch (BulkStorageException e) {
             LOGGER.error(
                   "Unrecoverable storage update error for {}: {}; aborting.",
-                  request.getId(),
+                  request.getUid(),
                   e.toString());
             requestStore.abort(request, e);
         } catch (BulkServiceException e) {
             LOGGER.error(
-                  "Problem activating request for {}: {}; aborting.", request.getId(),
+                  "Problem activating request for {}: {}; aborting.", request.getUid(),
                   e.toString());
             requestStore.abort(request, e);
         } catch (RuntimeException e) {
@@ -527,7 +527,7 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
 
         Optional<BulkRequestStatus> status;
         try {
-            status = requestStore.getRequestStatus(target.getRid());
+            status = requestStore.getRequestStatus(target.getRuid());
         } catch (BulkStorageException e) {
             LOGGER.error("isJobValid {}: {}", target, e.toString());
             return false;

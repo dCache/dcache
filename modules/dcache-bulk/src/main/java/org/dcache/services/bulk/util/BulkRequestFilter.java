@@ -72,7 +72,7 @@ public final class BulkRequestFilter {
     private final Long after;
     private final Set<String> owner;
     private final Set<String> urlPrefix;
-    private final Set<String> id;
+    private final Set<String> uuid;
     private final Set<String> activity;
     private final Set<BulkRequestStatus> statuses;
     private final Boolean cancelOnFailure;
@@ -82,7 +82,7 @@ public final class BulkRequestFilter {
     private final Depth expandDirectories;
     private final Boolean prestore;
 
-    private Long seqNo;
+    private Long id;
 
     public BulkRequestFilter(Set<BulkRequestStatus> statuses) {
         this(null, null, null, null, null, null,
@@ -91,9 +91,9 @@ public final class BulkRequestFilter {
     }
 
     public BulkRequestFilter(Long before, Long after, Set<String> owner, Set<String> urlPrefix,
-          Set<String> id, Set<String> activity, Set<BulkRequestStatus> statuses, Boolean cancelOnFailure,
-          Boolean clearOnSuccess, Boolean clearOnFailure, Boolean delayClear, Depth expandDirectories,
-          Boolean prestore) {
+          Set<String> uuid, Set<String> activity, Set<BulkRequestStatus> statuses,
+          Boolean cancelOnFailure, Boolean clearOnSuccess, Boolean clearOnFailure,
+          Boolean delayClear, Depth expandDirectories, Boolean prestore) {
         this.before = before;
         this.after = after;
         this.activity = activity;
@@ -105,7 +105,7 @@ public final class BulkRequestFilter {
         this.expandDirectories = expandDirectories;
         this.owner = owner;
         this.urlPrefix = urlPrefix;
-        this.id = id;
+        this.uuid = uuid;
         this.prestore = prestore;
     }
 
@@ -143,16 +143,16 @@ public final class BulkRequestFilter {
         return expandDirectories;
     }
 
-    public String[] getId() {
-        return id == null ? null : id.toArray(String[]::new);
+    public String[] getUuids() {
+        return id == null ? null : uuid.toArray(String[]::new);
     }
 
     public String[] getOwner() {
         return owner == null ? null : owner.toArray(String[]::new);
     }
 
-    public Long getSeqNo() {
-        return seqNo;
+    public Long getId() {
+        return id;
     }
 
     public BulkRequestStatus[] getStatuses() {
@@ -163,7 +163,7 @@ public final class BulkRequestFilter {
         return urlPrefix == null ? null : urlPrefix.toArray(String[]::new);
     }
 
-    public void setSeqNo(Long seqNo) {
-        this.seqNo = seqNo;
+    public void setId(Long id) {
+        this.id = id;
     }
 }

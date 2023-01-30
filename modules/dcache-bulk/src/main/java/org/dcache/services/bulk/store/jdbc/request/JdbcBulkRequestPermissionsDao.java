@@ -82,16 +82,19 @@ public final class JdbcBulkRequestPermissionsDao extends JdbcDaoSupport {
 
     private static final String TABLE_NAME = "request_permissions";
 
-    private JdbcBulkDaoUtils utils;
+    private static final String SELECT = "SELECT request_permissions.*";
 
-    public int delete(JdbcBulkRequestCriterion criterion) {
-        return utils.delete(criterion, TABLE_NAME, this);
-    }
+    private static final String JOINED_TABLE_NAMES_FOR_SELECT =
+          JdbcBulkRequestDao.TABLE_NAME + ", " + TABLE_NAME;
+
+    private JdbcBulkDaoUtils utils;
 
     public Optional<JdbcBulkRequestPermissions> get(JdbcBulkRequestCriterion criterion)
           throws BulkStorageException {
-        List<JdbcBulkRequestPermissions> list = utils.get(criterion.sorter("id"), 1, TABLE_NAME,
-              this, this::toPermissions);
+
+        List<JdbcBulkRequestPermissions> list = utils.get(SELECT,
+              criterion.sorter("request_permissions.id"), 1, JOINED_TABLE_NAMES_FOR_SELECT, this,
+              this::toPermissions);
 
         if (list.isEmpty()) {
             return Optional.empty();
@@ -131,13 +134,12 @@ public final class JdbcBulkRequestPermissionsDao extends JdbcDaoSupport {
     public JdbcBulkRequestPermissions toPermissions(ResultSet rs, int row)
           throws SQLException {
         JdbcBulkRequestPermissions wrapper = new JdbcBulkRequestPermissions();
-        String id = rs.getString("id");
+        Long id = rs.getLong("id");
         wrapper.setId(id);
         wrapper.setSubject(
               (Subject) utils.deserializeFromBase64(id, "subject", rs.getString("subject")));
-        wrapper.setRestriction(
-              (Restriction) utils.deserializeFromBase64(id, "restriction",
-                    rs.getString("restriction")));
+        wrapper.setRestriction((Restriction) utils.deserializeFromBase64(id, "restriction",
+              rs.getString("restriction")));
         LOGGER.debug("toPermissions, returning wrapper for {}.", id);
         return wrapper;
     }

@@ -69,7 +69,7 @@ public class BulkRequestSummary implements Serializable {
 
     private static final long serialVersionUID = -6792282420261895941L;
 
-    private long seqNo;
+    private long id;
     private String url;
     private String owner;
     private String activity;
@@ -78,9 +78,9 @@ public class BulkRequestSummary implements Serializable {
 
     public BulkRequestSummary() {}
 
-    public BulkRequestSummary(long seqNo, String url, String activity, BulkRequestStatusInfo statusInfo,
+    public BulkRequestSummary(long id, String url, String activity, BulkRequestStatusInfo statusInfo,
           int active) {
-        this.seqNo = seqNo;
+        this.id = id;
         this.url = url;
         this.owner = statusInfo.getUser();
         this.activity = activity;
@@ -104,8 +104,8 @@ public class BulkRequestSummary implements Serializable {
         return activity;
     }
 
-    public long getSeqNo() {
-        return seqNo;
+    public long getId() {
+        return id;
     }
 
     public String getStatus() {
@@ -124,8 +124,8 @@ public class BulkRequestSummary implements Serializable {
         this.activity = activity;
     }
 
-    public void setSeqNo(long seqNo) {
-        this.seqNo = seqNo;
+    public void setId(long id) {
+        this.id = id;
     }
 
     public void setStatus(String status) {

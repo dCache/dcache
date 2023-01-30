@@ -71,13 +71,16 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.services.bulk.BulkRequest;
 import org.dcache.services.bulk.store.jdbc.JdbcBulkDaoUtils;
+import org.dcache.services.bulk.store.jdbc.request.JdbcBulkRequestDao;
 import org.dcache.services.bulk.util.BulkRequestTarget;
 import org.dcache.services.bulk.util.BulkRequestTarget.PID;
 import org.dcache.services.bulk.util.BulkRequestTarget.State;
@@ -97,38 +100,52 @@ public final class JdbcRequestTargetDao extends JdbcDaoSupport {
     public static final String TABLE_NAME = "request_target";
 
     static class TargetPlaceholder {
-        String rid;
+        Long rid;
         String path;
-        String activity;
         String state;
     }
 
     static final String BATCH_INSERT = "INSERT INTO " + TABLE_NAME + " ("
-          + "pid, rid, pnfsid, path, type, activity, state, created_at, last_updated) "
-          + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+          + "pid, rid, pnfsid, path, type, state, created_at, last_updated) "
+          + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+
+    static final String SELECT = "SELECT *";
+
+    static final String JOINED_SELECT = "SELECT request_target.*, bulk_request.uuid as ruid, bulk_request.activity";
+
+    static final String SECONDARY_TABLE_NAME = JdbcBulkRequestDao.TABLE_NAME;
+
+    static final String JOINED_TABLE_NAMES_FOR_SELECT = SECONDARY_TABLE_NAME + ", " + TABLE_NAME;
 
     static final ParameterizedPreparedStatementSetter<TargetPlaceholder> SETTER = (ps, target) -> {
         Instant now = Instant.now();
         ps.setInt(1, PID.INITIAL.ordinal());
-        ps.setString(2, target.rid);
+        ps.setLong(2, target.rid);
         ps.setString(3, "?");
         ps.setString(4, target.path);
         ps.setString(5, "?");
-        ps.setString(6, target.activity);
-        ps.setString(7, target.state);
+        ps.setString(6, target.state);
+        ps.setTimestamp(7, Timestamp.from(now));
         ps.setTimestamp(8, Timestamp.from(now));
-        ps.setTimestamp(9, Timestamp.from(now));
     };
+
+    private static String tableNameForSelect(JdbcRequestTargetCriterion criterion) {
+        return criterion.isJoined() ? JOINED_TABLE_NAMES_FOR_SELECT : TABLE_NAME;
+    }
+
+    private static String getSelect(JdbcRequestTargetCriterion criterion) {
+        return criterion.isJoined() ? JOINED_SELECT : SELECT;
+    }
 
     private JdbcBulkDaoUtils utils;
     private BulkServiceStatistics statistics;
 
     public int count(JdbcRequestTargetCriterion criterion) {
-        return utils.count(criterion, TABLE_NAME, this);
+        return utils.count(criterion, tableNameForSelect(criterion), this);
     }
 
     public Map<String, Long> count(JdbcRequestTargetCriterion criterion, String classifier) {
-        return utils.countGrouped(criterion.classifier(classifier), TABLE_NAME, this);
+        return utils.countGrouped(criterion.classifier(classifier), tableNameForSelect(criterion), this);
     }
 
     public Map<String, Long> countStates() {
@@ -136,11 +153,15 @@ public final class JdbcRequestTargetDao extends JdbcDaoSupport {
     }
 
     public int delete(JdbcRequestTargetCriterion criterion) {
+        if (criterion.isJoined()) {
+            return utils.delete(criterion, TABLE_NAME, SECONDARY_TABLE_NAME, this);
+        }
         return utils.delete(criterion, TABLE_NAME, this);
     }
 
     public List<BulkRequestTarget> get(JdbcRequestTargetCriterion criterion, int limit) {
-        return utils.get(criterion, limit, TABLE_NAME, this, this::toRequestTarget);
+        return utils.get(getSelect(criterion), criterion, limit, tableNameForSelect(criterion),
+              this, criterion.isJoined() ? this::toFullRequestTarget : this::toRequestTarget);
     }
 
     public Optional<KeyHolder> insert(JdbcRequestTargetUpdate update) {
@@ -149,10 +170,10 @@ public final class JdbcRequestTargetDao extends JdbcDaoSupport {
 
     public void insertInitialTargets(BulkRequest request) {
         List<TargetPlaceholder> targets = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
         for (String target : request.getTarget()) {
             TargetPlaceholder t = new TargetPlaceholder();
             t.rid = request.getId();
-            t.activity = request.getActivity();
             String path = target.trim();
             if (path.isEmpty()) {
                 t.path = "invalid (empty) path";
@@ -161,13 +182,13 @@ public final class JdbcRequestTargetDao extends JdbcDaoSupport {
                 t.path = truncate(target, 256, true);
                 t.state = CREATED.name();
             }
+            if (seen.contains(t.path)) {
+                continue;
+            }
             targets.add(t);
+            seen.add(t.path);
         }
         utils.insertBatch(targets, BATCH_INSERT, SETTER, this);
-    }
-
-    public Optional<KeyHolder> insertOrUpdate(JdbcRequestTargetUpdate update) {
-        return utils.upsert(update.getInsertOrUpdateSql(), update.getArguments(), this);
     }
 
     public JdbcRequestTargetUpdate set() {
@@ -182,6 +203,13 @@ public final class JdbcRequestTargetDao extends JdbcDaoSupport {
     @Required
     public void setStatistics(BulkServiceStatistics statistics) {
         this.statistics = statistics;
+    }
+
+    public BulkRequestTarget toFullRequestTarget(ResultSet rs, int row) throws SQLException {
+        BulkRequestTarget target = toRequestTarget(rs, row);
+        target.setRuid(rs.getString("ruid"));
+        target.setActivity(rs.getString("activity"));
+        return target;
     }
 
     public BulkRequestTarget toRequestTarget(ResultSet rs, int row) throws SQLException {
@@ -219,8 +247,7 @@ public final class JdbcRequestTargetDao extends JdbcDaoSupport {
         return BulkRequestTargetBuilder.builder()
               .id(rs.getLong("id"))
               .pid(PID.values()[rs.getInt("pid")])
-              .rid(rs.getString("rid"))
-              .activity(rs.getString("activity"))
+              .rid(rs.getLong("rid"))
               .state(State.valueOf(rs.getString("state")))
               .attributes(attributes)
               .path(path)
@@ -231,7 +258,11 @@ public final class JdbcRequestTargetDao extends JdbcDaoSupport {
     }
 
     public int update(JdbcRequestTargetCriterion criterion, JdbcRequestTargetUpdate update) {
-        int count = utils.update(criterion, update, TABLE_NAME, this);
+        int count = 0;
+        if (criterion.isJoined()) {
+            count = utils.update(criterion, update, TABLE_NAME, SECONDARY_TABLE_NAME, this);
+        } else
+            count = utils.update(criterion, update, TABLE_NAME, this);
         statistics.increment(update.getStateName(), count);
         return count;
     }

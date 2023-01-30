@@ -102,7 +102,7 @@ public final class RequestContainerJobFactory {
 
     public AbstractRequestContainerJob createRequestJob(BulkRequest request)
           throws BulkServiceException {
-        String rid = request.getId();
+        String rid = request.getUid();
         LOGGER.trace("createRequestJob {}", rid);
 
         BulkActivity activity = create(request);
@@ -121,7 +121,7 @@ public final class RequestContainerJobFactory {
         pnfsHandler.setRestriction(activity.getRestriction());
         pnfsHandler.setSubject(activity.getSubject());
 
-        LOGGER.trace("createRequestJob {}, creating batch request job.", request.getId());
+        LOGGER.trace("createRequestJob {}, creating batch request job.", request.getUid());
         AbstractRequestContainerJob containerJob;
         if (request.isPrestore()) {
             containerJob = new PrestoreRequestContainerJob(activity, target, request, statistics);
@@ -167,7 +167,7 @@ public final class RequestContainerJobFactory {
     }
 
     BulkActivity create(BulkRequest request) throws BulkServiceException {
-        String rid = request.getId();
+        String rid = request.getUid();
 
         Optional<Subject> subject = requestStore.getSubject(rid);
         if (!subject.isPresent()) {

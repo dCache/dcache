@@ -139,7 +139,8 @@ public abstract class AbstractRequestContainerJob
 
     protected final BulkRequest request;
     protected final BulkActivity activity;
-    protected final String rid;
+    protected final Long rid;
+    protected final String ruid;
     protected final Depth depth;
     protected final String targetPrefix;
     protected final Map<FsPath, BatchedResult> waiting;
@@ -179,6 +180,7 @@ public abstract class AbstractRequestContainerJob
         waiting = new HashMap<>();
         cancelledPaths = new HashSet<>();
         rid = request.getId();
+        ruid = request.getUid();
         depth = request.getExpandDirectories();
         targetPrefix = request.getTargetPrefix();
         targetType = activity.getTargetType();
@@ -192,21 +194,21 @@ public abstract class AbstractRequestContainerJob
         target.cancel();
         statistics.decrement(RUNNING.name());
 
-        LOGGER.debug("cancel {}:  target state is now {}.", rid, target.getState());
+        LOGGER.debug("cancel {}:  target state is now {}.", ruid, target.getState());
 
         semaphore.drainPermits();
 
         interruptRunThread();
 
         synchronized (waiting) {
-            LOGGER.debug("cancel {}:  waiting {}.", rid, waiting.size());
+            LOGGER.debug("cancel {}:  waiting {}.", ruid, waiting.size());
             waiting.values().forEach(r -> r.cancel(activity));
-            LOGGER.debug("cancel {}:  waiting targets cancelled.", rid);
+            LOGGER.debug("cancel {}:  waiting targets cancelled.", ruid);
             statistics.decrement(RUNNING.name(), waiting.size());
             waiting.clear();
         }
 
-        LOGGER.debug("cancel {}:  calling cancel all on target store.", rid);
+        LOGGER.debug("cancel {}:  calling cancel all on target store.", ruid);
         targetStore.cancelAll(rid);
 
         signalStateChange();
@@ -228,7 +230,7 @@ public abstract class AbstractRequestContainerJob
         try {
             targetStore.update(id, CANCELLED, null);
         } catch (BulkStorageException e) {
-            LOGGER.error("Failed to cancel {}::{}: {}.", rid, id, e.toString());
+            LOGGER.error("Failed to cancel {}::{}: {}.", ruid, id, e.toString());
         }
     }
 
@@ -306,7 +308,7 @@ public abstract class AbstractRequestContainerJob
                                 + "; this is a bug.");
             }
         } catch (InterruptedException e) {
-            LOGGER.debug("run {} interrupted", rid);
+            LOGGER.debug("run {} interrupted", ruid);
             /*
              *  If the state has not already been set to terminal, do so.
              */
@@ -358,7 +360,7 @@ public abstract class AbstractRequestContainerJob
             try {
                 targetStore.update(target.getId(), target.getState(), target.getThrowable());
             } catch (BulkStorageException e) {
-                LOGGER.error("{}, updateJobState: {}", rid, e.toString());
+                LOGGER.error("{}, updateJobState: {}", ruid, e.toString());
             }
             signalStateChange();
         }
@@ -373,18 +375,18 @@ public abstract class AbstractRequestContainerJob
 
     protected DirectoryStream getDirectoryListing(FsPath path)
           throws CacheException, InterruptedException {
-        LOGGER.trace("getDirectoryListing {}, path {}, calling list ...", rid, path);
+        LOGGER.trace("getDirectoryListing {}, path {}, calling list ...", ruid, path);
         return listHandler.list(subject, restriction, path, null,
               Range.closedOpen(0, Integer.MAX_VALUE), MINIMALLY_REQUIRED_ATTRIBUTES);
     }
 
-    protected void expandDepthFirst(PID pid, FsPath path, FileAttributes dirAttributes)
+    protected void expandDepthFirst(Long id, PID pid, FsPath path, FileAttributes dirAttributes)
           throws BulkServiceException, CacheException, InterruptedException {
         checkForRequestCancellation();
 
         DirectoryStream stream = getDirectoryListing(path);
         for (DirectoryEntry entry : stream) {
-            LOGGER.trace("expandDepthFirst {}, directory {}, entry {}", rid, path,
+            LOGGER.trace("expandDepthFirst {}, directory {}, entry {}", ruid, path,
                   entry.getName());
             FsPath childPath = path.child(entry.getName());
             FileAttributes childAttributes = entry.getFileAttributes();
@@ -394,14 +396,14 @@ public abstract class AbstractRequestContainerJob
                     switch (depth) {
                         case ALL:
                             LOGGER.debug("expandDepthFirst {}, found directory {}, "
-                                  + "expand ALL.", rid, childPath);
-                            expandDepthFirst(PID.DISCOVERED, childPath, childAttributes);
+                                  + "expand ALL.", ruid, childPath);
+                            expandDepthFirst(null, PID.DISCOVERED, childPath, childAttributes);
                             break;
                         case TARGETS:
                             switch (targetType) {
                                 case BOTH:
                                 case DIR:
-                                    handleDirTarget(PID.DISCOVERED, childPath, childAttributes);
+                                    handleDirTarget(null, PID.DISCOVERED, childPath, childAttributes);
                             }
                             break;
                     }
@@ -413,7 +415,7 @@ public abstract class AbstractRequestContainerJob
                 case SPECIAL:
                 default:
                     LOGGER.trace("expandDepthFirst {}, cannot handle special "
-                          + "file {}.", rid, childPath);
+                          + "file {}.", ruid, childPath);
                     break;
             }
 
@@ -423,7 +425,7 @@ public abstract class AbstractRequestContainerJob
         switch (targetType) {
             case BOTH:
             case DIR:
-                handleDirTarget(pid, path, dirAttributes);
+                handleDirTarget(id, pid, path, dirAttributes);
                 break;
             case FILE:
                 /*
@@ -433,28 +435,30 @@ public abstract class AbstractRequestContainerJob
                  * completed targets and finding this one unhandled.
                  */
                 if (pid == PID.INITIAL) {
-                    targetStore.storeOrUpdate(toTarget(pid, path, Optional.of(dirAttributes),
+                    targetStore.storeOrUpdate(toTarget(id, pid, path, Optional.of(dirAttributes),
                           SKIPPED, null));
                     statistics.increment(SKIPPED.name());
                 }
         }
     }
 
-    protected List<String> getInitialTargetPaths() {
-         return targetStore.getInitialTargetPaths(rid, true);
+    protected List<BulkRequestTarget> getInitialTargets() {
+         return targetStore.getInitialTargets(rid, true);
     }
 
-    protected boolean hasBeenCancelled(PID pid, FsPath path, FileAttributes attributes) {
+    protected boolean hasBeenCancelled(Long id, PID pid, FsPath path, FileAttributes attributes) {
         synchronized (cancelledPaths) {
             if (cancelledPaths.remove(path.toString())) {
-                BulkRequestTarget target = toTarget(pid, path, Optional.of(attributes), CANCELLED,
-                      null);
+                BulkRequestTarget target = toTarget(id, pid, path, Optional.of(attributes),
+                      CANCELLED, null);
                 try {
-                    if (!targetStore.store(target)) {
+                    if (id == null) {
+                        targetStore.store(target);
+                    } else {
                         targetStore.update(target.getId(), CANCELLED, null);
                     }
                 } catch (BulkServiceException | UnsupportedOperationException e) {
-                    LOGGER.error("hasBeenCancelled {}, failed for {}: {}", rid, path, e.toString());
+                    LOGGER.error("hasBeenCancelled {}, failed for {}: {}", ruid, path, e.toString());
                 }
                 return true;
             }
@@ -488,10 +492,10 @@ public abstract class AbstractRequestContainerJob
         }
     }
 
-    protected BulkRequestTarget toTarget(PID pid, FsPath path, Optional<FileAttributes> attributes,
+    protected BulkRequestTarget toTarget(Long id, PID pid, FsPath path, Optional<FileAttributes> attributes,
           State state, Object errorObject) {
         return BulkRequestTargetBuilder.builder().attributes(attributes.orElse(null))
-              .activity(activity.getName()).pid(pid).rid(rid).state(state)
+              .activity(activity.getName()).id(id).pid(pid).rid(rid).ruid(ruid).state(state)
               .createdAt(System.currentTimeMillis()).error(errorObject).path(path)
               .build();
     }
@@ -499,7 +503,7 @@ public abstract class AbstractRequestContainerJob
     protected abstract void handleFileTarget(PID pid, FsPath path, FileAttributes attributes)
           throws InterruptedException;
 
-    protected abstract void handleDirTarget(PID pid, FsPath path, FileAttributes attributes)
+    protected abstract void handleDirTarget(Long id, PID pid, FsPath path, FileAttributes attributes)
           throws InterruptedException;
 
     protected abstract void processFileTargets() throws InterruptedException;
@@ -518,7 +522,7 @@ public abstract class AbstractRequestContainerJob
     private synchronized void interruptRunThread() {
         if (runThread != null) {
             runThread.interrupt();
-            LOGGER.debug("cancel {}: container job interrupted.", rid);
+            LOGGER.debug("cancel {}: container job interrupted.", ruid);
         }
     }
 

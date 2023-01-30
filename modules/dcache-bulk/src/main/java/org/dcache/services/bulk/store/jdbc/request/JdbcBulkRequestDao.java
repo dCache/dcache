@@ -103,11 +103,11 @@ public final class JdbcBulkRequestDao extends JdbcDaoSupport {
           + "(t.state = 'CREATED' OR t.state = 'READY' OR t.state='RUNNING'))";
 
     private static final String UPDATE_COMPLETED_IF_DONE =
-          "UPDATE bulk_request r SET status='COMPLETED', last_modified = ? WHERE r.id = ? AND "
+          "UPDATE bulk_request r SET status='COMPLETED', last_modified = ? WHERE r.uuid = ? AND "
                 + NO_UNPROCESSED_TARGETS;
 
     private static final String UPDATE_CANCELLED_IF_DONE =
-          "UPDATE bulk_request r SET status='CANCELLED', last_modified = ? WHERE r.id = ? "
+          "UPDATE bulk_request r SET status='CANCELLED', last_modified = ? WHERE r.uuid = ? "
                 + "AND r.status='CANCELLING' AND " + NO_UNPROCESSED_TARGETS;
 
     private JdbcBulkDaoUtils utils;
@@ -154,9 +154,9 @@ public final class JdbcBulkRequestDao extends JdbcDaoSupport {
      */
     public BulkRequest toRequest(ResultSet rs, int row) throws SQLException {
         BulkRequest request = new BulkRequest();
-        request.setSeqNo(rs.getLong("seq_no"));
-        String id = rs.getString("id");
-        request.setId(id);
+        request.setId(rs.getLong("id"));
+        String uid = rs.getString("uid");
+        request.setUid(uid);
         request.setActivity(rs.getString("activity"));
         request.setExpandDirectories(Depth.valueOf(rs.getString("expand_directories")));
         request.setUrlPrefix(rs.getString("url_prefix"));
@@ -217,18 +217,18 @@ public final class JdbcBulkRequestDao extends JdbcDaoSupport {
      * us not to synchronize when checking and setting the final state of the request.
      *
      * @param status either CANCELLED or COMPLETED.
-     * @param id     of the request.
+     * @param uuid   of the request.
      * @return whether the update succeeded.  False means there are still incomplete targets.
      */
-    public int updateTo(BulkRequestStatus status, String id) {
+    public int updateTo(BulkRequestStatus status, String uuid) {
         Timestamp now = new Timestamp(System.currentTimeMillis());
         switch (status) {
             case COMPLETED:
                 return getJdbcTemplate().update(UPDATE_COMPLETED_IF_DONE,
-                      new Object[]{now, id});
+                      new Object[]{now, uuid});
             case CANCELLED:
                 return getJdbcTemplate().update(UPDATE_CANCELLED_IF_DONE,
-                      new Object[]{now, id});
+                      new Object[]{now, uuid});
             default:
                 return 0;
         }
@@ -237,7 +237,7 @@ public final class JdbcBulkRequestDao extends JdbcDaoSupport {
     public JdbcBulkRequestUpdate updateFrom(BulkRequest request, String user)
           throws BulkStorageException {
         return set().activity(request.getActivity()).arguments(request.getArguments())
-              .cancelOnFailure(request.isCancelOnFailure()).id(request.getId())
+              .cancelOnFailure(request.isCancelOnFailure()).uid(request.getUid())
               .clearOnSuccess(request.isClearOnSuccess()).clearOnFailure(request.isClearOnFailure())
               .prestore(request.isPrestore())
               .depth(request.getExpandDirectories())

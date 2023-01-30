@@ -132,7 +132,7 @@ public final class BulkActivityFactory implements CellMessageSender {
                   "cannot create " + activity + "; no such activity.");
         }
 
-        LOGGER.debug("creating instance of activity {} for request {}.", activity, request.getId());
+        LOGGER.debug("creating instance of activity {} for request {}.", activity, request.getUid());
 
         BulkActivity bulkActivity = provider.createActivity();
         bulkActivity.setSubject(subject);

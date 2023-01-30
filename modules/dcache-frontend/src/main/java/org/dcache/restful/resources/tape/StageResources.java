@@ -165,7 +165,7 @@ public final class StageResources {
             message = service.send(message);
             lastInfo = message.getInfo();
             targetInfos.addAll(lastInfo.getTargets());
-            offset = lastInfo.getNextSeqNo();
+            offset = lastInfo.getNextId();
         }
 
         lastInfo.setTargets(targetInfos);

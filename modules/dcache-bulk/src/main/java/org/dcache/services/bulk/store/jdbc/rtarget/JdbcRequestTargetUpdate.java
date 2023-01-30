@@ -60,12 +60,10 @@ documents or software obtained from this server.
 package org.dcache.services.bulk.store.jdbc.rtarget;
 
 import static java.util.stream.Collectors.joining;
-import static org.dcache.services.bulk.store.jdbc.rtarget.JdbcRequestTargetDao.TABLE_NAME;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.FAILED;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.RUNNING;
 import static org.dcache.util.Strings.truncate;
 
-import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
@@ -138,8 +136,8 @@ public final class JdbcRequestTargetUpdate extends JdbcUpdate {
         return this;
     }
 
-    public JdbcRequestTargetUpdate rid(String rid) {
-        if (Strings.emptyToNull(rid) != null) {
+    public JdbcRequestTargetUpdate rid(Long rid) {
+        if (rid != null) {
             set("rid", rid);
         }
         return this;
@@ -168,24 +166,5 @@ public final class JdbcRequestTargetUpdate extends JdbcUpdate {
             set("type", "?");
         }
         return this;
-    }
-
-    public JdbcRequestTargetUpdate activity(String activity) {
-        if (Strings.emptyToNull(activity) != null) {
-            set("activity", activity);
-        }
-        return this;
-    }
-
-    /**
-     * REVISIT  this syntax is specific to POSTGRES;
-     *          we need eventually to push this into a postgres-specific package.
-     */
-    public String getInsertOrUpdateSql() {
-        return "INSERT INTO " + TABLE_NAME + " " + getInsert() +
-              " ON CONFLICT ON CONSTRAINT i_target_pkey DO UPDATE SET " + updates.keySet().stream()
-              .collect(joining(",", "(", ")")) + " = " + updates.keySet().stream()
-              .map(a -> "EXCLUDED." + a)
-              .collect(joining(",", "(", ")"));
     }
 }

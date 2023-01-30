@@ -114,18 +114,18 @@ public interface BulkRequestStore {
      * Releases all resources associated with this request id.
      *
      * @param subject   originator of the requests.
-     * @param requestId unique id for request.
+     * @param uid unique id for request.
      * @throws BulkStorageException, BulkPermissionDeniedException
      */
-    void clear(Subject subject, String requestId)
+    void clear(Subject subject, String uid)
           throws BulkStorageException, BulkPermissionDeniedException;
 
     /**
      * For internal use.
      *
-     * @param requestId unique id for request.
+     * @param uid unique id for request.
      */
-    void clear(String requestId);
+    void clear(String uid);
 
     /**
      * For internal use.
@@ -171,62 +171,69 @@ public interface BulkRequestStore {
     ListMultimap<String, String> getActiveRequestsByUser() throws BulkStorageException;
 
     /**
-     * @param id unique id for request.
+     * @param uid unique id for request.
+     * @return the key (sequence number) of the request.
+     * @throws BulkStorageException
+     */
+    Long getKey(String uid) throws BulkStorageException;
+
+    /**
+     * @param uid unique id for request.
      * @return optional of the request.
      */
-    Optional<BulkRequest> getRequest(String id) throws BulkStorageException;
+    Optional<BulkRequest> getRequest(String uid) throws BulkStorageException;
 
     /**
      * @param status  match only the requests with these statuses.
      * @param owners  match only the requests with these owners.
      * @param path match only the requests with targets whose paths equal or contain this path.
-     * @param seqNo match only the requests with seqNo greater or equal to this one.
+     * @param id match only the requests with id greater or equal to this one.
      * @return list of the corresponding request urls.
      * @throws BulkStorageException
      */
     List<BulkRequestSummary> getRequestSummaries(Set<BulkRequestStatus> status, Set<String> owners,
-          String path, Long seqNo) throws BulkStorageException;
+          String path, Long id) throws BulkStorageException;
 
     /**
-     * @param id unique id for request.
+     * @param uid unique id for request.
      * @return optional of the Restriction of the request.
      * @throws BulkStorageException
      */
-    Optional<Restriction> getRestriction(String id) throws BulkStorageException;
+    Optional<Restriction> getRestriction(String uid) throws BulkStorageException;
 
     /**
      * @param subject   of request user.
-     * @param id unique id for request.
+     * @param uid unique id for request.
      * @param offset    into the list of targets ordered by sequence number
      * @return optional of the corresponding request status.
      * @throws BulkStorageException, BulkPermissionDeniedException
      */
-    BulkRequestInfo getRequestInfo(Subject subject, String id, long offset)
+    BulkRequestInfo getRequestInfo(Subject subject, String uid, long offset)
           throws BulkStorageException, BulkPermissionDeniedException;
 
     /**
-     * @param id unique id for request.
+     * @param uid unique id for request.
      * @return optional of the status of the request.
      * @throws BulkStorageException
      */
-    Optional<BulkRequestStatus> getRequestStatus(String id)
+    Optional<BulkRequestStatus> getRequestStatus(String uid)
           throws BulkStorageException;
 
     /**
-     * @param id unique id for request.
+     * @param uid unique id for request.
      * @return optional of the uid:gid subject of the request.
      * @throws BulkStorageException
      */
-    Optional<Subject> getSubject(String id) throws BulkStorageException;
+    Optional<Subject> getSubject(String uid) throws BulkStorageException;
 
     /**
      * Checks to see if the subject owns or has access to the request.
      *
      * @param subject   of the user.
-     * @param id to check.
+     * @param uid to check.
      * @return true if request is accessible by user.
      */
-    boolean isRequestSubject(Subject subject, String id) throws BulkStorageException;
+    boolean isRequestSubject(Subject subject, String uid) throws BulkStorageException;
 
     /**
      * Load the store into memory. (May be a NOP).
@@ -247,10 +254,10 @@ public interface BulkRequestStore {
     /**
      * Reset the request to QUEUED state.
      *
-     * @param id unique id for request.
+     * @param uid unique id for request.
      * @throws BulkStorageException
      */
-    void reset(String id) throws BulkStorageException;
+    void reset(String uid) throws BulkStorageException;
 
     /**
      * Store the request.
@@ -266,11 +273,11 @@ public interface BulkRequestStore {
     /**
      * Update the status of the request.
      *
-     * @param id unique id for request.
+     * @param uid unique id for request.
      * @param status    QUEUED, STARTED, CANCELLED, COMPLETED.
      * @return true if state changed.
      * @throws BulkStorageException
      */
-    boolean update(String id, BulkRequestStatus status)
+    boolean update(String uid, BulkRequestStatus status)
           throws BulkStorageException;
 }

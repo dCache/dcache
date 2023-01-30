@@ -60,7 +60,6 @@ documents or software obtained from this server.
 package org.dcache.services.bulk.util;
 
 import java.util.Set;
-import org.dcache.services.bulk.util.BulkRequestTarget.PID;
 import org.dcache.services.bulk.util.BulkRequestTarget.State;
 
 /**
@@ -73,21 +72,21 @@ public final class BulkTargetFilter {
     private final Set<String> activities;
     private final Set<State> states;
     private final Set<String> types;
+    private final Set<Integer> pid;
     private final Long offset;
-    private final PID pid;
 
     /**
      * General purpose filter (used with, e.g., admin interface calls).
      *
      * @param requestIds of request targets should belong to.
-     * @param offset     beginning sequence id of targets to fetch.
+     * @param offset     beginning id of targets to fetch.
      * @param pid        node type of target.
      * @param pnfsIds    pnfsIds to match.
      * @param activities to match.
      * @param states     of targets.
      * @param types      file type of targets.
      */
-    public BulkTargetFilter(Set<String> requestIds, Long offset, PID pid,
+    public BulkTargetFilter(Set<String> requestIds, Long offset, Set<Integer> pid,
           Set<String> pnfsIds, Set<String> activities, Set<String> types,
           Set<State> states) {
         this.rids = requestIds;
@@ -107,8 +106,8 @@ public final class BulkTargetFilter {
         return offset;
     }
 
-    public PID getPid() {
-        return pid;
+    public Integer[] getPids() {
+        return pid == null ? null : pid.toArray(Integer[]::new);
     }
 
     public String[] getPnfsIds() {

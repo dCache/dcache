@@ -68,7 +68,7 @@ import org.dcache.auth.attributes.Restriction;
 public class BulkRequestCancelMessage extends BulkServiceMessage {
 
     private static final long serialVersionUID = -7362655973765754365L;
-    private final String requestId;
+    private final String uuid;
 
     private final String activity;
     private List<String> targetPaths;
@@ -77,14 +77,14 @@ public class BulkRequestCancelMessage extends BulkServiceMessage {
         this (requestId, null, restriction);
     }
 
-    public BulkRequestCancelMessage(String requestId, String activity, Restriction restriction) {
+    public BulkRequestCancelMessage(String uuid, String activity, Restriction restriction) {
         super(restriction);
-        this.requestId = requestId;
+        this.uuid = uuid;
         this.activity = activity;
     }
 
-    public String getRequestId() {
-        return requestId;
+    public String getRequestUuid() {
+        return uuid;
     }
 
     public String getActivity() { return activity; }

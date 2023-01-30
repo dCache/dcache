@@ -112,9 +112,16 @@ public final class JdbcBulkRequestUpdate extends JdbcUpdate {
         return this;
     }
 
-    public JdbcBulkRequestUpdate id(String id) {
-        if (Strings.emptyToNull(id) != null) {
+    public JdbcBulkRequestUpdate permId(Long id) {
+        if (id != null) {
             set("id", id);
+        }
+        return this;
+    }
+
+    public JdbcBulkRequestUpdate uid(String uid) {
+        if (Strings.emptyToNull(uid) != null) {
+            set("uid", uid);
         }
         return this;
     }

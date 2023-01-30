@@ -72,14 +72,14 @@ public class BulkRequestTargetInfo implements Serializable {
     private Long finishedAt;
     private String errorType;
     private String errorMessage;
-    private long seqNo;
+    private long id;
 
-    public long getSeqNo() {
-        return seqNo;
+    public long getId() {
+        return id;
     }
 
-    public void setSeqNo(long seqNo) {
-        this.seqNo = seqNo;
+    public void setId(long id) {
+        this.id = id;
     }
 
     public String getTarget() {

@@ -155,10 +155,20 @@ public final class JdbcBulkDaoUtils {
         return support.getJdbcTemplate().update(sql, criterion.getArgumentsAsArray());
     }
 
+    public int delete(JdbcCriterion criterion, String tableName, String secondaryTable,
+          JdbcDaoSupport support) {
+        LOGGER.trace("delete {}.", criterion);
+        String sql =
+              "DELETE FROM " + tableName + " WHERE EXISTS (SELECT * FROM " + secondaryTable
+                    + " WHERE " + criterion.getPredicate() + ")";
+        LOGGER.trace("delete {} ({}).", sql, criterion.getArguments());
+        return support.getJdbcTemplate().update(sql, criterion.getArgumentsAsArray());
+    }
+
     /**
      * @throws SQLException in order to support the jdbc template API.
      */
-    public Object deserializeFromBase64(String request, String field, String base64)
+    public Object deserializeFromBase64(Long id, String field, String base64)
           throws SQLException {
         if (base64 == null) {
             return null;
@@ -169,7 +179,7 @@ public final class JdbcBulkDaoUtils {
             return istream.readObject();
         } catch (IOException | ClassNotFoundException e) {
             throw new SQLException("problem deserializing " + field + " for "
-                  + request, e);
+                  + id, e);
         }
     }
 
@@ -241,10 +251,16 @@ public final class JdbcBulkDaoUtils {
               concatArguments(update.getArguments(), criterion.getArguments()));
     }
 
-    public Optional<KeyHolder> upsert(String sql, Collection<Object> arguments,
-          JdbcDaoSupport support) {
-        LOGGER.trace("upsert {}, {}.", sql, arguments);
-        return insert(sql, arguments, support);
+    public int update(JdbcCriterion criterion, JdbcUpdate update, String tableName,
+          String secondaryTable, JdbcDaoSupport support) {
+        LOGGER.trace("update {} : {}.", criterion, update);
+        String sql =
+              "UPDATE " + tableName + " SET " + update.getUpdate() + " FROM " + secondaryTable
+                    + " WHERE " + criterion.getPredicate();
+        LOGGER.trace("update {} ({}, {}).", sql, update.getArguments(),
+              criterion.getArguments());
+        return support.getJdbcTemplate().update(sql,
+              concatArguments(update.getArguments(), criterion.getArguments()));
     }
 
     private Optional<KeyHolder> insert(String sql, Collection<Object> arguments,

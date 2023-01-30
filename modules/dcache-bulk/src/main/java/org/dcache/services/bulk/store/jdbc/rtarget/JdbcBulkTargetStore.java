@@ -65,7 +65,6 @@ import static org.dcache.services.bulk.util.BulkRequestTarget.State.CREATED;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.dcache.namespace.FileType;
 import org.dcache.services.bulk.BulkStorageException;
 import org.dcache.services.bulk.store.BulkTargetStore;
@@ -89,7 +88,7 @@ public final class JdbcBulkTargetStore implements BulkTargetStore {
     @Override
     public void abort(BulkRequestTarget target)
           throws BulkStorageException {
-        LOGGER.trace("targetAborted {}, {}, {}.", target.getRid(), target.getPath(),
+        LOGGER.trace("targetAborted {}, {}, {}.", target.getRuid(), target.getPath(),
               target.getThrowable());
 
         /*
@@ -98,7 +97,7 @@ public final class JdbcBulkTargetStore implements BulkTargetStore {
         targetDao.insert(
               targetDao.set().pid(target.getPid()).rid(target.getRid())
                     .pnfsid(target.getPnfsId()).path(target.getPath()).type(target.getType())
-                    .activity(target.getActivity()).errorObject(target.getThrowable()).aborted());
+                    .errorObject(target.getThrowable()).aborted());
     }
 
     @Override
@@ -107,7 +106,7 @@ public final class JdbcBulkTargetStore implements BulkTargetStore {
     }
 
     @Override
-    public void cancelAll(String rid) {
+    public void cancelAll(Long rid) {
         targetDao.update(targetDao.where().rid(rid).state(NON_TERMINAL),
               targetDao.set().state(State.CANCELLED));
     }
@@ -118,12 +117,12 @@ public final class JdbcBulkTargetStore implements BulkTargetStore {
     }
 
     @Override
-    public int countUnprocessed(String rid) throws BulkStorageException {
+    public int countUnprocessed(Long rid) throws BulkStorageException {
         return targetDao.count(targetDao.where().rid(rid).state(NON_TERMINAL));
     }
 
     @Override
-    public int countFailed(String rid) throws BulkStorageException {
+    public int countFailed(Long rid) throws BulkStorageException {
         return targetDao.count(targetDao.where().rid(rid).state(State.FAILED));
     }
 
@@ -145,29 +144,29 @@ public final class JdbcBulkTargetStore implements BulkTargetStore {
     @Override
     public List<BulkRequestTarget> find(BulkTargetFilter jobFilter, Integer limit)
           throws BulkStorageException {
-        return targetDao.get(targetDao.where().filter(jobFilter).sorter("id"), limit);
+        return targetDao.get(targetDao.where().filter(jobFilter).sorter("request_target.id"), limit);
     }
 
     @Override
-    public List<String> getInitialTargetPaths(String requestId, boolean nonterminal) {
-        JdbcRequestTargetCriterion criterion = targetDao.where().rid(requestId).pid(PID.INITIAL)
-              .sorter("id");
+    public List<BulkRequestTarget> getInitialTargets(Long rid, boolean nonterminal) {
+        JdbcRequestTargetCriterion criterion = targetDao.where().rid(rid).pids(PID.INITIAL.ordinal())
+              .sorter("request_target.id");
         if (nonterminal) {
             criterion.state(NON_TERMINAL);
         }
-        return targetDao.get(criterion, Integer.MAX_VALUE).stream()
-              .map(t -> t.getPath().toString()).collect(Collectors.toList());
+        return targetDao.get(criterion, Integer.MAX_VALUE);
     }
 
     @Override
-    public List<BulkRequestTarget> nextReady(String rid, FileType type, Integer limit)
+    public List<BulkRequestTarget> nextReady(Long rid, FileType type, Integer limit)
           throws BulkStorageException {
-        return targetDao.get(targetDao.where().rid(rid).state(CREATED).type(type).sorter("id"),
-              limit);
+        return targetDao.get(
+              targetDao.where().rid(rid).state(CREATED).type(type).sorter("request_target.id")
+                    .join(), limit);
     }
 
     public Optional<BulkRequestTarget> getTarget(long id) throws BulkStorageException {
-        List<BulkRequestTarget> list = targetDao.get(targetDao.where().id(id), 1);
+        List<BulkRequestTarget> list = targetDao.get(targetDao.where().id(id).join(), 1);
         if (list.isEmpty()) {
             return Optional.empty();
         }
@@ -188,8 +187,12 @@ public final class JdbcBulkTargetStore implements BulkTargetStore {
 
     @Override
     public void storeOrUpdate(BulkRequestTarget target) throws BulkStorageException {
-        targetDao.insertOrUpdate(prepareUpdate(target))
-              .ifPresent(keyHolder -> target.setId((Long) keyHolder.getKeys().get("id")));
+        Long id = target.getId();
+        if (id == null) {
+            store(target);
+        } else {
+            targetDao.update(targetDao.where().id(id), prepareUpdate(target));
+        }
     }
 
     @Override
@@ -201,8 +204,7 @@ public final class JdbcBulkTargetStore implements BulkTargetStore {
     private JdbcRequestTargetUpdate prepareUpdate(BulkRequestTarget target) {
         JdbcRequestTargetUpdate update = targetDao.set().pid(target.getPid())
               .rid(target.getRid()).pnfsid(target.getPnfsId()).path(target.getPath())
-              .type(target.getType()).activity(target.getActivity())
-              .state(target.getState());
+              .type(target.getType()).state(target.getState());
 
         switch (target.getState()) {
             case COMPLETED:
