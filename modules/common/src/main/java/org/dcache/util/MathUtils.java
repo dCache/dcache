@@ -78,10 +78,10 @@ public class MathUtils {
      *  convert NaN to 0.0.
      *
      * @param value the double result of the computation.
-     * @return 0.0 if the value is NaN; otherwise, the value.
+     * @return 0.0 if the value is NaN; otherwise, the value (including null).
      */
     public static Double nanToZero(Double value) {
-        return Double.isNaN(value) ? 0.0 : value;
+        return value != null && Double.isNaN(value) ? 0.0 : value;
     }
 
 }
