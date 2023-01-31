@@ -25,6 +25,8 @@ import diskCacheV111.util.FsPath;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -103,6 +105,12 @@ public class MultiTargetedRestriction implements Restriction {
         // Sort authorisations to form a canonical ordering.  This simplifies
         // MultiTargetedRestriction#hashCode and #equals methods.
         this.authorisations = authorisations.stream().sorted().collect(toImmutableList());
+    }
+
+    public MultiTargetedRestriction alsoAuthorising(Collection<Authorisation> authz) {
+        Set<Authorisation> combined = new HashSet(authorisations);
+        combined.addAll(authz);
+        return new MultiTargetedRestriction(combined);
     }
 
     @Override
