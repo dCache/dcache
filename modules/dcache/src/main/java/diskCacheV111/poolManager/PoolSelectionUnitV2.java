@@ -18,6 +18,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Streams;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsHandler;
@@ -306,13 +307,13 @@ public class PoolSelectionUnitV2
                       pw.println();
                   });
             pw.println();
+
             _pGroups.values().stream().sorted(comparing(PGroup::getName)).forEachOrdered(
                   group -> {
                       pw.append("psu create pgroup ").append(group.getName());
                       if (group.isPrimary()) {
                           pw.append(" -resilient");
                       }
-
                       // don't explicitly add pools into dynamic pool groups
                       if (group instanceof DynamicPGroup) {
                           pw.append(" -dynamic");
@@ -331,8 +332,27 @@ public class PoolSelectionUnitV2
                                             .append(group.getName())
                                             .append(" ")
                                             .println(pool.getName())
+
                                 );
                       }
+
+                      pw.println();
+                  });
+            //nested -pools
+            _pGroups.values().stream().sorted(comparing(PGroup::getName)).forEachOrdered(
+                  group -> {
+                      pw.println();
+                      group._pgroupList.stream().sorted(comparing(PGroup::getName))
+                            .forEachOrdered(
+                                  groupS -> {pw
+                                            .append("psu addto pgroup ")
+                                            .append(group.getName())
+                                            .append(" ")
+                                            .println("@" + groupS.getName());
+                                      LOGGER.info(groupS.getName() + " " + group.getName());
+                                  }
+                            );
+
                       pw.println();
                   });
             _links.values().stream().sorted(comparing(Link::getName)).forEachOrdered(
@@ -1737,6 +1757,7 @@ public class PoolSelectionUnitV2
                     group._poolList.values().stream().sorted(comparing(Pool::getName))
                           .forEachOrdered(
                                 pool -> sb.append("   ").append(pool.toString()).append("\n"));
+                    sb.append("nested groups  = ").append(group._pgroupList).append("\n") ;
                 }
             }
         } finally {
@@ -2218,7 +2239,6 @@ public class PoolSelectionUnitV2
     //
 
     public void addToPoolGroup(String pGroupName, String poolName) {
-
         wlock();
         try {
             PGroup group = _pGroups.get(pGroupName);
