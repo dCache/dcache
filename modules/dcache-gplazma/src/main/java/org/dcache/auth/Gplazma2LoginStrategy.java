@@ -1,5 +1,7 @@
 package org.dcache.auth;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
@@ -11,13 +13,18 @@ import java.io.File;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.Collections;
-import static java.util.Objects.requireNonNull;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
+import org.dcache.auth.attributes.Activity;
 import org.dcache.auth.attributes.LoginAttribute;
+import org.dcache.auth.attributes.MultiTargetedRestriction;
+import org.dcache.auth.attributes.MultiTargetedRestriction.Authorisation;
 import org.dcache.auth.attributes.PrefixRestriction;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
@@ -39,6 +46,10 @@ public class Gplazma2LoginStrategy implements LoginStrategy, CellCommandListener
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Gplazma2LoginStrategy.class);
 
+    private static final Set<Activity> ALLOWED_UPLOAD_DIR_ACTIVITIES
+          = Set.of(Activity.DELETE, Activity.UPLOAD, Activity.MANAGE, Activity.READ_METADATA,
+          Activity.UPDATE_METADATA);
+
     // These are principals defined outside of dCache.
     private static final Set<Class<?>> EXTERNAL_AUTHENTICATION_INPUT = Set.of(
           KerberosPrincipal.class);
@@ -56,7 +67,8 @@ public class Gplazma2LoginStrategy implements LoginStrategy, CellCommandListener
 
     private String _configurationFile;
     private GPlazma _gplazma;
-    private Function<FsPath, PrefixRestriction> _createPrefixRestriction;
+    private Function<FsPath, PrefixRestriction> _createPrefixRestriction = PrefixRestriction::new;
+    private Optional<String> _uploadPath = Optional.empty();
 
     static {
         Stopwatch reflectionTimer = Stopwatch.createStarted();
@@ -94,22 +106,47 @@ public class Gplazma2LoginStrategy implements LoginStrategy, CellCommandListener
         return _configurationFile;
     }
 
+    /*
+     *  REVISIT  2023/01/23
+     *
+     *  This is a provisional solution to
+     *  GH File uploads with gfal using roots protocol with tokens fails #6952
+     *  https://github.com/dCache/dcache/issues/6952.
+     *
+     *  It relies on the fact that only the OIDC and SciToken plugins currently make
+     *  use of the MultiTargetedRestriction.  This may change in the future, and
+     *  could cause problems.
+     *
+     *  A more general solution for providing permissions on an upload directory
+     *  is advisable.
+     */
     private LoginReply convertLoginReply(org.dcache.gplazma.LoginReply gPlazmaLoginReply) {
-        Set<Object> sessionAttributes =
-              gPlazmaLoginReply.getSessionAttributes();
-        Set<LoginAttribute> loginAttributes =
-              sessionAttributes.stream()
-                    .filter(LoginAttribute.class::isInstance)
-                    .map(LoginAttribute.class::cast)
-                    .collect(Collectors.toSet());
+        Set<Object> sessionAttributes = gPlazmaLoginReply.getSessionAttributes();
+        Set<LoginAttribute> loginAttributes = new HashSet<>();
+        Set<MultiTargetedRestriction> mtRestrictions = new HashSet<>();
+        Set<FsPath> userRoots = new HashSet<>();
 
-        sessionAttributes.stream()
-              .filter(RootDirectory.class::isInstance)
-              .map(RootDirectory.class::cast)
-              .filter(att -> !att.getRoot().equals("/"))
-              .map(att -> FsPath.create(att.getRoot()))
-              .map(_createPrefixRestriction)
-              .forEach(loginAttributes::add);
+        findAttributesAndUserRoots(sessionAttributes, loginAttributes, mtRestrictions, userRoots);
+
+        /*
+         *  REVISIT 2023/01/23
+         *
+         *  When LoginReply.getRestriction() is called, Restrictions.concat(restrictions)
+         *  may be called.  This means that a composite restriction is created, in which
+         *  any restriction within it can veto an activity.  With MultiTargetedRestrictions,
+         *  however, we do not want their potentially stronger constraints vetoing a
+         *  PrefixRestriction containing permissions on an upload directory.
+         *
+         *  The solution here is not to add Prefix restrictions on the user ROOT and/or
+         *  UPLOAD dir if there are MultiTargetRestrictions, but rather to replace the
+         *  existing restriction with a new one also containing the upload directory
+         *  authorisation.
+         */
+        if (mtRestrictions.isEmpty()) {
+            userRoots.stream().map(_createPrefixRestriction).forEach(loginAttributes::add);
+        } else {
+            handleMultiTargetedRestrictions(userRoots, mtRestrictions, loginAttributes);
+        }
 
         Subject replyUser = filterPrincipals(gPlazmaLoginReply.getSubject(),
               AUTHENTICATION_OUTPUT, "LoginReply");
@@ -134,6 +171,37 @@ public class Gplazma2LoginStrategy implements LoginStrategy, CellCommandListener
 
         return new Subject(false, outPrincipals, in.getPublicCredentials(),
               in.getPrivateCredentials());
+    }
+
+    private void findAttributesAndUserRoots(Set<Object> sessionAttributes,
+          Set<LoginAttribute> loginAttributes, Set<MultiTargetedRestriction> mtRestrictions,
+          Set<FsPath> userRoots) {
+        for (Object attr : sessionAttributes) {
+            if (attr instanceof MultiTargetedRestriction) {
+                mtRestrictions.add((MultiTargetedRestriction) attr);
+            } else if (attr instanceof LoginAttribute) {
+                loginAttributes.add((LoginAttribute) attr);
+                if (attr instanceof RootDirectory) {
+                    RootDirectory rootDir = (RootDirectory) attr;
+                    String root = rootDir.getRoot();
+                    if (!root.equals("/")) {
+                        userRoots.add(FsPath.create(root));
+                    }
+                }
+            }
+        }
+    }
+
+    private void handleMultiTargetedRestrictions(Set<FsPath> userRoots,
+          Set<MultiTargetedRestriction> mtRestrictions,
+          Set<LoginAttribute> loginAttributes) {
+        Collection<Authorisation> uploadAuthorizations =
+              _uploadPath.map(up -> userRoots.stream().map(r -> r.resolve(up))
+                    .map(path -> new Authorisation(ALLOWED_UPLOAD_DIR_ACTIVITIES, path))
+                    .collect(Collectors.toList())).orElseGet(List::of);
+
+        mtRestrictions.stream().map(r -> r.alsoAuthorising(uploadAuthorizations))
+              .forEach(loginAttributes::add);
     }
 
     @Override
@@ -194,10 +262,14 @@ public class Gplazma2LoginStrategy implements LoginStrategy, CellCommandListener
         return printer.print();
     }
 
+    @Required
     public void setUploadPath(String s) {
-        if (Strings.isNullOrEmpty(s) || !s.startsWith("/")) {
-            _createPrefixRestriction = path -> new PrefixRestriction(path);
-        } else {
+        _uploadPath = Optional.ofNullable(Strings.emptyToNull(s));
+        /*
+         *  The case where the upload directory is relative
+         *  is already handled by the initialized value of the function.
+         */
+        if (_uploadPath.isPresent() && s.startsWith("/")) {
             FsPath uploadPath = FsPath.create(s);
             _createPrefixRestriction = path -> new PrefixRestriction(path, uploadPath);
         }
