@@ -65,6 +65,8 @@ import static org.dcache.util.MathUtils.nanToZero;
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import org.apache.commons.math3.util.FastMath;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>Maintains a histogram data set which consists of a fixed number of
@@ -72,6 +74,7 @@ import org.apache.commons.math3.util.FastMath;
  */
 public class TimeseriesHistogram extends HistogramModel
       implements UpdatableHistogramModel {
+    private static final Logger LOGGER = LoggerFactory.getLogger(TimeseriesHistogram.class);
 
     enum UpdateOperation {
         SUM, AVERAGE, REPLACE
@@ -182,9 +185,16 @@ public class TimeseriesHistogram extends HistogramModel
     }
 
     private int rotateBuffer(int binIndex) {
-        int units = binIndex - binCount + 1;
+        /*
+         *  REVISIT
+         *
+         *  see comments under #update().
+         */
+        int count = Math.min(binCount, data.size());
 
-        int len = units >= binCount ? binIndex : units;
+        int units = binIndex - count + 1;
+
+        int len = Math.min(units, count);
 
         for (int i = 0; i < len; ++i) {
             data.remove(0);
@@ -196,7 +206,7 @@ public class TimeseriesHistogram extends HistogramModel
         lowestBin += (binSize * units);
         highestBin += (binSize * units);
 
-        return binCount - 1;
+        return count - 1;
     }
 
     /**
@@ -217,13 +227,37 @@ public class TimeseriesHistogram extends HistogramModel
             return;
         }
 
+        /*
+         *  REVISIT
+         *
+         *  RT 10420 out of bounds exception in history cell
+         *  reported an attempt to insert at an index which should be length - 1,
+         *  but which ends up being = length.
+         *
+         *  The cause for this remains currently unidentified
+         *  (the size of the data array should be invariant).
+         *
+         *  The following is provisional:  (a) if there is a difference between the
+         *  constant size (binCount) given to the histogram upon construction and the
+         *  actual list/array size, we log it here; (b) since we are inserting into
+         *  the data, we use the actual size to compute the length - 1 to avoid the
+         *  IndexOutOfBounds error.
+         */
+
+        int datasize = Math.min(binCount, data.size());
+
+        if (binCount != datasize) {
+            LOGGER.error("{}: size of data array {} less than binCount {}: {}", identifier,
+                  datasize, binCount);
+        }
+
         /**
          * Update needs to rotate the buffer here regardless of
          * what the value is.
          *
          * New slots have a null value.
          */
-        if (binIndex >= binCount) {
+        if (binIndex >= datasize) {
             binIndex = rotateBuffer(binIndex);
         }
 

@@ -195,7 +195,7 @@ public final class HistogramMetadata implements Serializable {
     }
 
     public void rotate(int units) {
-        units = units >= numBins ? numBins : units;
+        units = Math.min(units, numBins);
 
         long now = System.currentTimeMillis();
 
