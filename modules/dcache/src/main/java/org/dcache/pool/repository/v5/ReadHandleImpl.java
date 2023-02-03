@@ -69,7 +69,7 @@ class ReadHandleImpl implements ReplicaDescriptor {
         }
         _entry.decrementLinkCount();
         _open = false;
-        _closedBy = new Exception("Previous, successful close.");
+        _closedBy = new Exception("Previous, successful close by " + Thread.currentThread().getName());
     }
 
     @Override
@@ -100,7 +100,7 @@ class ReadHandleImpl implements ReplicaDescriptor {
     @Override
     public synchronized URI getReplicaFile() throws IllegalStateException {
         if (!_open) {
-            throw new IllegalStateException("Handle is closed");
+            throw new IllegalStateException("Handle is closed", _closedBy);
         }
 
         return _entry.getReplicaUri();

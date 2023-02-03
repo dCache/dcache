@@ -214,7 +214,7 @@ class WriteHandleImpl implements ModifiableReplicaDescriptor {
     public synchronized void commit()
           throws IllegalStateException, InterruptedException, CacheException {
         if (_state != HandleState.OPEN) {
-            throw new IllegalStateException("Handle is closed");
+            throw new IllegalStateException("Handle is closed", _closedBy);
         }
 
         try {
@@ -379,7 +379,7 @@ class WriteHandleImpl implements ModifiableReplicaDescriptor {
                 setState(HandleState.CLOSED);
                 break;
         }
-        _closedBy = new Exception("Previous, successful close.");
+        _closedBy = new Exception("Previous, successful close by " + Thread.currentThread().getName());
     }
 
     /**
@@ -389,7 +389,7 @@ class WriteHandleImpl implements ModifiableReplicaDescriptor {
     @Override
     public synchronized URI getReplicaFile() throws IllegalStateException {
         if (_state == HandleState.CLOSED) {
-            throw new IllegalStateException("Handle is closed");
+            throw new IllegalStateException("Handle is closed", _closedBy);
         }
 
         return _entry.getReplicaUri();
@@ -418,7 +418,7 @@ class WriteHandleImpl implements ModifiableReplicaDescriptor {
     @Override
     public void setLastAccessTime(long time) {
         if (_state == HandleState.CLOSED) {
-            throw new IllegalStateException("Handle is closed");
+            throw new IllegalStateException("Handle is closed", _closedBy);
         }
         _atime = time;
     }
