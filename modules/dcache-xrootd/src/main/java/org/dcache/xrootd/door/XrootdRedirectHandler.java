@@ -26,7 +26,7 @@ import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ArgMissing;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_FileNotOpen;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_IOError;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_InvalidRequest;
-import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_NotAuthorized;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ItExists;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_Qcksum;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_Qconfig;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ServerError;
@@ -473,7 +473,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
         } catch (FileNotFoundCacheException e) {
             return withError(ctx, req, xrootdErrorCode(e.getRc()), "No such file");
         } catch (FileExistsCacheException e) {
-            return withError(ctx, req, kXR_NotAuthorized, "File already exists");
+            return withError(ctx, req, kXR_ItExists, "File already exists");
         } catch (TimeoutCacheException e) {
             return withError(ctx, req, xrootdErrorCode(e.getRc()), "Internal timeout");
         } catch (PermissionDeniedCacheException e) {
