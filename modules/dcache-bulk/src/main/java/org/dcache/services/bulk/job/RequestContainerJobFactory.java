@@ -114,7 +114,7 @@ public final class RequestContainerJobFactory {
         attributes.setPnfsId(PLACEHOLDER_PNFSID);
         BulkRequestTarget target = BulkRequestTargetBuilder.builder()
               .activity(activity.getName())
-              .rid(request.getId()).pid(PID.ROOT).attributes(attributes)
+              .rid(request.getId()).ruid(request.getUid()).pid(PID.ROOT).attributes(attributes)
               .path(ROOT_REQUEST_PATH).build();
 
         PnfsHandler pnfsHandler = new PnfsHandler(pnfsManager);

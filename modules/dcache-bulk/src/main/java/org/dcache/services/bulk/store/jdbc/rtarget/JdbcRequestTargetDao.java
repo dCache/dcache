@@ -111,7 +111,7 @@ public final class JdbcRequestTargetDao extends JdbcDaoSupport {
 
     static final String SELECT = "SELECT *";
 
-    static final String JOINED_SELECT = "SELECT request_target.*, bulk_request.uuid as ruid, bulk_request.activity";
+    static final String JOINED_SELECT = "SELECT request_target.*, bulk_request.uid as ruid, bulk_request.activity";
 
     static final String SECONDARY_TABLE_NAME = JdbcBulkRequestDao.TABLE_NAME;
 

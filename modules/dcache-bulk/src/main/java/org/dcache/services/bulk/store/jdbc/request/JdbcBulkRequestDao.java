@@ -103,11 +103,11 @@ public final class JdbcBulkRequestDao extends JdbcDaoSupport {
           + "(t.state = 'CREATED' OR t.state = 'READY' OR t.state='RUNNING'))";
 
     private static final String UPDATE_COMPLETED_IF_DONE =
-          "UPDATE bulk_request r SET status='COMPLETED', last_modified = ? WHERE r.uuid = ? AND "
+          "UPDATE bulk_request r SET status='COMPLETED', last_modified = ? WHERE r.uid = ? AND "
                 + NO_UNPROCESSED_TARGETS;
 
     private static final String UPDATE_CANCELLED_IF_DONE =
-          "UPDATE bulk_request r SET status='CANCELLED', last_modified = ? WHERE r.uuid = ? "
+          "UPDATE bulk_request r SET status='CANCELLED', last_modified = ? WHERE r.uid = ? "
                 + "AND r.status='CANCELLING' AND " + NO_UNPROCESSED_TARGETS;
 
     private JdbcBulkDaoUtils utils;
