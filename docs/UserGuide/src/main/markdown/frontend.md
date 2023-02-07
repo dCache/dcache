@@ -2670,3 +2670,35 @@ Please note that the JSON returned for GET on bulk-requests differs from that re
 Full specification of these commands can be obtained by inspecting the
 SWAGGER page which is available from the frontend
 at ``https://<host>:3880/api/v1``.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ NOTE: The user-driven attribute 'delay' for indicating how long to wait
+       before clearing a request on success or failure has been deprecated
+       and is no longer supported.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+## Support for .well-known
+
+From version 8.2 on, the frontend service exposes the `.well-known` resource on
+port 3880.  Currently, two endpoints are supported.
+
+For the WLCG TAPE API, a .json file should be configured to provide the actual host
+and port at which the RESTful service may be contacted.  An example is provided:
+
+```
+/var/lib/dcache/httpd/wlcg-tape-rest-api.json
+```
+
+See https://docs.google.com/document/d/1Zx_H5dRkQRfju3xIYZ2WgjKoOvmLtsafP2pKGpHqcfY/edit#heading=h.ozszs1lr7q93
+for fuller information (version 1).
+
+The `security.txt` well-known endpoint is also supported on both the frontend
+at port 3880 and on webdav at port 2880.  The property:
+
+```
+dcache.wellknown!security-txt.uri=${dcache.paths.httpd}/security.txt
+```
+
+should be configured to point to either a URL with host and port that provides
+this information, or a local path with the appropriate `security.txt` file.
+See https://securitytxt.org/ for further information.
