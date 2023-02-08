@@ -59,12 +59,14 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.store.jdbc.request;
 
-import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.dcache.services.bulk.BulkRequest;
 import org.dcache.services.bulk.BulkRequest.Depth;
@@ -74,6 +76,7 @@ import org.dcache.services.bulk.BulkRequestStatusInfo;
 import org.dcache.services.bulk.BulkStorageException;
 import org.dcache.services.bulk.store.jdbc.JdbcBulkDaoUtils;
 import org.dcache.services.bulk.store.jdbc.rtarget.JdbcRequestTargetDao;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -167,7 +170,13 @@ public final class JdbcBulkRequestDao extends JdbcDaoSupport {
         request.setPrestore(rs.getBoolean("prestore"));
         String args = rs.getString("arguments");
         if (Strings.emptyToNull(args) != null) {
-            request.setArguments(Splitter.on(",").withKeyValueSeparator(":").split(args));
+            JSONObject argObj = new JSONObject("{" + args + "}");
+            Map<String, String> arguments = new HashMap<>();
+            for (Iterator<String> keys = argObj.keys(); keys.hasNext();) {
+                String key = keys.next();
+                arguments.put(key, String.valueOf(argObj.get(key)));
+            }
+            request.setArguments(arguments);
         }
         BulkRequestStatusInfo statusInfo = new BulkRequestStatusInfo();
         statusInfo.setUser(rs.getString("owner"));
