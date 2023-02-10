@@ -75,7 +75,7 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
         tokenProcessor = processor;
 
         String targets = properties.getProperty(OIDC_ALLOWED_AUDIENCES);
-        audienceTargets = Set.copyOf(Splitter.on(' ').trimResults().splitToList(targets));
+        audienceTargets = Set.copyOf(new Args(targets).getArguments());
     }
 
     private static IdentityProvider createIdentityProvider(String name, String description,
