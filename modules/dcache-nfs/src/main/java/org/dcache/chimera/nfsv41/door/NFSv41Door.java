@@ -844,21 +844,28 @@ public class NFSv41Door extends AbstractCellComponent implements
     private void logLayoutErrors(CompoundContext context, ff_layoutreturn4 lr) {
         for (ff_ioerr4 ioerr : lr.fflr_ioerr_report) {
             for (device_error4 de : ioerr.ffie_errors) {
-                PoolDS ds = _poolDeviceMap.getByDeviceId(de.de_deviceid);
-                String pool = ds == null ? "an unknown pool" : ("pool " + ds.getName());
-                _log.error("Client {} reports error {} on {} for op {}", toAddrString(context.getRemoteSocketAddress().getAddress()),
-                      nfsstat.toString(de.de_status), pool, nfs_opnum4.toString(de.de_opnum));
-
-                // rise an alarm when client can't connect to the pool
-                if (de.de_status == nfsstat.NFSERR_NXIO) {
-                    _log.error(
-                          AlarmMarkerFactory.getMarker(PredefinedAlarm.CLIENT_CONNECTION_REJECTED,
-                                pool),
-                          "Client {} failed to connect to {}", toAddrString(context.getRemoteSocketAddress().getAddress()), pool);
-                }
+                reportLayoutError(context, de);
             }
         }
     }
+
+    private void reportLayoutError(CompoundContext context, device_error4 de) {
+        PoolDS ds = _poolDeviceMap.getByDeviceId(de.de_deviceid);
+        String pool = ds == null ? "an unknown pool" : ("pool " + ds.getName());
+        _log.error("Client {} reports error {} on {} for op {}", toAddrString(
+                    context.getRemoteSocketAddress().getAddress()),
+              nfsstat.toString(de.de_status), pool, nfs_opnum4.toString(de.de_opnum));
+
+        // rise an alarm when client can't connect to the pool
+        if (de.de_status == nfsstat.NFSERR_NXIO) {
+            _log.error(
+                  AlarmMarkerFactory.getMarker(PredefinedAlarm.CLIENT_CONNECTION_REJECTED,
+                        pool),
+                  "Client {} failed to connect to {}", toAddrString(
+                        context.getRemoteSocketAddress().getAddress()), pool);
+        }
+    }
+
 
     /*
      * (non-Javadoc)
@@ -930,7 +937,9 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     @Override
     public void layoutError(CompoundContext context, LAYOUTERROR4args args) throws IOException {
-        // NOP for now. Forced by interface
+        var errors = args.lea_errors;
+        Arrays.stream(errors)
+              .forEach(e -> reportLayoutError(context, e));
     }
 
     @Override
