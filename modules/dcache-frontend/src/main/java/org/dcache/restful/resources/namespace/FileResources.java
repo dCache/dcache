@@ -65,6 +65,7 @@ import org.dcache.namespace.FileType;
 import org.dcache.pinmanager.PinManagerPinMessage;
 import org.dcache.pinmanager.PinManagerUnpinMessage;
 import org.dcache.poolmanager.PoolMonitor;
+import org.dcache.qos.QoSTransitionEngine;
 import org.dcache.qos.data.FileQoSRequirements;
 import org.dcache.qos.remote.clients.RemoteQoSRequirementsClient;
 import org.dcache.restful.providers.JsonFileAttributes;
@@ -81,6 +82,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 import org.springframework.stereotype.Component;
 
 /**
@@ -125,6 +127,8 @@ public class FileResources {
     @Inject
     @Named("qos-engine")
     private CellStub qosEngine;
+
+    private boolean useQosService;
 
     @GET
     @ApiOperation(value = "Find metadata and optionally directory contents.",
@@ -439,17 +443,26 @@ public class FileResources {
                     break;
                 case "qos":
                     String targetQos = reqPayload.getString("target");
-                    /*
-                     *  fire and forget, does not wait for transition to complete
-                     */
-                    FileAttributes attr
-                          = pnfsHandler.getFileAttributes(path.toString(),
-                          NamespaceUtils.getRequestedAttributes(false, false,
-                                true, false, false));
-                    FileQoSRequirements requirements = getBasicRequirements(targetQos, attr);
-                    RemoteQoSRequirementsClient client = new RemoteQoSRequirementsClient();
-                    client.setRequirementsService(qosEngine);
-                    client.fileQoSRequirementsModified(requirements);
+                    if (!useQosService) {
+                        new QoSTransitionEngine(poolmanager,
+                              poolMonitor,
+                              pnfsHandler,
+                              pinmanager)
+                              .adjustQoS(path,
+                                    targetQos, request.getRemoteHost());
+                    } else {
+                        /*
+                         *  fire and forget, does not wait for transition to complete
+                         */
+                        FileAttributes attr
+                              = pnfsHandler.getFileAttributes(path.toString(),
+                              NamespaceUtils.getRequestedAttributes(false, false,
+                                    true, false, false));
+                        FileQoSRequirements requirements = getBasicRequirements(targetQos, attr);
+                        RemoteQoSRequirementsClient client = new RemoteQoSRequirementsClient();
+                        client.setRequirementsService(qosEngine);
+                        client.fileQoSRequirementsModified(requirements);
+                    }
                     break;
                 case "pin":
                     Integer lifetime = reqPayload.optInt("lifetime");
@@ -603,6 +616,11 @@ public class FileResources {
             throw new InternalServerErrorException(e);
         }
         return successfulResponse(Response.Status.OK);
+    }
+
+    @Required
+    public void setUseQosService(boolean useQosService) {
+        this.useQosService = useQosService;
     }
 
     private FileQoSRequirements getBasicRequirements(String targetQos, FileAttributes attributes) {

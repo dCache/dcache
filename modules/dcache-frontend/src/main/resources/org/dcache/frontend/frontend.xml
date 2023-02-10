@@ -594,7 +594,9 @@
     <bean class="org.dcache.restful.resources.cells.CellInfoResources" scope="request"/>
     <bean class="org.dcache.restful.resources.doors.DoorsResources" scope="request"/>
     <bean class="org.dcache.restful.resources.identity.UserResource" scope="request"/>
-    <bean class="org.dcache.restful.resources.namespace.FileResources" scope="request"/>
+    <bean class="org.dcache.restful.resources.namespace.FileResources" scope="request">
+      <property name="useQosService" value="${frontend.service.namespace.use-qos-service}"/>
+    </bean>
     <bean class="org.dcache.restful.resources.labels.LabelsResources" scope="request"/>
     <bean class="org.dcache.restful.resources.namespace.IdResources" scope="request"/>
     <bean class="org.dcache.restful.resources.pool.PoolGroupInfoResources" scope="request"/>
