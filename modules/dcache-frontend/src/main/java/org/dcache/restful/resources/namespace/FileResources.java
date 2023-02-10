@@ -2,6 +2,7 @@ package org.dcache.restful.resources.namespace;
 
 import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.Range;
 import diskCacheV111.util.AttributeExistsCacheException;
 import diskCacheV111.util.CacheException;
@@ -453,7 +454,8 @@ public class FileResources {
                     if (lifetime == null) {
                         lifetime = 0;
                     }
-                    String lifetimeUnitVal = reqPayload.optString("lifetime-unit");
+                    String lifetimeUnitVal = Strings.emptyToNull(
+                          reqPayload.optString("lifetime-unit"));
                     TimeUnit lifetimeUnit = lifetimeUnitVal == null ?
                           TimeUnit.SECONDS : TimeUnit.valueOf(lifetimeUnitVal);
                     pnfsId = pnfsHandler.getPnfsIdByPath(path.toString());
