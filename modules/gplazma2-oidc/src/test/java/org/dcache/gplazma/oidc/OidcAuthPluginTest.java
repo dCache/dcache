@@ -439,6 +439,34 @@ public class OidcAuthPluginTest {
     }
 
     @Test
+    public void shouldAcceptSingleAudWithSpaceMatchesSingleAllowedValue() throws Exception {
+        var profile = aProfile().thatReturns(aProfileResult()
+                .withPrincipals(Collections.singleton(new OidcSubjectPrincipal("sub-claim-value", "MY-OP"))))
+                .build();
+        var op = anIp("MY-OP").withProfile(profile).build();
+        var claims = claims()
+                .withStringClaim("sub", "sub-claim-value")
+                .withStringClaim("aud", "my target")
+                .build();
+        given(aPlugin()
+            .withProperty("gplazma.oidc.audience-targets", "\"my target\"")
+            .withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(op).containing(claims))));
+
+        when(invoked().withBearerToken("FOO"));
+
+        verify(processor).extract(eq("FOO"));
+        verify(profile).processClaims(eq(op), eq(claims));
+        assertThat(principals, hasItem(new OidcSubjectPrincipal("sub-claim-value", "MY-OP")));
+        assertThat(principals, not(hasItem(any(OpenIdGroupPrincipal.class))));
+        assertThat(principals, not(hasItem(any(FullNamePrincipal.class))));
+        assertThat(principals, not(hasItem(any(EmailAddressPrincipal.class))));
+        assertThat(principals, not(hasItem(any(LoAPrincipal.class))));
+        assertThat(principals, not(hasItem(any(EntitlementPrincipal.class))));
+        assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
+        assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
+    }
+
+    @Test
     public void shouldAcceptWhenSingleAudMatchesOneFromMultipleAllowedValue() throws Exception {
         var profile = aProfile().thatReturns(aProfileResult()
                 .withPrincipals(Collections.singleton(new OidcSubjectPrincipal("sub-claim-value", "MY-OP"))))
