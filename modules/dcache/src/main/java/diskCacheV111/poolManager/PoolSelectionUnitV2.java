@@ -1037,6 +1037,17 @@ public class PoolSelectionUnitV2
             if (unit != null && unit.getType() == STORE) {
                 return (StorageUnit) unit;
             }
+
+            /*
+             *  If not found, and regex is on, try to resolve it.
+             */
+            if (_useRegex) {
+                List<Unit> units = new ArrayList<>();
+                resolveStorageUnit(units, storageClass);
+                if (!units.isEmpty()) {
+                    return (StorageUnit) units.iterator().next();
+                }
+            }
         } finally {
             _psuReadLock.unlock();
         }
