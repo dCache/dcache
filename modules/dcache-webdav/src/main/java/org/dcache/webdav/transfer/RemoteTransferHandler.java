@@ -138,6 +138,7 @@ import org.dcache.util.LineIndentingPrintWriter;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.Strings;
 import org.dcache.util.URIs;
+import org.dcache.util.Xattrs;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.webdav.transfer.CopyFilter.CredentialSource;
 import org.eclipse.jetty.http.HttpFields;
@@ -858,6 +859,10 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                               .fileType(FileType.REGULAR)
                               .xattr("xdg.origin.url", _destination.toASCIIString())
                               .build();
+
+                        Xattrs.from(ServletRequest.getRequest().getParameterMap())
+                              .forEach(attributes::updateXattr);
+
                         try {
                             msg = _pnfs.createPnfsEntry(_path.toString(), attributes,
                                     TransferManagerHandler.ATTRIBUTES_FOR_PULL);
