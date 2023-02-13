@@ -422,7 +422,7 @@
 
     <!-- This is still needed in order to return the auto-generated id on insert -->
 
-    <changeSet author="arossi" id="5.4.9">
+    <changeSet author="arossi" id="5.4.9" dbms="postgresql">
         <preConditions onFail="MARK_RAN">
             <and>
                 <not>
