@@ -30,7 +30,6 @@ public class LoggingProducerListener<K, V> implements ProducerListener<K, V> {
 
     @Override
     public void onSuccess(ProducerRecord<K, V> record, RecordMetadata recordMetadata) {
-        LOGGER.info("Successful!");
     }
 
     @Override
