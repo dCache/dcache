@@ -133,7 +133,7 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
 
         @Override
         public Optional<BulkRequest> load(String uid) throws Exception {
-            List<BulkRequest> list = requestDao.get(requestDao.where().uids(uid), 1);
+            List<BulkRequest> list = requestDao.get(requestDao.where().uids(uid), 1, true);
             if (list.isEmpty()) {
                 return Optional.empty();
             }
@@ -287,7 +287,7 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
         limit = limit == null ? Integer.MAX_VALUE : limit;
         BulkRequestFilter rfilter = requestFilter.orElse(null);
         return requestDao.get(
-                    requestDao.where().filter(rfilter).sorter("id"), limit).stream()
+                    requestDao.where().filter(rfilter).sorter("id"), limit, false).stream()
               .collect(Collectors.toList());
     }
 
@@ -339,7 +339,7 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
 
         List<BulkRequest> requests = requestDao.get(
               requestDao.where().sorter("bulk_request.id").id(id).pnfsId(pnfsId).status(status)
-                    .user(users), FETCH_SIZE);
+                    .user(users), FETCH_SIZE, false);
 
         List<BulkRequestSummary> summaries = new ArrayList<>();
 
@@ -466,7 +466,7 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
         LOGGER.trace("next {}.", limit);
         return requestDao.get(
                     requestDao.where().status(QUEUED).sorter(sortedBy.orElse("arrived_at"))
-                          .reverse(reverse.orElse(false)), (int) limit).stream()
+                          .reverse(reverse.orElse(false)), (int) limit, true).stream()
               .collect(Collectors.toList());
     }
 
@@ -565,6 +565,8 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
             requestPermissionsDao.insert(
                   requestPermissionsDao.set().permId(request.getId()).subject(subject)
                         .restriction(restriction));
+
+            requestDao.insertArguments(request);
 
             requestTargetDao.insertInitialTargets(request);
         } catch (BulkStorageException e) {

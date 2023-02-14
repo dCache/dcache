@@ -61,8 +61,6 @@ package org.dcache.services.bulk.store.jdbc.request;
 
 import com.google.common.base.Strings;
 import java.sql.Timestamp;
-import java.util.Map;
-import java.util.stream.Collectors;
 import javax.security.auth.Subject;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.db.JdbcUpdate;
@@ -72,7 +70,7 @@ import org.dcache.services.bulk.BulkStorageException;
 import org.dcache.services.bulk.store.jdbc.JdbcBulkDaoUtils;
 
 /**
- *  Implementation of the update class for the bulk request table.
+ * Implementation of the update class for the bulk request table.
  */
 public final class JdbcBulkRequestUpdate extends JdbcUpdate {
 
@@ -132,6 +130,7 @@ public final class JdbcBulkRequestUpdate extends JdbcUpdate {
         }
         return this;
     }
+
     public JdbcBulkRequestUpdate subject(Subject subject) throws BulkStorageException {
         if (subject != null) {
             set("subject", utils.serializeToBase64("subject", subject));
@@ -182,14 +181,6 @@ public final class JdbcBulkRequestUpdate extends JdbcUpdate {
 
     public JdbcBulkRequestUpdate delayClear(int delayClear) {
         set("delay_clear", delayClear);
-        return this;
-    }
-
-    public JdbcBulkRequestUpdate arguments(Map<String, String> arguments) {
-        if (arguments != null && !arguments.isEmpty()) {
-            set("arguments", arguments.entrySet().stream().map(e -> e.getKey() + ":" + e.getValue())
-                  .collect(Collectors.joining(",")));
-        }
         return this;
     }
 

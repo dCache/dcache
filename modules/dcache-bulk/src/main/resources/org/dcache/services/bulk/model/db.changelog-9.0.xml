@@ -459,4 +459,64 @@
             <column name="id"/>
         </createIndex>
     </changeSet>
+
+    <!-- Maintaining a separate table for the text arguments presents the
+         advantage that, in the case of very large maps (as, for instance, with
+         STAGE requests), queries on the bulk_request table that do not need
+         to return the arguments run faster. The requests can also be more easily
+         inspected in the db interpreter. -->
+
+    <changeSet author="arossi" id="6.0">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="request_arguments"/>
+            </not>
+        </preConditions>
+
+        <createTable tableName="request_arguments">
+            <column name="rid" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="arguments" type="text">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="request_arguments"
+          indexName="idx_request_arguments_rid">
+            <column name="rid"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="rid" baseTableName="request_arguments"
+          constraintName="request_arguments_rid_fkey"
+          deferrable="false"
+          initiallyDeferred="false"
+          onDelete="CASCADE"
+          onUpdate="CASCADE"
+          referencedColumnNames="id"
+          referencedTableName="bulk_request"/>
+        <rollback/>
+    </changeSet>
+
+    <!-- See above @5.2.6p -->
+    <changeSet author="arossi" id="6.1p" runInTransaction="false" dbms="postgresql">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <columnExists columnName="arguments" tableName="bulk_request"/>
+            </and>
+        </preConditions>
+        <sql splitStatements="false">
+            INSERT INTO request_arguments SELECT id, arguments FROM bulk_request;
+        </sql>
+    </changeSet>
+
+    <changeSet author="arossi" id="6.2">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <columnExists columnName="arguments" tableName="bulk_request"/>
+            </and>
+        </preConditions>
+        <dropColumn tableName="bulk_request" columnName="arguments"/>
+    </changeSet>
+
 </databaseChangeLog>

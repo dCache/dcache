@@ -208,8 +208,7 @@ public final class JdbcBulkDaoUtils {
         LOGGER.trace("get {}, {}, limit {}.", sql, args, limit);
         JdbcTemplate template = support.getJdbcTemplate();
         template.setFetchSize(fetchSize);
-        args.add(limit);
-        return template.query(sql, args.toArray(Object[]::new), mapper);
+        return template.query(sql + " LIMIT " + limit, args.toArray(Object[]::new), mapper);
     }
 
     public Optional<KeyHolder> insert(JdbcUpdate update, String tableName, JdbcDaoSupport support) {
@@ -263,7 +262,7 @@ public final class JdbcBulkDaoUtils {
               concatArguments(update.getArguments(), criterion.getArguments()));
     }
 
-    private Optional<KeyHolder> insert(String sql, Collection<Object> arguments,
+    public Optional<KeyHolder> insert(String sql, Collection<Object> arguments,
           JdbcDaoSupport support) {
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
