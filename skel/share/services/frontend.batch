@@ -37,6 +37,7 @@ check -strong frontend.service.transfers.timeout.unit
 check -strong frontend.service.cell-info.update-threads
 check -strong frontend.service.cell-info.timeout
 check -strong frontend.service.cell-info.timeout.unit
+check -strong frontend.service.namespace.use-qos-service
 check -strong frontend.service.pool-info.update-threads
 check -strong frontend.service.pool-info.maxPoolActivityListSize
 check -strong frontend.service.pool-info.timeout
