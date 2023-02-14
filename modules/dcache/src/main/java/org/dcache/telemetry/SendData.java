@@ -48,8 +48,8 @@ public class SendData implements CellCommandListener, CellLifeCycleAware {
     public void setUrlStr(String url) {
         try {
             uri = URI.create(url);
-        } catch (IllegalArgumentException iae) {
-            LOGGER.error("Failed to create URL. Reason: ", iae);
+        } catch (IllegalArgumentException e) {
+            LOGGER.error("Failed to create URL. Reason: {}", e.toString());
             throw new RuntimeException();
         }
     }
@@ -115,8 +115,8 @@ public class SendData implements CellCommandListener, CellLifeCycleAware {
             } else {
                 LOGGER.info("Information successfully sent to {}", uri);
             }
-        } catch (InterruptedException | IOException ioe) {
-            LOGGER.error("Sending data to {} failed, caused by: ", uri, ioe);
+        } catch (InterruptedException | IOException e) {
+            LOGGER.error("Sending data to {} failed, caused by: {}", uri, e.toString());
         }
     }
 
