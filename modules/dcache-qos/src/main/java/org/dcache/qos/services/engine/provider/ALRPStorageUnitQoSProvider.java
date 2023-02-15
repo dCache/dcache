@@ -70,7 +70,6 @@ import static org.dcache.qos.data.QoSMessageType.VALIDATE_ONLY;
 
 import com.google.common.annotations.VisibleForTesting;
 import diskCacheV111.poolManager.PoolSelectionUnit;
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnit;
 import diskCacheV111.poolManager.StorageUnit;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
@@ -159,13 +158,12 @@ public class ALRPStorageUnitQoSProvider implements QoSRequirementsProvider, Cell
         RetentionPolicy retentionPolicy = attributes.getRetentionPolicy();
 
         String unitKey = attributes.getStorageClass() + "@" + attributes.getHsm();
-        SelectionUnit unit = poolSelectionUnit().getStorageUnit(unitKey);
-        if (!(unit instanceof StorageUnit)) {
+        StorageUnit storageUnit = poolSelectionUnit().getStorageUnit(unitKey);
+        if (storageUnit == null) {
             throw new QoSException(unitKey + " does not correspond to a storage unit; "
                   + "cannot retrieve requirements for " + descriptor.getPnfsId());
         }
 
-        StorageUnit storageUnit = (StorageUnit) unit;
         Integer required = storageUnit.getRequiredCopies();
         List<String> onlyOneCopyPer = storageUnit.getOnlyOneCopyPer();
 

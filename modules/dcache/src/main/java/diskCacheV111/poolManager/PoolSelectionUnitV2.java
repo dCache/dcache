@@ -591,65 +591,8 @@ public class PoolSelectionUnitV2
             // original code is in the else
             //
             List<Unit> list = new ArrayList<>();
-            if (_useRegex) {
-                Unit universalCoverage = null;
-                Unit classCoverage = null;
+            resolveStorageUnit(list, storeUnitName);
 
-                for (Unit unit : _units.values()) {
-                    if (unit.getType() != STORE) {
-                        continue;
-                    }
-
-                    if (unit.getName().equals("*@*")) {
-                        universalCoverage = unit;
-                    } else if (unit.getName().equals("*@" + storeUnitName)) {
-                        classCoverage = unit;
-                    } else {
-                        if (Pattern.matches(unit.getName(), storeUnitName)) {
-                            list.add(unit);
-                            break;
-                        }
-                    }
-                }
-                //
-                // If a pattern matches then use it, fail over to a class,
-                // then universal. If nothing, throw exception
-                //
-                if (list.isEmpty()) {
-                    if (classCoverage != null) {
-                        list.add(classCoverage);
-                    } else if (universalCoverage != null) {
-                        list.add(universalCoverage);
-                    } else {
-                        throw new IllegalArgumentException(
-                              "Unit not found : " + storeUnitName);
-                    }
-                }
-
-            } else {
-                Unit unit = _units.get(storeUnitName);
-                if (unit == null) {
-                    int ind = storeUnitName.lastIndexOf('@');
-                    if ((ind > 0) && (ind < (storeUnitName.length() - 1))) {
-                        String template = "*@"
-                              + storeUnitName.substring(ind + 1);
-                        if ((unit = _units.get(template)) == null) {
-
-                            if ((unit = _units.get("*@*")) == null) {
-                                LOGGER.debug("no matching storage unit found for: {}",
-                                      storeUnitName);
-                                throw new IllegalArgumentException(
-                                      "Unit not found : " + storeUnitName);
-                            }
-                        }
-                    } else {
-                        throw new IllegalArgumentException(
-                              "IllegalUnitFormat : " + storeUnitName);
-                    }
-                }
-                LOGGER.debug("matching storage unit found for: {}", storeUnitName);
-                list.add(unit);
-            }
             if (protocolUnitName != null) {
 
                 Unit unit = findProtocolUnit(protocolUnitName);
@@ -877,6 +820,65 @@ public class PoolSelectionUnitV2
         return result;
     }
 
+    private void resolveStorageUnit(List<Unit> list, String storeUnitName) {
+        if (_useRegex) {
+            Unit universalCoverage = null;
+            Unit classCoverage = null;
+
+            for (Unit unit : _units.values()) {
+                if (unit.getType() != STORE) {
+                    continue;
+                }
+
+                if (unit.getName().equals("*@*")) {
+                    universalCoverage = unit;
+                } else if (unit.getName().equals("*@" + storeUnitName)) {
+                    classCoverage = unit;
+                } else {
+                    if (Pattern.matches(unit.getName(), storeUnitName)) {
+                        list.add(unit);
+                        break;
+                    }
+                }
+            }
+
+            if (list.isEmpty()) {
+                if (classCoverage != null) {
+                    list.add(classCoverage);
+                } else if (universalCoverage != null) {
+                    list.add(universalCoverage);
+                } else {
+                    throw new IllegalArgumentException(
+                          "Unit not found : " + storeUnitName);
+                }
+            }
+        } else {
+            Unit unit = _units.get(storeUnitName);
+            if (unit == null) {
+                int ind = storeUnitName.lastIndexOf('@');
+                if ((ind > 0) && (ind < (storeUnitName.length() - 1))) {
+                    String template = "*@"
+                          + storeUnitName.substring(ind + 1);
+                    if ((unit = _units.get(template)) == null) {
+
+                        if ((unit = _units.get("*@*")) == null) {
+                            LOGGER.debug("no matching storage unit found for: {}",
+                                  storeUnitName);
+                            throw new IllegalArgumentException(
+                                  "Unit not found : " + storeUnitName);
+                        }
+                    }
+                } else {
+                    throw new IllegalArgumentException(
+                          "IllegalUnitFormat : " + storeUnitName);
+                }
+            }
+
+            LOGGER.debug("matching storage unit found for: {}", storeUnitName);
+            list.add(unit);
+        }
+    }
+
     @Override
     public String getProtocolUnit(String protocolUnitName) {
         Unit unit = findProtocolUnit(protocolUnitName);
@@ -939,6 +941,17 @@ public class PoolSelectionUnitV2
             Unit unit = _units.get(storageClass);
             if (unit != null && unit.getType() == STORE) {
                 return (StorageUnit) unit;
+            }
+
+            /*
+             *  If not found, and regex is on, try to resolve it.
+             */
+            if (_useRegex) {
+                List<Unit> units = new ArrayList<>();
+                resolveStorageUnit(units, storageClass);
+                if (!units.isEmpty()) {
+                    return (StorageUnit) units.iterator().next();
+                }
             }
         } finally {
             _psuReadLock.unlock();
