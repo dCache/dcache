@@ -50,26 +50,27 @@ public final class Xattrs {
     }
 
     /**
-     * Extract extended attributes from the given {@code params} {@link Map}.
+     * Extract extended attributes from the given {@code params} {@link Map}. This method expected
+     * the params map ar value returned by {@link ServletRequest#getParameterMap}
      *
      * @param params The map to extract attributes from.
      * @return a key-value map with extended attributes.
      * @throws NullPointerException if params is {@code null}
      */
-    public static Map<String, String> from(Map<String, String> params) {
+    public static Map<String, String> from(Map<String, String[]> params) {
 
         requireNonNull(params, "Params must be provided");
 
         return params.entrySet()
               .stream()
               .filter(e -> e.getKey().startsWith(XATTR_PREFIX))
-              .collect(toMap(Xattrs::getName, Map.Entry::getValue));
+              .collect(toMap(Xattrs::getName, e -> e.getValue()[0]));
     }
 
     /**
      * Convert a URL query key-value pair to the corresponding extended attribute name.
      */
-    private static String getName(Map.Entry<String, String> entry) {
+    private static String getName(Map.Entry<String, ?> entry) {
         return entry.getKey().substring(XATTR_PREFIX.length());
     }
 }

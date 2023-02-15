@@ -67,7 +67,6 @@ import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
-import io.milton.http.FileItem;
 import io.milton.http.HttpManager;
 import io.milton.http.Request;
 import io.milton.http.ResourceFactory;
@@ -100,7 +99,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -1348,14 +1346,7 @@ public class DcacheResourceFactory
      * Returns request params.
      */
     private static Map<String, String> getXattrsFromRequest() {
-        Map<String, String> m = new HashMap<>();
-        Map<String, FileItem> files = new HashMap<>();
-        try {
-            HttpManager.request().parseRequestParameters(m, files);
-        } catch (Exception e) {
-            throw new RuntimeException();
-        }
-        return Xattrs.from(m);
+        return Xattrs.from(ServletRequest.getRequest().getParameterMap());
     }
 
     /**
