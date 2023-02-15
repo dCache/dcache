@@ -368,6 +368,7 @@ public final class StageResources {
             Map<String, String> arguments = new HashMap<>();
             arguments.put("diskLifetime", jsonLifetimes.toString());
             arguments.put("targetedMetadata", jsonMetadata.toString());
+            request.setArguments(arguments);
         } catch (JSONException e) {
             throw new BadRequestException(
                   String.format("badly formed json object (%s): %s.", requestPayload, e));

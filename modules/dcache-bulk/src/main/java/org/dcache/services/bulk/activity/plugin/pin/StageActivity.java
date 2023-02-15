@@ -133,8 +133,14 @@ public final class StageActivity extends PinManagerActivity {
     @Override
     protected void configure(Map<String, String> arguments) {
         if (arguments != null) {
-            jsonLifetimes = new JSONObject(arguments.get("diskLifetime"));
-            jsonMetadata = new JSONObject(arguments.get("targetedMetadata"));
+            String value = arguments.get("diskLifetime");
+            if (value != null) {
+                jsonLifetimes = new JSONObject(value);
+            }
+            value = arguments.get("targetedMetadata");
+            if (value != null) {
+                jsonMetadata = new JSONObject(value);
+            }
         }
     }
 
