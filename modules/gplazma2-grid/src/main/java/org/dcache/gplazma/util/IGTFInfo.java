@@ -361,13 +361,23 @@ public class IGTFInfo {
             checkMutable();
             switch (type) {
                 case POLICY:
-                    Map<String, String> pr = Splitter.on(',').trimResults().omitEmptyStrings().
-                          withKeyValueSeparator(Splitter.on('=').trimResults()).split(value);
-                    IGTFInfo.this.policyRequires = ImmutableMap.copyOf(pr);
+                    try {
+                        Map<String, String> pr = Splitter.on(',').trimResults().omitEmptyStrings().
+                              withKeyValueSeparator(Splitter.on('=').trimResults()).split(value);
+                        IGTFInfo.this.policyRequires = ImmutableMap.copyOf(pr);
+                    } catch (IllegalArgumentException e) {
+                        throw new ParserException("Invalid policy 'requires' value: \"" + value
+                            + "\": " + e.getMessage());
+                    }
                     break;
                 case TRUST_ANCHOR:
-                    IGTFInfo.this.trustAnchorRequires =
-                          ImmutableList.copyOf(Splitter.on(',').trimResults().split(value));
+                    try {
+                        IGTFInfo.this.trustAnchorRequires =
+                              ImmutableList.copyOf(Splitter.on(',').trimResults().split(value));
+                    } catch (IllegalArgumentException e) {
+                        throw new ParserException("Invalid anchor 'requires' value: \"" + value
+                            + "\": " + e.getMessage());
+                    }
                     break;
             }
         }
