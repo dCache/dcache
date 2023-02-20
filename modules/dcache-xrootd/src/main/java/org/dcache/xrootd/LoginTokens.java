@@ -17,17 +17,16 @@
  */
 package org.dcache.xrootd;
 
-import com.google.common.base.Splitter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.base.Splitter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.Optional;
-
-import static com.google.common.base.Preconditions.checkArgument;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Utility class to handle login token.
@@ -74,7 +73,7 @@ public class LoginTokens
                     Integer.parseInt(port));
             return Optional.of(addr);
         } catch (UnknownHostException | IllegalArgumentException e) {
-            LOGGER.warn("Bad kXR_login token \"{}\": {}", token, e.getMessage()); // should be DEBUG
+            LOGGER.debug("Bad kXR_login token \"{}\": {}", token, e.getMessage());
         }
 
         return Optional.empty();
