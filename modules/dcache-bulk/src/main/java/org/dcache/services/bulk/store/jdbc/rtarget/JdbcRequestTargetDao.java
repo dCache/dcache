@@ -200,13 +200,7 @@ public final class JdbcRequestTargetDao extends JdbcDaoSupport {
         Long startedAt = timestamp == null ? null : timestamp.getTime();
 
         String errorType = rs.getString("error_type");
-        Throwable error = null;
-
-        if (errorType != null) {
-            /** this is a placeholder **/
-            error = new Throwable(
-                  "[errorType: " + errorType + "] " + rs.getString("error_message"));
-        }
+        String errorMessage = rs.getString("error_message");
 
         return BulkRequestTargetBuilder.builder()
               .id(rs.getLong("id"))
@@ -219,7 +213,7 @@ public final class JdbcRequestTargetDao extends JdbcDaoSupport {
               .createdAt(rs.getTimestamp("created_at").getTime())
               .startedAt(startedAt)
               .lastUpdated(rs.getTimestamp("last_updated").getTime())
-              .error(error).build();
+              .errorType(errorType).errorMessage(errorMessage).build();
     }
 
     public int update(JdbcRequestTargetCriterion criterion, JdbcRequestTargetUpdate update) {

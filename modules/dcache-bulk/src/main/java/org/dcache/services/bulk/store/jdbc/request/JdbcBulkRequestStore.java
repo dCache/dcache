@@ -187,9 +187,13 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
         attributes.setFileType(FileType.SPECIAL);
         attributes.setPnfsId(PLACEHOLDER_PNFSID);
 
+        Throwable root = Throwables.getRootCause(exception);
+
         BulkRequestTarget target = BulkRequestTargetBuilder.builder().rid(requestId)
               .pid(ROOT_REQUEST_PARENT).activity(request.getActivity())
-              .path(ROOT_REQUEST_PATH).attributes(attributes).error(exception).build();
+              .path(ROOT_REQUEST_PATH).attributes(attributes)
+              .errorType(root.getClass().getCanonicalName())
+              .errorMessage(root.getMessage()).build();
 
         try {
             targetStore.abort(target);
@@ -776,12 +780,8 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
         if (target.isTerminated()) {
             info.setFinishedAt(target.getLastUpdated());
         }
-        Throwable errorObject = target.getThrowable();
-        if (errorObject != null) {
-            Throwable root = Throwables.getRootCause(errorObject);
-            info.setErrorType(root.getClass().getCanonicalName());
-            info.setErrorMessage(root.getMessage());
-        }
+        info.setErrorType(target.getErrorType());
+        info.setErrorMessage(target.getErrorMessage());
         return info;
     }
 

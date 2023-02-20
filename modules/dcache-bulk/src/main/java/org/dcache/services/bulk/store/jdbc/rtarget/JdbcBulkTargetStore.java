@@ -90,8 +90,8 @@ public final class JdbcBulkTargetStore implements BulkTargetStore {
     @Override
     public void abort(BulkRequestTarget target)
           throws BulkStorageException {
-        LOGGER.trace("targetAborted {}, {}, {}.", target.getRid(), target.getPath(),
-              target.getThrowable());
+        LOGGER.trace("targetAborted {}, {}, {}, {}.", target.getRid(), target.getPath(),
+              target.getErrorType(), target.getErrorMessage());
 
         /*
          * If aborted, the target has not yet been stored ...
@@ -99,7 +99,8 @@ public final class JdbcBulkTargetStore implements BulkTargetStore {
         targetDao.insert(
               targetDao.set().pid(target.getPid()).rid(target.getRid())
                     .pnfsid(target.getPnfsId()).path(target.getPath()).type(target.getType())
-                    .activity(target.getActivity()).errorObject(target.getThrowable()).aborted());
+                    .activity(target.getActivity()).errorType(target.getErrorType())
+                    .errorMessage(target.getErrorMessage()).aborted());
     }
 
     @Override
@@ -209,9 +210,10 @@ public final class JdbcBulkTargetStore implements BulkTargetStore {
     }
 
     @Override
-    public void update(Long id, State state, Throwable errorObject) throws BulkStorageException {
+    public void update(Long id, State state, String errorType, String errorMessage)
+          throws BulkStorageException {
         targetDao.update(targetDao.where().id(id),
-              targetDao.set().state(state).errorObject(errorObject));
+              targetDao.set().state(state).errorType(errorType).errorMessage(errorMessage));
     }
 
     private JdbcRequestTargetUpdate prepareUpdate(BulkRequestTarget target) {
@@ -225,7 +227,7 @@ public final class JdbcBulkTargetStore implements BulkTargetStore {
             case FAILED:
             case CANCELLED:
                 update = update.targetStart(target.getCreatedAt())
-                      .errorObject(target.getThrowable());
+                      .errorType(target.getErrorType()).errorMessage(target.getErrorMessage());
                 break;
             case RUNNING:
                 update.targetStart(target.getCreatedAt());

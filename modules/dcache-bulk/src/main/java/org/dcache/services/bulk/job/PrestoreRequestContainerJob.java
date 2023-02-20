@@ -211,7 +211,9 @@ public final class PrestoreRequestContainerJob extends AbstractRequestContainerJ
             perform(completedTarget);
         } catch (InterruptedException e) {
             LOGGER.debug("{}. retryFailed interrupted", rid);
-            targetStore.update(result.getTarget().getId(), FAILED, e);
+            targetStore.update(result.getTarget().getId(), FAILED,
+                  InterruptedException.class.getCanonicalName(),
+                  "retryFailed interrupted for " + rid);
         }
     }
 
@@ -246,7 +248,8 @@ public final class PrestoreRequestContainerJob extends AbstractRequestContainerJ
                 return;
             }
 
-            targetStore.update(completedTarget.getId(), state, completedTarget.getThrowable());
+            targetStore.update(completedTarget.getId(), state, completedTarget.getErrorType(),
+                  completedTarget.getErrorMessage());
         } catch (BulkStorageException e) {
             LOGGER.error("{} could not store target from result: {}: {}.", rid, result.getTarget(),
                   e.toString());
@@ -267,7 +270,7 @@ public final class PrestoreRequestContainerJob extends AbstractRequestContainerJ
 
         BulkRequestTarget target = readyTargets.poll();
         if (target != null) {
-            targetStore.update(target.getId(), READY, null);
+            targetStore.update(target.getId(), READY, null, null);
         }
         return Optional.ofNullable(target);
     }
@@ -310,7 +313,7 @@ public final class PrestoreRequestContainerJob extends AbstractRequestContainerJ
         BatchedResult result = new BatchedResult(target, future);
 
         try {
-            targetStore.update(target.getId(), RUNNING, error);
+            targetStore.update(target.getId(), RUNNING, null, null);
         } catch (BulkStorageException e) {
             LOGGER.error("{}, could not update target {},: {}.", rid, target, e.toString());
         }
