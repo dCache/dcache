@@ -1044,10 +1044,9 @@ public final class BulkServiceCommands implements CellCommandListener {
 
             BulkRequestTarget target = optional.get();
             StringBuilder builder = new StringBuilder(formatTarget(target, true)).append("\n");
-            Throwable t = target.getThrowable();
-            if (t != null) {
-                builder.append("ERROR: ").append(t.getClass().getCanonicalName()).append(" : ")
-                      .append(t.getMessage()).append("\n");
+            if (target.getErrorType() != null) {
+                builder.append("ERROR[").append(target.getErrorType()).append(" : ")
+                      .append(target.getErrorMessage()).append("]\n");
             }
             return builder.toString();
         }

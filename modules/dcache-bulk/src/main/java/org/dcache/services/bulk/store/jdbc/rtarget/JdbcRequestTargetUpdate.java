@@ -64,7 +64,6 @@ import static org.dcache.services.bulk.util.BulkRequestTarget.State.FAILED;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.RUNNING;
 import static org.dcache.util.Strings.truncate;
 
-import com.google.common.base.Throwables;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 import java.sql.Timestamp;
@@ -122,12 +121,13 @@ public final class JdbcRequestTargetUpdate extends JdbcUpdate {
         return this;
     }
 
-    public JdbcRequestTargetUpdate errorObject(Throwable errorObject) {
-        if (errorObject != null) {
-            Throwable root = Throwables.getRootCause(errorObject);
-            set("error_type", root.getClass().getCanonicalName());
-            set("error_message", truncate(root.getMessage(), 256, false));
-        }
+    public JdbcRequestTargetUpdate errorType(String errorType) {
+        set("error_type", errorType);
+        return this;
+    }
+
+    public JdbcRequestTargetUpdate errorMessage(String errorMessage) {
+        set("error_message", truncate(errorMessage, 256, false));
         return this;
     }
 

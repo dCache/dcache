@@ -74,7 +74,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import javax.ws.rs.HEAD;
 import org.dcache.namespace.FileType;
 import org.dcache.services.bulk.BulkRequest;
 import org.dcache.services.bulk.BulkRequest.Depth;
@@ -219,7 +218,9 @@ public final class PrestoreRequestContainerJob extends AbstractRequestContainerJ
             perform(completedTarget);
         } catch (InterruptedException e) {
             LOGGER.debug("{}. retryFailed interrupted", ruid);
-            targetStore.update(result.getTarget().getId(), FAILED, e);
+            targetStore.update(result.getTarget().getId(), FAILED,
+                  InterruptedException.class.getCanonicalName(),
+                  "retryFailed interrupted for " + ruid);
         }
     }
 
@@ -261,7 +262,8 @@ public final class PrestoreRequestContainerJob extends AbstractRequestContainerJ
                 return;
             }
 
-            targetStore.update(completedTarget.getId(), state, completedTarget.getThrowable());
+            targetStore.update(completedTarget.getId(), state, completedTarget.getErrorType(),
+                  completedTarget.getErrorMessage());
         } catch (BulkStorageException e) {
             LOGGER.error("{} could not store target from result: {}: {}.", ruid, result.getTarget(),
                   e.toString());
@@ -282,7 +284,7 @@ public final class PrestoreRequestContainerJob extends AbstractRequestContainerJ
 
         BulkRequestTarget target = readyTargets.poll();
         if (target != null) {
-            targetStore.update(target.getId(), READY, null);
+            targetStore.update(target.getId(), READY, null, null);
         }
 
         return Optional.ofNullable(target);
@@ -328,7 +330,7 @@ public final class PrestoreRequestContainerJob extends AbstractRequestContainerJ
         if (error == null) {
             target.setState(RUNNING);
             try {
-                targetStore.update(target.getId(), RUNNING, error);
+                targetStore.update(target.getId(), RUNNING, null, null);
             } catch (BulkStorageException e) {
                 LOGGER.error("{}, could not update target {},: {}.", ruid, target, e.toString());
             }

@@ -176,7 +176,9 @@ public final class RequestContainerJob extends AbstractRequestContainerJob {
             perform(id, pid, path, attributes);
         } catch (InterruptedException e) {
             LOGGER.debug("{}. retryFailed interrupted", ruid);
-            targetStore.update(result.getTarget().getId(), FAILED, e);
+            targetStore.update(result.getTarget().getId(), FAILED,
+                  InterruptedException.class.getCanonicalName(),
+                  "retryFailed interrupted for " + ruid);
         }
     }
 
@@ -193,7 +195,8 @@ public final class RequestContainerJob extends AbstractRequestContainerJob {
                 return;
             }
 
-            targetStore.update(completedTarget.getId(), state, completedTarget.getThrowable());
+            targetStore.update(completedTarget.getId(), state, completedTarget.getErrorType(),
+                  completedTarget.getErrorMessage());
         } catch (BulkStorageException e) {
             LOGGER.error("{} could not store target from result: {}, {}: {}.", ruid, result,
                   attributes, e.toString());

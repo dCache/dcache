@@ -68,6 +68,7 @@ import static org.dcache.services.bulk.util.BulkRequestTarget.State.RUNNING;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.SKIPPED;
 import static org.dcache.services.bulk.util.BulkRequestTarget.computeFsPath;
 
+import com.google.common.base.Throwables;
 import com.google.common.collect.Range;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
@@ -228,7 +229,7 @@ public abstract class AbstractRequestContainerJob
         }
 
         try {
-            targetStore.update(id, CANCELLED, null);
+            targetStore.update(id, CANCELLED, null, null);
         } catch (BulkStorageException e) {
             LOGGER.error("Failed to cancel {}::{}: {}.", ruid, id, e.toString());
         }
@@ -358,7 +359,8 @@ public abstract class AbstractRequestContainerJob
     public void update(State state) {
         if (target.setState(state)) {
             try {
-                targetStore.update(target.getId(), target.getState(), target.getThrowable());
+                targetStore.update(target.getId(), target.getState(), target.getErrorType(),
+                      target.getErrorMessage());
             } catch (BulkStorageException e) {
                 LOGGER.error("{}, updateJobState: {}", ruid, e.toString());
             }
@@ -455,7 +457,7 @@ public abstract class AbstractRequestContainerJob
                     if (id == null) {
                         targetStore.store(target);
                     } else {
-                        targetStore.update(target.getId(), CANCELLED, null);
+                        targetStore.update(target.getId(), CANCELLED, null, null);
                     }
                 } catch (BulkServiceException | UnsupportedOperationException e) {
                     LOGGER.error("hasBeenCancelled {}, failed for {}: {}", ruid, path, e.toString());
@@ -493,11 +495,20 @@ public abstract class AbstractRequestContainerJob
     }
 
     protected BulkRequestTarget toTarget(Long id, PID pid, FsPath path, Optional<FileAttributes> attributes,
-          State state, Object errorObject) {
+          State state, Throwable throwable) {
+        String errorType = null;
+        String errorMessage = null;
+        Throwable root = null;
+        if (throwable != null) {
+            root = Throwables.getRootCause(throwable);
+            errorType = root.getClass().getCanonicalName();
+            errorMessage = root.getMessage();
+        }
+
         return BulkRequestTargetBuilder.builder().attributes(attributes.orElse(null))
               .activity(activity.getName()).id(id).pid(pid).rid(rid).ruid(ruid).state(state)
-              .createdAt(System.currentTimeMillis()).error(errorObject).path(path)
-              .build();
+              .createdAt(System.currentTimeMillis()).errorType(errorType)
+              .errorMessage(errorMessage).path(path).build();
     }
 
     protected abstract void handleFileTarget(PID pid, FsPath path, FileAttributes attributes)

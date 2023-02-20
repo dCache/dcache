@@ -61,6 +61,7 @@ package org.dcache.services.bulk.util;
 
 import static java.util.Objects.requireNonNull;
 
+import com.google.common.base.Throwables;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 import java.sql.Timestamp;
@@ -104,7 +105,7 @@ public final class BulkRequestTarget {
           "%s: invalid target state transition %s to %s; please report this to dcache.org.";
 
     private static final String TARGET_FORMAT =
-          "TARGET [%s, %s, %s][%s][%s: (C %s)(S %s)(U %s)(ret %s)][%s] %s : %s (err %s)";
+          "TARGET [%s, %s, %s][%s][%s: (C %s)(S %s)(U %s)(ret %s)][%s] %s : %s (err %s %s)";
 
     private static final String KEY_SEPARATOR = "::";
 
@@ -125,7 +126,8 @@ public final class BulkRequestTarget {
     private Long startedAt;
     private long lastUpdated;
     private int retried;
-    private Throwable errorObject;
+    private String errorType;
+    private String errorMessage;
     private FileAttributes attributes;
 
     BulkRequestTarget() {
@@ -142,8 +144,9 @@ public final class BulkRequestTarget {
             case READY:
             case RUNNING:
                 state = State.CANCELLED;
-                if (errorObject == null) {
-                    errorObject = new BulkServiceException(getKey() + ": " + state);
+                if (errorType == null) {
+                    errorType = BulkServiceException.class.getCanonicalName();
+                    errorMessage = getKey() + ": " + state;
                 }
 
                 return true;
@@ -188,7 +191,7 @@ public final class BulkRequestTarget {
     public synchronized void resetToReady() {
         ++retried;
         state = State.READY;
-        errorObject = null;
+        setErrorObject(null);
         lastUpdated = System.currentTimeMillis();
     }
 
@@ -248,12 +251,16 @@ public final class BulkRequestTarget {
         return state;
     }
 
-    public Throwable getThrowable() {
-        return errorObject;
-    }
-
     public FileType getType() {
         return attributes == null ? null : attributes.getFileType();
+    }
+
+    public String getErrorType() {
+        return errorType;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
     }
 
     public void setActivity(String activity) {
@@ -269,14 +276,29 @@ public final class BulkRequestTarget {
     }
 
     public void setErrorObject(Object error) {
+        Throwable errorObject;
+        errorType = null;
+        errorObject = null;
         if (error != null) {
             if (error instanceof Throwable) {
-                errorObject = (Throwable) error;
+                errorObject = Throwables.getRootCause((Throwable) error);
             } else {
-                errorObject = new Throwable(String.valueOf(error));
+                errorObject = Throwables.getRootCause(new Throwable(String.valueOf(error)));
             }
+
+            errorType = errorObject.getClass().getCanonicalName();
+            errorMessage = errorObject.getMessage();
+
             setState(State.FAILED);
         }
+    }
+
+    public void setErrorType(String errorType) {
+        this.errorType = errorType;
+    }
+
+    public void setErrorMessage(String errorMessage) {
+        this.errorMessage = errorMessage;
     }
 
     public void setId(Long id) {
@@ -369,6 +391,6 @@ public final class BulkRequestTarget {
     public String toString() {
         return String.format(TARGET_FORMAT, id, pid, ruid, activity,
               state, new Timestamp(createdAt), startedAt == null ? null : new Timestamp(startedAt),
-              new Timestamp(lastUpdated), retried, getType(), getPnfsId(), path, errorObject);
+              new Timestamp(lastUpdated), retried, getType(), getPnfsId(), path, errorType, errorMessage);
     }
 }

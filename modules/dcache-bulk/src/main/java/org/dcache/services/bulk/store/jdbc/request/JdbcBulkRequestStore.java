@@ -183,9 +183,13 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
         attributes.setFileType(FileType.SPECIAL);
         attributes.setPnfsId(PLACEHOLDER_PNFSID);
 
+        Throwable root = Throwables.getRootCause(exception);
+
         BulkRequestTarget target = BulkRequestTargetBuilder.builder().rid(request.getId())
               .pid(PID.ROOT).activity(request.getActivity())
-              .path(ROOT_REQUEST_PATH).attributes(attributes).error(exception).build();
+              .path(ROOT_REQUEST_PATH).attributes(attributes)
+              .errorType(root.getClass().getCanonicalName())
+              .errorMessage(root.getMessage()).build();
 
         try {
             targetStore.abort(target);
@@ -455,7 +459,7 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
               requestTargetDao.where().pids(PID.DISCOVERED.ordinal()).state(NON_TERMINAL));
         requestTargetDao.update(
               requestTargetDao.where().pids(PID.INITIAL.ordinal()).state(NON_TERMINAL),
-              requestTargetDao.set().state(CREATED).errorObject(null));
+              requestTargetDao.set().state(CREATED).errorType(null).errorMessage(null));
         requestDao.update(requestDao.where().status(STARTED, CANCELLING),
               requestDao.set().status(QUEUED));
     }
@@ -466,8 +470,8 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
         LOGGER.trace("next {}.", limit);
         return requestDao.get(
                     requestDao.where().status(QUEUED).sorter(sortedBy.orElse("arrived_at"))
-                          .reverse(reverse.orElse(false)), (int) limit, true).stream()
-              .collect(Collectors.toList());
+                          .reverse(reverse.orElse(false)), (int) limit, true)
+              .stream().collect(Collectors.toList());
     }
 
     @Override
@@ -487,7 +491,7 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
         requestTargetDao.delete(requestTargetDao.where().pids(PID.ROOT.ordinal()).ruids(uid));
         requestTargetDao.delete(requestTargetDao.where().pids(PID.DISCOVERED.ordinal()).ruids(uid));
         requestTargetDao.update(requestTargetDao.where().pids(PID.INITIAL.ordinal()).ruids(uid),
-              requestTargetDao.set().state(CREATED).errorObject(null));
+              requestTargetDao.set().state(CREATED).errorType(null).errorMessage(null));
         requestDao.update(requestDao.where().uids(uid),
               requestDao.set().status(QUEUED));
         try {
@@ -784,12 +788,8 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
         if (target.isTerminated()) {
             info.setFinishedAt(target.getLastUpdated());
         }
-        Throwable errorObject = target.getThrowable();
-        if (errorObject != null) {
-            Throwable root = Throwables.getRootCause(errorObject);
-            info.setErrorType(root.getClass().getCanonicalName());
-            info.setErrorMessage(root.getMessage());
-        }
+        info.setErrorType(target.getErrorType());
+        info.setErrorMessage(target.getErrorMessage());
         return info;
     }
 
