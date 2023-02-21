@@ -129,8 +129,13 @@ public final class BulkRequestTargetBuilder {
         return this;
     }
 
-    public BulkRequestTargetBuilder error(Object error) {
-        target.setErrorObject(error);
+    public BulkRequestTargetBuilder errorType(String errorType) {
+        target.setErrorType(errorType);
+        return this;
+    }
+
+    public BulkRequestTargetBuilder errorMessage(String errorMessage) {
+        target.setErrorMessage(errorMessage);
         return this;
     }
 

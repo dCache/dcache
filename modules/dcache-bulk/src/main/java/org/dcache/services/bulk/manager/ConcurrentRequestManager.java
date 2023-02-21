@@ -539,7 +539,8 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
                 case CANCELLED:
                     job.update(State.CANCELLED);
                     try {
-                        targetStore.update(target.getId(), State.CANCELLED, target.getThrowable());
+                        targetStore.update(target.getId(), State.CANCELLED, target.getErrorType(),
+                              target.getErrorMessage());
                     } catch (BulkStorageException e) {
                         LOGGER.error("updateJobState", e.toString());
                     }

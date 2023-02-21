@@ -63,6 +63,7 @@ import static org.dcache.services.bulk.BulkRequestStatus.CANCELLED;
 import static org.dcache.services.bulk.BulkRequestStatus.CANCELLING;
 import static org.dcache.services.bulk.BulkRequestStatus.COMPLETED;
 
+import com.google.common.base.Throwables;
 import diskCacheV111.util.FsPath;
 import java.util.List;
 import java.util.Optional;
@@ -120,10 +121,13 @@ public final class BulkRequestHandler implements BulkSubmissionHandler,
           throws BulkServiceException {
         LOGGER.trace("requestTargetAborted {}, {}, {}; calling abort on request store",
               parent, path, exception.toString());
+        Throwable root = Throwables.getRootCause(exception);
+        String errorType = root.getClass().getCanonicalName();
+        String errorMessage = root.getMessage();
         targetStore.abort(
               BulkRequestTargetBuilder.builder().rid(parent.getRid()).pid(parent.getId())
                     .activity(parent.getActivity()).path(path).attributes(attributes)
-                    .error(exception).build());
+                    .errorType(errorType).errorMessage(errorMessage).build());
         requestManager.signal();
         statistics.incrementJobsAborted();
     }
