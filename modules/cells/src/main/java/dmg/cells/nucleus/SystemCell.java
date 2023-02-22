@@ -6,12 +6,15 @@ import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.MoreExecutors;
 import dmg.util.AuthorizedString;
 import dmg.util.command.Command;
+import dmg.util.command.Option;
 import dmg.util.logback.FilterShell;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +26,8 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
+import jdk.jfr.Configuration;
+import jdk.jfr.Recording;
 import org.apache.curator.framework.CuratorFramework;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
@@ -42,6 +47,9 @@ public class SystemCell
 
     private final CellShell _cellShell;
     private final CellNucleus _nucleus;
+
+    private volatile Recording recording;
+
     private int _packetsReceived,
           _packetsAnswered,
           _packetsForwarded,
@@ -133,6 +141,48 @@ public class SystemCell
                 return InetAddress.getLocalHost().getCanonicalHostName();
             } catch (UnknownHostException ex) {
                 return "localhost";
+            }
+        }
+    }
+
+
+    @Command(name = "jfr start", hint = "Starts Java flight recorder", description = "Starts JFR")
+    public class StartJFR implements Callable<String> {
+
+        @Override
+        public String call() throws Exception {
+
+            if (recording != null) {
+                return "Another record in progress.";
+            }
+
+            Configuration configuration = Configuration.getConfiguration("default");
+            recording = new Recording(configuration);
+            recording.setName(getCellDomainName());
+            recording.start();
+
+            return "enabled";
+        }
+    }
+
+    @Command(name = "jfr stop", hint = "Stops Java flight recorder", description = "Stops JFR")
+    public class StopJFR implements Callable<String> {
+
+        @Option(name = "out", usage = "Path where to write flight recorder output")
+        String outFileName;
+
+        @Override
+        public String call() throws Exception {
+
+            recording.stop();
+            try {
+                var outFile =
+                      outFileName == null ? Files.createTempFile(getCellDomainName() + "_", ".jfr")
+                            : Path.of(outFileName);
+                recording.dump(outFile);
+                return "recorded into " + outFile.toAbsolutePath();
+            } finally {
+                recording = null;
             }
         }
     }
