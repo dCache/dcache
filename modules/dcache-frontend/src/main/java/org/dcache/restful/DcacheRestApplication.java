@@ -14,6 +14,7 @@ import org.dcache.restful.resources.cells.CellInfoResources;
 import org.dcache.restful.resources.doors.DoorsResources;
 import org.dcache.restful.resources.identity.UserResource;
 import org.dcache.restful.resources.labels.LabelsResources;
+import org.dcache.restful.resources.migration.MigrationResources;
 import org.dcache.restful.resources.namespace.FileResources;
 import org.dcache.restful.resources.namespace.IdResources;
 import org.dcache.restful.resources.pool.PoolGroupInfoResources;
@@ -67,6 +68,7 @@ public class DcacheRestApplication extends ResourceConfig {
         register(ApiListingResource.class);
         register(SwaggerSerializers.class);
         register(EventResources.class);
+        register(MigrationResources.class);
 
         register(QosManagement.class);
         register(RequestUser.class);
