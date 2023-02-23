@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 - 2022 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2023 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -183,9 +183,9 @@ public class NearlineStorageHandler
     private PnfsHandler pnfs;
     private CellStub billingStub;
     private HsmSet hsmSet;
-    private long stageTimeout = TimeUnit.HOURS.toMillis(4);
-    private long flushTimeout = TimeUnit.HOURS.toMillis(4);
-    private long removeTimeout = TimeUnit.HOURS.toMillis(4);
+    private OptionalLong stageTimeout = OptionalLong.empty();
+    private OptionalLong flushTimeout = OptionalLong.empty();
+    private OptionalLong removeTimeout = OptionalLong.empty();
     private ScheduledFuture<?> timeoutFuture;
     private boolean _addFromNearlineStorage;
 
@@ -315,17 +315,26 @@ public class NearlineStorageHandler
         info.setQueuedRemoves(getRemoveQueueSize());
         info.setQueuedRestores(getFetchQueueSize());
         info.setQueuedStores(getStoreQueueSize());
-        info.setRemoveTimeoutInSeconds(TimeUnit.MILLISECONDS.toSeconds(removeTimeout));
-        info.setStoreTimeoutInSeconds(TimeUnit.MILLISECONDS.toSeconds(flushTimeout));
-        info.setRestoreTimeoutInSeconds(TimeUnit.MILLISECONDS.toSeconds(stageTimeout));
+        info.setRemoveTimeoutInSeconds(
+              removeTimeout.stream().map(TimeUnit.MILLISECONDS::toSeconds).findAny().orElse(-1));
+        info.setStoreTimeoutInSeconds(
+              flushTimeout.stream().map(TimeUnit.MILLISECONDS::toSeconds).findAny().orElse(-1));
+        info.setRestoreTimeoutInSeconds(
+              stageTimeout.stream().map(TimeUnit.MILLISECONDS::toSeconds).findAny().orElse(-1));
         return info;
     }
 
     @Override
     public void printSetup(PrintWriter pw) {
-        pw.append("rh set timeout ").println(TimeUnit.MILLISECONDS.toSeconds(stageTimeout));
-        pw.append("st set timeout ").println(TimeUnit.MILLISECONDS.toSeconds(flushTimeout));
-        pw.append("rm set timeout ").println(TimeUnit.MILLISECONDS.toSeconds(removeTimeout));
+        stageTimeout
+              .ifPresent(
+                    v -> pw.append("rh set timeout ").println(TimeUnit.MILLISECONDS.toSeconds(v)));
+        flushTimeout
+              .ifPresent(
+                    v -> pw.append("st set timeout ").println(TimeUnit.MILLISECONDS.toSeconds(v)));
+        removeTimeout
+              .ifPresent(
+                    v -> pw.append("rm set timeout ").println(TimeUnit.MILLISECONDS.toSeconds(v)));
     }
 
     /**
@@ -988,7 +997,8 @@ public class NearlineStorageHandler
 
         @Override
         public long getDeadline() {
-            return (state.get() == State.ACTIVE) ? activatedAt + flushTimeout : Long.MAX_VALUE;
+            return (state.get() == State.ACTIVE && flushTimeout.isPresent()) ? activatedAt
+                  + flushTimeout.getAsLong() : Long.MAX_VALUE;
         }
 
         @Override
@@ -1315,7 +1325,8 @@ public class NearlineStorageHandler
 
         @Override
         public long getDeadline() {
-            return (state.get() == State.ACTIVE) ? activatedAt + stageTimeout : Long.MAX_VALUE;
+            return (state.get() == State.ACTIVE && stageTimeout.isPresent()) ? activatedAt
+                  + stageTimeout.getAsLong() : Long.MAX_VALUE;
         }
 
         @Override
@@ -1438,7 +1449,8 @@ public class NearlineStorageHandler
 
         @Override
         public long getDeadline() {
-            return (state.get() == State.ACTIVE) ? activatedAt + removeTimeout : Long.MAX_VALUE;
+            return (state.get() == State.ACTIVE && removeTimeout.isPresent()) ? activatedAt
+                  + removeTimeout.getAsLong() : Long.MAX_VALUE;
         }
 
         public void failed(Exception cause) {
@@ -1480,7 +1492,22 @@ public class NearlineStorageHandler
         @Override
         public String call() {
             synchronized (NearlineStorageHandler.this) {
-                stageTimeout = TimeUnit.SECONDS.toMillis(timeout);
+                stageTimeout = OptionalLong.of(TimeUnit.SECONDS.toMillis(timeout));
+            }
+            return "";
+        }
+    }
+
+    @AffectsSetup
+    @Command(name = "rh unset timeout",
+          hint = "unset restore timeout",
+          description = "Unset restore timeout for the HSM script.")
+    class RestoreUnsetTimeoutCommand implements Callable<String> {
+
+        @Override
+        public String call() {
+            synchronized (NearlineStorageHandler.this) {
+                stageTimeout = OptionalLong.empty();
             }
             return "";
         }
@@ -1527,7 +1554,22 @@ public class NearlineStorageHandler
         @Override
         public String call() {
             synchronized (NearlineStorageHandler.this) {
-                flushTimeout = TimeUnit.SECONDS.toMillis(timeout);
+                flushTimeout = OptionalLong.of(TimeUnit.SECONDS.toMillis(timeout));
+            }
+            return "";
+        }
+    }
+
+    @AffectsSetup
+    @Command(name = "st unset timeout",
+          hint = "unset store timeout",
+          description = "Unset store timeout for the HSM script.")
+    class StoreUnsetTimeoutCommand implements Callable<String> {
+
+        @Override
+        public String call() {
+            synchronized (NearlineStorageHandler.this) {
+                flushTimeout = OptionalLong.empty();
             }
             return "";
         }
@@ -1574,7 +1616,22 @@ public class NearlineStorageHandler
         @Override
         public String call() {
             synchronized (NearlineStorageHandler.this) {
-                removeTimeout = TimeUnit.SECONDS.toMillis(timeout);
+                removeTimeout = OptionalLong.of(TimeUnit.SECONDS.toMillis(timeout));
+            }
+            return "";
+        }
+    }
+
+    @AffectsSetup
+    @Command(name = "rm unset timeout",
+          hint = "unset tape remove timeout",
+          description = "Unset remove timeout for the HSM script.")
+    class RemoveUnsetTimeoutCommand implements Callable<String> {
+
+        @Override
+        public String call() {
+            synchronized (NearlineStorageHandler.this) {
+                removeTimeout = OptionalLong.empty();
             }
             return "";
         }
