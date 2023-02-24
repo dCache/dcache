@@ -18,6 +18,197 @@ lib="$(getProperty dcache.paths.share.lib)"
 
 cd @TARGET@/dcache
 
+build_ca() {
+    local host_cert_hash old_dn ca_key ca_cert ca_index trust_store ca_serial
+
+    ca_key="$ca_dir/ca-key.pem"
+    ca_cert="$ca_dir/ca-cert.pem"
+    ca_index="$ca_dir/index.txt"
+    ca_serial="$ca_dir/serial"
+
+    cat > $ca_config <<EOF
+RANDFILE = $ca_dir/rand
+CN       = Disposable CA $(date "+%Y-%m-%d %H:%M:%S")
+
+##  USED WHEN GENERATING CA (SELF-SIGNED) CERTIFICATE + PRIVATE KEY
+
+[req]
+default_bits       = 2048
+encrypt_key        = no
+default_md         = sha256
+distinguished_name = CA_distinguished_name
+x509_extensions    = CA_x509_extensions
+prompt             = no
+
+[CA_distinguished_name]
+1.DC = org
+2.DC = dCache
+CN   = \$ENV::CN
+
+[CA_x509_extensions]
+subjectKeyIdentifier   = hash
+authorityKeyIdentifier = keyid:always,issuer
+basicConstraints       = critical,CA:true
+subjectAltName         = email:support@dcache.org,URI:http://www.dcache.org/
+nsComment              = "dCache.org disposable CA, generated $(date "+%Y-%m-%d %H:%M:%S")"
+keyUsage               = critical,keyCertSign
+
+##
+##  USED WHEN PROCESSING CERTIFICATE SIGNING REQUEST:
+##
+
+[ca]
+default_ca = CA_default
+
+[CA_default]
+certs            = $ca_dir
+crl_dir          = $ca_dir
+database         = $ca_index
+new_certs_dir    = $ca_dir
+certificate      = $ca_cert
+private_key      = $ca_key
+serial           = $ca_serial
+crlnumber        = $ca_dir/crlnumber
+crl              = $ca_dir/crl.pem
+RANDFILE         = $ca_dir/rand
+name_opt         = ca_default
+cert_opt         = ca_default
+default_days     = 365
+default_crl_days = 30
+default_md       = sha256
+preserve         = no
+policy           = policy_any
+email_in_dn      = no
+
+[host_cert]
+basicConstraints       = critical,CA:FALSE
+keyUsage               = critical,digitalSignature,keyEncipherment,dataEncipherment
+nsComment              = "dCache.org disposable CA generated host certificate"
+subjectKeyIdentifier   = hash
+authorityKeyIdentifier = keyid,issuer
+subjectAltName         = @host_alt_names
+extendedKeyUsage       = serverAuth,clientAuth
+issuerAltName          = issuer:copy
+certificatePolicies    = 2.5.29.32.0
+
+[user_cert]
+basicConstraints       = critical,CA:FALSE
+keyUsage               = critical,digitalSignature,keyEncipherment,dataEncipherment
+nsComment              = "dCache.org disposable CA generated user certificate"
+subjectKeyIdentifier   = hash
+authorityKeyIdentifier = keyid,issuer
+subjectAltName         = @user_alt_names
+extendedKeyUsage       = serverAuth,clientAuth
+issuerAltName          = issuer:copy
+certificatePolicies    = 2.5.29.32.0
+
+[policy_any]
+DC = match
+DC = match
+CN = supplied
+EOF
+    i=1
+    echo "" >> $ca_config
+    echo "[host_alt_names]" >> $ca_config
+    for fqdn in $(list_potential_subjaltname | sort | uniq); do
+        echo "DNS.$i = $fqdn" >> $ca_config
+        i=$(( $i + 1 ))
+    done
+
+    email_address=$(git config --global user.email) && cat >> $ca_config <<EOF
+
+[user_alt_names]
+email = $email_address
+EOF
+
+    touch $ca_index
+    echo 01 > $ca_serial
+    openssl req -batch -new -x509 -config "$ca_config" -days 365 -keyout "$ca_key" -out "$ca_cert" >/dev/null 2>&1
+
+    #  Add our certificate authority to our trust store
+    trust_store=etc/grid-security/certificates
+    host_cert_hash=$(openssl x509 -in $ca_cert -noout -subject_hash)
+    cp "$ca_cert" "$trust_store/$host_cert_hash.0"
+
+    old_dn="$(openssl x509 -in $ca_cert -noout -subject -nameopt compat | sed 's:subject= *\+/\?:/:;s:, :/:g')"
+    cat > "$trust_store/$host_cert_hash.signing_policy" <<EOF
+access_id_CA    X509    '$old_dn'
+pos_rights      globus  CA:sign
+cond_subjects   globus  '"/DC=org/DC=dCache/*"'
+EOF
+    cat > "$trust_store/$host_cert_hash.namespaces" <<EOF
+TO Issuer "$old_dn" \\
+  PERMIT Subject "/DC=org/DC=dCache/.*"
+EOF
+}
+
+build_host_credentials() {
+    local ca_host_req ca_hostkey
+    local target_hostkey target_hostcert
+
+    ca_host_req="$ca_dir/hostcert.req"
+    ca_hostkey="$ca_dir/hostkey.pem"
+    target_hostkey=etc/grid-security/hostkey.pem
+    target_hostcert=etc/grid-security/hostcert.pem
+
+    CN=$(uname -n) openssl req -new -config "$ca_config" -keyout "$ca_hostkey" -out "$ca_host_req" >/dev/null 2>&1
+    openssl ca -batch -config "$ca_config" -extensions host_cert -out "$target_hostcert" -infiles "$ca_host_req" >/dev/null  2>&1
+    openssl rsa -in "$ca_hostkey" -out "$target_hostkey" >/dev/null 2>&1
+}
+
+build_user_credentials() {
+    local ca_user_req target_userkey target_usercert
+
+    ca_user_req="$ca_dir/usercert.req"
+    target_userkey="userkey.pem"
+    target_usercert="usercert.pem"
+
+    CN=$username openssl req -new -config "$ca_config" -keyout "$target_userkey" -out "$ca_user_req" >/dev/null 2>&1
+
+    openssl ca -batch -config "$ca_config" -extensions user_cert -out "$target_usercert" -infiles "$ca_user_req" >/dev/null 2>&1
+
+    chmod 400 "$target_userkey"
+}
+
+build_x509_credentials() {
+    local ca_dir ca_config
+
+    mkdir -p etc/grid-security/certificates
+
+    mkdir -p "@TARGET@/ca"
+    ca_dir="$(cd @TARGET@/ca; pwd)"
+    ca_config="$ca_dir/openssl.config"
+
+    if [ ! -f "$ca_config" ]; then
+	build_ca
+    fi
+
+    if [ ! -f etc/grid-security/hostcert.pem ]; then
+	build_host_credentials
+    fi
+
+    if [ ! -f usercert.pem ]; then
+	build_user_credentials
+    fi
+}
+
+list_potential_subjaltname() {
+    echo localhost
+    uname -n
+    case $(uname) in
+        SunOS)
+            echo $(uname -n).$(awk '/^domain/ {print $2}' /etc/resolv.conf)
+            ;;
+        Darwin)
+            hostname -f
+            ;;
+        Linux)
+            hostname -A | sed 's/ /\n/g'
+            ;;
+    esac
+}
+
+
 prepend() { # $1 - file to update, $2 - text to add.
     tmp=$(mktemp)
     echo "$2" | cat - "$1" > $tmp && mv $tmp "$1"
@@ -72,37 +263,35 @@ add_oidc() {
     echo "username:${username} root:/ home:/" >> "@TARGET@/dcache/etc/omnisession.conf"
 }
 
-dn() { # $1 - path to X.509 certificate
+add_dn_from_file() { # $1 - X.509 pem certificate
+    local dn rc
 
-    # OpenSSL used to print the subject DN like
-    #
-    #     subject=/C=DE/O=GermanGrid/OU=DESY/CN=Alexander Paul Millar
-    #
-    # They changed the format to
-    #
-    #     subject=C = DE, O = GermanGrid, OU = DESY, CN = Alexander Paul Millar
-    #
-    # Initially without any backwards compatibility. The following
-    # accepts either format and produces output like:
-    #
-    #     /C=DE/O=GermanGrid/OU=DESY/CN=Alexander Paul Millar
-    #
-    openssl x509 -in "$1" -subject -noout -nameopt compat | sed 's:subject= *\+/\?:/:;s:, :/:g'
+    if [ ! -f "$1" ]; then
+	return
+    fi
+
+    dn=$(openssl x509 -in "$1" -subject -noout -nameopt compat | sed 's:subject= *\+/\?:/:;s:, :/:g')
+
+    rc=0
+    bin/dcache kpwd dcuserlist "$username" | grep -q "Authentication Record" || rc=$?
+
+    if [ $rc -eq 0 ]; then
+	bin/dcache kpwd dcusermod -s "$dn" "$username"
+    else
+	bin/dcache kpwd dcuseradd -u $uid -g $gid,$adminRoleGid -h / -r / -f / \
+		   -w read-write -s "$dn" "$username"
+    fi
+    bin/dcache kpwd dcmapadd "$dn" "$username"
 }
 
+build_x509_credentials
+
 if [ ! -f etc/dcache.kpwd ]; then
-    if [ -f ~/.globus/dcache-systemtest-usercert.pem ]; then
-        DN=$(dn ~/.globus/dcache-systemtest-usercert.pem)
-        bin/dcache kpwd dcuseradd -u $uid -g $gid,$adminRoleGid -h / -r / -f / \
-            -w read-write -p password -s "$DN" system-test
-        bin/dcache kpwd dcmapadd "$DN" system-test
-    fi
-    if [ -f ~/.globus/usercert.pem ]; then
-        DN=$(dn ~/.globus/usercert.pem)
-        bin/dcache kpwd dcuseradd -u $uid -g $gid,$adminRoleGid -h / -r / -f / \
-            -w read-write -p password -s "$DN" "$username"
-        bin/dcache kpwd dcmapadd "$DN" "$username"
-    fi
+    bin/dcache kpwd dcuseradd -u $uid -g $gid,$adminRoleGid -h / -r / -f / \
+	       -w read-write -p password "$username"
+
+    add_dn_from_file usercert.pem
+    add_dn_from_file ~/.globus/usercert.pem
 
     bin/dcache kpwd dcuseradd -u $uid -g $gid -h / -r /users-root \
             -w read-write -p password usersroot
@@ -209,35 +398,6 @@ system-test
 EOF
 fi
 
-if [ -f ~/.globus/dcache-systemtest-hostcert.pem ]; then
-    cp ~/.globus/dcache-systemtest-hostcert.pem etc/grid-security/hostcert.pem
-    cp ~/.globus/dcache-systemtest-hostkey.pem etc/grid-security/hostkey.pem
-    ## WORK-AROUND: we're using assemble maven plugin.  This doesn't allow files to be overwritten.
-    ##              As the VCS-supplied CA certificates are copied before the system- and user- trust
-    ##              stores and the generated host certificate's CA certificates and VCS-supplied
-    ##              CA certificate have the same hash (=> same filename), dCache's trust-store will
-    ##              have the VCS-supplied CA certificate.  This means that dCache won't trust the CA
-    ##              of its host certificate.  To fix this, we copy the CA certificates manually.
-    cp ~/.globus/dcache-systemtest-certificates/* etc/grid-security/certificates
-else
-    echo
-    echo "INFO: using VCS-supplied credentials.  These should work, but Globus native"
-    echo "      clients on some platforms will fail.  Use 'hostCredentials --generate'"
-    echo "      command to generate a host-specific credential if you have this problem."
-fi
-
-
-compare() {
-    rc=0
-    cmp -s "$1" "$2" || rc=$?
-    if [ $rc -eq 1 ]; then
-	echo
-	echo "WARNING: files $1 and $2 are different."
-	echo "         This difference can cause authentication problems, so should be"
-	echo "         resolved."
-    fi
-}
-
 have_oidc_agent() {
     local oidc_version minimum_version lowest_version
 
@@ -258,24 +418,5 @@ have_oidc_agent() {
 
     return 0
 }
-
-warn_missing_trust=0
-for path in etc/grid-security/certificates/*; do
-    file=$(basename $path)
-
-    if [ ! -f ~/.globus/certificates/$file -a ! -f /etc/grid-security/certificates/$file ]; then
-        if [ $warn_missing_trust = 0 ]; then
-            echo
-            echo "WARNING: not all certificates dCache trusts are trusted by YOU.  This can cause"
-            echo "         authentication problems when trying to use dCache.  To solve this"
-            echo "         problem use the 'hostCredentials --install' command."
-            warn_missing_trust=1
-        fi
-        continue
-    fi
-
-    compare $path ~/.globus/certificates/$file
-    compare $path /etc/grid-security/certificates/$file
-done
 
 have_oidc_agent && add_oidc || :
