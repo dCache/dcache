@@ -28,56 +28,39 @@ prepend_layout() { # $1 - text to add.
 }
 
 add_oidc() {
-    # The "oidc-add -a" command currently produces output like:
-    #
-    #     The following account configurations are currently loaded:
-    #     HELMHOLTZ
-    #     ESCAPE
-    #     WLCG
-    #
-    # Therefore we must skip the first line.
-    #
-    # See https://github.com/indigo-dc/oidc-agent/issues/395
+    local loaded_ops sub aud_claim audiences
 
-    loaded_ops=$(oidc-add -a | tail -n +2 | tr '\n' ' ')
+    loaded_ops=$(oidc-add -a | tr '\n' ' ')
 
     if [ "$loaded_ops" = "" ]; then
 	echo
-        echo -n "No OPs currently loaded into oidc-agent.  Try running "
-        if [ $(oidc-gen -l|wc -l) -lt 2 ]; then
-            echo "`oidc-gen` to register some new OPs."
+        echo "WARNING: there are no OPs currently loaded into oidc-agent.  Try running"
+        if [ $(oidc-gen -l|wc -l) -eq 0 ]; then
+            echo "         'oidc-gen' to register an OP."
         else
-            echo "'oidc-add' to load some OPs."
+            echo "         'oidc-add' to load some OPs."
         fi
-        exit
+        return 0
     fi
 
-    echo "Adding support for OP: $loaded_ops"
+    echo "INFO: adding support for OP: $loaded_ops"
     prepend etc/gplazma.conf "auth    optional    oidc"
 
     for op in $loaded_ops; do
         eval $(oidc-token -c $op)
 
-        # REVISIT: we should be able to use OIDC_ISS variable to
-        # discover the OP's issuer endpoint.  However, the URL is
-        # sometimes wrong.  For details, see:
-        #
-        #     https://github.com/indigo-dc/oidc-agent/issues/396
-        #
-        # As a work-around, we use the 'iss' claim from the JWT, which
-        # assumes the access token is a JWT.
-        iss=$(echo $OIDC_AT | cut -d. -f2 | base64 -d 2>/dev/null | jq -r .iss)
-
-        prepend_layout "gplazma.oidc.provider!$op = $iss"
+        prepend_layout "gplazma.oidc.provider!$op = $OIDC_ISS"
 
         # REVISIT: here we assume the access token is a JWT.  More
         # generally, we should contact the user-info endpoint to
         # discover the 'sub' claim.
-
         sub=$(echo $OIDC_AT | cut -d. -f2 | base64 -d 2>/dev/null | jq -r .sub)
 
         echo "oidc:${sub}@${op} username:${username} uid:$uid gid:$gid,true" >> "@TARGET@/dcache/etc/multi-mapfile"
 
+        # REVISIT: again, we assume the access token is a JWT.  More
+        # generally, we should contact the user-info endpoint to
+        # discover the 'aud' claim.
         aud_claim=$(echo $OIDC_AT|cut -d. -f2 | base64 -d 2>/dev/null | jq -e -r .aud) \
             && audiences="$audiences $aud_claim"
     done
@@ -255,6 +238,27 @@ compare() {
     fi
 }
 
+have_oidc_agent() {
+    local oidc_version minimum_version lowest_version
+
+    if ! command -v oidc-token >/dev/null; then
+	echo "WARNING: oidc-agent not found, skipping OpenID-Connect configuration."
+	return 1
+    fi
+
+    oidc_agent_version=$(oidc-token --version | awk '{print $2}')
+    minimum_version="4.3.0"
+    lowest_version=$(printf "$oidc_agent_version\n$minimum_version" \
+		   | sort -t "." -n -k1,1 -k2,2 -k3,3 -k4,4 \
+		   | head -n 1)
+    if [ "$lowest_version" != "$minimum_version" ]; then
+	echo "WARNING: oidc-agent is too old: install v$minimum_version or later."
+	return 1
+    fi
+
+    return 0
+}
+
 warn_missing_trust=0
 for path in etc/grid-security/certificates/*; do
     file=$(basename $path)
@@ -274,4 +278,4 @@ for path in etc/grid-security/certificates/*; do
     compare $path /etc/grid-security/certificates/$file
 done
 
-command -v oidc-token >/dev/null && add_oidc || :
+have_oidc_agent && add_oidc || :
