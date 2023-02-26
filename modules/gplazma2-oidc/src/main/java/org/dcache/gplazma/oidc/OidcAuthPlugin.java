@@ -82,7 +82,10 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
         try {
             URI issuer = new URI(endpoint);
 
-            return new IdentityProvider(name, issuer, profile);
+            List<String> suppress = args.getOptions("suppress").stream()
+                .flatMap(v -> Splitter.on(',').trimResults().splitToList(v).stream())
+                .collect(Collectors.toList());
+            return new IdentityProvider(name, issuer, profile, suppress);
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException(
                   "Invalid endpoint " + endpoint + ": " + e.getMessage());
@@ -95,7 +98,7 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
         ProfileFactory factory = PROFILES.get(profileName);
         checkArgument(factory != null, "profile '%s' is not supported", profileName);
 
-        return factory.create(args.optionsAsMap());
+        return factory.create(args.removeOptions("suppress").optionsAsMap());
     }
 
     @Override

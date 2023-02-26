@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import org.dcache.gplazma.oidc.IdentityProvider;
 import org.dcache.gplazma.oidc.Profile;
@@ -34,7 +35,7 @@ public class LookupResultTest {
 
     private static final Profile IGNORE_ALL = (i,c) -> Collections.emptySet();
     private static final IdentityProvider EXAMPLE_IP = new IdentityProvider("example-op",
-            URI.create("https://example.org/"), IGNORE_ALL);
+            URI.create("https://example.org/"), IGNORE_ALL, List.of());
 
     @Test(expected=NullPointerException.class)
     public void shouldThrowNpeOnErrorWithNullIp() {
