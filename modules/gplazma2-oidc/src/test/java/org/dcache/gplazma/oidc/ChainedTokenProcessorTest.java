@@ -24,6 +24,7 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.dcache.gplazma.AuthenticationException;
 import org.junit.Test;
@@ -44,7 +45,7 @@ public class ChainedTokenProcessorTest {
         public ResultBuilder withIP(String name) {
             provider = new IdentityProvider(name, URI.create("https://" + name + ".example.org/"),
                     (idp,c) -> new ProfileResult(Collections.emptySet()),
-                    MockHttpClientBuilder.aClient().build(), Duration.ofSeconds(1));
+                    MockHttpClientBuilder.aClient().build(), Duration.ofSeconds(1), List.of());
             return this;
         }
 
