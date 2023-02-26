@@ -136,6 +136,66 @@ public class OidcAuthPluginTest {
         assertThat(provider.getIssuerEndpoint(), is(equalTo(URI.create("https://oidc.example.org/"))));
         assertThat(provider.getConfigurationEndpoint(), is(equalTo(URI.create("https://oidc.example.org/.well-known/openid-configuration"))));
         assertThat(provider.getProfile(), is(instanceOf(OidcProfile.class)));
+        assertThat(provider.isSuppressed("example-1"), is(equalTo(false)));
+        assertThat(provider.isSuppressed("example-2"), is(equalTo(false)));
+        OidcProfile oidcProfile = (OidcProfile)provider.getProfile();
+        assertThat(oidcProfile.isPreferredUsernameClaimAccepted(), is(equalTo(false)));
+        assertThat(oidcProfile.isGroupsClaimMappedToGroupName(), is(equalTo(false)));
+    }
+
+    @Test
+    public void shouldReturnSingleIdentityProviderWithSingleSuppressWithSingleItem() throws Exception {
+        Properties properties = new Properties();
+        properties.setProperty("gplazma.oidc.provider!EXAMPLE", "https://oidc.example.org/ -suppress=example-1");
+
+        var identityProviders = OidcAuthPlugin.buildProviders(properties);
+
+        assertThat(identityProviders, hasSize(1));
+        IdentityProvider provider = identityProviders.iterator().next();
+        assertThat(provider.getName(), is(equalTo("EXAMPLE")));
+        assertThat(provider.getIssuerEndpoint(), is(equalTo(URI.create("https://oidc.example.org/"))));
+        assertThat(provider.getConfigurationEndpoint(), is(equalTo(URI.create("https://oidc.example.org/.well-known/openid-configuration"))));
+        assertThat(provider.getProfile(), is(instanceOf(OidcProfile.class)));
+        assertThat(provider.isSuppressed("example-1"), is(equalTo(true)));
+        assertThat(provider.isSuppressed("example-2"), is(equalTo(false)));
+        OidcProfile oidcProfile = (OidcProfile)provider.getProfile();
+        assertThat(oidcProfile.isPreferredUsernameClaimAccepted(), is(equalTo(false)));
+        assertThat(oidcProfile.isGroupsClaimMappedToGroupName(), is(equalTo(false)));
+    }
+
+    @Test
+    public void shouldReturnSingleIdentityProviderWithTwoSuppressItemsEachWithSingleItem() throws Exception {
+        Properties properties = new Properties();
+        properties.setProperty("gplazma.oidc.provider!EXAMPLE", "https://oidc.example.org/ -suppress=example-1 -suppress=example-2");
+
+        var identityProviders = OidcAuthPlugin.buildProviders(properties);
+
+        assertThat(identityProviders, hasSize(1));
+        IdentityProvider provider = identityProviders.iterator().next();
+        assertThat(provider.getName(), is(equalTo("EXAMPLE")));
+        assertThat(provider.getIssuerEndpoint(), is(equalTo(URI.create("https://oidc.example.org/"))));
+        assertThat(provider.getProfile(), is(instanceOf(OidcProfile.class)));
+        assertThat(provider.isSuppressed("example-1"), is(equalTo(true)));
+        assertThat(provider.isSuppressed("example-2"), is(equalTo(true)));
+        OidcProfile oidcProfile = (OidcProfile)provider.getProfile();
+        assertThat(oidcProfile.isPreferredUsernameClaimAccepted(), is(equalTo(false)));
+        assertThat(oidcProfile.isGroupsClaimMappedToGroupName(), is(equalTo(false)));
+    }
+
+    @Test
+    public void shouldReturnSingleIdentityProviderWithSingleSuppressItemsWithTwoItems() throws Exception {
+        Properties properties = new Properties();
+        properties.setProperty("gplazma.oidc.provider!EXAMPLE", "https://oidc.example.org/ -suppress=example-1,example-2");
+
+        var identityProviders = OidcAuthPlugin.buildProviders(properties);
+
+        assertThat(identityProviders, hasSize(1));
+        IdentityProvider provider = identityProviders.iterator().next();
+        assertThat(provider.getName(), is(equalTo("EXAMPLE")));
+        assertThat(provider.getIssuerEndpoint(), is(equalTo(URI.create("https://oidc.example.org/"))));
+        assertThat(provider.getProfile(), is(instanceOf(OidcProfile.class)));
+        assertThat(provider.isSuppressed("example-1"), is(equalTo(true)));
+        assertThat(provider.isSuppressed("example-2"), is(equalTo(true)));
         OidcProfile oidcProfile = (OidcProfile)provider.getProfile();
         assertThat(oidcProfile.isPreferredUsernameClaimAccepted(), is(equalTo(false)));
         assertThat(oidcProfile.isGroupsClaimMappedToGroupName(), is(equalTo(false)));

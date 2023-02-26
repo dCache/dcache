@@ -20,40 +20,40 @@ package org.dcache.gplazma.oidc;
 
 import java.net.URI;
 import java.util.Collections;
+import java.util.List;
+import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import org.junit.Test;
-
-
 public class IdentityProviderTests {
     private static final Profile IGNORE_ALL = (i,c) -> Collections.emptySet();
+    private static final List<String> NO_SUPPRESSION = List.of();
 
     @Test(expected = NullPointerException.class)
     public void shouldFailWithNullName() throws Exception {
-        IdentityProvider ignored = new IdentityProvider(null, URI.create("http://example.org/"), IGNORE_ALL);
+        IdentityProvider ignored = new IdentityProvider(null, URI.create("http://example.org/"), IGNORE_ALL, NO_SUPPRESSION);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void shouldFailWithEmptyName() throws Exception {
-        IdentityProvider ignored = new IdentityProvider("", URI.create("http://example.org/"), IGNORE_ALL);
+        IdentityProvider ignored = new IdentityProvider("", URI.create("http://example.org/"), IGNORE_ALL, NO_SUPPRESSION);
     }
 
     @Test(expected = NullPointerException.class)
     public void shouldFailWithNullUri() throws Exception {
-        IdentityProvider ignored = new IdentityProvider("null-provider", null, IGNORE_ALL);
+        IdentityProvider ignored = new IdentityProvider("null-provider", null, IGNORE_ALL, NO_SUPPRESSION);
     }
 
     @Test(expected = NullPointerException.class)
     public void shouldFailWithNullProfile() throws Exception {
-        IdentityProvider ignored = new IdentityProvider("null-profile", URI.create("http://example.org/"), null);
+        IdentityProvider ignored = new IdentityProvider("null-profile", URI.create("http://example.org/"), null, NO_SUPPRESSION);
     }
 
     @Test
     public void shouldParseProviderWithTrailingSlash() throws Exception {
         IdentityProvider google = new IdentityProvider("GOOGLE", URI.create("https://accounts.google.com/"),
-                IGNORE_ALL);
+                IGNORE_ALL, NO_SUPPRESSION);
 
         assertThat(google.getName(), is(equalTo("GOOGLE")));
         assertThat(google.getIssuerEndpoint().toString(),
@@ -66,7 +66,7 @@ public class IdentityProviderTests {
     @Test
     public void shouldParseProviderWithoutTrailingSlash() throws Exception {
         IdentityProvider google = new IdentityProvider("GOOGLE", URI.create("https://accounts.google.com"),
-                IGNORE_ALL);
+                IGNORE_ALL, NO_SUPPRESSION);
 
         assertThat(google.getName(), is(equalTo("GOOGLE")));
         assertThat(google.getIssuerEndpoint().toString(),
@@ -79,7 +79,7 @@ public class IdentityProviderTests {
     @Test
     public void shouldParseProviderWithPathWithoutTrailingSlash() throws Exception {
         IdentityProvider unity = new IdentityProvider("UNITY",
-              URI.create("https://unity.helmholtz-data-federation.de/oauth2"), IGNORE_ALL);
+              URI.create("https://unity.helmholtz-data-federation.de/oauth2"), IGNORE_ALL, NO_SUPPRESSION);
 
         assertThat(unity.getName(), is(equalTo("UNITY")));
         assertThat(unity.getIssuerEndpoint().toString(),
@@ -92,7 +92,7 @@ public class IdentityProviderTests {
     @Test
     public void shouldParseProviderWithPathWithTrailingSlash() throws Exception {
         IdentityProvider unity = new IdentityProvider("UNITY",
-              URI.create("https://unity.helmholtz-data-federation.de/oauth2/"), IGNORE_ALL);
+              URI.create("https://unity.helmholtz-data-federation.de/oauth2/"), IGNORE_ALL, NO_SUPPRESSION);
 
         assertThat(unity.getName(), is(equalTo("UNITY")));
         assertThat(unity.getIssuerEndpoint().toString(),

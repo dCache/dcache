@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.dcache.gplazma.AuthenticationException;
 import org.junit.Test;
@@ -42,7 +43,7 @@ public class ChainedTokenProcessorTest {
 
         public ResultBuilder withIP(String name) {
             provider = new IdentityProvider(name, URI.create("https://" + name + ".example.org/"),
-                    (idp,c) -> Collections.emptySet());
+                    (idp,c) -> Collections.emptySet(), List.of());
             return this;
         }
 

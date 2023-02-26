@@ -22,6 +22,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 import java.net.URI;
+import java.util.List;
 
 
 /**
@@ -38,8 +39,9 @@ public class IdentityProvider {
     private final URI issuer;
     private final URI configuration;
     private final Profile profile;
+    private final List<String> suppress;
 
-    public IdentityProvider(String name, URI endpoint, Profile profile) {
+    public IdentityProvider(String name, URI endpoint, Profile profile, List<String> suppress) {
         checkArgument(!name.isEmpty(), "Empty name not allowed");
         this.name = name;
         this.issuer = requireNonNull(endpoint);
@@ -48,6 +50,7 @@ public class IdentityProvider {
 
         configuration = issuer.resolve(
               withTrailingSlash(issuer.getPath()) + ".well-known/openid-configuration");
+        this.suppress = requireNonNull(suppress);
     }
 
     private static String withTrailingSlash(String path) {
@@ -64,6 +67,10 @@ public class IdentityProvider {
 
     public Profile getProfile() {
         return profile;
+    }
+
+    public boolean isSuppressed(String value) {
+        return suppress.stream().anyMatch(v -> v.equals(value));
     }
 
     /**
