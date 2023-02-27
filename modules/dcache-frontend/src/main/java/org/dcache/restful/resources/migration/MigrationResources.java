@@ -10,6 +10,7 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
+import io.swagger.annotations.ResponseHeader;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.ws.rs.BadRequestException;
@@ -57,7 +58,8 @@ public final class MigrationResources {
      */
     @POST
     @ApiOperation(value = "Submit a migration copy request. (See Pool Operator Commands 'migration copy')")
-    @ApiResponses({@ApiResponse(code = 201, message = "Created"),
+    @ApiResponses({
+          @ApiResponse(code = 201, message = "Created", responseHeaders = @ResponseHeader(name = "migration-job-id", description = "The migration job ID (if request valid).", response = Integer.class)),
           @ApiResponse(code = 400, message = "Bad request"),
           @ApiResponse(code = 401, message = "Unauthorized"),
           @ApiResponse(code = 403, message = "Forbidden"),
@@ -67,37 +69,31 @@ public final class MigrationResources {
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces(MediaType.APPLICATION_JSON)
     public Response submitMigrationCopy(@ApiParam(
-          "Description of the request. Which contains the following: "
-                + "sourcePool - Name of the pool to migrate from. (String)"
-                + "targetPools - Array of Pools (Strings) - Possible target pools."
-                + "concurrency - Integer - Amount of Concurrent Transfers to be performed."
-                + "pins - String (MOVE | KEEP) - Controls how sticky flags owned by the PinManager are handled."
-                + "smode - String (SAME | CACHED | PRECIOUS | REMOVABLE | DELETE)[+<owner>[(<lifetime>)] - "
-                + "Update the local replica to the given mode after transfer. An optional list of sticky flags can be specified."
-                +
-
-                "tmode - String (SAME | CACHED | PRECIOUS )[+<owner>[(<lifetime>)] - "
-                + "Sets the target replica to the given mode after transfer. An optional list of sticky flags can be specified."
-                +
-
-                "verify - Boolean - Force checksum computation when an existing target is updated."
-                + "eager - Boolean - Copy replicas rather than retrying when pools with existing replicas fail to respond."
-                +
-
-                "exclude - Array of Pools (Strings) - Exclude Target Pools. Single character (?) and multi character (*) wildcards may be used."
-                + "include - Array of Pools (Strings) - Only include the specified pools as target pools."
-                + "refresh - Integer - Specifies the period in seconds of when target pool information is queried from the pool manager. The default is 300 seconds."
-                + "select - String (PROPORTIONAL | BEST | RANDOM) - Determines how a pool is selected from the set of target pools."
-                + "target - String (POOL | PGROUP | LINK) - Determines the interpretation of the target pools."
-                + "fileAttributes - Description of the file attributes containing: "
-                + " accessed - String (<n>|[<n>]..[<m>]) - Only copy replicas within a given time period."
-                + " al - String (ONLINE | NEARLINE) - Only copy replicas with the given access latency."
-                + " pnfsid - Array of String (PNFSIDs) - Only copy replicas with the given PNFSIDs, must contain 1 or more PNFSIDs."
-                + " state - String (CACHED | PRECIOUS) - Only copy replicas with the given replica state."
-                + " rp - String (CUSTODIAL | REPLICA | OUTPUT) - Only copy replicas with the given retention policy."
-                + " size - String (<n>|[<n>]..[<m>]) - Only copy replicas with size <n>, or a size within the given, possibly open-ended, interval."
-                + " sticky - Array of Owners (Strings) - Only copy replicas that are sticky, if the array is not empty, then it will be restricted to the specified owners."
-                + " storage - String - Only copy replicas with a certain storage class.") String requestPayload) {
+          "Description of the request. Which contains the following:\n"
+                + "**sourcePool** - String - Name of the pool to migrate from.\n"
+                + "**targetPools** - Array of Pools (Strings) - Possible target pools.\n"
+                + "**concurrency** - Integer - Amount of Concurrent Transfers to be performed.\n"
+                + "**pins** - String (MOVE | KEEP) - Controls how sticky flags owned by the PinManager are handled.\n"
+                + "**smode** - String (SAME | CACHED | PRECIOUS | REMOVABLE | DELETE)[+<owner>[(<lifetime>)] - "
+                + "Update the local replica to the given mode after transfer. An optional list of sticky flags can be specified.\n"
+                + "**tmode** - String (SAME | CACHED | PRECIOUS )[+<owner>[(<lifetime>)] - "
+                + "Sets the target replica to the given mode after transfer. An optional list of sticky flags can be specified.\n"
+                + "**verify** - Boolean - Force checksum computation when an existing target is updated.\n"
+                + "**eager** - Boolean - Copy replicas rather than retrying when pools with existing replicas fail to respond.\n"
+                + "**exclude** - Array of Pools (Strings) - Exclude Target Pools. Single character (?) and multi character (\\*) wildcards may be used.\n"
+                + "**include** - Array of Pools (Strings) - Only include the specified pools as target pools.\n"
+                + "**refresh** - Integer - Specifies the period in seconds of when target pool information is queried from the pool manager. The default is 300 seconds.\n"
+                + "**select** - String (PROPORTIONAL | BEST | RANDOM) - Determines how a pool is selected from the set of target pools.\n"
+                + "**target** - String (POOL | PGROUP | LINK) - Determines the interpretation of the target pools.\n"
+                + "**fileAttributes** - Description of the file attributes containing: \n"
+                + "\\- **accessed** - String (<n>|[<n>]..[<m>]) - Only copy replicas within a given time period.\n"
+                + "\\- **al** - String (ONLINE | NEARLINE) - Only copy replicas with the given access latency.\n"
+                + "\\- **pnfsid** - Array of String (PNFSIDs) - Only copy replicas with the given PNFSIDs, must contain 1 or more PNFSIDs.\n"
+                + "\\- **state** - String (CACHED | PRECIOUS) - Only copy replicas with the given replica state.\n"
+                + "\\- **rp** - String (CUSTODIAL | REPLICA | OUTPUT) - Only copy replicas with the given retention policy.\n"
+                + "\\- **size** - String (<n>|[<n>]..[<m>]) - Only copy replicas with size <n>, or a size within the given, possibly open-ended, interval.\n"
+                + "\\- **sticky** - Array of Owners (Strings) - Only copy replicas that are sticky, if the array is not empty, then it will be restricted to the specified owners.\n"
+                + "\\- **storage** - String - Only copy replicas with a certain storage class.") String requestPayload) {
         // TODO: Add expressions (pause-when, include-when, exclude-when, stop-when) to the request.
         // TODO: Pass the migration request as a message and not via a CLI-Message.
         // This was implemented as a quick and dirty trick to fulfill some other projects' programmatic contracts.
@@ -113,7 +109,7 @@ public final class MigrationResources {
 
         // First convert to JSON.
         JSONObject jsonPayload = new JSONObject(requestPayload);
-        LOGGER.error("JSON Request: {}", jsonPayload);
+        LOGGER.info("JSON Request: {}", jsonPayload);
 
         if (!jsonPayload.has("sourcePool")) {
             throw new BadRequestException("No 'sourcePool' was specified.");
