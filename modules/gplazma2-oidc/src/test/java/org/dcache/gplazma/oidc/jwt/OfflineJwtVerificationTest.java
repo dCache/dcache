@@ -64,6 +64,19 @@ public class OfflineJwtVerificationTest {
         verification.extract("token-that-is-not-a-jwt");
     }
 
+    @Test(expected=UnableToProcess.class)
+    public void shouldNotProcessValidJwtWhenOfflineSuppressed() throws Exception {
+        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/"));
+        given(anOfflineJwtVerification()
+            .withEmptyAudienceTargetProperty()
+            .withIssuer(anIssuer().withIp(identityProvider).withOfflineSuppressed()));
+        given(aJwt()
+            .withPayloadClaim("iss", "https://oidc.example.org/")
+            .withPayloadClaim("sub", "paul"));
+
+        verification.extract(jwt);
+    }
+
     @Test(expected=AuthenticationException.class)
     public void shouldRejectTokenWithoutIss() throws Exception {
         given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/"));
@@ -268,6 +281,11 @@ public class OfflineJwtVerificationTest {
             BDDMockito.given(issuer.getIdentityProvider()).willReturn(ip);
             BDDMockito.given(issuer.getEndpoint()).willReturn(endpoint.toASCIIString());
             hasIp = true;
+            return this;
+        }
+
+        public MockIssuerBuilder withOfflineSuppressed() {
+            BDDMockito.given(issuer.isOfflineSuppressed()).willReturn(true);
             return this;
         }
 
