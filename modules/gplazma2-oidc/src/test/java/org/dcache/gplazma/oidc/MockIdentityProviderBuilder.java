@@ -66,6 +66,11 @@ public class MockIdentityProviderBuilder {
         return this;
     }
 
+    public MockIdentityProviderBuilder withSuppress(String keyword) {
+        BDDMockito.given(provider.isSuppressed(keyword)).willReturn(true);
+        return this;
+    }
+
     public IdentityProvider build() {
         return provider;
     }
