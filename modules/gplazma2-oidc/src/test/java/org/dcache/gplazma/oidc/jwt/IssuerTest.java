@@ -80,6 +80,24 @@ public class IssuerTest {
     }
 
     @Test
+    public void shouldNotShowSuppressedByDefault() throws Exception {
+        given(aClient());
+        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/"));
+        given(anIssuer().withoutHistory());
+
+        assertThat(issuer.isOfflineSuppressed(), is(equalTo(false)));
+    }
+
+    @Test
+    public void shouldShowOfflineSuppressedWhenConfigured() throws Exception {
+        given(aClient());
+        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/").withSuppress("offline"));
+        given(anIssuer().withoutHistory());
+
+        assertThat(issuer.isOfflineSuppressed(), is(equalTo(true)));
+    }
+
+    @Test
     public void shouldAcceptJwtWithoutKidWhenJkwsNoKid() throws Exception {
         given(aClient().onGet("https://oidc.example.org/jwks").responds()
                 .withEntity("{\"keys\": [" + jwtFactory.describePublicKey() + "]}"));
