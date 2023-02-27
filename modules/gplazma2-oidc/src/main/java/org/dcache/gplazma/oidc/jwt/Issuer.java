@@ -60,6 +60,7 @@ public class Issuer {
     private final Queue<String> previousJtis;
     private final IdentityProvider provider;
     private final HttpClient client;
+    private final boolean offlineSuppressed;
 
     private final Supplier<Map<String, PublicKey>> keys = MemoizeMapWithExpiry.memorize(this::readJwksDocument)
           .whenEmptyFor(Duration.ofMinutes(1))
@@ -70,6 +71,17 @@ public class Issuer {
         this.provider = requireNonNull(provider);
         this.client = requireNonNull(client);
         previousJtis = tokenHistory > 0 ? EvictingQueue.create(tokenHistory) : null;
+        offlineSuppressed = provider.isSuppressed("offline");
+        if (offlineSuppressed) {
+            LOGGER.warn("Offline verification of JWT access tokens issued by OP {} has been "
+                + "suppressed.  This may cause various problems, including dCache being slow to "
+                + "process requests with such tokens and dCache generating high load for the OP.",
+                provider.getName());
+        }
+    }
+
+    public boolean isOfflineSuppressed() {
+        return offlineSuppressed;
     }
 
     public IdentityProvider getIdentityProvider() {
