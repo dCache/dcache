@@ -72,6 +72,10 @@ public class OfflineJwtVerification implements TokenProcessor {
 
             var issuer = issuerOf(jwt);
 
+            if (issuer.isOfflineSuppressed()) {
+                throw new UnableToProcess("offline suppressed");
+            }
+
             return new ExtractResult(issuer.getIdentityProvider(), jwt.getPayloadMap());
         } catch (IOException e) {
             throw new UnableToProcess(e.getMessage());
