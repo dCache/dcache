@@ -246,10 +246,7 @@ public final class CellMessage implements Cloneable, Serializable {
         checkArgument(handler != null,
               "Cannot ensure CellMessage is encoded. The given msg payload serializer is null.");
 
-        if (!SerializationHandler.isEncodedWith(_messageStream, handler)) {
-            Object payload = SerializationHandler.decode(_messageStream);
-            _messageStream = SerializationHandler.encode(payload, handler);
-        }
+        // only one serialization is supported
         return this;
     }
 

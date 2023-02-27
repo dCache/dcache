@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2019 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2019 - 2023 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -33,7 +33,7 @@ public final class SerializationHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(SerializationHandler.class);
 
     public enum Serializer {
-        UNDEFINED("undefined"), JOS("standard"), FST("experimental");
+        UNDEFINED("undefined"), JOS("standard");
 
         private final String displayName;
 
@@ -55,10 +55,10 @@ public final class SerializationHandler {
         }
         String serializerString = configString.toLowerCase();
         switch (serializerString) {
-            case "experimental":
-                return Serializer.FST;
             case "standard":
                 return Serializer.JOS;
+            case "experimental":
+                // keep the keyword for the future use.
             default:
                 LOGGER.warn("Unknown serializer specified in configuration. Defaulting to {}.",
                       Serializer.JOS);
@@ -68,15 +68,13 @@ public final class SerializationHandler {
     }
 
     public static boolean isEncodedWith(byte[] msgStream, Serializer serializer) {
-        return serializer == Serializer.FST && MsgSerializerFst.isFstEncoded(msgStream);
+        return true; // we expect only one serialization type
     }
 
     public static byte[] encode(Object message, Serializer serializer) {
         switch (serializer) {
             case JOS:
                 return MsgSerializerJos.encode(message);
-            case FST:
-                return MsgSerializerFst.encode(message);
             case UNDEFINED:
             default:
                 throw new UnsupportedOperationException(
@@ -85,9 +83,6 @@ public final class SerializationHandler {
     }
 
     public static Object decode(byte[] messageStream) {
-        if (MsgSerializerFst.isFstEncoded(messageStream)) {
-            return MsgSerializerFst.decode(messageStream);
-        }
         return MsgSerializerJos.decode(messageStream);
     }
 
