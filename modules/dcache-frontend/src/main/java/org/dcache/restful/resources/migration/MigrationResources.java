@@ -98,10 +98,9 @@ public final class MigrationResources {
         // TODO: Pass the migration request as a message and not via a CLI-Message.
         // This was implemented as a quick and dirty trick to fulfill some other projects' programmatic contracts.
 
-        // Something to note here: We assume in getSubject() that you HAVE to be an Administrator!
-        // Should this change, then the Restrictions must be reapplied accordingly.
+        // Make sure when changing to reapply Restrictions accordingly!
         // If the user is an admin --> continue.
-        // If the user is not an admin however he has no restrictions --> continue.
+        // If the user is not an admin, however he has no restrictions --> continue.
         // If the user is not an admin and does have restrictions --> Bad Request.
         if (!RequestUser.isAdmin() && RequestUser.getRestriction() != Restrictions.none()) {
             throw new BadRequestException("User not authorized.");
@@ -119,7 +118,7 @@ public final class MigrationResources {
         PoolSelectionUnit.SelectionPool sourcePool = psu.getPool(sourcePoolName);
         if (sourcePool == null) {
             throw new BadRequestException(
-                  "No source pool with the name '" + sourcePoolName + "' is could be found.");
+                  "No source pool with the name '" + sourcePoolName + "' could be found.");
         }
         if (!jsonPayload.has("targetPools")) {
             throw new BadRequestException("No 'targetPools' were specified.");
@@ -133,13 +132,13 @@ public final class MigrationResources {
         StringBuilder commandStrBuilder = new StringBuilder("migration copy");
 
         // Could also have been done with anonymous inner functions, would have cost a bit of performance, but would be less clutter.
-        checkAppendInteger("concurrency", "concurrency", commandStrBuilder, jsonPayload);
-        checkAppendString("pins", "pins", commandStrBuilder, jsonPayload);
-        checkAppendString("smode", "smode", commandStrBuilder, jsonPayload);
-        checkAppendString("tmode", "tmode", commandStrBuilder, jsonPayload);
-        checkAppendBoolean("verify", "verify", commandStrBuilder, jsonPayload);
-        checkAppendBoolean("eager", "eager", commandStrBuilder, jsonPayload);
-        checkAppendInteger("refresh", "refresh", commandStrBuilder, jsonPayload);
+        conditionalAppendInteger("concurrency", "concurrency", commandStrBuilder, jsonPayload);
+        conditionalAppendString("pins", "pins", commandStrBuilder, jsonPayload);
+        conditionalAppendString("smode", "smode", commandStrBuilder, jsonPayload);
+        conditionalAppendString("tmode", "tmode", commandStrBuilder, jsonPayload);
+        conditionalAppendBoolean("verify", "verify", commandStrBuilder, jsonPayload);
+        conditionalAppendBoolean("eager", "eager", commandStrBuilder, jsonPayload);
+        conditionalAppendInteger("refresh", "refresh", commandStrBuilder, jsonPayload);
         if (jsonPayload.has("include")) {
             // We can't run a check if the pool exists since wildcards can be sent here!
             JSONArray includePools = jsonPayload.getJSONArray("include");
@@ -163,15 +162,15 @@ public final class MigrationResources {
             }
 
         }
-        checkAppendString("select", "select", commandStrBuilder, jsonPayload);
-        checkAppendString("target", "target", commandStrBuilder, jsonPayload);
+        conditionalAppendString("select", "select", commandStrBuilder, jsonPayload);
+        conditionalAppendString("target", "target", commandStrBuilder, jsonPayload);
 
         // fileAttributes are optional if they are left out, then it will just migrate the whole source pool.
         if (jsonPayload.has("fileAttributes")) {
             JSONObject fileAttributes = jsonPayload.getJSONObject("fileAttributes");
 
-            checkAppendString("accessed", "accessed", commandStrBuilder, fileAttributes);
-            checkAppendString("al", "al", commandStrBuilder, fileAttributes);
+            conditionalAppendString("accessed", "accessed", commandStrBuilder, fileAttributes);
+            conditionalAppendString("al", "al", commandStrBuilder, fileAttributes);
             if (fileAttributes.has("pnfsid")) {
                 JSONArray pnfsids = fileAttributes.getJSONArray("pnfsid");
                 if (pnfsids.length() > 0) {
@@ -183,9 +182,9 @@ public final class MigrationResources {
                 }
 
             }
-            checkAppendString("state", "state", commandStrBuilder, fileAttributes);
-            checkAppendString("rp", "rp", commandStrBuilder, fileAttributes);
-            checkAppendString("size", "size", commandStrBuilder, fileAttributes);
+            conditionalAppendString("state", "state", commandStrBuilder, fileAttributes);
+            conditionalAppendString("rp", "rp", commandStrBuilder, fileAttributes);
+            conditionalAppendString("size", "size", commandStrBuilder, fileAttributes);
             if (fileAttributes.has("sticky")) {
                 // If the array exists we add the sticky flag, then if it has elements it is restricted to certain owners.
                 commandStrBuilder.append("-sticky");
@@ -198,7 +197,7 @@ public final class MigrationResources {
                     commandStrBuilder.append(",").append(sticky.getString(i));
                 }
             }
-            checkAppendString("storage", "storage", commandStrBuilder, fileAttributes);
+            conditionalAppendString("storage", "storage", commandStrBuilder, fileAttributes);
         }
         // Add the target pools
         // We know that the length != 0 from earlier!
@@ -236,21 +235,21 @@ public final class MigrationResources {
 
     }
 
-    private static void checkAppendString(String cmdParam, String jsonKey, StringBuilder sb,
+    private static void conditionalAppendString(String cmdParam, String jsonKey, StringBuilder sb,
           JSONObject jsonPayload) {
         if (jsonPayload.has(jsonKey)) {
             sb.append(" -").append(cmdParam).append("=").append(jsonPayload.getString(jsonKey));
         }
     }
 
-    private static void checkAppendInteger(String cmdParam, String jsonKey, StringBuilder sb,
+    private static void conditionalAppendInteger(String cmdParam, String jsonKey, StringBuilder sb,
           JSONObject jsonPayload) {
         if (jsonPayload.has(jsonKey)) {
             sb.append(" -").append(cmdParam).append("=").append(jsonPayload.getInt(jsonKey));
         }
     }
 
-    private static void checkAppendBoolean(String cmdParam, String jsonKey, StringBuilder sb,
+    private static void conditionalAppendBoolean(String cmdParam, String jsonKey, StringBuilder sb,
           JSONObject jsonPayload) {
         if (jsonPayload.has(jsonKey) && jsonPayload.getBoolean(jsonKey)) {
             sb.append(" -").append(cmdParam);
