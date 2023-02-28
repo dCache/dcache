@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import org.apache.http.client.HttpClient;
 import org.dcache.auth.BearerTokenCredential;
 import org.dcache.auth.OAuthProviderPrincipal;
+import org.dcache.auth.Origin;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.oidc.helpers.JsonHttpClient;
@@ -57,6 +58,8 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
     private final static String HTTP_TIMEOUT_UNIT = "gplazma.oidc.http.timeout.unit";
     private final static String OIDC_ALLOWED_AUDIENCES = "gplazma.oidc.audience-targets";
     private final static String OIDC_PROVIDER_PREFIX = "gplazma.oidc.provider!";
+
+    private final static String SUPPRESS_AUDIENCE_TOKEN = "audience";
 
     private static final String DEFAULT_PROFILE_NAME = "oidc";
     private static final Map<String,ProfileFactory> PROFILES = Map.of("oidc", new OidcProfileFactory(),
@@ -95,8 +98,15 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
                 .flatMap(v -> Splitter.on(',').trimResults().splitToStream(v))
                 .collect(Collectors.toList());
 
-            return new IdentityProvider(name, issuer, profile, client, discoveryCacheDuration,
+            var idp = new IdentityProvider(name, issuer, profile, client, discoveryCacheDuration,
                 suppress);
+            if (idp.isSuppressed(SUPPRESS_AUDIENCE_TOKEN)) {
+                LOG.warn("Audience (\"aud\") checking is suppressed for OP {}.  This makes dCache "
+                    + "compatible with behaviour before version 8.2.0, but it also violates RFC "
+                    + "\"MUST\" requirements and may have security implications.",
+                    idp.getName());
+            }
+            return idp;
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException(
                   "Invalid endpoint " + endpoint + ": " + e.getMessage());
@@ -186,7 +196,7 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
         try {
             ExtractResult result = tokenProcessor.extract(token);
             checkAuthentication(!result.claims().isEmpty(), "processing token yielded no claims");
-            checkAudience(result.claims());
+            checkAudience(result, identifiedPrincipals);
 
             var idp = result.idp();
             identifiedPrincipals.add(new OAuthProviderPrincipal(idp.getName()));
@@ -220,22 +230,73 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
         }
     }
 
-    private void checkAudience(Map<String,JsonNode> claims) throws AuthenticationException {
+    private void checkAudience(ExtractResult result, Set<Principal> principals)
+            throws AuthenticationException {
+        var claims = result.claims();
         var audClaim = claims.get("aud");
 
         if (audClaim == null) {
             return;
         }
 
+        var idp = result.idp();
+        boolean suppressAudience = idp.isSuppressed(SUPPRESS_AUDIENCE_TOKEN);
+
         if (audClaim.isArray()) {
             List<String> audClaimAsList = new ArrayList<>(audClaim.size());
             audClaim.elements().forEachRemaining(e -> audClaimAsList.add(e.textValue()));
-            checkAuthentication(audClaimAsList.stream().anyMatch(audienceTargets::contains),
-                    "intended for %s", audClaimAsList);
+
+            if (!audClaimAsList.stream().anyMatch(audienceTargets::contains)) {
+                if (suppressAudience) {
+                    logAudienceSuppression(audClaimAsList.toString(), idp.getName(), claims,
+                        principals, "one of these audiences");
+                    return;
+                }
+                throw new AuthenticationException("intended for " + audClaimAsList);
+            }
         } else {
             String aud = audClaim.textValue();
-            checkAuthentication(audienceTargets.contains(aud), "intended for %s", aud);
+            if (!audienceTargets.contains(aud)) {
+                if (suppressAudience) {
+                    logAudienceSuppression(aud, idp.getName(), claims, principals, "this audience");
+                    return;
+                }
+                throw new AuthenticationException("intended for " + aud);
+            }
         }
+    }
+
+    private static void logAudienceSuppression(String audience, String op,
+            Map<String,JsonNode> claims, Set<Principal> principals, String whatToAdd) {
+        Optional<String> clientIPAddress = principals.stream()
+            .filter(Origin.class::isInstance)
+            .map(Origin.class::cast)
+            .findFirst()
+            .map(Principal::getName);
+
+        LOG.warn("Accepting token with an incompatible audience \"{}\" issued by OP {} to {}{}. "
+            + "To prevent similar warnings, either add {} to the 'gplazma.oidc.audience-targets' "
+            + "configuration property or update the client to use an audience value already defined "
+            + "in this configuration property.", audience, op,
+            clientId(claims).map(id -> "client \"" + id + "\"").orElse("an unknown client"),
+            clientIPAddress.map(addr -> " connecting from " + addr).orElse(""),
+            whatToAdd);
+    }
+
+    private static Optional<String> clientId(Map<String,JsonNode> claims) {
+        var clientIdClaim = claims.get("client_id");
+        if (clientIdClaim != null && clientIdClaim.isTextual()) {
+            return Optional.of(clientIdClaim.textValue());
+        }
+
+        // Some OPs (*cough* EGI CheckIn *cough*) violate RFC 9068 by issuing JWTs without a
+        // 'client_id' claim; however, they do provide an 'azp' claim.
+        var azpClaim = claims.get("azp");
+        if (azpClaim != null && azpClaim.isTextual()) {
+            return Optional.of(azpClaim.textValue());
+        }
+
+        return Optional.empty();
     }
 
     private static <T> Collection<T> nullToEmpty(final Collection<T> collection) {
