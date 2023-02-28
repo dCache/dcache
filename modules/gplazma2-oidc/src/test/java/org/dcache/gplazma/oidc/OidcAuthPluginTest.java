@@ -579,6 +579,27 @@ public class OidcAuthPluginTest {
         when(invoked().withBearerToken("FOO"));
     }
 
+    @Test
+    public void shouldAcceptSingleAuthClaimWithNoMatchingAudiencesIfAudienceSuppressed() throws Exception {
+        var profile = aProfile().thatReturns(aProfileResult()
+                .withPrincipals(Collections.singleton(new OidcSubjectPrincipal("sub-claim-value", "MY-OP"))))
+                .build();
+        var op = anIp("MY-OP").withProfile(profile).withSuppress("audience").build();
+        var claims = claims()
+                .withStringClaim("sub", "sub-claim-value")
+                .withStringClaim("aud", "another-service.example.org")
+                .build();
+        given(aPlugin()
+            .withProperty("gplazma.oidc.audience-targets", "dcache.example.org")
+            .withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(op).containing(claims))));
+
+        when(invoked().withBearerToken("FOO"));
+
+        verify(processor).extract(eq("FOO"));
+        verify(profile).processClaims(eq(op), eq(claims));
+        assertThat(principals, hasItem(new OidcSubjectPrincipal("sub-claim-value", "MY-OP")));
+    }
+
     @Test(expected=AuthenticationException.class)
     public void shouldRejectSingleAuthClaimWithDifferentConfiguredAudience() throws Exception {
         given(aPlugin()
