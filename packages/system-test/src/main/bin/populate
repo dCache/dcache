@@ -115,7 +115,7 @@ EOF
         i=$(( $i + 1 ))
     done
 
-    email_address=$(git config --global user.email) && cat >> $ca_config <<EOF
+    email_address=$(git config user.email) && cat >> $ca_config <<EOF
 
 [user_alt_names]
 email = $email_address
