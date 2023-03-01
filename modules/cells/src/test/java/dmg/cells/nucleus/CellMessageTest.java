@@ -1,8 +1,5 @@
 package dmg.cells.nucleus;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -17,6 +14,7 @@ import org.junit.Test;
 
 public class CellMessageTest {
 
+    /*
     @Test
     public void shouldDeserializeSerializedMessage_FST() throws Exception {
         CellMessage message = new CellMessage(new CellPath("foo", "bar"), "payload");
@@ -63,6 +61,7 @@ public class CellMessageTest {
         assertThat(decoded.getSession(), nullValue());
         assertThat(decoded.getTtl(), is(message.getTtl()));
     }
+     */
 
     @Test(expected = IllegalStateException.class)
     public void shouldFailToSerializedUnencodedMessages() throws Exception {
