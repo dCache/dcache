@@ -115,7 +115,11 @@ EOF
         i=$(( $i + 1 ))
     done
 
-    email_address=$(git config user.email) && cat >> $ca_config <<EOF
+    # If the email address can be found from git. continue
+    # or else it will use a dummy email address. We need the section to be defined with an email address.
+    # Alternatively we can not define the section but we would need to start handling this case earlier (remove subjectAltName).
+    email_address=$(git config user.email) || email_address="$USER@dcache.example.org"
+    cat >> $ca_config <<EOF
 
 [user_alt_names]
 email = $email_address
