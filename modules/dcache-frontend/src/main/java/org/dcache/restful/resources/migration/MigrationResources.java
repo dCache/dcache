@@ -245,10 +245,10 @@ public final class MigrationResources {
     }
 
     /**
-     * Gets migration information to a specified migration ID on a pool.
+     * Gets migration information for the specified migration job id on the specified pool.
      */
     @GET
-    @ApiOperation(value = "Gets information to a migration. (See Pool Operator Commands 'migration info')")
+    @ApiOperation(value = "Gets migration information for the specified migration job id on the specified pool. (See Pool Operator Commands 'migration info')")
     @ApiResponses({
           @ApiResponse(code = 200, message = "OK"),
           @ApiResponse(code = 400, message = "Bad request"),
@@ -342,7 +342,6 @@ public final class MigrationResources {
             throw new InternalServerErrorException(e);
         }
     }
-
 
     private static void conditionalAppendString(String cmdParam, String jsonKey, StringBuilder sb,
           JSONObject jsonPayload) {
