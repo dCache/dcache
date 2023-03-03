@@ -436,7 +436,7 @@ public class FileResources {
                     break;
                 case "mv":
                     String dest = (String) reqPayload.get("destination");
-                    FsPath target = pathMapper.resolve(request, path, dest);
+                    FsPath target = pathMapper.resolve(request, path.parent(), dest);
                     pnfsHandler.renameEntry(path.toString(), target.toString(), true);
                     break;
                 case "qos":
