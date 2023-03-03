@@ -68,7 +68,7 @@ public class JdbcDao extends JdbcDaoSupport implements PinDao {
         JdbcCriterion c = (JdbcCriterion) criterion;
         return getJdbcTemplate().query(
               "SELECT * FROM pins WHERE " + c.getPredicate(),
-              c.getArgumentsAsArray(), (RowMapper<Pin>) this::toPin);
+              (RowMapper<Pin>) this::toPin, c.getArgumentsAsArray());
     }
 
     @Override
@@ -76,7 +76,7 @@ public class JdbcDao extends JdbcDaoSupport implements PinDao {
         JdbcCriterion c = (JdbcCriterion) criterion;
         return getJdbcTemplate().query(
               "SELECT * FROM pins WHERE " + c.getPredicate() + " LIMIT " + limit,
-              c.getArgumentsAsArray(), (RowMapper<Pin>) this::toPin);
+              (RowMapper<Pin>) this::toPin, c.getArgumentsAsArray());
     }
 
     @Override
@@ -85,16 +85,15 @@ public class JdbcDao extends JdbcDaoSupport implements PinDao {
         return DataAccessUtils.singleResult(
               getJdbcTemplate().query(
                     "SELECT * FROM pins WHERE " + c.getPredicate(),
-                    c.getArgumentsAsArray(),
-                    (RowMapper<Pin>) this::toPin));
+                    (RowMapper<Pin>) this::toPin, c.getArgumentsAsArray()));
     }
 
     @Override
     public int count(PinCriterion criterion) {
         JdbcCriterion c = (JdbcCriterion) criterion;
         return getJdbcTemplate().queryForObject(
-              "SELECT count(*) FROM pins WHERE " + c.getPredicate(), c.getArgumentsAsArray(),
-              Integer.class);
+              "SELECT count(*) FROM pins WHERE " + c.getPredicate(), Integer.class,
+              c.getArgumentsAsArray());
 
     }
 
@@ -155,7 +154,6 @@ public class JdbcDao extends JdbcDaoSupport implements PinDao {
         InterruptedException exception =
               getJdbcTemplate().query(
                     "SELECT * FROM pins WHERE " + c.getPredicate() + limitQueryPart,
-                    c.getArgumentsAsArray(),
                     rs -> {
                         try {
                             while (rs.next()) {
@@ -165,7 +163,7 @@ public class JdbcDao extends JdbcDaoSupport implements PinDao {
                             return e;
                         }
                         return null;
-                    });
+                    }, c.getArgumentsAsArray());
         if (exception != null) {
             throw exception;
         }
