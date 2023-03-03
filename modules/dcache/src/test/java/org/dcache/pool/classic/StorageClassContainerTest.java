@@ -1,7 +1,8 @@
 package org.dcache.pool.classic;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -21,6 +22,7 @@ import org.dcache.pool.repository.ReplicaState;
 import org.dcache.vehicles.FileAttributes;
 import org.junit.Before;
 import org.junit.Test;
+
 
 public class StorageClassContainerTest {
 
