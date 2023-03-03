@@ -11,19 +11,25 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import io.swagger.annotations.ResponseHeader;
+import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.ForbiddenException;
+import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
+import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.PoolMonitor;
+import org.dcache.restful.providers.migrations.MigrationInfo;
 import org.dcache.restful.util.RequestUser;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -98,12 +104,16 @@ public final class MigrationResources {
         // TODO: Pass the migration request as a message and not via a CLI-Message.
         // This was implemented as a quick and dirty trick to fulfill some other projects' programmatic contracts.
 
+        // If no credentials were passed.
+        if (RequestUser.isAnonymous()) {
+            throw new NotAuthorizedException("Anonymous user is not authorized.");
+        }
         // Make sure when changing to reapply Restrictions accordingly!
         // If the user is an admin --> continue.
         // If the user is not an admin, however he has no restrictions --> continue.
         // If the user is not an admin and does have restrictions --> Bad Request.
         if (!RequestUser.isAdmin() && RequestUser.getRestriction() != Restrictions.none()) {
-            throw new BadRequestException("User not authorized.");
+            throw new ForbiddenException();
         }
 
         // First convert to JSON.
@@ -232,8 +242,107 @@ public final class MigrationResources {
         } catch (InterruptedException | CacheException | NoRouteToCellException e) {
             throw new InternalServerErrorException(e);
         }
-
     }
+
+    /**
+     * Gets migration information to a specified migration ID on a pool.
+     */
+    @GET
+    @ApiOperation(value = "Gets information to a migration. (See Pool Operator Commands 'migration info')")
+    @ApiResponses({
+          @ApiResponse(code = 200, message = "OK"),
+          @ApiResponse(code = 400, message = "Bad request"),
+          @ApiResponse(code = 401, message = "Unauthorized"),
+          @ApiResponse(code = 403, message = "Forbidden"),
+          @ApiResponse(code = 429, message = "Too many requests"),
+          @ApiResponse(code = 500, message = "Internal Server Error")})
+    @Path("/{poolName}/{id}")
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_JSON)
+    public MigrationInfo getMigrationInformation(@ApiParam("Name of the pool") @PathParam("poolName") String poolName,
+          @ApiParam("Migration Job ID") @PathParam("id") Integer jobId) {
+        // If no credentials were passed.
+        if (RequestUser.isAnonymous()) {
+            throw new NotAuthorizedException("Anonymous user is not authorized.");
+        }
+        // Make sure when changing to reapply Restrictions accordingly!
+        // If the user is an admin --> continue.
+        // If the user is not an admin, however he has no restrictions --> continue.
+        // If the user is not an admin and does have restrictions --> Bad Request.
+        if (!RequestUser.isAdmin() && RequestUser.getRestriction() != Restrictions.none()) {
+            throw new ForbiddenException();
+        }
+
+        PoolSelectionUnit psu = poolMonitor.getPoolSelectionUnit();
+        PoolSelectionUnit.SelectionPool sourcePool = psu.getPool(poolName);
+        if (sourcePool == null) {
+            throw new BadRequestException(
+                  "No source pool with the name '" + poolName + "' could be found.");
+        }
+        try {
+            String migrationInfoResponse = poolmanager.sendAndWait(
+                  new CellPath(sourcePool.getAddress()), "migration info " + jobId, String.class);
+            // Now we need to parse the returned string correctly
+            // As of now it is split into multiple lines
+            String[] entries = migrationInfoResponse.split("\n");
+
+            MigrationInfo migInfoOutput = new MigrationInfo();
+
+            for (String entry : entries) {
+                // Split with a limit of -1 to preserve empty strings following the : .
+                // Splitting with a limit of 0 would cause trailing empty strings to be ignored and kv[1] --> ArrayIndexOutOfBounds.
+                String[] kv = entry.split(":", -1);
+                // The length must be 2
+                if (kv.length != 2) {
+                    throw new InternalServerErrorException();
+                }
+                // Remember to get rid of whitespace.
+                String key = kv[0].trim().toLowerCase();
+                String value = kv[1].trim();
+                switch (key) {
+                    case "state": {
+                        migInfoOutput.setState(value);
+                        break;
+                    }
+                    case "queued": {
+                        migInfoOutput.setQueued(Integer.parseInt(value));
+                        break;
+                    }
+                    case "attempts": {
+                        migInfoOutput.setAttempts(Integer.parseInt(value));
+                        break;
+                    }
+                    case "targets": {
+                        migInfoOutput.setTargetPools(List.of(value.split(",")));
+                        break;
+                    }
+                    case "completed": {
+                        migInfoOutput.setCompleted(value);
+                        break;
+                    }
+                    case "total": {
+                        migInfoOutput.setTotal(Integer.parseInt(value.split(" ")[0]));
+                        break;
+                    }
+                    case "running tasks": {
+                        // TODO: Improve how the tasks are returned.
+                        migInfoOutput.setRunningTasks(value);
+                        break;
+                    }
+                    case "most recent errors": {
+                        // TODO: Improve how the recent errors are returned.
+                        migInfoOutput.setMostRecentErrors(value);
+                        break;
+                    }
+
+                }
+            }
+            return migInfoOutput;
+        } catch (CacheException | NoRouteToCellException | InterruptedException e) {
+            throw new InternalServerErrorException(e);
+        }
+    }
+
 
     private static void conditionalAppendString(String cmdParam, String jsonKey, StringBuilder sb,
           JSONObject jsonPayload) {
