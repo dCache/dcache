@@ -354,6 +354,21 @@ public class PinManagerCLI
         }
     }
 
+    @Command(name = "clear unavailable", hint = "Allows pin-manager to clear all pins for a given"
+          + " pool that are in state FAILED_TO_UNPIN because the pool is currently unavailable.")
+    public class ClearUnavailableCommand implements Callable<String> {
+
+        @Argument
+        String pool;
+
+        @Override
+        public String call() throws CommandException {
+            PinDao.PinCriterion criterion = _dao.where().state(FAILED_TO_UNPIN).pool(pool);
+            int total = _dao.update(criterion, _dao.set().state(READY_TO_UNPIN).pool(null));
+            return "Clearing " + total + " pins for pool " + pool + " in state FAILED_TO_UNPIN.";
+        }
+    }
+
     @Command(name = "bulk pin", hint = "pin several files",
           description = "Pin a list of PNFS IDs from FILE for a specified number of " +
                 "seconds. Each line FILE must be a PNFS ID.")
