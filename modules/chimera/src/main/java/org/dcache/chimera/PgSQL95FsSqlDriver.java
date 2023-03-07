@@ -403,54 +403,6 @@ public class PgSQL95FsSqlDriver extends FsSqlDriver {
     }
 
     @Override
-    void copyTags(FsInode orign, FsInode destination) {
-        _jdbc.queryForList(
-                    "INSERT INTO t_tags (inumber,itagid,isorign,itagname) (SELECT ?,itagid,0,itagname FROM t_tags WHERE inumber=?) RETURNING itagid",
-                    Long.class, destination.ino(), orign.ino()).
-              forEach(tagId -> {
-                  _jdbc.update("UPDATE t_tags_inodes SET inlink = inlink + 1 WHERE itagid=?",
-                        tagId);
-              });
-    }
-
-    @Override
-    void removeTag(FsInode dir) {
-        _jdbc.queryForList("DELETE FROM t_tags WHERE inumber=? RETURNING itagid", Long.class,
-                    dir.ino())
-              .forEach(tagId -> {
-                  // shortcut: delete right away, if there is only one reference left
-                  int n = _jdbc.update("DELETE FROM t_tags_inodes WHERE itagid=? AND inlink = 1",
-                        tagId);
-                  // if delete didn't happen, then just indicate that one reference in gone
-                  if (n == 0) {
-                      _jdbc.update("UPDATE t_tags_inodes SET inlink = inlink - 1 WHERE itagid=?",
-                            tagId);
-                  }
-              });
-    }
-
-    @Override
-    void removeTag(FsInode dir, String tag) {
-
-        Long tagId = _jdbc.query("DELETE FROM t_tags WHERE inumber=? AND itagname=? RETURNING *",
-              ps -> {
-                  ps.setLong(1, dir.ino());
-                  ps.setString(2, tag);
-              },
-              (ResultSet rs) -> rs.next() ? rs.getLong("itagid") : null);
-
-        // TODO: explore a possibility to perform DELETE+UPDATE with single query
-        if (tagId != null) {
-            // shortcut: delete right away, if there is only one reference left
-            int n = _jdbc.update("DELETE FROM t_tags_inodes WHERE itagid=? AND inlink = 1", tagId);
-            // if delete didn't happen, then just indicate that one reference in gone
-            if (n == 0) {
-                _jdbc.update("UPDATE t_tags_inodes SET inlink = inlink - 1 WHERE itagid=?", tagId);
-            }
-        }
-    }
-
-    @Override
     void setStorageInfo(FsInode inode, InodeStorageInformation storageInfo) {
         _jdbc.update("INSERT INTO t_storageinfo VALUES (?,?,?,?) " +
                     "ON CONFLICT ON CONSTRAINT t_storageinfo_pkey DO NOTHING",
