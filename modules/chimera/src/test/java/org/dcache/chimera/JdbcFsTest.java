@@ -20,8 +20,6 @@ import static org.junit.Assert.fail;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.AbstractFuture;
-import com.google.common.util.concurrent.ListenableFuture;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -33,11 +31,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import org.dcache.acl.ACE;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.AceType;
@@ -135,13 +128,23 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
 
         FsInode newFile = base.create("testCreateFile", 0, 0, 0644);
 
-        assertEquals("file creation has to increase parent's nlink count by one",
-              base.stat().getNlink(), stat.getNlink() + 1);
+        assertEquals("file creation shouldn't change parent's nlink count",
+              base.stat().getNlink(), stat.getNlink());
+
         assertTrue("file creation has to update parent's mtime",
               base.stat().getMTime() > stat.getMTime());
         assertEquals("new file should have link count equal to one", newFile.stat().getNlink(), 1);
         assertTrue("change count is not updated",
               stat.getGeneration() != base.stat().getGeneration());
+    }
+
+    @Test
+    public void testNlinkCountOfNewDir() throws Exception {
+
+        int parentNlink = _rootInode.stat().getNlink();
+        FsInode newDir = _rootInode.mkdir("junit", 1, 2, 0755);
+        assertEquals(parentNlink + 1, _rootInode.stat().getNlink());
+        assertEquals(2, newDir.stat().getNlink());
     }
 
     @Test
@@ -233,8 +236,7 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
 
         base.remove("testCreateFile");
 
-        assertEquals("remove have to decrease parents link count", base.stat().getNlink(),
-              stat.getNlink() - 1);
+        assertEquals("remove should not decrement parents link count", base.stat().getNlink(), stat.getNlink());
         assertFalse("remove have to update parent's mtime",
               stat.getMTime() == base.stat().getMTime());
 
@@ -292,76 +294,6 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
         } catch (NotDirChimeraException nde) {
             // OK
         }
-    }
-
-    private final static int PARALLEL_THREADS_COUNT = 10;
-
-    /**
-     * Run some database activity in a separate thread, providing a ListenableFuture of that
-     * activity's result. A <i>CountDownLatch</i> is accepted for synchronising the start of the
-     * task.
-     */
-    private static class ParallelDbFuture<T> extends AbstractFuture<T> implements Runnable {
-
-        private final Thread _thread;
-        private final Callable<T> _task;
-        private final CountDownLatch _start;
-
-        public ParallelDbFuture(CountDownLatch start, Callable<T> task) {
-            _thread = new Thread(this);
-            _start = start;
-            _task = task;
-        }
-
-        public void start() {
-            _thread.start();
-        }
-
-        @Override
-        public void run() {
-            _start.countDown();
-            try {
-                _start.await();
-                set(_task.call());
-            } catch (Exception e) {
-                setException(e);
-            }
-        }
-    }
-
-    @Test(timeout = 60_000)
-    public void testParallelCreate() throws ChimeraFsException {
-        FsInode base = _rootInode.mkdir("junit");
-        Stat stat = base.stat();
-
-        CountDownLatch start = new CountDownLatch(PARALLEL_THREADS_COUNT);
-        List<ParallelDbFuture> futures = IntStream.range(0, PARALLEL_THREADS_COUNT)
-              .mapToObj(i -> "file-" + i)
-              .map(name -> new ParallelDbFuture<>(start, () -> base.create(name, 0, 0, 0644)))
-              .collect(Collectors.toList());
-        futures.stream().forEach(ParallelDbFuture::start);
-
-        int nlink = stat.getNlink();
-        int exceptions = 0;
-        for (ListenableFuture<Void> f : futures) {
-            try {
-                f.get();
-                nlink++;
-            } catch (ExecutionException e) {
-                LOGGER.warn("ExecutionException, triggered by {}", String.valueOf(e.getCause()));
-                exceptions++;
-            } catch (InterruptedException e) {
-                LOGGER.warn("Interrupted.");
-            }
-        }
-
-        assertEquals("Checking nlink count of dir", nlink, base.stat().getNlink());
-
-        // REVISIT: we fail this test if any exceptions are found.  The
-        // motivation is to draw attendion to any such exception, but exceptions
-        // due to TransientDataAccessException or RecoverableDataAccessException
-        // are not indicative of an error.
-        assertEquals("Expecting no exceptions", 0, exceptions);
     }
 
     @Test
@@ -486,8 +418,7 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
         boolean ok = _fs.rename(fileInode, base, "testCreateFile", base, "testCreateFile2");
 
         assertTrue("can't move", ok);
-        assertEquals("link count of base directory should decrease by one",
-              preStatBase.getNlink() - 1, base.stat().getNlink());
+        assertEquals("link count of base directory shouldn't change", preStatBase.getNlink(), base.stat().getNlink());
 
         assertFalse("ghost file", file2Inode.exists());
 
@@ -507,12 +438,10 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
         boolean ok = _fs.rename(fileInode, base, "testCreateFile", base2, "testCreateFile2");
 
         assertTrue("can't move", ok);
-        assertEquals("link count of source directory should decrese on move out",
-              preStatBase.getNlink() - 1,
+        assertEquals("link count of source directory shouldn't change on move out", preStatBase.getNlink(),
               base.stat().getNlink());
-        assertEquals("link count of destination directory should increase on move in",
-              preStatBase2.getNlink() + 1, base2.stat().getNlink());
-        assertEquals("link count of file shold not be modified on move", preStatFile.getNlink(),
+        assertEquals("link count of destination directory should change on move in", preStatBase2.getNlink(), base2.stat().getNlink());
+        assertEquals("link count of file should not be modified on move", preStatFile.getNlink(),
               fileInode.stat().getNlink());
 
     }
@@ -533,13 +462,10 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
         boolean ok = _fs.rename(fileInode, base, "testCreateFile", base2, "testCreateFile2");
 
         assertTrue("can't move", ok);
-        assertEquals("link count of source directory should decrese on move out",
-              preStatBase.getNlink() - 1,
+        assertEquals("link count of source directory should should not be modified", preStatBase.getNlink(),
               base.stat().getNlink());
-        assertEquals("link count of destination directory should not be modified on replace",
-              preStatBase2.getNlink(), base2.stat().getNlink());
-        assertEquals("link count of file shold not be modified on move", preStatFile.getNlink(),
-              fileInode.stat().getNlink());
+        assertEquals("link count of destination directory should not be modified on replace", preStatBase2.getNlink(), base2.stat().getNlink());
+        assertEquals("link count of file shold not be modified on move", preStatFile.getNlink(), fileInode.stat().getNlink());
 
         assertFalse("ghost file", fileInode2.exists());
     }

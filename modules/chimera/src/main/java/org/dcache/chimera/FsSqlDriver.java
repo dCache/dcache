@@ -306,15 +306,12 @@ public class FsSqlDriver {
             return false;
         }
 
-        // A directory contains two pseudo entries for '.' and '..'
-        decNlink(inode, 2);
-
         // ensure that t_inodes and t_tags_inodes updated in the same order as
         // in mkdir
         decNlink(parent);
         removeTag(inode);
 
-        if (!removeInodeIfUnlinked(inode)) {
+        if (!removeInodeIfUnlinked(inode, true)) {
             throw new DirNotEmptyChimeraFsException("directory is not empty");
         }
 
@@ -327,45 +324,49 @@ public class FsSqlDriver {
         if (!removeEntryInParent(parent, name, inode)) {
             return false;
         }
+        // hard link counts
         decNlink(inode);
+        // ignore the result as the file might have a hardlink
+        removeInodeIfUnlinked(inode, false);
 
-        removeInodeIfUnlinked(inode);
-
-        /* During bulk deletion of files in the same directory,
-         * updating the parent inode is often a contention point. The
-         * link count on the parent is updated last to reduce the time
-         * in which the directory inode is locked by the database.
-         */
-        decNlink(parent);
-
+        // trigger mtime update of parent dir.
+        // Postgres driver makes it different.
+        decNlink(parent, 0);
         return true;
     }
 
-    void remove(FsInode inode) {
-        if (inode.isDirectory()) {
-            removeTag(inode);
-        }
+    void remove(FsInode inode) throws DirNotEmptyChimeraFsException {
 
         /* Updating the inode effectively blocks anybody else from changing it and thus also from
          * adding more links.
          */
-        _jdbc.update("UPDATE t_inodes SET inlink=0 WHERE inumber=?", inode.ino());
+        _jdbc.update("UPDATE t_inodes SET ictime=now() WHERE inumber=?", inode.ino());
 
         /* Remove all hard-links. */
         List<Long> parents =
               _jdbc.queryForList(
                     "SELECT iparent FROM t_dirs WHERE ichild=?",
                     Long.class, inode.ino());
-        for (Long parent : parents) {
-            decNlink(new FsInode(inode.getFs(), parent));
+
+        boolean isDir = inode.isDirectory();
+        if (isDir) {
+            removeTag(inode);
         }
+
+        for (Long parent : parents) {
+            decNlink(new FsInode(inode.getFs(), parent), isDir ? 1 : 0);
+        }
+
         int n = _jdbc.update("DELETE FROM t_dirs WHERE ichild=?", inode.ino());
         if (n != parents.size()) {
             throw new JdbcUpdateAffectedIncorrectNumberOfRowsException(
                   "DELETE FROM t_dirs WHERE ichild=?", parents.size(), n);
         }
 
-        removeInodeIfUnlinked(inode);
+        boolean removed = removeInodeIfUnlinked(inode, isDir);
+        if (!removed && isDir) {
+            throw new DirNotEmptyChimeraFsException("directory is not empty");
+        }
     }
 
     public Stat stat(String id) {
@@ -485,9 +486,14 @@ public class FsSqlDriver {
             throw new JdbcUpdateAffectedIncorrectNumberOfRowsException(moveLink, 1, n);
         }
 
+        int nlinkDelta = 0;
+        if (inode.isDirectory()) {
+            nlinkDelta = 1;
+        }
+
         if (!srcDir.equals(destDir)) {
-            incNlink(destDir);
-            decNlink(srcDir);
+            incNlink(destDir, nlinkDelta);
+            decNlink(srcDir, nlinkDelta);
         } else {
             incNlink(srcDir, 0);
         }
@@ -572,7 +578,7 @@ public class FsSqlDriver {
         Stat stat = createInode(id, type, owner, group, mode, nlink, size);
         FsInode inode = new FsInode(parent.getFs(), stat.getIno(), FsInodeType.INODE, 0, stat);
         createEntryInParent(parent, name, inode);
-        incNlink(parent);
+        incNlink(parent, type == UnixPermission.S_IFDIR ? 1 : 0);
         return inode;
     }
 
@@ -672,10 +678,16 @@ public class FsSqlDriver {
         return new FsInode(inode.getFs(), inode.ino(), FsInodeType.INODE, level, stat);
     }
 
-    boolean removeInodeIfUnlinked(FsInode inode) {
+    boolean removeInodeIfUnlinked(FsInode inode, boolean isDir) {
+        if (isDir) {
+            int n = _jdbc.update("DELETE FROM t_inodes WHERE inumber=? AND NOT EXISTS (SELECT 1 FROM t_dirs WHERE iparent = ? LIMIT 1)",
+                    inode.ino(), inode.ino());
+            return n > 0;
+        }
+
         List<String> ids
               = _jdbc.queryForList(
-              "SELECT ipnfsid FROM t_inodes WHERE inumber=? AND inlink=0 FOR UPDATE",
+              "SELECT ipnfsid FROM t_inodes WHERE inumber=? FOR UPDATE",
               String.class, inode.ino());
         if (ids.isEmpty()) {
             return false;
@@ -702,8 +714,9 @@ public class FsSqlDriver {
                   ps.setTimestamp(2, now);
                   ps.setTimestamp(3, now);
               });
-        _jdbc.update("DELETE FROM t_inodes WHERE inumber=?", inode.ino());
-        return true;
+        int n = _jdbc.update("DELETE FROM t_inodes WHERE inumber=? AND NOT EXISTS (SELECT 1 FROM t_dirs WHERE ichild = ? LIMIT 1)",
+                inode.ino(), inode.ino());
+        return n > 0;
     }
 
     boolean removeInodeLevel(FsInode inode, int level) {
