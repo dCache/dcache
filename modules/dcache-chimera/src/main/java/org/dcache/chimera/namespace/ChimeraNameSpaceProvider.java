@@ -1924,4 +1924,20 @@ public class ChimeraNameSpaceProvider
         }
 
     }
+
+    @Override
+    public String resolveSymlinks(Subject subject, String path) throws CacheException {
+        try {
+            /*
+             *  All calls to this method are done by the PnfsManager itself as ROOT.
+             */
+            if (!Subjects.ROOT.equals(subject)) {
+                throw new PermissionDeniedCacheException("Subject not allowed to call this method.");
+            }
+            return _fs.resolvePath(path);
+        } catch (ChimeraFsException e) {
+            throw new CacheException("Failed to resolve symlinks for " + path
+                  + ": " + Exceptions.messageOrClassName(e), e);
+        }
+    }
 }
