@@ -570,4 +570,11 @@ public interface FileSystemProvider extends Closeable {
      */
     void removeXattr(FsInode inode, String attr) throws ChimeraFsException;
 
+    /**
+     * Returns the path with symlinks resolved.
+     *
+     * @param path to resolve.
+     * @return resolved path.
+     */
+    String resolvePath(String path) throws ChimeraFsException;
 }

@@ -1786,6 +1786,25 @@ public class FsSqlDriver {
     }
 
     /**
+     * Should return the actual absolute path with all symlinks followed.
+     *
+     * This base implementation composes inode2path(path2inode).
+     *
+     * @param root node from which to begin path three walk.
+     * @param path to check for symlinks.
+     * @return path with all symlinks resolved; if does not exist, return the original path.
+     * @throws ChimeraFsException
+     * @throws SQLException
+     */
+    String resolvePath(FsInode root, String path) throws ChimeraFsException, SQLException {
+        FsInode pathInode = path2inode(root, path);
+        if (pathInode == null) {
+            return path;
+        }
+        return inode2path(pathInode, root);
+    }
+
+    /**
      * creates an instance of org.dcache.chimera.&lt;dialect&gt;FsSqlDriver or default driver, if
      * specific driver not available
      *
