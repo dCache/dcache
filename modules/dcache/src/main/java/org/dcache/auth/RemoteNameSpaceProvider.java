@@ -302,7 +302,6 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider {
         _pnfs.request(message);
     }
 
-
     /**
      * Remove a label attribute from a file.
      *
@@ -318,6 +317,10 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider {
         message.setSubject(subject);
         message.setRestriction(Restrictions.none());
         _pnfs.request(message);
+    }
 
+    @Override
+    public String resolveSymlinks(Subject subject, String path) throws CacheException {
+        throw new UnsupportedOperationException("For internal use only.");
     }
 }
