@@ -443,5 +443,13 @@ public interface NameSpaceProvider {
     void listVirtualDirectory(Subject subject, String path, Range<Integer> range,
                          Set<FileAttribute> attrs, ListHandler handler)  throws  CacheException;
 
-
+    /**
+     * Resolves symlinks in the given path.
+     *
+     * @param subject user making the request.
+     * @param path full path to be resolved.
+     * @return path with symlinks resolved.
+     * @throws CacheException
+     */
+    String resolveSymlinks(Subject subject, String path) throws CacheException;
 }
