@@ -154,8 +154,10 @@ public final class StageActivity extends PinManagerActivity {
     private long getLifetimeInMillis(FsPath path) {
         String ptString = null;
 
-        if (jsonLifetimes != null) {
-            ptString = jsonLifetimes.getString(path.toString());
+        String key = path.toString();
+
+        if (jsonLifetimes != null && jsonLifetimes.has(key)) {
+            ptString = jsonLifetimes.getString(key);
         }
 
         if (ptString == null) {
