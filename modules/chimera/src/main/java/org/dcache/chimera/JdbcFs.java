@@ -1572,6 +1572,15 @@ public class JdbcFs implements FileSystemProvider {
         throw new ChimeraFsException(NOT_IMPL);
     }
 
+    @Override
+    public String resolvePath(String path) throws ChimeraFsException {
+        try {
+            return _sqlDriver.resolvePath(new RootInode(this, _sqlDriver.getRootInumber()), path);
+        } catch (SQLException e) {
+            throw new ChimeraFsException(e.getMessage(), e);
+        }
+    }
+
     private interface FallibleTransactionCallback<T> {
 
         T doInTransaction(TransactionStatus status) throws ChimeraFsException;

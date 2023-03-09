@@ -219,4 +219,9 @@ public abstract class ForwardingNameSpaceProvider implements NameSpaceProvider {
         delegate().removeLabel(subject, path, name);
 
     }
+
+    @Override
+    public String resolveSymlinks(Subject subject, String path) throws CacheException {
+        return delegate().resolveSymlinks(subject, path);
+    }
 }

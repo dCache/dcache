@@ -270,6 +270,22 @@ public class PgSQL95FsSqlDriver extends FsSqlDriver {
     }
 
     @Override
+    String resolvePath(FsInode root, String path) {
+        String normalizedPath = normalizePath(path);
+        return _jdbc.query("SELECT * FROM resolve_path(?, ?)",
+              ps -> {
+                  ps.setLong(1, root.ino());
+                  ps.setString(2, normalizedPath);
+              },
+              rs -> {
+                  if (rs.next()) {
+                      return rs.getString(1);
+                  }
+                  return null;
+              });
+    }
+
+    @Override
     void copyAcl(FsInode source, FsInode inode, RsType type, EnumSet<AceFlags> mask,
           EnumSet<AceFlags> flags) {
         int msk = mask.stream().mapToInt(AceFlags::getValue).reduce(0, (a, b) -> a | b);
