@@ -249,10 +249,16 @@ public final class StageResources {
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces(MediaType.APPLICATION_JSON)
     public Response submit(
-          @ApiParam(value = "Description of the request, which consists of a list of file objects "
-                + "containing path, optional diskLifetime, and targetedMetadata. The latter is keyed "
-                + "to the sitename-from-well-known, and contains a map/object with site "
-                + "and implementation-specific attributes.", required = true)
+          @ApiParam(value = "Request structure:\n\n"
+                + "**files** - Array of File objects.  Required.\n"
+                + "File object structure:\n"
+                + "**path**:  - String.  Path of the file.  Duplicates will be sanitized.  Required.\n"
+                + "**diskLifetime**: - String of ISO 8601 format.  Duration after which the replica is considered no longer needed."
+                + "  Optional (defaults to system default for pin lifetime).\n"
+                + "**targetdMetadata** - targeted metadata object. Keyed to the sitename-from-well-known, "
+                + "and contains a map/object with site and implementation-specific attributes. "
+                + "Currently ignored by dCache.\n"
+                + "See further https://docs.google.com/document/d/1Zx_H5dRkQRfju3xIYZ2WgjKoOvmLtsafP2pKGpHqcfY/edit#heading=h.93yzfvog73oc.", required = true)
                 String requestPayload) {
         Subject subject = getSubject();
         Restriction restriction = getRestriction();
