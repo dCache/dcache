@@ -188,6 +188,8 @@ public class NearlineStorageHandler
     private OptionalLong removeTimeout = OptionalLong.empty();
     private ScheduledFuture<?> timeoutFuture;
     private boolean _addFromNearlineStorage;
+    private TimeUnit stickyOnStageDurationUnit;
+    private long stickyOnStageDuration;
 
     /**
      * Allocator used to use when space allocation is required.
@@ -256,6 +258,18 @@ public class NearlineStorageHandler
     @Required
     public void setFileStore(FileStore fileStore) {
         this.fileStore = fileStore;
+    }
+
+    @Required
+    public void setStickyOnStageDuration(long stickyOnStageDuration) {
+	checkArgument(stickyOnStageDuration >= -1,
+		      "Sticky on stage duration must be >= -1");
+        this.stickyOnStageDuration = stickyOnStageDuration;
+    }
+
+    @Required
+    public void setStickyOnStageDurationUnit(TimeUnit stickyOnStageDurationUnit) {
+        this.stickyOnStageDurationUnit = stickyOnStageDurationUnit;
     }
 
     @PostConstruct
@@ -1387,6 +1401,22 @@ public class NearlineStorageHandler
             }
             try {
                 descriptor.close();
+                if (cause == null) {
+                    /**
+                     * A sticky bit with hardcoded 5 minute lifetime is added
+                     * when a cached file is written to the pool.
+                     * Below we add ability to override the hardcoded default which
+                     * is useful for some workflows (e.g. when using permanent migration).
+                     */
+                    long expiration = stickyOnStageDuration == -1 ? -1
+                          : System.currentTimeMillis() +
+                                stickyOnStageDurationUnit.toMillis(stickyOnStageDuration);
+
+                    repository.setSticky(pnfsId,
+                          "self",
+                          expiration,
+                          true);
+                }
             } catch (Exception e) {
                 if (cause == null) {
                     cause = e;

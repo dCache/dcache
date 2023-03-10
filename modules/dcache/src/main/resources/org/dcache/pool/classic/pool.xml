@@ -194,6 +194,8 @@
       <property name="hsmSet" ref="hsmset"/>
       <property name="allocator" ref="allocator" />
       <property name="fileStore" ref="file-store" />
+      <property name="stickyOnStageDuration" value="${pool.sticky-on-stage-duration}" />
+      <property name="stickyOnStageDurationUnit" value="${pool.sticky-on-stage-duration.unit}" />
   </bean>
 
   <bean id="hsmset" class="org.dcache.pool.nearline.HsmSet">
