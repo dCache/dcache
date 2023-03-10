@@ -204,12 +204,16 @@ public final class BulkResources {
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces(MediaType.APPLICATION_JSON)
     public Response submit(
-          @ApiParam(value = "Description of the request, which defines the following: "
-                + "target (list), target_prefix, activity, cancel_on_failure, "
-                + "clear_on_success, clear_on_failure, delay_clear, expand_directories "
-                + "(NONE, TARGETS, ALL), pre_store (store all targets first), "
-                + "and arguments (map of name:value "
-                + "pairs) if required.", required = true)
+          @ApiParam(value = "Description of the request, which defines the following:\n\n"
+                + "**target** - Array of file paths.  Required.\n"
+                + "**target_prefix** - String path prefix, applied to all targets. Optional.\n"
+                + "**activity** - String, name of the activity (PIN, UNPIN, DELETE, UPDATE_QOS). Required.\n"
+                + "**cancel_on_failure** - Boolean. Optional, defaults to false.\n"
+                + "**clear_on_success** - Boolean, Optional, defaults to false.\n"
+                + "**clear_on_failure** - Boolean, Optional, defaults to false.\n"
+                + "**expand_directories** - String (NONE, TARGETS, ALL). Optional, defaults to NONE\n"
+                + "**pre_store** - Boolean (store all targets first, including recursively discovered paths).  Optional, defaults to false.\n"
+                + "**arguments** - Object (map) of name:value pairs. Optional, specific to activity.", required = true)
                 String requestPayload) {
         Subject subject = getSubject();
         Restriction restriction = getRestriction();
