@@ -245,7 +245,7 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
 
         FsInode base = _rootInode.mkdir("junit");
 
-        base.create("testCreateDir", 0, 0, 0644);
+        base.mkdir("testCreateDir", 0, 0, 0644);
         Stat stat = base.stat();
 
         Thread.sleep(1); // ensure updated directory mtime is distinct from creation mtime
