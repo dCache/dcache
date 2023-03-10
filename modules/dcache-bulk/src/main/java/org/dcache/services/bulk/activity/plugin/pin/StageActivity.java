@@ -152,17 +152,8 @@ public final class StageActivity extends PinManagerActivity {
     }
 
     private long getLifetimeInMillis(FsPath path) {
-        String ptString = null;
-
-        String key = path.toString();
-
-        if (jsonLifetimes != null && jsonLifetimes.has(key)) {
-            ptString = jsonLifetimes.getString(key);
-        }
-
-        if (ptString == null) {
-            ptString = DISK_LIFETIME.getDefaultValue();
-        }
+        String ptString = jsonLifetimes == null ? DISK_LIFETIME.getDefaultValue()
+              : jsonLifetimes.optString(path.toString(), DISK_LIFETIME.getDefaultValue());
 
         return TimeUnit.SECONDS.toMillis(Duration.parse(ptString).get(ChronoUnit.SECONDS));
     }
