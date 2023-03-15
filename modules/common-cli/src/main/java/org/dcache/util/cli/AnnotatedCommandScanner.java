@@ -5,6 +5,7 @@ import static java.util.Arrays.asList;
 import com.google.common.collect.Maps;
 import com.google.common.reflect.TypeToken;
 import dmg.util.command.Command;
+import dmg.util.command.CommandPrefix;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.util.List;
@@ -53,7 +54,22 @@ public class AnnotatedCommandScanner implements CommandScanner {
                               cast(commandClass).getDeclaredConstructor(
                                     commandClass.getDeclaringClass());
                         constructor.setAccessible(true);
-                        commands.put(asList(command.name().split(" ")),
+
+                        String prefix = null;
+                        for(var field : obj.getClass().getDeclaredFields()) {
+                            if (field.isAnnotationPresent(CommandPrefix.class)) {
+                                try {
+                                    field.setAccessible(true);
+                                    prefix = (String)field.get(obj);
+                                    break;
+                                } catch (IllegalAccessException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            }
+                        }
+
+                        var commandName =  prefix == null ? command.name() : prefix + " " + command.name();
+                        commands.put(asList(commandName.split(" ")),
                               new AnnotatedCommandExecutor(obj, command, constructor));
                     } catch (NoSuchMethodException e) {
                         throw new RuntimeException(
