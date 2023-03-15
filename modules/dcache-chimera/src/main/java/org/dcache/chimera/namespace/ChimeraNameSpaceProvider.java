@@ -785,6 +785,8 @@ public class ChimeraNameSpaceProvider
             }
 
             return locations;
+        } catch (FileNotFoundChimeraFsException e) {
+            throw new FileNotFoundCacheException("No such file or directory: " + pnfsId, e);
         } catch (ChimeraFsException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
         }
