@@ -349,8 +349,8 @@ public class PgSQL95FsSqlDriver extends FsSqlDriver {
             int n = _jdbc.update(
                   con -> {
                       PreparedStatement ps = con.prepareStatement(
-                            "INSERT INTO t_labels ( labelname) VALUES (?)"
-                                  + "ON CONFLICT ON CONSTRAINT labelname DO NOTHING",
+                            "INSERT INTO t_labels (labelname) VALUES (?)"
+                                  + "ON CONFLICT ON CONSTRAINT t_labels_labelname_key DO NOTHING",
                             Statement.RETURN_GENERATED_KEYS);
                       ps.setString(1, labelname);
 
@@ -363,23 +363,14 @@ public class PgSQL95FsSqlDriver extends FsSqlDriver {
                       label_id, inode.ino());
 
             } else {
-
-
-                Long label_id = getLabel(labelname);
-
+                long label_id = getLabel(labelname);
                 _jdbc.update(
-                      "INSERT INTO t_labels_ref (label_id, inumber) (SELECT * FROM (VALUES (?,?)) "
+                      "INSERT INTO t_labels_ref (label_id, inumber) VALUES (?,?) "
                             + "ON CONFLICT ON CONSTRAINT i_label_pkey DO NOTHING",
-
                       ps -> {
                           ps.setLong(1, label_id);
                           ps.setLong(2, inode.ino());
-                          ps.setLong(3, label_id);
-                          ps.setLong(4, inode.ino());
-
                       });
-
-
             }
 
         } catch (EmptyResultDataAccessException e) {
