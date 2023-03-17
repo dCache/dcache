@@ -59,6 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.tape;
 
+import static org.dcache.restful.util.JSONUtils.newBadRequestException;
+
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -148,8 +150,7 @@ public final class ArchiveInfoResources {
                 paths.add(jsonArray.getString(i));
             }
         } catch (JSONException e) {
-            throw new BadRequestException(
-                  String.format("badly formed json object (%s): %s.", requestPayload, e));
+            throw newBadRequestException(requestPayload, e);
         }
 
         return archiveInfoCollector.getInfo(HandlerBuilders.roleAwarePnfsHandler(pnfsManager),
