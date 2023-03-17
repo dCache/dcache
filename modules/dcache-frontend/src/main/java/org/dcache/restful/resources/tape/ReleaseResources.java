@@ -134,7 +134,8 @@ public final class ReleaseResources {
     @Produces(MediaType.APPLICATION_JSON)
     public Response release(
           @PathParam("id") String id,
-          @ApiParam(value = "Array of file paths to release. If any path does not belong to the "
+          @ApiParam(value = "Request structure:\n\n"
+                + "**paths** - array of paths for files to release. If any path does not belong to the "
                 + "stage request corresponding to the id, this request will fail.", required = true)
                 String requestPayload) {
 
