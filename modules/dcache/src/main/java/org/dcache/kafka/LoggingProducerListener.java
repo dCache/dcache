@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2018 - 2022 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2018 - 2023 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -36,8 +36,6 @@ public class LoggingProducerListener<K, V> implements ProducerListener<K, V> {
     public void onError(ProducerRecord<K, V> producerRecord,
           @Nullable RecordMetadata recordMetadata, Exception exception) {
         LOGGER.error("Producer exception occurred while publishing message : {}, exception : {}",
-              producerRecord, exception);
+              producerRecord, exception.toString());
     }
-
-
 }
