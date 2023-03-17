@@ -59,6 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.bulk;
 
+import static org.dcache.restful.util.JSONUtils.newBadRequestException;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
@@ -420,8 +422,7 @@ public final class BulkResources {
         try {
             map = new Gson().fromJson(requestPayload, Map.class);
         } catch (JsonParseException e) {
-            throw new BadRequestException(
-                  String.format("badly formed json object (%s): %s.", requestPayload, e));
+            throw newBadRequestException(requestPayload, e);
         }
 
         BulkRequest request = new BulkRequest();
