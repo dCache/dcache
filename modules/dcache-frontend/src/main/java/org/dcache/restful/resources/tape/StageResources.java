@@ -61,6 +61,7 @@ package org.dcache.restful.resources.tape;
 
 import static org.dcache.restful.resources.bulk.BulkResources.getRestriction;
 import static org.dcache.restful.resources.bulk.BulkResources.getSubject;
+import static org.dcache.restful.util.JSONUtils.newBadRequestException;
 
 import com.google.common.base.Strings;
 import io.swagger.annotations.Api;
@@ -198,10 +199,16 @@ public final class StageResources {
                 + "does not belong to that stage request, this request will fail.", required = true)
                 String requestPayload) {
 
-        JSONObject reqPayload = new JSONObject(requestPayload);
-        JSONArray paths = reqPayload.getJSONArray("paths");
-        if (paths == null) {
-            throw new BadRequestException("cancellation request contains no paths.");
+        JSONObject reqPayload;
+        JSONArray paths;
+        try {
+            reqPayload = new JSONObject(requestPayload);
+            paths = reqPayload.getJSONArray("paths");
+            if (paths == null) {
+                throw new BadRequestException("cancellation request contains no paths.");
+            }
+        } catch (JSONException e) {
+            throw newBadRequestException(requestPayload, e);
         }
 
         List<String> targetPaths = new ArrayList<>();
@@ -376,8 +383,7 @@ public final class StageResources {
             arguments.put("targetedMetadata", jsonMetadata.toString());
             request.setArguments(arguments);
         } catch (JSONException e) {
-            throw new BadRequestException(
-                  String.format("badly formed json object (%s): %s.", requestPayload, e));
+            throw newBadRequestException(requestPayload, e);
         }
 
         return request;

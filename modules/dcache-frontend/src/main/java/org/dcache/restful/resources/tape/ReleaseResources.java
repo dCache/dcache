@@ -59,6 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.tape;
 
+import static org.dcache.restful.util.JSONUtils.newBadRequestException;
 import static org.dcache.restful.util.RequestUser.getRestriction;
 import static org.dcache.restful.util.RequestUser.getSubject;
 
@@ -154,8 +155,7 @@ public final class ReleaseResources {
                 targetPaths.add(paths.getString(i));
             }
         } catch (JSONException e) {
-            throw new BadRequestException(
-                  String.format("badly formed json object (%s): %s.", requestPayload, e));
+            throw newBadRequestException(requestPayload, e);
         }
 
         Subject subject = getSubject();
