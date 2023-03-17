@@ -128,7 +128,8 @@ public final class ArchiveInfoResources {
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces(MediaType.APPLICATION_JSON)
     public List<ArchiveInfo> getArchiveInfo(
-          @ApiParam(value = "Array of paths for which to return archive info (file locality).",
+          @ApiParam(value = "Request structure:\n\n"
+                + "**paths** - array of paths for which to return archive info (file locality).",
                 required = true)
                 String requestPayload) {
 
