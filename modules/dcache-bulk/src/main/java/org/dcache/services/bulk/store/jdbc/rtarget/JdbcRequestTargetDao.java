@@ -71,9 +71,11 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.services.bulk.BulkRequest;
@@ -146,6 +148,7 @@ public final class JdbcRequestTargetDao extends JdbcDaoSupport {
 
     public void insertInitialTargets(BulkRequest request) {
         List<TargetPlaceholder> targets = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
         for (String target : request.getTarget()) {
             TargetPlaceholder t = new TargetPlaceholder();
             t.rid = request.getId();
@@ -158,6 +161,10 @@ public final class JdbcRequestTargetDao extends JdbcDaoSupport {
                 t.path = target;
                 t.state = CREATED.name();
             }
+            if (seen.contains(t.path)) {
+                continue;
+            }
+            seen.add(t.path);
             targets.add(t);
         }
         utils.insertBatch(targets, BATCH_INSERT, SETTER, this);
