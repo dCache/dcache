@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013 - 2021 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013 - 2023 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -112,11 +112,12 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
             getMoverChannel().close();
         } catch (IOException e) {
             _log.error("failed to close RAF {}", e.toString());
-        }
-        if (error == null) {
-            _completionHandler.completed(null, null);
-        } else {
-            _completionHandler.failed(error, null);
+        } finally {
+            if (error == null) {
+                _completionHandler.completed(null, null);
+            } else {
+                _completionHandler.failed(error, null);
+            }
         }
     }
 
