@@ -167,6 +167,6 @@ public class BulkRequestJsonParseTest {
     }
 
     private void whenParsed() {
-        bulkRequest = toBulkRequest(requestJson);
+        bulkRequest = toBulkRequest(requestJson, null);
     }
 }
