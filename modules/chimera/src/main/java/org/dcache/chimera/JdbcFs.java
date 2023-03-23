@@ -48,8 +48,11 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import javax.sql.DataSource;
+import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.dcache.acl.ACE;
 import org.dcache.acl.enums.RsType;
 import org.dcache.chimera.posix.Stat;
@@ -75,7 +78,7 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
  * @Immutable
  * @Threadsafe
  */
-public class JdbcFs implements FileSystemProvider {
+public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
 
     /**
      * common error message for unimplemented
@@ -180,6 +183,16 @@ public class JdbcFs implements FileSystemProvider {
      * default retention policy
      */
     private RetentionPolicy _defaultRetentionPolicy;
+
+
+    private final ScheduledExecutorService maintenanceTaskExecutor = Executors.newSingleThreadScheduledExecutor(
+          new ThreadFactoryBuilder()
+                .setNameFormat("chimera-maintenance-executor-%d")
+                .build()
+    );
+
+    private ScheduledFuture<?> maintenanceTask;
+
 
     public JdbcFs(DataSource dataSource, PlatformTransactionManager txManager)
           throws SQLException, ChimeraFsException {
@@ -1479,7 +1492,7 @@ public class JdbcFs implements FileSystemProvider {
      */
     @Override
     public void close() throws IOException {
-        // enforced by the interface
+        maintenanceTaskExecutor.shutdown();
     }
 
     @Override
@@ -1651,4 +1664,30 @@ public class JdbcFs implements FileSystemProvider {
                   String.format("%s user quota exceeded for uid=%d", rp, uid));
         }
     }
+
+    private synchronized void enableMaintenanceTask() {
+        if (maintenanceTask == null) {
+            maintenanceTask = maintenanceTaskExecutor.scheduleWithFixedDelay(
+                  () -> _sqlDriver.performMaintenanceTask(), 10, 20, TimeUnit.SECONDS
+            );
+        }
+    }
+
+    private synchronized void disableMaintenanceTask() {
+        if (maintenanceTask != null) {
+            maintenanceTask.cancel(false);
+            maintenanceTask = null;
+        }
+    }
+
+    @Override
+    public void isLeader() {
+        enableMaintenanceTask();
+    }
+
+    @Override
+    public void notLeader() {
+        disableMaintenanceTask();
+    }
+
 }

@@ -2212,4 +2212,16 @@ public class FsSqlDriver {
         setInodeAttributes(inode, 0, new Stat());
     }
 
+
+    /**
+     * File system backend specific periodic maintenance task. It's recommended to run the
+     * maintenance task runs as a single transaction, or as a series of transactions, if sub-tasks
+     * are involved. The thread running the tasks might be interrupted, for example, due to shutdown
+     * of the dCache processes.
+     *
+     * The implementation should handle multiple instances of the maintenance task running concurrently,
+     */
+    void performMaintenanceTask() {
+
+    }
 }

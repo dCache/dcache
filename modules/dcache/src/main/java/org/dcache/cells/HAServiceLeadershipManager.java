@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2020 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2020 - 2023 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -28,8 +28,10 @@ import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.zookeeper.CDCLeaderLatchListener;
 import dmg.util.CommandException;
 import dmg.util.command.Command;
+import dmg.util.command.CommandPrefix;
 import java.io.PrintWriter;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.leader.LeaderLatch;
@@ -55,7 +57,11 @@ public class HAServiceLeadershipManager implements CellIdentityAware, CellComman
     private LeaderLatch zkLeaderLatch;
     private LeaderLatchListener leadershipListener;
 
+    @CommandPrefix
+    private final String serviceName;
+
     public HAServiceLeadershipManager(String serviceName) {
+        this.serviceName = Objects.requireNonNull(serviceName);
         createZkLeadershipPath(serviceName);
     }
 

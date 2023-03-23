@@ -47,6 +47,10 @@
       <artifactId>spring-jdbc</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.apache.curator</groupId>
+      <artifactId>curator-recipes</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.dcache</groupId>
       <artifactId>dcache-common</artifactId>
       <version>${project.version}</version>

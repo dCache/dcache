@@ -145,6 +145,24 @@
 
     </bean>
 
+    <bean id="chimera-maintenance-leadership-manager" class="org.dcache.cells.HAServiceLeadershipManager"
+      init-method="initZkLeaderListener" destroy-method="shutdown">
+        <description>Coordinates which components performs maintenance tasks</description>
+        <constructor-arg value="chimera-maintenance"/>
+        <property name="leadershipListener">
+            <ref bean="chimera-maintenance-leaderlistener-group"/>
+        </property>
+    </bean>
+
+    <bean id="chimera-maintenance-leaderlistener-group" class="org.dcache.cells.LeadershipListenerGroup">
+        <description>Propagates leadership change notifications to managed listeners</description>
+        <property name="leaderElectionAwareComponents">
+            <set>
+                <ref bean="fileSystem"/>
+            </set>
+        </property>
+    </bean>
+
     <bean id="export" class="org.dcache.nfs.ExportFile">
         <description>NFS export file</description>
         <constructor-arg index = "0">
@@ -350,4 +368,5 @@
     <beans profile="inotify-false">
         <bean parent="door"/>
     </beans>
+
 </beans>
