@@ -59,6 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.bulk;
 
+import static org.dcache.restful.util.HttpServletRequests.getUserRootAwareTargetPrefix;
 import static org.dcache.restful.util.JSONUtils.newBadRequestException;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -224,7 +225,7 @@ public final class BulkResources {
         Subject subject = getSubject();
         Restriction restriction = getRestriction();
 
-        BulkRequest request = toBulkRequest(requestPayload);
+        BulkRequest request = toBulkRequest(requestPayload, this.request);
 
         /*
          *  Frontend sets the URL.  The backend service provides the UUID.
@@ -413,7 +414,7 @@ public final class BulkResources {
      * they are defined in the Bulk service as well.
      */
     @VisibleForTesting
-    static BulkRequest toBulkRequest(String requestPayload) {
+    static BulkRequest toBulkRequest(String requestPayload, HttpServletRequest httpServletRequest) {
         if (Strings.emptyToNull(requestPayload) == null) {
             throw new BadRequestException("empty request payload.");
         }
@@ -446,7 +447,11 @@ public final class BulkResources {
 
         string = removeEntry(map, String.class, "target_prefix", "target-prefix",
               "targetPrefix");
-        request.setTargetPrefix(string);
+        if (httpServletRequest != null) {
+            request.setTargetPrefix(getUserRootAwareTargetPrefix(httpServletRequest, string));
+        } else {
+            request.setTargetPrefix(string);
+        }
 
         string = removeEntry(map, String.class, "expand_directories", "expand-directories",
               "expandDirectories");

@@ -60,6 +60,7 @@ documents or software obtained from this server.
 package org.dcache.services.bulk.store.jdbc.rtarget;
 
 import static org.dcache.services.bulk.util.BulkRequestTarget.NON_TERMINAL;
+import static org.dcache.services.bulk.util.BulkRequestTarget.PID.DISCOVERED;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.CREATED;
 
 import java.util.List;
@@ -204,8 +205,12 @@ public final class JdbcBulkTargetStore implements BulkTargetStore {
 
     private JdbcRequestTargetUpdate prepareUpdate(BulkRequestTarget target) {
         JdbcRequestTargetUpdate update = targetDao.set().pid(target.getPid())
-              .rid(target.getRid()).pnfsid(target.getPnfsId()).path(target.getPath())
+              .rid(target.getRid()).pnfsid(target.getPnfsId())
               .type(target.getType()).state(target.getState());
+
+        if (target.getId() == null || target.getPid() == DISCOVERED) {
+            update.path(target.getPath());
+        }
 
         switch (target.getState()) {
             case COMPLETED:
