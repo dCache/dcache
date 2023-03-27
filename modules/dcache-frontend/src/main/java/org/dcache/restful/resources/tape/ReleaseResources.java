@@ -60,6 +60,7 @@ documents or software obtained from this server.
 package org.dcache.restful.resources.tape;
 
 import static org.dcache.restful.util.JSONUtils.newBadRequestException;
+import static org.dcache.restful.util.HttpServletRequests.getUserRootAwareTargetPrefix;
 import static org.dcache.restful.util.RequestUser.getRestriction;
 import static org.dcache.restful.util.RequestUser.getSubject;
 
@@ -172,6 +173,7 @@ public final class ReleaseResources {
          *  Frontend sets the URL.  The backend service provides the UUID.
          */
         request.setUrlPrefix(this.request.getRequestURL().toString());
+        request.setTargetPrefix(getUserRootAwareTargetPrefix(this.request, null));
 
         BulkRequestMessage message = new BulkRequestMessage(request, restriction);
         message.setSubject(subject);

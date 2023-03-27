@@ -295,6 +295,10 @@ public final class PrestoreRequestContainerJob extends AbstractRequestContainerJ
         checkForRequestCancellation();
         Long id = target.getId();
         FsPath path = target.getPath();
+        if (targetPrefix != null && !path.contains(targetPrefix)) {
+            path = computeFsPath(targetPrefix, target.getPath().toString());
+        }
+
         FileAttributes attributes = target.getAttributes();
 
         if (hasBeenCancelled(id, target.getPid(), path, attributes)) {
