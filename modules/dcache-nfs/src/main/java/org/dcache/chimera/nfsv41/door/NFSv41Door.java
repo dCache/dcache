@@ -711,7 +711,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                 final InetSocketAddress remote = context.getRpcCall().getTransport()
                       .getRemoteSocketAddress();
                 final NFS4ProtocolInfo protocolInfo = new NFS4ProtocolInfo(remote,
-                      new org.dcache.chimera.nfs.v4.xdr.stateid4(stateid),
+                      new org.dcache.chimera.nfs.v4.xdr.stateid4(openStateId.stateid()),
                       nfsInode.toNfsHandle()
                 );
 
@@ -800,7 +800,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             layout.lo_iomode = args.loga_iomode;
             layout.lo_offset = new offset4(0);
             layout.lo_length = new length4(nfs4_prot.NFS4_UINT64_MAX);
-            layout.lo_content = layoutDriver.getLayoutContent(stateid,
+            layout.lo_content = layoutDriver.getLayoutContent(openStateId.stateid(),
                   NFSv4Defaults.NFS4_STRIPE_SIZE, new nfs_fh4(nfsInode.toNfsHandle()), devices);
 
             layoutStateId.bumpSeqid();
