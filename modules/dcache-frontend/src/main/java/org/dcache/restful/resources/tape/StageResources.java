@@ -61,6 +61,7 @@ package org.dcache.restful.resources.tape;
 
 import static org.dcache.restful.resources.bulk.BulkResources.getRestriction;
 import static org.dcache.restful.resources.bulk.BulkResources.getSubject;
+import static org.dcache.restful.util.HttpServletRequests.getUserRootAwareTargetPrefix;
 import static org.dcache.restful.util.JSONUtils.newBadRequestException;
 
 import com.google.common.base.Strings;
@@ -340,6 +341,7 @@ public final class StageResources {
         request.setClearOnFailure(false);
         request.setClearOnSuccess(false);
         request.setActivity("STAGE");
+        request.setTargetPrefix(getUserRootAwareTargetPrefix(this.request, null));
 
         try {
             JSONObject reqPayload = new JSONObject(requestPayload);
