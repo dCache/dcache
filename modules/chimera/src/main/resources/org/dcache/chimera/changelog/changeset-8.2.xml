@@ -24,4 +24,28 @@
         <rollback>
         </rollback>
     </changeSet>
+
+    <!-- Fixes bug when handling empty or root paths. -->
+    <changeSet id="34.1" author="arossi" dbms="postgresql">
+        <comment>Symlink resolution calling inumber2path(path2inumber)</comment>
+        <createProcedure>
+            CREATE OR REPLACE FUNCTION resolve_path(root bigint, path varchar) RETURNS varchar
+                AS
+            $$
+                DECLARE
+                    len int;
+                BEGIN
+                len := length(path);
+                IF len = 0 THEN
+                    path := '/';
+                ELSIF path LIKE '/%' AND len > 1 THEN
+                    path := substring(path from 2);
+                END IF;
+                return inumber2path(path2inumber(root, path));
+            END;
+            $$ LANGUAGE plpgsql;
+        </createProcedure>
+        <rollback>
+        </rollback>
+    </changeSet>
 </databaseChangeLog>
