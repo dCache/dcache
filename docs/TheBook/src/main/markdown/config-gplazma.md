@@ -1246,7 +1246,7 @@ Example:
 
     "*" "/desy/Role=production/" desyprod
 
-In that case, any DN with the corresponding role will match. It should be noted that a match is first attempted with the explicit DN. Therefore if both DN and `"*"` matches can be made, the DN match will take precedence. This is true for the revocation matches as well (see below).
+In that case, any DN with the corresponding role will match. It should be noted that a match is first attempted with the explicit DN. Therefore if both DN and `"*"` matches can be made, the DN match will take precedence.
 
 Thus a user with subject `/C=DE/O=GermanGrid/OU=DESY/CN=John Doe` and
 role `/desy/Role=production` will be mapped to username `desyprod` via
@@ -1256,16 +1256,6 @@ there is also a line such as
     "/C=DE/O=GermanGrid/OU=DESY/CN=John Doe" "/desy/Role=production" desyprod2
 
 in which case the username will be `desyprod2`.
-
-#### Revocation Entries
-
-To create a revocation entry, add a line with a dash (`-`) as the username, such as
-
-    "/C=DE/O=GermanGrid/OU=DESY/CN=John Doe" "/desy/production" -
-
-or modify the username of the entry if it already exists. The behaviour is undefined if there are two entries which differ only by username.
-
-Since DN is matched first, if a user would be authorized by his VO membership through a `"*"` entry, but is matched according to his DN to a revocation entry, authorization would be denied. Likewise if a whole VO were denied in a revocation entry, but some user in that VO could be mapped to a username through his DN, then authorization would be granted.
 
 #### More Examples
 
