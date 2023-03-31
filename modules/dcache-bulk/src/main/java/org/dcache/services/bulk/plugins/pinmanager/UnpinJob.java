@@ -70,6 +70,8 @@ public class UnpinJob extends PinManagerJob {
 
     @Override
     protected void doRun() {
-        sendToPinManager(new PinManagerUnpinMessage(attributes.getPnfsId()));
+        PinManagerUnpinMessage message = new PinManagerUnpinMessage(attributes.getPnfsId());
+        message.setSubject(subject);
+        sendToPinManager(message);
     }
 }
