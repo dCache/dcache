@@ -132,6 +132,7 @@ abstract class PinManagerActivity extends BulkActivity<Message> implements PinMa
 
     protected PinManagerUnpinMessage unpinMessage(String id, PnfsId pnfsId) {
         PinManagerUnpinMessage message = new PinManagerUnpinMessage(pnfsId);
+        message.setSubject(subject);
         message.setRequestId(id);
         return message;
     }
