@@ -5,6 +5,7 @@ import static java.util.stream.Collectors.toMap;
 import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.MoreExecutors;
 import dmg.util.AuthorizedString;
+import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
 import dmg.util.logback.FilterShell;
@@ -146,8 +147,15 @@ public class SystemCell
     }
 
 
-    @Command(name = "jfr start", hint = "Starts Java flight recorder", description = "Starts JFR")
+    @Command(name = "jfr start", hint = "Starts Java flight recorder.",
+          description = "Starts Java flight recorder. The JFR configuration can be specified as optional"
+                + " parameter: either as one of JVM pre-defined configuration names 'default' or 'profile', or"
+                + " as an absolute path to a custom configuration."
+    )
     public class StartJFR implements Callable<String> {
+
+        @Argument(usage = "Predefined JFR configuration.", metaVar = "configuration", required = false, valueSpec = "[default|profile|<path>]")
+        String config = "default";
 
         @Override
         public String call() throws Exception {
@@ -156,12 +164,13 @@ public class SystemCell
                 return "Another record in progress.";
             }
 
-            Configuration configuration = Configuration.getConfiguration("default");
+            var configuration = config.startsWith("/") ?
+                  Configuration.create(Path.of(config)) : Configuration.getConfiguration(config);
             recording = new Recording(configuration);
             recording.setName(getCellDomainName());
             recording.start();
 
-            return "enabled";
+            return "enabled with config: " + configuration.getName();
         }
     }
 
