@@ -109,6 +109,7 @@ public class PinJob extends PinManagerJob {
             }
             PinManagerPinMessage message
                   = new PinManagerPinMessage(attributes, getProtocolInfo(),requestId, lifetime);
+            message.setSubject(subject);
             sendToPinManager(message);
         } catch (URISyntaxException e) {
             setError(e);

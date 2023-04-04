@@ -75,6 +75,7 @@ public class UnpinJob extends PinManagerJob {
     protected void doRun() {
         String id = arguments == null ? null : arguments.get(UNPIN_REQUEST_ID.getName());
         PinManagerUnpinMessage message = new PinManagerUnpinMessage(attributes.getPnfsId());
+        message.setSubject(subject);
         message.setRequestId(id);
         sendToPinManager(message);
     }
