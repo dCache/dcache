@@ -720,10 +720,10 @@ public class NFSv41Door extends AbstractCellComponent implements
 
                     transfer = args.loga_iomode == layoutiomode4.LAYOUTIOMODE4_RW ?
 
-                          new WriteTransfer(_pnfsHandler, client, openStateId, nfsInode,
+                          new WriteTransfer(_pnfsHandler, client, layoutType, openStateId, nfsInode,
                                 context.getRpcCall().getCredential().getSubject())
                           :
-                                new ReadTransfer(_pnfsHandler, client, openStateId, nfsInode,
+                                new ReadTransfer(_pnfsHandler, client, layoutType, openStateId, nfsInode,
                                       context.getRpcCall().getCredential().getSubject());
 
                     transfer.setProtocolInfo(protocolInfo);
@@ -736,39 +736,8 @@ public class NFSv41Door extends AbstractCellComponent implements
                     transfer.setIoQueue(_ioQueue);
                     transfer.setKafkaSender(_kafkaSender);
 
-                    /*
-                     * As all our layouts marked 'return-on-close', stop mover when
-                     * open-state disposed on CLOSE.
-                     */
                     final NfsTransfer t = transfer;
                     openStateId.addDisposeListener(state -> {
-                        /*
-                         * Cleanup transfer when state invalidated.
-                         */
-                        if (t.hasMover()) {
-                            // FIXME: as long as we can identify client's capabilities the workaround apply to flex_files layouts
-                            // to work correctly with proxy-io. As modern rhel clients (>= 7) use flex_files by default it's ok.
-                            if (layoutType == layouttype4.LAYOUT4_FLEX_FILES && client.isLeaseValid() && client.getCB() != null) {
-                                /*
-                                 * Due to race in the Linux kernel client, a server might see CLOSE before
-                                 * the last WRITE operation have been processed by a data server. Thus,
-                                 * recall the layout (enforce dirty page flushing) and return a NFS4ERR_DELAY.
-                                 *
-                                 * see: https://bugzilla.redhat.com/show_bug.cgi?id=1901524
-                                 */
-                                _log.warn(
-                                      "Deploying work-around for buggy client {} issuing CLOSE before LAYOUT_RETURN for transfer {}@{} of {}",
-                                      t.getMoverId(), t.getPool(), t.getPnfsId(),
-                                      t.getClient().getRemoteAddress());
-                                t.recallLayout(_callbackExecutor);
-                                throw new DelayException("Close before layoutreturn");
-                            } else {
-                                _log.warn("Removing orphan mover: {}@{} for {} by {}",
-                                      t.getMoverId(), t.getPool(), t.getPnfsId(),
-                                      t.getClient().getRemoteAddress());
-                                t.shutdownMover();
-                            }
-                        }
                         if (t.isWrite()) {
                             /* write request keep in the message map to
                              * avoid re-creates and trigger errors.
@@ -776,7 +745,6 @@ public class NFSv41Door extends AbstractCellComponent implements
                             _transfers.remove(openStateId.stateid());
                         }
                     });
-
                     _transfers.put(openStateId.stateid(), transfer);
                 } else {
                     // keep debug context in sync
@@ -1257,9 +1225,9 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     private class ReadTransfer extends NfsTransfer {
 
-        public ReadTransfer(PnfsHandler pnfs, NFS4Client client, NFS4State openStateId,
+        public ReadTransfer(PnfsHandler pnfs, NFS4Client client, layouttype4 layouttype, NFS4State openStateId,
               Inode nfsInode, Subject ioSubject) throws ChimeraNFSException {
-            super(pnfs, client, openStateId, nfsInode, ioSubject);
+            super(pnfs, client, layouttype, openStateId, nfsInode, ioSubject);
         }
 
         @Override
@@ -1322,9 +1290,9 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     private class WriteTransfer extends NfsTransfer {
 
-        public WriteTransfer(PnfsHandler pnfs, NFS4Client client, NFS4State openStateId,
+        public WriteTransfer(PnfsHandler pnfs, NFS4Client client, layouttype4 layoutType, NFS4State openStateId,
               Inode nfsInode, Subject ioSubject) throws ChimeraNFSException {
-            super(pnfs, client, openStateId, nfsInode, ioSubject);
+            super(pnfs, client, layoutType, openStateId, nfsInode, ioSubject);
         }
 
         @Override
@@ -1391,7 +1359,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         private final NFS4Client _client;
         protected boolean shutdownInProgress;
 
-        NfsTransfer(PnfsHandler pnfs, NFS4Client client, NFS4State openStateId,
+        NfsTransfer(PnfsHandler pnfs, NFS4Client client, layouttype4 layoutType, NFS4State openStateId,
               Inode nfsInode, Subject ioSubject) throws ChimeraNFSException {
             super(pnfs, Subjects.ROOT, Restrictions.none(), Subjects.fromUnixNumericSubject(ioSubject), null);
 
@@ -1399,6 +1367,41 @@ public class NFSv41Door extends AbstractCellComponent implements
 
             // layout, or a transfer in dCache language, must have a unique stateid
             _stateid = client.createState(openStateId.getStateOwner(), openStateId);
+
+            /*
+             * As all our layouts marked 'return-on-close', stop mover when
+             * layout-state disposed (which will trigger by open state disposal) on CLOSE.
+             */
+            _stateid.addDisposeListener(state -> {
+                /*
+                 * Cleanup transfer when state invalidated.
+                 */
+                var t = this;
+                if (t.hasMover()) {
+                    // FIXME: as long as we can identify client's capabilities the workaround apply to flex_files layouts
+                    // to work correctly with proxy-io. As modern rhel clients (>= 7) use flex_files by default it's ok.
+                    if (layoutType == layouttype4.LAYOUT4_FLEX_FILES && client.isLeaseValid() && client.getCB() != null) {
+                        /*
+                         * Due to race in the Linux kernel client, a server might see CLOSE before
+                         * the last WRITE operation have been processed by a data server. Thus,
+                         * recall the layout (enforce dirty page flushing) and return a NFS4ERR_DELAY.
+                         *
+                         * see: https://bugzilla.redhat.com/show_bug.cgi?id=1901524
+                         */
+                        _log.warn(
+                              "Deploying work-around for buggy client {} issuing CLOSE before LAYOUT_RETURN for transfer {}@{} of {}",
+                              t.getMoverId(), t.getPool(), t.getPnfsId(),
+                              t.getClient().getRemoteAddress());
+                        t.recallLayout(_callbackExecutor);
+                        throw new DelayException("Close before layoutreturn");
+                    } else {
+                        _log.warn("Removing orphan mover: {}@{} for {} by {}",
+                              t.getMoverId(), t.getPool(), t.getPnfsId(),
+                              t.getClient().getRemoteAddress());
+                        t.shutdownMover();
+                    }
+                }
+            });
             _openStateid = openStateId;
             _client = client;
         }
