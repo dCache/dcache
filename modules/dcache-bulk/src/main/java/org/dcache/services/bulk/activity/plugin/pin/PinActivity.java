@@ -116,6 +116,7 @@ public final class PinActivity extends PinManagerActivity {
             PinManagerPinMessage message
                   = new PinManagerPinMessage(attributes, getProtocolInfo(), id,
                   lifetimeInMillis);
+            message.setSubject(subject);
             return pinManager.send(message, Long.MAX_VALUE);
         } catch (URISyntaxException | CacheException e) {
             return Futures.immediateFailedFuture(e);
@@ -133,7 +134,7 @@ public final class PinActivity extends PinManagerActivity {
             String expire = arguments.get(LIFETIME.getName());
             String unit = arguments.get(LIFETIME_UNIT.getName());
 
-            Long value = (long)(Double.parseDouble(expire));
+            Long value = (long) (Double.parseDouble(expire));
 
             lifetimeInMillis = expire == null ? defaultUnit.toMillis(defaultValue)
                   : unit == null ? defaultUnit.toMillis(value)

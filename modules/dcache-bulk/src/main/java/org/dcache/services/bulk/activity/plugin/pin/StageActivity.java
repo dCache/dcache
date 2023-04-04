@@ -124,6 +124,7 @@ public final class StageActivity extends PinManagerActivity {
             PinManagerPinMessage message
                   = new PinManagerPinMessage(attributes, getProtocolInfo(), id,
                   getLifetimeInMillis(target));
+            message.setSubject(subject);
             return pinManager.send(message, Long.MAX_VALUE);
         } catch (URISyntaxException | CacheException e) {
             return Futures.immediateFailedFuture(e);
