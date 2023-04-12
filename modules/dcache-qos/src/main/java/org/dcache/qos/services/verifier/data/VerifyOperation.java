@@ -73,6 +73,8 @@ import diskCacheV111.util.PnfsId;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import javax.security.auth.Subject;
+import org.dcache.auth.Subjects;
 import org.dcache.qos.QoSException;
 import org.dcache.qos.data.FileQoSUpdate;
 import org.dcache.qos.data.QoSAction;
@@ -103,6 +105,7 @@ public final class VerifyOperation implements Comparable<VerifyOperation> {
     private VerifyOperationState state;
     private QoSAction previousAction;
     private QoSAction action;
+    private Subject subject;
 
     private String poolGroup;
     private String storageUnit;
@@ -240,6 +243,10 @@ public final class VerifyOperation implements Comparable<VerifyOperation> {
         return storageUnit;
     }
 
+    public Subject getSubject() {
+        return subject == null ? Subjects.ROOT : subject;
+    }
+
     public String getTarget() {
         return target;
     }
@@ -372,6 +379,10 @@ public final class VerifyOperation implements Comparable<VerifyOperation> {
 
     public void setStorageUnit(String storageUnit) {
         this.storageUnit = storageUnit;
+    }
+
+    public void setSubject(Subject subject) {
+        this.subject = subject;
     }
 
     public void setTarget(String target) {

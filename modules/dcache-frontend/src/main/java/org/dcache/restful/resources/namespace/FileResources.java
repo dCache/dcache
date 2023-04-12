@@ -39,6 +39,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
@@ -66,6 +67,7 @@ import org.dcache.namespace.FileType;
 import org.dcache.pinmanager.PinManagerPinMessage;
 import org.dcache.pinmanager.PinManagerUnpinMessage;
 import org.dcache.poolmanager.PoolMonitor;
+import org.dcache.qos.QoSException;
 import org.dcache.qos.QoSTransitionEngine;
 import org.dcache.qos.data.FileQoSRequirements;
 import org.dcache.qos.remote.clients.RemoteQoSRequirementsClient;
@@ -444,6 +446,7 @@ public class FileResources {
                     break;
                 case "qos":
                     String targetQos = reqPayload.getString("target");
+                    Subject subject = RequestUser.isAdmin() ? Subjects.ROOT : RequestUser.getSubject();
                     if (!useQosService) {
                         new QoSTransitionEngine(poolmanager,
                               poolMonitor,
@@ -458,11 +461,11 @@ public class FileResources {
                         FileAttributes attr
                               = pnfsHandler.getFileAttributes(path.toString(),
                               NamespaceUtils.getRequestedAttributes(false, false,
-                                    true, false, false));
+                                    true, false, true));
                         FileQoSRequirements requirements = getBasicRequirements(targetQos, attr);
                         RemoteQoSRequirementsClient client = new RemoteQoSRequirementsClient();
                         client.setRequirementsService(qosEngine);
-                        client.fileQoSRequirementsModified(requirements);
+                        client.fileQoSRequirementsModified(requirements, subject);
                     }
                     break;
                 case "pin":

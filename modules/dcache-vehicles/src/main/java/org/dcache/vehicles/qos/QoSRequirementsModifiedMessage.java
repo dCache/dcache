@@ -60,14 +60,16 @@ documents or software obtained from this server.
 package org.dcache.vehicles.qos;
 
 import diskCacheV111.vehicles.Message;
+import javax.security.auth.Subject;
 import org.dcache.qos.data.FileQoSRequirements;
 
 public class QoSRequirementsModifiedMessage extends Message {
 
     private final FileQoSRequirements requirements;
 
-    public QoSRequirementsModifiedMessage(FileQoSRequirements requirements) {
+    public QoSRequirementsModifiedMessage(FileQoSRequirements requirements, Subject subject) {
         this.requirements = requirements;
+        setSubject(subject);
     }
 
     public FileQoSRequirements getRequirements() {
