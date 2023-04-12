@@ -60,6 +60,7 @@ documents or software obtained from this server.
 package org.dcache.qos.remote.clients;
 
 import diskCacheV111.util.PnfsId;
+import javax.security.auth.Subject;
 import org.dcache.cells.CellStub;
 import org.dcache.qos.QoSException;
 import org.dcache.qos.listeners.QoSVerificationListener;
@@ -97,8 +98,10 @@ public final class RemoteQoSVerificationClient implements QoSVerificationListene
     }
 
     @Override
-    public void fileQoSVerificationCancelled(PnfsId pnfsId) throws QoSException {
-        verificationService.send(new QoSVerificationCancelledMessage(pnfsId));
+    public void fileQoSVerificationCancelled(PnfsId pnfsId, Subject subject) throws QoSException {
+        QoSVerificationCancelledMessage msg = new QoSVerificationCancelledMessage(pnfsId);
+        msg.setSubject(subject);
+        verificationService.send(msg);
     }
 
     public void fileQoSBatchedVerificationCancelled(String id) {

@@ -60,6 +60,7 @@ documents or software obtained from this server.
 package org.dcache.qos.local.clients;
 
 import diskCacheV111.util.PnfsId;
+import javax.security.auth.Subject;
 import org.dcache.qos.QoSException;
 import org.dcache.qos.listeners.QoSVerificationListener;
 import org.dcache.qos.services.verifier.handlers.VerifyOperationHandler;
@@ -91,7 +92,7 @@ public final class LocalQoSVerificationClient implements QoSVerificationListener
     }
 
     @Override
-    public void fileQoSVerificationCancelled(PnfsId pnfsId) throws QoSException {
+    public void fileQoSVerificationCancelled(PnfsId pnfsId, Subject subject) throws QoSException {
         fileOpHandler.handleFileOperationCancelled(pnfsId);
     }
 

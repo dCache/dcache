@@ -42,6 +42,14 @@ public class JdbcOperationUpdate extends JdbcUpdate implements VerifyOperationUp
     }
 
     @Override
+    public VerifyOperationUpdate subject(String subject) {
+        if (subject != null) {
+            set("subject", subject);
+        }
+        return this;
+    }
+
+    @Override
     public VerifyOperationUpdate arrivalTime(long epochMillis) {
         set("arrived", epochMillis);
         return this;
