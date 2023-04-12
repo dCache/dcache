@@ -1543,14 +1543,20 @@ public class DcacheResourceFactory
         protected HttpProtocolInfo.Disposition _disposition;
         private boolean _isSSL;
 
+        /**
+         * The original request path that will be passed to pool for fall-back redirect.
+         */
+        private final String _requestPath;
+
         public HttpTransfer(PnfsHandler pnfs, Subject subject,
               Restriction restriction, FsPath path) throws URISyntaxException {
             super(pnfs, subject, restriction, path);
             initializeTransfer(this, subject);
             _clientAddressForPool = getClientAddress();
 
-            ServletRequest.getRequest().setAttribute(TRANSACTION_ATTRIBUTE,
-                  getTransaction());
+            var request = ServletRequest.getRequest();
+            request.setAttribute(TRANSACTION_ATTRIBUTE, getTransaction());
+            _requestPath = ServletRequest.stripToPath(request.getRequestURI());
         }
 
         protected ProtocolInfo createProtocolInfo(InetSocketAddress address) {
@@ -1561,7 +1567,7 @@ public class DcacheResourceFactory
                         PROTOCOL_INFO_MINOR_VERSION,
                         address,
                         getCellName(), getCellDomainName(),
-                        _path.toString(),
+                        _requestPath,
                         _location,
                         _disposition,
                         _wantedChecksum);
