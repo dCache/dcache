@@ -74,6 +74,8 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import javax.security.auth.Subject;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.MessageReply;
 import org.dcache.qos.QoSException;
@@ -85,6 +87,7 @@ import org.dcache.qos.listeners.QoSRequirementsListener;
 import org.dcache.qos.listeners.QoSVerificationListener;
 import org.dcache.qos.services.engine.util.QoSEngineCounters;
 import org.dcache.qos.vehicles.QoSVerificationRequest;
+import org.dcache.vehicles.qos.QoSRequirementsModifiedMessage;
 import org.dcache.vehicles.qos.QoSRequirementsRequestMessage;
 import org.dcache.vehicles.qos.QoSTransitionCompletedMessage;
 import org.slf4j.Logger;
@@ -158,33 +161,54 @@ public final class FileQoSStatusHandler implements CellInfoProvider, QoSActionCo
         });
     }
 
-    public void handleQoSModification(FileQoSRequirements requirements) {
+    public Future<QoSRequirementsModifiedMessage> handleQoSModification(
+          QoSRequirementsModifiedMessage message) {
         counters.increment(QOS_MODIFIED.name());
+        final FileQoSRequirements requirements = message.getRequirements();
+        final Subject subject = message.getSubject();
         PnfsId pnfsId = requirements.getPnfsId();
-        executor.execute(() -> {
+        return executor.submit(() -> {
+            Exception exception = null;
             try {
                 LOGGER.debug("handleQoSModification calling fileQoSRequirementsModified for {}.",
                       pnfsId);
-                requirementsListener.fileQoSRequirementsModified(requirements);
+                requirementsListener.fileQoSRequirementsModified(requirements, subject);
                 LOGGER.debug("handleQoSModification calling fileQoSStatusChanged for {}, {}.",
                       pnfsId, QOS_MODIFIED);
-                fileQoSStatusChanged(new FileQoSUpdate(pnfsId, null, QOS_MODIFIED));
-            } catch (QoSException | CacheException | NoRouteToCellException | InterruptedException e) {
-                LOGGER.error("Failed to handle QoS requirements for {}: {}.",
-                      requirements.getPnfsId(), e.getMessage());
-                handleActionCompleted(pnfsId, VOID, e.toString());
+                FileQoSUpdate update = new FileQoSUpdate(pnfsId, null, QOS_MODIFIED);
+                update.setSubject(subject);
+                fileQoSStatusChanged(update);
+                message.setSucceeded();
+            } catch (CacheException e) {
+                exception = e;
+                message.setFailed(e.getRc(), e);
+            } catch (QoSException e) {
+                exception = e;
+                message.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
+            } catch (NoRouteToCellException e) {
+                exception = e;
+                message.setFailed(CacheException.SERVICE_UNAVAILABLE, e);
+            } catch (InterruptedException e) {
+                message.setFailed(CacheException.TIMEOUT, e);
+                exception = e;
             }
-        });
+
+            if (exception != null) {
+                LOGGER.error("Failed to handle QoS requirements for {}: {}.",
+                      requirements.getPnfsId(), exception.getMessage());
+                handleActionCompleted(pnfsId, VOID, exception.toString());
+            }
+        }, message);
     }
 
-    public void handleQoSModificationCancelled(PnfsId pnfsId) {
+    public void handleQoSModificationCancelled(PnfsId pnfsId, Subject subject) {
         counters.increment(QOS_MODIFIED_CANCELED.name());
         executor.execute(() -> {
             try {
                 LOGGER.debug(
                       "handleQoSModificationCancelled notifying verification listener to cancel {}.",
                       pnfsId);
-                verificationListener.fileQoSVerificationCancelled(pnfsId);
+                verificationListener.fileQoSVerificationCancelled(pnfsId, subject);
             } catch (QoSException e) {
                 LOGGER.error("Failed to handle QoS requirements for {}: {}.", pnfsId, e.toString());
             }

@@ -153,4 +153,15 @@
         </createIndex>
         <rollback/>
     </changeSet>
+
+    <changeSet author="rossi" id="6">
+    <preConditions onFail="MARK_RAN">
+        <not>
+            <columnExists tableName="qos_operation" columnName="subject"/>
+        </not>
+    </preConditions>
+        <addColumn tableName="qos_operation">
+            <column name="subject" type="varchar(4096)"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

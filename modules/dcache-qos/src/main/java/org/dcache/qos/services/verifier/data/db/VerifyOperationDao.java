@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
+import org.dcache.qos.QoSException;
 import org.dcache.qos.data.QoSAction;
 import org.dcache.qos.data.QoSMessageType;
 import org.dcache.qos.services.verifier.data.VerifyOperation;
@@ -91,6 +92,8 @@ public interface VerifyOperationDao {
 
         VerifyOperationUpdate pnfsid(PnfsId pnfsId);
 
+        VerifyOperationUpdate subject(String subject);
+
         VerifyOperationUpdate arrivalTime(long epochMillis);
 
         VerifyOperationUpdate lastUpdate(long epochMillis);
@@ -141,12 +144,12 @@ public interface VerifyOperationDao {
      * Returns a field value builder based on the fields of the file operation which can change
      * while being processed.
      */
-    VerifyOperationUpdate fromOperation(VerifyOperation operation);
+    VerifyOperationUpdate fromOperation(VerifyOperation operation) throws QoSException;
 
     /**
      * Returns true if stored, false if not.
      */
-    boolean store(VerifyOperation operation);
+    boolean store(VerifyOperation operation) throws QoSException;
 
     /**
      * Returns the VerifyOperations matching a selection criterion with an upper limit on the
