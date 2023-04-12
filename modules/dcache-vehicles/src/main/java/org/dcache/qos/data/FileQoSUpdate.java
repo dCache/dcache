@@ -64,6 +64,8 @@ import java.io.Serializable;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import javax.security.auth.Subject;
+import org.dcache.auth.Subjects;
 
 /**
  * A transient encapsulation of pertinent configuration data regarding a file, synthesized from a
@@ -83,6 +85,7 @@ public final class FileQoSUpdate implements Serializable {
 
     private final PnfsId pnfsId;
     private final QoSMessageType type;
+    private Subject subject;
     private String pool;
     private String effectivePoolGroup;
     private String storageUnit;
@@ -120,6 +123,10 @@ public final class FileQoSUpdate implements Serializable {
         return pnfsId;
     }
 
+    public Subject getSubject() {
+        return subject == null ? Subjects.ROOT: subject;
+    }
+
     public QoSMessageType getMessageType() {
         return type;
     }
@@ -134,6 +141,10 @@ public final class FileQoSUpdate implements Serializable {
 
     public void setPool(String pool) {
         this.pool = pool;
+    }
+
+    public void setSubject(Subject subject) {
+        this.subject = subject;
     }
 
     public String toString() {

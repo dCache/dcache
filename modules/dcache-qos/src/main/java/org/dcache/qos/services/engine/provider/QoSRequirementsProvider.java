@@ -59,6 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.qos.services.engine.provider;
 
+import diskCacheV111.util.CacheException;
+import javax.security.auth.Subject;
 import org.dcache.qos.QoSException;
 import org.dcache.qos.data.FileQoSRequirements;
 import org.dcache.qos.data.FileQoSUpdate;
@@ -80,6 +82,7 @@ public interface QoSRequirementsProvider {
      *
      * @param newRequirements in particular the number and distribution of persistent disk and tape
      *                        replicas.
+     * @param subject subject of the request.
      */
-    void handleModifiedRequirements(FileQoSRequirements newRequirements) throws QoSException;
+    void handleModifiedRequirements(FileQoSRequirements newRequirements, Subject subject) throws QoSException, CacheException;
 }

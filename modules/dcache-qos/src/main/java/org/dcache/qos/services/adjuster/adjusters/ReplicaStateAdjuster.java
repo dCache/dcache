@@ -132,6 +132,7 @@ public final class ReplicaStateAdjuster extends QoSAdjuster {
 
         LOGGER.debug("Sending {} message to {} for {}.", action, target, pnfsId);
         ACTIVITY_LOGGER.info("Sending {} message to {} for {}.", action, target, pnfsId);
+        msg.setSubject(subject);
         future = pools.send(new CellPath(target), msg);
     }
 

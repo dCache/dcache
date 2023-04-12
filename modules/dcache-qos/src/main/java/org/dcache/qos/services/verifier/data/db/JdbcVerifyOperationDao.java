@@ -20,11 +20,17 @@ package org.dcache.qos.services.verifier.data.db;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -33,8 +39,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
+import javax.security.auth.Subject;
 import org.dcache.db.JdbcCriterion;
 import org.dcache.db.JdbcUpdate;
+import org.dcache.qos.QoSException;
 import org.dcache.qos.data.QoSAction;
 import org.dcache.qos.data.QoSMessageType;
 import org.dcache.qos.services.verifier.data.VerifyOperation;
@@ -103,8 +111,30 @@ public class JdbcVerifyOperationDao extends JdbcDaoSupport implements VerifyOper
             operation.setException(new CacheException(rs.getInt("rc"), error));
         }
 
+        operation.setSubject(Subject.class.cast(deserialize(rs.getString("subject"))));
+
         LOGGER.debug("toOperation, returning {}.", operation);
         return operation;
+    }
+
+    private static String serialize(Subject subject) throws QoSException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ObjectOutputStream ostream = new ObjectOutputStream(baos)) {
+            ostream.writeObject(subject);
+        } catch (IOException e) {
+            throw new QoSException("problem serializing subject", e);
+        }
+        return Base64.getEncoder().encodeToString(baos.toByteArray());
+    }
+
+    private static Object deserialize(String base64) throws SQLException {
+        byte[] array = Base64.getDecoder().decode(base64);
+        ByteArrayInputStream bais = new ByteArrayInputStream(array);
+        try (ObjectInputStream istream = new ObjectInputStream(bais)) {
+            return istream.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            throw new SQLException("problem deserializing subject", e);
+        }
     }
 
     private static Object[] concatArguments(Collection<Object> first, Collection<Object> second) {
@@ -134,7 +164,7 @@ public class JdbcVerifyOperationDao extends JdbcDaoSupport implements VerifyOper
     }
 
     @Override
-    public VerifyOperationUpdate fromOperation(VerifyOperation operation) {
+    public VerifyOperationUpdate fromOperation(VerifyOperation operation) throws QoSException {
         return set().exception(operation.getException())
               .retried(operation.getRetried())
               .tried(operation.getTried())
@@ -144,7 +174,8 @@ public class JdbcVerifyOperationDao extends JdbcDaoSupport implements VerifyOper
               .previous(operation.getPreviousAction())
               .needed(operation.getNeededAdjustments())
               .source(operation.getSource())
-              .target(operation.getTarget());
+              .target(operation.getTarget())
+              .subject(serialize(operation.getSubject()));
     }
 
     /**
@@ -159,7 +190,7 @@ public class JdbcVerifyOperationDao extends JdbcDaoSupport implements VerifyOper
      * @return true if stored, false if just updated.
      */
     @Override
-    public boolean store(VerifyOperation operation) {
+    public boolean store(VerifyOperation operation) throws QoSException {
         PnfsId pnfsId = operation.getPnfsId();
         String storageUnit = operation.getStorageUnit();
         VerifyOperationUpdate insert = set().pnfsid(pnfsId)
@@ -172,7 +203,8 @@ public class JdbcVerifyOperationDao extends JdbcDaoSupport implements VerifyOper
               .needed(operation.getNeededAdjustments())
               .parent(operation.getParent())
               .source(operation.getSource())
-              .state(operation.getState());
+              .state(operation.getState())
+              .subject(serialize(operation.getSubject()));
 
         LOGGER.debug("store operation for {}.", operation.getPnfsId());
 

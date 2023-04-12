@@ -67,12 +67,14 @@ import static org.dcache.qos.data.QoSMessageType.CLEAR_CACHE_LOCATION;
 import static org.dcache.qos.data.QoSMessageType.QOS_MODIFIED;
 import static org.dcache.qos.data.QoSMessageType.SYSTEM_SCAN;
 import static org.dcache.qos.data.QoSMessageType.VALIDATE_ONLY;
+import static org.dcache.qos.util.QoSPermissionUtils.canModifyQos;
 
 import com.google.common.annotations.VisibleForTesting;
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.StorageUnit;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
@@ -84,6 +86,7 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import javax.security.auth.Subject;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.CellStub;
@@ -114,6 +117,8 @@ public class ALRPStorageUnitQoSProvider implements QoSRequirementsProvider, Cell
 
     public static final Set<FileAttribute> REQUIRED_QOS_ATTRIBUTES
           = Collections.unmodifiableSet(EnumSet.of(FileAttribute.PNFSID,
+          FileAttribute.OWNER,
+          FileAttribute.OWNER_GROUP,
           FileAttribute.ACCESS_LATENCY,
           FileAttribute.RETENTION_POLICY,
           FileAttribute.STORAGEINFO,
@@ -198,8 +203,8 @@ public class ALRPStorageUnitQoSProvider implements QoSRequirementsProvider, Cell
      *  REVISIT For now, we do not handle changes to number or partitioning of copies.
      */
     @Override
-    public void handleModifiedRequirements(FileQoSRequirements newRequirements)
-          throws QoSException {
+    public void handleModifiedRequirements(FileQoSRequirements newRequirements, Subject subject)
+          throws CacheException, QoSException {
         PnfsId pnfsId = newRequirements.getPnfsId();
 
         LOGGER.debug("handleModifiedRequirements for {}.", pnfsId);
@@ -233,11 +238,11 @@ public class ALRPStorageUnitQoSProvider implements QoSRequirementsProvider, Cell
             modifiedAttributes.setRetentionPolicy(REPLICA);
         }
 
-        try {
+        if (canModifyQos(subject, currentAttributes)) {
             pnfsHandler().setFileAttributes(pnfsId, modifiedAttributes);
-        } catch (CacheException e) {
-            throw new QoSException("Failed to set attributes for " + newRequirements.getPnfsId(),
-                  e);
+        } else {
+            throw new PermissionDeniedCacheException("User does not have permissions to set "
+                  + "attributes for " + newRequirements.getPnfsId());
         }
     }
 
