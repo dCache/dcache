@@ -111,7 +111,7 @@ public class UpdateQoSActivity extends BulkActivity<QoSTransitionCompletedMessag
         client.setRequirementsService(qosEngine);
         PnfsId pnfsId = target.getAttributes().getPnfsId();
         try {
-            client.fileQoSRequirementsModifiedCancelled(pnfsId);
+            client.fileQoSRequirementsModifiedCancelled(pnfsId, subject);
         } catch (QoSException e) {
             LOGGER.error("fileQoSRequirementsModifiedCancelled failed: {}, {}.", pnfsId,
                   e.getMessage());
@@ -151,7 +151,7 @@ public class UpdateQoSActivity extends BulkActivity<QoSTransitionCompletedMessag
         client.setRequirementsService(qosEngine);
 
         try {
-            client.fileQoSRequirementsModified(requirements);
+            client.fileQoSRequirementsModified(requirements, subject);
         } catch (CacheException | InterruptedException | NoRouteToCellException e) {
             return Futures.immediateFailedFuture(e);
         }

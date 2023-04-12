@@ -574,6 +574,7 @@ public class VerifyOperationHandler implements VerifyAndUpdateHandler {
         request.setPnfsId(requirements.getPnfsId());
         request.setAttributes(requirements.getAttributes());
         request.setPoolGroup(operation.getPoolGroup());
+        request.setSubject(operation.getSubject());
 
         String source = operation.getSource();
 

@@ -57,89 +57,27 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.qos.vehicles;
+package org.dcache.qos.util;
 
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.PoolManagerPoolInformation;
-import java.io.Serializable;
 import javax.security.auth.Subject;
-import org.dcache.qos.data.QoSAction;
+
+import org.dcache.auth.Subjects;
 import org.dcache.vehicles.FileAttributes;
 
-public class QoSAdjustmentRequest implements Serializable {
+public class QoSPermissionUtils {
 
-    private static final long serialVersionUID = -561618660521542972L;
-
-    private PnfsId pnfsId;
-    private Subject subject;
-    private QoSAction action;
-    private FileAttributes attributes;
-    private PoolManagerPoolInformation targetInfo;
-    private String source;
-    private String target;
-    private String poolGroup;
-
-    public PnfsId getPnfsId() {
-        return pnfsId;
+    /**
+     * Determines if the user is allowed to modify qos.
+     * Currently the user must either be the owner of the file or be ROOT.
+     *
+     * @param subject
+     * @param attributes
+     */
+    public static boolean canModifyQos(Subject subject, FileAttributes attributes) {
+        return Subjects.isRoot(subject) || Subjects.getUid(subject) == attributes.getOwner();
     }
 
-    public void setPnfsId(PnfsId pnfsId) {
-        this.pnfsId = pnfsId;
-    }
-
-    public QoSAction getAction() {
-        return action;
-    }
-
-    public void setAction(QoSAction action) {
-        this.action = action;
-    }
-
-    public FileAttributes getAttributes() {
-        return attributes;
-    }
-
-    public void setAttributes(FileAttributes attributes) {
-        this.attributes = attributes;
-    }
-
-    public PoolManagerPoolInformation getTargetInfo() {
-        return targetInfo;
-    }
-
-    public void setTargetInfo(PoolManagerPoolInformation targetInfo) {
-        this.targetInfo = targetInfo;
-    }
-
-    public String getSource() {
-        return source;
-    }
-
-    public void setSource(String source) {
-        this.source = source;
-    }
-
-    public String getTarget() {
-        return target;
-    }
-
-    public void setTarget(String target) {
-        this.target = target;
-    }
-
-    public String getPoolGroup() {
-        return poolGroup;
-    }
-
-    public void setPoolGroup(String poolGroup) {
-        this.poolGroup = poolGroup;
-    }
-
-    public Subject getSubject() {
-        return subject;
-    }
-
-    public void setSubject(Subject subject) {
-        this.subject = subject;
+    private QoSPermissionUtils() {
+        // static class
     }
 }

@@ -65,6 +65,7 @@ import diskCacheV111.util.PnfsId;
 import dmg.cells.nucleus.NoRouteToCellException;
 import java.io.Serializable;
 import java.util.concurrent.ExecutionException;
+import javax.security.auth.Subject;
 import org.dcache.cells.CellStub;
 import org.dcache.qos.QoSException;
 import org.dcache.qos.data.FileQoSRequirements;
@@ -110,17 +111,28 @@ public final class RemoteQoSRequirementsClient implements QoSRequirementsListene
     }
 
     @Override
-    public void fileQoSRequirementsModified(FileQoSRequirements newRequirements)
+    public void fileQoSRequirementsModified(FileQoSRequirements newRequirements, Subject subject)
           throws CacheException, NoRouteToCellException, InterruptedException {
-        requirementsService.sendAndWait(new QoSRequirementsModifiedMessage(newRequirements));
+        QoSRequirementsModifiedMessage message = new QoSRequirementsModifiedMessage(newRequirements, subject);
+        message = requirementsService.sendAndWait(message);
+        Serializable error = message.getErrorObject();
+        if (error == null) {
+            return;
+        }
+
+        if (error instanceof CacheException) {
+            throw (CacheException) error;
+        } else {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, String.valueOf(error));
+        }
     }
 
     @Override
-    public void fileQoSRequirementsModifiedCancelled(PnfsId pnfsid) throws QoSException {
+    public void fileQoSRequirementsModifiedCancelled(PnfsId pnfsid, Subject subject) throws QoSException {
         /*
          *  Fire and forget. The sender will need to listen for a response.
          */
-        requirementsService.send(new QoSCancelRequirementsModifiedMessage(pnfsid));
+        requirementsService.send(new QoSCancelRequirementsModifiedMessage(pnfsid, subject));
     }
 
     public void setRequirementsService(CellStub requirementsService) {
