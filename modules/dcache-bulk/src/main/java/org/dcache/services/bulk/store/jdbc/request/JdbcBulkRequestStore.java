@@ -67,6 +67,7 @@ import static org.dcache.services.bulk.BulkRequestStatus.STARTED;
 import static org.dcache.services.bulk.activity.BulkActivity.MINIMALLY_REQUIRED_ATTRIBUTES;
 import static org.dcache.services.bulk.util.BulkRequestTarget.NON_TERMINAL;
 import static org.dcache.services.bulk.util.BulkRequestTarget.PID.DISCOVERED;
+import static org.dcache.services.bulk.util.BulkRequestTarget.PID.INITIAL;
 import static org.dcache.services.bulk.util.BulkRequestTarget.PLACEHOLDER_PNFSID;
 import static org.dcache.services.bulk.util.BulkRequestTarget.ROOT_REQUEST_PATH;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.CREATED;
@@ -461,7 +462,7 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
         requestTargetDao.delete(
               requestTargetDao.where().pids(DISCOVERED.ordinal()).state(NON_TERMINAL));
         requestTargetDao.update(
-              requestTargetDao.where().pids(PID.INITIAL.ordinal()).state(NON_TERMINAL),
+              requestTargetDao.where().pids(INITIAL.ordinal()).state(NON_TERMINAL),
               requestTargetDao.set().state(CREATED).errorType(null).errorMessage(null));
         requestDao.update(requestDao.where().status(STARTED, CANCELLING),
               requestDao.set().status(QUEUED));
@@ -493,7 +494,7 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
         LOGGER.trace("reset {}.", uid);
         requestTargetDao.delete(requestTargetDao.where().pids(PID.ROOT.ordinal()).ruids(uid));
         requestTargetDao.delete(requestTargetDao.where().pids(DISCOVERED.ordinal()).ruids(uid));
-        requestTargetDao.update(requestTargetDao.where().pids(PID.INITIAL.ordinal()).ruids(uid),
+        requestTargetDao.update(requestTargetDao.where().pids(INITIAL.ordinal()).ruids(uid),
               requestTargetDao.set().state(CREATED).errorType(null).errorMessage(null));
         requestDao.update(requestDao.where().uids(uid),
               requestDao.set().status(QUEUED));
@@ -774,7 +775,11 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
 
         FsPath prefix = Strings.emptyToNull(prefixString) == null ? null
               : FsPath.create(prefixString);
-        boolean stripRecursive = targets.stream().anyMatch(t -> t.getPid() == DISCOVERED);
+
+        BulkRequestTarget initial = targets.stream().filter(t -> t.getPid() == INITIAL).findAny()
+              .orElse(null);
+
+        boolean stripRecursive = prefix != null && initial != null && !initial.getPath().hasPrefix(prefix);
 
         List<BulkRequestTargetInfo> targetInfo = targets.stream()
               .map(t -> toRequestTargetInfo(t, stripRecursive? prefix : null)).collect(Collectors.toList());
