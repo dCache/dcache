@@ -91,20 +91,14 @@ module:
 Building a docker image
 -----------------------
 
-Building a docker image is disabled by default.  This is because it
+Building a container image is disabled by default.  This is because it
 requires a running docker deployment, which not all developers have
 installed.
 
-You may enable building of docker images by activating the `docker`
-profile; e.g.,
+You may enable building of docker images by activating the `container`
+profile for the `tar` packaging:
 
-    mvn clean package -Pdocker
-
-To build only the docker image, you may select the docker module,
-`packages/docker` explicitly, as above.  However, it is still required
-to enable the `docker` profile; e.g.,
-
-    mvn clean package -am -pl packages/docker -Pdocker
+    mvn clean package -am -pl packages/tar -P container
 
 
 The system-test module

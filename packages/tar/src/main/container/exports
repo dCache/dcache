@@ -1,0 +1,1 @@
+/ *(rw,no_root_squash,lt=flex_files:nfsv4_1_files)

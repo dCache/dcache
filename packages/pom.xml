@@ -224,13 +224,4 @@
     <module>system-test</module>
   </modules>
 
-  <profiles>
-    <profile>
-      <id>docker</id>
-
-      <modules>
-	<module>docker</module>
-      </modules>
-    </profile>
-  </profiles>
 </project>

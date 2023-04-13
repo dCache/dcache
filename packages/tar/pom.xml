@@ -1,110 +1,149 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <groupId>org.dcache</groupId>
-    <artifactId>packaging</artifactId>
-    <version>9.1.0-SNAPSHOT</version>
-  </parent>
+    <parent>
+        <groupId>org.dcache</groupId>
+        <artifactId>packaging</artifactId>
+        <version>9.1.0-SNAPSHOT</version>
+    </parent>
 
-  <artifactId>dcache-tar</artifactId>
-  <packaging>pom</packaging>
+    <artifactId>dcache-tar</artifactId>
+    <packaging>pom</packaging>
 
-  <name>dCache tarball packaging</name>
+    <name>dCache tarball packaging</name>
 
-  <properties>
-      <modules>${project.basedir}/..</modules>
-      <skel>${project.basedir}/../../skel</skel>
-      <filtered-skel>${project.basedir}/target/filtered-skel</filtered-skel>
-  </properties>
+    <properties>
+        <modules>${project.basedir}/..</modules>
+        <skel>${project.basedir}/../../skel</skel>
+        <filtered-skel>${project.basedir}/target/filtered-skel</filtered-skel>
+    </properties>
 
-  <build>
-      <finalName>dcache-${tar.version}</finalName>
-      <plugins>
+    <build>
+        <finalName>dcache-${tar.version}</finalName>
+        <plugins>
 
-          <plugin>
-              <groupId>org.codehaus.mojo</groupId>
-              <artifactId>build-helper-maven-plugin</artifactId>
-              <executions>
-                  <execution>
-                      <id>regex-property</id>
-                      <goals>
-                          <goal>regex-property</goal>
-                      </goals>
-                      <configuration>
-                          <name>tar.version</name>
-                          <value>${project.version}</value>
-                          <regex>-SNAPSHOT</regex>
-                          <replacement>-\${git.commit.id.abbrev}</replacement>
-                          <failIfNoMatch>false</failIfNoMatch>
-                      </configuration>
-                  </execution>
-              </executions>
-          </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>regex-property</id>
+                        <goals>
+                            <goal>regex-property</goal>
+                        </goals>
+                        <configuration>
+                            <name>tar.version</name>
+                            <value>${project.version}</value>
+                            <regex>-SNAPSHOT</regex>
+                            <replacement>-\${git.commit.id.abbrev}</replacement>
+                            <failIfNoMatch>false</failIfNoMatch>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
 
-          <plugin>
-              <artifactId>maven-resources-plugin</artifactId>
-              <executions>
-                  <execution>
-                      <!-- The files in our skel directory need some
-                           variable substitution.
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <!-- The files in our skel directory need some
+                             variable substitution.
 
-                           The assembly plugin however only supports
-                           ${} substitution and that conflicts with
-                           shell variables and dCache configuration
-                           properties.
+                             The assembly plugin however only supports
+                             ${} substitution and that conflicts with
+                             shell variables and dCache configuration
+                             properties.
 
-                           Therefore we use the resource plugin to
-                           make a filtered copy of the skel and use
-                           those files in the assembly whenever we
-                           need a filtered file. -->
-                      <id>copy-resources</id>
-                      <phase>prepare-package</phase>
-                      <goals>
-                          <goal>copy-resources</goal>
-                      </goals>
-                      <configuration>
-                          <outputDirectory>${filtered-skel}</outputDirectory>
-                          <resources>
-                              <resource>
-                                  <directory>${skel}</directory>
-                                  <filtering>true</filtering>
-                              </resource>
-                          </resources>
-                          <delimiters>
-                              <delimiter>@</delimiter>
-                          </delimiters>
-                          <useDefaultDelimiters>false</useDefaultDelimiters>
-                          <filters>
-                              <filter>${project.basedir}/src/main/assembly/filter.properties</filter>
-                          </filters>
-                      </configuration>
-                  </execution>
-              </executions>
-          </plugin>
+                             Therefore we use the resource plugin to
+                             make a filtered copy of the skel and use
+                             those files in the assembly whenever we
+                             need a filtered file. -->
+                        <id>copy-resources</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${filtered-skel}</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${skel}</directory>
+                                    <filtering>true</filtering>
+                                </resource>
+                            </resources>
+                            <delimiters>
+                                <delimiter>@</delimiter>
+                            </delimiters>
+                            <useDefaultDelimiters>false</useDefaultDelimiters>
+                            <filters>
+                                <filter>${project.basedir}/src/main/assembly/filter.properties</filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
 
-          <plugin>
-              <artifactId>maven-assembly-plugin</artifactId>
-              <configuration>
-                  <descriptors>
-                      <descriptor>src/main/assembly/tar.xml</descriptor>
-                  </descriptors>
-                  <formats>
-                      <format>tar.gz</format>
-                  </formats>
-                  <appendAssemblyId>false</appendAssemblyId>
-                  <includeEmptyDirs>true</includeEmptyDirs>
-              </configuration>
-              <executions>
-                  <execution>
-                      <id>make-assembly</id>
-                      <phase>package</phase>
-                      <goals>
-                          <goal>single</goal>
-                      </goals>
-                  </execution>
-              </executions>
-          </plugin>
-      </plugins>
-  </build>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <descriptors>
+                        <descriptor>src/main/assembly/tar.xml</descriptor>
+                    </descriptors>
+                    <formats>
+                        <format>tar.gz</format>
+                    </formats>
+                    <appendAssemblyId>false</appendAssemblyId>
+                    <includeEmptyDirs>true</includeEmptyDirs>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>container</id>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <version>0.42.1</version>
+                        <configuration>
+                            <images>
+                                <image>
+                                    <name>%g/dcache:%l</name>
+                                    <build>
+                                        <dockerFile>${basedir}/src/main/container/Dockerfile</dockerFile>
+                                        <assembly>
+                                            <descriptor>${basedir}/src/main/assembly/tar.xml</descriptor>
+                                        </assembly>
+                                    </build>
+                                </image>
+                            </images>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>build</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>build</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
