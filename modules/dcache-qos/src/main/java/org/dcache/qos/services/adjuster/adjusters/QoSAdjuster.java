@@ -59,8 +59,13 @@ documents or software obtained from this server.
  */
 package org.dcache.qos.services.adjuster.adjusters;
 
+import static org.dcache.qos.util.QoSPermissionUtils.canModifyQos;
+
 import com.google.common.collect.ImmutableList;
+import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsId;
+import java.util.Optional;
+import javax.security.auth.Subject;
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.qos.data.QoSAction;
@@ -85,12 +90,24 @@ public abstract class QoSAdjuster implements Cancellable {
     protected PnfsId pnfsId;
     protected FileAttributes attributes;
     protected QoSAction action;
+    protected Subject subject ;
     protected QoSAdjustTaskCompletionHandler completionHandler;
 
     public void adjustQoS(QoSAdjusterTask task) {
         pnfsId = task.getPnfsId();
         action = task.getAction();
         attributes = task.getAttributes();
+        subject = task.getSubject();
+
+        try {
+            checkPermissions();
+        } catch (PermissionDeniedCacheException e) {
+            /*
+             *  handler is injected by factory build
+             */
+            completionHandler.taskFailed(pnfsId, Optional.empty(), e);
+            return;
+        }
 
         /*
          *  Generate the SESSION ID.   This is used by the QoS status endpoint
@@ -104,4 +121,11 @@ public abstract class QoSAdjuster implements Cancellable {
     }
 
     protected abstract void runAdjuster(QoSAdjusterTask task);
+
+    private void checkPermissions() throws PermissionDeniedCacheException {
+        if (!canModifyQos(subject, attributes)) {
+            throw new PermissionDeniedCacheException(String.format("subject does not have "
+                  + "permission for %s on %s.", action, pnfsId));
+        }
+    }
 }

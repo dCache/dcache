@@ -174,6 +174,7 @@ public final class StagingAdjuster extends QoSAdjuster {
                   getProtocolInfo(),
                   QOS_PIN_REQUEST_ID,
                   QOS_PIN_TEMP_LIFETIME);
+            message.setSubject(subject);
             future = pinManager.send(message, Long.MAX_VALUE);
             future.addListener(this::handleCompletion, executorService);
             LOGGER.debug("handleStaging, sent pin manager request for {}.", pnfsId);
@@ -192,6 +193,7 @@ public final class StagingAdjuster extends QoSAdjuster {
         LOGGER.debug("handleStaging, cancelling pin {}.", pnfsId);
         ACTIVITY_LOGGER.info("handleStaging, cancelling pin {}", pnfsId);
         PinManagerUnpinMessage message = new PinManagerUnpinMessage(pnfsId);
+        message.setSubject(subject);
         pinManager.send(message, Long.MAX_VALUE);
         LOGGER.debug("handleStaging, sent pin manager request to unpin {}.", pnfsId);
     }

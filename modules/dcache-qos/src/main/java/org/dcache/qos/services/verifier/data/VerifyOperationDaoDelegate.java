@@ -92,6 +92,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 import javax.annotation.concurrent.GuardedBy;
+import org.dcache.qos.QoSException;
 import org.dcache.qos.data.FileQoSUpdate;
 import org.dcache.qos.data.QoSMessageType;
 import org.dcache.qos.services.verifier.data.db.VerifyOperationDao;
@@ -325,6 +326,8 @@ public class VerifyOperationDaoDelegate implements VerifyOperationDelegate {
      *  Operation is written to the store but not to the queues, to preserve
      *  the prioritization by arrival time (since gaps may be created when
      *  the queues are close to max capacity).
+     *  If a duplicate request arrives with a second subject, the original subject
+     *  is not changed.  REVISIT
      */
     public boolean createOrUpdateOperation(FileQoSUpdate data) {
         PnfsId pnfsId = data.getPnfsId();
@@ -354,6 +357,7 @@ public class VerifyOperationDaoDelegate implements VerifyOperationDelegate {
         operation.setRetried(0);
         operation.setNeeded(0);
         operation.setState(READY);
+        operation.setSubject(data.getSubject());
 
         write.lock();
         try {
@@ -376,6 +380,10 @@ public class VerifyOperationDaoDelegate implements VerifyOperationDelegate {
                       pnfsId, storageUnit);
                 return false;
             }
+        } catch (QoSException e) {
+            LOGGER.error("createOrUpdateOperation, could not store operation for {}: {}.", pnfsId,
+                  e.toString());
+            return false;
         } finally {
             write.unlock();
         }
@@ -527,6 +535,8 @@ public class VerifyOperationDaoDelegate implements VerifyOperationDelegate {
             if (retry || operation.getNeededAdjustments() < 2) {
                 enqueueFirst(operation);
             }
+        } catch (QoSException e) {
+            LOGGER.error("resetOperation, could not update reset {}: {}", operation, e.toString());
         } finally {
             write.unlock();
         }
@@ -617,6 +627,8 @@ public class VerifyOperationDaoDelegate implements VerifyOperationDelegate {
                 dao.update(dao.whereUnique().pnfsId(pnfsId), dao.fromOperation(operation));
                 callback.signal();
             }
+        } catch (QoSException e) {
+            LOGGER.debug("could not update operation for ({}, {}): {}.", pnfsId, error, e.toString());
         } finally {
             write.unlock();
         }
@@ -680,6 +692,8 @@ public class VerifyOperationDaoDelegate implements VerifyOperationDelegate {
         try {
             dao.update(dao.whereUnique().pnfsId(pnfsId), dao.fromOperation(operation));
             callback.signal();
+        } catch (QoSException e) {
+            LOGGER.error("could not void operation {}: {}.", operation, e.toString());
         } finally {
             write.unlock();
         }
