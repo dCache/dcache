@@ -56,7 +56,11 @@ add_oidc() {
     prepend etc/gplazma.conf "auth    optional    oidc"
 
     for op in $loaded_ops; do
-        eval $(oidc-token -c $op)
+        #  The "2>&1" is a work-around for a bug in oidc-token; see:
+        #
+        #      https://github.com/indigo-dc/oidc-agent/issues/503
+        #
+        eval $(oidc-token -c $op 2>&1)
 
         # REVISIT: we should be able to use OIDC_ISS variable to
         # discover the OP's issuer endpoint.  However, the URL is
