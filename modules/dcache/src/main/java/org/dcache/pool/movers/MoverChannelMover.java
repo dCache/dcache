@@ -21,6 +21,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
+import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import dmg.cells.nucleus.CellPath;
@@ -104,6 +105,10 @@ public abstract class MoverChannelMover<P extends ProtocolInfo, M extends MoverC
             }
         } catch (IOException e) {
         }
+
+        s.append(",cl=[")
+              .append(((IpProtocolInfo)getProtocolInfo()).getSocketAddress().getAddress().getHostAddress())
+              .append("]");
         return s.toString();
     }
 }
