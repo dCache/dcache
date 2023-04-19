@@ -1548,12 +1548,17 @@ public class NearlineStorageHandler
           description = "Remove an HSM restore request.")
     class RestoreKillCommand implements Callable<String> {
 
-        @Argument
-        PnfsId pnfsId;
+        @Argument(metaVar = "pnfsid|*")
+        String arg;
 
         @Override
         public String call() throws NoSuchElementException, IllegalStateException {
-            stageRequests.cancel(pnfsId);
+            if ("*".equals(arg)) {
+                stageRequests.cancelRequests();
+            } else {
+                var pnfsId = new PnfsId(arg);
+                stageRequests.cancel(pnfsId);
+            }
             return "Kill initialized";
         }
     }
@@ -1610,12 +1615,18 @@ public class NearlineStorageHandler
           description = "Remove an HSM store request.")
     class StoreKillCommand implements Callable<String> {
 
-        @Argument
-        PnfsId pnfsId;
+        @Argument(metaVar = "pnfsid|*")
+        String arg;
 
         @Override
         public String call() throws NoSuchElementException, IllegalStateException {
-            flushRequests.cancel(pnfsId);
+
+            if ("*".equals(arg)) {
+                flushRequests.cancelRequests();
+            } else {
+                var pnfsId = new PnfsId(arg);
+                flushRequests.cancel(pnfsId);
+            }
             return "Kill initialized";
         }
     }
@@ -1685,12 +1696,17 @@ public class NearlineStorageHandler
           description = "Remove and cancel the requests to remove a file from HSM.\n\n")
     class RemoveKillCommand implements Callable<String> {
 
-        @Argument(metaVar = "HSM uri")
-        String uri;
+        @Argument(metaVar = "uri|*")
+        String arg;
 
         @Override
         public String call() {
-            removeRequests.cancel(URI.create(uri));
+
+            if ("*".equals(arg)) {
+                removeRequests.cancelRequests();
+            } else {
+                removeRequests.cancel(URI.create(arg));
+            }
             return "Kill initialized";
         }
     }
