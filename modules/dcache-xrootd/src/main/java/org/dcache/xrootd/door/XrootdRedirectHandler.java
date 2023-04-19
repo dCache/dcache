@@ -1379,10 +1379,17 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
           throws PermissionDeniedCacheException {
         String fromOpaque = opaque.get(EFFECTIVE_ROOT_NAME);
         FsPath root = fromOpaque != null ? FsPath.create(fromOpaque) : effectiveRoot();
+
+        if (path.charAt(0) != '/') {
+            path = "/" + path;
+        }
+
         FsPath fullPath = FsPath.create(path);
+
         if (fullPath.hasPrefix(root)) {
             path = fullPath.stripPrefix(root);
         }
+
         return root.chroot(path);
     }
 
