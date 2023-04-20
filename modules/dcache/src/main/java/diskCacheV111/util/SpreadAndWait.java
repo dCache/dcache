@@ -1,15 +1,14 @@
 // $Id: SpreadAndWait.java,v 1.6 2007-07-08 17:02:48 tigran Exp $
 package diskCacheV111.util;
 
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.MoreExecutors;
 import dmg.cells.nucleus.CellPath;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.dcache.cells.CellStub;
+
+import static org.dcache.util.CompletableFutures.fromListenableFuture;
 
 public class SpreadAndWait<T extends Serializable> {
 
@@ -23,19 +22,14 @@ public class SpreadAndWait<T extends Serializable> {
 
     public synchronized void send(final CellPath destination, Class<? extends T> type,
           Serializable msg) {
-        Futures.addCallback(_stub.send(destination, msg, type),
-              new FutureCallback<T>() {
-                  @Override
-                  public void onSuccess(T answer) {
-                      SpreadAndWait.this.success(destination, answer);
-                  }
-
-                  @Override
-                  public void onFailure(Throwable t) {
-                      SpreadAndWait.this.failure();
-                  }
-              },
-              MoreExecutors.directExecutor());
+        fromListenableFuture(_stub.send(destination, msg, type))
+                .whenComplete((a, t) -> {
+                    if (t != null) {
+                        SpreadAndWait.this.failure();
+                    } else {
+                        SpreadAndWait.this.success(destination, a);
+                    }
+                });
         _pending++;
     }
 
