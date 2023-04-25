@@ -80,8 +80,14 @@ class PGroup extends PoolCore implements SelectionPoolGroup {
     }
 
     public void addSubgroup(PGroup subGroup) {
-        checkLoop(this, subGroup);
-        _pgroupList.add(subGroup);
+        if (!this._pgroupList.contains(subGroup)) {
+            checkLoop(this, subGroup);
+            _pgroupList.add(subGroup);
+        } else {
+            throw new IllegalArgumentException(
+                  "Subgroup " + subGroup.getName() + " is already defined in " + this.getName());
+        }
+
     }
 
     @Override
