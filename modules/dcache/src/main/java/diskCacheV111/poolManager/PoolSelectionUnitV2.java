@@ -102,7 +102,6 @@ public class PoolSelectionUnitV2
                 .build();
     private boolean _useRegex;
     private boolean _allPoolsActive;
-    public  boolean _cachingEnabeled;
 
     /**
      * Ok, this is the critical part of PoolManager, but (!!!) the whole select path is READ-ONLY,
@@ -116,12 +115,6 @@ public class PoolSelectionUnitV2
 
     private final NetHandler _netHandler = new NetHandler();
     private transient PnfsHandler _pnfsHandler;
-
-    public void setCachingEnabeled(boolean cachingEnabeled) {
-        _cachingEnabeled = cachingEnabeled;
-    }
-
-
     @Override
     public Map<String, SelectionLink> getLinks() {
         rlock();
@@ -662,36 +655,29 @@ public class PoolSelectionUnitV2
               type, storeUnitName, dCacheUnitName, netUnitName, protocolUnitName,
               variableMap, storageInfo.locations(), linkGroupName);
 
-
-
         String cacheKey = null;
-        if (_cachingEnabeled) {
+        try {
+            Unit unit = _netHandler.match(netUnitName);
+            netUnitGroup = unit._uGroupList.values()
+                  .stream()
+                  .map(UGroup::getName).findFirst().get();
 
-            try {
-                Unit unit = _netHandler.match(netUnitName);
-                netUnitGroup = unit._uGroupList.values()
-                      .stream()
-                      .map(UGroup::getName).findFirst().get();
-
-                LOGGER.debug("this IP address   belongs to {} in uGroup {} " + netUnitName + netUnitGroup);
+            LOGGER.debug(
+                  "this IP address   belongs to {} in uGroup {} " + netUnitName + netUnitGroup);
 
 
-            } catch (UnknownHostException e) {
-                LOGGER.error("Caching did not work, please check the configuration " + e);
-            }
-
-            cacheKey = type.toString() + storeUnitName + dCacheUnitName +
-                  netUnitGroup + protocolUnitName + linkGroupName;
-
-            PoolPreferenceLevel[] cachedMatchValueTmp = cachedMatchValue.getIfPresent(cacheKey);
-            if (cachedMatchValueTmp != null) {
-                //counter = counter + 1;
-                //System.out.println("counter " + counter);
-                return cachedMatchValueTmp;
-
-            }
+        } catch (UnknownHostException e) {
+            LOGGER.error("Caching did not work, please check the configuration " + e);
         }
 
+        cacheKey = type.toString() + storeUnitName + dCacheUnitName +
+              netUnitGroup + protocolUnitName + linkGroupName;
+
+        PoolPreferenceLevel[] cachedMatchValueTmp = cachedMatchValue.getIfPresent(cacheKey);
+        if (cachedMatchValueTmp != null) {
+            return cachedMatchValueTmp;
+
+        }
         PoolPreferenceLevel[] result = null;
         rlock();
         try {
@@ -714,9 +700,7 @@ public class PoolSelectionUnitV2
         if (LOGGER.isDebugEnabled()) {
             logResult(result);
         }
-        if (_cachingEnabeled){
-            cachedMatchValue.put(cacheKey, result);
-        }
+        cachedMatchValue.put(cacheKey, result);
         return result;
     }
 
@@ -2646,11 +2630,8 @@ public class PoolSelectionUnitV2
     }
 
     protected void wlock() {
-
         _psuWriteLock.lock();
-        if (_cachingEnabeled) {
-            cachedMatchValue.invalidateAll();
-        }
+        cachedMatchValue.invalidateAll();
     }
 
     protected void wunlock() {

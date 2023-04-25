@@ -334,8 +334,6 @@ public class PoolSelectionUnitTest {
         FileAttributes fileAttributes = new FileAttributes();
         StorageInfos.injectInto(GenericStorageInfo.valueOf("*", "*"), fileAttributes);
 
-        _psu._cachingEnabeled = true;
-
         PoolPreferenceLevel[] preferenceRes1 = _psu.match(
               DirectionType.READ,  // operation
               "131.169.214.149", // net unit
