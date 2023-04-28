@@ -1,12 +1,12 @@
+# Minimal dCache Installation Guide
 
- dCache mission is to provide a system for storing and retrieving huge amounts of data, distributed among a large number of heterogeneous
+
+The dCache mission is to provide a system for storing and retrieving huge amounts of data, distributed among a large number of heterogeneous
 server nodes, under a single virtual filesystem tree with a variety of standard access methods.
      
 ### Minimum System Requirements
-
- 
    
- #### Software:
+#### Software:
 - OpenJDK 11
  > yum install java-11-openjdk
  > 
