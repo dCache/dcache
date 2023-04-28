@@ -1732,7 +1732,7 @@ public class ChimeraNameSpaceProvider
     private void removeRecursively(ExtendedInode parent, String name, ExtendedInode inode,
           Consumer<ExtendedInode> deleted) throws ChimeraFsException, CacheException {
         try {
-            if (inode.isDirectory() && inode.stat().getNlink() > 2) {
+            if (inode.isDirectory()) {
                 try (DirectoryStreamB<ChimeraDirectoryEntry> list = _fs.newDirectoryStream(inode)) {
                     for (ChimeraDirectoryEntry entry : list) {
                         String child = entry.getName();
