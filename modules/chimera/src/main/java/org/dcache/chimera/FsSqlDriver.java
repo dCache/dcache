@@ -1799,7 +1799,7 @@ public class FsSqlDriver {
     String resolvePath(FsInode root, String path) throws ChimeraFsException, SQLException {
         FsInode pathInode = path2inode(root, path);
         if (pathInode == null) {
-            return path;
+            return null;
         }
         return inode2path(pathInode, root);
     }

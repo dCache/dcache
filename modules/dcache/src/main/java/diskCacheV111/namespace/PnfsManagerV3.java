@@ -110,6 +110,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
@@ -254,6 +255,8 @@ public class PnfsManagerV3
     private List<ProcessThread> _listProcessThreads = new ArrayList<>();
 
     private JdbcQuota quotaSystem;
+
+    private Function<FsPath, FsPath> pathResolver = p -> resolveSymlinks(p.toString());
 
     private void populateRequestMap() {
         _gauges.addGauge(PnfsAddCacheLocationMessage.class);
@@ -1788,6 +1791,7 @@ public class PnfsManagerV3
 
         FsPath path = message.getFsPath();
         Restriction restriction = message.getRestriction();
+        restriction.setPathResolver(pathResolver);
 
         /* As a special case, if the user is allowed to upload into
          * a child directory then they are also allowed to create this
@@ -1800,7 +1804,7 @@ public class PnfsManagerV3
          * the directory '/data/test-1' should succeed.  However, an attempt to
          * mkdir '/data/test-1/item1' should fail.
          */
-        if (restriction.hasUnrestrictedChild(UPLOAD, resolveSymlinks(path.toString()))) {
+        if (restriction.hasUnrestrictedChild(UPLOAD, path)) {
             return;
         }
 
@@ -1823,8 +1827,7 @@ public class PnfsManagerV3
          * In example 2, the parent is 'test-1' and the user is not allowed to
          * upload this file.
          */
-        if (!path.isRoot() && !restriction.isRestricted(UPLOAD,
-              resolveSymlinks(path.parent().toString()))) {
+        if (!path.isRoot() && !restriction.isRestricted(UPLOAD, path.parent())) {
             return;
         }
 
@@ -2067,10 +2070,11 @@ public class PnfsManagerV3
                 sourcePath = _nameSpaceProvider.pnfsidToPath(msg.getSubject(), pnfsId);
             }
             LOGGER.info("Rename {} to new name: {}", sourcePath, destinationPath);
+            msg.getRestriction().setPathResolver(pathResolver);
             checkRestriction(msg, MANAGE, FsPath.create(sourcePath).parent());
             checkRestriction(msg, MANAGE, FsPath.create(destinationPath).parent());
             boolean overwrite = msg.getOverwrite()
-                  && !msg.getRestriction().isRestricted(DELETE, resolveSymlinks(destinationPath));
+                  && !msg.getRestriction().isRestricted(DELETE, FsPath.create(destinationPath));
             _nameSpaceProvider.rename(msg.getSubject(), pnfsId, sourcePath, destinationPath,
                   overwrite);
         } catch (CacheException e) {
@@ -2162,6 +2166,7 @@ public class PnfsManagerV3
             _directory = requireNonNull(_msg.getFsPath());
             _subject = _msg.getSubject();
             _restriction = _msg.getRestriction();
+            _restriction.setPathResolver(pathResolver);
             _deadline =
                   (delay == Long.MAX_VALUE)
                         ? Long.MAX_VALUE
@@ -2182,8 +2187,7 @@ public class PnfsManagerV3
         @Override
         public void addEntry(String name, FileAttributes attrs) {
             if (Subjects.isRoot(_subject)
-                  || !_restriction.isRestricted(READ_METADATA,
-                  resolveSymlinks(_directory.toString()), name)) {
+                  || !_restriction.isRestricted(READ_METADATA, _directory, name)) {
                 long now = System.currentTimeMillis();
                 _msg.addEntry(name, attrs);
                 if (_msg.getEntries().size() >= _directoryListLimit ||
@@ -3284,55 +3288,30 @@ public class PnfsManagerV3
 
     private void checkRestriction(Restriction restriction, Set<AccessMask> mask,
           Activity activity, FsPath path) throws PermissionDeniedCacheException {
-        FsPath resolvedPath;
-        try {
-            if (activity == UPLOAD) {
-                /*
-                 *  The resolution will not work on the full path because it does not
-                 *  yet exist, so we resolve the parent and then compose the child path.
-                 */
-                FsPath resolvedParent = resolveSymlinks(path.parent().toString());
-                resolvedPath = resolvedParent.child(path.name());
-            } else {
-                Optional<FsPath> optional = resolveSymlinks(path.toString(), true);
-                if (optional.isEmpty()) {
-                    LOGGER.debug("skipping checkRestriction on unresolved path {}.", path);
-                    return;
-                }
-                resolvedPath = optional.get();
-            }
-        } catch (CacheException e) {
-            /*
-             *  Do not risk allowing the operation to proceed in this case because
-             *  the underlying error may not necessarily prevent the desired activity.
-             */
-            throw new PermissionDeniedCacheException(
-                  "Restriction " + restriction + " denied activity " + activity + " on " + path, e);
-        }
-
+        restriction.setPathResolver(pathResolver);
         if (mask.stream()
               .map(PnfsManagerV3::toActivity)
-              .anyMatch(a -> restriction.isRestricted(a, resolvedPath))) {
+              .anyMatch(a -> restriction.isRestricted(a, path))) {
 
             Set<AccessMask> denied = mask.stream()
-                  .filter(m -> restriction.isRestricted(toActivity(m), resolvedPath))
+                  .filter(m -> restriction.isRestricted(toActivity(m), path))
                   .collect(Collectors.toSet());
 
             throw new PermissionDeniedCacheException(
                   "Restriction " + restriction + " denied access for " + denied + " on "
-                        + resolvedPath);
+                        + resolveSymlinks(path.toString()));
         }
 
-        if (restriction.isRestricted(activity, resolvedPath)) {
+        if (restriction.isRestricted(activity, path)) {
             throw new PermissionDeniedCacheException(
                   "Restriction " + restriction + " denied activity " + activity + " on "
-                        + resolvedPath);
+                        + resolveSymlinks(path.toString()));
         }
     }
 
     private FsPath resolveSymlinks(String target) {
         try {
-            return resolveSymlinks(target, false).get();
+            return recursivelyResolveSymlinks(target);
         } catch (CacheException e) {
             LOGGER.error("resolveSymlinks failed: {}; returning original target.",
                   Throwables.getRootCause(e).toString());
@@ -3340,12 +3319,21 @@ public class PnfsManagerV3
         }
     }
 
-    private Optional<FsPath> resolveSymlinks(String target, boolean allowNullReturn) throws CacheException {
+    private FsPath recursivelyResolveSymlinks(String target) throws CacheException {
         String resolved = _nameSpaceProvider.resolveSymlinks(Subjects.ROOT, target);
-        if (Strings.emptyToNull(resolved) == null) {
-            return allowNullReturn ? Optional.empty() : Optional.of(FsPath.create(target));
+
+        if (Strings.emptyToNull(resolved) != null) {
+            return FsPath.create(resolved);
         }
-        return Optional.of(FsPath.create(resolved));
+
+        File file = new File(target);
+        File parent = file.getParentFile();
+        if (parent == null) {
+            return FsPath.create(target);
+        }
+
+        FsPath resolvedParent = recursivelyResolveSymlinks(parent.getAbsolutePath());
+        return FsPath.create(new File(resolvedParent.toString(), file.getName()).getAbsolutePath());
     }
 
     /**
