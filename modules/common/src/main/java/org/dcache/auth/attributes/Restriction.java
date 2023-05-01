@@ -19,6 +19,7 @@ package org.dcache.auth.attributes;
 
 import diskCacheV111.util.FsPath;
 import java.io.Serializable;
+import java.util.function.Function;
 
 /**
  * A Restriction provides an overlay authorisation layer where some actions of that a user would
@@ -146,6 +147,18 @@ public interface Restriction extends LoginAttribute, Serializable {
      * {@code #isRestricted} returns true.
      */
     boolean isSubsumedBy(Restriction other);
+
+    /**
+     * @param resolver function to use for resolving paths.
+     */
+    void setPathResolver(Function<FsPath, FsPath> resolver);
+
+    /**
+     * @return returns NOP resolver.  Should be overridden by implementations.
+     */
+    default Function<FsPath, FsPath> getPathResolver() {
+        return Function.identity();
+    }
 
     /**
      * Provide a short, single-line description of this restriction.
