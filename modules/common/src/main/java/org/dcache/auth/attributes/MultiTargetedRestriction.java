@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -96,6 +97,8 @@ public class MultiTargetedRestriction implements Restriction {
 
     private final Collection<Authorisation> authorisations;
 
+    private transient Function<FsPath, FsPath> resolver;
+
     /**
      * Create a Restriction based on the supplied collection of Authorisations. An Authorisation
      * with the path FsPath.ROOT implies its activities are unrestricted.  If no authorisation has a
@@ -116,8 +119,10 @@ public class MultiTargetedRestriction implements Restriction {
     @Override
     public boolean hasUnrestrictedChild(Activity activity, FsPath parent) {
         for (Authorisation authorisation : authorisations) {
-            FsPath allowedPath = authorisation.getPath();
+            Function<FsPath, FsPath> resolver = getPathResolver();
+            FsPath allowedPath = resolver.apply(authorisation.getPath());
             EnumSet<Activity> allowedActivity = authorisation.getActivity();
+            parent = resolver.apply(parent);
 
             /*  As an example, if allowedPath is /path/to/dir then we return
              *  true if parent is /path or if parent is /path/to/dir/my-data,
@@ -134,8 +139,10 @@ public class MultiTargetedRestriction implements Restriction {
     @Override
     public boolean isRestricted(Activity activity, FsPath path) {
         for (Authorisation authorisation : authorisations) {
-            FsPath allowedPath = authorisation.getPath();
+            Function<FsPath, FsPath> resolver = getPathResolver();
+            FsPath allowedPath = resolver.apply(authorisation.getPath());
             EnumSet<Activity> allowedActivity = authorisation.getActivity();
+            path = resolver.apply(path);
             if (allowedActivity.contains(activity) && path.hasPrefix(allowedPath)) {
                 return false;
             }
@@ -187,10 +194,11 @@ public class MultiTargetedRestriction implements Restriction {
      */
     private boolean hasAuthorisationSubsumedBy(Authorisation other) {
         EnumSet<Activity> disallowedOtherActivities = EnumSet.complementOf(other.activities);
+        Function<FsPath, FsPath> resolver = getPathResolver();
         return authorisations.stream()
               .anyMatch(
                     ap -> disallowedOtherActivities.containsAll(EnumSet.complementOf(ap.activities))
-                          && other.getPath().hasPrefix(ap.getPath()));
+                          && resolver.apply(other.getPath()).hasPrefix(resolver.apply(ap.getPath())));
     }
 
     @Override
@@ -201,6 +209,17 @@ public class MultiTargetedRestriction implements Restriction {
 
         return false;
     }
+
+    @Override
+    public void setPathResolver(Function<FsPath, FsPath> resolver) {
+        this.resolver = resolver;
+    }
+
+    @Override
+    public Function<FsPath, FsPath> getPathResolver() {
+        return resolver != null ? resolver : Restriction.super.getPathResolver();
+    }
+
 
     @Override
     public String toString() {

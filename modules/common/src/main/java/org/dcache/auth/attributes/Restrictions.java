@@ -28,6 +28,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -146,6 +147,7 @@ public class Restrictions {
 
         private static final long serialVersionUID = 1854305439062458336L;
         private final Set<Restriction> restrictions;
+        private transient Function<FsPath, FsPath> resolver;
 
         public CompositeRestriction(Set<Restriction> restrictions) {
             this.restrictions = restrictions;
@@ -154,6 +156,7 @@ public class Restrictions {
         @Override
         public boolean isRestricted(Activity activity, FsPath path) {
             for (Restriction r : restrictions) {
+                r.setPathResolver(getPathResolver());
                 if (r.isRestricted(activity, path)) {
                     return true;
                 }
@@ -164,6 +167,7 @@ public class Restrictions {
         @Override
         public boolean isRestricted(Activity activity, FsPath directory, String name) {
             for (Restriction r : restrictions) {
+                r.setPathResolver(getPathResolver());
                 if (r.isRestricted(activity, directory, name)) {
                     return true;
                 }
@@ -173,6 +177,7 @@ public class Restrictions {
 
         @Override
         public boolean hasUnrestrictedChild(Activity activity, FsPath parent) {
+            restrictions.forEach(r -> r.setPathResolver(getPathResolver()));
             return !restrictions.stream().anyMatch(r -> !r.hasUnrestrictedChild(activity, parent));
         }
 
@@ -198,6 +203,7 @@ public class Restrictions {
             }
 
             for (Restriction r : restrictions) {
+                r.setPathResolver(getPathResolver());
                 if (!r.isSubsumedBy(other)) {
                     return false;
                 }
@@ -205,8 +211,19 @@ public class Restrictions {
             return true;
         }
 
+        @Override
+        public void setPathResolver(Function<FsPath, FsPath> resolver) {
+            this.resolver = resolver;
+        }
+
+        @Override
+        public Function<FsPath, FsPath> getPathResolver() {
+            return resolver != null ? resolver : Restriction.super.getPathResolver();
+        }
+
         private boolean isSubsumedBy(CompositeRestriction other) {
             for (Restriction r : restrictions) {
+                r.setPathResolver(getPathResolver());
                 if (!other.subsumes(r)) {
                     return false;
                 }
@@ -216,6 +233,7 @@ public class Restrictions {
 
         private boolean subsumes(Restriction other) {
             for (Restriction r : restrictions) {
+                r.setPathResolver(getPathResolver());
                 if (other.isSubsumedBy(r)) {
                     return true;
                 }
