@@ -737,14 +737,8 @@ public class NFSv41Door extends AbstractCellComponent implements
                     transfer.setKafkaSender(_kafkaSender);
 
                     final NfsTransfer t = transfer;
-                    openStateId.addDisposeListener(state -> {
-                        if (t.isWrite()) {
-                            /* write request keep in the message map to
-                             * avoid re-creates and trigger errors.
-                             */
-                            _transfers.remove(openStateId.stateid());
-                        }
-                    });
+                    /* clean dead transfers associated with open. */
+                    openStateId.addDisposeListener(state -> _transfers.remove(openStateId.stateid()));
                     _transfers.put(openStateId.stateid(), transfer);
                 } else {
                     // keep debug context in sync
