@@ -67,6 +67,7 @@ import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
+import diskCacheV111.util.PnfsHandler;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -84,6 +85,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
@@ -104,6 +106,8 @@ import javax.ws.rs.core.Response;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
+import org.dcache.cells.CellStub;
+import org.dcache.restful.util.HandlerBuilders;
 import org.dcache.restful.util.RequestUser;
 import org.dcache.restful.util.bulk.BulkServiceCommunicator;
 import org.dcache.services.bulk.BulkRequest;
@@ -135,6 +139,10 @@ public final class BulkResources {
 
     @Inject
     private BulkServiceCommunicator service;
+
+    @Inject
+    @Named("pnfs-stub")
+    private CellStub pnfsmanager;
 
     /**
      * @return List of bulk request summaries that have not been cleared.
@@ -224,8 +232,8 @@ public final class BulkResources {
                 String requestPayload) {
         Subject subject = getSubject();
         Restriction restriction = getRestriction();
-
-        BulkRequest request = toBulkRequest(requestPayload, this.request);
+        PnfsHandler handler = HandlerBuilders.unrestrictedPnfsHandler(pnfsmanager);
+        BulkRequest request = toBulkRequest(requestPayload, this.request, handler);
 
         /*
          *  Frontend sets the URL.  The backend service provides the UUID.
@@ -414,7 +422,7 @@ public final class BulkResources {
      * they are defined in the Bulk service as well.
      */
     @VisibleForTesting
-    static BulkRequest toBulkRequest(String requestPayload, HttpServletRequest httpServletRequest) {
+    static BulkRequest toBulkRequest(String requestPayload, HttpServletRequest httpServletRequest, PnfsHandler handler) {
         if (Strings.emptyToNull(requestPayload) == null) {
             throw new BadRequestException("empty request payload.");
         }
@@ -448,7 +456,7 @@ public final class BulkResources {
         string = removeEntry(map, String.class, "target_prefix", "target-prefix",
               "targetPrefix");
         if (httpServletRequest != null) {
-            request.setTargetPrefix(getUserRootAwareTargetPrefix(httpServletRequest, string));
+            request.setTargetPrefix(getUserRootAwareTargetPrefix(httpServletRequest, string, handler));
         } else {
             request.setTargetPrefix(string);
         }

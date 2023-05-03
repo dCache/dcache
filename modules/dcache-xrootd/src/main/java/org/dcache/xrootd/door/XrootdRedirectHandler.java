@@ -99,6 +99,7 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Checksum;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
+import org.dcache.vehicles.PnfsResolveSymlinksMessage;
 import org.dcache.xrootd.LoginTokens;
 import org.dcache.xrootd.core.XrootdException;
 import org.dcache.xrootd.core.XrootdSession;
@@ -1112,7 +1113,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
                       EnumSet.noneOf(FileAttribute.class));
             }
             return null;
-        } catch (PermissionDeniedCacheException e) {
+        } catch (CacheException e) {
             throw xrootdException(e);
         }
     }
@@ -1376,7 +1377,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
      * of the path returned.
      */
     private FsPath createFullPath(String path, Map<String, String> opaque)
-          throws PermissionDeniedCacheException {
+          throws CacheException {
         String fromOpaque = opaque.get(EFFECTIVE_ROOT_NAME);
         FsPath root = fromOpaque != null ? FsPath.create(fromOpaque) : effectiveRoot();
 
@@ -1384,7 +1385,10 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
             path = "/" + path;
         }
 
-        FsPath fullPath = FsPath.create(path);
+        PnfsResolveSymlinksMessage message = _door.sendResolveRequest(root.toString(), path);
+
+        root = FsPath.create(message.getResolvedPrefix());
+        FsPath fullPath = FsPath.create(message.getResolvedPath());
 
         if (fullPath.hasPrefix(root)) {
             path = fullPath.stripPrefix(root);

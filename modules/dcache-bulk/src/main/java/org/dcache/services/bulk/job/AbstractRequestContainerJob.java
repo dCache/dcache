@@ -104,6 +104,7 @@ import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryStream;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.vehicles.PnfsResolveSymlinksMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -445,7 +446,7 @@ public abstract class AbstractRequestContainerJob
     }
 
     protected List<BulkRequestTarget> getInitialTargets() {
-         return targetStore.getInitialTargets(rid, true);
+        return targetStore.getInitialTargets(rid, true);
     }
 
     protected boolean hasBeenCancelled(Long id, PID pid, FsPath path, FileAttributes attributes) {
@@ -481,6 +482,12 @@ public abstract class AbstractRequestContainerJob
         semaphore.release();
 
         checkTransitionToDirs();
+    }
+
+    protected FsPath resolvePath(String targetPath) throws CacheException {
+        PnfsResolveSymlinksMessage message = new PnfsResolveSymlinksMessage(targetPath, null);
+        message = pnfsHandler.request(message);
+        return FsPath.create(message.getResolvedPath());
     }
 
     private void checkTransitionToDirs() {

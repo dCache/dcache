@@ -120,6 +120,7 @@ import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
+import org.dcache.vehicles.PnfsResolveSymlinksMessage;
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
 import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.xrootd.door.proxy.NettyXrootProxyAdapter;
@@ -312,6 +313,11 @@ public class XrootdDoor
             list.add(FsPath.create(path));
         }
         return list;
+    }
+
+    public PnfsResolveSymlinksMessage sendResolveRequest(String root, String path)
+          throws CacheException {
+        return _pnfs.request(new PnfsResolveSymlinksMessage(path, root));
     }
 
     /**
