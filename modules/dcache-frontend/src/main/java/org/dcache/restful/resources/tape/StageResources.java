@@ -65,6 +65,7 @@ import static org.dcache.restful.util.HttpServletRequests.getUserRootAwareTarget
 import static org.dcache.restful.util.JSONUtils.newBadRequestException;
 
 import com.google.common.base.Strings;
+import diskCacheV111.util.PnfsHandler;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -77,6 +78,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
@@ -92,7 +94,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import org.dcache.auth.attributes.Restriction;
+import org.dcache.cells.CellStub;
 import org.dcache.restful.providers.tape.StageRequestInfo;
+import org.dcache.restful.util.HandlerBuilders;
 import org.dcache.restful.util.bulk.BulkServiceCommunicator;
 import org.dcache.services.bulk.BulkRequest;
 import org.dcache.services.bulk.BulkRequest.Depth;
@@ -124,6 +128,10 @@ public final class StageResources {
 
     @Inject
     private BulkServiceCommunicator service;
+
+    @Inject
+    @Named("pnfs-stub")
+    private CellStub pnfsmanager;
 
     private String[] supportedSitenames;
 
@@ -341,7 +349,9 @@ public final class StageResources {
         request.setClearOnFailure(false);
         request.setClearOnSuccess(false);
         request.setActivity("STAGE");
-        request.setTargetPrefix(getUserRootAwareTargetPrefix(this.request, null));
+
+        PnfsHandler handler = HandlerBuilders.unrestrictedPnfsHandler(pnfsmanager);
+        request.setTargetPrefix(getUserRootAwareTargetPrefix(this.request, null, handler));
 
         try {
             JSONObject reqPayload = new JSONObject(requestPayload);

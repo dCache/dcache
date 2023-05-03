@@ -129,17 +129,31 @@ public final class RequestContainerJob extends AbstractRequestContainerJob {
         for (BulkRequestTarget tgt : requestTargets) {
             checkForRequestCancellation();
             Long id = tgt.getId();
-            FsPath path = tgt.getPath();
-            if (targetPrefix != null && !path.contains(targetPrefix)) {
-                path = computeFsPath(targetPrefix, tgt.getPath().toString());
-            }
+            try {
+                FsPath path = resolvePath(tgt.getPath().toString());
+                if (targetPrefix != null && !path.contains(targetPrefix)) {
+                    path = computeFsPath(targetPrefix, tgt.getPath().toString());
+                }
 
-            switch (depth) {
-                case NONE:
-                    perform(id, PID.INITIAL, path, null);
-                    break;
-                default:
-                    handleTarget(id, PID.INITIAL, path);
+                switch (depth) {
+                    case NONE:
+                        perform(id, PID.INITIAL, path, null);
+                        break;
+                    default:
+                        handleTarget(id, PID.INITIAL, path);
+                }
+            } catch (CacheException e) {
+                LOGGER.error("problem handling target {}: {}.", tgt, e.toString());
+                tgt.setState(FAILED);
+                tgt.setErrorObject(e);
+                statistics.increment(FAILED.name());
+                try {
+                    targetStore.storeOrUpdate(tgt);
+                } catch (BulkStorageException ex) {
+                    LOGGER.error("processFileTargets {}, path {}, could not store, error {}.", ruid,
+                          tgt.getPath(),
+                          ex.getMessage());
+                }
             }
         }
     }

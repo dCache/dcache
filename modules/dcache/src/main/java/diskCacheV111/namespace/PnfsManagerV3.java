@@ -145,6 +145,7 @@ import org.dcache.vehicles.PnfsCreateSymLinkMessage;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.vehicles.PnfsRemoveChecksumMessage;
+import org.dcache.vehicles.PnfsResolveSymlinksMessage;
 import org.dcache.vehicles.PnfsSetFileAttributes;
 import org.dcache.vehicles.quota.PnfsManagerGetQuotaMessage;
 import org.dcache.vehicles.quota.PnfsManagerQuotaMessage;
@@ -2676,6 +2677,8 @@ public class PnfsManagerV3
             removeExtendedAttributes((PnfsRemoveExtendedAttributesMessage) pnfsMessage);
         } else if (pnfsMessage instanceof PnfsRemoveLabelsMessage) {
             removeLabel((PnfsRemoveLabelsMessage) pnfsMessage);
+        } else if (pnfsMessage instanceof PnfsResolveSymlinksMessage) {
+            resolveSymlinks((PnfsResolveSymlinksMessage) pnfsMessage);
         } else {
             LOGGER.warn("Unexpected message class [{}] from source [{}]",
                   pnfsMessage.getClass(), message.getSourcePath());
@@ -3328,6 +3331,17 @@ public class PnfsManagerV3
                   "Restriction " + restriction + " denied activity " + activity + " on "
                         + resolvedPath);
         }
+    }
+
+    private void resolveSymlinks(PnfsResolveSymlinksMessage message) {
+        String prefix = message.getPrefix();
+        String path   = message.getPnfsPath();
+        if (Strings.emptyToNull(prefix) != null) {
+            message.setResolvedPrefix(resolveSymlinks(prefix).toString());
+        }
+
+        message.setResolvedPath(resolveSymlinks(path).toString());
+        message.setSucceeded();
     }
 
     private FsPath resolveSymlinks(String target) {

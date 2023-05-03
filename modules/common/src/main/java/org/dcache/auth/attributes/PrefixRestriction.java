@@ -33,6 +33,7 @@ public class PrefixRestriction implements Restriction {
     private ImmutableSet<FsPath> prefixes;
 
     public PrefixRestriction(FsPath... prefixes) {
+
         this.prefixes = ImmutableSet.copyOf(prefixes);
     }
 
