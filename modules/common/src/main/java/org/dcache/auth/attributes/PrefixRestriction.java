@@ -36,6 +36,7 @@ public class PrefixRestriction implements Restriction {
     private transient Function<FsPath, FsPath> resolver;
 
     public PrefixRestriction(FsPath... prefixes) {
+
         this.prefixes = ImmutableSet.copyOf(prefixes);
     }
 

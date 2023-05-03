@@ -20,10 +20,13 @@ package org.dcache.restful.util;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
+import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
+import diskCacheV111.util.PnfsHandler;
 import java.util.Set;
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.BadRequestException;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.LoginAttributes;
@@ -31,6 +34,7 @@ import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.http.AuthenticationHandler;
+import org.dcache.vehicles.PnfsResolveSymlinksMessage;
 
 /**
  * Utility class for methods that operate on an HttpServletRequest object.
@@ -63,7 +67,7 @@ public class HttpServletRequests {
     }
 
     public static String getUserRootAwareTargetPrefix(HttpServletRequest request,
-          String includedPrefix) {
+          String includedPrefix, PnfsHandler handler) throws BadRequestException {
         FsPath userRootPath = getLoginAttributes(request).stream()
               .filter(RootDirectory.class::isInstance)
               .findFirst()
@@ -71,7 +75,15 @@ public class HttpServletRequests {
               .map(RootDirectory::getRoot)
               .map(FsPath::create)
               .orElse(FsPath.ROOT);
-        return getTargetPrefixFromUserRoot(userRootPath, includedPrefix);
+        PnfsResolveSymlinksMessage message = new PnfsResolveSymlinksMessage(userRootPath.toString(),
+              includedPrefix);
+        try {
+            message = handler.request(message);
+        } catch (CacheException e) {
+            throw new BadRequestException(e);
+        }
+        return getTargetPrefixFromUserRoot(FsPath.create(message.getResolvedPath()),
+              message.getPrefix());
     }
 
     @VisibleForTesting

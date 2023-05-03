@@ -226,22 +226,22 @@ public final class PrestoreRequestContainerJob extends AbstractRequestContainerJ
 
     private void addInfo(BulkRequestTarget target) {
         Long id = target.getId();
-        FsPath path = target.getPath();
-        if (targetPrefix != null && !path.contains(targetPrefix)) {
-            path = computeFsPath(targetPrefix, target.getPath().toString());
-        }
         try {
+            FsPath path = resolvePath(target.getPath().toString());
+            if (targetPrefix != null && !path.contains(targetPrefix)) {
+                path = computeFsPath(targetPrefix, target.getPath().toString());
+            }
             targetInfo.add(new TargetInfo(id, path, pnfsHandler.getFileAttributes(path,
                   MINIMALLY_REQUIRED_ATTRIBUTES)));
         } catch (CacheException e) {
-            LOGGER.error("addInfo {}, path {}, error {}.", ruid, path, e.getMessage());
+            LOGGER.error("addInfo {}, path {}, error {}.", ruid, target.getPath(), e.getMessage());
             target.setState(FAILED);
             target.setErrorObject(e);
             statistics.increment(FAILED.name());
             try {
                 targetStore.storeOrUpdate(target);
             } catch (BulkStorageException ex) {
-                LOGGER.error("addInfo {}, path {}, could not store, error {}.", ruid, path,
+                LOGGER.error("addInfo {}, path {}, could not store, error {}.", ruid, target.getPath(),
                       ex.getMessage());
             }
         } finally {
