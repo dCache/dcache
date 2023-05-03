@@ -196,7 +196,8 @@ public class Gplazma2LoginStrategy
          *  authorisation.
          */
         if (mtRestrictions.isEmpty()) {
-            userRoots.stream().map(_createPrefixRestriction).forEach(loginAttributes::add);
+            userRoots.stream().filter(p->!p.toString().equals("/"))
+                  .map(_createPrefixRestriction).forEach(loginAttributes::add);
         } else {
             handleMultiTargetedRestrictions(userRoots, mtRestrictions, loginAttributes);
         }
@@ -236,10 +237,7 @@ public class Gplazma2LoginStrategy
                 loginAttributes.add((LoginAttribute) attr);
                 if (attr instanceof RootDirectory) {
                     RootDirectory rootDir = (RootDirectory) attr;
-                    String root = rootDir.getRoot();
-                    if (!root.equals("/")) {
-                        userRoots.add(FsPath.create(root));
-                    }
+                    userRoots.add(FsPath.create(rootDir.getRoot()));
                 }
             }
         }
