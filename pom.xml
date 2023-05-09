@@ -304,17 +304,6 @@
                 <version>1.0</version>
             </dependency>
             <dependency>
-                <groupId>org.opensciencegrid</groupId>
-                <artifactId>privilege-xacml</artifactId>
-                <version>3.0.0</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
                 <groupId>net.java.dev.jna</groupId>
                 <artifactId>jna</artifactId>
                 <version>${version.jna}</version>
@@ -323,27 +312,6 @@
                 <groupId>net.java.dev.jna</groupId>
                 <artifactId>jna-platform</artifactId>
                 <version>${version.jna}</version>
-            </dependency>
-            <!-- xacml client incompatible with the newer opensaml library -->
-            <dependency>
-                <groupId>org.opensaml</groupId>
-                <artifactId>opensaml</artifactId>
-                <version>2.6.5</version>
-                <exclusions>
-                    <exclusion>
-                        <!-- We manually pull in a different variant -->
-                        <groupId>org.bouncycastle</groupId>
-                        <artifactId>bcprov-jdk15</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>commons-logging</groupId>
-                        <artifactId>commons-logging</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>xalan</groupId>
-                        <artifactId>xalan</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>javax.xml</groupId>
@@ -1456,7 +1424,6 @@
         <module>modules/gplazma2-banfile</module>
         <module>modules/gplazma2-voms</module>
         <module>modules/gplazma2-kpwd</module>
-        <module>modules/gplazma2-xacml</module>
         <module>modules/gplazma2-ldap</module>
         <module>modules/gplazma2-htpasswd</module>
         <module>modules/gplazma2-oidc</module>
