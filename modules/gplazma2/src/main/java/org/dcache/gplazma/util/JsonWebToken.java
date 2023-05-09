@@ -17,6 +17,7 @@
  */
 package org.dcache.gplazma.util;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -144,6 +145,17 @@ public class JsonWebToken {
         return Optional.ofNullable(payload.get(key))
               .filter(JsonNode::isTextual)
               .map(JsonNode::textValue);
+    }
+
+    public Optional<String> getPayloadValueAsString(String key) {
+        return Optional.ofNullable(payload.get(key))
+              .map(n -> {
+                    try {
+                        return mapper.writeValueAsString(n);
+                    } catch (JsonProcessingException e) {
+                        return "Bad JSON: " + e;
+                    }
+                  });
     }
 
     public Map<String,JsonNode> getPayloadMap() {
