@@ -36,6 +36,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.Stack;
+import java.util.function.Function;
 import javax.security.auth.x500.X500Principal;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -44,6 +45,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.x509.AttributeCertificate;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
+import org.dcache.auth.BearerTokenCredential;
 import org.dcache.auth.FQAN;
 import org.dcache.gplazma.configuration.ConfigurationItemControl;
 import org.dcache.gplazma.monitor.LoginMonitor.Result;
@@ -59,6 +61,8 @@ import org.dcache.gplazma.monitor.LoginResult.SessionPhaseResult;
 import org.dcache.gplazma.monitor.LoginResult.SessionPluginResult;
 import org.dcache.gplazma.monitor.LoginResult.SetDiff;
 import org.dcache.gplazma.util.CertPaths;
+import org.dcache.gplazma.util.JsonWebToken;
+import org.dcache.util.TimeUtils;
 import org.italiangrid.voms.VOMSAttribute;
 import org.italiangrid.voms.asn1.VOMSACUtils;
 import org.slf4j.Logger;
@@ -203,9 +207,64 @@ public class LoginResultPrinter {
     private String print(Object credential) {
         if (CertPaths.isX509CertPath(credential)) {
             return print(CertPaths.getX509Certificates((CertPath) credential));
+        } else if (credential instanceof BearerTokenCredential) {
+            return print((BearerTokenCredential)credential);
         } else {
             return credential.toString();
         }
+    }
+
+    private String print(BearerTokenCredential credential) {
+        String token = credential.getToken();
+
+        if (JsonWebToken.isCompatibleFormat(token)) {
+            try {
+                return print(new JsonWebToken(token));
+            } catch (IOException e) {
+                return "Bad JWT (" + e + "): " + credential;
+            }
+        } else {
+            return credential.toString();
+        }
+    }
+
+    private void appendPayloadSimpleClaim(StringBuilder sb, JsonWebToken jwt, String key) {
+        appendPayloadClaim(sb, jwt, key, Function.identity());
+    }
+
+    private void appendPayloadInstantClaim(StringBuilder sb, JsonWebToken jwt, String key) {
+        appendPayloadClaim(sb, jwt, key, s -> jwt.getPayloadInstant(key)
+                          .map(i -> s + " --> " + TimeUtils.relativeTimestamp(i))
+                          .orElse(s));
+    }
+
+    private void appendPayloadClaim(StringBuilder sb, JsonWebToken jwt, String key,
+            Function<String,String> valueEnhancer) {
+        jwt.getPayloadValueAsString(key)
+            .map(valueEnhancer::apply)
+            .map(v -> "  +- " + key + ": " + v + "\n")
+            .ifPresent(sb::append);
+    }
+
+    private String print(JsonWebToken jwt) {
+        var sb = new StringBuilder();
+        sb.append("JWT bearer token:\n");
+        sb.append("  |\n");
+        appendPayloadSimpleClaim(sb, jwt, "iss");
+        appendPayloadSimpleClaim(sb, jwt, "jti");
+        appendPayloadSimpleClaim(sb, jwt, "sub");
+        appendPayloadSimpleClaim(sb, jwt, "scope");
+        appendPayloadSimpleClaim(sb, jwt, "authenticating_authority");
+        appendPayloadInstantClaim(sb, jwt, "auth_time");
+        appendPayloadInstantClaim(sb, jwt, "iat");
+        appendPayloadInstantClaim(sb, jwt, "nbf");
+        appendPayloadInstantClaim(sb, jwt, "exp");
+        appendPayloadSimpleClaim(sb, jwt, "aud");
+        appendPayloadSimpleClaim(sb, jwt, "azp");
+        appendPayloadSimpleClaim(sb, jwt, "client_id");
+        appendPayloadSimpleClaim(sb, jwt, "session_state");
+        appendPayloadSimpleClaim(sb, jwt, "sid");
+        return sb.toString();
     }
 
     private String print(X509Certificate[] certificates) {
