@@ -347,7 +347,6 @@ public class PoolSelectionUnitBenchmarkCaching {
     @Threads(value = 16)
     public int matchCaching() {
 
-        psu.setCachingEnabeled(true);
         String address = adresses[ThreadLocalRandom.current().nextInt(adresses.length)];
         PoolPreferenceLevel[] preference = psu.match(
               DirectionType.WRITE,  // operation
