@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013 - 2019 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013 - 2023 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -25,6 +25,7 @@ import com.google.common.util.concurrent.SettableFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TimeoutCacheException;
+import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import dmg.cells.nucleus.CDC;
@@ -44,6 +45,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.CompletionHandler;
@@ -68,6 +70,7 @@ import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.NettyPortRange;
+import org.dcache.util.NetworkUtils;
 import org.dcache.util.TryCatchTemplate;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
@@ -423,7 +426,12 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
                 }
                 conditionallyStartServer();
                 setCancellable(channel);
-                sendAddressToDoor(mover, getServerAddress().getPort());
+                InetAddress localIP =
+                        NetworkUtils.getLocalAddress(((IpProtocolInfo)mover.getProtocolInfo()).getSocketAddress().getAddress());
+
+                InetSocketAddress localEndpoint = new InetSocketAddress(localIP, getServerAddress().getPort());
+                mover.setLocalEndpoint(localEndpoint);
+                sendAddressToDoor(mover, localEndpoint);
             }
 
             @Override
@@ -674,7 +682,7 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
         postTransferService.execute(mover, completionHandler);
     }
 
-    protected abstract void sendAddressToDoor(NettyMover<P> mover, int port)
+    protected abstract void sendAddressToDoor(NettyMover<P> mover, InetSocketAddress localEndpoint)
           throws Exception;
 
     protected abstract UUID createUuid(P protocolInfo);

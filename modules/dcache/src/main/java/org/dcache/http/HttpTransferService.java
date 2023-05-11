@@ -39,14 +39,14 @@ import io.netty.handler.codec.http.cors.CorsHandler;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
-import java.net.InetAddress;
+
+import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.UUID;
 import org.dcache.pool.movers.NettyMover;
 import org.dcache.pool.movers.NettyTransferService;
-import org.dcache.util.NetworkUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -110,12 +110,12 @@ public class HttpTransferService extends NettyTransferService<HttpProtocolInfo> 
      * Send the network address of this mover to the door, along with the UUID identifying it.
      */
     @Override
-    protected void sendAddressToDoor(NettyMover<HttpProtocolInfo> mover, int port)
+    protected void sendAddressToDoor(NettyMover<HttpProtocolInfo> mover, InetSocketAddress localEndppoint)
           throws SocketException, CacheException {
         HttpProtocolInfo protocolInfo = mover.getProtocolInfo();
         String uri;
         try {
-            uri = getUri(protocolInfo, port, mover.getUuid()).toASCIIString();
+            uri = getUri(protocolInfo, localEndppoint, mover.getUuid()).toASCIIString();
         } catch (URISyntaxException e) {
             throw new RuntimeException(
                   "Failed to create URI for HTTP mover. Please report to support@dcache.org", e);
@@ -130,18 +130,16 @@ public class HttpTransferService extends NettyTransferService<HttpProtocolInfo> 
         doorStub.notify(new CellPath(httpDoor), httpDoorMessage);
     }
 
-    protected URI getUri(HttpProtocolInfo protocolInfo, int port, UUID uuid)
+    protected URI getUri(HttpProtocolInfo protocolInfo, InetSocketAddress localEndpoint, UUID uuid)
           throws SocketException, CacheException, URISyntaxException {
         String path = protocolInfo.getPath();
         if (!path.startsWith("/")) {
             path = "/" + path;
         }
-        InetAddress localIP =
-              NetworkUtils.getLocalAddress(protocolInfo.getSocketAddress().getAddress());
         return new URI(PROTOCOL_HTTP,
               null,
-              localIP.getHostAddress(),
-              port,
+              localEndpoint.getAddress().getHostAddress(),
+              localEndpoint.getPort(),
               path,
               UUID_QUERY_PARAM + QUERY_PARAM_ASSIGN + uuid.toString(),
               null);

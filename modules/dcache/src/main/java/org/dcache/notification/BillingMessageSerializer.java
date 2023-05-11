@@ -2,6 +2,7 @@ package org.dcache.notification;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.net.InetAddresses;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.MoverInfoMessage;
 import java.net.InetSocketAddress;
@@ -40,6 +41,7 @@ public class BillingMessageSerializer implements Serializer<MoverInfoMessage> {
         data.getWriteIdle().ifPresent(d -> o.put("writeIdle", d.toString()));
         data.getReadActive().ifPresent(d -> o.put("readActive", d.toString()));
         data.getWriteActive().ifPresent(d -> o.put("writeActive", d.toString()));
+        data.getLocalEndpoint().ifPresent(d -> o.put("localEndpoint", InetAddresses.toUriString(d.getAddress()) + ":" + d.getPort()));
 
         JSONObject status = new JSONObject();
         status.put("code", data.getResultCode());

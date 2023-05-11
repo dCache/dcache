@@ -387,6 +387,9 @@ public class NfsTransferService
     @Nullable NfsMover getMoverByStateId(CompoundContext context, stateid4 stateid) {
         NfsMover mover = _activeIO.get(stateid);
         if (mover != null) {
+            if (mover.attachSession(context.getSession())) {
+                mover.setLocalEndpoint(context.getRemoteSocketAddress());
+            }
             mover.attachSession(context.getSession());
         }
         return mover;

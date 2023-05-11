@@ -126,11 +126,14 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
      *
      * @param session to attach to
      */
-    synchronized void attachSession(NFSv41Session session) {
+    synchronized boolean attachSession(NFSv41Session session) {
+
         if (_session == null) {
             _session = session;
             _session.getClient().attachState(_state);
+            return true;
         }
+        return  false;
     }
 
     /**

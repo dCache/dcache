@@ -25,7 +25,9 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.cors.CorsConfigBuilder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
+
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -70,10 +72,10 @@ public class HttpsTransferService extends HttpTransferService {
     }
 
     @Override
-    protected URI getUri(HttpProtocolInfo protocolInfo, int port, UUID uuid)
+    protected URI getUri(HttpProtocolInfo protocolInfo, InetSocketAddress localEndpoint, UUID uuid)
           throws SocketException, CacheException, URISyntaxException {
 
-        URI plainUrl = super.getUri(protocolInfo, port, uuid);
+        URI plainUrl = super.getUri(protocolInfo, localEndpoint, uuid);
         String host = getHost(plainUrl);
         try {
             if (InetAddresses.isInetAddress(host)) {

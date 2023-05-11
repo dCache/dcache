@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013-2015 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013-2023 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -41,7 +41,6 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.timeout.IdleStateHandler;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.util.EnumSet;
@@ -64,7 +63,6 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.movers.NettyMover;
 import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.util.CDCThreadFactory;
-import org.dcache.util.NetworkUtils;
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
 import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.xrootd.OutboundExceptionHandler;
@@ -386,17 +384,15 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
      * Sends our address to the door. Copied from the old xrootd mover.
      */
     @Override
-    protected void sendAddressToDoor(NettyMover<XrootdProtocolInfo> mover, int port)
+    protected void sendAddressToDoor(NettyMover<XrootdProtocolInfo> mover, InetSocketAddress localEndpoint)
           throws SocketException, CacheException {
         XrootdProtocolInfo protocolInfo = mover.getProtocolInfo();
-        InetAddress localIP = NetworkUtils.getLocalAddress(
-              protocolInfo.getSocketAddress().getAddress());
         CellPath cellpath = protocolInfo.getXrootdDoorCellPath();
+
         XrootdDoorAdressInfoMessage doorMsg =
-              new XrootdDoorAdressInfoMessage(protocolInfo.getXrootdFileHandle(),
-                    new InetSocketAddress(localIP, port));
+              new XrootdDoorAdressInfoMessage(protocolInfo.getXrootdFileHandle(), localEndpoint);
         doorStub.notify(cellpath, doorMsg);
-        LOGGER.debug("sending redirect {} to Xrootd-door {}", localIP, cellpath);
+        LOGGER.debug("sending redirect {} to Xrootd-door {}", localEndpoint, cellpath);
     }
 
     @Override
