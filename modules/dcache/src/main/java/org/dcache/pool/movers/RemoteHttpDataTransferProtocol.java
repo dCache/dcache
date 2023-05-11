@@ -212,6 +212,8 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
 
     private Long _expectedTransferSize;
 
+    private InetSocketAddress _localEndpoint;
+
     public RemoteHttpDataTransferProtocol(CloseableHttpClient client) {
         _client = requireNonNull(client);
     }
@@ -474,6 +476,47 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
         }
     }
 
+    private Optional<InetSocketAddress> localAddress() {
+        HttpContext context = getContext();
+        if (context == null) {
+            LOGGER.debug("No HttpContext value");
+            return Optional.empty();
+        }
+
+        Object conn = context.getAttribute(HttpCoreContext.HTTP_CONNECTION);
+        if (conn == null) {
+            LOGGER.debug("HTTP_CONNECTION is null");
+            return Optional.empty();
+        }
+
+        if (!(conn instanceof HttpInetConnection)) {
+            throw new RuntimeException("HTTP_CONNECTION has unexpected type: "
+                    + conn.getClass().getCanonicalName());
+        }
+
+        HttpInetConnection inetConn = (HttpInetConnection) conn;
+        if (!inetConn.isOpen()) {
+            LOGGER.debug("HttpConnection is no longer open");
+            return Optional.empty();
+        }
+
+        try {
+            InetAddress addr = inetConn.getLocalAddress();
+            if (addr == null) {
+                LOGGER.debug("HttpInetConnection is not connected");
+                return Optional.empty();
+            }
+
+            int port = inetConn.getLocalPort();
+            InetSocketAddress sockAddr = new InetSocketAddress(addr, port);
+            return Optional.of(sockAddr);
+        } catch (ConnectionShutdownException e) {
+            LOGGER.warn("HTTP_CONNECTION has unexpectedly disconnected");
+            // Perhaps a race condition here?  Hey ho.
+            return Optional.empty();
+        }
+    }
+
     private HttpGet buildGetRequest(RemoteHttpDataTransferProtocolInfo info,
           long deadline) {
         HttpGet get = new HttpGet(info.getUri());
@@ -495,6 +538,8 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
           ThirdPartyTransferFailedCacheException, InterruptedException {
         HttpGet get = buildGetRequest(info, deadline);
         CloseableHttpResponse response = _client.execute(get, context);
+
+        _localEndpoint = localAddress().orElse(null);
 
         boolean isSuccessful = false;
         try {
@@ -559,6 +604,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                       redirectionCount > 0 ? REDIRECTED_REQUEST : INITIAL_REQUEST);
 
                 try (CloseableHttpResponse response = _client.execute(put, context)) {
+                    _localEndpoint = localAddress().orElse(null);
                     StatusLine status = response.getStatusLine();
                     switch (status.getStatusCode()) {
                         case 200: /* OK (not actually a valid response from PUT) */
@@ -933,5 +979,10 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     @Override
     public Long getBytesExpected() {
         return _expectedTransferSize;
+    }
+
+    @Override
+    public Optional<InetSocketAddress> getLocalEndpoint() {
+        return Optional.ofNullable(_localEndpoint);
     }
 }
