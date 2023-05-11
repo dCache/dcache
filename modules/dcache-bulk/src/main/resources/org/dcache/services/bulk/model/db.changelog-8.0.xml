@@ -392,4 +392,15 @@
             <column name="rid"/>
         </createIndex>
     </changeSet>
+
+    <!-- for 8.2 only, full path will not be necessary in 9+ -->
+    <changeSet author="arossi" id="4.1.8.2" runInTransaction="false">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <columnExists tableName="request_target" columnName="path"/>
+            </and>
+        </preConditions>
+        <modifyDataType tableName="request_target" columnName="path" newDataType="varchar(1024)"/>
+    </changeSet>
+
 </databaseChangeLog>
