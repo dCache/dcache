@@ -110,6 +110,7 @@ thus to run without postgresql. To build it simply run:
 
     mvn clean package -am -pl packages/system-test
 
+You will need the `patch` utility for it to succeed.
 This entails a completely self-contained dCache instance in
 `packages/system-test/target/dcache`. It can be started using:
 
