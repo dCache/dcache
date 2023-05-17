@@ -194,14 +194,14 @@ public final class BulkServiceStatistics implements CellInfoProvider {
         }
     }
 
-    public synchronized void decrement(String targetState) {
+    public void decrement(String targetState) {
         AtomicLong counter = counts.get(targetState);
         if (counter != null) {
             counter.decrementAndGet();
         }
     }
 
-    public synchronized void decrement(String targetState, long by) {
+    public void decrement(String targetState, long by) {
         AtomicLong counter = counts.get(targetState);
         if (counter != null) {
             counter.addAndGet(-by);

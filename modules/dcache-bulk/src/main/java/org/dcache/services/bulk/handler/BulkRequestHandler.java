@@ -172,7 +172,7 @@ public final class BulkRequestHandler implements BulkSubmissionHandler,
                 });
             }
         } catch (BulkStorageException e) {
-            LOGGER.error("checkTerminated, check for cancel on failure {}: {}.", id,
+            LOGGER.warn("checkTerminated, check for cancel on failure {}: {}.", id,
                   e.toString());
         }
         return terminated;
