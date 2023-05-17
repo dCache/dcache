@@ -209,6 +209,10 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
             try {
                 Subject subject = message.getSubject();
                 String uuid = message.getRequestUuid();
+                /*
+                 *  First check to see if the request corresponds to a stored one.
+                 */
+                requestStore.getKey(uuid);
                 checkRestrictions(message.getRestriction(), uuid);
                 matchActivity(message.getActivity(), uuid);
                 BulkRequestInfo status = requestStore.getRequestInfo(subject, uuid,
@@ -236,6 +240,10 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
             try {
                 Subject subject = message.getSubject();
                 String uuid = message.getRequestUuid();
+                /*
+                 *  First check to see if the request corresponds to a stored one.
+                 */
+                requestStore.getKey(uuid);
                 checkRestrictions(message.getRestriction(), uuid);
                 matchActivity(message.getActivity(), uuid);
                 List<String> targetPaths = message.getTargetPaths();
@@ -267,6 +275,10 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
             try {
                 String uuid = message.getRequestUuid();
                 Subject subject = message.getSubject();
+                /*
+                 *  First check to see if the request corresponds to a stored one.
+                 */
+                requestStore.getKey(uuid);
                 checkRestrictions(message.getRestriction(), uuid);
                 matchActivity(message.getActivity(), uuid);
                 submissionHandler.clearRequest(subject, uuid, message.isCancelIfRunning());
