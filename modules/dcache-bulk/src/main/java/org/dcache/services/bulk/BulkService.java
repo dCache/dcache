@@ -81,6 +81,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
+import javax.ws.rs.HEAD;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
@@ -206,6 +207,10 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
             try {
                 Subject subject = message.getSubject();
                 String requestId = message.getRequestId();
+                /*
+                 *  First check to see if the request corresponds to a stored one.
+                 */
+                requestStore.getKey(requestId);
                 checkRestrictions(message.getRestriction(), requestId);
                 matchActivity(message.getActivity(), requestId);
                 BulkRequestInfo status = requestStore.getRequestInfo(subject, requestId,
@@ -233,6 +238,10 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
             try {
                 Subject subject = message.getSubject();
                 String requestId = message.getRequestId();
+                /*
+                 *  First check to see if the request corresponds to a stored one.
+                 */
+                requestStore.getKey(requestId);
                 checkRestrictions(message.getRestriction(), requestId);
                 matchActivity(message.getActivity(), requestId);
                 List<String> targetPaths = message.getTargetPaths();
@@ -264,6 +273,10 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
             try {
                 String requestId = message.getRequestId();
                 Subject subject = message.getSubject();
+                /*
+                 *  First check to see if the request corresponds to a stored one.
+                 */
+                requestStore.getKey(requestId);
                 checkRestrictions(message.getRestriction(), requestId);
                 matchActivity(message.getActivity(), requestId);
                 submissionHandler.clearRequest(subject, requestId, message.isCancelIfRunning());

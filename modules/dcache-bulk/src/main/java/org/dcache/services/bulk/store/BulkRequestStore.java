@@ -171,6 +171,13 @@ public interface BulkRequestStore {
     ListMultimap<String, String> getActiveRequestsByUser() throws BulkStorageException;
 
     /**
+     * @param uid unique id for request.
+     * @return the key (sequence number) of the request.
+     * @throws BulkStorageException
+     */
+    Long getKey(String uid) throws BulkStorageException;
+
+    /**
      * @param id unique id for request.
      * @return optional of the request.
      */
