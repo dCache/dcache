@@ -307,6 +307,11 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
     }
 
     @Override
+    public Long getKey(String uid) throws BulkStorageException {
+        return valid(uid).getSeqNo();
+    }
+
+    @Override
     public Optional<BulkRequest> getRequest(String id) throws BulkStorageException {
         Optional<BulkRequest> stored = Optional.empty();
         try {
@@ -798,8 +803,7 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
     private BulkRequest valid(String id) throws BulkStorageException {
         BulkRequest stored = get(id);
         if (stored == null) {
-            String error = "request id " + id + " is no longer valid!";
-            throw new BulkRequestNotFoundException(error);
+            throw new BulkRequestNotFoundException("request " + id + " not found");
         }
         return stored;
     }
