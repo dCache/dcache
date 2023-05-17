@@ -816,8 +816,7 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
     private BulkRequest valid(String uid) throws BulkStorageException {
         BulkRequest stored = get(uid);
         if (stored == null) {
-            String error = "request id " + uid + " is no longer valid!";
-            throw new BulkRequestNotFoundException(error);
+            throw new BulkRequestNotFoundException("request " + uid + " not found");
         }
         return stored;
     }
