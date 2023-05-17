@@ -55,24 +55,15 @@ public class CreateBenchmark {
         @Param(value = {"weak", "strong", "week_softupdate"})
         String wcc;
 
-        @Param(value = {"nlink", "no_nlink"})
-        String ref;
-
-        protected FileSystemProvider _fs;
-
         protected HikariDataSource _dataSource;
 
         protected FsInode _rootInode;
 
+        protected FileSystemProvider _fs;
+
+
         @Setup
         public void setUp() throws IOException, SQLException, LiquibaseException {
-
-
-            switch (ref) {
-                case "nlink":
-                    System.setProperty("nlink", "true");
-                    break;
-            }
 
             switch (wcc) {
                 case "week_softupdate":
@@ -95,8 +86,11 @@ public class CreateBenchmark {
             config.setJdbcUrl(dbProperties.getProperty("chimera.db.url"));
             config.setUsername(dbProperties.getProperty("chimera.db.user"));
             config.setPassword(dbProperties.getProperty("chimera.db.password"));
-            config.setMaximumPoolSize(Runtime.getRuntime().availableProcessors() * 2);
-            config.setMinimumIdle(100);
+            config.setMaximumPoolSize(128);
+            config.setMinimumIdle(64);
+            config.setAutoCommit(true);
+            config.setTransactionIsolation("TRANSACTION_READ_COMMITTED");
+
 
             _dataSource = new HikariDataSource(config);
 
@@ -119,7 +113,6 @@ public class CreateBenchmark {
             PlatformTransactionManager txManager = new DataSourceTransactionManager(_dataSource);
             _fs = new JdbcFs(_dataSource, txManager);
             _rootInode = _fs.path2inode("/");
-
             _fs.createTag(_rootInode, "aTag");
             FsInode tagInode = new FsInode_TAG(_fs, _rootInode.ino(), "aTag");
             byte[] data = "data".getBytes(UTF_8);
@@ -129,26 +122,18 @@ public class CreateBenchmark {
 
         @State(Scope.Thread)
         public static class ThreadCtx {
-
-            @Param(value = {"all-in-one", "one-per-thread"})
-            String dir;
-
             FsInode threadRoot;
-            FileSystemProvider fs;
 
             @Setup
-            public void setUp(DB db) throws ChimeraFsException {
-                fs = db._fs;
-                threadRoot = dir.equals("all-in-one") ? db._rootInode
-                      : db._rootInode.mkdir(Thread.currentThread().getName());
+            public void setUp(DB db) throws ChimeraFsException, SQLException {
+                threadRoot = db._fs.path2inode("/");
             }
-
         }
 
         @TearDown
         public void tearDown() throws Exception {
-            _dataSource.close();
             _fs.close();
+            _dataSource.close();
         }
     }
 
@@ -165,7 +150,7 @@ public class CreateBenchmark {
     public FsInode benchmarkCreateDeleteDir(ThreadCtx ctx) throws ChimeraFsException {
         var dirName = UUID.randomUUID().toString();
         FsInode sub = ctx.threadRoot.mkdir(dirName);
-        ctx.fs.remove(ctx.threadRoot, dirName, sub);
+        ctx.threadRoot.remove(dirName);
         return sub;
     }
 
