@@ -1,10 +1,12 @@
 package org.dcache.vehicles;
 
 import static java.util.Objects.requireNonNull;
+import static org.dcache.auth.Subjects.getDisplayName;
 
 import com.google.common.collect.BoundType;
 import com.google.common.collect.Range;
 import diskCacheV111.vehicles.Message;
+import diskCacheV111.util.FsPath;
 import diskCacheV111.vehicles.PnfsMessage;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -42,7 +44,7 @@ public class PnfsListDirectoryMessage extends PnfsMessage {
      * The last message has the following field set to true and a non-zero message count;
      */
     private boolean _isFinal;
-    private int _messageCount;
+    private int _messageCount = 0;
 
 
 
@@ -169,8 +171,38 @@ public class PnfsListDirectoryMessage extends PnfsMessage {
         return _messageCount;
     }
 
+    public void setMessageCount(int messageCount) {
+        _messageCount = messageCount;
+    }
+
     @Override
     public boolean invalidates(Message message) {
         return false;
     }
+
+    @Override
+    public boolean fold(Message message) {
+        if (message instanceof PnfsListDirectoryMessage) {
+            String path = getPnfsPath();
+            Set<FileAttribute> requested = getRequestedAttributes();
+            PnfsListDirectoryMessage other =
+                  (PnfsListDirectoryMessage) message;
+
+            if (path.equals(other.getPnfsPath()) &&
+                getDisplayName(getSubject()).equals(getDisplayName(other.getSubject())) &&
+                getMessageCount() == other.getMessageCount()-1 &&
+                other.getRequestedAttributes().containsAll(requested)) {
+                other.getEntries().forEach(e -> addEntry(e.getName(),
+                                                         e.getFileAttributes()));
+                if (other.isFinal()) {
+                    setSucceeded(other.getMessageCount());
+                }
+                _messageCount = other.getMessageCount();
+                return true;
+            }
+        }
+        return false;
+    }
+
+
 }
