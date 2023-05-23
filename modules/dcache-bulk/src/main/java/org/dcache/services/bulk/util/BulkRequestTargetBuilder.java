@@ -71,8 +71,8 @@ public final class BulkRequestTargetBuilder {
 
     private final BulkRequestTarget target;
 
-    public static BulkRequestTargetBuilder builder() {
-        return new BulkRequestTargetBuilder();
+    public static BulkRequestTargetBuilder builder(BulkServiceStatistics statistics) {
+        return new BulkRequestTargetBuilder(statistics);
     }
 
     public BulkRequestTargetBuilder id(Long id) {
@@ -149,7 +149,7 @@ public final class BulkRequestTargetBuilder {
         return target;
     }
 
-    private BulkRequestTargetBuilder() {
-        target = new BulkRequestTarget();
+    private BulkRequestTargetBuilder(BulkServiceStatistics statistics) {
+        target = new BulkRequestTarget(statistics);
     }
 }

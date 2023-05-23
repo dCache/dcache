@@ -160,6 +160,7 @@
     <description>Bulk request target data access object handler.</description>
     <property name="dataSource" ref="bulk-data-source"/>
     <property name="utils" ref="bulk-jdbc-dao-utils"/>
+    <property name="statistics" ref="statistics"/>
   </bean>
 
   <bean id="request-store" class="org.dcache.services.bulk.store.jdbc.request.JdbcBulkRequestStore"
@@ -179,7 +180,6 @@
   <bean id="target-store" class="org.dcache.services.bulk.store.jdbc.rtarget.JdbcBulkTargetStore">
     <description>RDBMS implementation of target storage interface</description>
     <property name="targetDao" ref="bulk-request-target-dao"/>
-    <property name="statistics" ref="statistics"/>
   </bean>
 
   <bean id="qos-response-receiver" class="org.dcache.services.bulk.activity.plugin.qos.QoSResponseReceiver">

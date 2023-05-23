@@ -64,7 +64,6 @@ import static org.dcache.services.bulk.util.BulkRequestTarget.State.CANCELLED;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.COMPLETED;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.FAILED;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.READY;
-import static org.dcache.services.bulk.util.BulkRequestTarget.State.RUNNING;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.SKIPPED;
 import static org.dcache.services.bulk.util.BulkRequestTarget.computeFsPath;
 
@@ -194,7 +193,6 @@ public abstract class AbstractRequestContainerJob
         containerState = ContainerState.STOP;
 
         target.cancel();
-        statistics.decrement(RUNNING.name());
 
         LOGGER.debug("cancel {}:  target state is now {}.", ruid, target.getState());
 
@@ -206,7 +204,6 @@ public abstract class AbstractRequestContainerJob
             LOGGER.debug("cancel {}:  waiting {}.", ruid, waiting.size());
             waiting.values().forEach(r -> r.cancel(activity));
             LOGGER.debug("cancel {}:  waiting targets cancelled.", ruid);
-            statistics.decrement(RUNNING.name(), waiting.size());
             waiting.clear();
         }
 
@@ -222,7 +219,6 @@ public abstract class AbstractRequestContainerJob
                 BatchedResult result = i.next();
                 if (result.getTarget().getId() == id) {
                     result.cancel(activity);
-                    statistics.decrement(RUNNING.name());
                     i.remove();
                     break;
                 }
@@ -301,7 +297,6 @@ public abstract class AbstractRequestContainerJob
                     semaphore = new Semaphore(1); /* synchronous */
                     processDirTargets();
                     containerState = ContainerState.STOP;
-                    statistics.decrement(RUNNING.name());
                     update(COMPLETED);
                     break;
                 default:
@@ -346,7 +341,6 @@ public abstract class AbstractRequestContainerJob
          * manager thread.
          */
         containerState = ContainerState.STOP;
-        statistics.decrement(RUNNING.name());
         target.setErrorObject(e);
         update(FAILED);
         ThreadGroup group = t.getThreadGroup();
@@ -440,7 +434,6 @@ public abstract class AbstractRequestContainerJob
                 if (pid == PID.INITIAL) {
                     targetStore.storeOrUpdate(toTarget(id, pid, path, Optional.of(dirAttributes),
                           SKIPPED, null));
-                    statistics.increment(SKIPPED.name());
                 }
         }
     }
@@ -512,7 +505,7 @@ public abstract class AbstractRequestContainerJob
             errorMessage = root.getMessage();
         }
 
-        return BulkRequestTargetBuilder.builder().attributes(attributes.orElse(null))
+        return BulkRequestTargetBuilder.builder(statistics).attributes(attributes.orElse(null))
               .activity(activity.getName()).id(id).pid(pid).rid(rid).ruid(ruid).state(state)
               .createdAt(System.currentTimeMillis()).errorType(errorType)
               .errorMessage(errorMessage).path(path).build();
