@@ -72,7 +72,6 @@ import org.dcache.services.bulk.store.BulkTargetStore;
 import org.dcache.services.bulk.util.BulkRequestTarget;
 import org.dcache.services.bulk.util.BulkRequestTarget.PID;
 import org.dcache.services.bulk.util.BulkRequestTarget.State;
-import org.dcache.services.bulk.util.BulkServiceStatistics;
 import org.dcache.services.bulk.util.BulkTargetFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -86,7 +85,6 @@ public final class JdbcBulkTargetStore implements BulkTargetStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(JdbcBulkTargetStore.class);
 
     private JdbcRequestTargetDao targetDao;
-    private BulkServiceStatistics statistics;
 
     @Override
     public void abort(BulkRequestTarget target)
@@ -106,15 +104,13 @@ public final class JdbcBulkTargetStore implements BulkTargetStore {
 
     @Override
     public void cancel(long id) {
-        int count = targetDao.update(targetDao.where().id(id), targetDao.set().state(State.CANCELLED));
-        statistics.increment(State.CANCELLED.name(), count);
+        targetDao.update(targetDao.where().id(id), targetDao.set().state(State.CANCELLED));
     }
 
     @Override
     public void cancelAll(Long rid) {
-        int count = targetDao.update(targetDao.where().rid(rid).state(NON_TERMINAL),
+        targetDao.update(targetDao.where().rid(rid).state(NON_TERMINAL),
               targetDao.set().state(State.CANCELLED));
-        statistics.increment(State.CANCELLED.name(), count);
     }
 
     @Override
@@ -184,11 +180,6 @@ public final class JdbcBulkTargetStore implements BulkTargetStore {
         this.targetDao = targetDao;
     }
 
-    @Required
-    public void setStatistics(BulkServiceStatistics statistics) {
-        this.statistics = statistics;
-    }
-
     @Override
     public boolean store(BulkRequestTarget target) throws BulkStorageException {
         targetDao.insert(prepareUpdate(target))
@@ -208,9 +199,8 @@ public final class JdbcBulkTargetStore implements BulkTargetStore {
 
     @Override
     public void update(Long id, State state, String errorType, String errorMessage) throws BulkStorageException {
-        int count = targetDao.update(targetDao.where().id(id),
+        targetDao.update(targetDao.where().id(id),
               targetDao.set().state(state).errorType(errorType).errorMessage(errorMessage));
-        statistics.increment(state.name(), count);
     }
 
     private JdbcRequestTargetUpdate prepareUpdate(BulkRequestTarget target) {

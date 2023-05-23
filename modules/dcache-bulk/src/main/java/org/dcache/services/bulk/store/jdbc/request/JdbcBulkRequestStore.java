@@ -189,7 +189,7 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
 
         Throwable root = Throwables.getRootCause(exception);
 
-        BulkRequestTarget target = BulkRequestTargetBuilder.builder().rid(request.getId())
+        BulkRequestTarget target = BulkRequestTargetBuilder.builder(statistics).rid(request.getId())
               .pid(PID.ROOT).activity(request.getActivity())
               .path(ROOT_REQUEST_PATH).attributes(attributes)
               .errorType(root.getClass().getCanonicalName())

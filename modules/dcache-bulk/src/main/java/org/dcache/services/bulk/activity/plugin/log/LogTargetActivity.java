@@ -91,7 +91,7 @@ public final class LogTargetActivity extends BulkActivity<BulkRequestTarget> {
     public ListenableFuture<BulkRequestTarget> perform(String ruid, long tid, FsPath path,
           FileAttributes attributes) {
         long now = System.currentTimeMillis();
-        BulkRequestTarget t = BulkRequestTargetBuilder.builder().activity(this.getName()).id(tid)
+        BulkRequestTarget t = BulkRequestTargetBuilder.builder(null).activity(this.getName()).id(tid)
               .ruid(ruid).state(State.RUNNING).path(path).createdAt(now).attributes(attributes)
               .startedAt(now).lastUpdated(now).build();
 

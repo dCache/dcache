@@ -112,7 +112,7 @@ public final class RequestContainerJobFactory {
         FileAttributes attributes = new FileAttributes();
         attributes.setFileType(FileType.SPECIAL);
         attributes.setPnfsId(PLACEHOLDER_PNFSID);
-        BulkRequestTarget target = BulkRequestTargetBuilder.builder()
+        BulkRequestTarget target = BulkRequestTargetBuilder.builder(statistics)
               .activity(activity.getName())
               .rid(request.getId()).ruid(request.getUid()).pid(PID.ROOT).attributes(attributes)
               .path(ROOT_REQUEST_PATH).build();

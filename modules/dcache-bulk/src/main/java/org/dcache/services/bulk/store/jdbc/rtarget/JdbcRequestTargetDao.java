@@ -85,6 +85,7 @@ import org.dcache.services.bulk.util.BulkRequestTarget;
 import org.dcache.services.bulk.util.BulkRequestTarget.PID;
 import org.dcache.services.bulk.util.BulkRequestTarget.State;
 import org.dcache.services.bulk.util.BulkRequestTargetBuilder;
+import org.dcache.services.bulk.util.BulkServiceStatistics;
 import org.dcache.vehicles.FileAttributes;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.ParameterizedPreparedStatementSetter;
@@ -136,6 +137,7 @@ public final class JdbcRequestTargetDao extends JdbcDaoSupport {
         return criterion.isJoined() ? JOINED_SELECT : SELECT;
     }
 
+    private BulkServiceStatistics statistics;
     private JdbcBulkDaoUtils utils;
 
     public int count(JdbcRequestTargetCriterion criterion) {
@@ -194,6 +196,11 @@ public final class JdbcRequestTargetDao extends JdbcDaoSupport {
     }
 
     @Required
+    public void setStatistics(BulkServiceStatistics statistics) {
+        this.statistics = statistics;
+    }
+
+    @Required
     public void setUtils(JdbcBulkDaoUtils utils) {
         this.utils = utils;
     }
@@ -230,7 +237,7 @@ public final class JdbcRequestTargetDao extends JdbcDaoSupport {
 
         String errorType = rs.getString("error_type");
         String errorMessage = rs.getString("error_message");
-        return BulkRequestTargetBuilder.builder()
+        return BulkRequestTargetBuilder.builder(statistics)
               .id(rs.getLong("id"))
               .pid(PID.values()[rs.getInt("pid")])
               .rid(rs.getLong("rid"))
