@@ -213,7 +213,6 @@ public final class PrestoreRequestContainerJob extends AbstractRequestContainerJ
           throws BulkStorageException {
         BulkRequestTarget completedTarget = result.getTarget();
         completedTarget.resetToReady();
-        statistics.decrement(completedTarget.getState().name());
         try {
             perform(completedTarget);
         } catch (InterruptedException e) {
@@ -237,7 +236,6 @@ public final class PrestoreRequestContainerJob extends AbstractRequestContainerJ
             LOGGER.error("addInfo {}, path {}, error {}.", ruid, target.getPath(), e.getMessage());
             target.setState(FAILED);
             target.setErrorObject(e);
-            statistics.increment(FAILED.name());
             try {
                 targetStore.storeOrUpdate(target);
             } catch (BulkStorageException ex) {
@@ -254,7 +252,6 @@ public final class PrestoreRequestContainerJob extends AbstractRequestContainerJ
 
         BulkRequestTarget completedTarget = result.getTarget();
         State state = completedTarget.getState();
-        statistics.decrement(RUNNING.name());
 
         try {
             if (state == FAILED && activity.getRetryPolicy().shouldRetry(completedTarget)) {

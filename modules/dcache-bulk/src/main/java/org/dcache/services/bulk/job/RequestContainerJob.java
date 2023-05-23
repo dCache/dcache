@@ -146,7 +146,6 @@ public final class RequestContainerJob extends AbstractRequestContainerJob {
                 LOGGER.error("problem handling target {}: {}.", tgt, e.toString());
                 tgt.setState(FAILED);
                 tgt.setErrorObject(e);
-                statistics.increment(FAILED.name());
                 try {
                     targetStore.storeOrUpdate(tgt);
                 } catch (BulkStorageException ex) {
@@ -185,7 +184,6 @@ public final class RequestContainerJob extends AbstractRequestContainerJob {
         FsPath path = completedTarget.getPath();
         PID pid = completedTarget.getPid();
         completedTarget.resetToReady();
-        statistics.decrement(completedTarget.getState().name());
         try {
             perform(id, pid, path, attributes);
         } catch (InterruptedException e) {
@@ -201,7 +199,6 @@ public final class RequestContainerJob extends AbstractRequestContainerJob {
 
         BulkRequestTarget completedTarget = result.getTarget();
         State state = completedTarget.getState();
-        statistics.decrement(RUNNING.name());
 
         try {
             if (state == FAILED && activity.getRetryPolicy().shouldRetry(completedTarget)) {
@@ -285,7 +282,6 @@ public final class RequestContainerJob extends AbstractRequestContainerJob {
                  *  returned from the database.
                  */
                 targetStore.storeOrUpdate(target);
-                statistics.increment(RUNNING.name());
             } catch (BulkStorageException e) {
                 LOGGER.error("{}, could not store target from result {}, {}, {}: {}.", ruid, result,
                       attributes, e.toString());

@@ -60,11 +60,16 @@ documents or software obtained from this server.
 package org.dcache.services.bulk.util;
 
 import static java.util.Objects.requireNonNull;
+import static org.dcache.services.bulk.util.BulkRequestTarget.State.CANCELLED;
+import static org.dcache.services.bulk.util.BulkRequestTarget.State.CREATED;
+import static org.dcache.services.bulk.util.BulkRequestTarget.State.READY;
+import static org.dcache.services.bulk.util.BulkRequestTarget.State.RUNNING;
 
 import com.google.common.base.Throwables;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 import java.sql.Timestamp;
+import java.util.Optional;
 import org.dcache.namespace.FileType;
 import org.dcache.services.bulk.BulkServiceException;
 import org.dcache.vehicles.FileAttributes;
@@ -78,8 +83,8 @@ import org.dcache.vehicles.FileAttributes;
  */
 public final class BulkRequestTarget {
 
-    public static final State[] NON_TERMINAL = new State[]{State.CREATED, State.READY,
-          State.RUNNING};
+    public static final State[] NON_TERMINAL = new State[]{CREATED, READY,
+          RUNNING};
 
     public static FsPath computeFsPath(String prefix, String target) {
         if (prefix == null) {
@@ -115,6 +120,8 @@ public final class BulkRequestTarget {
         return key.split(KEY_SEPARATOR);
     }
 
+    private final Optional<BulkServiceStatistics> statistics;
+
     private Long id;
     private PID pid;
     private Long rid;
@@ -130,11 +137,15 @@ public final class BulkRequestTarget {
     private String errorMessage;
     private FileAttributes attributes;
 
-    BulkRequestTarget() {
+    BulkRequestTarget(BulkServiceStatistics statistics) {
+        this.statistics = Optional.ofNullable(statistics);
         /**
          * Constructed by fluid builder.
          */
-        state = State.CREATED;
+        state = CREATED;
+        if (statistics != null) {
+            statistics.increment(CREATED.name());
+        }
         createdAt = System.currentTimeMillis();
     }
 
@@ -143,7 +154,8 @@ public final class BulkRequestTarget {
             case CREATED:
             case READY:
             case RUNNING:
-                state = State.CANCELLED;
+                updateCounters(CANCELLED);
+                state = CANCELLED;
                 if (errorType == null) {
                     errorType = BulkServiceException.class.getCanonicalName();
                     errorMessage = getKey() + ": " + state;
@@ -190,7 +202,8 @@ public final class BulkRequestTarget {
 
     public synchronized void resetToReady() {
         ++retried;
-        state = State.READY;
+        updateCounters(READY);
+        state = READY;
         setErrorObject(null);
         lastUpdated = System.currentTimeMillis();
     }
@@ -278,7 +291,6 @@ public final class BulkRequestTarget {
     public void setErrorObject(Object error) {
         Throwable errorObject;
         errorType = null;
-        errorObject = null;
         if (error != null) {
             if (error instanceof Throwable) {
                 errorObject = Throwables.getRootCause((Throwable) error);
@@ -352,6 +364,7 @@ public final class BulkRequestTarget {
                     case COMPLETED:
                     case FAILED:
                     case SKIPPED:
+                        updateCounters(state);
                         this.state = state;
                         lastUpdated = System.currentTimeMillis();
                         return true;
@@ -369,6 +382,7 @@ public final class BulkRequestTarget {
                     case FAILED:
                     case SKIPPED:
                     case RUNNING:
+                        updateCounters(state);
                         this.state = state;
                         lastUpdated = System.currentTimeMillis();
                         return true;
@@ -381,6 +395,7 @@ public final class BulkRequestTarget {
                 }
             case CREATED:
             default:
+                updateCounters(state);
                 this.state = state;
                 lastUpdated = System.currentTimeMillis();
                 return true;
@@ -392,5 +407,12 @@ public final class BulkRequestTarget {
         return String.format(TARGET_FORMAT, id, pid, ruid, activity,
               state, new Timestamp(createdAt), startedAt == null ? null : new Timestamp(startedAt),
               new Timestamp(lastUpdated), retried, getType(), getPnfsId(), path, errorType, errorMessage);
+    }
+
+    private void updateCounters(State state) {
+        statistics.ifPresent(s -> {
+            s.decrement(this.state.name());
+            s.increment(state.name());
+        });
     }
 }
