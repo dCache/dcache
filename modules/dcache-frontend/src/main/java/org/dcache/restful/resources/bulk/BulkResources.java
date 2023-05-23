@@ -155,9 +155,8 @@ public final class BulkResources {
      * @owner A comma-separated list of owners to match; unspecified returns all requests.
      */
     @GET
-    @ApiOperation("Get the summary info of current bulk operations.  If the number of requests "
-          + "returned equals 10K, retry using the offset (highest returned seqNo + 1) "
-          + "to fetch more requests.")
+    @ApiOperation("Get the summary info of current bulk operations.  If nextId != -1 "
+          + "retry using the offset = nextId to fetch more requests.")
     @ApiResponses({
           @ApiResponse(code = 400, message = "Bad request"),
           @ApiResponse(code = 500, message = "Internal Server Error")
@@ -221,13 +220,13 @@ public final class BulkResources {
     public Response submit(
           @ApiParam(value = "Description of the request, which defines the following:\n\n"
                 + "**target** - Array of file paths.  Required.\n"
-                + "**target_prefix** - String path prefix, applied to all targets. Optional.\n"
+                + "**targetPrefix** - String path prefix, applied to all targets. Optional.\n"
                 + "**activity** - String, name of the activity (PIN, UNPIN, DELETE, UPDATE_QOS). Required.\n"
-                + "**cancel_on_failure** - Boolean. Optional, defaults to false.\n"
-                + "**clear_on_success** - Boolean, Optional, defaults to false.\n"
-                + "**clear_on_failure** - Boolean, Optional, defaults to false.\n"
-                + "**expand_directories** - String (NONE, TARGETS, ALL). Optional, defaults to NONE\n"
-                + "**pre_store** - Boolean (store all targets first, including recursively discovered paths).  Optional, defaults to false.\n"
+                + "**cancelOnFailure** - Boolean. Optional, defaults to false.\n"
+                + "**clearOnSuccess** - Boolean, Optional, defaults to false.\n"
+                + "**clearOnFailure** - Boolean, Optional, defaults to false.\n"
+                + "**expandDirectories** - String (NONE, TARGETS, ALL). Optional, defaults to NONE\n"
+                + "**prestore** - Boolean (store all targets first, including recursively discovered paths).  Optional, defaults to false.\n"
                 + "**arguments** - Object (map) of name:value pairs. Optional, specific to activity.", required = true)
                 String requestPayload) {
         Subject subject = getSubject();
@@ -260,9 +259,8 @@ public final class BulkResources {
      * data fields.
      */
     @GET
-    @ApiOperation("Get the status information for an individual bulk request. If the number of "
-          + "request targets equals 10K, retry using the offset (highest returned seqNo + 1) "
-          + "to fetch more targets.")
+    @ApiOperation("Get the status information for an individual bulk request. If nextId != -1 "
+          + "retry using the offset = nextId to fetch more targets.")
     @ApiResponses({
           @ApiResponse(code = 400, message = "Bad request"),
           @ApiResponse(code = 401, message = "Unauthorized"),
