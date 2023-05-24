@@ -6,6 +6,7 @@ authors:
     affiliation: "Deutsches Elektronen-Synchrotron DESY"
     city: "Hamburg"
     country: "Germany"
+    orcid: https://orcid.org/0000-0002-6217-8539
   - family-names: "Chitrapu"
     given-names: "Krishnaveni"
     affiliation: "National Supercomputer Center"
@@ -21,6 +22,7 @@ authors:
     affiliation: "Fermi National Accelerator Laboratory (FNAL)"
     city: "Batavia"
     country: "USA"
+    orcid: https://orcid.org/0000-0001-6733-2905
   - family-names: "Meyer"
     given-names: "Svenja"
     affiliation: "Deutsches Elektronen-Synchrotron DESY"
@@ -31,11 +33,13 @@ authors:
     affiliation: "Deutsches Elektronen-Synchrotron DESY"
     city: "Hamburg"
     country: "Germany"
+    orcid: https://orcid.org/0000-0002-3957-1279
   - family-names: "Morschel"
     given-names: "Lea"
     affiliation: "Deutsches Elektronen-Synchrotron DESY"
     city: "Hamburg"
     country: "Germany"
+    orcid: https://orcid.org/0000-0003-2825-0469
   - family-names: "Rossi"
     given-names: "Albert"
     affiliation: "Fermi National Accelerator Laboratory (FNAL)"
