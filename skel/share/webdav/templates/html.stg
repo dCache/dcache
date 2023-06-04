@@ -48,7 +48,7 @@ file(f) ::= <<
     <td></td>
     $elseif(f.isDirectory)$
     <td class="text-muted text-center">
-        <span class="glyphicon glyphicon-folder-close"></span>
+        <span class="fa-solid fa-folder-open"></span>
     </td>
     <td>
         <a href="$root$/$[path:{item|$item.encoded$},f.name.encoded]; separator="/"$/$queryWithPrefix("?")$">$f.name.unencoded$</a>
@@ -59,7 +59,7 @@ file(f) ::= <<
     </td>
     $elseif(f.isUploading)$
     <td class="text-muted text-center">
-        <span class="glyphicon glyphicon-file"></span>
+        <span class="fa-solid fa-file"></span>
     </td>
     <td class="text-muted" title="Upload not yet complete">$f.name.unencoded$</td>
     <td></td>
@@ -73,7 +73,7 @@ file(f) ::= <<
     <td>
         <a href="$root$/$[path:{item|$item.encoded$},f.name.encoded]; separator="/"$?action=show$queryWithPrefix("&amp;")$" title="Show $f.name.unencoded$">$f.name.unencoded$</a>
         <a href="$root$/$[path:{item|$item.encoded$},f.name.encoded]; separator="/"$$queryWithPrefix("?")$" title="Download $f.name.unencoded$" download="$f.name.encoded$">
-            <span class="glyphicon glyphicon-cloud-download"></span>
+            <span class="fa-solid fa-cloud-arrow-down"></span>
         </a>
     </td>
     <td title="$f.size.humanFriendly$">$f.size$</td>
@@ -86,24 +86,24 @@ file(f) ::= <<
 
 localityIcon(l) ::= <<
     $if(l.online)$
-        <i title="This file's data is available with no delay." class="fa fa-file"></i>
+        <i title="This file's data is available with no delay." class="fa-solid fa-file"></i>
     $elseif(l.nearline)$
-        <i title="Reading this file's data may be delayed." class="fa fa-truck"></i>
+        <i title="Reading this file's data may be delayed." class="fa-solid fa-tape"></i>
     $elseif(l.onlineAndNearline)$
         <span class="text-muted"
 	title="This file's data is available with no delay now, but may be delayed in the future."><i
-	class="fa fa-file"></i><i class="other-locality fa fa-truck"></i></span>
+	class="fa-solid fa-file"></i><i class="other-locality fa-solid fa-tape"></i></span>
     $elseif(l.lost)$
-        <i title="This file's data has been lost." class="fa fa-exclamation-circle"></i>
+        <i title="This file's data has been lost." class="fa-solid fa-exclamation-circle"></i>
     $elseif(l.none)$
         /* This is for non-file types; e.g., symbolic links. Note that directories
            are handled separately. */
-        <i class="fa fa-file"></i>
+        <i class="fa-solid fa-file"></i>
     $elseif(l.unavailable)$
-        <i title="This file's data is currently unavailable." class="fa fa-minus-circle"></i>
+        <i title="This file's data is currently unavailable." class="fa-solid fa-minus-circle"></i>
     $else$
         /* This branch should never happen. */
-        <i title="Status of this file's data is unknown." class="fa fa-exclamation-triangle"></i>
+        <i title="Status of this file's data is unknown." class="fa-solid fa-exclamation-triangle"></i>
     $endif$
 >>
 
@@ -123,11 +123,12 @@ render(body) ::= <<
 
         <title>$config.head_title$</title>
 
-        <link rel="stylesheet" href="$root$$static$/bootstrap/css/bootstrap.min.css">
-        <link rel="stylesheet" href="$root$$static$/css/custom.css">
-        <link rel="stylesheet" href="$root$$static$/css/tablesorter.custom.css">
-        <link rel="stylesheet" href="$root$$static$/css/bootstrap.custom.css">
-        <link rel="stylesheet" href="$root$$static$/css/font-awesome.min.css">
+        <link rel="stylesheet" href="$root$$static$/css/font-awesome.min.css" rel="stylesheet">
+        <link rel="stylesheet" href="$root$$static$/css/solid.min.css" rel="stylesheet">
+        <link rel="stylesheet" href="$root$$static$/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+        <link rel="stylesheet" href="$root$$static$/css/custom.css" rel="stylesheet">
+        <link rel="stylesheet" href="$root$$static$/css/tablesorter.custom.css" rel="stylesheet">
+        <link rel="stylesheet" href="$root$$static$/css/bootstrap.custom.css" rel="stylesheet">
 
         <script src="$root$$static$/jquery/jquery.min.js"></script>
         <script src="$root$$static$/bootstrap/js/bootstrap.min.js"></script>
@@ -143,7 +144,7 @@ render(body) ::= <<
         <![endif]-->
     </head>
     <body>
-        <div class="navbar navbar-default navbar-fixed-top">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
           <div class="container">
             <div class="navbar-header pull-left">
               <a class="navbar-brand" href="#">$config.header_brand$</a>
@@ -152,7 +153,7 @@ render(body) ::= <<
             <div class="navbar-header pull-right">
               <div class="dropdown">
                   <a href="#" class="navbar-brand dropdown-toggle" data-toggle="dropdown">
-                    <span class="glyphicon glyphicon-user"></span>
+                    <span class="fa-solid fa-user-shield"></span>
                   </a>
                   <ul class="dropdown-menu dropdown-menu-right">
                     $subject.principals:{p|<li><a href="#">$p$</a></li>}$
@@ -160,16 +161,19 @@ render(body) ::= <<
               </div>
             </div>
           </div>
-        </div>
+        </nav>
+
+          <div class="container">
+            <nav aria-label="breadcrumb" class="bg-light">
+              <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="$root$$url(base)$"><span class="fa-solid fa-hard-drive"></span></a></li>
+                $breadcrumbs(base,path)$
+              </ol>
+            </nav>
+          </div>
 
         <div class="container">
-          <div id="navi">
-            <ol class="breadcrumb">
-              <li><a href="$root$$url(base)$"><span class="glyphicon glyphicon-hdd"></span></a></li>
-              $breadcrumbs(base,path)$
-            </ol>
-          </div>
-          $body$
+            $body$
         </div>
 
         <div id="footer">
@@ -187,7 +191,7 @@ url(path) ::= <<$path:{item|$item.encoded$/}$$queryWithPrefix("?")$>>
  */
 breadcrumbs(base,path) ::= <<
   $if(path)$
-    <li><a href="$root$$url([base,first(path)])$">$first(path).unencoded$</a>
+    <li class="breadcrumb-item"><a href="$root$$url([base,first(path)])$">$first(path).unencoded$</a>
     $breadcrumbs([base,first(path)],rest(path))$
     </li>
   $endif$
