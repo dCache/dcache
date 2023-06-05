@@ -131,7 +131,7 @@ render(body) ::= <<
         <link rel="stylesheet" href="$root$$static$/css/bootstrap.custom.css" rel="stylesheet">
 
         <script src="$root$$static$/jquery/jquery.min.js"></script>
-        <script src="$root$$static$/bootstrap/js/bootstrap.min.js"></script>
+        <script src="$root$$static$/bootstrap/js/bootstrap.bundle.js"></script>
         <script src="$root$$static$/tablesorter/js/jquery.tablesorter.min.js"></script>
         <script src="$root$$static$/tablesorter/js/jquery.tablesorter.widgets.min.js"></script>
         <script src="$root$$static$/js/jquery.tablesorter.init.js"></script>
@@ -152,11 +152,11 @@ render(body) ::= <<
             </div>
             <div class="navbar-header pull-right">
               <div class="dropdown">
-                  <a href="#" class="navbar-brand dropdown-toggle" data-toggle="dropdown">
-                    <span class="fa-solid fa-user-shield"></span>
-                  </a>
+                  <button class="btn dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                      <span class="fa-solid fa-user-shield"></span>
+                  </button>
                   <ul class="dropdown-menu dropdown-menu-right">
-                    $subject.principals:{p|<li><a href="#">$p$</a></li>}$
+                    $subject.principals:{p|<li><a class="dropdown-item" href="#">$p$</a></li>}$
                   </ul>
               </div>
             </div>
