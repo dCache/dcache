@@ -68,7 +68,6 @@ import org.dcache.util.CDCThreadFactory;
 import org.dcache.util.ChannelCdcSessionHandlerWrapper;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
-import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.NettyPortRange;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.TryCatchTemplate;
@@ -76,7 +75,9 @@ import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
-import org.springframework.context.SmartLifecycle;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 
 /**
  * Abstract base class for Netty based transfer services. This class provides most methods needed by
@@ -87,7 +88,7 @@ import org.springframework.context.SmartLifecycle;
  * the Netty channel to close.
  */
 public abstract class NettyTransferService<P extends ProtocolInfo>
-      implements TransferService<NettyMover<P>>, MoverFactory, CellIdentityAware, SmartLifecycle {
+      implements TransferService<NettyMover<P>>, MoverFactory, CellIdentityAware {
 
     private static final Logger LOGGER =
           LoggerFactory.getLogger(NettyTransferService.class);
@@ -250,7 +251,6 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
             public void channelInactive(ChannelHandlerContext ctx) throws Exception {
                 super.channelInactive(ctx);
                 openChannels.remove(ctx.channel());
-                conditionallyStopServer();
             }
         });
     }
@@ -296,8 +296,8 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
     /**
      * Method used by Spring to tell this bean to start.
      */
-    @Override
-    public synchronized void start() {
+    @PostConstruct
+    public synchronized void start() throws IOException {
         timeoutScheduler =
               Executors.newSingleThreadScheduledExecutor(
                     new ThreadFactoryBuilder().setNameFormat(name + "-connect-timeout").build());
@@ -306,46 +306,20 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
         socketGroup = new NioEventLoopGroup(threads,
               new CDCThreadFactory(new ThreadFactoryBuilder().setNameFormat(
                     name + "-net-%d").build()));
-    }
 
-    @Override
-    public synchronized boolean isRunning() {
-        return timeoutScheduler != null;
-    }
 
+        startServer();
+    }
 
     /**
      * Method used by Spring to tell this bean to shutdown synchronously.
      */
-    @Override
+    @PreDestroy
     public synchronized void stop() {
         LOGGER.debug("NettyTransferService#stop started");
         initialiseShutdown();
         awaitShutdownCompletion();
         LOGGER.debug("NettyTransferService#stop completed");
-    }
-
-    /**
-     * Method used by Spring to tell this bean to shutdown asynchronously.
-     *
-     * @param callback The callback that must be called.
-     */
-    @Override
-    public synchronized void stop(final Runnable callback) {
-        LOGGER.debug("NettyTransferService#stop (with callback) started");
-        initialiseShutdown();
-        LOGGER.debug("NettyTransferService#stop (with callback) shutdown initialised");
-        Runnable reportShutdownCompleted = new FireAndForgetTask(() ->
-        {
-            LOGGER.debug("NettyTransferService#stop (with callback) waiting thread started");
-            try {
-                awaitShutdownCompletion();
-                LOGGER.debug("NettyTransferService#stop (with callback) shutdown completed");
-            } finally {
-                callback.run();
-            }
-        });
-        new Thread(reportShutdownCompleted, name + "-async-shutdown").start();
     }
 
     protected void initialiseShutdown() {
@@ -371,24 +345,6 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-        }
-    }
-
-    /**
-     * Start server if there are any registered channels.
-     */
-    protected synchronized void conditionallyStartServer() throws IOException {
-        if (!uuids.isEmpty()) {
-            startServer();
-        }
-    }
-
-    /**
-     * Stop server if there are no channels.
-     */
-    protected synchronized void conditionallyStopServer() {
-        if (openChannels.isEmpty() && uuids.isEmpty()) {
-            stopServer();
         }
     }
 
@@ -424,7 +380,7 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
                 if (uuids.putIfAbsent(uuid, channel) != null) {
                     throw new IllegalStateException("UUID conflict");
                 }
-                conditionallyStartServer();
+
                 setCancellable(channel);
                 InetAddress localIP =
                         NetworkUtils.getLocalAddress(((IpProtocolInfo)mover.getProtocolInfo()).getSocketAddress().getAddress());
@@ -673,7 +629,6 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
             } else {
                 channel.done();
             }
-            conditionallyStopServer();
         }
     }
 
