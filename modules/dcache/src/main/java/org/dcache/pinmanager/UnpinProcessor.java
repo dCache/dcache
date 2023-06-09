@@ -63,6 +63,9 @@ public class UnpinProcessor implements Runnable {
               Executors.newSingleThreadExecutor());
         NDC.push("BackgroundUnpinner-" + _count.incrementAndGet());
         try {
+            // Fist try to unpin all poolless pins from the DB, for which chunking is unnecessary.
+            unpin_poolless();
+
             Semaphore idle = new Semaphore(MAX_RUNNING);
             unpin(idle, executor);
             idle.acquire(MAX_RUNNING);
@@ -78,6 +81,15 @@ public class UnpinProcessor implements Runnable {
         } finally {
             executor.shutdown();
             NDC.pop();
+        }
+    }
+
+    @Transactional
+    protected void unpin_poolless() {
+        PinDao.PinCriterion criterion = _dao.where().state(READY_TO_UNPIN).pool(null);
+        int deleted = _dao.delete(criterion);
+        if (deleted > 0) {
+            LOGGER.debug("Deleted {} poolless pin(s) from the database.", deleted);
         }
     }
 

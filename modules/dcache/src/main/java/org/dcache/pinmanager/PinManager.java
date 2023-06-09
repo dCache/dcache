@@ -108,7 +108,9 @@ public class PinManager implements CellMessageReceiver, LeaderLatchListener, Cel
 
     /**
      * This task transitions all pins that have exceeded their lifetime and are in state PINNING or
-     * PINNED to state READY_TO_UNPIN.
+     * PINNED to state READY_TO_UNPIN. It removes the pool, which expires pins on its own and does
+     * not need to be contacted for regular expiries. As PoolManager is aware of the timeout for
+     * pins in state PINNING, it should also delete the request on its own if it is still ongoing.
      */
     private class ExpirationTask implements Runnable {
 
@@ -123,8 +125,9 @@ public class PinManager implements CellMessageReceiver, LeaderLatchListener, Cel
                             .stateIsNot(READY_TO_UNPIN)
                             .stateIsNot(UNPINNING)
                             .stateIsNot(FAILED_TO_UNPIN),
-                      dao.set().
-                            state(READY_TO_UNPIN));
+                      dao.set()
+                            .state(READY_TO_UNPIN)
+                            .pool(null));
             } catch (JDOException | DataAccessException e) {
                 LOGGER.error("Database failure while expiring pins: {}",
                       e.getMessage());

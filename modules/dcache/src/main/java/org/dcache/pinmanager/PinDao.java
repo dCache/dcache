@@ -125,7 +125,7 @@ public interface PinDao {
 
         PinCriterion stateIsNot(Pin.State state);
 
-        PinCriterion pool(String pool);
+        PinCriterion pool(@Nullable String pool);
 
         PinCriterion sticky(String sticky);
 

@@ -235,8 +235,7 @@ public class MovePinRequestProcessor
         return message;
     }
 
-    public PinManagerExtendPinMessage
-    messageArrived(PinManagerExtendPinMessage message)
+    public PinManagerExtendPinMessage messageArrived(PinManagerExtendPinMessage message)
           throws CacheException, InterruptedException {
         try {
             Pin pin = _dao.get(_dao.where().pnfsId(message.getFileAttributes().getPnfsId())

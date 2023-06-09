@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2016 - 2020 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 - 2023 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -179,6 +179,7 @@ public class JdbcDao extends JdbcDaoSupport implements PinDao {
                 predicate.append(" AND ");
             }
             predicate.append(clause);
+
             this.arguments.addAll(asList(arguments));
         }
 
@@ -249,8 +250,12 @@ public class JdbcDao extends JdbcDaoSupport implements PinDao {
         }
 
         @Override
-        public JdbcPinCriterion pool(String pool) {
-            addClause("pool = ?", pool);
+        public JdbcPinCriterion pool(@Nullable String pool) {
+            if (pool == null) {
+                addClause("pool IS NULL");
+            } else {
+                addClause("pool = ?", pool);
+            }
             return this;
         }
 
