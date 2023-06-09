@@ -66,13 +66,13 @@ public class BerkeleyDBMetaDataRepository extends AbstractBerkeleyDBReplicaStore
 
             Stopwatch watch = Stopwatch.createStarted();
             Set<PnfsId> files = _fileStore.index();
-            LOGGER.info("Indexed {} entries in {} in {}.", files.size(), _fileStore, watch);
+            LOGGER.info("Indexed {} entries in {} in {}.", files.size(), _fileStore, watch);
 
             if (indexOptions.contains(IndexOption.ALLOW_REPAIR)) {
 
                 watch.reset().start();
                 Set<String> records = views.collectKeys(Collectors.toSet());
-                LOGGER.info("Indexed {} entries in {} in {}.", records.size(), dir, watch);
+                LOGGER.info("Indexed {} entries in {} in {}.", records.size(), dir, watch);
 
                 for (String id : records) {
                     if (!files.contains(new PnfsId(id))) {

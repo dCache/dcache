@@ -207,7 +207,7 @@ public class SrmExtendFileLifeTime {
                   "File lifetime extension failed for request " + request.getClientRequestId()
                         + " with SURL " + surl + ": " + e.getMessage(), e);
         } catch (SRMException e) {
-            LOGGER.warn("File lifetime extension failed for request {} with SURL {}: {}",
+            LOGGER.warn("File lifetime extension failed for request {} with SURL {}: {}",
                   request.getClientRequestId(), surl, e.getMessage());
             returnStatus = new TReturnStatus(TStatusCode.SRM_FAILURE,
                   "TURL for request " + request.getClientRequestId() + " with SURL " + surl

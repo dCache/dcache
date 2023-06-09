@@ -37,7 +37,7 @@ public interface CellLifeCycleAware {
     /**
      * Called after every execution of a complete cell setup.
      * <p>
-     * Unless any {@code beforeSetup} call failed and thus killed the cell, every invocation of
+     * Unless any {@code beforeSetup} call failed and thus killed the cell, every invocation of
      * {@code beforeSetup} is followed by an invocation of {@code afterSetup} once the setup has
      * been fully applied.
      * <p>
@@ -51,7 +51,7 @@ public interface CellLifeCycleAware {
     /**
      * Called after the setup has changed.
      *
-     * <p>In contrast to the {@code beforeSetup} and {@code afterSetup} methods, this method is
+     * <p>In contrast to the {@code beforeSetup} and {@code afterSetup} methods, this method is
      * also called after individual setup affecting commands have been invoked. When processing an
      * entire setup, this method is only called once after {@code afterSetup} was called.
      *

@@ -1652,7 +1652,7 @@ public final class Storage
           CopyCallbacks callbacks)
           throws SRMException {
         FsPath path = FsPath.create(fileId);
-        _log.debug("getFromRemoteTURL from {} to {}", remoteTURL, path);
+        _log.debug("getFromRemoteTURL from {} to {}", remoteTURL, path);
         return performRemoteTransfer(user, remoteTURL, path, true,
               extraInfo,
               remoteCredentialId,

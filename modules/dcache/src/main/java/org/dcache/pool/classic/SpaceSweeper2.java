@@ -231,7 +231,7 @@ public class SpaceSweeper2
                 public void run() {
                     try {
                         long bytes = reclaim(Long.MAX_VALUE, "'sweeper purge' command");
-                        LOGGER.info("'sweeper purge' reclaimed {} bytes.", bytes);
+                        LOGGER.info("'sweeper purge' reclaimed {} bytes.", bytes);
                     } catch (InterruptedException e) {
                     }
                 }
@@ -255,7 +255,7 @@ public class SpaceSweeper2
                 public void run() {
                     try {
                         long bytes = reclaim(bytesToFree, "'sweeper free' command");
-                        LOGGER.info("'sweeper free {}' reclaimed {} bytes.", bytesToFree, bytes);
+                        LOGGER.info("'sweeper free {}' reclaimed {} bytes.", bytesToFree, bytes);
                     } catch (InterruptedException e) {
                     }
                 }
@@ -513,7 +513,7 @@ public class SpaceSweeper2
         /**
          * Elements sorted by access time and value.
          * <p>
-         * The comparator uses {@code timeStamps} to look up the time of keys. A compound comparator
+         * The comparator uses {@code timeStamps} to look up the time of keys. A compound comparator
          * is used to ensure consistency with equals (otherwise two keys with the same time would be
          * collapsed to a single element in the set).
          * <p>

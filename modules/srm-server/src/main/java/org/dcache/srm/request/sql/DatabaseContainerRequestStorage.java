@@ -141,7 +141,7 @@ public abstract class DatabaseContainerRequestStorage<C extends ContainerRequest
             if (job != null) {
                 return fileRequestType.cast(job);
             }
-            LOGGER.error("Job {} not found in database.", jobId);
+            LOGGER.error("Job {} not found in database.", jobId);
         } catch (DataAccessException | SQLException e) {
             LOGGER.error("Failed to read job {}: {}", jobId, e.toString());
         }

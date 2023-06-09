@@ -34,14 +34,14 @@ import org.dcache.pool.classic.Cancellable;
  * executeWithCancellable} method.
  * <p>
  * The template implements Cancellable, which may be used to cancel any asynchronous operations
- * started by {@code execute}. The template implements CompletionHandler and {@code execute} or an
- * asynchronous operation started by {@code execute} must use this interface to signal completion.
+ * started by {@code execute}. The template implements CompletionHandler and {@code execute} or an
+ * asynchronous operation started by {@code execute} must use this interface to signal completion.
  * <p>
  * Once the template completes or fails, this is signalled to an injected completion handler.
  * <p>
  * An asynchronous operation started by {@code execute} should be registered by calling {@code
  * setCancellable}. Only then will the template be able to cancel the asynchronous operations.
- * Alternatively a subclass may override {@code executeWithCancellable} and return the Cancellable.
+ * Alternatively a subclass may override {@code executeWithCancellable} and return the Cancellable.
  * <p>
  * {@code execute} may register Closeable resources by calling {@code autoclose}. These are
  * guaranteed to be closed once this {@code TryCatchTemplate} completes. Failure to close any
@@ -50,7 +50,7 @@ import org.dcache.pool.classic.Cancellable;
  * <p>
  * Any exceptions thrown by {@code execute} are caught and will result in failure of the template.
  * <p>
- * A cancellable registered through {@code setCancellable} will be cancelled if {@code execute}
+ * A cancellable registered through {@code setCancellable} will be cancelled if {@code execute}
  * throws an exception or calls {@code failed}, or if the template is cancelled.
  * <p>
  * A subclass may override {@code onSuccess} and {@code onFailure} to add additional processing when
@@ -169,9 +169,9 @@ public abstract class TryCatchTemplate<V, A> implements Cancellable, CompletionH
     /**
      * Invoked with the result of the execution when it is successful.
      * <p>
-     * If an {@code Exception} is thrown, the template fails. Otherwise the template succeeds.
+     * If an {@code Exception} is thrown, the template fails. Otherwise the template succeeds.
      * <p>
-     * Must not call {@code completed} or {@code failed}.
+     * Must not call {@code completed} or {@code failed}.
      */
     protected void onSuccess(V result, A attachment)
           throws Exception {
@@ -180,14 +180,14 @@ public abstract class TryCatchTemplate<V, A> implements Cancellable, CompletionH
     /**
      * Invoked when the execution fails or is canceled.
      * <p>
-     * If an {@code Exception} is thrown of which {@code t} is the cause, that exception is used to
+     * If an {@code Exception} is thrown of which {@code t} is the cause, that exception is used to
      * fail this template. Thus an implementation may replace the reason the template fails by
-     * throwing a new exception with {@code t} set as the cause.
+     * throwing a new exception with {@code t} set as the cause.
      * <p>
      * Otherwise the template fails with {@code t}. Any other exception thrown by this method is
      * suppressed.
      * <p>
-     * Must not call {@code completed} or {@code failed}.
+     * Must not call {@code completed} or {@code failed}.
      */
     protected void onFailure(Throwable t, A attachment)
           throws Exception {

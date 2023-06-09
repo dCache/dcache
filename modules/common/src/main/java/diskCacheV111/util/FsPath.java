@@ -221,7 +221,7 @@ public abstract class FsPath implements Serializable {
     }
 
     /**
-     * Returns true if the path of {@code prefix} is a prefix of the path of this FsPath.
+     * Returns true if the path of {@code prefix} is a prefix of the path of this FsPath.
      */
     public boolean hasPrefix(FsPath prefix) {
         /* The purpose of delta is just to describe how much longer this path is than prefix - the
@@ -253,7 +253,7 @@ public abstract class FsPath implements Serializable {
      * @return The {@code path} StringBuilder
      * @throws IllegalArgumentException if {@code prefix} is not a prefix of this FsPath or if the
      *                                  the length of this FsPath is not the sum of the length of
-     *                                  {@code prefix} and {@code length}.
+     *                                  {@code prefix} and {@code length}.
      */
     protected abstract StringBuilder appendSuffix(FsPath prefix, FsPath length, StringBuilder s);
 
@@ -266,7 +266,7 @@ public abstract class FsPath implements Serializable {
      * @return The {@code path} StringBuilder
      * @throws IllegalArgumentException if {@code prefix} is not a prefix of this FsPath or if the
      *                                  the length of this FsPath is not the sum of the length of
-     *                                  {@code prefix} and {@code length}.
+     *                                  {@code prefix} and {@code length}.
      */
     protected abstract StringBuilder appendSuffix2(FsPath prefix, FsPath length, StringBuilder s);
 

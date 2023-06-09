@@ -303,7 +303,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
 
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable t) {
         if (t instanceof ClosedChannelException) {
-            LOGGER.info("Connection {} unexpectedly closed.", ctx.channel());
+            LOGGER.info("Connection {} unexpectedly closed.", ctx.channel());
         } else if (t instanceof Exception) {
             releaseAllFiles(downloadsSeeError(new CacheException(t.toString(), t))
                   .uploadsSeeError(

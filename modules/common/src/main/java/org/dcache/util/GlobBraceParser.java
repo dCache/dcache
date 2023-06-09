@@ -38,7 +38,7 @@ import java.util.StringTokenizer;
  * the cartesian product):
  * <p>
  * expand(S) = expand(E) U expand(T) expand(T) = expand(S) | [] expand(E) = [ STR ] x expand(F) |
- * expand(F) expand(F) = expand(S) x expand(E) | [""]
+ * expand(F) expand(F) = expand(S) x expand(E) | [""]
  */
 class GlobBraceParser {
 

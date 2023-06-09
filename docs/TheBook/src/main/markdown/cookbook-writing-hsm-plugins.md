@@ -253,17 +253,17 @@ $ tree
 └── src
     └── main
         ├── assembly
-        │   └── plugin.xml
+        │   └── plugin.xml
         ├── defaults
-        │   └── org.example.test.properties
+        │   └── org.example.test.properties
         ├── docs
-        │   └── README.md
+        │   └── README.md
         ├── java
-        │   └── org
-        │       └── example
-        │           └── dcache
-        │               ├── PluginNearlineStorage.java
-        │               └── PluginNearlineStorageProvider.java
+        │   └── org
+        │       └── example
+        │           └── dcache
+        │               ├── PluginNearlineStorage.java
+        │               └── PluginNearlineStorageProvider.java
         └── resources
             └── META-INF
                 └── services

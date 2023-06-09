@@ -167,7 +167,7 @@ public class MovePinRequestProcessor
               .getPool(poolName);
         if (pool == null || !pool.isActive()) {
             throw new CacheException(
-                  "Unable to move sticky flag because pool " + poolName + " is unavailable");
+                  "Unable to move sticky flag because pool " + poolName + " is unavailable");
         }
         PoolSetStickyMessage msg =
               new PoolSetStickyMessage(poolName, pnfsId, sticky, owner, validTill);
