@@ -51,9 +51,9 @@ authors:
     city: "Hamburg"
     country: "Germany"
 title: "dCache: Inter-disciplinary storage system"
-version: 7.2
+version: 8.1
 doi: "https://doi.org/10.1051/epjconf/202125102010"
 journal: "EPJ Web Conf."
-date-released: "2021-08-23"
+date-released: "2022-05-12"
 url: https://dcache.org
 repository-code: "https://github.com/dCache/dcache"
