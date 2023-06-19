@@ -8,7 +8,7 @@ The table below lists the *default* port values as defined in the \*.properties
 files in  /usr/share/dcache/defaults/. Those files also provide information
 about which ports may be deprecated.
 
- 
+ 
 
 | Port number | Description                                                                                     | Component                                                                         |
 |-------------|-------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|

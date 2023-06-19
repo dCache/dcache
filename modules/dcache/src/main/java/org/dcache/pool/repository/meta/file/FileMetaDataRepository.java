@@ -84,7 +84,7 @@ public class FileMetaDataRepository
 
             Stopwatch watch = Stopwatch.createStarted();
             Set<PnfsId> files = _fileStore.index();
-            LOGGER.info("Indexed {} entries in {} in {}.", files.size(), _fileStore, watch);
+            LOGGER.info("Indexed {} entries in {} in {}.", files.size(), _fileStore, watch);
 
             if (indexOptions.contains(IndexOption.ALLOW_REPAIR)) {
                 watch.reset().start();
@@ -98,7 +98,7 @@ public class FileMetaDataRepository
                           })
                           .collect(toList());
                 }
-                LOGGER.info("Found {} orphaned meta data entries in {} in {}.",
+                LOGGER.info("Found {} orphaned meta data entries in {} in {}.",
                       metaFilesToBeDeleted.size(), _metadir, watch);
 
                 for (Path name : metaFilesToBeDeleted) {

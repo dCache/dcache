@@ -61,7 +61,7 @@ public class AtomicCounter {
      *
      * @param value    the value to wait for the counter to change away from
      * @param deadline the absolute time to wait until
-     * @return true if the counter has a different value than {@code value} upon return
+     * @return true if the counter has a different value than {@code value} upon return
      * @throw InterruptedException if the current thread is interrupted
      */
     public boolean awaitChangeUntil(int value, Date deadline)

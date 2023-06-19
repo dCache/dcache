@@ -596,18 +596,18 @@ class CellGlue {
             Serializable messageObject = msg.decode().getMessageObject();
             if (messageObject instanceof NoRouteToCellException) {
                 LOGGER.info(
-                      "Unable to notify {} about delivery failure of message sent to {}: No route for {} in {}.",
+                      "Unable to notify {} about delivery failure of message sent to {}: No route for {} in {}.",
                       msg.getDestinationPath(),
                       ((NoRouteToCellException) messageObject).getDestinationPath(),
                       routeTarget, _cellDomainName);
             } else {
                 LOGGER.warn(
-                      "Message from {} could not be delivered because no route to {} is known.",
+                      "Message from {} could not be delivered because no route to {} is known.",
                       msg.getSourcePath(), routeTarget);
             }
         } else {
             LOGGER.debug(
-                  "Message from {} could not be delivered because no route to {} is known; the sender will be notified.",
+                  "Message from {} could not be delivered because no route to {} is known; the sender will be notified.",
                   msg.getSourcePath(), routeTarget);
             CellMessage envelope = new CellMessage(msg.getSourcePath().revert(),
                   new NoRouteToCellException(msg,

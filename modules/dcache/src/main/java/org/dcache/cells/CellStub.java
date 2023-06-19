@@ -521,7 +521,7 @@ public class CellStub
      * result of the original {@code Future}.
      * <p>
      * If the original {@code Future} returns a message indicating an error, the returned {@code
-     * Future} will fail with the corresponding CacheException. This distinguishes this method from
+     * Future} will fail with the corresponding CacheException. This distinguishes this method from
      * {@link Futures#transform}.
      */
     public static <T extends Message, V> ListenableFuture<V> transform(
@@ -542,7 +542,7 @@ public class CellStub
      * result of the original {@code Future}.
      * <p>
      * If the original {@code Future} returns a message indicating an error, the returned {@code
-     * Future} will fail with the corresponding CacheException. This distinguishes this method from
+     * Future} will fail with the corresponding CacheException. This distinguishes this method from
      * {@link Futures#transform}.
      */
     public static <T extends Message, V> ListenableFuture<V> transformAsync(

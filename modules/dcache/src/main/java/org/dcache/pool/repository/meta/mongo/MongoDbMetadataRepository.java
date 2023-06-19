@@ -156,7 +156,7 @@ public class MongoDbMetadataRepository implements ReplicaStore, EnvironmentAware
 
             Stopwatch watch = Stopwatch.createStarted();
             Set<PnfsId> files = fileStore.index();
-            LOGGER.info("Indexed {} entries in {} in {}.", files.size(), fileStore, watch);
+            LOGGER.info("Indexed {} entries in {} in {}.", files.size(), fileStore, watch);
 
             if (indexOptions.contains(IndexOption.ALLOW_REPAIR)) {
                 watch.reset().start();
@@ -169,7 +169,7 @@ public class MongoDbMetadataRepository implements ReplicaStore, EnvironmentAware
                           .filter(id -> !files.contains(new PnfsId(id)))
                           .collect(toList());
                 }
-                LOGGER.info("Found {} orphaned meta data entries in {}.",
+                LOGGER.info("Found {} orphaned meta data entries in {}.",
                       metaFilesToBeDeleted.size(), watch);
 
                 metaFilesToBeDeleted.forEach((id) -> {

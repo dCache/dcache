@@ -163,7 +163,7 @@ public class LinkGroupLoader
                       vos);
                 break;
             } catch (DeadlockLoserDataAccessException e) {
-                LOGGER.info("Update of link group {} lost deadlock race and will be retried: {}",
+                LOGGER.info("Update of link group {} lost deadlock race and will be retried: {}",
                       linkGroupName, e.toString());
             } catch (TransientDataAccessException | RecoverableDataAccessException | CannotCreateTransactionException e) {
                 LOGGER.warn("Update of link group {} failed and will be retried: {}",

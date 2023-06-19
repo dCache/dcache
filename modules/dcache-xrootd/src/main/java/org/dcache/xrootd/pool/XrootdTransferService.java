@@ -41,6 +41,8 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.timeout.IdleStateHandler;
+
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.util.EnumSet;
@@ -185,7 +187,7 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
     }
 
     @Override
-    public synchronized void start() {
+    public synchronized void start() throws IOException {
         super.start();
         ThreadFactory factory = new ThreadFactoryBuilder()
               .setNameFormat("xrootd-tpc-client-%d")

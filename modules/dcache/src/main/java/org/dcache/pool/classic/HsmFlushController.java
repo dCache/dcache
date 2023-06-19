@@ -355,7 +355,7 @@ public class HsmFlushController
 
                       @Override
                       public void failed(Throwable exc, PnfsId attachment) {
-                          LOGGER.error("Flush for {} failed: {}", pnfsId, exc.toString());
+                          LOGGER.error("Flush for {} failed: {}", pnfsId, exc.toString());
                       }
                   });
             return "Flush Initiated";

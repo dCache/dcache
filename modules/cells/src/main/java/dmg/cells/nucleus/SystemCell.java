@@ -239,7 +239,7 @@ public class SystemCell
               name -> () -> {
                   long time = System.currentTimeMillis() - start;
                   if (time > softTimeout) {
-                      _log.warn("Killed {} in {} ms", name, time);
+                      _log.warn("Killed {} in {} ms", name, time);
                   } else {
                       _log.info("Killed {}", name);
                   }

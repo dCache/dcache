@@ -155,7 +155,7 @@ render(body) ::= <<
                   <button class="btn dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                       <span class="fa-solid fa-user-shield"></span>
                   </button>
-                  <ul class="dropdown-menu dropdown-menu-right">
+                  <ul class="dropdown-menu dropdown-menu-lg-end">
                     $subject.principals:{p|<li><a class="dropdown-item" href="#">$p$</a></li>}$
                   </ul>
               </div>

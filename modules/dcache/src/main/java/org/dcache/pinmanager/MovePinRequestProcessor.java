@@ -167,7 +167,7 @@ public class MovePinRequestProcessor
               .getPool(poolName);
         if (pool == null || !pool.isActive()) {
             throw new CacheException(
-                  "Unable to move sticky flag because pool " + poolName + " is unavailable");
+                  "Unable to move sticky flag because pool " + poolName + " is unavailable");
         }
         PoolSetStickyMessage msg =
               new PoolSetStickyMessage(poolName, pnfsId, sticky, owner, validTill);
@@ -235,8 +235,7 @@ public class MovePinRequestProcessor
         return message;
     }
 
-    public PinManagerExtendPinMessage
-    messageArrived(PinManagerExtendPinMessage message)
+    public PinManagerExtendPinMessage messageArrived(PinManagerExtendPinMessage message)
           throws CacheException, InterruptedException {
         try {
             Pin pin = _dao.get(_dao.where().pnfsId(message.getFileAttributes().getPnfsId())

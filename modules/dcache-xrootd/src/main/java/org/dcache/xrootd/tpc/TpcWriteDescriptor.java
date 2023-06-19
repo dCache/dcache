@@ -289,7 +289,7 @@ public final class TpcWriteDescriptor extends WriteDescriptor
                   client.getError());
         }
 
-        LOGGER.debug("Request to sync ({}) is for third-party write.",
+        LOGGER.debug("Request to sync ({}) is for third-party write.",
               syncRequest);
 
         if (isFirstSync) {

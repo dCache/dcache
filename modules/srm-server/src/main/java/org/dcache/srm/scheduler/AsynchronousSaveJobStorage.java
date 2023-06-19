@@ -92,7 +92,7 @@ public class AsynchronousSaveJobStorage<J extends Job> implements JobStorage<J> 
                     task.run();
                     success = true;
                 } else {
-                    LOGGER.warn("Persistence of request {} skipped, queue is too long.",
+                    LOGGER.warn("Persistence of request {} skipped, queue is too long.",
                           job.getId());
                 }
             } finally {

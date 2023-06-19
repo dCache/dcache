@@ -122,7 +122,7 @@ public class HttpTransferService extends NettyTransferService<HttpProtocolInfo> 
         }
         CellAddressCore httpDoor = new CellAddressCore(
               protocolInfo.getHttpDoorCellName(), protocolInfo.getHttpDoorDomainName());
-        LOGGER.debug("Sending redirect URI {} to {}", uri, httpDoor);
+        LOGGER.debug("Sending redirect URI {} to {}", uri, httpDoor);
         HttpDoorUrlInfoMessage httpDoorMessage =
               new HttpDoorUrlInfoMessage(mover.getFileAttributes().getPnfsId().toString(), uri);
         httpDoorMessage.setId(protocolInfo.getSessionId());
