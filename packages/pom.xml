@@ -127,6 +127,11 @@
     </dependency>
     <dependency>
         <groupId>org.dcache</groupId>
+        <artifactId>gplazma2-oidc-te</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.dcache</groupId>
         <artifactId>gplazma2-omnisession</artifactId>
         <version>${project.version}</version>
     </dependency>
