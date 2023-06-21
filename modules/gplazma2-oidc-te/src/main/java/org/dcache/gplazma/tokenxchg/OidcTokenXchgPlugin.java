@@ -1,14 +1,17 @@
-package org.dcache.gplazma.plugins;
-
-import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
+package org.dcache.gplazma.tokenxchg;
 
 import java.security.Principal;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 import javax.security.auth.kerberos.KerberosPrincipal;
-import org.dcache.auth.UserNamePrincipal;
+
 import org.dcache.gplazma.AuthenticationException;
+import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
+import org.dcache.gplazma.plugins.GPlazmaMappingPlugin;
+import org.dcache.auth.UserNamePrincipal;
+
+import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 /**
  * A {@link GPlazmaMappingPlugin} converts {@code user@DOMAIN.COM} to {@link UserNamePrincipal}
@@ -20,9 +23,9 @@ import org.dcache.gplazma.AuthenticationException;
  *     <b>map requisite krb5</b>
  * </pre>
  */
-public class TokenExchange implements GPlazmaMappingPlugin {
+public class OidcTokenXchgPlugin implements GPlazmaMappingPlugin {
 
-    public TokenExchange(Properties properties) {
+    public OidcTokenXchgPlugin(Properties properties) {
         /*
          * enforced by pluggin interface
          */
