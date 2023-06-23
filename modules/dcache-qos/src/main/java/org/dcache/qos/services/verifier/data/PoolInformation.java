@@ -67,7 +67,7 @@ import java.util.Map;
 import org.dcache.qos.data.PoolQoSStatus;
 
 /**
- * Encapsulates "live" pool information – pool mode, status, and cost. Also stores pool tags.
+ * Encapsulates "live" pool information - pool mode, status, and cost. Also stores pool tags.
  * <p/>
  * This object is held by the {@link PoolInfoMap}; status, mode, tags and cost are refreshed during
  * the Pool Monitor updates.

@@ -124,7 +124,7 @@ public abstract class AbstractLocationExtractor extends PoolTagConstraintDiscrim
 
     /**
      * @param location to examine
-     * @return the number of tags whose values match values already stored in the seenTags map ––
+     * @return the number of tags whose values match values already stored in the seenTags map --
      * that is, of locations/pools which either already exist or have been selected.
      */
     private int checkPartitionConstraints(String location) {

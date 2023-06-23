@@ -1,7 +1,7 @@
 User and Group quota in dCache
 ==============================
 
-Release 7.2 introduces a user and group quota implementation. The quota system operates on the chimera namespace. It periodically counts space usage broken down by Retention Policy, UID and GID, and stores these counts in two chimera DB tables –– t_user_quota and t_group_quota. Besides space counts these tables hold quota limits for each space count category by UID and by GID. A null for a limit means "no quota". No entries in these tables for a UID or GIDs means "no quota" for that UID or GID. CUSTODIAL Retention Policy corresponds to files going to tape, REPLICA corresponds to disk-only files, and OUTPUT currently is not used in dCache.  The quota system is controlled by the master switch:
+Release 7.2 introduces a user and group quota implementation. The quota system operates on the chimera namespace. It periodically counts space usage broken down by Retention Policy, UID and GID, and stores these counts in two chimera DB tables -- t_user_quota and t_group_quota. Besides space counts these tables hold quota limits for each space count category by UID and by GID. A null for a limit means "no quota". No entries in these tables for a UID or GIDs means "no quota" for that UID or GID. CUSTODIAL Retention Policy corresponds to files going to tape, REPLICA corresponds to disk-only files, and OUTPUT currently is not used in dCache.  The quota system is controlled by the master switch:
 
 ```
         dcache.enable.quota

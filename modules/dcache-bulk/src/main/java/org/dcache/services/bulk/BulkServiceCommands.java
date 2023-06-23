@@ -146,7 +146,7 @@ public final class BulkServiceCommands implements CellCommandListener {
     /**
      * error type | error message
      */
-    private static final String FORMAT_TARGET_INFO_ERROR = " –– (ERROR: %s : %s)";
+    private static final String FORMAT_TARGET_INFO_ERROR = " -- (ERROR: %s : %s)";
 
     /**
      * id | arrived | modified | owner | status | uid

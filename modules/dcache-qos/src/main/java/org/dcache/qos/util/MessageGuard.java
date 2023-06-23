@@ -109,7 +109,7 @@ public class MessageGuard {
               messageObject, enabled);
 
         String session = CDC.getSession();
-        LOGGER.trace("{} – session {}", message, session);
+        LOGGER.trace("{} - session {}", message, session);
 
         synchronized (backlogHandler) {
             if (!enabled) {

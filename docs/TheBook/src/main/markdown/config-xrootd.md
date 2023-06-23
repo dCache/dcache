@@ -456,9 +456,9 @@ See above (under ZTN) for an example layout configuration.
 Note that the above configuration enforces TLS (STRICT); this is highly recommended
 with SciToken authorization as the token hash is not secure unless encrypted.
 While it is not strictly required to start TLS at login (since the actual token
-is not passed until a request involving a path, in this case, 'open') ––
+is not passed until a request involving a path, in this case, 'open') --
 ``xrootd.security.tls.require-session=true``
-would have been sufficient –– the extra protection on login of course will not
+would have been sufficient -- the extra protection on login of course will not
 hurt. (The same applies to GSI: TLS is of course redundant for the handshake, but can further
 guarantee data protection and integrity if on thereafter. For GSI-only doors, then, one can also
 opt to start the TLS session after login using 'session'.)

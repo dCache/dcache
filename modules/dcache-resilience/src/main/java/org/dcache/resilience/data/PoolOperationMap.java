@@ -802,13 +802,13 @@ public class PoolOperationMap extends RunnableModule {
         }
 
         if (operation.currStatus == PoolStatusForResilience.UNINITIALIZED) {
-            LOGGER.info("Cannot scan {} –– uninitialized", update.pool);
+            LOGGER.info("Cannot scan {} -- uninitialized", update.pool);
             reset(update.pool, operation);
             return false;
         }
 
         if (operation.state == State.EXCLUDED) {
-            LOGGER.info("Skipping scan {} –– pool is excluded", update.pool);
+            LOGGER.info("Skipping scan {} -- pool is excluded", update.pool);
             reset(update.pool, operation);
             return false;
         }
@@ -816,7 +816,7 @@ public class PoolOperationMap extends RunnableModule {
         if (!bypassStateCheck) {
             if (operation.currStatus == PoolStatusForResilience.DOWN &&
                   operation.lastStatus == PoolStatusForResilience.DOWN) {
-                LOGGER.info("Skipping scan {} –– pool is down and was already "
+                LOGGER.info("Skipping scan {} -- pool is down and was already "
                       + "scanned", update.pool);
                 reset(update.pool, operation);
                 return false;

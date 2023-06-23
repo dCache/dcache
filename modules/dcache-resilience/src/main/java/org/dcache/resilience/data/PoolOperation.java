@@ -72,7 +72,7 @@ public final class PoolOperation {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PoolOperation.class);
 
-    private static final String TO_STRING = "(completed: %s / %s : %s%%) – "
+    private static final String TO_STRING = "(completed: %s / %s : %s%%) - "
           + "(updated: %s)(scanned: %s)(prev %s)(curr %s)(%s) %s";
 
     enum State {

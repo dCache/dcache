@@ -36,7 +36,7 @@ The QoS service is actually made up of four different components.
    the bulk service (also accessible through the REST API). The engine also
    manages the logic, or rules, for determining what a file's QoS is.
 1. the ``QoS Verifier``:  This used to be the heart of the Resilience service.
-   It is now responsible only for verification––that is, determining the state of
+   It is now responsible only for verification--that is, determining the state of
    a file and what needs to be done to make it satisfy its specified QoS.
    The operations are now maintained in a database for reliable survival on restart, and
    the component assures that enough iterations over the file will occur
@@ -585,10 +585,10 @@ of any pool scan operations:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 [fndcatemp2] (qos@qosDomain) admin > pool ls
 [fndcatemp2] (qos-scanner@qosSDomain) admin > pool ls
-dcatest03-1	(completed: 0 / 0 : ?%) – (updated: 2022/04/29 13:54:52)(finished: 2022/04/29 13:54:52)(prev UNINITIALIZED)(curr UNINITIALIZED)(IDLE)
-dcatest03-2	(completed: 0 / 0 : ?%) – (updated: 2022/04/29 13:54:52)(finished: 2022/04/29 13:54:52)(prev UNINITIALIZED)(curr UNINITIALIZED)(IDLE)
-dcatest03-3	(completed: 0 / 0 : ?%) – (updated: 2022/04/29 13:54:52)(finished: 2022/04/29 13:54:52)(prev UNINITIALIZED)(curr UNINITIALIZED)(IDLE)
-dcatest03-4	(completed: 0 / 0 : ?%) – (updated: 2022/04/29 13:54:52)(finished: 2022/04/29 13:54:52)(prev UNINITIALIZED)(curr UNINITIALIZED)(IDLE)
+dcatest03-1	(completed: 0 / 0 : ?%) - (updated: 2022/04/29 13:54:52)(finished: 2022/04/29 13:54:52)(prev UNINITIALIZED)(curr UNINITIALIZED)(IDLE)
+dcatest03-2	(completed: 0 / 0 : ?%) - (updated: 2022/04/29 13:54:52)(finished: 2022/04/29 13:54:52)(prev UNINITIALIZED)(curr UNINITIALIZED)(IDLE)
+dcatest03-3	(completed: 0 / 0 : ?%) - (updated: 2022/04/29 13:54:52)(finished: 2022/04/29 13:54:52)(prev UNINITIALIZED)(curr UNINITIALIZED)(IDLE)
+dcatest03-4	(completed: 0 / 0 : ?%) - (updated: 2022/04/29 13:54:52)(finished: 2022/04/29 13:54:52)(prev UNINITIALIZED)(curr UNINITIALIZED)(IDLE)
 ...
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -901,7 +901,7 @@ status        ENABLED
 last update   Thu Jun 16 09:24:21 CDT 2016
 
 \s qos-scanner pool ls rw-dmsdca24-1
-rw-dmsdca24-1   (completed: 0 / 0 : ?%) – (updated: Thu Jun 16 09:25:42 CDT 2016)(scanned: Thu Jun 16 09:25:42 CDT 2016)(prev ENABLED)(curr ENABLED)(IDLE)
+rw-dmsdca24-1   (completed: 0 / 0 : ?%) - (updated: Thu Jun 16 09:25:42 CDT 2016)(scanned: Thu Jun 16 09:25:42 CDT 2016)(prev ENABLED)(curr ENABLED)(IDLE)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When the pool is added, a scan is scheduled for it, provided it is in an
@@ -929,16 +929,16 @@ We observe the pool has been queued for a scan:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 \s qos-scanner pool ls rw-
-rw-dmsdca24-2   (completed: 0 / 0 : ?%) – (updated: Thu Jun 16 17:17:09 CDT 2016)(scanned: Thu Jun 16 17:14:33 CDT 2016)(prev ENABLED)(curr ENABLED)(WAITING)
-rw-dmsdca24-3   (completed: 0 / 0 : ?%) – (updated: Thu Jun 16 17:14:33 CDT 2016)(scanned: Thu Jun 16 17:14:33 CDT 2016)(prev UNINITIALIZED)(curr ENABLED)(IDLE)
-rw-dmsdca24-4   (completed: 0 / 0 : ?%) – (updated: Thu Jun 16 17:14:33 CDT 2016)(scanned: Thu Jun 16 17:14:33 CDT 2016)(prev UNINITIALIZED)(curr ENABLED)(IDLE)
+rw-dmsdca24-2   (completed: 0 / 0 : ?%) - (updated: Thu Jun 16 17:17:09 CDT 2016)(scanned: Thu Jun 16 17:14:33 CDT 2016)(prev ENABLED)(curr ENABLED)(WAITING)
+rw-dmsdca24-3   (completed: 0 / 0 : ?%) - (updated: Thu Jun 16 17:14:33 CDT 2016)(scanned: Thu Jun 16 17:14:33 CDT 2016)(prev UNINITIALIZED)(curr ENABLED)(IDLE)
+rw-dmsdca24-4   (completed: 0 / 0 : ?%) - (updated: Thu Jun 16 17:14:33 CDT 2016)(scanned: Thu Jun 16 17:14:33 CDT 2016)(prev UNINITIALIZED)(curr ENABLED)(IDLE)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When the scan starts, we can see it is doing some work:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 \s qos-scanner pool ls rw-dmsdca24-2
-rw-dmsdca24-2   (completed: 491 / ? : ?%) – (updated: Thu Jun 16 17:17:19 CDT 2016)(scanned: Thu Jun 16 17:14:33 CDT 2016)(prev ENABLED)(curr ENABLED)(RUNNING)
+rw-dmsdca24-2   (completed: 491 / ? : ?%) - (updated: Thu Jun 16 17:17:19 CDT 2016)(scanned: Thu Jun 16 17:14:33 CDT 2016)(prev ENABLED)(curr ENABLED)(RUNNING)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Because this is a demo pool, there aren't many files, so the scan completes
