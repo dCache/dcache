@@ -191,9 +191,7 @@ happened to be running in a core domain being shut down will be unavailable and
 any task that service may have been working on may be lost. Other services will
 eventually discover such a situation through a timeout.
 
-Without having production experience with such a setup yet (dCache 2.16 has not
-(yet) been released when this is being written), our recommendation would be to
-have two or three core domains.
+Three core domains seem to be a good choice for larger instances.
 
 ### Core only deployment
 
