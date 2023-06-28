@@ -266,9 +266,17 @@ public final class BulkServiceCommands implements CellCommandListener {
         Optional<Subject> subject;
 
         String statusName = null;
+        /*
+         *  If there is an exception, log to pinboard (INFO) and allow the request to be
+         *  processed without subject.
+         */
         try {
             subject = store.getSubject(requestId);
-        } catch (BulkStorageException e) {
+        } catch (RuntimeException e) {
+            LOGGER.info("could not fetch Subject for {}", requestId, e);
+            subject = Optional.empty();
+        } catch (Exception e) {
+            LOGGER.info("could not fetch Subject for {}: {}.", requestId, e.toString());
             subject = Optional.empty();
         }
 
