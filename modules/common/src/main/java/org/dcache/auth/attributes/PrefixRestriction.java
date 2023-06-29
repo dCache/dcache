@@ -45,24 +45,14 @@ public class PrefixRestriction implements Restriction {
 
     @Override
     public boolean isRestricted(Activity activity, FsPath path) {
-        for (FsPath prefix : prefixes) {
-            Function<FsPath, FsPath> resolver = getPathResolver();
-            prefix = resolver.apply(prefix);
-            path = resolver.apply(path);
-            if (path.hasPrefix(prefix)) {
-                return false;
-            }
-            if (prefix.hasPrefix(path) && (activity == Activity.READ_METADATA
-                  || activity == Activity.LIST)) {
-                return false;
-            }
-        }
-        return true;
+        return isRestricted(activity, path, getPathResolver());
     }
 
     @Override
-    public boolean isRestricted(Activity activity, FsPath directory, String child) {
-        return isRestricted(activity, directory.child(child));
+    public boolean isRestricted(Activity activity, FsPath directory, String child,
+          boolean skipSymlinkResolution) {
+        return isRestricted(activity, directory.child(child),
+              skipSymlinkResolution ? getIdentityResolver() : getPathResolver());
     }
 
     @Override
@@ -152,5 +142,20 @@ public class PrefixRestriction implements Restriction {
             sb.append("prefixes={").append(Joiner.on(',').join(prefixes)).append('}');
         }
         return sb.append(']').toString();
+    }
+
+    private boolean isRestricted(Activity activity, FsPath path, Function<FsPath, FsPath> resolver) {
+        for (FsPath prefix : prefixes) {
+            prefix = resolver.apply(prefix);
+            path = resolver.apply(path);
+            if (path.hasPrefix(prefix)) {
+                return false;
+            }
+            if (prefix.hasPrefix(path) && (activity == Activity.READ_METADATA
+                  || activity == Activity.LIST)) {
+                return false;
+            }
+        }
+        return true;
     }
 }
