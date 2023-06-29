@@ -118,6 +118,9 @@ public class JdbcVerifyOperationDao extends JdbcDaoSupport implements VerifyOper
     }
 
     private static String serialize(Subject subject) throws QoSException {
+        if (subject == null) {
+            return null;
+        }
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (ObjectOutputStream ostream = new ObjectOutputStream(baos)) {
             ostream.writeObject(subject);
@@ -128,6 +131,9 @@ public class JdbcVerifyOperationDao extends JdbcDaoSupport implements VerifyOper
     }
 
     private static Object deserialize(String base64) throws SQLException {
+        if (base64 == null) {
+            return null;
+        }
         byte[] array = Base64.getDecoder().decode(base64);
         ByteArrayInputStream bais = new ByteArrayInputStream(array);
         try (ObjectInputStream istream = new ObjectInputStream(bais)) {
