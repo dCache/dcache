@@ -138,28 +138,14 @@ public class MultiTargetedRestriction implements Restriction {
 
     @Override
     public boolean isRestricted(Activity activity, FsPath path) {
-        for (Authorisation authorisation : authorisations) {
-            Function<FsPath, FsPath> resolver = getPathResolver();
-            FsPath allowedPath = resolver.apply(authorisation.getPath());
-            EnumSet<Activity> allowedActivity = authorisation.getActivity();
-            path = resolver.apply(path);
-            if (allowedActivity.contains(activity) && path.hasPrefix(allowedPath)) {
-                return false;
-            }
-
-            // As a special case, certain activities are always allowed for
-            // parents of an AllowedPath.
-            if (ALLOWED_PARENT_ACTIVITIES.contains(activity) && allowedPath.hasPrefix(path)) {
-                return false;
-            }
-        }
-
-        return true;
+        return isRestricted(activity, path, getPathResolver());
     }
 
     @Override
-    public boolean isRestricted(Activity activity, FsPath directory, String child) {
-        return isRestricted(activity, directory.child(child));
+    public boolean isRestricted(Activity activity, FsPath directory, String child,
+          boolean skipSymlinkResolution) {
+        return isRestricted(activity, directory.child(child),
+              skipSymlinkResolution ? getIdentityResolver() : getPathResolver());
     }
 
     @Override
@@ -226,5 +212,24 @@ public class MultiTargetedRestriction implements Restriction {
         return authorisations.stream()
               .map(Object::toString)
               .collect(Collectors.joining(", ", "MultiTargetedRestriction[", "]"));
+    }
+
+    private boolean isRestricted(Activity activity, FsPath path, Function<FsPath, FsPath> resolver) {
+        for (Authorisation authorisation : authorisations) {
+            FsPath allowedPath = resolver.apply(authorisation.getPath());
+            EnumSet<Activity> allowedActivity = authorisation.getActivity();
+            path = resolver.apply(path);
+            if (allowedActivity.contains(activity) && path.hasPrefix(allowedPath)) {
+                return false;
+            }
+
+            // As a special case, certain activities are always allowed for
+            // parents of an AllowedPath.
+            if (ALLOWED_PARENT_ACTIVITIES.contains(activity) && allowedPath.hasPrefix(path)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
