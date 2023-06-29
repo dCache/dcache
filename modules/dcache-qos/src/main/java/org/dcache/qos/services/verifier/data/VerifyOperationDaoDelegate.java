@@ -252,11 +252,6 @@ public class VerifyOperationDaoDelegate implements VerifyOperationDelegate {
      */
     private int lastReadyIndex = 0;
 
-    /*
-     *  If there is a refresh thread currently running.
-     */
-    private boolean refreshing = false;
-
     @Override
     public Map<String, Long> aggregateCounts(String classifier) {
         read.lock();
@@ -424,35 +419,20 @@ public class VerifyOperationDaoDelegate implements VerifyOperationDelegate {
 
     /*
      *  Dequeues the next READY operation, if it exists.  Uses a simple clock algorithm
-     *  to alternate among the queues. Note that operations have been appended during refresh
-     *  in the sort order of the query (by last updated timestamp), so the queues are
-     *  prioritized.
+     *  to alternate among the queues.
      *  <p/>
-     *  If the total size of the ready queues < the maximum running limit, a refresh is triggered.
      */
     public VerifyOperation next() {
         VerifyOperation operation = null;
-        int qsz;
-
         write.lock();
         try {
             for (int i = 0; i < queues.length; ++i) {
                 operation = queues[lastReadyIndex].poll();
+
                 lastReadyIndex = (lastReadyIndex + 1) % queues.length;
+
                 if (operation != null) {
                     break;
-                }
-            }
-
-            qsz = Arrays.stream(queues).mapToInt(Deque::size).sum();
-
-            if (!refreshing && qsz < maxRunning) {
-                int ready = dao.count(dao.where().state(READY));
-                LOGGER.debug("next, not currently refreshing; queue size {}, ready {}.", qsz,
-                      ready);
-                if (ready > 0) {
-                    refreshing = true;
-                    queueSupplier.submit(this::doRefresh);
                 }
             }
         } finally {
@@ -463,18 +443,42 @@ public class VerifyOperationDaoDelegate implements VerifyOperationDelegate {
     }
 
     /*
+     *  Checks each queue to see if it is empty.  If it is, its message types are
+     *  added to a query to see if there are READY operations.  The entire set is
+     *  passed off to the queueSupplier thread which will repopulate the empty queues
+     *  from the persistent store.
+     */
+    public void refresh() {
+        List<QoSMessageType> toRefresh = new LinkedList<>();
+        read.lock();
+        try {
+            for (int i = 0; i < queues.length; ++i) {
+                if (queues[i].peek() == null) {
+                    toRefresh.addAll(Arrays.asList(Queue.at(i).messageTypes));
+                }
+            }
+
+            if (!toRefresh.isEmpty()) {
+                QoSMessageType[] messageTypes = toRefresh.toArray(QoSMessageType[]::new);
+                int ready = dao.count(dao.where().state(READY).messageType(messageTypes));
+                if (ready > 0) {
+                    LOGGER.trace("next, toRefresh {}, ready {}.", toRefresh, ready);
+                    queueSupplier.submit(this::doRefresh);
+                }
+            }
+        } finally {
+            read.unlock();
+        }
+    }
+
+    /*
      *  Resets to READY operations that were in the RUNNING or WAITING state when the service
      *  last stopped so they can be reprocessed.  The queues are then refreshed.
      */
     public void reload() {
-        write.lock();
-        try {
-            dao.update(dao.where().state(RUNNING, WAITING), dao.set().state(READY));
-            if (dao.count(dao.where().state(READY)) > 0) {
-                queueSupplier.submit(this::doRefresh);
-            }
-        } finally {
-            write.unlock();
+        dao.update(dao.where().state(RUNNING, WAITING), dao.set().state(READY));
+        if (dao.count(dao.where().state(READY)) > 0) {
+            queueSupplier.submit(this::doRefresh);
         }
     }
 
@@ -700,40 +704,37 @@ public class VerifyOperationDaoDelegate implements VerifyOperationDelegate {
     }
 
     /*
-     *  Triggered if the sum of the queue sizes is below max running,
-     *  if there are ready operations in the store.
+     *  Triggered if any queue is empty and if there are ready operations in the store.
      *
      *  For each queue it will attempt to pull into memory up to cache capacity operations
-     *  corresponding to queue message types, clearing the queue first.
+     *  corresponding to queue message types.
      *
-     *  Run on a separate thread, so it needs to lock.
+     *  Run on a separate thread.
      */
     private void doRefresh() {
         LOGGER.debug("doRefresh starting.");
 
         write.lock();
-
         try {
-            /*
-             *  ORDER BY default is "updated".  Prioritization sets it back
-             *  to arrival time (done on resetOperation).
-             *
-             *  For fairness, we want to load the earliest of each of the separate types.
-             */
             for (int i = 0; i < queues.length; ++i) {
-                populateQueue(i);
+                if (queues[i].isEmpty()) {
+                    populateQueue(i);
+                }
             }
-
             callback.signal();
         } finally {
             write.unlock();
         }
 
         LOGGER.debug("signalled callback; refresh finished.");
-
-        refreshing = false;
     }
 
+    /*
+     *  ORDER BY default is "updated".  Prioritization sets it back
+     *  to arrival time (done on resetOperation).
+     *
+     *  For fairness, we want to load the earliest of each of the separate types.
+     */
     @GuardedBy("lock")
     private void populateQueue(int index) {
         Queue queue = Queue.at(index);
@@ -742,7 +743,6 @@ public class VerifyOperationDaoDelegate implements VerifyOperationDelegate {
         VerifyOperationCriterion criterion = dao.where().state(READY)
               .messageType(queue.messageTypes);
         List<VerifyOperation> results = dao.get(criterion, capacity);
-        queues[index].clear();
         results.forEach(queues[index]::addLast);
         LOGGER.debug("populateQueue {}, loaded {} operations.", queue.name(), queues[index].size());
     }
