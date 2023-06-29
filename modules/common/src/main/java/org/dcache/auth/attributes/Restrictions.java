@@ -165,9 +165,9 @@ public class Restrictions {
         }
 
         @Override
-        public boolean isRestricted(Activity activity, FsPath directory, String name) {
+        public boolean isRestricted(Activity activity, FsPath directory, String name, boolean skipSymlink) {
             for (Restriction r : restrictions) {
-                r.setPathResolver(getPathResolver());
+                r.setPathResolver(skipSymlink? getIdentityResolver() : getPathResolver());
                 if (r.isRestricted(activity, directory, name)) {
                     return true;
                 }
