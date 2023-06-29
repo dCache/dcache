@@ -159,8 +159,8 @@ public class ALRPStorageUnitQoSProvider implements QoSRequirementsProvider, Cell
         }
 
         FileAttributes attributes = descriptor.getAttributes();
-        AccessLatency accessLatency = attributes.getAccessLatency();
-        RetentionPolicy retentionPolicy = attributes.getRetentionPolicy();
+        AccessLatency accessLatency = attributes.getAccessLatencyIfPresent().orElse(null);
+        RetentionPolicy retentionPolicy = attributes.getRetentionPolicyIfPresent().orElse(null);
 
         String unitKey = attributes.getStorageClass() + "@" + attributes.getHsm();
         StorageUnit storageUnit = poolSelectionUnit().getStorageUnit(unitKey);
