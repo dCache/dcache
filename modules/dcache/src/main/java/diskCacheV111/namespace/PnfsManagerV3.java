@@ -2223,7 +2223,7 @@ public class PnfsManagerV3
         @Override
         public void addEntry(String name, FileAttributes attrs) {
             if (Subjects.isRoot(_subject)
-                  || !_restriction.isRestricted(READ_METADATA, _directory, name)) {
+                  || !_restriction.isRestricted(READ_METADATA, _directory, name, true)) {
                 long now = System.currentTimeMillis();
                 _msg.addEntry(name, attrs);
                 if (_msg.getEntries().size() >= _directoryListLimit ||
