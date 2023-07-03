@@ -1253,6 +1253,16 @@ be scheduled for scans.
 >
 >   **Use the QoS transition to change existing disk+tape files to tape.**
 
+### Changing pool tags
+
+If a pool's tags are used to determine replica distribution (based on the storage
+unit definition of `onlyOneCopyPer`) and these are changed, QoS will not automatically
+force the pool to be scanned immediately upon restart (it will just be
+scheduled for a restart scan based on the defined grace period).
+
+>   If it is desirable to rescan a pool's replicas immediately after its
+>   tags have been changed, this must be done manually (see above).
+
 ### Troubleshooting operations
 
 Intervention to rectify qos handling should hopefully be needed infrequently;
