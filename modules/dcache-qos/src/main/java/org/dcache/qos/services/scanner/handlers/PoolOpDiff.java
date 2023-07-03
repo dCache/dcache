@@ -110,6 +110,12 @@ public final class PoolOpDiff {
      */
     private final Map<String, PoolV2Mode> modeChanged = new HashMap<>();
 
+    /*
+     *  (pool, tags)
+     */
+    private final Map<String, Map<String, String>> tagsChanged
+          = new HashMap<>();
+
     public Collection<String> getConstraintsChanged() {
         return constraintsChanged;
     }
@@ -154,6 +160,10 @@ public final class PoolOpDiff {
         return poolsRmved;
     }
 
+    public Map<String, Map<String, String>> getTagsChanged() {
+        return tagsChanged;
+    }
+
     public Collection<String> getUninitializedPools() {
         return uninitPools;
     }
@@ -172,7 +182,7 @@ public final class PoolOpDiff {
               && newUnits.isEmpty() && oldUnits.isEmpty()
               && poolsAdded.isEmpty() && poolsRmved.isEmpty()
               && unitsAdded.isEmpty() && unitsRmved.isEmpty()
-              && constraintsChanged.isEmpty()
+              && constraintsChanged.isEmpty() && tagsChanged.isEmpty()
               && modeChanged.isEmpty();
     }
 
@@ -189,12 +199,14 @@ public final class PoolOpDiff {
                     "Units Added:          %s\n" +
                     "Units Removed:        %s\n" +
                     "Constraints changed:  %s\n" +
-                    "Mode changed:         %s\n",
+                    "Mode changed:         %s\n" +
+                    "Tags changed:         %s\n",
               newPools, oldPools, uninitPools,
               newGroups, oldGroups,
               newUnits, oldUnits,
               poolsAdded, poolsRmved,
               unitsAdded, unitsRmved,
-              constraintsChanged, modeChanged);
+              constraintsChanged, modeChanged,
+              tagsChanged);
     }
 }
