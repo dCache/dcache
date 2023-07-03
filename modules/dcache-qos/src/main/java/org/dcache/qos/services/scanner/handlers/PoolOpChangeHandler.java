@@ -61,6 +61,7 @@ package org.dcache.qos.services.scanner.handlers;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
@@ -69,9 +70,11 @@ import diskCacheV111.poolManager.StorageUnit;
 import diskCacheV111.poolManager.StorageUnitInfoExtractor;
 import diskCacheV111.pools.PoolV2Mode;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.dcache.poolmanager.PoolInfo;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.qos.data.PoolQoSStatus;
 import org.dcache.qos.services.scanner.data.PoolFilter;
@@ -114,6 +117,7 @@ public final class PoolOpChangeHandler extends
                   diff.getPoolsAddedToPoolGroup().removeAll(p);
                   diff.getPoolsRemovedFromPoolGroup().removeAll(p);
                   diff.getModeChanged().remove(p);
+                  diff.getTagsChanged().remove(p);
               });
 
         PoolSelectionUnit currentPsu = newPoolMonitor.getPoolSelectionUnit();
@@ -152,6 +156,16 @@ public final class PoolOpChangeHandler extends
 
         LOGGER.trace("Rescanning the pool groups whose marker changed.");
         diff.getMarkerChanged().forEach(g -> scanPoolsOfModifiedPoolGroup(g, currentPsu));
+
+        LOGGER.trace("Rescanning the pools with changed tags.");
+        diff.getTagsChanged().keySet().stream()
+              .map(currentPsu::getPool)
+              .forEach(p -> poolOperationMap.scan(p.getName(),
+                    null,
+                    null,
+                    null,
+                    p.getPoolMode(),
+                    true));
 
         LOGGER.trace("Checking to see if previously uninitialized pools are now ready.");
         poolOperationMap.saveExcluded();
@@ -220,6 +234,9 @@ public final class PoolOpChangeHandler extends
 
         LOGGER.trace("comparing pool mode");
         comparePoolMode(diff, commonPools, nextPsu);
+
+        LOGGER.trace("comparing pool tags");
+        comparePoolTags(diff, commonPools, currentPoolMonitor, nextPoolMonitor);
 
         return diff;
     }
@@ -307,6 +324,24 @@ public final class PoolOpChangeHandler extends
         }
     }
 
+    private void comparePoolTags(PoolOpDiff diff, Set<String> common, PoolMonitor current,
+          PoolMonitor next) {
+        CostModule currentCostModule = current.getCostModule();
+        CostModule nextCostModule = next.getCostModule();
+
+        diff.getNewPools()
+              .forEach(p -> diff.getTagsChanged().put(p, getPoolTags(p, nextCostModule)));
+
+        common.forEach(p -> {
+            Map<String, String> newTags = getPoolTags(p, nextCostModule);
+            Map<String, String> oldTags = getPoolTags(p, currentCostModule);
+            if (oldTags == null || (newTags != null
+                  && !oldTags.equals(newTags))) {
+                diff.getTagsChanged().put(p, newTags);
+            }
+        });
+    }
+
     private Set<String> compareStorageUnits(PoolOpDiff diff,
           PoolSelectionUnit currentPsu,
           PoolSelectionUnit nextPsu) {
@@ -391,6 +426,14 @@ public final class PoolOpChangeHandler extends
         Sets.difference(next, curr).forEach(diff.newGroups::add);
         Sets.difference(curr, next).forEach(diff.oldGroups::add);
         return Sets.intersection(next, curr);
+    }
+
+    private Map<String, String> getPoolTags(String pool, CostModule costModule) {
+        PoolInfo poolInfo = costModule.getPoolInfo(pool);
+        if (poolInfo == null) {
+            return null;
+        }
+        return poolInfo.getTags();
     }
 
     /**
