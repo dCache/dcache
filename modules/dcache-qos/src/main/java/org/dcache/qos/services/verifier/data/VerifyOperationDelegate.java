@@ -108,7 +108,12 @@ public interface VerifyOperationDelegate extends VerifyOperationMap {
     void reload();
 
     /**
-     * Remove the operation from any in memory caches and from including any backing persistence.
+     * Repopulate memory caches, if applicable.
+     */
+    void refresh();
+
+    /**
+     * Remove the operation from any in memory caches and from any backing persistence.
      *
      * @param pnfsId of the operation.
      */

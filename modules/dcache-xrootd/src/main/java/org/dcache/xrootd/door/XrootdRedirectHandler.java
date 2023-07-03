@@ -599,7 +599,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
 
         String tpcKey = opaque.get("tpc.key");
         if (tpcKey == null) {
-            _log.debug("{} –– not a third-party request.", req);
+            _log.debug("{} -- not a third-party request.", req);
             return null;  // proceed as usual with mover + redirect
         }
 
@@ -609,7 +609,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
          * to the TPC client.
          */
         if (req.getSession().getDelegatedCredential() != null) {
-            _log.debug("{} –– third-party request with delegation.", req);
+            _log.debug("{} -- third-party request with delegation.", req);
             return null;  // proceed as usual with mover + redirect
         }
 
@@ -640,7 +640,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
                  * remove the key and return immediately.
                  */
                 _door.removeTpcPlaceholder(tpcKey);
-                _log.debug("{} –– request contains authorization token.", req);
+                _log.debug("{} -- request contains authorization token.", req);
                 return null;  // proceed as usual with mover + redirect
             }
 

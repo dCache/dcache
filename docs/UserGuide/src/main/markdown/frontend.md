@@ -2688,6 +2688,13 @@ and port at which the RESTful service may be contacted.  An example is provided:
 ```
 /var/lib/dcache/httpd/wlcg-tape-rest-api.json
 ```
+The property:
+
+```
+dcache.wellknown!wlcg-tape-rest-api.path=${dcache.paths.httpd}/wlcg-tape-rest-api.json
+```
+should be configured to point to the file should its location be changed or
+multiple such files are used.
 
 See https://docs.google.com/document/d/1Zx_H5dRkQRfju3xIYZ2WgjKoOvmLtsafP2pKGpHqcfY/edit#heading=h.ozszs1lr7q93
 for fuller information (version 1).

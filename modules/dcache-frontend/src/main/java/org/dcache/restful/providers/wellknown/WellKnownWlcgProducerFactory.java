@@ -72,7 +72,7 @@ import org.json.JSONObject;
  *  Supports the wlcg-tape-rest-api.path endpoint.
  */
 public class WellKnownWlcgProducerFactory extends AbstractWellKnownProducerFactory {
-    private static final String PATH = "frontend.wellknown!wlcg-tape-rest-api.path";
+    private static final String PATH = "dcache.wellknown!wlcg-tape-rest-api.path";
 
     @Override
     public String getEndpoint() {

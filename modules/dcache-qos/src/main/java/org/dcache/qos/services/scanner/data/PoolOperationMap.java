@@ -831,13 +831,13 @@ public class PoolOperationMap extends ScanOperationMap {
         }
 
         if (operation.currStatus == PoolQoSStatus.UNINITIALIZED) {
-            LOGGER.info("Cannot scan {} –– uninitialized", pool);
+            LOGGER.info("Cannot scan {} -- uninitialized", pool);
             reset(pool, operation);
             return false;
         }
 
         if (operation.state == State.EXCLUDED) {
-            LOGGER.info("Skipping scan {} –– pool is excluded", pool);
+            LOGGER.info("Skipping scan {} -- pool is excluded", pool);
             reset(pool, operation);
             return false;
         }
@@ -845,7 +845,7 @@ public class PoolOperationMap extends ScanOperationMap {
         if (!bypassStateCheck) {
             if (operation.currStatus == PoolQoSStatus.DOWN &&
                   operation.lastStatus == PoolQoSStatus.DOWN) {
-                LOGGER.info("Skipping scan {} –– pool is down and was already "
+                LOGGER.info("Skipping scan {} -- pool is down and was already "
                       + "scanned", pool);
                 reset(pool, operation);
                 return false;

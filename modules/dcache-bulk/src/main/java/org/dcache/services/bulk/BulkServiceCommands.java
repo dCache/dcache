@@ -146,7 +146,7 @@ public final class BulkServiceCommands implements CellCommandListener {
     /**
      * error type | error message
      */
-    private static final String FORMAT_TARGET_INFO_ERROR = " –– (ERROR: %s : %s)";
+    private static final String FORMAT_TARGET_INFO_ERROR = " -- (ERROR: %s : %s)";
 
     /**
      * id | arrived | modified | owner | status | uid
@@ -311,9 +311,17 @@ public final class BulkServiceCommands implements CellCommandListener {
         Optional<Subject> subject;
 
         String statusName = null;
+        /*
+         *  If there is an exception, log to pinboard (INFO) and allow the request to be
+         *  processed without subject.
+         */
         try {
             subject = store.getSubject(uid);
-        } catch (BulkStorageException e) {
+        } catch (RuntimeException e) {
+            LOGGER.info("could not fetch Subject for {}", uid, e);
+            subject = Optional.empty();
+        } catch (Exception e) {
+            LOGGER.info("could not fetch Subject for {}: {}.", uid, e.toString());
             subject = Optional.empty();
         }
 
