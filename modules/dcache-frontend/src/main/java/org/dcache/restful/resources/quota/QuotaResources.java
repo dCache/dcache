@@ -62,7 +62,6 @@ package org.dcache.restful.resources.quota;
 import static diskCacheV111.util.CacheException.ATTRIBUTE_EXISTS;
 import static diskCacheV111.util.CacheException.NO_ATTRIBUTE;
 import static diskCacheV111.util.CacheException.SERVICE_UNAVAILABLE;
-import static org.dcache.restful.util.RequestUser.checkAuthenticated;
 
 import com.google.common.base.Strings;
 import diskCacheV111.util.CacheException;
@@ -140,8 +139,6 @@ public final class QuotaResources {
           + "calling user only.")
     @DefaultValue("false")
     @QueryParam("user") boolean user) {
-        checkAuthenticated();
-
         PnfsManagerGetQuotaMessage message;
 
         if (user) {
@@ -169,8 +166,6 @@ public final class QuotaResources {
           + "calling user only.")
     @DefaultValue("false")
     @QueryParam("user") boolean user) {
-        checkAuthenticated();
-
         PnfsManagerGetQuotaMessage message;
 
         /*
@@ -200,8 +195,6 @@ public final class QuotaResources {
           @ApiParam(value = "The user id to which the quota corresponds.",
                 required = true)
           @PathParam("id") int id) {
-        checkAuthenticated();
-
         return getQuotas(new PnfsManagerGetQuotaMessage(id, QuotaType.USER));
     }
 
@@ -218,8 +211,6 @@ public final class QuotaResources {
           @ApiParam(value = "The group id to which the quota corresponds.",
                 required = true)
           @PathParam("id") int id) {
-        checkAuthenticated();
-
         return getQuotas(new PnfsManagerGetQuotaMessage(id, QuotaType.GROUP));
     }
 
