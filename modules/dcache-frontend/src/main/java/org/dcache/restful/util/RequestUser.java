@@ -18,7 +18,6 @@
 package org.dcache.restful.util;
 
 import static com.google.common.base.Preconditions.checkState;
-import static org.dcache.util.Exceptions.genericCheck;
 
 import java.io.IOException;
 import java.security.AccessController;
@@ -85,11 +84,6 @@ public class RequestUser implements ContainerRequestFilter, ContainerResponseFil
         }
 
         return Subjects.getUid(user);
-    }
-
-    public static void checkAuthenticated() throws NotAuthorizedException {
-        genericCheck(!isAnonymous(), NotAuthorizedException::new,
-              "anonymous access not allowed");
     }
 
     @Override
