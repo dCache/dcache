@@ -20,13 +20,16 @@ package org.dcache.http;
 import static org.dcache.http.AuthenticationHandler.getLoginAttributes;
 import static org.dcache.util.Exceptions.genericCheck;
 
+import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
+import diskCacheV111.util.PnfsHandler;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellInfoProvider;
 import java.io.PrintWriter;
 import java.util.function.Function;
 import javax.servlet.http.HttpServletRequest;
 import org.dcache.auth.attributes.LoginAttributes;
+import org.dcache.vehicles.PnfsResolveSymlinksMessage;
 
 /**
  * This Class is responsible for the mapping between client requested paths and corresponding dCache
@@ -88,6 +91,19 @@ public class PathMapper implements CellInfoProvider {
         return asDcachePath(request, path, RuntimeException::new);
     }
 
+    public <E extends Exception> FsPath asDcachePath(HttpServletRequest request, String path,
+          Function<String, E> asException, PnfsHandler handler) throws E, CacheException {
+        FsPath root = effectiveRoot(request, asException);
+        PnfsResolveSymlinksMessage message = handler.request(
+              new PnfsResolveSymlinksMessage(path, root.toString()));
+        root = FsPath.create(message.getResolvedPrefix());
+        FsPath fullPath = FsPath.create(message.getResolvedPath());
+        if (fullPath.hasPrefix(root)) {
+            path = fullPath.stripPrefix(root);
+        }
+        return root.chroot(path);
+    }
+
     /**
      * Resolve an arbitrary path reference against some source while enforcing a root directory.
      * This method ensures that ".." path elements cannot walk outside the effective root directory.
@@ -115,6 +131,16 @@ public class PathMapper implements CellInfoProvider {
      */
     public String asRequestPath(HttpServletRequest request, FsPath path) {
         return path.stripPrefix(effectiveRoot(request, RuntimeException::new));
+    }
+
+    public String asRequestPath(HttpServletRequest request, FsPath path, PnfsHandler handler)
+          throws CacheException {
+        FsPath root = effectiveRoot(request, RuntimeException::new);
+        PnfsResolveSymlinksMessage message = handler.request(
+              new PnfsResolveSymlinksMessage(path.toString(), root.toString()));
+        root = FsPath.create(message.getResolvedPrefix());
+        FsPath fullPath = FsPath.create(message.getResolvedPath());
+        return fullPath.stripPrefix(root);
     }
 
     @Override
