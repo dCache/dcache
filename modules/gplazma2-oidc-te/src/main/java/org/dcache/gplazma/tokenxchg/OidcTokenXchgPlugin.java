@@ -1,17 +1,15 @@
 package org.dcache.gplazma.tokenxchg;
 
 import java.security.Principal;
-import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
-import javax.security.auth.kerberos.KerberosPrincipal;
 
+import org.dcache.auth.UserNamePrincipal;
+import org.dcache.auth.attributes.Restriction;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
 import org.dcache.gplazma.plugins.GPlazmaMappingPlugin;
-import org.dcache.auth.UserNamePrincipal;
 
-import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 /**
  * A {@link GPlazmaMappingPlugin} converts {@code user@DOMAIN.COM} to {@link UserNamePrincipal}
@@ -23,7 +21,7 @@ import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
  *     <b>map requisite krb5</b>
  * </pre>
  */
-public class OidcTokenXchgPlugin implements GPlazmaMappingPlugin {
+public class OidcTokenXchgPlugin implements GPlazmaAuthenticationPlugin {
 
     public OidcTokenXchgPlugin(Properties properties) {
         /*
@@ -32,24 +30,18 @@ public class OidcTokenXchgPlugin implements GPlazmaMappingPlugin {
     }
 
     @Override
-    public void map(Set<Principal> principals) throws AuthenticationException {
-        Set<Principal> kerberosPrincipals = new HashSet<>();
-        for (Principal principal : principals) {
-            if (principal instanceof KerberosPrincipal) {
-                kerberosPrincipals.add(new UserNamePrincipal(stripDomain(principal.getName())));
-            }
-        }
-        checkAuthentication(!kerberosPrincipals.isEmpty(),
-              "no Kerberos principals");
+    public void authenticate(Set<Object> publicCredentials, Set<Object> privateCredentials,
+          Set<Principal> identifiedPrincipals, Set<Restriction> restrictions)
+          throws AuthenticationException {
 
-        principals.addAll(kerberosPrincipals);
+
+        System.out.println("=================================");
+        System.out.println("authenticate");
+        System.out.println("publicCredentials:");
+        System.out.println(publicCredentials);
+        System.out.println("privateCredentials:");
+        System.out.println(privateCredentials);
+
     }
 
-    private String stripDomain(String s) {
-        int n = s.indexOf('@');
-        if (n != -1) {
-            return s.substring(0, n);
-        }
-        return s;
-    }
 }
