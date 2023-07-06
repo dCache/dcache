@@ -67,7 +67,6 @@ import org.dcache.namespace.FileType;
 import org.dcache.pinmanager.PinManagerPinMessage;
 import org.dcache.pinmanager.PinManagerUnpinMessage;
 import org.dcache.poolmanager.PoolMonitor;
-import org.dcache.qos.QoSException;
 import org.dcache.qos.QoSTransitionEngine;
 import org.dcache.qos.data.FileQoSRequirements;
 import org.dcache.qos.remote.clients.RemoteQoSRequirementsClient;
@@ -180,7 +179,7 @@ public class FileResources {
                     isChecksum,
                     isOptional);
         PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager);
-        FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new);
+        FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new, handler);
         try {
 
             FileAttributes namespaceAttributes = handler.getFileAttributes(path, attributes);
@@ -428,9 +427,8 @@ public class FileResources {
             JSONObject reqPayload = new JSONObject(requestPayload);
             String action = (String) reqPayload.get("action");
             PnfsHandler pnfsHandler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager);
-            FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new);
+            FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new, pnfsHandler);
             PnfsId pnfsId;
-            Long uid;
             switch (action) {
                 case "mkdir":
                     String name = (String) reqPayload.get("name");
@@ -601,7 +599,7 @@ public class FileResources {
     public Response deleteFileEntry(@ApiParam(value = "Path of file or directory.", required = true)
     @PathParam("path") String requestPath) throws CacheException {
         PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager);
-        FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new);
+        FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new, handler);
 
         try {
             handler.deletePnfsEntry(path.toString());
