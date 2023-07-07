@@ -138,6 +138,7 @@ public class AuthenticationHandler extends HandlerWrapper {
                 addAuthCredentialsToSubject(request, suppliedIdentity);
                 addSpnegoCredentialsToSubject(baseRequest, request, suppliedIdentity);
                 addQueryBearerTokenToSubject(request, suppliedIdentity);
+                addDesiredRolesToSubject(request, suppliedIdentity);
 
                 LoginReply login = _loginStrategy.login(suppliedIdentity);
                 Subject authnIdentity = login.getSubject();
@@ -449,5 +450,30 @@ public class AuthenticationHandler extends HandlerWrapper {
               space >= 0 ? header.substring(0, space).toUpperCase() : HttpServletRequest.BASIC_AUTH;
         String authData = space >= 0 ? header.substring(space + 1) : header;
         return Optional.of(new AuthInfo(authScheme, authData));
+    }
+
+    private void addDesiredRolesToSubject(HttpServletRequest request, Subject subject) {
+        String header = request.getHeader("Roles");
+        if (header == null) {
+            LOG.debug("No roles header found");
+            return;
+        }
+
+        if (header.length() == 0) {
+            LOG.debug("Desired roles in roles header are not-null, but are empty");
+            return;
+        }
+
+        int space = header.indexOf(" ");
+        String data = space >= 0 ? header.substring(space + 1) : header;
+
+        Splitter.on(',')
+              .trimResults()
+              .omitEmptyStrings()
+              .split(data)
+              .forEach(
+                    r -> {
+                        subject.getPrincipals().add(new DesiredRole(r));
+                    });
     }
 }
