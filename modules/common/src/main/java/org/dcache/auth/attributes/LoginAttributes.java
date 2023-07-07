@@ -29,8 +29,10 @@ public class LoginAttributes {
 
     public static final String ADMIN_ROLE_NAME = "admin";
     public static final String OBSERVER_ROLE_NAME = "observer";
+    public static final String QOS_ROLE_NAME = "qos";
     private static final Role ADMIN_ROLE = new Role(ADMIN_ROLE_NAME);
     private static final Role OBSERVER_ROLE = new Role(OBSERVER_ROLE_NAME);
+    private static final Role QOS_ROLE = new Role(QOS_ROLE_NAME);
 
     private LoginAttributes() {
         // prevent instantiation
@@ -61,12 +63,20 @@ public class LoginAttributes {
         return OBSERVER_ROLE;
     }
 
+    public static Role qosRole() {
+        return QOS_ROLE;
+    }
+
     public static boolean hasAdminRole(Collection<LoginAttribute> attributes) {
         return attributes.stream().anyMatch(ADMIN_ROLE::equals);
     }
 
     public static boolean hasObserverRole(Collection<LoginAttribute> attributes) {
         return attributes.stream().anyMatch(OBSERVER_ROLE::equals);
+    }
+
+    public static boolean hasQoSRole(Collection<LoginAttribute> attributes) {
+        return attributes.stream().anyMatch(QOS_ROLE::equals);
     }
 
     public static Stream<String> assertedRoles(Collection<LoginAttribute> attributes) {
