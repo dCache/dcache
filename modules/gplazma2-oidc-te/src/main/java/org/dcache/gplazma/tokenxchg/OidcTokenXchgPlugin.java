@@ -10,6 +10,8 @@ import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
 import org.dcache.gplazma.plugins.GPlazmaMappingPlugin;
 
+import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
+
 
 /**
  * A {@link GPlazmaMappingPlugin} converts {@code user@DOMAIN.COM} to {@link UserNamePrincipal}
@@ -41,6 +43,11 @@ public class OidcTokenXchgPlugin implements GPlazmaAuthenticationPlugin {
         System.out.println(publicCredentials);
         System.out.println("privateCredentials:");
         System.out.println(privateCredentials);
+
+        String token = null;
+
+        // throw new AuthenticationException("foo: ");
+        checkAuthentication(token != null, "No bearer token in the credentials");
 
     }
 
