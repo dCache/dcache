@@ -1,6 +1,6 @@
 <plugins>
     <plugin>
         <name>oidc-te</name>
-        <class>org.dcache.gplazma.plugins.tokenxchg.OidcTokenXchgPlugin</class>
+        <class>org.dcache.gplazma.plugins.tokenx.TokenExchange</class>
     </plugin>
 </plugins>

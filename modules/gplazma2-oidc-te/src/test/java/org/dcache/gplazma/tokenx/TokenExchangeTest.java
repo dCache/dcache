@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.dcache.gplazma.tokenxchg;
+package org.dcache.gplazma.tokenx;
 
 import java.security.Principal;
 import java.util.HashSet;
@@ -30,9 +30,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 
-public class OidcTokenXchgPluginTest {
+public class TokenExchangeTest {
  
-    private OidcTokenXchgPlugin plugin; 
+    private TokenExchange plugin; 
     private Set<Principal> principals;
     private Set<Restriction> restrictions;
 
@@ -95,8 +95,8 @@ public class OidcTokenXchgPluginTest {
         // }
 
 
-        public OidcTokenXchgPlugin build() {
-            return new OidcTokenXchgPlugin(properties);
+        public TokenExchange build() {
+            return new TokenExchange(properties);
         }
     }
 
@@ -122,7 +122,7 @@ public class OidcTokenXchgPluginTest {
             return this;
         }
 
-        public void invokeOn(OidcTokenXchgPlugin plugin) throws AuthenticationException {
+        public void invokeOn(TokenExchange plugin) throws AuthenticationException {
             principals = new HashSet<>();
             restrictions = new HashSet<>();
             plugin.authenticate(publicCredentials, privateCredentials, principals, restrictions);
