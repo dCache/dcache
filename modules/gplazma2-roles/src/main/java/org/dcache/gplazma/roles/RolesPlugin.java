@@ -47,12 +47,17 @@ public class RolesPlugin implements GPlazmaSessionPlugin {
     @VisibleForTesting
     static final String OBSERVER_GID_PROPERTY_NAME = "gplazma.roles.observer-gid";
 
+    @VisibleForTesting
+    static final String QOS_GID_PROPERTY_NAME = "gplazma.roles.qos-gid";
+
     private final Long adminGid;
     private final Long observerGid;
+    private final Long qosGid;
 
     public RolesPlugin(Properties properties) {
         this.adminGid = getGidForRole(properties, ADMIN_GID_PROPERTY_NAME);
         this.observerGid = getGidForRole(properties, OBSERVER_GID_PROPERTY_NAME);
+        this.qosGid = getGidForRole(properties, QOS_GID_PROPERTY_NAME);
     }
 
     @Override
@@ -102,6 +107,10 @@ public class RolesPlugin implements GPlazmaSessionPlugin {
 
                   if (observerGid != null && gid == observerGid.longValue()) {
                       roles.add(LoginAttributes.observerRole());
+                  }
+
+                  if (qosGid != null && gid == qosGid.longValue()) {
+                      roles.add(LoginAttributes.qosRole());
                   }
               });
 
