@@ -28,6 +28,8 @@ stages:
 variables:
   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true -DskipTests -Dmaven.repo.local=.m2/repository"
   K8S_NAMESPACE: dcache-build-$CI_PIPELINE_ID
+  CHECK_TIMEOUT: --timeout=300s
+  AUTOCA_URL: https://ci.dcache.org/ca
 
 
 rpm:
@@ -307,3 +309,19 @@ deploy_infrastructure:
     - helm -n ${K8S_NAMESPACE} install --wait --set auth.username=dcache --set auth.password=let-me-in --set auth.database=chimera  chimera oci://registry-1.docker.io/bitnamicharts/postgresql
     - helm -n ${K8S_NAMESPACE} install --wait cells oci://registry-1.docker.io/bitnamicharts/zookeeper
     - helm -n ${K8S_NAMESPACE} install --wait --set externalZookeeper.servers=cells-zookeeper --set kraft.enabled=false billing oci://registry-1.docker.io/bitnamicharts/kafka
+
+
+k8s_dcache_deploy:
+  stage: test_deploy
+  image: bitnami/kubectl:latest
+  tags:
+    - kubernetes
+    - dcache-dev
+  script:
+    - kubectl config set-context --current --namespace=${K8S_NAMESPACE}
+    - kubectl apply -f .ci/dcache-service.yml
+    - while ! kubectl get pod -l app=dcache-door; do sleep 1; done
+    - kubectl wait $CHECK_TIMEOUT --for=condition=Ready pod -l app=dcache-door
+
+  environment:
+    testing
