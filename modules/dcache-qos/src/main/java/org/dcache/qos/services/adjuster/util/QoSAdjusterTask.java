@@ -136,8 +136,8 @@ public final class QoSAdjusterTask extends ErrorAwareTask implements Cancellable
         this.source = task.source;
         this.target = task.target;
         this.poolGroup = task.poolGroup;
-        this.status = task.status;
         this.subject = task.subject;
+        this.status = Status.INITIALIZED;
     }
 
     @Override
