@@ -10,17 +10,24 @@
 #  PKG_UPLOAD_URL: URL to upload dCache release packages
 #  PKG_UPLOAD_USER: user name to use for authorization
 #  PKG_UPLOAD_PASS: password
+#
+#  KUBECONFIG: env file that contains kubernetes configuration to access the cluster
+
 
 
 stages:
   - build
   - sign
+  - testenv_pre
+  - test_infra
   - test_deploy
+  - testenv_post
   - upload
 
 
 variables:
   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true -DskipTests -Dmaven.repo.local=.m2/repository"
+  K8S_NAMESPACE: dcache-build-$CI_PIPELINE_ID
 
 
 rpm:
@@ -256,3 +263,47 @@ upload_tar:
     - TAR_NAME=`ls packages/tar/target/ | grep dcache`
     - VERSION=`echo $TAR_NAME | cut -d'-' -f 2 | cut -d'.' -f 1,2`
     - curl -u $PKG_UPLOAD_USER:$PKG_UPLOAD_PASS --upload-file packages/tar/target/$TAR_NAME --ftp-create-dirs "$PKG_UPLOAD_URL/$VERSION/$TAR_NAME"
+
+#
+# prepare kubernetes env for the build
+#
+prepare_k8s_env:
+  stage: testenv_pre
+  image: bitnami/kubectl:latest
+  tags:
+    - kubernetes
+    - dcache-dev
+  script:
+    - kubectl create namespace ${K8S_NAMESPACE}
+
+#
+# dispose kubernetes resources
+#
+cleanup_k8s_env:
+  stage: testenv_post
+  image: bitnami/kubectl:latest
+  tags:
+    - kubernetes
+    - dcache-dev
+  when: always
+  script:
+    - kubectl delete namespace ${K8S_NAMESPACE} --grace-period=1 --ignore-not-found=true
+
+
+#
+# infrastructure required to run dCache
+#
+deploy_infrastructure:
+  stage: test_infra
+  image:
+    name: devth/helm:latest
+    entrypoint: ['']
+  tags:
+  - kubernetes
+  - dcache-dev
+  script:
+    - helm repo add bitnami https://charts.bitnami.com/bitnami
+    - helm repo update
+    - helm -n ${K8S_NAMESPACE} install --wait --set auth.username=dcache --set auth.password=let-me-in --set auth.database=chimera  chimera oci://registry-1.docker.io/bitnamicharts/postgresql
+    - helm -n ${K8S_NAMESPACE} install --wait cells oci://registry-1.docker.io/bitnamicharts/zookeeper
+    - helm -n ${K8S_NAMESPACE} install --wait --set externalZookeeper.servers=cells-zookeeper --set kraft.enabled=false billing oci://registry-1.docker.io/bitnamicharts/kafka
