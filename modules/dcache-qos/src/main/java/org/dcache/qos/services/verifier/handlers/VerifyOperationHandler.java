@@ -65,8 +65,10 @@ import static org.dcache.qos.services.verifier.data.PoolInfoMap.LIMITER;
 import static org.dcache.qos.services.verifier.data.VerifyOperationState.CANCELED;
 import static org.dcache.qos.services.verifier.handlers.FileStatusVerifier.VERIFY_FAILURE_MESSAGE;
 
+import com.google.common.base.Throwables;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
+import java.io.IOException;
 import java.io.Serializable;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -358,17 +360,24 @@ public class VerifyOperationHandler implements VerifyAndUpdateHandler {
 
             action = statusVerifier.verify(requirements, operation);
         } catch (QoSException e) {
+            Throwable c = e.getCause();
             String message = CacheExceptionUtils.getCacheExceptionErrorMessage(
                   VERIFY_FAILURE_MESSAGE,
                   pnfsId,
                   VOID,
-                  null, e.getCause());
+                  null, Throwables.getRootCause(e));
             /*
              *  FATAL error, should abort operation.
              */
-            CacheException exception = new CacheException(
-                  CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                  message, e.getCause());
+            CacheException exception;
+            if (c instanceof CacheException) {
+                exception = new CacheException(((CacheException)c).getRc(), message);
+            } else if (c instanceof IOException) {
+                exception = new CacheException(CacheException.ERROR_IO_DISK, message);
+            } else {
+                exception = new CacheException(
+                      CacheException.UNEXPECTED_SYSTEM_EXCEPTION, message, c);
+            }
             fileOpMap.updateOperation(pnfsId, exception);
             return;
         } catch (InterruptedException e) {
