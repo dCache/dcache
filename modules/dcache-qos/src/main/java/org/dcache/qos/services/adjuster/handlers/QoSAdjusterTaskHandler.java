@@ -106,10 +106,11 @@ public final class QoSAdjusterTaskHandler implements CellMessageReceiver {
 
     public void notifyAdjustmentCompleted(QoSAdjusterTask task) {
         QoSAdjustmentStatus status;
+        Throwable error = task.getException();
 
         if (task.isCancelled()) {
             status = QoSAdjustmentStatus.CANCELLED;
-        } else if (task.getException() != null) {
+        } else if (error != null) {
             status = QoSAdjustmentStatus.FAILED;
         } else {
             status = QoSAdjustmentStatus.COMPLETED;
@@ -117,8 +118,6 @@ public final class QoSAdjusterTaskHandler implements CellMessageReceiver {
 
         PnfsId pnfsId = task.getPnfsId();
         QoSAction action = task.getAction();
-        Throwable error = task.getException();
-
         QoSAdjustmentResponse response = new QoSAdjustmentResponse();
         response.setAction(action);
         response.setPnfsId(pnfsId);
