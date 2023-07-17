@@ -20,6 +20,9 @@ package org.dcache.xrootd.security;
 import static java.util.Arrays.asList;
 
 import eu.emi.security.authn.x509.X509CertChainValidatorExt;
+
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -61,7 +64,10 @@ public class ProxyDelegationStore {
               certChainValidator);
     }
 
-    public void setVomsDir(String vomsDir) {
+    public void setVomsDir(String vomsDir) throws FileNotFoundException{
+        if (!new File(vomsDir).isDirectory()) {
+            throw new FileNotFoundException("Local trust directory does not exist: " + vomsDir);
+        }
         this.vomsDir = vomsDir;
     }
 

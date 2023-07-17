@@ -4,6 +4,8 @@ import static com.google.common.base.Predicates.containsPattern;
 import static com.google.common.collect.Iterables.any;
 
 import com.google.common.collect.Lists;
+
+import java.io.FileNotFoundException;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
@@ -149,7 +151,7 @@ public class GplazmaAwareChannelHandlerFactoryFactoryBean
         throw new IllegalArgumentException("Authorization plugin not found: " + name);
     }
 
-    private ProxyDelegationClientFactory createProxyDelegationClientFactory(String name) {
+    private ProxyDelegationClientFactory createProxyDelegationClientFactory(String name) throws FileNotFoundException {
         for (ProxyDelegationClientFactory factory : _clientFactories) {
             if (factory instanceof GSIProxyDelegationClientFactory) {
                 ((GSIProxyDelegationClientFactory) factory)
@@ -165,7 +167,7 @@ public class GplazmaAwareChannelHandlerFactoryFactoryBean
         return null;
     }
 
-    private ProxyDelegationStore getGsiProxyDelegationProvider() {
+    private ProxyDelegationStore getGsiProxyDelegationProvider() throws FileNotFoundException {
         LOGGER.debug("get ProxyDelegationProvider called");
 
         /*
