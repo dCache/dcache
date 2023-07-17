@@ -64,6 +64,7 @@ import static org.dcache.qos.util.CacheExceptionUtils.FailureType.NEWSOURCE;
 import static org.dcache.qos.util.CacheExceptionUtils.FailureType.NEWTARGET;
 import static org.dcache.qos.util.CacheExceptionUtils.FailureType.RETRIABLE;
 
+import com.google.common.base.Throwables;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import java.io.Serializable;
@@ -108,7 +109,7 @@ public final class CacheExceptionUtils {
 
         if (errorObject instanceof Throwable) {
             Throwable t = (Throwable) errorObject;
-            return new CacheException(t.getMessage(), t.getCause());
+            return new CacheException(t.getMessage(), Throwables.getRootCause(t));
         }
 
         return new CacheException(String.valueOf(errorObject));
