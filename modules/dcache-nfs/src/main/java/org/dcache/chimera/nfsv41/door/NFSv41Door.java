@@ -1497,6 +1497,12 @@ public class NFSv41Door extends AbstractCellComponent implements
                 throw error;
             }
 
+            if (shutdownInProgress) {
+                // race with competing open. Let wait for pending mover shutdown to complete.
+                _log.info("Waiting for pending mover shutdown to complete: {}@{} ", this.getMoverId(), this.getPool());
+                throw new DelayException("Waiting for pending mover shutdown to complete");
+            }
+
             /*
              * If already have triggered selection process, then there are no
              * reasons to block. The async reply will update _redirectFuture when
