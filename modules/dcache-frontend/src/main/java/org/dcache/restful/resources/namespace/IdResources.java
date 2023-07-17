@@ -172,7 +172,7 @@ public class IdResources {
              * Since FileResources maps according to the effective root,
              * we should return the path in the same form here.
              */
-            result.setPath(pathMapper.asRequestPath(request, path));
+            result.setPath(pathMapper.asRequestPath(request, path, handler));
 
             String name = path.name();
             result.setFileName(name);
