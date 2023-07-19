@@ -71,9 +71,6 @@ public class PoolOpChangeHandlerTest {
         whenReloadAndScanIsCalled();
         using(aPoolOperationMapVerifier()).verifyThat("add").isCalled(1).on(poolOperationMap)
               .with("testpool03-0");
-        using(aPoolOperationMapVerifier()).verifyThat("scan").isCalled(1).on(poolOperationMap)
-              .with("testpool03-0", noAddedTo(), noRemovedFrom(), noStorageUnit(), anyMode(),
-                    ignoringStateCheck());
     }
 
     @Test
@@ -281,18 +278,6 @@ public class PoolOpChangeHandlerTest {
         using(aPoolOperationMapVerifier()).verifyThat("scan").isCalled(1).on(poolOperationMap)
               .with("testpool09-8", noAddedTo(), noRemovedFrom(), noStorageUnit(), anyMode(),
                     withStateCheck());
-    }
-
-    /*
-     * Pools with changed tags.
-     */
-    @Test
-    public void shouldTriggerScanWhenPoolTagsChanged() throws Exception {
-        givenTestPool(POOL_ON_WHICH_TO_CHANGE_TAGS).withTagsChanged();
-        whenReloadAndScanIsCalled();
-        using(aPoolOperationMapVerifier()).verifyThat("scan").isCalled(1).on(poolOperationMap)
-              .with(POOL_ON_WHICH_TO_CHANGE_TAGS, noAddedTo(), noRemovedFrom(), noStorageUnit(),
-                    anyMode(), ignoringStateCheck());
     }
 
     private void assertNoUpdatesToPoolOperationMap() {

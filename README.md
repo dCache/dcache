@@ -16,6 +16,8 @@ are performed automatically and invisibly to the user. Beside HEP
 specific protocols, data in dCache can be accessed via __NFSv4.1
 (pNFS)__, __FTP__ as well as through __WebDav__.
 
+[![DOI](https://zenodo.org/badge/9113580.svg)](https://zenodo.org/badge/latestdoi/9113580)
+
 Documentation
 =============
 

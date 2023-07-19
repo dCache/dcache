@@ -68,7 +68,7 @@
         <version.smc>6.6.0</version.smc>
         <version.xerces>2.12.0</version.xerces>
         <version.jetty>9.4.51.v20230217</version.jetty>
-        <version.xrootd4j>4.5.6</version.xrootd4j>
+        <version.xrootd4j>4.5.7</version.xrootd4j>
         <version.jersey>2.28</version.jersey>
         <version.dcache-view>2.0.2</version.dcache-view>
         <version.netty>4.1.94.Final</version.netty>
@@ -254,7 +254,7 @@
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>31.1-jre</version>
+                <version>32.0.0-jre</version>
             </dependency>
             <dependency>
                 <groupId>eu.eu-emi.security</groupId>

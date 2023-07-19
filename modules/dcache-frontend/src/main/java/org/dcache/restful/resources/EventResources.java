@@ -21,6 +21,8 @@ package org.dcache.restful.resources;
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.dcache.restful.util.Preconditions.checkNotForbidden;
 import static org.dcache.restful.util.Preconditions.checkRequestNotBad;
+import static org.dcache.restful.util.RequestUser.isAnonymous;
+import static org.dcache.util.Exceptions.genericCheck;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -47,6 +49,7 @@ import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.InternalServerErrorException;
+import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.PATCH;
 import javax.ws.rs.POST;
@@ -183,7 +186,7 @@ public class EventResources {
     }
 
     private Channel channelForId(String id) {
-        RequestUser.checkAuthenticated();
+        checkAuthenticated();
         Channel channel = registrar.get(id)
               .orElseThrow(() -> new NotFoundException("No such channel"));
         checkNotForbidden(channel.isAccessAllowed(RequestUser.getSubject()),
@@ -216,7 +219,7 @@ public class EventResources {
     })
     @Path("/eventTypes")
     public List<String> getEventTypes() {
-        RequestUser.checkAuthenticated();
+        checkAuthenticated();
         return repository.listEventTypes();
     }
 
@@ -234,7 +237,7 @@ public class EventResources {
     @Path("/eventTypes/{type}")
     public EventStreamMetadata getEventType(@ApiParam("The specific event type to be described.")
     @NotNull @PathParam("type") String type) {
-        RequestUser.checkAuthenticated();
+        checkAuthenticated();
         return repository.metadataForEventType(type)
               .orElseThrow(() -> new NotFoundException("No such event type"));
     }
@@ -252,7 +255,7 @@ public class EventResources {
     @Path("/eventTypes/{type}/selector")
     public ObjectNode getSelectorSchema(@ApiParam("The specific event type to be described.")
     @NotNull @PathParam("type") String type) {
-        RequestUser.checkAuthenticated();
+        checkAuthenticated();
         return repository.selectorSchemaForEventType(type)
               .orElseThrow(() -> new NotFoundException("No such event type"));
     }
@@ -269,7 +272,7 @@ public class EventResources {
     @Path("/eventTypes/{type}/event")
     public ObjectNode getEventSchema(@ApiParam("The specific event type to be described.")
     @NotNull @PathParam("type") String type) {
-        RequestUser.checkAuthenticated();
+        checkAuthenticated();
         return repository.eventSchemaForEventType(type)
               .orElseThrow(() -> new NotFoundException("No such event type"));
     }
@@ -296,7 +299,7 @@ public class EventResources {
     public List<String> getChannels(@Context UriInfo uriInfo,
           @ApiParam("Limit channels by client-id")
           @QueryParam("client-id") String clientId) {
-        RequestUser.checkAuthenticated();
+        checkAuthenticated();
 
         UriBuilder idToUri = uriInfo.getBaseUriBuilder().path(getClass())
               .path(getClass(), "events");
@@ -348,7 +351,7 @@ public class EventResources {
     @Path("/channels")
     public Response register(@Context UriInfo uriInfo,
           NewChannelMetadata metadata) {
-        RequestUser.checkAuthenticated();
+        checkAuthenticated();
 
         String clientId = metadata == null ? null : canonicaliseClientId(metadata.clientId);
 
@@ -589,5 +592,16 @@ public class EventResources {
               .getSubscription(eventType, subscriptionId)
               .orElseThrow(() -> new NotFoundException("Subscription not found"))
               .close();
+    }
+
+    /* REVISIT This contradicts the global property `frontend.authz.anonymous-operations=READONLY`.
+               Currently this exception pertains only to Event resources.  If this exception is
+               necessary, the method belongs here (it has been moved from RequestUser).
+               Otherwise, the checks in this class should be changed to allow GET in conformity
+               with the global behavior indicated by the property.
+     */
+    private static void checkAuthenticated() throws NotAuthorizedException {
+        genericCheck(!isAnonymous(), NotAuthorizedException::new,
+              "anonymous access not allowed");
     }
 }

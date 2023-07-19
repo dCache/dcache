@@ -4,6 +4,7 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import java.net.InetSocketAddress;
 import java.nio.file.OpenOption;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
 import org.dcache.pool.repository.RepositoryChannel;
@@ -61,5 +62,13 @@ public interface MoverProtocol {
     @Nullable
     default List<InetSocketAddress> remoteConnections() {
         return null;
+    }
+
+    /**
+     * Returns the {@link Optional} containing {@link InetSocketAddress} of the local endpoint used by clients
+     * to access the mover.
+     */
+    default Optional<InetSocketAddress> getLocalEndpoint() {
+        return Optional.empty();
     }
 }

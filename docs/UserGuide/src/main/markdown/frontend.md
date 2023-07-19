@@ -2709,3 +2709,24 @@ dcache.wellknown!security-txt.uri=${dcache.paths.httpd}/security.txt
 should be configured to point to either a URL with host and port that provides
 this information, or a local path with the appropriate `security.txt` file.
 See https://securitytxt.org/ for further information.
+
+## Asserting a desired role using an http header
+
+It is now possible to assert roles without recourse to the password
+authentication plugin.
+
+For instance, with `curl`, instead of `-u user#role`, you can do the following:
+
+```
+curl  -k -L -H "Roles: admin"  --capath /etc/grid-security/certificates --cert /tmp/x509up_u`uid` --cacert /tmp/x509up_u`uid` --key /tmp/x509up_u`uid` -X  POST "https://fndcatemp2.fnal.gov:3880/api/v1/quota/user/8888" -H "accept: application/json" -H "content-type: application/json"
+```
+
+or
+
+```
+curl  -k -L -H "Roles: admin" -H "Authorization: Bearer ${TOKEN}" -X  POST "https://fndcatemp2.fnal.gov:3880/api/v1/quota/user/8888" -H "accept: application/json" -H "content-type: application/json"
+```
+
+The `Roles` header takes a comma-delimited list of available roles the user wishes to assert.
+Whether those roles are assigned, of course, depends upon whether the user has actually
+been authorized to have them.

@@ -1,0 +1,327 @@
+#
+# A dCache build/deploy/test pipeline file.
+#
+# The following environment variables injected by gitlab CI
+#
+#  DCACHE_ORG_PGP_KEY: GPG key used to sign RPM and DEB packages
+#  DCACHE_ORG_KEY_NAME: GPG key name
+#  DCACHE_ORG_PGP_KEY_PASS: GPG key password
+#
+#  PKG_UPLOAD_URL: URL to upload dCache release packages
+#  PKG_UPLOAD_USER: user name to use for authorization
+#  PKG_UPLOAD_PASS: password
+#
+#  KUBECONFIG: env file that contains kubernetes configuration to access the cluster
+
+
+
+stages:
+  - build
+  - sign
+  - testenv_pre
+  - test_infra
+  - test_deploy
+  - testenv_post
+  - upload
+
+
+variables:
+  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true -DskipTests -Dmaven.repo.local=.m2/repository"
+  K8S_NAMESPACE: dcache-build-$CI_PIPELINE_ID
+  CHECK_TIMEOUT: --timeout=300s
+  AUTOCA_URL: https://ci.dcache.org/ca
+
+
+rpm:
+  stage: build
+  image: dcache/maven-java11-rpm-build
+  # Cache downloaded dependencies and plugins between builds.
+  # To keep cache across branches add 'key: "$CI_JOB_NAME"'
+  cache:
+    key:
+      files:
+        - pom.xml
+      prefix: "$CI_JOB_NAME"
+    paths:
+      - ./.m2/repository
+  script:
+    - mvn $MAVEN_CLI_OPTS -am -pl packages/fhs -P rpm clean package
+  artifacts:
+    paths:
+      - "packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm"
+    expire_in: 2 days
+
+srm_client_rpm:
+  stage: build
+  image: dcache/maven-java11-rpm-build
+  # Cache downloaded dependencies and plugins between builds.
+  # To keep cache across branches add 'key: "$CI_JOB_NAME"'
+  cache:
+    key:
+      files:
+        - pom.xml
+      prefix: "$CI_JOB_NAME"
+    paths:
+      - ./.m2/repository
+  script:
+    - mvn $MAVEN_CLI_OPTS -am -pl modules/srm-client package -P rpm
+  artifacts:
+    paths:
+      - "modules/srm-client/target/rpmbuild/RPMS/noarch/dcache-srmclient*.rpm"
+    expire_in: 2 days
+
+deb:
+  stage: build
+  image: dcache/maven-java11-deb-build
+  # Cache downloaded dependencies and plugins between builds.
+  # To keep cache across branches add 'key: "$CI_JOB_NAME"'
+  cache:
+    key:
+      files:
+        - pom.xml
+      prefix: "$CI_JOB_NAME"
+    paths:
+      - ./.m2/repository
+  script:
+    - mvn $MAVEN_CLI_OPTS -am -pl packages/fhs -P deb clean package
+  artifacts:
+    paths:
+      - "packages/fhs/target/dcache_*.deb"
+    expire_in: 2 days
+
+tar:
+  stage: build
+  image: dcache/maven-java11-tar-build
+  # Cache downloaded dependencies and plugins between builds.
+  # To keep cache across branches add 'key: "$CI_JOB_NAME"'
+  cache:
+    key:
+      files:
+        - pom.xml
+      prefix: "$CI_JOB_NAME"
+    paths:
+      - ./.m2/repository
+  script:
+    - mvn $MAVEN_CLI_OPTS -am -pl packages/tar clean package
+  artifacts:
+    paths:
+      - "packages/tar/target/dcache-*.tar.gz"
+    expire_in: 2 days
+
+
+container:
+  stage: build
+  # Cache downloaded dependencies and plugins between builds.
+  # To keep cache across branches add 'key: "$CI_JOB_NAME"'
+  image: gcr.io/kaniko-project/executor:debug
+  needs: ["tar"]
+  only:
+    - master
+  script:
+    - |-
+      tag=$CI_COMMIT_SHORT_SHA
+      if [[ -n "$CI_COMMIT_TAG" ]]; then
+        tag=$CI_COMMIT_TAG
+      fi
+    - mkdir maven
+    - tar -C maven --strip-components=1 -xzvf packages/tar/target/dcache-*.tar.gz
+    - cp $CI_PROJECT_DIR/packages/tar/src/main/container/* .
+    - ls -l
+    - mkdir -p /kaniko/.docker
+    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
+    - >
+      /kaniko/executor
+      --context $CI_PROJECT_DIR
+      --dockerfile $CI_PROJECT_DIR/Dockerfile
+      --destination $CI_REGISTRY_IMAGE:$tag
+
+
+
+
+sign_rpm:
+  stage: sign
+  image: almalinux:8
+  needs: ["rpm"]
+  script:
+    - dnf install -y rpm-sign
+    - echo $DCACHE_ORG_PGP_KEY | base64 -d -i > secret.gpg
+    - gpg --quiet --batch --yes --allow-secret-key-import --passphrase="$DCACHE_ORG_PGP_KEY_PASS" --import secret.gpg
+    - gpg -a --export "$DCACHE_ORG_KEY_NAME" > RPM-GPG-KEY
+    - rpmsign --addsign --define "_signature gpg" --define "_gpg_name  $DCACHE_ORG_KEY_NAME" --define "_gpg_sign_cmd_extra_args --pinentry-mode loopback --passphrase $DCACHE_ORG_PGP_KEY_PASS" packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm*
+    - rpmkeys --import RPM-GPG-KEY
+    - rpm --checksig -v packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm
+  artifacts:
+    paths:
+    - packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm
+
+sign_srm_client_rpm:
+  stage: sign
+  image: almalinux:8
+  needs: ["srm_client_rpm"]
+  script:
+    - dnf install -y rpm-sign
+    - echo $DCACHE_ORG_PGP_KEY | base64 -d -i > secret.gpg
+    - gpg --quiet --batch --yes --allow-secret-key-import --passphrase="$DCACHE_ORG_PGP_KEY_PASS" --import secret.gpg
+    - gpg -a --export "$DCACHE_ORG_KEY_NAME" > RPM-GPG-KEY
+    - rpmsign --addsign --define "_signature gpg" --define "_gpg_name  $DCACHE_ORG_KEY_NAME" --define "_gpg_sign_cmd_extra_args --pinentry-mode loopback --passphrase $DCACHE_ORG_PGP_KEY_PASS" modules/srm-client/target/rpmbuild/RPMS/noarch/dcache-srmclient*.rpm
+    - rpmkeys --import RPM-GPG-KEY
+    - rpm --checksig -v modules/srm-client/target/rpmbuild/RPMS/noarch/dcache-srmclient*.rpm
+  artifacts:
+    paths:
+    - modules/srm-client/target/rpmbuild/RPMS/noarch/dcache-srmclient*.rpm
+
+sign_deb:
+  stage: sign
+  image: ubuntu:22.04
+  needs: ["deb"]
+  script:
+    - apt-get -qq update
+    - apt-get -qq install debsigs gpg
+    - echo $DCACHE_ORG_PGP_KEY | base64 -d -i > secret.gpg
+    - gpg --quiet --batch --yes --allow-secret-key-import --passphrase="$DCACHE_ORG_PGP_KEY_PASS" --import secret.gpg
+    - echo $DCACHE_ORG_PGP_KEY_PASS > $HOME/.gnupg/gpg-passphrase
+    - echo "passphrase-file $HOME/.gnupg/gpg-passphrase" >> "$HOME/.gnupg/gpg.conf"
+    - echo 'allow-loopback-pinentry' >> "$HOME/.gnupg/gpg-agent.conf"
+    - echo 'pinentry-mode loopback' >> "$HOME/.gnupg/gpg.conf"
+    - echo 'use-agent' >> "$HOME/.gnupg/gpg.conf"
+    - echo RELOADAGENT | gpg-connect-agent
+    - debsigs --sign=origin --verify --check -v -k "$DCACHE_ORG_KEY_NAME" packages/fhs/target/dcache_*.deb
+  artifacts:
+    paths:
+    - packages/fhs/target/dcache_*.deb
+
+install_rpm:
+  stage: test_deploy
+  image: centos:7
+  script:
+    - yum --nogpgcheck install -y packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm
+
+#install_deb:
+#  stage: test_deploy
+#  image: ubuntu:21.10
+#  script:
+#    - apt-get update
+#    - DEBIAN_FRONTEND=noninteractive apt install -y -f ./packages/fhs/target/dcache_*.deb
+
+k8s_deploy:
+  stage: test_deploy
+  image:
+    name: rancher/kubectl:v1.22.2
+    entrypoint: ["/usr/bin/env"]
+  rules:
+    - exists:
+      - .ci-k8s/dcache-service.yml
+  script:
+    - kubectl apply -f .ci-k8s/zookeeper.yml
+    - kubectl apply -f .ci-k8s/postgresql-service.yml
+    - kubectl apply -f .ci-k8s/dcache-service.yml
+  tags:
+    - kubernetes
+
+upload_rpm:
+  stage: upload
+  image: almalinux:8
+  dependencies:
+    - sign_rpm
+  rules:
+    - if: $CI_COMMIT_TAG
+  script:
+    - RPM_NAME=`ls packages/fhs/target/rpmbuild/RPMS/noarch/ | grep dcache`
+    - VERSION=`echo $RPM_NAME | cut -d'-' -f 2 | cut -d'.' -f 1,2`
+    - curl -u $PKG_UPLOAD_USER:$PKG_UPLOAD_PASS --upload-file packages/fhs/target/rpmbuild/RPMS/noarch/$RPM_NAME --ftp-create-dirs "$PKG_UPLOAD_URL/$VERSION/$RPM_NAME"
+
+upload_srm_client_rpm:
+  stage: upload
+  image: almalinux:8
+  dependencies:
+    - sign_srm_client_rpm
+  rules:
+    - if: $CI_COMMIT_TAG
+  script:
+    - RPM_NAME=`ls modules/srm-client/target/rpmbuild/RPMS/noarch/ | grep dcache-srmclient`
+    - VERSION=`echo $RPM_NAME | cut -d'-' -f 3 | cut -d'.' -f 1,2`
+    - curl -u $PKG_UPLOAD_USER:$PKG_UPLOAD_PASS --upload-file modules/srm-client/target/rpmbuild/RPMS/noarch/$RPM_NAME --ftp-create-dirs "$PKG_UPLOAD_URL/$VERSION/$RPM_NAME"
+
+upload_deb:
+  stage: upload
+  image: almalinux:8
+  dependencies:
+    - sign_deb
+  rules:
+    - if: $CI_COMMIT_TAG
+  script:
+    - DEB_NAME=`ls packages/fhs/target/ | grep dcache`
+    - VERSION=`echo $DEB_NAME | cut -d'_' -f 2 | cut -d'.' -f 1,2`
+    - curl -u $PKG_UPLOAD_USER:$PKG_UPLOAD_PASS --upload-file packages/fhs/target/$DEB_NAME --ftp-create-dirs "$PKG_UPLOAD_URL/$VERSION/$DEB_NAME"
+
+upload_tar:
+  stage: upload
+  image: almalinux:8
+  dependencies:
+    - tar
+  rules:
+    - if: $CI_COMMIT_TAG
+  script:
+    - TAR_NAME=`ls packages/tar/target/ | grep dcache`
+    - VERSION=`echo $TAR_NAME | cut -d'-' -f 2 | cut -d'.' -f 1,2`
+    - curl -u $PKG_UPLOAD_USER:$PKG_UPLOAD_PASS --upload-file packages/tar/target/$TAR_NAME --ftp-create-dirs "$PKG_UPLOAD_URL/$VERSION/$TAR_NAME"
+
+#
+# prepare kubernetes env for the build
+#
+prepare_k8s_env:
+  stage: testenv_pre
+  image: bitnami/kubectl:latest
+  tags:
+    - kubernetes
+    - dcache-dev
+  script:
+    - kubectl create namespace ${K8S_NAMESPACE}
+
+#
+# dispose kubernetes resources
+#
+cleanup_k8s_env:
+  stage: testenv_post
+  image: bitnami/kubectl:latest
+  tags:
+    - kubernetes
+    - dcache-dev
+  when: always
+  script:
+    - kubectl delete namespace ${K8S_NAMESPACE} --grace-period=1 --ignore-not-found=true
+
+
+#
+# infrastructure required to run dCache
+#
+deploy_infrastructure:
+  stage: test_infra
+  image:
+    name: devth/helm:latest
+    entrypoint: ['']
+  tags:
+  - kubernetes
+  - dcache-dev
+  script:
+    - helm repo add bitnami https://charts.bitnami.com/bitnami
+    - helm repo update
+    - helm -n ${K8S_NAMESPACE} install --wait --set auth.username=dcache --set auth.password=let-me-in --set auth.database=chimera  chimera oci://registry-1.docker.io/bitnamicharts/postgresql
+    - helm -n ${K8S_NAMESPACE} install --wait cells oci://registry-1.docker.io/bitnamicharts/zookeeper
+    - helm -n ${K8S_NAMESPACE} install --wait --set externalZookeeper.servers=cells-zookeeper --set kraft.enabled=false billing oci://registry-1.docker.io/bitnamicharts/kafka
+
+
+k8s_dcache_deploy:
+  stage: test_deploy
+  image: bitnami/kubectl:latest
+  tags:
+    - kubernetes
+    - dcache-dev
+  script:
+    - kubectl config set-context --current --namespace=${K8S_NAMESPACE}
+    - kubectl apply -f .ci/dcache-service.yml
+    - while ! kubectl get pod -l app=dcache-door; do sleep 1; done
+    - kubectl wait $CHECK_TIMEOUT --for=condition=Ready pod -l app=dcache-door
+
+  environment:
+    testing
