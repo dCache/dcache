@@ -60,7 +60,7 @@ public class DenyActivityRestriction implements Restriction {
     }
 
     @Override
-    public boolean isRestricted(Activity activity, FsPath directory, String name) {
+    public boolean isRestricted(Activity activity, FsPath directory, String name, boolean skipSymlinkResolution) {
         return denied.contains(activity);
     }
 
