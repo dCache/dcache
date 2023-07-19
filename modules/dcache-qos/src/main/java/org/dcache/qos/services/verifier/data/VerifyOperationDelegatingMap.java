@@ -357,6 +357,8 @@ public class VerifyOperationDelegatingMap extends RunnableModule
                 submit(operation);
                 --available;
             }
+
+            delegate.refresh();
         }
     }
 
@@ -583,12 +585,8 @@ public class VerifyOperationDelegatingMap extends RunnableModule
      */
     @VisibleForTesting
     public void scan() {
-        try {
-            terminalProcessor.processTerminated();
-            readyProcessor.processReady();
-        } catch (Throwable t) {
-            t.printStackTrace();
-        }
+        terminalProcessor.processTerminated();
+        readyProcessor.processReady();
     }
 
     public void setCounters(QoSVerifierCounters counters) {
