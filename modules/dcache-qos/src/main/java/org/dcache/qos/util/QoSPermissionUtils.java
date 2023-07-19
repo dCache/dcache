@@ -74,6 +74,18 @@ public class QoSPermissionUtils {
      * @param attributes
      */
     public static boolean canModifyQos(Subject subject, FileAttributes attributes) {
+        if (subject == null) {
+            /*
+             *  This is a workaround for legacy database entries before
+             *  https://github.com/dCache/dcache-security-fixes/tree/fix/master/qos-propagate-subject-to-adjuster
+             *  was introduced.  An incompatibility was overlooked whereby
+             *  the database could contain entries when updated by liquibase,
+             *  thus making the new subject field null.
+             *
+             *  In this case we just return false.
+             */
+            return false;
+        }
         return Subjects.isRoot(subject) || Subjects.getUid(subject) == attributes.getOwner();
     }
 
