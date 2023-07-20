@@ -43,11 +43,6 @@ public class TokenExchangeTest {
         restrictions = null;
     }
 
-    // @Test
-    // public void foo() {
-    //     System.out.println("my first unit test");
-    // }
-
     @Test(expected=AuthenticationException.class)
     public void shouldFailWithoutBearerToken() throws Exception {
         given(aPlugin());
