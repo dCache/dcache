@@ -24,7 +24,6 @@ import java.util.Set;
 
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.BearerTokenCredential;
-import org.dcache.auth.PasswordCredential;
 import org.dcache.gplazma.AuthenticationException;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,6 +47,13 @@ public class TokenExchangeTest {
         given(aPlugin());
 
         when(invoked().withoutCredentials());
+    }
+
+    @Test(expected=AuthenticationException.class)
+    public void shouldFailWithTwoBearerTokens() throws Exception {
+        given(aPlugin());
+
+        when(invoked().withBearerToken("FOO").withBearerToken("BAR"));
     }
 
     private void given(PluginBuilder builder) {
@@ -102,15 +108,10 @@ public class TokenExchangeTest {
         private final Set<Object> publicCredentials = new HashSet<>();
         private final Set<Object> privateCredentials = new HashSet<>();
 
-        // public AuthenticateInvocationBuilder withBearerToken(String token) {
-        //     privateCredentials.add(new BearerTokenCredential(token));
-        //     return this;
-        // }
-
-        // public AuthenticateInvocationBuilder withUsernamePassword(String username, String password) {
-        //     privateCredentials.add(new PasswordCredential(username, password));
-        //     return this;
-        // }
+        public AuthenticateInvocationBuilder withBearerToken(String token) {
+            privateCredentials.add(new BearerTokenCredential(token));
+            return this;
+        }
 
         public AuthenticateInvocationBuilder withoutCredentials() {
             privateCredentials.clear();

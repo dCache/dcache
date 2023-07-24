@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 
+import org.dcache.auth.BearerTokenCredential;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.gplazma.AuthenticationException;
@@ -53,6 +54,14 @@ public class TokenExchange implements GPlazmaAuthenticationPlugin {
         System.out.println(privateCredentials);
 
         String token = null;
+        for (Object credential : privateCredentials) {
+            if (credential instanceof BearerTokenCredential) {
+                checkAuthentication(token == null, "Multiple bearer tokens");
+
+                token = ((BearerTokenCredential) credential).getToken();
+                LOG.debug("Found bearer token: {}", token);
+            }
+        }
 
         // throw new AuthenticationException("foo: ");
         checkAuthentication(token != null, "No bearer token in the credentials");
