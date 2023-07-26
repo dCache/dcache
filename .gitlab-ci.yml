@@ -203,21 +203,6 @@ install_rpm:
 #    - apt-get update
 #    - DEBIAN_FRONTEND=noninteractive apt install -y -f ./packages/fhs/target/dcache_*.deb
 
-k8s_deploy:
-  stage: test_deploy
-  image:
-    name: rancher/kubectl:v1.22.2
-    entrypoint: ["/usr/bin/env"]
-  rules:
-    - exists:
-      - .ci-k8s/dcache-service.yml
-  script:
-    - kubectl apply -f .ci-k8s/zookeeper.yml
-    - kubectl apply -f .ci-k8s/postgresql-service.yml
-    - kubectl apply -f .ci-k8s/dcache-service.yml
-  tags:
-    - kubernetes
-
 upload_rpm:
   stage: upload
   image: almalinux:8
