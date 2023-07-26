@@ -4,6 +4,7 @@
 
 package org.dcache.vehicles;
 
+import com.google.common.base.Strings;
 import diskCacheV111.vehicles.PnfsMessage;
 
 public class PnfsResolveSymlinksMessage extends PnfsMessage {
@@ -21,6 +22,11 @@ public class PnfsResolveSymlinksMessage extends PnfsMessage {
     }
 
     public PnfsResolveSymlinksMessage(String path, String prefix) {
+        if (Strings.emptyToNull(path) == null) {
+            path = "/";
+        } else if (path.charAt(0) != '/') {
+            path = "/" + path;
+        }
         setPnfsPath(path);
         this.prefix = prefix;
         setReplyRequired(true);
