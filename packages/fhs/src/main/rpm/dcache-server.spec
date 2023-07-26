@@ -11,7 +11,7 @@ AutoReqProv: no
 
 Requires(pre): shadow-utils
 Requires: which
-Requires: java-11
+Requires: java-11-headless
 
 %{?systemd_requires}
 BuildRequires: systemd
