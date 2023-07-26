@@ -1,6 +1,6 @@
 
 # Minimalistic Java image
-FROM alpine:3.13
+FROM alpine:3.15
 
 ENV DCACHE_INSTALL_DIR=/opt/dcache
 

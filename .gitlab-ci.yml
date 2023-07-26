@@ -31,31 +31,7 @@ variables:
   K8S_NAMESPACE: dcache-build-$CI_PIPELINE_ID
   CHECK_TIMEOUT: --timeout=300s
   AUTOCA_URL: https://ci.dcache.org/ca
-
-pynfs_tests:
-  stage: testing
-  image: bitnami/kubectl:latest
-  allow_failure: true
-  tags:
-    - kubernetes
-    - dcache-dev
-  script:
-    - kubectl config set-context --current --namespace=${K8S_NAMESPACE}
-
-    - kubectl run pynfs-tester --image=dcache/pynfs:0.1 --restart=Never  --command -- sleep 3600
-    
-    - kubectl wait $CHECK_TIMEOUT --for=condition=Ready pods --all
-    - kubectl exec pynfs-tester -- /bin/bash -c "cd /pynfs/nfs4.0; python3 -u ./testserver.py --maketree dcache-door-svc:/data OPEN5; exit 0"
-    - kubectl exec pynfs-tester -- /bin/bash -c "cd /pynfs/nfs4.0; python3 -u ./testserver.py --xml=/xunit-report-v40.xml --noinit dcache-door-svc:/data all; exit 0"
-    - kubectl exec pynfs-tester -- /bin/bash -c "cd /pynfs/nfs4.1; python3 -u ./testserver.py --xml=/xunit-report-v41.xml --noinit dcache-door-svc:/data all; exit 0"
-
-    - kubectl cp pynfs-tester:/xunit-report-v40.xml xunit-report-v40.xml
-    - kubectl cp pynfs-tester:/xunit-report-v41.xml xunit-report-v41.xml
-  environment: testing
-  artifacts:
-    reports:
-      junit:
-        - "xunit*.xml"
+  DCACHE_HELM_REPO: https://gitlab.desy.de/api/v4/projects/7648/packages/helm/test
 
 rpm:
   stage: build
@@ -138,10 +114,10 @@ container:
   stage: build
   # Cache downloaded dependencies and plugins between builds.
   # To keep cache across branches add 'key: "$CI_JOB_NAME"'
+  # For latest releases see https://github.com/GoogleContainerTools/kaniko/releases
+  # Only debug/*-debug versions of the Kaniko image are known to work within Gitlab CI
   image: gcr.io/kaniko-project/executor:debug
   needs: ["tar"]
-  only:
-    - master
   script:
     - |-
       tag=$CI_COMMIT_SHORT_SHA
@@ -320,18 +296,45 @@ deploy_infrastructure:
     - helm -n ${K8S_NAMESPACE} install --wait cells oci://registry-1.docker.io/bitnamicharts/zookeeper
     - helm -n ${K8S_NAMESPACE} install --wait --set externalZookeeper.servers=cells-zookeeper --set kraft.enabled=false billing oci://registry-1.docker.io/bitnamicharts/kafka
 
-
-k8s_dcache_deploy:
+deploy_dcache_helm:
   stage: test_deploy
+  image:
+    name: devth/helm:latest
+    entrypoint: ['']
+  tags:
+  - kubernetes
+  - dcache-dev
+  script:
+    - |-
+      tag=$CI_COMMIT_SHORT_SHA
+      if [[ -n "$CI_COMMIT_TAG" ]]; then
+        tag=$CI_COMMIT_TAG
+      fi
+    - helm repo add dcache ${DCACHE_HELM_REPO}
+    - helm repo update
+    - helm -n ${K8S_NAMESPACE} install --wait --set image.tag=${tag} --set image.repository=gitlab.desy.de:5555/dcache/dcache store dcache/dcache
+
+pynfs_tests:
+  stage: testing
   image: bitnami/kubectl:latest
+  allow_failure: true
   tags:
     - kubernetes
     - dcache-dev
   script:
     - kubectl config set-context --current --namespace=${K8S_NAMESPACE}
-    - kubectl apply -f .ci/dcache-service.yml
-    - while ! kubectl get pod -l app=dcache-door; do sleep 1; done
-    - kubectl wait $CHECK_TIMEOUT --for=condition=Ready pod -l app=dcache-door
 
-  environment:
-    testing
+    - kubectl run pynfs-tester --image=dcache/pynfs:0.1 --restart=Never  --command -- sleep 3600
+    - while ! kubectl wait --for=condition=Ready pod pynfs-tester; do sleep 1; done
+
+    - kubectl exec pynfs-tester -- /bin/bash -c "cd /pynfs/nfs4.0; python3 -u ./testserver.py --maketree store-door-svc:/data OPEN5; exit 0"
+    - kubectl exec pynfs-tester -- /bin/bash -c "cd /pynfs/nfs4.0; python3 -u ./testserver.py --xml=/xunit-report-v40.xml --noinit store-door-svc:/data all; exit 0"
+    - kubectl exec pynfs-tester -- /bin/bash -c "cd /pynfs/nfs4.1; python3 -u ./testserver.py --xml=/xunit-report-v41.xml --noinit store-door-svc:/data all; exit 0"
+
+    - kubectl cp pynfs-tester:/xunit-report-v40.xml xunit-report-v40.xml
+    - kubectl cp pynfs-tester:/xunit-report-v41.xml xunit-report-v41.xml
+  environment: testing
+  artifacts:
+    reports:
+      junit:
+        - "xunit*.xml"
