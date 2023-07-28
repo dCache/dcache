@@ -64,16 +64,17 @@ HTTP/WebDAV protocol.
 ### Installing dCache
 
 All dCache packages are available directly from our website's
-[dCache releases](https://www.dcache.org/downloads/1.9/) page, under
-the Downloads section.
+[dCache downloads](https://www.dcache.org/downloads/) page.
 
 ```console-root
-rpm -ivh https://www.dcache.org/downloads/1.9/repo/##SERIES##/dcache-##VERSION##-1.noarch.rpm
-|Retrieving https://www.dcache.org/downloads/1.9/repo/##SERIES##/dcache-##VERSION##-1.noarch.rpm
+rpm -ivh https://www.dcache.org/old/downloads/1.9/repo/##SERIES##/dcache-##VERSION##-1.noarch.rpm
+|Retrieving https://www.dcache.org/old/downloads/1.9/repo/##SERIES##/dcache-##VERSION##-1.noarch.rpm
 |Preparing...                          ################################# [100%]
 |Updating / installing...
 |   1:dcache-##VERSION##-1                   ################################# [100%]
 ```
+
+For example, `##SERIES##` could be `9.1` and `##VERSION##` could be `9.1.1`.
 
 ### Installing prerequisite packages
 
