@@ -774,7 +774,14 @@ public class XrootdDoor
         }
 
         if (createParents) {
-            pnfsHandler.createDirectories(path);
+            try {
+                pnfsHandler.createDirectories(path);
+            } catch (FileExistsCacheException e) {
+                /*
+                 *  The behavior of the xroot vanilla server is to ignore this error
+                 *  for createParents.
+                 */
+            }
         } else {
             pnfsHandler.createPnfsDirectory(path.toString());
         }
