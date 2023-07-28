@@ -18,6 +18,8 @@
 package org.dcache.pool.nearline;
 
 import static java.util.Collections.unmodifiableSet;
+import static java.util.Objects.requireNonNull;
+import static org.dcache.util.Exceptions.messageOrClassName;
 
 import com.google.common.collect.Maps;
 import diskCacheV111.util.FileNotInCacheException;
@@ -66,9 +68,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 
-import static java.util.Objects.requireNonNull;
-import static org.dcache.util.Exceptions.messageOrClassName;
-
 /**
  * An HsmSet encapsulates information about attached HSMs. The HsmSet also acts as a cell command
  * interpreter, allowing the user to add, remove or alter the information.
@@ -85,18 +84,20 @@ import static org.dcache.util.Exceptions.messageOrClassName;
  */
 public class HsmSet
       implements CellCommandListener, CellSetupProvider, CellLifeCycleAware,
-        CellDynamicCommandProvider {
+      CellDynamicCommandProvider {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HsmSet.class);
 
     /**
-     * Nearline storage provides that are part of the dCache on located in standard plugin classpath.
+     * Nearline storage provides that are part of the dCache on located in standard plugin
+     * classpath.
      */
     private static final Map<String, NearlineStorageProvider> EMBEDDED_PROVIDERS =
           ServiceLoader.load(NearlineStorageProvider.class)
-          .stream()
-          .map(Provider::get)
-          .collect(Collectors.toUnmodifiableMap(NearlineStorageProvider::getName, Function.identity()));
+                .stream()
+                .map(Provider::get)
+                .collect(Collectors.toUnmodifiableMap(NearlineStorageProvider::getName,
+                      Function.identity()));
 
     /**
      * Nearline storage provides that dynamically at the runtime.
@@ -118,6 +119,7 @@ public class HsmSet
 
     /**
      * Looks for an embedded on dynamically loaded configured provided.
+     *
      * @param name of the nearline storage provider to find.
      * @return nearline storage provider.
      * @throws IllegalArgumentException if provider with a given name not found.
@@ -300,6 +302,7 @@ public class HsmSet
         /**
          * Call the NearlineStorage start method.  This method may only be called once and must be
          * called before calling any other method, other than {@literal configure}.
+         *
          * @throws IOException if the underlying NearlinePlugin threw an exception.
          */
         public void start() throws IOException {
@@ -389,7 +392,6 @@ public class HsmSet
             writer.header("PROVIDER").left("provider").space();
             writer.header("DESCRIPTION").left("description");
 
-
             var f = new File(path);
             if (!f.exists()) {
                 throw new CommandException(1, "No such directory: " + path);
@@ -434,9 +436,10 @@ public class HsmSet
     }
 
     @Command(name = "hsm unload provider", hint = "Unload user provided nearline storage provider",
-    description = "Unloads user loaded provide. After unloading, the provider can be used anymore."
-          + " The system behaviour in undefined, if plugin is removed while corresponding hsm still"
-          + " in use.")
+          description =
+                "Unloads user loaded provide. After unloading, the provider can be used anymore."
+                      + " The system behaviour in undefined, if plugin is removed while corresponding hsm still"
+                      + " in use.")
     public class UnloadProvider implements Callable<String> {
 
         @Argument(usage = "Provider name to unload")
@@ -458,7 +461,8 @@ public class HsmSet
                 try {
                     ((URLClassLoader) (p.getClass().getClassLoader())).close();
                 } catch (IOException e) {
-                    throw new CommandException(1, "Can't unload " + provider + " : " + e.getMessage());
+                    throw new CommandException(1,
+                          "Can't unload " + provider + " : " + e.getMessage());
                 }
             }
 
@@ -535,7 +539,7 @@ public class HsmSet
                     info.start();
                 } catch (IOException e) {
                     throw new CommandException(1, "Nearline plugin failed on start: "
-                            + messageOrClassName(e));
+                          + messageOrClassName(e));
                 }
                 _hsm.put(instance, info);
             }
@@ -698,9 +702,9 @@ public class HsmSet
 
         /* Remove the stores that are not in the new configuration.
          */
-        Iterator<Map.Entry<String,HsmInfo>> iterator = _hsm.entrySet().iterator();
+        Iterator<Map.Entry<String, HsmInfo>> iterator = _hsm.entrySet().iterator();
         while (iterator.hasNext()) {
-            Map.Entry<String,HsmInfo> entry = iterator.next();
+            Map.Entry<String, HsmInfo> entry = iterator.next();
 
             if (_newConfig.containsKey(entry.getKey())) {
                 continue;
@@ -718,7 +722,8 @@ public class HsmSet
             try {
                 hsm.refresh();
             } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Error configuring hsm \"" + hsm.getInstance() + "\": " + e.getMessage());
+                throw new IllegalArgumentException(
+                      "Error configuring hsm \"" + hsm.getInstance() + "\": " + e.getMessage());
             }
         }
 
@@ -733,13 +738,13 @@ public class HsmSet
                         entry.getValue().start();
                     } catch (IOException e) {
                         LOGGER.warn(
-                                AlarmMarkerFactory.getMarker(
-                                        PredefinedAlarm.HSM_STARTUP_FAILED,
-                                        _poolName,
-                                        instance),
-                                "Removing HSM \"{}\" as it failed to start: {}",
-                                instance,
-                                messageOrClassName(e));
+                              AlarmMarkerFactory.getMarker(
+                                    PredefinedAlarm.HSM_STARTUP_FAILED,
+                                    _poolName,
+                                    instance),
+                              "Removing HSM \"{}\" as it failed to start: {}",
+                              instance,
+                              messageOrClassName(e));
                         itr.remove();
                     }
                 }
@@ -763,13 +768,13 @@ public class HsmSet
             } catch (IOException e) {
                 String instance = entry.getKey();
                 LOGGER.warn(
-                        AlarmMarkerFactory.getMarker(
-                                PredefinedAlarm.HSM_STARTUP_FAILED,
-                                _poolName,
-                                instance),
-                        "Removing HSM \"{}\" as it failed to start: {}",
-                        instance,
-                        messageOrClassName(e));
+                      AlarmMarkerFactory.getMarker(
+                            PredefinedAlarm.HSM_STARTUP_FAILED,
+                            _poolName,
+                            instance),
+                      "Removing HSM \"{}\" as it failed to start: {}",
+                      instance,
+                      messageOrClassName(e));
                 itr.remove();
             }
         }
