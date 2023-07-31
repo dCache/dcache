@@ -32,7 +32,7 @@ public interface DirectoryListSource {
      * @param range The range of entries to return; may be null
      * @return A DirectoryStream of the entries in the directory
      */
-    DirectoryStream list(Subject subject, Restriction restriction, FsPath path,
+    DirectoryEntryStream list(Subject subject, Restriction restriction, FsPath path,
           Glob pattern, Range<Integer> range)
           throws InterruptedException, CacheException;
 
@@ -57,7 +57,7 @@ public interface DirectoryListSource {
      * @param attrs The file attributes to query for each entry
      * @return A DirectoryStream of the entries in the directory
      */
-    DirectoryStream list(Subject subject, Restriction restriction, FsPath path,
+    DirectoryEntryStream list(Subject subject, Restriction restriction, FsPath path,
           Glob pattern, Range<Integer> range,
           Set<FileAttribute> attrs)
           throws InterruptedException, CacheException;
@@ -74,7 +74,7 @@ public interface DirectoryListSource {
      * @return A DirectoryStream of the entries in the directory
 
      */
-    DirectoryStream listVirtualDirectory(Subject subject, Restriction restriction, FsPath path,
+    DirectoryEntryStream listVirtualDirectory(Subject subject, Restriction restriction, FsPath path,
           Range<Integer> range,
           Set<FileAttribute> attrs)
           throws InterruptedException, CacheException;

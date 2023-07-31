@@ -62,7 +62,7 @@ public class ListDirectoryHandler
      * underlying PnfsHandler instance.
      */
     @Override
-    public DirectoryStream
+    public DirectoryEntryStream
     list(Subject subject, Restriction restriction, FsPath path, Glob pattern, Range<Integer> range)
           throws InterruptedException, CacheException {
         return list(subject, restriction, path, pattern, range,
@@ -82,7 +82,7 @@ public class ListDirectoryHandler
      * underlying PnfsHandler instance.
      */
     @Override
-    public DirectoryStream
+    public DirectoryEntryStream
     list(Subject subject, Restriction restriction, FsPath path, Glob pattern,
           Range<Integer> range, Set<FileAttribute> attributes)
           throws InterruptedException, CacheException {
@@ -124,7 +124,7 @@ public class ListDirectoryHandler
      */
 
     @Override
-    public DirectoryStream
+    public DirectoryEntryStream
     listVirtualDirectory(Subject subject, Restriction restriction, FsPath path,
          Range<Integer> range, Set<FileAttribute> attributes)
             throws InterruptedException, CacheException
@@ -177,7 +177,7 @@ public class ListDirectoryHandler
               printer.getRequiredAttributes();
         FileAttributes dirAttr =
               _pnfs.getFileAttributes(path.toString(), required);
-        try (DirectoryStream stream = list(subject, restriction, path, glob, range, required)) {
+        try (DirectoryEntryStream stream = list(subject, restriction, path, glob, range, required)) {
             int total = 0;
             for (DirectoryEntry entry : stream) {
                 printer.print(path, dirAttr, entry);
@@ -213,10 +213,10 @@ public class ListDirectoryHandler
      * Implementation of DirectoryStream, translating PnfsListDirectoryMessage replies to a stream
      * of DirectoryEntries.
      * <p>
-     * The stream acts as its own iterator, and multiple iterators are not supported.
+     * The stream acts as its own iterator, and multiple iterators are not supported. This is
+     * conform to the guarantees by the more general {@link java.nio.file.DirectoryStream}.
      */
-    public class Stream
-          implements DirectoryStream, Iterator<DirectoryEntry> {
+    public class Stream implements DirectoryEntryStream, Iterator<DirectoryEntry> {
 
         private final BlockingQueue<PnfsListDirectoryMessage> _queue =
               new LinkedBlockingQueue<>();

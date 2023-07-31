@@ -29,6 +29,7 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.DirectoryStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -76,7 +77,6 @@ import org.dcache.restful.util.HttpServletRequests;
 import org.dcache.restful.util.RequestUser;
 import org.dcache.restful.util.namespace.NamespaceUtils;
 import org.dcache.util.list.DirectoryEntry;
-import org.dcache.util.list.DirectoryStream;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 import org.json.JSONArray;
@@ -212,7 +212,7 @@ public class FileResources {
 
                 List<JsonFileAttributes> children = new ArrayList<>();
 
-                DirectoryStream stream = listDirectoryHandler.list(
+                DirectoryStream<DirectoryEntry> stream = listDirectoryHandler.list(
                       HttpServletRequests.roleAwareSubject(request),
                       HttpServletRequests.roleAwareRestriction(request),
                       path,

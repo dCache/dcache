@@ -90,7 +90,7 @@ import org.dcache.util.NetLoggerBuilder;
 import dmg.util.PagedCommandResult;
 import org.dcache.util.Version;
 import org.dcache.util.list.DirectoryEntry;
-import org.dcache.util.list.DirectoryStream;
+import org.dcache.util.list.DirectoryEntryStream;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
@@ -967,7 +967,7 @@ public class UserAdminShell
             String dir = buffer.length() == 1 ? "/" : buffer.substring(0, endIndex);
             String file = buffer.substring(endIndex + 1);
 
-            try (DirectoryStream stream = list(dir, file + "*")) {
+            try (DirectoryEntryStream stream = list(dir, file + "*")) {
                 for (DirectoryEntry entry : stream) {
                     if (entry.getFileAttributes().getFileType() == FileType.DIR) {
                         candidates.add(entry.getName() + "/");
@@ -1017,7 +1017,7 @@ public class UserAdminShell
      * Utility method to initiate a directory listing returning entries matching the given glob
      * string.
      */
-    private DirectoryStream list(String dir, String pattern)
+    private DirectoryEntryStream list(String dir, String pattern)
           throws InterruptedException, CacheException {
         return _list.list(Subjects.ROOT, Restrictions.none(), FsPath.create(dir),
               new Glob(pattern), Range.all(), EnumSet.of(FileAttribute.TYPE));

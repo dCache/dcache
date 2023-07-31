@@ -36,7 +36,7 @@ import org.dcache.namespace.ListHandler;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Glob;
 import org.dcache.util.list.DirectoryEntry;
-import org.dcache.util.list.DirectoryStream;
+import org.dcache.util.list.DirectoryEntryStream;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 
@@ -190,7 +190,7 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider {
     public void list(Subject subject, String path, Glob glob,
           Range<Integer> range, Set<FileAttribute> attrs, ListHandler handler)
           throws CacheException {
-        try (DirectoryStream stream = _handler.list(subject, Restrictions.none(),
+        try (DirectoryEntryStream stream = _handler.list(subject, Restrictions.none(),
               FsPath.create(path), glob, range, attrs)) {
             for (DirectoryEntry entry : stream) {
                 handler.addEntry(entry.getName(), entry.getFileAttributes());
@@ -205,7 +205,7 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider {
                      Range<Integer> range, Set<FileAttribute> attrs, ListHandler handler)
             throws CacheException
     {
-        try (DirectoryStream stream = _handler.listVirtualDirectory(subject, Restrictions.none(), FsPath.create(path), range, attrs)) {
+        try (DirectoryEntryStream stream = _handler.listVirtualDirectory(subject, Restrictions.none(), FsPath.create(path), range, attrs)) {
             for (DirectoryEntry entry : stream) {
                 handler.addEntry(entry.getName(), entry.getFileAttributes());
             }
