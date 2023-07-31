@@ -32,6 +32,7 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
+import java.nio.file.DirectoryStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -60,7 +61,6 @@ import org.dcache.restful.util.HttpServletRequests;
 import org.dcache.restful.util.RequestUser;
 import org.dcache.restful.util.namespace.NamespaceUtils;
 import org.dcache.util.list.DirectoryEntry;
-import org.dcache.util.list.DirectoryStream;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -165,7 +165,7 @@ public class LabelsResources {
         try {
             List<JsonFileAttributes> children = new ArrayList<>();
 
-            DirectoryStream stream = listDirectoryHandler.listVirtualDirectory(
+            DirectoryStream<DirectoryEntry> stream = listDirectoryHandler.listVirtualDirectory(
                   HttpServletRequests.roleAwareSubject(request),
                   HttpServletRequests.roleAwareRestriction(request),
                   path,

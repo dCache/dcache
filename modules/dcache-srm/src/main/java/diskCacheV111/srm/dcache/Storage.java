@@ -82,7 +82,6 @@ import static org.dcache.srm.SRMInvalidPathException.checkValidPath;
 import static org.dcache.util.NetworkUtils.isInetAddress;
 
 import com.google.common.base.CharMatcher;
-import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.base.Throwables;
@@ -161,7 +160,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -201,7 +199,6 @@ import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.CopyCallbacks;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.RemoveFileCallback;
-import org.dcache.srm.SRMAbortedException;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMDuplicationException;
 import org.dcache.srm.SRMExceedAllocationException;
@@ -229,7 +226,7 @@ import org.dcache.util.URIs;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryListPrinter;
 import org.dcache.util.list.DirectoryListSource;
-import org.dcache.util.list.DirectoryStream;
+import org.dcache.util.list.DirectoryEntryStream;
 import org.dcache.util.list.NullListPrinter;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.pool.CacheEntryInfoMessage;
@@ -1432,7 +1429,7 @@ public final class Storage
           List<FsPath> result)
           throws SRMException {
         List<DirectoryEntry> children = new ArrayList<>();
-        try (DirectoryStream list = _listSource.list(subject, restriction, dir, null,
+        try (DirectoryEntryStream list = _listSource.list(subject, restriction, dir, null,
               Range.<Integer>all(), attributesRequiredForRmdir)) {
             for (DirectoryEntry child : list) {
                 FileAttributes childAttributes = child.getFileAttributes();
