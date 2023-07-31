@@ -79,24 +79,24 @@ public final class MigrationResources {
                 + "**sourcePool** - String - Name of the pool to migrate from.\n"
                 + "**targetPools** - Array of Pools (Strings) - Possible target pools.\n"
                 + "**concurrency** - Integer - Amount of Concurrent Transfers to be performed.\n"
-                + "**pins** - String (MOVE | KEEP) - Controls how sticky flags owned by the PinManager are handled.\n"
-                + "**smode** - String (SAME | CACHED | PRECIOUS | REMOVABLE | DELETE)[+<owner>[(<lifetime>)] - "
+                + "**pins** - String (move | keep) - Controls how sticky flags owned by the PinManager are handled.\n"
+                + "**smode** - String (same | cached | precious | removable | delete)[+<owner>[(<lifetime>)] - "
                 + "Update the local replica to the given mode after transfer. An optional list of sticky flags can be specified.\n"
-                + "**tmode** - String (SAME | CACHED | PRECIOUS )[+<owner>[(<lifetime>)] - "
+                + "**tmode** - String (same | cached | precious )[+<owner>[(<lifetime>)] - "
                 + "Sets the target replica to the given mode after transfer. An optional list of sticky flags can be specified.\n"
                 + "**verify** - Boolean - Force checksum computation when an existing target is updated.\n"
                 + "**eager** - Boolean - Copy replicas rather than retrying when pools with existing replicas fail to respond.\n"
                 + "**exclude** - Array of Pools (Strings) - Exclude Target Pools. Single character (?) and multi character (\\*) wildcards may be used.\n"
                 + "**include** - Array of Pools (Strings) - Only include the specified pools as target pools.\n"
                 + "**refresh** - Integer - Specifies the period in seconds of when target pool information is queried from the pool manager. The default is 300 seconds.\n"
-                + "**select** - String (PROPORTIONAL | BEST | RANDOM) - Determines how a pool is selected from the set of target pools.\n"
-                + "**target** - String (POOL | PGROUP | LINK) - Determines the interpretation of the target pools.\n"
+                + "**select** - String (proportional | random) - Determines how a pool is selected from the set of target pools.\n"
+                + "**target** - String (pool | pgroup | link | hsm) - Determines the interpretation of the target pools.\n"
                 + "**fileAttributes** - Description of the file attributes containing: \n"
                 + "\\- **accessed** - String (<n>|[<n>]..[<m>]) - Only copy replicas within a given time period.\n"
-                + "\\- **al** - String (ONLINE | NEARLINE) - Only copy replicas with the given access latency.\n"
+                + "\\- **al** - String (online | nearline) - Only copy replicas with the given access latency.\n"
                 + "\\- **pnfsid** - Array of String (PNFSIDs) - Only copy replicas with the given PNFSIDs, must contain 1 or more PNFSIDs.\n"
-                + "\\- **state** - String (CACHED | PRECIOUS) - Only copy replicas with the given replica state.\n"
-                + "\\- **rp** - String (CUSTODIAL | REPLICA | OUTPUT) - Only copy replicas with the given retention policy.\n"
+                + "\\- **state** - String (cached | precious) - Only copy replicas with the given replica state.\n"
+                + "\\- **rp** - String (custodial | replica | output) - Only copy replicas with the given retention policy.\n"
                 + "\\- **size** - String (<n>|[<n>]..[<m>]) - Only copy replicas with size <n>, or a size within the given, possibly open-ended, interval.\n"
                 + "\\- **sticky** - Array of Owners (Strings) - Only copy replicas that are sticky, if the array is not empty, then it will be restricted to the specified owners.\n"
                 + "\\- **storage** - String - Only copy replicas with a certain storage class.") String requestPayload) {
@@ -143,9 +143,9 @@ public final class MigrationResources {
 
         // Could also have been done with anonymous inner functions, would have cost a bit of performance, but would be less clutter.
         conditionalAppendInteger("concurrency", "concurrency", commandStrBuilder, jsonPayload);
-        conditionalAppendString("pins", "pins", commandStrBuilder, jsonPayload);
-        conditionalAppendString("smode", "smode", commandStrBuilder, jsonPayload);
-        conditionalAppendString("tmode", "tmode", commandStrBuilder, jsonPayload);
+        conditionalAppendString("pins", "pins", commandStrBuilder, jsonPayload, true);
+        conditionalAppendString("smode", "smode", commandStrBuilder, jsonPayload, true);
+        conditionalAppendString("tmode", "tmode", commandStrBuilder, jsonPayload, true);
         conditionalAppendBoolean("verify", "verify", commandStrBuilder, jsonPayload);
         conditionalAppendBoolean("eager", "eager", commandStrBuilder, jsonPayload);
         conditionalAppendInteger("refresh", "refresh", commandStrBuilder, jsonPayload);
@@ -172,15 +172,15 @@ public final class MigrationResources {
             }
 
         }
-        conditionalAppendString("select", "select", commandStrBuilder, jsonPayload);
-        conditionalAppendString("target", "target", commandStrBuilder, jsonPayload);
+        conditionalAppendString("select", "select", commandStrBuilder, jsonPayload, true);
+        conditionalAppendString("target", "target", commandStrBuilder, jsonPayload, true);
 
         // fileAttributes are optional if they are left out, then it will just migrate the whole source pool.
         if (jsonPayload.has("fileAttributes")) {
             JSONObject fileAttributes = jsonPayload.getJSONObject("fileAttributes");
 
             conditionalAppendString("accessed", "accessed", commandStrBuilder, fileAttributes);
-            conditionalAppendString("al", "al", commandStrBuilder, fileAttributes);
+            conditionalAppendString("al", "al", commandStrBuilder, fileAttributes, true);
             if (fileAttributes.has("pnfsid")) {
                 JSONArray pnfsids = fileAttributes.getJSONArray("pnfsid");
                 if (pnfsids.length() > 0) {
@@ -192,12 +192,12 @@ public final class MigrationResources {
                 }
 
             }
-            conditionalAppendString("state", "state", commandStrBuilder, fileAttributes);
-            conditionalAppendString("rp", "rp", commandStrBuilder, fileAttributes);
+            conditionalAppendString("state", "state", commandStrBuilder, fileAttributes, true);
+            conditionalAppendString("rp", "rp", commandStrBuilder, fileAttributes, true);
             conditionalAppendString("size", "size", commandStrBuilder, fileAttributes);
             if (fileAttributes.has("sticky")) {
                 // If the array exists we add the sticky flag, then if it has elements it is restricted to certain owners.
-                commandStrBuilder.append("-sticky");
+                commandStrBuilder.append(" -sticky");
                 JSONArray sticky = fileAttributes.getJSONArray("sticky");
                 if (sticky.length() > 0) {
                     commandStrBuilder.append("=").append(sticky.getString(0));
@@ -289,9 +289,8 @@ public final class MigrationResources {
             MigrationInfo migInfoOutput = new MigrationInfo();
 
             for (String entry : entries) {
-                // Split with a limit of -1 to preserve empty strings following the : .
-                // Splitting with a limit of 0 would cause trailing empty strings to be ignored and kv[1] --> ArrayIndexOutOfBounds.
-                String[] kv = entry.split(":", -1);
+                // Split with a limit of 2 for #7197 to work.
+                String[] kv = entry.split(":", 2);
                 // The length must be 2
                 if (kv.length != 2) {
                     throw new InternalServerErrorException();
@@ -345,9 +344,17 @@ public final class MigrationResources {
 
     private static void conditionalAppendString(String cmdParam, String jsonKey, StringBuilder sb,
           JSONObject jsonPayload) {
+        conditionalAppendString(cmdParam, jsonKey, sb, jsonPayload, false);
+    }
+
+    private static void conditionalAppendString(String cmdParam, String jsonKey, StringBuilder sb,
+                                                JSONObject jsonPayload, boolean forceLowerCase) {
         if (jsonPayload.has(jsonKey)) {
-            sb.append(" -").append(cmdParam).append("=").append(jsonPayload.getString(jsonKey));
+            sb.append(" -").append(cmdParam).append("=").append(
+                    forceLowerCase ? jsonPayload.getString(jsonKey).toLowerCase() : jsonPayload.getString(jsonKey)
+            );
         }
+
     }
 
     private static void conditionalAppendInteger(String cmdParam, String jsonKey, StringBuilder sb,
