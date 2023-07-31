@@ -356,6 +356,12 @@ pynfs_tests:
 
     - kubectl cp pynfs-tester:/xunit-report-v40.xml xunit-report-v40.xml
     - kubectl cp pynfs-tester:/xunit-report-v41.xml xunit-report-v41.xml
+
+    - nfs40_errors=$(( $(echo 0$(sed -n 's/.*testsuite .*errors=\"\([0-9]*\)\".*/+\1/p' xunit-report-v40.xml)) ))
+    - nfs40_failures=$(( $(echo 0$(sed -n 's/.*testsuite .*failures=\"\([0-9]*\)\".*/+\1/p' xunit-report-v40.xml)) ))
+    - nfs41_errors=$(( $(echo 0$(sed -n 's/.*testsuite .*errors=\"\([0-9]*\)\".*/+\1/p' xunit-report-v41.xml)) ))
+    - nfs41_failures=$(( $(echo 0$(sed -n 's/.*testsuite .*failures=\"\([0-9]*\)\".*/+\1/p' xunit-report-v41.xml)) ))
+    - exit $(( $nfs40_errors + $nfs41_errors + $nfs40_failures + $nfs41_failures ))
   environment: testing
   artifacts:
     reports:
