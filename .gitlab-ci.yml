@@ -326,7 +326,7 @@ pynfs_tests:
   script:
     - kubectl config set-context --current --namespace=${K8S_NAMESPACE}
 
-    - kubectl run pynfs-tester --image=dcache/pynfs:0.1 --restart=Never  --command -- sleep 3600
+    - kubectl run pynfs-tester --image=dcache/pynfs:0.2 --restart=Never  --command -- sleep 3600
     - while ! kubectl wait --for=condition=Ready pod pynfs-tester; do sleep 1; done
 
     - kubectl exec pynfs-tester -- /bin/bash -c "cd /pynfs/nfs4.0; python3 -u ./testserver.py --maketree store-door-svc:/data OPEN5; exit 0"
