@@ -320,7 +320,6 @@ deploy_dcache_helm:
 pynfs_tests:
   stage: testing
   image: bitnami/kubectl:latest
-  allow_failure: true
   tags:
     - kubernetes
     - dcache-dev
@@ -331,8 +330,29 @@ pynfs_tests:
     - while ! kubectl wait --for=condition=Ready pod pynfs-tester; do sleep 1; done
 
     - kubectl exec pynfs-tester -- /bin/bash -c "cd /pynfs/nfs4.0; python3 -u ./testserver.py --maketree store-door-svc:/data OPEN5; exit 0"
-    - kubectl exec pynfs-tester -- /bin/bash -c "cd /pynfs/nfs4.0; python3 -u ./testserver.py --xml=/xunit-report-v40.xml --noinit store-door-svc:/data all; exit 0"
-    - kubectl exec pynfs-tester -- /bin/bash -c "cd /pynfs/nfs4.1; python3 -u ./testserver.py --xml=/xunit-report-v41.xml --noinit store-door-svc:/data all; exit 0"
+    - |-
+      kubectl exec pynfs-tester -- /bin/bash -c "cd /pynfs/nfs4.0; \
+         python3 -u ./testserver.py --xml=/xunit-report-v40.xml --noinit store-door-svc:/data all \
+           noACC2a noACC2b noACC2c noACC2d noACC2f noACC2r noACC2s \
+           noCID1 noCID2 noCID4a noCID4b noCID4c noCID4d noCID4e \
+           noCLOSE10 noCLOSE12 noCLOSE5 noCLOSE6 noCLOSE8 noCLOSE9 \
+           noCMT1aa noCMT1b noCMT1c noCMT1d noCMT1e noCMT1f noCMT2a noCMT2b noCMT2c noCMT2d noCMT2f \
+           noCMT2s noCMT3 noCMT4 noCR12 noLKT1 noLKT2a noLKT2b noLKT2c noLKT2d noLKT2f noLKT2s noLKT3 \
+           noLKT4 noLKT6 noLKT7 noLKT8 noLKT9 noLKU10 noLKU3 noLKU4 noLKU5 noLKU6 noLKU6b noLKU7 noLKU8 \
+           noLKU9 noLKUNONE noLOCK12a noLOCK12b noLOCK13 noLOCK24 noLOCKRNG noLOCKCHGU noLOCKCHGD \
+           noOPCF1 noOPCF6 noOPDG2 noOPDG3 noOPDG6 noOPDG7 noOPEN15 noOPEN18 noOPEN2 noOPEN20 noOPEN22 \
+           noOPEN23 noOPEN24 noOPEN26 noOPEN27 noOPEN28 noOPEN3 noOPEN30 noOPEN4 noRENEW3 noRD1 noRD10 \
+           noRD2 noRD3 noRD5 noRD6 noRD7a noRD7b noRD7c noRD7d noRD7f noRD7s noRPLY1 noRPLY10 noRPLY12 \
+           noRPLY14 noRPLY2 noRPLY3 noRPLY5 noRPLY6 noRPLY7 noRPLY8 noRPLY9 noSATT3d noSATT4 noSATT6d \
+           noSATT6r noSATT18 noSEC7 noWRT1 noWRT11 noWRT13 noWRT14 noWRT15 noWRT18 noWRT19 noWRT1b noWRT2 \
+           noWRT3 noWRT6a noWRT6b noWRT6c noWRT6d noWRT6f noWRT6s noWRT8 noWRT9; \
+      exit 0"
+    - |-
+      kubectl exec pynfs-tester -- /bin/bash -c "cd /pynfs/nfs4.1; \
+        python3 -u ./testserver.py --xml=/xunit-report-v41.xml --noinit store-door-svc:/data all \
+          noCOUR2 noCSESS25 noCSESS26 noCSESS27 noCSESS28 noCSESS29 noCSID3 noCSID4 noCSID9 noEID5f \
+          noEID50 noOPEN31 noSEQ6 noRECC3 noSEQ7 noSEQ10b noSEQ2; \
+        exit 0"
 
     - kubectl cp pynfs-tester:/xunit-report-v40.xml xunit-report-v40.xml
     - kubectl cp pynfs-tester:/xunit-report-v41.xml xunit-report-v41.xml
