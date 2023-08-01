@@ -339,7 +339,7 @@ pynfs_tests:
            noCMT1aa noCMT1b noCMT1c noCMT1d noCMT1e noCMT1f noCMT2a noCMT2b noCMT2c noCMT2d noCMT2f \
            noCMT2s noCMT3 noCMT4 noCR12 noLKT1 noLKT2a noLKT2b noLKT2c noLKT2d noLKT2f noLKT2s noLKT3 \
            noLKT4 noLKT6 noLKT7 noLKT8 noLKT9 noLKU10 noLKU3 noLKU4 noLKU5 noLKU6 noLKU6b noLKU7 noLKU8 \
-           noLKU9 noLKUNONE noLOCK12a noLOCK12b noLOCK13 noLOCK24 noLOCKRNG noLOCKCHGU noLOCKCHGD \
+           noLKU9 noLKUNONE noLOCK12a noLOCK12b noLOCK13 noLOCK24 noLOCKRNG noLOCKCHGU noLOCKCHGD noRLOWN3 \
            noOPCF1 noOPCF6 noOPDG2 noOPDG3 noOPDG6 noOPDG7 noOPEN15 noOPEN18 noOPEN2 noOPEN20 noOPEN22 \
            noOPEN23 noOPEN24 noOPEN26 noOPEN27 noOPEN28 noOPEN3 noOPEN30 noOPEN4 noRENEW3 noRD1 noRD10 \
            noRD2 noRD3 noRD5 noRD6 noRD7a noRD7b noRD7c noRD7d noRD7f noRD7s noRDDR12 noRDDR11 \
@@ -350,7 +350,7 @@ pynfs_tests:
       exit 0"
     - |-
       kubectl exec pynfs-tester -- /bin/bash -c "cd /pynfs/nfs4.1; \
-        python3 -u ./testserver.py --xml=/xunit-report-v41.xml --noinit store-door-svc:/data all xattr \
+        python3 -u ./testserver.py --minorversion=2 --xml=/xunit-report-v41.xml --noinit store-door-svc:/data all xattr \
           noCOUR2 noCSESS25 noCSESS26 noCSESS27 noCSESS28 noCSESS29 noCSID3 noCSID4 noCSID9 noEID5f \
           noEID50 noOPEN31 noSEQ6 noRECC3 noSEQ7 noSEQ10b noSEQ2; \
         exit 0"
