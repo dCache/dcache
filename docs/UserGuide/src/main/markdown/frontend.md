@@ -2730,3 +2730,16 @@ curl  -k -L -H "Roles: admin" -H "Authorization: Bearer ${TOKEN}" -X  POST "http
 The `Roles` header takes a comma-delimited list of available roles the user wishes to assert.
 Whether those roles are assigned, of course, depends upon whether the user has actually
 been authorized to have them.
+
+## Deprecation of the "prestore" option
+
+With 9.2, this option is no longer supported, for several reasons.
+See The Book, CHAPTER 18. THE BULK SERVICE, for an explanation.
+
+Note that this change has no effect on the handling of flat/non-recursive
+requests such as those specified by the TAPE REST API.
+
+From the standpoint of the JSON bulk description, we still allow
+for the presence of `prestore`/`preStore`/`pre_store`, etc. so
+that current scripts (if any) do not need to change.  But the
+option will simply be discarded by the frontend resource.

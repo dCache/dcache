@@ -122,11 +122,11 @@ public final class BulkServiceCommands implements CellCommandListener {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkServiceCommands.class);
 
     /**
-     * id | arrived | started | modified | owner | activity | depth | prestore | status :
+     * id | arrived | started | modified | owner | activity | depth | status :
      * urlPrefix/uid
      */
     private static final String FORMAT_REQUEST_FULL
-          = "%-12s | %-19s | %19s | %19s | %12s | %15s | %7s | %11s | %8s | %s/%s";
+          = "%-12s | %-19s | %19s | %19s | %12s | %15s | %7s | %8s | %s/%s";
 
     /**
      * (urlPrefix/uid):   target string
@@ -357,7 +357,6 @@ public final class BulkServiceCommands implements CellCommandListener {
                       request.getActivity(),
                       request.getExpandDirectories(),
                       statusName,
-                      request.isPrestore(),
                       request.getUrlPrefix(),
                       uid);
             case TARGET:
@@ -451,11 +450,6 @@ public final class BulkServiceCommands implements CellCommandListener {
               usage = "The recursion depth of the request.")
         String expandDirectories;
 
-        @Option(name = "prestore",
-              usage = "True means the request has indicated that all targets be stored "
-                    + "first before processing.")
-        Boolean prestore;
-
         @Option(name = "status",
               valueSpec = "QUEUED|STARTED|COMPLETED|CANCELLED",
               separator = ",",
@@ -493,7 +487,7 @@ public final class BulkServiceCommands implements CellCommandListener {
 
             rFilter = new BulkRequestFilter(beforeStart, afterStart, owners, urlPrefixes, ids,
                   activities, statuses, cancelOnFailure, clearOnSuccess, clearOnFailure, delayClear,
-                  depth, prestore);
+                  depth);
             rFilter.setId(id);
         }
 
@@ -961,13 +955,6 @@ public final class BulkServiceCommands implements CellCommandListener {
               usage = "Remove request from storage if all targets succeeded.")
         Boolean clearOnSuccess = false;
 
-        @Option(name = "prestore",
-              usage =
-                    "Store all targets first before performing the activity on them. (This applies "
-                          + "to recursive as well as non-recursive, and usually results in significantly "
-                          + "lower throughput.)")
-        Boolean prestore = false;
-
         @Option(name = "arguments",
               usage = "Optional comma-delimited list of name:value strings specific to the activity.")
         String arguments;
@@ -985,7 +972,6 @@ public final class BulkServiceCommands implements CellCommandListener {
             request.setClearOnFailure(clearOnFailure);
             request.setExpandDirectories(Depth.valueOf(expand.toUpperCase()));
             request.setUid(UUID.randomUUID().toString());
-            request.setPrestore(activity.equalsIgnoreCase("STAGE") || prestore);
 
             if (arguments != null) {
                 request.setArguments(Splitter.on(',')
