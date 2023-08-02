@@ -75,11 +75,11 @@ import static java.util.Objects.requireNonNull;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-import com.google.common.io.Files;
 import dmg.cells.nucleus.CellLifeCycleAware;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -93,7 +93,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 import javax.annotation.Nonnull;
 import org.dcache.commons.stats.MonitoringProxy;
 import org.dcache.commons.stats.RequestCounters;
@@ -401,7 +400,7 @@ public class SRM implements CellLifeCycleAware {
     public void cancelRequest(StringBuilder sb, long requestId)
           throws SRMInvalidRequestException {
         Job job = Job.getJob(requestId, Job.class);
-        if (job == null || !(job instanceof ContainerRequest)) {
+        if (!(job instanceof ContainerRequest)) {
             sb.append("request with id ").append(requestId)
                   .append(" is not found\n");
             return;
@@ -609,7 +608,7 @@ public class SRM implements CellLifeCycleAware {
     public Stream<PutFileRequest> getActivePutFileRequests(URI surl)
           throws DataAccessException {
         String path = getPath(surl);
-        return StreamSupport.stream(getActiveJobs(PutFileRequest.class).spliterator(), false)
+        return getActiveJobs(PutFileRequest.class).stream()
               .filter(r -> getPath(r.getSurl()).startsWith(path));
     }
 
@@ -688,6 +687,10 @@ public class SRM implements CellLifeCycleAware {
 
     private static String getPath(URI surl) {
         String path = surl.getPath();
+        if (path == null) {
+            throw new NullPointerException("path cannot be null.");
+        }
+        // Handle the query.
         String query = surl.getQuery();
         if (query != null) {
             int i = query.indexOf(SFN_STRING);
@@ -705,7 +708,17 @@ public class SRM implements CellLifeCycleAware {
          * paths to an absolute path, which requires additional name space
          * lookups.
          */
-        path = Files.simplifyPath(path);
+
+        // Trim away any whitespace. Shouldn't be the case though.
+        path = path.trim();
+        // Now we need to simplify the path
+        // Just return the base directory.
+        if (path.isEmpty() || path.isBlank() || path.equals(".")) {
+            return "/";
+        }
+        // Use Path.normalize() to remove trailin slashes and simplify "./" and "/../"
+        path = Path.of(path).normalize().toString();
+
         if (!path.endsWith("/")) {
             path = path + "/";
         }
