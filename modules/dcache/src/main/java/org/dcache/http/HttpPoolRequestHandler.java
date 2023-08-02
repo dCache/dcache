@@ -798,7 +798,10 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
 
         if (_useZeroCopy) {
             // disable timeout manager as zero-copy can't keep idle counters in sync
-            context.channel().pipeline().remove(IdleStateHandler.class);
+            var hasIdleStateHandler = context.channel().pipeline().get(IdleStateHandler.class) != null;
+            if (hasIdleStateHandler) {
+                context.channel().pipeline().remove(IdleStateHandler.class);
+            }
             return asFileRegion(file, lowerRange, length);
         }
         return new ReusableChunkedNioFile(file, lowerRange, length, _chunkSize);
