@@ -100,7 +100,7 @@ public class JdbcVerifyOperationDao extends JdbcDaoSupport implements VerifyOper
         operation.setTarget(rs.getString("target"));
 
         String tried = rs.getString("tried");
-        if (tried != null) {
+        if (tried != null && !tried.isEmpty()) {
             operation.setTried(Arrays.stream(tried.split(","))
                   .map(String::trim)
                   .collect(Collectors.toSet()));
