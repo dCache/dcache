@@ -164,3 +164,27 @@ Particularly useful are the following policy properties which can be changed wit
 requiring service restart using the admin shell command ``request policy``:
 
 ![Bulk Request Policy Command](images/bulk-request-policy.png)
+
+## Deprecation of the "prestore" option
+
+As of 9.2, the `prestore` semantics (option and container type) have been eliminated.
+
+There are two principal reasons for this.
+
+First, it is only relevant for recursive requests.  This is because
+originally the initial targets were not automatically stored.  This
+was discovered to be incorrect behavior.  Once initial targets are
+stored immediately, the rationale for storing the entire tree of
+targets before beginning the processing no longer makes much sense.
+
+Secondly, the time-to-completion is significantly increased (by at
+least an order of magnitude) because of the additional overhead
+involved in doing this on a sizeable tree of discovered targets.
+
+The lazy storage of discovered targets, and the deferring of directories
+in memory until they are handled, which is the behavior of the default
+container, does not pose problems for recovery, because the tree
+is rescanned in that case, and only the stored targets which have
+successfully completed or failed are skipped; hence, the entire
+directory list is reconstituted on restart for any requests that
+had not been completed before shutdown of the service.

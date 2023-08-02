@@ -122,13 +122,8 @@ public final class RequestContainerJobFactory {
         pnfsHandler.setSubject(activity.getSubject());
 
         LOGGER.trace("createRequestJob {}, creating batch request job.", request.getUid());
-        AbstractRequestContainerJob containerJob;
-        if (request.isPrestore()) {
-            containerJob = new PrestoreRequestContainerJob(activity, target, request, statistics);
-        } else {
-            containerJob = new RequestContainerJob(activity, target, request, statistics);
-        }
-
+        AbstractRequestContainerJob containerJob
+              = new RequestContainerJob(activity, target, request, statistics);
         containerJob.setNamespaceHandler(pnfsHandler);
         containerJob.setTargetStore(targetStore);
         containerJob.setListHandler(listHandler);
