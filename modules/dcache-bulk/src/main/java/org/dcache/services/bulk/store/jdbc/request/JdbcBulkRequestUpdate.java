@@ -174,11 +174,6 @@ public final class JdbcBulkRequestUpdate extends JdbcUpdate {
         return this;
     }
 
-    public JdbcBulkRequestUpdate prestore(boolean prestore) {
-        set("prestore", prestore);
-        return this;
-    }
-
     public JdbcBulkRequestUpdate delayClear(int delayClear) {
         set("delay_clear", delayClear);
         return this;

@@ -345,7 +345,6 @@ public final class StageResources {
         }
 
         BulkRequest request = new BulkRequest();
-        request.setPrestore(true);
         request.setExpandDirectories(Depth.NONE);
         request.setCancelOnFailure(false);
         request.setClearOnFailure(false);

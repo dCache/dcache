@@ -770,7 +770,7 @@
         <dependency>
             <groupId>org.dcache</groupId>
             <artifactId>nfs4j-core</artifactId>
-            <version>0.24.3</version>
+            <version>0.25.0</version>
         </dependency>
         <dependency>
             <groupId>com.github.nitram509</groupId>

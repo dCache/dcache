@@ -193,13 +193,6 @@ public final class JdbcBulkRequestCriterion extends JdbcCriterion {
         return this;
     }
 
-    public JdbcBulkRequestCriterion prestore(Boolean prestore) {
-        if (prestore != null) {
-            addClause("prestore = ?", prestore);
-        }
-        return this;
-    }
-
     public JdbcBulkRequestCriterion delayClear(Boolean delayClear) {
         if (delayClear != null) {
             addClause("delay_clear = ?", delayClear);
@@ -249,7 +242,6 @@ public final class JdbcBulkRequestCriterion extends JdbcCriterion {
             cancelOnFailure(filter.getCancelOnFailure());
             clearOnFailure(filter.getClearOnFailure());
             clearOnSuccess(filter.getClearOnSuccess());
-            prestore(filter.getPrestore());
             delayClear(filter.getDelayClear());
             expandDirectories(filter.getExpandDirectories());
             activity(filter.getActivity());

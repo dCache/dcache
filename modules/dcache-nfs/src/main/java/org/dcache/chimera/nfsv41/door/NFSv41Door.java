@@ -177,6 +177,7 @@ import org.dcache.util.NDC;
 import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
+import org.dcache.util.Version;
 import org.dcache.vehicles.DoorValidateMoverMessage;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
@@ -485,6 +486,8 @@ public class NFSv41Door extends AbstractCellComponent implements
                           .withExportTable(_exportFile)
                           .withVfs(_vfs)
                           .withOperationExecutor(_executor)
+                          .withImplementationName("dcache-" + Version.of(this.getClass()).getBuild())
+                          .withImplementationDate(Instant.parse(Version.of(this.getClass()).getBuildTime()))
                           .build();
 
                     oncRpcSvcBuilder.withRpcService(

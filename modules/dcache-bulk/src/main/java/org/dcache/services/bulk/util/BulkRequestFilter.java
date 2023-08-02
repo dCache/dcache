@@ -80,20 +80,19 @@ public final class BulkRequestFilter {
     private final Boolean clearOnFailure;
     private final Boolean delayClear;
     private final Depth expandDirectories;
-    private final Boolean prestore;
 
     private Long id;
 
     public BulkRequestFilter(Set<BulkRequestStatus> statuses) {
         this(null, null, null, null, null, null,
               statuses, null, null,
-              null, null, null, null);
+              null, null, null);
     }
 
     public BulkRequestFilter(Long before, Long after, Set<String> owner, Set<String> urlPrefix,
           Set<String> uuid, Set<String> activity, Set<BulkRequestStatus> statuses,
           Boolean cancelOnFailure, Boolean clearOnSuccess, Boolean clearOnFailure,
-          Boolean delayClear, Depth expandDirectories, Boolean prestore) {
+          Boolean delayClear, Depth expandDirectories) {
         this.before = before;
         this.after = after;
         this.activity = activity;
@@ -106,7 +105,6 @@ public final class BulkRequestFilter {
         this.owner = owner;
         this.urlPrefix = urlPrefix;
         this.uuid = uuid;
-        this.prestore = prestore;
     }
 
     public Long getAfter() {
@@ -136,8 +134,6 @@ public final class BulkRequestFilter {
     public Boolean getDelayClear() {
         return delayClear;
     }
-
-    public Boolean getPrestore() { return prestore; }
 
     public Depth getExpandDirectories() {
         return expandDirectories;
