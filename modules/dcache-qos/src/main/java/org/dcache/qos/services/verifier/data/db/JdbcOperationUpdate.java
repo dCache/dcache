@@ -111,7 +111,7 @@ public class JdbcOperationUpdate extends JdbcUpdate implements VerifyOperationUp
 
     @Override
     public VerifyOperationUpdate tried(Collection<String> tried) {
-        if (tried != null) {
+        if (tried != null && !tried.isEmpty()) {
             set("tried", tried.stream().collect(Collectors.joining(",")));
         }
         return this;
