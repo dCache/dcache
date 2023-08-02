@@ -3,6 +3,7 @@ package org.dcache.util.list;
 import com.google.common.collect.Range;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
+import java.nio.file.DirectoryStream;
 import java.util.Set;
 import javax.security.auth.Subject;
 import org.dcache.auth.attributes.Restriction;
@@ -32,7 +33,7 @@ public interface DirectoryListSource {
      * @param range The range of entries to return; may be null
      * @return A DirectoryStream of the entries in the directory
      */
-    DirectoryEntryStream list(Subject subject, Restriction restriction, FsPath path,
+    DirectoryStream<DirectoryEntry> list(Subject subject, Restriction restriction, FsPath path,
           Glob pattern, Range<Integer> range)
           throws InterruptedException, CacheException;
 
@@ -57,7 +58,7 @@ public interface DirectoryListSource {
      * @param attrs The file attributes to query for each entry
      * @return A DirectoryStream of the entries in the directory
      */
-    DirectoryEntryStream list(Subject subject, Restriction restriction, FsPath path,
+    DirectoryStream<DirectoryEntry> list(Subject subject, Restriction restriction, FsPath path,
           Glob pattern, Range<Integer> range,
           Set<FileAttribute> attrs)
           throws InterruptedException, CacheException;
@@ -74,7 +75,7 @@ public interface DirectoryListSource {
      * @return A DirectoryStream of the entries in the directory
 
      */
-    DirectoryEntryStream listVirtualDirectory(Subject subject, Restriction restriction, FsPath path,
+    DirectoryStream<DirectoryEntry> listVirtualDirectory(Subject subject, Restriction restriction, FsPath path,
           Range<Integer> range,
           Set<FileAttribute> attrs)
           throws InterruptedException, CacheException;

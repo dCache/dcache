@@ -58,8 +58,10 @@ import dmg.util.command.Command;
 import dmg.util.command.CommandLine;
 import dmg.util.command.HelpFormat;
 import java.io.CharArrayWriter;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Serializable;
+import java.nio.file.DirectoryStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -90,7 +92,6 @@ import org.dcache.util.NetLoggerBuilder;
 import dmg.util.PagedCommandResult;
 import org.dcache.util.Version;
 import org.dcache.util.list.DirectoryEntry;
-import org.dcache.util.list.DirectoryEntryStream;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
@@ -967,7 +968,7 @@ public class UserAdminShell
             String dir = buffer.length() == 1 ? "/" : buffer.substring(0, endIndex);
             String file = buffer.substring(endIndex + 1);
 
-            try (DirectoryEntryStream stream = list(dir, file + "*")) {
+            try (DirectoryStream<DirectoryEntry> stream = list(dir, file + "*")) {
                 for (DirectoryEntry entry : stream) {
                     if (entry.getFileAttributes().getFileType() == FileType.DIR) {
                         candidates.add(entry.getName() + "/");
@@ -980,6 +981,9 @@ public class UserAdminShell
             } catch (CacheException e) {
                 LOGGER.info("Completion failed: {}", e.toString());
                 return -1;
+            } catch (IOException e) {
+                // Should not be thrown, since Stream does not throw an IOException on close().
+                throw new RuntimeException("Unexpected Exception thrown.", e);
             }
             return endIndex + 1;
         }
@@ -1017,7 +1021,7 @@ public class UserAdminShell
      * Utility method to initiate a directory listing returning entries matching the given glob
      * string.
      */
-    private DirectoryEntryStream list(String dir, String pattern)
+    private DirectoryStream<DirectoryEntry> list(String dir, String pattern)
           throws InterruptedException, CacheException {
         return _list.list(Subjects.ROOT, Restrictions.none(), FsPath.create(dir),
               new Glob(pattern), Range.all(), EnumSet.of(FileAttribute.TYPE));

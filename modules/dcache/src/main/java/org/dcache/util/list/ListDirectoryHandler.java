@@ -5,6 +5,8 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
 import dmg.cells.nucleus.CellMessageReceiver;
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -62,7 +64,7 @@ public class ListDirectoryHandler
      * underlying PnfsHandler instance.
      */
     @Override
-    public DirectoryEntryStream
+    public DirectoryStream<DirectoryEntry>
     list(Subject subject, Restriction restriction, FsPath path, Glob pattern, Range<Integer> range)
           throws InterruptedException, CacheException {
         return list(subject, restriction, path, pattern, range,
@@ -82,7 +84,7 @@ public class ListDirectoryHandler
      * underlying PnfsHandler instance.
      */
     @Override
-    public DirectoryEntryStream
+    public DirectoryStream<DirectoryEntry>
     list(Subject subject, Restriction restriction, FsPath path, Glob pattern,
           Range<Integer> range, Set<FileAttribute> attributes)
           throws InterruptedException, CacheException {
@@ -124,7 +126,7 @@ public class ListDirectoryHandler
      */
 
     @Override
-    public DirectoryEntryStream
+    public DirectoryStream<DirectoryEntry>
     listVirtualDirectory(Subject subject, Restriction restriction, FsPath path,
          Range<Integer> range, Set<FileAttribute> attributes)
             throws InterruptedException, CacheException
@@ -177,7 +179,7 @@ public class ListDirectoryHandler
               printer.getRequiredAttributes();
         FileAttributes dirAttr =
               _pnfs.getFileAttributes(path.toString(), required);
-        try (DirectoryEntryStream stream = list(subject, restriction, path, glob, range, required)) {
+        try (DirectoryStream<DirectoryEntry> stream = list(subject, restriction, path, glob, range, required)) {
             int total = 0;
             for (DirectoryEntry entry : stream) {
                 printer.print(path, dirAttr, entry);
@@ -185,6 +187,9 @@ public class ListDirectoryHandler
             }
             printer.close();
             return total;
+        } catch (IOException e) {
+            // Should not be thrown, since Stream does not throw an IOException on close().
+            throw new RuntimeException("Unexpected Exception thrown.", e);
         }
     }
 
@@ -210,13 +215,12 @@ public class ListDirectoryHandler
     }
 
     /**
-     * Implementation of DirectoryStream, translating PnfsListDirectoryMessage replies to a stream
-     * of DirectoryEntries.
+     * Implementation of {@link java.nio.file.DirectoryStream}, translating PnfsListDirectoryMessage
+     * replies to a stream of DirectoryEntries.
      * <p>
-     * The stream acts as its own iterator, and multiple iterators are not supported. This is
-     * conform to the guarantees by the more general {@link java.nio.file.DirectoryStream}.
+     * The stream acts as its own iterator, and multiple iterators are not supported.
      */
-    public class Stream implements DirectoryEntryStream, Iterator<DirectoryEntry> {
+    private class Stream implements DirectoryStream<DirectoryEntry>, Iterator<DirectoryEntry> {
 
         private final BlockingQueue<PnfsListDirectoryMessage> _queue =
               new LinkedBlockingQueue<>();

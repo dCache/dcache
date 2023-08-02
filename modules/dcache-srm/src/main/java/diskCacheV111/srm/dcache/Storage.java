@@ -140,6 +140,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.login.LoginBrokerInfo;
 import dmg.cells.services.login.LoginBrokerSource;
 import eu.emi.security.authn.x509.X509Credential;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -147,6 +148,7 @@ import java.net.ProtocolFamily;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
+import java.nio.file.DirectoryStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -226,7 +228,6 @@ import org.dcache.util.URIs;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryListPrinter;
 import org.dcache.util.list.DirectoryListSource;
-import org.dcache.util.list.DirectoryEntryStream;
 import org.dcache.util.list.NullListPrinter;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.pool.CacheEntryInfoMessage;
@@ -1429,7 +1430,7 @@ public final class Storage
           List<FsPath> result)
           throws SRMException {
         List<DirectoryEntry> children = new ArrayList<>();
-        try (DirectoryEntryStream list = _listSource.list(subject, restriction, dir, null,
+        try (DirectoryStream<DirectoryEntry> list = _listSource.list(subject, restriction, dir, null,
               Range.<Integer>all(), attributesRequiredForRmdir)) {
             for (DirectoryEntry child : list) {
                 FileAttributes childAttributes = child.getFileAttributes();
@@ -1457,6 +1458,9 @@ public final class Storage
             throw new SRMInternalErrorException("Name space timeout", e);
         } catch (CacheException e) {
             throw new SRMException(dir + " (" + e.getMessage() + ")");
+        } catch (IOException e) {
+            // Should not be thrown, since Stream does not throw an IOException on close().
+            throw new RuntimeException("Unexpected Exception thrown.", e);
         }
 
         // Result list uses post-order so directories will be deleted bottom-up.

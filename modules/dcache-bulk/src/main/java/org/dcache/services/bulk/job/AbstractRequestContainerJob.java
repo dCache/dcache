@@ -101,7 +101,6 @@ import org.dcache.services.bulk.util.BulkRequestTargetBuilder;
 import org.dcache.services.bulk.util.BulkServiceStatistics;
 import org.dcache.util.SignalAware;
 import org.dcache.util.list.DirectoryEntry;
-import org.dcache.util.list.DirectoryEntryStream;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsResolveSymlinksMessage;
@@ -371,7 +370,7 @@ public abstract class AbstractRequestContainerJob
         }
     }
 
-    protected DirectoryEntryStream getDirectoryListing(FsPath path)
+    protected DirectoryStream<DirectoryEntry> getDirectoryListing(FsPath path)
           throws CacheException, InterruptedException {
         LOGGER.trace("getDirectoryListing {}, path {}, calling list ...", ruid, path);
         return listHandler.list(subject, restriction, path, null,
