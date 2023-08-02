@@ -226,7 +226,6 @@ public final class BulkResources {
                 + "**clearOnSuccess** - Boolean, Optional, defaults to false.\n"
                 + "**clearOnFailure** - Boolean, Optional, defaults to false.\n"
                 + "**expandDirectories** - String (NONE, TARGETS, ALL). Optional, defaults to NONE\n"
-                + "**prestore** - Boolean (store all targets first, including recursively discovered paths).  Optional, defaults to false.\n"
                 + "**arguments** - Object (map) of name:value pairs. Optional, specific to activity.", required = true)
                 String requestPayload) {
         Subject subject = getSubject();
@@ -489,12 +488,11 @@ public final class BulkResources {
             request.setCancelOnFailure(Boolean.valueOf(String.valueOf(value)));
         }
 
-        value = removeEntry(map, Object.class, "pre_store", "pre-store", "prestore");
-        if (value instanceof Boolean) {
-            request.setPrestore((boolean) value);
-        } else {
-            request.setPrestore(Boolean.valueOf(String.valueOf(value)));
-        }
+        /*
+         *  "prestore" has been deprecated, but we allow it still to be present
+         *   in the attributes for backward compatibility.
+         */
+        removeEntry(map, Object.class, "pre_store", "pre-store", "prestore");
 
         if (!map.isEmpty()) {
             throw new BadRequestException("unsupported arguments: " + map.keySet());

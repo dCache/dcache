@@ -2702,3 +2702,16 @@ dcache.wellknown!security-txt.uri=${dcache.paths.httpd}/security.txt
 should be configured to point to either a URL with host and port that provides
 this information, or a local path with the appropriate `security.txt` file.
 See https://securitytxt.org/ for further information.
+
+## Deprecation of the "prestore" option
+
+With 9.2, this option is no longer supported, for several reasons.
+See The Book, CHAPTER 18. THE BULK SERVICE, for an explanation.
+
+Note that this change has no effect on the handling of flat/non-recursive
+requests such as those specified by the TAPE REST API.
+
+From the standpoint of the JSON bulk description, we still allow
+for the presence of `prestore`/`preStore`/`pre_store`, etc. so
+that current scripts (if any) do not need to change.  But the
+option will simply be discarded by the frontend resource.

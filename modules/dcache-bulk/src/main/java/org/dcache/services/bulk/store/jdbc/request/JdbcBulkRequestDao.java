@@ -198,7 +198,6 @@ public final class JdbcBulkRequestDao extends JdbcDaoSupport {
         request.setClearOnSuccess(rs.getBoolean("clear_on_success"));
         request.setClearOnFailure(rs.getBoolean("clear_on_failure"));
         request.setCancelOnFailure(rs.getBoolean("cancel_on_failure"));
-        request.setPrestore(rs.getBoolean("prestore"));
         BulkRequestStatusInfo statusInfo = new BulkRequestStatusInfo();
         statusInfo.setUser(rs.getString("owner"));
         statusInfo.setCreatedAt(rs.getTimestamp("arrived_at").getTime());
@@ -292,7 +291,6 @@ public final class JdbcBulkRequestDao extends JdbcDaoSupport {
         return set().activity(request.getActivity())
               .cancelOnFailure(request.isCancelOnFailure()).uid(request.getUid())
               .clearOnSuccess(request.isClearOnSuccess()).clearOnFailure(request.isClearOnFailure())
-              .prestore(request.isPrestore())
               .depth(request.getExpandDirectories())
               .targetPrefix(request.getTargetPrefix()).urlPrefix(request.getUrlPrefix()).user(user)
               .status(BulkRequestStatus.QUEUED).arrivedAt(System.currentTimeMillis());
