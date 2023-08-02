@@ -352,7 +352,7 @@ pynfs_tests:
       kubectl exec pynfs-tester -- /bin/bash -c "cd /pynfs/nfs4.1; \
         python3 -u ./testserver.py --minorversion=2 --xml=/xunit-report-v41.xml --noinit store-door-svc:/data all xattr \
           noCOUR2 noCSESS25 noCSESS26 noCSESS27 noCSESS28 noCSESS29 noCSID3 noCSID4 noCSID9 noEID5f \
-          noEID50 noOPEN31 noSEQ6 noRECC3 noSEQ7 noSEQ10b noSEQ2 noXATT11 noXATT10 noALLOC1 ALLOC2 ALLOC3; \
+          noEID50 noOPEN31 noSEQ6 noRECC3 noSEQ7 noSEQ10b noSEQ2 noXATT11 noXATT10 noALLOC1 noALLOC2 noALLOC3; \
         exit 0"
 
     - kubectl cp pynfs-tester:/xunit-report-v40.xml xunit-report-v40.xml
