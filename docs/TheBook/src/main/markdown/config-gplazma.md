@@ -1086,6 +1086,80 @@ As of version 2.16, dCache is able to perform authentication based on [OpendID C
 OpenID Connect credentials are sent to dCache with Authorisation HTTP Header as follows 
 `Authorization: Bearer  <yaMMeexxx........>`. This bearer token is extracted, validated and verified against a **Trusted Authorisation Server** (Issue of the bearer token) and is used later to fetch additional user identity information from the corresponding Authorisation Server.
 
+
+
+
+
+  This configuration property is a map.  Each entry of the map
+  associates a nickname with information about that provider.  The
+  nickname is used when logging problems with the provider.  The
+  information is the URI of the issuer endpoint.  This must be a
+  valid URL that starts 'https://'.
+
+  The following example associates the nickname 'google' with
+  Google's issuer endpoint.
+
+```ini
+      gplazma.oidc.provider!google = https://accounts.google.com/
+```
+
+  The process for validating an access token has been improved with
+  newer versions of dCache.  Sometimes these improvements, while
+  correct, risk introducing incompatibilities when upgrading from an
+  earlier versions of dCache.  To support backwards compatibility the
+  `-suppress` option may be specified on a specific OP; for example,
+
+```ini
+  gplazma.oidc.provider!EXAMPLE = https://op.example.org/ -suppress=foo
+```
+
+ The `-suppress option's` value is a comma-separated list; in
+  addition, the -suppress option may be repeated.
+
+  The following suppress keywords are supported:
+
+**audience**  Suppress audience ("aud") claim verification.  By
+                default, dCache will check that the "aud" claim, if
+                present, matches one of the identities configured via
+               the `gplazma.oidc.audience-targets` configuration
+                property.  The token is rejected if there is no
+               match.  This option suppresses this check, resulting
+                in dCache accepting tokens with an arbitrary "aud"
+                claim value.In general, audience verification provides a form of
+                "damage limitation" if a token is misappropriated.
+                The stolen token may only be used against the token's
+               intended target service and not against any other
+                service that the user is authorised. 
+                Suppressing audience verification may be needed as
+                earlier versions of dCache lacked audience
+                verification.  Existing clients may be obtaining
+                tokens with inappropriate audience fields.  It is
+                recommended that this option is used sparingly and
+                only for a short time; i.e., a strategy is devised
+                through which clients are updated and this
+                suppression may be disabled.             
+**offline**   Suppress offline validation.  By default, dCache will
+                attempt to validate a JWT using the OP's public keys.
+                If the token is valid then the claims stored within
+                the JWT are used by dCache.  This option suppresses
+                this behaviour, resulting in dCache making an HTTP
+                request to the OP's userinfo endpoint to check the
+                validity of the token and obtain the claims that
+                describe the user. In general, offline verification is preferred as it
+                is faster and avoids making an HTTP request (one per
+                token) against the OP.  Suppressing offline validation is needed if OP
+                includes less information in the JWT than is
+                available from the userinfo endpoint and that
+                additional information is needed (e.g., group
+                membership).
+
+
+
+
+Since there is no universal token schema and token scopes are different the `-profile` option is used to set explicitly define the type of the token to be used. By default it is OIDC and WLCG token has a different schema (`-profile=wlcg`).
+
+  The `-prefix` This attribute limits which part of the namespace a user may access. 
+
 ### Steps for configuration 
 
 In order to configure the OpenID Connect support, we need to 
