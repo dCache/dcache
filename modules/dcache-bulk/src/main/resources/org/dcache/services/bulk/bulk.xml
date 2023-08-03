@@ -80,7 +80,7 @@
   </bean>
 
   <bean id="cancellation-executor" class="org.dcache.util.CDCScheduledExecutorServiceDecorator">
-    <description>Used to run delayed clear requests.</description>
+    <description>Used to cancel requests.</description>
     <constructor-arg>
       <bean class="java.util.concurrent.ScheduledThreadPoolExecutor">
         <constructor-arg value="${bulk.limits.cancellation-threads}"/>
@@ -102,6 +102,10 @@
         <constructor-arg value="1"/>
       </bean>
     </constructor-arg>
+  </bean>
+
+  <bean id="dir-list-executor" class="org.dcache.util.BoundedCachedExecutor">
+    <constructor-arg value="${bulk.limits.dir-list-threads}"/>
   </bean>
 
   <bean id="bulk-data-source" class="com.zaxxer.hikari.HikariDataSource">
@@ -250,6 +254,7 @@
     <property name="requestStore" ref="request-store"/>
     <property name="targetStore" ref="target-store"/>
     <property name="statistics" ref="statistics"/>
+    <property name="dirListExecutor" ref="dir-list-executor"/>
   </bean>
 
   <bean id="statistics" class="org.dcache.services.bulk.util.BulkServiceStatistics">
@@ -326,6 +331,7 @@
         <ref bean="cancellation-executor"/>
         <ref bean="manager-executor"/>
         <ref bean="reset-executor"/>
+        <ref bean="dir-list-executor"/>
       </list>
     </property>
     <property name="dataSource" ref="bulk-data-source"/>

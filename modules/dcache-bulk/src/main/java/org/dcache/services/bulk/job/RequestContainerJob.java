@@ -68,6 +68,8 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
@@ -94,17 +96,28 @@ public final class RequestContainerJob extends AbstractRequestContainerJob {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RequestContainerJob.class);
 
+    private static final DirTargetSorter SORTER = new DirTargetSorter();
+
     static class DirTarget {
         final FsPath path;
         final FileAttributes attributes;
         final PID pid;
         final Long id;
+        final int depth;
 
         DirTarget(Long id, PID pid, FsPath path, FileAttributes attributes) {
             this.id = id;
             this.pid = pid;
             this.attributes = attributes;
             this.path = path;
+            depth = (int)path.toString().chars().filter(c -> c == '/').count();
+        }
+    }
+
+    static class DirTargetSorter implements Comparator<DirTarget> {
+        @Override
+        public int compare(DirTarget o1, DirTarget o2) {
+            return Integer.compare(o2.depth, o1.depth);  /* DESCENDING ORDER */
         }
     }
 
@@ -159,7 +172,9 @@ public final class RequestContainerJob extends AbstractRequestContainerJob {
 
     @Override
     protected void processDirTargets() throws InterruptedException {
-        for (DirTarget dirTarget : dirs) {
+        DirTarget[] sorted = dirs.toArray(new DirTarget[0]);
+        Arrays.sort(sorted, SORTER);
+        for (DirTarget dirTarget : sorted) {
             checkForRequestCancellation();
             perform(dirTarget.id, dirTarget.pid, dirTarget.path, dirTarget.attributes);
         }

@@ -11,6 +11,7 @@ check -strong bulk.limits.container-processing-threads
 check -strong bulk.limits.activity-callback-threads
 check -strong bulk.limits.incoming-request-threads
 check -strong bulk.limits.cancellation-threads
+check -strong bulk.limits.dir-list-threads
 check -strong bulk.limits.request-cache-expiration
 check -strong bulk.limits.request-cache-expiration.unit
 check -strong bulk.limits.max-requests-per-user
