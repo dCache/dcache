@@ -35,6 +35,8 @@ import java.util.stream.Collectors;
  */
 public class MultiTargetedRestriction implements Restriction {
 
+    private static final long serialVersionUID = -4604505680192926544L;
+
     private static final EnumSet<Activity> ALLOWED_PARENT_ACTIVITIES
           = EnumSet.of(Activity.LIST, Activity.READ_METADATA);
 
