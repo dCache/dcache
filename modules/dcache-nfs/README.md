@@ -137,14 +137,52 @@ sequenceDiagram
     
     poolA->>poolA: state invalidated
     poolA-->>Door: Trnaster Finish
-    Door->>Door: Invalidate state
+    Door--xDoor: older verion of stateid is used. File stays open
     Door-->>ClientA: NFS4ERR_BAD_SEQID
-    Note right of Door: older verion stateid is used. File stays open
     
     loop Application IO
         ClientB->>poolA: READ(file, state1, offset, len)
         poolA-->>ClientB: NFS4ERR_BAD_STATEID
         Note right of PoolA: Mover is aleady gone
     end
+```
+
+### Competing opens
+
+(fixed by commit 421e1dc932c73186d52901431ec8b822fdadb508)
+```mermaid
+sequenceDiagram
+    autonumber
+    box HostA
+    actor ClientA as App1
+    actor ClientB as App2
+    end
+    participant Door
+    participant poolA
+    participant PoolManager
+    ClientA->>Door: OPEN(file), LAYOUTGET
+    Door->>PoolManager: Select Pool
+    PoolManager-->>Door: 'poolA'
+    Door->>poolA: Start Mover (state1)
+    poolA-->>Door: Ready(id)
+    Door-->>ClientA: 'open state1', 'layout'
+
+    loop Application IO
+        ClientA->>poolA: READ(file, state1, offset, len)
+        poolA-->>ClientA: 'bytes'
+    end
     
+    ClientA->>Door: LAYOUT_RETURN, CLOSE
+    Door->>poolA: Kill Mover(id)
+
+    ClientB->>Door: OPEN(file), LAYOUTGET
+    Door-->>ClientB: NFS4ERR_DELAY
+
+    poolA->>poolA: state invalidated
+    poolA-->>Door: Trnaster Finish
+    Door--xDoor: older verion of stateid is used. File stays open
+    Door-->>ClientA: NFS4ERR_BAD_SEQID
+
+    ClientB->>Door: LAYOUTGET
+    Note right of Door: Processed as regular LAYOUTGET
 ```
