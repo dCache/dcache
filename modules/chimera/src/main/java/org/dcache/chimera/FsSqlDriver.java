@@ -1291,23 +1291,14 @@ public class FsSqlDriver {
             _jdbc.update("INSERT INTO t_tags (inumber,itagid,isorign,itagname) VALUES (?, ?, 0, ?)",
                   id, tagid, tagName);
         });
-
-        _jdbc.update("UPDATE t_tags_inodes SET inlink = inlink + ? WHERE itagid=?", subtrees.size(),
-              tagid);
         return subtrees.size();
     }
 
-    void incTagNlink(long tagId) {
-        _jdbc.update("UPDATE t_tags_inodes SET inlink = inlink + 1 WHERE itagid=?", tagId);
-    }
-
     void decTagNlinkOrRemove(long tagId) {
-        // shortcut: delete right away, if there is only one reference left
-        int n = _jdbc.update("DELETE FROM t_tags_inodes WHERE itagid=? AND inlink = 1", tagId);
-        // if delete didn't happen, then just indicate that one reference in gone
-        if (n == 0) {
-            _jdbc.update("UPDATE t_tags_inodes SET inlink = inlink - 1 WHERE itagid=?", tagId);
-        }
+        // delete tag record, if not referenced anymore
+        _jdbc.update(
+              "DELETE FROM t_tags_inodes WHERE itagid = ? AND NOT EXISTS (SELECT inumber FROM t_tags WHERE itagid=? LIMIT 1)",
+              tagId, tagId);
     }
 
     void removeTag(FsInode dir, String tag) {
@@ -1443,15 +1434,9 @@ public class FsSqlDriver {
      * @param destination
      */
     void copyTags(FsInode orign, FsInode destination) {
-        int n = _jdbc.update(
+        _jdbc.update(
               "INSERT INTO t_tags (inumber,itagid,isorign,itagname) (SELECT ?,itagid,0,itagname from t_tags WHERE inumber=?)",
               destination.ino(), orign.ino());
-        if (n > 0) {
-            // if tags was copied, then bump the reference counts.
-            _jdbc.update(
-                  "UPDATE t_tags_inodes SET inlink = inlink + 1 WHERE itagid IN (SELECT itagid from t_tags where inumber=?)",
-                  destination.ino());
-        }
     }
 
     void setTagOwner(FsInode_TAG tagInode, int newOwner) throws FileNotFoundChimeraFsException {
