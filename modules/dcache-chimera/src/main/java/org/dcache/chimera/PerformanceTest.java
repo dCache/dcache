@@ -193,7 +193,7 @@ public class PerformanceTest extends Thread {
         System.out.println("Starting chimera... ");
         HikariDataSource dataSource = FsFactory.getDataSource(jdbc, user, password);
         PlatformTransactionManager txManager = new DataSourceTransactionManager(dataSource);
-        FileSystemProvider fileSystem = new JdbcFs(dataSource, txManager);
+        FileSystemProvider fileSystem = new JdbcFs(dataSource, txManager, "strong");
         provider = new ChimeraNameSpaceProvider();
         provider.setAclEnabled(false);
         provider.setExtractor(new ChimeraOsmStorageInfoExtractor(StorageInfo.DEFAULT_ACCESS_LATENCY,

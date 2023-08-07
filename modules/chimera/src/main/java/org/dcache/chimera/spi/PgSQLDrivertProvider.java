@@ -43,7 +43,7 @@ public class PgSQLDrivertProvider implements DBDriverProvider {
     }
 
     @Override
-    public FsSqlDriver getDriver(DataSource dataSource) throws SQLException, ChimeraFsException {
+    public FsSqlDriver getDriver(DataSource dataSource, String consistency) throws SQLException, ChimeraFsException {
 
         Connection dbConnection = null;
         try {
@@ -53,7 +53,7 @@ public class PgSQLDrivertProvider implements DBDriverProvider {
             int min = dbConnection.getMetaData().getDatabaseMinorVersion();
 
             if ((maj > 9) || (maj == 9 && min >= 5)) {
-                return new PgSQL95FsSqlDriver(dataSource);
+                return new PgSQL95FsSqlDriver(dataSource, consistency);
             } else {
                 throw new IllegalArgumentException("Required PostgreSQL 9.5 or newer");
             }

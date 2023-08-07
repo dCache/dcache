@@ -134,6 +134,7 @@
         <description>Chimera Filesystem</description>
         <constructor-arg ref="dataSource" />
         <constructor-arg ref="tx-manager" />
+        <constructor-arg value="${chimera.attr-consistency}" />
         <property name="pnfsHandler" ref="pnfs"/>
         <property name="poolMonitor" ref="pool-monitor"/>
         <property name="pinManagerStub" ref="pinManagerStub"/>

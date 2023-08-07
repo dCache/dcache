@@ -50,7 +50,7 @@ public abstract class ChimeraTestCaseHelper {
         }
 
         PlatformTransactionManager txManager = new DataSourceTransactionManager(_dataSource);
-        _fs = new JdbcFs(_dataSource, txManager);
+        _fs = new JdbcFs(_dataSource, txManager, "strong");
         _rootInode = _fs.path2inode("/");
     }
 

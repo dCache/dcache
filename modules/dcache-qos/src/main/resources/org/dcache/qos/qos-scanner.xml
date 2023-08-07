@@ -104,6 +104,7 @@
     <description>File system implementation (Chimera).</description>
     <constructor-arg ref="namespace-data-source"/>
     <constructor-arg ref="namespace-tx-manager"/>
+    <constructor-arg value="${chimera.attr-consistency}"/>
   </bean>
   
   <bean id="extractor" class="${qos.plugins.storage-info-extractor}">

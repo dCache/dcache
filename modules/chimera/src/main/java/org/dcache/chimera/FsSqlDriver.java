@@ -1807,14 +1807,15 @@ public class FsSqlDriver {
      * specific driver not available
      *
      * @param dataSource database data source
+     * @param consistency desired file system attribute consistency
      * @return FsSqlDriver
      */
-    static FsSqlDriver getDriverInstance(DataSource dataSource)
+    static FsSqlDriver getDriverInstance(DataSource dataSource, String consistency)
           throws ChimeraFsException, SQLException {
 
         for (DBDriverProvider driverProvider : ALL_PROVIDERS) {
             if (driverProvider.isSupportDB(dataSource)) {
-                FsSqlDriver driver = driverProvider.getDriver(dataSource);
+                FsSqlDriver driver = driverProvider.getDriver(dataSource, consistency);
                 LOGGER.info("Using DBDriverProvider: {}", driver.getClass().getName());
                 return driver;
             }

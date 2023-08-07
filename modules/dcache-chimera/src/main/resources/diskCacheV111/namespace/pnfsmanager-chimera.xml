@@ -102,6 +102,7 @@
       <description>Chimera</description>
       <constructor-arg ref="data-source"/>
       <constructor-arg ref="tx-manager"/>
+      <constructor-arg value="${chimera.attr-consistency}" />
       <property name="quota" ref="quota-system"/>
       <property name="quotaEnabled" value="${pnfsmanager.enable.quota}"/>
       <property name="defaultRetentionPolicy" value="#{ T(diskCacheV111.util.RetentionPolicy).getRetentionPolicy('${pnfsmanager.default-retention-policy}') }"/>

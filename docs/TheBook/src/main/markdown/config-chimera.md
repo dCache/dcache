@@ -48,6 +48,32 @@ chimera.db.user=myuser
 chimera.db.password=secret
 ```
 
+## Attribute consistency policy
+
+On new filesystem object creation in a directory the `modification` and
+`change id` attributes must be updated to provide a consistent, up-to-date view of the changes.
+In highly concurrent environments such updates might create so-called `hot inodes`
+and serialize all updates in a single directory, thus, reducing the namespace throughput. 
+
+As such strong consistency is not always required, to improve concurrent updates to  a single directory
+the POSIX constraints can be relaxed. The `chimera.attr-consistency` attribute controls the namespace attribute
+update bahaviour of a parent directory on update:
+
+| policy | behaviour                                                                                                                                                                                                                                   |
+|:-------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| strong | a creation of a filesystem object will right away update parent directory's mtime, ctime, nlink and generation attributes                                                                                                                   |
+| weak   | a creation of a filesystem object will eventually update (after 30 seconds) parent directory's mtime, ctime, nlink and generation attributes. Multiple concurrent modifications to a directory are aggregated into single attribute update. |
+| soft   | same as weak, however, reading of directory attributes will take into account pending attribute updates.                                                                                                                                    |
+
+Read-write exported NFS doors SHOULD run with `strong consistency` or `soft consistency` to maintain POSIX
+compliance. Read-only NFS doors might run with `weak consistency` if non-up-to-date directory attributes can
+be tolerated, for example when accessing existing data, or  `soft consistency`, if up-to-date information
+is desired, typically when seeking for newly arrived files through other doors.
+
+```
+chimera.attr-consistency=strong
+```
+
 ## Mounting Chimera through NFS
 
 dCache does not need the Chimera filesystem to be mounted, but a mounted file system is convenient for administrative access. This offers the opportunity to use OS-level tools like `ls` and `mkdir` for Chimera. However, direct I/O-operations like `cp` are not possible, since the `NFSv3` interface provides the namespace part only. This section describes how to start the Chimera `NFSv3` server and mount the name space.

@@ -184,6 +184,10 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
      */
     private RetentionPolicy _defaultRetentionPolicy;
 
+    /**
+     * File attribute consistency policy.
+     */
+    private final String _attributeConsistency;
 
     private final ScheduledExecutorService maintenanceTaskExecutor = Executors.newSingleThreadScheduledExecutor(
           new ThreadFactoryBuilder()
@@ -194,20 +198,21 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
     private ScheduledFuture<?> maintenanceTask;
 
 
-    public JdbcFs(DataSource dataSource, PlatformTransactionManager txManager)
+    public JdbcFs(DataSource dataSource, PlatformTransactionManager txManager, String consistency)
           throws SQLException, ChimeraFsException {
-        this(dataSource, txManager, 0);
+        this(dataSource, txManager, 0, consistency);
     }
 
-    public JdbcFs(DataSource dataSource, PlatformTransactionManager txManager, int id)
+    public JdbcFs(DataSource dataSource, PlatformTransactionManager txManager, int id, String consistency)
           throws SQLException, ChimeraFsException {
         _dbConnectionsPool = dataSource;
         _fsId = id;
 
         _tx = txManager;
 
+        _attributeConsistency = consistency;
         // try to get database dialect specific query engine
-        _sqlDriver = FsSqlDriver.getDriverInstance(dataSource);
+        _sqlDriver = FsSqlDriver.getDriverInstance(dataSource, _attributeConsistency);
     }
 
     public void setQuota(QuotaHandler quota) {
@@ -1482,6 +1487,7 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
             sb.append("rootID    : ").append(e.getMessage()).append('\n');
         }
         sb.append("FsId      : ").append(_fsId).append('\n');
+        sb.append("Wcc       : ").append(_attributeConsistency).append("\n");
         return sb.toString();
     }
 
