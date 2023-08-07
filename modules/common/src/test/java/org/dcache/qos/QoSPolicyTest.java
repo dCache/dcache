@@ -225,10 +225,10 @@ public class QoSPolicyTest {
             for (int j = 0; j < mLen; ++j) {
                 QoSStorageMediumSpecification origSpec = media.get(j);
                 JSONObject jsonSpec = mediaArray.getJSONObject(j);
-                assertEquals("storage element at " + j + " does not match!",
+                assertEquals("storage medium at " + j + " does not match!",
                       origSpec.getStorageMedium().name(),
-                      jsonSpec.getString("storageElement"));
-                assertEquals("storage element type does not match",
+                      jsonSpec.getString("storageMedium"));
+                assertEquals("storage medium type does not match",
                       origSpec.getType(), jsonSpec.getString("type"));
                 switch (origSpec.getStorageMedium()) {
                     case DISK:

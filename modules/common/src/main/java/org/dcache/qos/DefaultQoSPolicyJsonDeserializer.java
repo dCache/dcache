@@ -73,7 +73,7 @@ public class DefaultQoSPolicyJsonDeserializer {
     private static final String STATES = "states";
     private static final String DURATION = "duration";
     private static final String MEDIA = "media";
-    private static final String STORAGE_ELEMENT = "storageElement";
+    private static final String STORAGE_MEDIUM = "storageMedium";
     private static final String TYPE = "type";
     private static final String NUMBER_OF_COPIES = "numberOfCopies";
     private static final String PARTITION_KEYS = "partitionKeys";
@@ -112,7 +112,7 @@ public class DefaultQoSPolicyJsonDeserializer {
     }
 
     private static QoSStorageMediumSpecification deserializeStorageElement(JSONObject jsonMedia) {
-        switch(jsonMedia.getEnum(QoSStorageMedium.class, STORAGE_ELEMENT)) {
+        switch(jsonMedia.getEnum(QoSStorageMedium.class, STORAGE_MEDIUM)) {
             case DISK:
                 DefaultQoSDiskSpecification diskSpec = new DefaultQoSDiskSpecification();
                 if (jsonMedia.has(TYPE)) {
