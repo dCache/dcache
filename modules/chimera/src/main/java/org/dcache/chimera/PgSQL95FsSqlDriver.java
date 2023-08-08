@@ -80,6 +80,7 @@ public class PgSQL95FsSqlDriver extends FsSqlDriver {
             case "strong":
                 enableLazyWcc = false;
                 enableSoftUpdate = false;
+                break;
             default:
                 throw new IllegalArgumentException("Unsupported attribute consistency option '" + consistency + "'");
         }
