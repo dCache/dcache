@@ -1282,14 +1282,6 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
     }
 
     @Override
-    public void removeTag(FsInode dir) throws ChimeraFsException {
-        inTransaction(status -> {
-            _sqlDriver.removeTag(dir);
-            return null;
-        });
-    }
-
-    @Override
     public int getTag(FsInode inode, String tagName, byte[] data, int offset, int len)
           throws ChimeraFsException {
         return _sqlDriver.getTag(inode, tagName, data, offset, len);

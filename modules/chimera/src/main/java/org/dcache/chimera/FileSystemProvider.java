@@ -361,8 +361,6 @@ public interface FileSystemProvider extends Closeable {
     void removeTag(FsInode dir, String tagName)
           throws ChimeraFsException;
 
-    void removeTag(FsInode dir) throws ChimeraFsException;
-
     int getTag(FsInode inode, String tagName, byte[] data,
           int offset, int len) throws ChimeraFsException;
 

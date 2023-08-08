@@ -309,7 +309,7 @@ public class FsSqlDriver {
         // ensure that t_inodes and t_tags_inodes updated in the same order as
         // in mkdir
         decNlink(parent);
-        removeTag(inode);
+        removeAllTags(inode);
 
         if (!removeInodeIfUnlinked(inode, true)) {
             throw new DirNotEmptyChimeraFsException("directory is not empty");
@@ -350,7 +350,7 @@ public class FsSqlDriver {
 
         boolean isDir = inode.isDirectory();
         if (isDir) {
-            removeTag(inode);
+            removeAllTags(inode);
         }
 
         for (Long parent : parents) {
@@ -1309,7 +1309,7 @@ public class FsSqlDriver {
         }
     }
 
-    void removeTag(FsInode dir) {
+    protected void removeAllTags(FsInode dir) {
         /* Get the name of the tags to be removed.
          */
         _jdbc.queryForList("SELECT itagname FROM t_tags WHERE inumber=?", String.class, dir.ino())
