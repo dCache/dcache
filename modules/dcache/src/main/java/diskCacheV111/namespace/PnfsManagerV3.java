@@ -210,6 +210,7 @@ public class PnfsManagerV3
     private boolean quotaEnabled;
 
     private boolean useParentHashOnCreate;
+    private boolean useParallelListing;
 
     /**
      * Whether to use folding.
@@ -314,8 +315,14 @@ public class PnfsManagerV3
         this.quotaEnabled = quotaEnabled;
     }
 
+    @Required
     public void setUseParentHashOnCreate(boolean useParentHashOnCreate) {
         this.useParentHashOnCreate = useParentHashOnCreate;
+    }
+
+    @Required
+    public void setUseParallelListing(boolean useParallelListing) {
+        this.useParallelListing = useParallelListing;
     }
 
     @Required
@@ -429,20 +436,44 @@ public class PnfsManagerV3
             executor.execute(new ProcessThread(_fifos[i]));
         }
 
-        /**
-         * Start separate queues for list operations.
-         */
-        _listQueues =  new BlockingQueue[_listThreads];
-         for (int i = 0; i < _listQueues.length; i++) {
-            if (_queueMaxSize > 0) {
-                _listQueues[i] = new LinkedBlockingQueue<>(_queueMaxSize);
-            } else {
-                _listQueues[i] = new LinkedBlockingQueue<>();
-            }
-            ProcessThread t = new ProcessThread(_listQueues[i]);
-            _listProcessThreads.add(t);
-            executor.execute(t);
-        }
+	if (useParallelListing) {
+	    /**
+	     * when using parallel listing we have _listThreads
+	     * consumers serving a single queue.
+	     */
+	    _listQueues =  new BlockingQueue[1];
+	    if (_queueMaxSize > 0) {
+		_listQueues[0] = new LinkedBlockingQueue<>(_queueMaxSize);
+	    } else {
+		_listQueues[0] = new LinkedBlockingQueue<>();
+	    }
+
+	    /**
+	     * spawn consumers
+	     */
+	    for (int i = 0; i < _listThreads; i++) {
+		ProcessThread t = new ProcessThread(_listQueues[0]);
+		_listProcessThreads.add(t);
+		executor.execute(t);
+	    }
+	} else {
+	    /**
+	     * Start separate _listThreads queues for list operations.
+	     * each consumer processes a dedicated queue
+	     */
+	    _listQueues =  new BlockingQueue[_listThreads];
+	    for (int i = 0; i < _listQueues.length; i++) {
+		if (_queueMaxSize > 0) {
+		    _listQueues[i] = new LinkedBlockingQueue<>(_queueMaxSize);
+		} else {
+		    _listQueues[i] = new LinkedBlockingQueue<>();
+		}
+		ProcessThread t = null;
+		t = new ProcessThread(_listQueues[i]);
+		_listProcessThreads.add(t);
+		executor.execute(t);
+	    }
+	}
     }
 
     public void shutdown() throws InterruptedException {
@@ -2195,25 +2226,28 @@ public class PnfsManagerV3
             _messageCount++;
             _msg.setMessageCount(_messageCount);
 
-            /**
-             * fold other list requests for the same target in the queue
-             */
 
-            for (CellMessage message : _fifo) {
+            if (!useParallelListing) {
+                /**
+                 * fold other list requests for the same target in the queue
+                 */
 
-		PnfsMessage other = (PnfsMessage) message.getMessageObject();
+                for (CellMessage message : _fifo) {
 
-                if (other.invalidates(_msg)) {
-                    break;
-                }
+                    PnfsMessage other = (PnfsMessage) message.getMessageObject();
 
-                if (other.fold(_msg)) {
-		    other.setReply();
-                    CellPath source = message.getSourcePath().revert();
-                    CellMessage parcel = new CellMessage(source, other);
-                    parcel.setLastUOID(message.getUOID());
-                    sendMessage(parcel);
-                    ((PnfsListDirectoryMessage)other).clear();
+                    if (other.invalidates(_msg)) {
+                        break;
+                    }
+
+                    if (other.fold(_msg)) {
+                        other.setReply();
+                        CellPath source = message.getSourcePath().revert();
+                        CellMessage parcel = new CellMessage(source, other);
+                        parcel.setLastUOID(message.getUOID());
+                        sendMessage(parcel);
+                        ((PnfsListDirectoryMessage)other).clear();
+                    }
                 }
             }
             _msg.clear();
@@ -2607,7 +2641,16 @@ public class PnfsManagerV3
             throw new InvalidMessageCacheException("Missing PNFS id and path");
         }
 
-        int index = (int)(Math.abs((long)Objects.hashCode(path.toString())) % _listThreads);
+	int index = 0;
+
+	if (!useParallelListing) {
+	    index = (int)(Math.abs((long)Objects.hashCode(path.toString())) % _listThreads);
+	}
+
+	/**
+	 * when useParallelListing is true, we only have 1 queue in the
+	 * list of queues below
+	 */
 
         if (!_listQueues[index].offer(envelope)) {
             throw new MissingResourceCacheException("PnfsManager queue limit exceeded");
