@@ -455,7 +455,7 @@
 
   <bean id="http-transfer-service-parent" abstract="true"
             class="org.dcache.http.HttpTransferService" depends-on="rep">
-        <description>HTTP transfer service</description>
+        <description>Abstract HTTP transfer service</description>
         <property name="postTransferService" ref="post-transfer-service"/>
         <property name="threads" value="${pool.mover.http.threads}"/>
         <property name="chunkSize" value="${pool.mover.http.chunk-size}"/>
@@ -473,7 +473,9 @@
         <property name="customHeaders" ref="custom-headers"/>
     </bean>
 
-    <bean id="http-transfer-service"  parent="http-transfer-service-parent"/>
+    <bean id="http-transfer-service"  parent="http-transfer-service-parent">
+        <description>HTTP transfer service</description>
+    </bean>
 
   <bean id="remote-http-transfer-service" class="org.dcache.pool.classic.RemoteHttpTransferService"
           depends-on="rep" destroy-method="shutdown">
@@ -790,7 +792,14 @@
         </bean>
 
         <bean id="https-transfer-service" parent="http-transfer-service-parent" class="org.dcache.http.HttpsTransferService">
+            <description>HTTPS transfer service</description>
             <property name="sslContext" ref="netty-ssl-context-builder" />
+            <property name="portRange">
+                <bean class="org.dcache.util.NettyPortRange">
+                    <constructor-arg value="${pool.mover.https.port.min}"/>
+                    <constructor-arg value="${pool.mover.https.port.max}"/>
+                </bean>
+            </property>
         </bean>
     </beans>
 
