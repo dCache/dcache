@@ -340,8 +340,11 @@ grid_tests:
   script:
     - kubectl -n $K8S_NAMESPACE create -f .ci/cvmfs-volume-storageclass-pvc.yaml
     - kubectl -n $K8S_NAMESPACE create -f .ci/wn-with-cvmfs.yaml
-    - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod cvmfs-demo; do sleep 1; done
-    - kubectl -n $K8S_NAMESPACE exec cvmfs-demo -- ls /cvmfs/grid.cern.ch/
+    - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod grid-tester; do sleep 1; done
+    - kubectl -n $K8S_NAMESPACE exec grid-tester -- ls /cvmfs/grid.cern.ch/umd-c7wn-latest/etc/profile.d/setup-c7-wn-example.sh
+    - kubectl -n $K8S_NAMESPACE  cp .ci/run-grid-tests.sh grid-tester:/run-grid-tests.sh
+    - kubectl -n $K8S_NAMESPACE exec grid-tester -- /bin/sh /run-grid-tests.sh
+
 
 pynfs_tests:
   stage: testing
