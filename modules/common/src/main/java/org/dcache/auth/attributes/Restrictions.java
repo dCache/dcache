@@ -165,10 +165,10 @@ public class Restrictions {
         }
 
         @Override
-        public boolean isRestricted(Activity activity, FsPath directory, String name, boolean skipSymlink) {
+        public boolean isRestricted(Activity activity, FsPath directory, String name, boolean skipPrefixCheck) {
             for (Restriction r : restrictions) {
-                r.setPathResolver(skipSymlink? getIdentityResolver() : getPathResolver());
-                if (r.isRestricted(activity, directory, name)) {
+                r.setPathResolver(getPathResolver());
+                if (r.isRestricted(activity, directory, name, skipPrefixCheck)) {
                     return true;
                 }
             }
