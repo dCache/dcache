@@ -45,14 +45,13 @@ public class PrefixRestriction implements Restriction {
 
     @Override
     public boolean isRestricted(Activity activity, FsPath path) {
-        return isRestricted(activity, path, getPathResolver());
+        return isRestricted(activity, path, false);
     }
 
     @Override
     public boolean isRestricted(Activity activity, FsPath directory, String child,
-          boolean skipSymlinkResolution) {
-        return isRestricted(activity, directory.child(child),
-              skipSymlinkResolution ? getIdentityResolver() : getPathResolver());
+          boolean skipPrefixCheck) {
+        return isRestricted(activity, directory.child(child), skipPrefixCheck);
     }
 
     @Override
@@ -144,18 +143,23 @@ public class PrefixRestriction implements Restriction {
         return sb.append(']').toString();
     }
 
-    private boolean isRestricted(Activity activity, FsPath path, Function<FsPath, FsPath> resolver) {
-        for (FsPath prefix : prefixes) {
-            prefix = resolver.apply(prefix);
-            path = resolver.apply(path);
-            if (path.hasPrefix(prefix)) {
-                return false;
-            }
-            if (prefix.hasPrefix(path) && (activity == Activity.READ_METADATA
-                  || activity == Activity.LIST)) {
-                return false;
+    private boolean isRestricted(Activity activity, FsPath path, boolean skipPrefixCheck) {
+        if (skipPrefixCheck) {
+            return !(activity == Activity.READ_METADATA || activity == Activity.LIST);
+        } else {
+            for (FsPath prefix : prefixes) {
+                prefix = getPathResolver().apply(prefix);
+                path = getPathResolver().apply(path);
+                if (path.hasPrefix(prefix)) {
+                    return false;
+                }
+                if (prefix.hasPrefix(path) && (activity == Activity.READ_METADATA
+                      || activity == Activity.LIST)) {
+                    return false;
+                }
             }
         }
+
         return true;
     }
 }
