@@ -4,8 +4,11 @@ FROM almalinux:9-minimal
 
 ENV DCACHE_INSTALL_DIR=/opt/dcache
 
+# Neede by groupadd and useradd
+RUN microdnf -y install shadow-utils
+
 # Add JRE
-RUN microdnf -y install shadow-utils java-17-openjdk-headless openssh-clients
+RUN microdnf -y install java-17-openjdk-headless openssh-clients
 
 # Run dCache as user 'dcache'
 RUN groupadd dcache && useradd -r -g dcache dcache
