@@ -125,7 +125,10 @@ container:
   # For latest releases see https://github.com/GoogleContainerTools/kaniko/releases
   # Only debug/*-debug versions of the Kaniko image are known to work within Gitlab CI
   image: gcr.io/kaniko-project/executor:debug
-  needs: ["tar"]
+  needs:
+    - tar
+  dependencies:
+    - tar
   script:
     - |-
       tag=$CI_COMMIT_SHORT_SHA
@@ -275,7 +278,8 @@ upload_container:
   # For latest releases see https://github.com/GoogleContainerTools/kaniko/releases
   # Only debug/*-debug versions of the Kaniko image are known to work within Gitlab CI
   image: gcr.io/kaniko-project/executor:debug
-  needs: ["tar"]
+  dependencies:
+    - tar
   rules:
     - if: $CI_COMMIT_TAG
     - if: $CI_COMMIT_BRANCH
