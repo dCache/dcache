@@ -146,6 +146,10 @@ With respect to the example scanner domain: the scanner communicates directly wi
 so `chimera.db.host` should be set explicitly if it is not running on the same host
 as the database.
 
+> NOTE:  As of dCache 9.2, the singleton configuration has been removed.  Each of the
+> separate services can be run together in one domain or in separate domains, but it is
+> no longer possible to run the entire QoS component suite as a single service.
+
 ### Memory requirements
 
 While it is possible to run QoS in the same domain as other services,
