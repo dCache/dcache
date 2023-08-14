@@ -57,96 +57,89 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.services.bulk;
+package org.dcache.services.bulk.store.jdbc.request;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.io.Serializable;
+import static org.dcache.services.bulk.util.BulkServiceStatistics.getTimestamp;
 
-public class BulkRequestTargetInfo implements Serializable {
+import java.sql.Timestamp;
+import java.text.ParseException;
+import java.util.Set;
+import org.dcache.db.JdbcCriterion;
+import org.dcache.services.bulk.BulkArchivedSummaryFilter;
 
-    private static final long serialVersionUID = 6429036134346585765L;
+/**
+ * Implementation of criterion class for querying the request archive table.
+ */
+public final class JdbcArchivedBulkRequestCriterion extends JdbcCriterion {
 
-    private String target;
-    private String state;
-    private Long submittedAt;
-    private Long startedAt;
-    private Long finishedAt;
-    private String errorType;
-    private String errorMessage;
-    private long id;
-
-    @JsonIgnore
-    private transient boolean initial;
-
-    public boolean isInitial() {
-        return initial;
+    public JdbcArchivedBulkRequestCriterion() {
+        sorter = "last_modified";
     }
 
-    public void setInitial(boolean initial) {
-        this.initial = initial;
+    public JdbcArchivedBulkRequestCriterion uids(String... uids) {
+        addOrClause("uid = ?", (Object[]) uids);
+        return this;
     }
 
-    public long getId() {
-        return id;
+    public JdbcArchivedBulkRequestCriterion owner(String... owner) {
+        addOrClause("owner = ?", (Object[]) owner);
+        return this;
     }
 
-    public void setId(long id) {
-        this.id = id;
+    public JdbcArchivedBulkRequestCriterion activity(String... activity) {
+        addOrClause("activity = ?", (Object[]) activity);
+        return this;
     }
 
-    public String getTarget() {
-        return target;
+    public JdbcArchivedBulkRequestCriterion modifiedBefore(Long lastModified) {
+        if (lastModified != null) {
+            addClause("last_modified <= ?", new Timestamp(lastModified));
+        }
+        return this;
     }
 
-    public void setTarget(String target) {
-        this.target = target;
+    public JdbcArchivedBulkRequestCriterion modifiedAfter(Long lastModified) {
+        if (lastModified != null) {
+            addClause("last_modified >= ?", new Timestamp(lastModified));
+        }
+        return this;
     }
 
-    public String getState() {
-        return state;
+    public JdbcArchivedBulkRequestCriterion status(String ... status) {
+        addOrClause("status = ?", (Object[]) status);
+        return this;
     }
 
-    public void setState(String state) {
-        this.state = state;
+    public JdbcArchivedBulkRequestCriterion fromFilter(BulkArchivedSummaryFilter filter)
+          throws ParseException {
+        activity(toArray(filter.getActvity()));
+        owner(toArray(filter.getOwner()));
+        status(toArray(filter.getStatus()));
+        modifiedBefore(getTimestamp(filter.getBefore()));
+        modifiedAfter(getTimestamp(filter.getAfter()));
+        return this;
     }
 
-    public Long getSubmittedAt() {
-        return submittedAt;
+    public JdbcArchivedBulkRequestCriterion classifier(String classifier) {
+        this.classifier = classifier;
+        return this;
     }
 
-    public void setSubmittedAt(Long submittedAt) {
-        this.submittedAt = submittedAt;
+    public JdbcArchivedBulkRequestCriterion sorter(String sorter) {
+        this.sorter = sorter;
+        return this;
     }
 
-    public Long getStartedAt() {
-        return startedAt;
+    public JdbcArchivedBulkRequestCriterion reverse(Boolean reverse) {
+        this.reverse = reverse;
+        return this;
     }
 
-    public void setStartedAt(Long startedAt) {
-        this.startedAt = startedAt;
-    }
+    private static String[] toArray(Set<String> set) {
+        if (set == null) {
+            return null;
+        }
 
-    public Long getFinishedAt() {
-        return finishedAt;
-    }
-
-    public void setFinishedAt(Long finishedAt) {
-        this.finishedAt = finishedAt;
-    }
-
-    public String getErrorType() {
-        return errorType;
-    }
-
-    public void setErrorType(String errorType) {
-        this.errorType = errorType;
-    }
-
-    public String getErrorMessage() {
-        return errorMessage;
-    }
-
-    public void setErrorMessage(String errorMessage) {
-        this.errorMessage = errorMessage;
+        return set.toArray(String[]::new);
     }
 }

@@ -59,94 +59,71 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.Serializable;
 
-public class BulkRequestTargetInfo implements Serializable {
+/**
+ * Summary listing for archived request.
+ */
+public class BulkArchivedSummaryInfo implements Serializable {
 
-    private static final long serialVersionUID = 6429036134346585765L;
+    private static final long serialVersionUID = 5955821283286162913L;
 
-    private String target;
-    private String state;
-    private Long submittedAt;
-    private Long startedAt;
-    private Long finishedAt;
-    private String errorType;
-    private String errorMessage;
-    private long id;
+    private String uid;
+    private String owner;
+    private String activity;
+    private Long lastModified;
+    private String status;
 
-    @JsonIgnore
-    private transient boolean initial;
+    public BulkArchivedSummaryInfo() {
 
-    public boolean isInitial() {
-        return initial;
     }
 
-    public void setInitial(boolean initial) {
-        this.initial = initial;
+    public BulkArchivedSummaryInfo(String uid, String owner, Long lastModified, String activity,
+          String status) {
+        this.uid = uid;
+        this.owner = owner;
+        this.lastModified = lastModified;
+        this.activity = activity;
+        this.status = status;
     }
 
-    public long getId() {
-        return id;
+    public String getUid() {
+        return uid;
     }
 
-    public void setId(long id) {
-        this.id = id;
+    public void setUid(String uid) {
+        this.uid = uid;
     }
 
-    public String getTarget() {
-        return target;
+    public String getOwner() {
+        return owner;
     }
 
-    public void setTarget(String target) {
-        this.target = target;
+    public void setOwner(String owner) {
+        this.owner = owner;
     }
 
-    public String getState() {
-        return state;
+    public String getActivity() {
+        return activity;
     }
 
-    public void setState(String state) {
-        this.state = state;
+    public void setActivity(String activity) {
+        this.activity = activity;
     }
 
-    public Long getSubmittedAt() {
-        return submittedAt;
+    public Long getLastModified() {
+        return lastModified;
     }
 
-    public void setSubmittedAt(Long submittedAt) {
-        this.submittedAt = submittedAt;
+    public void setLastModified(Long lastModified) {
+        this.lastModified = lastModified;
     }
 
-    public Long getStartedAt() {
-        return startedAt;
+    public String getStatus() {
+        return status;
     }
 
-    public void setStartedAt(Long startedAt) {
-        this.startedAt = startedAt;
-    }
-
-    public Long getFinishedAt() {
-        return finishedAt;
-    }
-
-    public void setFinishedAt(Long finishedAt) {
-        this.finishedAt = finishedAt;
-    }
-
-    public String getErrorType() {
-        return errorType;
-    }
-
-    public void setErrorType(String errorType) {
-        this.errorType = errorType;
-    }
-
-    public String getErrorMessage() {
-        return errorMessage;
-    }
-
-    public void setErrorMessage(String errorMessage) {
-        this.errorMessage = errorMessage;
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

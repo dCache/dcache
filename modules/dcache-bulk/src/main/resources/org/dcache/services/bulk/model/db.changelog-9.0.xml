@@ -519,4 +519,55 @@
         <dropColumn tableName="bulk_request" columnName="arguments"/>
     </changeSet>
 
+    <changeSet author="arossi" id="7.0" dbms="postgresql">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="request_archive"/>
+            </not>
+        </preConditions>
+
+        <createTable tableName="request_archive">
+            <column name="uid" type="varchar(64)">
+                <constraints primaryKey="true" nullable="false" primaryKeyName="idx_request_archive_id"/>
+            </column>
+            <column name="owner" type="varchar(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_modified" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="varchar(16)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="activity" type="varchar(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="info" type="bytea">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="request_archive"
+          indexName="idx_request_archive_owner">
+            <column name="owner"/>
+        </createIndex>
+
+        <createIndex tableName="request_archive"
+          indexName="idx_request_archive_lastmodified">
+            <column name="last_modified"/>
+        </createIndex>
+
+        <createIndex tableName="request_archive"
+          indexName="idx_request_archive_activity">
+            <column name="activity"/>
+        </createIndex>
+
+        <createIndex tableName="request_archive"
+          indexName="idx_request_archive_status">
+            <column name="status"/>
+        </createIndex>
+
+        <rollback/>
+    </changeSet>
+
 </databaseChangeLog>

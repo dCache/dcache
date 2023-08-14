@@ -59,94 +59,65 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.Serializable;
+import java.util.Set;
 
-public class BulkRequestTargetInfo implements Serializable {
+public class BulkArchivedSummaryFilter implements Serializable {
 
-    private static final long serialVersionUID = 6429036134346585765L;
+    private static final long serialVersionUID = -3303045383608101558L;
 
-    private String target;
-    private String state;
-    private Long submittedAt;
-    private Long startedAt;
-    private Long finishedAt;
-    private String errorType;
-    private String errorMessage;
-    private long id;
+    private Set<String> owner;
+    private Set<String> actvity;
+    private Set<String> status;
+    private String before;
+    private String after;
+    private Integer limit = 5000;
 
-    @JsonIgnore
-    private transient boolean initial;
-
-    public boolean isInitial() {
-        return initial;
+    public Set<String> getOwner() {
+        return owner;
     }
 
-    public void setInitial(boolean initial) {
-        this.initial = initial;
+    public void setOwner(Set<String> owner) {
+        this.owner = owner;
     }
 
-    public long getId() {
-        return id;
+    public Set<String> getActvity() {
+        return actvity;
     }
 
-    public void setId(long id) {
-        this.id = id;
+    public void setActvity(Set<String> actvity) {
+        this.actvity = actvity;
     }
 
-    public String getTarget() {
-        return target;
+    public Set<String> getStatus() {
+        return status;
     }
 
-    public void setTarget(String target) {
-        this.target = target;
+    public void setStatus(Set<String> status) {
+        this.status = status;
     }
 
-    public String getState() {
-        return state;
+    public String getBefore() {
+        return before;
     }
 
-    public void setState(String state) {
-        this.state = state;
+    public void setBefore(String before) {
+        this.before = before;
     }
 
-    public Long getSubmittedAt() {
-        return submittedAt;
+    public String getAfter() {
+        return after;
     }
 
-    public void setSubmittedAt(Long submittedAt) {
-        this.submittedAt = submittedAt;
+    public void setAfter(String after) {
+        this.after = after;
     }
 
-    public Long getStartedAt() {
-        return startedAt;
+    public Integer getLimit() {
+        return limit;
     }
 
-    public void setStartedAt(Long startedAt) {
-        this.startedAt = startedAt;
-    }
-
-    public Long getFinishedAt() {
-        return finishedAt;
-    }
-
-    public void setFinishedAt(Long finishedAt) {
-        this.finishedAt = finishedAt;
-    }
-
-    public String getErrorType() {
-        return errorType;
-    }
-
-    public void setErrorType(String errorType) {
-        this.errorType = errorType;
-    }
-
-    public String getErrorMessage() {
-        return errorMessage;
-    }
-
-    public void setErrorMessage(String errorMessage) {
-        this.errorMessage = errorMessage;
+    public void setLimit(Integer limit) {
+        this.limit = limit;
     }
 }
