@@ -95,8 +95,7 @@ public final class BulkServiceStatistics implements CellInfoProvider {
     private final Map<String, AtomicLong> requestTypes = new TreeMap<>();
     private final Map<String, AtomicLong> userRequests = new TreeMap<>();
     private final Map<String, AtomicLong> counts
-          = Map.of(RUNNING.name(), new AtomicLong(0L),
-          CANCELLED.name(), new AtomicLong(0L),
+          = Map.of(CANCELLED.name(), new AtomicLong(0L),
           COMPLETED.name(), new AtomicLong(0L),
           FAILED.name(), new AtomicLong(0L),
           SKIPPED.name(), new AtomicLong(0L));
@@ -153,10 +152,6 @@ public final class BulkServiceStatistics implements CellInfoProvider {
 
         pw.println("---------------- REQUESTS  (current) -----------------");
         pw.println(String.format(STATS_FORMAT, "Active", activeRequests.get()));
-        pw.println();
-
-        pw.println("----------------- TARGETS  (current) -----------------");
-        pw.println(String.format(STATS_FORMAT, RUNNING.name(), counts.get(RUNNING.name())));
         pw.println();
     }
 
