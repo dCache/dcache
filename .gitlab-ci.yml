@@ -310,19 +310,39 @@ prepare_k8s_env:
   script:
     - kubectl create namespace ${K8S_NAMESPACE}
 
+
 #
-# dispose kubernetes resources
+# collect all logs
 #
-cleanup_k8s_env:
+collect_logs:
   stage: testenv_post
   image: bitnami/kubectl:latest
   tags:
     - kubernetes
     - dcache-dev
   when: always
+  allow_failure: true
+  script:
+    - kubectl -n $K8S_NAMESPACE get pods | grep Running | awk '{print $1}' | xargs -n1 kubectl -n $K8S_NAMESPACE logs | tee $K8S_NAMESPACE.log
+  artifacts:
+    name: "logs-$CI_PIPELINE_ID"
+    paths:
+      - "$K8S_NAMESPACE.log"
+
+#
+# dispose kubernetes resources
+#
+cleanup_k8s_env:
+  stage: testenv_post
+  image: bitnami/kubectl:latest
+  needs:
+    - collect_logs
+  tags:
+    - kubernetes
+    - dcache-dev
+  when: always
   script:
     - kubectl delete namespace ${K8S_NAMESPACE} --grace-period=1 --ignore-not-found=true
-
 
 #
 # infrastructure required to run dCache
