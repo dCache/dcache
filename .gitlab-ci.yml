@@ -221,8 +221,6 @@ upload_rpm:
     - sign_rpm
   rules:
     - if: $CI_COMMIT_TAG
-    - if: $CI_COMMIT_BRANCH
-      when: manual
   script:
     - RPM_NAME=`ls packages/fhs/target/rpmbuild/RPMS/noarch/ | grep dcache`
     - VERSION=`echo $RPM_NAME | cut -d'-' -f 2 | cut -d'.' -f 1,2`
@@ -235,8 +233,6 @@ upload_srm_client_rpm:
     - sign_srm_client_rpm
   rules:
     - if: $CI_COMMIT_TAG
-    - if: $CI_COMMIT_BRANCH
-      when: manual
   script:
     - RPM_NAME=`ls modules/srm-client/target/rpmbuild/RPMS/noarch/ | grep dcache-srmclient`
     - VERSION=`echo $RPM_NAME | cut -d'-' -f 3 | cut -d'.' -f 1,2`
@@ -249,8 +245,6 @@ upload_deb:
     - sign_deb
   rules:
     - if: $CI_COMMIT_TAG
-    - if: $CI_COMMIT_BRANCH
-      when: manual
   script:
     - DEB_NAME=`ls packages/fhs/target/ | grep dcache`
     - VERSION=`echo $DEB_NAME | cut -d'_' -f 2 | cut -d'.' -f 1,2`
@@ -263,8 +257,6 @@ upload_tar:
     - tar
   rules:
     - if: $CI_COMMIT_TAG
-    - if: $CI_COMMIT_BRANCH
-      when: manual
   script:
     - TAR_NAME=`ls packages/tar/target/ | grep dcache`
     - VERSION=`echo $TAR_NAME | cut -d'-' -f 2 | cut -d'.' -f 1,2`
@@ -282,8 +274,6 @@ upload_container:
     - tar
   rules:
     - if: $CI_COMMIT_TAG
-    - if: $CI_COMMIT_BRANCH
-      when: manual
   script:
     - |-
       tag=$CI_COMMIT_SHORT_SHA
