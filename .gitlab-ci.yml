@@ -33,6 +33,26 @@ stages:
   - testenv_post
   - upload
 
+#
+# tags for kubernetes
+#
+.kubernetes_tags:
+  tags:
+    - kubernetes
+    - dcache-dev
+
+#
+# image and tags for kubernetes/helm
+#
+.kubernetes_image:
+  extends: .kubernetes_tags
+  image: bitnami/kubectl:latest
+
+.helm_image:
+  extends: .kubernetes_tags
+  image:
+    name: devth/helm:latest
+    entrypoint: ['']
 
 variables:
   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true -DskipTests -Dmaven.repo.local=.m2/repository"
@@ -299,10 +319,7 @@ upload_container:
 #
 prepare_k8s_env:
   stage: testenv_pre
-  image: bitnami/kubectl:latest
-  tags:
-    - kubernetes
-    - dcache-dev
+  extends: .kubernetes_image
   script:
     - kubectl create namespace ${K8S_NAMESPACE}
 
@@ -312,10 +329,7 @@ prepare_k8s_env:
 #
 collect_logs:
   stage: testenv_post
-  image: bitnami/kubectl:latest
-  tags:
-    - kubernetes
-    - dcache-dev
+  extends: .kubernetes_image
   when: always
   allow_failure: true
   script:
@@ -330,12 +344,9 @@ collect_logs:
 #
 cleanup_k8s_env:
   stage: testenv_post
-  image: bitnami/kubectl:latest
+  extends: .kubernetes_image
   needs:
     - collect_logs
-  tags:
-    - kubernetes
-    - dcache-dev
   when: always
   script:
     - kubectl delete namespace ${K8S_NAMESPACE} --grace-period=1 --ignore-not-found=true
@@ -345,12 +356,7 @@ cleanup_k8s_env:
 #
 deploy_infrastructure:
   stage: test_infra
-  image:
-    name: devth/helm:latest
-    entrypoint: ['']
-  tags:
-  - kubernetes
-  - dcache-dev
+  extends: .helm_image
   script:
     - helm repo add bitnami https://charts.bitnami.com/bitnami
     - helm repo update
@@ -360,12 +366,7 @@ deploy_infrastructure:
 
 deploy_dcache_helm:
   stage: test_deploy
-  image:
-    name: devth/helm:latest
-    entrypoint: ['']
-  tags:
-  - kubernetes
-  - dcache-dev
+  extends: .helm_image
   script:
     - |-
       tag=$CI_COMMIT_SHORT_SHA
@@ -391,11 +392,8 @@ deploy_dcache_helm:
 #
 grid_tests:
   stage: testing
-  image: bitnami/kubectl:latest
+  extends: .kubernetes_image
   allow_failure: true
-  tags:
-    - kubernetes
-    - dcache-dev
   script:
     - kubectl -n $K8S_NAMESPACE create -f .ci/cvmfs-volume-storageclass-pvc.yaml
     - kubectl -n $K8S_NAMESPACE create -f .ci/wn-with-cvmfs.yaml
@@ -407,10 +405,7 @@ grid_tests:
 
 pynfs_tests:
   stage: testing
-  image: bitnami/kubectl:latest
-  tags:
-    - kubernetes
-    - dcache-dev
+  extends: .kubernetes_image
   script:
     - kubectl config set-context --current --namespace=${K8S_NAMESPACE}
 
