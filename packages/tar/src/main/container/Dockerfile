@@ -5,20 +5,29 @@ FROM almalinux:9-minimal
 ENV DCACHE_INSTALL_DIR=/opt/dcache
 
 # Neede by groupadd and useradd
-RUN microdnf -y install shadow-utils
-
-# Add JRE
-RUN microdnf -y install java-17-openjdk-headless openssh-clients
+# REVISIT: in some environments base OS kernel doesnt allow use of xattrs and the installation of
+#          shadow-utils fails.
+# RUN microdnf -y install shadow-utils
 
 # Run dCache as user 'dcache'
-RUN groupadd dcache && useradd -r -g dcache dcache
+#
+# REVISIT: as we cant use groupadd and useradd add user/group manually
+#
+# RUN groupadd dcache && useradd -r -g dcache dcache
+RUN echo "dcache:x:1000:" >> /etc/group
+RUN echo "dcache:x:994:1000::/home/dcache:/bin/bash" >> /etc/passwd
+RUN echo "dcache:!!:18438::::::" >> /etc/shadow
+
+# Add JRE
+RUN microdnf -y install java-17-openjdk-headless
 
 # Add dCache
 COPY maven /opt/dcache
 
+# RUN microdnf -y install  openssh-clients
 # generate ssh keys
-RUN ssh-keygen -t rsa -b 2048 -N '' -f ${DCACHE_INSTALL_DIR}/etc/admin/ssh_host_rsa_key
-RUN chown dcache:dcache ${DCACHE_INSTALL_DIR}/etc/admin/ssh_host_rsa_key
+# RUN ssh-keygen -t rsa -b 2048 -N '' -f ${DCACHE_INSTALL_DIR}/etc/admin/ssh_host_rsa_key
+# RUN chown dcache:dcache ${DCACHE_INSTALL_DIR}/etc/admin/ssh_host_rsa_key
 
 # fix liquibase
 #RUN rm ${DCACHE_INSTALL_DIR}/share/classes/liquibase-core-*.jar
