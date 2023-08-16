@@ -373,15 +373,26 @@ deploy_dcache_helm:
 grid_tests:
   stage: testing
   extends: .kubernetes_image
-  allow_failure: true
   script:
-    - kubectl -n $K8S_NAMESPACE create -f .ci/cvmfs-volume-storageclass-pvc.yaml
-    - kubectl -n $K8S_NAMESPACE create -f .ci/wn-with-cvmfs.yaml
+    - kubectl -n $K8S_NAMESPACE apply -f .ci/cvmfs-volume-storageclass-pvc.yaml
+    - kubectl -n $K8S_NAMESPACE apply -f .ci/wn-with-cvmfs.yaml
     - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod grid-tester; do sleep 1; done
     - kubectl -n $K8S_NAMESPACE exec grid-tester -- ls /cvmfs/grid.cern.ch/umd-c7wn-latest/etc/profile.d/setup-c7-wn-example.sh
-    - kubectl -n $K8S_NAMESPACE  cp .ci/run-grid-tests.sh grid-tester:/run-grid-tests.sh
+    - kubectl -n $K8S_NAMESPACE cp .ci/init-grid-ui.sh grid-tester:/init-grid-ui.sh
+    - kubectl -n $K8S_NAMESPACE cp .ci/run-grid-tests.sh grid-tester:/run-grid-tests.sh
     - kubectl -n $K8S_NAMESPACE exec grid-tester -- /bin/sh /run-grid-tests.sh
 
+gsi_xroot_tests:
+  stage: testing
+  extends: .kubernetes_image
+  script:
+    - kubectl -n $K8S_NAMESPACE apply -f .ci/cvmfs-volume-storageclass-pvc.yaml
+    - kubectl -n $K8S_NAMESPACE apply -f .ci/wn-with-cvmfs-xroot.yaml
+    - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod xroot-tester; do sleep 1; done
+    - kubectl -n $K8S_NAMESPACE exec xroot-tester -- ls /cvmfs/grid.cern.ch/umd-c7wn-latest/etc/profile.d/setup-c7-wn-example.sh
+    - kubectl -n $K8S_NAMESPACE cp .ci/init-grid-ui.sh xroot-tester:/init-grid-ui.sh
+    - kubectl -n $K8S_NAMESPACE cp .ci/run-xroot-tests.sh xroot-tester:/run-xroot-tests.sh
+    - kubectl -n $K8S_NAMESPACE exec xroot-tester -- /bin/sh /run-xroot-tests.sh
 
 pynfs_tests:
   stage: testing
