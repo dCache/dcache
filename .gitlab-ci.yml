@@ -142,7 +142,7 @@ container:
     - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
     - >
       /kaniko/executor
-      --label dcache-testing
+      --label dcache.build=testing
       --context $CI_PROJECT_DIR
       --build-arg "EXTRA_PKG=openssl"
       --build-arg "EXTRA_RPM='https://www.desy.de/~tigran/ca_dCacheORG-3.0-6.noarch.rpm https://linuxsoft.cern.ch/wlcg/centos7/x86_64/desy-voms-all-1.0.0-1.noarch.rpm'"
@@ -290,7 +290,7 @@ upload_container:
     - echo "{\"auths\":{\"https://index.docker.io/v1/\":{\"username\":\"$DOCKER_HUB_USER\",\"password\":\"$DOCKER_HUB_ACCESS_KEY\"}}}" > /kaniko/.docker/config.json
     - >
       /kaniko/executor
-      --label dcache-GA
+      --label dcache.build=GA
       --context $CI_PROJECT_DIR
       --dockerfile $CI_PROJECT_DIR/Dockerfile
       --destination dcache/dcache:$tag
