@@ -3,6 +3,8 @@
 FROM almalinux:9-minimal
 
 ENV DCACHE_INSTALL_DIR=/opt/dcache
+ARG EXTRA_PKG
+ARG EXTRA_RPM
 
 # Neede by groupadd and useradd
 # REVISIT: in some environments base OS kernel doesnt allow use of xattrs and the installation of
@@ -19,7 +21,10 @@ RUN echo "dcache:x:994:1000::/home/dcache:/bin/bash" >> /etc/passwd
 RUN echo "dcache:!!:18438::::::" >> /etc/shadow
 
 # Add JRE
-RUN microdnf -y install java-17-openjdk-headless hostname which procps-ng
+RUN microdnf -y install java-17-openjdk-headless hostname which procps-ng $EXTRA_PKG
+
+# Install extra packages, if provided
+RUN if [ -n "EXTRA_RPM" ]; then for p in $EXTRA_RPM; do rpm -i $p; done; fi
 
 # Add dCache
 COPY maven /opt/dcache
