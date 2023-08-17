@@ -11,6 +11,8 @@ AutoReqProv: no
 
 Requires(pre): shadow-utils
 Requires: which
+Requires: hostname
+Requires: procps-ng
 Requires: java-11-headless
 
 %{?systemd_requires}
