@@ -164,8 +164,6 @@ container:
       /kaniko/executor
       --label dcache.build=testing
       --context $CI_PROJECT_DIR
-      --build-arg "EXTRA_PKG=openssl"
-      --build-arg "EXTRA_RPM='https://www.desy.de/~tigran/ca_dCacheORG-3.0-6.noarch.rpm https://linuxsoft.cern.ch/wlcg/centos7/x86_64/desy-voms-all-1.0.0-1.noarch.rpm'"
       --dockerfile $CI_PROJECT_DIR/Dockerfile
       --destination $CI_REGISTRY_IMAGE:$tag
 
