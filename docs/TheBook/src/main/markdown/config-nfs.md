@@ -178,7 +178,7 @@ id-mapping service. Please refer to [Chapter 10, Authorization in
 dCache](config-gplazma.md) for instructions about how to configure
 `gPlazma.
 
-For correct user id mapping nfs4 requires that server and client use the same naming scope, called nfs4domain. This implies a consistent configuration on both sides. To reduce deployment overhead a special auto-discovery mechanism was introduced by SUN Microsystems - a [DNS TXT](http://docs.oracle.com/cd/E19253-01/816-4555/epubp/index.html) record. dCache supports this discovery mechanism. When `nfs.domain` property is set, it gets used. If it’s left unset, then DNS TXT record for `_nfsv4idmapdomain` is taken or the default `localdomain` is used when DNS record is absent.
+For correct user id mapping nfs4 requires that server and client use the same naming scope, called nfs4domain. This implies a consistent configuration on both sides. To reduce deployment overhead a special auto-discovery mechanism was introduced by SUN Microsystems ( now Oracle) - a [DNS TXT](https://docs.oracle.com/cd/E19253-01/816-4555/epubp/index.html) record. dCache supports this discovery mechanism. When `nfs.domain` property is set, it gets used. If it’s left unset, then DNS TXT record for `_nfsv4idmapdomain` is taken or the default `localdomain` is used when DNS record is absent.
 
 To avoid big latencies and avoiding multiple queries for the same
 information, like ownership of a files in a big directory, the results
