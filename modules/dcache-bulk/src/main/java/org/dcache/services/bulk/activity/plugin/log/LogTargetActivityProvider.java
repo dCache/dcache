@@ -62,6 +62,7 @@ package org.dcache.services.bulk.activity.plugin.log;
 import static org.dcache.services.bulk.activity.BulkActivity.TargetType.BOTH;
 
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 import org.dcache.services.bulk.BulkServiceException;
 import org.dcache.services.bulk.activity.BulkActivityArgumentDescriptor;
@@ -82,12 +83,17 @@ public final class LogTargetActivityProvider extends BulkActivityProvider<LogTar
         return LogTargetActivity.class;
     }
 
-    public Set<BulkActivityArgumentDescriptor> getArguments() {
+    public Set<BulkActivityArgumentDescriptor> getDescriptors() {
         return Collections.EMPTY_SET;
     }
 
     @Override
     protected LogTargetActivity activityInstance() throws BulkServiceException {
         return new LogTargetActivity(activity, targetType);
+    }
+
+    @Override
+    public void configure(Map<String, Object> environment) {
+        // NOP
     }
 }

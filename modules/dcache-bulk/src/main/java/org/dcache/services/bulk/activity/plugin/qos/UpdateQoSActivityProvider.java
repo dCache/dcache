@@ -62,6 +62,7 @@ package org.dcache.services.bulk.activity.plugin.qos;
 import static org.dcache.services.bulk.activity.BulkActivity.TargetType.FILE;
 
 import com.google.common.collect.ImmutableSet;
+import java.util.Map;
 import java.util.Set;
 import org.dcache.services.bulk.BulkServiceException;
 import org.dcache.services.bulk.activity.BulkActivityArgumentDescriptor;
@@ -69,8 +70,10 @@ import org.dcache.services.bulk.activity.BulkActivityProvider;
 
 public final class UpdateQoSActivityProvider extends BulkActivityProvider<UpdateQoSActivity> {
 
-    static final BulkActivityArgumentDescriptor TARGET_QOS =
-          new BulkActivityArgumentDescriptor("targetQos",
+    static final String TARGET_QOS = "targetQos";
+
+    private static final BulkActivityArgumentDescriptor DEFAULT_DESCRIPTOR =
+          new BulkActivityArgumentDescriptor(TARGET_QOS,
                 "the desired qos transition ('disk' is limited to "
                       + "files with volatile/unknown qos status)",
                 "disk|tape|disk+tape",
@@ -86,12 +89,17 @@ public final class UpdateQoSActivityProvider extends BulkActivityProvider<Update
         return UpdateQoSActivity.class;
     }
 
-    public Set<BulkActivityArgumentDescriptor> getArguments() {
-        return ImmutableSet.of(TARGET_QOS);
+    public Set<BulkActivityArgumentDescriptor> getDescriptors() {
+        return ImmutableSet.of(DEFAULT_DESCRIPTOR);
     }
 
     @Override
     protected UpdateQoSActivity activityInstance() throws BulkServiceException {
         return new UpdateQoSActivity(activity, targetType);
+    }
+
+    @Override
+    public void configure(Map<String, Object> environment) {
+        // NOP
     }
 }

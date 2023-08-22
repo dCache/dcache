@@ -641,7 +641,7 @@ public final class BulkServiceCommands implements CellCommandListener {
             Sorter sorter = new Sorter(SortOrder.valueOf(sort.toUpperCase()));
             Set<BulkActivityArgumentDescriptor> descriptors = activityFactory.getProviders()
                   .get(activity)
-                  .getArguments();
+                  .getDescriptors();
             String arguments = descriptors.stream()
                   .map(BulkServiceCommands::formatArgument)
                   .sorted(sorter)

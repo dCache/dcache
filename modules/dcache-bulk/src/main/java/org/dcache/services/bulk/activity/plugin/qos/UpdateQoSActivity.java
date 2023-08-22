@@ -164,7 +164,7 @@ public class UpdateQoSActivity extends BulkActivity<QoSTransitionCompletedMessag
         if (arguments == null) {
             return;
         }
-        targetQos = arguments.get(TARGET_QOS.getName());
+        targetQos = arguments.get(TARGET_QOS);
     }
 
     @Override

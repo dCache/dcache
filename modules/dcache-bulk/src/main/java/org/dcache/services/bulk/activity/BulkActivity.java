@@ -109,6 +109,7 @@ public abstract class BulkActivity<R> {
     protected ExecutorService activityExecutor;
     protected ExecutorService callbackExecutor;
     protected BulkTargetRetryPolicy retryPolicy;
+    protected Set<BulkActivityArgumentDescriptor> descriptors;
 
     protected BulkActivity(String name, TargetType targetType) {
         this.name = name;
@@ -176,6 +177,10 @@ public abstract class BulkActivity<R> {
 
     public void setCallbackExecutor(ExecutorService callbackExecutor) {
         this.callbackExecutor = callbackExecutor;
+    }
+
+    public void setDescriptors(Set<BulkActivityArgumentDescriptor> descriptors) {
+        this.descriptors = descriptors;
     }
 
     public void setMaxPermits(int maxPermits) {

@@ -130,9 +130,12 @@ public final class DeleteActivity extends BulkActivity<PnfsDeleteEntryMessage> i
     @Override
     protected void configure(Map<String, String> arguments) {
         if (arguments == null) {
-            skipDirs = Boolean.parseBoolean(SKIP_DIRS.getDefaultValue());
+            /*
+             *  There is only one descriptor.
+             */
+            skipDirs = Boolean.parseBoolean(descriptors.iterator().next().getDefaultValue());
         } else {
-            skipDirs = Boolean.parseBoolean(arguments.get(SKIP_DIRS.getName()));
+            skipDirs = Boolean.parseBoolean(arguments.get(SKIP_DIRS));
         }
     }
 }

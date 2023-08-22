@@ -51,7 +51,11 @@ check -strong bulk.db.schema.auto
 check -strong bulk.db.fetch-size
 check -strong bulk.plugin!delete.max-permits
 check -strong bulk.plugin!pin.max-permits
+check -strong bulk.plugin!pin.default-lifetime
+check -strong bulk.plugin!pin.default-lifetime.unit
 check -strong bulk.plugin!stage.max-permits
+check -strong bulk.plugin!stage.default-lifetime
+check -strong bulk.plugin!stage.default-lifetime.unit
 check -strong bulk.plugin!unpin.max-permits
 check -strong bulk.plugin!release.max-permits
 check -strong bulk.plugin!update-qos.max-permits
