@@ -106,10 +106,6 @@ define context PoolDefaults endDefine
    flush set interval 60
    flush set retry delay 60
 
-   rh set timeout 14400
-   st set timeout 14400
-   rm set timeout 14400
-
    mover set max active 100
    p2p set max active 10
    jtm set timeout -queue=p2p -lastAccess=0 -total=0
