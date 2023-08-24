@@ -40,6 +40,7 @@ import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
 import com.google.common.net.InetAddresses;
 import com.google.common.net.MediaType;
+import com.google.common.net.PercentEscaper;
 import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.services.space.Space;
 import diskCacheV111.services.space.SpaceException;
@@ -113,6 +114,9 @@ import java.util.function.Consumer;
 import javax.annotation.PostConstruct;
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
 import org.dcache.auth.Origin;
 import org.dcache.auth.RolePrincipal;
 import org.dcache.auth.RolePrincipal.Role;
@@ -167,6 +171,9 @@ public class DcacheResourceFactory
     private static final Logger LOGGER =
           LoggerFactory.getLogger(DcacheResourceFactory.class);
 
+    private static final XMLOutputFactory XML_OUTPUT_FACTORY = XMLOutputFactory.newFactory();
+
+
     public static final String TRANSACTION_ATTRIBUTE = "org.dcache.transaction";
 
     private static final Set<FileAttribute> MINIMALLY_REQUIRED_ATTRIBUTES =
@@ -202,6 +209,15 @@ public class DcacheResourceFactory
         PERFORMANCE,
         CLIENT_COMPATIBLE
     };
+
+    private static final PercentEscaper METALINK_NAME_ESCAPER = new PercentEscaper("", false);
+
+    // See https://www.iana.org/assignments/hash-function-text-names/hash-function-text-names.xhtml
+    private static final Map<ChecksumType,String> METALINK_NAMES_FOR_CHECKSUMS = Map.of(
+            ChecksumType.MD5_TYPE, "md5",
+            ChecksumType.SHA1, "sha-1",
+            ChecksumType.SHA256, "sha-256",
+            ChecksumType.SHA512, "sha-512");
 
     /**
      * In progress transfers. The key of the map is the session id of the transfer.
@@ -1087,6 +1103,125 @@ public class DcacheResourceFactory
               Range.<Integer>all());
 
         t.write(new AutoIndentWriter(out));
+    }
+
+    /**
+     * Performs a directory listing, writing a metalink description.
+     */
+    public void metalink(FsPath path, Writer out, URI uri)
+            throws InterruptedException, CacheException, IOException, XMLStreamException {
+        if (!_isAnonymousListingAllowed && Subjects.isNobody(getSubject())) {
+            throw new PermissionDeniedCacheException("Access denied");
+        }
+
+        XMLStreamWriter sw = XML_OUTPUT_FACTORY.createXMLStreamWriter(out);
+
+        sw.writeStartDocument();
+
+        DirectoryListPrinter printer =
+              new DirectoryListPrinter() {
+                  @Override
+                  public Set<FileAttribute> getRequiredAttributes() {
+                      return Set.of(MODIFICATION_TIME, TYPE, SIZE, CHECKSUM);
+                  }
+
+                  private FileAttributes entryAttributes(FsPath dir, DirectoryEntry entry) {
+                      FileAttributes attr = entry.getFileAttributes();
+                      switch (attr.getFileType()) {
+                          case LINK:
+                              String entryPath = dir.child(entry.getName()).toString();
+                              try {
+                                  return _pnfs.getFileAttributes(entryPath,
+                                        getRequiredAttributes());
+                              } catch (CacheException e) {
+                                  LOGGER.debug("Symlink lookup of {} failed with {}",
+                                        entryPath, e.getMessage());
+                                  return attr;
+                              }
+
+                          default:
+                              return attr;
+                      }
+                  }
+
+                  @Override
+                  public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry) {
+                      FileAttributes attr = entryAttributes(dir, entry);
+                      var mtime = Instant.ofEpochMilli(attr.getModificationTime());
+                      String safeName = METALINK_NAME_ESCAPER.escape(entry.getName());
+                      URI target = uri.resolve(safeName);
+
+                      if (attr.getFileType() != REGULAR && attr.getFileType() != LINK) {
+                          return;
+                      }
+
+                      /* FIXME: SIZE is defined if client specifies the
+                       * file's size before uploading.
+                       */
+                      if (attr.getFileType() == REGULAR && !attr.isDefined(SIZE)) {
+                          return;
+                      }
+
+                      try {
+                          sw.writeStartElement("file");
+                          try {
+                              sw.writeAttribute("name", entry.getName());
+
+                              if (attr.isDefined(SIZE)) {
+                                  sw.writeStartElement("size");
+                                  try {
+                                      sw.writeCharacters(Long.toString(attr.getSize()));
+                                  } finally {
+                                      sw.writeEndElement();
+                                  }
+                              }
+                              if (attr.isDefined(CHECKSUM)) {
+                                  for (Checksum checksum : attr.getChecksums()) {
+                                        String type = METALINK_NAMES_FOR_CHECKSUMS.get(checksum.getType());
+                                        if (type == null) {
+                                            continue;
+                                        }
+                                        sw.writeStartElement("hash");
+                                        try {
+                                            sw.writeAttribute("type", type);
+                                            sw.writeCharacters(checksum.getValue());
+                                        } finally {
+                                            sw.writeEndElement();
+                                        }
+                                  }
+                              }
+                              sw.writeStartElement("url");
+                              try {
+                                  sw.writeCharacters(target.toASCIIString());
+                              } finally {
+                                  sw.writeEndElement();
+                              }
+                              sw.writeStartElement("updated");
+                              try {
+                                  sw.writeCharacters(mtime.toString());
+                              } finally {
+                                  sw.writeEndElement();
+                              }
+                          } finally {
+                              sw.writeEndElement();
+                          }
+                      } catch (XMLStreamException e) {
+                          LOGGER.warn("Failed to process directory item {}: {}", entry.getName(),
+                              e.toString());
+                      }
+                  }
+              };
+
+        sw.writeStartElement("metalink");
+        sw.writeDefaultNamespace("urn:ietf:params:xml:ns:metalink");
+        try {
+            _list.printDirectory(getSubject(), getRestriction(), printer, path, null,
+                  Range.<Integer>all());
+        } finally {
+            sw.writeEndElement();
+        }
+
+        sw.writeEndDocument();
     }
 
     /**

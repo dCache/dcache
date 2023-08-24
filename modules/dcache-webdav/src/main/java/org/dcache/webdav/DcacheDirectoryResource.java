@@ -5,6 +5,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.dcache.namespace.FileAttribute.STORAGEINFO;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.net.MediaType;
 import diskCacheV111.services.space.Space;
 import diskCacheV111.services.space.SpaceException;
 import diskCacheV111.util.CacheException;
@@ -20,6 +21,7 @@ import io.milton.http.LockTimeout;
 import io.milton.http.LockToken;
 import io.milton.http.Range;
 import io.milton.http.Request;
+import io.milton.http.Response;
 import io.milton.http.exceptions.BadRequestException;
 import io.milton.http.exceptions.ConflictException;
 import io.milton.http.exceptions.NotAuthorizedException;
@@ -39,6 +41,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -47,6 +50,7 @@ import java.util.Map;
 import java.util.Optional;
 import javax.xml.namespace.QName;
 import org.dcache.space.ReservationCaches;
+import javax.xml.stream.XMLStreamException;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,6 +64,13 @@ public class DcacheDirectoryResource
       MakeCollectionableResource, LockingCollectionResource,
       MultiNamespaceCustomPropertyResource {
 
+    /**
+     * An EntityWriter provides the entity (i.e., the contents) of a GET request.
+     */
+    private interface EntityWriter {
+        public void writeEntity(Writer writer) throws InterruptedException, CacheException, IOException;
+    };
+
     private static final Logger LOGGER = LoggerFactory.getLogger(DcacheDirectoryResource.class);
 
     private static final String DAV_NAMESPACE_URI = "DAV:";
@@ -72,6 +83,16 @@ public class DcacheDirectoryResource
 
     private static final PropertyMetaData READONLY_LONG = new PropertyMetaData(READ_ONLY,
           Long.class);
+
+    private static final MediaType DEFAULT_ENTITY_TYPE = MediaType.HTML_UTF_8;
+    private static final MediaType METALINK_ENTITY_TYPE = MediaType.create("application", "metalink4+xml");
+
+    private final Map<MediaType,EntityWriter> supportedMediaTypes = Map.of(
+        DEFAULT_ENTITY_TYPE, this::htmlEntity,
+        METALINK_ENTITY_TYPE, this::metalinkEntity);
+
+    private final Map<String,MediaType> supportedResponseMediaTypes = Map.of(
+        "metalink", METALINK_ENTITY_TYPE);
 
     private final boolean _allAttributes;
 
@@ -157,9 +178,10 @@ public class DcacheDirectoryResource
           throws IOException, NotAuthorizedException {
         try {
             Writer writer = new OutputStreamWriter(out, UTF_8);
-            if (!_factory.deliverClient(_path, writer)) {
-                _factory.list(_path, writer);
-            }
+            MediaType type = MediaType.parse(contentType);
+            EntityWriter entityWriter = Optional.ofNullable(supportedMediaTypes.get(type))
+                .orElseThrow();
+            entityWriter.writeEntity(writer);
             writer.flush();
         } catch (PermissionDeniedCacheException e) {
             throw WebDavExceptions.permissionDenied(this);
@@ -171,6 +193,27 @@ public class DcacheDirectoryResource
         }
     }
 
+    private void htmlEntity(Writer writer) throws IOException, InterruptedException,
+            CacheException {
+        if (_factory.deliverClient(_path, writer)) {
+            return;
+        }
+
+        _factory.list(_path, writer);
+    }
+
+    private void metalinkEntity(Writer writer) throws IOException,
+            InterruptedException, CacheException {
+        Request request = HttpManager.request();
+        // NB. Milton ensures directory URLs end with a '/' by issuing a redirection if not.
+        URI uri = URI.create(request.getAbsoluteUrl());
+        try {
+            _factory.metalink(_path, writer, uri);
+        } catch (XMLStreamException e) {
+            throw new WebDavException("Failed to write metalink description: " + e, this);
+        }
+    }
+
     @Override
     public Long getMaxAgeSeconds(Auth auth) {
         return null;
@@ -178,7 +221,37 @@ public class DcacheDirectoryResource
 
     @Override
     public String getContentType(String accepts) {
-        return "text/html; charset=utf-8";
+        Request request = HttpManager.request();
+        Map<String,String> params = request.getParams();
+        MediaType type = Optional.ofNullable(params)
+            .map(p -> p.get("type"))
+            .flatMap(Optional::ofNullable)
+            .map(supportedResponseMediaTypes::get)
+            .flatMap(Optional::ofNullable)
+            .orElseGet(() -> Requests.selectResponseType(accepts,
+                        supportedMediaTypes.keySet(), DEFAULT_ENTITY_TYPE));
+
+        // We must set the "Link" HTTP response header here, as we want it to appear for both HEAD
+        // and GET requests, and (not unreasonably) Milton doesn't call sendContent for HEAD requests.
+        if (type.equals(DEFAULT_ENTITY_TYPE)) {
+            /* There is a slight subtly here.  A GET request that targets a directory with a
+             * non-trailing-slash URL (e.g., "https://example.org/my-directory") triggers Milton to
+             * issue a redirection to the corresponding trailing-slash URL
+             * (e.g., "https://example.org/my-directory/").  This redirection does not happen for
+             * HEAD requets.  Therefore, metalinkUrl may be a non-trailing-slash URL for HEAD
+             * requests, while this cannot happen for GET requests.
+             *
+             * A non-trailing-slash metalinkUrl value is not a problem as a corresponding GET
+             * request will trigger a similiar redirection (to the equivalent trailing-slash URL)
+             * while preserving the query parameter.
+             */
+            String metalinkUrl = HttpManager.request().getAbsoluteUrl() + "?type=metalink";
+            String linkValue = String.format("<%s>; rel=describedby; type=\"%s\"", metalinkUrl,
+                    METALINK_ENTITY_TYPE);
+            HttpManager.response().setNonStandardHeader("Link", linkValue);
+        }
+
+        return type.toString();
     }
 
     @Override
