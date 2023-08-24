@@ -33,27 +33,6 @@ stages:
   - testenv_post
   - upload
 
-#
-# tags for kubernetes
-#
-.kubernetes_tags:
-  tags:
-    - kubernetes
-    - dcache-dev
-
-#
-# image and tags for kubernetes/helm
-#
-.kubernetes_image:
-  extends: .kubernetes_tags
-  image: bitnami/kubectl:latest
-
-.helm_image:
-  extends: .kubernetes_tags
-  image:
-    name: devth/helm:latest
-    entrypoint: ['']
-
 variables:
   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true -DskipTests -Dmaven.repo.local=.m2/repository"
   K8S_NAMESPACE: dcache-build-$CI_PIPELINE_ID
@@ -61,11 +40,32 @@ variables:
   AUTOCA_URL: https://ci.dcache.org/ca
   DCACHE_HELM_REPO: https://gitlab.desy.de/api/v4/projects/7648/packages/helm/test
 
-rpm:
-  stage: build
-  image: dcache/maven-java11-rpm-build
-  # Cache downloaded dependencies and plugins between builds.
-  # To keep cache across branches add 'key: "$CI_JOB_NAME"'
+
+#
+# default tags and image for testing stages/kubernetes/helm 
+#
+.kubernetes_tags:
+  tags:
+    - kubernetes
+    - dcache-dev
+
+.kubernetes_image:
+  extends: .kubernetes_tags
+  image: bitnami/kubectl:latest
+  
+.helm_image:
+  extends: .kubernetes_tags
+  image:
+    name: devth/helm:latest
+    entrypoint: ['']
+
+
+#
+# default cache konfiguration for maven build jobs
+# Cache downloaded dependencies and plugins between builds.
+# To keep cache across branches add 'key: "$CI_JOB_NAME"'
+#
+.build_cache:
   cache:
     key:
       files:
@@ -73,6 +73,20 @@ rpm:
       prefix: "$CI_JOB_NAME"
     paths:
       - ./.m2/repository
+
+#
+# default rules for upload stage
+#
+.upload_rules:
+  rules:
+    - if: $CI_COMMIT_TAG
+
+
+
+rpm:
+  stage: build
+  image: dcache/maven-java11-rpm-build
+  extends: .build_cache
   script:
     - mvn $MAVEN_CLI_OPTS -am -pl packages/fhs -P rpm clean package
   artifacts:
@@ -83,15 +97,7 @@ rpm:
 srm_client_rpm:
   stage: build
   image: dcache/maven-java11-rpm-build
-  # Cache downloaded dependencies and plugins between builds.
-  # To keep cache across branches add 'key: "$CI_JOB_NAME"'
-  cache:
-    key:
-      files:
-        - pom.xml
-      prefix: "$CI_JOB_NAME"
-    paths:
-      - ./.m2/repository
+  extends: .build_cache
   script:
     - mvn $MAVEN_CLI_OPTS -am -pl modules/srm-client package -P rpm
   artifacts:
@@ -102,15 +108,7 @@ srm_client_rpm:
 deb:
   stage: build
   image: dcache/maven-java11-deb-build
-  # Cache downloaded dependencies and plugins between builds.
-  # To keep cache across branches add 'key: "$CI_JOB_NAME"'
-  cache:
-    key:
-      files:
-        - pom.xml
-      prefix: "$CI_JOB_NAME"
-    paths:
-      - ./.m2/repository
+  extends: .build_cache
   script:
     - mvn $MAVEN_CLI_OPTS -am -pl packages/fhs -P deb clean package
   artifacts:
@@ -121,15 +119,7 @@ deb:
 tar:
   stage: build
   image: dcache/maven-java11-tar-build
-  # Cache downloaded dependencies and plugins between builds.
-  # To keep cache across branches add 'key: "$CI_JOB_NAME"'
-  cache:
-    key:
-      files:
-        - pom.xml
-      prefix: "$CI_JOB_NAME"
-    paths:
-      - ./.m2/repository
+  extends: .build_cache
   script:
     - mvn $MAVEN_CLI_OPTS -am -pl packages/tar clean package
   artifacts:
@@ -140,8 +130,6 @@ tar:
 
 container:
   stage: build
-  # Cache downloaded dependencies and plugins between builds.
-  # To keep cache across branches add 'key: "$CI_JOB_NAME"'
   # For latest releases see https://github.com/GoogleContainerTools/kaniko/releases
   # Only debug/*-debug versions of the Kaniko image are known to work within Gitlab CI
   image: gcr.io/kaniko-project/executor:debug
@@ -240,8 +228,6 @@ upload_rpm:
   image: almalinux:8
   dependencies:
     - sign_rpm
-  rules:
-    - if: $CI_COMMIT_TAG
   script:
     - RPM_NAME=`ls packages/fhs/target/rpmbuild/RPMS/noarch/ | grep dcache`
     - VERSION=`echo $RPM_NAME | cut -d'-' -f 2 | cut -d'.' -f 1,2`
@@ -252,8 +238,7 @@ upload_srm_client_rpm:
   image: almalinux:8
   dependencies:
     - sign_srm_client_rpm
-  rules:
-    - if: $CI_COMMIT_TAG
+  extends: .upload_rules
   script:
     - RPM_NAME=`ls modules/srm-client/target/rpmbuild/RPMS/noarch/ | grep dcache-srmclient`
     - VERSION=`echo $RPM_NAME | cut -d'-' -f 3 | cut -d'.' -f 1,2`
@@ -264,8 +249,7 @@ upload_deb:
   image: almalinux:8
   dependencies:
     - sign_deb
-  rules:
-    - if: $CI_COMMIT_TAG
+  extends: .upload_rules
   script:
     - DEB_NAME=`ls packages/fhs/target/ | grep dcache`
     - VERSION=`echo $DEB_NAME | cut -d'_' -f 2 | cut -d'.' -f 1,2`
@@ -276,8 +260,7 @@ upload_tar:
   image: almalinux:8
   dependencies:
     - tar
-  rules:
-    - if: $CI_COMMIT_TAG
+  extends: .upload_rules
   script:
     - TAR_NAME=`ls packages/tar/target/ | grep dcache`
     - VERSION=`echo $TAR_NAME | cut -d'-' -f 2 | cut -d'.' -f 1,2`
@@ -293,8 +276,7 @@ upload_container:
   image: gcr.io/kaniko-project/executor:debug
   dependencies:
     - tar
-  rules:
-    - if: $CI_COMMIT_TAG
+  extends: .upload_rules
   script:
     - |-
       tag=$CI_COMMIT_SHORT_SHA
