@@ -355,7 +355,7 @@ deploy_dcache_helm:
       fi
     - helm repo add dcache ${DCACHE_HELM_REPO}
     - helm repo update
-    - helm -n ${K8S_NAMESPACE} install --wait --set image.tag=${tag} --set image.repository=gitlab.desy.de:5555/dcache/dcache store dcache/dcache
+    - helm -n ${K8S_NAMESPACE} install --wait --set image.tag=${tag} --set image.repository=${CI_REGISTRY_IMAGE} store dcache/dcache
 
 
 #
