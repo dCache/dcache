@@ -4,6 +4,7 @@ import static io.milton.property.PropertySource.PropertyAccessibility.READ_ONLY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.net.MediaType;
 import diskCacheV111.services.space.Space;
 import diskCacheV111.services.space.SpaceException;
 import diskCacheV111.util.CacheException;
@@ -19,6 +20,7 @@ import io.milton.http.LockTimeout;
 import io.milton.http.LockToken;
 import io.milton.http.Range;
 import io.milton.http.Request;
+import io.milton.http.Response;
 import io.milton.http.exceptions.BadRequestException;
 import io.milton.http.exceptions.ConflictException;
 import io.milton.http.exceptions.NotAuthorizedException;
@@ -38,12 +40,14 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import javax.xml.namespace.QName;
+import javax.xml.stream.XMLStreamException;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,6 +73,21 @@ public class DcacheDirectoryResource
 
     private static final PropertyMetaData READONLY_LONG = new PropertyMetaData(READ_ONLY,
           Long.class);
+
+    private static final MediaType DEFAULT_ENTITY_TYPE = MediaType.HTML_UTF_8;
+    private static final MediaType METALINK_ENTITY_TYPE = MediaType.create("application", "metalink4+xml");
+
+    private final Map<MediaType,EntityWriter> supportedMediaTypes = Map.of(
+        DEFAULT_ENTITY_TYPE, this::htmlEntity,
+        METALINK_ENTITY_TYPE, this::metalinkEntity);
+
+    private final Map<String,EntityWriter> supportedTargetTypes = Map.of(
+        "metalink", this::metalinkEntity);
+
+    private interface EntityWriter {
+        public void writeEntity(FsPath path, Writer writer) throws InterruptedException,
+            CacheException, IOException;
+    };
 
     public DcacheDirectoryResource(DcacheResourceFactory factory,
           FsPath path, FileAttributes attributes) {
@@ -151,9 +170,7 @@ public class DcacheDirectoryResource
           throws IOException, NotAuthorizedException {
         try {
             Writer writer = new OutputStreamWriter(out, UTF_8);
-            if (!_factory.deliverClient(_path, writer)) {
-                _factory.list(_path, writer);
-            }
+            acceptAwareResponse(_path, writer);
             writer.flush();
         } catch (PermissionDeniedCacheException e) {
             throw WebDavExceptions.permissionDenied(this);
@@ -162,6 +179,54 @@ public class DcacheDirectoryResource
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException("This should not happen as UTF-8 " +
                   "is a required encoding for JVM", e);
+        }
+    }
+
+    public void acceptAwareResponse(FsPath path, Writer writer)
+            throws InterruptedException, CacheException, IOException {
+        Request request = HttpManager.request();
+
+        var params = request.getParams();
+        if (params != null) {
+            var target = params.get("target");
+            if (target != null) {
+                var entity = supportedTargetTypes.get(target);
+                if (entity != null) {
+                    entity.writeEntity(path, writer);
+                    return;
+                }
+            }
+        }
+
+        MediaType responseType = Requests.selectResponseType(request, supportedMediaTypes.keySet(),
+            MediaType.HTML_UTF_8);
+        EntityWriter entity = supportedMediaTypes.get(responseType);
+        entity.writeEntity(path, writer);
+    }
+
+    private void htmlEntity(FsPath path, Writer writer) throws IOException, InterruptedException,
+            CacheException {
+        if (_factory.deliverClient(_path, writer)) {
+            return;
+        }
+
+        _factory.list(_path, writer);
+    }
+
+    private void metalinkEntity(FsPath path, Writer writer) throws IOException,
+            InterruptedException, CacheException {
+        Response response = HttpManager.response();
+        response.setContentTypeHeader(METALINK_ENTITY_TYPE.toString());
+
+        Request request = HttpManager.request();
+        String url = request.getAbsoluteUrl();
+        String urlWithTrailingSlash = url.endsWith("/") ? url : (url + "/");
+        URI uri = URI.create(urlWithTrailingSlash);
+        try {
+            _factory.metalink(_path, writer, uri);
+        } catch (XMLStreamException e) {
+            LOGGER.warn("Failed to write metalink description: {}", e.toString());
+            throw new WebDavException("Failed to write metalink description: " + e, this); // This probably doesn't work.
         }
     }
 
