@@ -57,54 +57,25 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.qos.services.adjuster.adjusters;
-
-import com.google.common.collect.ImmutableList;
-import diskCacheV111.util.PnfsId;
-import javax.security.auth.Subject;
-import org.dcache.pool.classic.Cancellable;
-import org.dcache.pool.repository.StickyRecord;
-import org.dcache.qos.data.QoSAction;
-import org.dcache.qos.services.adjuster.handlers.QoSAdjustTaskCompletionHandler;
-import org.dcache.qos.services.adjuster.util.QoSAdjusterTask;
-import org.dcache.qos.util.MessageGuard;
-import org.dcache.vehicles.FileAttributes;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+package org.dcache.auth;
 
 /**
- * Parent class for adjusters. Generates a QOS session id for the remote messaging to identify
- * events originating here.
+ *  A Principal which assigns a role-based authorization with respect to a uid.
+ *  While this code replicates the UidPrincipal, it needs to be independent so
+ *  that its presence does not violate the requirement of only one Uid principal
+ *  per user.
  */
-public abstract class QoSAdjuster implements Cancellable {
+@AuthenticationOutput
+@AuthenticationInput
+abstract class UidRolePrincipal extends AbstractUidPrincipal {
 
-    protected static final Logger LOGGER = LoggerFactory.getLogger(QoSAdjuster.class);
-    protected static final Logger ACTIVITY_LOGGER = LoggerFactory.getLogger("org.dcache.qos-log");
-    protected static final ImmutableList<StickyRecord> ONLINE_STICKY_RECORD
-          = ImmutableList.of(new StickyRecord("system", StickyRecord.NON_EXPIRING));
+    private static final long serialVersionUID = 3405254609909807921L;
 
-    protected PnfsId pnfsId;
-    protected FileAttributes attributes;
-    protected QoSAction action;
-    protected Subject subject ;
-    protected QoSAdjustTaskCompletionHandler completionHandler;
-
-    public void adjustQoS(QoSAdjusterTask task) {
-        pnfsId = task.getPnfsId();
-        action = task.getAction();
-        attributes = task.getAttributes();
-        subject = task.getSubject();
-
-        /*
-         *  Generate the SESSION ID.   This is used by the QoS status endpoint
-         *  (requirements listener or QoS engine) to exclude location updates
-         *  which result from copies or actions initiated here (an optimization
-         *  so as not to resend redundant verification requests).
-         */
-        MessageGuard.setQoSSession();
-
-        runAdjuster(task);
+    protected UidRolePrincipal(long uid) {
+        super(uid);
     }
 
-    protected abstract void runAdjuster(QoSAdjusterTask task);
+    protected UidRolePrincipal(String uid) {
+        super(uid);
+    }
 }

@@ -59,8 +59,13 @@ documents or software obtained from this server.
  */
 package org.dcache.qos.util;
 
+import java.security.Principal;
+import java.util.Iterator;
+import java.util.Set;
 import javax.security.auth.Subject;
-
+import org.dcache.auth.AdminRolePrincipal;
+import org.dcache.auth.QoSPlaceholderRolePrincipal;
+import org.dcache.auth.QoSRolePrincipal;
 import org.dcache.auth.Subjects;
 import org.dcache.vehicles.FileAttributes;
 
@@ -68,10 +73,13 @@ public class QoSPermissionUtils {
 
     /**
      * Determines if the user is allowed to modify qos.
-     * Currently the user must either be the owner of the file or be ROOT.
      *
-     * @param subject
-     * @param attributes
+     * This is a user-facing check done up front by the engine.   Verifications and
+     * adjustments initiated by the QoS service itself are done as ROOT and
+     * do not need checking.
+     *
+     * @param subject of the message received.
+     * @param attributes with OWNER defined.
      */
     public static boolean canModifyQos(Subject subject, FileAttributes attributes) {
         if (subject == null) {
@@ -86,7 +94,33 @@ public class QoSPermissionUtils {
              */
             return false;
         }
-        return Subjects.isRoot(subject) || Subjects.getUid(subject) == attributes.getOwner();
+
+        long owner = attributes.getOwner();
+
+        Set<Principal> principals = subject.getPrincipals();
+
+        for (Iterator<Principal> i = principals.iterator(); i.hasNext();) {
+            Principal next = i.next();
+
+            if (next instanceof AdminRolePrincipal) {
+                return true;
+            }
+
+            /*
+             *  This may not be something we have immediate need for, but the OR logic here
+             *  allows for there being multiple specifications of qos permissions
+             *  on different uids.
+             */
+            if (next instanceof QoSPlaceholderRolePrincipal && Subjects.getUid(subject) == owner) {
+                return true;
+            }
+
+            if (next instanceof QoSRolePrincipal && ((QoSRolePrincipal) next).getUid() == owner) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private QoSPermissionUtils() {

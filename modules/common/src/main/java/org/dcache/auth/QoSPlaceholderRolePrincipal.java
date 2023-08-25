@@ -57,54 +57,33 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.qos.services.adjuster.adjusters;
+package org.dcache.auth;
 
-import com.google.common.collect.ImmutableList;
-import diskCacheV111.util.PnfsId;
-import javax.security.auth.Subject;
-import org.dcache.pool.classic.Cancellable;
-import org.dcache.pool.repository.StickyRecord;
-import org.dcache.qos.data.QoSAction;
-import org.dcache.qos.services.adjuster.handlers.QoSAdjustTaskCompletionHandler;
-import org.dcache.qos.services.adjuster.util.QoSAdjusterTask;
-import org.dcache.qos.util.MessageGuard;
-import org.dcache.vehicles.FileAttributes;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.UUID;
 
 /**
- * Parent class for adjusters. Generates a QOS session id for the remote messaging to identify
- * events originating here.
+ *  Authorizes the user to execute QoS transitions on the files belonging to that user.
+ *  The user's uid is not specified in the construction of the principal and must
+ *  be derived from the user's actual Uid principal.  The placeholder uid value
+ *  is simply an attempt to give each object a unique random value for hashing purposes
+ *  and should not be called in order to reference an actual uid.
  */
-public abstract class QoSAdjuster implements Cancellable {
+@AuthenticationOutput
+@AuthenticationInput
+public class QoSPlaceholderRolePrincipal extends UidRolePrincipal {
 
-    protected static final Logger LOGGER = LoggerFactory.getLogger(QoSAdjuster.class);
-    protected static final Logger ACTIVITY_LOGGER = LoggerFactory.getLogger("org.dcache.qos-log");
-    protected static final ImmutableList<StickyRecord> ONLINE_STICKY_RECORD
-          = ImmutableList.of(new StickyRecord("system", StickyRecord.NON_EXPIRING));
+    private static final long serialVersionUID = 7355594681811638281L;
 
-    protected PnfsId pnfsId;
-    protected FileAttributes attributes;
-    protected QoSAction action;
-    protected Subject subject ;
-    protected QoSAdjustTaskCompletionHandler completionHandler;
+    private static final long PLACEHOLDER_FOR_USER_UID = Long.MAX_VALUE;
 
-    public void adjustQoS(QoSAdjusterTask task) {
-        pnfsId = task.getPnfsId();
-        action = task.getAction();
-        attributes = task.getAttributes();
-        subject = task.getSubject();
+    private final long placeholderUid;
 
-        /*
-         *  Generate the SESSION ID.   This is used by the QoS status endpoint
-         *  (requirements listener or QoS engine) to exclude location updates
-         *  which result from copies or actions initiated here (an optimization
-         *  so as not to resend redundant verification requests).
-         */
-        MessageGuard.setQoSSession();
-
-        runAdjuster(task);
+    public QoSPlaceholderRolePrincipal() {
+        super(PLACEHOLDER_FOR_USER_UID);
+        placeholderUid = UUID.randomUUID().getLeastSignificantBits();
     }
 
-    protected abstract void runAdjuster(QoSAdjusterTask task);
+    public long getUid() {
+        return placeholderUid;
+    }
 }
