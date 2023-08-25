@@ -74,7 +74,6 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 import javax.security.auth.Subject;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.MessageReply;
@@ -161,13 +160,14 @@ public final class FileQoSStatusHandler implements CellInfoProvider, QoSActionCo
         });
     }
 
-    public Future<QoSRequirementsModifiedMessage> handleQoSModification(
+    public MessageReply<QoSRequirementsModifiedMessage> handleQoSModification(
           QoSRequirementsModifiedMessage message) {
         counters.increment(QOS_MODIFIED.name());
         final FileQoSRequirements requirements = message.getRequirements();
         final Subject subject = message.getSubject();
         PnfsId pnfsId = requirements.getPnfsId();
-        return executor.submit(() -> {
+        MessageReply<QoSRequirementsModifiedMessage> reply = new MessageReply<>();
+        executor.submit(() -> {
             Exception exception = null;
             try {
                 LOGGER.debug("handleQoSModification calling fileQoSRequirementsModified for {}.",
@@ -198,7 +198,10 @@ public final class FileQoSStatusHandler implements CellInfoProvider, QoSActionCo
                       requirements.getPnfsId(), exception.getMessage());
                 handleActionCompleted(pnfsId, VOID, exception.toString());
             }
-        }, message);
+            reply.reply(message);
+        });
+
+        return reply;
     }
 
     public void handleQoSModificationCancelled(PnfsId pnfsId, Subject subject) {
