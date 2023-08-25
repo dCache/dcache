@@ -151,7 +151,8 @@ public class UpdateQoSActivity extends BulkActivity<QoSTransitionCompletedMessag
         client.setRequirementsService(qosEngine);
 
         try {
-            client.fileQoSRequirementsModified(requirements, subject);
+            ListenableFuture asyncFuture = client.fileQoSRequirementsModifiedAsync(requirements, subject);
+            responseReceiver.setAsyncListener(pnfsId, asyncFuture);
         } catch (CacheException | InterruptedException | NoRouteToCellException e) {
             return Futures.immediateFailedFuture(e);
         }
