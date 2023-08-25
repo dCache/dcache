@@ -302,10 +302,11 @@ class WriteHandleImpl implements ModifiableReplicaDescriptor {
         }
 
         /* If nothing was uploaded, we delete the replica and leave the name space
-         * entry it is virgin state.
+         * entry in its virgin state except for setting the file size to zero.
          */
         long length = _entry.getReplicaSize();
         if (length == 0) {
+            _fileAttributes.setSize(length);
             _targetState = ReplicaState.REMOVED;
             if (why == null) {
                 why = "replica is empty";
