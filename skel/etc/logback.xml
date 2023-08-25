@@ -80,7 +80,6 @@
     </else>
   </if>
 
-
   <appender name="pinboard" class="dmg.util.PinboardAppender">
     <layout>
       <pattern>${dcache.log.format.pinboard}</pattern>
@@ -150,12 +149,22 @@
     </then>
   </if>
 
-
   <appender name="resilience" class="ch.qos.logback.core.rolling.RollingFileAppender">
-    <file>${dcache.log.dir}/${dcache.domain.name}.resilience</file>
+    <file>${dcache.log.dir}/resilience-activity.log</file>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-      <fileNamePattern>${dcache.log.dir}/${dcache.domain.name}.resilience.%d{yyyy-MM-dd}.gz</fileNamePattern>
+      <fileNamePattern>${dcache.log.dir}/resilience-activity.%d{yyyy-MM-dd}.gz</fileNamePattern>
       <maxHistory>${dcache.log.resilience.max-history}</maxHistory>
+    </rollingPolicy>
+    <encoder>
+      <pattern>${dcache.log.format.file}</pattern>
+    </encoder>
+  </appender>
+
+  <appender name="qos" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>${dcache.log.dir}/qos-activity.log</file>
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <fileNamePattern>${dcache.log.dir}/qos-activity.%d{yyyy-MM-dd}.gz</fileNamePattern>
+      <maxHistory>${dcache.log.qos.max-history}</maxHistory>
     </rollingPolicy>
     <encoder>
       <pattern>${dcache.log.format.file}</pattern>
@@ -164,13 +173,8 @@
 
   <if condition='!"${dcache.log.level.kafka}".equals("off")'>
     <then>
-
       <!-- This is the kafkaAppender -->
-
-
       <appender name="kafka" class="com.github.danielwegener.logback.kafka.KafkaAppender">
-
-
         <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
           <layout class="org.dcache.alarms.logback.MarkerJsonLayout">
 
@@ -181,7 +185,6 @@
               <prettyPrint>true</prettyPrint>
             </jsonFormatter>
           </layout>
-
         </encoder>
         <!-- Regardless of the level to which the kafka appender is set,
              only messages marked as ALARM are allowed through -->
@@ -193,10 +196,7 @@
         <!-- producer configs are documented here: https://kafka.apache.org/documentation.html#newproducerconfigs -->
         <!-- bootstrap.servers is the only mandatory producerConfig -->
         <producerConfig>bootstrap.servers=${dcache.kafka.bootstrap-servers}</producerConfig>
-
       </appender>
-
-
     </then>
   </if>
 
@@ -229,6 +229,10 @@
 
   <logger name="org.dcache.resilience-log" additivity="false">
     <appender-ref ref="resilience"/>
+  </logger>
+
+  <logger name="org.dcache.qos-log" additivity="false">
+    <appender-ref ref="qos"/>
   </logger>
 
   <!-- Nothing is logged to this logger. Its sole purpose is to list
@@ -362,6 +366,12 @@
       <appender>resilience</appender>
       <logger>org.dcache.resilience-log</logger>
       <level>${dcache.log.level.resilience}</level>
+    </threshold>
+
+    <threshold>
+      <appender>qos</appender>
+      <logger>org.dcache.qos-log</logger>
+      <level>${dcache.log.level.qos}</level>
     </threshold>
 
   </turboFilter>
