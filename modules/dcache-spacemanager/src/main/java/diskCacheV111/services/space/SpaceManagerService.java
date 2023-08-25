@@ -775,7 +775,14 @@ public final class SpaceManagerService
              */
             fileRemoved(finished.getPnfsId());
         } else {
-            transferFinished(finished.getPnfsId(), finished.getFileAttributes().getSize());
+            long fileSize = 0;
+            if (finished.getFileAttributes().isDefined(FileAttribute.SIZE)) {
+                fileSize = finished.getFileAttributes().getSize();
+            } else {
+                LOGGER.warn("Transfer " + (finished.getReturnCode() == 0 ? "succeeded " : "failed ")
+                      + "and did not report a file size. Reporting as zero bytes.");
+            }
+            transferFinished(finished.getPnfsId(), fileSize);
         }
     }
 
