@@ -228,6 +228,7 @@ upload_rpm:
   image: almalinux:8
   dependencies:
     - sign_rpm
+  extends: .upload_rules
   script:
     - RPM_NAME=`ls packages/fhs/target/rpmbuild/RPMS/noarch/ | grep dcache`
     - VERSION=`echo $RPM_NAME | cut -d'-' -f 2 | cut -d'.' -f 1,2`
