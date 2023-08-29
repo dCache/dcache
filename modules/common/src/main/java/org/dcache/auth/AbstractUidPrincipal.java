@@ -101,6 +101,11 @@ abstract class AbstractUidPrincipal implements Principal, Serializable {
         if (this == other) {
             return true;
         }
+
+        if (other == null) {
+            return false;
+        }
+
         if (!(this.getClass().equals(other.getClass()))) {
             return false;
         }
