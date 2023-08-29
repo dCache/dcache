@@ -74,7 +74,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ScheduledExecutorService;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.qos.QoSException;
@@ -87,7 +86,7 @@ import org.dcache.qos.listeners.QoSAdjustmentListener;
 import org.dcache.qos.listeners.QoSRequirementsListener;
 import org.dcache.qos.services.verifier.data.PoolInfoMap;
 import org.dcache.qos.services.verifier.data.VerifyOperation;
-import org.dcache.qos.services.verifier.data.VerifyOperationMap;
+import org.dcache.qos.services.verifier.data.VerifyOperationManager;
 import org.dcache.qos.services.verifier.data.VerifyOperationState;
 import org.dcache.qos.services.verifier.data.VerifyScanRecordMap;
 import org.dcache.qos.services.verifier.util.QoSVerifierCounters;
@@ -120,7 +119,8 @@ import org.slf4j.LoggerFactory;
 public class VerifyOperationHandler implements VerifyAndUpdateHandler {
 
     private static final Logger LOGGER
-          = LoggerFactory.getLogger(VerifyOperationHandler.class);
+          = LoggerFactory.getLogger(
+          VerifyOperationHandler.class);
     private static final Logger ABORTED_LOGGER
           = LoggerFactory.getLogger("org.dcache.qos-log");
 
@@ -172,9 +172,9 @@ public class VerifyOperationHandler implements VerifyAndUpdateHandler {
     private VerifyScanRecordMap scanRecordMap;
 
     /**
-     * For communication with the store.
+     * Central component that communicates with the queues and store.
      */
-    private VerifyOperationMap fileOpMap;
+    private VerifyOperationManager manager;
 
     /**
      * For retrieval of pool configuration and availability information.
@@ -197,7 +197,6 @@ public class VerifyOperationHandler implements VerifyAndUpdateHandler {
      * Thread queues.
      */
     private ExecutorService updateExecutor;
-    private ScheduledExecutorService taskExecutor;
 
     /**
      * Statistics.
@@ -205,11 +204,7 @@ public class VerifyOperationHandler implements VerifyAndUpdateHandler {
     private QoSVerifierCounters counters;
 
     public void cancelCurrentFileOpForPool(String pool) {
-        fileOpMap.cancelFileOpForPool(pool, false);
-    }
-
-    public ScheduledExecutorService getTaskExecutor() {
-        return taskExecutor;
+        manager.cancelFileOpForPool(pool, false);
     }
 
     /**
@@ -225,12 +220,12 @@ public class VerifyOperationHandler implements VerifyAndUpdateHandler {
         updateExecutor.submit(() -> {
             switch (status) {
                 case FAILED:
-                    fileOpMap.updateOperation(pnfsId,
+                    manager.updateOperation(pnfsId,
                           CacheExceptionUtils.getCacheExceptionFrom(error));
                     break;
                 case CANCELLED:
                 case COMPLETED:
-                    fileOpMap.updateOperation(pnfsId, null);
+                    manager.updateOperation(pnfsId, null);
                     break;
                 default:
             }
@@ -257,7 +252,7 @@ public class VerifyOperationHandler implements VerifyAndUpdateHandler {
          */
         updateExecutor.submit(() -> {
             scanRecordMap.cancel(pool);
-            fileOpMap.cancelFileOpForPool(pool, true);
+            manager.cancelFileOpForPool(pool, true);
         });
     }
 
@@ -266,7 +261,7 @@ public class VerifyOperationHandler implements VerifyAndUpdateHandler {
      */
     public void handleFileOperationCancelled(PnfsId pnfsId) {
         counters.incrementReceived(QoSVerifierCounters.VRF_CNCL_MESSAGE);
-        updateExecutor.submit(() -> fileOpMap.cancel(pnfsId, true));
+        updateExecutor.submit(() -> manager.cancel(pnfsId, true));
     }
 
     /**
@@ -297,7 +292,7 @@ public class VerifyOperationHandler implements VerifyAndUpdateHandler {
      */
     public void handleUpdate(FileQoSUpdate data) {
         LOGGER.debug("handleUpdate, update to be registered: {}", data);
-        if (!fileOpMap.createOrUpdateOperation(data)) {
+        if (!manager.createOrUpdateOperation(data)) {
             LOGGER.debug("handleUpdate, operation already registered for: {}", data.getPnfsId());
             handleVerificationNop(data, false);
         }
@@ -309,7 +304,7 @@ public class VerifyOperationHandler implements VerifyAndUpdateHandler {
      * nothing else needs to be done; (c) sending an adjustment request to the adjustment listener.
      */
     public void handleVerification(PnfsId pnfsId) {
-        VerifyOperation operation = fileOpMap.getRunning(pnfsId);
+        VerifyOperation operation = manager.getRunning(pnfsId);
         if (operation == null) {
             LOGGER.debug(
                   "handleVerification: operation for {} id not in the RUNNING state; returning.",
@@ -324,7 +319,7 @@ public class VerifyOperationHandler implements VerifyAndUpdateHandler {
             LOGGER.debug(
                   "handleVerification: operation {} was terminated before processing; returning.",
                   operation);
-            fileOpMap.updateOperation(pnfsId, operation.getException());
+            manager.updateOperation(pnfsId, operation.getException());
             return;
         }
 
@@ -339,14 +334,14 @@ public class VerifyOperationHandler implements VerifyAndUpdateHandler {
 
             if (requirements == null) {
                 if (operation.getMessageType() == CLEAR_CACHE_LOCATION) {
-                    fileOpMap.voidOperation(operation);
+                    manager.updateVoided(operation);
                     return;
                 }
                 throw new QoSException("requirements could not be fetched; failing operation.");
             }
 
             if (!checkStorageUnit(operation, requirements)) {
-                fileOpMap.voidOperation(operation);
+                manager.updateVoided(operation);
                 return;
             }
 
@@ -378,7 +373,7 @@ public class VerifyOperationHandler implements VerifyAndUpdateHandler {
                 exception = new CacheException(
                       CacheException.UNEXPECTED_SYSTEM_EXCEPTION, message, c);
             }
-            fileOpMap.updateOperation(pnfsId, exception);
+            manager.updateOperation(pnfsId, exception);
             return;
         } catch (InterruptedException e) {
             LOGGER.debug("operation for {} was interrupted; returning.", pnfsId);
@@ -390,7 +385,7 @@ public class VerifyOperationHandler implements VerifyAndUpdateHandler {
         switch (action) {
             case VOID:
                 /**  signals the operation map so that the operation can be removed. **/
-                fileOpMap.voidOperation(operation);
+                manager.updateVoided(operation);
                 break;
             case NOTIFY_MISSING:
                 /**  signals the operation map so that the operation can be removed. **/
@@ -422,7 +417,7 @@ public class VerifyOperationHandler implements VerifyAndUpdateHandler {
                      *  FATAL error, should abort operation.
                      */
                     CacheException exception = CacheExceptionUtils.getCacheExceptionFrom(e);
-                    fileOpMap.updateOperation(pnfsId, exception);
+                    manager.updateOperation(pnfsId, exception);
                 }
         }
     }
@@ -501,8 +496,8 @@ public class VerifyOperationHandler implements VerifyAndUpdateHandler {
         this.counters = counters;
     }
 
-    public void setFileOpMap(VerifyOperationMap fileOpMap) {
-        this.fileOpMap = fileOpMap;
+    public void setManager(VerifyOperationManager manager) {
+        this.manager = manager;
     }
 
     public void setPoolInfoMap(PoolInfoMap poolInfoMap) {
@@ -519,10 +514,6 @@ public class VerifyOperationHandler implements VerifyAndUpdateHandler {
 
     public void setStatusVerifier(FileStatusVerifier statusVerifier) {
         this.statusVerifier = statusVerifier;
-    }
-
-    public void setTaskExecutor(ScheduledExecutorService taskExecutor) {
-        this.taskExecutor = taskExecutor;
     }
 
     public void setUpdateExecutor(ExecutorService updateExecutor) {
@@ -604,7 +595,7 @@ public class VerifyOperationHandler implements VerifyAndUpdateHandler {
          */
         operation.requestAdjustment(request, adjustmentListener);
 
-        fileOpMap.updateOperation(request);
+        manager.updateOperation(request);
     }
 
     private void handleInaccessibleFile(VerifyOperation operation) {
@@ -625,7 +616,7 @@ public class VerifyOperationHandler implements VerifyAndUpdateHandler {
               = CacheExceptionUtils.getCacheException(CacheException.PANIC, VERIFY_FAILURE_MESSAGE,
               pnfsId, VOID, error, null);
 
-        fileOpMap.updateOperation(pnfsId, exception);
+        manager.updateOperation(pnfsId, exception);
     }
 
     private void handlePoolSelectionError(VerifyOperation operation) {
@@ -639,7 +630,7 @@ public class VerifyOperationHandler implements VerifyAndUpdateHandler {
         CacheException exception
               = CacheExceptionUtils.getCacheException(CacheException.PANIC, VERIFY_FAILURE_MESSAGE,
               pnfsId, VOID, error, null);
-        fileOpMap.updateOperation(pnfsId, exception);
+        manager.updateOperation(pnfsId, exception);
     }
 
     private void handleNamespaceSyncError(PnfsId pnfsId) {
@@ -652,7 +643,7 @@ public class VerifyOperationHandler implements VerifyAndUpdateHandler {
               CacheException.PANIC,
               VERIFY_FAILURE_MESSAGE,
               pnfsId, VOID, error, null);
-        fileOpMap.updateOperation(pnfsId, exception);
+        manager.updateOperation(pnfsId, exception);
     }
 
     private void handleNoLocationsForFile(VerifyOperation operation) {
@@ -666,7 +657,7 @@ public class VerifyOperationHandler implements VerifyAndUpdateHandler {
               CacheException.PANIC,
               VERIFY_FAILURE_MESSAGE,
               pnfsId, VOID, error, null);
-        fileOpMap.updateOperation(pnfsId, exception);
+        manager.updateOperation(pnfsId, exception);
     }
 
     private void handleVerificationNop(FileQoSUpdate data, boolean failed) {

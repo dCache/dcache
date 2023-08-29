@@ -13,9 +13,10 @@ check -strong qos-verifier.db.fetch-size
 check -strong qos.limits.verifier.submit-threads
 check -strong qos.limits.verifier.bulk-threads
 check -strong qos.limits.verifier.task-threads
-check -strong qos.limits.verifier.remove-threads
+check -strong qos.limits.verifier.modify-task-threads
+check -strong qos.limits.verifier.scanner-task-threads
+check -strong qos.limits.verifier.post-process-threads
 check -strong qos.limits.verifier.max-running-operations
-check -strong qos.limits.verifier.cache-capacity
 check -strong qos.limits.verifier.operation-history
 check -strong qos.limits.verifier.operation-retries
 check -strong qos.limits.verifier.scan-period

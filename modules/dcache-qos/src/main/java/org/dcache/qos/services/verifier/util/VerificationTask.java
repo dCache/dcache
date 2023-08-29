@@ -61,6 +61,7 @@ package org.dcache.qos.services.verifier.util;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 import org.dcache.qos.services.verifier.handlers.VerifyAndUpdateHandler;
 import org.dcache.qos.util.ErrorAwareTask;
@@ -72,16 +73,19 @@ import org.slf4j.LoggerFactory;
  */
 public final class VerificationTask extends ErrorAwareTask {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(VerificationTask.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(
+          VerificationTask.class);
     private static final Consumer<CacheException> ERROR_HANDLER = e
           -> LOGGER.error("Error during fire and forget:", e);
 
     private final PnfsId pnfsId;
+    private final ExecutorService executor;
     private final VerifyAndUpdateHandler handler;
 
-    public VerificationTask(PnfsId pnfsId, VerifyAndUpdateHandler handler) {
+    public VerificationTask(PnfsId pnfsId, VerifyAndUpdateHandler handler, ExecutorService executor) {
         this.pnfsId = pnfsId;
         this.handler = handler;
+        this.executor = executor;
     }
 
     @Override
@@ -91,6 +95,6 @@ public final class VerificationTask extends ErrorAwareTask {
 
     public void submit() {
         setErrorHandler(ERROR_HANDLER);
-        handler.getTaskExecutor().submit(toFireAndForgetTask());
+        executor.submit(toFireAndForgetTask());
     }
 }

@@ -89,15 +89,12 @@ import org.dcache.qos.data.QoSMessageType;
 import org.dcache.qos.services.verifier.data.PoolInfoFilter;
 import org.dcache.qos.services.verifier.data.PoolInfoMap;
 import org.dcache.qos.services.verifier.data.VerifyOperationCancelFilter;
-import org.dcache.qos.services.verifier.data.VerifyOperationDaoDelegate;
-import org.dcache.qos.services.verifier.data.VerifyOperationDelegatingMap;
 import org.dcache.qos.services.verifier.data.VerifyOperationFilter;
+import org.dcache.qos.services.verifier.data.VerifyOperationManager;
 import org.dcache.qos.services.verifier.data.VerifyOperationState;
-import org.dcache.qos.services.verifier.handlers.VerifyOperationHandler;
 import org.dcache.qos.services.verifier.util.QoSVerifierCounters;
 import org.dcache.qos.util.InitializerAwareCommand;
 import org.dcache.qos.util.MapInitializer;
-import org.dcache.qos.util.MessageGuard;
 import org.dcache.qos.util.QoSHistory;
 import org.dcache.vehicles.FileAttributes;
 
@@ -296,7 +293,7 @@ public final class QoSVerifierAdmin implements CellCommandListener {
             try {
                 VerifyOperationFilter filter = getFilter();
                 forceRemoval |= Arrays.stream(state).collect(Collectors.toSet()).contains(WAITING);
-                fileOpMap.cancel(new VerifyOperationCancelFilter(filter, forceRemoval));
+                manager.cancel(new VerifyOperationCancelFilter(filter, forceRemoval));
                 return "Issued cancel command to cancel verify operations.";
             } catch (IllegalArgumentException e) {
                 return "Improper input: " + e.getMessage();
@@ -422,10 +419,10 @@ public final class QoSVerifierAdmin implements CellCommandListener {
             filter.setReverse(reverse);
 
             if (count) {
-                return fileOpMap.count(filter) + " matching pnfsids";
+                return manager.count(filter) + " matching pnfsids";
             }
 
-            long size = fileOpMap.size();
+            long size = manager.size();
             int limitValue = (int) size;
 
             if (limit == null) {
@@ -439,7 +436,7 @@ public final class QoSVerifierAdmin implements CellCommandListener {
                 limitValue = limit;
             }
 
-            return fileOpMap.list(filter, limitValue);
+            return manager.list(filter, limitValue);
         }
     }
 
@@ -457,9 +454,6 @@ public final class QoSVerifierAdmin implements CellCommandListener {
               usage = "sweep interval unit.")
         TimeUnit unit;
 
-        @Option(name = "capacity", usage = "Maximum size of in-memory operation cache.")
-        Integer capacity;
-
         @Option(name = "maxRunning", usage = "Maximum number of concurrent running operations.")
         Integer maxRunning;
 
@@ -473,25 +467,21 @@ public final class QoSVerifierAdmin implements CellCommandListener {
         @Override
         protected String doCall() throws Exception {
             if (sweep != null) {
-                fileOpMap.setTimeout(sweep);
+                manager.setTimeout(sweep);
                 if (unit != null) {
-                    fileOpMap.setTimeoutUnit(unit);
+                    manager.setTimeoutUnit(unit);
                 }
             }
 
-            if (capacity != null) {
-                cache.setCapacity(capacity);
-            }
-
             if (maxRunning != null) {
-                cache.setMaxRunning(maxRunning);
+                manager.setMaxRunning(maxRunning);
             }
 
             if (retries != null) {
-                fileOpMap.setMaxRetries(retries);
+                manager.setMaxRetries(retries);
             }
 
-            return fileOpMap.infoMessage();
+            return manager.infoMessage();
         }
     }
 
@@ -529,21 +519,11 @@ public final class QoSVerifierAdmin implements CellCommandListener {
     }
 
     private CellStub pnfsManager;
-    private MessageGuard messageGuard;
     private MapInitializer initializer;
     private PoolInfoMap poolInfoMap;
-    private VerifyOperationDelegatingMap fileOpMap;
-    private VerifyOperationDaoDelegate cache;
-    private VerifyOperationHandler fileOpHandler;
+    private VerifyOperationManager manager;
     private QoSVerifierCounters counters;
     private QoSHistory history;
-
-    /*
-     *  Needs concrete implementation type to set initialization and running parameters.
-     */
-    public void setCache(VerifyOperationDaoDelegate cache) {
-        this.cache = cache;
-    }
 
     public void setCounters(QoSVerifierCounters counters) {
         this.counters = counters;
@@ -552,13 +532,8 @@ public final class QoSVerifierAdmin implements CellCommandListener {
     /*
      *  Needs concrete implementation type to set initialization and running parameters.
      */
-    public void setFileOpMap(VerifyOperationDelegatingMap fileOpMap) {
-        this.fileOpMap = fileOpMap;
-    }
-
-    public void setFileOpHandler(
-          VerifyOperationHandler fileOpHandler) {
-        this.fileOpHandler = fileOpHandler;
+    public void setManager(VerifyOperationManager manager) {
+        this.manager = manager;
     }
 
     public void setHistory(QoSHistory history) {
@@ -567,10 +542,6 @@ public final class QoSVerifierAdmin implements CellCommandListener {
 
     public void setInitializer(MapInitializer initializer) {
         this.initializer = initializer;
-    }
-
-    public void setMessageGuard(MessageGuard messageGuard) {
-        this.messageGuard = messageGuard;
     }
 
     public void setPnfsManager(CellStub pnfsManager) {
@@ -591,7 +562,7 @@ public final class QoSVerifierAdmin implements CellCommandListener {
                 Iterator<String> it = attr.getLocations().iterator();
                 FileQoSUpdate update = new FileQoSUpdate(pnfsId, it.hasNext() ? it.next() : null,
                       QoSMessageType.VALIDATE_ONLY);
-                fileOpMap.createOrUpdateOperation(update);
+                manager.createOrUpdateOperation(update);
                 ++successful;
             } catch (NoSuchElementException | CacheException e) {
                 reply.append(pnfsId).append(" ").append(e.getMessage()).append("\n");
@@ -608,22 +579,5 @@ public final class QoSVerifierAdmin implements CellCommandListener {
         handler.setSubject(Subjects.ROOT);
         handler.setRestriction(Restrictions.none());
         return handler;
-    }
-
-    private void startAll() {
-        initializer.initialize();
-        if (fileOpMap.isRunning()) {
-            fileOpMap.shutdown();
-        }
-        fileOpMap.initialize();
-        messageGuard.enable();
-    }
-
-    private void shutdownAll() {
-        if (fileOpMap.isRunning()) {
-            fileOpMap.shutdown();
-        }
-        messageGuard.disable(true);
-        initializer.shutDown();
     }
 }

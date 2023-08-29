@@ -60,10 +60,8 @@ documents or software obtained from this server.
 package org.dcache.qos.services.verifier.data;
 
 import java.util.function.Predicate;
-import org.dcache.qos.data.QoSAction;
 import org.dcache.qos.services.verifier.data.db.VerifyOperationDao;
 import org.dcache.qos.services.verifier.data.db.VerifyOperationDao.VerifyOperationCriterion;
-import org.dcache.qos.services.verifier.data.db.VerifyOperationDao.VerifyOperationUpdate;
 
 /**
  * Filter used specifically with cancel operations.
@@ -76,17 +74,6 @@ public final class VerifyOperationCancelFilter {
     public VerifyOperationCancelFilter(VerifyOperationFilter filter, boolean remove) {
         this.filter = filter;
         this.remove = remove;
-    }
-
-    public VerifyOperationUpdate getUpdate(VerifyOperationDao dao) {
-        VerifyOperationUpdate update = dao.set().state(VerifyOperationState.CANCELED);
-        if (remove) {
-            /*
-             *  Only if the operation is voided will it be removed.
-             */
-            update.action(QoSAction.VOID);
-        }
-        return update;
     }
 
     public VerifyOperationCriterion getCriterion(VerifyOperationDao dao) {

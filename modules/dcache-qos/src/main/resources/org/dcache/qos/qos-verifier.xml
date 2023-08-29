@@ -172,15 +172,77 @@
                   refreshed periodically, and optimized for the purposes of the verifier.</description>
   </bean>
 
-  <bean id="verify-operation-queues" class="org.dcache.qos.services.verifier.data.VerifyOperationDaoDelegate">
-    <description>Provides an in-memory façade to the underlying store in the form of a set of queues.</description>
-    <property name="queueSupplier" ref="verification-supplier-executor"/>
-    <property name="capacity" value="${qos.limits.verifier.cache-capacity}"/>
-    <property name="maxRunning" value="${qos.limits.verifier.max-running-operations}"/>
-    <property name="dao" ref="verifier-dao"/>
+  <bean id="task-executor" class="org.dcache.util.BoundedCachedExecutor" destroy-method="shutdownNow">
+      <constructor-arg value="${qos.limits.verifier.task-threads}"/>
   </bean>
 
-  <bean id="verify-operation-map" class="org.dcache.qos.services.verifier.data.VerifyOperationDelegatingMap"
+  <bean id="modify-task-executor" class="org.dcache.util.BoundedCachedExecutor" destroy-method="shutdownNow">
+    <constructor-arg value="${qos.limits.verifier.modify-task-threads}"/>
+  </bean>
+
+  <bean id="scanner-task-executor" class="org.dcache.util.BoundedCachedExecutor" destroy-method="shutdownNow">
+    <constructor-arg value="${qos.limits.verifier.scanner-task-threads}"/>
+  </bean>
+
+  <bean id="post-process-executor" class="org.dcache.util.BoundedCachedExecutor" destroy-method="shutdownNow">
+    <constructor-arg value="${qos.limits.verifier.post-process-threads}"/>
+  </bean>
+
+  <bean id="verify-operation-queue-index" class="org.dcache.qos.services.verifier.data.VerifyOperationQueueIndex">
+    <description>Maintains the mappings between types of messages and available queues;
+                 starts and stops the queues; configured by the manager.</description>
+    <property name="queueTypes">
+      <list>
+        <bean class="org.dcache.qos.services.verifier.data.VerifyOperationQueueIndex.QueueType">
+          <property name="name" value="NAMESPACE"/>
+          <property name="description" value="from a location or cancellation message"/>
+          <property name="messageTypes">
+            <list>
+              <value>ADD_CACHE_LOCATION</value>
+              <value>CLEAR_CACHE_LOCATION</value>
+              <value>CORRUPT_FILE</value>
+            </list>
+          </property>
+          <property name="executorService" ref="task-executor"/>
+        </bean>
+        <bean class="org.dcache.qos.services.verifier.data.VerifyOperationQueueIndex.QueueType">
+          <property name="name" value="MODIFY"/>
+          <property name="description" value="from a qos modification request"/>
+          <property name="messageTypes">
+            <list>
+              <value>QOS_MODIFIED</value>
+              <value>QOS_MODIFIED_CANCELED</value>
+              <value>VALIDATE_ONLY</value>
+            </list>
+          </property>
+          <property name="executorService" ref="modify-task-executor"/>
+        </bean>
+        <bean class="org.dcache.qos.services.verifier.data.VerifyOperationQueueIndex.QueueType">
+          <property name="name" value="POOL"/>
+          <property name="description" value="from a pool scan request"/>
+          <property name="messageTypes">
+            <list>
+              <value>POOL_STATUS_UP</value>
+              <value>POOL_STATUS_DOWN</value>
+            </list>
+          </property>
+          <property name="executorService" ref="scanner-task-executor"/>
+        </bean>
+        <bean class="org.dcache.qos.services.verifier.data.VerifyOperationQueueIndex.QueueType">
+          <property name="name" value="SYSTEM"/>
+          <property name="description" value="from system scan request"/>
+          <property name="messageTypes">
+            <list>
+              <value>SYSTEM_SCAN</value>
+            </list>
+          </property>
+          <property name="executorService" ref="scanner-task-executor"/>
+        </bean>
+      </list>
+    </property>
+  </bean>
+
+  <bean id="verify-operation-manager" class="org.dcache.qos.services.verifier.data.VerifyOperationManager"
     destroy-method="shutdown">
     <description>Provides an in-memory API for accessing verification operations.</description>
     <property name="timeout" value="${qos.limits.verifier.scan-period}"/>
@@ -189,10 +251,18 @@
     <property name="maxRetries" value="${qos.limits.verifier.operation-retries}"/>
     <property name="history" ref="verify-history"/>
     <property name="poolInfoMap" ref="pool-info-map"/>
-    <property name="updateHandler" ref="verify-operation-handler"/>
-    <property name="cache" ref="verify-operation-queues"/>
+    <property name="handler" ref="verify-operation-handler"/>
     <property name="reloadGracePeriod" value="${qos.limits.verifier.reload-grace-period}"/>
     <property name="reloadGracePeriodUnit" value="${qos.limits.verifier.reload-grace-period.unit}"/>
+    <property name="maxRunning" value="${qos.limits.verifier.max-running-operations}"/>
+    <property name="dao" ref="verifier-dao"/>
+    <property name="queueIndex" ref="verify-operation-queue-index"/>
+    <property name="postProcessExecutor" ref="post-process-executor"/>
+    <property name="removalExecutor">
+      <bean class="java.util.concurrent.Executors" factory-method="newSingleThreadExecutor"
+        destroy-method="shutdownNow">
+      </bean>
+    </property>
   </bean>
 
   <bean id="verify-scan-record-map" class="org.dcache.qos.services.verifier.data.VerifyScanRecordMap">
@@ -209,21 +279,16 @@
 
   <bean id="verify-operation-handler"
     class="org.dcache.qos.services.verifier.handlers.VerifyOperationHandler">
-    <description>Processes the running verification operation by obtaining requirements, 
-                 current file status and computation of the next action to be taken 
+    <description>Processes the running verification operation by obtaining requirements,
+                 current file status and computation of the next action to be taken
                  (via the file-status-verifier).</description>
     <property name="poolInfoMap" ref="pool-info-map"/>
-    <property name="fileOpMap" ref="verify-operation-map"/>
+    <property name="manager" ref="verify-operation-manager"/>
     <property name="scanRecordMap" ref="verify-scan-record-map"/>
     <property name="statusVerifier" ref="file-status-verifier"/>
     <property name="updateExecutor">
       <bean class="org.dcache.util.BoundedCachedExecutor" destroy-method="shutdownNow">
         <constructor-arg value="${qos.limits.verifier.submit-threads}"/>
-      </bean>
-    </property>
-    <property name="taskExecutor">
-      <bean class="java.util.concurrent.ScheduledThreadPoolExecutor" destroy-method="shutdownNow">
-        <constructor-arg value="${qos.limits.verifier.task-threads}"/>
       </bean>
     </property>
     <property name="adjustmentListener" ref="adjuster-client"/>
@@ -272,20 +337,17 @@
     </property>
     <property name="messageGuard" ref="message-guard"/>
     <property name="poolInfoMap" ref="pool-info-map"/>
-    <property name="verifyOperationMap" ref="verify-operation-map"/>
+    <property name="manager" ref="verify-operation-manager"/>
     <property name="changeHandler" ref="pool-info-change-handler"/>
   </bean>
 
   <bean id="verifier-admin" class="org.dcache.qos.services.verifier.admin.QoSVerifierAdmin">
     <description>Commands for monitoring, launching and canceling verification requests.</description>
-    <property name="messageGuard" ref="message-guard"/>
     <property name="initializer" ref="verifier-map-initializer"/>
     <property name="counters" ref="verify-counters"/>
     <property name="pnfsManager" ref="pnfs-manager"/>
-    <property name="fileOpHandler" ref="verify-operation-handler"/>
-    <property name="fileOpMap" ref="verify-operation-map"/>
+    <property name="manager" ref="verify-operation-manager"/>
     <property name="poolInfoMap" ref="pool-info-map"/>
     <property name="history" ref="verify-history"/>
-    <property name="cache" ref="verify-operation-queues"/>
   </bean>
 </beans>
