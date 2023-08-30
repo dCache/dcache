@@ -506,21 +506,24 @@ public class FsSqlDriver {
      *
      * @param parent
      * @param name
-     * @return null if path is not found
+     * @throws FileNotFoundChimeraFsException if name does not exist in parent path
+     * @return the inode for the named file in the parent directory.
      */
-    FsInode inodeOf(FsInode parent, String name, StatCacheOption stat) {
+    FsInode inodeOf(FsInode parent, String name, StatCacheOption stat)
+            throws FileNotFoundChimeraFsException {
         switch (name) {
             case ".":
                 return parent.isDirectory() ? parent : null;
             case "..":
                 if (!parent.isDirectory()) {
-                    return null;
+                    throw FileNotFoundChimeraFsException.ofFileInDirectory(parent, name);
                 }
                 FsInode dir = parent.getParent();
                 return (dir == null) ? parent : dir;
             default:
+                FsInode child;
                 if (stat == STAT) {
-                    return _jdbc.query(
+                    child = _jdbc.query(
                           "SELECT c.* FROM t_dirs d JOIN t_inodes c ON d.ichild = c.inumber " +
                                 "WHERE d.iparent = ? AND d.iname = ?",
                           ps -> {
@@ -530,7 +533,7 @@ public class FsSqlDriver {
                           rs -> rs.next() ? new FsInode(parent.getFs(), rs.getLong("inumber"),
                                 FsInodeType.INODE, 0, toStat(rs)) : null);
                 } else {
-                    return _jdbc.query("SELECT ichild FROM t_dirs WHERE iparent=? AND iname=?",
+                    child = _jdbc.query("SELECT ichild FROM t_dirs WHERE iparent=? AND iname=?",
                           ps -> {
                               ps.setLong(1, parent.ino());
                               ps.setString(2, name);
@@ -538,6 +541,10 @@ public class FsSqlDriver {
                           rs -> rs.next() ? new FsInode(parent.getFs(), rs.getLong("ichild"))
                                 : null);
                 }
+                if (child == null) {
+                    throw FileNotFoundChimeraFsException.ofFileInDirectory(parent, name);
+                }
+                return child;
         }
     }
 
@@ -1606,13 +1613,10 @@ public class FsSqlDriver {
          */
         for (int i = pathElemts.size(); i > 0; i--) {
             String f = pathElemts.get(i - 1);
-            inode = inodeOf(parentInode, f, STAT);
-
-            if (inode == null) {
-                /*
-                 * element not found stop walking
-                 */
-                break;
+            try {
+                inode = inodeOf(parentInode, f, STAT);
+            } catch (FileNotFoundChimeraFsException e) {
+                return null;
             }
 
             /*
@@ -1639,7 +1643,7 @@ public class FsSqlDriver {
      *
      * @param root staring point
      * @param path
-     * @return inode or null if path does not exist.
+     * @return inode or an empty collection if path does not exist.
      */
     List<FsInode> path2inodes(FsInode root, String path) throws ChimeraFsException {
         File pathFile = new File(path);
@@ -1664,9 +1668,9 @@ public class FsSqlDriver {
         /* Path elements are in reverse order.
          */
         for (String f : Lists.reverse(pathElements)) {
-            inode = inodeOf(parentInode, f, STAT);
-
-            if (inode == null) {
+            try {
+                inode = inodeOf(parentInode, f, STAT);
+            } catch (FileNotFoundChimeraFsException e) {
                 return Collections.emptyList();
             }
 

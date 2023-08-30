@@ -423,9 +423,6 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
                 int level = Integer.parseInt(cmd[1]);
                 return inTransaction(status -> {
                     FsInode useInode = _sqlDriver.inodeOf(parent, cmd[2], STAT);
-                    if (useInode == null) {
-                        throw FileNotFoundChimeraFsException.ofFileInDirectory(parent, cmd[2]);
-                    }
                     try {
                         Stat stat = useInode.statCache();
                         return _sqlDriver.createLevel(useInode, stat.getUid(),
@@ -562,7 +559,7 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
             FsInode parent = path2inode(parentPath);
             String name = filePath.getName();
             FsInode inode = _sqlDriver.inodeOf(parent, name, STAT);
-            if (inode == null || !_sqlDriver.remove(parent, name, inode)) {
+            if (!_sqlDriver.remove(parent, name, inode)) {
                 throw FileNotFoundChimeraFsException.ofPath(path);
             }
             return null;
@@ -799,9 +796,6 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
                     throw FileNotFoundChimeraFsException.ofFileInDirectory(parent, name);
                 }
                 FsInode inode = _sqlDriver.inodeOf(parent, cmd[1], NO_STAT);
-                if (inode == null) {
-                    throw FileNotFoundChimeraFsException.ofFileInDirectory(parent, cmd[1]);
-                }
                 return new FsInode_ID(this, inode.ino());
             }
 
@@ -814,9 +808,6 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
                     int level = Integer.parseInt(cmd[1]);
 
                     FsInode inode = _sqlDriver.inodeOf(parent, cmd[2], NO_STAT);
-                    if (inode == null) {
-                        throw FileNotFoundChimeraFsException.ofFileInDirectory(parent, cmd[2]);
-                    }
                     if (level <= LEVELS_NUMBER) {
                         stat(inode, level);
                         return new FsInode(this, inode.ino(), level);
@@ -917,9 +908,6 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
                     throw FileNotFoundChimeraFsException.ofFileInDirectory(parent, name);
                 }
                 FsInode inode = _sqlDriver.inodeOf(parent, cmd[1], NO_STAT);
-                if (inode == null) {
-                    throw FileNotFoundChimeraFsException.ofFileInDirectory(parent, cmd[1]);
-                }
                 return new FsInode_SURI(this, inode.ino());
             }
 
@@ -960,9 +948,6 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
                 }
 
                 FsInode inode = _sqlDriver.inodeOf(parent, cmd[1], NO_STAT);
-                if (inode == null) {
-                    throw FileNotFoundChimeraFsException.ofFileInDirectory(parent, cmd[1]);
-                }
                 switch (cmd[2]) {
                     case "locality":
                         return new FsInode_PLOC(this, inode.ino());
@@ -985,11 +970,7 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
                 if (cmd.length != 2) {
                     throw FileNotFoundChimeraFsException.ofFileInDirectory(parent, name);
                 }
-                FsInode inode = _sqlDriver.inodeOf(getWormID(), cmd[1], NO_STAT);
-                if (inode == null) {
-                    throw FileNotFoundChimeraFsException.ofFileInDirectory(parent, cmd[1]);
-                }
-                return inode;
+                return _sqlDriver.inodeOf(getWormID(), cmd[1], NO_STAT);
             }
 
             if (name.startsWith(".(fset)(")) {
@@ -999,10 +980,6 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
                 }
 
                 FsInode inode = _sqlDriver.inodeOf(parent, cmd[1], NO_STAT);
-                if (inode == null) {
-                    throw FileNotFoundChimeraFsException.ofFileInDirectory(parent, cmd[1]);
-                }
-
                 String[] args = new String[cmd.length - 2];
                 System.arraycopy(cmd, 2, args, 0, args.length);
 
@@ -1011,9 +988,6 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
         }
 
         FsInode inode = _sqlDriver.inodeOf(parent, name, cacheOption);
-        if (inode == null) {
-            throw FileNotFoundChimeraFsException.ofFileInDirectory(parent, name);
-        }
         fillIdCaches(inode);
         inode.setParent(parent);
         return inode;
@@ -1156,29 +1130,32 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
                 throw new NotDirChimeraException(destDir);
             }
 
-            FsInode destInode = _sqlDriver.inodeOf(destDir, dest, STAT);
-
-            if (destInode != null) {
-                if (destInode.equals(inode)) {
-                    // according to POSIX, we are done
-                    return false;
+            FsInode destInode;
+            try {
+                destInode = _sqlDriver.inodeOf(destDir, dest, STAT);
+            } catch (FileNotFoundChimeraFsException e) {
+                if (!_sqlDriver.rename(inode, srcDir, source, destDir, dest)) {
+                    throw FileNotFoundChimeraFsException.ofPath(source);
                 }
-
-                /* Renaming into existing is only allowed for the same type of entry.
-                 */
-                if (inode.isDirectory() != destInode.isDirectory()) {
-                    throw new FileExistsChimeraFsException(dest);
-                }
-
-                if (!_sqlDriver.remove(destDir, dest, destInode)) {
-                    // Concurrent modification - retry
-                    return rename(inode, srcDir, source, destDir, dest);
-                }
+                return true;
             }
 
-            if (!_sqlDriver.rename(inode, srcDir, source, destDir, dest)) {
-                throw FileNotFoundChimeraFsException.ofPath(source);
+            if (destInode.equals(inode)) {
+                // according to POSIX, we are done
+                return false;
             }
+
+            /* Renaming into existing is only allowed for the same type of entry.
+             */
+            if (inode.isDirectory() != destInode.isDirectory()) {
+                throw new FileExistsChimeraFsException(dest);
+            }
+
+            if (!_sqlDriver.remove(destDir, dest, destInode)) {
+                // Concurrent modification - retry
+                return rename(inode, srcDir, source, destDir, dest);
+            }
+
             return true;
         });
     }
