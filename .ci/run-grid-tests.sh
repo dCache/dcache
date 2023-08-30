@@ -28,7 +28,7 @@ TESTS="DccpTests GlobusurlcpTests"
 declare -i ERRORS=0
 
 for name in $TESTS; do
-  robot -o ${name}_output --variable SRM_VERSION:2 --name ${name} -x ${name}-junit.xml ${name}.robot || ERRORS+=$?
+  robot -o ${name}_output --variable SRM_VERSION:2 --name ${name} -x /xunit/xunit-${name}.xml ${name}.robot || ERRORS+=$?
 done
 
 exit $ERRORS

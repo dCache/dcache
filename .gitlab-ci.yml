@@ -382,6 +382,11 @@ grid_tests:
     - kubectl -n $K8S_NAMESPACE cp .ci/init-grid-ui.sh grid-tester:/init-grid-ui.sh
     - kubectl -n $K8S_NAMESPACE cp .ci/run-grid-tests.sh grid-tester:/run-grid-tests.sh
     - kubectl -n $K8S_NAMESPACE exec grid-tester -- /bin/sh /run-grid-tests.sh
+    - kubectl -n $K8S_NAMESPACE cp grid-tester:/xunit .
+  artifacts:
+    reports:
+      junit:
+        - "xunit*.xml"
 
 gsi_xroot_tests:
   stage: testing
