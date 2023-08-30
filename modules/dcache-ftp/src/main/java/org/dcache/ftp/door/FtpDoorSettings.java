@@ -4,6 +4,9 @@ import diskCacheV111.util.PnfsHandler;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellPath;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -14,6 +17,8 @@ import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.util.Option;
 import org.dcache.util.OptionParser;
 import org.dcache.util.PortRange;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Object holding configuration options for FTP doors.
@@ -21,6 +26,7 @@ import org.dcache.util.PortRange;
  * Settings can be injected using {@link OptionParser}.
  */
 public class FtpDoorSettings {
+    private static final Logger LOGGER = LoggerFactory.getLogger(FtpDoorSettings.class);
 
     @Option(name = "poolManager",
           description = "Well known name of the pool manager",
@@ -66,6 +72,9 @@ public class FtpDoorSettings {
 
     @Option(name = "kafka-clientid")
     protected String kafkaclientid;
+
+    @Option(name = "kafka-config-file")
+    protected String kafkaConfigFile;
 
 
     @Option(name = "clientDataPortRange",
@@ -388,6 +397,24 @@ public class FtpDoorSettings {
 
     public KafkaProducer createKafkaProducer() {
         Properties props = new Properties();
+	if (kafkaConfigFile != null && !kafkaConfigFile.trim().isEmpty()) {
+	    try {
+		FileInputStream fis = new FileInputStream(kafkaConfigFile);
+		try {
+		    props.load(fis);
+		} catch (IOException ex) {
+		    LOGGER.error("failed to load configuration ", ex);
+		} finally {
+		    try {
+			fis.close();
+		    } catch (IOException ex) {
+			LOGGER.error("failed to close " + kafkaConfigFile, ex);
+		    }
+		}
+	    } catch (FileNotFoundException ex) {
+		LOGGER.error(ex.toString());
+	    }
+	}
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBootstrapServer);
         props.put(ProducerConfig.CLIENT_ID_CONFIG, kafkaclientid);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
