@@ -34,7 +34,7 @@ stages:
   - upload
 
 variables:
-  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true -DskipTests -Dmaven.repo.local=.m2/repository"
+  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true -Dmaven.repo.local=.m2/repository"
   K8S_NAMESPACE: dcache-build-$CI_PIPELINE_ID
   CHECK_TIMEOUT: --timeout=300s
   AUTOCA_URL: https://ci.dcache.org/ca
@@ -90,6 +90,10 @@ rpm:
   script:
     - mvn $MAVEN_CLI_OPTS -am -pl packages/fhs -P rpm clean package
   artifacts:
+    reports:
+      junit:
+        - "**/target/surefire-reports/TEST-*.xml"
+        - "**/target/failsafe-reports/TEST-*.xml"
     paths:
       - "packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm"
     expire_in: 2 days
@@ -99,7 +103,7 @@ srm_client_rpm:
   image: dcache/maven-java11-rpm-build
   extends: .build_cache
   script:
-    - mvn $MAVEN_CLI_OPTS -am -pl modules/srm-client package -P rpm
+    - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl modules/srm-client package -P rpm
   artifacts:
     paths:
       - "modules/srm-client/target/rpmbuild/RPMS/noarch/dcache-srmclient*.rpm"
@@ -110,7 +114,7 @@ deb:
   image: dcache/maven-java11-deb-build
   extends: .build_cache
   script:
-    - mvn $MAVEN_CLI_OPTS -am -pl packages/fhs -P deb clean package
+    - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl packages/fhs -P deb clean package
   artifacts:
     paths:
       - "packages/fhs/target/dcache_*.deb"
@@ -121,7 +125,7 @@ tar:
   image: dcache/maven-java11-tar-build
   extends: .build_cache
   script:
-    - mvn $MAVEN_CLI_OPTS -am -pl packages/tar clean package
+    - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl packages/tar clean package
   artifacts:
     paths:
       - "packages/tar/target/dcache-*.tar.gz"
