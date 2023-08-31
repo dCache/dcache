@@ -11,7 +11,7 @@ git clone --depth 1 https://github.com/dCache/Grid-tools-functional-test-suite.g
 cd Grid-tools-functional-test-suite
 
 export DFTS_SUT=store-door-svc.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local
-export HTTP_PORT=2880
+export HTTP_PORT=8080
 export SRM_PORT=8443
 export GSIDCAP_PORT=22128
 export GSIFTP_PORT=2811
@@ -21,7 +21,7 @@ export WORKSPACE=`pwd`
 
 
 # test groups to run
-TESTS="DccpTests GlobusurlcpTests SrmlsTests"
+TESTS="DccpTests GlobusurlcpTests SrmlsTests SrmcpTests"
 
 # robot returns the number of failed tests in its return code.
 # So we add up the retvals using ERRORS as an accumulator
