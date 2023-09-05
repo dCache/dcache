@@ -59,62 +59,78 @@ documents or software obtained from this server.
  */
 package org.dcache.auth;
 
-import java.io.Serializable;
-import java.security.Principal;
+import com.google.common.base.Splitter;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import java.util.UUID;
 
-/*
- *  Base class for both UidPrincipal and UidRolePrincipal.
+/**
+ *  A Principal which assigns a role-based authorization with respect to a uid.
+ *  While this code replicates the UidPrincipal, it needs to be independent so
+ *  that its presence does not violate the requirement of only one Uid principal
+ *  per user.
  */
-abstract class AbstractUidPrincipal implements Principal, Serializable {
+@AuthenticationOutput
+@AuthenticationInput
+public class RolePrincipal extends AbstractIdPrincipal {
 
-    private static final long serialVersionUID = -8815120327854777479L;
+    private static final long serialVersionUID = -208608738074565124L;
 
-    protected final long uid;
+    private static final long PLACEHOLDER_ID = Long.MAX_VALUE;
 
-    protected AbstractUidPrincipal(long uid) {
-        if (uid < 0) {
-            throw new IllegalArgumentException("UID must be non-negative");
-        }
-        this.uid = uid;
-    }
+    private final long internalId;
 
-    protected AbstractUidPrincipal(String uid) {
-        this(Long.parseLong(uid));
-    }
+    public enum Role {
+        ADMIN("admin"),
+        QOS_USER("qos-user"),
+        QOS_GROUP("qos-group");
 
-    public long getUid() {
-        return uid;
-    }
+        private final String tag;
 
-    @Override
-    public String getName() {
-        return String.valueOf(getUid());
-    }
-
-    @Override
-    public int hashCode() {
-        return (int) getUid();
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        if (this == other) {
-            return true;
+        Role(String tag) {
+            this.tag = tag;
         }
 
-        if (other == null) {
-            return false;
+        public String getTag() {
+            return tag;
         }
 
-        if (!(this.getClass().equals(other.getClass()))) {
-            return false;
+        static Role fromTag(String tag) {
+            switch (tag.toUpperCase(Locale.ROOT)) {
+                case "ADMIN":
+                    return ADMIN;
+                case "QOS-USER":
+                    return QOS_USER;
+                case "QOS-GROUP":
+                    return QOS_GROUP;
+            }
+
+            throw new IllegalArgumentException("Unrecognized role: " + tag);
         }
-        AbstractUidPrincipal otherUid = (AbstractUidPrincipal) other;
-        return (otherUid.getUid() == getUid());
     }
 
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + '[' + getName() + ']';
+    private final Set<Role> roles = new HashSet<>();
+
+    public RolePrincipal(String roles) {
+        super(PLACEHOLDER_ID);
+        internalId = UUID.randomUUID().getLeastSignificantBits();
+        List<String> parts = Splitter.on(',').splitToList(roles);
+        for (String role: parts) {
+            this.roles.add(Role.fromTag(role));
+        }
+    }
+
+    public long getId() {
+        return internalId;
+    }
+
+    public Set<Role> getRoles() {
+        return Set.copyOf(roles);
+    }
+
+    public boolean hasRole(Role role) {
+        return roles.contains(role);
     }
 }

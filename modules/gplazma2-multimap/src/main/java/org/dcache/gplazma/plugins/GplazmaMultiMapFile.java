@@ -3,7 +3,6 @@ package org.dcache.gplazma.plugins;
 import static org.dcache.gplazma.plugins.exceptions.GplazmaParseMapFileException.checkFormat;
 
 import com.google.common.base.Splitter;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -22,18 +21,16 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.security.auth.kerberos.KerberosPrincipal;
-import org.dcache.auth.AdminRolePrincipal;
 import org.dcache.auth.EmailAddressPrincipal;
 import org.dcache.auth.EntitlementPrincipal;
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
 import org.dcache.auth.GroupPrincipal;
+import org.dcache.auth.RolePrincipal;
 import org.dcache.auth.OAuthProviderPrincipal;
 import org.dcache.auth.OidcSubjectPrincipal;
 import org.dcache.auth.OpenIdGroupPrincipal;
-import org.dcache.auth.QoSPlaceholderRolePrincipal;
-import org.dcache.auth.QoSRolePrincipal;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
@@ -120,8 +117,7 @@ public class GplazmaMultiMapFile {
         USER_NAME("username", UserNamePrincipal.class),
         ENTITLEMENT("entitlement", EntitlementPrincipal.class),
         OP("op", OAuthProviderPrincipal.class),
-        ADMIN_ROLE("admin", AdminRolePrincipal.class),
-        QOS_ROLE("qos", QoSRolePrincipal.class);
+        ROLES("roles", RolePrincipal.class);
 
         private final String label;
         private final Class<? extends Principal> groupType;
@@ -145,11 +141,6 @@ public class GplazmaMultiMapFile {
                           parts.size() == 2 ? Boolean.parseBoolean(parts.get(1)) : false;
                     return groupType.getConstructor(String.class, Boolean.TYPE)
                           .newInstance(parts.get(0), isPrimary);
-                } else if (QoSRolePrincipal.class.isAssignableFrom(groupType)
-                      && Strings.emptyToNull(value) == null) {
-                    return QoSPlaceholderRolePrincipal.class.getConstructor().newInstance();
-                } else if (AdminRolePrincipal.class.isAssignableFrom(groupType)) {
-                    return AdminRolePrincipal.class.getConstructor().newInstance();
                 } else {
                     return groupType.getConstructor(String.class).newInstance(value);
                 }

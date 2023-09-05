@@ -319,7 +319,8 @@ public class SubjectsTest {
         assertTrue(Subjects.hasGid(dcacheSubject, GID2));
         assertEquals(Subjects.getLoginName(dcacheSubject), USERNAME1);
 
-        assertThat("UidPrincipal not injected", dcacheSubject.getPrincipals(), hasItem(any(UidPrincipal.class)));
+        assertThat("UidPrincipal not injected", dcacheSubject.getPrincipals(), hasItem(any(
+              UidPrincipal.class)));
         assertThat("GidPrincipal not injected", dcacheSubject.getPrincipals(), hasItem(any(GidPrincipal.class)));
 
         assertThat("UnixNumericUserPrincipal not removed", dcacheSubject.getPrincipals(), not(hasItem(any(UnixNumericUserPrincipal.class))));

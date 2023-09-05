@@ -95,7 +95,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
-import org.dcache.auth.AdminRolePrincipal;
+import org.dcache.auth.RolePrincipal;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
@@ -1104,7 +1104,7 @@ public final class BulkServiceCommands implements CellCommandListener {
         public String call() {
             Subject subject = new Subject();
             Subjects.ROOT.getPrincipals().forEach(subject.getPrincipals()::add);
-            subject.getPrincipals().add(new AdminRolePrincipal());
+            subject.getPrincipals().add(new RolePrincipal("admin"));
             Restriction restriction = Restrictions.none();
             BulkRequest request = new BulkRequest();
             request.setUrlPrefix("ssh://admin");

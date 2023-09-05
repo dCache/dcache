@@ -10,7 +10,7 @@ package org.dcache.auth;
  */
 @AuthenticationOutput
 @AuthenticationInput
-public class UidPrincipal extends AbstractUidPrincipal {
+public class UidPrincipal extends AbstractIdPrincipal {
 
     private static final long serialVersionUID = -6614351509379265417L;
 
@@ -19,4 +19,8 @@ public class UidPrincipal extends AbstractUidPrincipal {
     }
 
     public UidPrincipal(String uid) { super(uid); }
+
+    public long getUid() {
+        return getId();
+    }
 }

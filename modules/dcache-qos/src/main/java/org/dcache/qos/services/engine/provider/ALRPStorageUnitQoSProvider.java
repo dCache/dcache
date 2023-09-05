@@ -241,8 +241,8 @@ public class ALRPStorageUnitQoSProvider implements QoSRequirementsProvider, Cell
         if (canModifyQos(subject, currentAttributes)) {
             pnfsHandler().setFileAttributes(pnfsId, modifiedAttributes);
         } else {
-            throw new PermissionDeniedCacheException("User does not have permissions to set "
-                  + "attributes for " + newRequirements.getPnfsId());
+            throw new PermissionDeniedCacheException("User does not have permissions to modify "
+                  + "QoS for " + newRequirements.getPnfsId());
         }
     }
 

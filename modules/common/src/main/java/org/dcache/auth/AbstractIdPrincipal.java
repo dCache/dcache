@@ -59,16 +59,62 @@ documents or software obtained from this server.
  */
 package org.dcache.auth;
 
-/**
- *  Authorizes the bearer to act as ROOT.
+import java.io.Serializable;
+import java.security.Principal;
+
+/*
+ *  Base class for both UidPrincipal and UidRolePrincipal.
  */
-@AuthenticationOutput
-@AuthenticationInput
-public class AdminRolePrincipal extends UidRolePrincipal {
+abstract class AbstractIdPrincipal implements Principal, Serializable {
 
-    private static final long serialVersionUID = 2702995170926235855L;
+    private static final long serialVersionUID = 6512883936234057609L;
 
-    public AdminRolePrincipal() {
-        super(Subjects.getUid(Subjects.ROOT));
+    protected final long id;
+
+    protected AbstractIdPrincipal(long id) {
+        if (id < 0) {
+            throw new IllegalArgumentException("UID must be non-negative");
+        }
+        this.id = id;
+    }
+
+    protected AbstractIdPrincipal(String id) {
+        this(Long.parseLong(id));
+    }
+
+    @Override
+    public String getName() {
+        return String.valueOf(getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return (int) getId();
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+
+        if (other == null) {
+            return false;
+        }
+
+        if (!(this.getClass().equals(other.getClass()))) {
+            return false;
+        }
+        AbstractIdPrincipal otherUid = (AbstractIdPrincipal) other;
+        return (otherUid.getId() == getId());
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + '[' + getName() + ']';
+    }
+
+    protected long getId() {
+        return id;
     }
 }
