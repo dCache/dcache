@@ -113,6 +113,8 @@ import javax.annotation.PostConstruct;
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
 import org.dcache.auth.Origin;
+import org.dcache.auth.RolePrincipal;
+import org.dcache.auth.RolePrincipal.Role;
 import org.dcache.auth.SubjectWrapper;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.LoginAttribute;
@@ -1304,9 +1306,9 @@ public class DcacheResourceFactory
     }
 
     private boolean isAdmin() {
-        Set<LoginAttribute> attributes = AuthenticationHandler.getLoginAttributes(
-              ServletRequest.getRequest());
-        return LoginAttributes.hasAdminRole(attributes);
+        return getSubject().getPrincipals().stream()
+              .filter(p->p instanceof RolePrincipal)
+              .anyMatch(p->((RolePrincipal) p).hasRole(Role.ADMIN));
     }
 
     private PnfsHandler roleAwarePnfsHandler() {
