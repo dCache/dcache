@@ -2,6 +2,7 @@ package org.dcache.webdav;
 
 import static io.milton.property.PropertySource.PropertyAccessibility.READ_ONLY;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.dcache.namespace.FileAttribute.STORAGEINFO;
 
 import com.google.common.collect.ImmutableSet;
 import diskCacheV111.services.space.Space;
@@ -43,7 +44,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import javax.xml.namespace.QName;
+import org.dcache.space.ReservationCaches;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,9 +73,12 @@ public class DcacheDirectoryResource
     private static final PropertyMetaData READONLY_LONG = new PropertyMetaData(READ_ONLY,
           Long.class);
 
+    private final boolean _allAttributes;
+
     public DcacheDirectoryResource(DcacheResourceFactory factory,
-          FsPath path, FileAttributes attributes) {
+          FsPath path, FileAttributes attributes, boolean allAttributes) {
         super(factory, path, attributes);
+        _allAttributes = allAttributes;
     }
 
     @Override
@@ -254,6 +260,12 @@ public class DcacheDirectoryResource
         return createNullLock();
     }
 
+    private Optional<String> getWriteToken() {
+        return _attributes.isDefined(STORAGEINFO)
+                ? ReservationCaches.writeToken(_attributes)
+                :  _factory.lookupWriteToken(_path);
+    }
+
     @Override
     public Object getProperty(QName name) {
         Object value = super.getProperty(name);
@@ -264,11 +276,13 @@ public class DcacheDirectoryResource
 
         try {
             if (name.equals(QUOTA_AVAILABLE)) {
-                return _factory.spaceForPath(_path).getAvailableSpaceInBytes();
+                var maybeToken = getWriteToken();
+                return _factory.spaceForToken(maybeToken).getAvailableSpaceInBytes();
             }
 
             if (name.equals(QUOTA_USED)) {
-                Space space = _factory.spaceForPath(_path);
+                var maybeToken = getWriteToken();
+                Space space = _factory.spaceForToken(maybeToken);
                 return space.getUsedSizeInBytes() + space.getAllocatedSpaceInBytes();
             }
         } catch (SpaceException e) {
@@ -282,14 +296,17 @@ public class DcacheDirectoryResource
     public PropertyMetaData getPropertyMetaData(QName name) {
         PropertyMetaData metadata = super.getPropertyMetaData(name);
 
-        if (!_factory.isSpaceManaged(_path)) {
+        if (!_allAttributes) {
             return metadata;
         }
 
         // Milton accepts null and PropertyMetaData.UNKNOWN to mean the
         // property is unknown.
         if ((metadata == null || metadata.isUnknown()) && QUOTA_PROPERTIES.contains(name)) {
-            metadata = READONLY_LONG;
+            var maybeToken = getWriteToken();
+            if (_factory.isSpaceManaged(maybeToken)) {
+                return READONLY_LONG;
+            }
         }
 
         return metadata;
@@ -299,7 +316,12 @@ public class DcacheDirectoryResource
     public List<QName> getAllPropertyNames() {
         List<QName> genericNames = super.getAllPropertyNames();
 
-        if (!_factory.isSpaceManaged(_path)) {
+        if (!_allAttributes) {
+            return genericNames;
+        }
+
+        var maybeToken = getWriteToken();
+        if (!_factory.isSpaceManaged(maybeToken)) {
             return genericNames;
         }
 
