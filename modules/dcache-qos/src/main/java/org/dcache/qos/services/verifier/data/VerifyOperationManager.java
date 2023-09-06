@@ -564,7 +564,6 @@ public class VerifyOperationManager extends RunnableModule implements CellInfoPr
         operation.setRetried(0);
         operation.setNeeded(0);
         operation.setState(READY);
-        operation.setSubject(data.getSubject());
 
         switch (type) {
             case POOL_STATUS_DOWN:

@@ -77,6 +77,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
+import org.dcache.auth.Subjects;
 import org.dcache.qos.QoSException;
 import org.dcache.qos.data.FileQoSRequirements;
 import org.dcache.qos.data.FileQoSUpdate;
@@ -590,7 +591,7 @@ public class VerifyOperationHandler implements VerifyAndUpdateHandler {
         request.setPnfsId(requirements.getPnfsId());
         request.setAttributes(requirements.getAttributes());
         request.setPoolGroup(operation.getPoolGroup());
-        request.setSubject(operation.getSubject());
+        request.setSubject(Subjects.ROOT);
 
         String source = operation.getSource();
 

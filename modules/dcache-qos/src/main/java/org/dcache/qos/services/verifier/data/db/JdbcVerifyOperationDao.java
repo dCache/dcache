@@ -21,20 +21,13 @@ package org.dcache.qos.services.verifier.data.db;
 import static org.dcache.qos.services.verifier.data.VerifyOperationState.READY;
 
 import diskCacheV111.util.PnfsId;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Base64;
 import java.util.Collection;
 import java.util.List;
 import javax.annotation.ParametersAreNonnullByDefault;
-import javax.security.auth.Subject;
 import org.dcache.db.JdbcCriterion;
 import org.dcache.db.JdbcUpdate;
 import org.dcache.qos.QoSException;
@@ -85,36 +78,9 @@ public class JdbcVerifyOperationDao extends JdbcDaoSupport implements VerifyOper
         operation.setRetried(0);
         operation.setNeeded(0);
         operation.setState(READY);
-        operation.setSubject(Subject.class.cast(deserialize(rs.getString("subject"))));
 
         LOGGER.debug("toOperation, returning {}.", operation);
         return operation;
-    }
-
-    private static String serialize(Subject subject) throws QoSException {
-        if (subject == null) {
-            return null;
-        }
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (ObjectOutputStream ostream = new ObjectOutputStream(baos)) {
-            ostream.writeObject(subject);
-        } catch (IOException e) {
-            throw new QoSException("problem serializing subject", e);
-        }
-        return Base64.getEncoder().encodeToString(baos.toByteArray());
-    }
-
-    private static Object deserialize(String base64) throws SQLException {
-        if (base64 == null) {
-            return null;
-        }
-        byte[] array = Base64.getDecoder().decode(base64);
-        ByteArrayInputStream bais = new ByteArrayInputStream(array);
-        try (ObjectInputStream istream = new ObjectInputStream(bais)) {
-            return istream.readObject();
-        } catch (IOException | ClassNotFoundException e) {
-            throw new SQLException("problem deserializing subject", e);
-        }
     }
 
     private Integer fetchSize;
@@ -186,8 +152,7 @@ public class JdbcVerifyOperationDao extends JdbcDaoSupport implements VerifyOper
               .storageUnit(storageUnit)
               .messageType(operation.getMessageType())
               .parent(operation.getParent())
-              .source(operation.getSource())
-              .subject(serialize(operation.getSubject()));
+              .source(operation.getSource());
 
         LOGGER.debug("store operation for {}.", operation.getPnfsId());
 

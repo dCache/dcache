@@ -91,4 +91,13 @@
         </createIndex>
         <rollback/>
     </changeSet>
+
+    <changeSet author="rossi" id="7.2">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="qos_operation"/>
+        </preConditions>
+
+        <dropColumn tableName="qos_operation" columnName="subject"/>
+        <rollback/>
+    </changeSet>
 </databaseChangeLog>
