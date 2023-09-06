@@ -68,15 +68,15 @@ public final class SystemScanSummary extends ScanSummary {
 
     private final long from;
     private final long to;
-    private final boolean nearline;
+    private final boolean qosNearline;
 
     private long lastIndex;
 
-    public SystemScanSummary(String id, long from, long to, boolean nearline) {
+    public SystemScanSummary(String id, long from, long to, boolean qosNearline) {
         super(id);
         this.from = from;
         this.to = to;
-        this.nearline = nearline;
+        this.qosNearline = qosNearline;
     }
 
     public long getFrom() {
@@ -95,7 +95,7 @@ public final class SystemScanSummary extends ScanSummary {
         this.lastIndex = lastIndex;
     }
 
-    public synchronized boolean isNearlineScan() {
-        return nearline;
+    public synchronized boolean isQosNearline() {
+        return qosNearline;
     }
 }

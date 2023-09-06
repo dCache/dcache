@@ -79,6 +79,11 @@ public interface NamespaceAccess {
     long[] getMinMaxInumbers() throws CacheException;
 
     /**
+     * @return the sql fetch size.
+     */
+    int getFetchSize();
+
+    /**
      * The main query.
      *
      * @param scan for initializing scan and tracking progress.
@@ -108,4 +113,6 @@ public interface NamespaceAccess {
     void setConnectionPool(DataSource connectionPool);
 
     void setFetchSize(int fetchSize);
+
+
 }

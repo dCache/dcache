@@ -663,7 +663,7 @@ restage it before considering it inaccessible.
 ### Pool scan vs Sys scan
 
 For the scanner component, there are two kinds of scans.  The pool scan runs a query
-by location (= pool) and verifies each of the files that the namespace indicates is
+by location (= pool) and verifies each of the ``ONLINE`` files that the namespace indicates is
 resident on that pool.  This is generally useful for disk-resident replicas, but
 will not be able to detect missing replicas (say, from faulty migration, where the
 old pool is no longer in the pool configuration). Nevertheless, a pool scan
@@ -685,10 +685,26 @@ copy, regardless of the current available pools, and will stage it back in if it
  SCANNING, QOS vs Resilience
 
  Formerly (in resilience), individual pool scans were both triggered by pool state changes
- and were run periodically; in QoS, however, they are only triggered by state changes
- (or by an explicit admin command).  The sys scans, on the other hand, run periodically
- in the background, touching each file in the natural order of their primary key in the
- namespace.
+ and were run periodically; in QoS, they are still triggered by state changes
+ (or by an explicit admin command), but there is an option as to how to run ONLINE scans
+ periodically.  By enabling 'online' scans (the default), the sys scans will
+ touch each file in the natural order of their primary key in the namespace.
+ The advantage to this is avoiding scanning the same file more than once if
+ it has more than one location.  The disadvantage is that files whose locations
+ are currently offline or have been removed from the dCache configuration will
+ trigger an alarm.  If 'online' is disabled, the old-style pool scan (more properly,
+ location-based scan) will be triggered instead.  This will look at only ONLINE
+ files on IDLE pools that are ENABLED, but will end up running redundant checks
+ for files with multiple replicas.
+
+ With the advent of the rule engine (9.2), the NEARLINE scan has been limited to
+ files with a defined qos policy.
+
+ NEARLINE is no longer turned off by default, since it no longer necessarily
+ encompasses all files on tape, but just the ones for which the policy state
+ currently involves state.  Of course, if the majority of files in the dCache
+ instance have a policy, then this scan will again involve a much longer run-time
+ and thus the window should be adjusted accordingly.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ----------------------

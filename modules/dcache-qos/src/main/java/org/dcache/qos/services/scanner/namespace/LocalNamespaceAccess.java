@@ -96,31 +96,8 @@ public class LocalNamespaceAccess implements NamespaceAccess {
     static final int FILE_TYPE = 32768;
 
     /**
-     * Checks all NEARLINE CUSTODIAL files that have cached disk locations.  As this kind of file
-     * predominates on most installations, this scan could run for days. It is here mainly for the
-     * following reasons:
-     * <p/>
-     * <ol>
-     *   <li>failed disk+tape to tape transitions which updated the AL, but did not remove
-     *         the sticky bits on the pools;</li><br/>
-     *   <li>failed disk to tape which flushed the file but did not remove the sticky bit
-     *         on the source.</li><br/>
-     * </ol>
-     */
-    static final String SQL_GET_NEARLINE_PNFSIDS
-          = "SELECT inumber, ipnfsid FROM t_inodes n WHERE n.itype = " + FILE_TYPE
-          + " AND n.iaccess_latency = 0"
-          + " AND n.iretention_policy = 0"
-          + " AND n.inumber >= ?"
-          + " AND n.inumber < ?"
-          + " AND EXISTS (SELECT * FROM t_locationinfo l"
-          + " WHERE l.inumber = n.inumber"
-          + " AND l.itype = 1)"
-          + " ORDER BY n.inumber ASC";
-
-    /**
      * The regular system scan checks consistency for all ONLINE files, whether REPLICA or
-     * CUSTODIAL.
+     * CUSTODIAL.  Included are files for which a policy is defined.
      */
     static final String SQL_GET_ONLINE_PNFSIDS
           = "SELECT inumber, ipnfsid FROM t_inodes WHERE itype = " + FILE_TYPE
@@ -130,15 +107,27 @@ public class LocalNamespaceAccess implements NamespaceAccess {
           + " ORDER BY inumber ASC";
 
     /**
+     * The qos scan checks consistency for all NEARLINE CUSTODIAL files for which a policy is defined.
+     */
+    static final String SQL_GET_NEARLINE_QOS_PNFSIDS
+          = "SELECT inumber, ipnfsid FROM t_inodes WHERE itype = " + FILE_TYPE
+          + " AND iaccess_latency = 0"
+          + " AND iretention_policy = 0"
+          + " AND inumber >= ?"
+          + " AND inumber < ?"
+          + " AND EXISTS (SELECT * FROM t_qos_policy WHERE id = iqos_policy)"
+          + " ORDER BY inumber ASC";
+
+    /**
      * Pool status or config changes should be concerned only with the disk status of the file, so
-     * we check only ONLINE files again.
+     * we check only ONLINE files again.  Files for which a QoS policy is defined are included.
      */
     static final String SQL_GET_ONLINE_FOR_LOCATION
-          = "SELECT n.ipnfsid FROM t_locationinfo l, t_inodes n "
-          + "WHERE l.inumber = n.inumber "
-          + "AND l.itype = 1 "
-          + "AND n.iaccess_latency = 1 "
-          + "AND l.ilocation = ?";
+          = "SELECT n.ipnfsid FROM t_locationinfo l, t_inodes n"
+          + " WHERE l.inumber = n.inumber"
+          + " AND l.itype = 1"
+          + " AND n.iaccess_latency = 1"
+          + " AND l.ilocation = ?";
 
     /**
      * Get the current range of the entire scan.
@@ -146,14 +135,14 @@ public class LocalNamespaceAccess implements NamespaceAccess {
     static final String SQL_GET_MIN_MAX_INUMBER = "SELECT min(inumber), max(inumber) FROM t_inodes";
 
     static final String SQL_GET_CONTAINED_IN
-          = "SELECT n.ipnfsid FROM t_locationinfo l, t_inodes n "
-          + "WHERE n.inumber = l.inumber "
-          + "AND l.ilocation IN (%s) "
-          + "AND NOT EXISTS "
-          + "(SELECT n1.ipnfsid FROM t_locationinfo l1, t_inodes n1 "
-          + "WHERE n.inumber = l1.inumber "
-          + "AND n.inumber = n1.inumber "
-          + "AND l1.ilocation NOT IN (%s))";
+          = "SELECT n.ipnfsid FROM t_locationinfo l, t_inodes n"
+          + " WHERE n.inumber = l.inumber"
+          + " AND l.ilocation IN (%s)"
+          + " AND NOT EXISTS"
+          + " (SELECT n1.ipnfsid FROM t_locationinfo l1, t_inodes n1"
+          + " WHERE n.inumber = l1.inumber"
+          + " AND n.inumber = n1.inumber"
+          + " AND l1.ilocation NOT IN (%s))";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LocalNamespaceAccess.class);
 
@@ -230,6 +219,10 @@ public class LocalNamespaceAccess implements NamespaceAccess {
     @Override
     public void setConnectionPool(DataSource connectionPool) {
         this.connectionPool = connectionPool;
+    }
+
+    public int getFetchSize() {
+        return fetchSize;
     }
 
     @Override
@@ -333,11 +326,13 @@ public class LocalNamespaceAccess implements NamespaceAccess {
         List<PnfsId> replicas = new ArrayList<>();
         QoSScannerVerificationRequest request;
 
-        LOGGER.debug("handleQuery: for system scan,  inumber {} to inumber {}.", start);
+        LOGGER.debug("handleQuery: for {} system scan,  inumber {} to inumber {}.",
+              scan.isQosNearline() ? "nearline qos": "online", start);
+
+        String sql = scan.isQosNearline() ? SQL_GET_NEARLINE_QOS_PNFSIDS : SQL_GET_ONLINE_PNFSIDS;
 
         try {
-            statement = connection.prepareStatement(scan.isNearlineScan() ?
-                  SQL_GET_NEARLINE_PNFSIDS : SQL_GET_ONLINE_PNFSIDS);
+            statement = connection.prepareStatement(sql);
             statement.setLong(1, start);
             statement.setLong(2, to);
             statement.setFetchSize(fetchSize);
@@ -353,7 +348,7 @@ public class LocalNamespaceAccess implements NamespaceAccess {
                 replicas.add(new PnfsId(resultSet.getString(2)));
                 scan.incrementCount();
                 if (replicas.size() == fetchSize) {
-                    request = new QoSScannerVerificationRequest(scan.getId().toString(), replicas,
+                    request = new QoSScannerVerificationRequest(scan.getId(), replicas,
                           SYSTEM_SCAN, null, null, true);
                     verificationListener.fileQoSVerificationRequested(request);
                     replicas = new ArrayList<>();
@@ -363,7 +358,7 @@ public class LocalNamespaceAccess implements NamespaceAccess {
             scan.setLastIndex(index);
 
             if (!replicas.isEmpty() && !scan.isCancelled()) {
-                request = new QoSScannerVerificationRequest(scan.getId().toString(), replicas,
+                request = new QoSScannerVerificationRequest(scan.getId(), replicas,
                       SYSTEM_SCAN, null, null, true);
                 verificationListener.fileQoSVerificationRequested(request);
             }
