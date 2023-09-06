@@ -214,7 +214,7 @@ public abstract class BulkActivity<R> {
      *
      * @param arguments parameters of the specific activity.
      */
-    protected abstract void configure(Map<String, String> arguments);
+    protected abstract void configure(Map<String, String> arguments) throws BulkServiceException;
 
     /**
      * Internal implementation of completion handler taking full target.

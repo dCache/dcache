@@ -60,6 +60,7 @@ documents or software obtained from this server.
 package org.dcache.services.bulk.activity.plugin.qos;
 
 import static org.dcache.services.bulk.activity.BulkActivity.TargetType.FILE;
+import static org.dcache.services.bulk.activity.BulkActivityArgumentDescriptor.EMPTY_DEFAULT;
 
 import com.google.common.collect.ImmutableSet;
 import java.util.Map;
@@ -77,8 +78,22 @@ public final class UpdateQoSActivityProvider extends BulkActivityProvider<Update
                 "the desired qos transition ('disk' is limited to "
                       + "files with volatile/unknown qos status)",
                 "disk|tape|disk+tape",
-                true,
-                null);
+                false,
+                EMPTY_DEFAULT);
+
+    static final BulkActivityArgumentDescriptor QOS_STATE =
+          new BulkActivityArgumentDescriptor("qosState",
+                "the index into the desired policy's list states",
+                "integer",
+                false,
+                "0");
+
+    static final BulkActivityArgumentDescriptor QOS_POLICY =
+          new BulkActivityArgumentDescriptor("qosPolicy",
+                "the name of the qos policy to apply to the file",
+                "string, max 64 chars",
+                false,
+                EMPTY_DEFAULT);
 
     public UpdateQoSActivityProvider() {
         super("UPDATE_QOS", FILE);
@@ -89,8 +104,9 @@ public final class UpdateQoSActivityProvider extends BulkActivityProvider<Update
         return UpdateQoSActivity.class;
     }
 
+    @Override
     public Set<BulkActivityArgumentDescriptor> getDescriptors() {
-        return ImmutableSet.of(DEFAULT_DESCRIPTOR);
+        return ImmutableSet.of(DEFAULT_DESCRIPTOR, QOS_STATE, QOS_POLICY);
     }
 
     @Override
