@@ -50,6 +50,7 @@
       <property name="quotaSystem" ref="quota-system"/>
       <property name="quotaEnabled" value="${pnfsmanager.enable.quota}"/>
       <property name="useParentHashOnCreate" value="${pnfsmanager.use-parent-hash-on-create}"/>
+      <property name="qosManager" ref="qos-manager"/>
   </bean>
 
     <bean id="data-source" class="org.dcache.db.AlarmEnabledDataSource" destroy-method="close">
@@ -149,6 +150,11 @@
       <description>Storage info extractor</description>
       <constructor-arg value="#{ T(diskCacheV111.util.AccessLatency).getAccessLatency('${pnfsmanager.default-access-latency}') }"/>
       <constructor-arg value="#{ T(diskCacheV111.util.RetentionPolicy).getRetentionPolicy('${pnfsmanager.default-retention-policy}') }"/>
+  </bean>
+
+  <bean id="qos-manager" class="org.dcache.chimera.qos.JdbcQos" depends-on="liquibase">
+    <description>Quota</description>
+    <constructor-arg ref="data-source"/>
   </bean>
 
   <bean id="name-space-provider"
