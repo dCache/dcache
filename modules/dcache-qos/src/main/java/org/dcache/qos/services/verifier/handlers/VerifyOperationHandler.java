@@ -74,6 +74,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Semaphore;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.qos.QoSException;
@@ -197,6 +198,11 @@ public class VerifyOperationHandler implements VerifyAndUpdateHandler {
      * Thread queues.
      */
     private ExecutorService updateExecutor;
+
+    /**
+     * Throttles requests to engine.
+     */
+    private Semaphore semaphore;
 
     /**
      * Statistics.
@@ -330,7 +336,13 @@ public class VerifyOperationHandler implements VerifyAndUpdateHandler {
             FileQoSUpdate data = new FileQoSUpdate(operation.getPnfsId(),
                   operation.getPrincipalPool(),
                   operation.getMessageType());
-            requirements = requirementsListener.fileQoSRequirementsRequested(data);
+
+            semaphore.acquire();
+            try {
+                requirements = requirementsListener.fileQoSRequirementsRequested(data);
+            } finally {
+                semaphore.release();
+            }
 
             if (requirements == null) {
                 if (operation.getMessageType() == CLEAR_CACHE_LOCATION) {
@@ -498,6 +510,10 @@ public class VerifyOperationHandler implements VerifyAndUpdateHandler {
 
     public void setManager(VerifyOperationManager manager) {
         this.manager = manager;
+    }
+
+    public void setMaxConcurrentRequirementRequests(int maxRequests) {
+        semaphore = new Semaphore(maxRequests);
     }
 
     public void setPoolInfoMap(PoolInfoMap poolInfoMap) {

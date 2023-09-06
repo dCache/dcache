@@ -286,6 +286,7 @@
     <property name="manager" ref="verify-operation-manager"/>
     <property name="scanRecordMap" ref="verify-scan-record-map"/>
     <property name="statusVerifier" ref="file-status-verifier"/>
+    <property name="maxConcurrentRequirementRequests" value="${qos.limits.messages.max-requirement-requests}"/>
     <property name="updateExecutor">
       <bean class="org.dcache.util.BoundedCachedExecutor" destroy-method="shutdownNow">
         <constructor-arg value="${qos.limits.verifier.submit-threads}"/>
