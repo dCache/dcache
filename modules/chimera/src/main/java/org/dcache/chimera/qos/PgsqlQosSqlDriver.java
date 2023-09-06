@@ -56,66 +56,17 @@ All documents and software available from this server are subject to U.S.
 export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
- */
-package org.dcache.qos;
+*/
+package org.dcache.chimera.qos;
 
-import java.io.Serializable;
-import java.util.List;
-import java.util.Objects;
+import javax.sql.DataSource;
 
 /**
- *  This is the template used to govern a file's QoS lifetime.
+ *  For the moment, no necessary optimizations.
  */
-public class QoSPolicy implements Serializable {
+public class PgsqlQosSqlDriver extends QosSqlDriver {
 
-    public static final String TAG_QOS_POLICY = "QosPolicy";
-
-    private static final long serialVersionUID = -3271665359959015633L;
-
-    /**
-     *  Specifies a particular policy as established by the administrator.
-     *  A file can have only one policy at a time.  The names must be
-     *  unique within the dCache instance.
-     */
-    private String name;
-
-    /**
-     *   An ordered list of states determining the transitions from one set of media to another
-     *   that the file should undergo during its lifetime.
-     */
-    private List<QoSState> states;
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public List<QoSState> getStates() {
-        return states;
-    }
-
-    public void setStates(List<QoSState> states) {
-        this.states = states;
-    }
-
-    public boolean equals(Object obj) {
-        if (!(obj instanceof QoSPolicy)) {
-            return false;
-        }
-
-        QoSPolicy other = (QoSPolicy) obj;
-        if ((name == null && other.name != null) || !name.equals(other.name)) {
-            return false;
-        }
-
-        return (states == null && other.states == null) ||
-              states != null && states.equals(other.states);
-    }
-
-    public int hashCode() {
-        return Objects.hash(name, states);
+    public PgsqlQosSqlDriver(DataSource dataSource) {
+        super(dataSource);
     }
 }

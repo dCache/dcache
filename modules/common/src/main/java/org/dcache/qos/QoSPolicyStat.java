@@ -60,62 +60,49 @@ documents or software obtained from this server.
 package org.dcache.qos;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
-/**
- *  This is the template used to govern a file's QoS lifetime.
- */
-public class QoSPolicy implements Serializable {
+public class QoSPolicyStat implements Serializable {
 
-    public static final String TAG_QOS_POLICY = "QosPolicy";
+    private static final long serialVersionUID = 534374137668236594L;
+    private static final String FORMAT = "%-36s | %-5s | %-16s";
 
-    private static final long serialVersionUID = -3271665359959015633L;
+    private String policyName;
+    private List<QoSPolicyStateCount> stateCountsList;
 
-    /**
-     *  Specifies a particular policy as established by the administrator.
-     *  A file can have only one policy at a time.  The names must be
-     *  unique within the dCache instance.
-     */
-    private String name;
+    public QoSPolicyStat() {
 
-    /**
-     *   An ordered list of states determining the transitions from one set of media to another
-     *   that the file should undergo during its lifetime.
-     */
-    private List<QoSState> states;
-
-    public String getName() {
-        return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public QoSPolicyStat(String policyName) {
+        this.policyName = policyName;
+        stateCountsList = new ArrayList<>();
     }
 
-    public List<QoSState> getStates() {
-        return states;
+    public String getPolicyName() {
+        return policyName;
     }
 
-    public void setStates(List<QoSState> states) {
-        this.states = states;
+    public List<QoSPolicyStateCount> getStateCountsList() {
+        return stateCountsList;
     }
 
-    public boolean equals(Object obj) {
-        if (!(obj instanceof QoSPolicy)) {
-            return false;
-        }
-
-        QoSPolicy other = (QoSPolicy) obj;
-        if ((name == null && other.name != null) || !name.equals(other.name)) {
-            return false;
-        }
-
-        return (states == null && other.states == null) ||
-              states != null && states.equals(other.states);
+    public void setPolicyName(String policyName) {
+        this.policyName = policyName;
     }
 
-    public int hashCode() {
-        return Objects.hash(name, states);
+    public void setStateCountsList(List<QoSPolicyStateCount> stateCountsList) {
+        this.stateCountsList = stateCountsList;
+    }
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        stateCountsList.forEach(
+                        pc -> sb.append(String.format(FORMAT, policyName,
+                                                      pc.getStateIndex(),
+                                                      pc.getNumberOfFiles()))
+                                .append("\n"));
+        return sb.toString();
     }
 }

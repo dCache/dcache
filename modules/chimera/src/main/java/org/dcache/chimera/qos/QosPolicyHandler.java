@@ -56,66 +56,53 @@ All documents and software available from this server are subject to U.S.
 export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
- */
-package org.dcache.qos;
+*/
 
-import java.io.Serializable;
+package org.dcache.chimera.qos;
+
 import java.util.List;
-import java.util.Objects;
+import java.util.Optional;
+import org.dcache.chimera.ChimeraFsException;
+import org.dcache.qos.QoSPolicy;
+import org.dcache.qos.QoSPolicyStat;
 
 /**
- *  This is the template used to govern a file's QoS lifetime.
+ *  Management of QoSPolicy storage and retrieval.
  */
-public class QoSPolicy implements Serializable {
-
-    public static final String TAG_QOS_POLICY = "QosPolicy";
-
-    private static final long serialVersionUID = -3271665359959015633L;
+public interface QosPolicyHandler {
 
     /**
-     *  Specifies a particular policy as established by the administrator.
-     *  A file can have only one policy at a time.  The names must be
-     *  unique within the dCache instance.
+     * Policies cannot be updated or overwritten.
+     *
+     * @param policy to add or substitute.
+     * @throws ChimeraFsException esp. if the policy already exists
      */
-    private String name;
+    void addQosPolicy(QoSPolicy policy) throws ChimeraFsException;
 
     /**
-     *   An ordered list of states determining the transitions from one set of media to another
-     *   that the file should undergo during its lifetime.
+     * @param name must be unique to the dCache instance.
+     * @return an optional of the corresponding policy.
      */
-    private List<QoSState> states;
+    Optional<QoSPolicy> getQosPolicy(String name) throws ChimeraFsException;
 
-    public String getName() {
-        return name;
-    }
+    /**
+     * @param name must be unique to the dCache instance.
+     * @return the id of the policy that has been removed
+     */
+    int removeQosPolicy(String name) throws ChimeraFsException;
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    /**
+     * @return list of all registered QoS policy names.
+     */
+    List<String> listQoSPolicies() throws ChimeraFsException;
 
-    public List<QoSState> getStates() {
-        return states;
-    }
+    /**
+     * @return list of state counts by policy name.
+     */
+    List<QoSPolicyStat> getPolicyStatsByPolicyName();
 
-    public void setStates(List<QoSState> states) {
-        this.states = states;
-    }
-
-    public boolean equals(Object obj) {
-        if (!(obj instanceof QoSPolicy)) {
-            return false;
-        }
-
-        QoSPolicy other = (QoSPolicy) obj;
-        if ((name == null && other.name != null) || !name.equals(other.name)) {
-            return false;
-        }
-
-        return (states == null && other.states == null) ||
-              states != null && states.equals(other.states);
-    }
-
-    public int hashCode() {
-        return Objects.hash(name, states);
-    }
+    /**
+     * @param id of the invalid QoS policy.
+     */
+    void invalidate(Integer id);
 }

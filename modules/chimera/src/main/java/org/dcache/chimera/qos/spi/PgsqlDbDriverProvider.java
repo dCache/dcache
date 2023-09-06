@@ -56,66 +56,34 @@ All documents and software available from this server are subject to U.S.
 export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
- */
-package org.dcache.qos;
+*/
+package org.dcache.chimera.qos.spi;
 
-import java.io.Serializable;
-import java.util.List;
-import java.util.Objects;
+import static org.dcache.util.SqlHelper.tryToClose;
 
-/**
- *  This is the template used to govern a file's QoS lifetime.
- */
-public class QoSPolicy implements Serializable {
+import java.sql.Connection;
+import java.sql.SQLException;
+import javax.sql.DataSource;
+import org.dcache.chimera.qos.PgsqlQosSqlDriver;
+import org.dcache.chimera.qos.QosSqlDriver;
 
-    public static final String TAG_QOS_POLICY = "QosPolicy";
+public class PgsqlDbDriverProvider implements DbDriverProvider {
 
-    private static final long serialVersionUID = -3271665359959015633L;
-
-    /**
-     *  Specifies a particular policy as established by the administrator.
-     *  A file can have only one policy at a time.  The names must be
-     *  unique within the dCache instance.
-     */
-    private String name;
-
-    /**
-     *   An ordered list of states determining the transitions from one set of media to another
-     *   that the file should undergo during its lifetime.
-     */
-    private List<QoSState> states;
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public List<QoSState> getStates() {
-        return states;
-    }
-
-    public void setStates(List<QoSState> states) {
-        this.states = states;
-    }
-
-    public boolean equals(Object obj) {
-        if (!(obj instanceof QoSPolicy)) {
-            return false;
+    @Override
+    public boolean isSupportedDB(DataSource dataSource)
+          throws SQLException {
+        Connection dbConnection = null;
+        try {
+            dbConnection = dataSource.getConnection();
+            String databaseProductName = dbConnection.getMetaData().getDatabaseProductName();
+            return databaseProductName.equalsIgnoreCase("PostgreSQL");
+        } finally {
+            tryToClose(dbConnection);
         }
-
-        QoSPolicy other = (QoSPolicy) obj;
-        if ((name == null && other.name != null) || !name.equals(other.name)) {
-            return false;
-        }
-
-        return (states == null && other.states == null) ||
-              states != null && states.equals(other.states);
     }
 
-    public int hashCode() {
-        return Objects.hash(name, states);
+    @Override
+    public QosSqlDriver getDriver(DataSource dataSource) throws SQLException {
+        return new PgsqlQosSqlDriver(dataSource);
     }
 }

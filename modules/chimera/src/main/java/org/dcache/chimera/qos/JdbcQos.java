@@ -56,66 +56,63 @@ All documents and software available from this server are subject to U.S.
 export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
- */
-package org.dcache.qos;
+*/
+package org.dcache.chimera.qos;
 
-import java.io.Serializable;
+import java.sql.SQLException;
 import java.util.List;
-import java.util.Objects;
+import java.util.Optional;
+import javax.sql.DataSource;
+import org.dcache.chimera.ChimeraFsException;
+import org.dcache.qos.QoSPolicy;
+import org.dcache.qos.QoSPolicyStat;
+import org.springframework.dao.DataAccessException;
 
-/**
- *  This is the template used to govern a file's QoS lifetime.
- */
-public class QoSPolicy implements Serializable {
+public class JdbcQos implements QosPolicyHandler {
 
-    public static final String TAG_QOS_POLICY = "QosPolicy";
+    private final QosSqlDriver sqlDriver;
 
-    private static final long serialVersionUID = -3271665359959015633L;
-
-    /**
-     *  Specifies a particular policy as established by the administrator.
-     *  A file can have only one policy at a time.  The names must be
-     *  unique within the dCache instance.
-     */
-    private String name;
-
-    /**
-     *   An ordered list of states determining the transitions from one set of media to another
-     *   that the file should undergo during its lifetime.
-     */
-    private List<QoSState> states;
-
-    public String getName() {
-        return name;
+    public JdbcQos(DataSource ds) throws SQLException {
+        sqlDriver = QosSqlDriver.getDriverInstance(ds);
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public List<QoSState> getStates() {
-        return states;
-    }
-
-    public void setStates(List<QoSState> states) {
-        this.states = states;
-    }
-
-    public boolean equals(Object obj) {
-        if (!(obj instanceof QoSPolicy)) {
-            return false;
+    @Override
+    public void addQosPolicy(QoSPolicy policy) throws ChimeraFsException {
+        if (!sqlDriver.insertPolicy(policy)) {
+            throw new ChimeraFsException("could not add qos policy " + policy.getName());
         }
-
-        QoSPolicy other = (QoSPolicy) obj;
-        if ((name == null && other.name != null) || !name.equals(other.name)) {
-            return false;
-        }
-
-        return (states == null && other.states == null) ||
-              states != null && states.equals(other.states);
     }
 
-    public int hashCode() {
-        return Objects.hash(name, states);
+    @Override
+    public Optional<QoSPolicy> getQosPolicy(String name) {
+        return Optional.ofNullable(sqlDriver.selectPolicy(name));
+    }
+
+    @Override
+    public int removeQosPolicy(String name) throws ChimeraFsException {
+        try {
+            int id = sqlDriver.getPolicyId(name);
+            if (!sqlDriver.deletePolicy(name)) {
+                throw new ChimeraFsException("failed to delete qos policy " + name);
+            }
+            return id;
+        } catch (DataAccessException e) {
+            throw new ChimeraFsException("Error getting policy id for + " + name, e);
+        }
+    }
+
+    @Override
+    public List<String> listQoSPolicies() {
+        return sqlDriver.selectPolicyNames();
+    }
+
+    @Override
+    public List<QoSPolicyStat> getPolicyStatsByPolicyName() {
+        return sqlDriver.selectCounts();
+    }
+
+    @Override
+    public void invalidate(Integer id) {
+        sqlDriver.invalidateQosPolicy(id);
     }
 }

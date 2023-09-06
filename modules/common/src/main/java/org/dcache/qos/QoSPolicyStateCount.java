@@ -60,62 +60,35 @@ documents or software obtained from this server.
 package org.dcache.qos;
 
 import java.io.Serializable;
-import java.util.List;
-import java.util.Objects;
 
-/**
- *  This is the template used to govern a file's QoS lifetime.
- */
-public class QoSPolicy implements Serializable {
+public class QoSPolicyStateCount implements Serializable {
 
-    public static final String TAG_QOS_POLICY = "QosPolicy";
+    private static final long serialVersionUID = 8083306459399381907L;
+    private int stateIndex;
+    private long numberOfFiles;
 
-    private static final long serialVersionUID = -3271665359959015633L;
+    public QoSPolicyStateCount() {
 
-    /**
-     *  Specifies a particular policy as established by the administrator.
-     *  A file can have only one policy at a time.  The names must be
-     *  unique within the dCache instance.
-     */
-    private String name;
-
-    /**
-     *   An ordered list of states determining the transitions from one set of media to another
-     *   that the file should undergo during its lifetime.
-     */
-    private List<QoSState> states;
-
-    public String getName() {
-        return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public QoSPolicyStateCount(int stateIndex, long numberOfFiles) {
+        this.stateIndex = stateIndex;
+        this.numberOfFiles = numberOfFiles;
     }
 
-    public List<QoSState> getStates() {
-        return states;
+    public int getStateIndex() {
+        return stateIndex;
     }
 
-    public void setStates(List<QoSState> states) {
-        this.states = states;
+    public long getNumberOfFiles() {
+        return numberOfFiles;
     }
 
-    public boolean equals(Object obj) {
-        if (!(obj instanceof QoSPolicy)) {
-            return false;
-        }
-
-        QoSPolicy other = (QoSPolicy) obj;
-        if ((name == null && other.name != null) || !name.equals(other.name)) {
-            return false;
-        }
-
-        return (states == null && other.states == null) ||
-              states != null && states.equals(other.states);
+    public void setStateIndex(int stateIndex) {
+        this.stateIndex = stateIndex;
     }
 
-    public int hashCode() {
-        return Objects.hash(name, states);
+    public void setNumberOfFiles(long numberOfFiles) {
+        this.numberOfFiles = numberOfFiles;
     }
 }
