@@ -59,10 +59,18 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.activity.plugin.qos;
 
+import com.google.common.base.Throwables;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.Message;
 import dmg.cells.nucleus.CellMessageReceiver;
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import org.dcache.qos.data.QoSAction;
 import org.dcache.vehicles.qos.QoSTransitionCompletedMessage;
 
 /**
@@ -81,6 +89,24 @@ public class QoSResponseReceiver implements CellMessageReceiver {
         QoSTransitionFuture future = new QoSTransitionFuture();
         waiting.put(pnfsid, future);
         return future;
+    }
+
+    public void setAsyncListener(PnfsId pnfsid, ListenableFuture<Message> asyncFuture) {
+        asyncFuture.addListener(() -> {
+            Serializable error;
+            try {
+                error = asyncFuture.get().getErrorObject();
+            } catch (ExecutionException | InterruptedException e) {
+                error = Throwables.getRootCause(e);
+            }
+
+            /*
+             *  Only report completion on submission error.
+             */
+            if (error != null) {
+                messageArrived(new QoSTransitionCompletedMessage(pnfsid, QoSAction.VOID, error));
+            }
+        }, MoreExecutors.directExecutor());
     }
 
     public void messageArrived(QoSTransitionCompletedMessage message) {
