@@ -48,7 +48,9 @@ public class Stat {
         BLK_SIZE,
         ACCESS_LATENCY,
         RETENTION_POLICY,
-        STATE
+        STATE,
+        QOS_POLICY,
+        QOS_STATE
     }
 
     /**
@@ -68,6 +70,17 @@ public class Stat {
     private long _generation; //
     private int _accessLatency;
     private int _retentionPolicy;
+
+    /*
+     * Reference to the id of the file's QoS policy.
+     */
+    private Integer _qosPolicy;
+
+    /*
+     * Index into the list of states in the QoS policy; this represents the file's
+     * current QoS state.
+     */
+    private Integer _qosState;
 
     /*
      * Opposite to classic Unix, all times in milliseconds
@@ -116,6 +129,8 @@ public class Stat {
         _ctime = stat._ctime;
         _crtime = stat._crtime;
         _state = stat._state;
+        _qosPolicy = stat._qosPolicy;
+        _qosState = stat._qosState;
     }
 
     public int getDev() {
@@ -296,6 +311,26 @@ public class Stat {
         _state = state;
     }
 
+    public Integer getQosPolicy() {
+        guard(StatAttributes.QOS_POLICY);
+        return _qosPolicy;
+    }
+
+    public void setQosPolicy(Integer qosPolicy) {
+        define(StatAttributes.QOS_POLICY);
+        _qosPolicy = qosPolicy;
+    }
+
+    public Integer getQosState() {
+        guard(StatAttributes.QOS_STATE);
+        return _qosState;
+    }
+
+    public void setQosState(Integer qosState) {
+        define(StatAttributes.QOS_STATE);
+        _qosState = qosState;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -425,7 +460,7 @@ public class Stat {
      * @param other to get values from.
      */
     public void update(Stat other) {
-        for (Stat.StatAttributes attr : other.getDefinedAttributeses()) {
+        for (StatAttributes attr : other.getDefinedAttributeses()) {
             switch (attr) {
                 case DEV:
                     this.setDev(other.getDev());
@@ -468,6 +503,12 @@ public class Stat {
                     this.setCrTime(other.getCrTime());
                     break;
                 case BLK_SIZE:
+                    break;
+                case QOS_POLICY:
+                    this.setQosPolicy(other.getQosPolicy());
+                    break;
+                case QOS_STATE:
+                    this.setQosState(other.getQosState());
                     break;
             }
         }

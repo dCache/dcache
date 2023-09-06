@@ -575,4 +575,18 @@ public interface FileSystemProvider extends Closeable {
      * @return resolved path.
      */
     String resolvePath(String path) throws ChimeraFsException;
+
+    /**
+     * @param id of the policy.
+     * @return name of the policy.
+     * @throws ChimeraFsException
+     */
+    String qosPolicyIdToName(Integer id) throws ChimeraFsException;
+
+    /**
+     * @param name of the policy.
+     * @return id of the policy.
+     * @throws ChimeraFsException
+     */
+    Integer qosPolicyNameToId(String name) throws ChimeraFsException;
 }

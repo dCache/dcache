@@ -20,6 +20,7 @@ import static java.util.stream.Collectors.toList;
 import static org.dcache.chimera.FileSystemProvider.SetXattrMode;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
 
+import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Ints;
@@ -38,6 +39,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -59,6 +61,7 @@ import org.dcache.acl.enums.RsType;
 import org.dcache.acl.enums.Who;
 import org.dcache.chimera.FileSystemProvider.StatCacheOption;
 import org.dcache.chimera.posix.Stat;
+import org.dcache.chimera.posix.Stat.StatAttributes;
 import org.dcache.chimera.spi.DBDriverProvider;
 import org.dcache.chimera.store.InodeStorageInformation;
 import org.dcache.util.Checksum;
@@ -408,6 +411,8 @@ public class FsSqlDriver {
         if (!rs.wasNull()) {
             stat.setAccessLatency(AccessLatency.getAccessLatency(al));
         }
+        stat.setQosPolicy((Integer)rs.getObject("iqos_policy")); // can be null
+        stat.setQosState((Integer)rs.getObject("iqos_state")); // can be null
         stat.setSize(rs.getLong("isize"));
         stat.setATime(rs.getTimestamp("iatime").getTime());
         stat.setCTime(rs.getTimestamp("ictime").getTime());
@@ -687,8 +692,9 @@ public class FsSqlDriver {
 
     boolean removeInodeIfUnlinked(FsInode inode, boolean isDir) {
         if (isDir) {
-            int n = _jdbc.update("DELETE FROM t_inodes WHERE inumber=? AND NOT EXISTS (SELECT 1 FROM t_dirs WHERE iparent = ? LIMIT 1)",
-                    inode.ino(), inode.ino());
+            int n = _jdbc.update(
+                  "DELETE FROM t_inodes WHERE inumber=? AND NOT EXISTS (SELECT 1 FROM t_dirs WHERE iparent = ? LIMIT 1)",
+                  inode.ino(), inode.ino());
             return n > 0;
         }
 
@@ -721,8 +727,9 @@ public class FsSqlDriver {
                   ps.setTimestamp(2, now);
                   ps.setTimestamp(3, now);
               });
-        int n = _jdbc.update("DELETE FROM t_inodes WHERE inumber=? AND NOT EXISTS (SELECT 1 FROM t_dirs WHERE ichild = ? LIMIT 1)",
-                inode.ino(), inode.ino());
+        int n = _jdbc.update(
+              "DELETE FROM t_inodes WHERE inumber=? AND NOT EXISTS (SELECT 1 FROM t_dirs WHERE ichild = ? LIMIT 1)",
+              inode.ino(), inode.ino());
         return n > 0;
     }
 
@@ -1789,7 +1796,7 @@ public class FsSqlDriver {
 
     /**
      * Should return the actual absolute path with all symlinks followed.
-     *
+     * <p>
      * This base implementation composes inode2path(path2inode).
      *
      * @param root node from which to begin path three walk.
@@ -1833,7 +1840,7 @@ public class FsSqlDriver {
           FsInode inode, Stat stat, int level)
           throws SQLException {
 
-        if (stat.isDefined(Stat.StatAttributes.ATIME)
+        if (stat.isDefined(StatAttributes.ATIME)
               && stat.getDefinedAttributeses().size() == 1) {
             /*
              * ATIME only update. The CTIME must stay unchanged.
@@ -1850,51 +1857,57 @@ public class FsSqlDriver {
                     ? "UPDATE t_inodes SET ictime=?,igeneration=igeneration+1"
                     : ("UPDATE t_level_" + level + " SET ictime=?");
         final String attrUpdateSuffix =
-              (level == 0 && stat.isDefined(Stat.StatAttributes.SIZE))
+              (level == 0 && stat.isDefined(StatAttributes.SIZE))
                     ? " WHERE inumber=? AND itype = " + UnixPermission.S_IFREG
                     : " WHERE inumber=?";
 
         StringBuilder sb = new StringBuilder(128);
-        long ctime = stat.isDefined(Stat.StatAttributes.CTIME) ? stat.getCTime() :
+        long ctime = stat.isDefined(StatAttributes.CTIME) ? stat.getCTime() :
               System.currentTimeMillis();
 
         // set size always must trigger mtime update
-        if (stat.isDefined(Stat.StatAttributes.SIZE) && !stat.isDefined(
-              Stat.StatAttributes.MTIME)) {
+        if (stat.isDefined(StatAttributes.SIZE) && !stat.isDefined(
+              StatAttributes.MTIME)) {
             stat.setMTime(ctime);
         }
 
         sb.append(attrUpdatePrefix);
 
-        if (stat.isDefined(Stat.StatAttributes.UID)) {
+        if (stat.isDefined(StatAttributes.UID)) {
             sb.append(",iuid=?");
         }
-        if (stat.isDefined(Stat.StatAttributes.GID)) {
+        if (stat.isDefined(StatAttributes.GID)) {
             sb.append(",igid=?");
         }
-        if (stat.isDefined(Stat.StatAttributes.SIZE)) {
+        if (stat.isDefined(StatAttributes.SIZE)) {
             sb.append(",isize=?");
         }
-        if (stat.isDefined(Stat.StatAttributes.MODE)) {
+        if (stat.isDefined(StatAttributes.MODE)) {
             sb.append(",imode=?");
         }
-        if (stat.isDefined(Stat.StatAttributes.MTIME)) {
+        if (stat.isDefined(StatAttributes.MTIME)) {
             sb.append(",imtime=?");
         }
-        if (stat.isDefined(Stat.StatAttributes.ATIME)) {
+        if (stat.isDefined(StatAttributes.ATIME)) {
             sb.append(",iatime=?");
         }
-        if (stat.isDefined(Stat.StatAttributes.CRTIME)) {
+        if (stat.isDefined(StatAttributes.CRTIME)) {
             sb.append(",icrtime=?");
         }
-        if (stat.isDefined(Stat.StatAttributes.ACCESS_LATENCY)) {
+        if (stat.isDefined(StatAttributes.ACCESS_LATENCY)) {
             sb.append(",iaccess_latency=?");
         }
-        if (stat.isDefined(Stat.StatAttributes.RETENTION_POLICY)) {
+        if (stat.isDefined(StatAttributes.RETENTION_POLICY)) {
             sb.append(",iretention_policy=?");
         }
-        if (stat.isDefined(Stat.StatAttributes.STATE)) {
+        if (stat.isDefined(StatAttributes.STATE)) {
             sb.append(",iio=?");
+        }
+        if (stat.isDefined(StatAttributes.QOS_POLICY)) {
+            sb.append(",iqos_policy=?");
+        }
+        if (stat.isDefined(StatAttributes.QOS_STATE)) {
+            sb.append(",iqos_state=?");
         }
         sb.append(attrUpdateSuffix);
 
@@ -1904,35 +1917,49 @@ public class FsSqlDriver {
         int idx = 1;
         preparedStatement.setTimestamp(idx++, new Timestamp(ctime));
         // NOTICE: order here MUST match the order of processing attributes above.
-        if (stat.isDefined(Stat.StatAttributes.UID)) {
+        if (stat.isDefined(StatAttributes.UID)) {
             preparedStatement.setInt(idx++, stat.getUid());
         }
-        if (stat.isDefined(Stat.StatAttributes.GID)) {
+        if (stat.isDefined(StatAttributes.GID)) {
             preparedStatement.setInt(idx++, stat.getGid());
         }
-        if (stat.isDefined(Stat.StatAttributes.SIZE)) {
+        if (stat.isDefined(StatAttributes.SIZE)) {
             preparedStatement.setLong(idx++, stat.getSize());
         }
-        if (stat.isDefined(Stat.StatAttributes.MODE)) {
+        if (stat.isDefined(StatAttributes.MODE)) {
             preparedStatement.setInt(idx++, stat.getMode() & UnixPermission.S_PERMS);
         }
-        if (stat.isDefined(Stat.StatAttributes.MTIME)) {
+        if (stat.isDefined(StatAttributes.MTIME)) {
             preparedStatement.setTimestamp(idx++, new Timestamp(stat.getMTime()));
         }
-        if (stat.isDefined(Stat.StatAttributes.ATIME)) {
+        if (stat.isDefined(StatAttributes.ATIME)) {
             preparedStatement.setTimestamp(idx++, new Timestamp(stat.getATime()));
         }
-        if (stat.isDefined(Stat.StatAttributes.CRTIME)) {
+        if (stat.isDefined(StatAttributes.CRTIME)) {
             preparedStatement.setTimestamp(idx++, new Timestamp(stat.getCrTime()));
         }
-        if (stat.isDefined(Stat.StatAttributes.ACCESS_LATENCY)) {
+        if (stat.isDefined(StatAttributes.ACCESS_LATENCY)) {
             preparedStatement.setInt(idx++, stat.getAccessLatency().getId());
         }
-        if (stat.isDefined(Stat.StatAttributes.RETENTION_POLICY)) {
+        if (stat.isDefined(StatAttributes.RETENTION_POLICY)) {
             preparedStatement.setInt(idx++, stat.getRetentionPolicy().getId());
         }
-        if (stat.isDefined(Stat.StatAttributes.STATE)) {
+        if (stat.isDefined(StatAttributes.STATE)) {
             preparedStatement.setInt(idx++, stat.getState().getValue());
+        }
+        if (stat.isDefined(StatAttributes.QOS_POLICY)) {
+            if (stat.getQosPolicy() == null) {
+                preparedStatement.setNull(idx++, Types.NULL);
+            } else {
+                preparedStatement.setObject(idx++, stat.getQosPolicy());
+            }
+        }
+        if (stat.isDefined(StatAttributes.QOS_STATE)) {
+            if (stat.getQosState() == null) {
+                preparedStatement.setNull(idx++, Types.NULL);
+            } else {
+                preparedStatement.setObject(idx++, stat.getQosState());
+            }
         }
         preparedStatement.setLong(idx++, inode.ino());
         return preparedStatement;
@@ -2073,7 +2100,6 @@ public class FsSqlDriver {
 
                 Long label_id = getLabel(labelname);
 
-
                 Integer n = _jdbc.queryForObject(
                       "SELECT count(*) FROM t_labels_ref WHERE inumber=? and label_id = ?",
                       Integer.class, inode.ino(), label_id);
@@ -2094,7 +2120,6 @@ public class FsSqlDriver {
                           ps.setLong(4, inode.ino());
 
                       });
-
 
 
             }
@@ -2221,10 +2246,30 @@ public class FsSqlDriver {
      * maintenance task runs as a single transaction, or as a series of transactions, if sub-tasks
      * are involved. The thread running the tasks might be interrupted, for example, due to shutdown
      * of the dCache processes.
-     *
-     * The implementation should handle multiple instances of the maintenance task running concurrently,
+     * <p>
+     * The implementation should handle multiple instances of the maintenance task running
+     * concurrently,
      */
     void performMaintenanceTask() {
 
+    }
+
+    /**
+     * These are for converting between the Inode (Stat) layer and the FileAttributes layer.
+     * In essence, the inode table stores an int foreign key ref to the policy, but the attributes
+     * store the policy name.
+     */
+    String getQoSPolicyName(Integer id) throws SQLException {
+        if (id == null) {
+            return null;
+        }
+        return _jdbc.queryForObject("SELECT name FROM t_qos_policy WHERE id=?", String.class, id);
+    }
+
+    Integer getQoSPolicyId(String name) throws SQLException {
+        if (Strings.emptyToNull(name) == null) {
+            return null;
+        }
+        return _jdbc.queryForObject("SELECT id FROM t_qos_policy WHERE name=?", Integer.class, name);
     }
 }

@@ -1569,6 +1569,24 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
         }
     }
 
+    @Override
+    public String qosPolicyIdToName(Integer id) throws ChimeraFsException {
+        try {
+            return _sqlDriver.getQoSPolicyName(id);
+        } catch (SQLException e) {
+            throw new ChimeraFsException(e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public Integer qosPolicyNameToId(String name) throws ChimeraFsException {
+        try {
+            return _sqlDriver.getQoSPolicyId(name);
+        } catch (SQLException e) {
+            throw new ChimeraFsException(e.getMessage(), e);
+        }
+    }
+
     private interface FallibleTransactionCallback<T> {
 
         T doInTransaction(TransactionStatus status) throws ChimeraFsException;
