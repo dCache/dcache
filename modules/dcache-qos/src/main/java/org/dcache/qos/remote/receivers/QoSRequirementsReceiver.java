@@ -64,13 +64,13 @@ import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
-import dmg.cells.nucleus.Reply;
 import java.util.function.Consumer;
 import org.dcache.cells.MessageReply;
 import org.dcache.qos.services.engine.handler.FileQoSStatusHandler;
 import org.dcache.qos.util.MessageGuard;
 import org.dcache.qos.util.MessageGuard.Status;
 import org.dcache.vehicles.CorruptFileMessage;
+import org.dcache.vehicles.qos.FileQoSPolicyInfoMessage;
 import org.dcache.vehicles.qos.QoSActionCompleteMessage;
 import org.dcache.vehicles.qos.QoSCancelRequirementsModifiedMessage;
 import org.dcache.vehicles.qos.QoSRequirementsModifiedMessage;
@@ -183,6 +183,13 @@ public final class QoSRequirementsReceiver implements CellMessageReceiver, Consu
               .forEach(action -> fileStatusHandler.handleActionCompleted(action.getPnfsId(),
                     action.getAction(),
                     action.getError()));
+    }
+
+    public MessageReply messageArrived(FileQoSPolicyInfoMessage message) {
+        MessageReply<Message> reply = new MessageReply<>();
+        fileStatusHandler.handleQoSPolicyInfoRequest(message, reply);
+
+        return reply;
     }
 
     public void setMessageGuard(MessageGuard messageGuard) {

@@ -57,42 +57,49 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.qos.services.engine.provider;
+package org.dcache.vehicles.qos;
 
-import diskCacheV111.util.CacheException;
-import javax.security.auth.Subject;
-import org.dcache.qos.QoSException;
-import org.dcache.qos.data.FileQoSRequirements;
-import org.dcache.qos.data.FileQoSUpdate;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.Message;
+import org.dcache.qos.data.FileQosPolicyInfo;
 
-public interface QoSRequirementsProvider {
+public class FileQoSPolicyInfoMessage extends Message {
 
-    /**
-     * Implementation-dependent response to request for file's QoS requirements.
-     *
-     * @param update containing file pnfsid, originating type of message, and optional location for
-     *               the file source.
-     * @return requirements, in particular the number and distribution of persistent disk and tape
-     * replicas.
-     */
-    FileQoSRequirements fetchRequirements(FileQoSUpdate update) throws QoSException;
+    private static final long serialVersionUID = -6466822721150231669L;
+    private FsPath path;
+    private PnfsId pnfsId;
+    private FileQosPolicyInfo qosPolicyInfo;
 
-    /**
-     * Used internally to avoid another call to the PnfsManager.
-     *
-     * @param update containing file pnfsid, originating type of message, and optional location for
-     *               the file source.
-     * @param descriptor initialized by a previous call to the PnfsManager.
-     * @return requirements, in particular the number and distribution of persistent disk and tape
-     */
-    FileQoSRequirements fetchRequirements(FileQoSUpdate update, FileQoSRequirements descriptor) throws QoSException;
+    public FileQoSPolicyInfoMessage(FsPath path) {
+        this.path = path;
+    }
 
-    /**
-     * Implementation-dependent response to requested change in QoS requirements.
-     *
-     * @param newRequirements in particular the number and distribution of persistent disk and tape
-     *                        replicas.
-     * @param subject subject of the request.
-     */
-    void handleModifiedRequirements(FileQoSRequirements newRequirements, Subject subject) throws QoSException, CacheException;
+    public FileQoSPolicyInfoMessage(PnfsId pnfsId) {
+        this.pnfsId = pnfsId;
+    }
+
+    public FsPath getPath() {
+        return path;
+    }
+
+    public void setPath(FsPath path) {
+        this.path = path;
+    }
+
+    public PnfsId getPnfsId() {
+        return pnfsId;
+    }
+
+    public void setPnfsId(PnfsId pnfsId) {
+        this.pnfsId = pnfsId;
+    }
+
+    public FileQosPolicyInfo getQosPolicyInfo() {
+        return qosPolicyInfo;
+    }
+
+    public void setQosPolicyInfo(FileQosPolicyInfo qosPolicyInfo) {
+        this.qosPolicyInfo = qosPolicyInfo;
+    }
 }

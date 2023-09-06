@@ -7,6 +7,7 @@ check -strong qos-verifier.cell.consume
 check -strong qos-verifier.cell.subscribe
 check -strong qos.pool-monitor-topic
 check -strong qos.home
+check -strong qos.limits.messages.max-requirement-requests
 check -strong qos-verifier.db.connections.max
 check -strong qos-verifier.db.connections.idle
 check -strong qos-verifier.db.fetch-size

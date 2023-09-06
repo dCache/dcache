@@ -57,42 +57,60 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.qos.services.engine.provider;
+package org.dcache.qos.services.engine.data;
 
-import diskCacheV111.util.CacheException;
-import javax.security.auth.Subject;
-import org.dcache.qos.QoSException;
-import org.dcache.qos.data.FileQoSRequirements;
-import org.dcache.qos.data.FileQoSUpdate;
+import diskCacheV111.util.PnfsId;
 
-public interface QoSRequirementsProvider {
+/**
+ *  Holds information about a file qos state.  There should not be more than one
+ *  of these per file at a time.
+ */
+public class QoSRecord {
 
-    /**
-     * Implementation-dependent response to request for file's QoS requirements.
-     *
-     * @param update containing file pnfsid, originating type of message, and optional location for
-     *               the file source.
-     * @return requirements, in particular the number and distribution of persistent disk and tape
-     * replicas.
-     */
-    FileQoSRequirements fetchRequirements(FileQoSUpdate update) throws QoSException;
+    private final long id;
+    private final PnfsId pnfsId;
+    private final long expiration;
+    private final int currentState;
 
-    /**
-     * Used internally to avoid another call to the PnfsManager.
-     *
-     * @param update containing file pnfsid, originating type of message, and optional location for
-     *               the file source.
-     * @param descriptor initialized by a previous call to the PnfsManager.
-     * @return requirements, in particular the number and distribution of persistent disk and tape
-     */
-    FileQoSRequirements fetchRequirements(FileQoSUpdate update, FileQoSRequirements descriptor) throws QoSException;
+    public QoSRecord(long id, PnfsId pnfsId, long expiration, int currentState) {
+        this.id = id;
+        this.pnfsId = pnfsId;
+        this.expiration = expiration;
+        this.currentState = currentState;
+    }
 
-    /**
-     * Implementation-dependent response to requested change in QoS requirements.
-     *
-     * @param newRequirements in particular the number and distribution of persistent disk and tape
-     *                        replicas.
-     * @param subject subject of the request.
-     */
-    void handleModifiedRequirements(FileQoSRequirements newRequirements, Subject subject) throws QoSException, CacheException;
+    public long getId() {
+        return id;
+    }
+
+    public PnfsId getPnfsId() {
+        return pnfsId;
+    }
+
+    public long getExpiration() {
+        return expiration;
+    }
+
+    public int getCurrentState() {
+        return currentState;
+    }
+
+    public String toString() {
+        return String.format("(pnfsid %s)(current state index %s)(expires %s)", pnfsId,
+              currentState, expiration);
+    }
+
+    public boolean equals(Object other) {
+        if (!(other instanceof QoSRecord)) {
+            return false;
+        }
+
+        QoSRecord record = (QoSRecord) other;
+
+        return pnfsId.equals(record.pnfsId);
+    }
+
+    public int hashCode() {
+        return pnfsId.hashCode();
+    }
 }

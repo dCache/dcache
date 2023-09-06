@@ -57,42 +57,58 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.qos.services.engine.provider;
+package org.dcache.qos.data;
 
-import diskCacheV111.util.CacheException;
-import javax.security.auth.Subject;
-import org.dcache.qos.QoSException;
-import org.dcache.qos.data.FileQoSRequirements;
-import org.dcache.qos.data.FileQoSUpdate;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.util.PnfsId;
+import java.io.Serializable;
 
-public interface QoSRequirementsProvider {
+public class FileQosPolicyInfo implements Serializable {
 
-    /**
-     * Implementation-dependent response to request for file's QoS requirements.
-     *
-     * @param update containing file pnfsid, originating type of message, and optional location for
-     *               the file source.
-     * @return requirements, in particular the number and distribution of persistent disk and tape
-     * replicas.
-     */
-    FileQoSRequirements fetchRequirements(FileQoSUpdate update) throws QoSException;
+    private static final long serialVersionUID = 4864003896594366273L;
+    private PnfsId pnfsId;
+    private FsPath path;
+    private String policyName;
+    private Integer policyState;
+    private Long expires;
 
-    /**
-     * Used internally to avoid another call to the PnfsManager.
-     *
-     * @param update containing file pnfsid, originating type of message, and optional location for
-     *               the file source.
-     * @param descriptor initialized by a previous call to the PnfsManager.
-     * @return requirements, in particular the number and distribution of persistent disk and tape
-     */
-    FileQoSRequirements fetchRequirements(FileQoSUpdate update, FileQoSRequirements descriptor) throws QoSException;
+    public PnfsId getPnfsId() {
+        return pnfsId;
+    }
 
-    /**
-     * Implementation-dependent response to requested change in QoS requirements.
-     *
-     * @param newRequirements in particular the number and distribution of persistent disk and tape
-     *                        replicas.
-     * @param subject subject of the request.
-     */
-    void handleModifiedRequirements(FileQoSRequirements newRequirements, Subject subject) throws QoSException, CacheException;
+    public void setPnfsId(PnfsId pnfsId) {
+        this.pnfsId = pnfsId;
+    }
+
+    public FsPath getPath() {
+        return path;
+    }
+
+    public void setPath(FsPath path) {
+        this.path = path;
+    }
+
+    public String getPolicyName() {
+        return policyName;
+    }
+
+    public void setPolicyName(String policyName) {
+        this.policyName = policyName;
+    }
+
+    public Integer getPolicyState() {
+        return policyState;
+    }
+
+    public void setPolicyState(Integer policyState) {
+        this.policyState = policyState;
+    }
+
+    public Long getExpires() {
+        return expires;
+    }
+
+    public void setExpires(Long expires) {
+        this.expires = expires;
+    }
 }
