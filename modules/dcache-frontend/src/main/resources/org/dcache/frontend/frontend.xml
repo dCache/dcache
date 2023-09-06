@@ -599,6 +599,7 @@
     </bean>
     <bean class="org.dcache.restful.resources.labels.LabelsResources" scope="request"/>
     <bean class="org.dcache.restful.resources.namespace.IdResources" scope="request"/>
+    <bean class="org.dcache.restful.resources.namespace.QosPolicyResource" scope="request"/>
     <bean class="org.dcache.restful.resources.pool.PoolGroupInfoResources" scope="request"/>
     <bean class="org.dcache.restful.resources.pool.PoolInfoResources" scope="request">
       <property name="unlimitedOperationVisibility" value="${frontend.authz.unlimited-operation-visibility}"/>
@@ -606,6 +607,7 @@
     <bean class="org.dcache.restful.resources.restores.RestoreResources" scope="request">
       <property name="unlimitedOperationVisibility" value="${frontend.authz.unlimited-operation-visibility}"/>
     </bean>
+    <bean class="org.dcache.restful.resources.qos.QoSPolicyResource" scope="request"/>
     <bean class="org.dcache.restful.resources.quota.QuotaResources" scope="request"/>
     <bean class="org.dcache.restful.resources.selection.LinkResources" scope="request"/>
     <bean class="org.dcache.restful.resources.selection.UnitResources" scope="request"/>
