@@ -59,13 +59,12 @@ documents or software obtained from this server.
  */
 package org.dcache.qos.remote.receivers;
 
-import com.google.common.base.Throwables;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
-import java.util.concurrent.ExecutionException;
+import dmg.cells.nucleus.Reply;
 import java.util.function.Consumer;
 import org.dcache.cells.MessageReply;
 import org.dcache.qos.services.engine.handler.FileQoSStatusHandler;
@@ -154,23 +153,16 @@ public final class QoSRequirementsReceiver implements CellMessageReceiver, Consu
         return reply;
     }
 
-    /**
-     * Made this synchronous to support Frontend request.
-     */
-    public QoSRequirementsModifiedMessage messageArrived(QoSRequirementsModifiedMessage message) {
+    public MessageReply<QoSRequirementsModifiedMessage> messageArrived(QoSRequirementsModifiedMessage message) {
+        MessageReply<QoSRequirementsModifiedMessage> reply = new MessageReply<>();
         if (messageGuard.getStatus("QoSRequirementsModifiedMessage", message)
               == Status.DISABLED) {
             message.setFailed(CacheException.SERVICE_UNAVAILABLE, "messages disabled");
-            return message;
+            reply.reply(message);
+            return reply;
         }
-        try {
-            fileStatusHandler.handleQoSModification(message).get();
-        } catch (InterruptedException e) {
-            message.setFailed(CacheException.TIMEOUT, e);
-        } catch (ExecutionException e) {
-            message.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, Throwables.getRootCause(e));
-        }
-        return message;
+
+        return fileStatusHandler.handleQoSModification(message);
     }
 
     public void messageArrived(QoSCancelRequirementsModifiedMessage message) {

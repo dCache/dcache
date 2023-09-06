@@ -80,6 +80,7 @@ public interface QoSRequirementsListener {
 
     /**
      * A client sends this when it wishes to change a file's QoS requirements.
+     * This call is assumed to block.
      *
      * @param newRequirements describing principally how many peristent disk and tape copies are
      *                        required.
