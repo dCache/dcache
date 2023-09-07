@@ -660,7 +660,7 @@ public class DcacheResourceFactory
     private DcacheResource getResource(FsPath path, FileAttributes attributes) {
         if (attributes.getFileType() == DIR) {
             return new DcacheDirectoryResource(this, path, attributes,
-                  _includeAllAttributesForPropfind);
+                  isFetchAllAttributes());
         } else {
             return new DcacheFileResource(this, path, attributes);
         }
@@ -1138,7 +1138,7 @@ public class DcacheResourceFactory
               pnfs.createPnfsDirectory(path.toString(), REQUIRED_ATTRIBUTES);
 
         return new DcacheDirectoryResource(this, path, reply.getFileAttributes(),
-              _includeAllAttributesForPropfind);
+              isFetchAllAttributes());
     }
 
     public void move(FsPath sourcePath, PnfsId pnfsId, FsPath newPath)
