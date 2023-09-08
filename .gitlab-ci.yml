@@ -336,10 +336,12 @@ collect_logs:
   allow_failure: true
   script:
     - kubectl -n $K8S_NAMESPACE get pods | grep Running | awk '{print $1}' | xargs -n1 kubectl -n $K8S_NAMESPACE logs | tee $K8S_NAMESPACE.log
+    - kubectl -n $K8S_NAMESPACE run -ti --rm --image=edenhill/kcat:1.7.1 kcat -- kcat -C -t billing -b billing-kafka:9092 -p 0 -e -q > $K8S_NAMESPACE-billing.json || true
   artifacts:
     name: "logs-$CI_PIPELINE_ID"
     paths:
       - "$K8S_NAMESPACE.log"
+      - "$K8S_NAMESPACE-billing.json"
 
 #
 # dispose kubernetes resources
