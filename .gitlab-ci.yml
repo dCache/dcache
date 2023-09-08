@@ -54,6 +54,10 @@ before_script:
       echo "Runner tgas      : $CI_RUNNER_TAGS"
       echo "=========================================="
 
+default:
+  tags:
+    - dcache-dev
+
 #
 # default tags and image for testing stages/kubernetes/helm 
 #
