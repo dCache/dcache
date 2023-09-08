@@ -144,6 +144,10 @@ public abstract class AbstractRequestContainerJob
         public void run() {
             try {
                 doList();
+            } catch (InterruptedException e) {
+                containerState = ContainerState.STOP;
+                target.setErrorObject(e);
+                update(CANCELLED);
             } catch (Throwable e) {
                 errorHandler.accept(e);
                 Throwables.throwIfUnchecked(e);
