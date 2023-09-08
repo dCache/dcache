@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.dcache.pool.repository.RepositoryChannel;
@@ -111,6 +112,11 @@ public abstract class Mode extends AbstractMultiplexerListener {
     private final List<InetSocketAddress> _addresses = new ArrayList<>();
 
     private String _lastFailure;
+
+    /**
+     * Local endpoint used for transfer.
+     */
+    private volatile InetSocketAddress _localEndpoint;
 
     /**
      * Constructs a new mode for outgoing connections.
@@ -427,6 +433,7 @@ public abstract class Mode extends AbstractMultiplexerListener {
             _opened++;
             LOGGER.debug("Opened {}", socket);
             _addresses.add((InetSocketAddress) socket.getRemoteSocketAddress());
+            _localEndpoint = (InetSocketAddress) socket.getLocalSocketAddress();
             channel.configureBlocking(false);
             if (_bufferSize > 0) {
                 channel.socket().setSendBufferSize(_bufferSize);
@@ -453,6 +460,7 @@ public abstract class Mode extends AbstractMultiplexerListener {
                 _opened++;
                 LOGGER.debug("Opened {}", socket);
                 _addresses.add((InetSocketAddress) socket.getLocalSocketAddress());
+                _localEndpoint = (InetSocketAddress) socket.getLocalSocketAddress();
                 newConnection(multiplexer, channel);
             }
         } catch (IOException e) {
@@ -589,6 +597,13 @@ public abstract class Mode extends AbstractMultiplexerListener {
                 pw.println("Desired transferred: " + describeSize(_size));
             }
         }
+    }
+
+    /**
+     * Returns local endpoint used for the transfer, if known.
+     */
+    public Optional<InetSocketAddress> localEndpoint() {
+        return Optional.ofNullable(_localEndpoint);
     }
 
     abstract public String name();
