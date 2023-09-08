@@ -100,7 +100,14 @@ public final class RemoteQoSVerificationClient implements QoSVerificationListene
     @Override
     public void fileQoSVerificationCancelled(PnfsId pnfsId, Subject subject) throws QoSException {
         QoSVerificationCancelledMessage msg = new QoSVerificationCancelledMessage(pnfsId);
-        msg.setSubject(subject);
+        /*
+         *  The only cancellation that can currently take place is either
+         *  through the Bulk service or the admin interface.
+         *  In the former case, a pre-authorization check of the subject is done;
+         *  in the latter, the subject has the admin role.
+         *  Hence no further authorization is necessary here and no futher checks of
+         *  the subject are done.
+         */
         verificationService.send(msg);
     }
 

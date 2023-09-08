@@ -70,6 +70,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import javax.security.auth.Subject;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
 import org.dcache.qos.QoSPolicy;
@@ -155,7 +156,8 @@ public class QoSPolicyCache implements CellMessageReceiver{
     }
 
     public PnfsManagerRmQoSPolicyMessage messageArrived(PnfsManagerRmQoSPolicyMessage message) throws CacheException {
-        if (!Subjects.isRoot(message.getSubject())) {
+        Subject subject = message.getSubject();
+        if (!Subjects.isRoot(subject) && !Subjects.hasAdminRole(subject)) {
             throw new PermissionDeniedCacheException("not authorized to remove policies.");
         }
         removePolicy(message.getPolicyName());
@@ -169,7 +171,8 @@ public class QoSPolicyCache implements CellMessageReceiver{
      */
     public PnfsManagerAddQoSPolicyMessage messageArrived(PnfsManagerAddQoSPolicyMessage message)
           throws CacheException {
-        if (!Subjects.isRoot(message.getSubject())) {
+        Subject subject = message.getSubject();
+        if (!Subjects.isRoot(subject) && !Subjects.hasAdminRole(subject)) {
             throw new PermissionDeniedCacheException("not authorized to update policies.");
         }
 

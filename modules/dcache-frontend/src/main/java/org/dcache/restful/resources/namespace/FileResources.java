@@ -446,7 +446,7 @@ public class FileResources {
                     String targetQos = reqPayload.getString("target");
                     String qosPolicy = reqPayload.getString("policy");
                     Integer qosState = (Integer)reqPayload.get("state");
-                    Subject subject = RequestUser.isAdmin() ? Subjects.ROOT : RequestUser.getSubject();
+                    Subject subject = RequestUser.getSubject();
                     if (!useQosService) {
                         new QoSTransitionEngine(poolmanager,
                               poolMonitor,

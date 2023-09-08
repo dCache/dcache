@@ -325,8 +325,8 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
 
         BulkArchivedRequestInfo info = list.get(0);
 
-        if (!Subjects.isRoot(subject) && !BulkRequestStore.uidGidKey(subject)
-              .equals(info.getOwner())) {
+        if (!Subjects.isRoot(subject) && !Subjects.hasAdminRole(subject) &&
+              !BulkRequestStore.uidGidKey(subject).equals(info.getOwner())) {
             throw new BulkPermissionDeniedException("Subject does not have "
                   + "permission to read archived request " + rid);
         }
@@ -468,7 +468,7 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
         if (requestSubject.isEmpty()) {
             return false;
         }
-        return Subjects.isRoot(subject) ||
+        return Subjects.isRoot(subject) || Subjects.hasAdminRole(subject) ||
               BulkRequestStore.uidGidKey(subject)
                     .equals(BulkRequestStore.uidGidKey(requestSubject.get()));
     }
@@ -773,7 +773,8 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
                   + "request has no subject.", uid);
         }
 
-        if (!Subjects.isRoot(subject) && !key.equals(BulkRequestStore.uidGidKey(requestSubject))) {
+        if (!Subjects.isRoot(subject) && !Subjects.hasAdminRole(subject) &&
+              !key.equals(BulkRequestStore.uidGidKey(requestSubject))) {
             throw new BulkPermissionDeniedException(uid);
         }
 

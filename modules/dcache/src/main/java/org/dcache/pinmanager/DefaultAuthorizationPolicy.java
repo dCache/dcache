@@ -7,7 +7,7 @@ import org.dcache.pinmanager.model.Pin;
 public class DefaultAuthorizationPolicy implements AuthorizationPolicy {
 
     private boolean isAuthorized(Subject subject, Pin pin) {
-        return (Subjects.isRoot(subject) ||
+        return (Subjects.isRoot(subject) || Subjects.hasAdminRole(subject) ||
               Subjects.hasUid(subject, pin.getUid()) ||
               Subjects.hasGid(subject, pin.getGid()));
     }

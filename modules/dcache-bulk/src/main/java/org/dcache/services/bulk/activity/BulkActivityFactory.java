@@ -112,7 +112,6 @@ public final class BulkActivityFactory implements CellMessageSender, Environment
     private CellStub poolManager;
     private CellStub qosEngine;
     private PoolMonitor poolMonitor;
-    private PnfsHandler pnfsHandler;
     private QoSResponseReceiver qoSResponseReceiver;
     private CellEndpoint endpoint;
 
@@ -134,11 +133,13 @@ public final class BulkActivityFactory implements CellMessageSender, Environment
                   "cannot create " + activity + "; no such activity.");
         }
 
-        LOGGER.debug("creating instance of activity {} for request {}.", activity, request.getUid());
+        LOGGER.debug("creating instance of activity {} for request {}.", activity,
+              request.getUid());
 
         BulkActivity bulkActivity = provider.createActivity();
         bulkActivity.setSubject(subject);
         bulkActivity.setRestriction(restriction);
+
         bulkActivity.setActivityExecutor(activityExecutors.get(activity));
         bulkActivity.setCallbackExecutor(callbackExecutors.get(activity));
         BulkTargetRetryPolicy retryPolicy = retryPolicies.get(activity);
@@ -164,9 +165,6 @@ public final class BulkActivityFactory implements CellMessageSender, Environment
             provider.configure(environment);
             providers.put(provider.getActivity(), provider);
         }
-        pnfsHandler = new PnfsHandler(pnfsManager);
-        pnfsHandler.setRestriction(Restrictions.none());
-        pnfsHandler.setSubject(Subjects.ROOT);
     }
 
     /**
@@ -240,8 +238,15 @@ public final class BulkActivityFactory implements CellMessageSender, Environment
     private void configureEndpoints(BulkActivity activity) {
         if (activity instanceof NamespaceHandlerAware) {
             PnfsHandler pnfsHandler = new PnfsHandler(pnfsManager);
-            pnfsHandler.setRestriction(activity.getRestriction());
-            pnfsHandler.setSubject(activity.getSubject());
+            Subject subject = activity.getSubject();
+            Restriction restriction = activity.getRestriction();
+            if (Subjects.hasAdminRole(subject)) {
+                pnfsHandler.setSubject(Subjects.ROOT);
+                pnfsHandler.setRestriction(Restrictions.none());
+            } else {
+                pnfsHandler.setSubject(subject);
+                pnfsHandler.setRestriction(restriction);
+            }
             ((NamespaceHandlerAware) activity).setNamespaceHandler(pnfsHandler);
         }
 

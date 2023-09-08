@@ -59,11 +59,15 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.bulk;
 
+import static org.dcache.restful.util.HttpServletRequests.getUserRootAwareTargetPrefix;
+import static org.dcache.restful.util.JSONUtils.newBadRequestException;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
+import diskCacheV111.util.PnfsHandler;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -72,10 +76,14 @@ import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import io.swagger.annotations.Example;
 import io.swagger.annotations.ExampleProperty;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.springframework.stereotype.Component;
-
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.security.auth.Subject;
@@ -95,19 +103,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import diskCacheV111.util.PnfsHandler;
-
-import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.CellStub;
@@ -129,9 +124,9 @@ import org.dcache.services.bulk.BulkRequestMessage;
 import org.dcache.services.bulk.BulkRequestStatus;
 import org.dcache.services.bulk.BulkRequestStatusMessage;
 import org.dcache.services.bulk.BulkRequestSummary;
-
-import static org.dcache.restful.util.HttpServletRequests.getUserRootAwareTargetPrefix;
-import static org.dcache.restful.util.JSONUtils.newBadRequestException;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.springframework.stereotype.Component;
 
 /**
  * <p>RESTful API to the BulkService.</p>
@@ -481,10 +476,6 @@ public final class BulkResources {
     public static Subject getSubject() {
         if (RequestUser.isAnonymous()) {
             throw new NotAuthorizedException("User cannot be anonymous.");
-        }
-
-        if (RequestUser.isAdmin()) {
-            return Subjects.ROOT;
         }
 
         return RequestUser.getSubject();

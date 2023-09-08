@@ -91,6 +91,7 @@ public final class DeleteActivity extends BulkActivity<PnfsDeleteEntryMessage> i
     public ListenableFuture<PnfsDeleteEntryMessage> perform(String rid, long tid, FsPath path,
           FileAttributes attributes) {
         PnfsDeleteEntryMessage msg = new PnfsDeleteEntryMessage(path.toString());
+        msg.setSubject(subject);
         if (attributes != null && attributes.getFileType() == FileType.DIR && skipDirs) {
             msg.setSucceeded();
             return Futures.immediateFuture(msg);
