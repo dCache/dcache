@@ -22,6 +22,9 @@ stages:
 variables:
   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true -DskipTests -Dmaven.repo.local=.m2/repository"
 
+default:
+  tags:
+    - dcache-dev
 
 rpm:
   stage: build
