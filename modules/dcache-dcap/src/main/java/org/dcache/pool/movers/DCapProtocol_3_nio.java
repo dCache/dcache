@@ -25,6 +25,7 @@ import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.SocketChannel;
 import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -72,6 +73,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
 
     private Consumer<Checksum> _integrityChecker;
 
+    private volatile InetSocketAddress _localEndpoint;
 
     // bind passive dcap to port defined as org.dcache.dcap.port
     private static ProtocolConnectionPoolFactory factory;
@@ -294,6 +296,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         }
 
         Socket socket = socketChannel.socket();
+        _localEndpoint = new InetSocketAddress(socket.getLocalAddress(), socket.getLocalPort());
         socket.setKeepAlive(true);
         socket.setTcpNoDelay(true);
         if (bufferSize.getSendBufferSize() > 0) {
@@ -1024,5 +1027,10 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         return _transferTime < 0 ?
               System.currentTimeMillis() - _transferStarted :
               _transferTime;
+    }
+
+    @Override
+    public Optional<InetSocketAddress> getLocalEndpoint() {
+        return Optional.ofNullable(_localEndpoint);
     }
 }
