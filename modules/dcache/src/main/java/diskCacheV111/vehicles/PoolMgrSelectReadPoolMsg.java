@@ -10,8 +10,6 @@ import static org.dcache.namespace.FileAttribute.CACHECLASS;
 import static org.dcache.namespace.FileAttribute.HSM;
 import static org.dcache.namespace.FileAttribute.LOCATIONS;
 import static org.dcache.namespace.FileAttribute.PNFSID;
-import static org.dcache.namespace.FileAttribute.QOS_POLICY;
-import static org.dcache.namespace.FileAttribute.QOS_STATE;
 import static org.dcache.namespace.FileAttribute.RETENTION_POLICY;
 import static org.dcache.namespace.FileAttribute.SIZE;
 import static org.dcache.namespace.FileAttribute.STORAGECLASS;
@@ -52,7 +50,7 @@ public class PoolMgrSelectReadPoolMsg extends PoolMgrSelectPoolMsg {
 
     private static final EnumSet<FileAttribute> REQUIRED_ATTRIBUTES =
           EnumSet.of(PNFSID, STORAGEINFO, STORAGECLASS, CACHECLASS, HSM, LOCATIONS, SIZE,
-                ACCESS_LATENCY, RETENTION_POLICY, QOS_POLICY, QOS_STATE);
+                ACCESS_LATENCY, RETENTION_POLICY);
 
     private static final long serialVersionUID = -2126253028981131441L;
 
