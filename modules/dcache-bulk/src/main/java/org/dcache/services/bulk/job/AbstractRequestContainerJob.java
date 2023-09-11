@@ -326,6 +326,11 @@ public abstract class AbstractRequestContainerJob
                     containerState = ContainerState.STOP;
                     update(COMPLETED);
                     break;
+                case STOP:
+                    LOGGER.debug("run {} was prematurely stopped; exiting", ruid);
+                    update(CANCELLED);
+                    setRunThread(null);
+                    return;
                 default:
                     throw new RuntimeException(
                           "run container called with container in wrong state " + containerState
