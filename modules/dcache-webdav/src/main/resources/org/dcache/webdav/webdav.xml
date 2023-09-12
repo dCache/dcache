@@ -230,6 +230,7 @@
         <property name="overwriteAllowed" value="${webdav.enable.overwrite}"/>
         <property name="redirectToHttps" value="${webdav.redirect.allow-https}"/>
         <property name="poolMonitor" ref="pool-monitor"/>
+        <property name="defaultPropfindProperties" value="${webdav.default-propfind-properties}"/>
     </bean>
 
     <bean id="pool-manager-handler" class="org.dcache.poolmanager.PoolManagerHandlerSubscriber">

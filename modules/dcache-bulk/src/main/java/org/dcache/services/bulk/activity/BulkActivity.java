@@ -109,6 +109,7 @@ public abstract class BulkActivity<R> {
     protected ExecutorService activityExecutor;
     protected ExecutorService callbackExecutor;
     protected BulkTargetRetryPolicy retryPolicy;
+    protected Set<BulkActivityArgumentDescriptor> descriptors;
 
     protected BulkActivity(String name, TargetType targetType) {
         this.name = name;
@@ -178,6 +179,10 @@ public abstract class BulkActivity<R> {
         this.callbackExecutor = callbackExecutor;
     }
 
+    public void setDescriptors(Set<BulkActivityArgumentDescriptor> descriptors) {
+        this.descriptors = descriptors;
+    }
+
     public void setMaxPermits(int maxPermits) {
         this.maxPermits = maxPermits;
     }
@@ -209,7 +214,7 @@ public abstract class BulkActivity<R> {
      *
      * @param arguments parameters of the specific activity.
      */
-    protected abstract void configure(Map<String, String> arguments);
+    protected abstract void configure(Map<String, String> arguments) throws BulkServiceException;
 
     /**
      * Internal implementation of completion handler taking full target.

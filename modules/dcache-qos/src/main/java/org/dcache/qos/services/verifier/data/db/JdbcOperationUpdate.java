@@ -18,14 +18,9 @@
  */
 package org.dcache.qos.services.verifier.data.db;
 
-import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
-import java.util.Collection;
-import java.util.stream.Collectors;
 import org.dcache.db.JdbcUpdate;
-import org.dcache.qos.data.QoSAction;
 import org.dcache.qos.data.QoSMessageType;
-import org.dcache.qos.services.verifier.data.VerifyOperationState;
 import org.dcache.qos.services.verifier.data.db.VerifyOperationDao.VerifyOperationUpdate;
 
 /**
@@ -56,72 +51,9 @@ public class JdbcOperationUpdate extends JdbcUpdate implements VerifyOperationUp
     }
 
     @Override
-    public VerifyOperationUpdate lastUpdate(long epochMillis) {
-        set("updated", epochMillis);
-        return this;
-    }
-
-    @Override
     public VerifyOperationUpdate messageType(QoSMessageType messageType) {
         if (messageType != null) {
             set("msg_type", messageType.name());
-        }
-        return this;
-    }
-
-    @Override
-    public VerifyOperationUpdate action(QoSAction action) {
-        if (action != null) {
-            set("action", action.name());
-        } else {
-            set("action", null);
-        }
-        return this;
-    }
-
-    @Override
-    public VerifyOperationUpdate previous(QoSAction action) {
-        if (action != null) {
-            set("prev_action", action.name());
-        } else {
-            set("prev_action", null);
-        }
-        return this;
-    }
-
-    @Override
-    public VerifyOperationUpdate state(VerifyOperationState state) {
-        if (state != null) {
-            set("state", state.name());
-        }
-        return this;
-    }
-
-    @Override
-    public VerifyOperationUpdate needed(int needed) {
-        set("needed", needed);
-        return this;
-    }
-
-    @Override
-    public VerifyOperationUpdate retried(int retried) {
-        set("retried", retried);
-        return this;
-    }
-
-    @Override
-    public VerifyOperationUpdate tried(Collection<String> tried) {
-        if (tried != null) {
-            set("tried", tried.stream().collect(Collectors.joining(",")));
-        }
-        return this;
-    }
-
-    @Override
-    public VerifyOperationUpdate exception(CacheException exception) {
-        if (exception != null) {
-            set("rc", exception.getRc());
-            set("error", exception.toString());
         }
         return this;
     }

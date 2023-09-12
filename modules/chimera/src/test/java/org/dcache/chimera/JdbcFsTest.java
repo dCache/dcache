@@ -968,6 +968,53 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
     }
 
     @Test
+    public void testTagPropagation() throws ChimeraFsException {
+
+        var tagName = "aTag";
+
+        _fs.createTag(_rootInode, tagName);
+        FsInode tagInode = new FsInode_TAG(_fs, _rootInode.ino(), tagName);
+        byte[] data = "data".getBytes(UTF_8);
+        tagInode.write(0, data, 0, data.length);
+
+        var dir = _fs.mkdir(_rootInode, "dir.0", 0, 0, 0755);
+        _fs.statTag(dir, tagName);
+    }
+
+    @Test(expected = FileNotFoundChimeraFsException.class)
+    public void testStatMissingTag() throws ChimeraFsException {
+        var dir = _fs.mkdir(_rootInode, "dir.0", 0, 0, 0755);
+        _fs.statTag(dir, "aTag");
+    }
+
+    @Test
+    public void testTagDisposal() throws ChimeraFsException, SQLException {
+
+        var tagName = "aTag";
+
+        var dir = _fs.mkdir(_rootInode, "dir.0", 0, 0, 0755);
+        _fs.createTag(dir, tagName);
+
+        FsInode tagInode = new FsInode_TAG(_fs, dir.ino(), tagName);
+        byte[] data = "data".getBytes(UTF_8);
+        tagInode.write(0, data, 0, data.length);
+
+        long tagId = tagInode.stat().getIno();
+
+        try (var conn = _dataSource.getConnection()) {
+            var found = conn.createStatement().executeQuery("SELECT * FROM t_tags_inodes WHERE itagid="+tagId).next();
+            assertTrue("tag inodes is not populated with a new entry", found);
+        }
+
+        _fs.remove(_rootInode, "dir.0", dir);
+
+        try (var conn = _dataSource.getConnection()) {
+            var found = conn.createStatement().executeQuery("SELECT * FROM t_tags_inodes WHERE itagid="+tagId).next();
+            assertFalse("tag is not disposed on last reference removal", found);
+        }
+    }
+
+    @Test
     public void testChangeTagOwner() throws Exception {
 
         final String tagName = "myTag";
@@ -1229,12 +1276,7 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
         assertEquals("Tag ref count mismatch", 1, tagInode.stat().getNlink());
 
         FsInode sub = top.mkdir("sub");
-        assertEquals("Tag ref count not incremented on create", 2, tagInode.stat().getNlink());
-
         _fs.remove(top, "sub", sub);
-        assertEquals("Tag ref count decremented on remove", 1, tagInode.stat().getNlink());
-
-        // remove last reference
         _fs.remove(_rootInode, "top", top);
 
         // as we don't have a way to access tags, use direct SQL

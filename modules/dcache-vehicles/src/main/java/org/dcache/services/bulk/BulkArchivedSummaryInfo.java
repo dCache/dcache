@@ -57,102 +57,73 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.qos.services.verifier.data;
+package org.dcache.services.bulk;
 
-import diskCacheV111.util.PnfsId;
-import java.util.Collection;
-import java.util.Map;
-import org.dcache.util.SignalAware;
+import java.io.Serializable;
 
 /**
- * Defines interactions with the operation delegate which are in addition to its support of the
- * VerifyOperationMap interface.
+ * Summary listing for archived request.
  */
-public interface VerifyOperationDelegate extends VerifyOperationMap {
+public class BulkArchivedSummaryInfo implements Serializable {
 
-    /**
-     * @return counts listed according to the filter. This should return the full stored numbers,
-     * not just those held in memory.
-     */
-    Map<String, Long> aggregateCounts(String classifier);
+    private static final long serialVersionUID = 5955821283286162913L;
 
-    /**
-     * @return the number of unoccupied running slots.
-     */
-    int available();
+    private String uid;
+    private String owner;
+    private String activity;
+    private Long lastModified;
+    private String status;
 
-    /**
-     * @param callback to signal when significant changes take place to the internal data
-     *                 structures.
-     */
-    VerifyOperationDelegate callback(SignalAware callback);
+    public BulkArchivedSummaryInfo() {
 
-    /**
-     * @return maximum cache size.
-     */
-    int capacity();
+    }
 
-    /**
-     * @return maximum number of operations that can be concurrently in the RUNNING state.
-     */
-    int maxRunning();
+    public BulkArchivedSummaryInfo(String uid, String owner, Long lastModified, String activity,
+          String status) {
+        this.uid = uid;
+        this.owner = owner;
+        this.lastModified = lastModified;
+        this.activity = activity;
+        this.status = status;
+    }
 
-    /**
-     * @return the next available operation (in the READY state).
-     */
-    VerifyOperation next();
+    public String getUid() {
+        return uid;
+    }
 
-    /**
-     * Called on startup.  This may or may not populate the cache, depending on implementation.
-     */
-    void reload();
+    public void setUid(String uid) {
+        this.uid = uid;
+    }
 
-    /**
-     * Repopulate memory caches, if applicable.
-     */
-    void refresh();
+    public String getOwner() {
+        return owner;
+    }
 
-    /**
-     * Remove the operation from any in memory caches and from any backing persistence.
-     *
-     * @param pnfsId of the operation.
-     */
-    void remove(PnfsId pnfsId);
+    public void setOwner(String owner) {
+        this.owner = owner;
+    }
 
-    /**
-     * Delete the operation from the backing persistence.
-     *
-     * @param filter describing the operations to match.
-     */
-    void remove(VerifyOperationCancelFilter filter);
+    public String getActivity() {
+        return activity;
+    }
 
-    /**
-     * Call reset on the operation and update the cache.  Write through changes if there is
-     * persistence.
-     *
-     * @param operation to reset.
-     * @param retry     true if the operation failed and is being retried.
-     */
-    void resetOperation(VerifyOperation operation, boolean retry);
+    public void setActivity(String activity) {
+        this.activity = activity;
+    }
 
-    /**
-     * @return the number of operations currently in the RUNNING state.
-     */
-    int running();
+    public Long getLastModified() {
+        return lastModified;
+    }
 
-    /**
-     * @return operations whose current phase has been terminated (DONE, FAILED, CANCELED). Note
-     * that this method need not return all currently terminated operations (it may be implemented
-     * with a limit to protect against memory bloat). Operations should be ordered by natural
-     * ordering.
-     */
-    Collection<VerifyOperation> terminated();
+    public void setLastModified(Long lastModified) {
+        this.lastModified = lastModified;
+    }
 
-    /**
-     * Special update which just changes the state of the operation.
-     *
-     * @param operation
-     * @param state     to be updated to.
-     */
-    void updateOperation(VerifyOperation operation, VerifyOperationState state);
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
 }

@@ -18,44 +18,28 @@
  */
 package org.dcache.qos.services.verifier.data.db;
 
-import diskCacheV111.util.CacheException;
+import static org.dcache.qos.services.verifier.data.VerifyOperationState.READY;
+
 import diskCacheV111.util.PnfsId;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Arrays;
-import java.util.Base64;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
-import javax.security.auth.Subject;
 import org.dcache.db.JdbcCriterion;
 import org.dcache.db.JdbcUpdate;
 import org.dcache.qos.QoSException;
-import org.dcache.qos.data.QoSAction;
 import org.dcache.qos.data.QoSMessageType;
 import org.dcache.qos.services.verifier.data.VerifyOperation;
-import org.dcache.qos.services.verifier.data.VerifyOperationState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DuplicateKeyException;
-import org.springframework.dao.support.DataAccessUtils;
-import org.springframework.jdbc.JdbcUpdateAffectedIncorrectNumberOfRowsException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.ParameterizedPreparedStatementSetter;
 import org.springframework.jdbc.core.support.JdbcDaoSupport;
-import org.springframework.jdbc.support.rowset.SqlRowSet;
 
 /**
  * Provides the Jdbc/Sql implementation of the operation dao interface.
@@ -63,10 +47,17 @@ import org.springframework.jdbc.support.rowset.SqlRowSet;
 @ParametersAreNonnullByDefault
 public class JdbcVerifyOperationDao extends JdbcDaoSupport implements VerifyOperationDao {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(JdbcVerifyOperationDao.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(
+          JdbcVerifyOperationDao.class);
+
+    private static final String BATCH_DELETE = "DELETE FROM qos_operation WHERE pnfsid = ?";
+
+    private static final ParameterizedPreparedStatementSetter<PnfsId> SETTER =
+          (ps, target) -> ps.setString(1, target.toString());
 
     /**
      * Based on the ResultSet returned by the query, construct a VerifyOperation object.
+     * This is used only on reload.
      *
      * @param rs  from the query.
      * @param row unused, but needs to be there to satisfy the template function signature.
@@ -77,74 +68,19 @@ public class JdbcVerifyOperationDao extends JdbcDaoSupport implements VerifyOper
         VerifyOperation operation
               = new VerifyOperation(new PnfsId(rs.getString("pnfsid")));
         operation.setArrived(rs.getLong("arrived"));
-        operation.setLastUpdate(rs.getLong("updated"));
+        operation.setLastUpdate(System.currentTimeMillis());
         operation.setMessageType(QoSMessageType.valueOf(rs.getString("msg_type")));
         operation.setPoolGroup(rs.getString("pool_group"));
         operation.setStorageUnit(rs.getString("storage_unit"));
-        operation.setState(VerifyOperationState.valueOf(rs.getString("state")));
-
-        String value = rs.getString("action");
-        if (value != null) {
-            operation.setAction(QoSAction.valueOf(value));
-        }
-
-        value = rs.getString("prev_action");
-        if (value != null) {
-            operation.setPreviousAction(QoSAction.valueOf(value));
-        }
-
-        operation.setNeeded(rs.getInt("needed"));
-        operation.setRetried(rs.getInt("retried"));
         operation.setParent(rs.getString("parent"));
         operation.setSource(rs.getString("source"));
         operation.setTarget(rs.getString("target"));
-
-        String tried = rs.getString("tried");
-        if (tried != null) {
-            operation.setTried(Arrays.stream(tried.split(","))
-                  .map(String::trim)
-                  .collect(Collectors.toSet()));
-        }
-
-        String error = rs.getString("error");
-        if (error != null) {
-            operation.setException(new CacheException(rs.getInt("rc"), error));
-        }
-
-        operation.setSubject(Subject.class.cast(deserialize(rs.getString("subject"))));
+        operation.setRetried(0);
+        operation.setNeeded(0);
+        operation.setState(READY);
 
         LOGGER.debug("toOperation, returning {}.", operation);
         return operation;
-    }
-
-    private static String serialize(Subject subject) throws QoSException {
-        if (subject == null) {
-            return null;
-        }
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (ObjectOutputStream ostream = new ObjectOutputStream(baos)) {
-            ostream.writeObject(subject);
-        } catch (IOException e) {
-            throw new QoSException("problem serializing subject", e);
-        }
-        return Base64.getEncoder().encodeToString(baos.toByteArray());
-    }
-
-    private static Object deserialize(String base64) throws SQLException {
-        if (base64 == null) {
-            return null;
-        }
-        byte[] array = Base64.getDecoder().decode(base64);
-        ByteArrayInputStream bais = new ByteArrayInputStream(array);
-        try (ObjectInputStream istream = new ObjectInputStream(bais)) {
-            return istream.readObject();
-        } catch (IOException | ClassNotFoundException e) {
-            throw new SQLException("problem deserializing subject", e);
-        }
-    }
-
-    private static Object[] concatArguments(Collection<Object> first, Collection<Object> second) {
-        return Stream.concat(first.stream(), second.stream()).toArray(Object[]::new);
     }
 
     private Integer fetchSize;
@@ -155,33 +91,44 @@ public class JdbcVerifyOperationDao extends JdbcDaoSupport implements VerifyOper
     }
 
     @Override
-    public VerifyOperationCriterion where() {
-        return new JdbcOperationCriterion();
+    public int delete(VerifyOperationCriterion criterion) {
+        if (criterion.isEmpty()) {
+            LOGGER.error("delete not permitted using an empty criterion.");
+            return 0;
+        }
+
+        LOGGER.trace("delete {}.", criterion);
+
+        JdbcCriterion c = (JdbcCriterion) criterion;
+
+        String sql = "DELETE FROM qos_operation WHERE " + c.getPredicate();
+
+        LOGGER.trace("delete {} ({}).", sql, c.getArguments());
+
+        return getJdbcTemplate().update(sql, c.getArgumentsAsArray());
+    }
+
+    public void deleteBatch(List<PnfsId> targets, int batchSize) {
+        getJdbcTemplate().batchUpdate(BATCH_DELETE, targets, batchSize, SETTER);
     }
 
     @Override
-    public UniqueOperationCriterion whereUnique() {
-        return new UniqueJdbcOperationCriterion();
+    public List<VerifyOperation> load() throws QoSException {
+        JdbcCriterion c = (JdbcCriterion) where().sorter("arrived");
+        String sql = "SELECT * FROM qos_operation WHERE " + c.getPredicate()
+              + " ORDER BY " + c.orderBy() + " ASC";
+
+        LOGGER.trace("get {} ({}).", sql, c.getArguments());
+
+        JdbcTemplate template = getJdbcTemplate();
+        template.setFetchSize(fetchSize);
+
+        return template.query(sql, c.getArgumentsAsArray(), JdbcVerifyOperationDao::toOperation);
     }
 
     @Override
     public VerifyOperationUpdate set() {
         return new JdbcOperationUpdate();
-    }
-
-    @Override
-    public VerifyOperationUpdate fromOperation(VerifyOperation operation) throws QoSException {
-        return set().exception(operation.getException())
-              .retried(operation.getRetried())
-              .tried(operation.getTried())
-              .lastUpdate(operation.getLastUpdate())
-              .state(operation.getState())
-              .action(operation.getAction())
-              .previous(operation.getPreviousAction())
-              .needed(operation.getNeededAdjustments())
-              .source(operation.getSource())
-              .target(operation.getTarget())
-              .subject(serialize(operation.getSubject()));
     }
 
     /**
@@ -201,16 +148,11 @@ public class JdbcVerifyOperationDao extends JdbcDaoSupport implements VerifyOper
         String storageUnit = operation.getStorageUnit();
         VerifyOperationUpdate insert = set().pnfsid(pnfsId)
               .arrivalTime(operation.getArrived())
-              .lastUpdate(operation.getLastUpdate())
               .poolGroup(operation.getPoolGroup())
               .storageUnit(storageUnit)
               .messageType(operation.getMessageType())
-              .retried(operation.getRetried())
-              .needed(operation.getNeededAdjustments())
               .parent(operation.getParent())
-              .source(operation.getSource())
-              .state(operation.getState())
-              .subject(serialize(operation.getSubject()));
+              .source(operation.getSource());
 
         LOGGER.debug("store operation for {}.", operation.getPnfsId());
 
@@ -221,126 +163,8 @@ public class JdbcVerifyOperationDao extends JdbcDaoSupport implements VerifyOper
     }
 
     @Override
-    public List<VerifyOperation> get(VerifyOperationCriterion criterion, int limit) {
-        LOGGER.trace("get {}, limit {}.", criterion, limit);
-
-        JdbcCriterion c = (JdbcCriterion) criterion;
-
-        Boolean reverse = c.reverse();
-        String direction = reverse == null || !reverse ? "ASC" : "DESC";
-
-        String sql = "SELECT * FROM qos_operation WHERE " + c.getPredicate()
-              + " ORDER BY " + c.orderBy() + " " + direction + " LIMIT " + limit;
-
-        LOGGER.trace("get {} ({}).", sql, c.getArguments());
-
-        int maxfetch = Math.max(limit, fetchSize);
-
-        JdbcTemplate template = getJdbcTemplate();
-        template.setFetchSize(maxfetch);
-
-        return template.query(sql, c.getArgumentsAsArray(), JdbcVerifyOperationDao::toOperation);
-    }
-
-    @Nullable
-    @Override
-    public VerifyOperation get(UniqueOperationCriterion criterion) {
-        LOGGER.trace("get {}.", criterion);
-
-        JdbcCriterion c = (JdbcCriterion) criterion;
-
-        String sql = "SELECT * FROM qos_operation WHERE " + c.getPredicate();
-
-        LOGGER.trace("get {} ({}).", sql, c.getArguments());
-
-        return DataAccessUtils.singleResult(getJdbcTemplate()
-              .query(sql, c.getArgumentsAsArray(), JdbcVerifyOperationDao::toOperation));
-    }
-
-    @Override
-    public Map<String, Long> counts(VerifyOperationCriterion criterion) {
-        LOGGER.trace("counts {}.", criterion);
-
-        JdbcCriterion c = (JdbcCriterion) criterion;
-        String groupBy = c.groupBy();
-
-        String sql = "SELECT " + groupBy + ", count(*) FROM qos_operation WHERE "
-              + c.getPredicate() + " GROUP BY " + groupBy;
-
-        LOGGER.trace("counts {} ({}).", sql, c.getArguments());
-
-        SqlRowSet rowSet = getJdbcTemplate().queryForRowSet(sql, c.getArgumentsAsArray());
-
-        Map<String, Long> counts = new HashMap<>();
-
-        while (rowSet.next()) {
-            counts.put(rowSet.getString(1), rowSet.getLong(2));
-        }
-
-        return counts;
-    }
-
-    @Override
-    public int count(VerifyOperationCriterion criterion) {
-        LOGGER.trace("count {}.", criterion);
-
-        JdbcCriterion c = (JdbcCriterion) criterion;
-
-        String sql = "SELECT count(*) FROM qos_operation WHERE " + c.getPredicate();
-
-        LOGGER.trace("count {} ({}).", sql, c.getArguments());
-
-        return getJdbcTemplate().queryForObject(sql, c.getArgumentsAsArray(), Integer.class);
-    }
-
-    @Nullable
-    @Override
-    public int update(UniqueOperationCriterion criterion, VerifyOperationUpdate update) {
-        LOGGER.trace("update {} : {}.", criterion, update);
-
-        JdbcCriterion c = (JdbcCriterion) criterion;
-        JdbcUpdate u = (JdbcUpdate) update;
-
-        String sql = "UPDATE qos_operation SET " + u.getUpdate() + " WHERE " + c.getPredicate();
-
-        LOGGER.trace("update {} ({}, {}).", sql, u.getArguments(), c.getArguments());
-
-        int n = getJdbcTemplate()
-              .update(sql, concatArguments(u.getArguments(), c.getArguments()));
-
-        if (n > 1) {
-            throw new JdbcUpdateAffectedIncorrectNumberOfRowsException(sql, 1, n);
-        }
-
-        return n;
-    }
-
-    @Override
-    public int update(VerifyOperationCriterion criterion, VerifyOperationUpdate update) {
-        LOGGER.trace("update {} : {}.", criterion, update);
-
-        JdbcCriterion c = (JdbcCriterion) criterion;
-        JdbcUpdate u = (JdbcUpdate) update;
-
-        String sql = "UPDATE qos_operation SET " + u.getUpdate() + " WHERE " + c.getPredicate();
-
-        LOGGER.trace("update {} ({}, {}).", sql, u.getArguments(), c.getArguments());
-
-        return getJdbcTemplate().update(sql, concatArguments(u.getArguments(), c.getArguments()));
-    }
-
-
-    @Override
-    public int delete(VerifyOperationCriterion criterion) {
-        LOGGER.trace("delete {}.", criterion);
-
-        JdbcCriterion c = (JdbcCriterion) criterion;
-
-        String sql = "DELETE FROM qos_operation WHERE " + c.getPredicate();
-
-        LOGGER.trace("delete {} ({}).", sql, c.getArguments());
-
-        return getJdbcTemplate().update(sql, c.getArgumentsAsArray());
+    public VerifyOperationCriterion where() {
+        return new JdbcOperationCriterion();
     }
 
     /**

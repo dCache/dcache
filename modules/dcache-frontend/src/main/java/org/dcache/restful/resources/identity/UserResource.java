@@ -23,9 +23,10 @@ import static org.dcache.restful.util.HttpServletRequests.getLoginAttributes;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Authorization;
-import java.util.ArrayList;
+import java.security.Principal;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
@@ -34,12 +35,12 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import org.dcache.auth.RolePrincipal;
+import org.dcache.auth.RolePrincipal.Role;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.LoginAttribute;
-import org.dcache.auth.attributes.Role;
 import org.dcache.auth.attributes.RootDirectory;
-import org.dcache.auth.attributes.UnassertedRole;
 import org.dcache.restful.providers.UserAttributes;
 import org.dcache.restful.util.RequestUser;
 import org.springframework.stereotype.Component;
@@ -82,17 +83,17 @@ public class UserResource {
                     user.setHomeDirectory(((HomeDirectory) attribute).getHome());
                 } else if (attribute instanceof RootDirectory) {
                     user.setRootDirectory(((RootDirectory) attribute).getRoot());
-                } else if (attribute instanceof Role) {
-                    if (user.getRoles() == null) {
-                        user.setRoles(new ArrayList<>());
-                    }
-                    user.getRoles().add(((Role) attribute).getRole());
-                } else if (attribute instanceof UnassertedRole) {
-                    if (user.getUnassertedRoles() == null) {
-                        user.setUnassertedRoles(new ArrayList<>());
-                    }
-                    user.getUnassertedRoles().add(((UnassertedRole) attribute).getRole());
                 }
+            }
+
+            Optional<Principal> principal
+                  = subject.getPrincipals().stream().filter(p->p instanceof RolePrincipal)
+                  .findFirst();
+
+            if (principal.isPresent()) {
+                RolePrincipal rolePrincipal = (RolePrincipal) principal.get();
+                user.setRoles(rolePrincipal.getRoles().stream().map(Role::getTag)
+                      .collect(Collectors.toList()));
             }
         }
 

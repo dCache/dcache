@@ -93,13 +93,15 @@ public final class JdbcBulkTargetStore implements BulkTargetStore {
               target.getErrorType(), target.getErrorMessage());
 
         /*
-         * If aborted, the target has not yet been stored ...
+         * If aborted, the placeholder target has not yet been stored ...
          */
         targetDao.insert(
               targetDao.set().pid(target.getPid()).rid(target.getRid())
                     .pnfsid(target.getPnfsId()).path(target.getPath()).type(target.getType())
                     .errorType(target.getErrorType()).errorMessage(target.getErrorMessage())
                     .aborted());
+
+        cancelAll(target.getRid());
     }
 
     @Override

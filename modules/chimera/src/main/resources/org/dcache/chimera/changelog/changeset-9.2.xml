@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet id="35.1" author="arossi">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="t_qos_policy"/>
+            </not>
+        </preConditions>
+
+        <createTable tableName="t_qos_policy">
+            <column name="id" type="int" autoIncrement="true">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="name" type="varchar(64)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="qos_policy_pkey"/>
+            </column>
+            <column name="policy" type="text">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+
+        <rollback/>
+    </changeSet>
+
+    <changeSet id="35.2" author="arossi">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="t_inodes" columnName="iqos_policy"/>
+            </not>
+        </preConditions>
+        <comment>Corresponds to the id of the qos policy</comment>
+        <addColumn tableName="t_inodes">
+            <column name="iqos_policy" type="int">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <addForeignKeyConstraint baseColumnNames="iqos_policy" baseTableName="t_inodes"
+          constraintName="qos_ipolicy_fkey"
+          deferrable="false"
+          initiallyDeferred="false"
+          referencedColumnNames="id"
+          referencedTableName="t_qos_policy"/>
+
+        <rollback/>
+    </changeSet>
+
+    <changeSet id="35.3" author="arossi">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="t_inodes" columnName="iqos_state"/>
+            </not>
+        </preConditions>
+        <comment>Corresponds to the list index of states contained in the qos policy</comment>
+        <addColumn tableName="t_inodes">
+            <column name="iqos_state" type="int">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <rollback/>
+    </changeSet>
+
+</databaseChangeLog>

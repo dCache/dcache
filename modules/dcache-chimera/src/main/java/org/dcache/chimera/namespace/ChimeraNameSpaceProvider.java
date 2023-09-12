@@ -7,6 +7,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.dcache.acl.enums.AccessType.ACCESS_ALLOWED;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.NO_STAT;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
+import static org.dcache.chimera.posix.Stat.StatAttributes.QOS_POLICY;
 import static org.dcache.namespace.FileAttribute.ACCESS_LATENCY;
 import static org.dcache.namespace.FileAttribute.CACHECLASS;
 import static org.dcache.namespace.FileAttribute.CHECKSUM;
@@ -368,6 +369,7 @@ public class ChimeraNameSpaceProvider
                     fileAttributes.setSize(Long.parseLong(size.get(0)));
                 }
             }
+
             return fileAttributes;
         } catch (NotDirChimeraException e) {
             throw new NotDirCacheException("Not a directory: " + parentPath);
@@ -1054,6 +1056,18 @@ public class ChimeraNameSpaceProvider
                 case LABELS:
                     attributes.setLabels(_fs.getLabels(inode));
                     break;
+                case QOS_POLICY:
+                    String qosPolicy = _extractor.getQosPolicy(inode);
+                    if (qosPolicy != null) {
+                        attributes.setQosPolicy(qosPolicy);
+                    }
+                    break;
+                case QOS_STATE:
+                    Integer qosState = _extractor.getQosState(inode);
+                    if (qosState != null) {
+                        attributes.setQosState(qosState);
+                    }
+                    break;
                 default:
                     throw new UnsupportedOperationException(
                           "Attribute " + attribute + " not supported yet.");
@@ -1181,12 +1195,25 @@ public class ChimeraNameSpaceProvider
                         break;
                     case LABELS:
                         break;
+                    case QOS_POLICY:
+                        stat.setQosPolicy(_fs.qosPolicyNameToId(attr.getQosPolicy()));
+                        if (stat.getQosPolicy() == null) {
+                            stat.setQosState(null);
+                        }
+                        break;
+                    case QOS_STATE:
+                        stat.setQosState(attr.getQosState());
+                        break;
                     default:
                         throw new UnsupportedOperationException(
                               "Attribute " + attribute + " not supported yet.");
                 }
             }
+
             if (stat.isDefinedAny()) {
+                if (stat.isDefined(QOS_POLICY) && stat.getQosPolicy() == null) {
+                    stat.setQosState(null);
+                }
                 inode.setStat(stat);
             }
 
@@ -1805,16 +1832,16 @@ public class ChimeraNameSpaceProvider
                 }
             }
 
-            FileSystemProvider.SetXattrMode m;
+            SetXattrMode m;
             switch (mode) {
                 case CREATE:
-                    m = FileSystemProvider.SetXattrMode.CREATE;
+                    m = SetXattrMode.CREATE;
                     break;
                 case REPLACE:
-                    m = FileSystemProvider.SetXattrMode.REPLACE;
+                    m = SetXattrMode.REPLACE;
                     break;
                 case EITHER:
-                    m = FileSystemProvider.SetXattrMode.EITHER;
+                    m = SetXattrMode.EITHER;
                     break;
                 default:
                     throw new RuntimeException();

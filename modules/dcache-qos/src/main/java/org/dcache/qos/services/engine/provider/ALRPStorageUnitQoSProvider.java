@@ -115,7 +115,7 @@ import org.slf4j.LoggerFactory;
  */
 public class ALRPStorageUnitQoSProvider implements QoSRequirementsProvider, CellMessageReceiver {
 
-    public static final Set<FileAttribute> REQUIRED_QOS_ATTRIBUTES
+    public static final Set<FileAttribute> REQUIRED_ATTRIBUTES
           = Collections.unmodifiableSet(EnumSet.of(FileAttribute.PNFSID,
           FileAttribute.OWNER,
           FileAttribute.OWNER_GROUP,
@@ -158,6 +158,12 @@ public class ALRPStorageUnitQoSProvider implements QoSRequirementsProvider, Cell
             return null;
         }
 
+        return fetchRequirements(update, descriptor);
+    }
+
+    @Override
+    public FileQoSRequirements fetchRequirements(FileQoSUpdate update, FileQoSRequirements descriptor)
+          throws QoSException {
         FileAttributes attributes = descriptor.getAttributes();
         AccessLatency accessLatency = attributes.getAccessLatencyIfPresent().orElse(null);
         RetentionPolicy retentionPolicy = attributes.getRetentionPolicyIfPresent().orElse(null);
@@ -183,8 +189,7 @@ public class ALRPStorageUnitQoSProvider implements QoSRequirementsProvider, Cell
 
         if (accessLatency == ONLINE) {
             /*
-             *  REVISIT -- current override of file AL based on storage unit
-             *  REVISIT -- eventually we will want to override the storage unit default for a given file
+             *  override of file AL based on storage unit
              */
             descriptor.setRequiredDisk(required == null ? 1 : required);
             if (onlyOneCopyPer != null) {
@@ -200,7 +205,7 @@ public class ALRPStorageUnitQoSProvider implements QoSRequirementsProvider, Cell
     }
 
     /*
-     *  REVISIT For now, we do not handle changes to number or partitioning of copies.
+     *  Does not handle changes to number or partitioning of copies.
      */
     @Override
     public void handleModifiedRequirements(FileQoSRequirements newRequirements, Subject subject)
@@ -219,31 +224,8 @@ public class ALRPStorageUnitQoSProvider implements QoSRequirementsProvider, Cell
             currentAttributes = fetchAttributes(pnfsId);
         }
 
-        if (currentAttributes.getRetentionPolicy() == CUSTODIAL
-              && newRequirements.getRequiredTape() == 0) {
-            throw new QoSException("Unsupported transition from tape to disk: "
-                  + "QoS currently does not support removal of tape locations.");
-        }
-
-        FileAttributes modifiedAttributes = new FileAttributes();
-        if (newRequirements.getRequiredDisk() > 0) {
-            modifiedAttributes.setAccessLatency(ONLINE);
-        } else {
-            modifiedAttributes.setAccessLatency(NEARLINE);
-        }
-
-        if (newRequirements.getRequiredTape() > 0) {
-            modifiedAttributes.setRetentionPolicy(CUSTODIAL);
-        } else {
-            modifiedAttributes.setRetentionPolicy(REPLICA);
-        }
-
-        if (canModifyQos(subject, currentAttributes)) {
-            pnfsHandler().setFileAttributes(pnfsId, modifiedAttributes);
-        } else {
-            throw new PermissionDeniedCacheException("User does not have permissions to set "
-                  + "attributes for " + newRequirements.getPnfsId());
-        }
+        modifyRequirements(pnfsId, currentAttributes, new FileAttributes(), newRequirements,
+              subject);
     }
 
     public void setPnfsManager(CellStub pnfsManager) {
@@ -257,13 +239,13 @@ public class ALRPStorageUnitQoSProvider implements QoSRequirementsProvider, Cell
     protected FileAttributes fetchAttributes(PnfsId pnfsId) throws QoSException {
         try {
             LOGGER.debug("fetchAttributes for {}.", pnfsId);
-            return pnfsHandler().getFileAttributes(pnfsId, REQUIRED_QOS_ATTRIBUTES);
+            return pnfsHandler().getFileAttributes(pnfsId, REQUIRED_ATTRIBUTES);
         } catch (CacheException e) {
             throw new QoSException(String.format("No attributes returned for %s", pnfsId), e);
         }
     }
 
-    private FileQoSRequirements initialize(FileQoSUpdate update) throws QoSException {
+    protected FileQoSRequirements initialize(FileQoSUpdate update) throws QoSException {
         PnfsId pnfsId = update.getPnfsId();
         QoSMessageType messageType = update.getMessageType();
 
@@ -294,11 +276,41 @@ public class ALRPStorageUnitQoSProvider implements QoSRequirementsProvider, Cell
         return new FileQoSRequirements(pnfsId, attributes);
     }
 
-    private PnfsHandler pnfsHandler() {
+    protected PnfsHandler pnfsHandler() {
         PnfsHandler pnfsHandler = new PnfsHandler(pnfsManager);
         pnfsHandler.setSubject(Subjects.ROOT);
         pnfsHandler.setRestriction(Restrictions.none());
         return pnfsHandler;
+    }
+
+    protected void modifyRequirements(PnfsId pnfsId, FileAttributes currentAttributes,
+          FileAttributes modifiedAttributes, FileQoSRequirements newRequirements, Subject subject)
+          throws QoSException, CacheException {
+
+        if (currentAttributes.getRetentionPolicy() == CUSTODIAL
+              && newRequirements.getRequiredTape() == 0) {
+            throw new QoSException("Unsupported transition from tape to disk: "
+                  + "QoS currently does not support removal of tape locations.");
+        }
+
+        if (newRequirements.getRequiredDisk() > 0) {
+            modifiedAttributes.setAccessLatency(ONLINE);
+        } else {
+            modifiedAttributes.setAccessLatency(NEARLINE);
+        }
+
+        if (newRequirements.getRequiredTape() > 0) {
+            modifiedAttributes.setRetentionPolicy(CUSTODIAL);
+        } else {
+            modifiedAttributes.setRetentionPolicy(REPLICA);
+        }
+
+        if (canModifyQos(subject, currentAttributes)) {
+            pnfsHandler().setFileAttributes(pnfsId, modifiedAttributes);
+        } else {
+            throw new PermissionDeniedCacheException("User does not have permissions to set "
+                  + "attributes for " + newRequirements.getPnfsId());
+        }
     }
 
     private synchronized PoolSelectionUnit poolSelectionUnit() throws QoSException {

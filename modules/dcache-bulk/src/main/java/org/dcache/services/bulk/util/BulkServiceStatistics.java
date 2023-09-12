@@ -67,8 +67,11 @@ import static org.dcache.services.bulk.util.BulkRequestTarget.State.SKIPPED;
 
 import dmg.cells.nucleus.CellInfoProvider;
 import java.io.PrintWriter;
+import java.text.ParseException;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Map;
 import java.util.TreeMap;
@@ -80,6 +83,22 @@ import java.util.concurrent.atomic.AtomicLong;
  * Provides activity statistics via the CellInfo interface.
  */
 public final class BulkServiceStatistics implements CellInfoProvider {
+
+    /**
+     * Date format
+     */
+    public static final String DATE_FORMAT = "yyyy/MM/dd-HH:mm:ss";
+
+    public static final DateTimeFormatter DATE_FORMATTER
+          = DateTimeFormatter.ofPattern(DATE_FORMAT).withZone(ZoneId.systemDefault());
+
+    public static Long getTimestamp(String datetime) throws ParseException {
+        if (datetime == null) {
+            return null;
+        }
+
+        return Instant.from(DATE_FORMATTER.parse(datetime)).toEpochMilli();
+    }
 
     private static final String LAST_START = "Running since: %s";
     private static final String UP_TIME = "Uptime %s days, %s hours, %s minutes, %s seconds";
@@ -95,8 +114,7 @@ public final class BulkServiceStatistics implements CellInfoProvider {
     private final Map<String, AtomicLong> requestTypes = new TreeMap<>();
     private final Map<String, AtomicLong> userRequests = new TreeMap<>();
     private final Map<String, AtomicLong> counts
-          = Map.of(RUNNING.name(), new AtomicLong(0L),
-          CANCELLED.name(), new AtomicLong(0L),
+          = Map.of(CANCELLED.name(), new AtomicLong(0L),
           COMPLETED.name(), new AtomicLong(0L),
           FAILED.name(), new AtomicLong(0L),
           SKIPPED.name(), new AtomicLong(0L));
@@ -153,10 +171,6 @@ public final class BulkServiceStatistics implements CellInfoProvider {
 
         pw.println("---------------- REQUESTS  (current) -----------------");
         pw.println(String.format(STATS_FORMAT, "Active", activeRequests.get()));
-        pw.println();
-
-        pw.println("----------------- TARGETS  (current) -----------------");
-        pw.println(String.format(STATS_FORMAT, RUNNING.name(), counts.get(RUNNING.name())));
         pw.println();
     }
 

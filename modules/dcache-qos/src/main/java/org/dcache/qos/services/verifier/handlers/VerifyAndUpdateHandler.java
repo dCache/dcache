@@ -62,7 +62,6 @@ package org.dcache.qos.services.verifier.handlers;
 import diskCacheV111.util.PnfsId;
 import java.io.Serializable;
 import java.util.Set;
-import java.util.concurrent.ScheduledExecutorService;
 import org.dcache.qos.data.FileQoSUpdate;
 import org.dcache.qos.data.QoSAction;
 import org.dcache.qos.services.verifier.data.VerifyOperation;
@@ -72,11 +71,6 @@ import org.dcache.qos.services.verifier.data.VerifyOperationState;
  * Internal API used by task and maps.
  */
 public interface VerifyAndUpdateHandler {
-
-    /**
-     * @return executor to which the task is submitted.
-     */
-    ScheduledExecutorService getTaskExecutor();
 
     /**
      * Stores the operation after some preliminary processing.

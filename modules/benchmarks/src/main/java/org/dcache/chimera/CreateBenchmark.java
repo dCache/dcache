@@ -52,7 +52,7 @@ public class CreateBenchmark {
     @State(Scope.Benchmark)
     public static class DB {
 
-        @Param(value = {"weak", "strong", "week_softupdate"})
+        @Param(value = {"weak", "strong", "soft"})
         String wcc;
 
         protected HikariDataSource _dataSource;
@@ -64,18 +64,6 @@ public class CreateBenchmark {
 
         @Setup
         public void setUp() throws IOException, SQLException, LiquibaseException {
-
-            switch (wcc) {
-                case "week_softupdate":
-                    System.setProperty("chimera_soft_update", "true");
-                case "weak":
-                    System.setProperty("chimera_lazy_wcc", "true");
-                case "strong":
-                    ;
-                    break;
-                default:
-                    throw new IllegalArgumentException("Invalid wcc mode: " + wcc);
-            }
 
             Properties dbProperties = new Properties();
             try (InputStream input = Resources.asByteSource(DB_TEST_PROPERTIES).openStream()) {
@@ -111,7 +99,7 @@ public class CreateBenchmark {
             }
 
             PlatformTransactionManager txManager = new DataSourceTransactionManager(_dataSource);
-            _fs = new JdbcFs(_dataSource, txManager);
+            _fs = new JdbcFs(_dataSource, txManager, wcc);
             _rootInode = _fs.path2inode("/");
             _fs.createTag(_rootInode, "aTag");
             FsInode tagInode = new FsInode_TAG(_fs, _rootInode.ino(), "aTag");

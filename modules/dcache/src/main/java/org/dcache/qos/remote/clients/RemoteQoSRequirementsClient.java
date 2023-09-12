@@ -127,6 +127,18 @@ public final class RemoteQoSRequirementsClient implements QoSRequirementsListene
         }
     }
 
+    /**
+     * An async version which can be used in the context of bulk processing.
+     *
+     * @param newRequirements describing principally how many persistent disk and tape copies are
+     *                        required.
+     */
+    public ListenableFuture<QoSRequirementsModifiedMessage>
+            fileQoSRequirementsModifiedAsync(FileQoSRequirements newRequirements, Subject subject)
+          throws CacheException, NoRouteToCellException, InterruptedException {
+        return requirementsService.send(new QoSRequirementsModifiedMessage(newRequirements, subject));
+    }
+
     @Override
     public void fileQoSRequirementsModifiedCancelled(PnfsId pnfsid, Subject subject) throws QoSException {
         /*

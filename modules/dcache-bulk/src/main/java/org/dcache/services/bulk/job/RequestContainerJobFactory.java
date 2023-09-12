@@ -79,6 +79,7 @@ import org.dcache.services.bulk.util.BulkRequestTarget;
 import org.dcache.services.bulk.util.BulkRequestTarget.PID;
 import org.dcache.services.bulk.util.BulkRequestTargetBuilder;
 import org.dcache.services.bulk.util.BulkServiceStatistics;
+import org.dcache.util.BoundedExecutor;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
@@ -99,6 +100,7 @@ public final class RequestContainerJobFactory {
     private ListDirectoryHandler listHandler;
     private BulkTargetStore targetStore;
     private BulkServiceStatistics statistics;
+    private BoundedExecutor dirListExecutor;
 
     public AbstractRequestContainerJob createRequestJob(BulkRequest request)
           throws BulkServiceException {
@@ -122,16 +124,12 @@ public final class RequestContainerJobFactory {
         pnfsHandler.setSubject(activity.getSubject());
 
         LOGGER.trace("createRequestJob {}, creating batch request job.", request.getUid());
-        AbstractRequestContainerJob containerJob;
-        if (request.isPrestore()) {
-            containerJob = new PrestoreRequestContainerJob(activity, target, request, statistics);
-        } else {
-            containerJob = new RequestContainerJob(activity, target, request, statistics);
-        }
-
+        AbstractRequestContainerJob containerJob
+              = new RequestContainerJob(activity, target, request, statistics);
         containerJob.setNamespaceHandler(pnfsHandler);
         containerJob.setTargetStore(targetStore);
         containerJob.setListHandler(listHandler);
+        containerJob.setDirListExecutor(dirListExecutor);
         containerJob.initialize();
         return containerJob;
     }
@@ -139,6 +137,11 @@ public final class RequestContainerJobFactory {
     @Required
     public void setActivityFactory(BulkActivityFactory activityFactory) {
         this.activityFactory = activityFactory;
+    }
+
+    @Required
+    public void setDirListExecutor(BoundedExecutor dirListExecutor) {
+        this.dirListExecutor = dirListExecutor;
     }
 
     @Required

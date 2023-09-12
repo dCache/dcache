@@ -42,5 +42,13 @@ fi
 	-Ddcache.home=${DCACHE_HOME} \
 	-Ddcache.paths.defaults=${DCACHE_HOME}/share/defaults \
 	-Dzookeeper.sasl.client=false \
+	--add-opens=java.base/java.lang=ALL-UNNAMED \
+	--add-opens=java.base/java.util=ALL-UNNAMED \
+	--add-opens=java.base/java.net=ALL-UNNAMED \
+	--add-opens=java.base/java.util.concurrent=ALL-UNNAMED \
+	--add-opens=java.base/java.text=ALL-UNNAMED \
+	--add-opens=java.sql/java.sql=ALL-UNNAMED  \
+	--add-opens=java.base/java.math=ALL-UNNAMED \
+	--add-opens=java.base/sun.nio.fs=ALL-UNNAMED \
 	${JAVA_ARGS} \
 	org.dcache.boot.BootLoader start ${DOMAIN}

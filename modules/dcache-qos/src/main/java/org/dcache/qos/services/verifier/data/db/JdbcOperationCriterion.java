@@ -20,13 +20,11 @@ package org.dcache.qos.services.verifier.data.db;
 
 import diskCacheV111.util.PnfsId;
 import org.dcache.db.JdbcCriterion;
-import org.dcache.qos.data.QoSAction;
 import org.dcache.qos.data.QoSMessageType;
-import org.dcache.qos.services.verifier.data.VerifyOperationState;
 import org.dcache.qos.services.verifier.data.db.VerifyOperationDao.VerifyOperationCriterion;
 
 /**
- * Implements the non-unique result criterion based on the qos_operation table.
+ * Implements the result criterion based on the qos_operation table.
  */
 public class JdbcOperationCriterion extends JdbcCriterion
       implements VerifyOperationCriterion {
@@ -38,32 +36,20 @@ public class JdbcOperationCriterion extends JdbcCriterion
     }
 
     @Override
-    public JdbcOperationCriterion updatedBefore(Long epochMillis) {
-        addClause("updated <= ?", epochMillis);
+    public JdbcOperationCriterion arrivedBefore(Long epochMillis) {
+        addClause("arrived <= ?", epochMillis);
         return this;
     }
 
     @Override
-    public JdbcOperationCriterion updatedAfter(Long epochMillis) {
-        addClause("updated >= ?", epochMillis);
+    public JdbcOperationCriterion arrivedAfter(Long epochMillis) {
+        addClause("arrived >= ?", epochMillis);
         return this;
     }
 
     @Override
     public JdbcOperationCriterion messageType(QoSMessageType... messageType) {
         addOrClause("msg_type = ?", (Object[]) messageType);
-        return this;
-    }
-
-    @Override
-    public JdbcOperationCriterion action(QoSAction... action) {
-        addOrClause("action = ?", (Object[]) action);
-        return this;
-    }
-
-    @Override
-    public JdbcOperationCriterion state(VerifyOperationState... state) {
-        addOrClause("state = ?", (Object[]) state);
         return this;
     }
 
@@ -108,20 +94,6 @@ public class JdbcOperationCriterion extends JdbcCriterion
     }
 
     @Override
-    public JdbcOperationCriterion retriedMoreThan(Integer retried) {
-        if (retried != null) {
-            addClause("retried >= ?", retried);
-        }
-        return this;
-    }
-
-    @Override
-    public JdbcOperationCriterion classifier(String classifier) {
-        this.classifier = classifier;
-        return this;
-    }
-
-    @Override
     public JdbcOperationCriterion sorter(String sorter) {
         this.sorter = sorter;
         return this;
@@ -131,5 +103,10 @@ public class JdbcOperationCriterion extends JdbcCriterion
     public JdbcOperationCriterion reverse(Boolean reverse) {
         this.reverse = reverse;
         return this;
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return getPredicate().isEmpty();
     }
 }

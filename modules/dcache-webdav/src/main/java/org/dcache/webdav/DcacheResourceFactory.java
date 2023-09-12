@@ -18,6 +18,7 @@ import static org.dcache.namespace.FileAttribute.OWNER_GROUP;
 import static org.dcache.namespace.FileAttribute.PNFSID;
 import static org.dcache.namespace.FileAttribute.RETENTION_POLICY;
 import static org.dcache.namespace.FileAttribute.SIZE;
+import static org.dcache.namespace.FileAttribute.STORAGEINFO;
 import static org.dcache.namespace.FileAttribute.TYPE;
 import static org.dcache.namespace.FileAttribute.XATTR;
 import static org.dcache.namespace.FileType.DIR;
@@ -39,6 +40,7 @@ import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
 import com.google.common.net.InetAddresses;
 import com.google.common.net.MediaType;
+import com.google.common.net.PercentEscaper;
 import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.services.space.Space;
 import diskCacheV111.services.space.SpaceException;
@@ -112,7 +114,12 @@ import java.util.function.Consumer;
 import javax.annotation.PostConstruct;
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
 import org.dcache.auth.Origin;
+import org.dcache.auth.RolePrincipal;
+import org.dcache.auth.RolePrincipal.Role;
 import org.dcache.auth.SubjectWrapper;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.LoginAttribute;
@@ -164,7 +171,14 @@ public class DcacheResourceFactory
     private static final Logger LOGGER =
           LoggerFactory.getLogger(DcacheResourceFactory.class);
 
+    private static final XMLOutputFactory XML_OUTPUT_FACTORY = XMLOutputFactory.newFactory();
+
+
     public static final String TRANSACTION_ATTRIBUTE = "org.dcache.transaction";
+
+    private static final Set<FileAttribute> MINIMALLY_REQUIRED_ATTRIBUTES =
+          EnumSet.of(TYPE, PNFSID, CREATION_TIME, MODIFICATION_TIME, SIZE,
+                MODE, OWNER, OWNER_GROUP);
 
     private static final Set<FileAttribute> REQUIRED_ATTRIBUTES =
           EnumSet.of(TYPE, PNFSID, CREATION_TIME, MODIFICATION_TIME, SIZE,
@@ -176,7 +190,7 @@ public class DcacheResourceFactory
     // Additional attributes needed for PROPFIND requests; e.g., to supply
     // values for properties.
     private static final Set<FileAttribute> PROPFIND_ATTRIBUTES = Sets.union(
-          EnumSet.of(CHECKSUM, ACCESS_LATENCY, RETENTION_POLICY),
+          EnumSet.of(CHECKSUM, ACCESS_LATENCY, RETENTION_POLICY, STORAGEINFO),
           PoolMonitorV5.getRequiredAttributesForFileLocality());
 
     private static final String PROTOCOL_INFO_NAME = "Http";
@@ -190,6 +204,20 @@ public class DcacheResourceFactory
 
     private static final Splitter PATH_SPLITTER =
           Splitter.on('/').omitEmptyStrings();
+
+    enum PropfindProperties {
+        PERFORMANCE,
+        CLIENT_COMPATIBLE
+    };
+
+    private static final PercentEscaper METALINK_NAME_ESCAPER = new PercentEscaper("", false);
+
+    // See https://www.iana.org/assignments/hash-function-text-names/hash-function-text-names.xhtml
+    private static final Map<ChecksumType,String> METALINK_NAMES_FOR_CHECKSUMS = Map.of(
+            ChecksumType.MD5_TYPE, "md5",
+            ChecksumType.SHA1, "sha-1",
+            ChecksumType.SHA256, "sha-256",
+            ChecksumType.SHA512, "sha-512");
 
     /**
      * In progress transfers. The key of the map is the session id of the transfer.
@@ -233,6 +261,7 @@ public class DcacheResourceFactory
     private boolean _impatientClientProxied = true;
     private boolean _isOverwriteAllowed;
     private boolean _isAnonymousListingAllowed;
+    private boolean _includeAllAttributesForPropfind;
 
     private String _staticContentPath;
     private ReloadableTemplate _template;
@@ -604,9 +633,9 @@ public class DcacheResourceFactory
     public DcacheResource getResource(FsPath path) {
         checkPathAllowed(path);
 
-        String requestPath = getRequestPath();
         boolean haveRetried = false;
         Subject subject = getSubject();
+        String requestPath = getRequestPath();
 
         try {
             while (true) {
@@ -648,7 +677,8 @@ public class DcacheResourceFactory
      */
     private DcacheResource getResource(FsPath path, FileAttributes attributes) {
         if (attributes.getFileType() == DIR) {
-            return new DcacheDirectoryResource(this, path, attributes);
+            return new DcacheDirectoryResource(this, path, attributes,
+                  isFetchAllAttributes());
         } else {
             return new DcacheFileResource(this, path, attributes);
         }
@@ -917,6 +947,11 @@ public class DcacheResourceFactory
         return result;
     }
 
+    public void setDefaultPropfindProperties(PropfindProperties defaultPropfindProperties) {
+        _includeAllAttributesForPropfind =
+              defaultPropfindProperties == PropfindProperties.CLIENT_COMPATIBLE;
+    }
+
     private class FileLocalityWrapper {
 
         private final FileLocality _inner;
@@ -1071,6 +1106,125 @@ public class DcacheResourceFactory
     }
 
     /**
+     * Performs a directory listing, writing a metalink description.
+     */
+    public void metalink(FsPath path, Writer out, URI uri)
+            throws InterruptedException, CacheException, IOException, XMLStreamException {
+        if (!_isAnonymousListingAllowed && Subjects.isNobody(getSubject())) {
+            throw new PermissionDeniedCacheException("Access denied");
+        }
+
+        XMLStreamWriter sw = XML_OUTPUT_FACTORY.createXMLStreamWriter(out);
+
+        sw.writeStartDocument();
+
+        DirectoryListPrinter printer =
+              new DirectoryListPrinter() {
+                  @Override
+                  public Set<FileAttribute> getRequiredAttributes() {
+                      return Set.of(MODIFICATION_TIME, TYPE, SIZE, CHECKSUM);
+                  }
+
+                  private FileAttributes entryAttributes(FsPath dir, DirectoryEntry entry) {
+                      FileAttributes attr = entry.getFileAttributes();
+                      switch (attr.getFileType()) {
+                          case LINK:
+                              String entryPath = dir.child(entry.getName()).toString();
+                              try {
+                                  return _pnfs.getFileAttributes(entryPath,
+                                        getRequiredAttributes());
+                              } catch (CacheException e) {
+                                  LOGGER.debug("Symlink lookup of {} failed with {}",
+                                        entryPath, e.getMessage());
+                                  return attr;
+                              }
+
+                          default:
+                              return attr;
+                      }
+                  }
+
+                  @Override
+                  public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry) {
+                      FileAttributes attr = entryAttributes(dir, entry);
+                      var mtime = Instant.ofEpochMilli(attr.getModificationTime());
+                      String safeName = METALINK_NAME_ESCAPER.escape(entry.getName());
+                      URI target = uri.resolve(safeName);
+
+                      if (attr.getFileType() != REGULAR && attr.getFileType() != LINK) {
+                          return;
+                      }
+
+                      /* FIXME: SIZE is defined if client specifies the
+                       * file's size before uploading.
+                       */
+                      if (attr.getFileType() == REGULAR && !attr.isDefined(SIZE)) {
+                          return;
+                      }
+
+                      try {
+                          sw.writeStartElement("file");
+                          try {
+                              sw.writeAttribute("name", entry.getName());
+
+                              if (attr.isDefined(SIZE)) {
+                                  sw.writeStartElement("size");
+                                  try {
+                                      sw.writeCharacters(Long.toString(attr.getSize()));
+                                  } finally {
+                                      sw.writeEndElement();
+                                  }
+                              }
+                              if (attr.isDefined(CHECKSUM)) {
+                                  for (Checksum checksum : attr.getChecksums()) {
+                                        String type = METALINK_NAMES_FOR_CHECKSUMS.get(checksum.getType());
+                                        if (type == null) {
+                                            continue;
+                                        }
+                                        sw.writeStartElement("hash");
+                                        try {
+                                            sw.writeAttribute("type", type);
+                                            sw.writeCharacters(checksum.getValue());
+                                        } finally {
+                                            sw.writeEndElement();
+                                        }
+                                  }
+                              }
+                              sw.writeStartElement("url");
+                              try {
+                                  sw.writeCharacters(target.toASCIIString());
+                              } finally {
+                                  sw.writeEndElement();
+                              }
+                              sw.writeStartElement("updated");
+                              try {
+                                  sw.writeCharacters(mtime.toString());
+                              } finally {
+                                  sw.writeEndElement();
+                              }
+                          } finally {
+                              sw.writeEndElement();
+                          }
+                      } catch (XMLStreamException e) {
+                          LOGGER.warn("Failed to process directory item {}: {}", entry.getName(),
+                              e.toString());
+                      }
+                  }
+              };
+
+        sw.writeStartElement("metalink");
+        sw.writeDefaultNamespace("urn:ietf:params:xml:ns:metalink");
+        try {
+            _list.printDirectory(getSubject(), getRestriction(), printer, path, null,
+                  Range.<Integer>all());
+        } finally {
+            sw.writeEndElement();
+        }
+
+        sw.writeEndDocument();
+    }
+
+    /**
      * Deletes a file.
      */
     public void deleteFile(FileAttributes attributes, FsPath path)
@@ -1120,7 +1274,8 @@ public class DcacheResourceFactory
         PnfsCreateEntryMessage reply =
               pnfs.createPnfsDirectory(path.toString(), REQUIRED_ATTRIBUTES);
 
-        return new DcacheDirectoryResource(this, path, reply.getFileAttributes());
+        return new DcacheDirectoryResource(this, path, reply.getFileAttributes(),
+              isFetchAllAttributes());
     }
 
     public void move(FsPath sourcePath, PnfsId pnfsId, FsPath newPath)
@@ -1304,9 +1459,9 @@ public class DcacheResourceFactory
     }
 
     private boolean isAdmin() {
-        Set<LoginAttribute> attributes = AuthenticationHandler.getLoginAttributes(
-              ServletRequest.getRequest());
-        return LoginAttributes.hasAdminRole(attributes);
+        return getSubject().getPrincipals().stream()
+              .filter(p->p instanceof RolePrincipal)
+              .anyMatch(p->((RolePrincipal) p).hasRole(Role.ADMIN));
     }
 
     private PnfsHandler roleAwarePnfsHandler() {
@@ -1411,13 +1566,16 @@ public class DcacheResourceFactory
     }
 
     private Set<FileAttribute> buildRequestedAttributes() {
-        Set<FileAttribute> attributes = EnumSet.copyOf(REQUIRED_ATTRIBUTES);
+        boolean all = isFetchAllAttributes();
+
+        Set<FileAttribute> attributes = all ? EnumSet.copyOf(REQUIRED_ATTRIBUTES) :
+              EnumSet.copyOf(MINIMALLY_REQUIRED_ATTRIBUTES);
 
         if (isDigestRequested()) {
             attributes.add(CHECKSUM);
         }
 
-        if (isPropfindRequest()) {
+        if (isPropfindRequest() && all) {
             // FIXME: Unfortunately, Milton parses the request body after
             // requesting the Resource, so we cannot know which additional
             // attributes are being requested; therefore, we must request all
@@ -1426,6 +1584,14 @@ public class DcacheResourceFactory
         }
 
         return attributes;
+    }
+
+    private boolean isFetchAllAttributes() {
+        if (!isPropfindRequest()) {
+            return true;
+        }
+
+        return _includeAllAttributesForPropfind;
     }
 
     /**
@@ -1485,7 +1651,7 @@ public class DcacheResourceFactory
         }
     }
 
-    private Optional<String> lookupWriteToken(FsPath path) {
+    public Optional<String> lookupWriteToken(FsPath path) {
         try {
             return _writeTokenCache.get(path);
         } catch (ExecutionException e) {
@@ -1496,14 +1662,14 @@ public class DcacheResourceFactory
         }
     }
 
-    public Space spaceForPath(FsPath path) throws SpaceException {
-        return lookupWriteToken(path)
+    public Space spaceForToken(Optional<String> maybeToken) throws SpaceException {
+        return maybeToken
               .flatMap(this::lookupSpaceById)
               .orElseThrow(() -> new SpaceException("Path not under space management"));
     }
 
-    public boolean isSpaceManaged(FsPath path) {
-        return lookupWriteToken(path)
+    public boolean isSpaceManaged(Optional<String> maybeToken) {
+        return maybeToken
               .flatMap(this::lookupSpaceById)
               .isPresent();
     }

@@ -251,6 +251,11 @@ public class ReservationCaches {
                     });
     }
 
+    public static java.util.Optional<String> writeToken(FileAttributes attr) {
+        StorageInfo info = attr.getStorageInfo();
+        return java.util.Optional.ofNullable(info.getMap().get("writeToken"));
+    }
+
     /**
      * Cache queries to discover if a directory has the "WriteToken" tag set.
      */
@@ -262,11 +267,6 @@ public class ReservationCaches {
               .refreshAfterWrite(5, MINUTES)
               .recordStats()
               .build(new CacheLoader<FsPath, java.util.Optional<String>>() {
-                  private java.util.Optional<String> writeToken(FileAttributes attr) {
-                      StorageInfo info = attr.getStorageInfo();
-                      return java.util.Optional.ofNullable(info.getMap().get("writeToken"));
-                  }
-
                   @Override
                   public java.util.Optional<String> load(FsPath path)
                         throws CacheException, NoRouteToCellException, InterruptedException {

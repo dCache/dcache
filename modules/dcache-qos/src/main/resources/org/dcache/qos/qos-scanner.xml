@@ -48,7 +48,7 @@
 
   <bean id="message-guard" class="org.dcache.qos.util.MessageGuard">
     <description>Validates messages for handling; will ignore messages is message handling is
-                 paused or if they originate with the qos service itself.</description>
+      paused or if they originate with the qos service itself.</description>
     <property name="backlogHandler" ref="message-backlog-handler"/>
   </bean>
 
@@ -104,8 +104,9 @@
     <description>File system implementation (Chimera).</description>
     <constructor-arg ref="namespace-data-source"/>
     <constructor-arg ref="namespace-tx-manager"/>
+    <constructor-arg value="${chimera.attr-consistency}"/>
   </bean>
-  
+
   <bean id="extractor" class="${qos.plugins.storage-info-extractor}">
     <description>Namespace database storage info extractor.</description>
     <!-- these are placeholder values which do not effect how qos works, so the dcache defaults are fine -->
@@ -206,13 +207,14 @@
     <property name="timeout" value="${qos.limits.scanner.scan-period}"/>
     <property name="timeoutUnit" value="${qos.limits.scanner.scan-period.unit}"/>
     <property name="maxConcurrentRunning" value="${qos.limits.scanner.task-threads}"/>
-    <property name="nearlineBatchSize" value="${qos.limits.scanner.nearline-batch-size}"/>
-    <property name="nearlineRescanEnabled" value="${qos.limits.scanner.enable.nearline-scan}"/>
-    <property name="nearlineRescanWindow" value="${qos.limits.scanner.nearline-window}"/>
-    <property name="nearlineRescanWindowUnit" value="${qos.limits.scanner.nearline-window.unit}"/>
+    <property name="qosNearlineBatchSize" value="${qos.limits.scanner.qos-nearline-batch-size}"/>
+    <property name="onlineScanEnabled" value="${qos.limits.scanner.enable.online-scan}"/>
+    <property name="qosNearlineRescanWindow" value="${qos.limits.scanner.qos-nearline-window}"/>
+    <property name="qosNearlineRescanWindowUnit" value="${qos.limits.scanner.qos-nearline-window.unit}"/>
     <property name="onlineBatchSize"  value="${qos.limits.scanner.online-batch-size}"/>
     <property name="onlineRescanWindow" value="${qos.limits.scanner.online-window}"/>
     <property name="onlineRescanWindowUnit" value="${qos.limits.scanner.online-window.unit}"/>
+    <property name="poolOperationMap" ref="pool-operation-map"/>
     <property name="handler" ref="scanner-namespace-handler"/>
     <property name="counters" ref="scanner-counters"/>
   </bean>

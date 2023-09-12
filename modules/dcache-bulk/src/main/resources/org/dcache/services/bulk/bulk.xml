@@ -80,7 +80,7 @@
   </bean>
 
   <bean id="cancellation-executor" class="org.dcache.util.CDCScheduledExecutorServiceDecorator">
-    <description>Used to run delayed clear requests.</description>
+    <description>Used to cancel requests.</description>
     <constructor-arg>
       <bean class="java.util.concurrent.ScheduledThreadPoolExecutor">
         <constructor-arg value="${bulk.limits.cancellation-threads}"/>
@@ -102,6 +102,10 @@
         <constructor-arg value="1"/>
       </bean>
     </constructor-arg>
+  </bean>
+
+  <bean id="dir-list-executor" class="org.dcache.util.BoundedCachedExecutor">
+    <constructor-arg value="${bulk.limits.dir-list-threads}"/>
   </bean>
 
   <bean id="bulk-data-source" class="com.zaxxer.hikari.HikariDataSource">
@@ -163,18 +167,27 @@
     <property name="statistics" ref="statistics"/>
   </bean>
 
+  <bean id="bulk-archive-dao"
+    class="org.dcache.services.bulk.store.jdbc.request.JdbcBulkArchiveDao">
+    <description>Archived request data access object handler.</description>
+    <property name="dataSource" ref="bulk-data-source"/>
+    <property name="utils" ref="bulk-jdbc-dao-utils"/>
+  </bean>
+
   <bean id="request-store" class="org.dcache.services.bulk.store.jdbc.request.JdbcBulkRequestStore"
     init-method="initialize">
     <description>RDBMS implementation of request storage interface</description>
     <property name="requestDao" ref="bulk-request-dao"/>
     <property name="requestTargetDao" ref="bulk-request-target-dao"/>
     <property name="requestPermissionsDao" ref="bulk-request-permissions-dao"/>
+    <property name="archiveDao" ref="bulk-archive-dao"/>
     <property name="targetStore" ref="target-store"/>
     <property name="expiry" value="${bulk.limits.request-cache-expiration}"/>
     <property name="expiryUnit" value="${bulk.limits.request-cache-expiration.unit}"/>
     <property name="capacity" value="${bulk.limits.container-processing-threads}"/>
     <property name="statistics" ref="statistics"/>
     <property name="pnfsManager" ref="pnfs-manager-stub"/>
+    <property name="bulkUtils" ref="bulk-jdbc-dao-utils"/>
   </bean>
 
   <bean id="target-store" class="org.dcache.services.bulk.store.jdbc.rtarget.JdbcBulkTargetStore">
@@ -250,6 +263,7 @@
     <property name="requestStore" ref="request-store"/>
     <property name="targetStore" ref="target-store"/>
     <property name="statistics" ref="statistics"/>
+    <property name="dirListExecutor" ref="dir-list-executor"/>
   </bean>
 
   <bean id="statistics" class="org.dcache.services.bulk.util.BulkServiceStatistics">
@@ -315,6 +329,8 @@
     <property name="submissionHandler" ref="request-handler"/>
     <property name="statistics" ref="statistics"/>
     <property name="executor" ref="reset-executor"/>
+    <property name="archiver" ref="request-archiver"/>
+    <property name="archiveDao" ref="bulk-archive-dao"/>
   </bean>
 
   <bean id="shutdownManager" class="org.dcache.services.bulk.util.BulkShutdownManager" destroy-method="shutdown">
@@ -326,10 +342,26 @@
         <ref bean="cancellation-executor"/>
         <ref bean="manager-executor"/>
         <ref bean="reset-executor"/>
+        <ref bean="dir-list-executor"/>
       </list>
     </property>
     <property name="dataSource" ref="bulk-data-source"/>
     <property name="await" value="${bulk.limits.shutdown-manager-wait}"/>
     <property name="awaitUnit" value="${bulk.limits.shutdown-manager-wait.unit}"/>
+  </bean>
+
+  <bean id="request-archiver" class="org.dcache.services.bulk.store.jdbc.request.JdbcBulkRequestArchiver"
+    init-method="reset" destroy-method="shutdown">
+    <property name="requestDao" ref="bulk-request-dao"/>
+    <property name="requestStore" ref="request-store"/>
+    <property name="archiverScheduler">
+      <bean class="java.util.concurrent.ScheduledThreadPoolExecutor">
+        <constructor-arg value="1"/>
+      </bean>
+    </property>
+    <property name="archiverPeriod" value="${bulk.limits.archiver-period}"/>
+    <property name="archiverPeriodUnit" value="${bulk.limits.archiver-period.unit}"/>
+    <property name="archiverWindow" value="${bulk.limits.archiver-window}"/>
+    <property name="archiverWindowUnit" value="${bulk.limits.archiver-window.unit}"/>
   </bean>
 </beans>

@@ -31,7 +31,7 @@ public class FsFactory {
         AlarmEnabledDataSource dataSource = new AlarmEnabledDataSource(url,
               FsFactory.class.getSimpleName(), getDataSource(url, user, password));
         PlatformTransactionManager txManager = new DataSourceTransactionManager(dataSource);
-        return new JdbcFs(dataSource, txManager) {
+        return new JdbcFs(dataSource, txManager, "strong") {
             @Override
             public void close() throws IOException {
                 super.close();
