@@ -539,13 +539,6 @@ does not support TLS, but the triggering client has expressed 'tls.tpc=1'
 As of 6.2, dCache has not yet implemented the GP file or data channel options;
 stay tuned for further developments in those areas.
 
-> **A note on TLS configuration for the pools**
->
->Given that pools may need to service clients that do not support TLS (they
->may, for instance, be using a non-xroot protocol), it is probably not
->practical to make the pools require TLS by setting
->``pool.mover.xrootd.security.tls.mode=STRICT``.
-
 > **Host cert and key**
 >
 > These are required to be there when the SSHHandlerFactory (which provides
@@ -559,42 +552,34 @@ stay tuned for further developments in those areas.
 As of 8.1, dCache now supports the chaining of authentication plugins/protocols on the door.
 This means that a single door can tell the client to try each or any of the protocols indicated.
 
-The defaults have been modified so that dCache can be used out of the box in most cases
-without further concern to configure doors and pools.   To summarize, for the door:
+The defaults have been set so that dCache can be used out of the box in most cases
+without further concern to configure doors and pools.  To enforce TLS, which is
+mandatory for token-based authentication/authorization, change the following property
+on the *doors* from its default value (`OPTIONAL`) to:
 
 ```
-xrootd.plugins=gplazma:ztn,gplazma:gsi,gplazma:none,authz:scitokens
-xrootd.security.tls.mode=OPTIONAL
-xrootd.plugin!scitokens.strict=false
+xrootd.security.tls.mode=STRICT
 ```
 
-These defaults guarantee that the client
+Otherwise, attempts to use a token will be rejected by the door _unless_ the client
+uses the `xroots`/`roots` URL protocol, in which case it is telling the server/door
+that it requires TLS.
 
-1. will try ZTN first, because if it has no discoverable cert keys and no proxy,
-   the client will fail a GSI request unless `export XrdSecGSICREATEPROXY=0` is set;
-2. will then try GSI if it has no token;
-3. if it tries ZTN it must turn on/request TLS or that protocol will be rejected (xroots:// must be used)
-4. if those fail, it can be logged in anonymously and potentially receive further authorization
-   downstream from another token;
-5. if ZTN succeeds and there is no authorization token on the path URL, the ZTN token
-   will be used as fallback (the scitoken requirement is not strict);
-6. third-party-copy will succeed with dCache doors as sources because the third-party
-   client can connect using the rendezvous token without further authentication
-   (gplazma:none).
-7. NOTE:  it is possible to use GSI rather than ZTN and als provide a scitoken/JWT token on the path
-   URL; TLS must be activated in this case.  The usage scenario for this would, however, be rare.
+When TLS is set to `STRICT`, and other defaults remain as they are, the following apply:
 
-Of course, these remain configurable in case of special requirements.
+1. clients using an xroot protocol version prior to 5 will not be rejected; they
+   will be allowed to authenticate using x509 as previously;
+2. clients that use a protocol version of 5 or higher will be told to turn on TLS;
+3. clients will be told to try `ZTN` first; if there is no token available, they will
+   either look for a different credential (e.g., an x509 proxy) or log in anonymously
+   (if this is permitted by the door).
 
-The pool defaults
+If it is not desirable to force all data transfers to be encrypted, the *pool* configuration
+should leave the TLS mode at its default value (`OPTIONAL`).
 
-```
-pool.mover.xrootd.tpc-authn-plugins=gsi,unix,ztn
-```
-
-have been updated to load the ZTN module, but currently this results in a NOP
-because there is no agreed-upon strategy for getting the token to the third-party client;
-this may change in the near future.
+For more information about how to allow clients to (a) support multiple credentials or
+(b) to require encryption (especially on third-party transfers), see
+the User Guide under *_xroot_*.
 
 ### Tried-hosts
 
