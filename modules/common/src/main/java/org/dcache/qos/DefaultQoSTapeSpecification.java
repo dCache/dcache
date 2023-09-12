@@ -57,93 +57,67 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.qos.services.verifier.data;
+package org.dcache.qos;
 
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
-import org.dcache.qos.data.FileQoSUpdate;
-import org.dcache.qos.vehicles.QoSAdjustmentRequest;
+import java.util.Objects;
 
 /**
- * Defines interactions with the core mapping of verify operations.
+ *  A simple tape specification.
  */
-public interface VerifyOperationMap {
+public class DefaultQoSTapeSpecification extends QoSHsmSpecification {
+
+    private static final long serialVersionUID = -7122977962254426993L;
+
+    private String instance;
 
     /**
-     * @param filter based on parameters set by user.
+     *  E.g., "Enstore", "CTA", etc.
      */
-    void cancel(VerifyOperationCancelFilter filter);
+    private String type;
 
-    /**
-     * @param pnfsId of single operation to cancel.
-     * @param remove if false, the operation is reset for retry.
-     */
-    void cancel(PnfsId pnfsId, boolean remove);
+    @Override
+    public String getInstance() {
+        return instance;
+    }
 
-    /**
-     * Forced cancellation of all operations matching this pool.
-     *
-     * @param pool       could be source, target or parent.
-     * @param onlyParent only match parent pools.
-     */
-    void cancelFileOpForPool(String pool, boolean onlyParent);
+    @Override
+    public String getType() {
+        return type;
+    }
 
-    /**
-     * Should give a full count of the store (not only what may be held currently in memory).
-     *
-     * @param filter defining which operations to match.
-     * @return count of single matching type.
+    /*
+     *  Currently, we only allow one copy per tape system instance.
      */
-    int count(VerifyOperationFilter filter);
+    @Override
+    public Integer getNumberOfCopies() {
+        return 1;
+    }
 
-    /**
-     * Adds a new operation based on incoming data.
-     *
-     * @param data concerning the file derived from received message.
-     * @return true if new, false if simply updated (file is currently active).
-     */
-    boolean createOrUpdateOperation(FileQoSUpdate data);
+    public void setInstance(String instance) {
+        this.instance = instance;
+    }
 
-    /**
-     * @param pnfsId of the matching operation, if any.  It is understood that there can only be one
-     *               such operation active for any given pnfsid at a time.
-     * @return the operation, or <code>null</code> if there is no such operation currently running.
-     */
-    VerifyOperation getRunning(PnfsId pnfsId);
+    public void setType(String type) {
+        this.type = type;
+    }
 
-    /**
-     * Should give a full listing of the store (not only what may be held currently in memory).
-     *
-     * @param filter defining which operations to match.
-     * @param limit  of matching entries to include.
-     * @return line-separated listing.
-     */
-    String list(VerifyOperationFilter filter, int limit);
+    public boolean equals(Object obj) {
+        if (!(obj instanceof DefaultQoSTapeSpecification)) {
+            return false;
+        }
 
-    /**
-     * @return full size of the current operation store (not just what may be cached in memory).
-     */
-    int size();
+        DefaultQoSTapeSpecification other = (DefaultQoSTapeSpecification) obj;
 
-    /**
-     * Terminal update.
-     *
-     * @param pnfsId of the terminated operation.
-     * @param error  if there was a failure (can be <code>null</code>).
-     */
-    void updateOperation(PnfsId pnfsId, CacheException error);
+        if ((type == null && other.type != null) ||
+              type != null && !type.equals(other.type)) {
+            return false;
+        }
 
-    /**
-     * Running update.  This is called after the verifier has determined the action to take.
-     *
-     * @param request which will be sent to the adjuster service.
-     */
-    void updateOperation(QoSAdjustmentRequest request);
+        return (instance == null && other.instance == null) ||
+              instance != null && instance.equals(other.instance);
+    }
 
-    /**
-     * If there is nothing (more) to do.
-     *
-     * @param operation to void.
-     */
-    void voidOperation(VerifyOperation operation);
+    public int hashCode() {
+        return Objects.hash(type, instance);
+    }
 }

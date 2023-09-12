@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
+import org.dcache.auth.RolePrincipal.Role;
 import org.dcache.util.PrincipalSetMaker;
 import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 import org.slf4j.Logger;
@@ -68,6 +69,15 @@ public class Subjects {
      */
     public static boolean isRoot(Subject subject) {
         return hasUid(subject, 0);
+    }
+
+    public static boolean hasAdminRole(Subject subject) {
+        return hasRole(subject, Role.ADMIN);
+    }
+
+    public static boolean hasRole(Subject subject, Role role) {
+        return subject.getPrincipals().stream().filter(p -> p instanceof RolePrincipal)
+              .anyMatch(p -> ((RolePrincipal) p).hasRole(role));
     }
 
     /**

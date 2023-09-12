@@ -83,7 +83,7 @@ public final class SystemScanOperation extends ScanOperation<SystemScanTask> {
     final String id;
     final long from;
     final long to;
-    final boolean nearline;
+    final boolean qos;
 
     long lastUpdate;
     long lastScan;
@@ -98,11 +98,11 @@ public final class SystemScanOperation extends ScanOperation<SystemScanTask> {
     private long failed;
     private boolean canceled;
 
-    SystemScanOperation(long from, long to, boolean nearline) {
+    SystemScanOperation(long from, long to, boolean qos) {
         id = UUID.randomUUID().toString();
         this.from = from;
         this.to = to;
-        this.nearline = nearline;
+        this.qos = qos;
 
         lastUpdate = System.currentTimeMillis();
         lastScan = lastUpdate;
@@ -116,7 +116,7 @@ public final class SystemScanOperation extends ScanOperation<SystemScanTask> {
     public String toString() {
         return String.format(TO_STRING,
               id,
-              nearline ? "NEARLINE" : "ONLINE",
+              qos ? "QOS" : "ONLINE",
               from,
               to,
               canceled ? "CANCELED" : (scanLabel == FINISHED ? "DONE" : "RUNNING"),
@@ -167,8 +167,8 @@ public final class SystemScanOperation extends ScanOperation<SystemScanTask> {
         return to >= minMaxIndices[1];
     }
 
-    boolean isNearline() {
-        return nearline;
+    boolean isQos() {
+        return qos;
     }
 
     protected String getFormattedPercentDone() {

@@ -59,17 +59,9 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.store.jdbc;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -80,7 +72,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.dcache.db.JdbcCriterion;
 import org.dcache.db.JdbcUpdate;
-import org.dcache.services.bulk.BulkStorageException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -165,24 +156,6 @@ public final class JdbcBulkDaoUtils {
         return support.getJdbcTemplate().update(sql, criterion.getArgumentsAsArray());
     }
 
-    /**
-     * @throws SQLException in order to support the jdbc template API.
-     */
-    public Object deserializeFromBase64(Long id, String field, String base64)
-          throws SQLException {
-        if (base64 == null) {
-            return null;
-        }
-        byte[] array = Base64.getDecoder().decode(base64);
-        ByteArrayInputStream bais = new ByteArrayInputStream(array);
-        try (ObjectInputStream istream = new ObjectInputStream(bais)) {
-            return istream.readObject();
-        } catch (IOException | ClassNotFoundException e) {
-            throw new SQLException("problem deserializing " + field + " for "
-                  + id, e);
-        }
-    }
-
     public <T> List<T> get(String select, JdbcCriterion criterion, int limit, String tableName,
           JdbcDaoSupport support, RowMapper<T> mapper) {
         LOGGER.trace("get {}, {}, limit {}.", select, criterion, limit);
@@ -220,18 +193,6 @@ public final class JdbcBulkDaoUtils {
     public <T> void insertBatch(List<T> targets, String sql,
           ParameterizedPreparedStatementSetter<T> setter, JdbcDaoSupport support) {
         support.getJdbcTemplate().batchUpdate(sql, targets, 100, setter);
-    }
-
-    public String serializeToBase64(String field, Serializable serializable)
-          throws BulkStorageException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (ObjectOutputStream ostream = new ObjectOutputStream(baos)) {
-            ostream.writeObject(serializable);
-        } catch (IOException e) {
-            throw new BulkStorageException("problem serializing "
-                  + field, e);
-        }
-        return Base64.getEncoder().encodeToString(baos.toByteArray());
     }
 
     @Required

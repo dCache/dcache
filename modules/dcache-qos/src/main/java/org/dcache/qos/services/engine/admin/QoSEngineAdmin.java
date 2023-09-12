@@ -59,10 +59,17 @@ documents or software obtained from this server.
  */
 package org.dcache.qos.services.engine.admin;
 
+import static org.dcache.qos.services.engine.handler.FileQoSStatusHandler.DEFAULT_PERIOD;
+import static org.dcache.qos.services.engine.handler.FileQoSStatusHandler.DEFAULT_QUERY_LIMIT;
+import static org.dcache.qos.services.engine.handler.FileQoSStatusHandler.DEFAULT_UNIT;
+
+import diskCacheV111.util.PnfsId;
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
 import java.util.concurrent.TimeUnit;
+import org.dcache.qos.services.engine.handler.FileQoSStatusHandler;
 import org.dcache.qos.services.engine.util.QoSEngineCounters;
 import org.dcache.qos.util.InitializerAwareCommand;
 import org.dcache.qos.util.MapInitializer;
@@ -152,6 +159,52 @@ public final class QoSEngineAdmin implements CellCommandListener {
         }
     }
 
+    @Command(name = "reset", hint = "reset the period",
+          description = "Resets the period and unit for the expiration checks of policy state.")
+    class ResetCommand extends InitializerAwareCommand {
+
+        @Option(name = "period",
+              usage = "Value of the interval for periodic checks of policy state expiration.")
+        int period = DEFAULT_PERIOD;
+
+        @Option(name = "unit",
+              valueSpec = "MILLIS|SECONDS|MINUTES|HOURS|DAYS",
+              usage = "Time unit of the interval for periodic checks of policy state expiration.")
+        TimeUnit unit = DEFAULT_UNIT;
+
+        @Option(name = "limit",
+              usage = "Max number of entries to fetch at a time.")
+        int limit = DEFAULT_QUERY_LIMIT;
+
+        ResetCommand() {
+            super(initializer);
+        }
+
+        @Override
+        protected String doCall() throws Exception {
+            handler.setPeriod(period);
+            handler.setPeriodUnit(unit);
+            handler.reset();
+            return "Currently scheduled sweep cancelled and reset.";
+        }
+    }
+
+    @Command(name = "qos", hint = "print qos info for a file if it is being tracked",
+          description = "Resets the period and unit for the expiration checks of policy state.")
+    class QoSRecord extends InitializerAwareCommand {
+
+        @Argument(index = 0,
+              usage = "The unique identifier of the file within dCache.")
+        PnfsId pnfsId;
+
+        QoSRecord()  {  super(initializer); }
+
+        @Override
+        protected String doCall() throws Exception {
+            return handler.getQoSRecordIfExists(pnfsId);
+        }
+    }
+
     private final MapInitializer initializer = new MapInitializer() {
         @Override
         protected long getRefreshTimeout() {
@@ -175,6 +228,11 @@ public final class QoSEngineAdmin implements CellCommandListener {
 
     private MessageGuard messageGuard;
     private QoSEngineCounters counters;
+    private FileQoSStatusHandler handler;
+
+    public void setHandler(FileQoSStatusHandler handler) {
+        this.handler = handler;
+    }
 
     public void setCounters(QoSEngineCounters counters) {
         this.counters = counters;

@@ -103,13 +103,17 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.CellStub;
 import org.dcache.restful.util.HandlerBuilders;
 import org.dcache.restful.util.RequestUser;
 import org.dcache.restful.util.bulk.BulkServiceCommunicator;
+import org.dcache.services.bulk.BulkArchivedRequestInfo;
+import org.dcache.services.bulk.BulkArchivedRequestInfoMessage;
+import org.dcache.services.bulk.BulkArchivedSummaryFilter;
+import org.dcache.services.bulk.BulkArchivedSummaryInfo;
+import org.dcache.services.bulk.BulkArchivedSummaryInfoMessage;
 import org.dcache.services.bulk.BulkRequest;
 import org.dcache.services.bulk.BulkRequest.Depth;
 import org.dcache.services.bulk.BulkRequestCancelMessage;
@@ -258,8 +262,7 @@ public final class BulkResources {
      * data fields.
      */
     @GET
-    @ApiOperation("Get the status information for an individual bulk request. If nextId != -1 "
-          + "retry using the offset = nextId to fetch more targets.")
+    @ApiOperation("Get the status information for an individual bulk request.")
     @ApiResponses({
           @ApiResponse(code = 400, message = "Bad request"),
           @ApiResponse(code = 401, message = "Unauthorized"),
@@ -280,6 +283,85 @@ public final class BulkResources {
         BulkRequestStatusMessage message = new BulkRequestStatusMessage(id, restriction);
         message.setSubject(subject);
         message.setOffset(offset);
+        message = service.send(message);
+        return message.getInfo();
+    }
+
+    @GET
+    @ApiOperation("List the status information for an individual bulk request matching"
+          + " the query parameters (if any).")
+    @ApiResponses({
+          @ApiResponse(code = 400, message = "Bad request"),
+          @ApiResponse(code = 401, message = "Unauthorized"),
+          @ApiResponse(code = 403, message = "Forbidden"),
+          @ApiResponse(code = 404, message = "Not found"),
+          @ApiResponse(code = 500, message = "Internal Server Error")
+    })
+    @Path("/archived")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<BulkArchivedSummaryInfo> getArchivedSummaryList(
+          @ApiParam("A datetime string formatted as 'yyyy/MM/dd-HH:mm:ss'.")
+          @QueryParam("before") String before,
+          @ApiParam("A datetime string formatted as 'yyyy/MM/dd-HH:mm:ss'.")
+          @QueryParam("after") String after,
+          @ApiParam("A comma-separated list of non-repeating elements, "
+                + "each of which is an activity type.")
+          @QueryParam("activity") String activity,
+          @ApiParam("A comma-separated list of non-repeating elements, "
+          + "each of which is one of: completed, cancelled.")
+          @QueryParam("status") String status,
+          @ApiParam("A comma-separated list of owners to match; unspecified returns all requests.")
+          @QueryParam("owner") String owner,
+          @ApiParam("Max number of entries to return for the request list (default = 5K).")
+          @DefaultValue("5000")
+          @QueryParam("limit") int limit) {
+        BulkArchivedSummaryFilter filter = new BulkArchivedSummaryFilter();
+        filter.setAfter(after);
+        filter.setBefore(before);
+        filter.setLimit(limit);
+        if (activity != null) {
+            filter.setActvity(Arrays.stream(activity.split("[,]")).collect(Collectors.toSet()));
+        }
+        if (status != null) {
+            filter.setStatus(Arrays.stream(status.split("[,]")).collect(Collectors.toSet()));
+        }
+        if (owner != null) {
+            filter.setOwner(Arrays.stream(owner.split("[,]")).collect(Collectors.toSet()));
+        }
+        Subject subject = getSubject();
+        Restriction restriction = getRestriction();
+        BulkArchivedSummaryInfoMessage message = new BulkArchivedSummaryInfoMessage(filter, restriction);
+        message.setSubject(subject);
+        message = service.send(message);
+        return message.getInfo();
+    }
+
+    /**
+     * Get archived information for a request.
+     * <p>
+     * NOTE: users logged in with the admin role can obtain info on any request.
+     *
+     * @param id of the request.
+     * @return Object which describes the request. See {@link BulkArchivedRequestInfo} for the
+     * data fields.
+     */
+    @GET
+    @ApiOperation("Get the information for a bulk request which has been archived.")
+    @ApiResponses({
+          @ApiResponse(code = 400, message = "Bad request"),
+          @ApiResponse(code = 401, message = "Unauthorized"),
+          @ApiResponse(code = 403, message = "Forbidden"),
+          @ApiResponse(code = 404, message = "Not found"),
+          @ApiResponse(code = 500, message = "Internal Server Error")
+    })
+    @Path("/archived/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public BulkArchivedRequestInfo getArchivedRequestInfo(@ApiParam("The unique id of the request.")
+    @PathParam("id") String id) {
+        Subject subject = getSubject();
+        Restriction restriction = getRestriction();
+        BulkArchivedRequestInfoMessage message = new BulkArchivedRequestInfoMessage(id, restriction);
+        message.setSubject(subject);
         message = service.send(message);
         return message.getInfo();
     }
@@ -394,10 +476,6 @@ public final class BulkResources {
     public static Subject getSubject() {
         if (RequestUser.isAnonymous()) {
             throw new NotAuthorizedException("User cannot be anonymous.");
-        }
-
-        if (RequestUser.isAdmin()) {
-            return Subjects.ROOT;
         }
 
         return RequestUser.getSubject();

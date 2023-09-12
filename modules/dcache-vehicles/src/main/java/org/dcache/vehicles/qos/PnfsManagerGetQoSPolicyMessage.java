@@ -57,58 +57,29 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.qos.local.clients;
+package org.dcache.vehicles.qos;
 
-import diskCacheV111.util.PnfsId;
-import javax.security.auth.Subject;
-import org.dcache.qos.QoSException;
-import org.dcache.qos.listeners.QoSVerificationListener;
-import org.dcache.qos.services.verifier.handlers.VerifyOperationHandler;
-import org.dcache.qos.vehicles.QoSAdjustmentResponse;
-import org.dcache.qos.vehicles.QoSScannerVerificationRequest;
-import org.dcache.qos.vehicles.QoSVerificationRequest;
+import org.dcache.qos.QoSPolicy;
 
-/**
- * A pass-through to the file operation handler. Use this listener when plugging in directly to the
- * verification service.
- */
-public final class LocalQoSVerificationClient implements QoSVerificationListener {
+public class PnfsManagerGetQoSPolicyMessage extends PnfsManagerQoSPolicyMessage {
 
-    private VerifyOperationHandler fileOpHandler;
+    private static final long serialVersionUID = 1132558931827401229L;
+    private final String policyName;
+    private QoSPolicy policy;
 
-    @Override
-    public void fileQoSVerificationRequested(QoSVerificationRequest request) {
-        fileOpHandler.handleUpdate(request.getUpdate());
+    public String getPolicyName() {
+        return policyName;
     }
 
-    @Override
-    public void fileQoSVerificationRequested(QoSScannerVerificationRequest request) {
-        fileOpHandler.handleVerificationRequest(request);
+    public PnfsManagerGetQoSPolicyMessage(String policyName) {
+        this.policyName = policyName;
     }
 
-    @Override
-    public void fileQoSAdjustmentCompleted(QoSAdjustmentResponse response) {
-        fileOpHandler.handleAdjustmentResponse(response);
+    public QoSPolicy getPolicy() {
+        return policy;
     }
 
-    @Override
-    public void fileQoSVerificationCancelled(PnfsId pnfsId, Subject subject) throws QoSException {
-        fileOpHandler.handleFileOperationCancelled(pnfsId);
-    }
-
-    public void fileQoSBatchedVerificationCancelled(String pool) {
-        fileOpHandler.handleFileOperationsCancelledForPool(pool);
-    }
-
-    public void notifyLocationExclusion(String location) {
-        fileOpHandler.handleExcludedStatusChange(location, true);
-    }
-
-    public void notifyLocationInclusion(String location) {
-        fileOpHandler.handleExcludedStatusChange(location, false);
-    }
-
-    public void setFileOpHandler(VerifyOperationHandler fileOpHandler) {
-        this.fileOpHandler = fileOpHandler;
+    public void setPolicy(QoSPolicy policy) {
+        this.policy = policy;
     }
 }

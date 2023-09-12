@@ -66,7 +66,6 @@ import java.util.Arrays;
 import java.util.function.Predicate;
 import org.dcache.qos.data.QoSAction;
 import org.dcache.qos.data.QoSMessageType;
-import org.dcache.qos.services.verifier.data.db.UniqueJdbcOperationCriterion;
 import org.dcache.qos.services.verifier.data.db.VerifyOperationDao;
 import org.dcache.qos.services.verifier.data.db.VerifyOperationDao.VerifyOperationCriterion;
 
@@ -74,7 +73,6 @@ import org.dcache.qos.services.verifier.data.db.VerifyOperationDao.VerifyOperati
  * Abstracts user command filter, and provides methods for conversion into dao criteria and update.
  */
 public class VerifyOperationFilter {
-
     private PnfsId[] ids;
     private QoSAction[] action;
     private QoSMessageType[] msgType;
@@ -85,6 +83,8 @@ public class VerifyOperationFilter {
     private String source;
     private String target;
     private Integer retried;
+    private String arrivedBefore;
+    private String arrivedAfter;
     private String lastUpdateBefore;
     private String lastUpdateAfter;
     private boolean reverse;
@@ -93,22 +93,18 @@ public class VerifyOperationFilter {
         VerifyOperationCriterion criterion = dao.where();
 
         if (ids != null) {
-            if (ids.length == 1) {
-                return new UniqueJdbcOperationCriterion().pnfsId(ids[0]);
-            } else {
-                criterion.pnfsIds(ids);
-            }
+            criterion.pnfsIds(ids);
         }
 
-        if (lastUpdateBefore != null) {
-            criterion.updatedBefore(getTimestamp(lastUpdateBefore));
-        }
-        if (lastUpdateAfter != null) {
-            criterion.updatedAfter(getTimestamp(lastUpdateAfter));
-        }
         criterion.messageType(msgType);
-        criterion.state(state);
-        criterion.action(action);
+
+        if (arrivedBefore != null) {
+            criterion.arrivedBefore(getTimestamp(arrivedBefore));
+        }
+
+        if (arrivedAfter != null) {
+            criterion.arrivedAfter(getTimestamp(arrivedAfter));
+        }
 
         if (storageUnit != null) {
             criterion.unit(storageUnit);
@@ -130,10 +126,6 @@ public class VerifyOperationFilter {
             criterion.target(target);
         }
 
-        if (retried != null) {
-            criterion.retriedMoreThan(retried);
-        }
-
         if (reverse) {
             criterion.reverse(reverse);
         }
@@ -152,10 +144,13 @@ public class VerifyOperationFilter {
               || parent.equals(operation.getParent());
 
         Predicate<VerifyOperation> matchesState = operation -> state == null
-              || Arrays.stream(state).anyMatch(action -> operation.getState().equals(state));
+              || Arrays.stream(state).anyMatch(state -> operation.getState().equals(state));
 
         Predicate<VerifyOperation> matchesAction = operation -> action == null
               || Arrays.stream(action).anyMatch(action -> operation.getAction().equals(action));
+
+        Predicate<VerifyOperation> matchesMsgType = operation -> msgType == null
+              || Arrays.stream(msgType).anyMatch(type -> operation.getMessageType().equals(type));
 
         Predicate<VerifyOperation> matchesSource = operation -> source == null
               || source.equals(operation.getSource());
@@ -169,6 +164,12 @@ public class VerifyOperationFilter {
         Predicate<VerifyOperation> matchesStorageUnit = operation -> storageUnit == null
               || storageUnit.equals(operation.getStorageUnit());
 
+        Predicate<VerifyOperation> matchesArrivedBefore = operation -> arrivedBefore == null
+              || getTimestamp(arrivedBefore) <= operation.getArrived();
+
+        Predicate<VerifyOperation> matchesArrivedAfter = operation -> arrivedAfter == null
+              || getTimestamp(arrivedAfter) >= operation.getArrived();
+
         Predicate<VerifyOperation> matchesBefore = operation -> lastUpdateBefore == null
               || getTimestamp(lastUpdateBefore) <= operation.getLastUpdate();
 
@@ -181,11 +182,14 @@ public class VerifyOperationFilter {
         return matchesIds.and(matchesParent)
               .and(matchesState)
               .and(matchesAction)
+              .and(matchesMsgType)
               .and(matchesSource)
               .and(matchesTarget)
               .and(matchesPoolGroup)
               .and(matchesStorageUnit)
               .and(matchesBefore)
+              .and(matchesArrivedBefore)
+              .and(matchesArrivedAfter)
               .and(matchesAfter)
               .and(matchesRetried);
     }
@@ -228,6 +232,14 @@ public class VerifyOperationFilter {
 
     public void setRetried(Integer retried) {
         this.retried = retried;
+    }
+
+    public void setArrivedBefore(String arrivedBefore) {
+        this.arrivedBefore = arrivedBefore;
+    }
+
+    public void setArrivedAfter(String arrivedAfter) {
+        this.arrivedAfter = arrivedAfter;
     }
 
     public void setLastUpdateBefore(String lastUpdateBefore) {

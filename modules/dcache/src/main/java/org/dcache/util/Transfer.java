@@ -9,6 +9,8 @@ import static com.google.common.util.concurrent.Futures.transformAsync;
 import static java.util.Objects.requireNonNull;
 import static org.dcache.namespace.FileAttribute.CREATION_TIME;
 import static org.dcache.namespace.FileAttribute.PNFSID;
+import static org.dcache.namespace.FileAttribute.QOS_POLICY;
+import static org.dcache.namespace.FileAttribute.QOS_STATE;
 import static org.dcache.namespace.FileAttribute.SIZE;
 import static org.dcache.namespace.FileAttribute.STORAGEINFO;
 import static org.dcache.namespace.FileAttribute.TYPE;
@@ -63,7 +65,6 @@ import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.List;
 import java.util.OptionalLong;
 import java.util.Set;
@@ -102,6 +103,9 @@ public class Transfer implements Comparable<Transfer> {
           new TimebasedCounter();
 
     private static final BaseEncoding SESSION_ENCODING = BaseEncoding.base64().omitPadding();
+
+    private static final EnumSet<FileAttribute> QOS_ATTRIBUTES =
+          EnumSet.of(QOS_POLICY, QOS_STATE);
 
     protected final PnfsHandler _pnfs;
 
@@ -751,6 +755,7 @@ public class Transfer implements Comparable<Transfer> {
         attr.addAll(PoolMgrSelectReadPoolMsg.getRequiredAttributes());
         Set<AccessMask> mask;
         if (allowWrite) {
+            attr.addAll(QOS_ATTRIBUTES);
             mask = EnumSet.of(AccessMask.READ_DATA, AccessMask.WRITE_DATA);
         } else {
             mask = EnumSet.of(AccessMask.READ_DATA);

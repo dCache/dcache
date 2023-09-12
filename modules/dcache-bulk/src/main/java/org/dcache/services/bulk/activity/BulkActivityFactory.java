@@ -65,6 +65,7 @@ import diskCacheV111.util.NamespaceHandlerAware;
 import diskCacheV111.util.PnfsHandler;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessageSender;
+import dmg.cells.nucleus.EnvironmentAware;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -93,7 +94,7 @@ import org.springframework.beans.factory.annotation.Required;
  * For each activity (such as pinning, deletion, etc.), there must be an SPI provider which creates
  * the class implementing the activity API contract.
  */
-public final class BulkActivityFactory implements CellMessageSender {
+public final class BulkActivityFactory implements CellMessageSender, EnvironmentAware {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkActivityFactory.class);
 
@@ -104,13 +105,13 @@ public final class BulkActivityFactory implements CellMessageSender {
     private Map<String, ExecutorService> activityExecutors;
     private Map<String, ExecutorService> callbackExecutors;
     private Map<String, Integer> maxPermits;
+    private Map<String, Object> environment;
 
     private CellStub pnfsManager;
     private CellStub pinManager;
     private CellStub poolManager;
     private CellStub qosEngine;
     private PoolMonitor poolMonitor;
-    private PnfsHandler pnfsHandler;
     private QoSResponseReceiver qoSResponseReceiver;
     private CellEndpoint endpoint;
 
@@ -132,11 +133,13 @@ public final class BulkActivityFactory implements CellMessageSender {
                   "cannot create " + activity + "; no such activity.");
         }
 
-        LOGGER.debug("creating instance of activity {} for request {}.", activity, request.getUid());
+        LOGGER.debug("creating instance of activity {} for request {}.", activity,
+              request.getUid());
 
         BulkActivity bulkActivity = provider.createActivity();
         bulkActivity.setSubject(subject);
         bulkActivity.setRestriction(restriction);
+
         bulkActivity.setActivityExecutor(activityExecutors.get(activity));
         bulkActivity.setCallbackExecutor(callbackExecutors.get(activity));
         BulkTargetRetryPolicy retryPolicy = retryPolicies.get(activity);
@@ -159,11 +162,9 @@ public final class BulkActivityFactory implements CellMessageSender {
         for (BulkActivityProvider provider : serviceLoader) {
             String activity = provider.getActivity();
             provider.setMaxPermits(maxPermits.get(activity));
+            provider.configure(environment);
             providers.put(provider.getActivity(), provider);
         }
-        pnfsHandler = new PnfsHandler(pnfsManager);
-        pnfsHandler.setRestriction(Restrictions.none());
-        pnfsHandler.setSubject(Subjects.ROOT);
     }
 
     /**
@@ -229,11 +230,23 @@ public final class BulkActivityFactory implements CellMessageSender {
         this.callbackExecutors = callbackExecutors;
     }
 
+    @Override
+    public void setEnvironment(Map<String, Object> environment) {
+        this.environment = environment;
+    }
+
     private void configureEndpoints(BulkActivity activity) {
         if (activity instanceof NamespaceHandlerAware) {
             PnfsHandler pnfsHandler = new PnfsHandler(pnfsManager);
-            pnfsHandler.setRestriction(activity.getRestriction());
-            pnfsHandler.setSubject(activity.getSubject());
+            Subject subject = activity.getSubject();
+            Restriction restriction = activity.getRestriction();
+            if (Subjects.hasAdminRole(subject)) {
+                pnfsHandler.setSubject(Subjects.ROOT);
+                pnfsHandler.setRestriction(Restrictions.none());
+            } else {
+                pnfsHandler.setSubject(subject);
+                pnfsHandler.setRestriction(restriction);
+            }
             ((NamespaceHandlerAware) activity).setNamespaceHandler(pnfsHandler);
         }
 

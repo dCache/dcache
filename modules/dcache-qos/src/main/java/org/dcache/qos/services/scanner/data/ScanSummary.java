@@ -83,6 +83,10 @@ abstract class ScanSummary implements Serializable {
         ++count;
     }
 
+    public synchronized void incrementCount(long count) {
+        this.count += count;
+    }
+
     public synchronized boolean isCancelled() {
         return canceled;
     }

@@ -78,6 +78,16 @@ public interface QoSRequirementsProvider {
     FileQoSRequirements fetchRequirements(FileQoSUpdate update) throws QoSException;
 
     /**
+     * Used internally to avoid another call to the PnfsManager.
+     *
+     * @param update containing file pnfsid, originating type of message, and optional location for
+     *               the file source.
+     * @param descriptor initialized by a previous call to the PnfsManager.
+     * @return requirements, in particular the number and distribution of persistent disk and tape
+     */
+    FileQoSRequirements fetchRequirements(FileQoSUpdate update, FileQoSRequirements descriptor) throws QoSException;
+
+    /**
      * Implementation-dependent response to requested change in QoS requirements.
      *
      * @param newRequirements in particular the number and distribution of persistent disk and tape

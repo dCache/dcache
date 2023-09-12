@@ -41,7 +41,12 @@ public enum FileAttribute {
     /**
      * @since 7.2
      */
-    LABELS
+    LABELS,
 
+    /**
+     * @since 9.2
+     */
+    QOS_POLICY,
+    QOS_STATE
 
 }

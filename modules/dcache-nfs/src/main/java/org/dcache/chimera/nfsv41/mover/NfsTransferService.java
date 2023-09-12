@@ -1,6 +1,7 @@
 package org.dcache.chimera.nfsv41.mover;
 
 import com.google.common.collect.Sets;
+import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
@@ -17,6 +18,7 @@ import dmg.util.command.Option;
 import java.io.File;
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.io.PrintWriter;
 import java.net.BindException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -46,7 +48,6 @@ import org.dcache.chimera.nfsv41.common.StatsDecoratedOperationExecutor;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.status.BadHandleException;
-import org.dcache.nfs.status.BadStateidException;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.nfs.v4.AbstractOperationExecutor;
 import org.dcache.nfs.v4.CompoundContext;
@@ -554,5 +555,12 @@ public class NfsTransferService
                       notifyDoorWithRedirect(mover);
                   });
         }
+    }
+
+    @Override
+    public void getInfo(PrintWriter pw) {
+        CellInfoProvider.super.getInfo(pw);
+        var endpoint = _rpcService.getInetSocketAddress(IpProtocolType.TCP);
+        pw.printf("   Listening on: %s:%d\n", InetAddresses.toUriString(endpoint.getAddress()), endpoint.getPort());
     }
 }

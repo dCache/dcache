@@ -771,7 +771,7 @@ public final class QoSScannerAdmin implements CellCommandListener {
     @Command(name = "sys cancel",
           hint = "cancel background scan operations",
           description = "Cancels operations matching the options; either single operation, all "
-                + "online or nearline; notifies the verifier.")
+                + "online or qos; notifies the verifier.")
     class SysCancelCommand extends InitializerAwareCommand {
 
         SysCancelCommand() {
@@ -782,9 +782,9 @@ public final class QoSScannerAdmin implements CellCommandListener {
               usage = "Cancel the sub-operation matching this uuid.")
         String id;
 
-        @Option(name = "nearline",
-              usage = "Cancel all nearline sub-operations.")
-        boolean nearline = false;
+        @Option(name = "qos",
+              usage = "Cancel all qosNearline sub-operations.")
+        boolean qos = false;
 
         @Option(name = "online",
               usage = "Cancel all online sub-operations.")
@@ -795,7 +795,7 @@ public final class QoSScannerAdmin implements CellCommandListener {
             if (id != null) {
                 systemOperationMap.cancelSystemScan(id);
             } else {
-                if (nearline) {
+                if (qos) {
                     systemOperationMap.cancelAll(true);
                 }
                 if (online) {
@@ -836,21 +836,20 @@ public final class QoSScannerAdmin implements CellCommandListener {
           hint = "control the periodic check for system scans",
           description =
                 "Resets the properties governing system scanning, like the periodic interval,"
-                      + " whether nearline is enabled, batch size, and the number of concurrent operations allowed.")
+                      + " whether online is enabled, batch size, and the number of concurrent operations allowed.")
     class SysControlCommand extends InitializerAwareCommand {
 
-        @Option(name = "enable-nearline",
-              usage = "Turn on or off NEARLINE (CUSTODIAL) system scanning.")
-        Boolean enableNearline;
+        @Option(name = "enable-online",
+              usage = "Turn on or off direct namespace ONLINE system scanning"
+                    + " (if false, scans of IDLE ENABLED pools are used).")
+        Boolean enableOnline;
 
-        @Option(name = "nearline-window",
-              usage = "(one of nearline-window|online-window). "
-                    + "Amount of time which must pass since the last full system scan for it to be run again.")
-        Integer nearlineWindow;
+        @Option(name = "qos-nearline-window",
+              usage = "Amount of time which must pass since the last full system scan for it to be run again.")
+        Integer qosNearlineWindow;
 
         @Option(name = "online-window",
-              usage = "(one of nearline-window|online-window). "
-                    + "Amount of time which must pass since the last system scan (online files only) for "
+              usage = "Amount of time which must pass since the last system scan (online files only) for "
                     + "it to be run again.")
         Integer onlineWindow;
 
@@ -858,9 +857,9 @@ public final class QoSScannerAdmin implements CellCommandListener {
               usage = "Maximum number of pnsfids to send to the verifier at a time.")
         Integer onlineBatch;
 
-        @Option(name = "nearline-batch-size",
+        @Option(name = "qos-nearline-batch-size",
               usage = "Maximum number of pnsfids to send to the verifier at a time.")
-        Integer nearlineBatch;
+        Integer qosNearlineBatch;
 
         @Option(name = "max-operations",
               usage = "Maximum number of concurrent operations permitted; note that this number "
@@ -878,12 +877,12 @@ public final class QoSScannerAdmin implements CellCommandListener {
 
         @Override
         protected String doCall() {
-            if (enableNearline != null) {
-                systemOperationMap.setNearlineRescanEnabled(enableNearline);
+            if (enableOnline != null) {
+                systemOperationMap.setOnlineScanEnabled(enableOnline);
             }
 
-            if (nearlineBatch != null) {
-                systemOperationMap.setNearlineBatchSize(nearlineBatch);
+            if (qosNearlineBatch != null) {
+                systemOperationMap.setQosNearlineBatchSize(qosNearlineBatch);
             }
 
             if (onlineBatch != null) {
@@ -894,10 +893,10 @@ public final class QoSScannerAdmin implements CellCommandListener {
                 systemOperationMap.setMaxConcurrentRunning(maxOperations);
             }
 
-            if (nearlineWindow != null) {
-                systemOperationMap.setNearlineRescanWindow(nearlineWindow);
+            if (qosNearlineWindow != null) {
+                systemOperationMap.setQosNearlineRescanWindow(qosNearlineWindow);
                 if (unit != null) {
-                    systemOperationMap.setNearlineRescanWindowUnit(unit);
+                    systemOperationMap.setQosNearlineRescanWindowUnit(unit);
                 }
             } else if (onlineWindow != null) {
                 systemOperationMap.setOnlineRescanWindow(onlineWindow);
@@ -913,30 +912,30 @@ public final class QoSScannerAdmin implements CellCommandListener {
 
     @Command(name = "sys scan",
           hint = "initiate an ad hoc background scan.",
-          description =
-                "If this is nearline, it will bypass the enable flag; however, if a scan of "
-                      + "the requested type is already running, it will not be automatically canceled.")
+          description = "If a scan of the requested type is already running, "
+                + "it will not be automatically canceled.")
     class SysScanCommand extends InitializerAwareCommand {
 
         SysScanCommand() {
             super(initializer);
         }
 
-        @Option(name = "nearline",
-              usage = "Scan nearline custodial files with cached replicas. "
-                    + "For most deployments, NEARLINE will be the more costly scan and could run for many "
-                    + "days, depending on the size of the namespace.")
-        boolean nearline = false;
+        @Option(name = "qos",
+              usage = "Scan NEARLINE files for which a QoS policy has been defined.")
+        boolean qos = false;
 
         @Option(name = "online",
-              usage = "Scan online files (both REPLICA and CUSTODIAL). "
-                    + "Equivalent to scanning all pools for persistent files.")
+              usage = "Scan online files (both REPLICA and CUSTODIAL). Depending on whether "
+                    + "online is enabled (true by default), it will either scan the namespace "
+                    + "entries or will trigger a scan of all IDLE ENABLED pools. Setting this scan "
+                    + "to be run periodically should take into account the size of the namespace or "
+                    + "the number of pools, and the proportion of ONLINE files they contain.")
         boolean online = false;
 
         @Override
         protected String doCall() {
             try {
-                if (nearline) {
+                if (qos) {
                     systemOperationMap.startScan(true);
                 }
 
@@ -944,7 +943,7 @@ public final class QoSScannerAdmin implements CellCommandListener {
                     systemOperationMap.startScan(false);
                 }
 
-                if (!nearline && !online) {
+                if (!qos && !online) {
                     return "No scan started; must be -online, -nearline or both.";
                 }
             } catch (PermissionDeniedCacheException e) {

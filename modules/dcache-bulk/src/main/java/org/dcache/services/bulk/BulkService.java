@@ -206,17 +206,17 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
 
         MessageReply<Message> reply = new MessageReply<>();
         incomingExecutorService.execute(() -> {
+            Subject subject = message.getSubject();
+            String uuid = message.getRequestUuid();
+            long offset = message.getOffset();
             try {
-                Subject subject = message.getSubject();
-                String uuid = message.getRequestUuid();
                 /*
                  *  First check to see if the request corresponds to a stored one.
                  */
                 requestStore.getKey(uuid);
                 checkRestrictions(message.getRestriction(), uuid);
                 matchActivity(message.getActivity(), uuid);
-                BulkRequestInfo status = requestStore.getRequestInfo(subject, uuid,
-                      message.getOffset());
+                BulkRequestInfo status = requestStore.getRequestInfo(subject, uuid, offset);
                 message.setInfo(status);
                 reply.reply(message);
             } catch (BulkServiceException e) {
@@ -293,6 +293,53 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
                 thisThread.getUncaughtExceptionHandler().uncaughtException(thisThread, e);
             }
         });
+        return reply;
+    }
+
+    public Reply messageArrived(BulkArchivedRequestInfoMessage message) {
+        LOGGER.trace("received BulkArchivedRequestInfoMessage {}", message);
+
+        MessageReply<Message> reply = new MessageReply<>();
+        incomingExecutorService.execute(() -> {
+            try {
+                String uuid = message.getRequestUuid();
+                Subject subject = message.getSubject();
+                message.setInfo(requestStore.getArchivedInfo(subject, uuid));
+                reply.reply(message);
+            } catch (BulkServiceException e) {
+                LOGGER.error("messageArrived(BulkArchivedRequestInfoMessage) {}: {}", message,
+                      e.toString());
+                reply.fail(message, e);
+            } catch (Exception e) {
+                reply.fail(message, e);
+                Thread thisThread = Thread.currentThread();
+                thisThread.getUncaughtExceptionHandler().uncaughtException(thisThread, e);
+            }
+        });
+
+        return reply;
+    }
+
+    public Reply messageArrived(BulkArchivedSummaryInfoMessage message) {
+        LOGGER.trace("received BulkArchivedSummaryInfoMessage {}", message);
+
+        MessageReply<Message> reply = new MessageReply<>();
+        incomingExecutorService.execute(() -> {
+            try {
+                Subject subject = message.getSubject();
+                message.setInfo(requestStore.getArchivedSummaryInfo(subject, message.getFilter()));
+                reply.reply(message);
+            } catch (BulkServiceException e) {
+                LOGGER.error("messageArrived(BulkArchivedSummaryInfoMessage) {}: {}", message,
+                      e.toString());
+                reply.fail(message, e);
+            } catch (Exception e) {
+                reply.fail(message, e);
+                Thread thisThread = Thread.currentThread();
+                thisThread.getUncaughtExceptionHandler().uncaughtException(thisThread, e);
+            }
+        });
+
         return reply;
     }
 

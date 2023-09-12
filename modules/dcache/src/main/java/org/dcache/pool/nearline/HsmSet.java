@@ -103,7 +103,7 @@ public class HsmSet
      * Nearline storage provides that dynamically at the runtime.
      */
     private final Map<String, NearlineStorageProvider> dynamicProviders = new ConcurrentHashMap<>();
-
+    private final Map<NearlineStorageProvider, String> dynamicProviderPath = new ConcurrentHashMap<>();
     private static final String DEFAULT_PROVIDER = "script";
 
     private final ConcurrentMap<String, HsmInfo> _newConfig = Maps.newConcurrentMap();
@@ -376,6 +376,7 @@ public class HsmSet
         return description;
     }
 
+    @AffectsSetup
     @Command(name = "hsm load provider", hint = "Load a provider from the specified directory",
           description = "Loads an external provider. The provided path should point to a directory"
                 + " containing jar files. If the directory contains a provider with a name that already"
@@ -387,7 +388,6 @@ public class HsmSet
 
         @Override
         public String call() throws CommandException {
-
             ColumnWriter writer = new ColumnWriter();
             writer.header("PROVIDER").left("provider").space();
             writer.header("DESCRIPTION").left("description");
@@ -423,6 +423,7 @@ public class HsmSet
                     continue;
                 }
 
+                dynamicProviderPath.put(p, path);
                 var old = dynamicProviders.putIfAbsent(p.getName(), p);
                 if (old == null) {
                     writer.row()
@@ -435,6 +436,7 @@ public class HsmSet
         }
     }
 
+    @AffectsSetup
     @Command(name = "hsm unload provider", hint = "Unload user provided nearline storage provider",
           description =
                 "Unloads user loaded provide. After unloading, the provider can be used anymore."
@@ -454,6 +456,7 @@ public class HsmSet
 
             var p = dynamicProviders.remove(provider);
             if (p != null) {
+                dynamicProviderPath.remove(p);
                 dynamicProviders.remove(p.getName());
                 writer.row()
                       .value("provider", p.getName())
@@ -669,8 +672,17 @@ public class HsmSet
 
     @Override
     public void printSetup(PrintWriter pw) {
-        if (!_hsm.isEmpty()) {
+        if (!dynamicProviders.isEmpty() || !_hsm.isEmpty()) {
             pw.println("#\n# Nearline storage\n#");
+        }
+        if (!dynamicProviders.isEmpty()) {
+            for (NearlineStorageProvider provider : dynamicProviders.values()) {
+                pw.print("hsm load provider ");
+                pw.print(dynamicProviderPath.get(provider));
+                pw.println();
+            }
+        }
+        if (!_hsm.isEmpty()) {
             for (HsmInfo info : _hsm.values()) {
                 pw.print("hsm create ");
                 pw.print(info.getType());

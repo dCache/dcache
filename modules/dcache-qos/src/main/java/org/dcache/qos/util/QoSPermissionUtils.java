@@ -59,8 +59,12 @@ documents or software obtained from this server.
  */
 package org.dcache.qos.util;
 
+import java.security.Principal;
+import java.util.Iterator;
+import java.util.Set;
 import javax.security.auth.Subject;
-
+import org.dcache.auth.RolePrincipal;
+import org.dcache.auth.RolePrincipal.Role;
 import org.dcache.auth.Subjects;
 import org.dcache.vehicles.FileAttributes;
 
@@ -68,25 +72,44 @@ public class QoSPermissionUtils {
 
     /**
      * Determines if the user is allowed to modify qos.
-     * Currently the user must either be the owner of the file or be ROOT.
      *
-     * @param subject
-     * @param attributes
+     * This is a user-facing check done up front by the engine.   Verifications and
+     * adjustments initiated by the QoS service itself are done as ROOT and
+     * do not need checking.
+     *
+     * @param subject of the message received.
+     * @param attributes with OWNER and OWNER_GROUP defined.
      */
     public static boolean canModifyQos(Subject subject, FileAttributes attributes) {
         if (subject == null) {
             /*
-             *  This is a workaround for legacy database entries before
-             *  https://github.com/dCache/dcache-security-fixes/tree/fix/master/qos-propagate-subject-to-adjuster
-             *  was introduced.  An incompatibility was overlooked whereby
-             *  the database could contain entries when updated by liquibase,
-             *  thus making the new subject field null.
-             *
-             *  In this case we just return false.
+             * with 9.2, the subject is no longer retrieved from the database.
+             * If it is missing from the message, do not authorize.
              */
             return false;
         }
-        return Subjects.isRoot(subject) || Subjects.getUid(subject) == attributes.getOwner();
+
+        Set<Principal> principals = subject.getPrincipals();
+
+        for (Iterator<Principal> i = principals.iterator(); i.hasNext(); ) {
+            Principal next = i.next();
+            if (next instanceof RolePrincipal) {
+                RolePrincipal principal = (RolePrincipal) next;
+                /*
+                 *  This may not be something we have immediate need for, but the OR logic here
+                 *  allows for there being permissions based on both uid and primary gid.
+                 */
+                if (principal.hasRole(Role.ADMIN) ||
+                      (principal.hasRole(Role.QOS_USER)
+                            && Subjects.getUid(subject) == attributes.getOwner()) ||
+                      (principal.hasRole(Role.QOS_GROUP)
+                            && Subjects.getPrimaryGid(subject) == attributes.getGroup())) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private QoSPermissionUtils() {

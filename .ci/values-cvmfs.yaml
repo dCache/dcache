@@ -1,0 +1,15 @@
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Extra ConfigMaps to create and manage by the chart release.
+# These can be used e.g. when defining CVMFS client configuration.
+# ConfigMap data supports go-template expressions.
+extraConfigMaps:
+  # /etc/cvmfs/config.d/
+  cvmfs-csi-config-d: {}
+  # /etc/cvmfs/default.local
+  cvmfs-csi-default-local:
+    default.local: |
+      CVMFS_USE_GEOAPI=yes
+      CVMFS_HTTP_PROXY="http://grid-squid01.desy.de:3128;http://grid-squid02.desy.de:3128;http://grid-squid03.desy.de:3128;http://grid-squid04.desy.de:3128;http://grid-squid05.desy.de:3128;http://grid-squid06.desy.de:3128;DIRECT"
+

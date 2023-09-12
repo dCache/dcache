@@ -1,27 +1,40 @@
 
 # Minimalistic Java image
-FROM alpine:3.15
+FROM almalinux:9-minimal
 
 ENV DCACHE_INSTALL_DIR=/opt/dcache
 
+# Neede by groupadd and useradd
+# REVISIT: in some environments base OS kernel doesnt allow use of xattrs and the installation of
+#          shadow-utils fails.
+# RUN microdnf -y install shadow-utils
+
 # Run dCache as user 'dcache'
-RUN addgroup dcache && adduser -S -G dcache dcache
+#
+# REVISIT: as we cant use groupadd and useradd add user/group manually
+#
+# RUN groupadd dcache && useradd -r -g dcache dcache
+RUN echo "dcache:x:1000:" >> /etc/group
+RUN echo "dcache:x:994:1000::/home/dcache:/bin/bash" >> /etc/passwd
+RUN echo "dcache:!!:18438::::::" >> /etc/shadow
 
 # Add JRE
-RUN apk --no-cache add openjdk11 --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
+RUN microdnf -y install java-17-openjdk-headless hostname which procps-ng
 
 # Add dCache
 COPY maven /opt/dcache
 
+# RUN microdnf -y install  openssh-clients
 # generate ssh keys
-RUN apk --update add openssh
-RUN ssh-keygen -t rsa -b 2048 -N '' -f ${DCACHE_INSTALL_DIR}/etc/admin/ssh_host_rsa_key
-RUN chown dcache:dcache ${DCACHE_INSTALL_DIR}/etc/admin/ssh_host_rsa_key
+# RUN ssh-keygen -t rsa -b 2048 -N '' -f ${DCACHE_INSTALL_DIR}/etc/admin/ssh_host_rsa_key
+# RUN chown dcache:dcache ${DCACHE_INSTALL_DIR}/etc/admin/ssh_host_rsa_key
 
 # fix liquibase
 #RUN rm ${DCACHE_INSTALL_DIR}/share/classes/liquibase-core-*.jar
 #COPY liquibase-core-3.5.3.jar ${DCACHE_INSTALL_DIR}/share/classes/liquibase-core-3.5.3.jar
 
+# Post-install brutal cleanup
+RUN microdnf clean all && rm -rf /var/cache/yum /var/lib/dnf /var/lib/rpm
 
 # add external files into container at the build time
 COPY je.properties ${DCACHE_INSTALL_DIR}/var/nfs/je.properties
@@ -31,17 +44,12 @@ COPY exports ${DCACHE_INSTALL_DIR}/etc/exports
 COPY run.sh /run.sh
 
 # where we store the data
-RUN mkdir /pool
-
 # location of init scripts
-RUN mkdir /dcache.init.d
-
 # Stupid grid tools....
-RUN mkdir -p /etc/grid-security/certificates
+RUN mkdir -p /pool /dcache.init.d /etc/grid-security/certificates
 
 # adjust permissions
-RUN chown -R dcache:dcache ${DCACHE_INSTALL_DIR}/var
-RUN chown -R dcache:dcache /pool
+RUN chown -R dcache:dcache ${DCACHE_INSTALL_DIR}/var /pool
 
 # the data log files must survive container restarts
 VOLUME ${DCACHE_INSTALL_DIR}/var

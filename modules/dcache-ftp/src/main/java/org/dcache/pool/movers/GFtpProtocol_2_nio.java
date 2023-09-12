@@ -721,4 +721,12 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
             _blockSize = args.getIntOption("gsiftpBlockSize");
         }
     }
+
+    @Override
+    public Optional<InetSocketAddress> getLocalEndpoint() {
+        if (_mode == null) {
+            return Optional.empty();
+        }
+        return _mode.localEndpoint();
+    }
 }

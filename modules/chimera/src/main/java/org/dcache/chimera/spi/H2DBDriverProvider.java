@@ -26,7 +26,7 @@ public class H2DBDriverProvider implements DBDriverProvider {
     }
 
     @Override
-    public FsSqlDriver getDriver(DataSource dataSource) throws SQLException, ChimeraFsException {
+    public FsSqlDriver getDriver(DataSource dataSource, String consistency) throws SQLException, ChimeraFsException {
         return new H2FsSqlDriver(dataSource);
     }
 }

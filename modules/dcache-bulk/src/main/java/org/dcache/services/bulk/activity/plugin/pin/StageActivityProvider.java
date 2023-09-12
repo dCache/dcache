@@ -61,26 +61,31 @@ package org.dcache.services.bulk.activity.plugin.pin;
 
 import static org.dcache.services.bulk.activity.BulkActivity.TargetType.FILE;
 
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import org.dcache.services.bulk.BulkServiceException;
 import org.dcache.services.bulk.activity.BulkActivityArgumentDescriptor;
 import org.dcache.services.bulk.activity.BulkActivityProvider;
 
 public final class StageActivityProvider extends BulkActivityProvider<StageActivity> {
 
-    static final BulkActivityArgumentDescriptor DISK_LIFETIME
-          = new BulkActivityArgumentDescriptor("diskLifetime",
-          "guaranteed duration of file on disk",
-          "string",
-          false,
-          "P2D");
+    static final String METADATA = "targetedMetadata";
+    static final String DISK_LIFETIME = "diskLifetime";
+    static final String DISK_LIFETIME_UNIT = "diskLifetimeUnit";
 
-    static final BulkActivityArgumentDescriptor METADATA =
-          new BulkActivityArgumentDescriptor("targetedMetadata",
-                "additional arguments",
-                "name:value",
-                false,
-                "{}");
+    private static final String DEFAULT_STAGE_LIFETIME = "bulk.plugin!stage.default-lifetime";
+    private static final String DEFAULT_STAGE_LIFETIME_UNIT = "bulk.plugin!stage.default-lifetime.unit";
+
+    private static final BulkActivityArgumentDescriptor DEFAULT_METADATA_DESCRIPTOR
+         = new BulkActivityArgumentDescriptor(METADATA,
+          "additional arguments",
+          "name:value",
+          false,
+          "{}");
+
+    private String defaultLifetime;
+    private String defaultLifetimeUnit;
 
     public StageActivityProvider() {
         super("STAGE", FILE);
@@ -92,12 +97,36 @@ public final class StageActivityProvider extends BulkActivityProvider<StageActiv
     }
 
     @Override
-    public Set<BulkActivityArgumentDescriptor> getArguments() {
-        return Set.of(DISK_LIFETIME, METADATA);
+    public Set<BulkActivityArgumentDescriptor> getDescriptors() {
+        return Set.of(getDiskLifetimeDescriptor(), getDiskLifetimeUnitDescriptor(),
+              DEFAULT_METADATA_DESCRIPTOR);
     }
 
     @Override
     protected StageActivity activityInstance() throws BulkServiceException {
         return new StageActivity(activity, targetType);
+    }
+
+    @Override
+    public void configure(Map<String, Object> environment) {
+        defaultLifetime = String.valueOf(environment.getOrDefault(DEFAULT_STAGE_LIFETIME,2));
+        defaultLifetimeUnit = String.valueOf(environment.getOrDefault(DEFAULT_STAGE_LIFETIME_UNIT,
+              TimeUnit.DAYS));
+    }
+
+    private BulkActivityArgumentDescriptor getDiskLifetimeDescriptor() {
+        return new BulkActivityArgumentDescriptor(DISK_LIFETIME,
+              "guaranteed duration of file on disk",
+              "string",
+              false,
+              defaultLifetime);
+    }
+
+    private BulkActivityArgumentDescriptor getDiskLifetimeUnitDescriptor() {
+        return new BulkActivityArgumentDescriptor(DISK_LIFETIME_UNIT,
+              "time unit of the guaranteed duration of file on disk",
+              "string",
+              false,
+              defaultLifetimeUnit);
     }
 }

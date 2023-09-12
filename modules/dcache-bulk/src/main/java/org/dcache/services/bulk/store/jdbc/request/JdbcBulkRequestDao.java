@@ -100,6 +100,8 @@ public final class JdbcBulkRequestDao extends JdbcDaoSupport {
 
     private static final String SELECT = "SELECT bulk_request.*";
 
+    private static final String SELECT_UID = "SELECT uid";
+
     private static final String FULL_SELECT =
           "SELECT " + TABLE_NAME + ".*, " + ARGUMENTS_TABLE_NAME + ".arguments as arguments";
 
@@ -154,6 +156,11 @@ public final class JdbcBulkRequestDao extends JdbcDaoSupport {
         }
     }
 
+    public List<String> getUids(JdbcBulkRequestCriterion criterion, int limit) {
+        return utils.get(SELECT_UID, criterion, limit, TABLE_NAME, this,
+              (rs, rowNum) -> rs.getString(1));
+    }
+
     public Optional<KeyHolder> insert(JdbcBulkRequestUpdate update) {
         return utils.insert(update, TABLE_NAME, this);
     }
@@ -169,7 +176,7 @@ public final class JdbcBulkRequestDao extends JdbcDaoSupport {
     }
 
     public JdbcBulkRequestUpdate set() {
-        return new JdbcBulkRequestUpdate(utils);
+        return new JdbcBulkRequestUpdate();
     }
 
     @Required

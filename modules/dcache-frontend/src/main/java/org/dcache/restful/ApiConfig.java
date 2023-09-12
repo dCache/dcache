@@ -51,12 +51,7 @@ import javax.ws.rs.ext.Provider;
       securityDefinition = @SecurityDefinition(
             basicAuthDefinitions = {
                   @BasicAuthDefinition(key = "basicAuth",
-                        description = "Username and password authentication "
-                              + "with optional role assertion.  To assert "
-                              + "roles, append '#' to the username followed "
-                              + "by a comma-separated list of roles; e.g., "
-                              + "a username of \"paul#admin\" is user "
-                              + "\"paul\" asserting the \"admin\" role.")
+                        description = "Username and password authentication.")
             }
       ),
       consumes = {"application/json"},

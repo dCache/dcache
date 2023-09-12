@@ -63,13 +63,27 @@ public class PgSQL95FsSqlDriver extends FsSqlDriver {
     /**
      * this is a utility class which is issues SQL queries on database
      */
-    public PgSQL95FsSqlDriver(DataSource dataSource) throws ChimeraFsException {
+    public PgSQL95FsSqlDriver(DataSource dataSource, String consistency) throws ChimeraFsException {
         super(dataSource);
         LOGGER.info("Running PostgreSQL >= 9.5 specific Driver");
         this.dataSource = dataSource;
 
-        enableLazyWcc = System.getProperty("chimera_lazy_wcc") != null;
-        enableSoftUpdate = enableLazyWcc && System.getProperty("chimera_soft_update") != null;
+        boolean softUpdateTmp = false;
+        switch (consistency) {
+            case "soft":
+                softUpdateTmp = true;
+                // fallthrough
+            case "weak":
+                enableSoftUpdate = softUpdateTmp;
+                enableLazyWcc = true;
+                break;
+            case "strong":
+                enableLazyWcc = false;
+                enableSoftUpdate = false;
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported attribute consistency option '" + consistency + "'");
+        }
         createProcedureName = enableLazyWcc ? "f_create_inode95_lazy_wcc" : "f_create_inode95";
     }
 

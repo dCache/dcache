@@ -57,33 +57,35 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.qos.local.clients;
+package org.dcache.services.bulk;
 
-import diskCacheV111.util.PnfsId;
-import org.dcache.qos.QoSException;
-import org.dcache.qos.listeners.QoSAdjustmentListener;
-import org.dcache.qos.services.adjuster.handlers.QoSAdjusterTaskHandler;
-import org.dcache.qos.vehicles.QoSAdjustmentRequest;
+import java.util.List;
+import org.dcache.auth.attributes.Restriction;
 
 /**
- * A pass-through to the adjuster task handler. Use this listener when plugging in directly to the
- * adjustment service.
+ *  Used to retrieve summary info on archived requests.
  */
-public final class LocalQoSAdjustmentClient implements QoSAdjustmentListener {
+public class BulkArchivedSummaryInfoMessage extends BulkServiceMessage {
 
-    private QoSAdjusterTaskHandler taskHandler;
+    private static final long serialVersionUID = 8093799662852516663L;
 
-    @Override
-    public void fileQoSAdjustmentRequested(QoSAdjustmentRequest adjustmentRequest) {
-        taskHandler.handleAdjustmentRequest(adjustmentRequest);
+    private final BulkArchivedSummaryFilter filter;
+    private List<BulkArchivedSummaryInfo> info;
+
+    public BulkArchivedSummaryInfoMessage(BulkArchivedSummaryFilter filter, Restriction restriction)  {
+        super(restriction);
+        this.filter = filter;
     }
 
-    @Override
-    public void fileQoSAdjustmentCancelled(PnfsId pnfsId) throws QoSException {
-        taskHandler.handleAdjustmentCancelled(pnfsId);
+    public List<BulkArchivedSummaryInfo> getInfo() {
+        return info;
     }
 
-    public void setTaskHandler(QoSAdjusterTaskHandler taskHandler) {
-        this.taskHandler = taskHandler;
+    public BulkArchivedSummaryFilter getFilter() {
+        return filter;
+    }
+
+    public void setInfo(List<BulkArchivedSummaryInfo> info) {
+        this.info = info;
     }
 }

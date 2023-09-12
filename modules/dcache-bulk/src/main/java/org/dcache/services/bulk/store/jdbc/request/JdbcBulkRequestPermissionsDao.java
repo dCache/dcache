@@ -59,8 +59,12 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.store.jdbc.request;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import javax.security.auth.Subject;
@@ -114,7 +118,7 @@ public final class JdbcBulkRequestPermissionsDao extends JdbcDaoSupport {
     }
 
     public JdbcBulkRequestUpdate set() {
-        return new JdbcBulkRequestUpdate(utils);
+        return new JdbcBulkRequestUpdate();
     }
 
     @Required
@@ -137,8 +141,8 @@ public final class JdbcBulkRequestPermissionsDao extends JdbcDaoSupport {
         Long id = rs.getLong("id");
         wrapper.setId(id);
         wrapper.setSubject(
-              (Subject) utils.deserializeFromBase64(id, "subject", rs.getString("subject")));
-        wrapper.setRestriction((Restriction) utils.deserializeFromBase64(id, "restriction",
+              (Subject) deserializeFromBase64(id, "subject", rs.getString("subject")));
+        wrapper.setRestriction((Restriction) deserializeFromBase64(id, "restriction",
               rs.getString("restriction")));
         LOGGER.debug("toPermissions, returning wrapper for {}.", id);
         return wrapper;
@@ -146,5 +150,23 @@ public final class JdbcBulkRequestPermissionsDao extends JdbcDaoSupport {
 
     public JdbcBulkRequestCriterion where() {
         return new JdbcBulkRequestCriterion();
+    }
+
+    /**
+     * @throws SQLException in order to support the jdbc template API.
+     */
+    private static Object deserializeFromBase64(Long id, String field, String base64)
+          throws SQLException {
+        if (base64 == null) {
+            return null;
+        }
+        byte[] array = Base64.getDecoder().decode(base64);
+        ByteArrayInputStream bais = new ByteArrayInputStream(array);
+        try (ObjectInputStream istream = new ObjectInputStream(bais)) {
+            return istream.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            throw new SQLException("problem deserializing " + field + " for "
+                  + id, e);
+        }
     }
 }
