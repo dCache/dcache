@@ -9,9 +9,6 @@ check -strong qos.home
 check -strong qos.db.namespace.connections.max
 check -strong qos.db.namespace.connections.idle
 check -strong qos.db.namespace.fetch-size
-check -strong qos-scanner.db.connections.max
-check -strong qos-scanner.db.connections.idle
-check -strong qos-scanner.db.fetch-size
 check -strong qos.plugins.storage-info-extractor
 check -strong qos.limits.scanner.submit-threads
 check -strong qos.limits.scanner.task-threads
