@@ -62,9 +62,11 @@ public class Issuer {
     private final HttpClient client;
     private final boolean offlineSuppressed;
 
+    // Recommendation for six hours comes from this document:
+    //     https://doi.org/10.5281/zenodo.3460258
     private final Supplier<Map<String, PublicKey>> keys = MemoizeMapWithExpiry.memorize(this::readJwksDocument)
           .whenEmptyFor(Duration.ofMinutes(1))
-          .whenNonEmptyFor(Duration.ofMinutes(10))
+          .whenNonEmptyFor(Duration.ofHours(6))
           .build();
 
     public Issuer(HttpClient client, IdentityProvider provider, int tokenHistory) {
