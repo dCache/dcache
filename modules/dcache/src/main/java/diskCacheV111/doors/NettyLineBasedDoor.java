@@ -22,7 +22,7 @@ package diskCacheV111.doors;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.dcache.util.ByteUnit.KiB;
 
-import com.google.common.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.net.InetAddresses;
 import diskCacheV111.services.space.Space;
 import dmg.cells.nucleus.CDC;

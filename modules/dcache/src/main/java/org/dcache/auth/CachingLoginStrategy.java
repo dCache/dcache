@@ -1,9 +1,9 @@
 package org.dcache.auth;
 
+import com.github.benmanes.caffeine.cache.CacheLoader;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.base.Throwables;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.UncheckedExecutionException;
@@ -15,6 +15,8 @@ import dmg.cells.nucleus.CellInfoProvider;
 import java.io.PrintWriter;
 import java.security.Principal;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import javax.security.auth.Subject;
@@ -27,9 +29,9 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
 
     private final LoginStrategy _inner;
 
-    private final LoadingCache<Principal, ListenableFuture<Principal>> _forwardCache;
-    private final LoadingCache<Principal, ListenableFuture<Set<Principal>>> _reverseCache;
-    private final LoadingCache<Subject, ListenableFuture<LoginReply>> _loginCache;
+    private final LoadingCache<Principal, CompletableFuture<Principal>> _forwardCache;
+    private final LoadingCache<Principal, CompletableFuture<Set<Principal>>> _reverseCache;
+    private final LoadingCache<Subject, CompletableFuture<LoginReply>> _loginCache;
 
     private final long _time;
     private final TimeUnit _unit;
@@ -47,21 +49,21 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
 
         _inner = inner;
 
-        _forwardCache = CacheBuilder.newBuilder()
+        _forwardCache = Caffeine.newBuilder()
               .expireAfterWrite(timeout, unit)
               .maximumSize(size)
               .softValues()
               .recordStats()
               .build(new ForwardFetcher());
 
-        _reverseCache = CacheBuilder.newBuilder()
+        _reverseCache = Caffeine.newBuilder()
               .expireAfterWrite(timeout, unit)
               .maximumSize(size)
               .softValues()
               .recordStats()
               .build(new ReverseFetcher());
 
-        _loginCache = CacheBuilder.newBuilder()
+        _loginCache = Caffeine.newBuilder()
               .expireAfterWrite(timeout, unit)
               .maximumSize(size)
               .softValues()
@@ -79,7 +81,7 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
             return _loginCache.get(subject).get();
         } catch (InterruptedException e) {
             throw new TimeoutCacheException("Request interrupted");
-        } catch (ExecutionException e) {
+        } catch (ExecutionException | CompletionException e) {
             Throwables.propagateIfPossible(e.getCause(), CacheException.class);
             throw new RuntimeException(e.getCause());
         } catch (UncheckedExecutionException e) {
@@ -118,41 +120,41 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
         }
     }
 
-    private class ForwardFetcher extends CacheLoader<Principal, ListenableFuture<Principal>> {
+    private class ForwardFetcher implements CacheLoader<Principal, CompletableFuture<Principal>> {
 
         @Override
-        public ListenableFuture<Principal> load(Principal f) throws CacheException {
+        public CompletableFuture<Principal> load(Principal f) throws CacheException {
             try {
-                return Futures.immediateFuture(_inner.map(f));
+                return CompletableFuture.completedFuture(_inner.map(f));
             } catch (CacheException e) {
                 Throwables.propagateIfPossible(e, TimeoutCacheException.class);
-                return Futures.immediateFailedFuture(e);
+                return CompletableFuture.failedFuture(e);
             }
         }
     }
 
-    private class ReverseFetcher extends CacheLoader<Principal, ListenableFuture<Set<Principal>>> {
+    private class ReverseFetcher implements CacheLoader<Principal, CompletableFuture<Set<Principal>>> {
 
         @Override
-        public ListenableFuture<Set<Principal>> load(Principal f) throws CacheException {
+        public CompletableFuture<Set<Principal>> load(Principal f) throws CacheException {
             try {
-                return Futures.immediateFuture(_inner.reverseMap(f));
+                return CompletableFuture.completedFuture(_inner.reverseMap(f));
             } catch (CacheException e) {
                 Throwables.propagateIfPossible(e, TimeoutCacheException.class);
-                return Futures.immediateFailedFuture(e);
+                return CompletableFuture.failedFuture(e);
             }
         }
     }
 
-    private class LoginFetcher extends CacheLoader<Subject, ListenableFuture<LoginReply>> {
+    private class LoginFetcher implements CacheLoader<Subject, CompletableFuture<LoginReply>> {
 
         @Override
-        public ListenableFuture<LoginReply> load(Subject f) throws CacheException {
+        public CompletableFuture<LoginReply> load(Subject f) throws CacheException {
             try {
-                return Futures.immediateFuture(_inner.login(f));
+                return CompletableFuture.completedFuture(_inner.login(f));
             } catch (CacheException e) {
                 Throwables.propagateIfPossible(e, TimeoutCacheException.class);
-                return Futures.immediateFailedFuture(e);
+                return CompletableFuture.failedFuture(e);
             }
         }
     }
@@ -178,7 +180,7 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
         sb.append("Login:\n");
         for (Subject s : _loginCache.asMap().keySet()) {
             try {
-                ListenableFuture<LoginReply> out = _loginCache.getIfPresent(s);
+                CompletableFuture<LoginReply> out = _loginCache.getIfPresent(s);
                 if (out != null) {
                     sb.append("   ").append(Subjects.toString(s)).append(" => ");
                     sb.append(out.get()).append('\n');
@@ -190,7 +192,7 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
         sb.append("Map:\n");
         for (Principal p : _forwardCache.asMap().keySet()) {
             try {
-                ListenableFuture<Principal> out = _forwardCache.getIfPresent(p);
+                CompletableFuture<Principal> out = _forwardCache.getIfPresent(p);
                 if (out != null) {
                     sb.append("   ").append(p).append(" => ");
                     sb.append(out.get()).append('\n');
@@ -202,7 +204,7 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
         sb.append("ReverseMap:\n");
         for (Principal p : _reverseCache.asMap().keySet()) {
             try {
-                ListenableFuture<Set<Principal>> out = _reverseCache.getIfPresent(p);
+                CompletableFuture<Set<Principal>> out = _reverseCache.getIfPresent(p);
                 if (out != null) {
                     sb.append("   ").append(p).append(" => ");
                     sb.append(out.get()).append('\n');

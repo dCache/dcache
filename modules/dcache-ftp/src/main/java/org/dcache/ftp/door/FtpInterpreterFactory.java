@@ -17,7 +17,7 @@
  */
 package org.dcache.ftp.door;
 
-import com.google.common.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import diskCacheV111.doors.LineBasedInterpreter;
 import diskCacheV111.doors.NettyLineBasedInterpreterFactory;
 import diskCacheV111.services.space.Space;

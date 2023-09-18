@@ -51,11 +51,11 @@ import static org.dcache.srm.v2_2.TStatusCode.SRM_SPACE_LIFETIME_EXPIRED;
 import static org.dcache.srm.v2_2.TStatusCode.SRM_SUCCESS;
 import static org.dcache.srm.v2_2.TStatusCode.SRM_TOO_MANY_RESULTS;
 
+import com.github.benmanes.caffeine.cache.CacheLoader;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
@@ -257,17 +257,14 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware {
 
     private final CertificateFactory cf = CertificateFactories.newX509CertificateFactory();
 
-    private final LoadingCache<Class, Optional<Field>> requestTokenFieldCache = CacheBuilder.newBuilder()
-          .build(new CacheLoader<Class, Optional<Field>>() {
-              @Override
-              public Optional<Field> load(Class clazz) {
-                  try {
-                      Field field = clazz.getDeclaredField("requestToken");
-                      field.setAccessible(true);
-                      return Optional.of(field);
-                  } catch (NoSuchFieldException e) {
-                      return Optional.empty();
-                  }
+    private final LoadingCache<Class<?>, Optional<Field>> requestTokenFieldCache = Caffeine.newBuilder()
+          .build(clazz -> {
+              try {
+                  Field field = clazz.getDeclaredField("requestToken");
+                  field.setAccessible(true);
+                  return Optional.of(field);
+              } catch (NoSuchFieldException e) {
+                  return Optional.empty();
               }
           });
 
@@ -727,7 +724,7 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware {
     }
 
     private MappedRequest mapRequest(Object request) throws SRMInternalErrorException {
-        Optional<Field> field = requestTokenFieldCache.getUnchecked(request.getClass());
+        Optional<Field> field = requestTokenFieldCache.get(request.getClass());
         if (field.isPresent()) {
             try {
                 Field f = field.get();
@@ -803,7 +800,7 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware {
 
     private Object mapResponse(SrmResponse response) {
         Object o = response.getResponse();
-        Optional<Field> field = requestTokenFieldCache.getUnchecked(o.getClass());
+        Optional<Field> field = requestTokenFieldCache.get(o.getClass());
         field.ifPresent(f -> {
             try {
                 f.set(o, prefix(response.getId(), (String) f.get(o)));

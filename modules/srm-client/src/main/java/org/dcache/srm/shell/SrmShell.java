@@ -30,15 +30,15 @@ import static org.dcache.util.StringMarkup.percentEncode;
 import static org.dcache.util.TimeUtils.TimeUnitFormat.SHORT;
 import static org.dcache.util.TimeUtils.duration;
 
+import com.github.benmanes.caffeine.cache.CacheLoader;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.base.Throwables;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -90,6 +90,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
@@ -1394,8 +1395,8 @@ public class SrmShell extends ShellApplication {
 
         private final boolean verboseList;
 
-        private final LoadingCache<URI, TMetaDataPathDetail[]> lsCache = CacheBuilder.newBuilder()
-              .build(new CacheLoader<URI, TMetaDataPathDetail[]>() {
+        private final LoadingCache<URI, TMetaDataPathDetail[]> lsCache = Caffeine.newBuilder()
+              .build(new CacheLoader<>() {
                   @Override
                   public TMetaDataPathDetail[] load(URI key) throws Exception {
                       TMetaDataPathDetail[] contents = fs.list(key, verboseList);
@@ -1408,8 +1409,8 @@ public class SrmShell extends ShellApplication {
                   }
               });
 
-        private final LoadingCache<File, TMetaDataPathDetail> statCache = CacheBuilder.newBuilder()
-              .build(new CacheLoader<File, TMetaDataPathDetail>() {
+        private final LoadingCache<File, TMetaDataPathDetail> statCache = Caffeine.newBuilder()
+              .build(new CacheLoader<>() {
                   @Override
                   public TMetaDataPathDetail load(File key) throws Exception {
                       return fs.stat(asURI(key));
@@ -1455,7 +1456,7 @@ public class SrmShell extends ShellApplication {
             return path;
         }
 
-        private RuntimeException propagate(ExecutionException e)
+        private RuntimeException propagate(CompletionException e)
               throws RemoteException, SRMException, InterruptedException {
             Throwable cause = e.getCause();
             Throwables.throwIfInstanceOf(cause, RemoteException.class);
@@ -1468,7 +1469,7 @@ public class SrmShell extends ShellApplication {
               SRMException, InterruptedException {
             try {
                 return lsCache.get(asURI(directory));
-            } catch (ExecutionException e) {
+            } catch (CompletionException e) {
                 throw propagate(e);
             }
         }
@@ -1482,7 +1483,7 @@ public class SrmShell extends ShellApplication {
             File absPath = resolveAgainstCwd(item);
             try {
                 return statCache.get(absPath);
-            } catch (ExecutionException e) {
+            } catch (CompletionException e) {
                 throw propagate(e);
             }
         }

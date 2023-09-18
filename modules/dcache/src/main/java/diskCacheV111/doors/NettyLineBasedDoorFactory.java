@@ -19,7 +19,7 @@
 
 package diskCacheV111.doors;
 
-import com.google.common.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import diskCacheV111.services.space.Space;
@@ -138,8 +138,8 @@ public class NettyLineBasedDoorFactory extends AbstractService implements LoginC
 
         CellStub spaceManager = new CellStub(parentEndpoint, spaceManagerPath, 30_000);
         spaceDescriptionCache = ReservationCaches.buildOwnerDescriptionLookupCache(spaceManager,
-              executor);
-        spaceLookupCache = ReservationCaches.buildSpaceLookupCache(spaceManager, executor);
+              executor).synchronous();
+        spaceLookupCache = ReservationCaches.buildSpaceLookupCache(spaceManager, executor).synchronous();
 
         LoginStrategy loginStrategy = new RemoteLoginStrategy(
               new CellStub(parentEndpoint, gPlazma, 30_000));

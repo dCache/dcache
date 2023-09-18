@@ -19,15 +19,16 @@ package diskCacheV111.srm.dcache;
 
 import static org.dcache.util.ByteUnit.KiB;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.base.Throwables;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hashing;
 import com.google.common.util.concurrent.Striped;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -108,7 +109,7 @@ public final class CanonicalizingByteArrayStore {
      * Cache to reduce frequent reloads from the database.
      */
     private final Cache<Long, byte[]> cache =
-          CacheBuilder.newBuilder().expireAfterAccess(10, TimeUnit.MINUTES).maximumSize(1000)
+          Caffeine.newBuilder().expireAfterAccess(10, TimeUnit.MINUTES).maximumSize(1000)
                 .build();
 
     /**
@@ -117,7 +118,7 @@ public final class CanonicalizingByteArrayStore {
      * <p>
      * Class invariant: Any Token has a corresponding byte array in the database.
      */
-    private final Cache<Long, Token> canonicalizationCache = CacheBuilder.newBuilder().weakValues()
+    private final Cache<Long, Token> canonicalizationCache = Caffeine.newBuilder().weakValues()
           .build();
 
     /**
@@ -217,8 +218,8 @@ public final class CanonicalizingByteArrayStore {
      */
     private Token makeToken(long id) {
         try {
-            return canonicalizationCache.get(id, () -> new Token(id));
-        } catch (UncheckedExecutionException | ExecutionException e) {
+            return canonicalizationCache.get(id, (key) -> new Token(id));
+        } catch (UncheckedExecutionException | CompletionException e) {
             Throwable cause = e.getCause();
             Throwables.throwIfUnchecked(cause);
             throw new RuntimeException(cause);
