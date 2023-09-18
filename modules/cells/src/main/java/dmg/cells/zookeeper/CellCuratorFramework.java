@@ -17,9 +17,9 @@
  */
 package dmg.cells.zookeeper;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.CacheLoader;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import dmg.cells.nucleus.CDC;
 import java.util.Collection;
 import java.util.List;
@@ -115,9 +115,9 @@ public class CellCuratorFramework implements CuratorFramework {
     private final BoundedExecutor executor;
 
     private final LoadingCache<Watcher, Watcher> watchers =
-          CacheBuilder.newBuilder().build(new CacheLoader<Watcher, Watcher>() {
+          Caffeine.newBuilder().build(new CacheLoader<>() {
               @Override
-              public Watcher load(Watcher watcher) throws Exception {
+              public Watcher load(Watcher watcher) {
                   CDC cdc = new CDC();
                   return event -> executor.execute(() -> {
                       try (CDC ignore = cdc.restore()) {
@@ -128,9 +128,9 @@ public class CellCuratorFramework implements CuratorFramework {
           });
 
     private final LoadingCache<CuratorWatcher, CuratorWatcher> curatorWatchers =
-          CacheBuilder.newBuilder().build(new CacheLoader<CuratorWatcher, CuratorWatcher>() {
+          Caffeine.newBuilder().build(new CacheLoader<>() {
               @Override
-              public CuratorWatcher load(CuratorWatcher watcher) throws Exception {
+              public CuratorWatcher load(CuratorWatcher watcher) {
                   CDC cdc = new CDC();
                   return event -> executor.execute(() -> {
                       try (CDC ignore = cdc.restore()) {
@@ -175,11 +175,11 @@ public class CellCuratorFramework implements CuratorFramework {
     }
 
     protected Watcher wrap(Watcher watcher) {
-        return watchers.getUnchecked(watcher);
+        return watchers.get(watcher);
     }
 
     protected CuratorWatcher wrap(CuratorWatcher watcher) {
-        return curatorWatchers.getUnchecked(watcher);
+        return curatorWatchers.get(watcher);
     }
 
     @Override
