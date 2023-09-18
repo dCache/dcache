@@ -18,7 +18,6 @@ import static org.dcache.namespace.FileAttribute.OWNER_GROUP;
 import static org.dcache.namespace.FileAttribute.PNFSID;
 import static org.dcache.namespace.FileAttribute.RETENTION_POLICY;
 import static org.dcache.namespace.FileAttribute.SIZE;
-import static org.dcache.namespace.FileAttribute.STORAGEINFO;
 import static org.dcache.namespace.FileAttribute.TYPE;
 import static org.dcache.namespace.FileAttribute.XATTR;
 import static org.dcache.namespace.FileType.DIR;
@@ -167,10 +166,6 @@ public class DcacheResourceFactory
 
     public static final String TRANSACTION_ATTRIBUTE = "org.dcache.transaction";
 
-    private static final Set<FileAttribute> MINIMALLY_REQUIRED_ATTRIBUTES =
-          EnumSet.of(TYPE, PNFSID, CREATION_TIME, MODIFICATION_TIME, SIZE,
-                MODE, OWNER, OWNER_GROUP);
-
     private static final Set<FileAttribute> REQUIRED_ATTRIBUTES =
           EnumSet.of(TYPE, PNFSID, CREATION_TIME, MODIFICATION_TIME, SIZE,
                 MODE, OWNER, OWNER_GROUP, XATTR);
@@ -181,7 +176,7 @@ public class DcacheResourceFactory
     // Additional attributes needed for PROPFIND requests; e.g., to supply
     // values for properties.
     private static final Set<FileAttribute> PROPFIND_ATTRIBUTES = Sets.union(
-          EnumSet.of(CHECKSUM, ACCESS_LATENCY, RETENTION_POLICY, STORAGEINFO),
+          EnumSet.of(CHECKSUM, ACCESS_LATENCY, RETENTION_POLICY),
           PoolMonitorV5.getRequiredAttributesForFileLocality());
 
     private static final String PROTOCOL_INFO_NAME = "Http";
@@ -195,11 +190,6 @@ public class DcacheResourceFactory
 
     private static final Splitter PATH_SPLITTER =
           Splitter.on('/').omitEmptyStrings();
-
-    enum PropfindProperties {
-        PERFORMANCE,
-        CLIENT_COMPATIBLE
-    };
 
     /**
      * In progress transfers. The key of the map is the session id of the transfer.
@@ -243,7 +233,6 @@ public class DcacheResourceFactory
     private boolean _impatientClientProxied = true;
     private boolean _isOverwriteAllowed;
     private boolean _isAnonymousListingAllowed;
-    private boolean _includeAllAttributesForPropfind;
 
     private String _staticContentPath;
     private ReloadableTemplate _template;
@@ -615,9 +604,9 @@ public class DcacheResourceFactory
     public DcacheResource getResource(FsPath path) {
         checkPathAllowed(path);
 
+        String requestPath = getRequestPath();
         boolean haveRetried = false;
         Subject subject = getSubject();
-        String requestPath = getRequestPath();
 
         try {
             while (true) {
@@ -659,8 +648,7 @@ public class DcacheResourceFactory
      */
     private DcacheResource getResource(FsPath path, FileAttributes attributes) {
         if (attributes.getFileType() == DIR) {
-            return new DcacheDirectoryResource(this, path, attributes,
-                  isFetchAllAttributes());
+            return new DcacheDirectoryResource(this, path, attributes);
         } else {
             return new DcacheFileResource(this, path, attributes);
         }
@@ -929,11 +917,6 @@ public class DcacheResourceFactory
         return result;
     }
 
-    public void setDefaultPropfindProperties(PropfindProperties defaultPropfindProperties) {
-        _includeAllAttributesForPropfind =
-              defaultPropfindProperties == PropfindProperties.CLIENT_COMPATIBLE;
-    }
-
     private class FileLocalityWrapper {
 
         private final FileLocality _inner;
@@ -1137,8 +1120,7 @@ public class DcacheResourceFactory
         PnfsCreateEntryMessage reply =
               pnfs.createPnfsDirectory(path.toString(), REQUIRED_ATTRIBUTES);
 
-        return new DcacheDirectoryResource(this, path, reply.getFileAttributes(),
-              isFetchAllAttributes());
+        return new DcacheDirectoryResource(this, path, reply.getFileAttributes());
     }
 
     public void move(FsPath sourcePath, PnfsId pnfsId, FsPath newPath)
@@ -1429,16 +1411,13 @@ public class DcacheResourceFactory
     }
 
     private Set<FileAttribute> buildRequestedAttributes() {
-        boolean all = isFetchAllAttributes();
-
-        Set<FileAttribute> attributes = all ? EnumSet.copyOf(REQUIRED_ATTRIBUTES) :
-              EnumSet.copyOf(MINIMALLY_REQUIRED_ATTRIBUTES);
+        Set<FileAttribute> attributes = EnumSet.copyOf(REQUIRED_ATTRIBUTES);
 
         if (isDigestRequested()) {
             attributes.add(CHECKSUM);
         }
 
-        if (isPropfindRequest() && all) {
+        if (isPropfindRequest()) {
             // FIXME: Unfortunately, Milton parses the request body after
             // requesting the Resource, so we cannot know which additional
             // attributes are being requested; therefore, we must request all
@@ -1447,14 +1426,6 @@ public class DcacheResourceFactory
         }
 
         return attributes;
-    }
-
-    private boolean isFetchAllAttributes() {
-        if (!isPropfindRequest()) {
-            return true;
-        }
-
-        return _includeAllAttributesForPropfind;
     }
 
     /**
@@ -1514,7 +1485,7 @@ public class DcacheResourceFactory
         }
     }
 
-    public Optional<String> lookupWriteToken(FsPath path) {
+    private Optional<String> lookupWriteToken(FsPath path) {
         try {
             return _writeTokenCache.get(path);
         } catch (ExecutionException e) {
@@ -1525,14 +1496,14 @@ public class DcacheResourceFactory
         }
     }
 
-    public Space spaceForToken(Optional<String> maybeToken) throws SpaceException {
-        return maybeToken
+    public Space spaceForPath(FsPath path) throws SpaceException {
+        return lookupWriteToken(path)
               .flatMap(this::lookupSpaceById)
               .orElseThrow(() -> new SpaceException("Path not under space management"));
     }
 
-    public boolean isSpaceManaged(Optional<String> maybeToken) {
-        return maybeToken
+    public boolean isSpaceManaged(FsPath path) {
+        return lookupWriteToken(path)
               .flatMap(this::lookupSpaceById)
               .isPresent();
     }
