@@ -72,11 +72,11 @@ import static org.dcache.services.bulk.util.BulkRequestTarget.PLACEHOLDER_PNFSID
 import static org.dcache.services.bulk.util.BulkRequestTarget.ROOT_REQUEST_PATH;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.CREATED;
 
+import com.github.benmanes.caffeine.cache.CacheLoader;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import diskCacheV111.util.CacheException;
@@ -91,6 +91,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -139,7 +140,7 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
 
     private static final Integer FETCH_SIZE = 10000;
 
-    class RequestLoader extends CacheLoader<String, Optional<BulkRequest>> {
+    class RequestLoader implements CacheLoader<String, Optional<BulkRequest>> {
 
         @Override
         public Optional<BulkRequest> load(String uid) throws Exception {
@@ -170,7 +171,7 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
     private PnfsHandler pnfsHandler;
 
     public void initialize() {
-        requestCache = CacheBuilder.newBuilder()
+        requestCache = Caffeine.newBuilder()
               .expireAfterAccess(expiry, expiryUnit)
               .maximumSize(capacity)
               .build(new RequestLoader());
@@ -232,7 +233,7 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
         Optional<BulkRequest> stored;
         try {
             stored = requestCache.get(uid);
-        } catch (ExecutionException e) {
+        } catch (CompletionException e) {
             throw new BulkStorageException(e.getMessage(), e.getCause());
         }
 
@@ -251,7 +252,7 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
 
         try {
             stored = requestCache.get(uid);
-        } catch (ExecutionException e) {
+        } catch (CompletionException e) {
             Throwable cause = e.getCause();
             LOGGER.error("Fatal error trying to clear {}: "
                   + "{}.", uid, cause == null ? e.getMessage() : cause.getMessage());
@@ -354,7 +355,7 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
         Optional<BulkRequest> stored = Optional.empty();
         try {
             stored = requestCache.get(uid);
-        } catch (ExecutionException e) {
+        } catch (CompletionException e) {
             Throwable cause = e.getCause();
             LOGGER.error("Fatal error trying to get request {}: "
                   + "{}.", uid, cause == null ? e.getMessage() : cause.getMessage());
@@ -542,7 +543,7 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
                 status.setLastModified(System.currentTimeMillis());
                 status.setCompletedAt(null);
             });
-        } catch (ExecutionException e) {
+        } catch (CompletionException e) {
             throw new BulkStorageException(e.getMessage(), e.getCause());
         }
     }
@@ -712,7 +713,7 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
                     default:
                 }
             });
-        } catch (ExecutionException e) {
+        } catch (CompletionException e) {
             throw new BulkStorageException(e.getMessage(), e.getCause());
         }
 
@@ -805,7 +806,7 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
     private BulkRequest get(String uid) throws BulkStorageException {
         try {
             return requestCache.get(uid).orElse(null);
-        } catch (ExecutionException e) {
+        } catch (CompletionException e) {
             Throwable cause = e.getCause();
             throw new BulkStorageException(
                   cause == null ? e.getMessage() : cause.getMessage());

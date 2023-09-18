@@ -20,8 +20,8 @@ package org.dcache.webdav.transfer;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.ImmutableMap;
 import diskCacheV111.srm.CredentialServiceAnnouncement;
 import diskCacheV111.srm.CredentialServiceRequest;
@@ -86,7 +86,7 @@ public class CredentialServiceClient
 
     private CellStub topic;
 
-    private Cache<CellAddressCore, URI> cache = CacheBuilder.newBuilder()
+    private Cache<CellAddressCore, URI> cache = Caffeine.newBuilder()
           .expireAfterWrite(70, SECONDS).build();
 
     @Required

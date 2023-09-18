@@ -2,15 +2,14 @@ package org.dcache.chimera.nfsv41.door.proxy;
 
 import static org.dcache.chimera.nfsv41.door.ExceptionUtils.asNfsException;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.base.Stopwatch;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.google.common.net.HostAndPort;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -59,7 +58,7 @@ public class NfsProxyIoFactory implements ProxyIoFactory {
     private static final Logger _log = LoggerFactory.getLogger(NfsProxyIoFactory.class);
 
     private final Cache<stateid4, ProxyIoAdapter> _proxyIO
-          = CacheBuilder.newBuilder()
+          = Caffeine.newBuilder()
           .build();
 
     private final NFSv41DeviceManager deviceManager;
@@ -78,29 +77,36 @@ public class NfsProxyIoFactory implements ProxyIoFactory {
           boolean isWrite) throws IOException {
         try {
             return _proxyIO.get(stateid,
-                  () -> {
-                      final NFS4Client nfsClient;
-                      if (context.getMinorversion() == 1) {
-                          nfsClient = context.getSession().getClient();
-                      } else {
-                          nfsClient = context.getStateHandler().getClientIdByStateId(stateid);
-                      }
+                  (key) -> {
+                try {
+                    final NFS4Client nfsClient;
+                    if (context.getMinorversion() == 1) {
+                        nfsClient = context.getSession().getClient();
+                    } else {
+                        nfsClient = context.getStateHandler().getClientIdByStateId(stateid);
+                    }
 
-                      final NFS4State state = nfsClient.state(stateid);
-                      final ProxyIoAdapter adapter = createIoAdapter(inode, stateid, context,
-                            isWrite);
+                    final NFS4State state = nfsClient.state(stateid);
+                    final ProxyIoAdapter adapter = createIoAdapter(inode, stateid, context,
+                          isWrite);
 
-                      state.addDisposeListener(s -> {
-                          tryToClose(adapter);
-                          _proxyIO.invalidate(s.stateid());
-                      });
+                    state.addDisposeListener(s -> {
+                        tryToClose(adapter);
+                        _proxyIO.invalidate(s.stateid());
+                    });
 
-                      return adapter;
-                  });
-        } catch (ExecutionException e) {
-            Throwable t = e.getCause();
-            _log.debug("failed to create IO adapter: {}", t.getMessage());
-            throw asNfsException(t, NfsIoException.class);
+                    return adapter;
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                  }});
+        } catch (RuntimeException e) {
+            if (e.getCause() != null) {
+                Throwable t = e.getCause();
+                _log.debug("failed to create IO adapter: {}", t.getMessage());
+                throw asNfsException(t, NfsIoException.class);
+            } else {
+                throw e;
+            }
         }
     }
 
@@ -233,7 +239,7 @@ public class NfsProxyIoFactory implements ProxyIoFactory {
 
     @Override
     public int getCount() {
-        return (int) _proxyIO.size();
+        return (int) _proxyIO.estimatedSize();
     }
 
     public static nfsv4_1_file_layout4 decodeLayoutId(byte[] data) throws IOException {

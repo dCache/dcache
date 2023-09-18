@@ -8,10 +8,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+import com.github.benmanes.caffeine.cache.CacheLoader;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.base.Splitter;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TimeoutCacheException;
@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.dcache.cells.CellStub;
@@ -93,10 +94,10 @@ public class InfoHttpEngine implements HttpResponseEngine, CellMessageSender {
         private final String _name;
         private final String _mimeType;
 
-        LoadingCache<List<String>, String> resultCache = CacheBuilder.newBuilder()
+        LoadingCache<List<String>, String> resultCache = Caffeine.newBuilder()
               .maximumSize(10)
               .expireAfterWrite(1, TimeUnit.SECONDS)
-              .build(new CacheLoader<List<String>, String>() {
+              .build(new CacheLoader<>() {
                   @Override
                   public String load(List<String> path)
                         throws InterruptedException, CacheException, NoRouteToCellException {
@@ -125,7 +126,7 @@ public class InfoHttpEngine implements HttpResponseEngine, CellMessageSender {
                 request.printHttpHeader(raw.length);
                 request.setContentType(this._mimeType);
                 out.write(raw);
-            } catch (ExecutionException e) {
+            } catch (CompletionException e) {
                 Throwable cause = e.getCause();
                 if (cause instanceof TimeoutCacheException) {
                     throw new HttpException(503, "The info cell took too " +

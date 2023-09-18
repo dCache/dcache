@@ -27,11 +27,11 @@ import static org.dcache.util.ByteUnit.KiB;
 import static org.dcache.util.TransferRetryPolicy.tryOnce;
 import static org.dcache.webdav.InsufficientStorageException.checkStorageSufficient;
 
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 import com.google.common.base.Splitter;
 import com.google.common.base.Throwables;
-import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
@@ -106,6 +106,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -1614,7 +1615,7 @@ public class DcacheResourceFactory
     private Optional<Space> lookupSpaceById(String id) {
         try {
             return _spaceLookupCache.get(id);
-        } catch (ExecutionException e) {
+        } catch (CompletionException e) {
             Throwable t = e.getCause();
             Throwables.throwIfUnchecked(t);
             LOGGER.warn("Failed to fetch space statistics for {}: {}", id, t.toString());
@@ -1625,7 +1626,7 @@ public class DcacheResourceFactory
     private Optional<String> lookupWriteToken(FsPath path) {
         try {
             return _writeTokenCache.get(path);
-        } catch (ExecutionException e) {
+        } catch (CompletionException e) {
             Throwable t = e.getCause();
             Throwables.throwIfUnchecked(t);
             LOGGER.warn("Failed to query for WriteToken tag on {}: {}", path, t.toString());
