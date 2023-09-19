@@ -227,6 +227,7 @@ public class PnfsManagerV3
 
     private boolean useParentHashOnCreate;
     private boolean useParallelListing;
+    private int maxListRequestsInQueue;
 
     /**
      * Whether to use folding.
@@ -341,6 +342,11 @@ public class PnfsManagerV3
     @Required
     public void setUseParallelListing(boolean useParallelListing) {
         this.useParallelListing = useParallelListing;
+    }
+
+    @Required
+    public void setMaxListRequestsInQueue(int maxListRequestsInQueue) {
+        this.maxListRequestsInQueue = maxListRequestsInQueue;
     }
 
     @Required
@@ -2810,21 +2816,40 @@ public class PnfsManagerV3
           throws CacheException {
 
         String path = message.getPnfsPath();
+
         if (path == null) {
             throw new InvalidMessageCacheException("Missing PNFS id and path");
         }
-
-	int index = 0;
-
-	if (!useParallelListing) {
-	    index = (int)(Math.abs((long)Objects.hashCode(path.toString())) % _listThreads);
-	}
 
 	/**
 	 * when useParallelListing is true, we only have 1 queue in the
 	 * list of queues below
 	 */
-        if (!_listQueues[index].offer(envelope)) {
+	int index = 0;
+
+	if (!useParallelListing) {
+	    index = (int)(Math.abs((long)Objects.hashCode(path.toString())) % _listThreads);
+	}
+        BlockingQueue<CellMessage> queue = _listQueues[index];
+
+        /**
+         * Do counts only if maxListRequestsInQueue is enabled
+         */
+        if (maxListRequestsInQueue < Integer.MAX_VALUE) {
+            int counter = 0;
+            for (CellMessage i : queue) {
+                PnfsListDirectoryMessage msg = (PnfsListDirectoryMessage)i.getMessageObject();
+                if (msg.getPnfsPath().equals(path))  {
+                    if (counter > maxListRequestsInQueue) {
+                        LOGGER.warn("Too many list requests for the same directory {}  in PnfsManager queue", path);
+                        throw new MissingResourceCacheException("Too many list requests for the same directory in PndsManager queue");
+                    }
+                    counter += 1;
+                }
+            }
+        }
+
+        if (!queue.offer(envelope)) {
             throw new MissingResourceCacheException("PnfsManager queue limit exceeded");
         }
     }
