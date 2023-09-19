@@ -108,7 +108,7 @@ dn() { # $1 - path to X.509 certificate
     #
     #     /C=DE/O=GermanGrid/OU=DESY/CN=Alexander Paul Millar
     #
-    openssl x509 -in "$1" -subject -noout -nameopt compat | sed 's:subject= *\+/\?:/:;s:, :/:g'
+    openssl x509 -in "$1" -subject -noout -nameopt compat | sed -E -e 's:subject= */?:/:;s:, :/:g;s: = :=:g'
 }
 
 if [ ! -f etc/dcache.kpwd ]; then
