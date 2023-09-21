@@ -11,7 +11,10 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import io.swagger.annotations.ResponseHeader;
+
+import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.ws.rs.BadRequestException;
@@ -209,16 +212,80 @@ public final class MigrationResources {
             }
             conditionalAppendString("storage", "storage", commandStrBuilder, fileAttributes);
         }
-        // Add the target pools
-        // We know that the length != 0 from earlier!
-        for (int i = 0; i < targetPools.length(); i++) {
-            String poolName = targetPools.getString(i);
-            PoolSelectionUnit.SelectionPool sp = psu.getPool(poolName);
-            if (sp == null) {
-                throw new BadRequestException(
-                      "One of the specified pools '" + poolName + "' could not be found.");
+        // Determine the target type and interpret the "targetPool"-value(s) accordingly
+        String targetType;
+        if (jsonPayload.has("target")) {
+            targetType = jsonPayload.getString("target").toLowerCase();
+        } else {
+            targetType = "pool";
+        }
+
+        switch (targetType) {
+            case "hsm": {
+                List<String> hsms = new ArrayList<>();
+                // We know that the length != 0 from earlier!
+                for (int i = 0; i < targetPools.length(); i++) {
+                    hsms.add(targetPools.getString(i));
+                }
+                if (psu.getPools().values().stream().filter(p -> p.hasAnyHsmFrom(hsms)).count() == 0) {
+                    throw new BadRequestException("No pools with the specified hsms could be found.");
+                }
+                for (String hsmName : hsms) {
+                    commandStrBuilder.append(" ").append(hsmName);
+                }
+                break;
             }
-            commandStrBuilder.append(" ").append(poolName);
+            case "link": {
+                if (targetPools.length() == 1) {
+                    String targetName = targetPools.getString(0);
+                    try {
+                        // This will throw an exception if the targetName (link name) doesn't exist.
+                        psu.getLinkByName(targetName);
+                        // We will reach this line, only if it does exist, and then we can proceed correctly.
+                        commandStrBuilder.append(" ").append(targetName);
+                    } catch (NoSuchElementException e) {
+                        throw new BadRequestException(
+                                "The specified link '" + targetName + "' could not be found.");
+
+                    }
+                } else {
+                    throw new BadRequestException(
+                            "When using type 'link', exactly one target must be specified.");
+                }
+                break;
+            }
+            case "pool": {
+                // We know that the length != 0 from earlier!
+                for (int i = 0; i < targetPools.length(); i++) {
+                    String targetName = targetPools.getString(i);
+                    PoolSelectionUnit.SelectionPool sp = psu.getPool(targetName);
+                    if (sp == null) {
+                        throw new BadRequestException(
+                                "One of the specified pools '" + targetName + "' could not be found.");
+                    }
+                    commandStrBuilder.append(" ").append(targetName);
+                }
+                break;
+            }
+            case "pgroup": {
+                // We know that the length != 0 from earlier!
+                for (int i = 0; i < targetPools.length(); i++) {
+                    String targetName = targetPools.getString(i);
+                    try {
+                        // This will throw an exception if the targetName (pool group name) doesn't exist.
+                        psu.getPoolsByPoolGroup(targetName);
+                        // We will reach this line, only if it does exist, and then we can proceed correctly.
+                        commandStrBuilder.append(" ").append(targetName);
+                    } catch (NoSuchElementException e) {
+                        throw new BadRequestException(
+                                "One of the specified pool groups '" + targetName + "' could not be found.");
+                    }
+                }
+                break;
+            }
+            default: {
+                throw new BadRequestException("Option 'target' has invalid argument: " + targetType);
+            }
         }
 
         LOGGER.info("Command parsed from json payload is: '{}'.", commandStrBuilder);
