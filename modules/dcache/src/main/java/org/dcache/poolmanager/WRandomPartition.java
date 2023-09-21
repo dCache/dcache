@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 
 import diskCacheV111.poolManager.CostModule;
@@ -63,8 +64,8 @@ public class WRandomPartition extends Partition
                     filter(dst, new DifferentHost(srcPoolInfo.getHostName())));
 
             if (!tryList.isEmpty()) {
-                PoolInfo destPoolInfo = selectWritePool(cm, tryList, attributes, attributes.getSize());
-                return new P2pPair(srcPoolInfo, destPoolInfo);
+                SelectedPool destPoolInfo = selectWritePool(cm, tryList, attributes, attributes.getSize());
+                return new P2pPair(new SelectedPool(srcPoolInfo), destPoolInfo);
             }
         }
 
@@ -72,20 +73,20 @@ public class WRandomPartition extends Partition
     }
 
     @Override
-    public PoolInfo selectReadPool(CostModule cm, List<PoolInfo> pools, FileAttributes attributes) throws CacheException {
-        return pools.get(_random.nextInt(pools.size()));
+    public SelectedPool selectReadPool(CostModule cm, List<PoolInfo> pools, FileAttributes attributes) throws CacheException {
+        return new SelectedPool(pools.get(_random.nextInt(pools.size())));
     }
 
     @Override
-    public PoolInfo selectStagePool(CostModule cm, List<PoolInfo> pools, String previousPool, String previousHost, FileAttributes attributes) throws CacheException {
+    public SelectedPool selectStagePool(CostModule cm, List<PoolInfo> pools, Optional<PoolInfo> previousPool, FileAttributes attributes) throws CacheException {
         return selectWritePool(cm, pools, attributes, attributes.getSize());
     }
 
     @Override
-    public PoolInfo selectWritePool(CostModule cm, List<PoolInfo> pools, FileAttributes attributes, long preallocated) throws CacheException {
+    public SelectedPool selectWritePool(CostModule cm, List<PoolInfo> pools, FileAttributes attributes, long preallocated) throws CacheException {
         WeightedPool weightedPools[] = toWeightedWritePoolsArray(pools);
         int index = selectWrandomIndex(weightedPools);
-        return weightedPools[index].getCostInfo();
+        return new SelectedPool(weightedPools[index].getCostInfo());
     }
 
     private WeightedPool[] toWeightedWritePoolsArray(Collection<PoolInfo> costInfos) {
