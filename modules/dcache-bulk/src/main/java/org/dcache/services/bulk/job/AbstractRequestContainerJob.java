@@ -74,6 +74,7 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.util.NamespaceHandlerAware;
 import diskCacheV111.util.PnfsHandler;
 import java.lang.Thread.UncaughtExceptionHandler;
+import java.nio.file.DirectoryStream;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -103,7 +104,6 @@ import org.dcache.services.bulk.util.BulkServiceStatistics;
 import org.dcache.util.BoundedExecutor;
 import org.dcache.util.SignalAware;
 import org.dcache.util.list.DirectoryEntry;
-import org.dcache.util.list.DirectoryStream;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsResolveSymlinksMessage;
@@ -406,7 +406,7 @@ public abstract class AbstractRequestContainerJob
         }
     }
 
-    protected DirectoryStream getDirectoryListing(FsPath path)
+    protected DirectoryStream<DirectoryEntry> getDirectoryListing(FsPath path)
           throws CacheException, InterruptedException {
         LOGGER.trace("getDirectoryListing {}, path {}, calling list ...", ruid, path);
         return listHandler.list(subject, restriction, path, null,
@@ -416,14 +416,16 @@ public abstract class AbstractRequestContainerJob
     protected void expandDepthFirst(Long id, PID pid, FsPath path, FileAttributes dirAttributes)
           throws BulkServiceException, CacheException, InterruptedException {
         checkForRequestCancellation();
+
+
         DirListTask task = new DirListTask() {
             @Override
             public void doList() throws Throwable {
                 try {
-                    DirectoryStream stream = getDirectoryListing(path);
+                    DirectoryStream<DirectoryEntry> stream = getDirectoryListing(path);
                     for (DirectoryEntry entry : stream) {
                         LOGGER.trace("expandDepthFirst {}, directory {}, entry {}", ruid, path,
-                              entry.getName());
+                                entry.getName());
                         FsPath childPath = path.child(entry.getName());
                         FileAttributes childAttributes = entry.getFileAttributes();
 

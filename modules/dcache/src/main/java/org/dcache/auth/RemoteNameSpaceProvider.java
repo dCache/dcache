@@ -24,6 +24,8 @@ import diskCacheV111.vehicles.PnfsReadExtendedAttributesMessage;
 import diskCacheV111.vehicles.PnfsRemoveExtendedAttributesMessage;
 import diskCacheV111.vehicles.PnfsRemoveLabelsMessage;
 import diskCacheV111.vehicles.PnfsWriteExtendedAttributesMessage;
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -36,7 +38,6 @@ import org.dcache.namespace.ListHandler;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Glob;
 import org.dcache.util.list.DirectoryEntry;
-import org.dcache.util.list.DirectoryStream;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 
@@ -190,13 +191,16 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider {
     public void list(Subject subject, String path, Glob glob,
           Range<Integer> range, Set<FileAttribute> attrs, ListHandler handler)
           throws CacheException {
-        try (DirectoryStream stream = _handler.list(subject, Restrictions.none(),
+        try (DirectoryStream<DirectoryEntry> stream = _handler.list(subject, Restrictions.none(),
               FsPath.create(path), glob, range, attrs)) {
             for (DirectoryEntry entry : stream) {
                 handler.addEntry(entry.getName(), entry.getFileAttributes());
             }
         } catch (InterruptedException e) {
             throw new TimeoutCacheException(e.getMessage());
+        } catch (IOException e) {
+            // Should not be thrown, since Stream does not throw an IOException on close().
+            throw new RuntimeException("Unexpected Exception thrown.", e);
         }
     }
 
@@ -205,12 +209,15 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider {
                      Range<Integer> range, Set<FileAttribute> attrs, ListHandler handler)
             throws CacheException
     {
-        try (DirectoryStream stream = _handler.listVirtualDirectory(subject, Restrictions.none(), FsPath.create(path), range, attrs)) {
+        try (DirectoryStream<DirectoryEntry> stream = _handler.listVirtualDirectory(subject, Restrictions.none(), FsPath.create(path), range, attrs)) {
             for (DirectoryEntry entry : stream) {
                 handler.addEntry(entry.getName(), entry.getFileAttributes());
             }
         } catch (InterruptedException e) {
             throw new TimeoutCacheException(e.getMessage());
+        } catch (IOException e) {
+            // Should not be thrown, since Stream does not throw an IOException on close().
+            throw new RuntimeException("Unexpected Exception thrown.", e);
         }
     }
 
