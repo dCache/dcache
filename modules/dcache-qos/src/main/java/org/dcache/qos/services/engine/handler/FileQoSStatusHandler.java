@@ -72,6 +72,7 @@ import com.google.common.base.Throwables;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.Message;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.NoRouteToCellException;
@@ -437,9 +438,21 @@ public final class FileQoSStatusHandler implements CellInfoProvider,
     private void fileQoSStatusChanged(FileQoSUpdate update) throws QoSException {
         PnfsId pnfsId = update.getPnfsId();
         QoSMessageType messageType = update.getMessageType();
-        FileQoSRequirements requirements = requirementsListener.fileQoSRequirementsRequested(update);
+        FileQoSRequirements requirements = null;
 
-        // null requirements here means file deletion
+        try {
+            requirements = requirementsListener.fileQoSRequirementsRequested(update);
+        } catch (QoSException e) {
+            if (e.getCause() instanceof TimeoutCacheException) {
+                LOGGER.warn("namespace currently busy or unavailable; "
+                      + "could not change status for {}.", pnfsId);
+                return;
+            }
+        }
+
+        /*
+         * null requirements here means fatal exception or deletion of file
+         */
         if (requirements == null) {
             engineDao.delete(pnfsId);
             return;
@@ -592,8 +605,7 @@ public final class FileQoSStatusHandler implements CellInfoProvider,
     }
 
     /*
-     *  Maintains the two state tables. Temporary states have a state index and expiration;
-     *  the permanent states carry only the pnfsid.  The latter are accessed by the scanner.
+     *  Maintains the state table. Temporary states have a state index and expiration.
      */
     private void updateQoSTransition(PnfsId pnfsId, FileAttributes fileAttributes)
           throws QoSException {
