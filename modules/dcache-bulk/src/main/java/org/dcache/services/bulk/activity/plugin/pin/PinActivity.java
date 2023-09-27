@@ -127,6 +127,7 @@ public final class PinActivity extends PinManagerActivity {
     @Override
     protected void configure(Map<String, String> arguments) {
         TimeUnit defaultUnit = TimeUnit.valueOf(lifetimeUnitDefault());
+
         Long defaultValue = Long.parseLong(lifetimeDefault());
 
         if (arguments == null) {
@@ -135,11 +136,17 @@ public final class PinActivity extends PinManagerActivity {
             String expire = arguments.get(LIFETIME);
             String unit = arguments.get(LIFETIME_UNIT);
 
-            Long value = (long) (Double.parseDouble(expire));
-
-            lifetimeInMillis = expire == null ? defaultUnit.toMillis(defaultValue)
-                  : unit == null ? defaultUnit.toMillis(value)
-                        : TimeUnit.valueOf(unit).toMillis(value);
+            /*
+             * Guard against erroneous argument names ...
+             */
+            if (expire == null) {
+                lifetimeInMillis = unit == null ? defaultUnit.toMillis(defaultValue):
+                      TimeUnit.valueOf(unit).toMillis(defaultValue);
+            } else {
+                Long value = (long) (Double.parseDouble(expire));
+                lifetimeInMillis = unit == null ? defaultUnit.toMillis(value)
+                            : TimeUnit.valueOf(unit).toMillis(value);
+            }
         }
 
         id = arguments == null ? null : arguments.get(PIN_REQUEST_ID);
