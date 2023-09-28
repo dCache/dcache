@@ -19,7 +19,7 @@ specific protocols, data in dCache can be accessed via __NFSv4.1
 [![DOI](https://zenodo.org/badge/9113580.svg)](https://zenodo.org/badge/latestdoi/9113580)
 
 Documentation
-=============
+============
 
 [The dCache book](docs/TheBook/src/main/markdown/index.md)
 
