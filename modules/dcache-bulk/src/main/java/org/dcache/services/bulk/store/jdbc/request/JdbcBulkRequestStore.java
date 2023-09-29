@@ -610,6 +610,8 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
         try {
             /*
              *  Insertion order: request, permissions, must be maintained.
+             *  Initial insertion status is INCOMPLETE.  This is immediately changed to QUEUED
+             *  after insertion is complete.
              */
             requestDao.insert(
                         requestDao.updateFrom(request, BulkRequestStore.uidGidKey(subject)))
@@ -623,6 +625,8 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
             requestDao.insertArguments(request);
 
             requestTargetDao.insertInitialTargets(request);
+
+            requestDao.update(requestDao.where().unique(request.getId()), requestDao.set().status(QUEUED));
         } catch (BulkStorageException e) {
             throw new BulkStorageException("store failed for " + request.getUid(), e);
         }

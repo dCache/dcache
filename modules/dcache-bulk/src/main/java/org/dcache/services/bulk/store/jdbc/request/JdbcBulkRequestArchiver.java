@@ -61,6 +61,7 @@ package org.dcache.services.bulk.store.jdbc.request;
 
 import static org.dcache.services.bulk.BulkRequestStatus.CANCELLED;
 import static org.dcache.services.bulk.BulkRequestStatus.COMPLETED;
+import static org.dcache.services.bulk.BulkRequestStatus.INCOMPLETE;
 
 import dmg.cells.nucleus.CellInfoProvider;
 import java.io.PrintWriter;
@@ -137,7 +138,7 @@ public class JdbcBulkRequestArchiver implements Runnable, CellInfoProvider {
         long threshhold = System.currentTimeMillis() - archiverWindowUnit.toMillis(archiverWindow);
 
         List<String> expiredUids = requestDao.getUids(
-              requestDao.where().modifiedBefore(threshhold).status(COMPLETED, CANCELLED),
+              requestDao.where().modifiedBefore(threshhold).status(INCOMPLETE, COMPLETED, CANCELLED),
               Integer.MAX_VALUE);
 
         /*
