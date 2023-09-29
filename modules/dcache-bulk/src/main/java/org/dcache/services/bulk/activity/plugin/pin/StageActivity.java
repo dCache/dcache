@@ -78,6 +78,7 @@ import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.dcache.pinmanager.PinManagerPinMessage;
 import org.dcache.services.bulk.BulkServiceException;
@@ -128,6 +129,12 @@ public final class StageActivity extends PinManagerActivity {
                   = new PinManagerPinMessage(attributes, getProtocolInfo(), id,
                   getLifetimeInMillis(target));
             message.setSubject(subject);
+
+            Optional<ListenableFuture<Message>> skipOption = skipIfOnline(attributes, message);
+            if (skipOption.isPresent()) {
+                return skipOption.get();
+            }
+
             return pinManager.send(message, Long.MAX_VALUE);
         } catch (URISyntaxException | CacheException e) {
             return Futures.immediateFailedFuture(e);
