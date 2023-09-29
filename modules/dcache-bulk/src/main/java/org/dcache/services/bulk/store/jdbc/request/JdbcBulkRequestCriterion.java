@@ -92,6 +92,13 @@ public final class JdbcBulkRequestCriterion extends JdbcCriterion {
         return this;
     }
 
+    public JdbcBulkRequestCriterion unique(Long id) {
+        if (id != null) {
+            addClause("bulk_request.id = ?", id);
+        }
+        return this;
+    }
+
     public JdbcBulkRequestCriterion pnfsId(String pnfsid) {
         if (pnfsid != null) {
             addClause("request_target.pnfsid = ?", pnfsid);
