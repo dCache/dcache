@@ -63,11 +63,13 @@ import static org.dcache.services.bulk.job.AbstractRequestContainerJob.findAbsol
 import static org.dcache.services.bulk.util.BulkRequestTarget.computeFsPath;
 
 import com.google.common.base.Strings;
+import com.google.common.base.Throwables;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.Message;
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.Reply;
@@ -81,10 +83,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
+import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.CellStub;
+import org.dcache.cells.HAServiceLeadershipManager;
 import org.dcache.cells.MessageReply;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.services.bulk.BulkRequest.Depth;
@@ -101,7 +105,8 @@ import org.springframework.beans.factory.annotation.Required;
 /**
  * Bulk service façade.  Handles incoming messages.  Handles restart reloading.
  */
-public final class BulkService implements CellLifeCycleAware, CellMessageReceiver {
+public final class BulkService implements CellLifeCycleAware, CellMessageReceiver,
+      LeaderLatchListener {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkService.class);
     private static final String TARGET_COUNT_ERROR_FORMAT = "The number of targets %s exceeds "
@@ -120,13 +125,17 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
     private BulkTargetStore targetStore;
     private BulkSubmissionHandler submissionHandler;
     private BulkServiceStatistics statistics;
+    private HAServiceLeadershipManager leadershipManager;
     private ExecutorService incomingExecutorService;
     private CellStub namespace;
+    private CellStub endpoint;
     private Depth allowedDepth;
     private int maxRequestsPerUser;
     private int maxFlatTargets;
     private int maxShallowTargets;
     private int maxRecursiveTargets;
+
+    private boolean initialized;
 
     @Override
     public void afterStart() {
@@ -141,8 +150,23 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
          *  is necessary for processing request targets.
          */
         waitForNamespace();
+    }
 
+    @Override
+    public synchronized void isLeader() {
+        LOGGER.info("isLeader called");
         incomingExecutorService.execute(() -> initialize());
+    }
+
+    @Override
+    public synchronized void notLeader() {
+        LOGGER.info("notLeader called");
+        try {
+            incomingExecutorService.execute(() -> parkService());
+        } catch (Exception e) {
+            LOGGER.error("notLeader: {}, cause: {}.",
+                  e.getMessage(), String.valueOf(Throwables.getRootCause(e)));
+        }
     }
 
     public Reply messageArrived(BulkRequestMessage message) {
@@ -150,22 +174,27 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
         MessageReply<Message> reply = new MessageReply<>();
         incomingExecutorService.execute(() -> {
             try {
-                BulkRequest request = message.getRequest();
-                Subject subject = message.getSubject();
-                Restriction restriction = message.getRestriction();
-                checkQuota(subject);
-                String uid = UUID.randomUUID().toString();
-                request.setUid(uid);
-                checkRestrictions(restriction, uid);
-                checkActivity(request);
-                checkDepthConstraints(request);
-                requestStore.store(subject, restriction, request);
-                statistics.incrementRequestsReceived(request.getActivity());
-                requestManager.signal();
-                message.setRequestUrl(request.getUrlPrefix() + "/" + request.getUid());
-                reply.reply(message);
+                if (!leadershipManager.hasLeadership()) {
+                    relayToLeader(message, reply);
+                } else {
+                    BulkRequest request = message.getRequest();
+                    Subject subject = message.getSubject();
+                    Restriction restriction = message.getRestriction();
+                    checkQuota(subject);
+                    String uid = UUID.randomUUID().toString();
+                    request.setUid(uid);
+                    checkRestrictions(restriction, uid);
+                    checkActivity(request);
+                    checkDepthConstraints(request);
+                    requestStore.store(subject, restriction, request);
+                    statistics.incrementRequestsReceived(request.getActivity());
+                    requestManager.signal();
+                    message.setRequestUrl(request.getUrlPrefix() + "/" + request.getUid());
+                    reply.reply(message);
+                }
             } catch (BulkServiceException e) {
-                LOGGER.error("messageArrived(BulkRequestMessage) {}: {}", message, e.toString());
+                LOGGER.error("messageArrived(BulkRequestMessage) {}: {}", message,
+                      e.toString());
                 reply.fail(message, e);
             } catch (Exception e) {
                 reply.fail(message, e);
@@ -178,7 +207,6 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
 
     public Reply messageArrived(BulkRequestListMessage message) {
         LOGGER.trace("received BulkRequestListMessage {}", message);
-
         MessageReply<Message> reply = new MessageReply<>();
         incomingExecutorService.execute(() -> {
             try {
@@ -203,7 +231,6 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
 
     public Reply messageArrived(BulkRequestStatusMessage message) {
         LOGGER.trace("received BulkRequestStatusMessage {}", message);
-
         MessageReply<Message> reply = new MessageReply<>();
         incomingExecutorService.execute(() -> {
             Subject subject = message.getSubject();
@@ -234,26 +261,29 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
 
     public Reply messageArrived(BulkRequestCancelMessage message) {
         LOGGER.trace("received BulkRequestCancelMessage {}", message);
-
         MessageReply<Message> reply = new MessageReply<>();
         incomingExecutorService.execute(() -> {
             try {
-                Subject subject = message.getSubject();
-                String uuid = message.getRequestUuid();
-                /*
-                 *  First check to see if the request corresponds to a stored one.
-                 */
-                requestStore.getKey(uuid);
-                checkRestrictions(message.getRestriction(), uuid);
-                matchActivity(message.getActivity(), uuid);
-                List<String> targetPaths = message.getTargetPaths();
-                if (targetPaths == null || targetPaths.isEmpty()) {
-                    submissionHandler.cancelRequest(subject, uuid);
+                if (!leadershipManager.hasLeadership()) {
+                    relayToLeader(message, reply);
                 } else {
-                    validateTargets(uuid, subject, targetPaths);
-                    submissionHandler.cancelTargets(subject, uuid, targetPaths);
+                    Subject subject = message.getSubject();
+                    String uuid = message.getRequestUuid();
+                    /*
+                     *  First check to see if the request corresponds to a stored one.
+                     */
+                    requestStore.getKey(uuid);
+                    checkRestrictions(message.getRestriction(), uuid);
+                    matchActivity(message.getActivity(), uuid);
+                    List<String> targetPaths = message.getTargetPaths();
+                    if (targetPaths == null || targetPaths.isEmpty()) {
+                        submissionHandler.cancelRequest(subject, uuid);
+                    } else {
+                        validateTargets(uuid, subject, targetPaths);
+                        submissionHandler.cancelTargets(subject, uuid, targetPaths);
+                    }
+                    reply.reply(message);
                 }
-                reply.reply(message);
             } catch (BulkServiceException e) {
                 LOGGER.error("messageArrived(BulkRequestCancelMessage) {}: {}", message,
                       e.toString());
@@ -267,22 +297,29 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
         return reply;
     }
 
+    public static void main(String[] args) {
+        System.out.println(Long.parseLong("60000L"));
+    }
+
     public Reply messageArrived(BulkRequestClearMessage message) {
         LOGGER.trace("received BulkRequestClearMessage {}", message);
-
         MessageReply<Message> reply = new MessageReply<>();
         incomingExecutorService.execute(() -> {
             try {
-                String uuid = message.getRequestUuid();
-                Subject subject = message.getSubject();
-                /*
-                 *  First check to see if the request corresponds to a stored one.
-                 */
-                requestStore.getKey(uuid);
-                checkRestrictions(message.getRestriction(), uuid);
-                matchActivity(message.getActivity(), uuid);
-                submissionHandler.clearRequest(subject, uuid, message.isCancelIfRunning());
-                reply.reply(message);
+                if (!leadershipManager.hasLeadership()) {
+                    relayToLeader(message, reply);
+                } else {
+                    String uuid = message.getRequestUuid();
+                    Subject subject = message.getSubject();
+                    /*
+                     *  First check to see if the request corresponds to a stored one.
+                     */
+                    requestStore.getKey(uuid);
+                    checkRestrictions(message.getRestriction(), uuid);
+                    matchActivity(message.getActivity(), uuid);
+                    submissionHandler.clearRequest(subject, uuid, message.isCancelIfRunning());
+                    reply.reply(message);
+                }
             } catch (BulkServiceException e) {
                 LOGGER.error("messageArrived(BulkRequestClearMessage) {}: {}", message,
                       e.toString());
@@ -298,7 +335,6 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
 
     public Reply messageArrived(BulkArchivedRequestInfoMessage message) {
         LOGGER.trace("received BulkArchivedRequestInfoMessage {}", message);
-
         MessageReply<Message> reply = new MessageReply<>();
         incomingExecutorService.execute(() -> {
             try {
@@ -322,7 +358,6 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
 
     public Reply messageArrived(BulkArchivedSummaryInfoMessage message) {
         LOGGER.trace("received BulkArchivedSummaryInfoMessage {}", message);
-
         MessageReply<Message> reply = new MessageReply<>();
         incomingExecutorService.execute(() -> {
             try {
@@ -366,6 +401,16 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
     @Required
     public synchronized void setAllowedDepth(Depth allowedDepth) {
         this.allowedDepth = allowedDepth;
+    }
+
+    @Required
+    public void setEndpointStub(CellStub endpoint) {
+        this.endpoint = endpoint;
+    }
+
+    @Required
+    public void setLeadershipManager(HAServiceLeadershipManager leadershipManager) {
+        this.leadershipManager = leadershipManager;
     }
 
     @Required
@@ -432,6 +477,22 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
         String activity = request.getActivity();
         if (!activityFactory.isValidActivity(activity)) {
             throw new BulkServiceException(activity + " is not a recognized activity.");
+        }
+    }
+
+    private <M extends Message> void relayToLeader(M message, MessageReply<M> reply)
+          throws Exception {
+        CellAddressCore cellAddressCore = leadershipManager.getLeaderAddress();
+        endpoint.setDestination(cellAddressCore.toString());
+        Message response = endpoint.sendAndWait(message);
+        if (response.getReturnCode() != 0) {
+            Object error = response.getErrorObject();
+            if (error instanceof Exception) {
+                throw (Exception) error;
+            }
+            throw new Exception(String.valueOf(error));
+        } else {
+            reply.reply(message);
         }
     }
 
@@ -515,7 +576,12 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
         }
     }
 
-    private void initialize() {
+    private synchronized void initialize() {
+        if (initialized) {
+            LOGGER.info("Service already initialized.");
+            return;
+        }
+
         /*
          * See store specifics for how reload is handled, but the minimal contract is
          * that all incomplete requests be reset to the QUEUED state.
@@ -542,6 +608,25 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
         requestManager.signal();
 
         LOGGER.info("Service startup completed.");
+
+        initialized = true;
+    }
+
+    private synchronized void parkService() {
+        if (!initialized) {
+            LOGGER.info("Service already parked.");
+            return;
+        }
+
+        LOGGER.info("Stopping the job manager.");
+        try {
+            requestManager.shutdown();
+        } catch (Exception e) {
+            LOGGER.error("parkService error: {}, {}.",
+                  e.getMessage(), String.valueOf(Throwables.getRootCause(e)));
+        }
+
+        initialized = false;
     }
 
     private void matchActivity(String activity, String uuid)

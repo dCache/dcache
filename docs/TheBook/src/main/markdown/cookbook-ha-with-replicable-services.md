@@ -256,3 +256,19 @@ information. Requests will be load balanced over available instances of `topo`.
 This service collects nightly statistics about available pools. One can have
 multiple instances of `statistics` and each instance will collect the same
 information.
+
+### `bulk`
+
+This service processes bulk requests for pinning/unpinning, staging/releasing,
+file deletion and qos updating or manipulation.  It does not directly affect
+transfers, but is perhaps more critical than the other services in this group
+because it supports the `REST` API.
+
+Bulk is fully replicable. All instances *_must_* share the same database instance.
+The configuration should be synchronized such that all instances are configured
+the same way.
+
+Request querying is load-balanced over the physical instances, but only the
+leader instance is responsible for submission, cancelling or clearing requests,
+and only the leader actually processes them (i.e., runs the request container
+servicing the request).

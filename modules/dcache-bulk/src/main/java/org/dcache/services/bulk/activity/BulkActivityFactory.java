@@ -115,6 +115,8 @@ public final class BulkActivityFactory implements CellMessageSender, Environment
     private QoSResponseReceiver qoSResponseReceiver;
     private CellEndpoint endpoint;
 
+    private boolean initialized;
+
     /**
      * Generates an instance of the plugin-specific activity to be used by the request jobs.
      *
@@ -157,13 +159,16 @@ public final class BulkActivityFactory implements CellMessageSender, Environment
     }
 
     public void initialize() {
-        ServiceLoader<BulkActivityProvider> serviceLoader
-              = ServiceLoader.load(BulkActivityProvider.class);
-        for (BulkActivityProvider provider : serviceLoader) {
-            String activity = provider.getActivity();
-            provider.setMaxPermits(maxPermits.get(activity));
-            provider.configure(environment);
-            providers.put(provider.getActivity(), provider);
+        if (!initialized) {
+            ServiceLoader<BulkActivityProvider> serviceLoader
+                  = ServiceLoader.load(BulkActivityProvider.class);
+            for (BulkActivityProvider provider : serviceLoader) {
+                String activity = provider.getActivity();
+                provider.setMaxPermits(maxPermits.get(activity));
+                provider.configure(environment);
+                providers.put(provider.getActivity(), provider);
+            }
+            initialized = true;
         }
     }
 
