@@ -123,15 +123,12 @@ public class AnnotatedCommandExecutor implements CommandExecutor {
             for (Handler handler : _handlers) {
                 handler.apply(command, arguments);
             }
+            return command.call();
         } catch (IllegalAccessException e) {
             throw new RuntimeException("This is a bug. Please notify " +
                   "support@dcache.org", e);
         } catch (IllegalArgumentException e) {
             throw new CommandSyntaxException(e.getMessage());
-        }
-
-        try {
-            return command.call();
         } catch (CommandException e) {
             throw e;
         } catch (RuntimeException e) {
