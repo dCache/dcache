@@ -38,6 +38,8 @@ check -strong bulk.service.poolmanager.timeout.unit
 check -strong bulk.service.qos
 check -strong bulk.service.qos.timeout
 check -strong bulk.service.qos.timeout.unit
+check -strong bulk.service.ha-leader.timeout
+check -strong bulk.service.ha-leader.timeout.unit
 check -strong bulk.pool-monitor.topic
 check -strong bulk.qos-transition-topic
 check -strong bulk.db.connections.max

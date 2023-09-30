@@ -90,6 +90,11 @@ public interface BulkRequestManager extends SignalAware {
     void cancelTargets(String id, List<String> targetPaths);
 
     /**
+     * Should wipe out any in-memory request state.
+     */
+    void shutdown() throws Exception;
+
+    /**
      * Implementation-specific.
      */
     void initialize() throws Exception;
