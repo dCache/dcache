@@ -62,6 +62,7 @@ package org.dcache.services.bulk.store;
 import com.google.common.collect.ListMultimap;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
@@ -154,6 +155,11 @@ public interface BulkRequestStore {
      * @throws BulkStorageException
      */
     int countNonTerminated(String user) throws BulkStorageException;
+
+    /**
+     * @return a map of the combined results of target counts grouped by state.
+     */
+    Map<String, Long> countsByStatus();
 
     /**
      * @param filter optional filter on the request.

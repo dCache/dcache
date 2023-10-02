@@ -296,6 +296,11 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
     }
 
     @Override
+    public Map<String, Long> countsByStatus() {
+        return requestDao.countStatus();
+    }
+
+    @Override
     public Collection<BulkRequest> find(Optional<BulkRequestFilter> requestFilter, Integer limit)
           throws BulkStorageException {
         limit = limit == null ? Integer.MAX_VALUE : limit;

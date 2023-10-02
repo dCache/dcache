@@ -86,6 +86,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
@@ -1142,6 +1143,28 @@ public final class BulkServiceCommands implements CellCommandListener {
         @Override
         public String call() {
             return statistics.getOwnerCounts();
+        }
+    }
+
+    @Command(name = "status counts",
+          hint = "Display counts for requests and targets in various states.",
+          description = "Runs two database queries for actual counts.")
+    class StatusCounts implements Callable<String> {
+
+        @Override
+        public String call() {
+            Map<String, Long> requests = requestStore.countsByStatus();
+            Map<String, Long> targets = targetStore.countsByState();
+
+           return new StringBuilder()
+                 .append("---------- REQUESTS ----------\n")
+                 .append(String.format(FORMAT_COUNTS + "\n", "STATUS", "COUNT"))
+                 .append(requests.entrySet().stream().map(e -> String.format(FORMAT_COUNTS,
+                       e.getKey(), e.getValue())).collect(joining("\n")))
+                 .append("\n\n---------- TARGETS -----------\n")
+                 .append(String.format(FORMAT_COUNTS + "\n", "STATE", "COUNT"))
+                 .append(targets.entrySet().stream().map(e -> String.format(FORMAT_COUNTS,
+                       e.getKey(), e.getValue())).collect(joining("\n"))).toString();
         }
     }
 
