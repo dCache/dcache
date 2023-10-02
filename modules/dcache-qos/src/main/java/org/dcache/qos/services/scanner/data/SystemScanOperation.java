@@ -87,7 +87,6 @@ public final class SystemScanOperation extends ScanOperation<SystemScanTask> {
 
     long lastUpdate;
     long lastScan;
-    long[] minMaxIndices;
 
     SystemScanTask task;
     CacheException exception;
@@ -161,10 +160,6 @@ public final class SystemScanOperation extends ScanOperation<SystemScanTask> {
         LOGGER.trace("isComplete ? {} (runningTotal {}, completed = {}).",
               isComplete, runningTotal, completed);
         return isComplete;
-    }
-
-    boolean isFinal() {
-        return to >= minMaxIndices[1];
     }
 
     boolean isQos() {
