@@ -134,6 +134,10 @@ public final class JdbcBulkRequestDao extends JdbcDaoSupport {
         return utils.count(criterion, TABLE_NAME, this);
     }
 
+    public Map<String, Long> countStatus() {
+        return utils.countGrouped(where().classifier("status"), TABLE_NAME, this);
+    }
+
     /*
      * Should delete the jobs by cascading on the request id.
      */
