@@ -117,6 +117,10 @@ public final class JdbcRequestTargetDao extends JdbcDaoSupport {
 
     static final String JOINED_TABLE_NAMES_FOR_SELECT = SECONDARY_TABLE_NAME + ", " + TABLE_NAME;
 
+    static final String UIDS_OF_FAILED
+          = "SELECT r.uid FROM bulk_request r WHERE r.status = 'COMPLETED' AND EXISTS " +
+          "(SELECT * FROM request_target t WHERE r.id = t.rid AND t.state = 'FAILED')";
+
     static final ParameterizedPreparedStatementSetter<TargetPlaceholder> SETTER = (ps, target) -> {
         Instant now = Instant.now();
         ps.setInt(1, PID.INITIAL.ordinal());
@@ -162,6 +166,10 @@ public final class JdbcRequestTargetDao extends JdbcDaoSupport {
     public List<BulkRequestTarget> get(JdbcRequestTargetCriterion criterion, int limit) {
         return utils.get(getSelect(criterion), criterion, limit, tableNameForSelect(criterion),
               this, criterion.isJoined() ? this::toFullRequestTarget : this::toRequestTarget);
+    }
+
+    public List<String> getRequestsOfFailed() {
+        return getJdbcTemplate().queryForList(UIDS_OF_FAILED, String.class);
     }
 
     public Optional<KeyHolder> insert(JdbcRequestTargetUpdate update) {

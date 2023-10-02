@@ -278,6 +278,13 @@ public interface BulkRequestStore {
     void reset(String uid) throws BulkStorageException;
 
     /**
+     * Retry all requests that have FAILED targets.
+     *
+     * @throws BulkStorageException
+     */
+    int retryFailed() throws BulkStorageException;
+
+    /**
      * Store the request.
      *
      * @param subject     sending the request.
