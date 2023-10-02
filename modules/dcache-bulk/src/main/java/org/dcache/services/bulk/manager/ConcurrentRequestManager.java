@@ -72,6 +72,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -83,7 +84,7 @@ import org.dcache.services.bulk.BulkServiceException;
 import org.dcache.services.bulk.BulkStorageException;
 import org.dcache.services.bulk.handler.BulkRequestCompletionHandler;
 import org.dcache.services.bulk.handler.BulkSubmissionHandler;
-import org.dcache.services.bulk.job.AbstractRequestContainerJob;
+import org.dcache.services.bulk.job.BulkRequestContainerJob;
 import org.dcache.services.bulk.manager.scheduler.BulkRequestScheduler;
 import org.dcache.services.bulk.manager.scheduler.BulkSchedulerProvider;
 import org.dcache.services.bulk.store.BulkRequestStore;
@@ -168,15 +169,15 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
         private void broadcastTargetCancel() {
             List<String> toCancel;
 
-            synchronized (cancelledJobs) {
-                toCancel = cancelledJobs.stream().collect(Collectors.toList());
-                cancelledJobs.clear();
+            synchronized (cancelledTargets) {
+                toCancel = cancelledTargets.stream().collect(Collectors.toList());
+                cancelledTargets.clear();
             }
 
             synchronized (requestJobs) {
                 toCancel.forEach(key -> {
                     String[] ridId = BulkRequestTarget.parse(key);
-                    AbstractRequestContainerJob job = requestJobs.get(ridId[0]);
+                    BulkRequestContainerJob job = requestJobs.get(ridId[0]);
                     if (job != null) {
                         long id = Long.valueOf(ridId[1]);
                         job.cancel(id);
@@ -216,7 +217,7 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
 
         @GuardedBy("requestJobs")
         private boolean isTerminated(String rid) {
-            AbstractRequestContainerJob job = requestJobs.get(rid);
+            BulkRequestContainerJob job = requestJobs.get(rid);
             if (job != null && job.getTarget().getState() == State.CANCELLED) {
                 return completionHandler.checkTerminated(rid, true);
             }
@@ -245,7 +246,7 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
              *   immediately started.
              */
             synchronized (requestJobs) {
-                requestJobs.values().stream().filter(AbstractRequestContainerJob::isReady)
+                requestJobs.values().stream().filter(BulkRequestContainerJob::isReady)
                       .forEach(ConcurrentRequestManager.this::startJob);
             }
         }
@@ -309,6 +310,11 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
     private ExecutorService processorExecutorService;
 
     /**
+     * Thread dedicated to jobs.
+     */
+    private ExecutorService pooledExecutorService;
+
+    /**
      * Records number of jobs and requests processed.
      */
     private BulkServiceStatistics statistics;
@@ -327,12 +333,12 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
     /**
      * Held for the lifetime of the container run.
      */
-    private Map<String, AbstractRequestContainerJob> requestJobs;
+    private Map<String, BulkRequestContainerJob> requestJobs;
 
     /**
      * Ids of jobs cancelled individually. To avoid doing cancellation on the calling thread.
      */
-    private Collection<String> cancelledJobs;
+    private Collection<String> cancelledTargets;
 
     /**
      * Handles the promotion of jobs to running.
@@ -347,16 +353,18 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
     @Override
     public void initialize() throws Exception {
         requestJobs = new LinkedHashMap<>();
-        cancelledJobs = new HashSet<>();
+        cancelledTargets = new HashSet<>();
         schedulerProvider.initialize();
         processor = new ConcurrentRequestProcessor(schedulerProvider.getRequestScheduler());
+        processorExecutorService = Executors.newSingleThreadScheduledExecutor();
+        pooledExecutorService = Executors.newCachedThreadPool();
         processorFuture = processorExecutorService.submit(processor);
     }
 
     @Override
     public void cancel(BulkRequestTarget target) {
-        synchronized (cancelledJobs) {
-            cancelledJobs.add(target.getKey());
+        synchronized (cancelledTargets) {
+            cancelledTargets.add(target.getKey());
         }
         processor.signal();
     }
@@ -364,7 +372,7 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
     @Override
     public boolean cancelRequest(String requestId) {
         synchronized (requestJobs) {
-            AbstractRequestContainerJob job = requestJobs.get(requestId);
+            BulkRequestContainerJob job = requestJobs.get(requestId);
             if (job != null) {
                 job.cancel();
                 processor.signal();
@@ -380,7 +388,7 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
     @Override
     public void cancelTargets(String id, List<String> targetPaths) {
         synchronized (requestJobs) {
-            AbstractRequestContainerJob job = requestJobs.get(id);
+            BulkRequestContainerJob job = requestJobs.get(id);
             if (job != null) {
                 targetPaths.forEach(job::cancel);
                 LOGGER.trace("{} request targets cancelled for {}.", targetPaths.size(), id);
@@ -398,7 +406,7 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
             processorFuture.cancel(true);
         }
         requestJobs = null;
-        cancelledJobs = null;
+        cancelledTargets = null;
         requestStore.clearCache();
     }
 
@@ -425,11 +433,6 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
     @Required
     public void setMaxActiveRequests(int maxActiveRequests) {
         this.maxActiveRequests = maxActiveRequests;
-    }
-
-    @Required
-    public void setProcessorExecutorService(ExecutorService processorExecutorService) {
-        this.processorExecutorService = processorExecutorService;
     }
 
     @Required
@@ -474,7 +477,7 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
     }
 
     @Override
-    public void submit(AbstractRequestContainerJob job) {
+    public void submit(BulkRequestContainerJob job) {
         synchronized (requestJobs) {
             requestJobs.put(job.getTarget().getRuid(), job);
         }
@@ -511,16 +514,16 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
         }
     }
 
-    void startJob(AbstractRequestContainerJob job) {
+    void startJob(BulkRequestContainerJob job) {
         String key = job.getTarget().getKey();
-        long id = job.getTarget().getId();
         LOGGER.trace("submitting job {} to executor, target {}.", key,
               job.getTarget());
+        job.setExecutor(pooledExecutorService);
         job.setCallback(this);
         try {
             if (isJobValid(job)) { /* possibly cancelled in flight */
                 job.update(State.RUNNING);
-                job.getActivity().getActivityExecutor().submit(new FireAndForgetTask(job));
+                pooledExecutorService.submit(new FireAndForgetTask(job));
             }
         } catch (RuntimeException e) {
             job.getTarget().setErrorObject(e);
@@ -535,7 +538,7 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
      *  This is here mostly in order to catch jobs which have changed state on the fly
      *  during cancellation. It is only called by the processor thread (when it invokes startJob).
      */
-    private boolean isJobValid(AbstractRequestContainerJob job) {
+    private boolean isJobValid(BulkRequestContainerJob job) {
         BulkRequestTarget target = job.getTarget();
 
         if (target.isTerminated()) {

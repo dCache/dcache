@@ -73,7 +73,6 @@ public abstract class BulkActivityProvider<J extends BulkActivity> {
 
     protected final String activity;
     protected final TargetType targetType;
-    protected int maxPermits;
 
     protected BulkActivityProvider(String activity, TargetType targetType) {
         this.activity = activity;
@@ -88,14 +87,6 @@ public abstract class BulkActivityProvider<J extends BulkActivity> {
         return targetType;
     }
 
-    public int getMaxPermits() {
-        return maxPermits;
-    }
-
-    public void setMaxPermits(int maxPermits) {
-        this.maxPermits = maxPermits;
-    }
-
     /**
      * @return an instance of the specific activity type to be configured by factory.
      *
@@ -103,7 +94,6 @@ public abstract class BulkActivityProvider<J extends BulkActivity> {
      */
     public J createActivity() throws BulkServiceException {
         J activity = activityInstance();
-        activity.setMaxPermits(maxPermits);
         activity.setDescriptors(getDescriptors());
         return activity;
     }

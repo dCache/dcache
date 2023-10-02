@@ -64,6 +64,7 @@ import static org.dcache.services.bulk.util.BulkRequestTarget.ROOT_REQUEST_PATH;
 
 import diskCacheV111.util.PnfsHandler;
 import java.util.Optional;
+import java.util.concurrent.Semaphore;
 import javax.security.auth.Subject;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.CellStub;
@@ -79,7 +80,6 @@ import org.dcache.services.bulk.util.BulkRequestTarget;
 import org.dcache.services.bulk.util.BulkRequestTarget.PID;
 import org.dcache.services.bulk.util.BulkRequestTargetBuilder;
 import org.dcache.services.bulk.util.BulkServiceStatistics;
-import org.dcache.util.BoundedExecutor;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
@@ -100,9 +100,10 @@ public final class RequestContainerJobFactory {
     private ListDirectoryHandler listHandler;
     private BulkTargetStore targetStore;
     private BulkServiceStatistics statistics;
-    private BoundedExecutor dirListExecutor;
+    private Semaphore dirListSemaphore;
+    private Semaphore inFlightSemaphore;
 
-    public AbstractRequestContainerJob createRequestJob(BulkRequest request)
+    public BulkRequestContainerJob createRequestJob(BulkRequest request)
           throws BulkServiceException {
         String rid = request.getUid();
         LOGGER.trace("createRequestJob {}", rid);
@@ -124,14 +125,23 @@ public final class RequestContainerJobFactory {
         pnfsHandler.setSubject(activity.getSubject());
 
         LOGGER.trace("createRequestJob {}, creating batch request job.", request.getUid());
-        AbstractRequestContainerJob containerJob
-              = new RequestContainerJob(activity, target, request, statistics);
+        BulkRequestContainerJob containerJob
+              = new BulkRequestContainerJob(activity, target, request, statistics);
         containerJob.setNamespaceHandler(pnfsHandler);
         containerJob.setTargetStore(targetStore);
         containerJob.setListHandler(listHandler);
-        containerJob.setDirListExecutor(dirListExecutor);
+        containerJob.setDirListSemaphore(dirListSemaphore);
+        containerJob.setInFlightSemaphore(inFlightSemaphore);
         containerJob.initialize();
         return containerJob;
+    }
+
+    public int getDirListSemaphoreAvailable() {
+        return dirListSemaphore.availablePermits();
+    }
+
+    public int getInFlightSemaphoreAvailable() {
+        return inFlightSemaphore.availablePermits();
     }
 
     @Required
@@ -140,13 +150,18 @@ public final class RequestContainerJobFactory {
     }
 
     @Required
-    public void setDirListExecutor(BoundedExecutor dirListExecutor) {
-        this.dirListExecutor = dirListExecutor;
+    public void setListHandler(ListDirectoryHandler listHandler) {
+        this.listHandler = listHandler;
     }
 
     @Required
-    public void setListHandler(ListDirectoryHandler listHandler) {
-        this.listHandler = listHandler;
+    public void setDirListSemaphore(int permits) {
+        dirListSemaphore = new Semaphore(permits);
+    }
+
+    @Required
+    public void setInFlightSemaphore(int permits) {
+        inFlightSemaphore = new Semaphore(permits);
     }
 
     @Required

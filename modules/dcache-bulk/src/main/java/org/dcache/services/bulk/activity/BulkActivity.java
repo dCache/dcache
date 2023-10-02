@@ -65,14 +65,13 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import javax.security.auth.Subject;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.services.bulk.BulkServiceException;
 import org.dcache.services.bulk.activity.retry.BulkTargetRetryPolicy;
 import org.dcache.services.bulk.activity.retry.NoRetryPolicy;
-import org.dcache.services.bulk.util.BatchedResult;
 import org.dcache.services.bulk.util.BulkRequestTarget;
 import org.dcache.vehicles.FileAttributes;
 
@@ -98,34 +97,22 @@ public abstract class BulkActivity<R> {
 
     private static final BulkTargetRetryPolicy DEFAULT_RETRY_POLICY = new NoRetryPolicy();
 
-    private static final int DEFAULT_PERMITS = 50;
-
     protected final String name;
     protected final TargetType targetType;
 
     protected Subject subject;
     protected Restriction restriction;
-    protected Set<FileAttribute> requiredAttributes;
-    protected int maxPermits;
-    protected ExecutorService activityExecutor;
-    protected ExecutorService callbackExecutor;
     protected BulkTargetRetryPolicy retryPolicy;
     protected Set<BulkActivityArgumentDescriptor> descriptors;
 
     protected BulkActivity(String name, TargetType targetType) {
         this.name = name;
         this.targetType = targetType;
-        requiredAttributes = MINIMALLY_REQUIRED_ATTRIBUTES;
-        maxPermits = DEFAULT_PERMITS;
         retryPolicy = DEFAULT_RETRY_POLICY;
     }
 
     public void cancel(BulkRequestTarget target) {
         target.cancel();
-    }
-
-    public int getMaxPermits() {
-        return maxPermits;
     }
 
     public String getName() {
@@ -144,10 +131,6 @@ public abstract class BulkActivity<R> {
         return targetType;
     }
 
-    public Set<FileAttribute> getRequiredAttributes() {
-        return requiredAttributes;
-    }
-
     public Subject getSubject() {
         return subject;
     }
@@ -164,37 +147,8 @@ public abstract class BulkActivity<R> {
         this.restriction = restriction;
     }
 
-    public ExecutorService getActivityExecutor() {
-        return activityExecutor;
-    }
-
-    public void setActivityExecutor(ExecutorService activityExecutor) {
-        this.activityExecutor = activityExecutor;
-    }
-
-    public ExecutorService getCallbackExecutor() {
-        return callbackExecutor;
-    }
-
-    public void setCallbackExecutor(ExecutorService callbackExecutor) {
-        this.callbackExecutor = callbackExecutor;
-    }
-
     public void setDescriptors(Set<BulkActivityArgumentDescriptor> descriptors) {
         this.descriptors = descriptors;
-    }
-
-    public void setMaxPermits(int maxPermits) {
-        this.maxPermits = maxPermits;
-    }
-
-    /**
-     * Completion handler method. Calls the internal implementation.
-     *
-     * @param result of the targeted activity.
-     */
-    public void handleCompletion(BatchedResult<R> result) {
-        handleCompletion(result.getTarget(), result.getFuture());
     }
 
     /**
@@ -223,5 +177,5 @@ public abstract class BulkActivity<R> {
      * @param target which has terminate.
      * @param future the future returned by the activity call to perform();
      */
-    protected abstract void handleCompletion(BulkRequestTarget target, ListenableFuture<R> future);
+    public abstract void handleCompletion(BulkRequestTarget target, Future<R> future);
 }

@@ -70,7 +70,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
-import java.util.concurrent.ExecutorService;
 import javax.security.auth.Subject;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restriction;
@@ -102,9 +101,6 @@ public final class BulkActivityFactory implements CellMessageSender, Environment
           new HashMap<>());
 
     private Map<String, BulkTargetRetryPolicy> retryPolicies;
-    private Map<String, ExecutorService> activityExecutors;
-    private Map<String, ExecutorService> callbackExecutors;
-    private Map<String, Integer> maxPermits;
     private Map<String, Object> environment;
 
     private CellStub pnfsManager;
@@ -142,8 +138,6 @@ public final class BulkActivityFactory implements CellMessageSender, Environment
         bulkActivity.setSubject(subject);
         bulkActivity.setRestriction(restriction);
 
-        bulkActivity.setActivityExecutor(activityExecutors.get(activity));
-        bulkActivity.setCallbackExecutor(callbackExecutors.get(activity));
         BulkTargetRetryPolicy retryPolicy = retryPolicies.get(activity);
         if (retryPolicy != null) {
             bulkActivity.setRetryPolicy(retryPolicy);
@@ -163,8 +157,6 @@ public final class BulkActivityFactory implements CellMessageSender, Environment
             ServiceLoader<BulkActivityProvider> serviceLoader
                   = ServiceLoader.load(BulkActivityProvider.class);
             for (BulkActivityProvider provider : serviceLoader) {
-                String activity = provider.getActivity();
-                provider.setMaxPermits(maxPermits.get(activity));
                 provider.configure(environment);
                 providers.put(provider.getActivity(), provider);
             }
@@ -216,23 +208,8 @@ public final class BulkActivityFactory implements CellMessageSender, Environment
     }
 
     @Required
-    public void setMaxPermits(Map<String, Integer> maxPermits) {
-        this.maxPermits = maxPermits;
-    }
-
-    @Required
     public void setRetryPolicies(Map<String, BulkTargetRetryPolicy> retryPolicies) {
         this.retryPolicies = retryPolicies;
-    }
-
-    @Required
-    public void setActivityExecutors(Map<String, ExecutorService> activityExecutors) {
-        this.activityExecutors = activityExecutors;
-    }
-
-    @Required
-    public void setCallbackExecutors(Map<String, ExecutorService> callbackExecutors) {
-        this.callbackExecutors = callbackExecutors;
     }
 
     @Override

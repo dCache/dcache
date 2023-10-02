@@ -75,6 +75,7 @@ import diskCacheV111.vehicles.Message;
 import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import org.dcache.cells.CellStub;
 import org.dcache.pinmanager.PinManagerAware;
 import org.dcache.pinmanager.PinManagerPinMessage;
@@ -104,7 +105,7 @@ abstract class PinManagerActivity extends BulkActivity<Message> implements PinMa
     }
 
     @Override
-    protected void handleCompletion(BulkRequestTarget target, ListenableFuture<Message> future) {
+    public void handleCompletion(BulkRequestTarget target, Future<Message> future) {
         Message reply;
         try {
             reply = getUninterruptibly(future);

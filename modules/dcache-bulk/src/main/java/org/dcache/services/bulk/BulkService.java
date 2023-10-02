@@ -59,7 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk;
 
-import static org.dcache.services.bulk.job.AbstractRequestContainerJob.findAbsolutePath;
+import static org.dcache.services.bulk.job.BulkRequestContainerJob.findAbsolutePath;
 import static org.dcache.services.bulk.util.BulkRequestTarget.computeFsPath;
 
 import com.google.common.base.Strings;
