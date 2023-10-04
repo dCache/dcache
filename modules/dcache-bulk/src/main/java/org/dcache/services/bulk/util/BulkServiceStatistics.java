@@ -78,6 +78,8 @@ import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import org.dcache.services.bulk.job.RequestContainerJobFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Provides activity statistics via the CellInfo interface.
@@ -105,6 +107,7 @@ public final class BulkServiceStatistics implements CellInfoProvider {
     private static final String LAST_SWEEP = "Last job sweep at %s";
     private static final String LAST_SWEEP_DURATION = "Last job sweep took %s seconds";
     private static final String STATS_FORMAT = "%-20s :    %10s";
+    private static final String CONCURRENCY_FORMAT = "%-45s :  %10s";
 
     private final Date started = new Date();
 
@@ -119,6 +122,8 @@ public final class BulkServiceStatistics implements CellInfoProvider {
           FAILED.name(), new AtomicLong(0L),
           SKIPPED.name(), new AtomicLong(0L));
 
+
+    private RequestContainerJobFactory factory;
     private long lastSweep = started.getTime();
     private long lastSweepDuration = 0;
 
@@ -172,6 +177,12 @@ public final class BulkServiceStatistics implements CellInfoProvider {
         pw.println("---------------- REQUESTS  (current) -----------------");
         pw.println(String.format(STATS_FORMAT, "Active", activeRequests.get()));
         pw.println();
+
+        pw.println(String.format(CONCURRENCY_FORMAT, "Available permits for directory listing",
+              factory.getDirListSemaphoreAvailable()));
+        pw.println(String.format(CONCURRENCY_FORMAT, "Available permits for in-flight targets",
+              factory.getInFlightSemaphoreAvailable()));
+        pw.println();
     }
 
     public String getOwnerCounts() {
@@ -214,6 +225,11 @@ public final class BulkServiceStatistics implements CellInfoProvider {
 
     public void setActive(int count) {
         activeRequests.set(count);
+    }
+
+    @Required
+    public void setRequestContainerJobFactory(RequestContainerJobFactory factory) {
+        this.factory = factory;
     }
 
     public void sweepFinished(long duration) {

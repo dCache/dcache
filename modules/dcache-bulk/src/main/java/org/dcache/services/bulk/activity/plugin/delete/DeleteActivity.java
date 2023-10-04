@@ -71,6 +71,7 @@ import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import org.dcache.namespace.FileType;
 import org.dcache.services.bulk.activity.BulkActivity;
 import org.dcache.services.bulk.util.BulkRequestTarget;
@@ -105,8 +106,8 @@ public final class DeleteActivity extends BulkActivity<PnfsDeleteEntryMessage> i
     }
 
     @Override
-    protected void handleCompletion(BulkRequestTarget target,
-          ListenableFuture<PnfsDeleteEntryMessage> future) {
+    public void handleCompletion(BulkRequestTarget target,
+          Future<PnfsDeleteEntryMessage> future) {
         PnfsDeleteEntryMessage reply;
         try {
             reply = getUninterruptibly(future);
