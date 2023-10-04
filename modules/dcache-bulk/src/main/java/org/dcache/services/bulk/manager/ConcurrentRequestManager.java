@@ -72,6 +72,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -129,6 +130,7 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
         @Override
         public void run() {
             try {
+                signals.set(0);
                 while (!Thread.interrupted()) {
                     doRun();
                     await();
@@ -337,13 +339,18 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
      */
     private ConcurrentRequestProcessor processor;
 
+    /**
+     * For clearing state (=> HA).
+     */
+    private Future processorFuture;
+
     @Override
     public void initialize() throws Exception {
         requestJobs = new LinkedHashMap<>();
         cancelledJobs = new HashSet<>();
         schedulerProvider.initialize();
         processor = new ConcurrentRequestProcessor(schedulerProvider.getRequestScheduler());
-        processorExecutorService.execute(processor);
+        processorFuture = processorExecutorService.submit(processor);
     }
 
     @Override
@@ -383,6 +390,16 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
                       id);
             }
         }
+    }
+
+    @Override
+    public void shutdown() throws Exception {
+        if (processorFuture != null) {
+            processorFuture.cancel(true);
+        }
+        requestJobs = null;
+        cancelledJobs = null;
+        requestStore.clearCache();
     }
 
     @Override

@@ -38,6 +38,12 @@
     <property name="timeoutUnit" value="${bulk.service.qos.timeout.unit}"/>
   </bean>
 
+  <bean id="ha-leader-stub" class="org.dcache.cells.CellStub">
+    <description>Endpoint communication stub</description>
+    <property name="timeout" value="${bulk.service.ha-leader.timeout}"/>
+    <property name="timeoutUnit" value="${bulk.service.ha-leader.timeout.unit}"/>
+  </bean>
+
   <bean id="pool-monitor" class="org.dcache.poolmanager.RemotePoolMonitor">
     <description>Maintains runtime information about all pools</description>
     <property name="poolManagerStub" ref="pool-manager-stub"/>
@@ -125,6 +131,7 @@
                 <entry key="transactionIsolation" value="TRANSACTION_READ_COMMITTED"/>
                 <entry key="minimumIdle" value="${bulk.db.connections.idle}"/>
                 <entry key="maximumPoolSize" value="${bulk.db.connections.max}"/>
+                <entry key="connectionTimeout" value="60000"/>
               </map>
             </property>
           </bean>
@@ -187,7 +194,6 @@
     <property name="capacity" value="${bulk.limits.container-processing-threads}"/>
     <property name="statistics" ref="statistics"/>
     <property name="pnfsManager" ref="pnfs-manager-stub"/>
-    <property name="bulkUtils" ref="bulk-jdbc-dao-utils"/>
   </bean>
 
   <bean id="target-store" class="org.dcache.services.bulk.store.jdbc.rtarget.JdbcBulkTargetStore">
@@ -317,6 +323,8 @@
     <property name="submissionHandler" ref="request-handler"/>
     <property name="requestManager" ref="request-manager"/>
     <property name="targetStore" ref="target-store"/>
+    <property name="leadershipManager" ref="ha-service-leadership-manager"/>
+    <property name="endpointStub" ref="ha-leader-stub"/>
   </bean>
 
   <bean id="admin-commands" class="org.dcache.services.bulk.BulkServiceCommands">
@@ -351,7 +359,7 @@
   </bean>
 
   <bean id="request-archiver" class="org.dcache.services.bulk.store.jdbc.request.JdbcBulkRequestArchiver"
-    init-method="reset" destroy-method="shutdown">
+    destroy-method="shutdown">
     <property name="requestDao" ref="bulk-request-dao"/>
     <property name="requestStore" ref="request-store"/>
     <property name="archiverScheduler">
@@ -363,5 +371,24 @@
     <property name="archiverPeriodUnit" value="${bulk.limits.archiver-period.unit}"/>
     <property name="archiverWindow" value="${bulk.limits.archiver-window}"/>
     <property name="archiverWindowUnit" value="${bulk.limits.archiver-window.unit}"/>
+  </bean>
+
+  <bean id="ha-service-leadership-manager" class="org.dcache.cells.HAServiceLeadershipManager"
+    init-method="initZkLeaderListener" destroy-method="shutdown">
+    <description>Coordinates which bulk service handles the requests</description>
+    <constructor-arg value="bulk"/>
+    <property name="leadershipListener">
+      <ref bean="leaderlistener-group"/>
+    </property>
+  </bean>
+
+  <bean id="leaderlistener-group" class="org.dcache.cells.LeadershipListenerGroup">
+    <description>Propagates leadership change notifications to managed listeners</description>
+    <property name="leaderElectionAwareComponents">
+      <set>
+        <ref bean="bulk-service"/>
+        <ref bean="request-archiver"/>
+      </set>
+    </property>
   </bean>
 </beans>

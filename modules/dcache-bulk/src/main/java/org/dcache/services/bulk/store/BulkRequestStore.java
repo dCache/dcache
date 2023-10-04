@@ -254,6 +254,11 @@ public interface BulkRequestStore {
     boolean isRequestSubject(Subject subject, String uid) throws BulkStorageException;
 
     /**
+     * Clear all entries from memory. (May be a NOP).
+     */
+    void clearCache() throws BulkStorageException;
+
+    /**
      * Load the store into memory. (May be a NOP).
      */
     void load() throws BulkStorageException;

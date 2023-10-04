@@ -114,7 +114,6 @@ import org.dcache.services.bulk.BulkRequestSummary;
 import org.dcache.services.bulk.BulkRequestTargetInfo;
 import org.dcache.services.bulk.BulkStorageException;
 import org.dcache.services.bulk.store.BulkRequestStore;
-import org.dcache.services.bulk.store.jdbc.JdbcBulkDaoUtils;
 import org.dcache.services.bulk.store.jdbc.rtarget.JdbcBulkTargetStore;
 import org.dcache.services.bulk.store.jdbc.rtarget.JdbcRequestTargetDao;
 import org.dcache.services.bulk.util.BulkRequestFilter;
@@ -160,7 +159,6 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
     private JdbcBulkRequestPermissionsDao requestPermissionsDao;
     private JdbcBulkTargetStore targetStore;
     private JdbcRequestTargetDao requestTargetDao;
-    private JdbcBulkDaoUtils utils;
     private long expiry;
     private TimeUnit expiryUnit;
     private long capacity;
@@ -473,6 +471,11 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
                     .equals(BulkRequestStore.uidGidKey(requestSubject.get()));
     }
 
+    @Override
+    public void clearCache() throws BulkStorageException {
+        requestCache.invalidateAll();
+    }
+
     /**
      * With the RDBMS implementation of the store, the following applies on restart:
      * <p>
@@ -550,11 +553,6 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
     @Required
     public void setArchiveDao(JdbcBulkArchiveDao archiveDao) {
         this.archiveDao = archiveDao;
-    }
-
-    @Required
-    public void setBulkUtils(JdbcBulkDaoUtils utils) {
-        this.utils = utils;
     }
 
     @Required

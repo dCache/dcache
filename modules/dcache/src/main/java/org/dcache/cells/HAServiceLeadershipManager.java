@@ -80,6 +80,10 @@ public class HAServiceLeadershipManager implements CellIdentityAware, CellComman
         this.leadershipListener = leadershipListener;
     }
 
+    public CellAddressCore getLeaderAddress() throws Exception {
+        return new CellAddressCore(zkLeaderLatch.getLeader().getId());
+    }
+
     public void shutdown() {
         if (zkLeaderLatch != null) {
             CloseableUtils.closeQuietly(zkLeaderLatch);

@@ -70,6 +70,7 @@ import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.dcache.services.bulk.BulkRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,7 +81,7 @@ import org.springframework.beans.factory.annotation.Required;
  * completed.  This involves storing a serialized request info object and deleting the entry from
  * the main tables.
  */
-public class JdbcBulkRequestArchiver implements Runnable, CellInfoProvider {
+public class JdbcBulkRequestArchiver implements Runnable, CellInfoProvider, LeaderLatchListener {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JdbcBulkRequestArchiver.class);
 
@@ -95,6 +96,7 @@ public class JdbcBulkRequestArchiver implements Runnable, CellInfoProvider {
     private TimeUnit archiverWindowUnit;
     private ScheduledFuture<?> future;
     private long lastRunCompleted;
+    private boolean leader;
 
     @Override
     public void getInfo(PrintWriter pw) {
@@ -122,12 +124,32 @@ public class JdbcBulkRequestArchiver implements Runnable, CellInfoProvider {
     }
 
     public synchronized void runNow() {
+        if (!leader) {
+            return;
+        }
+
         if (future != null) {
             future.cancel(true);
         }
+
         archiverScheduler.submit(this);
+
         future = archiverScheduler.scheduleAtFixedRate(this, archiverPeriod, archiverPeriod,
               archiverPeriodUnit);
+    }
+
+    @Override
+    public synchronized void isLeader() {
+        leader = true;
+        reset();
+    }
+
+    @Override
+    public synchronized void notLeader() {
+        leader = false;
+        if (future != null) {
+            future.cancel(true);
+        }
     }
 
     @Override
