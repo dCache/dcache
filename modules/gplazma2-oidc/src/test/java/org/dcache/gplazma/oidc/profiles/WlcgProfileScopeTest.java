@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2020-2022 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2020-2023 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,8 +17,6 @@
  */
 package org.dcache.gplazma.oidc.profiles;
 
-import org.dcache.gplazma.oidc.profiles.WlcgProfileScope;
-
 import static org.dcache.auth.attributes.Activity.DOWNLOAD;
 import static org.dcache.auth.attributes.Activity.LIST;
 import static org.dcache.auth.attributes.Activity.READ_METADATA;
@@ -34,6 +32,11 @@ import org.dcache.auth.attributes.MultiTargetedRestriction.Authorisation;
 import org.junit.Test;
 
 public class WlcgProfileScopeTest {
+
+    @Test(expected=InvalidScopeException.class)
+    public void shouldRejectUnknownScope() {
+        new WlcgProfileScope("unknown-value");
+    }
 
     @Test
     public void shouldIdentifyStorageReadScope() {
@@ -56,7 +59,41 @@ public class WlcgProfileScopeTest {
     }
 
     @Test
-    public void shouldParseReadScope() {
+    public void shouldIdentifyComputeReadScope() {
+        assertTrue(WlcgProfileScope.isWlcgProfileScope("compute.read"));
+    }
+
+    @Test
+    public void shouldIdentifyComputeModifyScope() {
+        assertTrue(WlcgProfileScope.isWlcgProfileScope("compute.modify"));
+    }
+
+    @Test
+    public void shouldIdentifyComputeCreateScope() {
+        assertTrue(WlcgProfileScope.isWlcgProfileScope("compute.create"));
+    }
+
+    @Test
+    public void shouldIdentifyComputeCancelScope() {
+        assertTrue(WlcgProfileScope.isWlcgProfileScope("compute.cancel"));
+    }
+
+    @Test
+    public void shouldParseReadScopeWithoutResourcePath() {
+        WlcgProfileScope scope = new WlcgProfileScope("storage.read");
+
+        Optional<Authorisation> maybeAuth = scope.authorisation(FsPath.create("/VOs/wlcg"));
+
+        assertTrue(maybeAuth.isPresent());
+
+        Authorisation auth = maybeAuth.get();
+
+        assertThat(auth.getPath(), equalTo(FsPath.create("/VOs/wlcg")));
+        assertThat(auth.getActivity(), containsInAnyOrder(LIST, READ_METADATA, DOWNLOAD));
+    }
+
+    @Test
+    public void shouldParseReadScopeWithRootResourcePath() {
         WlcgProfileScope scope = new WlcgProfileScope("storage.read:/");
 
         Optional<Authorisation> maybeAuth = scope.authorisation(FsPath.create("/VOs/wlcg"));
@@ -67,5 +104,60 @@ public class WlcgProfileScopeTest {
 
         assertThat(auth.getPath(), equalTo(FsPath.create("/VOs/wlcg")));
         assertThat(auth.getActivity(), containsInAnyOrder(LIST, READ_METADATA, DOWNLOAD));
+    }
+
+    @Test
+    public void shouldParseReadScopeWithNonRootResourcePath() {
+        WlcgProfileScope scope = new WlcgProfileScope("storage.read:/foo");
+
+        Optional<Authorisation> maybeAuth = scope.authorisation(FsPath.create("/VOs/wlcg"));
+
+        assertTrue(maybeAuth.isPresent());
+
+        Authorisation auth = maybeAuth.get();
+
+        assertThat(auth.getPath(), equalTo(FsPath.create("/VOs/wlcg/foo")));
+        assertThat(auth.getActivity(), containsInAnyOrder(LIST, READ_METADATA, DOWNLOAD));
+    }
+
+    @Test(expected=InvalidScopeException.class)
+    public void shouldRejectReadScopeWithRelativeResourcePath() {
+        new WlcgProfileScope("storage.read:foo");
+    }
+
+    @Test
+    public void shouldParseComputeReadScope() {
+        WlcgProfileScope scope = new WlcgProfileScope("compute.read");
+
+        Optional<Authorisation> maybeAuth = scope.authorisation(FsPath.create("/VOs/wlcg"));
+
+        assertTrue(maybeAuth.isEmpty());
+    }
+
+    @Test
+    public void shouldParseComputeModifyScope() {
+        WlcgProfileScope scope = new WlcgProfileScope("compute.modify");
+
+        Optional<Authorisation> maybeAuth = scope.authorisation(FsPath.create("/VOs/wlcg"));
+
+        assertTrue(maybeAuth.isEmpty());
+    }
+
+    @Test
+    public void shouldParseComputeCreateScope() {
+        WlcgProfileScope scope = new WlcgProfileScope("compute.create");
+
+        Optional<Authorisation> maybeAuth = scope.authorisation(FsPath.create("/VOs/wlcg"));
+
+        assertTrue(maybeAuth.isEmpty());
+    }
+
+    @Test
+    public void shouldParseComputeCancelScope() {
+        WlcgProfileScope scope = new WlcgProfileScope("compute.cancel");
+
+        Optional<Authorisation> maybeAuth = scope.authorisation(FsPath.create("/VOs/wlcg"));
+
+        assertTrue(maybeAuth.isEmpty());
     }
 }

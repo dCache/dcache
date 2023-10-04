@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2020-2022 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2020-2023 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -80,14 +80,37 @@ public class WlcgProfileScope implements AuthorisationSupplier {
          * Read the data, potentially causing data to be staged from a nearline resource to an
          * online resource. This is a superset of {@literal storage.read}.
          */
-        STAGE("storage.stage", LIST, READ_METADATA, DOWNLOAD); // FIXME need to allow staging.
+        STAGE("storage.stage", LIST, READ_METADATA, DOWNLOAD), // FIXME need to allow staging.
+
+        /**
+         * "Read" or query information about job status and attributes.
+         */
+        COMPUTE_READ("compute.read"),
+
+        /**
+         * Modify or change the attributes of an existing job.
+         */
+        COMPUTE_MODIFY("compute.modify"),
+
+        /**
+         * Create or submit a new job at the computing resource.
+         */
+        COMPUTE_CREATE("compute.create"),
+
+        /**
+         * Delete a job from the computing resource, potentially terminating
+         * a running job.
+         */
+        COMPUTE_CANCEL("compute.cancel");
 
         private final String label;
         private final EnumSet<Activity> allowedActivities;
 
         private Operation(String label, Activity... allowedActivities) {
             this.label = label;
-            this.allowedActivities = EnumSet.copyOf(asList(allowedActivities));
+            this.allowedActivities = allowedActivities.length == 0
+                    ? EnumSet.noneOf(Activity.class)
+                    : EnumSet.copyOf(asList(allowedActivities));
         }
 
         public String getLabel() {
@@ -116,16 +139,20 @@ public class WlcgProfileScope implements AuthorisationSupplier {
 
     public WlcgProfileScope(String scope) {
         int colon = scope.indexOf(':');
-        checkScopeValid(colon != -1, "Missing ':' in scope");
 
-        String operationLabel = scope.substring(0, colon);
+        String operationLabel = colon == -1 ? scope : scope.substring(0, colon);
+
         operation = OPERATIONS_BY_LABEL.get(operationLabel);
         checkScopeValid(operation != null, "Unknown operation %s", operationLabel);
 
-        String scopePath = scope.substring(colon + 1);
-        checkScopeValid(scopePath.startsWith("/"), "Path does not start with /");
+        if (colon == -1) {
+            path = "/";
+        } else {
+            String scopePath = scope.substring(colon + 1);
+            checkScopeValid(scopePath.startsWith("/"), "Path does not start with /");
 
-        path = URI.create(scopePath).getPath();
+            path = URI.create(scopePath).getPath();
+        }
 
         LOGGER.debug("WlcgProfileScope created from scope \"{}\": op={} path={}",
               scope, operation, path);
@@ -133,12 +160,17 @@ public class WlcgProfileScope implements AuthorisationSupplier {
 
     public static boolean isWlcgProfileScope(String scope) {
         int colon = scope.indexOf(':');
-        return colon >= MINIMUM_LABEL_SIZE
-              && OPERATIONS_BY_LABEL.keySet().contains(scope.substring(0, colon));
+        String authz = colon == -1 ? scope : scope.substring(0, colon);
+        return authz.length() >= MINIMUM_LABEL_SIZE
+              && OPERATIONS_BY_LABEL.keySet().contains(authz);
     }
 
     @Override
     public Optional<MultiTargetedRestriction.Authorisation> authorisation(FsPath prefix) {
+        if (operation.allowedActivities.isEmpty()) {
+            return Optional.empty();
+        }
+
         FsPath absPath = prefix.resolve(path.substring(1));
         LOGGER.debug("WlcgProfileScope authorising {} with prefix \"{}\" to path {}",
               prefix, operation.allowedActivities, absPath);
