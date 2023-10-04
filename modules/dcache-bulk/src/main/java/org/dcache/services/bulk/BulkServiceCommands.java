@@ -1063,6 +1063,26 @@ public final class BulkServiceCommands implements CellCommandListener {
         }
     }
 
+    @Command(name = "request retry failed",
+          hint = "Retry only those requests which have failed targets.",
+          description = "Calls reset on the requests matching this criterion.")
+    class RequestRetryFailed implements Callable<String> {
+
+        @Override
+        public String call() throws Exception {
+            executor.submit(()-> {
+                try {
+                    int count = requestStore.retryFailed();
+                    LOGGER.info("{} requests with failed targets have been reset.", count);
+                } catch (BulkStorageException e) {
+                    LOGGER.error("could not reset failed: {}.", e.toString());
+                }
+            });
+
+            return "Resetting requests with failed targets.";
+        }
+    }
+
     @Command(name = "request submit",
           hint = "Launch a bulk request.",
           description = "Command-line version of the RESTful request.")

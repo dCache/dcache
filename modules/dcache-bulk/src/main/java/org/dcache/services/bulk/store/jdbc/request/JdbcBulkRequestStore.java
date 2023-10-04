@@ -71,6 +71,7 @@ import static org.dcache.services.bulk.util.BulkRequestTarget.PID.INITIAL;
 import static org.dcache.services.bulk.util.BulkRequestTarget.PLACEHOLDER_PNFSID;
 import static org.dcache.services.bulk.util.BulkRequestTarget.ROOT_REQUEST_PATH;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.CREATED;
+import static org.dcache.services.bulk.util.BulkRequestTarget.State.FAILED;
 
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
@@ -93,6 +94,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
@@ -119,7 +121,6 @@ import org.dcache.services.bulk.store.jdbc.rtarget.JdbcRequestTargetDao;
 import org.dcache.services.bulk.util.BulkRequestFilter;
 import org.dcache.services.bulk.util.BulkRequestTarget;
 import org.dcache.services.bulk.util.BulkRequestTarget.PID;
-import org.dcache.services.bulk.util.BulkRequestTarget.State;
 import org.dcache.services.bulk.util.BulkRequestTargetBuilder;
 import org.dcache.services.bulk.util.BulkServiceStatistics;
 import org.dcache.vehicles.FileAttributes;
@@ -555,6 +556,17 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
         }
     }
 
+    @Override
+    public int retryFailed() throws BulkStorageException {
+        AtomicInteger count = new AtomicInteger(0);
+        List<String> uids = requestTargetDao.getRequestsOfFailed();
+        for (String uid: uids) {
+            reset(uid);
+            count.incrementAndGet();
+        }
+        return count.get();
+    }
+
     @Required
     public void setArchiveDao(JdbcBulkArchiveDao archiveDao) {
         this.archiveDao = archiveDao;
@@ -790,7 +802,7 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
 
     private void conditionallyClearTerminalRequest(BulkRequest stored) {
         Long rid = stored.getId();
-        if (requestTargetDao.count(requestTargetDao.where().rid(rid).state(State.FAILED)) > 0) {
+        if (requestTargetDao.count(requestTargetDao.where().rid(rid).state(FAILED)) > 0) {
             if (stored.isClearOnFailure()) {
                 clear(stored.getUid());
             }
