@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -97,9 +98,9 @@ public class NfsProxyIoFactory implements ProxyIoFactory {
 
                     return adapter;
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    throw new CompletionException(e);
                   }});
-        } catch (RuntimeException e) {
+        } catch (CompletionException e) {
             if (e.getCause() != null) {
                 Throwable t = e.getCause();
                 _log.debug("failed to create IO adapter: {}", t.getMessage());

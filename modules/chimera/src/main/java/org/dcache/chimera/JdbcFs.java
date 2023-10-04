@@ -722,11 +722,11 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
             return _idCache.get(inode.ino(), (key) -> {
                 String id = _sqlDriver.getId(inode);
                 if (id == null) {
-                    throw new RuntimeException(FileNotFoundChimeraFsException.of(inode));
+                    throw new CompletionException(FileNotFoundChimeraFsException.of(inode));
                 }
                 return id;
             });
-        } catch (RuntimeException e) {
+        } catch (CompletionException e) {
             if (e.getCause() != null) {
                 Throwables.throwIfInstanceOf(e.getCause(), ChimeraFsException.class);
                 Throwables.throwIfInstanceOf(e.getCause(), DataAccessException.class);
@@ -743,11 +743,11 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
                 return new FsInode(this, _inoCache.get(id, (key) -> {
                     Long ino = _sqlDriver.getInumber(id);
                     if (ino == null) {
-                        throw new RuntimeException(FileNotFoundChimeraFsException.ofPnfsId(id));
+                        throw new CompletionException(FileNotFoundChimeraFsException.ofPnfsId(id));
                     }
                     return ino;
                 }));
-            } catch (RuntimeException e) {
+            } catch (CompletionException e) {
                 if (e.getCause() != null) {
                     Throwables.throwIfInstanceOf(e.getCause(), ChimeraFsException.class);
                     Throwables.throwIfInstanceOf(e.getCause(), DataAccessException.class);
