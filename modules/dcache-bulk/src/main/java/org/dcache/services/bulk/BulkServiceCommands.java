@@ -93,6 +93,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
@@ -181,7 +182,7 @@ public final class BulkServiceCommands implements CellCommandListener {
     /**
      * name | class | type | permits
      */
-    private static final String FORMAT_ACTIVITY = "%-20s | %100s | %7s | %10s ";
+    private static final String FORMAT_ACTIVITY = "%-20s | %100s | %7s ";
 
     /**
      * name | required | description
@@ -267,8 +268,7 @@ public final class BulkServiceCommands implements CellCommandListener {
         return String.format(FORMAT_ACTIVITY,
               entry.getKey(),
               provider.getActivityClass(),
-              provider.getTargetType(),
-              provider.getMaxPermits());
+              provider.getTargetType());
     }
 
     private static String formatArgument(BulkActivityArgumentDescriptor descriptor) {
@@ -550,7 +550,7 @@ public final class BulkServiceCommands implements CellCommandListener {
                 return "There are no mapped activities!";
             }
 
-            return String.format(FORMAT_ACTIVITY, "NAME", "CLASS", "TYPE", "PERMITS")
+            return String.format(FORMAT_ACTIVITY, "NAME", "CLASS", "TYPE")
                   + "\n" + activities;
         }
     }
@@ -1371,7 +1371,7 @@ public final class BulkServiceCommands implements CellCommandListener {
     private BulkActivityFactory activityFactory;
     private BulkTargetStore targetStore;
     private BulkServiceStatistics statistics;
-    private ExecutorService executor;
+    private ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private JdbcBulkArchiveDao archiveDao;
 
@@ -1388,11 +1388,6 @@ public final class BulkServiceCommands implements CellCommandListener {
     @Required
     public void setArchiveDao(JdbcBulkArchiveDao archiveDao) {
         this.archiveDao = archiveDao;
-    }
-
-    @Required
-    public void setExecutor(ExecutorService executor) {
-        this.executor = executor;
     }
 
     @Required

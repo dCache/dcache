@@ -76,15 +76,6 @@
     </constructor-arg>
   </bean>
 
-  <bean id="activity-callback-executor" class="org.dcache.util.CDCExecutorServiceDecorator">
-    <description>Used to execute the future callbacks to jobs which send and wait for replies.</description>
-    <constructor-arg>
-      <bean class="org.dcache.util.BoundedCachedExecutor">
-        <constructor-arg value="${bulk.limits.activity-callback-threads}"/>
-      </bean>
-    </constructor-arg>
-  </bean>
-
   <bean id="cancellation-executor" class="org.dcache.util.CDCScheduledExecutorServiceDecorator">
     <description>Used to cancel requests.</description>
     <constructor-arg>
@@ -92,26 +83,6 @@
         <constructor-arg value="${bulk.limits.cancellation-threads}"/>
       </bean>
     </constructor-arg>
-  </bean>
-
-  <bean id="manager-executor"  class="org.dcache.util.CDCExecutorServiceDecorator">
-    <constructor-arg>
-      <bean class="org.dcache.util.BoundedCachedExecutor">
-        <constructor-arg value="1"/>
-      </bean>
-    </constructor-arg>
-  </bean>
-
-  <bean id="reset-executor" class="org.dcache.util.CDCExecutorServiceDecorator">
-    <constructor-arg>
-      <bean class="org.dcache.util.BoundedCachedExecutor">
-        <constructor-arg value="1"/>
-      </bean>
-    </constructor-arg>
-  </bean>
-
-  <bean id="dir-list-executor" class="org.dcache.util.BoundedCachedExecutor">
-    <constructor-arg value="${bulk.limits.dir-list-threads}"/>
   </bean>
 
   <bean id="bulk-data-source" class="com.zaxxer.hikari.HikariDataSource">
@@ -215,39 +186,6 @@
     <property name="qoSResponseReceiver" ref="qos-response-receiver"/>
     <!-- while it is possible to specify these separately, for now,
          all activities share the same two executors -->
-    <property name="activityExecutors">
-      <map>
-        <entry key="DELETE" value-ref="container-job-executor"/>
-        <entry key="PIN" value-ref="container-job-executor"/>
-        <entry key="STAGE" value-ref="container-job-executor"/>
-        <entry key="UNPIN" value-ref="container-job-executor"/>
-        <entry key="RELEASE" value-ref="container-job-executor"/>
-        <entry key="UPDATE_QOS" value-ref="container-job-executor"/>
-        <entry key="LOG_TARGET" value-ref="container-job-executor"/>
-      </map>
-    </property>
-    <property name="callbackExecutors">
-      <map>
-        <entry key="DELETE" value-ref="activity-callback-executor"/>
-        <entry key="PIN" value-ref="activity-callback-executor"/>
-        <entry key="STAGE" value-ref="activity-callback-executor"/>
-        <entry key="UNPIN" value-ref="activity-callback-executor"/>
-        <entry key="RELEASE" value-ref="activity-callback-executor"/>
-        <entry key="UPDATE_QOS" value-ref="activity-callback-executor"/>
-        <entry key="LOG_TARGET" value-ref="activity-callback-executor"/>
-      </map>
-    </property>
-    <property name="maxPermits">
-      <map>
-        <entry key="DELETE" value="${bulk.plugin!delete.max-permits}"/>
-        <entry key="PIN" value="${bulk.plugin!pin.max-permits}"/>
-        <entry key="STAGE" value="${bulk.plugin!stage.max-permits}"/>
-        <entry key="UNPIN" value="${bulk.plugin!unpin.max-permits}"/>
-        <entry key="RELEASE" value="${bulk.plugin!release.max-permits}"/>
-        <entry key="UPDATE_QOS" value="${bulk.plugin!update-qos.max-permits}"/>
-        <entry key="LOG_TARGET" value="${bulk.plugin!log-target.max-permits}"/>
-      </map>
-    </property>
     <property name="retryPolicies">
       <map>
         <entry key="DELETE"><bean class="${bulk.plugin!delete.retry-policy}"/></entry>
@@ -269,11 +207,13 @@
     <property name="requestStore" ref="request-store"/>
     <property name="targetStore" ref="target-store"/>
     <property name="statistics" ref="statistics"/>
-    <property name="dirListExecutor" ref="dir-list-executor"/>
+    <property name="dirListSemaphore" value="${bulk.limits.dir-list-semaphore}"/>
+    <property name="inFlightSemaphore" value="${bulk.limits.in-flight-semaphore}"/>
   </bean>
 
   <bean id="statistics" class="org.dcache.services.bulk.util.BulkServiceStatistics">
     <description>Tracks request and target states (counts), sweeper state, etc.</description>
+    <property name="requestContainerJobFactory" ref="job-factory"/>
   </bean>
 
   <bean id="request-handler" class="org.dcache.services.bulk.handler.BulkRequestHandler">
@@ -302,7 +242,6 @@
     <property name="completionHandler" ref="request-handler"/>
     <property name="submissionHandler" ref="request-handler"/>
     <property name="schedulerProvider" ref="scheduler-provider"/>
-    <property name="processorExecutorService" ref="manager-executor"/>
     <property name="maxActiveRequests" value="${bulk.limits.container-processing-threads}"/>
     <property name="timeout" value="${bulk.limits.sweep-interval}"/>
     <property name="timeoutUnit" value="${bulk.limits.sweep-interval.unit}"/>
@@ -336,7 +275,6 @@
     <property name="requestManager" ref="request-manager"/>
     <property name="submissionHandler" ref="request-handler"/>
     <property name="statistics" ref="statistics"/>
-    <property name="executor" ref="reset-executor"/>
     <property name="archiver" ref="request-archiver"/>
     <property name="archiveDao" ref="bulk-archive-dao"/>
   </bean>
@@ -346,11 +284,7 @@
       <list>
         <ref bean="incoming-thread-executor"/>
         <ref bean="container-job-executor"/>
-        <ref bean="activity-callback-executor"/>
         <ref bean="cancellation-executor"/>
-        <ref bean="manager-executor"/>
-        <ref bean="reset-executor"/>
-        <ref bean="dir-list-executor"/>
       </list>
     </property>
     <property name="dataSource" ref="bulk-data-source"/>

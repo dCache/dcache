@@ -76,6 +76,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import org.dcache.cells.CellStub;
 import org.dcache.qos.QoSException;
 import org.dcache.qos.data.FileQoSRequirements;
@@ -197,7 +198,7 @@ public class UpdateQoSActivity extends BulkActivity<QoSTransitionCompletedMessag
 
     @Override
     public void handleCompletion(BulkRequestTarget target,
-          ListenableFuture<QoSTransitionCompletedMessage> future) {
+          Future<QoSTransitionCompletedMessage> future) {
         QoSTransitionCompletedMessage message;
         try {
             message = getUninterruptibly(future);

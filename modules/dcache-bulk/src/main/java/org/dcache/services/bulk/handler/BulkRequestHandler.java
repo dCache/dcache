@@ -74,7 +74,7 @@ import org.dcache.services.bulk.BulkRequestNotFoundException;
 import org.dcache.services.bulk.BulkRequestStatus;
 import org.dcache.services.bulk.BulkServiceException;
 import org.dcache.services.bulk.BulkStorageException;
-import org.dcache.services.bulk.job.AbstractRequestContainerJob;
+import org.dcache.services.bulk.job.BulkRequestContainerJob;
 import org.dcache.services.bulk.job.RequestContainerJobFactory;
 import org.dcache.services.bulk.manager.BulkRequestManager;
 import org.dcache.services.bulk.store.BulkRequestStore;
@@ -210,7 +210,7 @@ public final class BulkRequestHandler implements BulkSubmissionHandler,
 
     @Override
     public void submitRequestJob(BulkRequest request) throws BulkServiceException {
-        AbstractRequestContainerJob job = jobFactory.createRequestJob(request);
+        BulkRequestContainerJob job = jobFactory.createRequestJob(request);
         if (storeJobTarget(job.getTarget())) {
             requestManager.submit(job);
         }

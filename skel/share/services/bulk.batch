@@ -8,10 +8,8 @@ check -strong bulk.cell.subscribe
 check -strong bulk.allowed-directory-expansion
 check -strong bulk.request-scheduler
 check -strong bulk.limits.container-processing-threads
-check -strong bulk.limits.activity-callback-threads
 check -strong bulk.limits.incoming-request-threads
 check -strong bulk.limits.cancellation-threads
-check -strong bulk.limits.dir-list-threads
 check -strong bulk.limits.request-cache-expiration
 check -strong bulk.limits.request-cache-expiration.unit
 check -strong bulk.limits.max-requests-per-user
@@ -26,6 +24,8 @@ check -strong bulk.limits.archiver-period
 check -strong bulk.limits.archiver-period.unit
 check -strong bulk.limits.archiver-window
 check -strong bulk.limits.archiver-window.unit
+check -strong bulk.limits.dir-list-semaphore
+check -strong bulk.limits.in-flight-semaphore
 check -strong bulk.service.pnfsmanager
 check -strong bulk.service.pnfsmanager.timeout
 check -strong bulk.service.pnfsmanager.timeout.unit
@@ -51,17 +51,10 @@ check -strong bulk.db.password
 check -strong bulk.db.password.file
 check -strong bulk.db.schema.auto
 check -strong bulk.db.fetch-size
-check -strong bulk.plugin!delete.max-permits
-check -strong bulk.plugin!pin.max-permits
 check -strong bulk.plugin!pin.default-lifetime
 check -strong bulk.plugin!pin.default-lifetime.unit
-check -strong bulk.plugin!stage.max-permits
 check -strong bulk.plugin!stage.default-lifetime
 check -strong bulk.plugin!stage.default-lifetime.unit
-check -strong bulk.plugin!unpin.max-permits
-check -strong bulk.plugin!release.max-permits
-check -strong bulk.plugin!update-qos.max-permits
-check -strong bulk.plugin!log-target.max-permits
 check -strong bulk.plugin!delete.retry-policy
 check -strong bulk.plugin!pin.retry-policy
 check -strong bulk.plugin!stage.retry-policy

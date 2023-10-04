@@ -90,25 +90,8 @@ a different id. The default lifetime is five minutes (the same as for the NFS do
 the [QoS Engine](config-qos-engine.md).
 - **LOG_TARGET** : logs metadata for each target at the INFO level.
 
-Each activity is associated with
-
-- a permit count (used in connection with a semaphore for throttling execution);
-- two thread queues, one for the execution of the container job,
-and the other for the execution of callbacks on activity futures;
-- a retry policy (currently the only retry policy is a NOP, i.e., no retry).
-
-The permits are configurable using either the property or the admin shell
-command ``request policy``.
-
+Each activity is associated with a retry policy (currently the only retry policy is a NOP, i.e., no retry).
 Should other retry policies become available, these can be set via a property.
-
-The number and distribution of thread executors is hard-coded for the activities, but their
-respective sizes can be adjusted using the properties:
-
-    ```
-    bulk.limits.container-processing-threads=110
-    bulk.limits.activity-callback-threads=50
-    ```
 
 ## Container Design
 

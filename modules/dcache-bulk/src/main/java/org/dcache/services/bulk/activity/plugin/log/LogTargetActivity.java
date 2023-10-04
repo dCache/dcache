@@ -63,6 +63,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import diskCacheV111.util.FsPath;
 import java.util.Map;
+import java.util.concurrent.Future;
 import org.dcache.services.bulk.activity.BulkActivity;
 import org.dcache.services.bulk.util.BulkRequestTarget;
 import org.dcache.services.bulk.util.BulkRequestTarget.State;
@@ -110,7 +111,7 @@ public final class LogTargetActivity extends BulkActivity<BulkRequestTarget> {
     }
 
     @Override
-    protected void handleCompletion(BulkRequestTarget target, ListenableFuture future) {
+    public void handleCompletion(BulkRequestTarget target, Future future) {
         target.setState(State.COMPLETED);
     }
 
