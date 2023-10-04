@@ -300,7 +300,7 @@ public final class JdbcBulkRequestDao extends JdbcDaoSupport {
               .clearOnSuccess(request.isClearOnSuccess()).clearOnFailure(request.isClearOnFailure())
               .depth(request.getExpandDirectories())
               .targetPrefix(request.getTargetPrefix()).urlPrefix(request.getUrlPrefix()).user(user)
-              .status(BulkRequestStatus.QUEUED).arrivedAt(System.currentTimeMillis());
+              .status(BulkRequestStatus.INCOMPLETE).arrivedAt(System.currentTimeMillis());
     }
 
     public JdbcBulkRequestCriterion where() {

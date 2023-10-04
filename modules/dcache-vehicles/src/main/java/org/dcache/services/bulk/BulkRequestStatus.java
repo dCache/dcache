@@ -60,6 +60,7 @@ documents or software obtained from this server.
 package org.dcache.services.bulk;
 
 public enum BulkRequestStatus {
+    INCOMPLETE("Request has been created but insertion is not yet complete."),
     QUEUED("Request has been submitted to the service and awaits processing."),
     STARTED("Request has been set to active and has begun processing."),
     COMPLETED("All targets of the request have reached terminal state."),
