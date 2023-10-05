@@ -692,14 +692,14 @@ curl -s -H "Accept: application/metalink4+xml" https://dcache.example.org/Users/
 |    &lt;size>174&lt;/size>
 |    &lt;hash type="sha-1">b95d5d20afb9a49d1d779ad3a6a246bd03bfef34&lt;/hash>
 |    &lt;hash type="md5">7128e02d3779f8ff5141b9f5ac003be4&lt;/hash>
-|    &lt;url>https://prometheus.desy.de/Users/paul/public%2Dfile&lt;/url>
+|    &lt;url>https://dcache.example.org/Users/paul/public%2Dfile&lt;/url>
 |    &lt;updated>2023-10-05T04:05:00.682Z&lt;/updated>
 |  &lt;/file>
 |  &lt;file name="private-file">
 |    &lt;size>145&lt;/size>
 |    &lt;hash type="sha-1">cfb51c36cbb348ead6b10588b84f5f9923737649&lt;/hash>
 |    &lt;hash type="md5">32f9a46c0b40d63222db11b8a46f0584&lt;/hash>
-|    &lt;url>https://prometheus.desy.de/Users/paul/private%2Dfile&lt;/url>
+|    &lt;url>https://dcache.example.org/Users/paul/private%2Dfile&lt;/url>
 |    &lt;updated>2023-10-05T04:05:01.438Z&lt;/updated>
 |  &lt;/file>
 |&lt;/metalink>
@@ -724,14 +724,14 @@ curl -s https://dcache.example.org/Users/paul/?type=metalink | xmllint -format -
 |    &lt;size>174&lt;/size>
 |    &lt;hash type="sha-1">b95d5d20afb9a49d1d779ad3a6a246bd03bfef34&lt;/hash>
 |    &lt;hash type="md5">7128e02d3779f8ff5141b9f5ac003be4&lt;/hash>
-|    &lt;url>https://prometheus.desy.de/Users/paul/public%2Dfile&lt;/url>
+|    &lt;url>https://dcache.example.org/Users/paul/public%2Dfile&lt;/url>
 |    &lt;updated>2023-10-05T04:05:00.682Z&lt;/updated>
 |  &lt;/file>
 |  &lt;file name="private-file">
 |    &lt;size>145&lt;/size>
 |    &lt;hash type="sha-1">cfb51c36cbb348ead6b10588b84f5f9923737649&lt;/hash>
 |    &lt;hash type="md5">32f9a46c0b40d63222db11b8a46f0584&lt;/hash>
-|    &lt;url>https://prometheus.desy.de/Users/paul/private%2Dfile&lt;/url>
+|    &lt;url>https://dcache.example.org/Users/paul/private%2Dfile&lt;/url>
 |    &lt;updated>2023-10-05T04:05:01.438Z&lt;/updated>
 |  &lt;/file>
 |&lt;/metalink>
@@ -746,8 +746,8 @@ response header has the relationship (`rel`) attribute value of
 `application/metalink4+xml`.
 
 ```console-user
-curl -s -I https://prometheus.desy.de/Users/paul/ | grep ^Link
-|Link: &lt;https://prometheus.desy.de/Users/paul/?type=metalink>; rel=describedby; type="application/metalink4+xml"
+curl -s -I https://dcache.example.org/Users/paul/ | grep ^Link
+|Link: &lt;https://dcache.example.org/Users/paul/?type=metalink>; rel=describedby; type="application/metalink4+xml"
 ```
 
 In the above example, curl issues an HTTP HEAD request that targets a
