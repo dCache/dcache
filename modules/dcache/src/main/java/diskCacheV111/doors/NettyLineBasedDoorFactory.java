@@ -138,8 +138,8 @@ public class NettyLineBasedDoorFactory extends AbstractService implements LoginC
 
         CellStub spaceManager = new CellStub(parentEndpoint, spaceManagerPath, 30_000);
         spaceDescriptionCache = ReservationCaches.buildOwnerDescriptionLookupCache(spaceManager,
-              executor).synchronous();
-        spaceLookupCache = ReservationCaches.buildSpaceLookupCache(spaceManager, executor).synchronous();
+              executor);
+        spaceLookupCache = ReservationCaches.buildSpaceLookupCache(spaceManager, executor);
 
         LoginStrategy loginStrategy = new RemoteLoginStrategy(
               new CellStub(parentEndpoint, gPlazma, 30_000));

@@ -72,6 +72,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import com.github.benmanes.caffeine.cache.AsyncCacheLoader;
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import diskCacheV111.services.space.Space;
 import diskCacheV111.services.space.message.GetSpaceMetaData;
 import diskCacheV111.services.space.message.GetSpaceTokens;
@@ -150,11 +151,11 @@ public class ReservationCaches {
     /**
      * Builds a loading cache for looking up space tokens by owner and description.
      */
-    public static AsyncLoadingCache<GetSpaceTokensKey, long[]> buildOwnerDescriptionLookupCache(
+    public static LoadingCache<GetSpaceTokensKey, long[]> buildOwnerDescriptionLookupCache(
           CellStub spaceManager, Executor executor) {
         return Caffeine.newBuilder().maximumSize(1000).expireAfterWrite(30, SECONDS)
               .refreshAfterWrite(10, SECONDS).recordStats().executor(executor)
-              .buildAsync(new AsyncCacheLoader<>() {
+              .buildAsync(new AsyncCacheLoader<GetSpaceTokensKey, long[]>() {
                   private GetSpaceTokens createRequest(GetSpaceTokensKey key) {
                       GetSpaceTokens message = new GetSpaceTokens(key.description);
                       message.setSubject(new Subject(true, key.principals, Collections.emptySet(),
@@ -203,13 +204,13 @@ public class ReservationCaches {
                             }, executor);
                       return future;
                   }
-              });
+              }).synchronous();
     }
 
     /**
      * Build a loading cache for looking up space reservations by space token.
      */
-    public static AsyncLoadingCache<String, Optional<Space>> buildSpaceLookupCache(
+    public static LoadingCache<String, Optional<Space>> buildSpaceLookupCache(
           CellStub spaceManager,
           Executor executor) {
         return Caffeine.newBuilder()
@@ -218,7 +219,7 @@ public class ReservationCaches {
               .refreshAfterWrite(30, SECONDS)
               .recordStats()
               .executor(executor)
-              .buildAsync(new AsyncCacheLoader<>() {
+              .buildAsync(new AsyncCacheLoader<String, Optional<Space>>() {
                   @Override
                   public CompletableFuture<Optional<Space>> asyncLoad(String token,
                         Executor executor)
@@ -253,13 +254,13 @@ public class ReservationCaches {
                             }, executor);
                       return future;
                   }
-              });
+              }).synchronous();
     }
 
     /**
      * Cache queries to discover if a directory has the "WriteToken" tag set.
      */
-    public static AsyncLoadingCache<FsPath, Optional<String>> buildWriteTokenLookupCache(
+    public static LoadingCache<FsPath, Optional<String>> buildWriteTokenLookupCache(
           PnfsHandler pnfs, Executor executor) {
         return Caffeine.newBuilder()
               .maximumSize(1000)
@@ -267,7 +268,7 @@ public class ReservationCaches {
               .refreshAfterWrite(5, MINUTES)
               .recordStats()
               .executor(executor)
-              .buildAsync(new AsyncCacheLoader<>() {
+              .buildAsync(new AsyncCacheLoader<FsPath, Optional<String>>() {
                   private Optional<String> writeToken(FileAttributes attr) {
                       StorageInfo info = attr.getStorageInfo();
                       return Optional.ofNullable(info.getMap().get("writeToken"));
@@ -306,6 +307,6 @@ public class ReservationCaches {
                             }, executor);
                       return future;
                   }
-              });
+              }).synchronous();
     }
 }
