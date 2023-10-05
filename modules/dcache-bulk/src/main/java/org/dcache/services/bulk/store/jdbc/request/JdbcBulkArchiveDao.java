@@ -132,6 +132,10 @@ public final class JdbcBulkArchiveDao extends JdbcDaoSupport {
         return utils.count(criterion, TABLE_NAME, this);
     }
 
+    public int delete(JdbcArchivedBulkRequestCriterion criterion) {
+        return utils.delete(criterion, TABLE_NAME, this);
+    }
+
     public List<BulkArchivedRequestInfo> get(JdbcArchivedBulkRequestCriterion criterion, int limit) {
        return utils.get(SELECT_INFO, criterion, limit, TABLE_NAME, this, infoRowMapper);
     }
