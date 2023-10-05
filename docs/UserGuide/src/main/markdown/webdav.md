@@ -747,7 +747,7 @@ response header has the relationship (`rel`) attribute value of
 
 ```console-user
 curl -s -I https://prometheus.desy.de/Users/paul/ | grep ^Link
-|Link: <https://prometheus.desy.de/Users/paul/?type=metalink>; rel=describedby; type="application/metalink4+xml"
+|Link: &lt;https://prometheus.desy.de/Users/paul/?type=metalink>; rel=describedby; type="application/metalink4+xml"
 ```
 
 In the above example, curl issues an HTTP HEAD request that targets a
