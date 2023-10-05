@@ -379,6 +379,10 @@ public final class BulkRequestContainerJob
         }
 
         void cancel() {
+            if (activityFuture != null) {
+                activityFuture.cancel(true);
+            }
+
             if (target != null) {
                 activity.cancel(target);
             }
