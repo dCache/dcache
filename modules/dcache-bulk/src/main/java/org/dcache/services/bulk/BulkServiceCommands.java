@@ -110,6 +110,7 @@ import org.dcache.services.bulk.handler.BulkSubmissionHandler;
 import org.dcache.services.bulk.manager.BulkRequestManager;
 import org.dcache.services.bulk.store.BulkRequestStore;
 import org.dcache.services.bulk.store.BulkTargetStore;
+import org.dcache.services.bulk.store.jdbc.request.JdbcArchivedBulkRequestCriterion;
 import org.dcache.services.bulk.store.jdbc.request.JdbcBulkArchiveDao;
 import org.dcache.services.bulk.store.jdbc.request.JdbcBulkRequestArchiver;
 import org.dcache.services.bulk.util.BulkRequestFilter;
@@ -667,10 +668,53 @@ public final class BulkServiceCommands implements CellCommandListener {
         }
     }
 
+    @Command(name = "request archived clear",
+          hint = "Clear archived requests",
+          description = ".")
+    class RequestArchivedClear implements Callable<String> {
+        @Option(name = "owner",
+              separator = ",",
+              usage = "The owner of the request.")
+        String[] owner;
+
+        @Option(name = "before",
+              valueSpec = DATE_FORMAT,
+              usage = "Select requests with last modified date-time before date-time.")
+        String before;
+
+        @Option(name = "after",
+              valueSpec = DATE_FORMAT,
+              usage = "Select requests with last modified date-time after date-time.")
+        String after;
+
+        @Option(name = "activity",
+              separator = ",",
+              usage = "The request activity.")
+        String[] activity;
+
+        @Option(name = "status",
+              valueSpec = "COMPLETED|CANCELLED",
+              separator = ",",
+              usage = "Status of the request.")
+        String[] status;
+
+        @Override
+        public String call() throws Exception {
+            JdbcArchivedBulkRequestCriterion criterion =
+                  archiveDao.where().modifiedBefore(getTimestamp(before))
+                  .modifiedAfter(getTimestamp(after)).owner(owner).activity(activity)
+                  .status(status);
+
+            int count = archiveDao.count(criterion);
+            executor.submit(() -> archiveDao.delete(criterion));
+            return "Removing " + count + " archived requests.";
+        }
+    }
+
     @Command(name = "request archived ls",
           hint = "List archived requests",
           description = "Display the uid, owner, last modified, activity and status for"
-                + "      the archived request.")
+                + "      the archived request, or just counts if option is true.")
     class RequestArchivedLs implements Callable<String> {
 
         @Option(name = "owner",
@@ -699,12 +743,23 @@ public final class BulkServiceCommands implements CellCommandListener {
               usage = "Status of the request.")
         String[] status;
 
+        @Option(name = "count",
+              usage = "return only the count of the matching requests.")
+        Boolean count = false;
+
         @Option(name = "limit",
               usage = "Return maximum of this many entries.")
         Integer limit = 5000;
 
         @Override
         public String call() throws Exception {
+            if (count) {
+                return String.valueOf(
+                      archiveDao.count(archiveDao.where().modifiedBefore(getTimestamp(before))
+                            .modifiedAfter(getTimestamp(after)).owner(owner).activity(activity)
+                            .status(status)));
+            }
+
             List<BulkArchivedSummaryInfo> list =
                   archiveDao.list(archiveDao.where().modifiedBefore(getTimestamp(before))
                         .modifiedAfter(getTimestamp(after)).owner(owner).activity(activity)
