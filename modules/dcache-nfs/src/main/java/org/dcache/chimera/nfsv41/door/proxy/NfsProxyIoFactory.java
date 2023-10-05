@@ -101,13 +101,9 @@ public class NfsProxyIoFactory implements ProxyIoFactory {
                     throw new CompletionException(e);
                   }});
         } catch (CompletionException e) {
-            if (e.getCause() != null) {
-                Throwable t = e.getCause();
-                _log.debug("failed to create IO adapter: {}", t.getMessage());
-                throw asNfsException(t, NfsIoException.class);
-            } else {
-                throw e;
-            }
+            Throwable t = e.getCause();
+            _log.debug("failed to create IO adapter: {}", t.getMessage());
+            throw asNfsException(t, NfsIoException.class);
         }
     }
 

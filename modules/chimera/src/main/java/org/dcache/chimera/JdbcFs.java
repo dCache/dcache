@@ -727,12 +727,10 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
                 return id;
             });
         } catch (CompletionException e) {
-            if (e.getCause() != null) {
-                Throwables.throwIfInstanceOf(e.getCause(), ChimeraFsException.class);
-                Throwables.throwIfInstanceOf(e.getCause(), DataAccessException.class);
-                Throwables.throwIfUnchecked(e.getCause());
-            }
-            throw e;
+            Throwables.throwIfInstanceOf(e.getCause(), ChimeraFsException.class);
+            Throwables.throwIfInstanceOf(e.getCause(), DataAccessException.class);
+            Throwables.throwIfUnchecked(e.getCause());
+            throw new RuntimeException(e.getCause());
         }
     }
 
@@ -748,11 +746,9 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
                     return ino;
                 }));
             } catch (CompletionException e) {
-                if (e.getCause() != null) {
-                    Throwables.throwIfInstanceOf(e.getCause(), ChimeraFsException.class);
-                    Throwables.throwIfInstanceOf(e.getCause(), DataAccessException.class);
-                    Throwables.throwIfUnchecked(e.getCause());
-                }
+                Throwables.throwIfInstanceOf(e.getCause(), ChimeraFsException.class);
+                Throwables.throwIfInstanceOf(e.getCause(), DataAccessException.class);
+                Throwables.throwIfUnchecked(e.getCause());
                 throw new RuntimeException(e.getCause());
             }
         } else {
