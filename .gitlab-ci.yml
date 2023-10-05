@@ -434,6 +434,18 @@ gsi_xroot_tests:
     - kubectl -n $K8S_NAMESPACE cp .ci/run-xroot-tests.sh xroot-tester:/run-xroot-tests.sh
     - kubectl -n $K8S_NAMESPACE exec xroot-tester -- /bin/sh /run-xroot-tests.sh
 
+webdav_with_x509_tests:
+  stage: testing
+  extends: .kubernetes_image
+  script:
+    - kubectl -n $K8S_NAMESPACE apply -f .ci/cvmfs-volume-storageclass-pvc.yaml
+    - kubectl -n $K8S_NAMESPACE apply -f .ci/webdav-wn-cvmfs.yaml
+    - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod webdav-tester; do sleep 1; done
+    - kubectl -n $K8S_NAMESPACE exec webdav-tester -- ls /cvmfs/grid.cern.ch/umd-c7wn-latest/etc/profile.d/setup-c7-wn-example.sh
+    - kubectl -n $K8S_NAMESPACE cp .ci/init-grid-ui.sh webdav-tester:/init-grid-ui.sh
+    - kubectl -n $K8S_NAMESPACE cp .ci/run-webdav-tests.sh webdav-tester:/run-webdav-tests.sh
+    - kubectl -n $K8S_NAMESPACE exec webdav-tester -- /bin/sh /run-webdav-tests.sh
+
 pynfs_tests:
   stage: testing
   extends: .kubernetes_image

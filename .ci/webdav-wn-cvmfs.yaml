@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: webdav-tester
+spec:
+  containers:
+    - name: tester
+      image: centos:7
+      imagePullPolicy: IfNotPresent
+      command: [ "/bin/sleep", "inf"]
+      volumeMounts:
+        - name: cvmfs
+          mountPath: /cvmfs
+          # CVMFS automount volumes must be mounted with HostToContainer mount propagation.
+          mountPropagation: HostToContainer
+  volumes:
+    - name: cvmfs
+      persistentVolumeClaim:
+        claimName: cvmfs
+
+
