@@ -484,6 +484,36 @@ public class WlcgProfileTest {
     }
 
     @Test
+    public void shouldAcceptComputeReadScopeWithDenyAllAuthz() throws Exception {
+        given(aWlcgProfile().withPrefix("/prefix"));
+
+        when(invoked().withIdP(anIp("MY-OP"))
+                .withStringClaim("wlcg.ver", "1.0")
+                .withStringClaim("scope", "openid compute.read"));
+
+        assertThat(principals, hasItem(any(ExemptFromNamespaceChecks.class)));
+        assertThat(restriction, isPresent());
+        Restriction r = restriction.get();
+        assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/my-file")));
+
+        assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/other/my-file")));
+
+        assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/prefix/my-file")));
+    }
+
+    @Test
     public void shouldIncludeAuthzIdentity() throws Exception {
         given(aWlcgProfile().withPrefix("/prefix")
                 .withAuthzIdentity(aSetOfPrincipals().withGroupname("authz-group"))
@@ -492,6 +522,20 @@ public class WlcgProfileTest {
         when(invoked().withIdP(anIp("MY-OP"))
                 .withStringClaim("wlcg.ver", "1.0")
                 .withStringClaim("scope", "openid storage.read:/"));
+
+        assertThat(principals, hasItem(new GroupNamePrincipal("authz-group")));
+        assertThat(principals, not(hasItem(new GroupNamePrincipal("non-authz-group"))));
+    }
+
+    @Test
+    public void shouldIncludeAuthzIdentityWhenAcceptingComputeReadScope() throws Exception {
+        given(aWlcgProfile().withPrefix("/prefix")
+                .withAuthzIdentity(aSetOfPrincipals().withGroupname("authz-group"))
+                .withNonAuthzIdentity(aSetOfPrincipals().withGroupname("non-authz-group")));
+
+        when(invoked().withIdP(anIp("MY-OP"))
+                .withStringClaim("wlcg.ver", "1.0")
+                .withStringClaim("scope", "openid compute.read"));
 
         assertThat(principals, hasItem(new GroupNamePrincipal("authz-group")));
         assertThat(principals, not(hasItem(new GroupNamePrincipal("non-authz-group"))));
