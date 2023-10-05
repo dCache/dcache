@@ -243,6 +243,16 @@
     <property name="submissionHandler" ref="request-handler"/>
     <property name="schedulerProvider" ref="scheduler-provider"/>
     <property name="maxActiveRequests" value="${bulk.limits.container-processing-threads}"/>
+    <property name="executor">
+      <bean class="org.dcache.util.BoundedCachedExecutor">
+        <constructor-arg value="${bulk.limits.in-flight-semaphore}"/>
+      </bean>
+    </property>
+    <property name="callbackExecutor">
+      <bean class="org.dcache.util.BoundedCachedExecutor">
+        <constructor-arg value="${bulk.db.connections.max}"/>
+      </bean>
+    </property>
     <property name="timeout" value="${bulk.limits.sweep-interval}"/>
     <property name="timeoutUnit" value="${bulk.limits.sweep-interval.unit}"/>
   </bean>

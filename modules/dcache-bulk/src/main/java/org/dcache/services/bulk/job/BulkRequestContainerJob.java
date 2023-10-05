@@ -73,7 +73,6 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.Range;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.MoreExecutors;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.NamespaceHandlerAware;
@@ -476,7 +475,7 @@ public final class BulkRequestContainerJob
                         remove();
                     }
                 }
-            }, MoreExecutors.directExecutor());
+            }, callbackExecutor);
         }
 
         /**
@@ -510,7 +509,7 @@ public final class BulkRequestContainerJob
                         remove();
                     }
                 }
-            }, MoreExecutors.directExecutor());
+            }, callbackExecutor);
         }
 
         /**
@@ -563,7 +562,7 @@ public final class BulkRequestContainerJob
             try {
                 activityFuture = activity.perform(ruid, id == null ? seqNo : id, path, attributes);
                 if (async) {
-                    activityFuture.addListener(() -> handleCompletion(), executor);
+                    activityFuture.addListener(() -> handleCompletion(), callbackExecutor);
                 }
             } catch (BulkServiceException | UnsupportedOperationException e) {
                 LOGGER.error("{}, perform failed for {}: {}", ruid, target, e.getMessage());
@@ -665,6 +664,7 @@ public final class BulkRequestContainerJob
     private SignalAware callback;
     private Thread runThread;
     private ExecutorService executor;
+    private ExecutorService callbackExecutor;
     private Semaphore dirListSemaphore;
     private Semaphore inFlightSemaphore;
 
@@ -833,6 +833,10 @@ public final class BulkRequestContainerJob
 
     public void setListHandler(ListDirectoryHandler listHandler) {
         this.listHandler = listHandler;
+    }
+
+    public void setCallbackExecutor(ExecutorService callbackExecutor) {
+        this.callbackExecutor = callbackExecutor;
     }
 
     public void setExecutor(ExecutorService executor) {

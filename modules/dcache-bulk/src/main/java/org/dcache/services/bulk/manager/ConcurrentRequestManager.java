@@ -92,6 +92,7 @@ import org.dcache.services.bulk.store.BulkTargetStore;
 import org.dcache.services.bulk.util.BulkRequestTarget;
 import org.dcache.services.bulk.util.BulkRequestTarget.State;
 import org.dcache.services.bulk.util.BulkServiceStatistics;
+import org.dcache.util.BoundedCachedExecutor;
 import org.dcache.util.FireAndForgetTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -310,9 +311,14 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
     private ExecutorService processorExecutorService;
 
     /**
+     * Thread dedicated to job callbacks.
+     */
+    private ExecutorService callbackExecutor;
+
+    /**
      * Thread dedicated to jobs.
      */
-    private ExecutorService pooledExecutorService;
+    private ExecutorService executorService;
 
     /**
      * Records number of jobs and requests processed.
@@ -357,7 +363,6 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
         schedulerProvider.initialize();
         processor = new ConcurrentRequestProcessor(schedulerProvider.getRequestScheduler());
         processorExecutorService = Executors.newSingleThreadScheduledExecutor();
-        pooledExecutorService = Executors.newCachedThreadPool();
         processorFuture = processorExecutorService.submit(processor);
     }
 
@@ -421,8 +426,18 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
     }
 
     @Required
+    public void setCallbackExecutor(BoundedCachedExecutor callbackExecutor) {
+        this.callbackExecutor = callbackExecutor;
+    }
+
+    @Required
     public void setCompletionHandler(BulkRequestCompletionHandler completionHandler) {
         this.completionHandler = completionHandler;
+    }
+
+    @Required
+    public void setExecutor(BoundedCachedExecutor pooledExecutor) {
+        this.executorService = pooledExecutor;
     }
 
     @Required
@@ -518,12 +533,13 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
         String key = job.getTarget().getKey();
         LOGGER.trace("submitting job {} to executor, target {}.", key,
               job.getTarget());
-        job.setExecutor(pooledExecutorService);
+        job.setExecutor(executorService);
+        job.setCallbackExecutor(callbackExecutor);
         job.setCallback(this);
         try {
             if (isJobValid(job)) { /* possibly cancelled in flight */
                 job.update(State.RUNNING);
-                pooledExecutorService.submit(new FireAndForgetTask(job));
+                executorService.submit(new FireAndForgetTask(job));
             }
         } catch (RuntimeException e) {
             job.getTarget().setErrorObject(e);
