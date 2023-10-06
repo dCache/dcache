@@ -25,6 +25,7 @@ import dmg.cells.nucleus.CellPath;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.nio.channels.CompletionHandler;
+import org.dcache.chimera.nfsv41.common.LegacyUtils;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.status.NfsIoException;
 import org.dcache.nfs.v4.NFS4State;
@@ -51,8 +52,13 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
           NfsTransferService nfsTransferService, PnfsHandler pnfsHandler) {
         super(handle, message, pathToDoor, nfsTransferService);
         _nfsTransferService = nfsTransferService;
-        org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateid = getProtocolInfo().stateId();
-        _state = new MoverState(null, new stateid4(legacyStateid.other, legacyStateid.seqid.value));
+
+        // REVISIT 11.0: remove drop legacy support
+        // stateid4 stateid = getProtocolInfo().stateId();
+        Object stateObject = getProtocolInfo().stateId();
+        stateid4 stateid = LegacyUtils.toStateid(stateObject);
+
+        _state = new MoverState(null, stateid);
         _namespace = pnfsHandler;
     }
 

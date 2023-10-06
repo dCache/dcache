@@ -89,6 +89,7 @@ import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.FsInodeType;
 import org.dcache.chimera.JdbcFs;
+import org.dcache.chimera.nfsv41.common.LegacyUtils;
 import org.dcache.chimera.nfsv41.common.StatsDecoratedOperationExecutor;
 import org.dcache.chimera.nfsv41.door.proxy.NfsProxyIoFactory;
 import org.dcache.chimera.nfsv41.door.proxy.ProxyIoFactory;
@@ -528,8 +529,7 @@ public class NFSv41Door extends AbstractCellComponent implements
      * and NFSv4.1 device id. Finally, notify waiting request that we have got
      * the reply for LAYOUTGET
      */
-    public void messageArrived(
-          PoolPassiveIoFileMessage<org.dcache.chimera.nfs.v4.xdr.stateid4> message) {
+    public void messageArrived(PoolPassiveIoFileMessage<?> message) {
 
         String poolName = message.getPoolName();
         long verifier = message.getVerifier();
@@ -539,9 +539,13 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         PoolDS device = _poolDeviceMap.getOrCreateDS(poolName, verifier, poolAddresses);
 
-        org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateid = message.challange();
-        NfsTransfer transfer = _transfers.get(
-              new stateid4(legacyStateid.other, legacyStateid.seqid.value));
+
+        // REVISIT 11.0: remove drop legacy support. Old polls will send legacy stateid.
+        // stateid4 stateid = message.challange();
+        Object stateObject = message.challange();
+        stateid4 stateid = LegacyUtils.toStateid(stateObject);
+        NfsTransfer transfer = _transfers.get(stateid);
+
         /*
          * We got a notification for a transfer which was not
          * started by us.
@@ -591,10 +595,12 @@ public class NFSv41Door extends AbstractCellComponent implements
         }
     }
 
-    public DoorValidateMoverMessage<org.dcache.chimera.nfs.v4.xdr.stateid4> messageArrived(
-          DoorValidateMoverMessage<org.dcache.chimera.nfs.v4.xdr.stateid4> message) {
-        org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateid = message.getChallenge();
-        stateid4 stateid = new stateid4(legacyStateid.other, legacyStateid.seqid.value);
+    public DoorValidateMoverMessage<?> messageArrived(DoorValidateMoverMessage<?> message) {
+
+        // REVISIT 11.0: remove drop legacy support. Old polls will send legacy stateid.
+        // stateid4 stateid = message.getChallenge();
+        Object stateObject = message.getChallenge();
+        stateid4 stateid = LegacyUtils.toStateid(stateObject);
 
         boolean isValid = false;
         try {

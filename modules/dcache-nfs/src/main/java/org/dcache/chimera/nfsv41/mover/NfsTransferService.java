@@ -44,6 +44,7 @@ import java.util.function.Predicate;
 import javax.annotation.Nullable;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
+import org.dcache.chimera.nfsv41.common.LegacyUtils;
 import org.dcache.chimera.nfsv41.common.StatsDecoratedOperationExecutor;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.nfs.ChimeraNFSException;
@@ -342,11 +343,16 @@ public class NfsTransferService
 
     public void notifyDoorWithRedirect(NfsMover mover) {
         CellPath directDoorPath = new CellPath(mover.getPathToDoor().getDestinationAddress());
-        final org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateId = mover.getProtocolInfo()
-              .stateId();
+
+        // REVISIT 11.0: remove drop legacy support
+        // stateid4 stateid = mover.getProtocolInfo().stateId();
+        Object stateObject = mover.getProtocolInfo().stateId();
+        stateid4 stateid = LegacyUtils.toStateid(stateObject);
+
+        // never send legacy stateid.
         _door.notify(directDoorPath,
               new PoolPassiveIoFileMessage<>(_cellAddress.getCellName(), _localSocketAddresses,
-                    legacyStateId,
+                    stateid,
                     _bootVerifier));
     }
 
