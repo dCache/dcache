@@ -55,11 +55,11 @@ dCache Book
 
         - [qos service](config-qos-engine.md)
 
-        - spacemanager service
+        - [spacemanager service](config-spacemanager.md)
 
         - [srm service](config-SRM.md)
 
-        - srmmanager service
+        - [srmmanager service](config-srmmanager.md)
 
         - [statistics service](config-statistics.md)
 
