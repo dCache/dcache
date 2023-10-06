@@ -32,10 +32,10 @@ state `PINNED` once the attempt is successful.
 
 When a pin either has a finite lifetime that has expired or is directly requested to be removed, it
 is put into state `READY_TO_UNPIN`. An 'unpinning' background task runs regularly (default every
-minute), which directly removes all pins in state `READY_TO_UNPIN` that don't require pool contact,
-then selects a certain number of pins (default 200) in state `READY_TO_UNPIN` for which the
-corresponding pool needs to be contacted and attempts to remove them as well. During unpinning the
-pins are in state `UNPINNING`.
+minute), which directly removes all pins in state `READY_TO_UNPIN` that don't require pool contact
+(regular pin expiry), then selects a certain number of pins (default 2000) in state `READY_TO_UNPIN`
+for which the corresponding pool needs to be contacted (manually triggered, premature expiry) and
+attempts to remove them as well. During unpinning the pins are in state `UNPINNING`.
 
 On success, the pin is deleted from the pool in question as well as the database, on failure the pin
 is put into state `FAILED_TO_UNPIN`. Another background process regularly (default every 2h) resets
