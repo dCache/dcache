@@ -18,7 +18,7 @@
 #
 #  KUBECONFIG: env file that contains kubernetes configuration to access the cluster
 #
-# dCache deplyment in kubernetes managed by helm chart
+# dCache deployment in kubernetes managed by helm chart
 #  https://gitlab.desy.de/dcache/dcache-helm
 #
 
@@ -51,7 +51,7 @@ before_script:
       echo "Runner id        : $CI_RUNNER_ID"
       echo "Runner version   : $CI_RUNNER_VERSION"
       echo "Runner revision  : $CI_RUNNER_REVISION"
-      echo "Runner tgas      : $CI_RUNNER_TAGS"
+      echo "Runner tags      : $CI_RUNNER_TAGS"
       echo "=========================================="
 
 default:
