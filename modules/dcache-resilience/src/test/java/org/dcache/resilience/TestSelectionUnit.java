@@ -159,6 +159,11 @@ final class TestSelectionUnit implements PoolSelectionUnit {
     }
 
     @Override
+    public SelectionPoolGroup getPoolGroupByName(String poolGroup) throws NoSuchElementException {
+        return psu.getPoolGroupByName(poolGroup);
+    }
+
+    @Override
     public Collection<SelectionPool> getPoolsByPoolGroup(String poolGroup)
           throws NoSuchElementException {
         return psu.getPoolsByPoolGroup(poolGroup);

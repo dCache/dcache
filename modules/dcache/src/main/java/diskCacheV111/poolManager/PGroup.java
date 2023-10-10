@@ -47,6 +47,10 @@ class PGroup extends PoolCore implements SelectionPoolGroup {
         return allPools;
     }
 
+    @Override
+    public List<PGroup> getPoolGroups() {
+        return _pgroupList;
+    }
 
     // check whatever there is a pool group that exist in there reference list
     // IOW, A ->  B -> C ; C -> A not allowed.

@@ -2545,6 +2545,18 @@ public class PoolSelectionUnitV2
     }
 
     @Override
+    public PGroup getPoolGroupByName(String pgroup) {
+        PGroup poolGroup = null;
+        rlock();
+        try {
+            poolGroup = _pGroups.get(pgroup);
+        } finally {
+            runlock();
+        }
+        return poolGroup;
+    }
+
+    @Override
     public Collection<SelectionPoolGroup> getPoolGroupsOfPool(String poolName) {
         rlock();
         try {
