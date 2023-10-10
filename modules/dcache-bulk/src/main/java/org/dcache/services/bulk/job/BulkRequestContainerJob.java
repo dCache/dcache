@@ -206,6 +206,9 @@ public final class BulkRequestContainerJob
         final long seqNo;
 
         Future taskFuture;
+        boolean holdingPermit;
+        ExecutorService taskExecutor;
+        Semaphore taskSemaphore;
 
         ContainerTask() {
             seqNo = taskCounter.getAndIncrement();
@@ -242,17 +245,28 @@ public final class BulkRequestContainerJob
         void submitAsync() throws InterruptedException {
             checkForRequestCancellation();
 
+            if (!holdingPermit) {
+                taskSemaphore.acquire();
+                holdingPermit = true;
+            }
+
             synchronized (running) {
                 running.put(seqNo, this);
                 LOGGER.debug("{} - submitAsync {}, task count is now {}.", ruid, seqNo, running.size());
             }
-            taskFuture = executor.submit(this);
+
+            taskFuture = taskExecutor.submit(this);
         }
 
         void remove() {
             synchronized (running) {
                 running.remove(seqNo);
                 LOGGER.debug("{} - remove task {}, task count now {}.", ruid, seqNo, running.size());
+            }
+
+            if (holdingPermit) {
+                taskSemaphore.release();
+                holdingPermit = false;
             }
 
             checkTransitionToDirs();
@@ -272,6 +286,8 @@ public final class BulkRequestContainerJob
             this.pid = pid;
             this.path = path;
             this.dirAttributes = dirAttributes;
+            taskExecutor = listExecutor;
+            taskSemaphore = dirListSemaphore;
         }
 
         void doInner() throws Throwable {
@@ -345,15 +361,10 @@ public final class BulkRequestContainerJob
 
         private DirectoryStream getDirectoryListing(FsPath path)
               throws CacheException, InterruptedException {
-            dirListSemaphore.acquire();
-            try {
-                LOGGER.debug("{} - DirListTask, getDirectoryListing for path {}, calling list ...",
-                      ruid, path);
-                return listHandler.list(subject, restriction, path, null,
-                      Range.closedOpen(0, Integer.MAX_VALUE), MINIMALLY_REQUIRED_ATTRIBUTES);
-            } finally {
-                dirListSemaphore.release();
-            }
+            LOGGER.debug("{} - DirListTask, getDirectoryListing for path {}, calling list ...",
+                  ruid, path);
+            return listHandler.list(subject, restriction, path, null,
+                  Range.closedOpen(0, Integer.MAX_VALUE), MINIMALLY_REQUIRED_ATTRIBUTES);
         }
     }
 
@@ -371,11 +382,11 @@ public final class BulkRequestContainerJob
          */
         TaskState state;
 
-        boolean holdingPermit;
-
         TargetTask(BulkRequestTarget target, TaskState initialState) {
             this.target = target;
             state = initialState;
+            taskExecutor = BulkRequestContainerJob.this.executor;
+            taskSemaphore = inFlightSemaphore;
         }
 
         void cancel() {
@@ -412,23 +423,6 @@ public final class BulkRequestContainerJob
                             handleTarget();
                     }
                     break;
-            }
-        }
-
-        @Override
-        void submitAsync() throws InterruptedException {
-            if (!holdingPermit) {
-                inFlightSemaphore.acquire();
-                holdingPermit = true;
-            }
-            super.submitAsync();
-        }
-
-        void remove() {
-            super.remove();
-            if (holdingPermit) {
-                inFlightSemaphore.release();
-                holdingPermit = false;
             }
         }
 
@@ -668,6 +662,7 @@ public final class BulkRequestContainerJob
     private SignalAware callback;
     private Thread runThread;
     private ExecutorService executor;
+    private ExecutorService listExecutor;
     private ExecutorService callbackExecutor;
     private Semaphore dirListSemaphore;
     private Semaphore inFlightSemaphore;
@@ -845,6 +840,10 @@ public final class BulkRequestContainerJob
 
     public void setExecutor(ExecutorService executor) {
         this.executor = executor;
+    }
+
+    public void setListExecutor(ExecutorService listExecutor) {
+        this.listExecutor = listExecutor;
     }
 
     public void setNamespaceHandler(PnfsHandler pnfsHandler) {

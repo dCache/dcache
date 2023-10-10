@@ -316,6 +316,11 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
     private ExecutorService callbackExecutor;
 
     /**
+     * Thread dedicated to directory listing.
+     */
+    private ExecutorService listExecutor;
+
+    /**
      * Thread dedicated to jobs.
      */
     private ExecutorService executorService;
@@ -441,6 +446,11 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
     }
 
     @Required
+    public void setListExecutor(BoundedCachedExecutor listExecutor) {
+        this.listExecutor = listExecutor;
+    }
+
+    @Required
     public void setTargetStore(BulkTargetStore targetStore) {
         this.targetStore = targetStore;
     }
@@ -534,6 +544,7 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
         LOGGER.trace("submitting job {} to executor, target {}.", key,
               job.getTarget());
         job.setExecutor(executorService);
+        job.setListExecutor(listExecutor);
         job.setCallbackExecutor(callbackExecutor);
         job.setCallback(this);
         try {
