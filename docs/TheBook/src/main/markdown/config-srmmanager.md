@@ -4,7 +4,7 @@ CHAPTER 12. dCache SRM MANAGER
 Storage Resource Managers (SRMs) are middleware components whose function is to
 provide dynamic space allocation and file management on shared storage components on the Grid.
 
-The SRM service in dCcahe is split between a front end `srm` and a backend `srmmanager` cell for
+The SRM service in dCache is split between a front end `srm` and a backend `srmmanager` cell for
 scalability. To instantiate the SRM service both cells need to be started, not necessarily on the
 same host.
 
