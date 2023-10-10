@@ -260,7 +260,7 @@ public final class BulkRequestTarget {
         return startedAt;
     }
 
-    public State getState() {
+    public synchronized State getState() {
         return state;
     }
 
