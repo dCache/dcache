@@ -1556,7 +1556,7 @@ public class DcacheResourceFactory
 
             var request = ServletRequest.getRequest();
             request.setAttribute(TRANSACTION_ATTRIBUTE, getTransaction());
-            _requestPath = ServletRequest.stripToPath(request.getRequestURI());
+            _requestPath = ServletRequest.stripToPath(request.getRequestURL().toString());
         }
 
         protected ProtocolInfo createProtocolInfo(InetSocketAddress address) {
