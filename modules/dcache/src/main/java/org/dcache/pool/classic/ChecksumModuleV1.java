@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2007-2022 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2007-2023 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -226,6 +226,7 @@ public class ChecksumModuleV1
         StringBuilder sb = new StringBuilder();
 
         sb.append(" Policies :\n").
+              append(" enabled digests: " ).append(defaultChecksumTypes()).append("\n").
               append("        on read : ").append(getPolicy(ON_READ)).append("\n").
               append("       on write : ").append(getPolicy(ON_WRITE)).append("\n").
               append("       on flush : ").append(getPolicy(ON_FLUSH)).append("\n").
