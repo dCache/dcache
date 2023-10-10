@@ -253,6 +253,11 @@
         <constructor-arg value="${bulk.db.connections.max}"/>
       </bean>
     </property>
+    <property name="listExecutor" >
+      <bean class="org.dcache.util.BoundedCachedExecutor">
+        <constructor-arg value="${bulk.limits.dir-list-semaphore}"/>
+      </bean>
+    </property>
     <property name="timeout" value="${bulk.limits.sweep-interval}"/>
     <property name="timeoutUnit" value="${bulk.limits.sweep-interval.unit}"/>
   </bean>
