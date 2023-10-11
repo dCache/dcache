@@ -69,6 +69,11 @@ This part contains guides for specific tasks a system administrator might want t
     - [Maven Archetype](cookbook-writing-hsm-plugins.md#maven-archetype)
     - [Examples](cookbook-writing-hsm-plugins.md#examples)
 
+- [QoS Policies](cookbook-qos-policies.md)
+    - [QoS Policy Schema](cookbook-qos-policies.md#qos-policy-definition)
+    - [QoS Policy Management](cookbook-qos-policies.md#managing-policies)
+    - [Applying a QoS Policy to a file](cookbook-qos-policies.md#applying-policies-to-files)
+
 - [Advanced Tuning](cookbook-advanced.md)
    - [Multiple Queues for Movers in each Pool](cookbook-advanced.md#multiple-queues-for-movers-in-each-pool)
       - [Description](cookbook-advanced.md#description)
