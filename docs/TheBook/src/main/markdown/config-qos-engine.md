@@ -194,16 +194,40 @@ is indefinitely set to "sticky".  To change the file back to cached, a second
 modification request is required. In the future, this may be done via a time-bound
 set of rules given to the engine (not yet implemented).
 
-File QoS modification can be achieved through the RESTful frontend for single files,
+File QoS modification can be achieved through the RESTful frontend, either
+for single files using `/api/v1/namespace`, or in bulk, using `/api/v1/bulk-requests`,
+the latter communicating with the [dCache Bulk Service](config-bulk.md).  Please
+refer to the SWAGGER pages at (`https://example.org:3880/api/v1`) for a description
+of the available RESTful resources.  Admins can also submit and control bulk qos
+transitions directly through the admin shell commands for the Bulk service.
 
-[dCache Frontend Service/A Note on the RESTful resource for QoS transitions](config-frontend.md/)
+#### QoS file policy (since 9.2)
 
-of through the Bulk service for file sets.
+With version 9.2, a "rule engine" capability has been added to the QoS Engine.  The
+way this works is as follows:
 
-[dCache Bulk Service/Job plugins](config-bulk.md)
+1. A QoS Policy is defined (it is expressed in JSON).
+2. The policy is uploaded through the Frontend REST API (`qos-policy`).  This stores the policy
+   in the namespace.  The API also allows one to list current policies, view a policy's JSON,
+   and remove the policy.  Adding and removal require admin privileges.
+3. Directories can be tagged using the `QosPolicy` tag, which should indicate the
+   name of the policy.  All files written to this directory will be associated with this policy.
+4. The policy defines a set of transitions (media states), each having a specific duration.
+   The QoS Engine keeps track of the current transition and its expiration.  Upon expiration,
+   it consults the policy to see what the next state is, and asks the QoS Verifier to apply it.
+   When a file has reached the final state of its policy, it is no longer checked by the QoS Engine;
+   however, if the file's final state includes `ONLINE` access latency, the QoS Scanner will
+   check it during the periodic online scans; on the other hand, if the file's final state
+   includes `NEARLINE` access latency, but its retention policy is `CUSTODIAL`, the QoS Scanner
+   will check to make sure it has a tape location.  *_Note that there is no requirement for a file
+   in dCache to have a QoS policy._*
+5. The Bulk service's `UPDATE_QOS` activity now allows for transitioning files both by
+   `targetQos` (`disk`, `tape`, `disk+tape`), but also by `qosPolicy` (associate with the
+   file with a policy by this name); in addition, it is possible to skip transitions in that
+   policy using the `qosState` argument to indicate which index of the transition
+   list to begin at (0 by default).
 
-In addition, the administrator can issue transition requests directly through the admin interface
-for the Bulk service using ``request submit``.
+For more information on policies, with some examples, see the QoS Policy cookbook.
 
 ### QoS and "resilience"
 
