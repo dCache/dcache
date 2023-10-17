@@ -67,13 +67,21 @@
     </constructor-arg>
   </bean>
 
-  <bean id="container-job-executor" class="org.dcache.util.CDCExecutorServiceDecorator">
+  <bean id="container-job-executor" class="org.dcache.util.BoundedCachedExecutor">
     <description>Used to execute jobs that are executed by a batch container.</description>
-    <constructor-arg>
-      <bean class="org.dcache.util.BoundedCachedExecutor">
-        <constructor-arg value="${bulk.limits.container-processing-threads}"/>
-      </bean>
-    </constructor-arg>
+    <constructor-arg value="${bulk.limits.container-processing-threads}"/>
+  </bean>
+
+  <bean id="task-executor" class="org.dcache.util.BoundedCachedExecutor">
+    <constructor-arg value="${bulk.limits.in-flight-semaphore}"/>
+  </bean>
+
+  <bean id="callback-executor" class="org.dcache.util.BoundedCachedExecutor">
+    <constructor-arg value="${bulk.db.connections.max}"/>
+  </bean>
+
+  <bean id="dir-list-executor" class="org.dcache.util.BoundedCachedExecutor">
+    <constructor-arg value="${bulk.limits.dir-list-semaphore}"/>
   </bean>
 
   <bean id="cancellation-executor" class="org.dcache.util.CDCScheduledExecutorServiceDecorator">
@@ -209,6 +217,9 @@
     <property name="statistics" ref="statistics"/>
     <property name="dirListSemaphore" value="${bulk.limits.dir-list-semaphore}"/>
     <property name="inFlightSemaphore" value="${bulk.limits.in-flight-semaphore}"/>
+    <property name="taskExecutor" ref="task-executor"/>
+    <property name="callbackExecutor" ref="callback-executor"/>
+    <property name="listExecutor" ref="dir-list-executor"/>
   </bean>
 
   <bean id="statistics" class="org.dcache.services.bulk.util.BulkServiceStatistics">
@@ -243,21 +254,7 @@
     <property name="submissionHandler" ref="request-handler"/>
     <property name="schedulerProvider" ref="scheduler-provider"/>
     <property name="maxActiveRequests" value="${bulk.limits.container-processing-threads}"/>
-    <property name="executor">
-      <bean class="org.dcache.util.BoundedCachedExecutor">
-        <constructor-arg value="${bulk.limits.in-flight-semaphore}"/>
-      </bean>
-    </property>
-    <property name="callbackExecutor">
-      <bean class="org.dcache.util.BoundedCachedExecutor">
-        <constructor-arg value="${bulk.db.connections.max}"/>
-      </bean>
-    </property>
-    <property name="listExecutor" >
-      <bean class="org.dcache.util.BoundedCachedExecutor">
-        <constructor-arg value="${bulk.limits.dir-list-semaphore}"/>
-      </bean>
-    </property>
+    <property name="containerExecutor" ref="container-job-executor"/>
     <property name="timeout" value="${bulk.limits.sweep-interval}"/>
     <property name="timeoutUnit" value="${bulk.limits.sweep-interval.unit}"/>
   </bean>
@@ -299,6 +296,9 @@
       <list>
         <ref bean="incoming-thread-executor"/>
         <ref bean="container-job-executor"/>
+        <ref bean="task-executor"/>
+        <ref bean="callback-executor"/>
+        <ref bean="dir-list-executor"/>
         <ref bean="cancellation-executor"/>
       </list>
     </property>
