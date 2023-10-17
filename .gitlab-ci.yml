@@ -440,7 +440,7 @@ pynfs_tests:
   script:
     - kubectl config set-context --current --namespace=${K8S_NAMESPACE}
 
-    - kubectl run pynfs-tester --image=dcache/pynfs:0.4 --restart=Never  --command -- sleep 3600
+    - kubectl run pynfs-tester --image=dcache/pynfs:0.5 --restart=Never  --command -- sleep 3600
     - while ! kubectl wait --for=condition=Ready pod pynfs-tester; do sleep 1; done
 
     - kubectl exec pynfs-tester -- /bin/bash -c "/run-nfs4.0.sh --maketree store-door-svc:/data OPEN5; exit 0"
@@ -453,7 +453,7 @@ pynfs_tests:
            noCMT1aa noCMT1b noCMT1c noCMT1d noCMT1e noCMT1f noCMT2a noCMT2b noCMT2c noCMT2d noCMT2f \
            noCMT2s noCMT3 noCMT4 noCR12 noLKT1 noLKT2a noLKT2b noLKT2c noLKT2d noLKT2f noLKT2s noLKT3 \
            noLKT4 noLKT6 noLKT7 noLKT8 noLKT9 noLKU10 noLKU3 noLKU4 noLKU5 noLKU6 noLKU6b noLKU7 noLKU8 \
-           noLKU9 noLKUNONE noLOCK12a noLOCK12b noLOCK13 noLOCK24 noLOCKRNG noLOCKCHGU noLOCKCHGD noRLOWN3 \
+           noLKU9 noLKUNONE noLOCK12a noLOCK12b noLOCK13 noLOCKRNG noLOCKCHGU noLOCKCHGD noRLOWN3 \
            noOPCF1 noOPCF6 noOPDG2 noOPDG3 noOPDG6 noOPDG7 noOPEN15 noOPEN18 noOPEN2 noOPEN20 noOPEN22 \
            noOPEN23 noOPEN24 noOPEN26 noOPEN27 noOPEN28 noOPEN3 noOPEN30 noOPEN4 noRENEW3 noRD1 noRD10 \
            noRD2 noRD3 noRD5 noRD5a noRD6 noRD7a noRD7b noRD7c noRD7d noRD7f noRD7s noRDDR12 noRDDR11 \
