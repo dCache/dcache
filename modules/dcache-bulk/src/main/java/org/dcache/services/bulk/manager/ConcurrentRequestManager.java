@@ -311,19 +311,9 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
     private ExecutorService processorExecutorService;
 
     /**
-     * Thread dedicated to job callbacks.
+     * Thread dedicated to running containerJobs.
      */
-    private ExecutorService callbackExecutor;
-
-    /**
-     * Thread dedicated to directory listing.
-     */
-    private ExecutorService listExecutor;
-
-    /**
-     * Thread dedicated to jobs.
-     */
-    private ExecutorService executorService;
+    private ExecutorService containerExecutor;
 
     /**
      * Records number of jobs and requests processed.
@@ -431,23 +421,13 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
     }
 
     @Required
-    public void setCallbackExecutor(BoundedCachedExecutor callbackExecutor) {
-        this.callbackExecutor = callbackExecutor;
-    }
-
-    @Required
     public void setCompletionHandler(BulkRequestCompletionHandler completionHandler) {
         this.completionHandler = completionHandler;
     }
 
     @Required
-    public void setExecutor(BoundedCachedExecutor pooledExecutor) {
-        this.executorService = pooledExecutor;
-    }
-
-    @Required
-    public void setListExecutor(BoundedCachedExecutor listExecutor) {
-        this.listExecutor = listExecutor;
+    public void setContainerExecutor(BoundedCachedExecutor containerExecutor) {
+        this.containerExecutor = containerExecutor;
     }
 
     @Required
@@ -543,14 +523,11 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
         String key = job.getTarget().getKey();
         LOGGER.trace("submitting job {} to executor, target {}.", key,
               job.getTarget());
-        job.setExecutor(executorService);
-        job.setListExecutor(listExecutor);
-        job.setCallbackExecutor(callbackExecutor);
         job.setCallback(this);
         try {
             if (isJobValid(job)) { /* possibly cancelled in flight */
                 job.update(State.RUNNING);
-                executorService.submit(new FireAndForgetTask(job));
+                containerExecutor.submit(new FireAndForgetTask(job));
             }
         } catch (RuntimeException e) {
             job.getTarget().setErrorObject(e);

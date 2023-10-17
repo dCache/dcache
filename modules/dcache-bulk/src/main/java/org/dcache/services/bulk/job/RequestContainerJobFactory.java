@@ -80,6 +80,7 @@ import org.dcache.services.bulk.util.BulkRequestTarget;
 import org.dcache.services.bulk.util.BulkRequestTarget.PID;
 import org.dcache.services.bulk.util.BulkRequestTargetBuilder;
 import org.dcache.services.bulk.util.BulkServiceStatistics;
+import org.dcache.util.BoundedCachedExecutor;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
@@ -102,6 +103,9 @@ public final class RequestContainerJobFactory {
     private BulkServiceStatistics statistics;
     private Semaphore dirListSemaphore;
     private Semaphore inFlightSemaphore;
+    private BoundedCachedExecutor taskExecutor;
+    private BoundedCachedExecutor callbackExecutor;
+    private BoundedCachedExecutor listExecutor;
 
     public BulkRequestContainerJob createRequestJob(BulkRequest request)
           throws BulkServiceException {
@@ -132,6 +136,9 @@ public final class RequestContainerJobFactory {
         containerJob.setListHandler(listHandler);
         containerJob.setDirListSemaphore(dirListSemaphore);
         containerJob.setInFlightSemaphore(inFlightSemaphore);
+        containerJob.setExecutor(taskExecutor);
+        containerJob.setListExecutor(listExecutor);
+        containerJob.setCallbackExecutor(callbackExecutor);
         containerJob.initialize();
         return containerJob;
     }
@@ -150,8 +157,18 @@ public final class RequestContainerJobFactory {
     }
 
     @Required
+    public void setCallbackExecutor(BoundedCachedExecutor callbackExecutor) {
+        this.callbackExecutor = callbackExecutor;
+    }
+
+    @Required
     public void setListHandler(ListDirectoryHandler listHandler) {
         this.listHandler = listHandler;
+    }
+
+    @Required
+    public void setListExecutor(BoundedCachedExecutor listExecutor) {
+        this.listExecutor = listExecutor;
     }
 
     @Required
@@ -182,6 +199,11 @@ public final class RequestContainerJobFactory {
     @Required
     public void setTargetStore(BulkTargetStore targetStore) {
         this.targetStore = targetStore;
+    }
+
+    @Required
+    public void setTaskExecutor(BoundedCachedExecutor taskExecutor) {
+        this.taskExecutor = taskExecutor;
     }
 
     BulkActivity create(BulkRequest request) throws BulkServiceException {
