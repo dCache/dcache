@@ -74,8 +74,7 @@ public abstract class InitializerAwareCommand implements Callable<String> {
     protected static final String REQUIRE_LIMIT =
           "The current table contains %s entries; listing them all "
                 + "could cause an out-of-memory error and "
-                + "cause the resilience system to fail and/or "
-                + "restarts; if you wish to proceed "
+                + "cause failure and/or restart; if you wish to proceed "
                 + "with this listing, reissue the command "
                 + "with the explicit option '-limit=%s'";
 
