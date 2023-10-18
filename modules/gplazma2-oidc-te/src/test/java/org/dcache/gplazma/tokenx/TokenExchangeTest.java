@@ -18,9 +18,15 @@
 package org.dcache.gplazma.tokenx;
 
 import java.security.Principal;
+import java.util.Base64;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse;
 
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.BearerTokenCredential;
@@ -30,6 +36,8 @@ import org.junit.Test;
 
 
 public class TokenExchangeTest {
+
+    private HttpClient client = HttpClient.newHttpClient();
  
     private TokenExchange plugin; 
     private Set<Principal> principals;
@@ -55,6 +63,67 @@ public class TokenExchangeTest {
 
         when(invoked().withBearerToken("FOO").withBearerToken("BAR"));
     }
+
+    @Test
+    public void tokenExchangeTest() throws Exception {
+
+        given(aPlugin());
+
+        String helmholtzToken = "eyJ0eXAiOiJhdCtqd3QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJiNWMzNTViNS0xY2NhLTRmZmEtYjRmNy02MDg4OGRhODc4ZmEiLCJhdWQiOiJwdWJsaWMtb2lkYy1hZ2VudCIsInNjb3BlIjoiZWR1cGVyc29uX2VudGl0bGVtZW50IGVtYWlsIGVkdXBlcnNvbl9zY29wZWRfYWZmaWxpYXRpb24gb2ZmbGluZV9hY2Nlc3MgcHJvZmlsZSBvcGVuaWQgZWR1cGVyc29uX3VuaXF1ZV9pZCIsImlzcyI6Imh0dHBzOlwvXC9sb2dpbi1kZXYuaGVsbWhvbHR6LmRlXC9vYXV0aDIiLCJleHAiOjE2OTc0NTA1MDYsImlhdCI6MTY5NzQ0NjUwNiwianRpIjoiYzM1MGI4NjYtOWMxNi00N2Q2LTg1ODMtMGY1YmYyMjQxZmU4IiwiY2xpZW50X2lkIjoicHVibGljLW9pZGMtYWdlbnQifQ.Ypifl_u_pBO2Kf65obgdzo-rbKSp35-GIq1fFk0nTTml9Ogl8LMY8wFAd-4Yhir3yCkvvDYzorzP8_NPkj_mvqxJRGGcku0Q80INTKTYew1eW4qlFhMqjRs9QCmVcpzYfmlBvlTfIYZ_oXr1SJAGJLfvzG2IyzGKr0_w3V-EgLEGuljhZAc9bibGbRn569_oX2n9TTqi-mGmJU72C4ssy88QK3WyieFGn0MQZdi95-WMyJG13Vo9qVAdgRdXTmOCzJdlvYLBRAWkUp6v9yEdxnbQb5REAakCirot1EBUOehpST_LrBjZCl0oQJa0kqrkpJKb7eejy9F1EISzuq7eTg";
+
+        plugin.tokenExchange(helmholtzToken);
+
+
+   }
+
+//     @Test
+//     public void prototyping() throws Exception {
+//         System.out.println("=================================");
+//         System.out.println("proto-typing:");
+
+//         String helmholtzToken = "eyJ0eXAiOiJhdCtqd3QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJiNWMzNTViNS0xY2NhLTRmZmEtYjRmNy02MDg4OGRhODc4ZmEiLCJhdWQiOiJwdWJsaWMtb2lkYy1hZ2VudCIsInNjb3BlIjoiZWR1cGVyc29uX2VudGl0bGVtZW50IGVtYWlsIGVkdXBlcnNvbl9zY29wZWRfYWZmaWxpYXRpb24gb2ZmbGluZV9hY2Nlc3MgcHJvZmlsZSBvcGVuaWQgZWR1cGVyc29uX3VuaXF1ZV9pZCIsImlzcyI6Imh0dHBzOlwvXC9sb2dpbi1kZXYuaGVsbWhvbHR6LmRlXC9vYXV0aDIiLCJleHAiOjE2OTc0NTA1MDYsImlhdCI6MTY5NzQ0NjUwNiwianRpIjoiYzM1MGI4NjYtOWMxNi00N2Q2LTg1ODMtMGY1YmYyMjQxZmU4IiwiY2xpZW50X2lkIjoicHVibGljLW9pZGMtYWdlbnQifQ.Ypifl_u_pBO2Kf65obgdzo-rbKSp35-GIq1fFk0nTTml9Ogl8LMY8wFAd-4Yhir3yCkvvDYzorzP8_NPkj_mvqxJRGGcku0Q80INTKTYew1eW4qlFhMqjRs9QCmVcpzYfmlBvlTfIYZ_oXr1SJAGJLfvzG2IyzGKr0_w3V-EgLEGuljhZAc9bibGbRn569_oX2n9TTqi-mGmJU72C4ssy88QK3WyieFGn0MQZdi95-WMyJG13Vo9qVAdgRdXTmOCzJdlvYLBRAWkUp6v9yEdxnbQb5REAakCirot1EBUOehpST_LrBjZCl0oQJa0kqrkpJKb7eejy9F1EISzuq7eTg";
+//         String[] chunks = helmholtzToken.split("\\.");
+
+//         System.out.println(helmholtzToken);
+
+//         System.out.println(chunks.length);
+//         System.out.println("0:" + chunks[0]);
+//         System.out.println("1:" + chunks[1]);
+//         System.out.println("2:" + chunks[2]);
+
+//         String result = new String(Base64.getUrlDecoder().decode(chunks[1]));
+
+//         System.out.println("=================================");
+//         System.out.println("decode:");
+//         System.out.println(Base64.getUrlDecoder().decode(chunks[0]));
+//         System.out.println(Base64.getUrlDecoder().decode(chunks[1]));
+//         System.out.println(result);
+
+//     //     HttpRequest request = HttpRequest.newBuilder()
+//     // .uri(URI.create("https://dev-keycloak.desy.de/auth/realms/desy-test/protocol/openid-connect/token"))
+//     // .POST(BodyPublishers.ofString("client_id=exchange-test" + "&client_secret=S0iO4EcUyn0m4b4TgSqDYViDeo9vorAs\n" + //
+//     //         "" + "&grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Atoken-exchange&subject_token=" + helmholtzToken + "&subject_issuer=oidc&subject_token_type=urn%3Aietf%3Aparams%3Aoauth%3Atoken-type%3Aaccess_token&audience=exchange-test"))
+//     // .setHeader("Content-Type", "application/x-www-form-urlencoded")
+//     // .build();
+
+//         HttpRequest request = HttpRequest.newBuilder()
+//     .uri(URI.create("https://dev-keycloak.desy.de/auth/realms/desy-test/protocol/openid-connect/token"))
+//     .POST(BodyPublishers.ofString("client_id=exchange-test-public"
+//     + ""
+//     + "&grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Atoken-exchange"
+//     + "&subject_token=" + helmholtzToken
+//     + "&subject_issuer=oidc"
+//     + "&subject_token_type=urn%3Aietf%3Aparams%3Aoauth%3Atoken-type%3Aaccess_token"
+//     + "&audience=exchange-test"))
+//     .setHeader("Content-Type", "application/x-www-form-urlencoded")
+//     .build();
+
+// HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+//         System.out.println(response);
+
+
+//     }
 
     private void given(PluginBuilder builder) {
         plugin = builder.build();
