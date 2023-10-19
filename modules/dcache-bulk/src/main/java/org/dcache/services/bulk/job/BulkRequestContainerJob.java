@@ -127,8 +127,8 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Container job for a list of targets which may or may not be associated with each other via a
- * common parent. It handles all file targets asynchronously, recurs if directory listing is enabled,
- * and processes directory targets serially last in depth-first reverse order.
+ * common parent. It handles all file targets asynchronously, recurs if directory listing is
+ * enabled, and processes directory targets serially last in depth-first reverse order.
  */
 public final class BulkRequestContainerJob
       implements Runnable, NamespaceHandlerAware, Comparable<BulkRequestContainerJob>,
@@ -156,9 +156,10 @@ public final class BulkRequestContainerJob
     }
 
     /**
-     *  Directories that serve as targets.  These are stored in memory, sorted and processed last.
+     * Directories that serve as targets. These are stored in memory, sorted and processed last.
      */
     static class DirTarget {
+
         final FsPath path;
         final FileAttributes attributes;
         final PID pid;
@@ -170,46 +171,85 @@ public final class BulkRequestContainerJob
             this.pid = pid;
             this.attributes = attributes;
             this.path = path;
-            depth = (int)path.toString().chars().filter(c -> c == '/').count();
+            depth = (int) path.toString().chars().filter(c -> c == '/').count();
         }
     }
 
     /**
-     *  Depth-first (descending order).
+     * Depth-first (descending order).
      */
     static class DirTargetSorter implements Comparator<DirTarget> {
+
         @Override
         public int compare(DirTarget o1, DirTarget o2) {
-            return Integer.compare(o2.depth, o1.depth);  /* DESCENDING ORDER */
+            return Integer.compare(o2.depth, o1.depth); /* DESCENDING ORDER */
         }
     }
 
     /**
-     *  Container delays processing directory targets until the final step.
+     * Encapsulates manipulation of the semaphore.
+     */
+    class PermitHolder {
+
+        private final AtomicBoolean holdingPermit = new AtomicBoolean(false);
+        private Semaphore taskSemaphore;
+
+        void acquireIfNotHoldingPermit() throws InterruptedException {
+            if (taskSemaphore == null) {
+                return;
+            }
+
+            if (holdingPermit.compareAndSet(false, true)) {
+                taskSemaphore.acquire();
+            }
+        }
+
+        void throttledRelease() {
+            activity.throttle();
+            releaseIfHoldingPermit();
+        }
+
+        void releaseIfHoldingPermit() {
+            if (taskSemaphore == null) {
+                return;
+            }
+
+            if (holdingPermit.compareAndSet(true, false)) {
+                taskSemaphore.release();
+            }
+        }
+
+        void setTaskSemaphore(Semaphore taskSemaphore) {
+            this.taskSemaphore = taskSemaphore;
+        }
+    }
+
+    /**
+     * Container delays processing directory targets until the final step.
      */
     enum ContainerState {
         START, PROCESS_FILES, WAIT, PROCESS_DIRS, STOP
     }
 
     /**
-     *  Only INITIAL targets go through all three states.  DISCOVERED targets
-     *  already have their proper paths and attributes from listing.
+     * Only INITIAL targets go through all three states. DISCOVERED targets already have their
+     * proper paths and attributes from listing.
      */
     enum TaskState {
         RESOLVE_PATH, FETCH_ATTRIBUTES, HANDLE_TARGET, HANDLE_DIR_TARGET
     }
 
     /**
-     *  Wrapper task for directory listing and target processing.
+     * Wrapper task for directory listing and target processing.
      */
     abstract class ContainerTask implements Runnable {
+
         final Consumer<Throwable> errorHandler = e -> uncaughtException(Thread.currentThread(), e);
         final long seqNo = taskCounter.getAndIncrement();
-        final AtomicBoolean holdingPermit = new AtomicBoolean(false);
+        final PermitHolder permitHolder = new PermitHolder();
 
         Future taskFuture;
         ExecutorService taskExecutor;
-        Semaphore taskSemaphore;
 
         public void run() {
             try {
@@ -237,7 +277,8 @@ public final class BulkRequestContainerJob
 
         void expandDepthFirst(Long id, PID pid, FsPath path, FileAttributes dirAttributes)
               throws BulkServiceException, CacheException {
-            LOGGER.debug("{} - expandDepthFirst, {}, {}, {}, {}", ruid, id, pid, path, dirAttributes);
+            LOGGER.debug("{} - expandDepthFirst, {}, {}, {}, {}", ruid, id, pid, path,
+                  dirAttributes);
             try {
                 new DirListTask(id, pid, path, dirAttributes).submitAsync();
             } catch (InterruptedException e) {
@@ -247,16 +288,14 @@ public final class BulkRequestContainerJob
 
         void submitAsync() throws InterruptedException {
             /*
-             *  Acquisition must be done outside the synchronized block (running),
-             *  else there could be a deadlock.
+             * Acquisition must be done outside the synchronized block (running),
+             * else there could be a deadlock.
              */
-            if (holdingPermit.compareAndSet(false, true)) {
-                taskSemaphore.acquire();
-            }
+            permitHolder.acquireIfNotHoldingPermit();
 
             synchronized (running) {
                 if (jobTarget.isTerminated()) {
-                    taskSemaphore.release();
+                    permitHolder.releaseIfHoldingPermit();
                     return;
                 }
 
@@ -269,13 +308,12 @@ public final class BulkRequestContainerJob
         }
 
         void remove() {
-            if (holdingPermit.compareAndSet(true, false)) {
-                taskSemaphore.release();
-            }
+            permitHolder.releaseIfHoldingPermit();
 
             synchronized (running) {
                 running.remove(seqNo);
-                LOGGER.debug("{} - remove task {}, task count now {}.", ruid, seqNo, running.size());
+                LOGGER.debug("{} - remove task {}, task count now {}.", ruid, seqNo,
+                      running.size());
 
                 if (running.isEmpty()) {
                     checkTransitionToDirs();
@@ -287,6 +325,7 @@ public final class BulkRequestContainerJob
     }
 
     class DirListTask extends ContainerTask {
+
         final Long id;
         final PID pid;
         final FsPath path;
@@ -298,7 +337,7 @@ public final class BulkRequestContainerJob
             this.path = path;
             this.dirAttributes = dirAttributes;
             taskExecutor = listExecutor;
-            taskSemaphore = dirListSemaphore;
+            permitHolder.setTaskSemaphore(dirListSemaphore);
         }
 
         void doInner() throws Throwable {
@@ -384,12 +423,12 @@ public final class BulkRequestContainerJob
         final BulkRequestTarget target;
 
         /*
-         *  From activity.perform()
+         * From activity.perform()
          */
         ListenableFuture activityFuture;
 
         /*
-         *  Determines the doInner() switch
+         * Determines the doInner() switch
          */
         TaskState state;
 
@@ -397,7 +436,7 @@ public final class BulkRequestContainerJob
             this.target = target;
             state = initialState;
             taskExecutor = BulkRequestContainerJob.this.executor;
-            taskSemaphore = inFlightSemaphore;
+            permitHolder.setTaskSemaphore(inFlightSemaphore);
         }
 
         void cancel() {
@@ -452,7 +491,7 @@ public final class BulkRequestContainerJob
         }
 
         /**
-         *  (1) symlink resolution on initial targets; bypassed for discovered targets.
+         * (1) symlink resolution on initial targets; bypassed for discovered targets.
          */
         private void resolvePath() {
             LOGGER.debug("{} - resolvePath, resolving {}", ruid, target.getPath());
@@ -484,13 +523,14 @@ public final class BulkRequestContainerJob
         }
 
         /**
-         *  (2) retrieval of required file attributes.
+         * (2) retrieval of required file attributes.
          */
         private void fetchAttributes() {
             LOGGER.debug("{} - fetchAttributes for path {}", ruid, target.getPath());
             PnfsGetFileAttributes message = new PnfsGetFileAttributes(target.getPath().toString(),
                   MINIMALLY_REQUIRED_ATTRIBUTES);
-            ListenableFuture<PnfsGetFileAttributes> requestFuture = pnfsHandler.requestAsync(message);
+            ListenableFuture<PnfsGetFileAttributes> requestFuture = pnfsHandler.requestAsync(
+                  message);
             CellStub.addCallback(requestFuture, new AbstractMessageCallback<>() {
                 @Override
                 public void success(PnfsGetFileAttributes message) {
@@ -512,7 +552,7 @@ public final class BulkRequestContainerJob
         }
 
         /**
-         *  (3b) either recurs on directory or performs activity on file.
+         * (3b) either recurs on directory or performs activity on file.
          */
         private void handleTarget() throws InterruptedException {
             LOGGER.debug("{} - handleTarget for {}, path {}.", ruid, target.getActivity(),
@@ -524,8 +564,8 @@ public final class BulkRequestContainerJob
                     storeOrUpdate(null);
                     expandDepthFirst(target.getId(), target.getPid(), target.getPath(), attributes);
                     /*
-                     *  Swap out for the directory listing task.
-                     *  (We must do this AFTER the directory task has been added to running.)
+                     * Swap out for the directory listing task.
+                     * (We must do this AFTER the directory task has been added to running.)
                      */
                     remove();
                 } else if (type != FileType.SPECIAL) {
@@ -539,7 +579,7 @@ public final class BulkRequestContainerJob
         }
 
         /**
-         *  (3a) Performs activity on either file or directory target.
+         * (3a) Performs activity on either file or directory target.
          */
         private void performActivity() throws InterruptedException {
             performActivity(true);
@@ -554,7 +594,8 @@ public final class BulkRequestContainerJob
             storeOrUpdate(null);
 
             if (hasBeenSpecificallyCancelled(this)) {
-                LOGGER.debug("{} - performActivity hasBeenSpecificallyCancelled for {}.", ruid, path);
+                LOGGER.debug("{} - performActivity hasBeenSpecificallyCancelled for {}.", ruid,
+                      path);
                 remove();
             }
 
@@ -562,6 +603,7 @@ public final class BulkRequestContainerJob
                 activityFuture = activity.perform(ruid, id == null ? seqNo : id, path, attributes);
                 if (async) {
                     activityFuture.addListener(() -> handleCompletion(), callbackExecutor);
+                    permitHolder.throttledRelease();
                 }
             } catch (BulkServiceException | UnsupportedOperationException e) {
                 LOGGER.error("{}, perform failed for {}: {}", ruid, target, e.getMessage());
@@ -615,7 +657,8 @@ public final class BulkRequestContainerJob
             LOGGER.debug("{} - storeOrUpdate {}.", ruid, target);
 
             if (hasBeenSpecificallyCancelled(this)) {
-                LOGGER.debug("{} - storeOrUpdate, hasBeenSpecificallyCancelled {}.", ruid, target.getPath());
+                LOGGER.debug("{} - storeOrUpdate, hasBeenSpecificallyCancelled {}.", ruid,
+                      target.getPath());
                 return;
             }
 
@@ -624,14 +667,15 @@ public final class BulkRequestContainerJob
 
             try {
                 /*
-                 *  If this is an insert (id == null), the target id will be updated to what is
-                 *  returned from the database.
+                 * If this is an insert (id == null), the target id will be updated to what is
+                 * returned from the database.
                  */
                 checkForRequestCancellation();
                 targetStore.storeOrUpdate(target);
                 LOGGER.debug("{} - storeOrUpdate, target id {}", ruid, target.getId());
             } catch (BulkStorageException e) {
-                LOGGER.error("{}, could not store or update target from result {}, {}, {}: {}.", ruid,
+                LOGGER.error("{}, could not store or update target from result {}, {}, {}: {}.",
+                      ruid,
                       target.getId(), target.getPath(), target.getAttributes(), e.toString());
                 error = e;
             } catch (InterruptedException e) {
@@ -700,9 +744,9 @@ public final class BulkRequestContainerJob
         interruptRunThread();
 
         /*
-         *  Thread may already have exited.
+         * Thread may already have exited.
          *
-         *  Update terminates job target.
+         * Update terminates job target.
          */
         containerState = ContainerState.STOP;
         update(CANCELLED);
@@ -710,7 +754,7 @@ public final class BulkRequestContainerJob
         LOGGER.debug("{} - cancel, running {}.", ruid, running.size());
 
         /*
-         * Drain running tasks.  Calling task cancel removes the task from the map.
+         * Drain running tasks. Calling task cancel removes the task from the map.
          */
         while (true) {
             ContainerTask task;
@@ -832,7 +876,7 @@ public final class BulkRequestContainerJob
         } catch (InterruptedException e) {
             LOGGER.debug("{} - run: interrupted", ruid);
             /*
-             *  If the state has not already been set to terminal, do so.
+             * If the state has not already been set to terminal, do so.
              */
             containerState = ContainerState.STOP;
             update(CANCELLED);
@@ -952,7 +996,8 @@ public final class BulkRequestContainerJob
                         targetStore.update(target.getId(), CANCELLED, null, null);
                     }
                 } catch (BulkServiceException | UnsupportedOperationException e) {
-                    LOGGER.error("hasBeenSpecificallyCancelled {}, failed for {}: {}", ruid, target.getPath(),
+                    LOGGER.error("hasBeenSpecificallyCancelled {}, failed for {}: {}", ruid,
+                          target.getPath(),
                           e.toString());
                 }
                 return true;
@@ -985,7 +1030,7 @@ public final class BulkRequestContainerJob
         Arrays.sort(sorted, SORTER);
 
         /*
-         *  Process serially in this thread
+         * Process serially in this thread
          */
         for (DirTarget dirTarget : sorted) {
             try {
@@ -994,7 +1039,7 @@ public final class BulkRequestContainerJob
                       TaskState.HANDLE_DIR_TARGET).performSync();
             } catch (InterruptedException e) {
                 /*
-                 *  Cancel most likely called; stop processing.
+                 * Cancel most likely called; stop processing.
                  */
                 break;
             }
@@ -1018,7 +1063,7 @@ public final class BulkRequestContainerJob
                 new TargetTask(target, TaskState.RESOLVE_PATH).submitAsync();
             } catch (InterruptedException e) {
                 /*
-                 *  Cancel most likely called; stop processing.
+                 * Cancel most likely called; stop processing.
                  */
                 break;
             }

@@ -60,6 +60,7 @@ documents or software obtained from this server.
 package org.dcache.services.bulk.activity;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.RateLimiter;
 import diskCacheV111.util.FsPath;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -76,11 +77,12 @@ import org.dcache.services.bulk.util.BulkRequestTarget;
 import org.dcache.vehicles.FileAttributes;
 
 /**
- * Base definition for a bulk activity.  Specifies the interfaces for executing the action on a
+ * Base definition for a bulk activity. Specifies the interfaces for executing
+ * the action on a
  * given target and for listening (asynchronously) for a result.
  * <p>
  * An instance of an activity is constructed on a request-by-request basis
- * by the JobFactory.  It should not be shared between requests.
+ * by the JobFactory. It should not be shared between requests.
  *
  * @param <R> the type of object returned with the listenable future.
  */
@@ -90,10 +92,10 @@ public abstract class BulkActivity<R> {
         FILE, DIR, BOTH
     }
 
-    public static final Set<FileAttribute> MINIMALLY_REQUIRED_ATTRIBUTES
-          = Collections.unmodifiableSet(EnumSet.of(FileAttribute.PNFSID, FileAttribute.TYPE,
-          FileAttribute.OWNER_GROUP, FileAttribute.OWNER, FileAttribute.ACCESS_LATENCY,
-          FileAttribute.RETENTION_POLICY));
+    public static final Set<FileAttribute> MINIMALLY_REQUIRED_ATTRIBUTES = Collections
+          .unmodifiableSet(EnumSet.of(FileAttribute.PNFSID, FileAttribute.TYPE,
+                FileAttribute.OWNER_GROUP, FileAttribute.OWNER, FileAttribute.ACCESS_LATENCY,
+                FileAttribute.RETENTION_POLICY));
 
     private static final BulkTargetRetryPolicy DEFAULT_RETRY_POLICY = new NoRetryPolicy();
 
@@ -102,6 +104,7 @@ public abstract class BulkActivity<R> {
 
     protected Subject subject;
     protected Restriction restriction;
+    protected RateLimiter rateLimiter;
     protected BulkTargetRetryPolicy retryPolicy;
     protected Set<BulkActivityArgumentDescriptor> descriptors;
 
@@ -125,6 +128,20 @@ public abstract class BulkActivity<R> {
 
     public void setRetryPolicy(BulkTargetRetryPolicy retryPolicy) {
         this.retryPolicy = retryPolicy;
+    }
+
+    public void throttle() {
+        if (rateLimiter != null) {
+            rateLimiter.acquire();
+        }
+    }
+
+    public RateLimiter getRateLimiter() {
+        return rateLimiter;
+    }
+
+    public void setRateLimiter(RateLimiter rateLimiter) {
+        this.rateLimiter = rateLimiter;
     }
 
     public TargetType getTargetType() {
@@ -154,17 +171,18 @@ public abstract class BulkActivity<R> {
     /**
      * Performs the activity.
      *
-     * @param rid of the request.
-     * @param tid       of the target.
-     * @param path      of the target on which to perform the activity.
+     * @param rid  of the request.
+     * @param tid  of the target.
+     * @param path of the target on which to perform the activity.
      * @return future result of the activity.
      * @throws BulkServiceException
      */
     public abstract ListenableFuture<R> perform(String rid, long tid, FsPath path, FileAttributes attributes)
-          throws BulkServiceException;
+            throws BulkServiceException;
 
     /**
-     * An activity instance is on a request-by-request basis, so the parameters need to be
+     * An activity instance is on a request-by-request basis, so the parameters need
+     * to be
      * configured by the factory.
      *
      * @param arguments parameters of the specific activity.

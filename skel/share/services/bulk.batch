@@ -26,6 +26,9 @@ check -strong bulk.limits.archiver-window
 check -strong bulk.limits.archiver-window.unit
 check -strong bulk.limits.dir-list-semaphore
 check -strong bulk.limits.in-flight-semaphore
+check -strong bulk.limits.pin-manager-rate-per-second
+check -strong bulk.limits.pnfs-manager-rate-per-second
+check -strong bulk.limits.qos-engine-rate-per-second
 check -strong bulk.service.pnfsmanager
 check -strong bulk.service.pnfsmanager.timeout
 check -strong bulk.service.pnfsmanager.timeout.unit

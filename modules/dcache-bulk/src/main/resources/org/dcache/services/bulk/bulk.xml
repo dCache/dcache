@@ -205,6 +205,23 @@
         <entry key="LOG_TARGET"><bean class="${bulk.plugin!log-target.retry-policy}"/></entry>
       </map>
     </property>
+    <property name="rateLimiters">
+      <map>
+        <entry key="PIN" value="${bulk.limits.pin-manager-rate-per-second}"/>
+        <entry key="PNFS" value="${bulk.limits.pnfs-manager-rate-per-second}"/>
+        <entry key="QOS" value="${bulk.limits.qos-engine-rate-per-second}"/>
+      </map>
+    </property>
+    <property name="rateLimiterActivityIndex">
+      <map>
+        <entry key="DELETE" value="PNFS"/>
+        <entry key="PIN" value="PIN"/>
+        <entry key="STAGE" value="PIN"/>
+        <entry key="UNPIN" value="PIN"/>
+        <entry key="RELEASE" value="PIN"/>
+        <entry key="UPDATE_QOS" value="QOS"/>
+      </map>
+    </property>
   </bean>
 
   <bean id="job-factory" class="org.dcache.services.bulk.job.RequestContainerJobFactory">
