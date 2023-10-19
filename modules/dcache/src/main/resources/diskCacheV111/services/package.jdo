@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<jdo xmlns="http://java.sun.com/xml/ns/jdo/jdo"
+<jdo xmlns="https://db.apache.org/jdo/xmlns/jdo"
      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-     xsi:schemaLocation="http://java.sun.com/xml/ns/jdo/jdo
-        http://java.sun.com/xml/ns/jdo/jdo_2_0.xsd">
+     xsi:schemaLocation="https://db.apache.org/jdo/xmlns/jdo https://db.apache.org/jdo/xmlns/jdo_3_2.xsd">
      <package name="diskCacheV111.services">
         <class name="TransferManagerHandler" detachable="true" identity-type="application" table="remotetransfers">
             <field name="id" primary-key="true" null-value="exception">

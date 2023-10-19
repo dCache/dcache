@@ -119,8 +119,8 @@
         <bouncycastle.bcprov>bcprov-jdk15on</bouncycastle.bcprov>
         <bouncycastle.bcpkix>bcpkix-jdk15on</bouncycastle.bcpkix>
         <bouncycastle.version>1.67</bouncycastle.version>
-        <datanucleus-core.version>5.2.2</datanucleus-core.version>
-        <datanucleus.plugin.version>5.2.1</datanucleus.plugin.version>
+        <datanucleus-core.version>6.0.6</datanucleus-core.version>
+        <datanucleus.plugin.version>6.0.0-release</datanucleus.plugin.version>
         <asm.version>9.5</asm.version>
         <asm-tools.version>5.0.3</asm-tools.version>
     </properties>
@@ -451,37 +451,32 @@
             <dependency>
                 <groupId>org.datanucleus</groupId>
                 <artifactId>datanucleus-api-jdo</artifactId>
-                <version>5.2.2</version>
+                <version>6.0.1</version>
             </dependency>
             <dependency>
                 <groupId>org.datanucleus</groupId>
                 <artifactId>datanucleus-jdo-query</artifactId>
-                <version>5.0.9</version>
+                <version>6.0.1</version>
             </dependency>
             <dependency>
                 <groupId>org.datanucleus</groupId>
                 <artifactId>javax.jdo</artifactId>
-                <version>3.2.0-m12</version>
+                <version>3.2.0-release</version>
             </dependency>
             <dependency>
                 <groupId>org.datanucleus</groupId>
                 <artifactId>datanucleus-rdbms</artifactId>
-                <version>5.2.1</version>
-            </dependency>
-            <dependency>
-               <groupId>org.datanucleus</groupId>
-               <artifactId>datanucleus-accessplatform-jdo-rdbms</artifactId>
-               <version>5.2.2</version>
+                <version>${datanucleus-core.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.datanucleus</groupId>
                 <artifactId>datanucleus-xml</artifactId>
-                <version>5.1.0-release</version>
+                <version>6.0.0-release</version>
             </dependency>
             <dependency>
                 <groupId>org.datanucleus</groupId>
                 <artifactId>datanucleus-cache</artifactId>
-                <version>5.1.1</version>
+                <version>6.0.0-release</version>
             </dependency>
             <dependency>
                 <groupId>net.sf.saxon</groupId>
@@ -1186,7 +1181,7 @@
                         <dependency>
                             <groupId>org.slf4j</groupId>
                             <artifactId>log4j-over-slf4j</artifactId>
-			    <version>${version.slf4j}</version>
+                            <version>${version.slf4j}</version>
                         </dependency>
                         <dependency>
                             <groupId>org.dcache</groupId>
