@@ -183,7 +183,7 @@ public final class BulkServiceCommands implements CellCommandListener {
     /**
      * name | class | type | permits
      */
-    private static final String FORMAT_ACTIVITY = "%-20s | %100s | %7s ";
+    private static final String FORMAT_ACTIVITY = "%-20s | %100s | %7s";
 
     /**
      * name | required | description
@@ -264,8 +264,9 @@ public final class BulkServiceCommands implements CellCommandListener {
         }
     }
 
-    private static String formatActivity(Entry<String, BulkActivityProvider> entry) {
+    private static String formatActivity(Entry<String, BulkActivityProvider> entry, BulkActivityFactory factory) {
         BulkActivityProvider provider = entry.getValue();
+
         return String.format(FORMAT_ACTIVITY,
               entry.getKey(),
               provider.getActivityClass(),
@@ -544,14 +545,14 @@ public final class BulkServiceCommands implements CellCommandListener {
             Sorter sorter = new Sorter(SortOrder.valueOf(sort.toUpperCase()));
             String activities = activityFactory.getProviders().entrySet()
                   .stream()
-                  .map(BulkServiceCommands::formatActivity)
+                  .map(e -> formatActivity(e, activityFactory))
                   .sorted(sorter)
                   .collect(joining("\n"));
             if (activities == null) {
                 return "There are no mapped activities!";
             }
 
-            return String.format(FORMAT_ACTIVITY, "NAME", "CLASS", "TYPE")
+            return String.format(FORMAT_ACTIVITY, "NAME", "CLASS", "TYPE", "RATE")
                   + "\n" + activities;
         }
     }

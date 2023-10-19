@@ -60,6 +60,7 @@ documents or software obtained from this server.
 package org.dcache.services.bulk.activity;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.util.concurrent.RateLimiter;
 import diskCacheV111.poolManager.PoolManagerAware;
 import diskCacheV111.util.NamespaceHandlerAware;
 import diskCacheV111.util.PnfsHandler;
@@ -70,6 +71,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.stream.Collectors;
 import javax.security.auth.Subject;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restriction;
@@ -90,7 +92,8 @@ import org.springframework.beans.factory.annotation.Required;
 /**
  * Creates activities on the basis of activity mappings.
  * <p>
- * For each activity (such as pinning, deletion, etc.), there must be an SPI provider which creates
+ * For each activity (such as pinning, deletion, etc.), there must be an SPI
+ * provider which creates
  * the class implementing the activity API contract.
  */
 public final class BulkActivityFactory implements CellMessageSender, EnvironmentAware {
@@ -98,9 +101,11 @@ public final class BulkActivityFactory implements CellMessageSender, Environment
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkActivityFactory.class);
 
     private final Map<String, BulkActivityProvider> providers = Collections.synchronizedMap(
-          new HashMap<>());
+            new HashMap<>());
 
     private Map<String, BulkTargetRetryPolicy> retryPolicies;
+    private Map<String, RateLimiter> rateLimiters;
+    private Map<String, String> rateLimiterActivityIndex;
     private Map<String, Object> environment;
 
     private CellStub pnfsManager;
@@ -114,7 +119,8 @@ public final class BulkActivityFactory implements CellMessageSender, Environment
     private boolean initialized;
 
     /**
-     * Generates an instance of the plugin-specific activity to be used by the request jobs.
+     * Generates an instance of the plugin-specific activity to be used by the
+     * request jobs.
      *
      * @param request     being serviced.
      * @param subject     of user who submitted the request.
@@ -137,11 +143,16 @@ public final class BulkActivityFactory implements CellMessageSender, Environment
         BulkActivity bulkActivity = provider.createActivity();
         bulkActivity.setSubject(subject);
         bulkActivity.setRestriction(restriction);
+        String rateLimiterType = rateLimiterActivityIndex.get(activity);
+        if (rateLimiterType != null) {
+            bulkActivity.setRateLimiter(rateLimiters.get(rateLimiterType));
+        }
 
         BulkTargetRetryPolicy retryPolicy = retryPolicies.get(activity);
         if (retryPolicy != null) {
             bulkActivity.setRetryPolicy(retryPolicy);
         }
+
         configureEndpoints(bulkActivity);
         bulkActivity.configure(request.getArguments());
 
@@ -205,6 +216,17 @@ public final class BulkActivityFactory implements CellMessageSender, Environment
     @Required
     public void setQoSResponseReceiver(QoSResponseReceiver qoSResponseReceiver) {
         this.qoSResponseReceiver = qoSResponseReceiver;
+    }
+
+    @Required
+    public void setRateLimiters(Map<String, Double> rates) {
+        rateLimiters = rates.entrySet().stream()
+              .collect(Collectors.toMap(Map.Entry::getKey, e -> RateLimiter.create(e.getValue())));
+    }
+
+    @Required
+    public void setRateLimiterActivityIndex(Map<String, String> rateLimiterActivityIndex) {
+        this.rateLimiterActivityIndex = rateLimiterActivityIndex;
     }
 
     @Required
