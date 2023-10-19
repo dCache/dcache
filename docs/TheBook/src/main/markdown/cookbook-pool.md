@@ -98,6 +98,20 @@ If an option is enabled a checksum is calculated as described. If there is alrea
 >
 > Do not change the default configuration for the option `enforcecrc`. This option should always be enabled as this ensures that there will always be a checksum stored with a file.
 
+#### Using direct-IO
+
+When disk scrub is enabled or a checksum verification is triggered by admin, dCache pool
+will sequentially read all files in the pool to calculate the checksums. Those reads going
+through the filesystem cache and, eventually, evict data accessed by user applications via
+NFS or xroot protocols, thus, application will experience high IO latency.
+
+To avoid such situations, pool support disabling read-through filesystem cache by opening
+file with `O_DIRECT` flag. This bahavoir can be controlled by:
+
+    csm use directio on|off
+
+admin command. By default, the direct-IO capability is disabled.
+
 ## Migration Module
 
 The purpose of the migration module is essentially to copy or move the content of a pool to one or more other pools.

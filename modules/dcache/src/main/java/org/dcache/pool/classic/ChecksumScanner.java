@@ -6,17 +6,21 @@ import static java.util.Objects.requireNonNull;
 import static org.dcache.util.Exceptions.messageOrClassName;
 
 import com.google.common.collect.Iterables;
+import com.sun.nio.file.ExtendedOpenOption;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileCorruptedCacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PnfsId;
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellLifeCycleAware;
+import dmg.cells.nucleus.CellSetupProvider;
 import dmg.util.CommandException;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -26,8 +30,9 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
-import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -42,16 +47,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ChecksumScanner
-      implements CellCommandListener, CellLifeCycleAware {
+      implements CellCommandListener, CellLifeCycleAware, CellSetupProvider, CellInfoProvider {
 
     private static final Logger LOGGER =
           LoggerFactory.getLogger(ChecksumScanner.class);
-
-    /**
-     * OpenOptions to use by scanner, when checksum of a file is calculated.
-     */
-    private static final EnumSet<? extends OpenOption> SCANNER_OPEN_OPTIONS = EnumSet.of(
-          OpenFlags.NOATIME);
 
     private final FullScan _fullScan = new FullScan();
     private final Scrubber _scrubber = new Scrubber();
@@ -62,6 +61,11 @@ public class ChecksumScanner
     private String poolName;
 
     private File _scrubberStateFile;
+
+    /**
+     * Indicates whatever file should be opened with direct io mode to by-pass file system cache
+     */
+    private volatile boolean _useDirectIO;
 
     /**
      * Errors found while running 'csm check'.
@@ -121,8 +125,7 @@ public class ChecksumScanner
                 _bad.clear();
 
                 for (PnfsId id : _repository) {
-                    try (ReplicaDescriptor handle = _repository.openEntry(id,
-                          SCANNER_OPEN_OPTIONS)) {
+                    try (ReplicaDescriptor handle = _repository.openEntry(id,getOpenOptions())) {
                         _csm.verifyChecksum(handle);
                     } catch (FileNotInCacheException e) {
                         /* It was removed before we could get it. No problem.
@@ -184,8 +187,7 @@ public class ChecksumScanner
         public void runIt()
               throws CacheException, InterruptedException, IOException, NoSuchAlgorithmException {
             stopScrubber();
-            try (ReplicaDescriptor handle = _repository.openEntry(_pnfsId,
-                  EnumSet.of(OpenFlags.NOATIME))) {
+            try (ReplicaDescriptor handle = _repository.openEntry(_pnfsId, getOpenOptions())) {
                 _actualChecksums = _csm.verifyChecksum(handle);
             } catch (FileCorruptedCacheException e) {
                 _expectedChecksums = e.getExpectedChecksums().get();
@@ -430,8 +432,7 @@ public class ChecksumScanner
                 try {
                     if (_repository.getState(id) == ReplicaState.CACHED ||
                           _repository.getState(id) == ReplicaState.PRECIOUS) {
-                        ReplicaDescriptor handle =
-                              _repository.openEntry(id, SCANNER_OPEN_OPTIONS);
+                        ReplicaDescriptor handle = _repository.openEntry(id, getOpenOptions());
                         try {
                             _csm.verifyChecksumWithThroughputLimit(handle);
                         } finally {
@@ -465,6 +466,18 @@ public class ChecksumScanner
                   + _badCount + " corrupt, "
                   + _unableCount + " unable to check";
         }
+    }
+
+    /**
+     * Returns OpenOptions to use by scanner, when checksum of a file is calculated.
+     */
+    private Set<OpenOption> getOpenOptions() {
+        Set<OpenOption> scrubOpenOptions = new HashSet<>();
+        scrubOpenOptions.add(OpenFlags.NOATIME);
+        if (_useDirectIO) {
+            scrubOpenOptions.add(ExtendedOpenOption.DIRECT);
+        }
+        return scrubOpenOptions;
     }
 
     private void invalidateCacheEntryAndSendAlarm(PnfsId id, FileCorruptedCacheException e) {
@@ -596,6 +609,33 @@ public class ChecksumScanner
         }
     }
 
+    @Command(name = "csm use directio",
+            hint = "enable/disable whether to bypass filesystem cache",
+            description = "If set to \"on,\" the scrubber will open files for checksum calculation using " +
+                    "the O_DIRECT mode to bypass the filesystem cache. This approach may enhance client IO " +
+                    "latency in certain scenarios but could potentially reduce the scrubbing throughput.")
+    public class CsmDirectioCommand implements Callable<String> {
+
+        @Argument(valueSpec = "on|off",  usage = "Specify whether directio is used.")
+        String enable;
+
+        @Override
+        public String call() throws CommandException {
+
+            switch (enable.toLowerCase()) {
+                case "on":
+                    _useDirectIO = true;
+                    break;
+                case "off":
+                    _useDirectIO = false;
+                    break;
+                default:
+                    throw  new CommandException("Invalid value: " + enable);
+            }
+            return enable;
+        }
+    }
+
     @Command(name = "csm show errors",
           hint = "show errors found during checksum verification",
           description = "Display the list of all errors found while running " +
@@ -630,4 +670,17 @@ public class ChecksumScanner
         _csm.removeListener(listener);
         stopScrubber();
     }
+
+    @Override
+    public synchronized void printSetup(PrintWriter pw) {
+        if (_useDirectIO) {
+            pw.println("csm use directio on");
+        }
+    }
+
+    @Override
+    public synchronized void getInfo(PrintWriter pw) {
+        pw.printf("use directio  : %s\n", _useDirectIO ? "on" : "off");
+    }
+
 }
