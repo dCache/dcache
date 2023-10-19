@@ -401,8 +401,8 @@ public class ConfigurationPropertiesTests {
 
     @Test
     public void testGetReplacementExpandingEnv() {
-        //  we assume that this SHELL env variable always set
-        _standardProperties.setProperty(SIMPLE_PROPERTY_NAME, propertyReference("env.SHELL"));
+        //  we assume that this HOME env variable always set
+        _standardProperties.setProperty(SIMPLE_PROPERTY_NAME, propertyReference("env.HOME"));
         _standardProperties.getProperty(SIMPLE_PROPERTY_NAME);
     }
 
