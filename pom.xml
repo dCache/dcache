@@ -1357,6 +1357,16 @@
                          to accept the overhead of forking each test run. -->
                     <forkCount>1</forkCount>
                     <reuseForks>false</reuseForks>
+                    <!-- Make Powermock compatible with JDK 17 -->
+                    <argLine>
+                        --add-opens java.base/java.lang=ALL-UNNAMED
+                        --add-opens java.base/java.util=ALL-UNNAMED
+                        --add-opens java.base/java.lang.reflect=ALL-UNNAMED
+                        --add-opens java.base/java.time=ALL-UNNAMED
+                        --add-opens java.base/java.time.format=ALL-UNNAMED
+                        --add-opens java.base/java.util.concurrent=ALL-UNNAMED
+                        --add-opens java.base/java.util.stream=ALL-UNNAMED
+                    </argLine>
                 </configuration>
             </plugin>
 
