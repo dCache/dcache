@@ -120,6 +120,8 @@
         <bouncycastle.version>1.67</bouncycastle.version>
         <datanucleus-core.version>5.2.2</datanucleus-core.version>
         <datanucleus.plugin.version>5.2.1</datanucleus.plugin.version>
+        <asm.version>7.2</asm.version>
+        <asm-tools.version>5.0.3</asm-tools.version>
     </properties>
 
     <scm>
@@ -423,7 +425,22 @@
             <dependency>
                 <groupId>org.ow2.asm</groupId>
                 <artifactId>asm</artifactId>
-                <version>7.2</version>
+                <version>${asm.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm-tree</artifactId>
+                <version>${asm-tools.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm-analysis</artifactId>
+                <version>${asm-tools.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm-util</artifactId>
+                <version>${asm-tools.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.datanucleus</groupId>
