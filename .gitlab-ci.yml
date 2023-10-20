@@ -114,7 +114,7 @@ default:
 
 rpm:
   stage: build
-  image: dcache/maven-java11-rpm-build
+  image: dcache/maven-java17-rpm-build
   extends: .build_cache
   script:
     - mvn $MAVEN_CLI_OPTS -am -pl packages/fhs -P rpm clean package
@@ -129,7 +129,7 @@ rpm:
 
 srm_client_rpm:
   stage: build
-  image: dcache/maven-java11-rpm-build
+  image: dcache/maven-java17-rpm-build
   extends: .build_cache
   script:
     - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl modules/srm-client package -P rpm
@@ -151,7 +151,7 @@ deb:
 
 tar:
   stage: build
-  image: dcache/maven-java11-tar-build
+  image: dcache/maven-java17-tar-build
   extends: .build_cache
   script:
     - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl packages/tar clean package
