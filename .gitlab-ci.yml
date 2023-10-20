@@ -200,7 +200,7 @@ sign_rpm:
     - echo $DCACHE_ORG_PGP_KEY | base64 -d -i > secret.gpg
     - gpg --quiet --batch --yes --allow-secret-key-import --passphrase="$DCACHE_ORG_PGP_KEY_PASS" --import secret.gpg
     - gpg -a --export "$DCACHE_ORG_KEY_NAME" > RPM-GPG-KEY
-    - rpmsign --addsign --define "_signature gpg" --define "_gpg_name  $DCACHE_ORG_KEY_NAME" --define "_gpg_sign_cmd_extra_args --pinentry-mode loopback --passphrase $DCACHE_ORG_PGP_KEY_PASS" packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm*
+    - rpmsign --addsign --define "_signature gpg" --define "_gpg_name  $DCACHE_ORG_KEY_NAME" --define "_gpg_sign_cmd_extra_args --pinentry-mode loopback --passphrase $DCACHE_ORG_PGP_KEY_PASS" packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm
     - rpmkeys --import RPM-GPG-KEY
     - rpm --checksig -v packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm
   artifacts:
