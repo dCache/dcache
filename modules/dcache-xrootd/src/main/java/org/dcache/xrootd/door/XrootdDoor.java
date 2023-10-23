@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 - 2022 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2023 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -725,9 +725,8 @@ public class XrootdDoor
 
         try {
             _kafkaSender.accept(infoRemove);
-        } catch (KafkaException e) {
-            _log.warn(Throwables.getRootCause(e).getMessage());
-
+        } catch (KafkaException | org.apache.kafka.common.KafkaException e) {
+            _log.warn("Failed to send message to kafka: {} ", Throwables.getRootCause(e).getMessage());
         }
     }
 

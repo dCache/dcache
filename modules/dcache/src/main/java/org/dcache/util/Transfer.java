@@ -1187,9 +1187,8 @@ public class Transfer implements Comparable<Transfer> {
 
         try {
             _kafkaSender.accept(msg);
-        } catch (KafkaException e) {
-            _log.warn(Throwables.getRootCause(e).getMessage());
-
+        } catch (KafkaException | org.apache.kafka.common.KafkaException e) {
+            _log.warn("Failed to send message to kafka: {} ", Throwables.getRootCause(e).getMessage());
         }
     }
 
