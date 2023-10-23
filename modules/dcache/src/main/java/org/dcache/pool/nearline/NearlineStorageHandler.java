@@ -1197,12 +1197,10 @@ public class NearlineStorageHandler
             addFromNearlineStorage(infoMsg, storage);
 
             billingStub.notify(infoMsg);
-
             try {
                 _kafkaSender.accept(infoMsg);
-            } catch (KafkaException e) {
-                LOGGER.warn(Throwables.getRootCause(e).getMessage());
-
+            } catch (KafkaException | org.apache.kafka.common.KafkaException e) {
+                LOGGER.warn("Failed to send message to kafka: {} ", Throwables.getRootCause(e).getMessage());
             }
             flushRequests.removeAndCallback(pnfsId, cause);
         }
@@ -1435,9 +1433,8 @@ public class NearlineStorageHandler
             billingStub.notify(infoMsg);
             try {
                 _kafkaSender.accept(infoMsg);
-            } catch (KafkaException e) {
-                LOGGER.warn(Throwables.getRootCause(e).getMessage());
-
+            } catch (KafkaException | org.apache.kafka.common.KafkaException e) {
+                LOGGER.warn("Failed to send message to kafka: {} ", Throwables.getRootCause(e).getMessage());
             }
             stageRequests.removeAndCallback(pnfsId, cause);
         }
