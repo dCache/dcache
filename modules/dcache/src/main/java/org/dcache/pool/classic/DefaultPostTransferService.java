@@ -157,9 +157,8 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
 
         try {
             _kafkaSender.accept(moverInfoMessage);
-        } catch (KafkaException e) {
-            LOGGER.warn(Throwables.getRootCause(e).getMessage());
-
+        } catch (KafkaException | org.apache.kafka.common.KafkaException e) {
+            LOGGER.warn("Failed to send message to kafka: {} ", Throwables.getRootCause(e).getMessage());
         }
     }
 
