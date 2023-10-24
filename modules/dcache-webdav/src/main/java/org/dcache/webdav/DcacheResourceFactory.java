@@ -1233,7 +1233,8 @@ public class DcacheResourceFactory
             _kafkaSender.accept(infoRemove);
         } catch (KafkaException | org.apache.kafka.common.KafkaException e) {
             LOGGER.warn("Failed to send message to kafka: {} ", Throwables.getRootCause(e).getMessage());
-        }    }
+        }
+    }
 
     /**
      * Deletes a directory.
