@@ -56,7 +56,7 @@ public class WlcgProfileScope implements AuthorisationSupplier {
          * Read data. Only applies to “online” resources such as disk (as opposed to “nearline” such
          * as tape where the {@literal stage} authorization should be used in addition).
          */
-        READ("storage.read", LIST, READ_METADATA, DOWNLOAD),
+        READ("storage.read", true, LIST, READ_METADATA, DOWNLOAD),
 
         /**
          * Upload data. This includes renaming files if the destination file does not already exist.
@@ -67,47 +67,50 @@ public class WlcgProfileScope implements AuthorisationSupplier {
          * use case for a separate {@literal storage.create} scope is to enable stage-out of data
          * from jobs on a worker node.
          */
-        CREATE("storage.create", READ_METADATA, UPLOAD, MANAGE, UPDATE_METADATA),
+        CREATE("storage.create", true, READ_METADATA, UPLOAD, MANAGE, UPDATE_METADATA),
 
         /**
          * Change data. This includes renaming files, creating new files, and writing data. This
          * permission includes overwriting or replacing stored data in addition to deleting or
          * truncating data. This is a strict superset of {@literal storage.create}.
          */
-        MODIFY("storage.modify", LIST, READ_METADATA, UPLOAD, MANAGE, DELETE, UPDATE_METADATA),
+        MODIFY("storage.modify", true, LIST, READ_METADATA, UPLOAD, MANAGE, DELETE, UPDATE_METADATA),
 
         /**
          * Read the data, potentially causing data to be staged from a nearline resource to an
          * online resource. This is a superset of {@literal storage.read}.
          */
-        STAGE("storage.stage", LIST, READ_METADATA, DOWNLOAD), // FIXME need to allow staging.
+        STAGE("storage.stage", true, LIST, READ_METADATA, DOWNLOAD), // FIXME need to allow staging.
 
         /**
          * "Read" or query information about job status and attributes.
          */
-        COMPUTE_READ("compute.read"),
+        COMPUTE_READ("compute.read", false),
 
         /**
          * Modify or change the attributes of an existing job.
          */
-        COMPUTE_MODIFY("compute.modify"),
+        COMPUTE_MODIFY("compute.modify", false),
 
         /**
          * Create or submit a new job at the computing resource.
          */
-        COMPUTE_CREATE("compute.create"),
+        COMPUTE_CREATE("compute.create", false),
 
         /**
          * Delete a job from the computing resource, potentially terminating
          * a running job.
          */
-        COMPUTE_CANCEL("compute.cancel");
+        COMPUTE_CANCEL("compute.cancel", false);
 
         private final String label;
         private final EnumSet<Activity> allowedActivities;
 
-        private Operation(String label, Activity... allowedActivities) {
+        private final boolean requirePath;
+
+        private Operation(String label, boolean requirePath, Activity... allowedActivities) {
             this.label = label;
+            this.requirePath = requirePath;
             this.allowedActivities = allowedActivities.length == 0
                     ? EnumSet.noneOf(Activity.class)
                     : EnumSet.copyOf(asList(allowedActivities));
@@ -119,6 +122,10 @@ public class WlcgProfileScope implements AuthorisationSupplier {
 
         public EnumSet<Activity> allowedActivities() {
             return allowedActivities;
+        }
+
+        public boolean isPathRequired() {
+            return requirePath;
         }
     }
 
@@ -146,6 +153,7 @@ public class WlcgProfileScope implements AuthorisationSupplier {
         checkScopeValid(operation != null, "Unknown operation %s", operationLabel);
 
         if (colon == -1) {
+            checkScopeValid(!operation.isPathRequired(), "Path must be specified");
             path = "/";
         } else {
             String scopePath = scope.substring(colon + 1);
