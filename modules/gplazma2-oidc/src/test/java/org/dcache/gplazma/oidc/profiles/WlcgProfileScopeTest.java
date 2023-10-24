@@ -58,6 +58,22 @@ public class WlcgProfileScopeTest {
         assertFalse(WlcgProfileScope.isWlcgProfileScope("storage.write:/"));
     }
 
+
+    @Test(expected = InvalidScopeException.class)
+    public void shouldRejectStorageCreateScopeWithoutPath() {
+        new WlcgProfileScope("storage.create");
+    }
+
+    @Test(expected = InvalidScopeException.class)
+    public void shouldRejectStorageReadScopeWithoutPath() {
+        new WlcgProfileScope("storage.read");
+    }
+
+    @Test(expected = InvalidScopeException.class)
+    public void shouldRejectStorageModifyScopeWithoutPath() {
+        new WlcgProfileScope("storage.modify");
+    }
+
     @Test
     public void shouldIdentifyComputeReadScope() {
         assertTrue(WlcgProfileScope.isWlcgProfileScope("compute.read"));
