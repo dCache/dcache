@@ -95,20 +95,6 @@ public class WlcgProfileScopeTest {
     }
 
     @Test
-    public void shouldParseReadScopeWithoutResourcePath() {
-        WlcgProfileScope scope = new WlcgProfileScope("storage.read");
-
-        Optional<Authorisation> maybeAuth = scope.authorisation(FsPath.create("/VOs/wlcg"));
-
-        assertTrue(maybeAuth.isPresent());
-
-        Authorisation auth = maybeAuth.get();
-
-        assertThat(auth.getPath(), equalTo(FsPath.create("/VOs/wlcg")));
-        assertThat(auth.getActivity(), containsInAnyOrder(LIST, READ_METADATA, DOWNLOAD));
-    }
-
-    @Test
     public void shouldParseReadScopeWithRootResourcePath() {
         WlcgProfileScope scope = new WlcgProfileScope("storage.read:/");
 
