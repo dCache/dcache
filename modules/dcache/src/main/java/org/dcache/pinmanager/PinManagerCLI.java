@@ -126,7 +126,6 @@ public class PinManagerCLI
             long millis = (lifetime == -1) ? -1 : TimeUnit.SECONDS.toMillis(lifetime);
             PinManagerPinMessage message = pin(pnfsId, null, millis, true).get();
             return String.format("A pin request for %s has been sent", pnfsId);
-            }
         }
     }
 
