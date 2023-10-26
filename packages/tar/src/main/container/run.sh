@@ -25,7 +25,7 @@ then
 fi
 
 
-/usr/bin/java \
+exec /usr/bin/java \
 	-Dsun.net.inetaddr.ttl=1800 \
 	-Dorg.globus.tcp.port.range=20000,25000 \
 	-Dorg.dcache.dcap.port=0 \
