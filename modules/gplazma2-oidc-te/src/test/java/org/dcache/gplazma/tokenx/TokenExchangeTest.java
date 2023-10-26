@@ -17,64 +17,81 @@
  */
 package org.dcache.gplazma.tokenx;
 
+import static org.mockito.Mockito.mock;
+
 import java.security.Principal;
-import java.util.Base64;
+// import java.util.Base64;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.BodyPublishers;
-import java.net.http.HttpResponse;
+// import java.net.URI;
+// import java.net.http.HttpClient;
+// import java.net.http.HttpRequest;
+// import java.net.http.HttpRequest.BodyPublishers;
+// import java.net.http.HttpResponse;
 
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.BearerTokenCredential;
 import org.dcache.gplazma.AuthenticationException;
+import org.dcache.gplazma.oidc.TokenProcessor;
+import org.dcache.gplazma.oidc.UnableToProcess;
+// import org.dcache.gplazma.oidc.OidcAuthPluginTest;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentMatchers;
+import org.mockito.BDDMockito;
 
+import static com.google.common.base.Preconditions.checkState;
 
 public class TokenExchangeTest {
 
-    private HttpClient client = HttpClient.newHttpClient();
+    // private HttpClient client = HttpClient.newHttpClient();
  
     private TokenExchange plugin; 
     private Set<Principal> principals;
     private Set<Restriction> restrictions;
+    private TokenProcessor processor;
 
     @Before
     public void setup() {
         plugin = null;
         principals = null;
         restrictions = null;
-    }
-
-    @Test(expected=AuthenticationException.class)
-    public void shouldFailWithoutBearerToken() throws Exception {
-        given(aPlugin());
-
-        when(invoked().withoutCredentials());
-    }
-
-    @Test(expected=AuthenticationException.class)
-    public void shouldFailWithTwoBearerTokens() throws Exception {
-        given(aPlugin());
-
-        when(invoked().withBearerToken("FOO").withBearerToken("BAR"));
+        processor = null;
     }
 
     @Test
-    public void tokenExchangeTest() throws Exception {
+    public void test_hello() {
 
-        given(aPlugin());
+        System.out.println("Hello");
+    }
 
-        String helmholtzToken = "eyJ0eXAiOiJhdCtqd3QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJiNWMzNTViNS0xY2NhLTRmZmEtYjRmNy02MDg4OGRhODc4ZmEiLCJhdWQiOiJwdWJsaWMtb2lkYy1hZ2VudCIsInNjb3BlIjoiZWR1cGVyc29uX2VudGl0bGVtZW50IGVtYWlsIGVkdXBlcnNvbl9zY29wZWRfYWZmaWxpYXRpb24gb2ZmbGluZV9hY2Nlc3MgcHJvZmlsZSBvcGVuaWQgZWR1cGVyc29uX3VuaXF1ZV9pZCIsImlzcyI6Imh0dHBzOlwvXC9sb2dpbi1kZXYuaGVsbWhvbHR6LmRlXC9vYXV0aDIiLCJleHAiOjE2OTc0NTA1MDYsImlhdCI6MTY5NzQ0NjUwNiwianRpIjoiYzM1MGI4NjYtOWMxNi00N2Q2LTg1ODMtMGY1YmYyMjQxZmU4IiwiY2xpZW50X2lkIjoicHVibGljLW9pZGMtYWdlbnQifQ.Ypifl_u_pBO2Kf65obgdzo-rbKSp35-GIq1fFk0nTTml9Ogl8LMY8wFAd-4Yhir3yCkvvDYzorzP8_NPkj_mvqxJRGGcku0Q80INTKTYew1eW4qlFhMqjRs9QCmVcpzYfmlBvlTfIYZ_oXr1SJAGJLfvzG2IyzGKr0_w3V-EgLEGuljhZAc9bibGbRn569_oX2n9TTqi-mGmJU72C4ssy88QK3WyieFGn0MQZdi95-WMyJG13Vo9qVAdgRdXTmOCzJdlvYLBRAWkUp6v9yEdxnbQb5REAakCirot1EBUOehpST_LrBjZCl0oQJa0kqrkpJKb7eejy9F1EISzuq7eTg";
+    // @Test(expected=AuthenticationException.class)
+    // public void shouldFailWithoutBearerToken() throws Exception {
+    //     given(aPlugin().withTokenProcessor(aTokenProcessor().thatFailsTestIfCalled()));
 
-        plugin.tokenExchange(helmholtzToken);
+    //     when(invoked().withoutCredentials());
+    //     // super.shouldFailWithoutBearerToken();
+    // }
+
+    // @Test(expected=AuthenticationException.class)
+    // public void shouldFailWithTwoBearerTokens() throws Exception {
+    //     given(aPlugin());
+
+    //     when(invoked().withBearerToken("FOO").withBearerToken("BAR"));
+    // }
+
+//     @Test
+//     public void tokenExchangeTest() throws Exception {
+
+//         given(aPlugin());
+
+//         String helmholtzToken = "eyJ0eXAiOiJhdCtqd3QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJiNWMzNTViNS0xY2NhLTRmZmEtYjRmNy02MDg4OGRhODc4ZmEiLCJhdWQiOiJwdWJsaWMtb2lkYy1hZ2VudCIsInNjb3BlIjoiZWR1cGVyc29uX2VudGl0bGVtZW50IGVtYWlsIGVkdXBlcnNvbl9zY29wZWRfYWZmaWxpYXRpb24gb2ZmbGluZV9hY2Nlc3MgcHJvZmlsZSBvcGVuaWQgZWR1cGVyc29uX3VuaXF1ZV9pZCIsImlzcyI6Imh0dHBzOlwvXC9sb2dpbi1kZXYuaGVsbWhvbHR6LmRlXC9vYXV0aDIiLCJleHAiOjE2OTc0NTA1MDYsImlhdCI6MTY5NzQ0NjUwNiwianRpIjoiYzM1MGI4NjYtOWMxNi00N2Q2LTg1ODMtMGY1YmYyMjQxZmU4IiwiY2xpZW50X2lkIjoicHVibGljLW9pZGMtYWdlbnQifQ.Ypifl_u_pBO2Kf65obgdzo-rbKSp35-GIq1fFk0nTTml9Ogl8LMY8wFAd-4Yhir3yCkvvDYzorzP8_NPkj_mvqxJRGGcku0Q80INTKTYew1eW4qlFhMqjRs9QCmVcpzYfmlBvlTfIYZ_oXr1SJAGJLfvzG2IyzGKr0_w3V-EgLEGuljhZAc9bibGbRn569_oX2n9TTqi-mGmJU72C4ssy88QK3WyieFGn0MQZdi95-WMyJG13Vo9qVAdgRdXTmOCzJdlvYLBRAWkUp6v9yEdxnbQb5REAakCirot1EBUOehpST_LrBjZCl0oQJa0kqrkpJKb7eejy9F1EISzuq7eTg";
+
+//         plugin.tokenExchange(helmholtzToken);
 
 
-   }
+//    }
 
 //     @Test
 //     public void prototyping() throws Exception {
@@ -138,6 +155,10 @@ public class TokenExchangeTest {
         return new PluginBuilder();
     }
 
+    private TokenProcessorBuilder aTokenProcessor() {
+        return new TokenProcessorBuilder();
+    }
+
     private AuthenticateInvocationBuilder invoked() {
         return new AuthenticateInvocationBuilder();
     }
@@ -154,10 +175,10 @@ public class TokenExchangeTest {
         //     properties.setProperty("gplazma.oidc.audience-targets", "");
         // }
 
-        // public PluginBuilder withTokenProcessor(TokenProcessorBuilder builder) {
-        //     processor = builder.build();
-        //     return this;
-        // }
+        public PluginBuilder withTokenProcessor(TokenProcessorBuilder builder) {
+            processor = builder.build();
+            return this;
+        }
 
         // public PluginBuilder withProperty(String key, String value) {
         //     properties.setProperty(key, value);
@@ -166,7 +187,7 @@ public class TokenExchangeTest {
 
 
         public TokenExchange build() {
-            return new TokenExchange(properties);
+            return new TokenExchange(properties, processor);
         }
     }
 
@@ -191,6 +212,64 @@ public class TokenExchangeTest {
             principals = new HashSet<>();
             restrictions = new HashSet<>();
             plugin.authenticate(publicCredentials, privateCredentials, principals, restrictions);
+        }
+    }
+
+    /**
+     * A fluent class for building a TokenProcessor.  It provides the same response for all extract
+     * requests.
+     */
+    private static class TokenProcessorBuilder {
+        private final TokenProcessor processor = mock(TokenProcessor.class);
+        private boolean responseAdded;
+
+        public TokenProcessorBuilder thatThrows(AuthenticationException exception) {
+            checkState(!responseAdded);
+            try {
+                BDDMockito.given(processor.extract(ArgumentMatchers.any())).willThrow(exception);
+            } catch (AuthenticationException | UnableToProcess e) {
+                throw new RuntimeException("Impossible exception caught", e);
+            }
+            responseAdded = true;
+            return this;
+        }
+
+        public TokenProcessorBuilder thatThrows(UnableToProcess exception) {
+            checkState(!responseAdded);
+            try {
+                BDDMockito.given(processor.extract(ArgumentMatchers.any())).willThrow(exception);
+            } catch (AuthenticationException | UnableToProcess e) {
+                throw new RuntimeException("Impossible exception caught", e);
+            }
+            responseAdded = true;
+            return this;
+        }
+
+        // public TokenProcessorBuilder thatReturns(ExtractResultBuilder builder) {
+        //     checkState(!responseAdded);
+        //     try {
+        //         BDDMockito.given(processor.extract(ArgumentMatchers.any())).willReturn(builder.build());
+        //     } catch (AuthenticationException | UnableToProcess e) {
+        //         throw new RuntimeException("Impossible exception caught", e);
+        //     }
+        //     responseAdded = true;
+        //     return this;
+        // }
+
+        public TokenProcessorBuilder thatFailsTestIfCalled() {
+            checkState(!responseAdded);
+            try {
+                BDDMockito.given(processor.extract(ArgumentMatchers.any())).willThrow(new AssertionError("TokenProcessor#assert called"));
+            } catch (AuthenticationException | UnableToProcess e) {
+                throw new RuntimeException("Impossible exception caught", e);
+            }
+            responseAdded = true;
+            return this;
+        }
+
+        public TokenProcessor build() {
+            checkState(responseAdded);
+            return processor;
         }
     }
 

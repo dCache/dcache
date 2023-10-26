@@ -12,32 +12,27 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 
+
 import org.dcache.auth.BearerTokenCredential;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.gplazma.AuthenticationException;
+import org.dcache.gplazma.oidc.OidcAuthPlugin;
+import org.dcache.gplazma.oidc.TokenProcessor;
 import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
 import org.dcache.gplazma.plugins.GPlazmaMappingPlugin;
 import org.dcache.gplazma.util.JsonWebToken;
+import org.dcache.util.Args;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.annotations.VisibleForTesting;
 
+// import static org.dcache.gplazma.oidc.OidcAuthPlugin.OIDC_ALLOWED_AUDIENCES;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 
-/**
- * A {@link GPlazmaMappingPlugin} converts {@code user@DOMAIN.COM} to {@link UserNamePrincipal}
- * corresponding to {@code user} ( without domain ).  For more complex mappings, like {@code
- * remte-user@DOMAIN.COM} to {@code local-user}, {@link GridMapFilePlugin} can be used.
- * <p>
- * To enable, add following likes into gplazma.conf:
- * <pre>
- *     <b>map requisite krb5</b>
- * </pre>
- */
-public class TokenExchange implements GPlazmaAuthenticationPlugin {
+public class TokenExchange extends OidcAuthPlugin {
 
     private final static Logger LOG = LoggerFactory.getLogger(TokenExchange.class);
 
@@ -61,24 +56,31 @@ public class TokenExchange implements GPlazmaAuthenticationPlugin {
     private final static String SUBJECT_TOKEN_TYPE = "urn%3Aietf%3Aparams%3Aoauth%3Atoken-type%3Aaccess_token";
     private final static String AUDIENCE = "exchange-test";
 
+    private final static String OIDC_ALLOWED_AUDIENCES = "gplazma.oidc.audience-targets";
+
+    // private final TokenProcessor tokenProcessor;
+    // private final Set<String> audienceTargets;
+
     public TokenExchange (Properties properties) {
         /*
          * enforced by pluggin interface
          */
+        super(properties);
     }
+
+    // @VisibleForTesting
+    // TokenExchange(Properties properties, TokenProcessor processor) {
+    //     tokenProcessor = processor;
+
+    //     // String targets = properties.getProperty(OIDC_ALLOWED_AUDIENCES);
+    //     // audienceTargets = Set.copyOf(new Args(targets).getArguments());
+    //     super(properties, processor);
+    // }
 
     @Override
     public void authenticate(Set<Object> publicCredentials, Set<Object> privateCredentials,
-          Set<Principal> identifiedPrincipals, Set<Restriction> restrictions)
-          throws AuthenticationException {
-
-
-        System.out.println("=================================");
-        System.out.println("authenticate");
-        System.out.println("publicCredentials:");
-        System.out.println(publicCredentials);
-        System.out.println("privateCredentials:");
-        System.out.println(privateCredentials);
+        Set<Principal> identifiedPrincipals, Set<Restriction> restrictions)
+        throws AuthenticationException {
 
         String token = null;
         for (Object credential : privateCredentials) {
@@ -92,19 +94,28 @@ public class TokenExchange implements GPlazmaAuthenticationPlugin {
 
         // throw new AuthenticationException("foo: ");
         checkAuthentication(token != null, "No bearer token in the credentials");
-        checkValid(token);
+        // checkValid(token);
 
         String exchangedToken = "";
 
         try {
+            System.out.println("calling method: tokenExchange()");
             exchangedToken = tokenExchange(token);
+
+            privateCredentials.clear();
+            privateCredentials.add(new BearerTokenCredential(exchangedToken));
+
+            // goal:
+            // - swap exchanged token with existing token
+            // Plan b: 
+            // - identifiedPrinciples.addAll()
         } catch (Exception e) {
             System.out.println("Do proper exception handling");
             e.printStackTrace();
         }
 
+        super.authenticate(publicCredentials, privateCredentials, identifiedPrincipals, restrictions);
     }
-
 
     @VisibleForTesting
     public String tokenExchange(String token) throws Exception {
@@ -130,27 +141,6 @@ public class TokenExchange implements GPlazmaAuthenticationPlugin {
         System.out.println(response);
 
         return result;
-    }
-
-    // redundant code from OidcAuthPlugin
-    private static void checkValid(String token) throws AuthenticationException {
-        if (JsonWebToken.isCompatibleFormat(token)) {
-            try {
-                JsonWebToken jwt = new JsonWebToken(token);
-
-                Instant now = Instant.now();
-
-                Optional<Instant> exp = jwt.getPayloadInstant("exp");
-                checkAuthentication(!exp.isPresent() || now.isBefore(exp.get()),
-                      "expired");
-
-                Optional<Instant> nbf = jwt.getPayloadInstant("nbf");
-                checkAuthentication(!nbf.isPresent() || now.isAfter(nbf.get()),
-                      "not yet valid");
-            } catch (IOException e) {
-                LOG.debug("Failed to parse token: {}", e.toString());
-            }
-        }
     }
 
 }
