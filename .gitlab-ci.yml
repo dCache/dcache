@@ -15,12 +15,6 @@
 #  DOCKER_HUB_ACCESS_KEY: Access Key or Password of the docker user
 #
 #
-#  DESY env: we use rancher2 based cluster. User rancher cli to create namespace to bind to the project
-#
-#  RANCHER_SERVER: rancher server endpoint
-#  RANCHER_TOKEN: rancher access token
-#  RANCHER_CONTEXT: associated rancher project
-#
 #
 #  KUBECONFIG: env file that contains kubernetes configuration to access the cluster
 #
@@ -75,13 +69,7 @@ default:
 .kubernetes_image:
   extends: .kubernetes_tags
   image: bitnami/kubectl:latest
-
-.rancher_image:
-  extends: .kubernetes_tags
-  image: rancher/cli2
-  before_script:
-    - rancher login ${RANCHER_SERVER} --token ${RANCHER_TOKEN} --context ${RANCHER_CONTEXT}
-
+  
 .helm_image:
   extends: .kubernetes_tags
   image:
@@ -333,9 +321,10 @@ upload_container:
 #
 prepare_k8s_env:
   stage: testenv_pre
-  extends: .rancher_image
+  extends: .kubernetes_image
   script:
-    - rancher namespaces create ${K8S_NAMESPACE}
+    - kubectl create namespace ${K8S_NAMESPACE}
+
 
 #
 # collect all logs
@@ -359,12 +348,12 @@ collect_logs:
 #
 cleanup_k8s_env:
   stage: testenv_post
-  extends: .rancher_image
+  extends: .kubernetes_image
   needs:
     - collect_logs
   when: always
   script:
-    - rancher namespaces delete ${K8S_NAMESPACE}
+    - kubectl delete namespace ${K8S_NAMESPACE} --grace-period=1 --ignore-not-found=true
 
 #
 # infrastructure required to run dCache
