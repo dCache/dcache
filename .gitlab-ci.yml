@@ -316,6 +316,26 @@ upload_container:
       --context $CI_PROJECT_DIR
       --dockerfile $CI_PROJECT_DIR/Dockerfile
       --destination dcache/dcache:$tag
+
+#
+# This jobs needs that the number of changes to fetch from GitLab when cloning a repository is high enough to generate
+# the changelog.
+Generate release notes:
+  image: almalinux:9-minimal
+  stage: upload
+  extends: .upload_rules
+  dependencies:
+    - sign_deb
+    - sign_rpm
+    - sign_srm_client_rpm
+    - tar
+  script:
+    - microdnf install -y git-core
+    - .ci/generate-changelog.sh >> release-$CI_COMMIT_TAG.md
+  artifacts:
+    paths:
+      - release-*.md
+
 #
 # prepare kubernetes env for the build
 #
