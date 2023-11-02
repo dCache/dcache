@@ -20,6 +20,8 @@ package org.dcache.webdav;
 
 import com.google.common.net.MediaType;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Set;
 
 import org.junit.Test;
@@ -106,5 +108,28 @@ public class RequestsTest {
                 Set.of(HTML_UTF_8, PLAIN_TEXT_UTF_8), HTML_UTF_8);
 
         assertThat(responseType, equalTo(PLAIN_TEXT_UTF_8));
+    }
+
+    @Test
+    public void shouldReturnFilePathOfUrl() throws MalformedURLException {
+        var u = new URL("https://door.domain.foo/pnfs/domain.foo/path/to/file");
+        assertThat(Requests.stripToPath(u), equalTo("/pnfs/domain.foo/path/to/file"));
+    }
+
+    @Test
+    public void shouldReturnFilePathOfUrlWithPort() throws MalformedURLException {
+        var u = new URL("https://door.domain.foo:1234/pnfs/domain.foo/path/to/file?foo=bar");
+        assertThat(Requests.stripToPath(u), equalTo("/pnfs/domain.foo/path/to/file"));
+    }
+    @Test
+    public void shouldReturnFilePathOfUrlWithPortAndExtraSlash() throws MalformedURLException {
+        var u = new URL("https://door.domain.foo:1234//pnfs/domain.foo//path/to/file");
+        assertThat(Requests.stripToPath(u), equalTo("/pnfs/domain.foo/path/to/file"));
+    }
+
+    @Test
+    public void shouldReturnFilePathOfUrlWithQuery() throws MalformedURLException {
+        var u = new URL("https://door.domain.foo:1234/pnfs/domain.foo/path/to/file?foo=bar");
+        assertThat(Requests.stripToPath(u), equalTo("/pnfs/domain.foo/path/to/file"));
     }
 }
