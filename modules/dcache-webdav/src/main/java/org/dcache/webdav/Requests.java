@@ -23,13 +23,13 @@ import static java.util.Comparator.comparingDouble;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Multimaps;
 import com.google.common.net.MediaType;
+
 import java.util.Comparator;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.net.URI;
-import java.net.URL;
 import java.nio.file.Path;
 import java.util.Collection;
 
@@ -169,7 +169,7 @@ public class Requests {
      * @return The path component of the URL.
      */
     public static String stripToPath(String uri) {
-        return stripToPath(URI.create(uri).getPath());
+        return stripToPath(URI.create(uri));
     }
 
     /**
@@ -178,7 +178,7 @@ public class Requests {
      * @param url The URL to extract path from.
      * @return The path component of the URL.
      */
-    public static String stripToPath(URL url) {
+    public static String stripToPath(URI url) {
         return Path.of(url.getPath()).normalize().toString();
     }
 }
