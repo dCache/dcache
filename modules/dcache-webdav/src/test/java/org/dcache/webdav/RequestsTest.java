@@ -112,24 +112,24 @@ public class RequestsTest {
 
     @Test
     public void shouldReturnFilePathOfUrl() throws MalformedURLException {
-        var u = new URL("https://door.domain.foo/pnfs/domain.foo/path/to/file");
+        var u = new URL("https://door.domain.foo/pnfs/domain.foo/path/to/file").toString();
         assertThat(Requests.stripToPath(u), equalTo("/pnfs/domain.foo/path/to/file"));
     }
 
     @Test
     public void shouldReturnFilePathOfUrlWithPort() throws MalformedURLException {
-        var u = new URL("https://door.domain.foo:1234/pnfs/domain.foo/path/to/file?foo=bar");
+        var u = new URL("https://door.domain.foo:1234/pnfs/domain.foo/path/to/file?foo=bar").toString();
         assertThat(Requests.stripToPath(u), equalTo("/pnfs/domain.foo/path/to/file"));
     }
     @Test
     public void shouldReturnFilePathOfUrlWithPortAndExtraSlash() throws MalformedURLException {
-        var u = new URL("https://door.domain.foo:1234//pnfs/domain.foo//path/to/file");
+        var u = new URL("https://door.domain.foo:1234//pnfs/domain.foo//path/to/file").toString();
         assertThat(Requests.stripToPath(u), equalTo("/pnfs/domain.foo/path/to/file"));
     }
 
     @Test
     public void shouldReturnFilePathOfUrlWithQuery() throws MalformedURLException {
-        var u = new URL("https://door.domain.foo:1234/pnfs/domain.foo/path/to/file?foo=bar");
+        var u = new URL("https://door.domain.foo:1234/pnfs/domain.foo/path/to/file?foo=bar").toString();
         assertThat(Requests.stripToPath(u), equalTo("/pnfs/domain.foo/path/to/file"));
     }
 }
