@@ -113,7 +113,7 @@
                           <bean class="${pool.plugins.meta}" init-method="init">
                               <description>Store for pool meta data</description>
                               <constructor-arg ref="file-store"/>
-                              <constructor-arg value="#{ T(java.nio.file.FileSystems).getDefault().getPath('${pool.path}') }"/>
+                              <constructor-arg value="#{ T(java.nio.file.FileSystems).getDefault().getPath('${pool.path.meta}') }"/>
                               <constructor-arg value="${pool.name}"/>
                           </bean>
                       </constructor-arg>
