@@ -32,7 +32,7 @@ public class PoolGroupInfoMsgHandler extends CellMessageHandlerSkel {
 
         Object array[] = (Object[]) msgPayload;
 
-        if (array.length != 4) {
+        if (array.length != 5) {
             LOGGER.error("Pool group info, unexpected array size: {}", array.length);
             return;
         }
@@ -42,15 +42,18 @@ public class PoolGroupInfoMsgHandler extends CellMessageHandlerSkel {
         Object poolNames[] = (Object[]) array[1];
         Object linkNames[] = (Object[]) array[2];
         Boolean resilient = (Boolean) array[3];
+        Object nestedPolls[] = (Object[]) array[4];
 
         StateUpdate update = new StateUpdate();
 
         StatePath thisPoolGroupPath = POOLGROUPS_PATH.newChild(poolgroupName);
 
-        if (poolNames.length + linkNames.length == 0) {
-            // Add an entry, even though this poolgroup is empty.
+        if (poolNames.length + linkNames.length + nestedPolls.length == 0) {
+            // Add an entry, even though this poolgroup is empty
             update.appendUpdate(thisPoolGroupPath, new StateComposite(metricLifetime));
         } else {
+            addItems(update, thisPoolGroupPath.newChild("nestedgroups"), nestedPolls,
+                  metricLifetime);
             addItems(update, thisPoolGroupPath.newChild("pools"), poolNames, metricLifetime);
             addItems(update, thisPoolGroupPath.newChild("links"), linkNames, metricLifetime);
             update.appendUpdate(thisPoolGroupPath.newChild("resilient"),

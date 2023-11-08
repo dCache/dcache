@@ -1532,11 +1532,13 @@ public class PoolSelectionUnitV2
                           + groupName);
                 }
 
-                Object[] result = new Object[4];
+                Object[] result = new Object[5];
                 result[0] = groupName;
                 result[1] = group._poolList.keySet().toArray();
                 result[2] = group._linkList.keySet().toArray();
                 result[3] = group.isPrimary();
+                result[4] = group._pgroupList.stream().sorted(comparing(PGroup::getName))
+                      .map(PGroup::getName).toArray();
                 xlsResult = result;
             }
         } finally {

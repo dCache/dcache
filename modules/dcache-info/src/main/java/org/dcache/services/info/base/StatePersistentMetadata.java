@@ -132,6 +132,8 @@ public class StatePersistentMetadata {
               branchMetadata("queue", "name"));
 
         this.add(StatePath.parsePath("poolgroups.*"), branchMetadata("poolgroup", "name"));
+        this.add(StatePath.parsePath("poolgroups.*.nestedgroups.*"), branchMetadata("nestedgroups", "name"));
+
         this.add(StatePath.parsePath("poolgroups.*.links.*"), branchMetadata("linkref", "name"));
         this.add(StatePath.parsePath("poolgroups.*.pools.*"), branchMetadata("poolref", "name"));
 
