@@ -61,7 +61,6 @@ package org.dcache.qos;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.dcache.util.TimeUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -100,7 +99,7 @@ public class DefaultQoSPolicyJsonDeserializer {
     private static QoSState deserializeState(JSONObject jsonState) {
         QoSState state = new QoSState();
         if (jsonState.has(DURATION)) {
-            state.setDuration(TimeUtils.validateDuration(jsonState.getString(DURATION)));
+            state.setDuration(jsonState.getString(DURATION));
         }
         List<QoSStorageMediumSpecification> media = new ArrayList<>();
         JSONArray mediaArray = jsonState.getJSONArray(MEDIA);
