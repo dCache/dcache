@@ -96,7 +96,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
 import javax.security.auth.Subject;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.AbstractMessageCallback;
@@ -244,7 +243,6 @@ public final class BulkRequestContainerJob
      */
     abstract class ContainerTask implements Runnable {
 
-        final Consumer<Throwable> errorHandler = e -> uncaughtException(Thread.currentThread(), e);
         final long seqNo = taskCounter.getAndIncrement();
         final PermitHolder permitHolder = new PermitHolder();
 
@@ -254,15 +252,8 @@ public final class BulkRequestContainerJob
         public void run() {
             try {
                 doInner();
-            } catch (InterruptedException e) {
-                remove();
-                containerState = ContainerState.STOP;
-                jobTarget.setErrorObject(e);
-                update(CANCELLED);
             } catch (Throwable e) {
-                remove();
-                errorHandler.accept(e);
-                Throwables.throwIfUnchecked(e);
+               handleException(e);
             }
         }
 
@@ -283,6 +274,18 @@ public final class BulkRequestContainerJob
                 new DirListTask(id, pid, path, dirAttributes).submitAsync();
             } catch (InterruptedException e) {
                 LOGGER.trace("{} - expandDepthFirst {} interrupted.", ruid, id);
+            }
+        }
+
+        void handleException(Throwable e) {
+            remove();
+            if (e instanceof InterruptedException) {
+                containerState = ContainerState.STOP;
+                jobTarget.setErrorObject(e);
+                update(CANCELLED);
+            } else {
+                uncaughtException(Thread.currentThread(), e);
+                Throwables.throwIfUnchecked(e);
             }
         }
 
@@ -476,6 +479,15 @@ public final class BulkRequestContainerJob
                     }
                     break;
             }
+        }
+
+        void handleException(Throwable e) {
+            target.setErrorObject(e);
+            if (activityFuture == null) {
+                activityFuture = Futures.immediateFailedFuture(Throwables.getRootCause(e));
+            }
+            handleCompletion();
+            super.handleException(e);
         }
 
         void performSync() throws InterruptedException {
@@ -935,7 +947,7 @@ public final class BulkRequestContainerJob
          */
         containerState = ContainerState.STOP;
         jobTarget.setErrorObject(e);
-        update(FAILED);
+        update();
         ThreadGroup group = t.getThreadGroup();
         if (group != null) {
             group.uncaughtException(t, e);
@@ -946,15 +958,7 @@ public final class BulkRequestContainerJob
 
     public void update(State state) {
         if (jobTarget.setState(state)) {
-            try {
-                targetStore.update(jobTarget.getId(), jobTarget.getState(),
-                      jobTarget.getErrorType(),
-                      jobTarget.getErrorMessage());
-            } catch (BulkStorageException e) {
-                LOGGER.error("{}, updateJobState: {}", ruid, e.toString());
-            }
-
-            signalStateChange();
+            update();
         }
     }
 
@@ -1098,5 +1102,17 @@ public final class BulkRequestContainerJob
               .activity(activity.getName()).id(id).pid(pid).rid(rid).ruid(ruid).state(state)
               .createdAt(System.currentTimeMillis()).errorType(errorType)
               .errorMessage(errorMessage).path(path).build();
+    }
+
+    private void update() {
+        try {
+            targetStore.update(jobTarget.getId(), jobTarget.getState(),
+                  jobTarget.getErrorType(),
+                  jobTarget.getErrorMessage());
+        } catch (BulkStorageException e) {
+            LOGGER.error("{}, updateJobState: {}", ruid, e.toString());
+        }
+
+        signalStateChange();
     }
 }
