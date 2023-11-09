@@ -15,6 +15,7 @@ import com.google.common.collect.ImmutableMap;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -35,6 +36,10 @@ import org.apache.commons.math3.stat.descriptive.StatisticalSummary;
 public class TimeUtils {
 
     public static final String TIMESTAMP_FORMAT = "yyyy-MM-dd' 'HH:mm:ss.SSS";
+
+    private static final String BAD_DURATION_FORMAT_ERROR = "Duration '%s' cannot be parsed. "
+          + "Accepted duration is a text string such as 'PnDTnHnMn.nS' based on the ISO-8601 "
+          + "duration format. E.g. 'P30DT2H30M15.5S' for 30 days, 2 hours, 30 minutes, 15.5 seconds.";
 
     /**
      * <p>Compares time units such that the larger unit is
@@ -578,5 +583,14 @@ public class TimeUtils {
 
     public static Duration durationOf(long value, TimeUnit unit) {
         return Duration.of(value, unit.toChronoUnit());
+    }
+
+    public static String validateDuration(String duration) throws IllegalArgumentException {
+        try {
+            Duration.parse(duration);
+            return duration;
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException(String.format(BAD_DURATION_FORMAT_ERROR, duration));
+        }
     }
 }
