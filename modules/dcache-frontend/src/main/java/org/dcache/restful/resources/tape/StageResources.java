@@ -106,6 +106,7 @@ import org.dcache.services.bulk.BulkRequestInfo;
 import org.dcache.services.bulk.BulkRequestMessage;
 import org.dcache.services.bulk.BulkRequestStatusMessage;
 import org.dcache.services.bulk.BulkRequestTargetInfo;
+import org.dcache.util.TimeUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -382,7 +383,8 @@ public final class StageResources {
                 String path = file.getString("path");
                 paths.add(path);
                 if (file.has("diskLifetime")) {
-                    jsonLifetimes.put(path, file.getString("diskLifetime"));
+                    jsonLifetimes.put(path,
+                          TimeUtils.validateDuration(file.getString("diskLifetime")));
                 }
                 if (file.has("targetedMetadata")) {
                     getTargetedMetadataForPath(file).ifPresent(mdata ->
@@ -395,7 +397,7 @@ public final class StageResources {
             arguments.put("diskLifetime", jsonLifetimes.toString());
             arguments.put("targetedMetadata", jsonMetadata.toString());
             request.setArguments(arguments);
-        } catch (JSONException e) {
+        } catch (JSONException | IllegalArgumentException e) {
             throw newBadRequestException(requestPayload, e);
         }
 
