@@ -295,6 +295,11 @@ public final class PrestoreRequestContainerJob extends AbstractRequestContainerJ
             future = Futures.immediateFailedFuture(e);
             register(target, future, e);
             return future;
+        } catch (Throwable e) {
+            future = Futures.immediateFailedFuture(e);
+            register(target, future, e);
+            uncaughtException(Thread.currentThread(), e);
+            return future;
         }
 
         register(target, future, null);
