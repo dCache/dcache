@@ -185,10 +185,10 @@ public class QoSPolicyTest {
     private void givenAQoSPolicy() {
         policy = aQoSPolicy("MyAnalysisData")
               .withStates(
-                    aQoSState().lasting("P1M")
+                    aQoSState().lasting("P1D")
                           .with(aDiskSpecification("SSD").withCopies(2).partitionedBy("hostname"),
                                 aDiskSpecification("spinning").withCopies(1)),
-                    aQoSState().lasting("P3M")
+                    aQoSState().lasting("P3D")
                           .with(aDiskSpecification("spinning").withCopies(2)
                                       .partitionedBy("hostname"),
                                 aTapeSpecification("CTA").withInstance("CTA::public")),
