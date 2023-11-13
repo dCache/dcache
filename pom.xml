@@ -70,7 +70,7 @@
         <version.jetty>9.4.52.v20230823</version.jetty>
         <version.xrootd4j>4.5.8</version.xrootd4j>
         <version.jersey>2.28</version.jersey>
-        <version.dcache-view>2.0.2</version.dcache-view>
+        <version.dcache-view>2.1.0</version.dcache-view>
         <version.netty>4.1.94.Final</version.netty>
         <version.dcache>${project.version}</version.dcache>
         <version.swagger-ui>3.1.7</version.swagger-ui>
