@@ -85,6 +85,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -140,6 +141,11 @@ public final class FileQoSStatusHandler implements CellInfoProvider,
           Set.of(FileAttribute.PNFSID, FileAttribute.QOS_POLICY, FileAttribute.QOS_STATE);
 
     private final AtomicLong handledExpired = new AtomicLong(0L);
+
+    /**
+     *  This is just a concurrent implementation of a set, which is how it is used here.
+     */
+    private final Set<PnfsId> modifyRequests = new ConcurrentSkipListSet<>();
 
     private QoSRequirementsListener requirementsListener;
     private QoSVerificationListener verificationListener;
@@ -228,43 +234,59 @@ public final class FileQoSStatusHandler implements CellInfoProvider,
     public MessageReply<QoSRequirementsModifiedMessage> handleQoSModification(
           QoSRequirementsModifiedMessage message) {
         counters.increment(QOS_MODIFIED.name());
+        modifyRequests.add(message.getRequirements().getPnfsId());
         MessageReply<QoSRequirementsModifiedMessage> reply = new MessageReply<>();
         qosModifyExecutor.submit(() -> {
             final FileQoSRequirements requirements = message.getRequirements();
             final Subject subject = message.getSubject();
             PnfsId pnfsId = requirements.getPnfsId();
             Exception exception = null;
-            try {
-                LOGGER.debug("handleQoSModification calling fileQoSRequirementsModified for {}.",
-                      pnfsId);
-                requirementsListener.fileQoSRequirementsModified(requirements, subject);
-                LOGGER.debug("handleQoSModification calling fileQoSStatusChanged for {}, {}.",
-                      pnfsId, QOS_MODIFIED);
-                policyStateExecutor.submit(() -> {
-                    FileQoSUpdate update = new FileQoSUpdate(pnfsId, null, QOS_MODIFIED);
-                    update.setSubject(subject);
-                    try {
-                        fileQoSStatusChanged(update);
-                    } catch (QoSException e) {
-                        String error = String.format("could not complete fileQoSStatusChanged "
-                                    + "for %s: %s, cause %s.", update, e.getMessage(),
-                              Throwables.getRootCause(e));
-                        handleActionCompleted(pnfsId, VOID, error);
-                    }
-                });
+            if (!modifyRequests.contains(pnfsId)) {
+                LOGGER.debug("handleQoSModification, for {} was cancelled, "
+                      + "skipping.", pnfsId);
                 message.setSucceeded();
-            } catch (CacheException e) {
-                exception = e;
-                message.setFailed(e.getRc(), e);
-            } catch (QoSException e) {
-                exception = e;
-                message.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
-            } catch (NoRouteToCellException e) {
-                exception = e;
-                message.setFailed(CacheException.SERVICE_UNAVAILABLE, e);
-            } catch (InterruptedException e) {
-                message.setFailed(CacheException.TIMEOUT, e);
-                exception = e;
+            } else {
+                try {
+                    LOGGER.debug(
+                          "handleQoSModification calling fileQoSRequirementsModified for {}.",
+                          pnfsId);
+                    requirementsListener.fileQoSRequirementsModified(requirements, subject);
+                    LOGGER.debug("handleQoSModification calling fileQoSStatusChanged for {}, {}.",
+                          pnfsId, QOS_MODIFIED);
+                    policyStateExecutor.submit(() -> {
+                        if (!modifyRequests.remove(pnfsId)) {
+                            LOGGER.debug("handleQoSModification, for {} was cancelled, "
+                                  + "skipping.", pnfsId);
+                            message.setSucceeded();
+                        } else {
+                            FileQoSUpdate update = new FileQoSUpdate(pnfsId, null, QOS_MODIFIED);
+                            update.setSubject(subject);
+                            try {
+                                fileQoSStatusChanged(update);
+                                message.setSucceeded();
+                            } catch (QoSException e) {
+                                String error = String.format(
+                                      "could not complete fileQoSStatusChanged "
+                                            + "for %s: %s, cause %s.", update, e.getMessage(),
+                                      Throwables.getRootCause(e));
+                                message.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
+                                handleActionCompleted(pnfsId, VOID, error);
+                            }
+                        }
+                    });
+                } catch (CacheException e) {
+                    exception = e;
+                    message.setFailed(e.getRc(), e);
+                } catch (QoSException e) {
+                    exception = e;
+                    message.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
+                } catch (NoRouteToCellException e) {
+                    exception = e;
+                    message.setFailed(CacheException.SERVICE_UNAVAILABLE, e);
+                } catch (InterruptedException e) {
+                    message.setFailed(CacheException.TIMEOUT, e);
+                    exception = e;
+                }
             }
 
             if (exception != null) {
@@ -272,6 +294,7 @@ public final class FileQoSStatusHandler implements CellInfoProvider,
                       requirements.getPnfsId(), exception.getMessage());
                 handleActionCompleted(pnfsId, VOID, exception.toString());
             }
+
             reply.reply(message);
         });
         return reply;
@@ -279,16 +302,19 @@ public final class FileQoSStatusHandler implements CellInfoProvider,
 
     public void handleQoSModificationCancelled(PnfsId pnfsId, Subject subject) {
         counters.increment(QOS_MODIFIED_CANCELED.name());
-        qosModifyExecutor.execute(() -> {
-            try {
-                LOGGER.debug(
-                      "handleQoSModificationCancelled notifying verification listener to cancel {}.",
-                      pnfsId);
-                verificationListener.fileQoSVerificationCancelled(pnfsId, subject);
-            } catch (QoSException e) {
-                LOGGER.error("Failed to handle QoS requirements for {}: {}.", pnfsId, e.toString());
-            }
-        });
+        if (!modifyRequests.remove(pnfsId)) {
+            qosModifyExecutor.execute(() -> {
+                try {
+                    LOGGER.debug(
+                          "handleQoSModificationCancelled notifying verification listener to cancel {}.",
+                          pnfsId);
+                    verificationListener.fileQoSVerificationCancelled(pnfsId, subject);
+                } catch (QoSException e) {
+                    LOGGER.error("Failed to handle QoS requirements for {}: {}.", pnfsId,
+                          e.toString());
+                }
+            });
+        }
     }
 
     public void handleQoSPolicyInfoRequest(FileQoSPolicyInfoMessage message, MessageReply<Message> reply) {
@@ -458,17 +484,15 @@ public final class FileQoSStatusHandler implements CellInfoProvider,
             return;
         }
 
+        FileAttributes attributes = requirements.getAttributes();
         switch (messageType) {
             case ADD_CACHE_LOCATION:
+                /*
+                 *  provide for lazy update inside namespace
+                 */
+                updateQosOnNamespace(pnfsId, attributes);
             case QOS_MODIFIED:
-                FileAttributes attributes = requirements.getAttributes();
                 try {
-                    if (messageType == ADD_CACHE_LOCATION) {
-                        /*
-                         *  provide for lazy update inside namespace
-                         */
-                        updateQosOnNamespace(pnfsId, attributes);
-                    }
                     LOGGER.debug(
                           "fileQoSStatusChanged calling updateQoSTransition for {}, {}.",
                           pnfsId, messageType);
@@ -481,7 +505,6 @@ public final class FileQoSStatusHandler implements CellInfoProvider,
                 }
                 break;
             case CLEAR_CACHE_LOCATION:
-                attributes = requirements.getAttributes();
                 if (attributes.isUndefined(FileAttribute.LOCATIONS) || attributes.getLocations().isEmpty()) {
                     // empty location here could mean file deletion
                     engineDao.delete(pnfsId);
