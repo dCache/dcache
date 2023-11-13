@@ -477,6 +477,7 @@ public class VerifyOperationManager extends RunnableModule implements CellInfoPr
         VerifyOperationFilter filter = new VerifyOperationFilter();
         filter.setPnfsIds(pnfsId);
         cancel(new VerifyOperationCancelFilter(filter, remove));
+
     }
 
     public void cancelFileOpForPool(String pool, boolean onlyParent) {

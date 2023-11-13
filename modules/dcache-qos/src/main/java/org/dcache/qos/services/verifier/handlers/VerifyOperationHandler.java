@@ -73,6 +73,7 @@ import java.io.Serializable;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
 import org.dcache.alarms.AlarmMarkerFactory;
@@ -167,6 +168,12 @@ public class VerifyOperationHandler implements VerifyAndUpdateHandler {
                   INCONSISTENT_LOCATIONS_ALARM);
         }
     }
+
+    /**
+     * Tracks individual modify requests.
+     * This is just a concurrent implementation of a set, which is how it is used here.
+     */
+    private final Set<PnfsId> modifyRequests = new ConcurrentSkipListSet<>();
 
     /**
      * Tracks scan requests and cancellations.
@@ -268,7 +275,9 @@ public class VerifyOperationHandler implements VerifyAndUpdateHandler {
      */
     public void handleFileOperationCancelled(PnfsId pnfsId) {
         counters.incrementReceived(QoSVerifierCounters.VRF_CNCL_MESSAGE);
-        updateExecutor.submit(() -> manager.cancel(pnfsId, true));
+        if (!modifyRequests.remove(pnfsId)) {
+            updateExecutor.submit(() -> manager.cancel(pnfsId, true));
+        }
     }
 
     /**
@@ -299,6 +308,9 @@ public class VerifyOperationHandler implements VerifyAndUpdateHandler {
      */
     public void handleUpdate(FileQoSUpdate data) {
         LOGGER.debug("handleUpdate, update to be registered: {}", data);
+        if (!modifyRequests.remove(data.getPnfsId())) {
+            LOGGER.debug("handleUpdate, update has been cancelled: {}", data);
+        }
         if (!manager.createOrUpdateOperation(data)) {
             LOGGER.debug("handleUpdate, operation already registered for: {}", data.getPnfsId());
             handleVerificationNop(data, false);
@@ -441,6 +453,8 @@ public class VerifyOperationHandler implements VerifyAndUpdateHandler {
     public void handleVerificationRequest(QoSVerificationRequest request) {
         counters.incrementReceived(QoSVerifierCounters.VRF_REQ_MESSAGE);
         LOGGER.debug("handleVerificationRequest for {}.", request.getUpdate());
+        PnfsId pnfsId = request.getUpdate().getPnfsId();
+        modifyRequests.add(pnfsId);
         updateExecutor.submit(() -> handleUpdate(request.getUpdate()));
     }
 
