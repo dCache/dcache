@@ -229,6 +229,11 @@ public final class RequestContainerJob extends AbstractRequestContainerJob {
             future = Futures.immediateFailedFuture(e);
             register(path, future, attributes, e);
             return future;
+        } catch (Throwable e) {
+            future = Futures.immediateFailedFuture(e);
+            register(path, future, attributes, e);
+            uncaughtException(Thread.currentThread(), e);
+            return future;
         }
 
         register(path, future, attributes, null);

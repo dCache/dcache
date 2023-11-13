@@ -62,7 +62,6 @@ package org.dcache.services.bulk.job;
 import static org.dcache.services.bulk.activity.BulkActivity.MINIMALLY_REQUIRED_ATTRIBUTES;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.CANCELLED;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.COMPLETED;
-import static org.dcache.services.bulk.util.BulkRequestTarget.State.FAILED;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.READY;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.SKIPPED;
 import static org.dcache.services.bulk.util.BulkRequestTarget.computeFsPath;
@@ -336,7 +335,7 @@ public abstract class AbstractRequestContainerJob
          */
         containerState = ContainerState.STOP;
         target.setErrorObject(e);
-        update(FAILED);
+        update();
         ThreadGroup group = t.getThreadGroup();
         if (group != null) {
             group.uncaughtException(t, e);
@@ -347,13 +346,7 @@ public abstract class AbstractRequestContainerJob
 
     public void update(State state) {
         if (target.setState(state)) {
-            try {
-                targetStore.update(target.getId(), target.getState(), target.getErrorType(),
-                      target.getErrorMessage());
-            } catch (BulkStorageException e) {
-                LOGGER.error("{}, updateJobState: {}", rid, e.toString());
-            }
-            signalStateChange();
+            update();
         }
     }
 
@@ -524,5 +517,15 @@ public abstract class AbstractRequestContainerJob
         if (runThread != null) {
             this.runThread.setUncaughtExceptionHandler(this);
         }
+    }
+
+    private void update() {
+        try {
+            targetStore.update(target.getId(), target.getState(), target.getErrorType(),
+                  target.getErrorMessage());
+        } catch (BulkStorageException e) {
+            LOGGER.error("{}, updateJobState: {}", rid, e.toString());
+        }
+        signalStateChange();
     }
 }
