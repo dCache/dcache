@@ -1099,6 +1099,10 @@ public final class BulkServiceCommands implements CellCommandListener {
                 "Sets status back to QUEUED, zeros out status counts and removes all targets.")
     class RequestReset extends FilteredRequest {
 
+        @Option(name = "skipTerminated",
+               usage = "Do not reset the targets which completed.")
+        boolean skipTerminated = false;
+
         @Override
         public String call() throws Exception {
             configureFilters();
@@ -1107,7 +1111,7 @@ public final class BulkServiceCommands implements CellCommandListener {
             for (String id : uids) {
                 executor.submit(()-> {
                     try {
-                        requestStore.reset(id);
+                        requestStore.reset(id, skipTerminated);
                     } catch (BulkStorageException e) {
                         LOGGER.error("could not reset {}: {}.", id, e.toString());
                     }

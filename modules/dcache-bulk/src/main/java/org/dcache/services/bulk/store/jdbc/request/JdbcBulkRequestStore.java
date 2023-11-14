@@ -524,7 +524,7 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
     }
 
     @Override
-    public void reset(String uid) throws BulkStorageException {
+    public void reset(String uid, boolean skipTerminated) throws BulkStorageException {
         /**
          *  Start from scratch:
          *  - delete ROOT
@@ -538,11 +538,20 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
          */
         LOGGER.trace("reset {}.", uid);
         requestTargetDao.delete(requestTargetDao.where().pids(PID.ROOT.ordinal()).ruids(uid));
-        requestTargetDao.delete(requestTargetDao.where().pids(DISCOVERED.ordinal()).ruids(uid));
-        requestTargetDao.update(requestTargetDao.where().pids(INITIAL.ordinal()).ruids(uid),
-              requestTargetDao.set().state(CREATED).errorType(null).errorMessage(null));
-        requestDao.update(requestDao.where().uids(uid),
-              requestDao.set().status(QUEUED));
+        if (skipTerminated) {
+            requestTargetDao.delete(requestTargetDao.where().pids(DISCOVERED.ordinal()).ruids(uid)
+                  .state(NON_TERMINAL));
+            requestTargetDao.update(requestTargetDao.where().pids(INITIAL.ordinal()).ruids(uid)
+                        .state(NON_TERMINAL),
+                  requestTargetDao.set().state(CREATED).errorType(null).errorMessage(null));
+        } else {
+            requestTargetDao.delete(requestTargetDao.where().pids(DISCOVERED.ordinal()).ruids(uid));
+            requestTargetDao.update(requestTargetDao.where().pids(INITIAL.ordinal()).ruids(uid),
+                  requestTargetDao.set().state(CREATED).errorType(null).errorMessage(null));
+        }
+
+        requestDao.update(requestDao.where().uids(uid), requestDao.set().status(QUEUED));
+
         try {
             requestCache.get(uid).ifPresent(r -> {
                 BulkRequestStatusInfo status = r.getStatusInfo();
@@ -561,7 +570,7 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
         AtomicInteger count = new AtomicInteger(0);
         List<String> uids = requestTargetDao.getRequestsOfFailed();
         for (String uid: uids) {
-            reset(uid);
+            reset(uid, false);
             count.incrementAndGet();
         }
         return count.get();

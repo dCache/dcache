@@ -284,9 +284,10 @@ public interface BulkRequestStore {
      * Reset the request to QUEUED state.
      *
      * @param uid unique id for request.
+     * @param skipTerminated if true, do not delete terminated targets
      * @throws BulkStorageException
      */
-    void reset(String uid) throws BulkStorageException;
+    void reset(String uid, boolean skipTerminated) throws BulkStorageException;
 
     /**
      * Retry all requests that have FAILED targets.
