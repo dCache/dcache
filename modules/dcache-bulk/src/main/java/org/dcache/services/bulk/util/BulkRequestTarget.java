@@ -301,7 +301,7 @@ public final class BulkRequestTarget {
             errorType = errorObject.getClass().getCanonicalName();
             errorMessage = errorObject.getMessage();
 
-            setState(State.FAILED);
+            setState(errorObject instanceof InterruptedException ? State.CANCELLED : State.FAILED);
         }
     }
 
