@@ -97,6 +97,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.security.auth.Subject;
+import javax.ws.rs.HEAD;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
@@ -252,8 +253,8 @@ public final class BulkRequestContainerJob
         public void run() {
             try {
                 doInner();
-            } catch (Throwable e) {
-               handleException(e);
+            } catch (RuntimeException e) {
+                uncaughtException(Thread.currentThread(), e);
             }
         }
 
@@ -324,7 +325,7 @@ public final class BulkRequestContainerJob
             }
         }
 
-        abstract void doInner() throws Throwable;
+        abstract void doInner();
     }
 
     class DirListTask extends ContainerTask {
@@ -343,10 +344,12 @@ public final class BulkRequestContainerJob
             permitHolder.setTaskSemaphore(dirListSemaphore);
         }
 
-        void doInner() throws Throwable {
+        void doInner() {
             try {
+                checkForRequestCancellation();
                 DirectoryStream stream = getDirectoryListing(path);
                 for (DirectoryEntry entry : stream) {
+                    checkForRequestCancellation();
                     LOGGER.debug("{} - DirListTask, directory {}, entry {}", ruid, path,
                           entry.getName());
                     FsPath childPath = path.child(entry.getName());
@@ -384,6 +387,7 @@ public final class BulkRequestContainerJob
                     }
                 }
 
+                checkForRequestCancellation();
                 switch (targetType) {
                     case BOTH:
                     case DIR:
@@ -402,6 +406,18 @@ public final class BulkRequestContainerJob
                                         SKIPPED, null));
                         }
                 }
+            } catch (InterruptedException e) {
+                /*
+                 *  Cancelled.  Do nothing.
+                 */
+                permitHolder.releaseIfHoldingPermit();
+            } catch (BulkServiceException | CacheException e) {
+                /*
+                 *  Fail fast
+                 */
+                containerState = ContainerState.STOP;
+                jobTarget.setErrorObject(e);
+                update();
             } finally {
                 remove();
             }
@@ -457,27 +473,42 @@ public final class BulkRequestContainerJob
         }
 
         @Override
-        void doInner() throws Throwable {
-            switch (state) {
-                case RESOLVE_PATH:
-                    resolvePath();
-                    break;
-                case FETCH_ATTRIBUTES:
-                    fetchAttributes();
-                    break;
-                case HANDLE_DIR_TARGET:
-                    performActivity();
-                    break;
-                case HANDLE_TARGET:
-                default:
-                    switch (depth) {
-                        case NONE:
-                            performActivity();
-                            break;
-                        default:
-                            handleTarget();
-                    }
-                    break;
+        void doInner() {
+            try {
+                checkForRequestCancellation();
+                switch (state) {
+                    case RESOLVE_PATH:
+                        resolvePath();
+                        break;
+                    case FETCH_ATTRIBUTES:
+                        fetchAttributes();
+                        break;
+                    case HANDLE_DIR_TARGET:
+                        performActivity();
+                        break;
+                    case HANDLE_TARGET:
+                    default:
+                        switch (depth) {
+                            case NONE:
+                                performActivity();
+                                break;
+                            default:
+                                handleTarget();
+                        }
+                        break;
+                }
+            } catch (InterruptedException e) {
+                /*
+                 *  Cancellation.  Do nothing.
+                 */
+                permitHolder.releaseIfHoldingPermit();
+            } catch (RuntimeException e) {
+                target.setErrorObject(e);
+                if (activityFuture == null) {
+                    activityFuture = Futures.immediateFailedFuture(Throwables.getRootCause(e));
+                }
+                handleCompletion();
+                uncaughtException(Thread.currentThread(), e);
             }
         }
 
@@ -631,6 +662,7 @@ public final class BulkRequestContainerJob
 
             State state = RUNNING;
             try {
+                checkForRequestCancellation();
                 activity.handleCompletion(target, activityFuture);
                 state = target.getState();
 
@@ -644,10 +676,15 @@ public final class BulkRequestContainerJob
             } catch (BulkStorageException e) {
                 LOGGER.error("{}, could not store target from result {}, {}, {}: {}.", ruid,
                       target.getId(), target.getPath(), target.getAttributes(), e.toString());
+            } catch (InterruptedException e) {
+                /*
+                 *  Cancelled.  Do nothing.
+                 */
+                return;
             }
 
-            if (state == FAILED && request.isCancelOnFailure()) {
-                cancel();
+            if (state == FAILED && request.isCancelOnFailure() && !jobTarget.isTerminated()) {
+                BulkRequestContainerJob.this.cancel();
             } else {
                 remove();
             }
@@ -674,15 +711,21 @@ public final class BulkRequestContainerJob
                 return;
             }
 
-            target.setState(error == null ? RUNNING : FAILED);
-            target.setErrorObject(error);
+            if (jobTarget.isTerminated()) {
+                error = new InterruptedException();
+            }
+
+            if (error == null) {
+                target.setState(RUNNING);
+            } else {
+                target.setErrorObject(error);
+            }
 
             try {
                 /*
                  * If this is an insert (id == null), the target id will be updated to what is
                  * returned from the database.
                  */
-                checkForRequestCancellation();
                 targetStore.storeOrUpdate(target);
                 LOGGER.debug("{} - storeOrUpdate, target id {}", ruid, target.getId());
             } catch (BulkStorageException e) {
@@ -690,9 +733,6 @@ public final class BulkRequestContainerJob
                       ruid,
                       target.getId(), target.getPath(), target.getAttributes(), e.toString());
                 error = e;
-            } catch (InterruptedException e) {
-                remove();
-                return;
             }
 
             if (error != null) {
@@ -762,11 +802,14 @@ public final class BulkRequestContainerJob
          */
         containerState = ContainerState.STOP;
         update(CANCELLED);
+        targetStore.cancelAll(rid);
 
         LOGGER.debug("{} - cancel, running {}.", ruid, running.size());
 
+        int count = 0;
+
         /*
-         * Drain running tasks. Calling task cancel removes the task from the map.
+         * Drain running tasks.
          */
         while (true) {
             ContainerTask task;
@@ -778,12 +821,12 @@ public final class BulkRequestContainerJob
                 task = running.values().iterator().next();
             }
 
-            task.cancel();
-
-            LOGGER.debug("{} - cancel: task {} cancelled.", ruid, task.seqNo);
+            task.cancel(); // removes the task
+            ++count;
         }
 
-        targetStore.cancelAll(rid);
+        LOGGER.trace("{} - cancel: {} tasks cancelled; running size: {}.", ruid, count,
+              running.size());
 
         signalStateChange();
     }
@@ -794,8 +837,7 @@ public final class BulkRequestContainerJob
                 ContainerTask task = i.next();
                 if (task instanceof TargetTask
                       && targetId == ((TargetTask) task).target.getId()) {
-                    task.cancel();
-                    i.remove();
+                    task.cancel(); // removes the task
                     break;
                 }
             }
@@ -963,18 +1005,9 @@ public final class BulkRequestContainerJob
     }
 
     private void checkForRequestCancellation() throws InterruptedException {
-        if (containerState == ContainerState.STOP) {
+        if (containerState == ContainerState.STOP || isRunThreadInterrupted()
+              || jobTarget.isTerminated()) {
             throw new InterruptedException();
-        }
-
-        if (isRunThreadInterrupted()) {
-            throw new InterruptedException();
-        }
-
-        synchronized (running) {
-            if (jobTarget.isTerminated()) {
-                throw new InterruptedException();
-            }
         }
     }
 
@@ -1038,6 +1071,7 @@ public final class BulkRequestContainerJob
          */
         for (DirTarget dirTarget : sorted) {
             try {
+                checkForRequestCancellation();
                 new TargetTask(toTarget(dirTarget.id, dirTarget.pid, dirTarget.path,
                       Optional.of(dirTarget.attributes), CREATED, null),
                       TaskState.HANDLE_DIR_TARGET).performSync();
@@ -1064,6 +1098,7 @@ public final class BulkRequestContainerJob
 
         for (BulkRequestTarget target : requestTargets) {
             try {
+                checkForRequestCancellation();
                 new TargetTask(target, TaskState.RESOLVE_PATH).submitAsync();
             } catch (InterruptedException e) {
                 /*
