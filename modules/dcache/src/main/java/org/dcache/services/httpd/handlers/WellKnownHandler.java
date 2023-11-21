@@ -59,8 +59,10 @@ documents or software obtained from this server.
  */
 package org.dcache.services.httpd.handlers;
 
+import diskCacheV111.util.CacheException;
 import dmg.util.HttpRequest;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.Optional;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -91,7 +93,8 @@ public class WellKnownHandler extends AbstractHandler {
             String[] tokens = proxy.getRequestTokens();
             Optional<WellKnownProducerFactory> factory = factoryProvider.getFactory(tokens[1]);
             if (factory.isEmpty()) {
-                throw new OnErrorException("No such endpoint");
+                response.sendError(HttpServletResponse.SC_NOT_FOUND, "No such endpoint");
+                return;
             }
 
             WellKnownProducer producer = factory.get().createProducer();
@@ -108,8 +111,8 @@ public class WellKnownHandler extends AbstractHandler {
                 baseRequest.setHandled(true);
             }
 
-        } catch (Exception t) {
-            throw new ServletException("WellKnownHandler", t);
+        } catch (CacheException | URISyntaxException e) {
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
 
