@@ -443,9 +443,12 @@ public class FileResources {
                     pnfsHandler.renameEntry(path.toString(), target.toString(), true);
                     break;
                 case "qos":
-                    String targetQos = reqPayload.getString("target");
-                    String qosPolicy = reqPayload.getString("policy");
-                    Integer qosState = (Integer)reqPayload.get("state");
+                    String targetQos =
+                          reqPayload.has("target") ? reqPayload.getString("target") : null;
+                    String qosPolicy =
+                          reqPayload.has("policy") ? reqPayload.getString("policy") : null;
+                    Integer qosState =
+                          reqPayload.has("state") ? (Integer) reqPayload.get("state") : null;
                     Subject subject = RequestUser.getSubject();
                     if (!useQosService) {
                         new QoSTransitionEngine(poolmanager,
