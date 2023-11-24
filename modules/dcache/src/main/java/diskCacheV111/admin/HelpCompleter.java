@@ -7,7 +7,7 @@ import java.util.List;
 import jline.console.completer.Completer;
 
 /**
- * Simple completor for JLine that uses the dCache help output to suggest command completions.
+ * Simple completer for JLine that uses the dCache help output to suggest command completions.
  */
 public class HelpCompleter implements Completer {
 
@@ -21,8 +21,10 @@ public class HelpCompleter implements Completer {
     }
 
     protected String scan(String line) {
-        int i = CharMatcher.anyOf("#[]<>|-").indexIn(line);
-        return (i == -1) ? line : line.substring(0, i);
+        int i = CharMatcher.anyOf("#[]<>|").indexIn(line);
+        int j = line.indexOf(" -");
+        i = i == -1 || j == -1 ? Math.max(i, j) : Math.min(i, j);
+        return (i == -1) ? line : line.substring(0, i).trim();
     }
 
     @Override
