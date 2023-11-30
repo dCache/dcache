@@ -6,10 +6,11 @@ import static java.util.stream.Collectors.toSet;
 import static org.dcache.util.Exceptions.messageOrClassName;
 
 import com.google.common.base.Stopwatch;
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientOptions;
-import com.mongodb.MongoClientURI;
+import com.mongodb.ConnectionString;
+import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoException;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.event.ServerClosedEvent;
 import com.mongodb.event.ServerDescriptionChangedEvent;
@@ -130,14 +131,13 @@ public class MongoDbMetadataRepository implements ReplicaStore, EnvironmentAware
 
     @Override
     public void init() throws CacheException {
+        MongoClientSettings settings = MongoClientSettings.builder()
+              .applicationName("dCache-" + Version.of(MongoDbMetadataRepository.class).getVersion())
+              .applyToServerSettings(builder -> builder.addServerListener(this))
+              .applyConnectionString(new ConnectionString(url))
+              .build();
+        mongo = MongoClients.create(settings);
 
-        MongoClientOptions.Builder optionBuilder = new MongoClientOptions.Builder()
-              .addServerListener(this)
-              .description(pool)
-              .applicationName(
-                    "dCache-" + Version.of(MongoDbMetadataRepository.class).getVersion());
-
-        mongo = new MongoClient(new MongoClientURI(url, optionBuilder));
         collection = mongo.getDatabase(dbName).getCollection(collectionName);
     }
 
@@ -278,7 +278,7 @@ public class MongoDbMetadataRepository implements ReplicaStore, EnvironmentAware
 
     @Override
     public String toString() {
-        return String.format("[data=%s;meta=%s]", fileStore, mongo.getConnectPoint());
+        return String.format("[data=%s;meta=%s]", fileStore, url);
     }
 
     @Override
