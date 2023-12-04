@@ -37,6 +37,7 @@ variables:
   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true -Dmaven.repo.local=.m2/repository"
   K8S_NAMESPACE: dcache-build-$CI_PIPELINE_ID
   CHECK_TIMEOUT: --timeout=300s
+  HELM_OPTS: --replace --timeout 10m0s
   AUTOCA_URL: https://ci.dcache.org/ca
   DCACHE_HELM_REPO: https://gitlab.desy.de/api/v4/projects/7648/packages/helm/test
 
@@ -384,9 +385,9 @@ deploy_infrastructure:
   script:
     - helm repo add bitnami https://charts.bitnami.com/bitnami
     - helm repo update
-    - helm -n ${K8S_NAMESPACE} install --wait --set auth.username=dcache --set auth.password=let-me-in --set auth.database=chimera  chimera bitnami/postgresql
-    - helm -n ${K8S_NAMESPACE} install --wait cells bitnami/zookeeper
-    - helm -n ${K8S_NAMESPACE} install --wait --set externalZookeeper.servers=cells-zookeeper --set kraft.enabled=false billing bitnami/kafka --version 23.0.7
+    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set auth.username=dcache --set auth.password=let-me-in --set auth.database=chimera  chimera bitnami/postgresql
+    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait cells bitnami/zookeeper
+    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set externalZookeeper.servers=cells-zookeeper --set kraft.enabled=false billing bitnami/kafka --version 23.0.7
 
 deploy_dcache_helm:
   stage: test_deploy
@@ -399,7 +400,7 @@ deploy_dcache_helm:
       fi
     - helm repo add dcache ${DCACHE_HELM_REPO}
     - helm repo update
-    - helm -n ${K8S_NAMESPACE} install --wait --set image.tag=${tag} --set image.repository=${CI_REGISTRY_IMAGE} store dcache/dcache
+    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=${tag} --set image.repository=${CI_REGISTRY_IMAGE} store dcache/dcache
 
 
 #
