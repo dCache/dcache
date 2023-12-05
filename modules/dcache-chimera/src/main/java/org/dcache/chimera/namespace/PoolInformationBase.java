@@ -5,8 +5,7 @@ import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.dcache.util.Args;
 
 /**
@@ -25,12 +24,12 @@ public class PoolInformationBase implements CellMessageReceiver {
     /**
      * Map of all pools currently up.
      */
-    private final Map<String, PoolInformation> _pools = new HashMap<>();
+    private final ConcurrentHashMap<String, PoolInformation> _pools = new ConcurrentHashMap<>();
 
     /**
      * Map from HSM instance name to the set of pools attached to that HSM.
      */
-    private final Map<String, Collection<PoolInformation>> _hsmToPool = new HashMap<>();
+    private final ConcurrentHashMap<String, Collection<PoolInformation>> _hsmToPool = new ConcurrentHashMap<>();
 
     /**
      *
