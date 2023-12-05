@@ -18,6 +18,7 @@
 package org.dcache.xrootd.pool;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.util.function.Predicate.not;
 import static org.dcache.xrootd.protocol.XrootdProtocol.UUID_PREFIX;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ArgInvalid;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ArgMissing;
@@ -945,7 +946,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
 
     @GuardedBy("writeLock")
     private void removeAllDescriptorsAtomically() {
-        _descriptors.forEach(FileDescriptor::close);
+        _descriptors.stream().filter(not(null)).forEach(FileDescriptor::close);
         _descriptors.clear();
     }
 
