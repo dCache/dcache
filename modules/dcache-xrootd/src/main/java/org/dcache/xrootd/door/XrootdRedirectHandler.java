@@ -1399,6 +1399,9 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
 
     private FsPath effectiveRoot() {
         LoginSessionInfo loginSessionInfo = sessionInfo();
+        if (Subjects.isNobody(loginSessionInfo.getSubject())) {
+            return _rootPath;
+        }
         FsPath userRoot = loginSessionInfo != null ? loginSessionInfo.getUserRootPath() : null;
         return userRoot != null ? userRoot : _rootPath;
     }
