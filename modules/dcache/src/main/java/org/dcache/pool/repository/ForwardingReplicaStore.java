@@ -59,7 +59,7 @@ public abstract class ForwardingReplicaStore implements ReplicaStore {
     }
 
     @Override
-    public boolean isOk() {
+    public FileStoreState isOk() {
         return delegate().isOk();
     }
 

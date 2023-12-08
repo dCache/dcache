@@ -100,14 +100,14 @@ public class FlatFileStore implements FileStore {
     }
 
     @Override
-    public boolean isOk() {
+    public FileStoreState isOk() {
         try {
             Path tmp = _dataDir.resolve(".repository_is_ok");
             Files.deleteIfExists(tmp);
             Files.createFile(tmp);
-            return true;
+            return FileStoreState.OK;
         } catch (IOException e) {
-            return false;
+            return FileStoreState.FAILED;
         }
     }
 }

@@ -30,6 +30,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.bson.Document;
+import org.dcache.pool.repository.FileStoreState;
 import org.dcache.pool.repository.DuplicateEntryException;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.ReplicaRecord;
@@ -111,7 +112,7 @@ public class MongoDbMetadataRepository implements ReplicaStore, EnvironmentAware
     /**
      * Flag, which indicates client connection status.
      */
-    private volatile boolean isOk;
+    private volatile FileStoreState dIskFailerState;
 
     /**
      * {@link FileStore} used to store data files.
@@ -126,7 +127,7 @@ public class MongoDbMetadataRepository implements ReplicaStore, EnvironmentAware
           boolean isReadOnly) {
         this.fileStore = fileStore;
         this.pool = poolName;
-        this.isOk = false;
+        this.dIskFailerState = FileStoreState.FAILED;
     }
 
     @Override
@@ -223,7 +224,7 @@ public class MongoDbMetadataRepository implements ReplicaStore, EnvironmentAware
             deleteIfExists(id);
 
         } catch (IOException | MongoException e) {
-            isOk = false;
+            dIskFailerState = FileStoreState.FAILED;
             throw new DiskErrorCacheException(
                   "Failed to remove " + id + ": " + messageOrClassName(e), e);
         }
@@ -247,8 +248,8 @@ public class MongoDbMetadataRepository implements ReplicaStore, EnvironmentAware
     }
 
     @Override
-    public boolean isOk() {
-        return isOk;
+    public FileStoreState isOk() {
+        return dIskFailerState;
     }
 
     @Override
@@ -291,13 +292,13 @@ public class MongoDbMetadataRepository implements ReplicaStore, EnvironmentAware
     @Override
     public void serverOpening(ServerOpeningEvent event) {
         LOGGER.info("Connected to server {}", event.getServerId());
-        isOk = true;
+        dIskFailerState = FileStoreState.OK;
     }
 
     @Override
     public void serverClosed(ServerClosedEvent event) {
         LOGGER.info("Lost connection with server {}", event.getServerId());
-        isOk = false;
+        dIskFailerState = FileStoreState.FAILED;
     }
 
     @Override

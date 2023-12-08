@@ -443,7 +443,7 @@ public class ReplicaStoreCache
     }
 
     @Override
-    public boolean isOk() {
+    public FileStoreState isOk() {
         return _inner.isOk();
     }
 

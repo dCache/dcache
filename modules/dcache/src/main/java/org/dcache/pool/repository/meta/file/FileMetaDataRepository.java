@@ -18,6 +18,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
+import org.dcache.pool.repository.FileStoreState;
 import org.dcache.pool.repository.DuplicateEntryException;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.ReplicaRecord;
@@ -180,18 +181,18 @@ public class FileMetaDataRepository
     }
 
     @Override
-    public synchronized boolean isOk() {
-        if (!_fileStore.isOk()) {
-            return false;
+    public synchronized FileStoreState isOk() {
+        if (_fileStore.isOk() == FileStoreState.FAILED) {
+            return FileStoreState.FAILED;
         }
         Path tmp = _metadir.resolve(".repository_is_ok");
         try {
             Files.deleteIfExists(tmp);
             Files.createFile(tmp);
-            return true;
+            return FileStoreState.OK;
         } catch (IOException e) {
             LOGGER.error("Failed to touch " + tmp + ": " + messageOrClassName(e), e);
-            return false;
+            return FileStoreState.FAILED;
         }
     }
 
