@@ -129,13 +129,6 @@ service is idle it may be shut down.
 
 The following is a list of critical replicable services in dCache.
 
-### `spacemanager`
-
-Spacemanager is fully replicable. Several instances must share the same
-database as requests from doors will be load balanced over all physical
-instances. The configuration should be synchronized such that all instances are
-configured the same way.
-
 ### `pinmanager`
 
 Pinmanager is fully replicable. Several instances must share the same database
@@ -156,6 +149,13 @@ ha get role
 ha show participants
 ```
 
+### `spacemanager`
+
+Spacemanager is fully replicable. Several instances must share the same
+database as requests from doors will be load balanced over all physical
+instances. The configuration should be synchronized such that all instances are
+configured the same way.
+
 ### `srmmanager`
 
 Srmmanager is fully replicable. Several instance must have separate databases.
@@ -170,6 +170,12 @@ requests by token in the backend, one has to strip the tag from the token. E.g.
 a client may see a token as `fb1991c5:-1093540442`, where `fb1991c5` is a
 backend indentifier and `-1093540442` is the backend token. One may map the
 backend identifier to an instance through ZooKeeper:
+
+### `transfermanager`
+
+Transfermanager is fully replicable. Several instances must share the same
+database as requests will be load balanced over all instances. The configuration
+should be synchronized such that all instances are configured the same way.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 \c System
