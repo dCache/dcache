@@ -110,11 +110,14 @@ thus to run without postgresql. To build it simply run:
 
     mvn clean package -am -pl packages/system-test
 
-You will need the `patch` utility for it to succeed.
+You will need to install `OpenSsl` toolkit and the `patch` utility for it to succeed.
 This entails a completely self-contained dCache instance in
 `packages/system-test/target/dcache`. It can be started using:
 
     packages/system-test/target/bin/ctlcluster start
+
+
+Next .
 
 To use GSI and TLS protocols, you may have to copy the test CA certificates
 into your `/etc/grid-security/certificates/` directory. Follow the instructions
