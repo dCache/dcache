@@ -13,6 +13,7 @@ import java.security.Principal;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -22,6 +23,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.dcache.auth.Subjects;
 import org.dcache.gplazma.AuthenticationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The banfile plug-in bans users by their principal class and the associated name. It is configured
@@ -40,6 +43,9 @@ import org.dcache.gplazma.AuthenticationException;
  */
 public class BanFilePlugin implements GPlazmaAccountPlugin {
 
+    private final static Logger LOGGER = LoggerFactory.getLogger(BanFilePlugin.class);
+
+
     private final static Pattern BAN_PATTERN = Pattern.compile("^ban\\s+([^:]+):(.*)$");
     private final static Pattern ALIAS_PATTERN = Pattern.compile("^alias\\s+([^:]+)=(.*)$");
 
@@ -50,14 +56,14 @@ public class BanFilePlugin implements GPlazmaAccountPlugin {
     private Instant lastFileRead;
 
     public BanFilePlugin(Properties properties) {
-
         checkArgument(properties != null, "property is null");
         String configFileName = properties.getProperty(BAN_FILE);
         checkArgument(configFileName != null, BAN_FILE + " property is not set");
 
         configFile = Path.of(configFileName);
-        checkState(Files.exists(configFile), "config file doesn't exist or not a file");
-
+        if (!Files.exists(configFile)) {
+            LOGGER.error("Banfile plugin configured, but banfile doesn't exist or is not a file.");
+        }
     }
 
     List<String> loadConfigLines() throws IOException {
@@ -74,8 +80,11 @@ public class BanFilePlugin implements GPlazmaAccountPlugin {
      * @return a set of banned principals
      */
     private synchronized Set<Principal> loadConfigIfNeeded() throws AuthenticationException {
+        if (!Files.exists(configFile)) {
+            LOGGER.debug("Banfile plugin configured, but banfile doesn't exist or is not a file.");
+            return new HashSet<>();
+        }
         try {
-
             if (bannedPrincipals == null ||
                   lastFileRead.isBefore(
                         Files.readAttributes(configFile, BasicFileAttributes.class)

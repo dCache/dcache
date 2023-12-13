@@ -656,7 +656,7 @@ username:tester uid:1000 gid:1000,true
 username:admin uid:0 gid:0,true
 ```
 
-Additionally we create an empty banfile to make sure the ban file plugin works:
+Additionally, we create an empty banfile to make sure the ban file plugin works:
 
 ```console-root
 touch /etc/dcache/ban.conf
