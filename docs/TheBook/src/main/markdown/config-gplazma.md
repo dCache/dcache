@@ -357,7 +357,7 @@ In this example the first line is a comment. Lines 2 to 5 define aliases for pri
 
 Please note that the plug-in only supports principals whose assiciated name is a single line of plain text. In programming terms this means the constructor of the principal class has to take exactly one single string parameter.
 
-For the plugin to work, the configuration file has to exist even if it is empty.
+The plugin assumes that a missing file is equivalent to a file with no contents; i.e., that no one has been banned.
 
 After modifying the banfile, you may want to update gplazma.conf to trigger a reload to activate the changes. You can test the result with the `explain login` command in the gPlazma cell.
 
