@@ -1403,7 +1403,10 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
             return _rootPath;
         }
         FsPath userRoot = loginSessionInfo != null ? loginSessionInfo.getUserRootPath() : null;
-        return userRoot != null ? userRoot : _rootPath;
+        if (userRoot == null) {
+            return  _rootPath;
+        }
+        return userRoot.contains(_rootPath.toString()) ? userRoot : _rootPath;
     }
 
     /**
