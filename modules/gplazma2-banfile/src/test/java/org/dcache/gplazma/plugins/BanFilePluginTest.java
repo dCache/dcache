@@ -146,8 +146,8 @@ public class BanFilePluginTest {
         plugin.account(Set.of(new UserNamePrincipal("bert")));
     }
 
-    @Test(expected = AuthenticationException.class)
-    public void shouldBanAllIfConfigDeleted() throws IOException, AuthenticationException {
+    @Test
+    public void shouldAllowAllIfConfigDeleted() throws IOException, AuthenticationException {
         givenConfig("");
         Files.deleteIfExists(configFile);
         plugin.account(Set.of(new UserNamePrincipal("bert")));
