@@ -21,6 +21,9 @@
 # dCache deployment in kubernetes managed by helm chart
 #  https://gitlab.desy.de/dcache/dcache-helm
 #
+#
+# The kubernetes based jobs don't use directly any job artefact, thus pulling artefact
+# is explicitly disabled by default.
 
 
 stages:
@@ -66,6 +69,7 @@ default:
   tags:
     - kubernetes
     - dcache-dev
+  dependencies: []
 
 .kubernetes_image:
   extends: .kubernetes_tags
