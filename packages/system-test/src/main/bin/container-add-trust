@@ -1,0 +1,56 @@
+#!/bin/bash
+#
+#  This is a script that:
+#
+#    * adds dCache Disposable CA to a container's trust store.
+#
+#    * copies the auto-generated X.509 credential to root's home directory.
+#
+#    * generates a new X.509 proxy credential from the auto-generated X.509
+#      credential.
+#
+#  The container ID is supplied as an argument; e.g.
+#
+#      packages/system-test/src/main/bin/container-add-trust a1a201a97049
+#
+#  The DOCKER_CMD variable may be used to specify a command to run instead of 'docker'.
+#  For example, the following command uses 'podman' instead of 'docker'.
+#
+#      DOCKER_CMD=podman packages/system-test/src/main/bin/container-add-trust a1a201a97049
+#
+set -eu
+
+if [ $# -ne 1 ]; then
+  echo "Need ID of container"
+  exit 1
+fi
+
+docker=${DOCKER_CMD:-docker}
+
+# Support running this script from either
+#     packages/system-test/target/bin
+# or
+#     packages/system-test/src/main/bin
+parent=$(cd $(dirname $0)/..;pwd)
+cd $parent/..
+if [ "$(basename $parent)" = "main" ]; then
+    cd ..
+fi
+cd target/dcache
+
+hash=$(openssl x509 -in etc/grid-security/hostcert.pem -noout -issuer_hash)
+old_hash=$(openssl x509 -in etc/grid-security/hostcert.pem -noout -issuer_hash_old)
+
+for ext in 0 namespaces signing_policy; do
+    src=etc/grid-security/certificates/$hash.$ext
+    dst=/etc/grid-security/certificates/$hash.$ext
+    $docker cp $src $1:$dst
+    dst=/etc/grid-security/certificates/$old_hash.$ext
+    $docker cp $src $1:$dst
+done
+
+for filename in usercert.pem userkey.pem; do
+    $docker cp $filename $1:/root/
+done
+
+$docker exec $1 voms-proxy-init --key=/root/userkey.pem --cert=/root/usercert.pem
