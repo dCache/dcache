@@ -73,6 +73,8 @@ public class P2PData implements Serializable {
     private String label;
     private InetAddress ppInterface;
 
+    private int maxActive;
+
     public String getLabel() {
         return label;
     }
@@ -85,6 +87,11 @@ public class P2PData implements Serializable {
         if (ppInterface != null) {
             pw.println("  Interface  : " + ppInterface);
         }
+        if (maxActive == Integer.MAX_VALUE) {
+            pw.println("  MaxActive  : unlimited");
+        } else {
+            pw.println("  MaxActive  : " + maxActive);
+        }
     }
 
     public void setLabel(String label) {
@@ -93,5 +100,9 @@ public class P2PData implements Serializable {
 
     public void setPpInterface(InetAddress ppInterface) {
         this.ppInterface = ppInterface;
+    }
+
+    public void setMaxActive(int maxActive) {
+        this.maxActive = maxActive;
     }
 }
