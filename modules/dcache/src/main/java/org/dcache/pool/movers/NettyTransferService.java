@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013 - 2023 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013 - 2024 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -190,24 +190,6 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
     public void setPostTransferService(
           PostTransferService postTransferService) {
         this.postTransferService = postTransferService;
-    }
-
-    public long getClientIdleTimeout() {
-        return clientIdleTimeout;
-    }
-
-    @Required
-    public void setClientIdleTimeout(long clientIdleTimeout) {
-        this.clientIdleTimeout = clientIdleTimeout;
-    }
-
-    public TimeUnit getClientIdleTimeoutUnit() {
-        return clientIdleTimeoutUnit;
-    }
-
-    @Required
-    public void setClientIdleTimeoutUnit(TimeUnit clientIdleTimeoutUnit) {
-        this.clientIdleTimeoutUnit = clientIdleTimeoutUnit;
     }
 
     public long getConnectTimeout() {

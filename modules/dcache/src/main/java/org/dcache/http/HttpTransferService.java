@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013-2023 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013-2024 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -38,7 +38,6 @@ import io.netty.handler.codec.http.cors.CorsConfigBuilder;
 import io.netty.handler.codec.http.cors.CorsHandler;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
-import io.netty.handler.timeout.IdleStateHandler;
 
 import java.net.InetSocketAddress;
 import java.net.SocketException;
@@ -166,11 +165,6 @@ public class HttpTransferService extends NettyTransferService<HttpProtocolInfo> 
         if (LOGGER.isDebugEnabled()) {
             pipeline.addLast("logger", new LoggingHandler());
         }
-        pipeline.addLast("idle-state-handler",
-              new IdleStateHandler(0,
-                    0,
-                    clientIdleTimeout,
-                    clientIdleTimeoutUnit));
         pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());
         pipeline.addLast("keepalive", new KeepAliveHandler());
 

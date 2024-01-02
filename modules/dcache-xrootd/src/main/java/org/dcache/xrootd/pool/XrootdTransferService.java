@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013-2023 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013-2024 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -40,7 +40,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.logging.LoggingHandler;
-import io.netty.handler.timeout.IdleStateHandler;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -431,10 +430,7 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
             pipeline.addLast("plugin:" + plugin.getName(),
                   plugin.createHandler());
         }
-        pipeline.addLast("timeout", new IdleStateHandler(0,
-              0,
-              clientIdleTimeout,
-              clientIdleTimeoutUnit));
+
         pipeline.addLast("chunkedWriter", new ChunkedResponseWriteHandler());
 
         /*

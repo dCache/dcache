@@ -383,8 +383,6 @@
       <property name="postTransferService" ref="post-transfer-service"/>
       <property name="pnfsStub" ref="pnfsStub"/>
       <property name="threads" value="${pool.mover.xrootd.threads}"/>
-      <property name="clientIdleTimeout" value="${pool.mover.xrootd.timeout.idle}"/>
-      <property name="clientIdleTimeoutUnit" value="${pool.mover.xrootd.timeout.idle.unit}"/>
       <property name="connectTimeout" value="${pool.mover.xrootd.timeout.connect}"/>
       <property name="connectTimeoutUnit" value="${pool.mover.xrootd.timeout.connect.unit}"/>
       <property name="tpcClientChunkSize" value="#{ byteSizeParser.parse('${pool.mover.xrootd.tpc-client-chunk-size}') }"/>
@@ -459,8 +457,6 @@
         <property name="postTransferService" ref="post-transfer-service"/>
         <property name="threads" value="${pool.mover.http.threads}"/>
         <property name="chunkSize" value="${pool.mover.http.chunk-size}"/>
-        <property name="clientIdleTimeout" value="${pool.mover.http.timeout.idle}"/>
-        <property name="clientIdleTimeoutUnit" value="${pool.mover.http.timeout.idle.unit}"/>
         <property name="connectTimeout" value="${pool.mover.http.timeout.connect}"/>
         <property name="connectTimeoutUnit" value="${pool.mover.http.timeout.connect.unit}"/>
         <property name="doorStub" ref="doorStub"/>
