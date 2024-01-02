@@ -3,12 +3,9 @@ package org.dcache.chimera;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.dcache.chimera.FileSystemProvider.SetXattrMode;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.NO_STAT;
+import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -1172,6 +1169,273 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
     }
 
     @Test
+    @Ignore("See https://github.com/dCache/dcache/issues/7487")
+    public void testCreateFileDotUseLevel0ForExistingFile() throws Exception {
+        FsInode file = _rootInode.create("normal-file", 1, 2, 0644);
+
+        FsInode level0 = _fs.createFile(_rootInode, ".(use)(0)(normal-file)",
+                3, 4, 0755);
+
+        assertThat(level0, notNullValue());
+        assertThat(level0, equalTo(file));
+        assertThat(level0.getLevel(), equalTo(0));
+        assertThat(level0.type(), equalTo(FsInodeType.INODE));
+
+        var fileStat = file.getStatCache();
+        var stat = level0.getStatCache();
+
+        assertThat(stat.getUid(), equalTo(1));
+        assertThat(stat.getGid(), equalTo(2));
+        assertThat(stat.getMode(), equalTo(0644 | UnixPermission.S_IFREG));
+        assertThat(stat.getIno(), equalTo(fileStat.getIno()));
+        assertThat(stat.getId(), equalTo(fileStat.getId()));
+        assertThat(stat.getGeneration(), equalTo(0L));
+        assertThat(stat.getSize(), equalTo(0L));
+        assertThat(stat.getNlink(), equalTo(1));
+        assertThat(stat.getDev(), equalTo(17));
+        assertThat(stat.getRdev(), equalTo(13));
+    }
+
+    @Test(expected=FileNotFoundChimeraFsException.class)
+    public void testCreateFileDotUseLevel0ForMissingFile() throws Exception {
+        _fs.createFile(_rootInode, ".(use)(0)(no-such-file)", 0, 0, 0644);
+    }
+
+    @Test
+    public void testCreateFileDotUseLevel1ForExistingFile() throws Exception {
+        FsInode file = _rootInode.create("normal-file", 2, 3, 0644);
+
+        FsInode level0 = _fs.createFile(_rootInode, ".(use)(1)(normal-file)",
+                4, 5, 0755);
+
+        assertThat(level0, notNullValue());
+        assertThat(level0, not(equalTo(file)));
+        assertThat(level0.getLevel(), equalTo(1));
+        assertThat(level0.type(), equalTo(FsInodeType.INODE));
+
+        var fileStat = file.getStatCache();
+        var stat = level0.getStatCache();
+
+        assertThat(stat.getUid(), equalTo(2));
+        assertThat(stat.getGid(), equalTo(3));
+        assertThat(stat.getMode(), equalTo(0644 | UnixPermission.S_IFREG));
+        assertThat(stat.getIno(), equalTo(fileStat.getIno()));
+        assertThat(stat.getGeneration(), equalTo(0L));
+        assertThat(stat.getSize(), equalTo(0L));
+        assertThat(stat.getNlink(), equalTo(1));
+        assertThat(stat.getDev(), equalTo(17));
+        assertThat(stat.getRdev(), equalTo(13));
+    }
+
+    @Test(expected=FileNotFoundChimeraFsException.class)
+    public void testCreateFileDotUseLevel1ForMissingFile() throws Exception {
+        _fs.createFile(_rootInode, ".(use)(1)(no-such-file)", 0, 0, 0644);
+    }
+
+    @Test
+    public void testInodeOfDotIdExistingFile() throws Exception {
+        FsInode file = _rootInode.create("normal-file", 1, 2, 0644);
+
+        FsInode id = _fs.inodeOf(_rootInode, ".(id)(normal-file)", STAT);
+
+        assertThat(id, notNullValue());
+        assertThat(id, not(equalTo(file)));
+        assertThat(id.getLevel(), equalTo(0));
+        assertThat(id.type(), equalTo(FsInodeType.ID));
+
+        assertContents(id, file.getId() + "\n");
+    }
+
+    @Test(expected=FileNotFoundChimeraFsException.class)
+    public void testInodeOfDotIdFileNotExisting() throws Exception {
+        _fs.inodeOf(_rootInode, ".(id)(normal-file)", STAT);
+    }
+
+    @Test
+    public void testInodeOfDotUseLevel0ExistingFile() throws Exception {
+        FsInode file = _rootInode.create("normal-file", 1, 2, 0644);
+
+        FsInode use = _fs.inodeOf(_rootInode, ".(use)(0)(normal-file)", STAT);
+
+        assertThat(use, notNullValue());
+        assertThat(use, equalTo(file));
+        assertThat(use.getLevel(), equalTo(0));
+        assertThat(use.type(), equalTo(FsInodeType.INODE));
+
+        var fileStat = file.statCache();
+        var stat = use.statCache();
+
+        assertThat(stat.getUid(), equalTo(1));
+        assertThat(stat.getGid(), equalTo(2));
+        assertThat(stat.getMode(), equalTo(0644 | UnixPermission.S_IFREG));
+        assertThat(stat.getIno(), equalTo(fileStat.getIno()));
+        assertThat(stat.getId(), equalTo(fileStat.getId()));
+        assertThat(stat.getGeneration(), equalTo(0L));
+        assertThat(stat.getSize(), equalTo(0L));
+        assertThat(stat.getNlink(), equalTo(1));
+        assertThat(stat.getDev(), equalTo(17));
+        assertThat(stat.getRdev(), equalTo(13));
+    }
+
+    @Test(expected=FileNotFoundChimeraFsException.class)
+    public void testInodeOfDotUseLevel0NonExistingFile() throws Exception {
+        _fs.inodeOf(_rootInode, ".(use)(0)(normal-file)", STAT);
+    }
+
+    @Test
+    public void testInodeOfDotSuriExistingFile() throws Exception {
+        FsInode file = _rootInode.create("normal-file", 1, 2, 0644);
+        String location = "hsm://somesystem/target";
+        _fs.addInodeLocation(file, StorageGenericLocation.TAPE, location);
+
+        FsInode suri = _fs.inodeOf(_rootInode, ".(suri)(normal-file)", STAT);
+
+        assertThat(suri, notNullValue());
+        assertThat(suri, not(equalTo(file)));
+        assertThat(suri.getLevel(), equalTo(0));
+        assertThat(suri.type(), equalTo(FsInodeType.SURI));
+
+        var fileStat = file.statCache();
+        var stat = suri.statCache();
+
+        assertThat(stat.getUid(), equalTo(1));
+        assertThat(stat.getGid(), equalTo(2));
+        assertThat(stat.getMode(), equalTo(0644 | UnixPermission.S_IFREG));
+        assertThat(stat.getIno(), equalTo(fileStat.getIno()));
+        assertThat(stat.getId(), equalTo(fileStat.getId()));
+        assertThat(stat.getGeneration(), equalTo(fileStat.getGeneration() +1)); // work-around for NFS.
+        assertThat(stat.getNlink(), equalTo(1));
+        assertThat(stat.getDev(), equalTo(17));
+        assertThat(stat.getRdev(), equalTo(13));
+
+        assertContents(suri, location + "\n");
+    }
+
+    @Test(expected=FileNotFoundChimeraFsException.class)
+    public void testInodeOfDotSuriNonExistingFile() throws Exception {
+        _fs.inodeOf(_rootInode, ".(suri)(normal-file)", STAT);
+    }
+
+    @Test
+    public void testInodeOfDotGetChecksumExistingFileWithNoChecksums() throws Exception {
+        FsInode file = _rootInode.create("normal-file", 1, 2, 0644);
+
+        FsInode checksums = _fs.inodeOf(_rootInode, ".(get)(normal-file)(checksums)", STAT);
+
+        assertThat(checksums, notNullValue());
+        assertThat(checksums, not(equalTo(file)));
+        assertThat(checksums.getLevel(), equalTo(0));
+        assertThat(checksums.type(), equalTo(FsInodeType.PCRC));
+
+        var fileStat = file.statCache();
+        var stat = checksums.statCache();
+
+        assertThat(stat.getUid(), equalTo(1));
+        assertThat(stat.getGid(), equalTo(2));
+        assertThat(stat.getMode(), equalTo(0644 | UnixPermission.S_IFREG));
+        assertThat(stat.getIno(), equalTo(fileStat.getIno()));
+        assertThat(stat.getId(), equalTo(fileStat.getId()));
+        assertThat(stat.getGeneration(), equalTo(fileStat.getGeneration()));
+        assertThat(stat.getNlink(), equalTo(1));
+        assertThat(stat.getDev(), equalTo(17));
+        assertThat(stat.getRdev(), equalTo(13));
+
+        assertContents(checksums, "\n\r");
+    }
+
+    @Test(expected=FileNotFoundChimeraFsException.class)
+    public void testInodeOfDotGetChecksumNonExistingFile() throws Exception {
+        _fs.inodeOf(_rootInode, ".(get)(normal-file)(checksums)", STAT);
+    }
+
+    @Test
+    public void testInodeOfDotConfigExistingFile() throws Exception {
+        buildWormhole();
+        FsInode worm = _fs.inodeOf(_rootInode, ".(config)", STAT);
+        FsInode origCfgFile = worm.create("test.config", 1, 2, 0644);
+
+        FsInode cfgFile = _fs.inodeOf(_rootInode, ".(config)(test.config)", STAT);
+
+        assertThat(cfgFile, notNullValue());
+        assertThat(cfgFile, equalTo(origCfgFile));
+
+        var origCfgStat = origCfgFile.statCache();
+        var stat = cfgFile.statCache();
+
+        assertThat(stat.getUid(), equalTo(1));
+        assertThat(stat.getGid(), equalTo(2));
+        assertThat(stat.getMode(), equalTo(0644 | UnixPermission.S_IFREG));
+        assertThat(stat.getIno(), equalTo(origCfgStat.getIno()));
+        assertThat(stat.getId(), equalTo(origCfgStat.getId()));
+        assertThat(stat.getGeneration(), equalTo(origCfgStat.getGeneration()));
+        assertThat(stat.getNlink(), equalTo(1));
+        assertThat(stat.getDev(), equalTo(17));
+        assertThat(stat.getRdev(), equalTo(13));
+    }
+
+    @Test(expected=FileNotFoundChimeraFsException.class)
+    public void testInodeOfDotConfigNotExistingFile() throws Exception {
+        buildWormhole();
+
+        _fs.inodeOf(_rootInode, ".(config)(no-such-file.config)", STAT);
+    }
+
+    @Test
+    public void testInodeOfDotFsetChecksum() throws Exception {
+        FsInode file = _rootInode.create("normal-file", 1, 2, 0644);
+
+        FsInode fset = _fs.inodeOf(_rootInode,
+                ".(fset)(normal-file)(checksum)(MD5)(d41d8cd98f00b204e9800998ecf8427e)",
+                STAT);
+
+        // simulate the 'touch' command.
+        var touchStat = new Stat();
+        touchStat.setMTime(System.currentTimeMillis());
+        fset.setStat(touchStat);
+
+        var checksums = _fs.getInodeChecksums(file);
+        assertThat(checksums, hasSize(1));
+        Checksum actual = checksums.iterator().next();
+        Checksum expected = new Checksum(ChecksumType.MD5_TYPE,
+                "d41d8cd98f00b204e9800998ecf8427e");
+
+        assertThat(actual, equalTo(expected));
+    }
+
+    @Test(expected=FileNotFoundChimeraFsException.class)
+    public void testInodeOfDotFsetChecksumMissingFile() throws Exception {
+        _fs.inodeOf(_rootInode, ".(fset)(missing-file)(checksum)(MD5)(d41d8cd98f00b204e9800998ecf8427e)", STAT);
+    }
+
+    @Test
+    public void testInodeOfNormalFile() throws Exception {
+        FsInode file = _rootInode.create("normal-file", 1, 2, 0644);
+
+        FsInode result = _fs.inodeOf(_rootInode, "normal-file", STAT);
+
+        assertThat(result, notNullValue());
+        assertThat(result, equalTo(file));
+
+        var fileStat = file.statCache();
+        var stat = result.statCache();
+
+        assertThat(stat.getUid(), equalTo(1));
+        assertThat(stat.getGid(), equalTo(2));
+        assertThat(stat.getMode(), equalTo(0644 | UnixPermission.S_IFREG));
+        assertThat(stat.getIno(), equalTo(fileStat.getIno()));
+        assertThat(stat.getId(), equalTo(fileStat.getId()));
+        assertThat(stat.getGeneration(), equalTo(fileStat.getGeneration()));
+        assertThat(stat.getNlink(), equalTo(1));
+        assertThat(stat.getDev(), equalTo(17));
+        assertThat(stat.getRdev(), equalTo(13));
+    }
+
+    @Test(expected=FileNotFoundChimeraFsException.class)
+    public void testInodeOfMissingFile() throws Exception {
+        _fs.inodeOf(_rootInode, "missing-file", STAT);
+    }
+
+    @Test
     public void testGenerationOnReaddir() throws Exception {
         FsInode inode = _rootInode.mkdir("junit");
         Stat stat = new Stat();
@@ -1788,4 +2052,25 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
         }
     }
 
+    private void buildWormhole() throws ChimeraFsException {
+        _fs.mkdir("/admin");
+        _fs.mkdir("/admin/etc");
+        _fs.mkdir("/admin/etc/config");
+    }
+
+    private void assertContents(FsInode inode, String expectedContents)
+            throws ChimeraFsException {
+        var stat = inode.statCache();
+
+        long expectedSize = expectedContents.getBytes(UTF_8).length;
+
+        assertThat(stat.getSize(), equalTo(expectedSize));
+
+        int requestedReadSize = (int)expectedSize;
+        byte[] data = new byte[requestedReadSize];
+        int actualSize = inode.read(0, data, 0, requestedReadSize);
+        assertThat(actualSize, equalTo(requestedReadSize));
+        String actualContents = new String(data, UTF_8);
+        assertThat(actualContents, equalTo(expectedContents));
+    }
 }
