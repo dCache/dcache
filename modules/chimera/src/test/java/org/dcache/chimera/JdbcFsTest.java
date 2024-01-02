@@ -402,7 +402,14 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
               preStatBase.getNlink(), base.stat().getNlink());
         assertEquals("link count of file shold not be modified in case of rename",
               preStatFile.getNlink(), fileInode.stat().getNlink());
-
+        try {
+            base.inodeOf("testCreateFile", NO_STAT);
+            fail("Some inode exists under source name");
+        } catch (FileNotFoundChimeraFsException e) {
+            // Success.
+        }
+        assertEquals("should resolve same inode under target name", fileInode,
+                base.inodeOf("testCreateFile2", NO_STAT));
     }
 
     @Test
@@ -419,6 +426,14 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
 
         assertTrue("can't move", ok);
         assertEquals("link count of base directory shouldn't change", preStatBase.getNlink(), base.stat().getNlink());
+        try {
+            base.inodeOf("testCreateFile", NO_STAT);
+            fail("Some inode exists under source name");
+        } catch (FileNotFoundChimeraFsException e) {
+            // Success.
+        }
+        assertEquals("should resolve same inode under target name", fileInode,
+                base.inodeOf("testCreateFile2", NO_STAT));
 
         assertFalse("ghost file", file2Inode.exists());
 
@@ -443,7 +458,26 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
         assertEquals("link count of destination directory should change on move in", preStatBase2.getNlink(), base2.stat().getNlink());
         assertEquals("link count of file should not be modified on move", preStatFile.getNlink(),
               fileInode.stat().getNlink());
-
+        try {
+            base.inodeOf("testCreateFile", NO_STAT);
+            fail("Some inode exists under source name in source directory");
+        } catch (FileNotFoundChimeraFsException e) {
+            // Success.
+        }
+        try {
+            base2.inodeOf("testCreateFile", NO_STAT);
+            fail("Some inode exists under source name in target directory.");
+        } catch (FileNotFoundChimeraFsException e) {
+            // Success.
+        }
+        try {
+            base.inodeOf("testCreateFile2", NO_STAT);
+            fail("Some inode exists under target name in source directory");
+        } catch (FileNotFoundChimeraFsException e) {
+            // Success.
+        }
+        assertEquals("should resolve same inode under target name in target directory",
+                fileInode, base2.inodeOf("testCreateFile2", NO_STAT));
     }
 
     @Test
@@ -468,6 +502,26 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
         assertEquals("link count of file shold not be modified on move", preStatFile.getNlink(), fileInode.stat().getNlink());
 
         assertFalse("ghost file", fileInode2.exists());
+        try {
+            base.inodeOf("testCreateFile", NO_STAT);
+            fail("Some inode exists under source name in source directory");
+        } catch (FileNotFoundChimeraFsException e) {
+            // Success.
+        }
+        try {
+            base2.inodeOf("testCreateFile", NO_STAT);
+            fail("Some inode exists under source name in target directory.");
+        } catch (FileNotFoundChimeraFsException e) {
+            // Success.
+        }
+        try {
+            base.inodeOf("testCreateFile2", NO_STAT);
+            fail("Some inode exists under target name in source directory");
+        } catch (FileNotFoundChimeraFsException e) {
+            // Success.
+        }
+        assertEquals("should resolve same inode under target name in target directory",
+                fileInode, base2.inodeOf("testCreateFile2", NO_STAT));
     }
 
     @Test
@@ -488,7 +542,10 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
         assertEquals("link count of file should not be modified in case of rename",
               preStatFile.getNlink(),
               fileInode.stat().getNlink());
-
+        assertEquals("should resolve same inode under target name in target directory",
+                fileInode, base.inodeOf("testCreateFile", NO_STAT));
+        assertEquals("should resolve same inode under target name in target directory",
+                linkInode, base.inodeOf("testCreateFile2", NO_STAT));
     }
 
     @Test
@@ -513,7 +570,22 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
               preStatBase2.getNlink(), base2.stat().getNlink());
         assertEquals("link count of file should not be modified in case of rename",
               preStatFile.getNlink(), fileInode.stat().getNlink());
-
+        assertEquals("should resolve same inode under target name in target directory",
+                fileInode, base.inodeOf("testCreateFile", NO_STAT));
+        try {
+            base.inodeOf("testCreateFile2", NO_STAT);
+            fail("Some inode exists under destination name in source directory");
+        } catch (FileNotFoundChimeraFsException e) {
+            // Success.
+        }
+        try {
+            base2.inodeOf("testCreateFile", NO_STAT);
+            fail("Some inode exists under source name in target directory");
+        } catch (FileNotFoundChimeraFsException e) {
+            // Success.
+        }
+        assertEquals("should resolve same inode under target name in target directory",
+                linkInode, base2.inodeOf("testCreateFile2", NO_STAT));
     }
 
     @Test
