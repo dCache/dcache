@@ -1366,6 +1366,7 @@
                     <reuseForks>false</reuseForks>
                     <!-- Make Powermock compatible with JDK 17 -->
                     <argLine>
+                        @{argLine}
                         --add-opens java.base/java.lang=ALL-UNNAMED
                         --add-opens java.base/java.util=ALL-UNNAMED
                         --add-opens java.base/java.lang.reflect=ALL-UNNAMED
