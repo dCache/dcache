@@ -5,6 +5,7 @@ import static com.google.common.base.Preconditions.checkState;
 import com.google.common.collect.Sets;
 import java.security.Principal;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -15,6 +16,9 @@ import org.dcache.gplazma.monitor.LoginMonitor.Result;
  * This class holds a detailed report of the activity when gPlazma processes a login request.
  */
 public class LoginResult {
+
+    private static final SetDiff<Principal> EMPTY_TO_EMPTY =
+            new SetDiff(Collections.emptySet(), Collections.emptySet());
 
     private final AuthPhaseResult _authPhase = new AuthPhaseResult();
     private final MapPhaseResult _mapPhase = new MapPhaseResult();
@@ -84,6 +88,15 @@ public class LoginResult {
     }
 
     /**
+     * Store the initial set of principals, as received by gPlazma from the
+     * door.
+     * @param initial The door-supplied set of principals.
+     */
+    public void setInitialPrincipals(Set<Principal> initial) {
+        _authPhase.setPrincipals(initial, initial);
+    }
+
+    /**
      * Returns whether gPlazma finished all four phases of the login process.
      * <p>
      * This is not the same as the login being successful.  This value will return true yet the
@@ -102,7 +115,7 @@ public class LoginResult {
 
         private final List<T> _plugins = new ArrayList<>();
         private final String _name;
-        private SetDiff<Principal> _principals;
+        private SetDiff<Principal> _principals = EMPTY_TO_EMPTY;
         private Result _result;
         private boolean _hasHappened;
 
