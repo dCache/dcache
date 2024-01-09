@@ -2172,9 +2172,7 @@ public class FsSqlDriver {
 
                             FsInode inode = new FsInode(dir.getFs(), rs.getLong("fileid"),
                                   FsInodeType.INODE, 0);
-                            String path = inode2path(rs.getLong("fileid"), _root);
-                            return new ChimeraDirectoryEntry(path, inode, stat);
-
+                            return new ChimeraDirectoryEntry(rs.getString("filename"), inode, stat);
 
                         } catch (SQLException e) {
                             LOGGER.error("failed to fetch next entry: {}", e.getMessage());

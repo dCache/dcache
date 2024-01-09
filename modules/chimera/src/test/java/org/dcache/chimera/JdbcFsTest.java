@@ -1742,10 +1742,10 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
               labelname)) {
 
             for (ChimeraDirectoryEntry entry : dirStream) {
-                fileNames.add(entry.getName());
+                fileNames.add(entry.getInode().getId());
             }
         }
-        assertTrue(fileNames.containsAll(Lists.newArrayList(parentDirName+"/aFile", parentDirName+"/bFile")));
+        assertTrue(fileNames.containsAll(Lists.newArrayList(inodeA.getId(), inodeB.getId())));
     }
 
     @Test
