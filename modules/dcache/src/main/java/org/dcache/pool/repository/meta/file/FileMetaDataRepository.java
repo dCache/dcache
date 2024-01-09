@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
+import java.nio.file.ReadOnlyFileSystemException;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Set;
@@ -191,8 +192,13 @@ public class FileMetaDataRepository
             Files.createFile(tmp);
             return FileStoreState.OK;
         } catch (IOException e) {
-            LOGGER.error("Failed to touch " + tmp + ": " + messageOrClassName(e), e);
-            return FileStoreState.FAILED;
+            if (e.getMessage().contains("Read-only file system")) {
+                LOGGER.error("Filesystem in read-only mode {}: {}", tmp, messageOrClassName(e));
+                return FileStoreState.READ_ONLY;
+            } else {
+                LOGGER.error("Failed to touch {}: {}", tmp, messageOrClassName(e));
+                return FileStoreState.FAILED;
+            }
         }
     }
 

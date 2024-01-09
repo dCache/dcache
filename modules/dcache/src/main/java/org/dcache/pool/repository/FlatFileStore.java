@@ -107,7 +107,11 @@ public class FlatFileStore implements FileStore {
             Files.createFile(tmp);
             return FileStoreState.OK;
         } catch (IOException e) {
-            return FileStoreState.FAILED;
+            if (e.getMessage().contains("Read-only file system")) {
+                return FileStoreState.READ_ONLY;
+            } else {
+                return FileStoreState.FAILED;
+            }
         }
     }
 }

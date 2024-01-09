@@ -178,6 +178,9 @@ public class BerkeleyDBMetaDataRepository extends AbstractBerkeleyDBReplicaStore
     public FileStoreState isOk() {
         if (_fileStore.isOk() == FileStoreState.OK && super.isOk() == FileStoreState.OK){
             return FileStoreState.OK;
+        } else if (_fileStore.isOk() == FileStoreState.READ_ONLY && super.isOk() == FileStoreState.READ_ONLY){
+            return FileStoreState.READ_ONLY;
+
         }
       else {
             return FileStoreState.FAILED;
