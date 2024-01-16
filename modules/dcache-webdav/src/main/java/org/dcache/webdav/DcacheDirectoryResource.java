@@ -43,9 +43,11 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
 import org.dcache.vehicles.FileAttributes;
@@ -83,6 +85,8 @@ public class DcacheDirectoryResource
 
     private static final MediaType DEFAULT_ENTITY_TYPE = MediaType.HTML_UTF_8;
     private static final MediaType METALINK_ENTITY_TYPE = MediaType.create("application", "metalink4+xml");
+    private static final Set<Request.Method> LINK_HEADER_REQUESTS =
+            EnumSet.of(Request.Method.HEAD, Request.Method.GET);
 
     private final Map<MediaType,EntityWriter> supportedMediaTypes = Map.of(
         DEFAULT_ENTITY_TYPE, this::htmlEntity,
@@ -227,7 +231,9 @@ public class DcacheDirectoryResource
 
         // We must set the "Link" HTTP response header here, as we want it to appear for both HEAD
         // and GET requests, and (not unreasonably) Milton doesn't call sendContent for HEAD requests.
-        if (type.equals(DEFAULT_ENTITY_TYPE)) {
+        if (type.equals(DEFAULT_ENTITY_TYPE)
+                && LINK_HEADER_REQUESTS.contains(request.getMethod())
+                && HttpManager.response().getNonStandardHeader("Link") == null) {
             /* There is a slight subtly here.  A GET request that targets a directory with a
              * non-trailing-slash URL (e.g., "https://example.org/my-directory") triggers Milton to
              * issue a redirection to the corresponding trailing-slash URL
