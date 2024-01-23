@@ -632,27 +632,8 @@ public class DcacheResourceFactory
                     PnfsHandler pnfs = roleAwarePnfsHandler();
                     Set<FileAttribute> requestedAttributes =
                           buildRequestedAttributes();
-                    FileAttributes attributes;
-
-                    // FIXME: work around race condition between http mover completion and HEAD request by FTS
-                    // See: https://rt.dcache.org/Ticket/Display.html?id=10510
-                    int retry = 10;
-                    do {
-                        attributes = pnfs.getFileAttributes(path.toString(), requestedAttributes);
-                        if (!requestedAttributes.contains(CHECKSUM) ||
-                                (attributes.isDefined(CHECKSUM) && !attributes.getChecksums().isEmpty())) {
-                            break;
-                        }
-                        LOGGER.debug("The checksum attribute is not available yet. Waiting ... ({} attempts left)", retry);
-                        retry--;
-                        try {
-                            MILLISECONDS.sleep(500);
-                        } catch (InterruptedException e) {
-                            // Probably shutdown...
-                            break;
-                        }
-                    } while (retry > 0);
-
+                    FileAttributes attributes =
+                          pnfs.getFileAttributes(path.toString(), requestedAttributes);
                     return getResource(path, attributes);
                 } catch (FileNotFoundCacheException e) {
                     if (haveRetried) {
