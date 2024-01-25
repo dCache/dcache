@@ -3,6 +3,7 @@ package org.dcache.gplazma.tokenx;
 import java.io.IOException;
 import java.security.Principal;
 import java.time.Instant;
+import java.util.Enumeration;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
@@ -19,6 +20,7 @@ import org.dcache.auth.attributes.Restriction;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.oidc.OidcAuthPlugin;
 import org.dcache.gplazma.oidc.TokenProcessor;
+import org.dcache.gplazma.oidc.UnableToProcess;
 import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
 import org.dcache.gplazma.plugins.GPlazmaMappingPlugin;
 import org.dcache.gplazma.util.JsonWebToken;
@@ -32,7 +34,8 @@ import com.google.common.annotations.VisibleForTesting;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 
-public class TokenExchange extends OidcAuthPlugin {
+// public class TokenExchange extends OidcAuthPlugin {
+public class TokenExchange implements GPlazmaAuthenticationPlugin {
 
     private final static Logger LOG = LoggerFactory.getLogger(TokenExchange.class);
 
@@ -48,13 +51,13 @@ public class TokenExchange extends OidcAuthPlugin {
      * "gplazma.oidc.token-exchange-audience"
      * */
 
-    private final static String TOKEN_EXCHANGE_URL = "https://dev-keycloak.desy.de/auth/realms/desy-test/protocol/openid-connect/token";
-    private final static String CLIENT_ID = "exchange-test";
-    private final static String CLIENT_SECRET = "S0iO4EcUyn0m4b4TgSqDYViDeo9vorAs";
+    private final static String TOKEN_EXCHANGE_URL = "https://keycloak.desy.de/auth/realms/production/protocol/openid-connect/token";
+    private final static String CLIENT_ID = "token-exchange";
+    private final static String CLIENT_SECRET = "tj05R7fKtV0Pqkxxnby5aic1AsiiROHy";
     private final static String GRANT_TYPE = "urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Atoken-exchange";
     private final static String SUBJECT_ISSUER = "oidc";
     private final static String SUBJECT_TOKEN_TYPE = "urn%3Aietf%3Aparams%3Aoauth%3Atoken-type%3Aaccess_token";
-    private final static String AUDIENCE = "exchange-test";
+    private final static String AUDIENCE = "token-exchange";
 
     private final static String OIDC_ALLOWED_AUDIENCES = "gplazma.oidc.audience-targets";
 
@@ -65,7 +68,7 @@ public class TokenExchange extends OidcAuthPlugin {
         /*
          * enforced by pluggin interface
          */
-        super(properties);
+        // super(properties);
     }
 
     // @VisibleForTesting
@@ -81,6 +84,7 @@ public class TokenExchange extends OidcAuthPlugin {
     public void authenticate(Set<Object> publicCredentials, Set<Object> privateCredentials,
         Set<Principal> identifiedPrincipals, Set<Restriction> restrictions)
         throws AuthenticationException {
+        // throws Exception {
 
         String token = null;
         for (Object credential : privateCredentials) {
@@ -109,16 +113,20 @@ public class TokenExchange extends OidcAuthPlugin {
             // - swap exchanged token with existing token
             // Plan b: 
             // - identifiedPrinciples.addAll()
-        } catch (Exception e) {
+        } catch (UnableToProcess | IOException | InterruptedException e) {
             System.out.println("Do proper exception handling");
             e.printStackTrace();
+            throw new AuthenticationException("Unable to process token: " + e.getMessage());
         }
 
-        super.authenticate(publicCredentials, privateCredentials, identifiedPrincipals, restrictions);
+        // super.authenticate(publicCredentials, privateCredentials, identifiedPrincipals, restrictions);
     }
 
     @VisibleForTesting
-    public String tokenExchange(String token) throws Exception {
+    public String tokenExchange(String token) 
+        throws UnableToProcess, IOException, InterruptedException {
+        // throws Exception {
+        
         String result = "";
 
         String postBody = "client_id=" + CLIENT_ID
@@ -135,10 +143,23 @@ public class TokenExchange extends OidcAuthPlugin {
             .setHeader("Content-Type", "application/x-www-form-urlencoded")
             .build();
 
-        HttpClient client = HttpClient.newHttpClient();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        System.out.println("request:");
+        System.out.println("toString: " + request.toString());
+        System.out.println("headers: " + request.headers());
+        System.out.println("bodyPublisher: " + request.bodyPublisher().toString());
 
-        System.out.println(response);
+        HttpClient client = HttpClient.newHttpClient();
+        HttpResponse<String> response;
+        try {
+            response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            System.out.println("response:");
+            System.out.println("respone: " + response.toString());
+            System.out.println("response body: " + response.body());
+
+        } catch (IOException | InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
 
         return result;
     }
