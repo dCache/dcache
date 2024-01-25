@@ -134,7 +134,9 @@ EOF
     host_cert_hash=$(openssl x509 -in $ca_cert -noout -subject_hash)
     cp "$ca_cert" "$trust_store/$host_cert_hash.0"
 
-    old_dn="$(openssl x509 -in $ca_cert -noout -subject -nameopt compat | sed 's:subject= *\+/\?:/:;s:, :/:g')"
+    # old_dn="$(openssl x509 -in $ca_cert -noout -subject -nameopt compat | sed 's:subject= *\+/\?:/:;s:, :/:g')"
+    old_dn="$(openssl x509 -in $ca_cert -noout -subject -nameopt compat | sed -E 's:subject= */?\?:/:;s: *,:/:g')"
+
     cat > "$trust_store/$host_cert_hash.signing_policy" <<EOF
 access_id_CA    X509    '$old_dn'
 pos_rights      globus  CA:sign
