@@ -278,7 +278,9 @@ add_dn_from_file() { # $1 - X.509 pem certificate
 	return
     fi
 
-    dn=$(openssl x509 -in "$1" -subject -noout -nameopt compat | sed 's:subject= *\+/\?:/:;s:, :/:g')
+    # dn=$(openssl x509 -in "$1" -subject -noout -nameopt compat | sed 's:subject= *\+/\?:/:;s:, :/:g')
+    # dn=$(openssl x509 -in "$1" -subject -noout -nameopt compat | sed -E 's:subject= */:?/:;s:details= */:?/:;s:priority= */:?/:' )
+    dn=$(openssl x509 -in "$1" -subject -noout -nameopt compat | sed -E 's:subject= */?\?:/:;s: *,:/:g' )
 
     rc=0
     bin/dcache kpwd dcuserlist "$username" | grep -q "Authentication Record" || rc=$?
