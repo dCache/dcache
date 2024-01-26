@@ -69,6 +69,7 @@ import org.dcache.nfs.v4.xdr.nfs4_prot;
 import org.dcache.nfs.v4.xdr.nfs_argop4;
 import org.dcache.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.nfs.v4.xdr.stateid4;
+import org.dcache.oncrpc4j.grizzly.GrizzlyUtils;
 import org.dcache.oncrpc4j.rpc.IoStrategy;
 import org.dcache.oncrpc4j.rpc.OncRpcException;
 import org.dcache.oncrpc4j.rpc.OncRpcProgram;
@@ -84,9 +85,13 @@ import org.dcache.pool.movers.Mover;
 import org.dcache.pool.movers.MoverFactory;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository;
+import org.dcache.util.ByteUnit;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.PortRange;
 import org.dcache.vehicles.DoorValidateMoverMessage;
+import org.glassfish.grizzly.Buffer;
+import org.glassfish.grizzly.memory.MemoryManager;
+import org.glassfish.grizzly.memory.PooledMemoryManager;
 import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -155,6 +160,21 @@ public class NfsTransferService
     private File _tcpPortFile;
 
     private CellAddressCore _cellAddress;
+
+    /**
+     * Buffer pool for IO operations.
+     * One pool with 1MB chunks (max NFS rsize).
+     */
+    private final MemoryManager<? extends Buffer> pooledBufferAllocator =
+            new PooledMemoryManager(// one pool with 1MB chunks (max NFS rsize)
+                    ByteUnit.MiB.toBytes(1), // base chunk size
+                    1, // number of pools
+                    2, // grow facter per pool, ignored, see above
+                    GrizzlyUtils.getDefaultWorkerPoolSize(), // expected concurrency
+                    PooledMemoryManager.DEFAULT_HEAP_USAGE_PERCENTAGE,
+                    PooledMemoryManager.DEFAULT_PREALLOCATED_BUFFERS_PERCENTAGE,
+                    true  // direct buffers
+            );
 
     @Override
     public void setCellAddress(CellAddressCore address) {
@@ -562,5 +582,13 @@ public class NfsTransferService
         CellInfoProvider.super.getInfo(pw);
         var endpoint = _rpcService.getInetSocketAddress(IpProtocolType.TCP);
         pw.printf("   Listening on: %s:%d\n", InetAddresses.toUriString(endpoint.getAddress()), endpoint.getPort());
+    }
+
+    /**
+     * Get IO buffer allocator.
+     * @return IO buffer allocator.
+     */
+    public MemoryManager<? extends Buffer> getIOBufferAllocator() {
+        return pooledBufferAllocator;
     }
 }
