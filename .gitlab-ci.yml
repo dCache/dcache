@@ -133,7 +133,7 @@ srm_client_rpm:
 
 deb:
   stage: build
-  image: dcache/maven-java11-deb-build
+  image: dcache/maven-java17-deb-build
   extends: .build_cache
   script:
     - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl packages/fhs -P deb clean package
