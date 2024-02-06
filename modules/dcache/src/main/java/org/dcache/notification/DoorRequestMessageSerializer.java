@@ -69,7 +69,7 @@ public class DoorRequestMessageSerializer implements Serializer<DoorRequestInfoM
         MoverInfoMessage moverInfoMessage = data.getMoverInfo();
 
         if (moverInfoMessage != null) {
-            JSONObject moverInfo = BillingMessageSerializer.transform(moverInfoMessage);
+            JSONObject moverInfo = MoverInfoMessageSerializer.transform(moverInfoMessage);
             Arrays.stream(REDUNDANT_MOVER_DATA_KEYS).forEach(moverInfo::remove);
             o.put("moverInfo", moverInfo);
         }
