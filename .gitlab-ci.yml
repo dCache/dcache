@@ -78,7 +78,7 @@ default:
 .helm_image:
   extends: .kubernetes_tags
   image:
-    name: devth/helm:latest
+    name: dtzar/helm-kubectl:latest
     entrypoint: ['']
 
 
