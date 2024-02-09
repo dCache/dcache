@@ -251,7 +251,7 @@ install_rpm:
 
 upload_rpm:
   stage: upload
-  image: almalinux:8
+  image: almalinux:9-minimal
   dependencies:
     - sign_rpm
   extends: .upload_rules
@@ -262,7 +262,7 @@ upload_rpm:
 
 upload_srm_client_rpm:
   stage: upload
-  image: almalinux:8
+  image: almalinux:9-minimal
   dependencies:
     - sign_srm_client_rpm
   extends: .upload_rules
@@ -273,7 +273,7 @@ upload_srm_client_rpm:
 
 upload_deb:
   stage: upload
-  image: almalinux:8
+  image: almalinux:9-minimal
   dependencies:
     - sign_deb
   extends: .upload_rules
@@ -284,7 +284,7 @@ upload_deb:
 
 upload_tar:
   stage: upload
-  image: almalinux:8
+  image: almalinux:9-minimal
   dependencies:
     - tar
   extends: .upload_rules
