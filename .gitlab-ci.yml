@@ -214,7 +214,7 @@ k8s_deploy:
 
 upload_rpm:
   stage: upload
-  image: almalinux:8
+  image: almalinux:9-minimal
   dependencies:
     - sign_rpm
   rules:
@@ -226,7 +226,7 @@ upload_rpm:
 
 upload_srm_client_rpm:
   stage: upload
-  image: almalinux:8
+  image: almalinux:9-minimal
   dependencies:
     - sign_srm_client_rpm
   rules:
@@ -238,7 +238,7 @@ upload_srm_client_rpm:
 
 upload_deb:
   stage: upload
-  image: almalinux:8
+  image: almalinux:9-minimal
   dependencies:
     - sign_deb
   rules:
@@ -250,7 +250,7 @@ upload_deb:
 
 upload_tar:
   stage: upload
-  image: almalinux:8
+  image: almalinux:9-minimal
   dependencies:
     - tar
   rules:
