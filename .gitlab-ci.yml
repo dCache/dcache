@@ -154,6 +154,22 @@ tar:
     expire_in: 2 days
 
 
+spotbugs:
+  stage: build
+  image: dcache/maven-java17-tar-build
+  extends: .build_cache
+  script:
+    - dnf -y -q install jq
+    - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl packages/tar -DskipTests package com.github.spotbugs:spotbugs-maven-plugin:4.8.3.0:spotbugs verify
+    - find . -name gl-code-quality-report.json -print | xargs cat | jq -s "add" > merged-gl-code-quality-report.json
+  artifacts:
+    reports:
+      codequality:
+        - merged-gl-code-quality-report.json
+    paths:
+      - merged-gl-code-quality-report.json
+    expire_in: 2 days
+
 container:
   stage: build
   # For latest releases see https://github.com/GoogleContainerTools/kaniko/releases

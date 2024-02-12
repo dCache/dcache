@@ -1255,6 +1255,11 @@
                     <artifactId>spotbugs-maven-plugin</artifactId>
                     <version>4.7.3.0</version>
                 </plugin>
+                <plugin>
+                    <groupId>de.chkal.maven</groupId>
+                    <artifactId>gitlab-code-quality-plugin</artifactId>
+                    <version>1.0.2</version>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -1396,6 +1401,18 @@
                         <goals>
                             <goal>integration-test</goal>
                             <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>de.chkal.maven</groupId>
+                <artifactId>gitlab-code-quality-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>generate</goal>
                         </goals>
                     </execution>
                 </executions>
