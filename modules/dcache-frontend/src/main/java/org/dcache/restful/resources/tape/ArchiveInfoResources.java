@@ -59,8 +59,10 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.tape;
 
+import static org.dcache.http.AuthenticationHandler.getLoginAttributes;
 import static org.dcache.restful.util.JSONUtils.newBadRequestException;
 
+import diskCacheV111.util.FsPath;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -74,12 +76,16 @@ import javax.inject.Named;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+
+import org.dcache.auth.attributes.LoginAttributes;
 import org.dcache.cells.CellStub;
+import org.dcache.http.PathMapper;
 import org.dcache.restful.providers.tape.ArchiveInfo;
 import org.dcache.restful.util.HandlerBuilders;
 import org.dcache.restful.util.wlcg.ArchiveInfoCollector;
@@ -108,6 +114,10 @@ public final class ArchiveInfoResources {
     @Inject
     private ArchiveInfoCollector archiveInfoCollector;
 
+    @Inject
+    private PathMapper pathMapper;
+
+
     /**
      * Return the file locality information for a list of file paths.
      * <p>
@@ -134,6 +144,8 @@ public final class ArchiveInfoResources {
                 String requestPayload) {
 
         List<String> paths;
+        FsPath userRoot = LoginAttributes.getUserRoot(getLoginAttributes(request));
+        FsPath rootPath = pathMapper.effectiveRoot(userRoot, ForbiddenException::new);
 
         try {
             JSONObject jsonPayload = new JSONObject(requestPayload);
@@ -147,13 +159,20 @@ public final class ArchiveInfoResources {
 
             paths = new ArrayList<>();
             for (int i = 0; i < len; ++i) {
-                paths.add(jsonArray.getString(i));
+                String requestedPath = jsonArray.getString(i);
+                String dcachePath = rootPath.chroot(requestedPath).toString();
+                paths.add(dcachePath);
             }
         } catch (JSONException e) {
             throw newBadRequestException(requestPayload, e);
         }
 
-        return archiveInfoCollector.getInfo(HandlerBuilders.roleAwarePnfsHandler(pnfsManager),
+        var archiveInfos = archiveInfoCollector.getInfo(HandlerBuilders.roleAwarePnfsHandler(pnfsManager),
               paths);
+
+        archiveInfos.forEach(ai ->
+            ai.setPath(FsPath.create(ai.getPath()).stripPrefix(rootPath)));
+
+        return archiveInfos;
     }
 }
