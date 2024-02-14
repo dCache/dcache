@@ -110,7 +110,7 @@ rpm:
   image: dcache/maven-java17-rpm-build
   extends: .build_cache
   script:
-    - mvn $MAVEN_CLI_OPTS -am -pl packages/fhs -P rpm clean package
+    - mvn $MAVEN_CLI_OPTS -Drun.slow.tests -am -pl packages/fhs -P rpm clean package
   artifacts:
     reports:
       junit:
