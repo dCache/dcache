@@ -662,8 +662,7 @@ public class PoolSelectionUnitV2
                   .stream()
                   .map(UGroup::getName).findFirst().get();
 
-            LOGGER.debug(
-                  "this IP address   belongs to {} in uGroup {} " + netUnitName + netUnitGroup);
+            LOGGER.debug("this IP address belongs to {} in uGroup {} ", netUnitName, netUnitGroup);
 
 
         } catch (UnknownHostException e) {
@@ -1158,7 +1157,7 @@ public class PoolSelectionUnitV2
                     break;
                 default:
                     throw new IllegalArgumentException(
-                          "Syntax error," + " no such mode: " + mode);
+                          "Syntax error, no such mode: " + mode);
             }
         } finally {
             wunlock();
