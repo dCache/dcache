@@ -64,9 +64,6 @@ default:
     when:
       - runner_system_failure
       - api_failure
-  tags:
-    - dcache-dev
-
 #
 # default tags and image for testing stages/kubernetes/helm 
 #
