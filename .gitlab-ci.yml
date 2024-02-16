@@ -59,6 +59,11 @@ before_script:
       echo "=========================================="
 
 default:
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - api_failure
   tags:
     - dcache-dev
 
