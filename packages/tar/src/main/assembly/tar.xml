@@ -8,6 +8,7 @@
                 <exclude>*:*:war:*</exclude>
                 <exclude>saxon:saxon:*:*</exclude>
                 <exclude>org.dcache:dcache-view:jar:*</exclude>
+                <exclude>org.dcache:dcache-view-admin:jar:*</exclude>
             </excludes>
             <outputDirectory>share/classes</outputDirectory>
             <useProjectArtifact>false</useProjectArtifact>
@@ -27,6 +28,15 @@
                 <include>org.dcache:dcache-view:jar:*</include>
             </includes>
             <outputDirectory>share/dcache-view</outputDirectory>
+            <fileMode>644</fileMode>
+            <directoryMode>755</directoryMode>
+            <unpack>true</unpack>
+        </dependencySet>
+        <dependencySet>
+            <includes>
+                <include>org.dcache:dcache-view-admin:jar:*</include>
+            </includes>
+            <outputDirectory>share/dcache-view-admin</outputDirectory>
             <fileMode>644</fileMode>
             <directoryMode>755</directoryMode>
             <unpack>true</unpack>

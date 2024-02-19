@@ -23,9 +23,6 @@ A dCache instance will generally consist of many storage (or "pool") nodes.
 On those nodes, normal Linux filesystems (btrfs, ext4, XFS, ZFS) are used
 to store data.
 
-Alternatively, dCache pools can use storage space provided by a Ceph object
-storage system.
-
 In addition to those possibilities, dCache can use its hierarchical storage
 management capabilities to transparently use  storage systems with different characteristics (like tape libraries for lower-cost, but higher-latency
 storage). Built-in mechanisms can be used to increase performance and balance loads,

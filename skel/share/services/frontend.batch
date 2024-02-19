@@ -80,6 +80,7 @@ check -strong frontend.restore-requests.topic
 check -strong frontend.restore-requests.lifetime
 check -strong frontend.restore-requests.lifetime.unit
 check -strong frontend.dcache-view.dir
+check -strong frontend.dcache-view-admin.dir
 
 check -strong frontend.static!dcache-view.endpoints.webapi
 check frontend.static!dcache-view.endpoints.webdav

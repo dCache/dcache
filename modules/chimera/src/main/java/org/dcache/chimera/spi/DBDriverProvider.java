@@ -26,8 +26,9 @@ public interface DBDriverProvider {
      * Get {@link FsSqlDriver} for the specific database.
      *
      * @param dataSource source for database connection
+     * @param consistency desired file attribute consistency
      * @return driver for specific database.
      * @throws SQLException on db errors
      */
-    FsSqlDriver getDriver(DataSource dataSource) throws SQLException, ChimeraFsException;
+    FsSqlDriver getDriver(DataSource dataSource, String consistency) throws SQLException, ChimeraFsException;
 }

@@ -51,6 +51,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -945,7 +946,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
 
     @GuardedBy("writeLock")
     private void removeAllDescriptorsAtomically() {
-        _descriptors.forEach(FileDescriptor::close);
+        _descriptors.stream().filter(Objects::nonNull).forEach(FileDescriptor::close);
         _descriptors.clear();
     }
 

@@ -63,14 +63,17 @@ import static org.dcache.services.bulk.activity.BulkActivity.TargetType.FILE;
 import static org.dcache.services.bulk.activity.BulkActivityArgumentDescriptor.EMPTY_DEFAULT;
 
 import com.google.common.collect.ImmutableSet;
+import java.util.Map;
 import java.util.Set;
 import org.dcache.services.bulk.BulkServiceException;
 import org.dcache.services.bulk.activity.BulkActivityArgumentDescriptor;
 import org.dcache.services.bulk.activity.BulkActivityProvider;
 
 public final class UnpinActivityProvider extends BulkActivityProvider<UnpinActivity> {
-    static final BulkActivityArgumentDescriptor UNPIN_REQUEST_ID
-          = new BulkActivityArgumentDescriptor("id",
+    static final String UNPIN_REQUEST_ID = "id";
+
+    private static final BulkActivityArgumentDescriptor DEFAULT_DESCRIPTOR
+          = new BulkActivityArgumentDescriptor(UNPIN_REQUEST_ID,
           "to use for this unpin.  If null, no id will be used (meaning all pins "
                 + "of the user)",
           "string",
@@ -82,8 +85,8 @@ public final class UnpinActivityProvider extends BulkActivityProvider<UnpinActiv
     }
 
     @Override
-    public Set<BulkActivityArgumentDescriptor> getArguments() {
-        return ImmutableSet.of(UNPIN_REQUEST_ID);
+    public Set<BulkActivityArgumentDescriptor> getDescriptors() {
+        return ImmutableSet.of(DEFAULT_DESCRIPTOR);
     }
 
     @Override
@@ -94,5 +97,10 @@ public final class UnpinActivityProvider extends BulkActivityProvider<UnpinActiv
     @Override
     protected UnpinActivity activityInstance() throws BulkServiceException {
         return new UnpinActivity(activity, targetType);
+    }
+
+    @Override
+    public void configure(Map<String, Object> environment) {
+        // NOP
     }
 }

@@ -96,12 +96,13 @@ public class PinManagerCLI
     }
 
     private Future<PinManagerPinMessage>
-    pin(PnfsId pnfsId, String requestId, long lifetime)
+    pin(PnfsId pnfsId, String requestId, long lifetime, boolean replyWhenStarted)
           throws CacheException {
         DCapProtocolInfo protocolInfo =
               new DCapProtocolInfo("DCap", 3, 0, new InetSocketAddress("localhost", 0));
         PinManagerPinMessage message = new PinManagerPinMessage(FileAttributes.ofPnfsId(pnfsId),
               protocolInfo, requestId, lifetime);
+        message.setReplyWhenStarted(replyWhenStarted);
         return _pinProcessor.messageArrived(message);
     }
 
@@ -109,9 +110,8 @@ public class PinManagerCLI
           description = "Pins a file to disk for some time. A file may be pinned forever by " +
                 "specifying a lifetime of -1. Pinning a file may involve staging it " +
                 "or copying it from one pool to another. For that reason pinning may " +
-                "take awhile and the pin command may time out. The pin request will " +
-                "however stay active and progress may be tracked by listing the pins " +
-                "on the file.")
+                "take awhile. The pin command will return immediately, but the pin request " +
+                "will stay active and progress may be tracked by listing the pins on the file.")
     public class PinCommand implements Callable<String> {
 
         @Argument(index = 0)
@@ -124,14 +124,8 @@ public class PinManagerCLI
         public String call()
               throws CacheException, ExecutionException, InterruptedException {
             long millis = (lifetime == -1) ? -1 : TimeUnit.SECONDS.toMillis(lifetime);
-            PinManagerPinMessage message = pin(pnfsId, null, millis).get();
-            if (message.getExpirationTime() == null) {
-                return String.format("[%d] %s pinned", message.getPinId(), pnfsId);
-            } else {
-                return String.format("[%d] %s pinned until %tc",
-                      message.getPinId(), pnfsId,
-                      message.getExpirationTime());
-            }
+            PinManagerPinMessage message = pin(pnfsId, null, millis, true).get();
+            return String.format("A pin request for %s has been sent", pnfsId);
         }
     }
 
@@ -526,7 +520,7 @@ public class PinManagerCLI
             List<PnfsId> list = new ArrayList(_tasks.keySet());
             for (PnfsId pnfsId : list) {
                 try {
-                    _tasks.put(pnfsId, pin(pnfsId, _requestId, _lifetime));
+                    _tasks.put(pnfsId, pin(pnfsId, _requestId, _lifetime, false));
                 } catch (CacheException e) {
                     _tasks.remove(pnfsId);
                     _errors.append("    ").append(pnfsId).

@@ -35,6 +35,8 @@ import java.util.stream.Collectors;
  */
 public class MultiTargetedRestriction implements Restriction {
 
+    private static final long serialVersionUID = -4604505680192926544L;
+
     private static final EnumSet<Activity> ALLOWED_PARENT_ACTIVITIES
           = EnumSet.of(Activity.LIST, Activity.READ_METADATA);
 
@@ -138,14 +140,13 @@ public class MultiTargetedRestriction implements Restriction {
 
     @Override
     public boolean isRestricted(Activity activity, FsPath path) {
-        return isRestricted(activity, path, getPathResolver());
+        return isRestricted(activity, path, false);
     }
 
     @Override
     public boolean isRestricted(Activity activity, FsPath directory, String child,
-          boolean skipSymlinkResolution) {
-        return isRestricted(activity, directory.child(child),
-              skipSymlinkResolution ? getIdentityResolver() : getPathResolver());
+          boolean skipPrefixCheck) {
+        return isRestricted(activity, directory.child(child), skipPrefixCheck);
     }
 
     @Override
@@ -214,19 +215,29 @@ public class MultiTargetedRestriction implements Restriction {
               .collect(Collectors.joining(", ", "MultiTargetedRestriction[", "]"));
     }
 
-    private boolean isRestricted(Activity activity, FsPath path, Function<FsPath, FsPath> resolver) {
+    private boolean isRestricted(Activity activity, FsPath path, boolean skipPrefixCheck) {
         for (Authorisation authorisation : authorisations) {
-            FsPath allowedPath = resolver.apply(authorisation.getPath());
             EnumSet<Activity> allowedActivity = authorisation.getActivity();
-            path = resolver.apply(path);
-            if (allowedActivity.contains(activity) && path.hasPrefix(allowedPath)) {
-                return false;
-            }
+            if (skipPrefixCheck) {
+                if (allowedActivity.contains(activity)) {
+                    return false;
+                }
 
-            // As a special case, certain activities are always allowed for
-            // parents of an AllowedPath.
-            if (ALLOWED_PARENT_ACTIVITIES.contains(activity) && allowedPath.hasPrefix(path)) {
-                return false;
+                if (ALLOWED_PARENT_ACTIVITIES.contains(activity)) {
+                    return false;
+                }
+            } else {
+                FsPath allowedPath = getPathResolver().apply(authorisation.getPath());
+                path = getPathResolver().apply(path);
+                if (allowedActivity.contains(activity) && path.hasPrefix(allowedPath)) {
+                    return false;
+                }
+
+                // As a special case, certain activities are always allowed for
+                // parents of an AllowedPath.
+                if (ALLOWED_PARENT_ACTIVITIES.contains(activity) && allowedPath.hasPrefix(path)) {
+                    return false;
+                }
             }
         }
 

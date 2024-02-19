@@ -11,8 +11,19 @@
 #  PKG_UPLOAD_USER: user name to use for authorization
 #  PKG_UPLOAD_PASS: password
 #
+#  DOCKER_HUB_USER: user name on docker hub
+#  DOCKER_HUB_ACCESS_KEY: Access Key or Password of the docker user
+#
+#
+#
 #  KUBECONFIG: env file that contains kubernetes configuration to access the cluster
-
+#
+# dCache deployment in kubernetes managed by helm chart
+#  https://gitlab.desy.de/dcache/dcache-helm
+#
+#
+# The kubernetes based jobs don't use directly any job artefact, thus pulling artefact
+# is explicitly disabled by default.
 
 
 stages:
@@ -21,22 +32,64 @@ stages:
   - testenv_pre
   - test_infra
   - test_deploy
+  - testing
   - testenv_post
   - upload
 
-
 variables:
-  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true -DskipTests -Dmaven.repo.local=.m2/repository"
+  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true -Dmaven.repo.local=.m2/repository"
   K8S_NAMESPACE: dcache-build-$CI_PIPELINE_ID
   CHECK_TIMEOUT: --timeout=300s
+  HELM_OPTS: --replace --timeout 10m0s
   AUTOCA_URL: https://ci.dcache.org/ca
+  DCACHE_HELM_REPO: https://gitlab.desy.de/api/v4/projects/7648/packages/helm/test
 
 
-rpm:
-  stage: build
-  image: dcache/maven-java11-rpm-build
-  # Cache downloaded dependencies and plugins between builds.
-  # To keep cache across branches add 'key: "$CI_JOB_NAME"'
+# let's debug nodes where job is running
+before_script:
+  - |
+      set +x
+      echo "============== GitLab Agent =============="
+      uname -a
+      echo "Runner           : $CI_RUNNER_DESCRIPTION"
+      echo "Runner id        : $CI_RUNNER_ID"
+      echo "Runner version   : $CI_RUNNER_VERSION"
+      echo "Runner revision  : $CI_RUNNER_REVISION"
+      echo "Runner tags      : $CI_RUNNER_TAGS"
+      echo "=========================================="
+
+default:
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - api_failure
+#
+# default tags and image for testing stages/kubernetes/helm 
+#
+.kubernetes_tags:
+  tags:
+    - kubernetes
+    - dcache-dev
+  dependencies: []
+
+.kubernetes_image:
+  extends: .kubernetes_tags
+  image: bitnami/kubectl:latest
+  
+.helm_image:
+  extends: .kubernetes_tags
+  image:
+    name: dtzar/helm-kubectl:latest
+    entrypoint: ['']
+
+
+#
+# default cache konfiguration for maven build jobs
+# Cache downloaded dependencies and plugins between builds.
+# To keep cache across branches add 'key: "$CI_JOB_NAME"'
+#
+.build_cache:
   cache:
     key:
       files:
@@ -44,27 +97,37 @@ rpm:
       prefix: "$CI_JOB_NAME"
     paths:
       - ./.m2/repository
+
+#
+# default rules for upload stage
+#
+.upload_rules:
+  rules:
+    - if: $CI_COMMIT_TAG
+
+
+
+rpm:
+  stage: build
+  image: dcache/maven-java17-rpm-build
+  extends: .build_cache
   script:
-    - mvn $MAVEN_CLI_OPTS -am -pl packages/fhs -P rpm clean package
+    - mvn $MAVEN_CLI_OPTS -Drun.slow.tests -am -pl packages/fhs -P rpm clean package
   artifacts:
+    reports:
+      junit:
+        - "**/target/surefire-reports/TEST-*.xml"
+        - "**/target/failsafe-reports/TEST-*.xml"
     paths:
       - "packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm"
     expire_in: 2 days
 
 srm_client_rpm:
   stage: build
-  image: dcache/maven-java11-rpm-build
-  # Cache downloaded dependencies and plugins between builds.
-  # To keep cache across branches add 'key: "$CI_JOB_NAME"'
-  cache:
-    key:
-      files:
-        - pom.xml
-      prefix: "$CI_JOB_NAME"
-    paths:
-      - ./.m2/repository
+  image: dcache/maven-java17-rpm-build
+  extends: .build_cache
   script:
-    - mvn $MAVEN_CLI_OPTS -am -pl modules/srm-client package -P rpm
+    - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl modules/srm-client package -P rpm
   artifacts:
     paths:
       - "modules/srm-client/target/rpmbuild/RPMS/noarch/dcache-srmclient*.rpm"
@@ -72,18 +135,10 @@ srm_client_rpm:
 
 deb:
   stage: build
-  image: dcache/maven-java11-deb-build
-  # Cache downloaded dependencies and plugins between builds.
-  # To keep cache across branches add 'key: "$CI_JOB_NAME"'
-  cache:
-    key:
-      files:
-        - pom.xml
-      prefix: "$CI_JOB_NAME"
-    paths:
-      - ./.m2/repository
+  image: dcache/maven-java17-deb-build
+  extends: .build_cache
   script:
-    - mvn $MAVEN_CLI_OPTS -am -pl packages/fhs -P deb clean package
+    - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl packages/fhs -P deb clean package
   artifacts:
     paths:
       - "packages/fhs/target/dcache_*.deb"
@@ -91,32 +146,41 @@ deb:
 
 tar:
   stage: build
-  image: dcache/maven-java11-tar-build
-  # Cache downloaded dependencies and plugins between builds.
-  # To keep cache across branches add 'key: "$CI_JOB_NAME"'
-  cache:
-    key:
-      files:
-        - pom.xml
-      prefix: "$CI_JOB_NAME"
-    paths:
-      - ./.m2/repository
+  image: dcache/maven-java17-tar-build
+  extends: .build_cache
   script:
-    - mvn $MAVEN_CLI_OPTS -am -pl packages/tar clean package
+    - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl packages/tar clean package
   artifacts:
     paths:
       - "packages/tar/target/dcache-*.tar.gz"
     expire_in: 2 days
 
 
+spotbugs:
+  stage: build
+  image: dcache/maven-java17-tar-build
+  extends: .build_cache
+  script:
+    - dnf -y -q install jq
+    - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl packages/tar -DskipTests package com.github.spotbugs:spotbugs-maven-plugin:4.8.3.0:spotbugs verify
+    - find . -name gl-code-quality-report.json -print | xargs cat | jq -s "add" > merged-gl-code-quality-report.json
+  artifacts:
+    reports:
+      codequality:
+        - merged-gl-code-quality-report.json
+    paths:
+      - merged-gl-code-quality-report.json
+    expire_in: 2 days
+
 container:
   stage: build
-  # Cache downloaded dependencies and plugins between builds.
-  # To keep cache across branches add 'key: "$CI_JOB_NAME"'
+  # For latest releases see https://github.com/GoogleContainerTools/kaniko/releases
+  # Only debug/*-debug versions of the Kaniko image are known to work within Gitlab CI
   image: gcr.io/kaniko-project/executor:debug
-  needs: ["tar"]
-  only:
-    - master
+  needs:
+    - tar
+  dependencies:
+    - tar
   script:
     - |-
       tag=$CI_COMMIT_SHORT_SHA
@@ -126,11 +190,11 @@ container:
     - mkdir maven
     - tar -C maven --strip-components=1 -xzvf packages/tar/target/dcache-*.tar.gz
     - cp $CI_PROJECT_DIR/packages/tar/src/main/container/* .
-    - ls -l
     - mkdir -p /kaniko/.docker
     - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
     - >
       /kaniko/executor
+      --label dcache.build=testing
       --context $CI_PROJECT_DIR
       --dockerfile $CI_PROJECT_DIR/Dockerfile
       --destination $CI_REGISTRY_IMAGE:$tag
@@ -140,14 +204,14 @@ container:
 
 sign_rpm:
   stage: sign
-  image: almalinux:8
+  image: almalinux:9-minimal
   needs: ["rpm"]
   script:
-    - dnf install -y rpm-sign
+    - microdnf install -y rpm-sign
     - echo $DCACHE_ORG_PGP_KEY | base64 -d -i > secret.gpg
     - gpg --quiet --batch --yes --allow-secret-key-import --passphrase="$DCACHE_ORG_PGP_KEY_PASS" --import secret.gpg
     - gpg -a --export "$DCACHE_ORG_KEY_NAME" > RPM-GPG-KEY
-    - rpmsign --addsign --define "_signature gpg" --define "_gpg_name  $DCACHE_ORG_KEY_NAME" --define "_gpg_sign_cmd_extra_args --pinentry-mode loopback --passphrase $DCACHE_ORG_PGP_KEY_PASS" packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm*
+    - rpmsign --addsign --define "_signature gpg" --define "_gpg_name  $DCACHE_ORG_KEY_NAME" --define "_gpg_sign_cmd_extra_args --pinentry-mode loopback --passphrase $DCACHE_ORG_PGP_KEY_PASS" packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm
     - rpmkeys --import RPM-GPG-KEY
     - rpm --checksig -v packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm
   artifacts:
@@ -156,10 +220,10 @@ sign_rpm:
 
 sign_srm_client_rpm:
   stage: sign
-  image: almalinux:8
+  image: almalinux:9-minimal
   needs: ["srm_client_rpm"]
   script:
-    - dnf install -y rpm-sign
+    - microdnf install -y rpm-sign
     - echo $DCACHE_ORG_PGP_KEY | base64 -d -i > secret.gpg
     - gpg --quiet --batch --yes --allow-secret-key-import --passphrase="$DCACHE_ORG_PGP_KEY_PASS" --import secret.gpg
     - gpg -a --export "$DCACHE_ORG_KEY_NAME" > RPM-GPG-KEY
@@ -203,28 +267,12 @@ install_rpm:
 #    - apt-get update
 #    - DEBIAN_FRONTEND=noninteractive apt install -y -f ./packages/fhs/target/dcache_*.deb
 
-k8s_deploy:
-  stage: test_deploy
-  image:
-    name: rancher/kubectl:v1.22.2
-    entrypoint: ["/usr/bin/env"]
-  rules:
-    - exists:
-      - .ci-k8s/dcache-service.yml
-  script:
-    - kubectl apply -f .ci-k8s/zookeeper.yml
-    - kubectl apply -f .ci-k8s/postgresql-service.yml
-    - kubectl apply -f .ci-k8s/dcache-service.yml
-  tags:
-    - kubernetes
-
 upload_rpm:
   stage: upload
-  image: almalinux:8
+  image: almalinux:9-minimal
   dependencies:
     - sign_rpm
-  rules:
-    - if: $CI_COMMIT_TAG
+  extends: .upload_rules
   script:
     - RPM_NAME=`ls packages/fhs/target/rpmbuild/RPMS/noarch/ | grep dcache`
     - VERSION=`echo $RPM_NAME | cut -d'-' -f 2 | cut -d'.' -f 1,2`
@@ -232,11 +280,10 @@ upload_rpm:
 
 upload_srm_client_rpm:
   stage: upload
-  image: almalinux:8
+  image: almalinux:9-minimal
   dependencies:
     - sign_srm_client_rpm
-  rules:
-    - if: $CI_COMMIT_TAG
+  extends: .upload_rules
   script:
     - RPM_NAME=`ls modules/srm-client/target/rpmbuild/RPMS/noarch/ | grep dcache-srmclient`
     - VERSION=`echo $RPM_NAME | cut -d'-' -f 3 | cut -d'.' -f 1,2`
@@ -244,11 +291,10 @@ upload_srm_client_rpm:
 
 upload_deb:
   stage: upload
-  image: almalinux:8
+  image: almalinux:9-minimal
   dependencies:
     - sign_deb
-  rules:
-    - if: $CI_COMMIT_TAG
+  extends: .upload_rules
   script:
     - DEB_NAME=`ls packages/fhs/target/ | grep dcache`
     - VERSION=`echo $DEB_NAME | cut -d'_' -f 2 | cut -d'.' -f 1,2`
@@ -256,72 +302,227 @@ upload_deb:
 
 upload_tar:
   stage: upload
-  image: almalinux:8
+  image: almalinux:9-minimal
   dependencies:
     - tar
-  rules:
-    - if: $CI_COMMIT_TAG
+  extends: .upload_rules
   script:
     - TAR_NAME=`ls packages/tar/target/ | grep dcache`
     - VERSION=`echo $TAR_NAME | cut -d'-' -f 2 | cut -d'.' -f 1,2`
     - curl -u $PKG_UPLOAD_USER:$PKG_UPLOAD_PASS --upload-file packages/tar/target/$TAR_NAME --ftp-create-dirs "$PKG_UPLOAD_URL/$VERSION/$TAR_NAME"
+
+
+upload_container:
+  stage: upload
+  # Cache downloaded dependencies and plugins between builds.
+  # To keep cache across branches add 'key: "$CI_JOB_NAME"'
+  # For latest releases see https://github.com/GoogleContainerTools/kaniko/releases
+  # Only debug/*-debug versions of the Kaniko image are known to work within Gitlab CI
+  image: gcr.io/kaniko-project/executor:debug
+  dependencies:
+    - tar
+  extends: .upload_rules
+  script:
+    - |-
+      tag=$CI_COMMIT_SHORT_SHA
+      if [[ -n "$CI_COMMIT_TAG" ]]; then
+        tag=$CI_COMMIT_TAG
+      fi
+    - mkdir maven
+    - tar -C maven --strip-components=1 -xzvf packages/tar/target/dcache-*.tar.gz
+    - cp $CI_PROJECT_DIR/packages/tar/src/main/container/* .
+    - mkdir -p /kaniko/.docker
+    - echo "{\"auths\":{\"https://index.docker.io/v1/\":{\"username\":\"$DOCKER_HUB_USER\",\"password\":\"$DOCKER_HUB_ACCESS_KEY\"}}}" > /kaniko/.docker/config.json
+    - >
+      /kaniko/executor
+      --label dcache.build=GA
+      --context $CI_PROJECT_DIR
+      --dockerfile $CI_PROJECT_DIR/Dockerfile
+      --destination dcache/dcache:$tag
+
+#
+# This jobs needs that the number of changes to fetch from GitLab when cloning a repository is high enough to generate
+# the changelog.
+Generate release notes:
+  image: almalinux:9-minimal
+  stage: upload
+  extends: .upload_rules
+  dependencies:
+    - sign_deb
+    - sign_rpm
+    - sign_srm_client_rpm
+    - tar
+  script:
+    - microdnf install -y git-core
+    - .ci/generate-changelog.sh >> release-$CI_COMMIT_TAG.md
+  artifacts:
+    paths:
+      - release-*.md
 
 #
 # prepare kubernetes env for the build
 #
 prepare_k8s_env:
   stage: testenv_pre
-  image: bitnami/kubectl:latest
-  tags:
-    - kubernetes
-    - dcache-dev
+  extends: .kubernetes_image
   script:
     - kubectl create namespace ${K8S_NAMESPACE}
+
+
+#
+# collect all logs
+#
+collect_logs:
+  stage: testenv_post
+  extends: .kubernetes_image
+  when: always
+  allow_failure: true
+  script:
+    - kubectl -n $K8S_NAMESPACE get pods | grep Running | awk '{print $1}' | xargs -n1 kubectl -n $K8S_NAMESPACE logs | tee $K8S_NAMESPACE.log
+    - kubectl -n $K8S_NAMESPACE run -ti --rm --image=edenhill/kcat:1.7.1 kcat -- kcat -C -t billing -b billing-kafka:9092 -p 0 -e -q > $K8S_NAMESPACE-billing.json || true
+  artifacts:
+    name: "logs-$CI_PIPELINE_ID"
+    paths:
+      - "$K8S_NAMESPACE.log"
+      - "$K8S_NAMESPACE-billing.json"
 
 #
 # dispose kubernetes resources
 #
 cleanup_k8s_env:
   stage: testenv_post
-  image: bitnami/kubectl:latest
-  tags:
-    - kubernetes
-    - dcache-dev
+  extends: .kubernetes_image
+  needs:
+    - collect_logs
   when: always
   script:
     - kubectl delete namespace ${K8S_NAMESPACE} --grace-period=1 --ignore-not-found=true
-
 
 #
 # infrastructure required to run dCache
 #
 deploy_infrastructure:
   stage: test_infra
-  image:
-    name: devth/helm:latest
-    entrypoint: ['']
-  tags:
-  - kubernetes
-  - dcache-dev
+  extends: .helm_image
   script:
     - helm repo add bitnami https://charts.bitnami.com/bitnami
     - helm repo update
-    - helm -n ${K8S_NAMESPACE} install --wait --set auth.username=dcache --set auth.password=let-me-in --set auth.database=chimera  chimera oci://registry-1.docker.io/bitnamicharts/postgresql
-    - helm -n ${K8S_NAMESPACE} install --wait cells oci://registry-1.docker.io/bitnamicharts/zookeeper
-    - helm -n ${K8S_NAMESPACE} install --wait --set externalZookeeper.servers=cells-zookeeper --set kraft.enabled=false billing oci://registry-1.docker.io/bitnamicharts/kafka
+    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set auth.username=dcache --set auth.password=let-me-in --set auth.database=chimera  chimera bitnami/postgresql
+    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait cells bitnami/zookeeper
+    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set externalZookeeper.servers=cells-zookeeper --set kraft.enabled=false billing bitnami/kafka --version 23.0.7
 
-
-k8s_dcache_deploy:
+deploy_dcache_helm:
   stage: test_deploy
-  image: bitnami/kubectl:latest
-  tags:
-    - kubernetes
-    - dcache-dev
+  extends: .helm_image
+  script:
+    - |-
+      tag=$CI_COMMIT_SHORT_SHA
+      if [[ -n "$CI_COMMIT_TAG" ]]; then
+        tag=$CI_COMMIT_TAG
+      fi
+    - helm repo add dcache ${DCACHE_HELM_REPO}
+    - helm repo update
+    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=${tag} --set image.repository=${CI_REGISTRY_IMAGE} store dcache/dcache
+
+
+#
+# Grid tests expects cluster-wide cvmfs volumes to be present.
+#
+# The deployment can be done as:
+#
+#  kubectl create -f ./ci/cvmfs-storageclass.yaml
+#  helm repo add cern https://registry.cern.ch/chartrepo/cern
+#  helm repo update
+#  helm -n dcache-dev-infrastructure install -f .ci/values-cvmfs.yaml cvmfs cern/cvmfs-csi
+#
+# More info: https://github.com/cvmfs-contrib/cvmfs-csi/tree/master/docs
+#
+grid_tests:
+  stage: testing
+  extends: .kubernetes_image
+  script:
+    - kubectl -n $K8S_NAMESPACE apply -f .ci/cvmfs-volume-storageclass-pvc.yaml
+    - kubectl -n $K8S_NAMESPACE apply -f .ci/wn-with-cvmfs.yaml
+    - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod grid-tester; do sleep 1; done
+    - kubectl -n $K8S_NAMESPACE exec grid-tester -- ls /cvmfs/grid.cern.ch/umd-c7wn-latest/etc/profile.d/setup-c7-wn-example.sh
+    - kubectl -n $K8S_NAMESPACE cp .ci/init-grid-ui.sh grid-tester:/init-grid-ui.sh
+    - kubectl -n $K8S_NAMESPACE cp .ci/run-grid-tests.sh grid-tester:/run-grid-tests.sh
+    - kubectl -n $K8S_NAMESPACE exec grid-tester -- /bin/sh /run-grid-tests.sh
+    - kubectl -n $K8S_NAMESPACE cp grid-tester:/xunit .
+  artifacts:
+    reports:
+      junit:
+        - "xunit*.xml"
+
+gsi_xroot_tests:
+  stage: testing
+  extends: .kubernetes_image
+  script:
+    - kubectl -n $K8S_NAMESPACE apply -f .ci/cvmfs-volume-storageclass-pvc.yaml
+    - kubectl -n $K8S_NAMESPACE apply -f .ci/wn-with-cvmfs-xroot.yaml
+    - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod xroot-tester; do sleep 1; done
+    - kubectl -n $K8S_NAMESPACE exec xroot-tester -- ls /cvmfs/grid.cern.ch/umd-c7wn-latest/etc/profile.d/setup-c7-wn-example.sh
+    - kubectl -n $K8S_NAMESPACE cp .ci/init-grid-ui.sh xroot-tester:/init-grid-ui.sh
+    - kubectl -n $K8S_NAMESPACE cp .ci/run-xroot-tests.sh xroot-tester:/run-xroot-tests.sh
+    - kubectl -n $K8S_NAMESPACE exec xroot-tester -- /bin/sh /run-xroot-tests.sh
+
+webdav_with_x509_tests:
+  stage: testing
+  extends: .kubernetes_image
+  script:
+    - kubectl -n $K8S_NAMESPACE apply -f .ci/cvmfs-volume-storageclass-pvc.yaml
+    - kubectl -n $K8S_NAMESPACE apply -f .ci/webdav-wn-cvmfs.yaml
+    - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod webdav-tester; do sleep 1; done
+    - kubectl -n $K8S_NAMESPACE exec webdav-tester -- ls /cvmfs/grid.cern.ch/umd-c7wn-latest/etc/profile.d/setup-c7-wn-example.sh
+    - kubectl -n $K8S_NAMESPACE cp .ci/init-grid-ui.sh webdav-tester:/init-grid-ui.sh
+    - kubectl -n $K8S_NAMESPACE cp .ci/run-webdav-tests.sh webdav-tester:/run-webdav-tests.sh
+    - kubectl -n $K8S_NAMESPACE exec webdav-tester -- /bin/sh /run-webdav-tests.sh
+
+pynfs_tests:
+  stage: testing
+  extends: .kubernetes_image
   script:
     - kubectl config set-context --current --namespace=${K8S_NAMESPACE}
-    - kubectl apply -f .ci/dcache-service.yml
-    - while ! kubectl get pod -l app=dcache-door; do sleep 1; done
-    - kubectl wait $CHECK_TIMEOUT --for=condition=Ready pod -l app=dcache-door
 
-  environment:
-    testing
+    - kubectl run pynfs-tester --image=dcache/pynfs:0.5 --restart=Never  --command -- sleep 3600
+    - while ! kubectl wait --for=condition=Ready pod pynfs-tester; do sleep 1; done
+
+    - kubectl exec pynfs-tester -- /bin/bash -c "/run-nfs4.0.sh --maketree store-door-svc:/data OPEN5; exit 0"
+    - |-
+      kubectl exec pynfs-tester -- /bin/bash -c "/run-nfs4.0.sh --xml=/xunit-report-v40.xml \
+           --noinit store-door-svc:/data all \
+           noACC2a noACC2b noACC2c noACC2d noACC2f noACC2r noACC2s \
+           noCID1 noCID2 noCID4a noCID4b noCID4c noCID4d noCID4e \
+           noCLOSE10 noCLOSE12 noCLOSE5 noCLOSE6 noCLOSE8 noCLOSE9 \
+           noCMT1aa noCMT1b noCMT1c noCMT1d noCMT1e noCMT1f noCMT2a noCMT2b noCMT2c noCMT2d noCMT2f \
+           noCMT2s noCMT3 noCMT4 noCR12 noLKT1 noLKT2a noLKT2b noLKT2c noLKT2d noLKT2f noLKT2s noLKT3 \
+           noLKT4 noLKT6 noLKT7 noLKT8 noLKT9 noLKU10 noLKU3 noLKU4 noLKU5 noLKU6 noLKU6b noLKU7 noLKU8 \
+           noLKU9 noLKUNONE noLOCK12a noLOCK12b noLOCK13 noLOCKRNG noLOCKCHGU noLOCKCHGD noRLOWN3 \
+           noOPCF1 noOPCF6 noOPDG2 noOPDG3 noOPDG6 noOPDG7 noOPEN15 noOPEN18 noOPEN2 noOPEN20 noOPEN22 \
+           noOPEN23 noOPEN24 noOPEN26 noOPEN27 noOPEN28 noOPEN3 noOPEN30 noOPEN4 noRENEW3 noRD1 noRD10 \
+           noRD2 noRD3 noRD5 noRD5a noRD6 noRD7a noRD7b noRD7c noRD7d noRD7f noRD7s noRDDR12 noRDDR11 \
+           noRPLY1 noRPLY10 noRPLY12 \
+           noRPLY14 noRPLY2 noRPLY3 noRPLY5 noRPLY6 noRPLY7 noRPLY8 noRPLY9 noSATT3d noSATT4 noSATT6d \
+           noSATT6r noSATT18 noSEC7 noWRT1 noWRT11 noWRT13 noWRT14 noWRT15 noWRT18 noWRT19 noWRT1b noWRT2 \
+           noWRT3 noWRT6a noWRT6b noWRT6c noWRT6d noWRT6f noWRT6s noWRT8 noWRT9; \
+      exit 0"
+    - |-
+      kubectl exec pynfs-tester -- /bin/bash -c "/run-nfs4.1.sh --minorversion=2 --xml=/xunit-report-v41.xml \
+          --noinit store-door-svc:/data all xattr \
+          noCOUR2 noCSESS25 noCSESS26 noCSESS27 noCSESS28 noCSESS29 noCSID3 noCSID4 noCSID9 noEID5f \
+          noEID50 noOPEN31 noSEQ6 noRECC3 noSEQ7 noSEQ10b noSEQ2 noXATT11 noXATT10 noALLOC1 noALLOC2 noALLOC3; \
+        exit 0"
+
+    - kubectl cp pynfs-tester:/xunit-report-v40.xml xunit-report-v40.xml
+    - kubectl cp pynfs-tester:/xunit-report-v41.xml xunit-report-v41.xml
+
+    - nfs40_errors=$(( $(echo 0$(sed -n 's/.*testsuite .*errors=\"\([0-9]*\)\".*/+\1/p' xunit-report-v40.xml)) ))
+    - nfs40_failures=$(( $(echo 0$(sed -n 's/.*testsuite .*failures=\"\([0-9]*\)\".*/+\1/p' xunit-report-v40.xml)) ))
+    - nfs41_errors=$(( $(echo 0$(sed -n 's/.*testsuite .*errors=\"\([0-9]*\)\".*/+\1/p' xunit-report-v41.xml)) ))
+    - nfs41_failures=$(( $(echo 0$(sed -n 's/.*testsuite .*failures=\"\([0-9]*\)\".*/+\1/p' xunit-report-v41.xml)) ))
+    - exit $(( $nfs40_errors + $nfs41_errors + $nfs40_failures + $nfs41_failures ))
+  environment: testing
+  artifacts:
+    reports:
+      junit:
+        - "xunit*.xml"

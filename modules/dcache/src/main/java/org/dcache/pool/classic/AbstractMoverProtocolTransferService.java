@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2015 - 2020 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2015 - 2023 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -84,8 +84,10 @@ public abstract class AbstractMoverProtocolTransferService
             throw new CacheException(CacheException.CANNOT_CREATE_MOVER, error,
                   cause);
         } catch (ClassNotFoundException e) {
-            throw new CacheException(CacheException.CANNOT_CREATE_MOVER,
-                  "Protocol " + info + " is not supported", e);
+            String error =
+                  "Could not create MoverProtocol mover for " + info + " because protocol "
+                        + info.getVersionString() + " is not supported";
+            throw new CacheException(CacheException.CANNOT_CREATE_MOVER, error, e);
         } catch (Exception e) {
             Throwables.throwIfUnchecked(e);
             String error = "Could not create MoverProtocol mover for " + info

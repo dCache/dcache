@@ -60,8 +60,11 @@ documents or software obtained from this server.
 package org.dcache.services.bulk.activity.plugin.qos;
 
 import static com.google.common.util.concurrent.Uninterruptibles.getUninterruptibly;
+import static org.dcache.services.bulk.activity.plugin.qos.UpdateQoSActivityProvider.QOS_POLICY;
+import static org.dcache.services.bulk.activity.plugin.qos.UpdateQoSActivityProvider.QOS_STATE;
 import static org.dcache.services.bulk.activity.plugin.qos.UpdateQoSActivityProvider.TARGET_QOS;
 
+import com.google.common.base.Strings;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import diskCacheV111.util.CacheException;
@@ -73,6 +76,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import org.dcache.cells.CellStub;
 import org.dcache.qos.QoSException;
 import org.dcache.qos.data.FileQoSRequirements;
@@ -100,6 +104,8 @@ public class UpdateQoSActivity extends BulkActivity<QoSTransitionCompletedMessag
     private CellStub qosEngine;
     private PnfsHandler pnfsHandler;
     private String targetQos;
+    private String qosPolicy;
+    private Integer qosState;
 
     public UpdateQoSActivity(String name, TargetType targetType) {
         super(name, targetType);
@@ -123,8 +129,8 @@ public class UpdateQoSActivity extends BulkActivity<QoSTransitionCompletedMessag
     @Override
     public ListenableFuture<QoSTransitionCompletedMessage> perform(String rid, long tid,
           FsPath path, FileAttributes attributes) throws BulkServiceException {
-        if (targetQos == null) {
-            return Futures.immediateFailedFuture(new IllegalArgumentException("no target qos given."));
+        if (targetQos == null && qosPolicy == null) {
+            return Futures.immediateFailedFuture(new IllegalArgumentException("no target qos or policy given."));
         }
 
         if (attributes == null) {
@@ -137,12 +143,17 @@ public class UpdateQoSActivity extends BulkActivity<QoSTransitionCompletedMessag
 
         PnfsId pnfsId = attributes.getPnfsId();
         FileQoSRequirements requirements = new FileQoSRequirements(pnfsId, attributes);
-        if (targetQos.contains("disk")) {
-            requirements.setRequiredDisk(1);
-        }
+        if (qosPolicy != null) {
+            requirements.setRequiredQoSPolicy(qosPolicy);
+            requirements.setRequiredQoSStateIndex(qosState == null ? 0 : qosState);
+        } else {
+            if (targetQos.contains("disk")) {
+                requirements.setRequiredDisk(1);
+            }
 
-        if (targetQos.contains("tape")) {
-            requirements.setRequiredTape(1);
+            if (targetQos.contains("tape")) {
+                requirements.setRequiredTape(1);
+            }
         }
 
         QoSTransitionFuture future = responseReceiver.register(pnfsId.toString());
@@ -151,7 +162,8 @@ public class UpdateQoSActivity extends BulkActivity<QoSTransitionCompletedMessag
         client.setRequirementsService(qosEngine);
 
         try {
-            client.fileQoSRequirementsModified(requirements, subject);
+            ListenableFuture asyncFuture = client.fileQoSRequirementsModifiedAsync(requirements, subject);
+            responseReceiver.setAsyncListener(pnfsId, asyncFuture);
         } catch (CacheException | InterruptedException | NoRouteToCellException e) {
             return Futures.immediateFailedFuture(e);
         }
@@ -160,16 +172,33 @@ public class UpdateQoSActivity extends BulkActivity<QoSTransitionCompletedMessag
     }
 
     @Override
-    protected void configure(Map<String, String> arguments) {
+    protected void configure(Map<String, String> arguments) throws BulkServiceException {
         if (arguments == null) {
             return;
         }
-        targetQos = arguments.get(TARGET_QOS.getName());
+        targetQos = arguments.get(TARGET_QOS);
+        qosPolicy = arguments.get(QOS_POLICY.getName());
+
+        if (qosPolicy == null) {
+            qosState = Integer.parseInt(QOS_STATE.getDefaultValue());
+        } else {
+            String state = arguments.get(QOS_STATE.getName());
+            if ( Strings.emptyToNull(state) == null) {
+                qosState = Integer.parseInt(QOS_STATE.getDefaultValue());
+            } else {
+                qosState = Integer.parseInt(state);
+            }
+        }
+
+        if (targetQos == null && qosPolicy == null) {
+            throw new BulkServiceException("either targetQos or qosPolicy must be "
+                  + "provided as argument.");
+        }
     }
 
     @Override
     public void handleCompletion(BulkRequestTarget target,
-          ListenableFuture<QoSTransitionCompletedMessage> future) {
+          Future<QoSTransitionCompletedMessage> future) {
         QoSTransitionCompletedMessage message;
         try {
             message = getUninterruptibly(future);

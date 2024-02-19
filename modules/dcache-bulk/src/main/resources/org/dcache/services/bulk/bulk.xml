@@ -38,6 +38,12 @@
     <property name="timeoutUnit" value="${bulk.service.qos.timeout.unit}"/>
   </bean>
 
+  <bean id="ha-leader-stub" class="org.dcache.cells.CellStub">
+    <description>Endpoint communication stub</description>
+    <property name="timeout" value="${bulk.service.ha-leader.timeout}"/>
+    <property name="timeoutUnit" value="${bulk.service.ha-leader.timeout.unit}"/>
+  </bean>
+
   <bean id="pool-monitor" class="org.dcache.poolmanager.RemotePoolMonitor">
     <description>Maintains runtime information about all pools</description>
     <property name="poolManagerStub" ref="pool-manager-stub"/>
@@ -61,45 +67,28 @@
     </constructor-arg>
   </bean>
 
-  <bean id="container-job-executor" class="org.dcache.util.CDCExecutorServiceDecorator">
+  <bean id="container-job-executor" class="org.dcache.util.BoundedCachedExecutor">
     <description>Used to execute jobs that are executed by a batch container.</description>
-    <constructor-arg>
-      <bean class="org.dcache.util.BoundedCachedExecutor">
-        <constructor-arg value="${bulk.limits.container-processing-threads}"/>
-      </bean>
-    </constructor-arg>
+    <constructor-arg value="${bulk.limits.container-processing-threads}"/>
   </bean>
 
-  <bean id="activity-callback-executor" class="org.dcache.util.CDCExecutorServiceDecorator">
-    <description>Used to execute the future callbacks to jobs which send and wait for replies.</description>
-    <constructor-arg>
-      <bean class="org.dcache.util.BoundedCachedExecutor">
-        <constructor-arg value="${bulk.limits.activity-callback-threads}"/>
-      </bean>
-    </constructor-arg>
+  <bean id="task-executor" class="org.dcache.util.BoundedCachedExecutor">
+    <constructor-arg value="${bulk.limits.in-flight-semaphore}"/>
+  </bean>
+
+  <bean id="callback-executor" class="org.dcache.util.BoundedCachedExecutor">
+    <constructor-arg value="${bulk.db.connections.max}"/>
+  </bean>
+
+  <bean id="dir-list-executor" class="org.dcache.util.BoundedCachedExecutor">
+    <constructor-arg value="${bulk.limits.dir-list-semaphore}"/>
   </bean>
 
   <bean id="cancellation-executor" class="org.dcache.util.CDCScheduledExecutorServiceDecorator">
-    <description>Used to run delayed clear requests.</description>
+    <description>Used to cancel requests.</description>
     <constructor-arg>
       <bean class="java.util.concurrent.ScheduledThreadPoolExecutor">
         <constructor-arg value="${bulk.limits.cancellation-threads}"/>
-      </bean>
-    </constructor-arg>
-  </bean>
-
-  <bean id="manager-executor"  class="org.dcache.util.CDCExecutorServiceDecorator">
-    <constructor-arg>
-      <bean class="org.dcache.util.BoundedCachedExecutor">
-        <constructor-arg value="1"/>
-      </bean>
-    </constructor-arg>
-  </bean>
-
-  <bean id="reset-executor" class="org.dcache.util.CDCExecutorServiceDecorator">
-    <constructor-arg>
-      <bean class="org.dcache.util.BoundedCachedExecutor">
-        <constructor-arg value="1"/>
       </bean>
     </constructor-arg>
   </bean>
@@ -121,6 +110,7 @@
                 <entry key="transactionIsolation" value="TRANSACTION_READ_COMMITTED"/>
                 <entry key="minimumIdle" value="${bulk.db.connections.idle}"/>
                 <entry key="maximumPoolSize" value="${bulk.db.connections.max}"/>
+                <entry key="connectionTimeout" value="60000"/>
               </map>
             </property>
           </bean>
@@ -163,12 +153,20 @@
     <property name="statistics" ref="statistics"/>
   </bean>
 
+  <bean id="bulk-archive-dao"
+    class="org.dcache.services.bulk.store.jdbc.request.JdbcBulkArchiveDao">
+    <description>Archived request data access object handler.</description>
+    <property name="dataSource" ref="bulk-data-source"/>
+    <property name="utils" ref="bulk-jdbc-dao-utils"/>
+  </bean>
+
   <bean id="request-store" class="org.dcache.services.bulk.store.jdbc.request.JdbcBulkRequestStore"
     init-method="initialize">
     <description>RDBMS implementation of request storage interface</description>
     <property name="requestDao" ref="bulk-request-dao"/>
     <property name="requestTargetDao" ref="bulk-request-target-dao"/>
     <property name="requestPermissionsDao" ref="bulk-request-permissions-dao"/>
+    <property name="archiveDao" ref="bulk-archive-dao"/>
     <property name="targetStore" ref="target-store"/>
     <property name="expiry" value="${bulk.limits.request-cache-expiration}"/>
     <property name="expiryUnit" value="${bulk.limits.request-cache-expiration.unit}"/>
@@ -196,39 +194,6 @@
     <property name="qoSResponseReceiver" ref="qos-response-receiver"/>
     <!-- while it is possible to specify these separately, for now,
          all activities share the same two executors -->
-    <property name="activityExecutors">
-      <map>
-        <entry key="DELETE" value-ref="container-job-executor"/>
-        <entry key="PIN" value-ref="container-job-executor"/>
-        <entry key="STAGE" value-ref="container-job-executor"/>
-        <entry key="UNPIN" value-ref="container-job-executor"/>
-        <entry key="RELEASE" value-ref="container-job-executor"/>
-        <entry key="UPDATE_QOS" value-ref="container-job-executor"/>
-        <entry key="LOG_TARGET" value-ref="container-job-executor"/>
-      </map>
-    </property>
-    <property name="callbackExecutors">
-      <map>
-        <entry key="DELETE" value-ref="activity-callback-executor"/>
-        <entry key="PIN" value-ref="activity-callback-executor"/>
-        <entry key="STAGE" value-ref="activity-callback-executor"/>
-        <entry key="UNPIN" value-ref="activity-callback-executor"/>
-        <entry key="RELEASE" value-ref="activity-callback-executor"/>
-        <entry key="UPDATE_QOS" value-ref="activity-callback-executor"/>
-        <entry key="LOG_TARGET" value-ref="activity-callback-executor"/>
-      </map>
-    </property>
-    <property name="maxPermits">
-      <map>
-        <entry key="DELETE" value="${bulk.plugin!delete.max-permits}"/>
-        <entry key="PIN" value="${bulk.plugin!pin.max-permits}"/>
-        <entry key="STAGE" value="${bulk.plugin!stage.max-permits}"/>
-        <entry key="UNPIN" value="${bulk.plugin!unpin.max-permits}"/>
-        <entry key="RELEASE" value="${bulk.plugin!release.max-permits}"/>
-        <entry key="UPDATE_QOS" value="${bulk.plugin!update-qos.max-permits}"/>
-        <entry key="LOG_TARGET" value="${bulk.plugin!log-target.max-permits}"/>
-      </map>
-    </property>
     <property name="retryPolicies">
       <map>
         <entry key="DELETE"><bean class="${bulk.plugin!delete.retry-policy}"/></entry>
@@ -238,6 +203,23 @@
         <entry key="RELEASE"><bean class="${bulk.plugin!release.retry-policy}"/></entry>
         <entry key="UPDATE_QOS"><bean class="${bulk.plugin!update-qos.retry-policy}"/></entry>
         <entry key="LOG_TARGET"><bean class="${bulk.plugin!log-target.retry-policy}"/></entry>
+      </map>
+    </property>
+    <property name="rateLimiters">
+      <map>
+        <entry key="PIN" value="${bulk.limits.pin-manager-rate-per-second}"/>
+        <entry key="PNFS" value="${bulk.limits.pnfs-manager-rate-per-second}"/>
+        <entry key="QOS" value="${bulk.limits.qos-engine-rate-per-second}"/>
+      </map>
+    </property>
+    <property name="rateLimiterActivityIndex">
+      <map>
+        <entry key="DELETE" value="PNFS"/>
+        <entry key="PIN" value="PIN"/>
+        <entry key="STAGE" value="PIN"/>
+        <entry key="UNPIN" value="PIN"/>
+        <entry key="RELEASE" value="PIN"/>
+        <entry key="UPDATE_QOS" value="QOS"/>
       </map>
     </property>
   </bean>
@@ -250,10 +232,16 @@
     <property name="requestStore" ref="request-store"/>
     <property name="targetStore" ref="target-store"/>
     <property name="statistics" ref="statistics"/>
+    <property name="dirListSemaphore" value="${bulk.limits.dir-list-semaphore}"/>
+    <property name="inFlightSemaphore" value="${bulk.limits.in-flight-semaphore}"/>
+    <property name="taskExecutor" ref="task-executor"/>
+    <property name="callbackExecutor" ref="callback-executor"/>
+    <property name="listExecutor" ref="dir-list-executor"/>
   </bean>
 
   <bean id="statistics" class="org.dcache.services.bulk.util.BulkServiceStatistics">
     <description>Tracks request and target states (counts), sweeper state, etc.</description>
+    <property name="requestContainerJobFactory" ref="job-factory"/>
   </bean>
 
   <bean id="request-handler" class="org.dcache.services.bulk.handler.BulkRequestHandler">
@@ -282,8 +270,8 @@
     <property name="completionHandler" ref="request-handler"/>
     <property name="submissionHandler" ref="request-handler"/>
     <property name="schedulerProvider" ref="scheduler-provider"/>
-    <property name="processorExecutorService" ref="manager-executor"/>
     <property name="maxActiveRequests" value="${bulk.limits.container-processing-threads}"/>
+    <property name="containerExecutor" ref="container-job-executor"/>
     <property name="timeout" value="${bulk.limits.sweep-interval}"/>
     <property name="timeoutUnit" value="${bulk.limits.sweep-interval.unit}"/>
   </bean>
@@ -303,6 +291,8 @@
     <property name="submissionHandler" ref="request-handler"/>
     <property name="requestManager" ref="request-manager"/>
     <property name="targetStore" ref="target-store"/>
+    <property name="leadershipManager" ref="ha-service-leadership-manager"/>
+    <property name="endpointStub" ref="ha-leader-stub"/>
   </bean>
 
   <bean id="admin-commands" class="org.dcache.services.bulk.BulkServiceCommands">
@@ -314,7 +304,8 @@
     <property name="requestManager" ref="request-manager"/>
     <property name="submissionHandler" ref="request-handler"/>
     <property name="statistics" ref="statistics"/>
-    <property name="executor" ref="reset-executor"/>
+    <property name="archiver" ref="request-archiver"/>
+    <property name="archiveDao" ref="bulk-archive-dao"/>
   </bean>
 
   <bean id="shutdownManager" class="org.dcache.services.bulk.util.BulkShutdownManager" destroy-method="shutdown">
@@ -322,14 +313,48 @@
       <list>
         <ref bean="incoming-thread-executor"/>
         <ref bean="container-job-executor"/>
-        <ref bean="activity-callback-executor"/>
+        <ref bean="task-executor"/>
+        <ref bean="callback-executor"/>
+        <ref bean="dir-list-executor"/>
         <ref bean="cancellation-executor"/>
-        <ref bean="manager-executor"/>
-        <ref bean="reset-executor"/>
       </list>
     </property>
     <property name="dataSource" ref="bulk-data-source"/>
     <property name="await" value="${bulk.limits.shutdown-manager-wait}"/>
     <property name="awaitUnit" value="${bulk.limits.shutdown-manager-wait.unit}"/>
+  </bean>
+
+  <bean id="request-archiver" class="org.dcache.services.bulk.store.jdbc.request.JdbcBulkRequestArchiver"
+    destroy-method="shutdown">
+    <property name="requestDao" ref="bulk-request-dao"/>
+    <property name="requestStore" ref="request-store"/>
+    <property name="archiverScheduler">
+      <bean class="java.util.concurrent.ScheduledThreadPoolExecutor">
+        <constructor-arg value="1"/>
+      </bean>
+    </property>
+    <property name="archiverPeriod" value="${bulk.limits.archiver-period}"/>
+    <property name="archiverPeriodUnit" value="${bulk.limits.archiver-period.unit}"/>
+    <property name="archiverWindow" value="${bulk.limits.archiver-window}"/>
+    <property name="archiverWindowUnit" value="${bulk.limits.archiver-window.unit}"/>
+  </bean>
+
+  <bean id="ha-service-leadership-manager" class="org.dcache.cells.HAServiceLeadershipManager"
+    init-method="initZkLeaderListener" destroy-method="shutdown">
+    <description>Coordinates which bulk service handles the requests</description>
+    <constructor-arg value="bulk"/>
+    <property name="leadershipListener">
+      <ref bean="leaderlistener-group"/>
+    </property>
+  </bean>
+
+  <bean id="leaderlistener-group" class="org.dcache.cells.LeadershipListenerGroup">
+    <description>Propagates leadership change notifications to managed listeners</description>
+    <property name="leaderElectionAwareComponents">
+      <set>
+        <ref bean="bulk-service"/>
+        <ref bean="request-archiver"/>
+      </set>
+    </property>
   </bean>
 </beans>

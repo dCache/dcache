@@ -62,12 +62,16 @@ package org.dcache.services.bulk.store;
 import com.google.common.collect.ListMultimap;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import javax.security.auth.Subject;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restriction;
+import org.dcache.services.bulk.BulkArchivedRequestInfo;
+import org.dcache.services.bulk.BulkArchivedSummaryFilter;
+import org.dcache.services.bulk.BulkArchivedSummaryInfo;
 import org.dcache.services.bulk.BulkPermissionDeniedException;
 import org.dcache.services.bulk.BulkRequest;
 import org.dcache.services.bulk.BulkRequestInfo;
@@ -103,8 +107,6 @@ public interface BulkRequestStore {
     /**
      * Does not throw exception, as this is an internal termination of the request.
      * <p>
-     * Should not clear the request from store unless automatic clear is set.
-     *
      * @param request which failed.
      * @param exception possibly associated with the abort.
      */
@@ -155,6 +157,11 @@ public interface BulkRequestStore {
     int countNonTerminated(String user) throws BulkStorageException;
 
     /**
+     * @return a map of the combined results of target counts grouped by state.
+     */
+    Map<String, Long> countsByStatus();
+
+    /**
      * @param filter optional filter on the request.
      * @param limit  max requests to return (can be <code>null</code>).
      * @return a collection of requests in the store which match the filter, if present; no filter
@@ -169,6 +176,23 @@ public interface BulkRequestStore {
      * @throws BulkStorageException
      */
     ListMultimap<String, String> getActiveRequestsByUser() throws BulkStorageException;
+
+    /**
+     * @param subject   of request user.
+     * @param uid unique id for request.
+     * @return the archived request info
+     */
+    BulkArchivedRequestInfo getArchivedInfo(Subject subject, String uid)
+          throws BulkStorageException, BulkPermissionDeniedException;
+
+    /**
+     * @param subject of request user.
+     * @param filter  for the query
+     * @return list of matching summary info objects
+     * @throws BulkStorageException
+     */
+    List<BulkArchivedSummaryInfo> getArchivedSummaryInfo(Subject subject,
+          BulkArchivedSummaryFilter filter) throws BulkStorageException;
 
     /**
      * @param uid unique id for request.
@@ -205,7 +229,7 @@ public interface BulkRequestStore {
      * @param subject   of request user.
      * @param uid unique id for request.
      * @param offset    into the list of targets ordered by sequence number
-     * @return optional of the corresponding request status.
+     * @return the corresponding request status.
      * @throws BulkStorageException, BulkPermissionDeniedException
      */
     BulkRequestInfo getRequestInfo(Subject subject, String uid, long offset)
@@ -236,6 +260,11 @@ public interface BulkRequestStore {
     boolean isRequestSubject(Subject subject, String uid) throws BulkStorageException;
 
     /**
+     * Clear all entries from memory. (May be a NOP).
+     */
+    void clearCache() throws BulkStorageException;
+
+    /**
      * Load the store into memory. (May be a NOP).
      */
     void load() throws BulkStorageException;
@@ -255,9 +284,17 @@ public interface BulkRequestStore {
      * Reset the request to QUEUED state.
      *
      * @param uid unique id for request.
+     * @param skipTerminated if true, do not delete terminated targets
      * @throws BulkStorageException
      */
-    void reset(String uid) throws BulkStorageException;
+    void reset(String uid, boolean skipTerminated) throws BulkStorageException;
+
+    /**
+     * Retry all requests that have FAILED targets.
+     *
+     * @throws BulkStorageException
+     */
+    int retryFailed() throws BulkStorageException;
 
     /**
      * Store the request.

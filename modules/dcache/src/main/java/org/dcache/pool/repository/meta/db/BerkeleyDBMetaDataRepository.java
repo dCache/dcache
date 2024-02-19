@@ -21,6 +21,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.dcache.pool.repository.FileStoreState;
 import org.dcache.pool.repository.DuplicateEntryException;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.ReplicaRecord;
@@ -174,8 +175,13 @@ public class BerkeleyDBMetaDataRepository extends AbstractBerkeleyDBReplicaStore
     }
 
     @Override
-    public boolean isOk() {
-        return _fileStore.isOk() && super.isOk();
+    public FileStoreState isOk() {
+        if (_fileStore.isOk() == FileStoreState.OK && super.isOk() == FileStoreState.OK){
+            return FileStoreState.OK;
+        }
+      else {
+            return FileStoreState.FAILED;
+        }
 
     }
 

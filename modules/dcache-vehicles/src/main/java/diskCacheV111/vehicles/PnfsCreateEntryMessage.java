@@ -15,6 +15,8 @@ import static org.dcache.namespace.FileAttribute.NLINK;
 import static org.dcache.namespace.FileAttribute.OWNER;
 import static org.dcache.namespace.FileAttribute.OWNER_GROUP;
 import static org.dcache.namespace.FileAttribute.PNFSID;
+import static org.dcache.namespace.FileAttribute.QOS_POLICY;
+import static org.dcache.namespace.FileAttribute.QOS_STATE;
 import static org.dcache.namespace.FileAttribute.RETENTION_POLICY;
 import static org.dcache.namespace.FileAttribute.SIMPLE_TYPE;
 import static org.dcache.namespace.FileAttribute.SIZE;
@@ -43,14 +45,14 @@ public class PnfsCreateEntryMessage extends PnfsSetFileAttributes {
     public static final EnumSet INVALID_CREATE_DIRECTORY_ATTRIBUTES =
           EnumSet.of(CACHECLASS, CHECKSUM, CREATION_TIME, FLAGS, HSM,
                 LOCATIONS, NLINK, PNFSID, RETENTION_POLICY, SIMPLE_TYPE,
-                SIZE, STORAGECLASS, STORAGEINFO);
+                SIZE, STORAGECLASS, STORAGEINFO, QOS_POLICY, QOS_STATE);
     public static final EnumSet INVALID_CREATE_FILE_ATTRIBUTES =
           EnumSet.of(CACHECLASS, CREATION_TIME, NLINK, PNFSID, STORAGECLASS,
                 STORAGEINFO, SIMPLE_TYPE);
     public static final EnumSet INVALID_CREATE_SYM_LINK_ATTRIBUTES =
           EnumSet.of(ACCESS_LATENCY, CACHECLASS, CHECKSUM, CREATION_TIME,
                 FLAGS, HSM, LOCATIONS, NLINK, PNFSID, RETENTION_POLICY,
-                SIZE, STORAGECLASS, STORAGEINFO, SIMPLE_TYPE);
+                SIZE, STORAGECLASS, STORAGEINFO, SIMPLE_TYPE, QOS_POLICY, QOS_STATE);
 
     public PnfsCreateEntryMessage(String path, FileAttributes attributes) {
         this(path, attributes, Collections.emptySet());
@@ -62,7 +64,7 @@ public class PnfsCreateEntryMessage extends PnfsSetFileAttributes {
               EnumSet.of(OWNER, OWNER_GROUP, MODE, TYPE, SIZE,
                     CREATION_TIME, ACCESS_TIME, MODIFICATION_TIME,
                     PNFSID, STORAGEINFO, STORAGECLASS, CACHECLASS, HSM,
-                    ACCESS_LATENCY, RETENTION_POLICY))));
+                    ACCESS_LATENCY, RETENTION_POLICY, QOS_POLICY, QOS_STATE))));
         checkArgument(attributes.isDefined(TYPE));
 
         switch (attributes.getFileType()) {

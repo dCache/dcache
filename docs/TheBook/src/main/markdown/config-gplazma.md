@@ -150,6 +150,406 @@ Example:
     identity requisite      ldap
     session optional        ldap
 
+#### oidc
+
+Delegated authentication is a relatively common paradigm.  This is
+where a service (such as a website) allows users to authenticate via
+some other service (e.g., "login with Google" or "login with GitHub").
+When the user wants to log in, they are redirected from the website to
+the authenticating service (Google, GitHub, etc).  If the user is not
+already logged in (to the authenticating service) then they are
+prompted to do so; typically by entering their username and password.
+The user is then redirected back to the original website.  In doing
+this, the service learns that the user correctly authenticated with
+the authenticating service (Google, GitHub, ...).  The authenticating
+service will provide a unique identifier for that user and possibly
+other information about the user; e.g., a name or an email address.
+
+There are a few interesting points here.  First, the website does not
+have to worry about how the user authenticates (e.g., they don't need
+to implement a password reset mechanism for users who have forgotten
+their password), although the authentication service may provide
+details on how the user authenticated.  Second, the website must
+strongly trust the authenticating service: a compromised
+authentications service could strongly impact traceability for the
+website).
+
+OpenID-Connect (OIDC) is a standard mechanism to support delegate
+authentication.  OIDC itself is based on another standard called
+OAuth2.  OAuth2 is a way to support delegated authorisation: a way to
+grant limited access without having to share username+password.  In
+OAuth2, the OAuth2 Provider (OP) issues an "access token" that allows
+anyone with that token to access a protected URL: one with which
+non-authenticated users cannot interact.
+
+In OIDC, the OP issues an access token that allows access to the
+userinfo endpoint.  Querying the userinfo endpoint with the access
+token provides information about the user that authenticated,
+expressed as a set of claims.  A claim is a key-value pair, that
+provides some information about the user; for example, a claim might
+have "email" as the key and "user@example.org" as the value.
+
+The `oidc` gPlazma plugin is an authentication phase plugin that
+allows dCache to support OIDC-based authentication.  It accepts an
+access token (as supplied to dCache via a WebDAV or xrootd door) and
+(at a high-level) does three things:
+
+ 1. Verify that the token is valid.
+ 2. Obtain OIDC information about the user: a set of claims.
+ 3. Convert OIDC claims into corresponding dCache information.
+
+##### Verifying the token
+
+One way to check the validity of the access token is to send the token
+to the OP's userinfo endpoint.  The OP will return an error if the
+token is invalid; for example, if the token not yet valid (embargoed)
+or has expired.
+
+Although this works, it has can result in a large number of HTTP
+requests (at least one for each new token), which can stress the OP.
+It introduces latency (as dCache must wait for the response) and it
+also requires that the OP is highly available (any down-time would
+result in dCache not accepting tokens).
+
+In OIDC and OAuth2, the access token is opaque: there is no way to
+obtain information about the user (or, more generally, about the
+token) by simply looking at the token.  Under this model, the dCache
+must query the userinfo endpoint.
+
+However, many OPs issue access tokens that conform to the JSON Web
+Token (JWT) standard.  JWTs are tokens that are cryptographically
+signed.  If dCache knows the OP's public keys then it can verify the
+token without sending any HTTP requests.  This is called "offline
+verification".
+
+By default, dCache will examine the token.  If it is a JWT then dCache
+will use offline verification; otherwise, the token is sent to the
+userinfo endpoint.  dCache will cache the response.  This behaviour
+may be adjusted.
+
+##### Obtaining OIDC information
+
+The access token represents a logged in user; however, dCache needs to
+know information about that user: the set of claims.  As with
+verifying the token, OIDC information may be obtained by querying the
+userinfo-endpoint.
+
+This suffers from the same problems as describe in verifying the
+token, with the same potential solution: JWTs.
+
+There is an additional problem: the access token is often included in
+locations that places a limit on its maximum size; for example, when
+used to authorise an HTTP request.  For opaque access tokens (which is
+usually just a randomly chosen number), this is not a problem;
+however, a JWT could become too large if it tries to include too much
+information.  To counter this problem, some OPs issue JWTs that
+include only a subset of the information available from the userinfo
+endpoint.
+
+By default, dCache will look to see if the token is a JWT.  If it is,
+information is extracted from the JWT. If not then the token is sent
+to the userinfo endpoint to learn about the user.
+
+As with verifying the token, this behaviour may be modified.
+
+##### Converting OIDC information
+
+The OIDC information about a user is expressed as a set of claims.
+These claims are not directly aligned with how dCache represents
+information about users.  Therefore, the claims must be converted into
+a form with which other gPlazma modules can work.
+
+Moreover, there is some variation in what claims may be present, with
+different collaborations choosing different sets of claims they will
+use.
+
+Rather than attempting to support all such behaviour, the oidc plugin
+will convert OIDC claims to corresponding gPlazma principals according
+to a set of rules, called a profile.  The oidc plugin supports
+multiple profiles.  Each configured OP uses exactly one profile when
+processing all tokens issued by that OP.  If no profile is specified
+then a default profile is used.
+
+Another feature that some OPs offer is direct- or explicit
+authorisation statements.  This is where the token includes
+information regarding which operations are supported.  Other
+operations are forbidden simply by excluding them from the token.
+
+dCache will honour such explicit AuthZ statements, and switch off
+other permission checks (e.g., within the namespace permission).  In
+other words, if the token says the bearer is entitled to do
+"something" then dCache will allow such operations.
+
+##### General configuration
+
+Configuration for the oidc plugin is via gPlazma configuration
+properties that start `gplazma.oidc`.
+
+The plugin will log a warning if an OP is taking too long to reply.
+This is intended to help diagnose problems with poor login latency.
+The `gplazma.oidc.http.slow-threshold` and
+`gplazma.oidc.http.slow-threshold.unit` configuration properties
+control this behaviour.
+
+Information about an OP is discovered through a standard mechanism
+called the discovery endpoint.  This information rarely changes, so
+may be cached.  The `gplazma.oidc.discovery-cache` and
+`gplazma.oidc.discovery-cache.unit` configuration properties control
+for how long the information is cached.
+
+In order to reduce latency, the plugin will process tokens that
+require contacting the OP concurrently.  There is a maximum number of
+threads available, as controlled by the
+`gplazma.oidc.concurrent-requests` configuration property.
+
+The HTTP requests are also limited: to avoid overloading networks or
+OPs.  There is an overall maximum number of HTTP requests that is
+controlled by the `gplazma.oidc.http.total-concurrent-requests`
+configuration property, and a maximum number of concurrent HTTP
+requests that an OP will see that is controlled by the
+`gplazma.oidc.http.per-route-concurrent-requests` configuration
+property.
+
+The plugin will not wait indefinitely for the OP's response; rather,
+it will give up if the OP doesn't respond within some timeout period.
+The duration of this timeout is controlled by the
+`gplazma.oidc.http.timeout` and `gplazma.oidc.http.timeout.unit`
+configuration properties.
+
+The result of looking up an access token via the userinfo endpoint is
+cached.  The behaviour of that cache may be tuned.  The
+`gplazma.oidc.access-token-cache.size` limits the number of tokens
+stored in the cache.
+
+The `gplazma.oidc.access-token-cache.refresh` and
+`gplazma.oidc.access-token-cache.refresh.unit` configuration
+properties control when the plugin considers the userinfo information
+for a token "stale".  After this time, a background activity is
+triggered to fetch more up-to-date information about the token if the
+token is used.  This refreshing activity does not block a login:
+logins will continue with the old information until the background
+activity completes, with subsequent logins using the more up-to-date
+information.
+
+The `gplazma.oidc.access-token-cache.expire` and
+`gplazma.oidc.access-token-cache.expire.unit` configuration properties
+control when the plugin considers the userinfo information for a token
+as "stale".  Unlike the refresh behaviour, the expire behaviour forces
+a login attempt to block until fresh information is available.
+
+One of the security features with bearer tokens is to limit the damage
+if a token is "stolen" (if the token is acquired by some unauthorised
+software or person).  To reduce the impact of this, it is possible to
+identify that a token should only be used by specific services, as
+identified by the `aud` (audience) claim.  If there is an `aud` claim
+value then any service that does not identify itself with the claim
+value must reject the token.
+
+In dCache, the `gplazma.oidc.audience-targets` configuration property
+controls the list of audience claims that dCache will accept.  If the
+token has an `aud` claim and that value does not match any of the
+items in `gplazma.oidc.audience-targets` then dCache will reject the
+token.
+
+##### Configuring the OPs.
+
+Perhaps the most central configuration is the list of OPs that the
+plugin will trust.  This is controlled by the `gplazma.oidc.provider`
+configuration property, which is a map property.
+
+The map's key is an alias for the OP.  This can be any value, but
+often it is a name that is shorter and more memorable that the OP's
+URL.
+
+The map's value is the URL of the OP.  This is the URL, as it appears
+in the `iss` (issuer) claim.  The plugin will use this URL to
+construct the discovery endpoint (following a standard procedure) and
+will query that endpoint to learn more about the OP.
+
+The following provides a minimal example of configuring an OP:
+
+    gplazma.oidc.provider!EXAMPLE = https://op.example.org/
+
+In this example, an OP is configured with the alias `EXAMPLE`.  The
+OP's issuer URL is `https://op.example.org/`.
+
+The OP configuration allows for some configuration of dCache's
+behaviour when accepting tokens from that OP.  This configuration are
+key-value pairs, with a dash (`-`) before the key and an equals (`=`)
+between the key-value pair.  If the value contains spaces then the
+value may be placed in double quotes (e.g., `-foo="bar baz"`).
+
+In the following example, the OP is supported with the alias EXAMPLE
+and with the behaviour configured by some control parameter `foo`,
+given `bar` as an argument.
+
+    gplazma.oidc.provider!EXAMPLE = https://op.example.org/ -foo=bar
+
+The following control parameters are available:
+
+  * `-profile` describes with which profile the OP's tokens are
+    processed.  Valid values are `oidc`, `scitokens` and `wlcg`.  If
+    no `-profile` is specified then `oidc` is used.  The parameter
+    must not be repeated.
+
+  * `-suppress` is used to disable certain behaviour.  The value is a
+    comma separated list of keywords.  The `-suppress` argument may be
+    repeated, which is equivalent to a single `-suppress` with the all
+    the supplied keywords as the value; for example, `-suppress=A
+    -suppress=B` is equivalent to `-suppress=A,B`.
+
+    The following suppress keywords are supported:
+
+      * `audience` suppresses the audience claim check.  This is
+        provided as a work-around to allow dCache to work with badly
+        configured clients.  If a token contains an `aud` claim that
+        is not listed in `gplazma.oidc.audience-targets` and audience
+        suppression is enabled then the plugin will accept the token
+        and write a log entry.
+
+      * `offline` suppresses offline verification.  This is provided
+        as a work-around for OPs that issue JWTs with insufficient
+        information: the required information is only available by
+        querying the userinfo endpoint.
+
+  * `-prefix` is use by the scitokens and wlcg profiles to map
+    authorisation paths to dCache paths.  More details are available
+    under those profile descriptions.
+
+  * `-authz-id` and `-non-authz-id` is used by the wlcg profile to
+    identify authorisation-bearing and non-authorisation-bearing
+    tokens.  More details are available under the wlcg profile
+    description.
+
+##### Available profiles
+
+This section describes the different profiles available when
+configuring an OP.  The default profile is `oidc`.
+
+###### Common profile behaviour.
+
+Certain behaviour is common to all profiles.  This is described here.
+
+The `sub` ("subject") claim, which assigns a persistent and unique
+(within the OP) identifier for the user.  The claim value is mapped to
+a value that includes the OP's identity; for example a `sub` claim of
+`user_1` in a token issue by an OP with alias `MY_OP` would have the
+value `user_1@MY_OP`.  This sub-based principal is generally ignored
+by dCache; to be useful, it needs to be mapped to some other
+principal; for example, the multimap line:
+
+    oidc:user_1@MY_OP username:paul
+
+converts the sub claim `user_1` from a token issued by `MY_OP` to the
+(dCache) user with username `paul`.
+
+The `jti` ("JWT identifier") claim, which assigns a unique identifier
+for the token.  The value is used to mitigate reply attacked (if that
+feature is enabled) and is mapped to the `JwtJtiPrincipal` and
+available through some logged entries, but is otherwise ignored by
+dCache.
+
+###### The `oidc` profile
+
+This profile adds support for the name, email address, groups,
+wlcg-groups, LoA, entitlement and username.
+
+A person's name may be represented in the token using different
+claims: `given_name` `family_name` and `name`.  If the `name` claim is
+present, it is used; otherwise if both the `given_name` and
+`family_name` are present then these are concatenated.  The result is
+converted to a FullNamePrincipal.
+
+The `preferred_username` claim is usually ignored.  However, if
+`-accept` argument contains the item `username` then the
+`preferred_username` is included as the (dCache) username principal.
+This implies a strong trust relationship between the OP and dCache,
+which most likely exists when the dCache instance and the OP are run
+by the same organisation.
+
+The `email` claim, if present, is converted to a corresponding
+EmailAddressPrincipal.
+
+The `groups` claim is non-standard, but provided by INDIGO IAM.  The
+claim value must be a JSON array of JSON Strings, with any initial `/`
+removed.  Each group is converted to a GroupNamePrincipal.
+
+The `wlcg.groups` claim is defined in the WLCG profile.  This provides
+broadly similar information to the `groups` claim.  Each such group is
+converted to OpenIdGroupPrincipal.  These principals have no affect on
+dCache: another plugin (e.g., multimap) may be used to associate an
+OIDC-group principal to a group principal.
+
+The `eduperson_assurance` claim contains information on the Level of
+Assurance of the person.  These terms identify how confident is the OP
+of the user's identity.  The plugin supports the standard REFEDs terms
+(`IAP/medium`, `ATP/ePA-1m`, etc) and LoA profiles (e.g.,
+`cappuccino`, `espresso`), the IGTF policies (`aspen`, `birch`, etc),
+the AARC policy (`assam`) and the EGI policies (`Low`, `Substantial`,
+`High`).  Each LoA term is converted to an equivalent LoAPrincipal.
+
+The `eduperson_entitlement` claim is either a single JSON String or an
+array of JSON Strings.  In either case, each claim value is converted
+to an EntitlementPrincipal, provided the value is a valid URI.
+
+######  The `scitokens` profile
+
+In addition to the common profile behaviour, the `scitokens` profile
+examines the `scope` claim to look for authorisation statements.  This
+indicates what the user is allowed to do.
+
+The oidc plugin will fail if dCache has been configured to to support
+an OP with the `scitokens` profile and a token from that OP has no
+authorisation statements.
+
+In the OP definition:
+
+  * The `-prefix` argument is required.  It is an absolute path within
+    dCache's namespace under which authorisation paths are resolved.
+    For example, if an OP is configured with `-prefix=/wlcg/CMS` and
+    the token allows reading under the `/users/paul` path
+    (`storage.read:/home/paul`) then the token is allowed to read
+    content under the `/wlcg/CMS/home/paul` path.
+
+###### The `wlcg` profile
+
+In addition to the common profile behaviour, the `wlcg` profile
+adds support for the WLCG JWT Profile document.
+
+The `wlcg.ver` claim must be present and must contain the value `1.0`.
+If this is not true then the plugin fails.
+
+The `wlcg.groups` claim is accepted only if the value is a JSON array
+of JSON strings.  Each group is mapped to an OpenIdGroupPrincipal.
+This is ignored by dCache, so must be mapped to some
+GroupNamePrincipal by some other gPlazma plugin (e.g., the multimap plugin).
+
+In addition, the `scope` claim is examined to see if it contains
+explicit authorisation statements.  If the token contains any such
+explicit authorisation statements then the token is considered an
+authorisation token; if the token contains no such authorisation
+statements then it is considered a non-authorisation token.
+
+In the OP definition:
+
+  * The `-prefix` argument is required.  It is an absolute path within
+    dCache's namespace under which authorisation paths are resolved.
+    For example, if an OP is configured with `-prefix=/wlcg/ATLAS` and
+    the token allows reading under the `/users/paul` path
+    (`storage.read:/users/paul`) then the token is allowed to read
+    content under the `/wlcg/ATLAS/users/paul` path.
+
+  * the `-authz-id` argument contains a space-separated list of
+    principals to add if the token is an authorisation tokens.  This
+    allows for custom behaviour if the token is bypassing dCache's
+    authorisation model.
+
+  * The `-non-authz-id` argument contains a space-separated list of
+    principals to add if the token is a non-authorised token.  This
+    allows for custom behaviour if the token is adhering to dCache's
+    authorisation model.
+
+
 #### map Plug-ins
 
 ##### kpwd
@@ -357,7 +757,7 @@ In this example the first line is a comment. Lines 2 to 5 define aliases for pri
 
 Please note that the plug-in only supports principals whose assiciated name is a single line of plain text. In programming terms this means the constructor of the principal class has to take exactly one single string parameter.
 
-For the plugin to work, the configuration file has to exist even if it is empty.
+The plugin assumes that a missing file is equivalent to a file with no contents; i.e., that no one has been banned.
 
 After modifying the banfile, you may want to update gplazma.conf to trigger a reload to activate the changes. You can test the result with the `explain login` command in the gPlazma cell.
 

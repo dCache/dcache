@@ -662,8 +662,7 @@ public class PoolSelectionUnitV2
                   .stream()
                   .map(UGroup::getName).findFirst().get();
 
-            LOGGER.debug(
-                  "this IP address   belongs to {} in uGroup {} " + netUnitName + netUnitGroup);
+            LOGGER.debug("this IP address belongs to {} in uGroup {} ", netUnitName, netUnitGroup);
 
 
         } catch (UnknownHostException e) {
@@ -1158,7 +1157,7 @@ public class PoolSelectionUnitV2
                     break;
                 default:
                     throw new IllegalArgumentException(
-                          "Syntax error," + " no such mode: " + mode);
+                          "Syntax error, no such mode: " + mode);
             }
         } finally {
             wunlock();
@@ -1532,11 +1531,13 @@ public class PoolSelectionUnitV2
                           + groupName);
                 }
 
-                Object[] result = new Object[4];
+                Object[] result = new Object[5];
                 result[0] = groupName;
                 result[1] = group._poolList.keySet().toArray();
                 result[2] = group._linkList.keySet().toArray();
                 result[3] = group.isPrimary();
+                result[4] = group._pgroupList.stream().sorted(comparing(PGroup::getName))
+                      .map(PGroup::getName).toArray();
                 xlsResult = result;
             }
         } finally {
@@ -2542,6 +2543,18 @@ public class PoolSelectionUnitV2
             runlock();
         }
         return linkGroup;
+    }
+
+    @Override
+    public PGroup getPoolGroupByName(String pgroup) {
+        PGroup poolGroup = null;
+        rlock();
+        try {
+            poolGroup = _pGroups.get(pgroup);
+        } finally {
+            runlock();
+        }
+        return poolGroup;
     }
 
     @Override

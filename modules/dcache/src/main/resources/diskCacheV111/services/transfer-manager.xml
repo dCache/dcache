@@ -116,7 +116,7 @@
             destroy-method="close">
         <constructor-arg>
             <map>
-                <entry key="datanucleus.PersistenceUnitName" value="TransferManager"/>
+                <entry key="datanucleus.persistenceunitname" value="TransferManager"/>
             </map>
         </constructor-arg>
         <property name="connectionFactory" ref="dataSource"/>

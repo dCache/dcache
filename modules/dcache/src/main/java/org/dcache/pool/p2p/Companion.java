@@ -63,6 +63,7 @@ import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.StickyRecord;
+import org.dcache.util.AdjustableSemaphore;
 import org.dcache.util.Checksum;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.Version;
@@ -156,6 +157,11 @@ class Companion {
     private SSLContext _sslContext;
 
     /**
+     * Semaphore to limit the number of concurrent pool-to-pool transfers.
+     */
+    private final AdjustableSemaphore _concurrency;
+
+    /**
      * Creates a new instance.
      *
      * @param executor                      Executor used for state machine callbacks
@@ -189,7 +195,8 @@ class Companion {
           CacheFileAvailable callback,
           boolean forceSourceMode,
           Long atime,
-          SSLContext sslContext) {
+          SSLContext sslContext,
+          AdjustableSemaphore concurrency) {
         _fsm = new CompanionContext(this);
 
         _executor = executor;
@@ -222,6 +229,7 @@ class Companion {
         _stickyRecords = new ArrayList<>(stickyRecords);
 
         _id = _nextId.getAndIncrement();
+        _concurrency = concurrency;
 
         synchronized (this) {
             _fsm.start();
@@ -564,8 +572,20 @@ class Companion {
         new Thread("P2P Transfer - " + _pnfsId + " " + _sourcePoolName) {
             @Override
             public void run() {
-                cdc.restore();
-                transfer(uri);
+
+                boolean release = false;
+                try {
+                    _concurrency.acquire();
+                    release = true;
+                    cdc.restore();
+                    transfer(uri);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                } finally {
+                    if(release) {
+                        _concurrency.release();
+                    }
+                }
             }
         }.start();
     }

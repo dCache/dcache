@@ -64,6 +64,7 @@ import static org.dcache.services.bulk.util.BulkRequestTarget.ROOT_REQUEST_PATH;
 
 import diskCacheV111.util.PnfsHandler;
 import java.util.Optional;
+import java.util.concurrent.Semaphore;
 import javax.security.auth.Subject;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.CellStub;
@@ -79,6 +80,7 @@ import org.dcache.services.bulk.util.BulkRequestTarget;
 import org.dcache.services.bulk.util.BulkRequestTarget.PID;
 import org.dcache.services.bulk.util.BulkRequestTargetBuilder;
 import org.dcache.services.bulk.util.BulkServiceStatistics;
+import org.dcache.util.BoundedCachedExecutor;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
@@ -99,8 +101,13 @@ public final class RequestContainerJobFactory {
     private ListDirectoryHandler listHandler;
     private BulkTargetStore targetStore;
     private BulkServiceStatistics statistics;
+    private Semaphore dirListSemaphore;
+    private Semaphore inFlightSemaphore;
+    private BoundedCachedExecutor taskExecutor;
+    private BoundedCachedExecutor callbackExecutor;
+    private BoundedCachedExecutor listExecutor;
 
-    public AbstractRequestContainerJob createRequestJob(BulkRequest request)
+    public BulkRequestContainerJob createRequestJob(BulkRequest request)
           throws BulkServiceException {
         String rid = request.getUid();
         LOGGER.trace("createRequestJob {}", rid);
@@ -122,18 +129,26 @@ public final class RequestContainerJobFactory {
         pnfsHandler.setSubject(activity.getSubject());
 
         LOGGER.trace("createRequestJob {}, creating batch request job.", request.getUid());
-        AbstractRequestContainerJob containerJob;
-        if (request.isPrestore()) {
-            containerJob = new PrestoreRequestContainerJob(activity, target, request, statistics);
-        } else {
-            containerJob = new RequestContainerJob(activity, target, request, statistics);
-        }
-
+        BulkRequestContainerJob containerJob
+              = new BulkRequestContainerJob(activity, target, request, statistics);
         containerJob.setNamespaceHandler(pnfsHandler);
         containerJob.setTargetStore(targetStore);
         containerJob.setListHandler(listHandler);
+        containerJob.setDirListSemaphore(dirListSemaphore);
+        containerJob.setInFlightSemaphore(inFlightSemaphore);
+        containerJob.setExecutor(taskExecutor);
+        containerJob.setListExecutor(listExecutor);
+        containerJob.setCallbackExecutor(callbackExecutor);
         containerJob.initialize();
         return containerJob;
+    }
+
+    public int getDirListSemaphoreAvailable() {
+        return dirListSemaphore.availablePermits();
+    }
+
+    public int getInFlightSemaphoreAvailable() {
+        return inFlightSemaphore.availablePermits();
     }
 
     @Required
@@ -142,8 +157,28 @@ public final class RequestContainerJobFactory {
     }
 
     @Required
+    public void setCallbackExecutor(BoundedCachedExecutor callbackExecutor) {
+        this.callbackExecutor = callbackExecutor;
+    }
+
+    @Required
     public void setListHandler(ListDirectoryHandler listHandler) {
         this.listHandler = listHandler;
+    }
+
+    @Required
+    public void setListExecutor(BoundedCachedExecutor listExecutor) {
+        this.listExecutor = listExecutor;
+    }
+
+    @Required
+    public void setDirListSemaphore(int permits) {
+        dirListSemaphore = new Semaphore(permits);
+    }
+
+    @Required
+    public void setInFlightSemaphore(int permits) {
+        inFlightSemaphore = new Semaphore(permits);
     }
 
     @Required
@@ -164,6 +199,11 @@ public final class RequestContainerJobFactory {
     @Required
     public void setTargetStore(BulkTargetStore targetStore) {
         this.targetStore = targetStore;
+    }
+
+    @Required
+    public void setTaskExecutor(BoundedCachedExecutor taskExecutor) {
+        this.taskExecutor = taskExecutor;
     }
 
     BulkActivity create(BulkRequest request) throws BulkServiceException {

@@ -92,6 +92,13 @@ public final class JdbcBulkRequestCriterion extends JdbcCriterion {
         return this;
     }
 
+    public JdbcBulkRequestCriterion unique(Long id) {
+        if (id != null) {
+            addClause("bulk_request.id = ?", id);
+        }
+        return this;
+    }
+
     public JdbcBulkRequestCriterion pnfsId(String pnfsid) {
         if (pnfsid != null) {
             addClause("request_target.pnfsid = ?", pnfsid);
@@ -193,13 +200,6 @@ public final class JdbcBulkRequestCriterion extends JdbcCriterion {
         return this;
     }
 
-    public JdbcBulkRequestCriterion prestore(Boolean prestore) {
-        if (prestore != null) {
-            addClause("prestore = ?", prestore);
-        }
-        return this;
-    }
-
     public JdbcBulkRequestCriterion delayClear(Boolean delayClear) {
         if (delayClear != null) {
             addClause("delay_clear = ?", delayClear);
@@ -249,7 +249,6 @@ public final class JdbcBulkRequestCriterion extends JdbcCriterion {
             cancelOnFailure(filter.getCancelOnFailure());
             clearOnFailure(filter.getClearOnFailure());
             clearOnSuccess(filter.getClearOnSuccess());
-            prestore(filter.getPrestore());
             delayClear(filter.getDelayClear());
             expandDirectories(filter.getExpandDirectories());
             activity(filter.getActivity());

@@ -89,7 +89,7 @@
           <description>Database persistence manager</description>
           <constructor-arg>
               <map>
-                  <entry key="datanucleus.PersistenceUnitName" value="Billing"/>
+                  <entry key="datanucleus.persistenceunitname" value="Billing"/>
               </map>
           </constructor-arg>
           <property name="connectionFactory" ref="data-source"/>

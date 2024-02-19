@@ -443,8 +443,13 @@ public class FileResources {
                     pnfsHandler.renameEntry(path.toString(), target.toString(), true);
                     break;
                 case "qos":
-                    String targetQos = reqPayload.getString("target");
-                    Subject subject = RequestUser.isAdmin() ? Subjects.ROOT : RequestUser.getSubject();
+                    String targetQos =
+                          reqPayload.has("target") ? reqPayload.getString("target") : null;
+                    String qosPolicy =
+                          reqPayload.has("policy") ? reqPayload.getString("policy") : null;
+                    Integer qosState =
+                          reqPayload.has("state") ? (Integer) reqPayload.get("state") : null;
+                    Subject subject = RequestUser.getSubject();
                     if (!useQosService) {
                         new QoSTransitionEngine(poolmanager,
                               poolMonitor,
@@ -460,7 +465,8 @@ public class FileResources {
                               = pnfsHandler.getFileAttributes(path.toString(),
                               NamespaceUtils.getRequestedAttributes(false, false,
                                     true, false, true));
-                        FileQoSRequirements requirements = getBasicRequirements(targetQos, attr);
+                        FileQoSRequirements requirements = getBasicRequirements(targetQos,
+                              qosPolicy, qosState, attr);
                         RemoteQoSRequirementsClient client = new RemoteQoSRequirementsClient();
                         client.setRequirementsService(qosEngine);
                         client.fileQoSRequirementsModified(requirements, subject);
@@ -626,9 +632,16 @@ public class FileResources {
         this.useQosService = useQosService;
     }
 
-    private FileQoSRequirements getBasicRequirements(String targetQos, FileAttributes attributes) {
+    private FileQoSRequirements getBasicRequirements(String targetQos, String qosPolicy,
+          Integer qosState, FileAttributes attributes) {
         FileQoSRequirements requirements = new FileQoSRequirements(attributes.getPnfsId(),
               attributes);
+
+        if (qosPolicy != null) {
+            requirements.setRequiredQoSPolicy(qosPolicy);
+            requirements.setRequiredQoSStateIndex( qosState == null ? 0 : qosState);
+            return requirements;
+        }
 
         if (targetQos == null) {
             throw new IllegalArgumentException("no target qos given.");

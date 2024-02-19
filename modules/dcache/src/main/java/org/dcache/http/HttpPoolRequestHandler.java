@@ -58,7 +58,6 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.QueryStringDecoder;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
-import io.netty.handler.timeout.IdleStateHandler;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -797,8 +796,6 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
         long length = (upperRange - lowerRange) + 1;
 
         if (_useZeroCopy) {
-            // disable timeout manager as zero-copy can't keep idle counters in sync
-            context.channel().pipeline().remove(IdleStateHandler.class);
             return asFileRegion(file, lowerRange, length);
         }
         return new ReusableChunkedNioFile(file, lowerRange, length, _chunkSize);

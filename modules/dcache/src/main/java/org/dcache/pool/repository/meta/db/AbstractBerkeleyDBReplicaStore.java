@@ -38,6 +38,7 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import org.dcache.pool.repository.FileStoreState;
 import org.dcache.pool.repository.ReplicaStore;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.configuration.ConfigurationMapFactoryBean;
@@ -147,20 +148,20 @@ public abstract class AbstractBerkeleyDBReplicaStore implements ReplicaStore, En
     }
 
     @Override
-    public synchronized boolean isOk() {
+    public synchronized FileStoreState isOk() {
         Path tmp = dir.resolve(".repository_is_ok");
         try {
             Files.deleteIfExists(tmp);
             Files.createFile(tmp);
 
             if (database.isFailed()) {
-                return false;
+                return FileStoreState.FAILED;
             }
 
-            return true;
+            return FileStoreState.OK;
         } catch (IOException e) {
             LOGGER.error("Failed to touch {}: {}", tmp, messageOrClassName(e));
-            return false;
+            return FileStoreState.FAILED;
         }
     }
 

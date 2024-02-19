@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2020-2022 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2020-2023 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -56,7 +56,7 @@ public class WlcgProfileScope implements AuthorisationSupplier {
          * Read data. Only applies to “online” resources such as disk (as opposed to “nearline” such
          * as tape where the {@literal stage} authorization should be used in addition).
          */
-        READ("storage.read", LIST, READ_METADATA, DOWNLOAD),
+        READ("storage.read", true, LIST, READ_METADATA, DOWNLOAD),
 
         /**
          * Upload data. This includes renaming files if the destination file does not already exist.
@@ -67,27 +67,53 @@ public class WlcgProfileScope implements AuthorisationSupplier {
          * use case for a separate {@literal storage.create} scope is to enable stage-out of data
          * from jobs on a worker node.
          */
-        CREATE("storage.create", READ_METADATA, UPLOAD, MANAGE, UPDATE_METADATA),
+        CREATE("storage.create", true, READ_METADATA, UPLOAD, MANAGE, UPDATE_METADATA),
 
         /**
          * Change data. This includes renaming files, creating new files, and writing data. This
          * permission includes overwriting or replacing stored data in addition to deleting or
          * truncating data. This is a strict superset of {@literal storage.create}.
          */
-        MODIFY("storage.modify", LIST, READ_METADATA, UPLOAD, MANAGE, DELETE, UPDATE_METADATA),
+        MODIFY("storage.modify", true, LIST, READ_METADATA, UPLOAD, MANAGE, DELETE, UPDATE_METADATA),
 
         /**
          * Read the data, potentially causing data to be staged from a nearline resource to an
          * online resource. This is a superset of {@literal storage.read}.
          */
-        STAGE("storage.stage", LIST, READ_METADATA, DOWNLOAD); // FIXME need to allow staging.
+        STAGE("storage.stage", true, LIST, READ_METADATA, DOWNLOAD), // FIXME need to allow staging.
+
+        /**
+         * "Read" or query information about job status and attributes.
+         */
+        COMPUTE_READ("compute.read", false),
+
+        /**
+         * Modify or change the attributes of an existing job.
+         */
+        COMPUTE_MODIFY("compute.modify", false),
+
+        /**
+         * Create or submit a new job at the computing resource.
+         */
+        COMPUTE_CREATE("compute.create", false),
+
+        /**
+         * Delete a job from the computing resource, potentially terminating
+         * a running job.
+         */
+        COMPUTE_CANCEL("compute.cancel", false);
 
         private final String label;
         private final EnumSet<Activity> allowedActivities;
 
-        private Operation(String label, Activity... allowedActivities) {
+        private final boolean requirePath;
+
+        private Operation(String label, boolean requirePath, Activity... allowedActivities) {
             this.label = label;
-            this.allowedActivities = EnumSet.copyOf(asList(allowedActivities));
+            this.requirePath = requirePath;
+            this.allowedActivities = allowedActivities.length == 0
+                    ? EnumSet.noneOf(Activity.class)
+                    : EnumSet.copyOf(asList(allowedActivities));
         }
 
         public String getLabel() {
@@ -96,6 +122,10 @@ public class WlcgProfileScope implements AuthorisationSupplier {
 
         public EnumSet<Activity> allowedActivities() {
             return allowedActivities;
+        }
+
+        public boolean isPathRequired() {
+            return requirePath;
         }
     }
 
@@ -116,16 +146,21 @@ public class WlcgProfileScope implements AuthorisationSupplier {
 
     public WlcgProfileScope(String scope) {
         int colon = scope.indexOf(':');
-        checkScopeValid(colon != -1, "Missing ':' in scope");
 
-        String operationLabel = scope.substring(0, colon);
+        String operationLabel = colon == -1 ? scope : scope.substring(0, colon);
+
         operation = OPERATIONS_BY_LABEL.get(operationLabel);
         checkScopeValid(operation != null, "Unknown operation %s", operationLabel);
 
-        String scopePath = scope.substring(colon + 1);
-        checkScopeValid(scopePath.startsWith("/"), "Path does not start with /");
+        if (colon == -1) {
+            checkScopeValid(!operation.isPathRequired(), "Path must be specified");
+            path = "/";
+        } else {
+            String scopePath = scope.substring(colon + 1);
+            checkScopeValid(scopePath.startsWith("/"), "Path does not start with /");
 
-        path = URI.create(scopePath).getPath();
+            path = URI.create(scopePath).getPath();
+        }
 
         LOGGER.debug("WlcgProfileScope created from scope \"{}\": op={} path={}",
               scope, operation, path);
@@ -133,12 +168,17 @@ public class WlcgProfileScope implements AuthorisationSupplier {
 
     public static boolean isWlcgProfileScope(String scope) {
         int colon = scope.indexOf(':');
-        return colon >= MINIMUM_LABEL_SIZE
-              && OPERATIONS_BY_LABEL.keySet().contains(scope.substring(0, colon));
+        String authz = colon == -1 ? scope : scope.substring(0, colon);
+        return authz.length() >= MINIMUM_LABEL_SIZE
+              && OPERATIONS_BY_LABEL.keySet().contains(authz);
     }
 
     @Override
     public Optional<MultiTargetedRestriction.Authorisation> authorisation(FsPath prefix) {
+        if (operation.allowedActivities.isEmpty()) {
+            return Optional.empty();
+        }
+
         FsPath absPath = prefix.resolve(path.substring(1));
         LOGGER.debug("WlcgProfileScope authorising {} with prefix \"{}\" to path {}",
               prefix, operation.allowedActivities, absPath);

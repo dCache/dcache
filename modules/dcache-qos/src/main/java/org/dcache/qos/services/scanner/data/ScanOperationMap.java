@@ -108,17 +108,17 @@ abstract class ScanOperationMap extends RunnableModule implements CellInfoProvid
                 break;
             }
 
-            LOGGER.trace("Pool watchdog initiating scan.");
+            LOGGER.trace("calling run scans.");
             runScans();
-            LOGGER.trace("Pool watchdog scan completed.");
+            LOGGER.trace("run scans returned.");
 
             recordSweep(start, System.currentTimeMillis());
         }
 
-        LOGGER.info("Exiting pool operation consumer.");
+        LOGGER.info("Exiting operation consumer.");
         clear();
 
-        LOGGER.info("Pool operation queues cleared.");
+        LOGGER.info("operation queues cleared.");
     }
 
     public void runNow() {

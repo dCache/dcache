@@ -1,4 +1,3 @@
-have dcache &&
 _dcache()
 {
   local dccmd cur prev

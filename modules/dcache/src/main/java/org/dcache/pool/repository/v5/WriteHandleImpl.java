@@ -5,6 +5,8 @@ import static java.util.Objects.requireNonNull;
 import static org.dcache.namespace.FileAttribute.ACCESS_LATENCY;
 import static org.dcache.namespace.FileAttribute.CHECKSUM;
 import static org.dcache.namespace.FileAttribute.LABELS;
+import static org.dcache.namespace.FileAttribute.QOS_POLICY;
+import static org.dcache.namespace.FileAttribute.QOS_STATE;
 import static org.dcache.namespace.FileAttribute.RETENTION_POLICY;
 import static org.dcache.namespace.FileAttribute.SIZE;
 import static org.dcache.namespace.FileAttribute.XATTR;
@@ -185,6 +187,14 @@ class WriteHandleImpl implements ModifiableReplicaDescriptor {
             attributesToUpdate.setAccessLatency(_fileAttributes.getAccessLatency());
             attributesToUpdate.setRetentionPolicy(_fileAttributes.getRetentionPolicy());
 
+            if (_fileAttributes.isDefined(QOS_POLICY)) {
+                attributesToUpdate.setQosPolicy(_fileAttributes.getQosPolicy());
+            }
+
+            if (_fileAttributes.isDefined(QOS_STATE)) {
+                attributesToUpdate.setQosState(_fileAttributes.getQosState());
+            }
+
             if (_fileAttributes.isDefined(SIZE)) {
                 attributesToUpdate.setSize(_fileAttributes.getSize());
             }
@@ -292,10 +302,11 @@ class WriteHandleImpl implements ModifiableReplicaDescriptor {
         }
 
         /* If nothing was uploaded, we delete the replica and leave the name space
-         * entry it is virgin state.
+         * entry in its virgin state except for setting the file size to zero.
          */
         long length = _entry.getReplicaSize();
         if (length == 0) {
+            _fileAttributes.setSize(length);
             _targetState = ReplicaState.REMOVED;
             if (why == null) {
                 why = "replica is empty";

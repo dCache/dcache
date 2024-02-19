@@ -182,14 +182,14 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware {
         queryPnfsManagerOnRename = yes;
     }
 
-    public DCacheAwareJdbcFs(DataSource dataSource, PlatformTransactionManager txManager)
+    public DCacheAwareJdbcFs(DataSource dataSource, PlatformTransactionManager txManager, String consistency)
           throws ChimeraFsException, SQLException {
-        super(dataSource, txManager);
+        super(dataSource, txManager, consistency);
     }
 
-    public DCacheAwareJdbcFs(DataSource dataSource, PlatformTransactionManager txManager, int id)
+    public DCacheAwareJdbcFs(DataSource dataSource, PlatformTransactionManager txManager, int id, String consistency)
           throws ChimeraFsException, SQLException {
-        super(dataSource, txManager, id);
+        super(dataSource, txManager, id, consistency);
     }
 
     public void setPnfsHandler(PnfsHandler pnfsHandler) {

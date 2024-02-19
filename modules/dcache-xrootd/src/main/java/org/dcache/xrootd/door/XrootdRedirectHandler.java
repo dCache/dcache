@@ -1106,7 +1106,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
             if (request.isDirectoryStat()) {
                 _door.listPath(fullListPath, subject, restriction,
                       new StatListCallback(request, subject, restriction, fullListPath, ctx),
-                      _door.getRequiredAttributesForFileStatus());
+                      _door.getRequiredAttributesForFileStatusList());
             } else {
                 _door.listPath(fullListPath, subject, restriction,
                       new ListCallback(request, ctx),
@@ -1342,10 +1342,10 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
         @Override
         public void success(PnfsListDirectoryMessage message) {
             message.getEntries().stream().forEach(
-                  e -> _response.add(e.getName(), _door.getFileStatus(_subject,
+                  e -> _response.add(e.getName(), _door.getFileStatusForListing(_subject,
                         _restriction,
                         _dirPath.child(e.getName()),
-                        _client, e.getFileAttributes())));
+                        e.getFileAttributes())));
             if (message.isFinal()) {
                 respond(_context, _response.buildFinal());
             } else {
@@ -1399,8 +1399,14 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
 
     private FsPath effectiveRoot() {
         LoginSessionInfo loginSessionInfo = sessionInfo();
+        if (Subjects.isNobody(loginSessionInfo.getSubject())) {
+            return _rootPath;
+        }
         FsPath userRoot = loginSessionInfo != null ? loginSessionInfo.getUserRootPath() : null;
-        return userRoot != null ? userRoot : _rootPath;
+        if (userRoot == null) {
+            return  _rootPath;
+        }
+        return userRoot.contains(_rootPath.toString()) ? userRoot : _rootPath;
     }
 
     /**

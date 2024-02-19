@@ -28,11 +28,11 @@ check -strong qos.limits.scanner.scan-period
 check -strong qos.limits.scanner.scan-period.unit
 check -strong qos.limits.scanner.online-window
 check -strong qos.limits.scanner.online-window.unit
-check -strong qos.limits.scanner.enable.nearline-scan
-check -strong qos.limits.scanner.nearline-window
-check -strong qos.limits.scanner.nearline-window.unit
+check -strong qos.limits.scanner.enable.online-scan
+check -strong qos.limits.scanner.qos-nearline-window
+check -strong qos.limits.scanner.qos-nearline-window.unit
 check -strong qos.limits.scanner.online-batch-size
-check -strong qos.limits.scanner.nearline-batch-size
+check -strong qos.limits.scanner.qos-nearline-batch-size
 check -strong qos.pool-selection-strategy
 check -strong qos.service.scanner
 check -strong qos.service.scanner.timeout

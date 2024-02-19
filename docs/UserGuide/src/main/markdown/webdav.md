@@ -8,6 +8,7 @@ Chapter 7. WebDAV
     + [Redirection](#redirection)
     + [Checksums](#checksums)
 + [Directory operations](#directory-operations)
++ [Metalink](#metalink)
 + [Properties](#properties)
 + [Extended Attributes](#extended-attributes)
 + [Requesting macaroons](#requesting-macaroons)
@@ -664,6 +665,109 @@ that are also authorised from this bearer token.  This is particularly
 useful when used with macaroons, as it provides an interactive view of
 dCache powered by macaroons.
 
+## Metalink
+
+Metalink is a standard XML-based file format, documented in RFC 5854,
+that describes how to download one or more files.  dCache provides
+limited support for providing metalink information: it describes how
+to download all the files in a directory, but there is no support for
+downloading files located within sub-directories: there's no recursion.
+
+The metalink description may be obtained in two ways: through HTTP
+content negotiation and through Metalink/HTTP.
+
+Content negotiation is where the HTTP client describes which file
+format(s) it understands, weighting them by preference.  It uses the
+`Accept` request header with a list of media types.  The media type
+for metalink is `application/metalink4+xml`.  To obtain a metalink
+description of a directory, the client issues a HTTP GET request
+against a directory, using content-negotiation to select a metalink
+response.
+
+```console-user
+curl -s -H "Accept: application/metalink4+xml" https://dcache.example.org/Users/paul/ | xmllint -format -
+|&lt;?xml version="1.0"?>
+|&lt;metalink xmlns="urn:ietf:params:xml:ns:metalink">
+|  &lt;file name="public-file">
+|    &lt;size>174&lt;/size>
+|    &lt;hash type="sha-1">b95d5d20afb9a49d1d779ad3a6a246bd03bfef34&lt;/hash>
+|    &lt;hash type="md5">7128e02d3779f8ff5141b9f5ac003be4&lt;/hash>
+|    &lt;url>https://dcache.example.org/Users/paul/public%2Dfile&lt;/url>
+|    &lt;updated>2023-10-05T04:05:00.682Z&lt;/updated>
+|  &lt;/file>
+|  &lt;file name="private-file">
+|    &lt;size>145&lt;/size>
+|    &lt;hash type="sha-1">cfb51c36cbb348ead6b10588b84f5f9923737649&lt;/hash>
+|    &lt;hash type="md5">32f9a46c0b40d63222db11b8a46f0584&lt;/hash>
+|    &lt;url>https://dcache.example.org/Users/paul/private%2Dfile&lt;/url>
+|    &lt;updated>2023-10-05T04:05:01.438Z&lt;/updated>
+|  &lt;/file>
+|&lt;/metalink>
+```
+
+In this example, the `xmllint` command is used only to make the
+resulting XML "pretty".  Without this command, you will see the more
+compact XML representation that dCache returns.  This representation
+requires fewer characters but is harder to understand.
+
+The same information is also available without content negotiation by
+appending `?type=metalink` to the URL (e.g.,
+`https://dcache.example.org/Users/paul/?type=metalink`).  A GET
+request that targets this URL will always provide a metalink
+description of the directory's contents.
+
+```console-user
+curl -s https://dcache.example.org/Users/paul/?type=metalink | xmllint -format -
+|&lt;?xml version="1.0"?>
+|&lt;metalink xmlns="urn:ietf:params:xml:ns:metalink">
+|  &lt;file name="public-file">
+|    &lt;size>174&lt;/size>
+|    &lt;hash type="sha-1">b95d5d20afb9a49d1d779ad3a6a246bd03bfef34&lt;/hash>
+|    &lt;hash type="md5">7128e02d3779f8ff5141b9f5ac003be4&lt;/hash>
+|    &lt;url>https://dcache.example.org/Users/paul/public%2Dfile&lt;/url>
+|    &lt;updated>2023-10-05T04:05:00.682Z&lt;/updated>
+|  &lt;/file>
+|  &lt;file name="private-file">
+|    &lt;size>145&lt;/size>
+|    &lt;hash type="sha-1">cfb51c36cbb348ead6b10588b84f5f9923737649&lt;/hash>
+|    &lt;hash type="md5">32f9a46c0b40d63222db11b8a46f0584&lt;/hash>
+|    &lt;url>https://dcache.example.org/Users/paul/private%2Dfile&lt;/url>
+|    &lt;updated>2023-10-05T04:05:01.438Z&lt;/updated>
+|  &lt;/file>
+|&lt;/metalink>
+```
+
+Metalink/HTTP is described by RFC 6249.  This a standard way to
+discover a URL of a corresponding metalink description.  Following
+this RFC, dCache includes an HTTP `Link` response header in GET or
+HEAD requests that target a directory.  Following RFC 6249, the link
+response header has the relationship (`rel`) attribute value of
+`describedby` and the `type` attribute value of
+`application/metalink4+xml`.
+
+```console-user
+curl -s -I https://dcache.example.org/Users/paul/ | grep ^Link
+|Link: &lt;https://dcache.example.org/Users/paul/?type=metalink>; rel=describedby; type="application/metalink4+xml"
+```
+
+In the above example, curl issues an HTTP HEAD request that targets a
+directory.  The response includes the `Link` header that identifies
+the URL containing the metalink description.
+
+In general, metalink is useful because it is supported by different
+applications.  The [Metalink wikipedia
+page](https://en.wikipedia.org/wiki/Metalink) contains a list of
+clients that support the format.  Here are some example clients along
+with some notes on their use:
+
+  * [aria2](https://aria2.github.io/) [supports
+    metalink](https://aria2.github.io/manual/en/html/README.html#metalink),
+    both content-negotiation and metalink/http.  The `-V` and
+    `--follow-metalink=mem` options may be of interest.
+
+  * [wget](https://www.gnu.org/software/wget/) version 1 (`wget`) has
+    limited support for metalink, while version 2 (`wget2`) has
+    broader support.
 
 ## Properties
 

@@ -74,9 +74,15 @@ public interface SysOpHandler {
     ExecutorService getSystemTaskService();
 
     /**
+     * @param qosNearline this scan is for qos permanent policy files or not.
      * @return the min and max indices for files in the database.
      */
-    long[] getMinMaxIndices() throws CacheException;
+    long[] getMinMaxIndices(boolean qosNearline) throws CacheException;
+
+    /**
+     * @return the max size of each batch of requests sent to the verifier.
+     */
+    int getBatchLimit();
 
     /**
      * Called in response to an admin command to cancel the current scan.

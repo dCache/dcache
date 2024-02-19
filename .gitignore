@@ -1,8 +1,5 @@
 ##  Ignore maven-generated directories and their contents.
-/modules/*/target/
-/packages/*/target/
-/plugins/*/target/
-/docs/*/target/
+target/
 
 ## Ignore Eclipse-generated files and directories
 ## The globbed version does not work on Mac OS X.9.
@@ -40,3 +37,6 @@
 
 # Ignoring .reviewboardrc file
 .reviewboardrc
+
+# Ignore generated XML in the source area:
+/modules/benchmarks/dependency-reduced-pom.xml

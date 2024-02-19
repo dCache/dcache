@@ -92,6 +92,6 @@ public final class UnpinActivity extends PinManagerActivity {
 
     @Override
     protected void configure(Map<String, String> arguments) {
-        id = arguments == null ? null : arguments.get(UNPIN_REQUEST_ID.getName());
+        id = arguments == null ? null : arguments.get(UNPIN_REQUEST_ID);
     }
 }

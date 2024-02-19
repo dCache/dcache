@@ -82,6 +82,12 @@ public final class FileQoSRequirements implements Serializable {
     private int requiredTape;
     private Set<String> partitionKeys;
 
+    /**
+     * @since 9.2
+     */
+    private String requiredQoSPolicy;
+    private int    requiredQoSStateIndex = 0;
+
     public FileQoSRequirements(PnfsId pnsfId, FileAttributes attributes) {
         this.pnfsId = pnsfId;
         this.attributes = attributes;
@@ -125,6 +131,26 @@ public final class FileQoSRequirements implements Serializable {
 
     public void setRequiredPoolGroup(String requiredPoolGroup) {
         this.requiredPoolGroup = requiredPoolGroup;
+    }
+
+    public String getRequiredQoSPolicy() {
+        return requiredQoSPolicy;
+    }
+
+    public void setRequiredQoSPolicy(String requiredQoSPolicy) {
+        this.requiredQoSPolicy = requiredQoSPolicy;
+    }
+
+    public boolean hasRequiredQoSPolicy() {
+        return requiredQoSPolicy != null;
+    }
+
+    public int getRequiredQoSStateIndex() {
+        return requiredQoSStateIndex;
+    }
+
+    public void setRequiredQoSStateIndex(int requiredQoSStateIndex) {
+        this.requiredQoSStateIndex = requiredQoSStateIndex;
     }
 
     @Override

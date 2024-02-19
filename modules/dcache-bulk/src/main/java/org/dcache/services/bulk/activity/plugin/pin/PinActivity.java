@@ -74,9 +74,11 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.dcache.pinmanager.PinManagerPinMessage;
 import org.dcache.services.bulk.BulkServiceException;
+import org.dcache.services.bulk.activity.BulkActivityArgumentDescriptor;
 import org.dcache.services.bulk.util.BulkRequestTarget;
 import org.dcache.vehicles.FileAttributes;
 
@@ -117,6 +119,12 @@ public final class PinActivity extends PinManagerActivity {
                   = new PinManagerPinMessage(attributes, getProtocolInfo(), id,
                   lifetimeInMillis);
             message.setSubject(subject);
+
+            Optional<ListenableFuture<Message>> skipOption = skipIfOnline(attributes, message);
+            if (skipOption.isPresent()) {
+                return skipOption.get();
+            }
+
             return pinManager.send(message, Long.MAX_VALUE);
         } catch (URISyntaxException | CacheException e) {
             return Futures.immediateFailedFuture(e);
@@ -125,23 +133,30 @@ public final class PinActivity extends PinManagerActivity {
 
     @Override
     protected void configure(Map<String, String> arguments) {
-        TimeUnit defaultUnit = TimeUnit.valueOf(LIFETIME_UNIT.getDefaultValue());
-        Long defaultValue = Long.parseLong(LIFETIME.getDefaultValue());
+        TimeUnit defaultUnit = TimeUnit.valueOf(lifetimeUnitDefault());
+
+        Long defaultValue = Long.parseLong(lifetimeDefault());
 
         if (arguments == null) {
             lifetimeInMillis = defaultUnit.toMillis(defaultValue);
         } else {
-            String expire = arguments.get(LIFETIME.getName());
-            String unit = arguments.get(LIFETIME_UNIT.getName());
+            String expire = arguments.get(LIFETIME);
+            String unit = arguments.get(LIFETIME_UNIT);
 
-            Long value = (long) (Double.parseDouble(expire));
-
-            lifetimeInMillis = expire == null ? defaultUnit.toMillis(defaultValue)
-                  : unit == null ? defaultUnit.toMillis(value)
-                        : TimeUnit.valueOf(unit).toMillis(value);
+            /*
+             * Guard against erroneous argument names ...
+             */
+            if (expire == null) {
+                lifetimeInMillis = unit == null ? defaultUnit.toMillis(defaultValue):
+                      TimeUnit.valueOf(unit).toMillis(defaultValue);
+            } else {
+                Long value = (long) (Double.parseDouble(expire));
+                lifetimeInMillis = unit == null ? defaultUnit.toMillis(value)
+                            : TimeUnit.valueOf(unit).toMillis(value);
+            }
         }
 
-        id = arguments == null ? null : arguments.get(PIN_REQUEST_ID.getName());
+        id = arguments == null ? null : arguments.get(PIN_REQUEST_ID);
     }
 
     private ProtocolInfo getProtocolInfo() throws URISyntaxException {
@@ -149,5 +164,23 @@ public final class PinActivity extends PinManagerActivity {
               new InetSocketAddress("localhost", 0),
               null, null, null,
               new URI("http", "localhost", null, null));
+    }
+
+    private String lifetimeDefault() {
+        for (BulkActivityArgumentDescriptor d: descriptors) {
+            if (d.getName().equals(LIFETIME)) {
+                return d.getDefaultValue();
+            }
+        }
+        return null;
+    }
+
+    private String lifetimeUnitDefault() {
+        for (BulkActivityArgumentDescriptor d: descriptors) {
+            if (d.getName().equals(LIFETIME_UNIT)) {
+                return d.getDefaultValue();
+            }
+        }
+        return null;
     }
 }

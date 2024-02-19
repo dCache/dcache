@@ -43,6 +43,7 @@ usage()
     echo "   database listLocks [<cell>@<domain>]..."
     echo "   database releaseLocks [<cell>@<domain>]..."
     echo "   database doc <cell>@<domain> <out-dir>"
+    echo "   database checksum <changeid> [<cell>@<domain>]..."
     echo "   dump heap [--force] <domain> <file>"
     echo "   dump threads [<domain>...]"
     echo "   dump zklog [<path>]"
@@ -908,6 +909,25 @@ case "$1" in
                             if hasManagedDatabase "$domain" "$cell"; then
                                 printf -- "-- %s: \n" "$cell@$domain"
                                 liquibase "$domain" "$cell" updateSQL
+                            fi
+                        fi
+                    done
+                done
+                ;;
+
+            checksum)
+                if [ $# -lt 1 ]; then
+                    usage
+                fi
+
+                id=$1
+                shift
+                for domain in $(getProperty dcache.domains); do
+                    for cell in $(getProperty dcache.domain.cells "$domain"); do
+                        if [ $# -eq 0 ] || matchesAny "$cell@$domain" "$@"; then
+                            if hasManagedDatabase "$domain" "$cell"; then
+                                printf -- "-- %s: \n" "$cell@$domain"
+                                liquibase "$domain" "$cell" calculateCheckSum $id
                             fi
                         fi
                     done

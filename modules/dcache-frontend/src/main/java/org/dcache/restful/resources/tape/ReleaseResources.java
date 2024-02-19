@@ -199,7 +199,6 @@ public final class ReleaseResources {
     private static BulkRequest toEphemeralBulkRequest(String id, String activity,
           List<String> targetPaths) {
         BulkRequest request = new BulkRequest();
-        request.setPrestore(false);
         request.setExpandDirectories(Depth.NONE);
         request.setCancelOnFailure(true);
         request.setClearOnFailure(true);

@@ -29,7 +29,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.LoginAttribute;
-import org.dcache.auth.attributes.LoginAttributes;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.auth.attributes.RootDirectory;
@@ -55,7 +54,7 @@ public class HttpServletRequests {
     }
 
     public static boolean isAdmin(HttpServletRequest request) {
-        return LoginAttributes.hasAdminRole(getLoginAttributes(request));
+        return Subjects.hasAdminRole(RequestUser.getSubject());
     }
 
     public static Subject roleAwareSubject(HttpServletRequest request) {

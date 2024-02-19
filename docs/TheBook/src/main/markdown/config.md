@@ -120,15 +120,22 @@ Individual services:
      - [Some typical scenarios part 1 - what happens when ...?](config-qos-engine.md#some-typical-scenarios-part-1-what-happens-when-)
      - [Some typical scenarios part 2 - how do I ...?](config-qos-engine.md#some-typical-scenarios-part-2-how-do-i-)
 
+- [dCache SpaceManager Service](config-spacemanager.md)
+     - [Utilization of space reservations for data storage](config-spacemanager.md#utilization-of-space-reservations-for-data-storage)
+     - [Properties of space reservation](config-spacemanager.md#properties-of-space-reservation)
+     - [Activating Spacemanager](config-spacemanager.md#activating-spacemanager)
+     - [Explicit and implicit space reservations for data storage in dCache](config-spacemanager.md#explicit-and-implicit-space-reservations-for-data-storage-in-dcache)
+     - [Spacemanager configuration](config-spacemanager.md#spacemanager-configuration)
+
 - [dCache Storage Resource Manager](config-SRM.md)
      - [Configuring the srm service](config-SRM.md#configuring-the-srm-service)
      - [Utilization of Space Reservations for Data Storage](config-SRM.md#utilization-of-space-reservations-for-data-storage)
-     - [dCache specific concepts](config-SRM.md#dcache-specific-concepts)
-     - [SpaceManager configuration](config-SRM.md#spacemanager-configuration)
-     - [SRM configuration for experts](config-SRM.md#srm-configuration-for-experts)
      - [Configuring the PostgreSQL Database](config-SRM.md#configuring-the-postgresql-database)
-     - [Tape Recall Scheduling](config-SRM.md#tape-recall-scheduling)
      - [General SRM Concepts (for developers)](config-SRM.md#general-srm-concepts-for-developers)
+
+- [dCache SRM Manager Service](config-srmmanager.md)
+     - [Configuring the srm manager service](config-srmmanager.md#configuring-the-srm-manager-service)
+     - [Tape recall scheduling](config-srmmanager.md#tape-recall-scheduling)
 
 - [The Statistics Service](config-statistics.md)
      - [The Basic Setup](config-statistics.md#the-basic-setup)

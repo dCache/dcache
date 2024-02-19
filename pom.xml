@@ -1,7 +1,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.dcache</groupId>
-    <version>9.2.0-SNAPSHOT</version>
+    <version>10.0.0-SNAPSHOT</version>
     <artifactId>dcache-parent</artifactId>
     <packaging>pom</packaging>
 
@@ -67,17 +67,18 @@
         <version.aspectj>1.9.9.1</version.aspectj>
         <version.smc>6.6.0</version.smc>
         <version.xerces>2.12.0</version.xerces>
-        <version.jetty>9.4.51.v20230217</version.jetty>
-        <version.xrootd4j>4.5.7</version.xrootd4j>
-        <version.jersey>2.28</version.jersey>
-        <version.dcache-view>2.0.2</version.dcache-view>
+        <version.jetty>9.4.52.v20230823</version.jetty>
+        <version.xrootd4j>4.5.8</version.xrootd4j>
+        <version.jersey>2.41</version.jersey>
+        <version.dcache-view>3.0.0</version.dcache-view>
+        <version.dcache-view-admin>3.0.0</version.dcache-view-admin>
         <version.netty>4.1.94.Final</version.netty>
         <version.dcache>${project.version}</version.dcache>
         <version.swagger-ui>3.1.7</version.swagger-ui>
 
         <!-- Remember to update modules/logback-test-config/pom.xml
              when upgrading logback. -->
-        <version.logback>1.2.10</version.logback>
+        <version.logback>1.2.13</version.logback>
         <version.logback.contrib>0.1.5</version.logback.contrib>
         <version.jackson>2.14.0</version.jackson>
         <version.jna>5.4.0</version.jna>
@@ -87,7 +88,7 @@
 
 
         <version.spring-integration-kafka>5.5.11</version.spring-integration-kafka>
-        <version.spring_kafka>2.8.5</version.spring_kafka>
+        <version.spring_kafka>2.9.11</version.spring_kafka>
         <version.kafka>3.1.0</version.kafka>
 
         <!-- BouncyCastle seems to change the naming convention of
@@ -118,8 +119,10 @@
         <bouncycastle.bcprov>bcprov-jdk15on</bouncycastle.bcprov>
         <bouncycastle.bcpkix>bcpkix-jdk15on</bouncycastle.bcpkix>
         <bouncycastle.version>1.67</bouncycastle.version>
-        <datanucleus-core.version>5.2.2</datanucleus-core.version>
-        <datanucleus.plugin.version>5.2.1</datanucleus.plugin.version>
+        <datanucleus-core.version>6.0.6</datanucleus-core.version>
+        <datanucleus.plugin.version>6.0.0-release</datanucleus.plugin.version>
+        <asm.version>9.5</asm.version>
+        <asm-tools.version>5.0.3</asm-tools.version>
     </properties>
 
     <scm>
@@ -199,7 +202,7 @@
             <dependency>
                 <groupId>org.apache.zookeeper</groupId>
                 <artifactId>zookeeper</artifactId>
-                <version>3.7.1</version>
+                <version>3.7.2</version>
                 <exclusions>
                     <exclusion>
                         <groupId>com.sun.jmx</groupId>
@@ -423,7 +426,22 @@
             <dependency>
                 <groupId>org.ow2.asm</groupId>
                 <artifactId>asm</artifactId>
-                <version>7.2</version>
+                <version>${asm.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm-tree</artifactId>
+                <version>${asm-tools.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm-analysis</artifactId>
+                <version>${asm-tools.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm-util</artifactId>
+                <version>${asm-tools.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.datanucleus</groupId>
@@ -433,37 +451,32 @@
             <dependency>
                 <groupId>org.datanucleus</groupId>
                 <artifactId>datanucleus-api-jdo</artifactId>
-                <version>5.2.2</version>
+                <version>6.0.1</version>
             </dependency>
             <dependency>
                 <groupId>org.datanucleus</groupId>
                 <artifactId>datanucleus-jdo-query</artifactId>
-                <version>5.0.9</version>
+                <version>6.0.1</version>
             </dependency>
             <dependency>
                 <groupId>org.datanucleus</groupId>
                 <artifactId>javax.jdo</artifactId>
-                <version>3.2.0-m12</version>
+                <version>3.2.0-release</version>
             </dependency>
             <dependency>
                 <groupId>org.datanucleus</groupId>
                 <artifactId>datanucleus-rdbms</artifactId>
-                <version>5.2.1</version>
-            </dependency>
-            <dependency>
-               <groupId>org.datanucleus</groupId>
-               <artifactId>datanucleus-accessplatform-jdo-rdbms</artifactId>
-               <version>5.2.2</version>
+                <version>${datanucleus-core.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.datanucleus</groupId>
                 <artifactId>datanucleus-xml</artifactId>
-                <version>5.1.0-release</version>
+                <version>6.0.0-release</version>
             </dependency>
             <dependency>
                 <groupId>org.datanucleus</groupId>
                 <artifactId>datanucleus-cache</artifactId>
-                <version>5.1.1</version>
+                <version>6.0.0-release</version>
             </dependency>
             <dependency>
                 <groupId>net.sf.saxon</groupId>
@@ -675,7 +688,7 @@
             <dependency>
                 <groupId>org.json</groupId>
                 <artifactId>json</artifactId>
-                <version>20230227</version>
+                <version>20231013</version>
             </dependency>
 
             <dependency>
@@ -729,6 +742,12 @@
             </dependency>
 
             <dependency>
+                <groupId>org.dcache</groupId>
+                <artifactId>dcache-view-admin</artifactId>
+                <version>${version.dcache-view-admin}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>${bouncycastle.bcpkix}</artifactId>
                 <version>${bouncycastle.version}</version>
@@ -770,7 +789,7 @@
         <dependency>
             <groupId>org.dcache</groupId>
             <artifactId>nfs4j-core</artifactId>
-            <version>0.24.3</version>
+            <version>0.25.0</version>
         </dependency>
         <dependency>
             <groupId>com.github.nitram509</groupId>
@@ -816,11 +835,6 @@
             </dependency>
             <dependency>
                 <groupId>org.dcache</groupId>
-                <artifactId>rados4j</artifactId>
-                <version>0.0.4</version>
-            </dependency>
-            <dependency>
-                <groupId>org.dcache</groupId>
                 <artifactId>ldap4testing</artifactId>
                 <version>1.0</version>
             </dependency>
@@ -832,8 +846,8 @@
             </dependency>
             <dependency>
                 <groupId>org.mongodb</groupId>
-                <artifactId>mongo-java-driver</artifactId>
-                <version>3.4.2</version>
+                <artifactId>mongodb-driver-sync</artifactId>
+                <version>4.11.1</version>
             </dependency>
 
             <dependency>
@@ -1132,7 +1146,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.0.0-M9</version>
+                    <version>3.1.2</version>
                     <configuration>
                         <!-- Disable stack-trace trimming as
                              surefire makes bad decisions too often. -->
@@ -1167,7 +1181,7 @@
                         <dependency>
                             <groupId>org.slf4j</groupId>
                             <artifactId>log4j-over-slf4j</artifactId>
-			    <version>${version.slf4j}</version>
+                            <version>${version.slf4j}</version>
                         </dependency>
                         <dependency>
                             <groupId>org.dcache</groupId>
@@ -1234,12 +1248,17 @@
                 <plugin>
                     <groupId>org.gaul</groupId>
                     <artifactId>modernizer-maven-plugin</artifactId>
-                    <version>2.4.0</version>
+                    <version>2.7.0</version>
                 </plugin>
                 <plugin>
                     <groupId>com.github.spotbugs</groupId>
                     <artifactId>spotbugs-maven-plugin</artifactId>
                     <version>4.7.3.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>de.chkal.maven</groupId>
+                    <artifactId>gitlab-code-quality-plugin</artifactId>
+                    <version>1.0.2</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -1345,6 +1364,17 @@
                          to accept the overhead of forking each test run. -->
                     <forkCount>1</forkCount>
                     <reuseForks>false</reuseForks>
+                    <!-- Make Powermock compatible with JDK 17 -->
+                    <argLine>
+                        @{argLine}
+                        --add-opens java.base/java.lang=ALL-UNNAMED
+                        --add-opens java.base/java.util=ALL-UNNAMED
+                        --add-opens java.base/java.lang.reflect=ALL-UNNAMED
+                        --add-opens java.base/java.time=ALL-UNNAMED
+                        --add-opens java.base/java.time.format=ALL-UNNAMED
+                        --add-opens java.base/java.util.concurrent=ALL-UNNAMED
+                        --add-opens java.base/java.util.stream=ALL-UNNAMED
+                    </argLine>
                 </configuration>
             </plugin>
 
@@ -1371,6 +1401,18 @@
                         <goals>
                             <goal>integration-test</goal>
                             <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>de.chkal.maven</groupId>
+                <artifactId>gitlab-code-quality-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>generate</goal>
                         </goals>
                     </execution>
                 </executions>

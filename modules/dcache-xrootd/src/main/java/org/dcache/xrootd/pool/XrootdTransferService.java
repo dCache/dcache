@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013-2023 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013-2024 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -40,7 +40,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.logging.LoggingHandler;
-import io.netty.handler.timeout.IdleStateHandler;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -160,7 +159,7 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
     private ServerProtocolFlags serverProtocolFlags;
     private long tpcServerResponseTimeout;
     private TimeUnit tpcServerResponseTimeoutUnit;
-    private Map<String, Timer> reconnectTimers;
+    private Map<UUID, Timer> reconnectTimers;
     private long readReconnectTimeout;
     private TimeUnit readReconnectTimeoutUnit;
     private int tpcClientChunkSize;
@@ -207,7 +206,7 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
      * @param uuid of the mover (channel)
      */
     public synchronized void cancelReconnectTimeoutForMover(UUID uuid) {
-        Timer timer = reconnectTimers.remove(uuid.toString());
+        Timer timer = reconnectTimers.remove(uuid);
         if (timer != null) {
             timer.cancel();
             LOGGER.debug("cancelReconnectTimeoutForMover, timer cancelled for {}.", uuid);
@@ -240,7 +239,7 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
                           key);
                 }
             };
-            reconnectTimers.put(key.toString(), timer);
+            reconnectTimers.put(key, timer);
             timer.schedule(task, readReconnectTimeoutUnit.toMillis(readReconnectTimeout));
         } else {
             LOGGER.debug("setReconnectTimeoutForMover for {}; " +
@@ -431,10 +430,7 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
             pipeline.addLast("plugin:" + plugin.getName(),
                   plugin.createHandler());
         }
-        pipeline.addLast("timeout", new IdleStateHandler(0,
-              0,
-              clientIdleTimeout,
-              clientIdleTimeoutUnit));
+
         pipeline.addLast("chunkedWriter", new ChunkedResponseWriteHandler());
 
         /*
@@ -506,6 +502,6 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
     }
 
     private synchronized void removeReadReconnectTimer(UUID key) {
-        reconnectTimers.remove(key.toString());
+        reconnectTimers.remove(key);
     }
 }

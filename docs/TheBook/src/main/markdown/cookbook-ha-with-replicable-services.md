@@ -107,7 +107,7 @@ suffix (although they internally are represented with an `@local` suffix). E.g.
 `PnfsManager@namespaceDomain` is a fully qualified cell address and identifies a
 specific cell instance, while `PnfsManager` is a logical address.
 
-In dCache 6.2, many -- although not all -- services are replicable. A
+In dCache, many -- although not all -- services are replicable. A
 replicable service is one that supports the above separation between a logical
 address and a physical address and which supports having several physical
 instances use the same logical address. One may recognize replicable services by
@@ -127,14 +127,7 @@ route delete PnfsManager PnfsManager@namespaceDomain
 After this, no new requests will reach that `pnfsmanager` instance and once the
 service is idle it may be shut down.
 
-The following is a list of critical replicable services in dCache 6.2.
-
-### `spacemanager`
-
-Spacemanager is fully replicable. Several instances must share the same
-database as requests from doors will be load balanced over all physical
-instances. The configuration should be synchronized such that all instances are
-configured the same way.
+The following is a list of critical replicable services in dCache.
 
 ### `pinmanager`
 
@@ -156,6 +149,12 @@ ha get role
 ha show participants
 ```
 
+### `spacemanager`
+
+Spacemanager is fully replicable. Several instances must share the same
+database as requests from doors will be load balanced over all physical
+instances. The configuration should be synchronized such that all instances are
+configured the same way.
 
 ### `srmmanager`
 
@@ -171,6 +170,12 @@ requests by token in the backend, one has to strip the tag from the token. E.g.
 a client may see a token as `fb1991c5:-1093540442`, where `fb1991c5` is a
 backend indentifier and `-1093540442` is the backend token. One may map the
 backend identifier to an instance through ZooKeeper:
+
+### `transfermanager`
+
+Transfermanager is fully replicable. Several instances must share the same
+database as requests will be load balanced over all instances. The configuration
+should be synchronized such that all instances are configured the same way.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 \c System
@@ -201,7 +206,7 @@ Non-critical services will not directly affect transfers in case of
 unavailabilty. As such, it may be unnecessary to replicate these services if the
 primary interest is rolling upgrades.
 
-The following is a list of non-critical replicable services in dCache 6.2.
+The following is a list of non-critical replicable services in dCache.
 
 ### `billing`
 
@@ -257,3 +262,19 @@ information. Requests will be load balanced over available instances of `topo`.
 This service collects nightly statistics about available pools. One can have
 multiple instances of `statistics` and each instance will collect the same
 information.
+
+### `bulk`
+
+This service processes bulk requests for pinning/unpinning, staging/releasing,
+file deletion and qos updating or manipulation.  It does not directly affect
+transfers, but is perhaps more critical than the other services in this group
+because it supports the `REST` API.
+
+Bulk is fully replicable. All instances *_must_* share the same database instance.
+The configuration should be synchronized such that all instances are configured
+the same way.
+
+Request querying is load-balanced over the physical instances, but only the
+leader instance is responsible for submission, cancelling or clearing requests,
+and only the leader actually processes them (i.e., runs the request container
+servicing the request).

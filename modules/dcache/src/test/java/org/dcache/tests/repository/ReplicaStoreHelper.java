@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.pool.repository.FileStoreState;
 import org.dcache.pool.repository.DuplicateEntryException;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.ReplicaRecord;
@@ -235,8 +236,8 @@ public class ReplicaStoreHelper implements ReplicaStore {
     }
 
     @Override
-    public boolean isOk() {
-        return true;
+    public FileStoreState isOk() {
+        return FileStoreState.OK;
     }
 
     @Override

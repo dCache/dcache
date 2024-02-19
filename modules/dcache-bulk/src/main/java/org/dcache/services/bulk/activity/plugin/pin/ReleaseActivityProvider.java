@@ -61,13 +61,16 @@ package org.dcache.services.bulk.activity.plugin.pin;
 
 import static org.dcache.services.bulk.activity.BulkActivity.TargetType.FILE;
 
+import java.util.Map;
 import java.util.Set;
 import org.dcache.services.bulk.BulkServiceException;
 import org.dcache.services.bulk.activity.BulkActivityArgumentDescriptor;
 import org.dcache.services.bulk.activity.BulkActivityProvider;
 
 public final class ReleaseActivityProvider extends BulkActivityProvider<ReleaseActivity> {
-    static final BulkActivityArgumentDescriptor REQUEST_ID
+    static final String REQUEST_ID = "id";
+
+    private static final BulkActivityArgumentDescriptor DEFAULT_DESCRIPTOR
           = new BulkActivityArgumentDescriptor("id",
           "to use for this release",
           "string",
@@ -78,8 +81,8 @@ public final class ReleaseActivityProvider extends BulkActivityProvider<ReleaseA
     }
 
     @Override
-    public Set<BulkActivityArgumentDescriptor> getArguments() {
-        return Set.of(REQUEST_ID);
+    public Set<BulkActivityArgumentDescriptor> getDescriptors() {
+        return Set.of(DEFAULT_DESCRIPTOR);
     }
 
     @Override
@@ -90,5 +93,10 @@ public final class ReleaseActivityProvider extends BulkActivityProvider<ReleaseA
     @Override
     protected ReleaseActivity activityInstance() throws BulkServiceException {
         return new ReleaseActivity(activity, targetType);
+    }
+
+    @Override
+    public void configure(Map<String, Object> environment) {
+        // NOP
     }
 }

@@ -103,8 +103,12 @@ public final class NamespaceOpHandler implements PoolOpHandler, SysOpHandler {
     }
 
     @Override
-    public long[] getMinMaxIndices() throws CacheException {
+    public long[] getMinMaxIndices(boolean qosNearline) throws CacheException {
         return namespace.getMinMaxInumbers();
+    }
+
+    public int getBatchLimit() {
+        return namespace.getFetchSize();
     }
 
     public void handlePoolScan(PoolScanSummary scan) {

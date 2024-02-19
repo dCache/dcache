@@ -241,9 +241,27 @@ public class Gplazma2LoginStrategy implements LoginStrategy, CellCommandListener
           "This command runs a test login with the supplied principals\n" +
                 "The result is tracked and an explanation is provided of how \n" +
                 "the result was obtained.\n\n" +
+                "The principal format is:\n" +
+                "  <short hand identifier:value>\n" +
+                "or\n" +
+                "  <class name:value>\n\n" +
+                "The support short hand identifiers are:\n" +
+                " dn\n" +
+                " gid\n" +
+                " kerberos\n" +
+                " fqan\n" +
+                " name\n" +
+                " origin\n" +
+                " oidc\n" +
+                " email\n" +
+                " uid\n" +
+                " username\n" +
+                " group\n\n" +
+                "All other types can be specific full qualified class names.\n\n" +
                 "Examples:\n" +
                 "  explain login \"dn:/C=DE/O=GermanGrid/OU=DESY/CN=testUser\" fqan:/test\n" +
-                "  explain login username:testuser\n";
+                "  explain login username:testuser\n" +
+                "  explain login org.dcache.auth.LoginNamePrincipal:testuser\n\n";
     public static final String hh_explain_login = "<principal> [<principal> ...] # explain the result of login";
 
     public String ac_explain_login_$_1_99(Args args) {

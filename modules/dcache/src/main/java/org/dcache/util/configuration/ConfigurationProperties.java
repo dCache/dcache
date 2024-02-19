@@ -247,14 +247,28 @@ public class ConfigurationProperties
             _prefixes.add(key.getPropertyName() + PREFIX_SEPARATOR);
         }
 
-        checkIsAllowed(key, (String) value);
+        // the reset of the code expects `value` to be an instance of String
+        assert value instanceof String;
+
+        String stringValue = (String) value;
+        // REVISIT: do we need to resolve it here or on get ?
+        if (stringValue.startsWith("${env.") && stringValue.endsWith("}")) {
+            String envKey = stringValue.substring(6, stringValue.length() - 1);
+            stringValue = System.getenv(envKey);
+            if (stringValue == null) {
+                _problemConsumer.error("Environment variable " + envKey + " for property " + rawKey + " undefined.");
+                return null;
+            }
+        }
+
+        checkIsAllowed(key, stringValue);
 
         if (key.hasAnnotations()) {
             putAnnotatedKey(key);
         }
 
         return key.hasAnyOf(OBSOLETE_FORBIDDEN) ? null
-              : super.put(name, canonicalizeValue(name, value));
+              : super.put(name, canonicalizeValue(name, stringValue));
     }
 
     private String canonicalizeValue(String key, Object value) {

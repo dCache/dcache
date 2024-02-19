@@ -67,25 +67,47 @@ import static org.dcache.services.bulk.util.BulkRequestTarget.State.SKIPPED;
 
 import dmg.cells.nucleus.CellInfoProvider;
 import java.io.PrintWriter;
+import java.text.ParseException;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import org.dcache.services.bulk.job.RequestContainerJobFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Provides activity statistics via the CellInfo interface.
  */
 public final class BulkServiceStatistics implements CellInfoProvider {
 
+    /**
+     * Date format
+     */
+    public static final String DATE_FORMAT = "yyyy/MM/dd-HH:mm:ss";
+
+    public static final DateTimeFormatter DATE_FORMATTER
+          = DateTimeFormatter.ofPattern(DATE_FORMAT).withZone(ZoneId.systemDefault());
+
+    public static Long getTimestamp(String datetime) throws ParseException {
+        if (datetime == null) {
+            return null;
+        }
+
+        return Instant.from(DATE_FORMATTER.parse(datetime)).toEpochMilli();
+    }
+
     private static final String LAST_START = "Running since: %s";
     private static final String UP_TIME = "Uptime %s days, %s hours, %s minutes, %s seconds";
     private static final String LAST_SWEEP = "Last job sweep at %s";
     private static final String LAST_SWEEP_DURATION = "Last job sweep took %s seconds";
     private static final String STATS_FORMAT = "%-20s :    %10s";
+    private static final String CONCURRENCY_FORMAT = "%-45s :  %10s";
 
     private final Date started = new Date();
 
@@ -95,12 +117,13 @@ public final class BulkServiceStatistics implements CellInfoProvider {
     private final Map<String, AtomicLong> requestTypes = new TreeMap<>();
     private final Map<String, AtomicLong> userRequests = new TreeMap<>();
     private final Map<String, AtomicLong> counts
-          = Map.of(RUNNING.name(), new AtomicLong(0L),
-          CANCELLED.name(), new AtomicLong(0L),
+          = Map.of(CANCELLED.name(), new AtomicLong(0L),
           COMPLETED.name(), new AtomicLong(0L),
           FAILED.name(), new AtomicLong(0L),
           SKIPPED.name(), new AtomicLong(0L));
 
+
+    private RequestContainerJobFactory factory;
     private long lastSweep = started.getTime();
     private long lastSweepDuration = 0;
 
@@ -155,8 +178,10 @@ public final class BulkServiceStatistics implements CellInfoProvider {
         pw.println(String.format(STATS_FORMAT, "Active", activeRequests.get()));
         pw.println();
 
-        pw.println("----------------- TARGETS  (current) -----------------");
-        pw.println(String.format(STATS_FORMAT, RUNNING.name(), counts.get(RUNNING.name())));
+        pw.println(String.format(CONCURRENCY_FORMAT, "Available permits for directory listing",
+              factory.getDirListSemaphoreAvailable()));
+        pw.println(String.format(CONCURRENCY_FORMAT, "Available permits for in-flight targets",
+              factory.getInFlightSemaphoreAvailable()));
         pw.println();
     }
 
@@ -200,6 +225,11 @@ public final class BulkServiceStatistics implements CellInfoProvider {
 
     public void setActive(int count) {
         activeRequests.set(count);
+    }
+
+    @Required
+    public void setRequestContainerJobFactory(RequestContainerJobFactory factory) {
+        this.factory = factory;
     }
 
     public void sweepFinished(long duration) {

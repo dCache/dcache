@@ -33,6 +33,22 @@ public interface ChimeraStorageInfoExtractable {
     RetentionPolicy getRetentionPolicy(ExtendedInode inode) throws CacheException;
 
     /**
+     * Returns the QosPolicy name of an inode's policy id.
+     * @param inode An inode
+     * @return policy name
+     * @throws CacheException if the policy could not be read
+     */
+    String getQosPolicy(ExtendedInode inode) throws CacheException;
+
+    /**
+     * Returns the QosPolicy state (the current index into the policy's state list).
+     * @param inode An inode
+     * @return policy state index
+     * @throws CacheException if the policy state could not be read
+     */
+    Integer getQosState(ExtendedInode inode) throws CacheException;
+
+    /**
      * Returns the StorageInfo of an inode.
      *
      * @param inode An inode

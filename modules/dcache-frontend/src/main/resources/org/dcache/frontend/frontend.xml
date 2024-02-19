@@ -19,15 +19,12 @@
   -->
 
 <beans xmlns="http://www.springframework.org/schema/beans"
-       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xmlns:context="http://www.springframework.org/schema/context"
-       xmlns:util="http://www.springframework.org/schema/util"
-       xmlns:plugin="http://www.springframework.org/schema/plugin"
-       xsi:schemaLocation="
-           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:context="http://www.springframework.org/schema/context"
+  xmlns:plugin="http://www.springframework.org/schema/plugin"
+  xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
            http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
-           http://www.springframework.org/schema/plugin http://www.springframework.org/schema/plugin/spring-plugin.xsd
-           http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
+           http://www.springframework.org/schema/plugin http://www.springframework.org/schema/plugin/spring-plugin.xsd">
 
   <context:property-placeholder/>
   <context:annotation-config/>
@@ -399,6 +396,16 @@
                     </property>
                 </bean>
                 <bean class="org.eclipse.jetty.server.handler.ContextHandler">
+                  <description>Provide access to dcache-view-admin</description>
+                  <property name="contextPath" value="/admin"/>
+                  <property name="handler">
+                    <bean class="org.eclipse.jetty.server.handler.ResourceHandler">
+                      <property name="directoriesListed" value="true"/>
+                      <property name="resourceBase" value="${frontend.dcache-view-admin.dir}"/>
+                    </bean>
+                  </property>
+                </bean>
+                <bean class="org.eclipse.jetty.server.handler.ContextHandler">
                     <description>Provide access to standard swagger-ui library</description>
                     <property name="contextPath" value="/api/libraries/swagger-ui"/>
                     <property name="allowNullPathInfo" value="true"/>
@@ -599,6 +606,7 @@
     </bean>
     <bean class="org.dcache.restful.resources.labels.LabelsResources" scope="request"/>
     <bean class="org.dcache.restful.resources.namespace.IdResources" scope="request"/>
+    <bean class="org.dcache.restful.resources.namespace.QosPolicyResource" scope="request"/>
     <bean class="org.dcache.restful.resources.pool.PoolGroupInfoResources" scope="request"/>
     <bean class="org.dcache.restful.resources.pool.PoolInfoResources" scope="request">
       <property name="unlimitedOperationVisibility" value="${frontend.authz.unlimited-operation-visibility}"/>
@@ -606,6 +614,7 @@
     <bean class="org.dcache.restful.resources.restores.RestoreResources" scope="request">
       <property name="unlimitedOperationVisibility" value="${frontend.authz.unlimited-operation-visibility}"/>
     </bean>
+    <bean class="org.dcache.restful.resources.qos.QoSPolicyResource" scope="request"/>
     <bean class="org.dcache.restful.resources.quota.QuotaResources" scope="request"/>
     <bean class="org.dcache.restful.resources.selection.LinkResources" scope="request"/>
     <bean class="org.dcache.restful.resources.selection.UnitResources" scope="request"/>

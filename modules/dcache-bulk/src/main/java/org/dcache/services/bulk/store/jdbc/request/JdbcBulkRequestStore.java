@@ -71,6 +71,7 @@ import static org.dcache.services.bulk.util.BulkRequestTarget.PID.INITIAL;
 import static org.dcache.services.bulk.util.BulkRequestTarget.PLACEHOLDER_PNFSID;
 import static org.dcache.services.bulk.util.BulkRequestTarget.ROOT_REQUEST_PATH;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.CREATED;
+import static org.dcache.services.bulk.util.BulkRequestTarget.State.FAILED;
 
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
@@ -83,6 +84,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -92,6 +94,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
 import org.dcache.auth.Subjects;
@@ -99,6 +103,9 @@ import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileType;
+import org.dcache.services.bulk.BulkArchivedRequestInfo;
+import org.dcache.services.bulk.BulkArchivedSummaryFilter;
+import org.dcache.services.bulk.BulkArchivedSummaryInfo;
 import org.dcache.services.bulk.BulkPermissionDeniedException;
 import org.dcache.services.bulk.BulkRequest;
 import org.dcache.services.bulk.BulkRequestInfo;
@@ -114,7 +121,6 @@ import org.dcache.services.bulk.store.jdbc.rtarget.JdbcRequestTargetDao;
 import org.dcache.services.bulk.util.BulkRequestFilter;
 import org.dcache.services.bulk.util.BulkRequestTarget;
 import org.dcache.services.bulk.util.BulkRequestTarget.PID;
-import org.dcache.services.bulk.util.BulkRequestTarget.State;
 import org.dcache.services.bulk.util.BulkRequestTargetBuilder;
 import org.dcache.services.bulk.util.BulkServiceStatistics;
 import org.dcache.vehicles.FileAttributes;
@@ -150,6 +156,7 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
 
     private LoadingCache<String, Optional<BulkRequest>> requestCache;
     private JdbcBulkRequestDao requestDao;
+    private JdbcBulkArchiveDao archiveDao;
     private JdbcBulkRequestPermissionsDao requestPermissionsDao;
     private JdbcBulkTargetStore targetStore;
     private JdbcRequestTargetDao requestTargetDao;
@@ -290,6 +297,11 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
     }
 
     @Override
+    public Map<String, Long> countsByStatus() {
+        return requestDao.countStatus();
+    }
+
+    @Override
     public Collection<BulkRequest> find(Optional<BulkRequestFilter> requestFilter, Integer limit)
           throws BulkStorageException {
         limit = limit == null ? Integer.MAX_VALUE : limit;
@@ -305,6 +317,35 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
         ListMultimap<String, String> result = ArrayListMultimap.create();
         result.putAll(activeRequestsByUser);
         return result;
+    }
+
+    @Override
+    public BulkArchivedRequestInfo getArchivedInfo(Subject subject, String rid)
+          throws BulkPermissionDeniedException {
+        List<BulkArchivedRequestInfo> list = archiveDao.get(archiveDao.where().uids(rid), 1);
+        if (list.isEmpty()) {
+            return null;
+        }
+
+        BulkArchivedRequestInfo info = list.get(0);
+
+        if (!Subjects.isRoot(subject) && !Subjects.hasAdminRole(subject) &&
+              !BulkRequestStore.uidGidKey(subject).equals(info.getOwner())) {
+            throw new BulkPermissionDeniedException("Subject does not have "
+                  + "permission to read archived request " + rid);
+        }
+
+        return info;
+    }
+
+    @Override
+    public List<BulkArchivedSummaryInfo> getArchivedSummaryInfo(Subject subject,
+          BulkArchivedSummaryFilter filter) throws BulkStorageException {
+        try {
+            return archiveDao.list(archiveDao.where().fromFilter(filter), filter.getLimit());
+        } catch (ParseException e) {
+           throw new BulkStorageException("problem parsing filter timestamp.", e);
+        }
     }
 
     @Override
@@ -384,7 +425,6 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
     public BulkRequestInfo getRequestInfo(Subject subject, String uid, long offset)
           throws BulkStorageException, BulkPermissionDeniedException {
         LOGGER.trace("getRequestInfo {}, {}.", BulkRequestStore.uidGidKey(subject), uid);
-
         BulkRequest stored = valid(uid);
 
         if (!isRequestSubject(subject, uid)) {
@@ -432,9 +472,14 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
         if (requestSubject.isEmpty()) {
             return false;
         }
-        return Subjects.isRoot(subject) ||
+        return Subjects.isRoot(subject) || Subjects.hasAdminRole(subject) ||
               BulkRequestStore.uidGidKey(subject)
                     .equals(BulkRequestStore.uidGidKey(requestSubject.get()));
+    }
+
+    @Override
+    public void clearCache() throws BulkStorageException {
+        requestCache.invalidateAll();
     }
 
     /**
@@ -479,7 +524,7 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
     }
 
     @Override
-    public void reset(String uid) throws BulkStorageException {
+    public void reset(String uid, boolean skipTerminated) throws BulkStorageException {
         /**
          *  Start from scratch:
          *  - delete ROOT
@@ -493,11 +538,20 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
          */
         LOGGER.trace("reset {}.", uid);
         requestTargetDao.delete(requestTargetDao.where().pids(PID.ROOT.ordinal()).ruids(uid));
-        requestTargetDao.delete(requestTargetDao.where().pids(DISCOVERED.ordinal()).ruids(uid));
-        requestTargetDao.update(requestTargetDao.where().pids(INITIAL.ordinal()).ruids(uid),
-              requestTargetDao.set().state(CREATED).errorType(null).errorMessage(null));
-        requestDao.update(requestDao.where().uids(uid),
-              requestDao.set().status(QUEUED));
+        if (skipTerminated) {
+            requestTargetDao.delete(requestTargetDao.where().pids(DISCOVERED.ordinal()).ruids(uid)
+                  .state(NON_TERMINAL));
+            requestTargetDao.update(requestTargetDao.where().pids(INITIAL.ordinal()).ruids(uid)
+                        .state(NON_TERMINAL),
+                  requestTargetDao.set().state(CREATED).errorType(null).errorMessage(null));
+        } else {
+            requestTargetDao.delete(requestTargetDao.where().pids(DISCOVERED.ordinal()).ruids(uid));
+            requestTargetDao.update(requestTargetDao.where().pids(INITIAL.ordinal()).ruids(uid),
+                  requestTargetDao.set().state(CREATED).errorType(null).errorMessage(null));
+        }
+
+        requestDao.update(requestDao.where().uids(uid), requestDao.set().status(QUEUED));
+
         try {
             requestCache.get(uid).ifPresent(r -> {
                 BulkRequestStatusInfo status = r.getStatusInfo();
@@ -509,6 +563,22 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
         } catch (ExecutionException e) {
             throw new BulkStorageException(e.getMessage(), e.getCause());
         }
+    }
+
+    @Override
+    public int retryFailed() throws BulkStorageException {
+        AtomicInteger count = new AtomicInteger(0);
+        List<String> uids = requestTargetDao.getRequestsOfFailed();
+        for (String uid: uids) {
+            reset(uid, false);
+            count.incrementAndGet();
+        }
+        return count.get();
+    }
+
+    @Required
+    public void setArchiveDao(JdbcBulkArchiveDao archiveDao) {
+        this.archiveDao = archiveDao;
     }
 
     @Required
@@ -564,6 +634,8 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
         try {
             /*
              *  Insertion order: request, permissions, must be maintained.
+             *  Initial insertion status is INCOMPLETE.  This is immediately changed to QUEUED
+             *  after insertion is complete.
              */
             requestDao.insert(
                         requestDao.updateFrom(request, BulkRequestStore.uidGidKey(subject)))
@@ -577,6 +649,8 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
             requestDao.insertArguments(request);
 
             requestTargetDao.insertInitialTargets(request);
+
+            requestDao.update(requestDao.where().unique(request.getId()), requestDao.set().status(QUEUED));
         } catch (BulkStorageException e) {
             throw new BulkStorageException("store failed for " + request.getUid(), e);
         }
@@ -694,6 +768,21 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
         return true;
     }
 
+    /*
+     *  Package so that archiver can call it.
+     */
+    void archiveRequest(BulkRequest request) {
+        BulkArchivedRequestInfo info = new BulkArchivedRequestInfo(request);
+        long nextId = 0;
+
+        do {
+            nextId = processTargets(request.getTargetPrefix(), request.getId(), nextId,
+                  info::addTarget);
+        } while (nextId != NO_FURTHER_ENTRIES);
+
+        archiveDao.insert(info);
+    }
+
     private String checkRequestPermissions(Subject subject, String uid)
           throws BulkPermissionDeniedException, BulkStorageException {
         String key = BulkRequestStore.uidGidKey(subject);
@@ -712,7 +801,8 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
                   + "request has no subject.", uid);
         }
 
-        if (!Subjects.isRoot(subject) && !key.equals(BulkRequestStore.uidGidKey(requestSubject))) {
+        if (!Subjects.isRoot(subject) && !Subjects.hasAdminRole(subject) &&
+              !key.equals(BulkRequestStore.uidGidKey(requestSubject))) {
             throw new BulkPermissionDeniedException(uid);
         }
 
@@ -721,7 +811,7 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
 
     private void conditionallyClearTerminalRequest(BulkRequest stored) {
         Long rid = stored.getId();
-        if (requestTargetDao.count(requestTargetDao.where().rid(rid).state(State.FAILED)) > 0) {
+        if (requestTargetDao.count(requestTargetDao.where().rid(rid).state(FAILED)) > 0) {
             if (stored.isClearOnFailure()) {
                 clear(stored.getUid());
             }
@@ -730,7 +820,11 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
         }
     }
 
+    /*
+     *  We now archive requests on clear.
+     */
     private void clear(BulkRequest request) {
+        archiveRequest(request);
         String uid = request.getUid();
         requestDao.delete(requestDao.where().uids(uid));
         requestCache.invalidate(uid);
@@ -766,11 +860,19 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
         info.setStartedAt(status.getStartedAt());
         info.setTargetPrefix(prefixString);
 
+        List<BulkRequestTargetInfo> targetInfo = new ArrayList<>();
+        info.setNextId(processTargets(prefixString, stored.getId(), offset, t-> targetInfo.add(t)));
+        info.setTargets(targetInfo);
+        return info;
+    }
+
+    private long processTargets(String prefixString, long id, long offset,
+          Consumer<BulkRequestTargetInfo> consumer) {
         /*
-         *  Order by id from offset.  Limit is 10000 per swatch.
+         *  Order by id from offset.  Limit is FETCH_SIZE per swatch.
          */
         List<BulkRequestTarget> targets = new ArrayList<>(requestTargetDao.get(
-              requestTargetDao.where().rid(stored.getId()).offset(offset).notRootRequest()
+              requestTargetDao.where().rid(id).offset(offset).notRootRequest()
                     .sorter("request_target.id"), FETCH_SIZE));
 
         FsPath prefix = Strings.emptyToNull(prefixString) == null ? null
@@ -779,25 +881,25 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
         BulkRequestTarget initial = targets.stream().filter(t -> t.getPid() == INITIAL).findAny()
               .orElse(null);
 
-        boolean stripRecursive = prefix != null && initial != null && !initial.getPath().hasPrefix(prefix);
+        boolean stripRecursive =
+              prefix != null && initial != null && !initial.getPath().hasPrefix(prefix);
 
-        List<BulkRequestTargetInfo> targetInfo = targets.stream()
-              .map(t -> toRequestTargetInfo(t, stripRecursive? prefix : null)).collect(Collectors.toList());
+        targets.stream().map(t -> toRequestTargetInfo(t, stripRecursive ? prefix : null))
+              .forEach(consumer);
 
-        info.setTargets(targetInfo);
         int size = targets.size();
         if (size == FETCH_SIZE) {
-            info.setNextId(targets.get(size - 1).getId() + 1);
+            return (targets.get(size - 1).getId() + 1);
         } else {
-            info.setNextId(NO_FURTHER_ENTRIES);
+            return NO_FURTHER_ENTRIES;
         }
-        return info;
     }
 
     private BulkRequestTargetInfo toRequestTargetInfo(BulkRequestTarget target,  FsPath prefix) {
         BulkRequestTargetInfo info = new BulkRequestTargetInfo();
         info.setId(target.getId());
-        if (prefix != null && target.getPid() == DISCOVERED) {
+        info.setInitial(target.getPid() == INITIAL);
+        if (prefix != null && !info.isInitial()) {
             info.setTarget(target.getPath().stripPrefix(prefix));
         } else {
             info.setTarget(target.getPath().toString());
