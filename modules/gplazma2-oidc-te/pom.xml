@@ -30,14 +30,28 @@
         <version>${project.version}</version>
     </dependency>
     <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+    </dependency>
+    <dependency>
         <groupId>org.dcache</groupId>
         <artifactId>gplazma2-oidc</artifactId>
         <version>${project.version}</version>
     </dependency>
     <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.hamcrest</groupId>
+        <artifactId>hamcrest</artifactId>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>com.github.npathai</groupId>
+        <artifactId>hamcrest-optional</artifactId>
+        <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>
