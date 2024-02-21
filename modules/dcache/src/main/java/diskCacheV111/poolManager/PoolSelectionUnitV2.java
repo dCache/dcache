@@ -102,6 +102,7 @@ public class PoolSelectionUnitV2
                 .build();
     private boolean _useRegex;
     private boolean _allPoolsActive;
+    public  boolean _cachingEnabeled;
 
     /**
      * Ok, this is the critical part of PoolManager, but (!!!) the whole select path is READ-ONLY,
@@ -115,6 +116,12 @@ public class PoolSelectionUnitV2
 
     private final NetHandler _netHandler = new NetHandler();
     private transient PnfsHandler _pnfsHandler;
+
+    public void setCachingEnabeled(boolean cachingEnabeled) {
+        _cachingEnabeled = cachingEnabeled;
+    }
+
+
     @Override
     public Map<String, SelectionLink> getLinks() {
         rlock();
@@ -655,28 +662,36 @@ public class PoolSelectionUnitV2
               type, storeUnitName, dCacheUnitName, netUnitName, protocolUnitName,
               variableMap, storageInfo.locations(), linkGroupName);
 
+
+
         String cacheKey = null;
-        try {
-            Unit unit = _netHandler.match(netUnitName);
-            netUnitGroup = unit._uGroupList.values()
-                  .stream()
-                  .map(UGroup::getName).findFirst().get();
+        if (_cachingEnabeled) {
 
-            LOGGER.debug("this IP address belongs to {} in uGroup {} ", netUnitName, netUnitGroup);
+            try {
+                Unit unit = _netHandler.match(netUnitName);
+                netUnitGroup = unit._uGroupList.values()
+                      .stream()
+                      .map(UGroup::getName).findFirst().get();
+
+                LOGGER.debug("this IP address  belongs to {} in uGroup {} ", netUnitName, netUnitGroup);
 
 
-        } catch (UnknownHostException e) {
-            LOGGER.error("Caching did not work, please check the configuration " + e);
+            } catch (UnknownHostException e) {
+                LOGGER.error("Caching did not work, please check the configuration " + e);
+            }
+
+            cacheKey = type.toString() + storeUnitName + dCacheUnitName +
+                  netUnitGroup + protocolUnitName + linkGroupName;
+
+            PoolPreferenceLevel[] cachedMatchValueTmp = cachedMatchValue.getIfPresent(cacheKey);
+            if (cachedMatchValueTmp != null) {
+                //counter = counter + 1;
+                //System.out.println("counter " + counter);
+                return cachedMatchValueTmp;
+
+            }
         }
 
-        cacheKey = type.toString() + storeUnitName + dCacheUnitName +
-              netUnitGroup + protocolUnitName + linkGroupName;
-
-        PoolPreferenceLevel[] cachedMatchValueTmp = cachedMatchValue.getIfPresent(cacheKey);
-        if (cachedMatchValueTmp != null) {
-            return cachedMatchValueTmp;
-
-        }
         PoolPreferenceLevel[] result = null;
         rlock();
         try {
@@ -699,7 +714,9 @@ public class PoolSelectionUnitV2
         if (LOGGER.isDebugEnabled()) {
             logResult(result);
         }
-        cachedMatchValue.put(cacheKey, result);
+        if (_cachingEnabeled){
+            cachedMatchValue.put(cacheKey, result);
+        }
         return result;
     }
 
@@ -829,6 +846,19 @@ public class PoolSelectionUnitV2
         }
         return linkGroup;
     }
+
+    @Override
+    public PGroup getPoolGroupByName(String pgroup) {
+        PGroup poolGroup = null;
+        rlock();
+        try {
+                poolGroup = _pGroups.get(pgroup);
+            } finally {
+                runlock();
+            }
+        return poolGroup;
+    }
+
 
     private Set<Link> findMatchingLinks(List<Unit> units, LinkGroup linkGroup,
           DirectionType type) {
@@ -1157,7 +1187,7 @@ public class PoolSelectionUnitV2
                     break;
                 default:
                     throw new IllegalArgumentException(
-                          "Syntax error, no such mode: " + mode);
+                          "Syntax error," + " no such mode: " + mode);
             }
         } finally {
             wunlock();
@@ -1531,13 +1561,11 @@ public class PoolSelectionUnitV2
                           + groupName);
                 }
 
-                Object[] result = new Object[5];
+                Object[] result = new Object[4];
                 result[0] = groupName;
                 result[1] = group._poolList.keySet().toArray();
                 result[2] = group._linkList.keySet().toArray();
                 result[3] = group.isPrimary();
-                result[4] = group._pgroupList.stream().sorted(comparing(PGroup::getName))
-                      .map(PGroup::getName).toArray();
                 xlsResult = result;
             }
         } finally {
@@ -2546,18 +2574,6 @@ public class PoolSelectionUnitV2
     }
 
     @Override
-    public PGroup getPoolGroupByName(String pgroup) {
-        PGroup poolGroup = null;
-        rlock();
-        try {
-            poolGroup = _pGroups.get(pgroup);
-        } finally {
-            runlock();
-        }
-        return poolGroup;
-    }
-
-    @Override
     public Collection<SelectionPoolGroup> getPoolGroupsOfPool(String poolName) {
         rlock();
         try {
@@ -2643,8 +2659,11 @@ public class PoolSelectionUnitV2
     }
 
     protected void wlock() {
+
         _psuWriteLock.lock();
-        cachedMatchValue.invalidateAll();
+        if (_cachingEnabeled) {
+            cachedMatchValue.invalidateAll();
+        }
     }
 
     protected void wunlock() {
