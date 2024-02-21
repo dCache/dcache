@@ -62,45 +62,30 @@ public class TokenExchange implements GPlazmaAuthenticationPlugin {
 
     private final static String OIDC_ALLOWED_AUDIENCES = "gplazma.oidc.audience-targets";
 
-    // private final TokenProcessor tokenProcessor;
-    // private final Set<String> audienceTargets;
-
     public TokenExchange (Properties properties) {
         /*
          * enforced by pluggin interface
          */
-        // super(properties);
     }
-
-    // @VisibleForTesting
-    // TokenExchange(Properties properties, TokenProcessor processor) {
-    //     tokenProcessor = processor;
-
-    //     // String targets = properties.getProperty(OIDC_ALLOWED_AUDIENCES);
-    //     // audienceTargets = Set.copyOf(new Args(targets).getArguments());
-    //     super(properties, processor);
-    // }
 
     @Override
     public void authenticate(Set<Object> publicCredentials, Set<Object> privateCredentials,
         Set<Principal> identifiedPrincipals, Set<Restriction> restrictions)
         throws AuthenticationException {
-        // throws Exception {
 
         BearerTokenCredential credential = null;
         for (Object c : privateCredentials) {
             if (c instanceof BearerTokenCredential) {
-                // checkAuthentication(token == null, "Multiple bearer tokens");
 
                 credential = (BearerTokenCredential) c;
                 checkAuthentication(credential == null, "Multiple bearer token credentials");
+
             }
         }
 
         String token = credential.getToken();
         LOG.debug("Found bearer token: {}", token);
 
-        // throw new AuthenticationException("foo: ");
         checkAuthentication(token != null, "No bearer token in the credentials");
         // checkValid(token);
 
@@ -113,29 +98,19 @@ public class TokenExchange implements GPlazmaAuthenticationPlugin {
             exchangedToken = tokenExchange(token);
             checkAuthentication(exchangedToken == null, "Token not exchangeable");
 
-            // goal:
-            // - swap exchanged token with existing token
-            // instead of clear remove original token
-            //privateCredentials.clear();
-            // privateCredentials.remove(new BearerTokenCredential(token));
+            // swap exchanged token with existing token
             privateCredentials.remove(credential);
-
-            // System.out.println("size of credential list:" + privateCredentials.size());
             privateCredentials.add(new BearerTokenCredential(exchangedToken));
 
-        } catch (UnableToProcess | IOException | InterruptedException e) {
-            // System.out.println("Do proper exception handling");
-            // e.printStackTrace();
+        } catch ( IOException e) {
             throw new AuthenticationException("Unable to process token: " + e.getMessage());
         }
 
-        // super.authenticate(publicCredentials, privateCredentials, identifiedPrincipals, restrictions);
     }
 
     @VisibleForTesting
     public String tokenExchange(String token) 
-        throws UnableToProcess, IOException, InterruptedException {
-        // throws Exception {
+        throws IOException {
         
         String result = null;
 
@@ -153,24 +128,19 @@ public class TokenExchange implements GPlazmaAuthenticationPlugin {
             .setHeader("Content-Type", "application/x-www-form-urlencoded")
             .build();
 
-        System.out.println("request:");
-        System.out.println("toString: " + request.toString());
-        System.out.println("headers: " + request.headers());
-        System.out.println("bodyPublisher: " + request.bodyPublisher().toString());
-
         HttpClient client = HttpClient.newHttpClient();
         HttpResponse<String> response = null;
         String response_body = null;
 
         try {
             response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            System.out.println("response:");
-            System.out.println("respone: " + response.toString());
+
+            // System.out.println("respone: " + response.toString());
             // System.out.println("response body: " + response.body());
 
             response_body = response.body();
 
-            System.out.println("response.body(): " + response_body);
+            // System.out.println("response.body(): " + response_body);
 
         } catch (IOException | InterruptedException e) {
             // TODO Auto-generated catch block
@@ -187,7 +157,6 @@ public class TokenExchange implements GPlazmaAuthenticationPlugin {
             throw new IOException("response has no access_token");
         }
 
-        // if (result_json.has("access_token")) {
 
         result = result_json.get("access_token").toString(); 
 
@@ -204,7 +173,6 @@ public class TokenExchange implements GPlazmaAuthenticationPlugin {
                 LOG.debug("Failed to parse token: {}", e.toString());
             }
         }
-        // } 
 
         // TODO Optional.ofNullable
         return result;
