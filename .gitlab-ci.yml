@@ -362,7 +362,7 @@ Generate release notes:
 #
 # prepare kubernetes env for the build
 #
-prepare_k8s_env:
+Prepare k8s environment:
   stage: testenv_pre
   extends: .kubernetes_image
   script:
@@ -372,7 +372,7 @@ prepare_k8s_env:
 #
 # collect all logs
 #
-collect_logs:
+Collect container logs:
   stage: testenv_post
   extends: .kubernetes_image
   when: always
@@ -389,7 +389,7 @@ collect_logs:
 #
 # dispose kubernetes resources
 #
-cleanup_k8s_env:
+Clean k8s environment:
   stage: testenv_post
   extends: .kubernetes_image
   needs:
@@ -401,7 +401,7 @@ cleanup_k8s_env:
 #
 # infrastructure required to run dCache
 #
-deploy_infrastructure:
+Deploy 3rd party infrastructure services:
   stage: test_infra
   extends: .helm_image
   script:
@@ -417,7 +417,7 @@ Add CVMFS Volume:
   script:
     - kubectl -n $K8S_NAMESPACE apply -f .ci/cvmfs-volume-storageclass-pvc.yaml
 
-deploy_dcache_helm:
+Deploy dCache Helm Chart:
   stage: test_deploy
   extends: .helm_image
   script:
@@ -443,7 +443,7 @@ deploy_dcache_helm:
 #
 # More info: https://github.com/cvmfs-contrib/cvmfs-csi/tree/master/docs
 #
-grid_tests:
+Grid EL7 WN tests:
   stage: testing
   extends: .kubernetes_image
   script:
@@ -481,7 +481,7 @@ webdav_with_x509_tests:
     - kubectl -n $K8S_NAMESPACE cp .ci/run-webdav-tests.sh webdav-tester:/run-webdav-tests.sh
     - kubectl -n $K8S_NAMESPACE exec webdav-tester -- /bin/sh /run-webdav-tests.sh
 
-pynfs_tests:
+NFS4.x protocol compliance tests:
   stage: testing
   extends: .kubernetes_image
   script:
