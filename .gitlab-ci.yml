@@ -393,7 +393,7 @@ Clean k8s environment:
   stage: testenv_post
   extends: .kubernetes_image
   needs:
-    - collect_logs
+    - Collect container logs
   when: always
   script:
     - kubectl delete namespace ${K8S_NAMESPACE} --grace-period=1 --ignore-not-found=true
