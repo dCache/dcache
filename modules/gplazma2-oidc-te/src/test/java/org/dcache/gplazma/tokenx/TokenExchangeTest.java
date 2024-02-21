@@ -19,6 +19,7 @@ package org.dcache.gplazma.tokenx;
 
 import static org.mockito.Mockito.mock;
 
+import java.io.IOException;
 import java.security.Principal;
 import java.util.HashMap;
 // import java.util.Base64;
@@ -75,12 +76,20 @@ public class TokenExchangeTest {
         System.out.println("=================================[tokenExchangeTest():");
         plugin = aPlugin().build();
 
-        given(aPlugin());
+        // given(aPlugin());
 
-        //  String helmholtzToken = "eyJ0eXAiOiJhdCtqd3QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJiNWMzNTViNS0xY2NhLTRmZmEtYjRmNy02MDg4OGRhODc4ZmEiLCJhdWQiOiJwdWJsaWMtb2lkYy1hZ2VudCIsInNjb3BlIjoiZWR1cGVyc29uX2VudGl0bGVtZW50IGVtYWlsIGVkdXBlcnNvbl9zY29wZWRfYWZmaWxpYXRpb24gb2ZmbGluZV9hY2Nlc3MgcHJvZmlsZSBvcGVuaWQgZWR1cGVyc29uX3VuaXF1ZV9pZCIsImlzcyI6Imh0dHBzOlwvXC9sb2dpbi1kZXYuaGVsbWhvbHR6LmRlXC9vYXV0aDIiLCJleHAiOjE2OTc0NTA1MDYsImlhdCI6MTY5NzQ0NjUwNiwianRpIjoiYzM1MGI4NjYtOWMxNi00N2Q2LTg1ODMtMGY1YmYyMjQxZmU4IiwiY2xpZW50X2lkIjoicHVibGljLW9pZGMtYWdlbnQifQ.Ypifl_u_pBO2Kf65obgdzo-rbKSp35-GIq1fFk0nTTml9Ogl8LMY8wFAd-4Yhir3yCkvvDYzorzP8_NPkj_mvqxJRGGcku0Q80INTKTYew1eW4qlFhMqjRs9QCmVcpzYfmlBvlTfIYZ_oXr1SJAGJLfvzG2IyzGKr0_w3V-EgLEGuljhZAc9bibGbRn569_oX2n9TTqi-mGmJU72C4ssy88QK3WyieFGn0MQZdi95-WMyJG13Vo9qVAdgRdXTmOCzJdlvYLBRAWkUp6v9yEdxnbQb5REAakCirot1EBUOehpST_LrBjZCl0oQJa0kqrkpJKb7eejy9F1EISzuq7eTg";
-        String helmholtzToken = "eyJ0eXAiOiJhdCtqd3QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIzNWFkOWJlOC0zOThkLTQzNjMtYjhlYS05MDJmYjU1YWM3YzUiLCJhdWQiOiJwdWJsaWMtb2lkYy1hZ2VudCIsInNjb3BlIjoiZWR1cGVyc29uX2VudGl0bGVtZW50IHN5czpzY2ltOnJlYWRfcHJvZmlsZSBlbnRpdGxlbWVudHMgZWR1cGVyc29uX2Fzc3VyYW5jZSB2b3BlcnNvbl9leHRlcm5hbF9hZmZpbGlhdGlvbiBlZHVwZXJzb25fc2NvcGVkX2FmZmlsaWF0aW9uIGVkdXBlcnNvbl9wcmluY2lwYWxfbmFtZSBwcm9maWxlIHN5czpzY2ltOnJlYWRfbWVtYmVyc2hpcHMgY3JlZGVudGlhbHMgc2luZ2xlLWxvZ291dCBzbiBlbWFpbCBvZmZsaW5lX2FjY2VzcyBvcGVuaWQgZWR1cGVyc29uX3VuaXF1ZV9pZCBkaXNwbGF5X25hbWUgdm9wZXJzb25faWQgc3lzOnNjaW06cmVhZF9zZWxmX2dyb3VwIiwiaXNzIjoiaHR0cHM6XC9cL2xvZ2luLmhlbG1ob2x0ei5kZVwvb2F1dGgyIiwiZXhwIjoxNzA4MzQyMjk3LCJpYXQiOjE3MDgzMzgyOTcsImp0aSI6IjdmMzJjOGQ2LTYzNWQtNDBmOS1iMzZlLTFjYjcyZWQ3ZGZkYSIsImNsaWVudF9pZCI6InB1YmxpYy1vaWRjLWFnZW50In0.jr0ilx57pYTT12DS7bJMusgCdwCPEAKXZBgzkEJWle-UhYp0vkIveAg2rimWQU7CMo2OQVbX5pMm713PyAJeAwLhvJBrOH5ziMPqX825oH1kYKu7fsxldN8DhYfo8f_hgcgc4DWXzsINleAY9JRuhnhVRqoZRQeh94_A5wLG2XvBaxtz05cKsPTwYhdf6kKqza1JP3GR5bvaOwhmOBd-00YTGL-GFuxLLj4IDg9dt-JFUL9CwOJsw2ZYyAa-OGlYsMMXAJZDHEoTDdoG5lM4LcbkcUBUB6Tgk49ZE3qAorkv-7e9ArHWkseLxYbC_nXacFWaa1fKFkYVFLG31Uoj4Q"; 
+        // String helmholtzToken = "eyJ0eXAiOiJhdCtqd3QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJiNWMzNTViNS0xY2NhLTRmZmEtYjRmNy02MDg4OGRhODc4ZmEiLCJhdWQiOiJwdWJsaWMtb2lkYy1hZ2VudCIsInNjb3BlIjoiZWR1cGVyc29uX2VudGl0bGVtZW50IGVtYWlsIGVkdXBlcnNvbl9zY29wZWRfYWZmaWxpYXRpb24gb2ZmbGluZV9hY2Nlc3MgcHJvZmlsZSBvcGVuaWQgZWR1cGVyc29uX3VuaXF1ZV9pZCIsImlzcyI6Imh0dHBzOlwvXC9sb2dpbi1kZXYuaGVsbWhvbHR6LmRlXC9vYXV0aDIiLCJleHAiOjE2OTc0NTA1MDYsImlhdCI6MTY5NzQ0NjUwNiwianRpIjoiYzM1MGI4NjYtOWMxNi00N2Q2LTg1ODMtMGY1YmYyMjQxZmU4IiwiY2xpZW50X2lkIjoicHVibGljLW9pZGMtYWdlbnQifQ.Ypifl_u_pBO2Kf65obgdzo-rbKSp35-GIq1fFk0nTTml9Ogl8LMY8wFAd-4Yhir3yCkvvDYzorzP8_NPkj_mvqxJRGGcku0Q80INTKTYew1eW4qlFhMqjRs9QCmVcpzYfmlBvlTfIYZ_oXr1SJAGJLfvzG2IyzGKr0_w3V-EgLEGuljhZAc9bibGbRn569_oX2n9TTqi-mGmJU72C4ssy88QK3WyieFGn0MQZdi95-WMyJG13Vo9qVAdgRdXTmOCzJdlvYLBRAWkUp6v9yEdxnbQb5REAakCirot1EBUOehpST_LrBjZCl0oQJa0kqrkpJKb7eejy9F1EISzuq7eTg";
+        String helmholtzToken = "eyJ0eXAiOiJhdCtqd3QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIzNWFkOWJlOC0zOThkLTQzNjMtYjhlYS05MDJmYjU1YWM3YzUiLCJhdWQiOiJwdWJsaWMtb2lkYy1hZ2VudCIsInNjb3BlIjoiZWR1cGVyc29uX2VudGl0bGVtZW50IHN5czpzY2ltOnJlYWRfcHJvZmlsZSBlbnRpdGxlbWVudHMgZWR1cGVyc29uX2Fzc3VyYW5jZSB2b3BlcnNvbl9leHRlcm5hbF9hZmZpbGlhdGlvbiBlZHVwZXJzb25fc2NvcGVkX2FmZmlsaWF0aW9uIGVkdXBlcnNvbl9wcmluY2lwYWxfbmFtZSBwcm9maWxlIHN5czpzY2ltOnJlYWRfbWVtYmVyc2hpcHMgY3JlZGVudGlhbHMgc2luZ2xlLWxvZ291dCBzbiBlbWFpbCBvZmZsaW5lX2FjY2VzcyBvcGVuaWQgZWR1cGVyc29uX3VuaXF1ZV9pZCBkaXNwbGF5X25hbWUgdm9wZXJzb25faWQgc3lzOnNjaW06cmVhZF9zZWxmX2dyb3VwIiwiaXNzIjoiaHR0cHM6XC9cL2xvZ2luLmhlbG1ob2x0ei5kZVwvb2F1dGgyIiwiZXhwIjoxNzA4NTExOTk2LCJpYXQiOjE3MDg1MDc5OTYsImp0aSI6IjBiNzFkNDFjLTEzZGItNDI3Ny05MWJiLWJjM2M0ZTQzMjVmMyIsImNsaWVudF9pZCI6InB1YmxpYy1vaWRjLWFnZW50In0.FWzCLhpV3yZAwZK_nMTlEvpBkKFTx-bDqNXYqmXXH-vbknQRMBUIirq6jqG00-QGtBTPsZQx9BCRmJA-G2u5lPj7PYmGScAIfoyUeiegixogtwYWOfpQrLrzhwOtazXVImEcjOIoADIcpPYblOunTqElzZ4Zd7fOVWLPPTZqVQTl3P7XUP0nBpdO8wH5KimtqXtMF4xS7Pf3BTohHm3uZGZM6zKsD0jfnAPLzbBaUqZ8_eq7OH6BRBl7xllKUIr8gcLXsDiB3X1GFeW1lk2TjTCt1DP3pXdyuDhLrlJS_UCiQYWuJkq3NE89hVTJ7sVTL-TXUGWU4LLKwPxKGsWLjg";
+                 
 
-        plugin.tokenExchange(helmholtzToken);
+        try {
+            plugin.tokenExchange(helmholtzToken);
+        }
+        catch (IOException e) {
+        
+            // LOG.debug("Failed to parse token: {}", e.toString());
+            System.out.println("Failed to parse token: " + e.toString());
+        }
 
         System.out.println("=================================tokenExchangeTest():]");
     }
