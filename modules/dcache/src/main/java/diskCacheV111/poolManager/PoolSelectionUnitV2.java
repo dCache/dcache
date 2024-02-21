@@ -673,7 +673,7 @@ public class PoolSelectionUnitV2
                       .stream()
                       .map(UGroup::getName).findFirst().get();
 
-                LOGGER.debug("this IP address   belongs to {} in uGroup {} " + netUnitName + netUnitGroup);
+                LOGGER.debug("this IP address  belongs to {} in uGroup {} ", netUnitName, netUnitGroup);
 
 
             } catch (UnknownHostException e) {
@@ -846,6 +846,19 @@ public class PoolSelectionUnitV2
         }
         return linkGroup;
     }
+
+    @Override
+    public PGroup getPoolGroupByName(String pgroup) {
+        PGroup poolGroup = null;
+        rlock();
+        try {
+                poolGroup = _pGroups.get(pgroup);
+            } finally {
+                runlock();
+            }
+        return poolGroup;
+    }
+
 
     private Set<Link> findMatchingLinks(List<Unit> units, LinkGroup linkGroup,
           DirectionType type) {
