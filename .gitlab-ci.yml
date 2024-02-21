@@ -411,6 +411,12 @@ deploy_infrastructure:
     - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait cells bitnami/zookeeper
     - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set externalZookeeper.servers=cells-zookeeper --set kraft.enabled=false billing bitnami/kafka --version 23.0.7
 
+Add CVMFS Volume:
+  stage: test_infra
+  extends: .kubernetes_image
+  script:
+    - kubectl -n $K8S_NAMESPACE apply -f .ci/cvmfs-volume-storageclass-pvc.yaml
+
 deploy_dcache_helm:
   stage: test_deploy
   extends: .helm_image
@@ -441,7 +447,6 @@ grid_tests:
   stage: testing
   extends: .kubernetes_image
   script:
-    - kubectl -n $K8S_NAMESPACE apply -f .ci/cvmfs-volume-storageclass-pvc.yaml
     - kubectl -n $K8S_NAMESPACE apply -f .ci/wn-with-cvmfs.yaml
     - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod grid-tester; do sleep 1; done
     - kubectl -n $K8S_NAMESPACE exec grid-tester -- ls /cvmfs/grid.cern.ch/umd-c7wn-latest/etc/profile.d/setup-c7-wn-example.sh
@@ -458,7 +463,6 @@ gsi_xroot_tests:
   stage: testing
   extends: .kubernetes_image
   script:
-    - kubectl -n $K8S_NAMESPACE apply -f .ci/cvmfs-volume-storageclass-pvc.yaml
     - kubectl -n $K8S_NAMESPACE apply -f .ci/wn-with-cvmfs-xroot.yaml
     - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod xroot-tester; do sleep 1; done
     - kubectl -n $K8S_NAMESPACE exec xroot-tester -- ls /cvmfs/grid.cern.ch/umd-c7wn-latest/etc/profile.d/setup-c7-wn-example.sh
@@ -470,7 +474,6 @@ webdav_with_x509_tests:
   stage: testing
   extends: .kubernetes_image
   script:
-    - kubectl -n $K8S_NAMESPACE apply -f .ci/cvmfs-volume-storageclass-pvc.yaml
     - kubectl -n $K8S_NAMESPACE apply -f .ci/webdav-wn-cvmfs.yaml
     - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod webdav-tester; do sleep 1; done
     - kubectl -n $K8S_NAMESPACE exec webdav-tester -- ls /cvmfs/grid.cern.ch/umd-c7wn-latest/etc/profile.d/setup-c7-wn-example.sh
