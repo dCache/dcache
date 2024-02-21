@@ -362,7 +362,7 @@ Generate release notes:
 #
 # prepare kubernetes env for the build
 #
-prepare_k8s_env:
+Prepare k8s environment:
   stage: testenv_pre
   extends: .kubernetes_image
   script:
@@ -372,7 +372,7 @@ prepare_k8s_env:
 #
 # collect all logs
 #
-collect_logs:
+Collect container logs:
   stage: testenv_post
   extends: .kubernetes_image
   when: always
@@ -389,11 +389,11 @@ collect_logs:
 #
 # dispose kubernetes resources
 #
-cleanup_k8s_env:
+Clean k8s environment:
   stage: testenv_post
   extends: .kubernetes_image
   needs:
-    - collect_logs
+    - Collect container logs
   when: always
   script:
     - kubectl delete namespace ${K8S_NAMESPACE} --grace-period=1 --ignore-not-found=true
@@ -401,7 +401,7 @@ cleanup_k8s_env:
 #
 # infrastructure required to run dCache
 #
-deploy_infrastructure:
+Deploy 3rd party infrastructure services:
   stage: test_infra
   extends: .helm_image
   script:
@@ -411,7 +411,13 @@ deploy_infrastructure:
     - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait cells bitnami/zookeeper
     - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set externalZookeeper.servers=cells-zookeeper --set kraft.enabled=false billing bitnami/kafka --version 23.0.7
 
-deploy_dcache_helm:
+Add CVMFS Volume:
+  stage: test_infra
+  extends: .kubernetes_image
+  script:
+    - kubectl -n $K8S_NAMESPACE apply -f .ci/cvmfs-volume-storageclass-pvc.yaml
+
+Deploy dCache Helm Chart:
   stage: test_deploy
   extends: .helm_image
   script:
@@ -437,11 +443,10 @@ deploy_dcache_helm:
 #
 # More info: https://github.com/cvmfs-contrib/cvmfs-csi/tree/master/docs
 #
-grid_tests:
+Grid EL7 WN tests:
   stage: testing
   extends: .kubernetes_image
   script:
-    - kubectl -n $K8S_NAMESPACE apply -f .ci/cvmfs-volume-storageclass-pvc.yaml
     - kubectl -n $K8S_NAMESPACE apply -f .ci/wn-with-cvmfs.yaml
     - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod grid-tester; do sleep 1; done
     - kubectl -n $K8S_NAMESPACE exec grid-tester -- ls /cvmfs/grid.cern.ch/umd-c7wn-latest/etc/profile.d/setup-c7-wn-example.sh
@@ -458,7 +463,6 @@ gsi_xroot_tests:
   stage: testing
   extends: .kubernetes_image
   script:
-    - kubectl -n $K8S_NAMESPACE apply -f .ci/cvmfs-volume-storageclass-pvc.yaml
     - kubectl -n $K8S_NAMESPACE apply -f .ci/wn-with-cvmfs-xroot.yaml
     - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod xroot-tester; do sleep 1; done
     - kubectl -n $K8S_NAMESPACE exec xroot-tester -- ls /cvmfs/grid.cern.ch/umd-c7wn-latest/etc/profile.d/setup-c7-wn-example.sh
@@ -470,7 +474,6 @@ webdav_with_x509_tests:
   stage: testing
   extends: .kubernetes_image
   script:
-    - kubectl -n $K8S_NAMESPACE apply -f .ci/cvmfs-volume-storageclass-pvc.yaml
     - kubectl -n $K8S_NAMESPACE apply -f .ci/webdav-wn-cvmfs.yaml
     - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod webdav-tester; do sleep 1; done
     - kubectl -n $K8S_NAMESPACE exec webdav-tester -- ls /cvmfs/grid.cern.ch/umd-c7wn-latest/etc/profile.d/setup-c7-wn-example.sh
@@ -478,7 +481,7 @@ webdav_with_x509_tests:
     - kubectl -n $K8S_NAMESPACE cp .ci/run-webdav-tests.sh webdav-tester:/run-webdav-tests.sh
     - kubectl -n $K8S_NAMESPACE exec webdav-tester -- /bin/sh /run-webdav-tests.sh
 
-pynfs_tests:
+NFS4.x protocol compliance tests:
   stage: testing
   extends: .kubernetes_image
   script:
