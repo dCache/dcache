@@ -183,7 +183,7 @@ public final class BulkServiceCommands implements CellCommandListener {
     /**
      * name | class | type | permits
      */
-    private static final String FORMAT_ACTIVITY = "%-20s | %100s | %7s";
+    private static final String FORMAT_ACTIVITY = "%-20s | %100s | %7s | %10s";
 
     /**
      * name | required | description
@@ -328,7 +328,7 @@ public final class BulkServiceCommands implements CellCommandListener {
             subject = Optional.empty();
         }
 
-        String user = subject.isPresent() ? BulkRequestStore.uidGidKey(subject.get()) : "?";
+        String user = subject.map(BulkRequestStore::uidGidKey).orElse("?");
 
         long arrivalTime = 0L;
         long modifiedTime = 0L;
@@ -807,7 +807,7 @@ public final class BulkServiceCommands implements CellCommandListener {
             configureFilters();
             List<String> uids = requestUids();
             StringBuilder requests = new StringBuilder();
-            uids.stream().forEach(id -> requests.append("\t").append(id).append("\n"));
+            uids.forEach(id -> requests.append("\t").append(id).append("\n"));
 
             for (String id : uids) {
                 try {
@@ -844,7 +844,7 @@ public final class BulkServiceCommands implements CellCommandListener {
             List<String> targetPaths = List.of(path);
             requestManager.cancelTargets(rid, targetPaths);
             return "Request " + rid + ", cancelled: \n"
-                  + targetPaths.stream().collect(Collectors.joining("\n"));
+                  + String.join("\n", targetPaths);
         }
     }
 
@@ -989,9 +989,8 @@ public final class BulkServiceCommands implements CellCommandListener {
                 case FULL:
                     partialResult =
                           String.format(FORMAT_REQUEST_FULL, "ID", "ARRIVED", "STARTED",
-                                "MODIFIED", "OWNER", "ACTIVITY", "DEPTH", "STATUS", "PRESTORE",
-                                "URL PREF",
-                                "UID") + "\n" + requests;
+                                "MODIFIED", "OWNER", "ACTIVITY", "DEPTH", "STATUS",
+                                "URL PREF", "UID") + "\n" + requests;
                     break;
                 case TARGET:
                     partialResult = String.format(FORMAT_REQUEST_TARGET, "URL PREF", "ID", "TARGET")
