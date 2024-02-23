@@ -1,38 +1,32 @@
 package org.dcache.gplazma.tokenx;
 
+import static java.util.Objects.requireNonNull;
+import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
+
 import java.io.IOException;
-import java.security.Principal;
-import java.time.Instant;
-import java.util.Enumeration;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.Set;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.BodyPublishers;
-import java.net.http.HttpResponse;
+import java.net.URISyntaxException;
+import java.security.Principal;
+import java.util.Set;
 
-import org.json.JSONObject;
-
+import org.apache.http.HttpEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
 import org.dcache.auth.BearerTokenCredential;
-import org.dcache.auth.UserNamePrincipal;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.oidc.OidcAuthPlugin;
-import org.dcache.gplazma.oidc.TokenProcessor;
-import org.dcache.gplazma.oidc.UnableToProcess;
 import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
-import org.dcache.gplazma.plugins.GPlazmaMappingPlugin;
 import org.dcache.gplazma.util.JsonWebToken;
-import org.dcache.util.Args;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.annotations.VisibleForTesting;
-
-// import static org.dcache.gplazma.oidc.OidcAuthPlugin.OIDC_ALLOWED_AUDIENCES;
-import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 
 // public class TokenExchange extends OidcAuthPlugin {
@@ -62,10 +56,19 @@ public class TokenExchange implements GPlazmaAuthenticationPlugin {
 
     private final static String OIDC_ALLOWED_AUDIENCES = "gplazma.oidc.audience-targets";
 
-    public TokenExchange (Properties properties) {
+    private final CloseableHttpClient client;
+
+    // public TokenExchange (Properties properties) {
+    public TokenExchange () {
         /*
          * enforced by pluggin interface
          */
+        // this.client = HttpClient.newHttpClient(); 
+        this.client = HttpClients.createDefault();
+    }
+
+    public TokenExchange (CloseableHttpClient client) {
+        this.client = requireNonNull(client);
     }
 
     @Override
@@ -92,82 +95,76 @@ public class TokenExchange implements GPlazmaAuthenticationPlugin {
         String exchangedToken = null;
 
         try {
-            // trace
-            System.out.println("calling method: tokenExchange()");
             
             exchangedToken = tokenExchange(token);
-            checkAuthentication(exchangedToken == null, "Token not exchangeable");
+            // checkAuthentication(exchangedToken == null, "Token not exchangeable");
 
             // swap exchanged token with existing token
             privateCredentials.remove(credential);
             privateCredentials.add(new BearerTokenCredential(exchangedToken));
 
-        } catch ( IOException e) {
+        } catch ( IOException | URISyntaxException e ) {
             throw new AuthenticationException("Unable to process token: " + e.getMessage());
         }
 
     }
 
+
     @VisibleForTesting
-    public String tokenExchange(String token) 
-        throws IOException {
-        
-        String result = null;
-
+    public String tokenExchange(String token) throws IOException, URISyntaxException {
         String postBody = "client_id=" + CLIENT_ID
-            + "&client_secret=" +  CLIENT_SECRET
-            + "&grant_type=" + GRANT_TYPE
-            + "&subject_token=" + token
-            + "&subject_issuer=" + SUBJECT_ISSUER
-            + "&subject_token_type=" + SUBJECT_TOKEN_TYPE
-            + "&audience=" + AUDIENCE;
+                + "&client_secret=" + CLIENT_SECRET
+                + "&grant_type=" + GRANT_TYPE
+                + "&subject_token=" + token
+                + "&subject_issuer=" + SUBJECT_ISSUER
+                + "&subject_token_type=" + SUBJECT_TOKEN_TYPE
+                + "&audience=" + AUDIENCE;
+    
+        URI uri = new URIBuilder(TOKEN_EXCHANGE_URL).build();
+        HttpPost httpPost = new HttpPost(uri);
+    
+        // Set headers
+        httpPost.setHeader("Content-Type", "application/x-www-form-urlencoded");
+    
+        // Set request body
+        StringEntity stringEntity = new StringEntity(postBody);
+        httpPost.setEntity(stringEntity);
+    
+        String responseBody = null;
 
-        HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create(TOKEN_EXCHANGE_URL))
-            .POST(BodyPublishers.ofString(postBody))
-            .setHeader("Content-Type", "application/x-www-form-urlencoded")
-            .build();
-
-        HttpClient client = HttpClient.newHttpClient();
-        HttpResponse<String> response = null;
-        String response_body = null;
-
-        try {
-            response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-            // System.out.println("respone: " + response.toString());
-            // System.out.println("response body: " + response.body());
-
-            response_body = response.body();
-
-            // System.out.println("response.body(): " + response_body);
-
-        } catch (IOException | InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-            LOG.debug("Failed to send/receive request to Idp: {}", e.toString());
+        try (CloseableHttpClient httpClient = HttpClients.createDefault();
+             CloseableHttpResponse response = httpClient.execute(httpPost)) {
+    
+            HttpEntity responseEntity = response.getEntity();
+            responseBody = EntityUtils.toString(responseEntity);
+    
+            // Handle the response as needed
+            System.out.println("Response: " + response);
+            System.out.println("Response body: " + responseBody);
+    
+            // return responseBody;
         }
-
 
         // extract access_token from result:
 
-        JSONObject result_json = new JSONObject(response_body);
+        String result = null;
+        JSONObject result_json = new JSONObject(responseBody);
 
         if (!result_json.has("access_token")) {
             throw new IOException("response has no access_token");
         }
 
-
         result = result_json.get("access_token").toString(); 
 
-        System.out.println("Access Token:");
-        System.out.println(result);
+        // System.out.println("Exchanged Access Token: " + result);
+        LOG.debug("Exchanged Access Token: {}", result);
 
         if (JsonWebToken.isCompatibleFormat(result)) {
             try {
                 JsonWebToken jwt = new JsonWebToken(result);
 
-                System.out.println("issuer: " + jwt.getPayloadString("iss"));
+                // System.out.println("Found issuer: " + jwt.getPayloadString("iss"));
+                LOG.debug("Found issuer: {}", jwt.getPayloadString("iss"));
         
             } catch (IOException e) {
                 LOG.debug("Failed to parse token: {}", e.toString());
@@ -177,5 +174,4 @@ public class TokenExchange implements GPlazmaAuthenticationPlugin {
         // TODO Optional.ofNullable
         return result;
     }
-
 }

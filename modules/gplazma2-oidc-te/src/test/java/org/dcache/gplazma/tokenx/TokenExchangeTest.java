@@ -17,70 +17,110 @@
  */
 package org.dcache.gplazma.tokenx;
 
-// import static org.mockito.Mockito.mock;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-// import java.security.Principal;
-// import java.util.HashMap;
-// import java.util.Base64;
-// import java.util.HashSet;
-// import java.util.Map;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Properties;
-// import java.util.Set;
-// import java.net.URI;
-// import java.net.http.HttpClient;
-// import java.net.http.HttpRequest;
-// import java.net.http.HttpRequest.BodyPublishers;
-// import java.net.http.HttpResponse;
 
-// import org.dcache.auth.attributes.Restriction;
-// import org.dcache.auth.BearerTokenCredential;
-// import org.dcache.gplazma.AuthenticationException;
-// import org.dcache.gplazma.oidc.ExtractResult;
-// import org.dcache.gplazma.oidc.IdentityProvider;
-// import org.dcache.gplazma.oidc.MockIdentityProviderBuilder;
-// import org.dcache.gplazma.oidc.TokenProcessor;
-// import org.dcache.gplazma.oidc.UnableToProcess;
-// import org.dcache.gplazma.oidc.OidcAuthPluginTest;
-// import org.junit.Before;
+import org.apache.http.HttpEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.util.EntityUtils;
 import org.junit.Test;
-// import org.mockito.ArgumentMatchers;
-// import org.mockito.BDDMockito;
-
-// import static org.dcache.gplazma.oidc.MockIdentityProviderBuilder.anIP;
-
-// import com.fasterxml.jackson.core.JsonProcessingException;
-// import com.fasterxml.jackson.databind.JsonNode;
-// import com.fasterxml.jackson.databind.ObjectMapper;
-
-// import static com.google.common.base.Preconditions.checkState;
+import org.mockito.Mockito;
 
 public class TokenExchangeTest {
 
     private TokenExchange plugin; 
 
+    // private final HttpClient client = mock(HttpClient.class);
+
+    @Test
+    public void testWithMock() throws IOException, InterruptedException, URISyntaxException {
+
+        System.out.println("=================================[testWithMock():");
+        CloseableHttpResponse mockResponse = Mockito.mock(CloseableHttpResponse.class);
+
+        // Define the behavior of the mock object to return a StringEntity with your JSON content
+        String jsonContent = "{\"key\": \"value\"}";
+        HttpEntity entity = new StringEntity(jsonContent);
+        Mockito.when(mockResponse.getEntity()).thenReturn(entity);
+        
+
+        // Mock HttpClient behavior
+        CloseableHttpClient mockClient = mock(CloseableHttpClient.class);
+
+        when(mockClient.execute(any()))
+                .thenReturn(mockResponse);
+
+
+        String postBody = "client_id="
+                + "&client_secret=test"
+                + "&grant_type=test"
+                + "&subject_token=test"
+                + "&subject_issuer=test"
+                + "&subject_token_type=test"
+                + "&audience=test";
+    
+        URI uri = new URIBuilder("http://example.org").build();
+
+        HttpPost httpPost = new HttpPost(uri);
+    
+        // Set headers
+        httpPost.setHeader("Content-Type", "application/x-www-form-urlencoded");
+    
+        // Set request body
+        StringEntity stringEntity = new StringEntity(postBody);
+        httpPost.setEntity(stringEntity);
+
+        String responseBody = null;
+
+        try (CloseableHttpResponse response = mockClient.execute(httpPost)) {
+    
+            HttpEntity responseEntity = response.getEntity();
+            responseBody = EntityUtils.toString(responseEntity);
+    
+            // Handle the response as needed
+            System.out.println("Response: " + response);
+            System.out.println("Response body: " + responseBody);
+    
+            // return responseBody;
+        }
+
+        System.out.println("=================================testWithMock():]");
+    }
+
     @Test(expected=IOException.class)
-    public void shouldFailWithIllegalToken() throws Exception {
+    public void shouldFailWithInvalidToken() throws Exception {
+        // plugin = new TokenExchange();
         plugin = aPlugin().build();
 
-        String helmholtzToken = "";
-                 
-        String result = plugin.tokenExchange(helmholtzToken); 
+
+        plugin.tokenExchange("InvalidToken"); 
+        
     }
 
     @Test
     public void tokenExchangeTest() throws Exception {
 
         System.out.println("=================================[tokenExchangeTest():");
+        // plugin = new TokenExchange();
         plugin = aPlugin().build();
 
         // String helmholtzToken = "eyJ0eXAiOiJhdCtqd3QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJiNWMzNTViNS0xY2NhLTRmZmEtYjRmNy02MDg4OGRhODc4ZmEiLCJhdWQiOiJwdWJsaWMtb2lkYy1hZ2VudCIsInNjb3BlIjoiZWR1cGVyc29uX2VudGl0bGVtZW50IGVtYWlsIGVkdXBlcnNvbl9zY29wZWRfYWZmaWxpYXRpb24gb2ZmbGluZV9hY2Nlc3MgcHJvZmlsZSBvcGVuaWQgZWR1cGVyc29uX3VuaXF1ZV9pZCIsImlzcyI6Imh0dHBzOlwvXC9sb2dpbi1kZXYuaGVsbWhvbHR6LmRlXC9vYXV0aDIiLCJleHAiOjE2OTc0NTA1MDYsImlhdCI6MTY5NzQ0NjUwNiwianRpIjoiYzM1MGI4NjYtOWMxNi00N2Q2LTg1ODMtMGY1YmYyMjQxZmU4IiwiY2xpZW50X2lkIjoicHVibGljLW9pZGMtYWdlbnQifQ.Ypifl_u_pBO2Kf65obgdzo-rbKSp35-GIq1fFk0nTTml9Ogl8LMY8wFAd-4Yhir3yCkvvDYzorzP8_NPkj_mvqxJRGGcku0Q80INTKTYew1eW4qlFhMqjRs9QCmVcpzYfmlBvlTfIYZ_oXr1SJAGJLfvzG2IyzGKr0_w3V-EgLEGuljhZAc9bibGbRn569_oX2n9TTqi-mGmJU72C4ssy88QK3WyieFGn0MQZdi95-WMyJG13Vo9qVAdgRdXTmOCzJdlvYLBRAWkUp6v9yEdxnbQb5REAakCirot1EBUOehpST_LrBjZCl0oQJa0kqrkpJKb7eejy9F1EISzuq7eTg";
-        String helmholtzToken = "eyJ0eXAiOiJhdCtqd3QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIzNWFkOWJlOC0zOThkLTQzNjMtYjhlYS05MDJmYjU1YWM3YzUiLCJhdWQiOiJwdWJsaWMtb2lkYy1hZ2VudCIsInNjb3BlIjoiZWR1cGVyc29uX2VudGl0bGVtZW50IHN5czpzY2ltOnJlYWRfcHJvZmlsZSBlbnRpdGxlbWVudHMgZWR1cGVyc29uX2Fzc3VyYW5jZSB2b3BlcnNvbl9leHRlcm5hbF9hZmZpbGlhdGlvbiBlZHVwZXJzb25fc2NvcGVkX2FmZmlsaWF0aW9uIGVkdXBlcnNvbl9wcmluY2lwYWxfbmFtZSBwcm9maWxlIHN5czpzY2ltOnJlYWRfbWVtYmVyc2hpcHMgY3JlZGVudGlhbHMgc2luZ2xlLWxvZ291dCBzbiBlbWFpbCBvZmZsaW5lX2FjY2VzcyBvcGVuaWQgZWR1cGVyc29uX3VuaXF1ZV9pZCBkaXNwbGF5X25hbWUgdm9wZXJzb25faWQgc3lzOnNjaW06cmVhZF9zZWxmX2dyb3VwIiwiaXNzIjoiaHR0cHM6XC9cL2xvZ2luLmhlbG1ob2x0ei5kZVwvb2F1dGgyIiwiZXhwIjoxNzA4NTExOTk2LCJpYXQiOjE3MDg1MDc5OTYsImp0aSI6IjBiNzFkNDFjLTEzZGItNDI3Ny05MWJiLWJjM2M0ZTQzMjVmMyIsImNsaWVudF9pZCI6InB1YmxpYy1vaWRjLWFnZW50In0.FWzCLhpV3yZAwZK_nMTlEvpBkKFTx-bDqNXYqmXXH-vbknQRMBUIirq6jqG00-QGtBTPsZQx9BCRmJA-G2u5lPj7PYmGScAIfoyUeiegixogtwYWOfpQrLrzhwOtazXVImEcjOIoADIcpPYblOunTqElzZ4Zd7fOVWLPPTZqVQTl3P7XUP0nBpdO8wH5KimtqXtMF4xS7Pf3BTohHm3uZGZM6zKsD0jfnAPLzbBaUqZ8_eq7OH6BRBl7xllKUIr8gcLXsDiB3X1GFeW1lk2TjTCt1DP3pXdyuDhLrlJS_UCiQYWuJkq3NE89hVTJ7sVTL-TXUGWU4LLKwPxKGsWLjg";
-                 
+        String token = "eyJ0eXAiOiJhdCtqd3QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIzNWFkOWJlOC0zOThkLTQzNjMtYjhlYS05MDJmYjU1YWM3YzUiLCJhdWQiOiJwdWJsaWMtb2lkYy1hZ2VudCIsInNjb3BlIjoiZWR1cGVyc29uX2VudGl0bGVtZW50IHN5czpzY2ltOnJlYWRfcHJvZmlsZSBlbnRpdGxlbWVudHMgZWR1cGVyc29uX2Fzc3VyYW5jZSB2b3BlcnNvbl9leHRlcm5hbF9hZmZpbGlhdGlvbiBlZHVwZXJzb25fc2NvcGVkX2FmZmlsaWF0aW9uIGVkdXBlcnNvbl9wcmluY2lwYWxfbmFtZSBwcm9maWxlIHN5czpzY2ltOnJlYWRfbWVtYmVyc2hpcHMgY3JlZGVudGlhbHMgc2luZ2xlLWxvZ291dCBzbiBlbWFpbCBvZmZsaW5lX2FjY2VzcyBvcGVuaWQgZWR1cGVyc29uX3VuaXF1ZV9pZCBkaXNwbGF5X25hbWUgdm9wZXJzb25faWQgc3lzOnNjaW06cmVhZF9zZWxmX2dyb3VwIiwiaXNzIjoiaHR0cHM6XC9cL2xvZ2luLmhlbG1ob2x0ei5kZVwvb2F1dGgyIiwiZXhwIjoxNzA4Njk3OTg1LCJpYXQiOjE3MDg2OTM5ODUsImp0aSI6ImQwOGU4OWVhLTM1OWItNGFmMC04YTk3LTFhNzJkODljZTc5NSIsImNsaWVudF9pZCI6InB1YmxpYy1vaWRjLWFnZW50In0.CKF_BJcQoXDYhREsLqPDznuLbQdqMfJpjBL7XuLL9GEYGPKJrouUFL-v3jMZoB2YqlUqAr-Dhl_X-KyQwLtEi1Xl7kvs8s8k0ZsYYV7INLZ9P4_41sxkh2LDE4nQuVfW_gUYFXsQb5dD6i4X7kbfdaMsNloA1GYP-pYPF15sOTtqKCXcmm_nBFFe6tJKkvE7rV75mCoEP-viTRRavsKxiuKVVQM_M_VqiZUX5J9ppGys4NwmANwVZuY57leoaDo6CFDxxt8A6MhdJ45cjUBd8Ls-iQf8sq5J8uNV4rIvuR1xapCDTuis9kw2ns60TIQupl0ZYOR_CCv_-K3qeqVdgA";
+
         String result = null;
 
         try {
-            result = plugin.tokenExchange(helmholtzToken);
+            result = plugin.tokenExchange(token);
         }
         catch (IOException e) {
         
@@ -110,7 +150,8 @@ public class TokenExchangeTest {
         }
 
         public TokenExchange build() {
-            return new TokenExchange(properties);
+            // return new TokenExchange(properties);
+            return new TokenExchange();
         }
     }
 
