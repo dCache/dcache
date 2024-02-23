@@ -18,6 +18,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,11 +42,6 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>,
      */
     private static final long METADATA_FLUSH_THRESHOLD = 3600000; // 1 hour
     private static final long METADATA_FLUSH_PERIOD = 600000; // 10 minutes
-
-    /**
-     * Our default timeout for sending messages, in milliseconds
-     */
-    private static final long STANDARD_TIMEOUT = 1000;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageHandlerChain.class);
     private final List<MessageHandler> _messageHandler = new LinkedList<>();
@@ -83,18 +79,19 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>,
      * @param ttl           lifetime of resulting metric, in seconds.
      * @param handler       the call-back handler for the return message
      * @param path          the CellPath to target cell
+     * @param timeout       the time to wait for a response, in milliseconds
      * @param requestString the String, requesting information
      */
     @Override
     public void sendMessage(long ttl, CellMessageAnswerable handler,
-          CellPath path, String requestString) {
+          CellPath path, long timeout, String requestString) {
         if (handler == null) {
             LOGGER.error("ignoring attempt to send string-based message without call-back");
             return;
         }
 
         CellMessage envelope = new CellMessage(path, requestString);
-        sendMessage(ttl, handler, envelope);
+        sendMessage(ttl, handler, timeout, envelope);
     }
 
 
@@ -103,12 +100,13 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>,
      *
      * @param ttl     lifetime of resulting metric, in seconds.
      * @param path    the CellPath for the recipient of this message
+     * @param timeout the time to wait for a response, in milliseconds
      * @param message the Message payload
      */
     @Override
-    public void sendMessage(long ttl, CellPath path, Message message) {
+    public void sendMessage(long ttl, CellPath path, long timeout, Message message) {
         CellMessage envelope = new CellMessage(path, message);
-        sendMessage(ttl, null, envelope);
+        sendMessage(ttl, null, timeout, envelope);
     }
 
 
@@ -117,15 +115,16 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>,
      *
      * @param ttl      the metadata for the message
      * @param handler  the call-back for this method, or null if none should be used.
+     * @param timeout  the time to wait for a response, in milliseconds
      * @param envelope the message to send
      * @throws SerializationException if the payload isn't serialisable.
      */
     @Override
     public void sendMessage(long ttl, CellMessageAnswerable handler,
-          CellMessage envelope) throws SerializationException {
+          long timeout, CellMessage envelope) throws SerializationException {
         putMetricTTL(envelope.getUOID(), ttl);
         _endpoint.sendMessage(envelope, handler != null ? handler : this,
-              MoreExecutors.directExecutor(), STANDARD_TIMEOUT);
+              MoreExecutors.directExecutor(), timeout);
     }
 
     public void setHandlers(List<MessageHandler> handlers) {
