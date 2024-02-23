@@ -78,9 +78,11 @@ public class SingleMessageDga extends SkelPeriodicActivity {
         super.trigger();
 
         if (_requestMessage != null) {
-            _sender.sendMessage(metricLifetime(), null, new CellMessage(_target, _requestMessage));
+            _sender.sendMessage(metricLifetime(), null, triggerPeriod(),
+                    new CellMessage(_target, _requestMessage));
         } else {
-            _sender.sendMessage(metricLifetime(), _handler, _target, _requestString);
+            _sender.sendMessage(metricLifetime(), _handler, _target,
+                    triggerPeriod(), _requestString);
         }
     }
 

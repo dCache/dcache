@@ -48,7 +48,8 @@ public class LinkgroupListDga extends SkelPeriodicActivity {
     public void trigger() {
         super.trigger();
         LOGGER.trace("Sending linkgroup list request message");
-        _mhc.sendMessage(_metricLifetime, _spacemanager, new GetLinkGroupNamesMessage());
+        _mhc.sendMessage(_metricLifetime, _spacemanager, triggerPeriod(),
+                new GetLinkGroupNamesMessage());
     }
 
 

@@ -66,7 +66,8 @@ public class RoutingMgrDga extends SkelListBasedActivity {
         CellPath routingMgrCellPath = new CellPath("RoutingMgr", domainName);
 
         LOGGER.info("sending message to RoutingMgr cell on domain {}", domainName);
-        _sender.sendMessage(getMetricLifetime(), _handler, routingMgrCellPath, "ls -x");
+        _sender.sendMessage(getMetricLifetime(), _handler, routingMgrCellPath,
+                listRefreshPeriod(), "ls -x");
     }
 
     /**

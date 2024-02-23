@@ -95,7 +95,7 @@ public class MessageHandlerChainAsMessageSenderTests {
         };
         CellMessage msg = new CellMessage(dest, obj);
 
-        _sender.sendMessage(10, new CactusCellMessageAnswerable(), msg);
+        _sender.sendMessage(10, new CactusCellMessageAnswerable(), 1000, msg);
 
         List<CellMessage> sentMsgs = _endpoint.getSentMessages();
 
@@ -112,7 +112,7 @@ public class MessageHandlerChainAsMessageSenderTests {
         CellPath dest = new CellPath("test-cell", "test-domain");
         Message vehicle = new Message();
 
-        _sender.sendMessage(10, dest, vehicle);
+        _sender.sendMessage(10, dest, 1000, vehicle);
 
         List<CellMessage> sentMsgs = _endpoint.getSentMessages();
 
@@ -129,7 +129,7 @@ public class MessageHandlerChainAsMessageSenderTests {
         CellPath dest = new CellPath("test-cell", "test-domain");
         String request = "get all data";
 
-        _sender.sendMessage(10, new CactusCellMessageAnswerable(), dest, request);
+        _sender.sendMessage(10, new CactusCellMessageAnswerable(), dest, 1000, request);
 
         List<CellMessage> sentMsgs = _endpoint.getSentMessages();
 

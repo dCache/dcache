@@ -28,6 +28,14 @@ public class SkelPeriodicActivity implements Schedulable {
                     _period)));
     }
 
+    /**
+     * The duration between successive triggers.
+     * @return duration in milliseconds.
+     */
+    public long triggerPeriod() {
+        return TimeUnit.SECONDS.toMillis(_period);
+    }
+
     @Override
     public Date shouldNextBeTriggered() {
         return new Date(_nextTrigger.getTime());
