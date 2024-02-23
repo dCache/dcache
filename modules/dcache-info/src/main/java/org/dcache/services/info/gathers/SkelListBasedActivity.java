@@ -1,5 +1,7 @@
 package org.dcache.services.info.gathers;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Date;
 import java.util.Set;
 import java.util.Stack;
@@ -56,6 +58,11 @@ public abstract class SkelListBasedActivity implements Schedulable {
     private Date _whenListRefresh;
 
     /**
+     * The current time between successive bursts of messages, in milliseconds.
+     */
+    private long _listRefreshPeriod;
+
+    /**
      * When we should next send a message
      */
     private Date _nextSendMsg = new Date();
@@ -110,6 +117,7 @@ public abstract class SkelListBasedActivity implements Schedulable {
         updateStack();  // Bring in initial work.
 
         _minimumListRefreshPeriod = minimumListRefreshPeriod;
+        _listRefreshPeriod = _minimumListRefreshPeriod;
         _successiveMsgDelay = successiveMsgDelay;
 
         randomiseDelay();  // Randomise our initial offset.
@@ -158,16 +166,23 @@ public abstract class SkelListBasedActivity implements Schedulable {
          *  Calculate the earliest we would like to do this again.
          */
         long timeToSendAllMsgs = _outstandingWork.size() * _successiveMsgDelay;
-        long listRefreshPeriod = Math.max(timeToSendAllMsgs, _minimumListRefreshPeriod);
+        _listRefreshPeriod = Math.max(timeToSendAllMsgs, _minimumListRefreshPeriod);
 
-        _whenListRefresh = new Date(System.currentTimeMillis() + listRefreshPeriod);
+        _whenListRefresh = new Date(System.currentTimeMillis() + _listRefreshPeriod);
 
         /**
          *  All metrics that are generated should have a lifetime based on when we expect
          *  to refresh the list and generate more metrics.
          *  The 2.5 factor allows for both 50% growth and a message being lost.
          */
-        _metricLifetime = (long) (2.5 * listRefreshPeriod / 1000.0);
+        _metricLifetime = (long) (2.5 * _listRefreshPeriod / 1000.0);
+    }
+
+    /**
+     * The number of second between bursts of messages, in milliseconds.
+     */
+    public long listRefreshPeriod() {
+        return _listRefreshPeriod;
     }
 
 

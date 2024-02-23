@@ -51,7 +51,7 @@ public class StaticDomainDga extends SkelListBasedActivity {
                   COMMAND, domain);
 
             _sender.sendMessage(getMetricLifetime(), _handler, path,
-                  COMMAND);
+                  listRefreshPeriod(), COMMAND);
         }
     }
 

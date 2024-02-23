@@ -69,7 +69,8 @@ public class ListBasedMessageDga extends SkelListBasedActivity {
         sb.append(" ");
         sb.append(item);
 
-        _sender.sendMessage(getMetricLifetime(), _handler, _cellPath, sb.toString());
+        _sender.sendMessage(getMetricLifetime(), _handler, _cellPath,
+                listRefreshPeriod(), sb.toString());
     }
 
     @Override
