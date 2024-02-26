@@ -58,11 +58,9 @@
 
       <!-- Fix up Axis auto-generated code -->
       <plugin>
-       <groupId>org.apache.maven.plugins</groupId>
-       <artifactId>maven-patch-plugin</artifactId>
-
+       <groupId>io.github.lukasmansour</groupId>
+       <artifactId>patch-maven-plugin</artifactId>
        <configuration>
-         <naturalOrderProcessing>true</naturalOrderProcessing>
          <patchDirectory>src/main/patches</patchDirectory>
          <targetDirectory>target/generated-sources/axistools/wsdl2java</targetDirectory>
        </configuration>
