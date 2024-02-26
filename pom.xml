@@ -1218,9 +1218,9 @@
                     <version>1.4</version>
                 </plugin>
                 <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-patch-plugin</artifactId>
-                    <version>1.2</version>
+                    <groupId>io.github.lukasmansour</groupId>
+                    <artifactId>patch-maven-plugin</artifactId>
+                    <version>1.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.jacoco</groupId>
