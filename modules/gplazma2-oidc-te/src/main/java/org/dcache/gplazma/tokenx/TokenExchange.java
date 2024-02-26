@@ -64,10 +64,13 @@ public class TokenExchange implements GPlazmaAuthenticationPlugin {
          * enforced by pluggin interface
          */
         // this.client = HttpClient.newHttpClient(); 
+        // System.out.println("==============TokenExchange()");
         this.client = HttpClients.createDefault();
     }
 
+    @VisibleForTesting
     public TokenExchange (CloseableHttpClient client) {
+        // System.out.println("==============TokenExchange(client)");
         this.client = requireNonNull(client);
     }
 
@@ -132,8 +135,9 @@ public class TokenExchange implements GPlazmaAuthenticationPlugin {
     
         String responseBody = null;
 
-        try (CloseableHttpClient httpClient = HttpClients.createDefault();
-             CloseableHttpResponse response = httpClient.execute(httpPost)) {
+        // try (CloseableHttpClient httpClient = HttpClients.createDefault();
+        //      CloseableHttpResponse response = httpClient.execute(httpPost)) {
+        try (CloseableHttpResponse response = this.client.execute(httpPost)) {
     
             HttpEntity responseEntity = response.getEntity();
             responseBody = EntityUtils.toString(responseEntity);
