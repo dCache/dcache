@@ -29,7 +29,6 @@ import org.slf4j.LoggerFactory;
 import com.google.common.annotations.VisibleForTesting;
 
 
-// public class TokenExchange extends OidcAuthPlugin {
 public class TokenExchange implements GPlazmaAuthenticationPlugin {
 
     private final static Logger LOG = LoggerFactory.getLogger(TokenExchange.class);
@@ -58,19 +57,12 @@ public class TokenExchange implements GPlazmaAuthenticationPlugin {
 
     private final CloseableHttpClient client;
 
-    // public TokenExchange (Properties properties) {
     public TokenExchange () {
-        /*
-         * enforced by pluggin interface
-         */
-        // this.client = HttpClient.newHttpClient(); 
-        // System.out.println("==============TokenExchange()");
         this.client = HttpClients.createDefault();
     }
 
     @VisibleForTesting
     public TokenExchange (CloseableHttpClient client) {
-        // System.out.println("==============TokenExchange(client)");
         this.client = requireNonNull(client);
     }
 
@@ -93,16 +85,11 @@ public class TokenExchange implements GPlazmaAuthenticationPlugin {
         LOG.debug("Found bearer token: {}", token);
 
         checkAuthentication(token != null, "No bearer token in the credentials");
-        // checkValid(token);
 
         String exchangedToken = null;
 
         try {
-            
             exchangedToken = tokenExchange(token);
-            // checkAuthentication(exchangedToken == null, "Token not exchangeable");
-
-            // swap exchanged token with existing token
             privateCredentials.remove(credential);
             privateCredentials.add(new BearerTokenCredential(exchangedToken));
 
@@ -126,48 +113,35 @@ public class TokenExchange implements GPlazmaAuthenticationPlugin {
         URI uri = new URIBuilder(TOKEN_EXCHANGE_URL).build();
         HttpPost httpPost = new HttpPost(uri);
     
-        // Set headers
         httpPost.setHeader("Content-Type", "application/x-www-form-urlencoded");
     
-        // Set request body
         StringEntity stringEntity = new StringEntity(postBody);
         httpPost.setEntity(stringEntity);
     
         String responseBody = null;
 
-        // try (CloseableHttpClient httpClient = HttpClients.createDefault();
-        //      CloseableHttpResponse response = httpClient.execute(httpPost)) {
         try (CloseableHttpResponse response = this.client.execute(httpPost)) {
     
             HttpEntity responseEntity = response.getEntity();
             responseBody = EntityUtils.toString(responseEntity);
     
-            // Handle the response as needed
-            System.out.println("Response: " + response);
-            System.out.println("Response body: " + responseBody);
-    
-            // return responseBody;
+            LOG.debug("Response: " + response);
+            LOG.debug("Response body: " + responseBody);
         }
 
-        // extract access_token from result:
-
-        String result = null;
         JSONObject result_json = new JSONObject(responseBody);
 
         if (!result_json.has("access_token")) {
             throw new IOException("response has no access_token");
         }
 
-        result = result_json.get("access_token").toString(); 
+        String result = result_json.get("access_token").toString(); 
 
-        // System.out.println("Exchanged Access Token: " + result);
         LOG.debug("Exchanged Access Token: {}", result);
 
         if (JsonWebToken.isCompatibleFormat(result)) {
             try {
                 JsonWebToken jwt = new JsonWebToken(result);
-
-                // System.out.println("Found issuer: " + jwt.getPayloadString("iss"));
                 LOG.debug("Found issuer: {}", jwt.getPayloadString("iss"));
         
             } catch (IOException e) {
@@ -175,7 +149,6 @@ public class TokenExchange implements GPlazmaAuthenticationPlugin {
             }
         }
 
-        // TODO Optional.ofNullable
         return result;
     }
 }
