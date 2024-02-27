@@ -41,14 +41,6 @@ public class TokenExchange implements GPlazmaAuthenticationPlugin {
     private final static String SUBJECT_TOKEN_TYPE = "gplazma.oidc-te.subject-token-type";
     private final static String AUDIENCE = "gplazma.oidc-te.audience";
 
-    // private final static String TOKEN_EXCHANGE_URL = "https://keycloak.desy.de/auth/realms/production/protocol/openid-connect/token";
-    // private final static String CLIENT_ID = "token-exchange";
-    // private final static String CLIENT_SECRET = "tj05R7fKtV0Pqkxxnby5aic1AsiiROHy";
-    // private final static String GRANT_TYPE = "urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Atoken-exchange";
-    // private final static String SUBJECT_ISSUER = "oidc";
-    // private final static String SUBJECT_TOKEN_TYPE = "urn%3Aietf%3Aparams%3Aoauth%3Atoken-type%3Aaccess_token";
-    // private final static String AUDIENCE = "token-exchange";
-
     private final CloseableHttpClient client;
 
     public TokenExchange () {
