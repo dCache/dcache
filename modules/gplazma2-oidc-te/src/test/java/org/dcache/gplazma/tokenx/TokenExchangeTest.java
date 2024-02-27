@@ -49,7 +49,7 @@ public class TokenExchangeTest {
     @Test
     public void tokenExchangeTest() throws Exception {
 
-        plugin = aPlugin().withAuthorizationServer(aAuthorizationServer().thatExchanges()).build();
+        given(aPlugin().withAuthorizationServer(aAuthorizationServer().thatExchanges()));
         // plugin = new TokenExchange();
 
         String token = "eyJ0eXAiOiJhdCtqd3QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIzNWFkOWJlOC0zOThkLTQzNjMtYjhlYS05MDJmYjU1YWM3YzUiLCJhdWQiOiJwdWJsaWMtb2lkYy1hZ2VudCIsInNjb3BlIjoiZWR1cGVyc29uX2VudGl0bGVtZW50IHN5czpzY2ltOnJlYWRfcHJvZmlsZSBlbnRpdGxlbWVudHMgZWR1cGVyc29uX2Fzc3VyYW5jZSB2b3BlcnNvbl9leHRlcm5hbF9hZmZpbGlhdGlvbiBlZHVwZXJzb25fc2NvcGVkX2FmZmlsaWF0aW9uIGVkdXBlcnNvbl9wcmluY2lwYWxfbmFtZSBwcm9maWxlIHN5czpzY2ltOnJlYWRfbWVtYmVyc2hpcHMgY3JlZGVudGlhbHMgc2luZ2xlLWxvZ291dCBzbiBlbWFpbCBvZmZsaW5lX2FjY2VzcyBvcGVuaWQgZWR1cGVyc29uX3VuaXF1ZV9pZCBkaXNwbGF5X25hbWUgdm9wZXJzb25faWQgc3lzOnNjaW06cmVhZF9zZWxmX2dyb3VwIiwiaXNzIjoiaHR0cHM6XC9cL2xvZ2luLmhlbG1ob2x0ei5kZVwvb2F1dGgyIiwiZXhwIjoxNzA4OTU0MzQ1LCJpYXQiOjE3MDg5NTAzNDUsImp0aSI6IjFjYmZiNTlmLTgzMjMtNDYwYi1hMjZkLWQ2ZTVhYWNkZTYxNiIsImNsaWVudF9pZCI6InB1YmxpYy1vaWRjLWFnZW50In0.sm89O9sGSlE916ui1Epu8Ss9BtwV4jr9yHcckyZoSFF81z6xYgC6c2WLHKDKnmMI_5Brv7CMgOXXmMIZub_UTOFqtCY9TmMfkwO--oG7JXGd_vQegIZ3FMlHA4smY48f_nvj52q0hQhQ_Aj63BZ1EuwX4wwhEJQov_ndmCZytAPHeVNZu0eTWJmO0VBY4-pWH_C073BR5-9DsZPaz_ejkLdhw5MHZN5ko6IqU_O5crxlC-klpnskRmeRhmaHt6-9CXrdMA8iMqij3LFbG0WkllFFXX35GKWBT-iFdbztF7FlrMhSydSSjQ-j0p1dWc9e6HZfUr5hOQNfYThFkMA2MA";
@@ -57,6 +57,10 @@ public class TokenExchangeTest {
 
         // System.out.println("result: " + result);
         assertThat(result, equalToIgnoringCase("valid.access.token"));
+    }
+
+    private void given(PluginBuilder builder) {
+        plugin = builder.build();
     }
 
     private PluginBuilder aPlugin() {
