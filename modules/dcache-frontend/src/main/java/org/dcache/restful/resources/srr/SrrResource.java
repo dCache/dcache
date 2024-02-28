@@ -121,7 +121,6 @@ public class SrrResource {
 
     @Produces(MediaType.APPLICATION_JSON)
     @GET
-    @Path("/")
     public Response getSrr() throws InterruptedException, CacheException, NoRouteToCellException {
 
         if (!isPublic) {
