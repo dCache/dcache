@@ -539,17 +539,13 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
     @Override
     public DirectoryStreamB<ChimeraDirectoryEntry> newDirectoryStream(FsInode dir)
           throws ChimeraFsException {
-        if ((dir instanceof FsInode_LABEL)) {
-            return _sqlDriver.virtualDirectoryStream(dir);
-        } else {
-            return _sqlDriver.newDirectoryStream(dir);
-        }
+        return _sqlDriver.newDirectoryStream(dir);
     }
 
     @Override
     public DirectoryStreamB<ChimeraDirectoryEntry> virtualDirectoryStream(FsInode dir,
           String labelname) throws ChimeraFsException {
-        return _sqlDriver.virtualDirectoryStream(dir);
+        return _sqlDriver.virtualDirectoryStream(dir, labelname);
     }
 
     @Override
@@ -865,21 +861,6 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
                     throw FileNotFoundChimeraFsException.ofFileInDirectory(parent, name);
                 }
                 return nameofInode;
-            }
-
-            if (name.startsWith(".(collection)(")) {
-                String[] cmd = PnfsCommandProcessor.process(name);
-                if (cmd.length != 2) {
-                    throw FileNotFoundChimeraFsException.ofFileInDirectory(parent, name);
-                }
-
-                FsInode labelInode = new FsInode_LABEL(this, _sqlDriver.getLabel(cmd[1]), cmd[1]);
-                if (!(labelInode.type() == FsInodeType.LABEL)) {
-                    if (!labelInode.exists()) {
-                        throw FileNotFoundChimeraFsException.ofFileInDirectory(parent, name);
-                    }
-                }
-                return labelInode;
             }
 
             if (name.startsWith(".(const)(")) {

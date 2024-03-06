@@ -96,7 +96,6 @@ import org.dcache.chimera.FileState;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FileSystemProvider.SetXattrMode;
 import org.dcache.chimera.FsInode;
-import org.dcache.chimera.FsInode_LABEL;
 import org.dcache.chimera.NoXdataChimeraException;
 import org.dcache.chimera.NotDirChimeraException;
 import org.dcache.chimera.StorageGenericLocation;
@@ -261,11 +260,6 @@ public class ChimeraNameSpaceProvider
           throws ChimeraFsException, CacheException {
         if (Subjects.isExemptFromNamespaceChecks(subject)) {
             return new ExtendedInode(_fs, _fs.path2inode(path));
-        }
-
-        if (path.startsWith("/.(collection)")) {
-            ExtendedInode dir = new ExtendedInode(_fs, _fs.path2inode(path));
-            return dir.inodeOf(path, STAT);
         }
 
         List<FsInode> inodes;
@@ -1295,7 +1289,6 @@ public class ChimeraNameSpaceProvider
         try {
             Pattern pattern = (glob == null) ? null : glob.toPattern();
             ExtendedInode dir = pathToInode(subject, path);
-            // TODO this should be checkt for virtual directories and test casse for list() must e added
             if (!dir.isDirectory()) {
                 throw new NotDirCacheException("Not a directory: " + path);
             }

@@ -27,9 +27,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import org.dcache.acl.ACE;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.AceType;
@@ -1847,44 +1845,6 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
 
         assertEquals("Unexpected number of attributes", 4, labelsSet.size());
         assertThat("List labels without order", labelsSet, containsInAnyOrder(labels));
-
-
-    }
-
-    @Test
-    public void testLsWithLabel() throws Exception {
-
-        FsInode dir = _fs.mkdir("/test");
-        FsInode inodeA = _fs.createFile(dir, "aFile");
-        FsInode inodeB = _fs.createFile(dir, "bFile");
-        FsInode inodeC = _fs.createFile(dir, "cFile");
-
-        FsInode dir1 = _fs.mkdir("/test1");
-        FsInode inodeB2 = _fs.createFile(dir1, "bFile");
-
-        String[] labels = {"cat", "dog", "yellow", "green"};
-
-        for (String labelName : labels) {
-            _fs.addLabel(inodeA, labelName);
-            _fs.addLabel(inodeB, labelName);
-            _fs.addLabel(inodeB2, labelName);
-        }
-
-        FsInode newInode = _fs.inodeOf(_rootInode, (".(collection)(cat)"), NO_STAT);
-
-        Collection<String> dirLs = new HashSet<>();
-        try (DirectoryStreamB<ChimeraDirectoryEntry> dirStream = _fs.newDirectoryStream(
-              newInode)) {
-
-            for (ChimeraDirectoryEntry entry : dirStream) {
-                dirLs.add(entry.getInode().getId());
-
-            }
-        }
-
-        assertThat("List file's pnfsid without order", dirLs,
-              containsInAnyOrder(inodeA.getId(), inodeB.getId(), inodeB2.getId()));
-        assertEquals("Unexpected number of entries", 3, getDirEntryCount(newInode));
 
 
     }
