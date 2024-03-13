@@ -112,6 +112,7 @@
       init-method="initZkLeaderListener" destroy-method="shutdown">
         <description>Coordinates which disk cleaner is active</description>
         <constructor-arg value="cleaner-disk"/>
+        <constructor-arg value="service"/>
         <property name="leadershipListener">
             <ref bean="leaderlistener-group"/>
         </property>

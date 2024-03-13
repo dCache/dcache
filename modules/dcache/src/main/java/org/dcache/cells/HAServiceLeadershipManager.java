@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2020 - 2023 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2020 - 2024 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -58,11 +58,15 @@ public class HAServiceLeadershipManager implements CellIdentityAware, CellComman
     private LeaderLatchListener leadershipListener;
 
     @CommandPrefix
-    private final String serviceName;
+    private final String cmdServiceName;
 
-    public HAServiceLeadershipManager(String serviceName) {
-        this.serviceName = Objects.requireNonNull(serviceName);
-        createZkLeadershipPath(serviceName);
+    public HAServiceLeadershipManager(String zkServiceName) {
+        this(zkServiceName, zkServiceName);
+    }
+
+    public HAServiceLeadershipManager(String zkServiceName, String cmdServiceName) {
+        this.cmdServiceName = Objects.requireNonNull(cmdServiceName);
+        createZkLeadershipPath(zkServiceName);
     }
 
     @Override

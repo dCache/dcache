@@ -195,6 +195,7 @@
         init-method="initZkLeaderListener" destroy-method="shutdown">
       <description>Coordinates which pnfsmanager updates the filesystem stat cache</description>
       <constructor-arg value="pnfsmanager"/>
+      <constructor-arg value="service"/>
       <property name="leadershipListener">
           <ref bean="leaderlistener-group"/>
       </property>
