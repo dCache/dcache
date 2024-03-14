@@ -59,16 +59,16 @@ documents or software obtained from this server.
  */
 package org.dcache.qos.services.engine.util;
 
+import com.github.benmanes.caffeine.cache.CacheLoader;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.base.Throwables;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.NoRouteToCellException;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
 import javax.security.auth.Subject;
 import org.dcache.auth.Subjects;
@@ -95,7 +95,7 @@ public class QoSPolicyCache implements CellMessageReceiver{
 
     private static final Logger LOGGER = LoggerFactory.getLogger(QoSPolicyCache.class);
 
-    class PolicyLoader extends CacheLoader<String, QoSPolicy> {
+    class PolicyLoader implements CacheLoader<String, QoSPolicy> {
 
         @Override
         public QoSPolicy load(String name) throws Exception {
@@ -137,7 +137,7 @@ public class QoSPolicyCache implements CellMessageReceiver{
     }
 
     public void initialize() {
-        policyCache = CacheBuilder.newBuilder()
+        policyCache = Caffeine.newBuilder()
               .expireAfterAccess(expiry, expiryUnit)
               .maximumSize(capacity)
               .build(new PolicyLoader());
@@ -210,7 +210,7 @@ public class QoSPolicyCache implements CellMessageReceiver{
     public Optional<QoSPolicy> getPolicy(String name) {
         try {
             return Optional.ofNullable(policyCache.get(name));
-        } catch (ExecutionException e) {
+        } catch (CompletionException e) {
             LOGGER.error("problem getting {}: {}.", name, String.valueOf(Throwables.getRootCause(e)));
             return Optional.empty();
         }

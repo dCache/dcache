@@ -18,7 +18,7 @@
  */
 package diskCacheV111.doors;
 
-import com.google.common.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import diskCacheV111.services.space.Space;
 import diskCacheV111.util.ConfigurationException;
 import dmg.cells.nucleus.CellAddressCore;
