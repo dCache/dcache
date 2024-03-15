@@ -160,7 +160,7 @@ public class CostModuleV1
         if (shouldRemovePool) {
             _hash.remove(poolName);
         } else if (newInfo != null) {
-            _hash.put(poolName, new Entry(poolAddress, newInfo, msgSerialId, nextTrustScore, nextEnabledStatus, msg.getTagMap()))
+            _hash.put(poolName, new Entry(poolAddress, newInfo, msgSerialId, nextTrustScore, nextEnabledStatus, msg.getTagMap()));
         }
     }
 
