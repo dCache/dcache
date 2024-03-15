@@ -131,7 +131,7 @@ public class CostModuleV1
             if (msgSerialId == lastSerailId) { // Pool has not rebooted
                 nextTrustScore = lastTrustScore/tsDecrease;
                 if (nextTrustScore < tsThreshold && !poolEntry.getEnabledStatus()) { // Pool was disabled, should now be re-ENABLED
-                    LOGGER.error("Pool {} WOULD now be re-ENABLED due to low trust score, BUT IS NOT", poolName);
+                    LOGGER.error("Pool {} WOULD now be re-ENABLED, BUT IS NOT", poolName);
                 }
 
             } else { // Pool has rebooted
@@ -140,7 +140,7 @@ public class CostModuleV1
 
                 if (nextTrustScore > tsThreshold) { // Set pool as DISABLED
                     nextEnabledStatus = false;
-                    LOGGER.error("Pool {} WOULD now marked as DISABLED due to high trust score, BUT IS NOT", poolName);
+                    LOGGER.error("Pool {} WOULD now marked as DISABLED, BUT IS NOT", poolName);
                 }
             }
         }
