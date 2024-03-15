@@ -52,13 +52,20 @@ public class CostModuleV1
 
         private static final long serialVersionUID = -6380756950554320179L;
 
+        private boolean _enabled = true;
+        private long _serialId;
+        private int _trustScore;
+
         private final long timestamp;
         private final PoolCostInfo _info;
         private double _fakeCpu = -1.0;
         private final ImmutableMap<String, String> _tagMap;
         private final CellAddressCore _address;
 
-        public Entry(CellAddressCore address, PoolCostInfo info, Map<String, String> tagMap) {
+        public Entry(CellAddressCore address, PoolCostInfo info, long serialId, int trustScore, boolean enabled, Map<String, String> tagMap) {
+            _enabled = enabled;
+            _trustScore = trustScore;
+            _serialId = serialId;
             timestamp = System.currentTimeMillis();
             _address = address;
             _info = info;
@@ -83,15 +90,60 @@ public class CostModuleV1
         public PoolInfo getPoolInfo() {
             return new PoolInfo(_address, _info, _tagMap);
         }
+
+        public long getSerialId() {
+            return _serialId;
+        }
+
+        public int getTrustScore() {
+            return _trustScore;
+        }
+
+        public boolean getEnabledStatus() {
+            return _enabled;
+        }
+    }
+    public boolean getPoolStatus (String poolName) {
+        return _hash.get(poolName).getEnabledStatus();
+
     }
 
     public synchronized void messageArrived(CellMessage envelope, PoolManagerPoolUpMessage msg) {
+        int tsIncrease = 15;
+        int tsDecrease = 2;
+        int tsThreshold = 35;
+        int tsCeiling = 150;
+        long msgSerialId = msg.getSerialId();
+        int nextTrustScore = 0;
+        boolean nextEnabledStatus = true;
+
         CellAddressCore poolAddress = envelope.getSourceAddress();
         String poolName = msg.getPoolName();
         PoolV2Mode poolMode = msg.getPoolMode();
         PoolCostInfo newInfo = msg.getPoolCostInfo();
         Entry poolEntry = _hash.get(poolName);
         boolean isNewPool = poolEntry == null;
+
+        if (!isNewPool) { // Only check for reboots if the pool is not new
+            int lastTrustScore = poolEntry.getTrustScore();
+            long lastSerailId = poolEntry.getSerialId();
+
+            if (msgSerialId == lastSerailId) { // Pool has rebooted
+                nextTrustScore = lastTrustScore/tsDecrease;
+                if (nextTrustScore < tsThreshold && !poolEntry.getEnabledStatus()) { // Pool was disabled, should now be re-ENABLED
+                    LOGGER.error("Pool {} WOULD now be re-ENABLED due to low trust score, BUT IS NOT", poolName);
+                }
+
+            } else { // Pool has not rebooted
+                if (lastTrustScore < tsCeiling) {nextTrustScore = lastTrustScore + tsIncrease;} // INCREASE trust score as long as it is not higher than the ceiling
+                LOGGER.error("Pool {} rebooted and changed ID from {} to {}, Trust Score now at {}", poolName, lastSerailId, msgSerialId, lastTrustScore);
+
+                if (nextTrustScore > tsThreshold) { // Set pool as DISABLED
+                    nextEnabledStatus = false;
+                    LOGGER.error("Pool {} WOULD now marked as DISABLED due to high trust score, BUT IS NOT", poolName);
+                }
+            }
+        }
 
         /* Whether the pool mentioned in the message should be removed */
         boolean shouldRemovePool = poolMode.getMode() == PoolV2Mode.DISABLED ||
@@ -108,7 +160,7 @@ public class CostModuleV1
         if (shouldRemovePool) {
             _hash.remove(poolName);
         } else if (newInfo != null) {
-            _hash.put(poolName, new Entry(poolAddress, newInfo, msg.getTagMap()));
+            _hash.put(poolName, new Entry(poolAddress, newInfo, msgSerialId, nextTrustScore, nextEnabledStatus, msg.getTagMap()))
         }
     }
 

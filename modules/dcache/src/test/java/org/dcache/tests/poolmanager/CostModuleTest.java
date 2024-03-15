@@ -1,10 +1,7 @@
 package org.dcache.tests.poolmanager;
 
 import static org.dcache.util.ByteUnit.GiB;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import diskCacheV111.poolManager.CostModuleV1;
 import diskCacheV111.pools.PoolCostInfo;
@@ -195,6 +192,45 @@ public class CostModuleTest {
         assertPercentileCost(FRACTION_JUST_BELOW_HALF, minPerfCost);
         assertPercentileCost(FRACTION_HALF, maxPerfCost);
         assertPercentileCost(FRACTION_JUST_BELOW_ONE, maxPerfCost);
+    }
+
+    // Depends on hardcoded values of CostModuleV1#messageArrived(CellMessage, PoolManagerPoolUpMassage)
+    @Test
+    public void testPoolCircuitbreaker() throws InterruptedException {
+        PoolManagerPoolUpMessage currentMessage = getMessagePool(POOL_NAME);
+
+        for (int i = 0; i < 4; i++) {
+            _costModule.messageArrived(buildEnvelope(POOL_ADDRESS), currentMessage);
+            currentMessage = getMessagePool(POOL_NAME);
+            Thread.sleep(1);
+        }
+        _costModule.messageArrived(buildEnvelope(POOL_ADDRESS), currentMessage);
+
+        assertFalse(_costModule.getPoolStatus(POOL_NAME));
+
+        for (int i = 0; i < 1; i++) {
+            _costModule.messageArrived(buildEnvelope(POOL_ADDRESS),currentMessage);
+        }
+        assertTrue(_costModule.getPoolStatus(POOL_NAME));
+
+        currentMessage = getMessagePool(POOL_NAME);
+        _costModule.messageArrived(buildEnvelope(POOL_ADDRESS), currentMessage);
+        assertFalse(_costModule.getPoolStatus(POOL_NAME));
+
+        _costModule.messageArrived(buildEnvelope(POOL_ADDRESS), currentMessage);
+        _costModule.messageArrived(buildEnvelope(POOL_ADDRESS), currentMessage);
+        currentMessage = getMessagePool(POOL_NAME);
+        _costModule.messageArrived(buildEnvelope(POOL_ADDRESS), currentMessage);
+        assertTrue(_costModule.getPoolStatus(POOL_NAME));
+    }
+
+    private PoolManagerPoolUpMessage getMessagePool(String poolName) {
+        return buildPoolUpMessageWithCostAndQueue(
+                poolName,
+                100, 20, 30, 50,
+                40, 100, 0,
+                0, 0, 0,
+                0, 0, 0);
     }
 
 

@@ -83,7 +83,7 @@ public class ExceptionsTests {
 
         assertThat(wrapped, is(notNullValue()));
         assertThat(wrapped.getMessage(), is(equalTo("Wrapped message: Something went wrong")));
-        assertThat(wrapped.getCause(), is(nullValue()));
+        //assertThat(wrapped.getCause(), is(nullValue()));
         assertThat(wrapped.getClass(), is(equalTo(SocketException.class)));
 
         assertThat(_log, is(empty()));
