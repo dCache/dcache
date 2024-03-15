@@ -78,15 +78,24 @@ public class QoSPermissionUtils {
      * do not need checking.
      *
      * @param subject of the message received.
+     * @param useRoles if true, use roles to determine if the user can modify qos.
      * @param attributes with OWNER and OWNER_GROUP defined.
      */
-    public static boolean canModifyQos(Subject subject, FileAttributes attributes) {
+    public static boolean canModifyQos(Subject subject, boolean useRoles, FileAttributes attributes) {
+
         if (subject == null) {
             /*
              * with 9.2, the subject is no longer retrieved from the database.
              * If it is missing from the message, do not authorize.
              */
             return false;
+        }
+
+        if (!useRoles) {
+            /*
+             *  If we are not using roles, then all users can modify QoS.
+             */
+            return true;
         }
 
         Set<Principal> principals = subject.getPrincipals();

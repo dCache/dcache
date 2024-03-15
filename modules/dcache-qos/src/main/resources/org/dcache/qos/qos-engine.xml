@@ -170,6 +170,7 @@
       <property name="pnfsManager" ref="pnfs-manager"/>
       <property name="cache" ref="policy-cache"/>
       <property name="engineDao" ref="engine-dao"/>
+      <property name="enableRoles" value="${qos.require-roles}" />
       <!-- pool monitor is received via message -->
     </bean>
 
