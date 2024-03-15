@@ -128,13 +128,13 @@ public class CostModuleV1
             int lastTrustScore = poolEntry.getTrustScore();
             long lastSerailId = poolEntry.getSerialId();
 
-            if (msgSerialId == lastSerailId) { // Pool has rebooted
+            if (msgSerialId == lastSerailId) { // Pool has not rebooted
                 nextTrustScore = lastTrustScore/tsDecrease;
                 if (nextTrustScore < tsThreshold && !poolEntry.getEnabledStatus()) { // Pool was disabled, should now be re-ENABLED
                     LOGGER.error("Pool {} WOULD now be re-ENABLED due to low trust score, BUT IS NOT", poolName);
                 }
 
-            } else { // Pool has not rebooted
+            } else { // Pool has rebooted
                 if (lastTrustScore < tsCeiling) {nextTrustScore = lastTrustScore + tsIncrease;} // INCREASE trust score as long as it is not higher than the ceiling
                 LOGGER.error("Pool {} rebooted and changed ID from {} to {}, Trust Score now at {}", poolName, lastSerailId, msgSerialId, lastTrustScore);
 
