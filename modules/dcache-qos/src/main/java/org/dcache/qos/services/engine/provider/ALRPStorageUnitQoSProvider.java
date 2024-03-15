@@ -100,6 +100,7 @@ import org.dcache.qos.data.QoSMessageType;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Standard provisioning of (fixed) file requirements.  Uses access latency, retention policy, and
@@ -135,6 +136,11 @@ public class ALRPStorageUnitQoSProvider implements QoSRequirementsProvider, Cell
 
     private CellStub pnfsManager;
     private PoolMonitor poolMonitor;
+
+    /**
+     * Whether users require a QoS role to perform a transition.
+     */
+    private boolean enableRoles;
 
     public synchronized void messageArrived(SerializablePoolMonitor poolMonitor) {
         setPoolMonitor(poolMonitor);
@@ -305,7 +311,7 @@ public class ALRPStorageUnitQoSProvider implements QoSRequirementsProvider, Cell
             modifiedAttributes.setRetentionPolicy(REPLICA);
         }
 
-        if (canModifyQos(subject, currentAttributes)) {
+        if (canModifyQos(subject, isEnableRoles(), currentAttributes)) {
             pnfsHandler().setFileAttributes(pnfsId, modifiedAttributes);
         } else {
             throw new PermissionDeniedCacheException("User does not have permissions to set "
@@ -373,5 +379,14 @@ public class ALRPStorageUnitQoSProvider implements QoSRequirementsProvider, Cell
         LOGGER.debug("After call to namespace, {} has locations {}.", pnfsId,
               attributes.getLocations());
         return attributes;
+    }
+
+    public boolean isEnableRoles() {
+        return enableRoles;
+    }
+
+    @Required
+    public void setEnableRoles(boolean enableRoles) {
+        this.enableRoles = enableRoles;
     }
 }
