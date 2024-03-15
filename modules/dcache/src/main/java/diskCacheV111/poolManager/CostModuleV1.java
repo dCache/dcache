@@ -109,10 +109,13 @@ public class CostModuleV1
     }
 
     public synchronized void messageArrived(CellMessage envelope, PoolManagerPoolUpMessage msg) {
-        int tsIncrease = 15;
-        int tsDecrease = 2;
-        int tsThreshold = 35;
-        int tsCeiling = 150;
+        // CostModuleTest#testPoolCircuitbreaker depends on these vaules beeing as they are.
+        // Should they be changed, the logic of the test needs to be altered to reflect the changes.
+        int tsIncrease = 16; // W/ a threshold of 35 and tsDecrease of 1.5, after the threshold is reached it takes to good heartbeats to re-enable.
+        int tsDecrease = 1.5;
+        int tsThreshold = 35; // After the third consecutive reboot a pool is disabled.
+        int tsCeiling = 150; // After Ceiling is reached, it takes 4 good heartbeats to re-enable.
+
         long msgSerialId = msg.getSerialId();
         int nextTrustScore = 0;
         boolean nextEnabledStatus = true;
