@@ -216,7 +216,7 @@ public class PolicyBasedQoSProvider extends ALRPStorageUnitQoSProvider {
             modifiedAttributes.setQosState(newRequirements.getRequiredQoSStateIndex());
         }
 
-        if (canModifyQos(subject, currentAttributes)) {
+        if (canModifyQos(subject, isEnableRoles(), currentAttributes)) {
             pnfsHandler().setFileAttributes(pnfsId, modifiedAttributes);
         } else {
             throw new PermissionDeniedCacheException("User does not have permissions to set "
