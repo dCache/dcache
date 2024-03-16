@@ -25,6 +25,7 @@ If you installed dCache following the instructions in the Chapter [Installing dC
 ```
 
 Use the property `billing.text.dir` to set the location of the log files and the property `billing.enable.text` to control whether the plain-text log files are generated.
+To write the logs in JSON format instead of plain text, use the property `billing.format.json=true`.
 
 By default the log files are located in the directory
 `/var/lib/dcache/billing`. Under this directory the log files are

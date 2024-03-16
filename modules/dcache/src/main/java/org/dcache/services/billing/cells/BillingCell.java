@@ -40,6 +40,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import org.dcache.cells.CellStub;
+import org.dcache.notification.BillingMessageSerializerVisitor;
 import org.dcache.services.billing.text.StringTemplateInfoMessageVisitor;
 import org.dcache.util.Args;
 import org.dcache.util.Slf4jSTErrorListener;
@@ -63,7 +64,7 @@ public final class BillingCell
 
     private static final Logger LOGGER =
           LoggerFactory.getLogger(BillingCell.class);
-    public static final String FORMAT_PREFIX = "billing.text.format.";
+    public static final String TEXT_FORMAT_PREFIX = "billing.text.format.";
 
     private final SimpleDateFormat _fileNameFormat =
           new SimpleDateFormat("yyyy.MM.dd");
@@ -87,6 +88,7 @@ public final class BillingCell
     private CellStub _poolManagerStub;
     private Path _logsDir;
     private boolean _enableText;
+    private boolean _jsonFormat;
     private boolean _flatTextDir;
 
     public BillingCell() {
@@ -102,10 +104,10 @@ public final class BillingCell
         };
         for (Map.Entry<String, Object> e : environment.entrySet()) {
             String key = e.getKey();
-            if (key.startsWith(FORMAT_PREFIX)) {
+            if (key.startsWith(TEXT_FORMAT_PREFIX)) {
                 String format = Formats.replaceKeywords(String.valueOf(e.getValue()), replaceable);
                 String clazz = CaseFormat.LOWER_HYPHEN.to(CaseFormat.UPPER_CAMEL,
-                      key.substring(FORMAT_PREFIX.length()));
+                      key.substring(TEXT_FORMAT_PREFIX.length()));
                 _formats.put(clazz, format);
             }
         }
@@ -195,6 +197,11 @@ public final class BillingCell
     }
 
     private String getFormattedMessage(InfoMessage msg) {
+        if (_jsonFormat) {
+            BillingMessageSerializerVisitor visitor = new BillingMessageSerializerVisitor();
+            msg.accept(visitor);
+            return new String(visitor.getData(), StandardCharsets.UTF_8);
+        }
         String format = _formats.get(msg.getClass().getSimpleName());
         if (!Strings.isNullOrEmpty(format)) {
             try {
@@ -352,6 +359,9 @@ public final class BillingCell
     }
 
     private String getFormatHeaders() {
+        if (_jsonFormat) {
+            return "";
+        }
         return _formats.entrySet().stream()
               .map(e -> "## " + CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_HYPHEN, e.getKey()) + ' '
                     + e.getValue() + '\n')
@@ -448,6 +458,10 @@ public final class BillingCell
     @Required
     public void setEnableTxt(boolean enableText) {
         _enableText = enableText;
+    }
+
+    public void setJsonFormat(boolean jsonFormat) {
+        _jsonFormat = jsonFormat;
     }
 
 }
