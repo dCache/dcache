@@ -692,8 +692,16 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
     }
 
     public void messageArrived(CellMessage envelope, TransferFailedMessage message) {
+
+        LOGGER.error("TESTING ZERO_BYTE messageArrived 1 ");
+
         messageArrived(Duration.of(envelope.getLocalAge(), MILLIS));
+
+        LOGGER.error("TESTING ZERO_BYTE messageArrived 2 " );
+
         RemoteTransfer transfer = _transfers.get(message.getId());
+        LOGGER.error("TESTING ZERO_BYTE is transfer null  " +  transfer );
+
         if (transfer != null) {
             String error = String.valueOf(message.getErrorObject());
             _activity.execute(() -> transfer.completed(error));
@@ -1114,6 +1122,8 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         }
 
         private void completed(String transferError) {
+            LOGGER.error("TESTING ZERO_BYTE call completed id " + _id );
+
             if (_transfers.remove(_id) == null) {
                 // Something else called complete, so do nothing.
                 return;
@@ -1127,6 +1137,8 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                 fetchChecksums();
             } else {
                 if (_direction == Direction.PULL) {
+                    LOGGER.error("TESTING ZERO_BYTE call deleteFile id " + _id );
+
                     error = deleteFile()
                           .map(e -> transferError + " (" + e + ")")
                           .orElse(transferError);
@@ -1157,6 +1169,8 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                  * restrictions removed.
                  */
                 PnfsHandler pnfs = new PnfsHandler(_pnfs, null);
+                LOGGER.error("TESTING ZERO_BYTE call deletePnfsEntry" );
+
                 pnfs.deletePnfsEntry(_pnfsId, _path.toString(),
                       EnumSet.of(FileType.REGULAR), EnumSet.noneOf(FileAttribute.class));
             } catch (FileNotFoundCacheException e) {

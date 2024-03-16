@@ -198,6 +198,7 @@ public abstract class TransferManager extends AbstractCellComponent
     public void messageArrived(DoorTransferFinishedMessage message) {
         long id = message.getId();
         TransferManagerHandler h = getHandler(id);
+        LOGGER.error("TESTING ZERO_BYTE id is {}, handler is {} ", id, h );
         if (h != null) {
             h.poolDoorMessageArrived(message);
         }
@@ -359,6 +360,7 @@ public abstract class TransferManager extends AbstractCellComponent
     }
 
     public void removeActiveTransfer(long id) {
+        LOGGER.error("TESTING ZERO_BYTE  removeActive transfer id {}", id);
         TransferManagerHandler handler = _activeTransfers.remove(id);
         if (handler == null) {
             return;

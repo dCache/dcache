@@ -4,6 +4,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static org.dcache.namespace.FileAttribute.PNFSID;
 import static org.dcache.namespace.FileType.DIR;
 import static org.dcache.namespace.FileType.LINK;
+import static org.dcache.qos.QoSTransitionEngine.LOGGER;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import diskCacheV111.namespace.NameSpaceProvider.Link;
@@ -386,6 +387,8 @@ public class PnfsHandler implements CellMessageSender {
     public FileAttributes deletePnfsEntry(PnfsId pnfsid, String path, Set<FileType> allowed,
           Set<FileAttribute> attr)
           throws CacheException {
+        LOGGER.error("TESTING ZERO_BYTE call deletePnfsEntry send request" );
+
         return request(new PnfsDeleteEntryMessage(pnfsid, path, allowed, attr)).getFileAttributes();
     }
 
