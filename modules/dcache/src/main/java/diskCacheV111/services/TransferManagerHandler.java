@@ -333,6 +333,8 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
                     setState(RECEIVED_PNFS_ENTRY_DELETE);
                     LOGGER.debug("Received PnfsDeleteEntryMessage, Deleted  : {}",
                           deleteReply.getPnfsPath());
+                    LOGGER.error("TESTING ZERO_BYTE Received PnfsDeleteEntryMessage, Deleted  : {}",
+                          deleteReply.getPnfsPath());
                     sendErrorReply();
                 }
             }
@@ -588,17 +590,23 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
             setState(WAITING_FOR_PNFS_ENTRY_DELETE);
             manager.persist(this);
             pnfsMsg.setReplyRequired(true);
+            LOGGER.error("TESTING ZERO_BYTE set RECEIVED_PNFS_CHECK_BEFORE_DELETE_STATE" );
+
             CellStub.addCallback(manager.getPnfsManagerStub().send(pnfsMsg), this, executor);
         } else {
             PnfsGetFileAttributes message = new PnfsGetFileAttributes(pnfsPath,
                   EnumSet.noneOf(FileAttribute.class));
             setState(WAITING_FOR_PNFS_CHECK_BEFORE_DELETE_STATE);
+            LOGGER.error("TESTING ZERO_BYTE set WAITING_FOR_PNFS_CHECK_BEFORE_DELETE_STATE" );
+
             CellStub.addCallback(manager.getPnfsManagerStub().send(message), this, executor);
         }
     }
 
     public void poolDoorMessageArrived(DoorTransferFinishedMessage doorMessage) {
         LOGGER.debug("poolDoorMessageArrived, doorMessage.getReturnCode()={}",
+              doorMessage.getReturnCode());
+        LOGGER.error("TESTING ZERO_BYTE poolDoorMessageArrived, doorMessage.getReturnCode()={}",
               doorMessage.getReturnCode());
         if (doorMessage.getReturnCode() != 0) {
             sendErrorReply(CacheException.THIRD_PARTY_TRANSFER_FAILED,
@@ -621,7 +629,12 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
               && created) {// Timur: I think this check  is not needed, we might not ever get storage info and pnfs id: && pnfsId != null && aMetadata != null && aMetadata.getFileSize() == 0) {
             if (state != WAITING_FOR_PNFS_ENTRY_DELETE && state != RECEIVED_PNFS_ENTRY_DELETE) {
                 LOGGER.debug("deleting pnfs entry we created: {}", pnfsPath);
+                LOGGER.error("TESTING ZERO_BYTE ptest store {}, created {}, state {}",
+                      store, created, state);
                 deletePnfsEntry();
+                LOGGER.error("TESTING ZERO_BYTE afetre delete");
+                LOGGER.error("TESTING ZERO_BYTE TEST THREAD " + Thread.currentThread().getName());
+
                 return;
             }
         }
@@ -648,8 +661,11 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
         }
         manager.finishTransfer();
         try {
+
             TransferFailedMessage errorReply = new TransferFailedMessage(transferRequest, replyCode,
                   errorObject);
+            LOGGER.error("TESTING ZERO_BYTE TransferFailedMessage errorObject {}, errorObject {}",
+                  errorObject,replyCode);
             manager.sendMessage(new CellMessage(requestor, errorReply));
         } catch (RuntimeException e) {
             LOGGER.error("Send message failed:", e);
@@ -657,6 +673,8 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
         }
         //this will allow the handler to be garbage collected
         // once we sent a response
+        LOGGER.error("TESTING ZERO_BYTE 1 removeActive transfer id {}", id);
+
         manager.removeActiveTransfer(id);
     }
 
@@ -691,6 +709,8 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
         }
         manager.finishTransfer();
         try {
+            LOGGER.error("TESTING ZERO_BYTE  ind sendError without argumentsTransferFailedMessage errorObject {}, errorObject {}",
+                  errorObject,replyCode);
             TransferFailedMessage errorReply = new TransferFailedMessage(transferRequest, replyCode,
                   errorObject);
             manager.sendMessage(new CellMessage(requestor, errorReply));
@@ -700,6 +720,8 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
         }
         //this will allow the handler to be garbage collected
         // once we sent a response
+        LOGGER.error("TESTING ZERO_BYTE 2 removeActive transfer id {}", id);
+
         manager.removeActiveTransfer(id);
     }
 
@@ -733,6 +755,8 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
         }
         //this will allow the handler to be garbage collected
         // once we sent a response
+        LOGGER.error("TESTING ZERO_BYTE 3 removeActive transfer id {}", id);
+
         manager.removeActiveTransfer(id);
     }
 
