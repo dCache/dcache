@@ -2134,8 +2134,11 @@ public class FsSqlDriver {
      * @param labelname a name of the label attached to files
      * @return stream of files  having the given label
      */
-    DirectoryStreamB<ChimeraDirectoryEntry> virtualDirectoryStream(FsInode dir, String labelname) {
+    DirectoryStreamB<ChimeraDirectoryEntry> virtualDirectoryStream(FsInode dir, String labelname)
+          throws ChimeraFsException {
+
         return new DirectoryStreamB<ChimeraDirectoryEntry>() {
+
             final VirtualDirectoryStreamImpl stream = new VirtualDirectoryStreamImpl(labelname,
                   _jdbc);
 

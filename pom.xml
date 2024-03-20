@@ -1,7 +1,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.dcache</groupId>
-    <version>10.0.0-SNAPSHOT</version>
+    <version>10.1.0-SNAPSHOT</version>
     <artifactId>dcache-parent</artifactId>
     <packaging>pom</packaging>
 
@@ -68,7 +68,7 @@
         <version.smc>6.6.0</version.smc>
         <version.xerces>2.12.0</version.xerces>
         <version.jetty>9.4.52.v20230823</version.jetty>
-        <version.xrootd4j>4.5.8</version.xrootd4j>
+        <version.xrootd4j>4.6.0</version.xrootd4j>
         <version.jersey>2.41</version.jersey>
         <version.dcache-view>3.0.0</version.dcache-view>
         <version.dcache-view-admin>3.0.0</version.dcache-view-admin>
@@ -187,7 +187,7 @@
             <dependency>
                 <groupId>org.apache.curator</groupId>
                 <artifactId>curator-recipes</artifactId>
-                <version>5.1.0</version>
+                <version>5.6.0</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.slf4j</groupId>

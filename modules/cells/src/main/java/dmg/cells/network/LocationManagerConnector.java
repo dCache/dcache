@@ -2,10 +2,12 @@ package dmg.cells.network;
 
 import static java.util.Objects.requireNonNull;
 
+import com.google.common.base.Throwables;
 import com.google.common.net.HostAndPort;
 import com.google.common.util.concurrent.Uninterruptibles;
 import dmg.cells.nucleus.CellAdapter;
 import dmg.util.DummyStreamEngine;
+import dmg.util.Exceptions;
 import dmg.util.StreamEngine;
 import java.io.IOException;
 import java.io.InterruptedIOException;
@@ -103,12 +105,12 @@ public class LocationManagerConnector
                 } catch (InterruptedIOException | ClosedByInterruptException e) {
                     throw e;
                 } catch (ExecutionException | IOException e) {
+                    String error = Exceptions.meaningfulMessage(Throwables.getRootCause(e));
                     _log.warn(AlarmMarkerFactory.getMarker(PredefinedAlarm.LOCATION_MANAGER_FAILURE,
                                 name,
                                 _domain,
-                                e.getMessage()),
-                          "Failed to connect to " + _domain + ": "
-                                + e.getMessage());
+                                    error),
+                          "Failed to connect to " + _domain + ": " + e);
                 }
 
                 _status = "Sleeping";

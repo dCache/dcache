@@ -57,7 +57,7 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
                 Buffer[] bufs = bArray.getArray();
                 int size = bArray.size();
 
-                for(int i = 0; i < size; i++) {
+                for(int i = 0; bytesToRead > 0  && i < size; i++) {
 
                     ByteBuffer directChunk = bufs[i].toByteBuffer();
                     directChunk.clear().limit(Math.min(directChunk.capacity(), bytesToRead));

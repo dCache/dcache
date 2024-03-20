@@ -56,7 +56,8 @@ public class SrmSpaceDetailsDga extends SkelPeriodicActivity {
 
         LOGGER.trace("Sending space token details request message");
 
-        _sender.sendMessage(_metricLifetime, _spacemanager, new GetSpaceTokensMessage(true));
+        _sender.sendMessage(_metricLifetime, _spacemanager, triggerPeriod(),
+                new GetSpaceTokensMessage(true));
     }
 
     @Override

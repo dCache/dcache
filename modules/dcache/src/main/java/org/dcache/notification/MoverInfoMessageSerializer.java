@@ -15,7 +15,7 @@ import org.apache.kafka.common.serialization.Serializer;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-public class BillingMessageSerializer implements Serializer<MoverInfoMessage> {
+public class MoverInfoMessageSerializer implements Serializer<MoverInfoMessage> {
 
     static JSONObject transform(MoverInfoMessage data) {
         JSONObject o = new JSONObject();
@@ -41,7 +41,8 @@ public class BillingMessageSerializer implements Serializer<MoverInfoMessage> {
         data.getWriteIdle().ifPresent(d -> o.put("writeIdle", d.toString()));
         data.getReadActive().ifPresent(d -> o.put("readActive", d.toString()));
         data.getWriteActive().ifPresent(d -> o.put("writeActive", d.toString()));
-        data.getLocalEndpoint().ifPresent(d -> o.put("localEndpoint", InetAddresses.toUriString(d.getAddress()) + ":" + d.getPort()));
+        data.getLocalEndpoint().ifPresent(d -> o.put("localEndpoint",
+              InetAddresses.toUriString(d.getAddress()) + ":" + d.getPort()));
 
         JSONObject status = new JSONObject();
         status.put("code", data.getResultCode());

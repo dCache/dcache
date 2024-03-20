@@ -71,6 +71,11 @@ class CheckHealthTask implements Runnable {
             case OPEN:
                 if (_replicaStore.isOk() == FileStoreState.FAILED) {
                     _repository.fail(FaultAction.DISABLED, "I/O test failed");
+                }else if (_replicaStore.isOk() == FileStoreState.READ_ONLY){
+                    LOGGER.error(
+                          "Read-only file system");
+
+                    _repository.fail(FaultAction.READONLY, "I/O test failed, READ_ONLY Error");
                 }
 
                 if (!checkSpaceAccounting()) {

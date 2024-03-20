@@ -147,6 +147,7 @@
         init-method="initZkLeaderListener" destroy-method="shutdown">
       <description>Coordinates which pinmanager handles pin expiry and removal</description>
       <constructor-arg value="pinmanager/PinManager"/>
+      <constructor-arg value="service"/>
       <property name="leadershipListener">
           <ref bean="leaderlistener-group"/>
       </property>

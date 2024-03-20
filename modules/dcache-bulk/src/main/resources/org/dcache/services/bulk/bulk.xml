@@ -343,6 +343,7 @@
     init-method="initZkLeaderListener" destroy-method="shutdown">
     <description>Coordinates which bulk service handles the requests</description>
     <constructor-arg value="bulk"/>
+    <constructor-arg value="service"/>
     <property name="leadershipListener">
       <ref bean="leaderlistener-group"/>
     </property>

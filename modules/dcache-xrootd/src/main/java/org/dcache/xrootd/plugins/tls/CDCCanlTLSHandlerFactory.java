@@ -17,12 +17,15 @@
  */
 package org.dcache.xrootd.plugins.tls;
 
+import com.google.common.base.Throwables;
 import eu.emi.security.authn.x509.CrlCheckingMode;
 import eu.emi.security.authn.x509.NamespaceCheckingMode;
 import eu.emi.security.authn.x509.OCSPCheckingMode;
 import io.netty.handler.ssl.SslContext;
 import java.io.File;
 import java.util.Properties;
+import java.util.function.Supplier;
+
 import org.dcache.ssl.CanlContextFactory;
 
 /**
@@ -34,15 +37,15 @@ import org.dcache.ssl.CanlContextFactory;
  */
 public class CDCCanlTLSHandlerFactory extends SSLHandlerFactory {
 
-    private static final String SERVICE_KEY = "xrootd.security.tls.hostcert.key";
-    private static final String SERVICE_CERT = "xrootd.security.tls.hostcert.cert";
-    private static final String SERVICE_CACERTS = "xrootd.security.tls.ca.path";
-    private static final String NAMESPACE_MODE = "xrootd.security.tls.ca.namespace-mode";
-    private static final String CRL_MODE = "xrootd.security.tls.ca.crl-mode";
-    private static final String OCSP_MODE = "xrootd.security.tls.ca.ocsp-mode";
+    public static final String SERVICE_KEY = "xrootd.security.tls.hostcert.key";
+    public static final String SERVICE_CERT = "xrootd.security.tls.hostcert.cert";
+    public static final String SERVICE_CACERTS = "xrootd.security.tls.ca.path";
+    public static final String NAMESPACE_MODE = "xrootd.security.tls.ca.namespace-mode";
+    public static final String CRL_MODE = "xrootd.security.tls.ca.crl-mode";
+    public static final String OCSP_MODE = "xrootd.security.tls.ca.ocsp-mode";
 
     @Override
-    protected SslContext buildContext(Properties properties) throws Exception {
+    protected Supplier<SslContext> buildContextSupplier(Properties properties) throws Exception {
         File serviceKey = new File(properties.getProperty(SERVICE_KEY));
         File serviceCert = new File(properties.getProperty(SERVICE_CERT));
         File serviceCaCerts = new File(properties.getProperty(SERVICE_CACERTS));
@@ -53,7 +56,7 @@ public class CDCCanlTLSHandlerFactory extends SSLHandlerFactory {
         OCSPCheckingMode ocspMode
               = OCSPCheckingMode.valueOf(properties.getProperty(OCSP_MODE));
 
-        return CanlContextFactory.custom()
+        var builder = CanlContextFactory.custom()
               .withCertificatePath(serviceCert.toPath())
               .withKeyPath(serviceKey.toPath())
               .withCertificateAuthorityPath(serviceCaCerts.toPath())
@@ -62,7 +65,15 @@ public class CDCCanlTLSHandlerFactory extends SSLHandlerFactory {
               .withNamespaceMode(namespaceMode)
               .withLazy(false)
               .startTls(startTls)
-              .buildWithCaching(SslContext.class)
-              .call();
+              .buildWithCaching(SslContext.class);
+
+        return () -> {
+            try {
+                return builder.call();
+            } catch (Exception e) {
+                Throwables.throwIfUnchecked(e);
+                throw new RuntimeException(e);
+            }
+        };
     }
 }

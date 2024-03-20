@@ -162,17 +162,31 @@ public class NfsTransferService
 
     private CellAddressCore _cellAddress;
 
+    // This is a workaround for the issue with the grizzly allocator.
+    // (which uses a fraction of heap memory for direct buffers, instead of configured direct memory limit
+    // See: https://github.com/eclipse-ee4j/grizzly/issues/2201
+
+    // as we know in advance how much memory is going to be used, we can pre-calculate the desired fraction.
+    // The expected direct buffer allocation is `<chunk size> * <expected concurrency>` (with an assumption,
+    // that we use only one memory pool, i.g. no grow).
+
+    private final int expectedConcurrency =  GrizzlyUtils.getDefaultWorkerPoolSize();
+    private final int allocationChunkSize = ByteUnit.MiB.toBytes(1); // one pool with 1MB chunks (max NFS rsize)
+    private final float heapFraction = (allocationChunkSize * expectedConcurrency) / (float) Runtime.getRuntime().maxMemory();
+
     /**
      * Buffer pool for IO operations.
      * One pool with 1MB chunks (max NFS rsize).
      */
     private final MemoryManager<? extends Buffer> pooledBufferAllocator =
             new PooledMemoryManager(// one pool with 1MB chunks (max NFS rsize)
-                    ByteUnit.MiB.toBytes(1), // base chunk size
+                    allocationChunkSize / 16, // Grizzly allocates at least 16 chunks per slice,
+                                              // for 1MB buffers 16MB in total.
+                                              // Pass 1/16 of the desired buffer size to compensate the over commitment.
                     1, // number of pools
                     2, // grow facter per pool, ignored, see above
-                    GrizzlyUtils.getDefaultWorkerPoolSize(), // expected concurrency
-                    PooledMemoryManager.DEFAULT_HEAP_USAGE_PERCENTAGE,
+                    expectedConcurrency, // expected concurrency
+                    heapFraction, // fraction of heap memory to use for direct buffers
                     PooledMemoryManager.DEFAULT_PREALLOCATED_BUFFERS_PERCENTAGE,
                     true  // direct buffers
             );
