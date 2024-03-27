@@ -37,12 +37,11 @@ export S2_SUPRESS_PROGRESS=1
 
 export SRM_HOST=store-door-svc.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local
 export SRM_PORT=8443
-export SRM_ENDPOINT="srm://${SRM_HOST}:${SRM_PORT}/srm/managerv2?SFN=${SRM_DATAPATH}/${NODE_NAME}"
 export SRM_DATAPATH=/data/s2
+export SRM_ENDPOINT="srm://${SRM_HOST}:${SRM_PORT}/srm/managerv2?SFN=${SRM_DATAPATH}"
 
 # s3 test depends on needs USER env to be set
 export USER=dcache-ci
-
 
 RC=0
 FAILED_TESTS=""
