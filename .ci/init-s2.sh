@@ -19,7 +19,7 @@ dnf -y install ca_USERTrustRSACertificationAuthority \
   ca_GEANTTCSAuthenticationRSACA4B
 
 curl --silent https://raw.githubusercontent.com/kofemann/autoca/v1.0-py3/pyclient/autoca-client -o autoca-client && chmod a+x autoca-client
-python3 ./autoca-client -n -k userkey.pem -c usercert.pem https://ci.dcache.org/ca "Kermit the frog"
+python3 ./autoca-client -n -k userkey.pem -c usercert.pem ${AUTOCA_URL} "Kermit the frog"
 
 
 /usr/sbin/fetch-crl
@@ -58,6 +58,11 @@ do
     RC=1
     echo "FAILED"
     FAILED_TESTS="$FAILED_TESTS $t"
+    ofile=`(echo $i | sed -e 's/\.s2$/\.out/')`
+    cat `basename $ofile`
+
+    efile=`(echo $i | sed -e 's/\.s2$/\.e1/')`
+    cat `basename $ofile`
   else
     echo "PASSED"
     PASSED_TESTS="$PASSED_TESTS $t"
