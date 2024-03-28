@@ -47,7 +47,7 @@ RC=0
 FAILED_TESTS=""
 PASSED_TESTS=""
 
-for i in /usr/share/s2/testing/scripts/protos/srm/2.2/basic/*.s2;
+for i in /usr/share/s2/testing/scripts/protos/srm/2.2/{avail,basic,usecase}/*.s2
 do
   t=`basename $i`
   echo -n "$t : "
