@@ -44,35 +44,11 @@ export SRM_ENDPOINT="srm://${SRM_HOST}:${SRM_PORT}/srm/managerv2?SFN=${SRM_DATAP
 export USER=dcache-ci
 
 RC=0
-FAILED_TESTS=""
-PASSED_TESTS=""
-
-for i in /usr/share/s2/testing/scripts/protos/srm/2.2/{avail,basic,usecase}/*.s2
+for i in /usr/share/s2/testing/scripts/protos/srm/2.2/{avail,basic,usecase}
 do
-  t=`basename $i`
-  echo -n "$t : "
-  cmd=`(echo $i | sed -e 's/\.s2$/\.sh/')`
-  $cmd > /dev/null 2>&1
-  rc=$?
-  if [ $rc -ne 0 ]; then
+  S2_LOGS_DIR=/ /usr/bin/xrunner.py -d $i
+  if [ $? -ne 0 ]; then
     RC=1
-    echo "FAILED"
-    FAILED_TESTS="$FAILED_TESTS $t"
-    ofile=`(echo $i | sed -e 's/\.s2$/\.out/')`
-    cat `basename $ofile`
-
-    efile=`(echo $i | sed -e 's/\.s2$/\.e1/')`
-    cat `basename $ofile`
-  else
-    echo "PASSED"
-    PASSED_TESTS="$PASSED_TESTS $t"
   fi
 done
-
-echo
-echo
-echo "PASSED_TESTS: $PASSED_TESTS"
-echo
-echo
-echo "FAILED_TESTS: $FAILED_TESTS"
 exit $RC
