@@ -27,10 +27,6 @@ python3 ./autoca-client -n -k userkey.pem -c usercert.pem ${AUTOCA_URL} "Kermit 
 voms-proxy-init -cert=usercert.pem -key=userkey.pem -voms=desy
 voms-proxy-info -all
 
-# globus libraries depend on the SHA1
-# https://twiki.cern.ch/twiki/bin/view/LCG/EL9vsSHA1CAs
-update-crypto-policies --set DEFAULT:SHA1
-
 # SLEEP_SOR is the sleep-time when polling an SRM GetStatusOf...Request
 export SLEEP_SOR=2
 export S2_SUPRESS_PROGRESS=1
