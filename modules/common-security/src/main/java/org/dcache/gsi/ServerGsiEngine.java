@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014-2015 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014-2024 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -23,7 +23,6 @@ import com.google.common.io.ByteSource;
 import eu.emi.security.authn.x509.X509Credential;
 import eu.emi.security.authn.x509.impl.CertificateUtils;
 import eu.emi.security.authn.x509.impl.KeyAndCertCredential;
-import eu.emi.security.authn.x509.proxy.ProxyCSRGenerator;
 import eu.emi.security.authn.x509.proxy.ProxyCertificateOptions;
 import java.io.EOFException;
 import java.io.IOException;
@@ -148,7 +147,7 @@ public class ServerGsiEngine extends InterceptingSSLEngine {
         ProxyCertificateOptions options = new ProxyCertificateOptions(chain);
         options.setPublicKey(keyPair.getPublic());
         options.setLimited(true);
-        byte[] req = ProxyCSRGenerator.generate(options, keyPair.getPrivate()).getCSR()
+        byte[] req = X509DelegationHelper.generateProxyReq(options, keyPair.getPrivate()).getCSR()
               .getEncoded();
         return ByteBuffer.wrap(req, 0, req.length);
     }
