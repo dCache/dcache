@@ -37,4 +37,4 @@ check transfermanagers.mover.queue
 create org.dcache.cells.UniversalSpringCell ${transfermanagers.cell.name} \
         "classpath:diskCacheV111/services/transfer-manager.xml \
         -consume=${transfermanagers.cell.consume} \
-        -profiles=db.enabled-${transfermanagers.enable.db}"
+        -profiles=db.enabled-${transfermanagers.enable.db},kafka-${transfermanagers.enable.kafka}"
