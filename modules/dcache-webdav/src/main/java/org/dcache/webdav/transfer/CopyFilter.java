@@ -387,8 +387,9 @@ public class CopyFilter implements Filter {
 
         TransferType type = TransferType.fromScheme(remote.getScheme());
 
+        var requestPath = URI.create(request.getAbsoluteUrl()).getPath();
         FsPath path = _pathMapper.asDcachePath(ServletRequest.getRequest(),
-              request.getAbsolutePath(), m -> new ErrorResponseException(Status.SC_FORBIDDEN, m));
+              requestPath, m -> new ErrorResponseException(Status.SC_FORBIDDEN, m));
 
         // Always check any client-supplied Overwrite header, to throw an error if the value is malformed.
         boolean overwriteAllowed = clientAllowsOverwrite();

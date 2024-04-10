@@ -4,11 +4,7 @@ Building dCache
 Requirements
 ------------
 
-To build dCache, you need Maven 3.5.0 or newer. Centos/Redhat 7
-comes with version 3.0.5. See https://maven.apache.org/install.html
-on how to install a newer version.
-
-dCache requires Java-11 for building. Running the resulting 
+To build dCache, you need Maven 3.5.0 or newer and Java-17 for building. Running the resulting
 binaries on newer JDKs should be possible.
 
 Building
@@ -145,7 +141,7 @@ older versions using
 This will download a tarball release of that version and install it in
 `packages/system-test/target`. The `ctlcluster` utility can be used to control
 all versions at once. Using the switch subcommand, particular services can
-be moved between versions, eg.
+be moved between versions, e.g.
 
     packages/system-test/target/bin/ctlcluster switch pool.name=pool_write 2.7.5
 
@@ -157,7 +153,7 @@ versions. Such incompatibilities have to be resolved manually.
 Unit tests
 ----------
 
-By default Maven executes all unit tests while building. This can be
+By default, Maven executes all unit tests while building. This can be
 time consuming and will fail if no internet connection is
 available. The unit tests can be disabled by appending the `-DskipTests`
 option to any mvn command.
