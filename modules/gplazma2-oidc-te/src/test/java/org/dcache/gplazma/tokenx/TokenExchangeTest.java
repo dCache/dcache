@@ -55,10 +55,10 @@ public class TokenExchangeTest {
         properties = new Properties();
         properties.put(TOKEN_EXCHANGE_URL, "https://keycloak.desy.de/auth/realms/production/protocol/openid-connect/token");
         properties.put(CLIENT_ID, "token-exchange");
-        properties.put(CLIENT_SECRET, "tj05R7fKtV0Pqkxxnby5aic1AsiiROHy");
-        properties.put(GRANT_TYPE, "urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Atoken-exchange");
+        properties.put(CLIENT_SECRET, "");
+        properties.put(GRANT_TYPE, "urn:ietf:params:oauth:grant-type:token-exchange");
         properties.put(SUBJECT_ISSUER, "oidc");
-        properties.put(SUBJECT_TOKEN_TYPE, "urn%3Aietf%3Aparams%3Aoauth%3Atoken-type%3Aaccess_token");
+        properties.put(SUBJECT_TOKEN_TYPE, "urn:ietf:params:oauth:token-type:access_token");
         properties.put(AUDIENCE, "token-exchange");
 
     }
@@ -77,7 +77,7 @@ public class TokenExchangeTest {
         // given(aPlugin().withAuthorizationServer(aAuthorizationServer().thatExchanges()));
         plugin = new TokenExchange(properties);
 
-        String token = "eyJ0eXAiOiJhdCtqd3QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIzNWFkOWJlOC0zOThkLTQzNjMtYjhlYS05MDJmYjU1YWM3YzUiLCJhdWQiOiJwdWJsaWMtb2lkYy1hZ2VudCIsInNjb3BlIjoiZWR1cGVyc29uX2VudGl0bGVtZW50IHN5czpzY2ltOnJlYWRfcHJvZmlsZSBlbnRpdGxlbWVudHMgZWR1cGVyc29uX2Fzc3VyYW5jZSB2b3BlcnNvbl9leHRlcm5hbF9hZmZpbGlhdGlvbiBlZHVwZXJzb25fc2NvcGVkX2FmZmlsaWF0aW9uIGVkdXBlcnNvbl9wcmluY2lwYWxfbmFtZSBwcm9maWxlIHN5czpzY2ltOnJlYWRfbWVtYmVyc2hpcHMgY3JlZGVudGlhbHMgc2luZ2xlLWxvZ291dCBzbiBlbWFpbCBvZmZsaW5lX2FjY2VzcyBvcGVuaWQgZWR1cGVyc29uX3VuaXF1ZV9pZCBkaXNwbGF5X25hbWUgdm9wZXJzb25faWQgc3lzOnNjaW06cmVhZF9zZWxmX2dyb3VwIiwiaXNzIjoiaHR0cHM6XC9cL2xvZ2luLmhlbG1ob2x0ei5kZVwvb2F1dGgyIiwiZXhwIjoxNzEyNzYxMjExLCJpYXQiOjE3MTI3NTcyMTEsImp0aSI6ImNiMWY1MjY3LTg5YWUtNDQ4NC1hNmM0LWFjNDQ0ZWI3MTIzZCIsImNsaWVudF9pZCI6InB1YmxpYy1vaWRjLWFnZW50In0.0zqUEvg-QjqQa8jh-ipqPa1JF1vmRIwJqth8wg4h4vXO7sUvqaNI2rp8kJB13te6Hw5ubRdzmbQe_So-Eql5NybKyEXPjui5uiMGQ13TI-_Byd48GQdRewki8cCGoQxJbKjBDY7KPxJ7Bsv5BkvHDvaIat_HV0_ykOWs_TvKyfMBBwcZVHnYWXzZr39ARHGFcLb9npHJtE-MCgDisQzsGKk98v0lAdI_aAoh49pw-QNVSeOLIoJwV6j0XqX02s-5kx8PgV7e78QMFAz7cgEwa3MAsHuOumOgiQdhxnUtaWDOHJ-JBSutvnR57D-DBKOog5-_bYMCx5npMv6d0xrDoA";
+        String token = "eyJ0eXAiOiJhdCtqd3QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIzNWFkOWJlOC0zOThkLTQzNjMtYjhlYS05MDJmYjU1YWM3YzUiLCJhdWQiOiJwdWJsaWMtb2lkYy1hZ2VudCIsInNjb3BlIjoiZWR1cGVyc29uX2VudGl0bGVtZW50IHN5czpzY2ltOnJlYWRfcHJvZmlsZSBlbnRpdGxlbWVudHMgZWR1cGVyc29uX2Fzc3VyYW5jZSB2b3BlcnNvbl9leHRlcm5hbF9hZmZpbGlhdGlvbiBlZHVwZXJzb25fc2NvcGVkX2FmZmlsaWF0aW9uIGVkdXBlcnNvbl9wcmluY2lwYWxfbmFtZSBwcm9maWxlIHN5czpzY2ltOnJlYWRfbWVtYmVyc2hpcHMgY3JlZGVudGlhbHMgc2luZ2xlLWxvZ291dCBzbiBlbWFpbCBvZmZsaW5lX2FjY2VzcyBvcGVuaWQgZWR1cGVyc29uX3VuaXF1ZV9pZCBkaXNwbGF5X25hbWUgdm9wZXJzb25faWQgc3lzOnNjaW06cmVhZF9zZWxmX2dyb3VwIiwiaXNzIjoiaHR0cHM6XC9cL2xvZ2luLmhlbG1ob2x0ei5kZVwvb2F1dGgyIiwiZXhwIjoxNzEyNzY1ODgxLCJpYXQiOjE3MTI3NjE4ODEsImp0aSI6ImZlNGM0OTE4LTM1ZWQtNGJiNy1iOGVjLTk4YWVhZjQ3ODM5MyIsImNsaWVudF9pZCI6InB1YmxpYy1vaWRjLWFnZW50In0.JJBDSTEGXJzqhTG7VMSyljmWsFXtbs9oxd3U9XXGBZqAeTC28COGouzWLnqUJsCcY4e9ipoz9_Ti9L5nxkb_g_f4aP634GfkAmSopmPK_464NO_hOe3jsXl1sixo1KCQhkamxnDGA5MPoiiFM5Itqm0N9zLXWMD3r1BpH8P0HSKdLktduWkCZopKVRCGG3kirj3Aw8c2HKA-hZw16OFSdE52ZR-X5B05U8T9mL779HhRqTUJHtMoqjnUvwa7zPLCU1Cn7uDq_BitGKtbiQiRc1-8gI2DaWMfwzCELur7YLCnaveGvnCkbeVPuOWde_soUeRKGc3qgmAA8Np63_2YPg";
 
         String result = plugin.tokenExchange(token);
 
