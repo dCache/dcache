@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.Principal;
+import java.util.Properties;
 import java.util.Set;
 
 import org.apache.http.HttpEntity;
@@ -33,23 +34,42 @@ public class TokenExchange implements GPlazmaAuthenticationPlugin {
 
     private final static Logger LOG = LoggerFactory.getLogger(TokenExchange.class);
 
-    private final static String TOKEN_EXCHANGE_URL = "gplazma.oidc-te.url";
-    private final static String CLIENT_ID = "gplazma.oidc-te.client-id";
-    private final static String CLIENT_SECRET = "gplazma.oidc-te.client-secret";
-    private final static String GRANT_TYPE = "gplazma.oidc-te.grant-type";
-    private final static String SUBJECT_ISSUER = "gplazma.oidc-te.subject-issuer";
-    private final static String SUBJECT_TOKEN_TYPE = "gplazma.oidc-te.subject-token-type";
-    private final static String AUDIENCE = "gplazma.oidc-te.audience";
+    public final static String TOKEN_EXCHANGE_URL = "gplazma.oidc-te.url";
+    public final static String CLIENT_ID = "gplazma.oidc-te.client-id";
+    public final static String CLIENT_SECRET = "gplazma.oidc-te.client-secret";
+    public final static String GRANT_TYPE = "gplazma.oidc-te.grant-type";
+    public final static String SUBJECT_ISSUER = "gplazma.oidc-te.subject-issuer";
+    public final static String SUBJECT_TOKEN_TYPE = "gplazma.oidc-te.subject-token-type";
+    public final static String AUDIENCE = "gplazma.oidc-te.audience";
 
     private final CloseableHttpClient client;
 
-    public TokenExchange () {
-        this.client = HttpClients.createDefault();
+    private final String tokenExchangeURL;
+    private final String clientID; 
+    private final String clientSecret; 
+    private final String grantType; 
+    private final String subjectIssuer; 
+    private final String subjectTokenType; 
+    private final String audience; 
+
+    public TokenExchange (Properties properties) {
+        this(properties, HttpClients.createDefault());
+
     }
 
     @VisibleForTesting
-    public TokenExchange (CloseableHttpClient client) {
+    TokenExchange (Properties properties, CloseableHttpClient client) {
+
+        tokenExchangeURL = properties.getProperty(TOKEN_EXCHANGE_URL);
+        clientID = properties.getProperty(CLIENT_ID);
+        clientSecret = properties.getProperty(CLIENT_SECRET);
+        grantType = properties.getProperty(GRANT_TYPE);
+        subjectIssuer = properties.getProperty(SUBJECT_ISSUER);
+        subjectTokenType = properties.getProperty(SUBJECT_TOKEN_TYPE);
+        audience = properties.getProperty(AUDIENCE);
+
         this.client = requireNonNull(client);
+
     }
 
     @Override
@@ -72,9 +92,9 @@ public class TokenExchange implements GPlazmaAuthenticationPlugin {
 
         checkAuthentication(token != null, "No bearer token in the credentials");
 
-        String exchangedToken = null;
 
         try {
+            String exchangedToken = null;
             exchangedToken = tokenExchange(token);
             privateCredentials.remove(credential);
             privateCredentials.add(new BearerTokenCredential(exchangedToken));
@@ -87,16 +107,17 @@ public class TokenExchange implements GPlazmaAuthenticationPlugin {
 
 
     @VisibleForTesting
-    public String tokenExchange(String token) throws IOException, URISyntaxException {
-        String postBody = "client_id=" + CLIENT_ID
-                + "&client_secret=" + CLIENT_SECRET
-                + "&grant_type=" + GRANT_TYPE
+    String tokenExchange(String token) throws IOException, URISyntaxException {
+        String postBody = "client_id=" + clientID 
+                + "&client_secret=" + clientSecret
+                + "&grant_type=" + grantType
                 + "&subject_token=" + token
-                + "&subject_issuer=" + SUBJECT_ISSUER
-                + "&subject_token_type=" + SUBJECT_TOKEN_TYPE
-                + "&audience=" + AUDIENCE;
+                + "&subject_issuer=" + subjectIssuer
+                + "&subject_token_type=" + subjectTokenType
+                + "&audience=" + audience;
+
     
-        URI uri = new URIBuilder(TOKEN_EXCHANGE_URL).build();
+        URI uri = new URIBuilder(tokenExchangeURL).build();
         HttpPost httpPost = new HttpPost(uri);
     
         httpPost.setHeader("Content-Type", "application/x-www-form-urlencoded");

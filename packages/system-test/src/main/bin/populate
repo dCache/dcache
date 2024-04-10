@@ -138,12 +138,7 @@ EOF
     host_cert_hash=$(openssl x509 -in $ca_cert -noout -subject_hash)
     cp "$ca_cert" "$trust_store/$host_cert_hash.0"
 
-# <<<<<<< HEAD
-#     # old_dn="$(openssl x509 -in $ca_cert -noout -subject -nameopt compat | sed 's:subject= *\+/\?:/:;s:, :/:g')"
-#     old_dn="$(openssl x509 -in $ca_cert -noout -subject -nameopt compat | sed -E 's:subject= */?\?:/:;s: *,:/:g')"
-# =======
     old_dn=$(extract_dn "$ca_cert")
-# >>>>>>> master
 
     cat > "$trust_store/$host_cert_hash.signing_policy" <<EOF
 access_id_CA    X509    '$old_dn'
@@ -288,13 +283,7 @@ add_dn_from_file() { # $1 - X.509 pem certificate
 	return
     fi
 
-# <<<<<<< HEAD
-#     # dn=$(openssl x509 -in "$1" -subject -noout -nameopt compat | sed 's:subject= *\+/\?:/:;s:, :/:g')
-#     # dn=$(openssl x509 -in "$1" -subject -noout -nameopt compat | sed -E 's:subject= */:?/:;s:details= */:?/:;s:priority= */:?/:' )
-#     dn=$(openssl x509 -in "$1" -subject -noout -nameopt compat | sed -E 's:subject= */?\?:/:;s: *,:/:g' )
-# =======
     dn=$(extract_dn "$1")
-# >>>>>>> master
 
     rc=0
     bin/dcache kpwd dcuserlist "$username" | grep -q "Authentication Record" || rc=$?
