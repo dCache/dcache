@@ -51,6 +51,7 @@ before_script:
       set +x
       echo "============== GitLab Agent =============="
       uname -a
+      date
       echo "Runner           : $CI_RUNNER_DESCRIPTION"
       echo "Runner id        : $CI_RUNNER_ID"
       echo "Runner version   : $CI_RUNNER_VERSION"
