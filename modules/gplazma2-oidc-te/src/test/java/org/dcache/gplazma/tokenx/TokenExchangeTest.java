@@ -24,6 +24,8 @@ import static org.dcache.gplazma.tokenx.TokenExchange.GRANT_TYPE;
 import static org.dcache.gplazma.tokenx.TokenExchange.SUBJECT_ISSUER;
 import static org.dcache.gplazma.tokenx.TokenExchange.SUBJECT_TOKEN_TYPE;
 import static org.dcache.gplazma.tokenx.TokenExchange.TOKEN_EXCHANGE_URL;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalToIgnoringCase;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -36,37 +38,25 @@ import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
+// import org.apache.http.impl.client.HttpClients;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
-
 
 public class TokenExchangeTest {
 
     private TokenExchange plugin; 
     private CloseableHttpClient httpClient;
-    private Properties properties;
 
     @Before
     public void setup() {
         plugin = null;
         httpClient = null;
-
-        properties = new Properties();
-        properties.put(TOKEN_EXCHANGE_URL, "https://keycloak.desy.de/auth/realms/production/protocol/openid-connect/token");
-        properties.put(CLIENT_ID, "token-exchange");
-        properties.put(CLIENT_SECRET, "");
-        properties.put(GRANT_TYPE, "urn:ietf:params:oauth:grant-type:token-exchange");
-        properties.put(SUBJECT_ISSUER, "oidc");
-        properties.put(SUBJECT_TOKEN_TYPE, "urn:ietf:params:oauth:token-type:access_token");
-        properties.put(AUDIENCE, "token-exchange");
-
     }
 
     @Test(expected=IOException.class)
     public void shouldFailWithInvalidToken() throws Exception {
-        plugin = new TokenExchange(properties);
-        // plugin = aPlugin().build();
+        given(aPlugin().withAuthorizationServer((aAuthorizationServer().thatThrowsIOException())));
 
         plugin.tokenExchange("InvalidToken"); 
     }
@@ -74,15 +64,15 @@ public class TokenExchangeTest {
     @Test
     public void tokenExchangeTest() throws Exception {
 
-        // given(aPlugin().withAuthorizationServer(aAuthorizationServer().thatExchanges()));
-        plugin = new TokenExchange(properties);
+        given(aPlugin().withAuthorizationServer(aAuthorizationServer().thatExchanges()));
+        // httpClient = HttpClients.createDefault(); plugin = aPlugin().build();
 
-        String token = "eyJ0eXAiOiJhdCtqd3QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIzNWFkOWJlOC0zOThkLTQzNjMtYjhlYS05MDJmYjU1YWM3YzUiLCJhdWQiOiJwdWJsaWMtb2lkYy1hZ2VudCIsInNjb3BlIjoiZWR1cGVyc29uX2VudGl0bGVtZW50IHN5czpzY2ltOnJlYWRfcHJvZmlsZSBlbnRpdGxlbWVudHMgZWR1cGVyc29uX2Fzc3VyYW5jZSB2b3BlcnNvbl9leHRlcm5hbF9hZmZpbGlhdGlvbiBlZHVwZXJzb25fc2NvcGVkX2FmZmlsaWF0aW9uIGVkdXBlcnNvbl9wcmluY2lwYWxfbmFtZSBwcm9maWxlIHN5czpzY2ltOnJlYWRfbWVtYmVyc2hpcHMgY3JlZGVudGlhbHMgc2luZ2xlLWxvZ291dCBzbiBlbWFpbCBvZmZsaW5lX2FjY2VzcyBvcGVuaWQgZWR1cGVyc29uX3VuaXF1ZV9pZCBkaXNwbGF5X25hbWUgdm9wZXJzb25faWQgc3lzOnNjaW06cmVhZF9zZWxmX2dyb3VwIiwiaXNzIjoiaHR0cHM6XC9cL2xvZ2luLmhlbG1ob2x0ei5kZVwvb2F1dGgyIiwiZXhwIjoxNzEyNzY1ODgxLCJpYXQiOjE3MTI3NjE4ODEsImp0aSI6ImZlNGM0OTE4LTM1ZWQtNGJiNy1iOGVjLTk4YWVhZjQ3ODM5MyIsImNsaWVudF9pZCI6InB1YmxpYy1vaWRjLWFnZW50In0.JJBDSTEGXJzqhTG7VMSyljmWsFXtbs9oxd3U9XXGBZqAeTC28COGouzWLnqUJsCcY4e9ipoz9_Ti9L5nxkb_g_f4aP634GfkAmSopmPK_464NO_hOe3jsXl1sixo1KCQhkamxnDGA5MPoiiFM5Itqm0N9zLXWMD3r1BpH8P0HSKdLktduWkCZopKVRCGG3kirj3Aw8c2HKA-hZw16OFSdE52ZR-X5B05U8T9mL779HhRqTUJHtMoqjnUvwa7zPLCU1Cn7uDq_BitGKtbiQiRc1-8gI2DaWMfwzCELur7YLCnaveGvnCkbeVPuOWde_soUeRKGc3qgmAA8Np63_2YPg";
+        String token = "eyJ0eXAiOiJhdCtqd3QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIzNWFkOWJlOC0zOThkLTQzNjMtYjhlYS05MDJmYjU1YWM3YzUiLCJhdWQiOiJwdWJsaWMtb2lkYy1hZ2VudCIsInNjb3BlIjoiZWR1cGVyc29uX2VudGl0bGVtZW50IHN5czpzY2ltOnJlYWRfcHJvZmlsZSBlbnRpdGxlbWVudHMgZWR1cGVyc29uX2Fzc3VyYW5jZSB2b3BlcnNvbl9leHRlcm5hbF9hZmZpbGlhdGlvbiBlZHVwZXJzb25fc2NvcGVkX2FmZmlsaWF0aW9uIGVkdXBlcnNvbl9wcmluY2lwYWxfbmFtZSBwcm9maWxlIHN5czpzY2ltOnJlYWRfbWVtYmVyc2hpcHMgY3JlZGVudGlhbHMgc2luZ2xlLWxvZ291dCBzbiBlbWFpbCBvZmZsaW5lX2FjY2VzcyBvcGVuaWQgZWR1cGVyc29uX3VuaXF1ZV9pZCBkaXNwbGF5X25hbWUgdm9wZXJzb25faWQgc3lzOnNjaW06cmVhZF9zZWxmX2dyb3VwIiwiaXNzIjoiaHR0cHM6XC9cL2xvZ2luLmhlbG1ob2x0ei5kZVwvb2F1dGgyIiwiZXhwIjoxNzEyODQ5NjkxLCJpYXQiOjE3MTI4NDU2OTEsImp0aSI6ImFkYTAyMTdjLTMzMjEtNGE4Mi1iMTA3LWI3NjUxYmQ4Yzk1MyIsImNsaWVudF9pZCI6InB1YmxpYy1vaWRjLWFnZW50In0.l9xKp03pf64dBOb9IdzAN1RIJtUi0gWZNRg_k4rShcfIvoTkNf3rVRWK9JTO_fjG9XUwTCOxt6wdYt4eZWuTkQLfKPq6cUluKn6xRGGB60Fb5M9iY-coBSjwNNjqw4S6YpaAa7rfKG2TQsvRV-HRRNNnXWQHJ8flGfNaQu0Gu5HRGevJ5Ple1E6n7gi-H_3YkxRE2nA7K5ZizQMCoVlJFfSGr9UE65iJDNl_VDe_OmCL2wz02A7qC7sZDteMmoxl6zKA0tgF-AqlF1AJsRW8rWtEKoav6cKPVKzZQ21OTvmHuGAxQBZ0nC07StZztma2e3Arsn-wohdyoueaj9OqQw";
 
         String result = plugin.tokenExchange(token);
 
-        System.out.println("result: " + result);
-        // assertThat(result, equalToIgnoringCase("valid.access.token"));
+        // System.out.println("result: " + result);
+        assertThat(result, equalToIgnoringCase("valid.access.token"));
     }
 
     private void given(PluginBuilder builder) {
@@ -126,6 +116,10 @@ public class TokenExchangeTest {
             return this;
         }
 
+        public AuthorizationServerBuilder thatThrowsIOException() throws IOException {
+            throw new IOException("IOException thrown");
+        }
+
         public CloseableHttpClient build() {
             return httpClient;
         }
@@ -137,7 +131,17 @@ public class TokenExchangeTest {
      */
     private class PluginBuilder {
 
-        public PluginBuilder() {}
+        private Properties properties = new Properties();
+
+        public PluginBuilder() {
+            properties.put(TOKEN_EXCHANGE_URL, "https://keycloak.desy.de/auth/realms/production/protocol/openid-connect/token");
+            properties.put(CLIENT_ID, "token-exchange");
+            properties.put(CLIENT_SECRET, "secret");
+            properties.put(GRANT_TYPE, "urn:ietf:params:oauth:grant-type:token-exchange");
+            properties.put(SUBJECT_ISSUER, "oidc");
+            properties.put(SUBJECT_TOKEN_TYPE, "urn:ietf:params:oauth:token-type:access_token");
+            properties.put(AUDIENCE, "token-exchange");
+        }
 
         public PluginBuilder withAuthorizationServer(AuthorizationServerBuilder builder) {
             httpClient = builder.build();
