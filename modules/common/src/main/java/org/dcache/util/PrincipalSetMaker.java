@@ -1,6 +1,7 @@
 package org.dcache.util;
 
 import com.google.common.collect.Sets;
+import java.net.URI;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.Set;
@@ -9,8 +10,10 @@ import org.dcache.auth.DesiredRole;
 import org.dcache.auth.EmailAddressPrincipal;
 import org.dcache.auth.ExemptFromNamespaceChecks;
 import org.dcache.auth.FQANPrincipal;
+import org.dcache.auth.FullNamePrincipal;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
+import org.dcache.auth.OAuthProviderPrincipal;
 import org.dcache.auth.OidcSubjectPrincipal;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
@@ -52,11 +55,24 @@ public class PrincipalSetMaker {
      * Add a username Principal to the set.
      *
      * @param name the username to add
+     *
      */
     public PrincipalSetMaker withUsername(String username) {
         _principals.add(new UserNamePrincipal(username));
         return this;
     }
+
+    /**
+     * Add a Full Name Principal to the set.
+     *
+     * @param name the full name of the user.
+     *
+     */
+    public PrincipalSetMaker withFullname(String name) {
+        _principals.add(new FullNamePrincipal(name));
+        return this;
+    }
+
 
     /**
      * Add a primary groupname Principal to the set.
@@ -149,6 +165,17 @@ public class PrincipalSetMaker {
      */
     public PrincipalSetMaker withOidc(String sub, String op) {
         _principals.add(new OidcSubjectPrincipal(sub, op));
+        return this;
+    }
+
+    /**
+     * Add an OAuth2 Provider (OP) to the set.
+     *
+     * @param alias the name/alias of this OAuth2 Provider.
+     * @param uri the URI identity of the OAuth2 Provider.
+     */
+    public PrincipalSetMaker withOauth2Provider(String alias, URI uri) {
+        _principals.add(new OAuthProviderPrincipal(alias, uri));
         return this;
     }
 
