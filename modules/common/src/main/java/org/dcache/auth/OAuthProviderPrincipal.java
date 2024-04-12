@@ -18,6 +18,7 @@
  */
 package org.dcache.auth;
 
+import java.net.URI;
 import static java.util.Objects.requireNonNull;
 
 import java.security.Principal;
@@ -29,14 +30,20 @@ import java.security.Principal;
 public class OAuthProviderPrincipal implements Principal {
 
     private final String name;
+    private final URI issuer;
 
-    public OAuthProviderPrincipal(String name) {
+    public OAuthProviderPrincipal(String name, URI issuer) {
         this.name = requireNonNull(name);
+        this.issuer = requireNonNull(issuer);
     }
 
     @Override
     public String getName() {
         return name;
+    }
+
+    public URI getIssuer() {
+        return issuer;
     }
 
     @Override

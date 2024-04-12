@@ -32,6 +32,7 @@ import static org.mockito.Mockito.mock;
  */
 public class MockIdentityProviderBuilder {
     private final IdentityProvider provider = mock(IdentityProvider.class);
+    private boolean hasEndpoint;
 
     static public MockIdentityProviderBuilder anIp(String name) {
         return new MockIdentityProviderBuilder(name);
@@ -44,6 +45,7 @@ public class MockIdentityProviderBuilder {
     public MockIdentityProviderBuilder withEndpoint(String endpoint) {
         URI url = URI.create(endpoint);
         BDDMockito.given(provider.getIssuerEndpoint()).willReturn(url);
+        hasEndpoint = true;
         return this;
     }
 
@@ -86,6 +88,9 @@ public class MockIdentityProviderBuilder {
     }
 
     public IdentityProvider build() {
+        if (!hasEndpoint) {
+            withEndpoint("https://example.org/");
+        }
         return provider;
     }
 }
