@@ -88,7 +88,7 @@ public class Issuer {
         String configEndpoint = sb.toString();
 
         userIdentity = Set.copyOf(identity);
-        opIdentity = new OAuthProviderPrincipal(id);
+        opIdentity = new OAuthProviderPrincipal(id, URI.create(endpoint));
 
         this.configuration = new HttpJsonNode(client, configEndpoint,
               Duration.ofHours(1), Duration.ofSeconds(10));
