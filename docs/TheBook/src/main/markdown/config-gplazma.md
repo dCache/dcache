@@ -561,6 +561,117 @@ In the OP definition:
 
 #### map Plug-ins
 
+##### alise
+
+[ALISE](https://github.com/m-team-kit/alise/) is a service developed through
+the interTwin project.  When deployed and configured, it allows a site's users
+to register their federated identities (e.g. EGI Check-In, Helmholtz ID, some
+community-managed INDICO-IAM service) against their site-local identity.  This
+registration process requires no admin intervention and a user typically does
+this once.   Once this link (between a user's federated and site-local
+identities) is registered, ALISE allows a service (such as dCache) to discover
+the local identity (a username) when that service presents that user's
+federated identity (an OIDC `sub` claim).
+
+ALISE is intended for sites that have identity management (IAM) solutions that
+do not support federated identities.  Other solutions may be preferable for
+sites that have IAM solutions that support account linking; e.g., sites running
+Keycloak may be able to provide the same functionality without running an
+additional service.
+
+The `alise` plugin processes a login request by taking the `sub` claim (e.g.,
+as provided by the `oidc` plugin) and sending a request to the ALISE service.
+If that request is successful then the plugin will learn the user's username
+and (optionally) that user's display name.  The `alise` plugin will cache
+result of the ALISE query for a short period.  This is to improve latency (of
+subsequent queries) and to avoid placing too much load on the ALISE server.
+
+When processing a login request, the `alise` plugin succeeds if it queries the
+ALISE service with a `sub` claim and receives a corresponding local identity: a
+username.  The plugin fails if the ALISE service responds that no mapping is
+known for this federated identity, if there is a problem making the request, or
+if the login attempt does not contain a `sub` claim (either no access token was
+provided or the `sub` claim was not extracted from the access token by the
+`oidc` plugin).
+
+**Configuration properties**
+
+`gplazma.alise.endpoint`
+
+This is a URL that forms the base for all HTTP queries to the ALISE service.
+The default value is not valid; you must supply this configuration.
+
+A typical value would look like `https://alise.example.org/`.
+
+For comparison, a typical HTTP request to ALISE would look like:
+
+    https://alise.example.org/api/v1/target/vega-kc/mapping/issuer/95d[...]
+
+The `gplazma.alise.endpoint` value is this URL update (but not including) the
+`/api/v1` part.
+
+`gplazma.alise.target`
+
+A specific ALISE endpoint may serve multiple families of related services:
+the targets.  Targets are independent of each other: the account mapping
+information of a target is independent of the account information any other
+target.
+
+The primary use-case for targets is to allow a single ALISE service to support
+multiple sites; however, the concept could also be useful if a ALISE service
+supports only a single site.
+
+The default value is not valid; you must supply this configuration.  A typical
+value would be a simple string; e.g., `vega-kc`.
+
+`gplazma.alise.apikey`
+
+The API key is the authorisation that allows dCache to query ALISE for account
+information.  The [ALISE documentation](https://github.com/m-team-kit/alise/)
+provides information on how to obtain the API key.
+
+The following provides a quick summary of the process, using oidc-agent and
+other common command-line tools.  The
+
+    SOME_OP=EGI-CHECKIN # or whichever oidc-agent account is appropriate
+    TOKEN=$(oidc-token $SOME_OP)
+    TARGET=vega-kc # see gplazma.alise.target
+    APIKEY_ENDPOINT=https://alise.example.org/api/v1/target/$TARGET/get_apikey
+    APIKEY=$(curl -sH "Authorization: Bearer $TOKEN" $APIKEY_ENDPOINT \
+        | jq -r .apikey)
+
+`gplazma.alise.timeout`
+
+The time dCache will wait for the ALISE service to respond when requesting a
+user's site-local identity.  If there is no response within that time then the
+alise plugin will fail the request.  This, in turn, will (depending on gPlazma
+configuration) likely result in gPlazma failing that login attempt.
+
+The value is expressed as an ISO 8601 duration; for example, `PT5M` is five
+minutes and `PT10S` is ten seconds.
+
+`gplazma.alise.issuers`
+
+The alise plugin can limit the federated identities that it will send to the
+ALISE service, based on the issuer of the access token.  The
+`gplazma.alise.issuers` configuration property contains a space-separated list
+of issuers, where each issuer is specified as either the dCache alias (see
+`oidc` plugin) or the issuer's URI.  As a special case, if this list is empty
+then all tokens are sent to the ALISE service for mapping.
+
+**Using with other plugins**
+
+When successful, the `alise` plugin provides information about the user; in
+particular, the user's username and (optionally) a display name.  By itself,
+this is insufficient for a successful gPlazma map phase, as the user's uid and
+gid must also be obtained.
+
+Out of the box, dCache supports multiple ways of obtaining the uid and gid from
+a username. This could be done by querying an LDAP service (see `ldap` plugin),
+an NIS service (see `nis` plugin) or the dCache server's local user account
+lookup service (see `nsswitch` plugin).  It is also possible to use explicit
+configuration files (see `multimap` plugin).
+
 ##### kpwd
 
 As a `map` plug-in it maps usernames to UID and GID. And as a `session` plug-in it adds root and home path information to the session based on the user’s username.
@@ -1480,7 +1591,7 @@ voms-proxy-info
 
 ## Using OpenID Connect
 
-dCache also supports the use of OpenID Connect bearer tokens as a means of authentication. 
+dCache also supports the use of OpenID Connect bearer tokens as a means of authentication.
 
 OpenID Connect is a federated identity system.  The dCache users see federated identity as a way to use their existing username & password safely.  From a dCache admin's point-of-view, this involves "outsourcing" responsibility for checking users identities to some external service: you must trust that the service is doing a good job.
 
@@ -1490,17 +1601,17 @@ OpenID Connect is a federated identity system.  The dCache users see federated i
 
 Common examples of Authorisation servers are Google, Indigo-IAM, Cern-Single-Signon etc.
 
-As of version 2.16, dCache is able to perform authentication based on [OpendID Connect](http://openid.net/specs/openid-connect-core-1_0.html) credentials on its HTTP end-points. In this document, we outline the configurations necessary to enable this support for OpenID Connect. 
+As of version 2.16, dCache is able to perform authentication based on [OpendID Connect](http://openid.net/specs/openid-connect-core-1_0.html) credentials on its HTTP end-points. In this document, we outline the configurations necessary to enable this support for OpenID Connect.
 
-OpenID Connect credentials are sent to dCache with Authorisation HTTP Header as follows 
+OpenID Connect credentials are sent to dCache with Authorisation HTTP Header as follows
 `Authorization: Bearer  <yaMMeexxx........>`. This bearer token is extracted, validated and verified against a **Trusted Authorisation Server** (Issue of the bearer token) and is used later to fetch additional user identity information from the corresponding Authorisation Server.
 
-### Steps for configuration 
+### Steps for configuration
 
-In order to configure the OpenID Connect support, we need to 
+In order to configure the OpenID Connect support, we need to
 
 1. configure the gplazma plugins providing the support for authentication using OpenID credentials and mapping a verified OpenID credential to dCache specific `username`, `uid` and `gid`.
-2. enabling the plugins in gplazma 
+2. enabling the plugins in gplazma
 
 ### Gplazma Plugins for OpenId Connect
 
@@ -1509,7 +1620,7 @@ The support for OpenID Connect in Cache is achieved with the help of two gplazma
 #### OpenID Authenticate Plugin (oidc)
 It takes the extracted OpenID connect credentials (Bearer Token) from the HTTP requests and validates it against a OpenID Provider end-point. The admins need to obtain this information from their trusted OpenID Provider such as Google.
 
-In case of Google, the provider end-point can be obtained from the url of its [Discovery Document](http://openid.net/specs/openid-connect-core-1_0.html#OpenID.Discovery), e.g. https://accounts.google.com/.well-known/openid-configuration. Hence, the provider end-point in this case would be **accounts.google.com**. 
+In case of Google, the provider end-point can be obtained from the url of its [Discovery Document](http://openid.net/specs/openid-connect-core-1_0.html#OpenID.Discovery), e.g. https://accounts.google.com/.well-known/openid-configuration. Hence, the provider end-point in this case would be **accounts.google.com**.
 
 This end-point has to be appended to the gplazma property **gplazma.oidc.hostnames**, which should be added to the layouts file. Multiple trusted OpenID providers can be added with space separated list as below.
 
@@ -1540,7 +1651,7 @@ The two plugins above must be enabled in the gplazma.conf.
 
 > auth optional oidc
 
-> map optional  multimap 
+> map optional  multimap
 
 Restart dCache and check that there are no errors in loading these gplazma plugins.
 
@@ -1830,26 +1941,26 @@ Some file access examples:
 
 Roles are a way of describing what capabilities a given user has.  They constitute
 a set of operations defined either explicitly or implicitly which the user who
-is assigned that role is permitted to exercise.  
+is assigned that role is permitted to exercise.
 
-Roles further allow users to act in more than one capacity without having to 
-change their basic identity. For instance, a "superuser" may wish to act as _janedoe_ 
+Roles further allow users to act in more than one capacity without having to
+change their basic identity. For instance, a "superuser" may wish to act as _janedoe_
 for some things, but as an administrator for others, without having to reauthenticate.
 
-While the role framework in dCache is designed to be extensible, there 
-currently exists only one recognized role, that of _admin_.  
+While the role framework in dCache is designed to be extensible, there
+currently exists only one recognized role, that of _admin_.
 
 To activate the use of the _admin_ role, the following steps are necessary.
 
-1) Define the admin role using the property:  
+1) Define the admin role using the property:
 
 ```ini
 gplazma.roles.admin-gid=<gid>
 ```
-    
+
 2) Add the _admin_ gid to the set of gids for any user who should have this capability.
 
-3) Add the roles plugin to your gPlazma configuration (usually 'requisite' is sufficient):  
+3) Add the roles plugin to your gPlazma configuration (usually 'requisite' is sufficient):
 
     session requisite roles
 
