@@ -1481,7 +1481,7 @@ public class SciTokenPluginTest {
                 .issuedBy("OP1").usingKey("key1"));
 
         assertThat(identifiedPrincipals, hasItems(new JwtSubPrincipal("EXAMPLE", sub),
-                new OidcSubjectPrincipal(sub, "EXAMPLE"), new OAuthProviderPrincipal("EXAMPLE"),
+                new OidcSubjectPrincipal(sub, "EXAMPLE"), new OAuthProviderPrincipal("EXAMPLE", URI.create("https://example.org")),
                 new JwtJtiPrincipal("EXAMPLE", jti)));
         assertThat(identifiedPrincipals, not(hasItems(new UidPrincipal(1000), new GidPrincipal(1000, true))));
     }

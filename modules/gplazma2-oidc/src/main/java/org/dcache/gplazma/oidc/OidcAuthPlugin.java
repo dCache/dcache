@@ -199,7 +199,7 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
             checkAudience(result, identifiedPrincipals);
 
             var idp = result.idp();
-            identifiedPrincipals.add(new OAuthProviderPrincipal(idp.getName()));
+            identifiedPrincipals.add(new OAuthProviderPrincipal(idp.getName(), idp.getIssuerEndpoint()));
 
             Profile profile = idp.getProfile();
             var profileResult = profile.processClaims(idp, result.claims());
