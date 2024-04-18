@@ -511,9 +511,9 @@ public class PgSQL95FsSqlDriver extends FsSqlDriver {
 
 
     @Override
-    void decNlink(FsInode inode, int delta) {
+    void decNlinkForDir(FsInode inode, int delta) {
         if (delta > 0 || !enableLazyWcc) {
-            super.decNlink(inode, delta);
+            super.decNlinkForDir(inode, delta);
             return;
         }
 
@@ -525,9 +525,9 @@ public class PgSQL95FsSqlDriver extends FsSqlDriver {
     }
 
     @Override
-    void incNlink(FsInode inode, int delta) {
+    void incNlinkForDir(FsInode inode, int delta) {
         if (delta > 0 || !enableLazyWcc) {
-            super.incNlink(inode, delta);
+            super.incNlinkForDir(inode, delta);
             return;
         }
         // parent dir mtime update
