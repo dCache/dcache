@@ -29,12 +29,16 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class represents a restriction that only allows certain activities with specific paths.
  */
 public class MultiTargetedRestriction implements Restriction {
 
+    private static final Logger LOGGER =
+          LoggerFactory.getLogger(MultiTargetedRestriction.class);
     private static final long serialVersionUID = -4604505680192926544L;
 
     private static final EnumSet<Activity> ALLOWED_PARENT_ACTIVITIES
@@ -220,7 +224,8 @@ public class MultiTargetedRestriction implements Restriction {
     private boolean isRestricted(Activity activity, FsPath path, boolean skipPrefixCheck) {
         if (!authorisations.isEmpty()) {
             Function<FsPath, FsPath> resolver = getPathResolver();
-            path = resolver.apply(path);
+            FsPath resolvedPath = resolver.apply(path);
+            LOGGER.debug("Checking {} restrictions on path {} -> {}", activity, path, resolvedPath);
             for (Authorisation authorisation : authorisations) {
                 EnumSet<Activity> allowedActivity = authorisation.getActivity();
                 if (skipPrefixCheck) {
@@ -233,13 +238,17 @@ public class MultiTargetedRestriction implements Restriction {
                     }
                 } else {
                     FsPath allowedPath = resolver.apply(authorisation.getPath());
-                    if (allowedActivity.contains(activity) && path.hasPrefix(allowedPath)) {
-                        return false;
+                    if (allowedActivity.contains(activity)) {
+                         LOGGER.debug("Checking whether {} on {} is allowed by {} -> {}",
+                                      activity, resolvedPath, authorisation.getPath(), allowedPath);
+                         if (resolvedPath.hasPrefix(allowedPath)) {
+                              return false;
+                         }
                     }
 
                     // As a special case, certain activities are always allowed for
                     // parents of an AllowedPath.
-                    if (ALLOWED_PARENT_ACTIVITIES.contains(activity) && allowedPath.hasPrefix(path)) {
+                    if (ALLOWED_PARENT_ACTIVITIES.contains(activity) && allowedPath.hasPrefix(resolvedPath)) {
                         return false;
                     }
                 }
