@@ -120,19 +120,21 @@ public class MultiTargetedRestriction implements Restriction {
 
     @Override
     public boolean hasUnrestrictedChild(Activity activity, FsPath parent) {
-        for (Authorisation authorisation : authorisations) {
+        if (!authorisations.isEmpty()) {
             Function<FsPath, FsPath> resolver = getPathResolver();
-            FsPath allowedPath = resolver.apply(authorisation.getPath());
-            EnumSet<Activity> allowedActivity = authorisation.getActivity();
             parent = resolver.apply(parent);
+            for (Authorisation authorisation : authorisations) {
+                FsPath allowedPath = resolver.apply(authorisation.getPath());
+                EnumSet<Activity> allowedActivity = authorisation.getActivity();
 
-            /*  As an example, if allowedPath is /path/to/dir then we return
-             *  true if parent is /path or if parent is /path/to/dir/my-data,
-             *  but return false if parent is /path/to/other/dir.
-             */
-            if (allowedActivity.contains(activity) &&
-                  (allowedPath.hasPrefix(parent) || parent.hasPrefix(allowedPath))) {
-                return true;
+                /*  As an example, if allowedPath is /path/to/dir then we return
+                 *  true if parent is /path or if parent is /path/to/dir/my-data,
+                 *  but return false if parent is /path/to/other/dir.
+                 */
+                if (allowedActivity.contains(activity) &&
+                        (allowedPath.hasPrefix(parent) || parent.hasPrefix(allowedPath))) {
+                    return true;
+                }
             }
         }
         return false;
@@ -216,31 +218,33 @@ public class MultiTargetedRestriction implements Restriction {
     }
 
     private boolean isRestricted(Activity activity, FsPath path, boolean skipPrefixCheck) {
-        for (Authorisation authorisation : authorisations) {
-            EnumSet<Activity> allowedActivity = authorisation.getActivity();
-            if (skipPrefixCheck) {
-                if (allowedActivity.contains(activity)) {
-                    return false;
-                }
+        if (!authorisations.isEmpty()) {
+            Function<FsPath, FsPath> resolver = getPathResolver();
+            path = resolver.apply(path);
+            for (Authorisation authorisation : authorisations) {
+                EnumSet<Activity> allowedActivity = authorisation.getActivity();
+                if (skipPrefixCheck) {
+                    if (allowedActivity.contains(activity)) {
+                        return false;
+                    }
 
-                if (ALLOWED_PARENT_ACTIVITIES.contains(activity)) {
-                    return false;
-                }
-            } else {
-                FsPath allowedPath = getPathResolver().apply(authorisation.getPath());
-                path = getPathResolver().apply(path);
-                if (allowedActivity.contains(activity) && path.hasPrefix(allowedPath)) {
-                    return false;
-                }
+                    if (ALLOWED_PARENT_ACTIVITIES.contains(activity)) {
+                        return false;
+                    }
+                } else {
+                    FsPath allowedPath = resolver.apply(authorisation.getPath());
+                    if (allowedActivity.contains(activity) && path.hasPrefix(allowedPath)) {
+                        return false;
+                    }
 
-                // As a special case, certain activities are always allowed for
-                // parents of an AllowedPath.
-                if (ALLOWED_PARENT_ACTIVITIES.contains(activity) && allowedPath.hasPrefix(path)) {
-                    return false;
+                    // As a special case, certain activities are always allowed for
+                    // parents of an AllowedPath.
+                    if (ALLOWED_PARENT_ACTIVITIES.contains(activity) && allowedPath.hasPrefix(path)) {
+                        return false;
+                    }
                 }
             }
         }
-
         return true;
     }
 }
