@@ -227,6 +227,13 @@ will use offline verification; otherwise, the token is sent to the
 userinfo endpoint.  dCache will cache the response.  This behaviour
 may be adjusted.
 
+Please note that the OIDC plugin uses Java's built-in trust store
+to verify the certificate presented by the issuer when making
+TLS-encrypted HTTP requests (https://...).  Most issuers use
+certificates issued by a CA/B-accredited certificate authority, and
+most distributions of Java provide CA/B as a default list of
+trusted certificate authorities.
+
 ##### Obtaining OIDC information
 
 The access token represents a logged in user; however, dCache needs to
