@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2022 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2022-2024 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,10 +17,15 @@
  */
 package org.dcache.util;
 
+import static com.github.npathai.hamcrestopt.OptionalMatchers.isEmpty;
+import static com.github.npathai.hamcrestopt.OptionalMatchers.isPresentAnd;
+import java.util.List;
 import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class ResultTest
 {
@@ -45,6 +50,19 @@ public class ResultTest
     }
 
     // Tests focusing on Result#equals
+
+    @Test
+    public void shouldEqualItself()
+    {
+        var r = Result.success("the result");
+        assertThat(r, equalTo(r));
+    }
+
+    @Test
+    public void shouldNotEqualAnotherObject()
+    {
+        assertThat(Result.success("the result"), not(equalTo(new Object())));
+    }
 
     @Test
     public void shouldEqualSuccessfulResultWithEqualValueWhenSuccessful()
@@ -98,5 +116,129 @@ public class ResultTest
         Result<String,String> r2 = Result.success("the result");
 
         assertThat(r1, is(not(equalTo(r2))));
+    }
+
+    @Test
+    public void shouldBeSuccessfulWhenSuccess() {
+        Result<String,String> r = Result.success("success!");
+
+        assertTrue(r.isSuccessful());
+    }
+
+    @Test
+    public void shouldNotBeFailureWhenSuccess() {
+        Result<String,String> r = Result.success("success!");
+
+        assertFalse(r.isFailure());
+    }
+
+    @Test
+    public void shouldNotBeSuccessfulWhenFailure() {
+        Result<String,String> r = Result.failure("it went wrong");
+
+        assertFalse(r.isSuccessful());
+    }
+
+    @Test
+    public void shouldBeFailureWhenFailure() {
+        Result<String,String> r = Result.failure("it went wrong!");
+
+        assertTrue(r.isFailure());
+    }
+
+    @Test
+    public void shouldHaveSuccessResultWhenSuccess() {
+        Result<String,String> r = Result.success("success!");
+
+        assertThat(r.getSuccess(), isPresentAnd(equalTo("success!")));
+    }
+
+    @Test
+    public void shouldNotHaveFailureResultWhenSuccess() {
+        Result<String,String> r = Result.success("success!");
+
+        assertThat(r.getFailure(), isEmpty());
+    }
+
+    @Test
+    public void shouldNotHaveSuccessResultWhenFailure() {
+        Result<String,String> r = Result.failure("it went wrong");
+
+        assertThat(r.getSuccess(), isEmpty());
+    }
+
+    @Test
+    public void shouldHaveFailureResultWhenFailure() {
+        Result<String,String> r = Result.failure("it went wrong");
+
+        assertThat(r.getFailure(), isPresentAnd(equalTo("it went wrong")));
+    }
+
+    @Test
+    public void shouldNotThrowExceptionWhenSuccess() {
+        Result<String,String> r = Result.success("success!");
+
+        r.orElseThrow(IllegalArgumentException::new);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void shouldThrowExceptionWhenFailure() {
+        Result<String,String> r = Result.failure("it went wrong");
+
+        r.orElseThrow(IllegalArgumentException::new);
+    }
+
+    @Test
+    public void shouldMapSuccess() {
+        Result<List<String>,String> input = Result.success(List.of("1"));
+
+        Result<List<Integer>,String> output = input.map(s -> s.stream()
+                .map(Integer::valueOf)
+                .toList());
+
+        assertThat(output.getFailure(), isEmpty());
+        assertThat(output.getSuccess(), isPresentAnd(contains(1)));
+    }
+
+    @Test
+    public void shouldNotMapFailure() {
+        Result<List<String>,String> input = Result.failure("Not an integer");
+
+        Result<List<Integer>,String> output = input.map(s -> s.stream()
+                .map(Integer::valueOf)
+                .toList());
+
+        assertThat(output.getSuccess(), isEmpty());
+        assertThat(output.getFailure(), isPresentAnd(equalTo("Not an integer")));
+    }
+
+    @Test
+    public void shouldNotFlatMapFailure() {
+        Result<List<String>,String> input = Result.failure("Not an integer");
+
+        Result<List<Integer>,String> output = input.flatMap(s -> Result.success(List.of(1)));
+
+        assertThat(output.getSuccess(), isEmpty());
+        assertThat(output.getFailure(), isPresentAnd(equalTo("Not an integer")));
+    }
+
+    @Test
+    public void shouldFlatMapToSuccess() {
+        Result<List<String>,String> input = Result.success(List.of("1"));
+
+        Result<List<Integer>,String> output = input.flatMap(s -> Result.success(List.of(1)));
+
+        assertThat(output.getFailure(), isEmpty());
+        assertThat(output.getSuccess(), isPresentAnd(contains(1)));
+    }
+
+    @Test
+    public void shouldFlatMapToFailure() {
+        Result<List<String>,String> input = Result.success(List.of("1"));
+
+        Result<List<Integer>,String> output = input.flatMap(s -> Result.failure("invalid value"));
+
+        assertThat(output.getSuccess(), isEmpty());
+        assertThat(output.getFailure(), isPresentAnd(equalTo("invalid value")));
     }
 }

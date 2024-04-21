@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2022 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2022-2024 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -47,6 +47,49 @@ public abstract class Result<S,F> {
      * @return The Result converted to some other, unified type.
      */
     public abstract <C> C map(Function<S,C> mapFromSuccess, Function<F,C> mapFromFailure);
+
+    /**
+     * Convert a successful result to another type.  This is equivalent to
+     * {@link Optional#map(java.util.function.Function)}.  If this Result is
+     * a failure then that failure value is returned, otherwise this Result's
+     * success value is passed to <tt>mapSuccess</tt> and a new successful
+     * Result is returned with the value returned by <tt>mapSuccess</tt>.
+     * <p>
+     * In effect, this processes a successful result using a procedure that
+     * cannot fail.
+     * <p>
+     * Note: this is really just syntactical sugar over
+     * {@link #map(java.util.function.Function, java.util.function.Function) },
+     * but it helps maintain readability.
+     * @param <U> The new successful type
+     * @param mapSuccess The function that maps the successful result.
+     */
+    public <U> Result<U,F> map(Function<S,U> mapSuccess) {
+        return map(s -> Result.success(mapSuccess.apply(s)), Result::failure);
+    }
+
+    /**
+     * Further process a successful result with the possibility of failure.
+     * This is equivalent to
+     * {@link Optional#flatMap(java.util.function.Function)}. If this Result is
+     * failure then this method returns a Result with that failure.
+     * If this Result is a success then the Function <tt>processSuccess</tt> is
+     * applied to this Result's successful result and the value returned by
+     * <tt>processSuccess</tt> is returned.
+     * <p>
+     * In effect, this processes a successful result by a procedure that could
+     * fail.
+     * <p>
+     * Note: this is really just syntactical sugar over
+     * {@link #map(java.util.function.Function, java.util.function.Function) },
+     * but it helps maintain readability.
+     * @param <U> The new successful type
+     * @param processSuccess The function that processes a successful result
+     * @return an updated result.
+     */
+    public <U> Result<U,F> flatMap(Function<S,Result<U,F>> processSuccess) {
+        return map(processSuccess, Result::failure);
+    }
 
     /**
      * Consume this result.  The consumers are most likely using side-effects

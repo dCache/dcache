@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2019 - 2022 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2019 - 2024 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -33,18 +33,20 @@ import java.security.spec.KeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.time.Duration;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.UUID;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import org.apache.http.client.HttpClient;
 import org.dcache.gplazma.AuthenticationException;
+import org.dcache.gplazma.oidc.helpers.ReasonBearingMissingNode;
 import org.dcache.gplazma.oidc.HttpClientUtils;
 import org.dcache.gplazma.oidc.IdentityProvider;
 import org.dcache.gplazma.util.JsonWebToken;
+import org.dcache.util.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,10 +66,16 @@ public class Issuer {
 
     // Recommendation for six hours comes from this document:
     //     https://doi.org/10.5281/zenodo.3460258
-    private final Supplier<Map<String, PublicKey>> keys = MemoizeMapWithExpiry.memorize(this::readJwksDocument)
-          .whenEmptyFor(Duration.ofMinutes(1))
-          .whenNonEmptyFor(Duration.ofHours(6))
-          .build();
+    // REVISIT: the cache duration depends only whether the JWKS document may
+    // be fetched, is a JSON object with "keys" pointing to an array.  If these
+    // steps are successful and one (or more) of the array items are malformed
+    // then we will cache the result for <tt>withSuccessFor</tt> duration.
+    // This behaviour may be suboptimal.
+    private final Supplier<Result<Map<String, Result<PublicKey,String>>,String>> keys =
+            MemoizeResultWithExpiry.memorize(this::readJwksDocument)
+                    .whenFailureFor(Duration.ofMinutes(1))
+                    .whenSuccessFor(Duration.ofHours(6))
+                    .build();
 
     public Issuer(HttpClient client, IdentityProvider provider, int tokenHistory) {
         this.provider = requireNonNull(provider);
@@ -94,90 +102,108 @@ public class Issuer {
         return provider.getIssuerEndpoint().toASCIIString();
     }
 
-    private Optional<URI> jwksEndpoint() {
+    private Result<URI,String> jwksEndpoint() {
         JsonNode configuration = provider.discoveryDocument();
         if (configuration.getNodeType() == JsonNodeType.MISSING) {
-            return Optional.empty();
+            String reason = configuration instanceof ReasonBearingMissingNode
+                    ? ((ReasonBearingMissingNode) configuration).getReason()
+                    : "unknown problem";
+            return Result.failure(reason);
         }
 
         JsonNode jwksNode = configuration.get("jwks_uri");
 
         if (jwksNode == null) {
             LOGGER.warn("configuration does not have jwks_uri");
-            return Optional.empty();
+            return Result.failure("discovery document missing jwks_uri");
         }
 
         if (!jwksNode.isTextual()) {
             LOGGER.warn("configuration has non-textual jwks_uri");
-            return Optional.empty();
+            return Result.failure("discovery document has non-textual jwks_uri");
         }
 
         String url = jwksNode.asText();
 
         if (url.isEmpty()) {
             LOGGER.warn("configuration has empty jwks_uri");
-            return Optional.empty();
+            return Result.failure("discovery document has empty jwks_uri");
         }
 
         try {
-            return Optional.of(new URI(url));
+            return Result.success(new URI(url));
         } catch (URISyntaxException e) {
             LOGGER.warn("Bad jwks_uri URI \"{}\": {}", url, e.toString());
-            return Optional.empty();
+            return Result.failure("Bad jwks_uri URI " + url + ": " + e.toString());
         }
     }
 
-    private Optional<JsonNode> fetchJson(URI uri) {
+    private Result<JsonNode,String> fetchJson(URI uri) {
         try {
             JsonNode document = HttpClientUtils.readJson(client, uri);
-            return Optional.of(document);
+            return Result.success(document);
         } catch (IOException e) {
             LOGGER.warn("Failed to fetch {}: {}", uri, e.toString());
-            return Optional.empty();
+            return Result.failure("Failed to fetch " + uri + ": " + e.toString());
         }
     }
 
-    private Optional<JsonNode> extractElement(JsonNode object, String key) {
+    private Result<JsonNode,String> extractElement(JsonNode object, String key) {
         if (object.getNodeType() != JsonNodeType.OBJECT) {
             LOGGER.warn("Json node has wrong type: {} != OBJECT", object.getNodeType());
-            return Optional.empty();
+            return Result.failure("Json node has wrong type: " + object.getNodeType() + " != OBJECT");
         }
 
         var element = object.get(key);
 
         if (element == null) {
             LOGGER.warn("JSON object is missing key \"{}\"", key);
-            return Optional.empty();
+            return Result.failure("JSON object is missing key \"" + key + "\"");
         }
 
-        return Optional.of(element);
+        return Result.success(element);
     }
 
-    private Optional<JsonNode> asArray(JsonNode node) {
+    private Result<JsonNode,String> asArray(JsonNode node) {
         if (node.getNodeType() != JsonNodeType.ARRAY) {
             LOGGER.warn("Json node has wrong type: {} != ARRAY", node.getNodeType());
-            return Optional.empty();
+            return Result.failure("Json node has wrong type: " + node.getNodeType() + " != ARRAY");
         }
-        return Optional.of(node);
+        return Result.success(node);
     }
 
-    private Map<String, PublicKey> readJwksDocument() {
+    private Result<Map<String, Result<PublicKey,String>>,String> readJwksDocument() {
         return jwksEndpoint()
                 .flatMap(this::fetchJson)
                 .flatMap(j -> this.extractElement(j, "keys"))
                 .flatMap(this::asArray)
-                .map(this::parseJwksKeys)
-                .orElse(Collections.emptyMap());
+                .map(this::parseJwksKeys);
     }
 
-    private Map<String, PublicKey> parseJwksKeys(JsonNode keys) {
-        Map<String, PublicKey> publicKeys = new HashMap<>();
+    private Map<String, Result<PublicKey,String>> parseJwksKeys(JsonNode keys) {
+        Map<String, Result<PublicKey,String>> publicKeys = new HashMap<>();
         for (JsonNode key : keys) {
+            if (!key.isObject()) {
+                LOGGER.debug("Ignoring JWKS \"keys\" array item that is not a JSON object.");
+                continue;
+            }
+            String kid;
             try {
-                String kid = getOptionalString(key, "kid").orElseGet(() -> UUID.randomUUID().toString());
-                publicKeys.put(kid, buildPublicKey(key));
+                kid = getOptionalString(key, "kid").orElseGet(() -> UUID.randomUUID().toString());
             } catch (BadKeyDescriptionException e) {
-                LOGGER.warn("Bad public key: {}", e.getMessage());
+                LOGGER.warn("Issuer returned a JWKS document with a bad public"
+                        + " key identifier (\"kid\").  Using a random"
+                        + " identifier as a work-around, but this could still"
+                        + " lead to tokens being reject.");
+                kid = UUID.randomUUID().toString();
+            }
+            try {
+                Result<PublicKey,String> r = Result.success(buildPublicKey(key));
+                publicKeys.put(kid, r);
+            } catch (BadKeyDescriptionException e) {
+                Result<PublicKey,String> r = Result.failure(e.getMessage());
+                publicKeys.put(kid, r);
+                LOGGER.debug("Bad public key: {}", e.getMessage());
             }
         }
         return publicKeys;
@@ -224,16 +250,35 @@ public class Issuer {
     }
 
     public void checkIssued(JsonWebToken token) throws AuthenticationException {
-        Map<String, PublicKey> keyMap = keys.get();
+        Map<String, Result<PublicKey,String>> keyMap = keys.get()
+                .orElseThrow(msg -> new AuthenticationException(
+                        "Problem fetching public keys: " + msg));
 
         String kid = token.getKeyIdentifier();
         if (kid != null) {
-            PublicKey publicKey = keyMap.get(kid);
-            checkAuthentication(publicKey != null, "Unknown kid \"" + kid + "\"");
-            checkAuthentication(token.isSignedBy(publicKey), "Invalid signature");
+            var publicKeyResult = keyMap.get(kid);
+            checkAuthentication(publicKeyResult != null, "issuer has no public"
+                    + " key for this token (key id \"" + kid + "\")");
+            PublicKey publicKey = publicKeyResult
+                    .orElseThrow(msg -> new AuthenticationException("issuer has"
+                            + " malformed public key for this token: " + msg));
+            checkAuthentication(token.isSignedBy(publicKey), "token not signed by issuer");
         } else {
-            checkAuthentication(keyMap.values().stream().anyMatch(token::isSignedBy),
-                  "Invalid signature");
+            if (!keyMap.values().stream()
+                    .map(Result::getSuccess)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .anyMatch(token::isSignedBy)) {
+                StringBuilder sb = new StringBuilder("issuer has no public key for this token");
+                String failures = keyMap.entrySet().stream()
+                        .filter(e -> e.getValue().isFailure())
+                        .map(e -> e.getKey() + "[" + e.getValue().getFailure().get() + "]")
+                        .collect(Collectors.joining(", "));
+                if (!failures.isEmpty()) {
+                    sb.append(": ").append(failures);
+                }
+                throw new AuthenticationException(sb.toString());
+            }
         }
 
         if (previousJtis != null) {
@@ -242,7 +287,7 @@ public class Issuer {
                 String jti = jtiClaim.get();
                 boolean isReplayAttack = previousJtis.contains(jti);
                 previousJtis.add(jti);
-                checkAuthentication(!isReplayAttack, "token reuse");
+                checkAuthentication(!isReplayAttack, "token is being reused; possible replay attack");
             }
         }
     }

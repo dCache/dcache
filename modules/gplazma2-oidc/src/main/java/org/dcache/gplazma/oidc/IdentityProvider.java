@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2018 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2018-2024 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.http.client.HttpClient;
+import org.dcache.gplazma.oidc.helpers.ReasonBearingMissingNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -126,7 +127,7 @@ public class IdentityProvider {
                 nextDiscoveryFetch = now.plus(cacheDurationWhenSuccessful);
             } catch (IOException e) {
                 LOGGER.warn("Failed to fetch discovery document for {}: {}", name, e.toString());
-                discoveryDocument = MissingNode.getInstance();
+                discoveryDocument = new ReasonBearingMissingNode(e.toString());
                 nextDiscoveryFetch = now.plus(CACHE_DURATION_WHEN_UNSUCCESSFUL);
             }
         }

@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2019 - 2022 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2019 - 2024 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -19,27 +19,27 @@ package org.dcache.gplazma.oidc.jwt;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Map;
 import java.util.function.Supplier;
+import org.dcache.util.Result;
 
 /**
- * Provide access to a Map, obtained from some supplier where the value is cached for a configurable
- * duration.  The cached duration may be different depending on whether the Map is empty.
+ * Provide access to a Result, obtained from some supplier where the value is cached for a configurable
+ * duration.  The cached duration may be different depending on whether the Result is successful.
  */
-public class MemoizeMapWithExpiry<C extends Map<?, ?>> implements Supplier<C> {
+public class MemoizeResultWithExpiry<C extends Result<?, ?>> implements Supplier<C> {
 
     private final Supplier<C> supplier;
-    private final Duration whenNonEmpty;
-    private final Duration whenEmpty;
+    private final Duration whenSuccess;
+    private final Duration whenFailure;
 
     private C value;
     private Instant nextCheck;
 
-    public MemoizeMapWithExpiry(Supplier<C> supplier, Duration whenNonEmpty,
-          Duration whenEmpty) {
+    public MemoizeResultWithExpiry(Supplier<C> supplier, Duration whenSuccess,
+          Duration whenFailure) {
         this.supplier = supplier;
-        this.whenEmpty = whenEmpty;
-        this.whenNonEmpty = whenNonEmpty;
+        this.whenFailure = whenFailure;
+        this.whenSuccess = whenSuccess;
     }
 
     @Override
@@ -47,39 +47,39 @@ public class MemoizeMapWithExpiry<C extends Map<?, ?>> implements Supplier<C> {
         Instant now = Instant.now();
         if (nextCheck == null || now.isAfter(nextCheck)) {
             value = supplier.get();
-            Duration cacheDuration = (value == null || value.isEmpty())
-                  ? whenEmpty : whenNonEmpty;
+            Duration cacheDuration = (value == null || value.isFailure())
+                  ? whenFailure : whenSuccess;
             nextCheck = now.plus(cacheDuration);
         }
         return value;
     }
 
-    public static <C extends Map<?, ?>> Builder memorize(Supplier<C> supplier) {
+    public static <C extends Result<?, ?>> Builder memorize(Supplier<C> supplier) {
         return new Builder(supplier);
     }
 
-    public static class Builder<C extends Map<?, ?>> {
+    public static class Builder<C extends Result<?, ?>> {
 
         private final Supplier<C> supplier;
-        private Duration whenNonEmpty;
-        private Duration whenEmpty;
+        private Duration whenSuccess;
+        private Duration whenFailure;
 
         public Builder(Supplier<C> supplier) {
             this.supplier = supplier;
         }
 
-        public Builder whenEmptyFor(Duration duration) {
-            whenEmpty = duration;
+        public Builder whenFailureFor(Duration duration) {
+            whenFailure = duration;
             return this;
         }
 
-        public Builder whenNonEmptyFor(Duration duration) {
-            whenNonEmpty = duration;
+        public Builder whenSuccessFor(Duration duration) {
+            whenSuccess = duration;
             return this;
         }
 
-        public MemoizeMapWithExpiry build() {
-            return new MemoizeMapWithExpiry(supplier, whenNonEmpty, whenEmpty);
+        public MemoizeResultWithExpiry build() {
+            return new MemoizeResultWithExpiry(supplier, whenSuccess, whenFailure);
         }
     }
 }
