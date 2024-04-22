@@ -28,6 +28,8 @@ import static org.junit.Assert.assertTrue;
 
 import diskCacheV111.util.FsPath;
 import java.util.Optional;
+
+import org.dcache.auth.attributes.Activity;
 import org.dcache.auth.attributes.MultiTargetedRestriction.Authorisation;
 import org.junit.Test;
 
@@ -54,6 +56,11 @@ public class WlcgProfileScopeTest {
     }
 
     @Test
+    public void shouldIdentifyStorageStageScope() {
+        assertTrue(WlcgProfileScope.isWlcgProfileScope("storage.stage:/"));
+    }
+
+    @Test
     public void shouldNotIdentifyStorageWriteScope() {
         assertFalse(WlcgProfileScope.isWlcgProfileScope("storage.write:/"));
     }
@@ -67,6 +74,11 @@ public class WlcgProfileScopeTest {
     @Test(expected = InvalidScopeException.class)
     public void shouldRejectStorageReadScopeWithoutPath() {
         new WlcgProfileScope("storage.read");
+    }
+
+    @Test(expected = InvalidScopeException.class)
+    public void shouldRejectStorageStageScopeWithoutPath() {
+        new WlcgProfileScope("storage.stage");
     }
 
     @Test(expected = InvalidScopeException.class)
@@ -109,6 +121,20 @@ public class WlcgProfileScopeTest {
     }
 
     @Test
+    public void shouldParseStageScopeWithRootResourcePath() {
+        WlcgProfileScope scope = new WlcgProfileScope("storage.stage:/");
+
+        Optional<Authorisation> maybeAuth = scope.authorisation(FsPath.create("/VOs/wlcg"));
+
+        assertTrue(maybeAuth.isPresent());
+
+        Authorisation auth = maybeAuth.get();
+
+        assertThat(auth.getPath(), equalTo(FsPath.create("/VOs/wlcg")));
+        assertThat(auth.getActivity(), containsInAnyOrder(LIST, READ_METADATA, DOWNLOAD, Activity.STAGE));
+    }
+
+    @Test
     public void shouldParseReadScopeWithNonRootResourcePath() {
         WlcgProfileScope scope = new WlcgProfileScope("storage.read:/foo");
 
@@ -122,9 +148,28 @@ public class WlcgProfileScopeTest {
         assertThat(auth.getActivity(), containsInAnyOrder(LIST, READ_METADATA, DOWNLOAD));
     }
 
+    @Test
+    public void shouldParseStageScopeWithNonRootResourcePath() {
+        WlcgProfileScope scope = new WlcgProfileScope("storage.stage:/foo");
+
+        Optional<Authorisation> maybeAuth = scope.authorisation(FsPath.create("/VOs/wlcg"));
+
+        assertTrue(maybeAuth.isPresent());
+
+        Authorisation auth = maybeAuth.get();
+
+        assertThat(auth.getPath(), equalTo(FsPath.create("/VOs/wlcg/foo")));
+        assertThat(auth.getActivity(), containsInAnyOrder(LIST, READ_METADATA, DOWNLOAD, Activity.STAGE));
+    }
+
     @Test(expected=InvalidScopeException.class)
     public void shouldRejectReadScopeWithRelativeResourcePath() {
         new WlcgProfileScope("storage.read:foo");
+    }
+
+    @Test(expected=InvalidScopeException.class)
+    public void shouldRejectStageScopeWithRelativeResourcePath() {
+        new WlcgProfileScope("storage.stage:foo");
     }
 
     @Test
