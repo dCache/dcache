@@ -496,6 +496,7 @@ public class QoSTransitionEngine {
         PinManagerPinMessage message =
               new PinManagerPinMessage(attributes,
                     protocolInfo,
+                    pnfsHandler.getRestriction(),
                     QOS_PIN_REQUEST_ID,
                     -1);
 

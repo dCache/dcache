@@ -16,8 +16,13 @@ import static org.dcache.namespace.FileAttribute.STORAGECLASS;
 import static org.dcache.namespace.FileAttribute.STORAGEINFO;
 
 import diskCacheV111.poolManager.RequestContainerV5;
+
+import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.EnumSet;
+
+import org.dcache.auth.attributes.Restriction;
+import org.dcache.auth.attributes.Restrictions;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.poolmanager.SelectedPool;
 import org.dcache.vehicles.FileAttributes;
@@ -25,7 +30,7 @@ import org.dcache.vehicles.FileAttributes;
 /**
  * Requests pool manager to provide a pool from which a given file can be read.
  * <p>
- * The requestor must provide sufficient information for PoolManager to perform the pool selection.
+ * The requester must provide sufficient information for PoolManager to perform the pool selection.
  * The caller may use the getRequiredAttributes method to learn which attributes are required by
  * PoolManager.
  * <p>
@@ -44,7 +49,7 @@ import org.dcache.vehicles.FileAttributes;
  * Typical reasons for such failures is that the pool was disabled after pool manager selected the
  * pool, or that the name space contained stale information (such stale information is cleared by
  * pool on attempt to read the file). The requester may retry the pool selection and should reread
- * file meta data before doing so.
+ * file metadata before doing so.
  */
 public class PoolMgrSelectReadPoolMsg extends PoolMgrSelectPoolMsg {
 
@@ -56,11 +61,18 @@ public class PoolMgrSelectReadPoolMsg extends PoolMgrSelectPoolMsg {
 
     private Context _context;
     private String _poolGroup;
+    private Restriction _restriction;
 
     public PoolMgrSelectReadPoolMsg(FileAttributes fileAttributes,
           ProtocolInfo protocolInfo,
           Context context) {
-        this(fileAttributes, protocolInfo, context, RequestContainerV5.allStates);
+        this(fileAttributes, protocolInfo, context, Restrictions.none());
+    }
+
+    public PoolMgrSelectReadPoolMsg(FileAttributes fileAttributes,
+          ProtocolInfo protocolInfo,
+          Context context, Restriction restriction) {
+        this(fileAttributes, protocolInfo, context, RequestContainerV5.allStates, restriction);
     }
 
     /**
@@ -72,12 +84,20 @@ public class PoolMgrSelectReadPoolMsg extends PoolMgrSelectPoolMsg {
     public PoolMgrSelectReadPoolMsg(FileAttributes fileAttributes,
           ProtocolInfo protocolInfo,
           Context context,
-          EnumSet<RequestContainerV5.RequestState> allowedStates) {
+          EnumSet<RequestContainerV5.RequestState> allowedStates, Restriction restriction) {
         super(fileAttributes, protocolInfo, allowedStates);
         checkArgument(fileAttributes.isDefined(getRequiredAttributes()),
               "Required attributes are missing: %s",
               missingFileAttributes(fileAttributes));
         _context = (context == null) ? new Context() : context;
+        _restriction = (restriction == null) ? Restrictions.none() : restriction;
+    }
+
+    public PoolMgrSelectReadPoolMsg(FileAttributes fileAttributes,
+          ProtocolInfo protocolInfo,
+          Context context,
+          EnumSet<RequestContainerV5.RequestState> allowedStates) {
+         this(fileAttributes, protocolInfo, context, allowedStates, Restrictions.none());
     }
 
     private static EnumSet<FileAttribute> missingFileAttributes(FileAttributes fileAttributes) {
@@ -106,6 +126,10 @@ public class PoolMgrSelectReadPoolMsg extends PoolMgrSelectPoolMsg {
 
     public void setContext(int retryCounter, SelectedPool previousStagePool) {
         setContext(new Context(retryCounter, previousStagePool));
+    }
+
+    public Restriction getRestriction() {
+        return _restriction;
     }
 
     public void setPoolGroup(String poolGroup) {
@@ -146,6 +170,13 @@ public class PoolMgrSelectReadPoolMsg extends PoolMgrSelectPoolMsg {
         // require affinity only it stage/p2p is enabled.
         EnumSet<RequestContainerV5.RequestState> allowedStates = getAllowedStates();
         return allowedStates.contains(ST_POOL_2_POOL) || allowedStates.contains(ST_STAGE);
+    }
+
+    private Object readResolve() throws ObjectStreamException {
+        if (_restriction == null) {
+            _restriction = Restrictions.none();
+        }
+        return this;
     }
 
 }

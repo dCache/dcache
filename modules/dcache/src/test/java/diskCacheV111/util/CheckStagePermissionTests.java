@@ -1,6 +1,7 @@
 package diskCacheV111.util;
 
 import static com.google.common.base.Preconditions.checkState;
+import static java.util.Collections.singleton;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -9,9 +10,16 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.EnumSet;
+import java.util.function.Function;
 import java.util.regex.PatternSyntaxException;
 import javax.security.auth.Subject;
 import org.dcache.auth.Subjects;
+import org.dcache.auth.attributes.Activity;
+import org.dcache.auth.attributes.MultiTargetedRestriction;
+import org.dcache.auth.attributes.Restriction;
+import org.dcache.auth.attributes.Restrictions;
+import org.dcache.util.StorageInfoBuilder;
 import org.dcache.vehicles.FileAttributes;
 import org.junit.After;
 import org.junit.Before;
@@ -471,16 +479,113 @@ public class CheckStagePermissionTests {
         assertThat(_allowed, is(false));
     }
 
+    @Test
+    public void shouldAllowAnonymousAccessWithNullRestriction() throws Exception {
+        given(file().hasContents("\"\" \"\" \"sql:chimera@osm\" \"!NFS.*\""));
+        givenAllowAnonymousAccess(true);
+
+        whenCheck(Subjects.NOBODY,
+                FileAttributes.of().storageClass("sql:chimera").hsm("osm"), XROOTD_PROTOCOL_INFO,
+                null);
+
+        assertThat(_allowed, is(true));
+    }
+
+    @Test
+    public void shouldAllowAnonymousAccessWithNoRestrictions() throws Exception {
+        given(file().hasContents("\"\" \"\" \"sql:chimera@osm\" \"!NFS.*\""));
+        givenAllowAnonymousAccess(true);
+
+        whenCheck(Subjects.NOBODY,
+                FileAttributes.of().storageClass("sql:chimera").hsm("osm"), XROOTD_PROTOCOL_INFO,
+                Restrictions.none());
+
+        assertThat(_allowed, is(true));
+    }
+
+    @Test
+    public void shouldAllowAccessWithRestrictions() throws Exception {
+        given(file().hasContents(
+                "\"/DC=org/DC=example/CN=test user\" \"/atlas/Role=production\" \"sql:chimera@osm\""));
+
+        whenCheck(Subjects.of().uid(100).gid(100).username("atlasprod")
+                        .dn("/DC=org/DC=example/CN=test user")
+                        .fqan("/atlas/Role=production").fqan("/atlas").build(),
+                FileAttributes.of().storageClass("sql:chimera").hsm("osm").storageInfo((new StorageInfoBuilder()).withKey("path", "/pnfs/user/my/file.dat").build()),
+                NFS4_PROTOCOL_INFO,
+                new MultiTargetedRestriction(singleton(new MultiTargetedRestriction.Authorisation(EnumSet.of(Activity.STAGE), FsPath.create("/pnfs/user/my")))));
+
+        assertThat(_allowed, is(true));
+    }
+
+    @Test
+    public void shouldDenyAccessForRestrictedPath() throws Exception {
+        given(file().hasContents(
+                "\"/DC=org/DC=example/CN=test user\" \"/atlas/Role=production\" \"sql:chimera@osm\""));
+
+        whenCheck(Subjects.of().uid(100).gid(100).username("atlasprod")
+                        .dn("/DC=org/DC=example/CN=test user")
+                        .fqan("/atlas/Role=production").fqan("/atlas").build(),
+                FileAttributes.of().storageClass("sql:chimera").hsm("osm").storageInfo((new StorageInfoBuilder()).withKey("path", "/pnfs/user/his/file.dat").build()),
+                NFS4_PROTOCOL_INFO,
+                new MultiTargetedRestriction(singleton(new MultiTargetedRestriction.Authorisation(EnumSet.of(Activity.STAGE), FsPath.create("/pnfs/user/my")))));
+
+        assertThat(_allowed, is(false));
+    }
+
+    @Test
+    public void shouldAllowAccessToRestrictedLogicalPath() throws Exception {
+        given(file().hasContents(
+                "\"/DC=org/DC=example/CN=test user\" \"/atlas/Role=production\" \"sql:chimera@osm\""));
+        Function<FsPath, FsPath> fakeSymlinkResolver = (FsPath p) -> {
+            return FsPath.create(p.toString().replaceAll("^/pnfs/user/my(/|$)", "/pnfs/user/his$1"));
+        };
+        Restriction r = new MultiTargetedRestriction(singleton(new MultiTargetedRestriction.Authorisation(EnumSet.of(Activity.STAGE), FsPath.create("/pnfs/user/my"))));
+        r.setPathResolver(fakeSymlinkResolver);
+        whenCheck(Subjects.of().uid(100).gid(100).username("atlasprod")
+                .dn("/DC=org/DC=example/CN=test user")
+                .fqan("/atlas/Role=production").fqan("/atlas").build(),
+                FileAttributes.of().storageClass("sql:chimera").hsm("osm").storageInfo((new StorageInfoBuilder()).withKey("path", "/pnfs/user/his/file.dat").build()),
+                NFS4_PROTOCOL_INFO, r);
+
+        assertThat(_allowed, is(true));
+    }
+
+    @Test
+    public void shouldAllowLogicalAccessToRestrictedPath() throws Exception {
+        given(file().hasContents(
+                "\"/DC=org/DC=example/CN=test user\" \"/atlas/Role=production\" \"sql:chimera@osm\""));
+        Function<FsPath, FsPath> fakeSymlinkResolver = (FsPath p) -> {
+            return FsPath.create(p.toString().replaceAll("^/pnfs/user/his(/|$)", "/pnfs/user/my$1"));
+           };
+        Restriction r = new MultiTargetedRestriction(singleton(new MultiTargetedRestriction.Authorisation(EnumSet.of(Activity.STAGE), FsPath.create("/pnfs/user/my"))));
+        r.setPathResolver(fakeSymlinkResolver);
+        whenCheck(Subjects.of().uid(100).gid(100).username("atlasprod")
+                        .dn("/DC=org/DC=example/CN=test user")
+                        .fqan("/atlas/Role=production").fqan("/atlas").build(),
+                FileAttributes.of().storageClass("sql:chimera").hsm("osm").storageInfo((new StorageInfoBuilder()).withKey("path", "/pnfs/user/his/file.dat").build()),
+                NFS4_PROTOCOL_INFO, r);
+
+        assertThat(_allowed, is(true));
+    }
+
     private void whenCheck(Subjects.Builder subjectBuilder,
-          FileAttributes.Builder attributeBuilder,
-          ProtocolInfo protocolInfo) throws PatternSyntaxException, IOException {
+                           FileAttributes.Builder attributeBuilder,
+                           ProtocolInfo protocolInfo) throws PatternSyntaxException, IOException {
         whenCheck(subjectBuilder.build(), attributeBuilder, protocolInfo);
     }
 
     private void whenCheck(Subject subject,
-          FileAttributes.Builder attributeBuilder,
-          ProtocolInfo protocolInfo) throws PatternSyntaxException, IOException {
+                           FileAttributes.Builder attributeBuilder,
+                           ProtocolInfo protocolInfo) throws PatternSyntaxException, IOException {
         _allowed = getCheck().canPerformStaging(subject, attributeBuilder.build(), protocolInfo);
+    }
+
+    private void whenCheck(Subject subject,
+          FileAttributes.Builder attributeBuilder,
+          ProtocolInfo protocolInfo,
+          Restriction restriction) throws PatternSyntaxException, IOException {
+        _allowed = getCheck().canPerformStaging(subject, attributeBuilder.build(), protocolInfo, restriction);
     }
 
     private CheckStagePermission getCheck() throws IOException {

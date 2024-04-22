@@ -19,10 +19,18 @@ import java.util.regex.PatternSyntaxException;
 import javax.security.auth.Subject;
 import org.dcache.auth.FQAN;
 import org.dcache.auth.Subjects;
+import org.dcache.auth.attributes.Activity;
+import org.dcache.auth.attributes.Restriction;
+import org.dcache.auth.attributes.Restrictions;
+import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.FileAttributes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CheckStagePermission {
 
+    private static final Logger LOGGER =
+          LoggerFactory.getLogger(CheckStagePermission.class);
     private static final Pattern LINE_PATTERN = Pattern.compile(
           "\"(?<dn>[^\"]*)\"([ \t]+\"(?<fqan>[^\"]*)\"([ \t]+\"(?<su>[^\"]*)\"([ \t]+\"(?<protocol>[^\"]*)\")?)?)?");
     private File _stageConfigFile;
@@ -49,22 +57,50 @@ public class CheckStagePermission {
         _allowAnonymousStaging = isAllowed;
     }
 
+
     /**
      * Check whether staging is allowed for a particular subject on a particular object.
      *
      * @param subject        The subject
      * @param fileAttributes The attributes of the file
+     * @param protocolInfo The protocol information
+     * @return true if and only if the subject is allowed to perform staging
+     */
+
+    public boolean canPerformStaging(Subject subject,
+          FileAttributes fileAttributes,
+          ProtocolInfo protocolInfo)
+          throws PatternSyntaxException, IOException {
+        return canPerformStaging(subject, fileAttributes, protocolInfo, Restrictions.none());
+    }
+
+    /**
+     * Check whether staging is allowed for a particular subject on a particular object.
+     *
+     * @param subject        The subject
+     * @param fileAttributes The attributes of the file
+     * @param protocolInfo The protocol information
+     * @param restriction_in Any restrictions on the user
      * @return true if and only if the subject is allowed to perform staging
      */
     public boolean canPerformStaging(Subject subject,
           FileAttributes fileAttributes,
-          ProtocolInfo protocolInfo)
+          ProtocolInfo protocolInfo,
+          Restriction restriction_in)
           throws PatternSyntaxException, IOException {
         if (Subjects.isRoot(subject)) {
             return true;
         }
 
+        Restriction restriction = restriction_in == null ? Restrictions.none() : restriction_in;
+
         if (!_allowAnonymousStaging && Subjects.isNobody(subject)) {
+            return false;
+        } else if (fileAttributes.isDefined(FileAttribute.STORAGEINFO) &&
+              fileAttributes.getStorageInfo().getKey("path") != null &&
+              restriction.isRestricted(Activity.STAGE,
+                    FsPath.create(fileAttributes.getStorageInfo().getKey("path")))) {
+            LOGGER.debug("Failed to authorize staging for {}", FsPath.create(fileAttributes.getStorageInfo().getKey("path")));
             return false;
         }
 

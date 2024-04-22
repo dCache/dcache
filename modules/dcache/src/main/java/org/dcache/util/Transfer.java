@@ -969,7 +969,8 @@ public class Transfer implements Comparable<Transfer> {
                   new PoolMgrSelectReadPoolMsg(fileAttributes,
                         protocolInfo,
                         getReadPoolSelectionContext(),
-                        allowedStates);
+                        allowedStates,
+                        _pnfs.getRestriction());
             request.setId(_id);
             request.setSubject(_subject);
             request.setBillingPath(getBillingPath());

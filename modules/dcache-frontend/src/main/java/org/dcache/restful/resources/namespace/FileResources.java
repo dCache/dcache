@@ -487,7 +487,9 @@ public class FileResources {
                      *  Fire-and-forget, as it was in 5.2
                      */
                     pinmanager.notify(new PinManagerPinMessage(FileAttributes.ofPnfsId(pnfsId),
-                          getProtocolInfo(), getRequestId(),
+                          getProtocolInfo(),
+                          HttpServletRequests.roleAwareRestriction(request),
+                          getRequestId(),
                           lifetimeUnit.toMillis(lifetime)));
                     break;
                 case "unpin":

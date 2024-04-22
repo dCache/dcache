@@ -3579,6 +3579,7 @@ public class PnfsManagerV3
     private void checkRestriction(Restriction restriction, Set<AccessMask> mask,
           Activity activity, FsPath path) throws PermissionDeniedCacheException {
         restriction.setPathResolver(pathResolver);
+        LOGGER.debug("Checking restriction of type {} on path {} for activity", restriction.getClass(), path, activity);
         if (mask.stream()
               .map(PnfsManagerV3::toActivity)
               .anyMatch(a -> restriction.isRestricted(a, path))) {

@@ -518,7 +518,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
         PoolMgrSelectPoolMsg request = store
               ? new PoolMgrSelectWritePoolMsg(fileAttributes, protocol_info)
               : new PoolMgrSelectReadPoolMsg(fileAttributes, protocol_info,
-                    _readPoolSelectionContext);
+                    _readPoolSelectionContext, transferRequest.getRestriction());
         request.setBillingPath(pnfsPath);
         request.setSubject(transferRequest.getSubject());
         LOGGER.debug("PoolMgrSelectPoolMsg: {}", request);
