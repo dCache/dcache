@@ -436,7 +436,7 @@ Deploy dCache Helm Chart:
 #
 # The deployment can be done as:
 #
-#  kubectl create -f ./ci/cvmfs-storageclass.yaml
+#  kubectl create -f .ci/cvmfs-storageclass.yaml
 #  helm repo add cern https://registry.cern.ch/chartrepo/cern
 #  helm repo update
 #  helm -n dcache-dev-infrastructure install -f .ci/values-cvmfs.yaml cvmfs cern/cvmfs-csi
