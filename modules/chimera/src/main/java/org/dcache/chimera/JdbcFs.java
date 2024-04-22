@@ -539,9 +539,8 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
     @Override
     public DirectoryStreamB<ChimeraDirectoryEntry> newDirectoryStream(FsInode dir)
           throws ChimeraFsException {
-        if ((dir instanceof FsInode_LABEL)) {
-            //TODO the casting to FsInode_LABEL should be reconsidered
-            return _sqlDriver.virtualDirectoryStream(dir, ((FsInode_LABEL) dir).getLabel());
+        if ((dir.type() == FsInodeType.LABEL)) {
+            return _sqlDriver.virtualDirectoryStream(dir, _sqlDriver.getLabelById(dir.ino()));
         } else {
             return _sqlDriver.newDirectoryStream(dir);
         }
@@ -621,7 +620,7 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
         if (stat == null) {
             throw FileNotFoundChimeraFsException.of(inode);
         }
-        if (level == 0) {
+        if (level == 0 ){
             _inoCache.put(stat.getId(), stat.getIno());
             _idCache.put(stat.getIno(), stat.getId());
         }
@@ -747,7 +746,6 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
             throw new RuntimeException(e.getCause());
         }
     }
-
     @Override
     public FsInode id2inode(String id, StatCacheOption option) throws ChimeraFsException {
         if (option == NO_STAT) {
@@ -873,8 +871,7 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
                 if (cmd.length != 2) {
                     throw FileNotFoundChimeraFsException.ofFileInDirectory(parent, name);
                 }
-
-                FsInode labelInode = new FsInode_LABEL(this, _sqlDriver.getLabel(cmd[1]), cmd[1]);
+                FsInode labelInode = new FsInode_LABEL(this, _sqlDriver.getLabel(cmd[1]));
                 if (!(labelInode.type() == FsInodeType.LABEL)) {
                     if (!labelInode.exists()) {
                         throw FileNotFoundChimeraFsException.ofFileInDirectory(parent, name);
@@ -1570,11 +1567,14 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
             return null;
         });
     }
-
-
     @Override
     public Set<String> getLabels(FsInode inode) throws ChimeraFsException {
         return inTransaction(status -> _sqlDriver.getLabels(inode));
+    }
+
+    @Override
+    public String getLabelById(long ino) throws ChimeraFsException {
+        return inTransaction(status -> _sqlDriver.getLabelById(ino));
     }
 
     @Override

@@ -18,32 +18,21 @@
  */
 package org.dcache.chimera;
 
-import java.util.Set;
-
 public class FsInode_LABEL extends FsInode {
-
-    public String getLabel() {
-        return _label;
-    }
-
-    private final String _label;
 
     /**
      * @param fs    pointer to 'File System'
      * @param ino   inode number of the label_id
-     * @param label
      */
-    public FsInode_LABEL(FileSystemProvider fs, long ino, String label) {
+    public FsInode_LABEL(FileSystemProvider fs, long ino) {
         super(fs, ino, FsInodeType.LABEL);
-        _label = label;
     }
 
     @Override
     public boolean exists() {
         boolean rc = false;
         try {
-            Set<String> list = _fs.getLabels(this);
-            if (list.contains(_label)) {
+            if (!_fs.getLabelById(ino()).isEmpty()) {
                 rc = true;
             }
         } catch (Exception e) {

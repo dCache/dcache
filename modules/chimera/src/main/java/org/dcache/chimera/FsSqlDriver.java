@@ -41,6 +41,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -386,6 +387,12 @@ public class FsSqlDriver {
     }
 
     public Stat stat(FsInode inode, int level) {
+        if (inode.type() == FsInodeType.LABEL) {
+            return _jdbc.query(
+                  "SELECT * FROM t_labels_ref where label_id=?",
+                  ps -> ps.setLong(1, inode.ino()),
+                  rs -> rs.next() ? toStatForLabel(rs) : null);
+        }
         if (level == 0) {
             return _jdbc.query(
                   "SELECT * FROM t_inodes WHERE inumber=?",
@@ -396,6 +403,53 @@ public class FsSqlDriver {
                   "SELECT * FROM t_level_" + level + " WHERE inumber=?",
                   ps -> ps.setLong(1, inode.ino()),
                   rs -> rs.next() ? toStatLevel(rs) : null);
+        }
+    }
+
+    private Stat toStatForLabel(ResultSet rs) throws SQLException {
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        Stat stat = new Stat();
+        // TODO create fake pnfsid for label
+        String pnfsIdSecond = "0000000000000000";
+        String pnfsIdThird = "F0000000000000000000";
+        int lenghtLabelId = ("F" + rs.getLong("label_id") + "A").length();
+        String temp = "F" + rs.getLong("label_id") + "A";
+        String replace = pnfsIdThird.substring(0, lenghtLabelId);
+        String pnfsID = pnfsIdSecond + pnfsIdThird.replaceAll(replace, temp);
+        stat.setIno(rs.getLong("label_id"));
+        // TODO could be changed latter or should be deleted
+        stat.setId(pnfsID);
+        stat.setCrTime(now.getTime());
+        stat.setGeneration(LocalDateTime.now().getMinute());
+        stat.setSize(512);
+        stat.setATime(now.getTime());
+        stat.setCTime(now.getTime());
+        stat.setMTime(now.getTime());
+        stat.setUid(0000);
+        stat.setGid(0000);
+        stat.setMode(0755 | UnixPermission.S_IFDIR);
+        stat.setDev(19);
+        stat.setRdev(23);
+        stat.setNlink(13);
+        return stat;
+    }
+
+
+    /**
+     * Returns the Label name.
+     *
+     * @param labelId of a label.
+     * @throws ChimeraFsException
+     */
+    String getLabelById(Long labelId) throws ChimeraFsException {
+        try {
+            return _jdbc.queryForObject("SELECT labelname FROM t_labels where  label_id=?",
+                  (rs, rn) -> {
+                      return (rs.getString("labelname"));
+                  }, labelId);
+
+        } catch (EmptyResultDataAccessException e) {
+            throw new NoLabelChimeraException("wrong id");
         }
     }
 
@@ -543,13 +597,28 @@ public class FsSqlDriver {
                           rs -> rs.next() ? new FsInode(parent.getFs(), rs.getLong("inumber"),
                                 FsInodeType.INODE, 0, toStat(rs)) : null);
                 } else {
-                    return _jdbc.query("SELECT ichild FROM t_dirs WHERE iparent=? AND iname=?",
-                          ps -> {
-                              ps.setLong(1, parent.ino());
-                              ps.setString(2, name);
-                          },
-                          rs -> rs.next() ? new FsInode(parent.getFs(), rs.getLong("ichild"))
-                                : null);
+
+                    Long parentIno;
+                    String nameChild;
+                    int  prefixParent = name.lastIndexOf("-");
+                    if (parent.type() == FsInodeType.LABEL) {
+
+                        parentIno = Long.valueOf(
+                              name.substring( prefixParent + 1, name.length()));
+                        nameChild = name.substring(0, prefixParent);
+                    }else {
+                        parentIno = parent.ino();
+                        nameChild = name;
+
+                    }
+                        return _jdbc.query("SELECT ichild FROM t_dirs WHERE iparent=? AND iname=?",
+                              ps -> {
+                                  ps.setLong(1, parentIno);
+                                  ps.setString(2, nameChild);
+                              },
+                              rs -> rs.next() ? new FsInode(parent.getFs(), rs.getLong("ichild"))
+                                    : null);
+
                 }
         }
     }
@@ -2138,11 +2207,15 @@ public class FsSqlDriver {
         setInodeAttributes(inode, 0, new Stat());
     }
 
-    Long getLabel(String labelname) {
-        return _jdbc.queryForObject("SELECT label_id FROM t_labels where labelname=?",
+    Long getLabel(String labelname) throws NoLabelChimeraException {
+        try {
+            return _jdbc.queryForObject("SELECT label_id FROM t_labels where labelname=?",
               (rs, rn) -> {
                   return (rs.getLong("label_id"));
               }, labelname);
+        } catch (EmptyResultDataAccessException e) {
+            throw new NoLabelChimeraException("wrong label");
+        }
 
     }
 
