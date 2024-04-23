@@ -485,14 +485,12 @@ NFS4.x protocol compliance tests:
   stage: testing
   extends: .kubernetes_image
   script:
-    - kubectl config set-context --current --namespace=${K8S_NAMESPACE}
+    - kubectl -n $K8S_NAMESPACE run pynfs-tester --image=dcache/pynfs:0.5 --restart=Never  --command -- sleep 3600
+    - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod pynfs-tester; do sleep 1; done
 
-    - kubectl run pynfs-tester --image=dcache/pynfs:0.5 --restart=Never  --command -- sleep 3600
-    - while ! kubectl wait --for=condition=Ready pod pynfs-tester; do sleep 1; done
-
-    - kubectl exec pynfs-tester -- /bin/bash -c "/run-nfs4.0.sh --maketree store-door-svc:/data OPEN5; exit 0"
+    - kubectl -n $K8S_NAMESPACE exec pynfs-tester -- /bin/bash -c "/run-nfs4.0.sh --maketree store-door-svc:/data OPEN5; exit 0"
     - |-
-      kubectl exec pynfs-tester -- /bin/bash -c "/run-nfs4.0.sh --xml=/xunit-report-v40.xml \
+      kubectl -n $K8S_NAMESPACE exec pynfs-tester -- /bin/bash -c "/run-nfs4.0.sh --xml=/xunit-report-v40.xml \
            --noinit store-door-svc:/data all \
            noACC2a noACC2b noACC2c noACC2d noACC2f noACC2r noACC2s \
            noCID1 noCID2 noCID4a noCID4b noCID4c noCID4d noCID4e \
@@ -510,14 +508,14 @@ NFS4.x protocol compliance tests:
            noWRT3 noWRT6a noWRT6b noWRT6c noWRT6d noWRT6f noWRT6s noWRT8 noWRT9; \
       exit 0"
     - |-
-      kubectl exec pynfs-tester -- /bin/bash -c "/run-nfs4.1.sh --minorversion=2 --xml=/xunit-report-v41.xml \
+      kubectl -n $K8S_NAMESPACE exec pynfs-tester -- /bin/bash -c "/run-nfs4.1.sh --minorversion=2 --xml=/xunit-report-v41.xml \
           --noinit store-door-svc:/data all xattr \
           noCOUR2 noCSESS25 noCSESS26 noCSESS27 noCSESS28 noCSESS29 noCSID3 noCSID4 noCSID9 noEID5f \
           noEID50 noOPEN31 noSEQ6 noRECC3 noSEQ7 noSEQ10b noSEQ2 noXATT11 noXATT10 noALLOC1 noALLOC2 noALLOC3; \
         exit 0"
 
-    - kubectl cp pynfs-tester:/xunit-report-v40.xml xunit-report-v40.xml
-    - kubectl cp pynfs-tester:/xunit-report-v41.xml xunit-report-v41.xml
+    - kubectl -n $K8S_NAMESPACE cp pynfs-tester:/xunit-report-v40.xml xunit-report-v40.xml
+    - kubectl -n $K8S_NAMESPACE cp pynfs-tester:/xunit-report-v41.xml xunit-report-v41.xml
 
     - nfs40_errors=$(( $(echo 0$(sed -n 's/.*testsuite .*errors=\"\([0-9]*\)\".*/+\1/p' xunit-report-v40.xml)) ))
     - nfs40_failures=$(( $(echo 0$(sed -n 's/.*testsuite .*failures=\"\([0-9]*\)\".*/+\1/p' xunit-report-v40.xml)) ))
