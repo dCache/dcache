@@ -46,6 +46,7 @@ import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -75,6 +76,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.concurrent.GuardedBy;
 import javax.security.auth.Subject;
+
+import eu.emi.security.authn.x509.CrlCheckingMode;
+import eu.emi.security.authn.x509.OCSPCheckingMode;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreMutex;
 import org.apache.curator.utils.ZKPaths;
@@ -95,6 +99,7 @@ import org.dcache.chimera.nfsv41.door.proxy.NfsProxyIoFactory;
 import org.dcache.chimera.nfsv41.door.proxy.ProxyIoFactory;
 import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
+import org.dcache.http.JdkSslContextFactory;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.ExportFile;
@@ -337,6 +342,27 @@ public class NFSv41Door extends AbstractCellComponent implements
      */
     private ClientRecoveryStore _clientStore;
 
+
+    /**
+     * Host certificate file.
+     */
+    private String _certFile;
+
+    /**
+     * Host private key file.
+     */
+    private String _keyFile;
+
+    /**
+     * Path to directory CA certificates
+     */
+    private String _caPath;
+
+    /**
+     * Enable RPC-over-TLS for NFS.
+     */
+    private boolean _enableTls;
+
     public void setEventNotifier(EventNotifier notifier) {
         _eventNotifier = notifier;
     }
@@ -420,6 +446,22 @@ public class NFSv41Door extends AbstractCellComponent implements
         _poolMonitor = poolMonitor;
     }
 
+    public void setCertFile(String certFile) {
+        _certFile = certFile;
+    }
+
+    public void setKeyFile(String keyFile) {
+        _keyFile = keyFile;
+    }
+
+    public void setCaPath(String caPath) {
+        _caPath = caPath;
+    }
+
+    public void setEnableTls(boolean enableTls) {
+        _enableTls = enableTls;
+    }
+
     public VirtualFileSystem wrapWithMonitoring(VirtualFileSystem inner) {
         MonitoringVfs monitor = new MonitoringVfs();
         monitor.setInner(inner);
@@ -443,6 +485,20 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         if (_enableRpcsecGss) {
             oncRpcSvcBuilder.withGssSessionManager(new GssSessionManager(_idMapper));
+        }
+
+        if (_enableTls) {
+            // FIXME: the certificate reload is not handled
+            JdkSslContextFactory sslContextFactory = new JdkSslContextFactory();
+            sslContextFactory.setServerCertificatePath(Path.of(_certFile));
+            sslContextFactory.setServerKeyPath(Path.of(_keyFile));
+            sslContextFactory.setServerCaPath(Path.of(_caPath));
+            sslContextFactory.setOcspCheckingMode(OCSPCheckingMode.IGNORE);
+            sslContextFactory.setCrlCheckingMode(CrlCheckingMode.IF_VALID);
+            sslContextFactory.init();
+
+            oncRpcSvcBuilder.withSSLContext(sslContextFactory.call());
+            oncRpcSvcBuilder.withStartTLS();
         }
 
         for (String version : _versions) {

@@ -3,7 +3,7 @@
 AUTOCA_URL=https://ci.dcache.org/ca
 
 dnf -q install -y epel-release which
-dnf -q install -y https://gitlab.desy.de/dcache/s2/-/jobs/386149/artifacts/raw/RPM-BUILD/RPMS/x86_64/s2-20240312-1.x86_64.rpm
+dnf -q install -y https://download.dcache.org/nexus/repository/s2-testsuite/el9/x86_64/s2-20240423-1.x86_64.rpm
 dnf -q install -y voms-clients-cpp fetch-crl openssl globus-gass-copy-progs
 
 rpm -i https://www.desy.de/~tigran/ca_dCacheORG-3.0-6.noarch.rpm

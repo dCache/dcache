@@ -15,6 +15,9 @@ import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellPath;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
+import eu.emi.security.authn.x509.CrlCheckingMode;
+import eu.emi.security.authn.x509.OCSPCheckingMode;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InterruptedIOException;
@@ -27,6 +30,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
+import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.time.Instant;
@@ -47,6 +51,7 @@ import org.dcache.cells.CellStub;
 import org.dcache.chimera.nfsv41.common.LegacyUtils;
 import org.dcache.chimera.nfsv41.common.StatsDecoratedOperationExecutor;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
+import org.dcache.http.JdkSslContextFactory;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.status.BadHandleException;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
@@ -162,6 +167,28 @@ public class NfsTransferService
 
     private CellAddressCore _cellAddress;
 
+
+    /**
+     * Host certificate file.
+     */
+    private String _certFile;
+
+    /**
+     * Host private key file.
+     */
+    private String _keyFile;
+
+    /**
+     * Path to directory CA certificates
+     */
+    private String _caPath;
+
+    /**
+     * Enable RPC-over-TLS for NFS.
+     */
+    private boolean _enableTls;
+
+
     // This is a workaround for the issue with the grizzly allocator.
     // (which uses a fraction of heap memory for direct buffers, instead of configured direct memory limit
     // See: https://github.com/eclipse-ee4j/grizzly/issues/2201
@@ -204,7 +231,7 @@ public class NfsTransferService
         );
     }
 
-    public void init() throws IOException, GSSException, OncRpcException {
+    public void init() throws Exception {
 
         tryToStartRpcService();
 
@@ -225,7 +252,7 @@ public class NfsTransferService
         _cleanerExecutor.scheduleAtFixedRate(new MoverResendRedirect(), 30, 30, TimeUnit.SECONDS);
     }
 
-    private void tryToStartRpcService() throws GSSException, IOException {
+    private void tryToStartRpcService() throws Exception {
 
         PortRange portRange;
         int minTcpPort = _minTcpPort;
@@ -278,6 +305,21 @@ public class NfsTransferService
                     RpcLoginService rpcLoginService = (t, gss) -> Subjects.NOBODY;
                     GssSessionManager gss = new GssSessionManager(rpcLoginService);
                     oncRpcSvcBuilder.withGssSessionManager(gss);
+                }
+
+
+                if (_enableTls) {
+                    // FIXME: the certificate reload is not handled
+                    JdkSslContextFactory sslContextFactory = new JdkSslContextFactory();
+                    sslContextFactory.setServerCertificatePath(Path.of(_certFile));
+                    sslContextFactory.setServerKeyPath(Path.of(_keyFile));
+                    sslContextFactory.setServerCaPath(Path.of(_caPath));
+                    sslContextFactory.setOcspCheckingMode(OCSPCheckingMode.IGNORE);
+                    sslContextFactory.setCrlCheckingMode(CrlCheckingMode.IF_VALID);
+                    sslContextFactory.init();
+
+                    oncRpcSvcBuilder.withSSLContext(sslContextFactory.call());
+                    oncRpcSvcBuilder.withStartTLS();
                 }
 
                 _rpcService = oncRpcSvcBuilder.build();
@@ -341,6 +383,22 @@ public class NfsTransferService
 
     public void setTcpPortFile(File path) {
         _tcpPortFile = path;
+    }
+
+    public void setCertFile(String certFile) {
+        _certFile = certFile;
+    }
+
+    public void setKeyFile(String keyFile) {
+        _keyFile = keyFile;
+    }
+
+    public void setCaPath(String caPath) {
+        _caPath = caPath;
+    }
+
+    public void setEnableTls(boolean enableTls) {
+        _enableTls = enableTls;
     }
 
     public void shutdown() throws IOException {
