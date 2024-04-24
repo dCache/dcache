@@ -254,11 +254,11 @@ sign_deb:
     paths:
     - packages/fhs/target/dcache_*.deb
 
-install_rpm:
+RPM test install on EL9:
   stage: test_deploy
-  image: centos:7
+  image: almalinux:9
   script:
-    - yum --nogpgcheck install -y packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm
+    - dnf --nogpgcheck install -y packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm
 
 #install_deb:
 #  stage: test_deploy
