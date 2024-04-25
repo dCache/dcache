@@ -1,0 +1,80 @@
+### upload readme file
+PUT {{webdav-door}}/data/pool-a/readme
+Authorization: Basic admin dickerelch
+Content-Type: application/octet-stream
+
+< README.md
+
+### upload readme1 file
+PUT {{webdav-door}}/data/pool-a/readme1
+Authorization: Basic admin dickerelch
+Content-Type: application/octet-stream
+
+< README.md
+
+
+### make sure readme file is there
+GET {{frontend-door}}{{endpoint}}{{namespace}}/readme
+
+
+
+
+### add "firststep" label to readme file
+POST {{frontend-door}}{{endpoint}}{{namespace}}/readme
+Authorization: Basic admin dickerelch
+Accept: application/json
+Content-Type: application/json
+
+{"action" : "set-label", "label" : "firststep" }
+
+
+### add "firststep" label to readme1 file
+POST {{frontend-door}}{{endpoint}}{{namespace}}/readme1
+Authorization: Basic admin dickerelch
+Accept: application/json
+Content-Type: application/json
+
+{"action" : "set-label", "label" : "firststep" }
+
+
+### add "firststep" label to readme file
+POST {{frontend-door}}{{endpoint}}{{namespace}}/readme
+Authorization: Basic admin dickerelch
+Accept: application/json
+Content-Type: application/json
+
+{"action" : "set-label", "label" : "firststep" }
+
+
+### get file(s) that has "firststep" label
+GET {{frontend-door}}{{endpoint}}{{labels}}/firststep
+
+
+### make sure readme file  could be downloaded
+GET {{webdav-door}}/.(collection)(firststep)/readme-0
+Content-Type: application/octet-stream
+
+
+
+> {%
+  client.test("Response status is 200 OK", function () {
+    client.assert(response.status === 200, "Response status is NOT 200 OK");
+
+  });
+
+%}
+
+### make sure readme file  could downloaded
+GET {{webdav-door}}/.(collection)(firststep)/readme1-0
+Content-Type: application/octet-stream
+
+
+> {%
+  client.test("Response status is 200 OK", function () {
+    client.assert(response.status === 200, "Response status is NOT 200 OK");
+
+  });
+
+%}
+
+

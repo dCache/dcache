@@ -87,7 +87,6 @@ import org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator;
  * SQL driver
  */
 public class FsSqlDriver {
-
     /**
      * Simple class to hold a tag assignment's directory inumber and its value.
      */
@@ -376,6 +375,13 @@ public class FsSqlDriver {
     }
 
     public Stat stat(String id) {
+        if (id.startsWith("FFFF")) {
+            int labelId = Integer.parseInt((id.substring(20, id.length())), 16);
+            return _jdbc.query(
+                  "SELECT * FROM t_labels_ref where label_id=?",
+                  ps -> ps.setString(1, String.valueOf(labelId)),
+                  rs -> rs.next() ? toStatForLabel(rs) : null);
+        }
         return _jdbc.query(
               "SELECT * FROM t_inodes WHERE ipnfsid=?",
               ps -> ps.setString(1, id),
@@ -409,13 +415,9 @@ public class FsSqlDriver {
     private Stat toStatForLabel(ResultSet rs) throws SQLException {
         Timestamp now = new Timestamp(System.currentTimeMillis());
         Stat stat = new Stat();
-        // TODO create fake pnfsid for label
-        String pnfsIdSecond = "0000000000000000";
-        String pnfsIdThird = "F0000000000000000000";
-        int lenghtLabelId = ("F" + rs.getLong("label_id") + "A").length();
-        String temp = "F" + rs.getLong("label_id") + "A";
-        String replace = pnfsIdThird.substring(0, lenghtLabelId);
-        String pnfsID = pnfsIdSecond + pnfsIdThird.replaceAll(replace, temp);
+        String pnfsIdSecond = "FFFF0000000000000000";
+        String tempId = String.format("%016x", rs.getLong("label_id"));
+        String pnfsID = pnfsIdSecond + tempId;
         stat.setIno(rs.getLong("label_id"));
         // TODO could be changed latter or should be deleted
         stat.setId(pnfsID);
@@ -2207,6 +2209,13 @@ public class FsSqlDriver {
         setInodeAttributes(inode, 0, new Stat());
     }
 
+
+    /**
+     * Returns the id of the label.
+     *
+     * @param labelname extended attribute name.
+     * @throws ChimeraFsException
+     */
     Long getLabel(String labelname) throws NoLabelChimeraException {
         try {
             return _jdbc.queryForObject("SELECT label_id FROM t_labels where labelname=?",

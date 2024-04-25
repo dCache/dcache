@@ -174,6 +174,7 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
      */
     private static final int MAX_NAME_LEN = 255;
 
+
     /**
      * switch quota check on/off
      */
@@ -729,6 +730,23 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
 
     @Override
     public FsInode path2inode(String path, FsInode startFrom) throws ChimeraFsException {
+        //TODO check and add pnfsid Creation to FsInode_LABEL
+        if (path.startsWith("/.(collection)")) {
+            Long labelId;
+            try {
+                labelId = _sqlDriver.getLabel(
+                      path.substring("/.(collection)".length() + 1, path.length() - 1));
+            } catch (NoLabelChimeraException e) {
+                throw FileNotFoundChimeraFsException.ofPath(path);
+            }
+            String pnfsIdSecond = "FFFF0000000000000000";
+            String tempId = String.format("%016x", labelId);
+            String pnfsID = pnfsIdSecond + tempId;
+            Stat stat = _sqlDriver.stat(pnfsID);
+
+            FsInode labelInode = new FsInode_LABEL(this, labelId, stat);
+            return labelInode;
+        }
         FsInode inode = _sqlDriver.path2inode(startFrom, path);
         if (inode == null) {
             throw FileNotFoundChimeraFsException.ofPath(path);
@@ -736,6 +754,7 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
         fillIdCaches(inode);
         return inode;
     }
+
 
     @Override
     public String inode2id(FsInode inode) throws ChimeraFsException {
@@ -778,7 +797,11 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
             }
             _inoCache.put(stat.getId(), stat.getIno());
             _idCache.put(stat.getIno(), stat.getId());
-            return new FsInode(this, stat.getIno(), FsInodeType.INODE, 0, stat);
+            if (id.startsWith("FFFF")) {
+                return new FsInode(this, stat.getIno(), FsInodeType.LABEL, 0, stat);
+            } else {
+                return new FsInode(this, stat.getIno(), FsInodeType.INODE, 0, stat);
+            }
         }
     }
 

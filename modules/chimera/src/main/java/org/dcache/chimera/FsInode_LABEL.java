@@ -18,6 +18,8 @@
  */
 package org.dcache.chimera;
 
+import org.dcache.chimera.posix.Stat;
+
 public class FsInode_LABEL extends FsInode {
 
     /**
@@ -26,6 +28,10 @@ public class FsInode_LABEL extends FsInode {
      */
     public FsInode_LABEL(FileSystemProvider fs, long ino) {
         super(fs, ino, FsInodeType.LABEL);
+    }
+
+    public FsInode_LABEL(FileSystemProvider fs, long ino, Stat stat) {
+        super(fs, ino, FsInodeType.LABEL, 0, stat);
     }
 
     @Override
