@@ -311,7 +311,7 @@ public class FsSqlDriver {
 
         // ensure that t_inodes and t_tags_inodes updated in the same order as
         // in mkdir
-        decNlink(parent);
+        decNlinkForDir(parent);
         removeAllTags(inode);
 
         if (!removeInodeIfUnlinked(inode, true)) {
@@ -328,13 +328,13 @@ public class FsSqlDriver {
             return false;
         }
         // hard link counts
-        decNlink(inode);
+        decNlinkForFile(inode);
         // ignore the result as the file might have a hardlink
         removeInodeIfUnlinked(inode, false);
 
         // trigger mtime update of parent dir.
         // Postgres driver makes it different.
-        decNlink(parent, 0);
+        decNlinkForDir(parent, 0);
         return true;
     }
 
@@ -357,7 +357,7 @@ public class FsSqlDriver {
         }
 
         for (Long parent : parents) {
-            decNlink(new FsInode(inode.getFs(), parent), isDir ? 1 : 0);
+            decNlinkForDir(new FsInode(inode.getFs(), parent), isDir ? 1 : 0);
         }
 
         int n = _jdbc.update("DELETE FROM t_dirs WHERE ichild=?", inode.ino());
@@ -497,10 +497,10 @@ public class FsSqlDriver {
         }
 
         if (!srcDir.equals(destDir)) {
-            incNlink(destDir, nlinkDelta);
-            decNlink(srcDir, nlinkDelta);
+            incNlinkForDir(destDir, nlinkDelta);
+            decNlinkForDir(srcDir, nlinkDelta);
         } else {
-            incNlink(srcDir, 0);
+            incNlinkForDir(srcDir, 0);
         }
         return true;
     }
@@ -583,7 +583,7 @@ public class FsSqlDriver {
         Stat stat = createInode(id, type, owner, group, mode, nlink, size);
         FsInode inode = new FsInode(parent.getFs(), stat.getIno(), FsInodeType.INODE, 0, stat);
         createEntryInParent(parent, name, inode);
-        incNlink(parent, type == UnixPermission.S_IFDIR ? 1 : 0);
+        incNlinkForDir(parent, type == UnixPermission.S_IFDIR ? 1 : 0);
         return inode;
     }
 
@@ -735,8 +735,8 @@ public class FsSqlDriver {
      *
      * @param inode
      */
-    void incNlink(FsInode inode) {
-        incNlink(inode, 1);
+    void incNlinkForFile(FsInode inode) {
+        incNlinkForFile(inode, 1);
     }
 
     /**
@@ -745,10 +745,63 @@ public class FsSqlDriver {
      * @param inode
      * @param delta
      */
-    void incNlink(FsInode inode, int delta) {
+    void incNlinkForFile(FsInode inode, int delta) {
         Timestamp now = new Timestamp(System.currentTimeMillis());
         _jdbc.update(
-              "UPDATE t_inodes SET inlink=inlink +?,imtime=?,ictime=?,igeneration=igeneration+1 WHERE inumber=?",
+              "UPDATE t_inodes SET inlink=inlink +?,ictime=?,igeneration=igeneration+1 WHERE inumber=?",
+              ps -> {
+                  ps.setInt(1, delta);
+                  ps.setTimestamp(2, now);
+                  ps.setLong(3, inode.ino());
+              });
+    }
+
+    /**
+     * increase inode reference count by 1; the same as incNlink(dbConnection, inode, 1)
+     *
+     * @param inode
+     */
+    void incNlinkForDir(FsInode inode) {
+        incNlinkForDir(inode, 1);
+    }
+
+    /**
+     * increases the reference count of the inode by delta
+     *
+     * @param inode
+     * @param delta
+     */
+    void incNlinkForDir(FsInode inode, int delta) {
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        _jdbc.update(
+                "UPDATE t_inodes SET inlink=inlink +?,imtime=?,ictime=?,igeneration=igeneration+1 WHERE inumber=?",
+                ps -> {
+                    ps.setInt(1, delta);
+                    ps.setTimestamp(2, now);
+                    ps.setTimestamp(3, now);
+                    ps.setLong(4, inode.ino());
+                });
+    }
+
+    /**
+     * decreases inode reverence count by 1. the same as decNlink(dbConnection, inode, 1)
+     *
+     * @param inode
+     */
+    void decNlinkForDir(FsInode inode) {
+        decNlinkForDir(inode, 1);
+    }
+
+    /**
+     * decreases inode reference count by delta
+     *
+     * @param inode
+     * @param delta
+     */
+    void decNlinkForDir(FsInode inode, int delta) {
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        _jdbc.update(
+              "UPDATE t_inodes SET inlink=inlink -?,imtime=?,ictime=?,igeneration=igeneration+1 WHERE inumber=?",
               ps -> {
                   ps.setInt(1, delta);
                   ps.setTimestamp(2, now);
@@ -762,8 +815,8 @@ public class FsSqlDriver {
      *
      * @param inode
      */
-    void decNlink(FsInode inode) {
-        decNlink(inode, 1);
+    void decNlinkForFile(FsInode inode) {
+        decNlinkForFile(inode, 1);
     }
 
     /**
@@ -772,17 +825,17 @@ public class FsSqlDriver {
      * @param inode
      * @param delta
      */
-    void decNlink(FsInode inode, int delta) {
+    void decNlinkForFile(FsInode inode, int delta) {
         Timestamp now = new Timestamp(System.currentTimeMillis());
         _jdbc.update(
-              "UPDATE t_inodes SET inlink=inlink -?,imtime=?,ictime=?,igeneration=igeneration+1 WHERE inumber=?",
-              ps -> {
-                  ps.setInt(1, delta);
-                  ps.setTimestamp(2, now);
-                  ps.setTimestamp(3, now);
-                  ps.setLong(4, inode.ino());
-              });
+                "UPDATE t_inodes SET inlink=inlink -?,ictime=?,igeneration=igeneration+1 WHERE inumber=?",
+                ps -> {
+                    ps.setInt(1, delta);
+                    ps.setTimestamp(2, now);
+                    ps.setLong(3, inode.ino());
+                });
     }
+
 
     /**
      * creates an entry name for the inode in the directory parent. parent's reference count is not
