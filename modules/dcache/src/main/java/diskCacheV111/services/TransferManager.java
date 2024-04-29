@@ -5,6 +5,7 @@ import static java.util.stream.Collectors.joining;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.MissingResourceCacheException;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.transferManager.CancelTransferMessage;
@@ -30,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.jdo.PersistenceManager;
@@ -41,6 +43,8 @@ import org.dcache.util.Args;
 import org.dcache.util.CDCExecutorServiceDecorator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.core.KafkaTemplate;
 
 
 /**
@@ -64,6 +68,7 @@ public abstract class TransferManager extends AbstractCellComponent
     private PoolManagerStub _poolManager;
     private CellStub _poolStub;
     private CellStub _billingStub;
+    private Consumer<DoorRequestInfoMessage> _kafkaSender = (s) -> {};
     private boolean _overwrite;
     private int _maxNumberOfDeleteRetries;
     // this is the timer which will timeout the
@@ -411,6 +416,10 @@ public abstract class TransferManager extends AbstractCellComponent
         return _billingStub;
     }
 
+    public Consumer<DoorRequestInfoMessage> getKafkaSender() {
+        return _kafkaSender;
+    }
+
     public String getIoQueueName() {
         return _ioQueueName;
     }
@@ -463,6 +472,11 @@ public abstract class TransferManager extends AbstractCellComponent
 
     public void setBilling(CellStub billingStub) {
         _billingStub = billingStub;
+    }
+
+    @Autowired(required = false)
+    public void setTransferTemplate(KafkaTemplate kafkaTemplate) {
+        _kafkaSender = kafkaTemplate::sendDefault;
     }
 
     public void setPoolManager(PoolManagerStub poolManager) {
