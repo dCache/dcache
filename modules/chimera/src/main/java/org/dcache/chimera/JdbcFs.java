@@ -367,8 +367,8 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
                 }
 
                 _sqlDriver.createEntryInParent(parent, name, inode);
-                _sqlDriver.incNlink(inode);
-                _sqlDriver.incNlink(parent, 0);
+                _sqlDriver.incNlinkForFile(inode);
+                _sqlDriver.incNlinkForDir(parent, 0);
             } catch (DuplicateKeyException e) {
                 throw new FileExistsChimeraFsException(e);
             }
