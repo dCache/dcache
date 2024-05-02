@@ -992,7 +992,8 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
 
     @Test(expected = FileNotFoundChimeraFsException.class)
     public void testMoveNotExists() throws Exception {
-        _fs.rename(_rootInode, _rootInode, "foo", _rootInode, "bar");
+        FsInode dummy = new FsInode(_fs, 31415);
+        _fs.rename(dummy, _rootInode, "foo", _rootInode, "bar");
     }
 
     @Test(expected = DirNotEmptyChimeraFsException.class)
@@ -2097,6 +2098,23 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
         long mtime1 = inode.stat().getMTime();
 
         assertThat("file mtine shoud not be changes on hardlink creation", mtime1, is(mtime0));
+    }
+
+    @Test(expected = InvalidArgumentChimeraException.class)
+    public void testMvDirectoryIntoItself() throws Exception {
+
+        FsInode dir = _fs.mkdir("/dir");
+        _fs.rename(dir, _rootInode, "dir", dir, "subdir");
+    }
+
+    @Test(expected = InvalidArgumentChimeraException.class)
+    public void testMvDirectoryOwnSubtree() throws Exception {
+
+        FsInode dir = _fs.mkdir("/dir");
+        _fs.mkdir("/dir/subdir1");
+        FsInode dir2 = _fs.mkdir("/dir/subdir1/subdir2");
+
+        _fs.rename(dir, _rootInode, "dir", dir2, "subdir3");
     }
 
     private long getDirEntryCount(FsInode dir) throws IOException {
