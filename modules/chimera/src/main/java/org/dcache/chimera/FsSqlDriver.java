@@ -18,6 +18,7 @@ package org.dcache.chimera;
 
 import static java.util.stream.Collectors.toList;
 import static org.dcache.chimera.FileSystemProvider.SetXattrMode;
+import static org.dcache.chimera.FileSystemProvider.StatCacheOption.NO_STAT;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
 
 import com.google.common.base.Throwables;
@@ -48,6 +49,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.OptionalLong;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -468,7 +470,13 @@ public class FsSqlDriver {
      * @param inode
      * @return true if moved, false if source did not exist
      */
-    boolean rename(FsInode inode, FsInode srcDir, String source, FsInode destDir, String dest) {
+    boolean rename(FsInode inode, FsInode srcDir, String source, FsInode destDir, String dest) throws ChimeraFsException {
+
+        // If source is a directory check that we don't move into its own subdirectory
+        if (inode.isDirectory()) {
+            checkLoop(inode, destDir);
+        }
+
         String moveLink = "UPDATE t_dirs SET iparent=?, iname=? WHERE iparent=? AND iname=? AND ichild=?";
         int n = _jdbc.update(moveLink,
               ps -> {
@@ -563,6 +571,30 @@ public class FsSqlDriver {
             return Lists.reverse(pList).stream().collect(Collectors.joining("/", "/", ""));
         } catch (IncorrectResultSizeDataAccessException e) {
             return "";
+        }
+    }
+
+    protected void checkLoop(FsInode inode, FsInode dst) throws InvalidArgumentChimeraException {
+        if (inode.ino() == dst.ino()) {
+            throw new InvalidArgumentChimeraException("Cannot move directory into itself.");
+        }
+
+        long destInumber = dst.ino();
+        while (true) {
+            OptionalLong parent = _jdbc.query("SELECT iparent FROM t_dirs WHERE ichild=?",
+                    rs -> rs.next() ? OptionalLong.of(rs.getLong("iparent")) : OptionalLong.empty(),
+                    destInumber);
+
+            if (parent.isEmpty()) {
+                // we have reached the root of the three
+                break;
+            }
+
+            long parentIno = parent.getAsLong();
+            if (parentIno == inode.ino()) {
+                throw new InvalidArgumentChimeraException("Cannot move directory into its own subdirectory.");
+            }
+            destInumber = parentIno;
         }
     }
 
