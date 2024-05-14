@@ -389,7 +389,7 @@ public final class Storage
         _billingStub = billingStub;
     }
 
-    @Autowired
+    @Autowired(required = false)
     public void setTransferTemplate(KafkaTemplate kafkaTemplate) {
         _kafkaSender = kafkaTemplate::sendDefault;
     }
