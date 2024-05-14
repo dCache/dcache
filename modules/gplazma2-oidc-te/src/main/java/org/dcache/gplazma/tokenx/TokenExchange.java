@@ -87,6 +87,10 @@ public class TokenExchange implements GPlazmaAuthenticationPlugin {
             }
         }
 
+        if (credential == null) {
+            throw new AuthenticationException("No bearer token credential found");
+        }
+
         String token = credential.getToken();
         LOG.debug("Found bearer token: {}", token);
 
@@ -94,8 +98,7 @@ public class TokenExchange implements GPlazmaAuthenticationPlugin {
 
 
         try {
-            String exchangedToken = null;
-            exchangedToken = tokenExchange(token);
+            String exchangedToken = tokenExchange(token);
             privateCredentials.remove(credential);
             privateCredentials.add(new BearerTokenCredential(exchangedToken));
 
