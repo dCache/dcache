@@ -205,4 +205,5 @@ create org.dcache.cells.UniversalSpringCell ${srmmanager.cell.name} \
        -consume=${srmmanager.cell.consume} \
         -cell.max-message-threads=${srmmanager.cell.max-message-threads} -cell.max-messages-queued=${srmmanager.cell.max-messages-queued} \
        -subscribe=${srmmanager.cell.subscribe} \
+       -profiles=kafka-${srmmanager.enable.kafka} \
    "

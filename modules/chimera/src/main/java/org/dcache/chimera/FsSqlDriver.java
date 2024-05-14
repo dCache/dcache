@@ -18,6 +18,7 @@ package org.dcache.chimera;
 
 import static java.util.stream.Collectors.toList;
 import static org.dcache.chimera.FileSystemProvider.SetXattrMode;
+import static org.dcache.chimera.FileSystemProvider.StatCacheOption.NO_STAT;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
 
 import com.google.common.base.Strings;
@@ -50,6 +51,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.OptionalLong;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -311,7 +313,7 @@ public class FsSqlDriver {
 
         // ensure that t_inodes and t_tags_inodes updated in the same order as
         // in mkdir
-        decNlink(parent);
+        decNlinkForDir(parent);
         removeAllTags(inode);
 
         if (!removeInodeIfUnlinked(inode, true)) {
@@ -328,13 +330,13 @@ public class FsSqlDriver {
             return false;
         }
         // hard link counts
-        decNlink(inode);
+        decNlinkForFile(inode);
         // ignore the result as the file might have a hardlink
         removeInodeIfUnlinked(inode, false);
 
         // trigger mtime update of parent dir.
         // Postgres driver makes it different.
-        decNlink(parent, 0);
+        decNlinkForDir(parent, 0);
         return true;
     }
 
@@ -357,7 +359,7 @@ public class FsSqlDriver {
         }
 
         for (Long parent : parents) {
-            decNlink(new FsInode(inode.getFs(), parent), isDir ? 1 : 0);
+            decNlinkForDir(new FsInode(inode.getFs(), parent), isDir ? 1 : 0);
         }
 
         int n = _jdbc.update("DELETE FROM t_dirs WHERE ichild=?", inode.ino());
@@ -474,7 +476,13 @@ public class FsSqlDriver {
      * @param inode
      * @return true if moved, false if source did not exist
      */
-    boolean rename(FsInode inode, FsInode srcDir, String source, FsInode destDir, String dest) {
+    boolean rename(FsInode inode, FsInode srcDir, String source, FsInode destDir, String dest) throws ChimeraFsException {
+
+        // If source is a directory check that we don't move into its own subdirectory
+        if (inode.isDirectory()) {
+            checkLoop(inode, destDir);
+        }
+
         String moveLink = "UPDATE t_dirs SET iparent=?, iname=? WHERE iparent=? AND iname=? AND ichild=?";
         int n = _jdbc.update(moveLink,
               ps -> {
@@ -497,10 +505,10 @@ public class FsSqlDriver {
         }
 
         if (!srcDir.equals(destDir)) {
-            incNlink(destDir, nlinkDelta);
-            decNlink(srcDir, nlinkDelta);
+            incNlinkForDir(destDir, nlinkDelta);
+            decNlinkForDir(srcDir, nlinkDelta);
         } else {
-            incNlink(srcDir, 0);
+            incNlinkForDir(srcDir, 0);
         }
         return true;
     }
@@ -577,13 +585,37 @@ public class FsSqlDriver {
         }
     }
 
+    protected void checkLoop(FsInode inode, FsInode dst) throws InvalidArgumentChimeraException {
+        if (inode.ino() == dst.ino()) {
+            throw new InvalidArgumentChimeraException("Cannot move directory into itself.");
+        }
+
+        long destInumber = dst.ino();
+        while (true) {
+            OptionalLong parent = _jdbc.query("SELECT iparent FROM t_dirs WHERE ichild=?",
+                    rs -> rs.next() ? OptionalLong.of(rs.getLong("iparent")) : OptionalLong.empty(),
+                    destInumber);
+
+            if (parent.isEmpty()) {
+                // we have reached the root of the three
+                break;
+            }
+
+            long parentIno = parent.getAsLong();
+            if (parentIno == inode.ino()) {
+                throw new InvalidArgumentChimeraException("Cannot move directory into its own subdirectory.");
+            }
+            destInumber = parentIno;
+        }
+    }
+
     FsInode createInodeInParent(FsInode parent, String name, String id, int owner, int group,
           int mode,
           int type, int nlink, long size) {
         Stat stat = createInode(id, type, owner, group, mode, nlink, size);
         FsInode inode = new FsInode(parent.getFs(), stat.getIno(), FsInodeType.INODE, 0, stat);
         createEntryInParent(parent, name, inode);
-        incNlink(parent, type == UnixPermission.S_IFDIR ? 1 : 0);
+        incNlinkForDir(parent, type == UnixPermission.S_IFDIR ? 1 : 0);
         return inode;
     }
 
@@ -735,8 +767,8 @@ public class FsSqlDriver {
      *
      * @param inode
      */
-    void incNlink(FsInode inode) {
-        incNlink(inode, 1);
+    void incNlinkForFile(FsInode inode) {
+        incNlinkForFile(inode, 1);
     }
 
     /**
@@ -745,10 +777,63 @@ public class FsSqlDriver {
      * @param inode
      * @param delta
      */
-    void incNlink(FsInode inode, int delta) {
+    void incNlinkForFile(FsInode inode, int delta) {
         Timestamp now = new Timestamp(System.currentTimeMillis());
         _jdbc.update(
-              "UPDATE t_inodes SET inlink=inlink +?,imtime=?,ictime=?,igeneration=igeneration+1 WHERE inumber=?",
+              "UPDATE t_inodes SET inlink=inlink +?,ictime=?,igeneration=igeneration+1 WHERE inumber=?",
+              ps -> {
+                  ps.setInt(1, delta);
+                  ps.setTimestamp(2, now);
+                  ps.setLong(3, inode.ino());
+              });
+    }
+
+    /**
+     * increase inode reference count by 1; the same as incNlink(dbConnection, inode, 1)
+     *
+     * @param inode
+     */
+    void incNlinkForDir(FsInode inode) {
+        incNlinkForDir(inode, 1);
+    }
+
+    /**
+     * increases the reference count of the inode by delta
+     *
+     * @param inode
+     * @param delta
+     */
+    void incNlinkForDir(FsInode inode, int delta) {
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        _jdbc.update(
+                "UPDATE t_inodes SET inlink=inlink +?,imtime=?,ictime=?,igeneration=igeneration+1 WHERE inumber=?",
+                ps -> {
+                    ps.setInt(1, delta);
+                    ps.setTimestamp(2, now);
+                    ps.setTimestamp(3, now);
+                    ps.setLong(4, inode.ino());
+                });
+    }
+
+    /**
+     * decreases inode reverence count by 1. the same as decNlink(dbConnection, inode, 1)
+     *
+     * @param inode
+     */
+    void decNlinkForDir(FsInode inode) {
+        decNlinkForDir(inode, 1);
+    }
+
+    /**
+     * decreases inode reference count by delta
+     *
+     * @param inode
+     * @param delta
+     */
+    void decNlinkForDir(FsInode inode, int delta) {
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        _jdbc.update(
+              "UPDATE t_inodes SET inlink=inlink -?,imtime=?,ictime=?,igeneration=igeneration+1 WHERE inumber=?",
               ps -> {
                   ps.setInt(1, delta);
                   ps.setTimestamp(2, now);
@@ -762,8 +847,8 @@ public class FsSqlDriver {
      *
      * @param inode
      */
-    void decNlink(FsInode inode) {
-        decNlink(inode, 1);
+    void decNlinkForFile(FsInode inode) {
+        decNlinkForFile(inode, 1);
     }
 
     /**
@@ -772,17 +857,17 @@ public class FsSqlDriver {
      * @param inode
      * @param delta
      */
-    void decNlink(FsInode inode, int delta) {
+    void decNlinkForFile(FsInode inode, int delta) {
         Timestamp now = new Timestamp(System.currentTimeMillis());
         _jdbc.update(
-              "UPDATE t_inodes SET inlink=inlink -?,imtime=?,ictime=?,igeneration=igeneration+1 WHERE inumber=?",
-              ps -> {
-                  ps.setInt(1, delta);
-                  ps.setTimestamp(2, now);
-                  ps.setTimestamp(3, now);
-                  ps.setLong(4, inode.ino());
-              });
+                "UPDATE t_inodes SET inlink=inlink -?,ictime=?,igeneration=igeneration+1 WHERE inumber=?",
+                ps -> {
+                    ps.setInt(1, delta);
+                    ps.setTimestamp(2, now);
+                    ps.setLong(3, inode.ino());
+                });
     }
+
 
     /**
      * creates an entry name for the inode in the directory parent. parent's reference count is not

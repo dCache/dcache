@@ -69,6 +69,7 @@ import java.util.List;
 import java.util.Optional;
 import javax.security.auth.Subject;
 import org.dcache.auth.attributes.Restriction;
+import org.dcache.auth.attributes.Restrictions;
 import org.dcache.services.bulk.BulkStorageException;
 import org.dcache.services.bulk.store.jdbc.JdbcBulkDaoUtils;
 import org.slf4j.Logger;
@@ -144,6 +145,7 @@ public final class JdbcBulkRequestPermissionsDao extends JdbcDaoSupport {
               (Subject) deserializeFromBase64(id, "subject", rs.getString("subject")));
         wrapper.setRestriction((Restriction) deserializeFromBase64(id, "restriction",
               rs.getString("restriction")));
+        if (wrapper.getRestriction() == null) { wrapper.setRestriction(Restrictions.none()); }
         LOGGER.debug("toPermissions, returning wrapper for {}.", id);
         return wrapper;
     }

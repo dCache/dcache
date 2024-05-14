@@ -323,7 +323,8 @@ public class PinRequestProcessor
               new PoolMgrSelectReadPoolMsg(task.getFileAttributes(),
                     task.getProtocolInfo(),
                     task.getReadPoolSelectionContext(),
-                    checkStaging(task));
+                    checkStaging(task),
+                    task.getRestriction());
         msg.setSubject(task.getSubject());
         CellStub.addCallback(_poolManagerStub.sendAsync(msg),
               new AbstractMessageCallback<PoolMgrSelectReadPoolMsg>() {

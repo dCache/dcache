@@ -1339,7 +1339,8 @@ public class RequestContainerV5
                           (PoolMgrSelectReadPoolMsg) envelope.getMessageObject();
                     if (_stagePolicyDecisionPoint.canPerformStaging(msg.getSubject(),
                           msg.getFileAttributes(),
-                          msg.getProtocolInfo())) {
+                          msg.getProtocolInfo(),
+                          msg.getRestriction())) {
                         return true;
                     }
                 } catch (IOException | PatternSyntaxException e) {

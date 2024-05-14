@@ -247,18 +247,54 @@ public class WlcgProfileTest {
         assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/my-file")));
         assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/my-file")));
         assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/my-file")));
 
         assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/other/my-file")));
         assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/other/my-file")));
         assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/other/my-file")));
         assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/other/my-file")));
         assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/other/my-file")));
 
         assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/prefix/my-file")));
         assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/prefix/my-file")));
         assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/prefix/my-file")));
         assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/prefix/my-file")));
         assertFalse(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/prefix/my-file")));
+    }
+
+    @Test
+    public void shouldAcceptRootStageScope() throws Exception {
+        given(aWlcgProfile().withPrefix("/prefix"));
+
+        when(invoked().withIdP(anIp("MY-OP"))
+                .withStringClaim("wlcg.ver", "1.0")
+                .withStringClaim("scope", "openid storage.stage:/"));
+
+        assertThat(principals, hasItem(any(ExemptFromNamespaceChecks.class)));
+        assertThat(restriction, isPresent());
+        Restriction r = restriction.get();
+        assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/my-file")));
+
+        assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/other/my-file")));
+
+        assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/prefix/my-file")));
+        assertFalse(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/prefix/my-file")));
+        assertFalse(r.isRestricted(Activity.STAGE, FsPath.create("/prefix/my-file")));
     }
 
     @Test
@@ -277,24 +313,68 @@ public class WlcgProfileTest {
         assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/my-file")));
         assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/my-file")));
         assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/my-file")));
 
         assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/other/my-file")));
         assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/other/my-file")));
         assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/other/my-file")));
         assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/other/my-file")));
         assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/other/my-file")));
 
         assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/prefix/my-file")));
         assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/prefix/my-file")));
         assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/prefix/my-file")));
         assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/prefix/my-file")));
         assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/prefix/my-file")));
 
         assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/prefix/target/my-file")));
         assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/prefix/target/my-file")));
         assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/prefix/target/my-file")));
         assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/prefix/target/my-file")));
         assertFalse(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/prefix/target/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/prefix/target/my-file")));
+    }
+
+    @Test
+    public void shouldAcceptSubdirStageScope() throws Exception {
+        given(aWlcgProfile().withPrefix("/prefix"));
+
+        when(invoked().withIdP(anIp("MY-OP"))
+                .withStringClaim("wlcg.ver", "1.0")
+                .withStringClaim("scope", "openid storage.stage:/target"));
+
+        assertThat(principals, hasItem(any(ExemptFromNamespaceChecks.class)));
+        assertThat(restriction, isPresent());
+        Restriction r = restriction.get();
+        assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/my-file")));
+
+        assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/other/my-file")));
+
+        assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/prefix/my-file")));
+
+        assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/prefix/target/my-file")));
+        assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/prefix/target/my-file")));
+        assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/prefix/target/my-file")));
+        assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/prefix/target/my-file")));
+        assertFalse(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/prefix/target/my-file")));
+        assertFalse(r.isRestricted(Activity.STAGE, FsPath.create("/prefix/target/my-file")));
     }
 
     @Test
@@ -313,18 +393,21 @@ public class WlcgProfileTest {
         assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/my-file")));
         assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/my-file")));
         assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/my-file")));
 
         assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/other/my-file")));
         assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/other/my-file")));
         assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/other/my-file")));
         assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/other/my-file")));
         assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/other/my-file")));
 
         assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/prefix/my-file")));
         assertFalse(r.isRestricted(Activity.UPLOAD, FsPath.create("/prefix/my-file")));
         assertFalse(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/prefix/my-file")));
         assertFalse(r.isRestricted(Activity.MANAGE, FsPath.create("/prefix/my-file")));
         assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/prefix/my-file")));
     }
 
     @Test
@@ -343,18 +426,21 @@ public class WlcgProfileTest {
         assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/my-file")));
         assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/my-file")));
         assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/my-file")));
 
         assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/other/my-file")));
         assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/other/my-file")));
         assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/other/my-file")));
         assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/other/my-file")));
         assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/other/my-file")));
 
         assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/prefix/my-file")));
         assertFalse(r.isRestricted(Activity.UPLOAD, FsPath.create("/prefix/my-file")));
         assertFalse(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/prefix/my-file")));
         assertFalse(r.isRestricted(Activity.MANAGE, FsPath.create("/prefix/my-file")));
         assertFalse(r.isRestricted(Activity.DELETE, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/prefix/my-file")));
     }
 
     @Test
@@ -373,18 +459,54 @@ public class WlcgProfileTest {
         assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/my-file")));
         assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/my-file")));
         assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/my-file")));
 
         assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/other/my-file")));
         assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/other/my-file")));
         assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/other/my-file")));
         assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/other/my-file")));
         assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/other/my-file")));
 
         assertFalse(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/prefix/my-file")));
         assertFalse(r.isRestricted(Activity.DELETE, FsPath.create("/prefix/my-file")));
         assertFalse(r.isRestricted(Activity.UPLOAD, FsPath.create("/prefix/my-file")));
         assertFalse(r.isRestricted(Activity.MANAGE, FsPath.create("/prefix/my-file")));
         assertFalse(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/prefix/my-file")));
+    }
+
+    @Test
+    public void shouldAcceptRootStageAndModifyWlcgScope() throws Exception {
+        given(aWlcgProfile().withPrefix("/prefix"));
+
+        when(invoked().withIdP(anIp("MY-OP"))
+                .withStringClaim("wlcg.ver", "1.0")
+                .withStringClaim("scope", "openid storage.stage:/ storage.modify:/"));
+
+        assertThat(principals, hasItem(any(ExemptFromNamespaceChecks.class)));
+        assertThat(restriction, isPresent());
+        Restriction r = restriction.get();
+        assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/my-file")));
+
+        assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/other/my-file")));
+
+        assertFalse(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/prefix/my-file")));
+        assertFalse(r.isRestricted(Activity.DELETE, FsPath.create("/prefix/my-file")));
+        assertFalse(r.isRestricted(Activity.UPLOAD, FsPath.create("/prefix/my-file")));
+        assertFalse(r.isRestricted(Activity.MANAGE, FsPath.create("/prefix/my-file")));
+        assertFalse(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/prefix/my-file")));
+        assertFalse(r.isRestricted(Activity.STAGE, FsPath.create("/prefix/my-file")));
     }
 
     @Test
@@ -403,42 +525,110 @@ public class WlcgProfileTest {
         assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/my-file")));
         assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/my-file")));
         assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/my-file")));
 
         assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/other/my-file")));
         assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/other/my-file")));
         assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/other/my-file")));
         assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/other/my-file")));
         assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/other/my-file")));
 
         assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/read-target/my-file")));
         assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/read-target/my-file")));
         assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/read-target/my-file")));
         assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/read-target/my-file")));
         assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/read-target/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/read-target/my-file")));
 
         assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/write-target/my-file")));
         assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/write-target/my-file")));
         assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/write-target/my-file")));
         assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/write-target/my-file")));
         assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/write-target/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/write-target/my-file")));
 
         assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/prefix/my-file")));
         assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/prefix/my-file")));
         assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/prefix/my-file")));
         assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/prefix/my-file")));
         assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/prefix/my-file")));
 
         assertFalse(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/prefix/read-target/my-file")));
         assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/prefix/read-target/my-file")));
         assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/prefix/read-target/my-file")));
         assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/prefix/read-target/my-file")));
         assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/prefix/read-target/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/prefix/read-target/my-file")));
 
         assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/prefix/write-target/my-file")));
         assertFalse(r.isRestricted(Activity.DELETE, FsPath.create("/prefix/write-target/my-file")));
         assertFalse(r.isRestricted(Activity.UPLOAD, FsPath.create("/prefix/write-target/my-file")));
         assertFalse(r.isRestricted(Activity.MANAGE, FsPath.create("/prefix/write-target/my-file")));
         assertFalse(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/prefix/write-target/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/prefix/write-target/my-file")));
+    }
+
+    @Test
+    public void shouldAcceptNonRootStageAndModifyWlcgScope() throws Exception {
+        given(aWlcgProfile().withPrefix("/prefix"));
+
+        when(invoked().withIdP(anIp("MY-OP"))
+                .withStringClaim("wlcg.ver", "1.0")
+                .withStringClaim("scope", "openid storage.stage:/read-target storage.modify:/write-target"));
+
+        assertThat(principals, hasItem(any(ExemptFromNamespaceChecks.class)));
+        assertThat(restriction, isPresent());
+        Restriction r = restriction.get();
+        assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/my-file")));
+
+        assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/other/my-file")));
+
+        assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/read-target/my-file")));
+        assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/read-target/my-file")));
+        assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/read-target/my-file")));
+        assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/read-target/my-file")));
+        assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/read-target/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/read-target/my-file")));
+
+        assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/write-target/my-file")));
+        assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/write-target/my-file")));
+        assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/write-target/my-file")));
+        assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/write-target/my-file")));
+        assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/write-target/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/write-target/my-file")));
+
+        assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/prefix/my-file")));
+
+        assertFalse(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/prefix/read-target/my-file")));
+        assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/prefix/read-target/my-file")));
+        assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/prefix/read-target/my-file")));
+        assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/prefix/read-target/my-file")));
+        assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/prefix/read-target/my-file")));
+        assertFalse(r.isRestricted(Activity.STAGE, FsPath.create("/prefix/read-target/my-file")));
+
+        assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/prefix/write-target/my-file")));
+        assertFalse(r.isRestricted(Activity.DELETE, FsPath.create("/prefix/write-target/my-file")));
+        assertFalse(r.isRestricted(Activity.UPLOAD, FsPath.create("/prefix/write-target/my-file")));
+        assertFalse(r.isRestricted(Activity.MANAGE, FsPath.create("/prefix/write-target/my-file")));
+        assertFalse(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/prefix/write-target/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/prefix/write-target/my-file")));
     }
 
     @Test
@@ -457,30 +647,176 @@ public class WlcgProfileTest {
         assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/my-file")));
         assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/my-file")));
         assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/my-file")));
 
         assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/other/my-file")));
         assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/other/my-file")));
         assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/other/my-file")));
         assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/other/my-file")));
         assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/other/my-file")));
 
         assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/write-target/my-file")));
         assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/write-target/my-file")));
         assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/write-target/my-file")));
         assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/write-target/my-file")));
         assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/write-target/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/write-target/my-file")));
 
         assertFalse(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/prefix/my-file")));
         assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/prefix/my-file")));
         assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/prefix/my-file")));
         assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/prefix/my-file")));
         assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/prefix/my-file")));
 
         assertFalse(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/prefix/write-target/my-file")));
         assertFalse(r.isRestricted(Activity.DELETE, FsPath.create("/prefix/write-target/my-file")));
         assertFalse(r.isRestricted(Activity.UPLOAD, FsPath.create("/prefix/write-target/my-file")));
         assertFalse(r.isRestricted(Activity.MANAGE, FsPath.create("/prefix/write-target/my-file")));
         assertFalse(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/prefix/write-target/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/prefix/write-target/my-file")));
+    }
+
+    @Test
+    public void shouldAcceptRootStageAndNonRootReadWlcgScope() throws Exception {
+        given(aWlcgProfile().withPrefix("/prefix"));
+
+        when(invoked().withIdP(anIp("MY-OP"))
+                .withStringClaim("wlcg.ver", "1.0")
+                .withStringClaim("scope", "openid storage.stage:/ storage.read:/no-stage-target"));
+
+        assertThat(principals, hasItem(any(ExemptFromNamespaceChecks.class)));
+        assertThat(restriction, isPresent());
+        Restriction r = restriction.get();
+        assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/my-file")));
+
+        assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/other/my-file")));
+
+        assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/no-stage-target/my-file")));
+        assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/no-stage-target/my-file")));
+        assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/no-stage-target/my-file")));
+        assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/no-stage-target/my-file")));
+        assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/no-stage-target/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/no-stage-target/my-file")));
+
+        assertFalse(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/prefix/my-file")));
+        assertFalse(r.isRestricted(Activity.STAGE, FsPath.create("/prefix/my-file")));
+
+        assertFalse(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/prefix/no-stage-target/my-file")));
+        assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/prefix/no-stage-target/my-file")));
+        assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/prefix/no-stage-target/my-file")));
+        assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/prefix/no-stage-target/my-file")));
+        assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/prefix/no-stage-target/my-file")));
+        assertFalse(r.isRestricted(Activity.STAGE, FsPath.create("/prefix/no-stage-target/my-file")));
+    }
+
+    @Test
+    public void shouldAcceptRootReadAndNonRootStageWlcgScope() throws Exception {
+        given(aWlcgProfile().withPrefix("/prefix"));
+
+        when(invoked().withIdP(anIp("MY-OP"))
+                .withStringClaim("wlcg.ver", "1.0")
+                .withStringClaim("scope", "openid storage.read:/ storage.stage:/stage-target"));
+
+        assertThat(principals, hasItem(any(ExemptFromNamespaceChecks.class)));
+        assertThat(restriction, isPresent());
+        Restriction r = restriction.get();
+        assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/my-file")));
+
+        assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/other/my-file")));
+
+        assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/stage-target/my-file")));
+        assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/stage-target/my-file")));
+        assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/stage-target/my-file")));
+        assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/stage-target/my-file")));
+        assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/stage-target/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/stage-target/my-file")));
+
+        assertFalse(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/prefix/my-file")));
+
+        assertFalse(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/prefix/stage-target/my-file")));
+        assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/prefix/stage-target/my-file")));
+        assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/prefix/stage-target/my-file")));
+        assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/prefix/stage-target/my-file")));
+        assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/prefix/stage-target/my-file")));
+        assertFalse(r.isRestricted(Activity.STAGE, FsPath.create("/prefix/stage-target/my-file")));
+    }
+
+    @Test
+    public void shouldAcceptRootStageAndNonRootModifyWlcgScope() throws Exception {
+        given(aWlcgProfile().withPrefix("/prefix"));
+
+        when(invoked().withIdP(anIp("MY-OP"))
+                .withStringClaim("wlcg.ver", "1.0")
+                .withStringClaim("scope", "openid storage.stage:/ storage.modify:/write-target"));
+
+        assertThat(principals, hasItem(any(ExemptFromNamespaceChecks.class)));
+        assertThat(restriction, isPresent());
+        Restriction r = restriction.get();
+        assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/my-file")));
+
+        assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/other/my-file")));
+
+        assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/write-target/my-file")));
+        assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/write-target/my-file")));
+        assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/write-target/my-file")));
+        assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/write-target/my-file")));
+        assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/write-target/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/write-target/my-file")));
+
+        assertFalse(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/prefix/my-file")));
+        assertFalse(r.isRestricted(Activity.STAGE, FsPath.create("/prefix/my-file")));
+
+        assertFalse(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/prefix/write-target/my-file")));
+        assertFalse(r.isRestricted(Activity.DELETE, FsPath.create("/prefix/write-target/my-file")));
+        assertFalse(r.isRestricted(Activity.UPLOAD, FsPath.create("/prefix/write-target/my-file")));
+        assertFalse(r.isRestricted(Activity.MANAGE, FsPath.create("/prefix/write-target/my-file")));
+        assertFalse(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/prefix/write-target/my-file")));
+        assertFalse(r.isRestricted(Activity.STAGE, FsPath.create("/prefix/write-target/my-file")));
     }
 
     @Test
@@ -499,18 +835,21 @@ public class WlcgProfileTest {
         assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/my-file")));
         assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/my-file")));
         assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/my-file")));
 
         assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/other/my-file")));
         assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/other/my-file")));
         assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/other/my-file")));
         assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/other/my-file")));
         assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/other/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/other/my-file")));
 
         assertTrue(r.isRestricted(Activity.UPLOAD, FsPath.create("/prefix/my-file")));
         assertTrue(r.isRestricted(Activity.MANAGE, FsPath.create("/prefix/my-file")));
         assertTrue(r.isRestricted(Activity.DELETE, FsPath.create("/prefix/my-file")));
         assertTrue(r.isRestricted(Activity.UPDATE_METADATA, FsPath.create("/prefix/my-file")));
         assertTrue(r.isRestricted(Activity.DOWNLOAD, FsPath.create("/prefix/my-file")));
+        assertTrue(r.isRestricted(Activity.STAGE, FsPath.create("/prefix/my-file")));
     }
 
     @Test

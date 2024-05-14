@@ -116,7 +116,9 @@ public final class PinActivity extends PinManagerActivity {
             checkPinnable(attributes);
 
             PinManagerPinMessage message
-                  = new PinManagerPinMessage(attributes, getProtocolInfo(), id,
+                  = new PinManagerPinMessage(attributes, getProtocolInfo(),
+                  pnfsHandler.getRestriction(),
+                  id,
                   lifetimeInMillis);
             message.setSubject(subject);
 

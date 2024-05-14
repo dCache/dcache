@@ -7,8 +7,12 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.ProtocolInfo;
+
+import java.io.ObjectStreamException;
 import java.util.Date;
 import java.util.EnumSet;
+import org.dcache.auth.attributes.Restriction;
+import org.dcache.auth.attributes.Restrictions;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pinmanager.model.Pin;
 import org.dcache.vehicles.FileAttributes;
@@ -18,6 +22,7 @@ public class PinManagerPinMessage extends Message {
     private static final long serialVersionUID = -146552359952271936L;
 
     private FileAttributes _fileAttributes;
+    private Restriction _restriction;
     private final ProtocolInfo _protocolInfo;
     private long _lifetime;
     private long _pinId;
@@ -29,13 +34,22 @@ public class PinManagerPinMessage extends Message {
 
     public PinManagerPinMessage(FileAttributes fileAttributes,
           ProtocolInfo protocolInfo,
+          Restriction restriction,
           String requestId,
           long lifetime) {
         _fileAttributes = requireNonNull(fileAttributes);
         _protocolInfo = requireNonNull(protocolInfo);
+        _restriction = (restriction == null) ? Restrictions.none() : restriction;
         _requestId = requestId;
         _lifetime = lifetime;
     }
+
+    public PinManagerPinMessage(FileAttributes fileAttributes,
+          ProtocolInfo protocolInfo,
+          String requestId,
+          long lifetime) {
+        this(fileAttributes, protocolInfo, Restrictions.none(), requestId, lifetime);
+     }
 
     /**
      * Choose whether to wait for the pin to be established before returning. If value is true then
@@ -45,7 +59,7 @@ public class PinManagerPinMessage extends Message {
      * available through those methods.
      * <p>
      * If set to false (the default) then the message returns once the pin request has been
-     * processed and the pin established, or if there was an some error.
+     * processed and the pin established, or if there was an error.
      *
      * @param value whether to reply after the pinning task has been started.
      */
@@ -93,6 +107,8 @@ public class PinManagerPinMessage extends Message {
         return _protocolInfo;
     }
 
+    public Restriction getRestriction() { return _restriction; }
+
     public String getPool() {
         return _pool;
     }
@@ -134,4 +150,10 @@ public class PinManagerPinMessage extends Message {
         attributes.addAll(PoolMgrSelectReadPoolMsg.getRequiredAttributes());
         return attributes;
     }
+
+    private Object readResolve() throws ObjectStreamException {
+        if (_restriction == null) { _restriction = Restrictions.none(); }
+        return this;
+    }
+
 }
