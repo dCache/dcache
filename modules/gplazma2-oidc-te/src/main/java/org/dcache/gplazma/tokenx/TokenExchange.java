@@ -81,8 +81,8 @@ public class TokenExchange implements GPlazmaAuthenticationPlugin {
         for (Object c : privateCredentials) {
             if (c instanceof BearerTokenCredential) {
 
-                credential = (BearerTokenCredential) c;
                 checkAuthentication(credential == null, "Multiple bearer token credentials");
+                credential = (BearerTokenCredential) c;
 
             }
         }
