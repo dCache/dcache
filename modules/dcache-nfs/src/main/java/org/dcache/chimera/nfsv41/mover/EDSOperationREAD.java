@@ -22,6 +22,11 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
 
     private static final Logger _log = LoggerFactory.getLogger(EDSOperationREAD.class.getName());
 
+    /**
+     * Empty buffer to be returned when offset is beyond the end of file.
+     */
+    private static final ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0).asReadOnlyBuffer();
+
     private final NfsTransferService nfsTransferService;
 
     public EDSOperationREAD(nfs_argop4 args, NfsTransferService nfsTransferService) {
@@ -37,6 +42,7 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
 
             long offset = _args.opread.offset.value;
             int count = _args.opread.count.value;
+            int bytesRead = 0;
 
             NfsMover mover = nfsTransferService.getMoverByStateId(context, _args.opread.stateid);
             if (mover == null) {
@@ -46,8 +52,20 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
             }
 
             RepositoryChannel fc = mover.getMoverChannel();
-            var gBuffer = nfsTransferService.getIOBufferAllocator().allocate(count);
-            int bytesToRead = count;
+            long filesize = fc.size();
+
+            // check if offset is beyond the end of file. Return empty buffer with eof set.
+            // https://datatracker.ietf.org/doc/html/rfc5661#section-18.22.3
+            if (offset >= filesize) {
+                res.status = nfsstat.NFS_OK;
+                res.resok4 = new READ4resok();
+                res.resok4.data = EMPTY_BUFFER;
+                res.resok4.eof = true;
+                return;
+            }
+
+            int bytesToRead = (int) Math.min(filesize - offset, count);
+            var gBuffer = nfsTransferService.getIOBufferAllocator().allocate(bytesToRead);
 
             int rc = -1;
             if (gBuffer.isComposite()) {
@@ -61,7 +79,7 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
 
                     ByteBuffer directChunk = bufs[i].toByteBuffer();
                     directChunk.clear().limit(Math.min(directChunk.capacity(), bytesToRead));
-                    rc = fc.read(directChunk, offset + count - bytesToRead);
+                    rc = fc.read(directChunk, offset + bytesRead);
                     if (rc < 0) {
                         break;
                     }
@@ -71,25 +89,26 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
                     directChunk.flip();
 
                     bytesToRead -= rc;
+                    bytesRead += rc;
                 }
             } else {
 
                 ByteBuffer directBuffer = gBuffer.toByteBuffer();
-                directBuffer.clear().limit(count);
+                directBuffer.clear().limit(bytesToRead);
                 rc = fc.read(directBuffer, offset);
                 if (rc > 0) {
                     // the positions of Buffer and ByteBuffer are independent, thus keep it in sync manually
                     gBuffer.position(directBuffer.position());
                     bytesToRead -= rc;
+                    bytesRead += rc;
                 }
             }
 
-            int bytesRead = count - bytesToRead;
             gBuffer.flip();
 
             res.status = nfsstat.NFS_OK;
             res.resok4 = new ShallowREAD4resok(gBuffer);
-            if (rc == -1 || offset + bytesRead == fc.size()) {
+            if (rc == -1 || offset + bytesRead == filesize) {
                 res.resok4.eof = true;
             }
 
