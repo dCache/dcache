@@ -39,29 +39,26 @@ you wish to setup a dCache-based storage system, just let us know and we will
 help you with your system specifications. Just contact us: <support@dcache.org>.
    
 #### Software:
+
 - OpenJDK 11 (java 11 , and java 17 for dCache staring from version 10.1)
   
  > yum install java-11-openjdk
  > 
  > dnf install java-11-openjdk-devel
- 
 
 
 - ZooKeeper version 3.7 (in case of a standalone ZooKeeper installation)
 
 ### Installing PostgreSQL
 
-In general, the database may be deployed on the same node as dCache or
-on some dedicated machine with db-specific hardware.  The decision
-involves trade-offs beyond the scope of this chapter; however, to keep
-this chapter simple, we are assuming the database will run on the same
-machine as the dCache services that use it.
+
 
 Please remember that, wherever you choose to deploy the database, it
 must be tuned for optimal performance for the available hardware.
 Without doing this, you will see poor performance as PostgreSQL
 typically experiences very poor performance with its default
-configuration.  
+configuration.  In general, the database may be deployed on the same node as dCache or
+on some dedicated machine with db-specific hardware.
 
 To keep this simple, we are assuming that the database will run on the same machine as the dCache services that
 use it.
@@ -139,7 +136,7 @@ database tables, indexes etc as necessary.  However, dCache does not
 create the databases.  That is a manual process, typically done only
 once.
 
-creating a single database user dcache:
+ Let us creat a single database user dcache:
 
 > createuser -U postgres --no-superuser --no-createrole --createdb --no-password dcache
 >
@@ -151,7 +148,7 @@ ensure correct database ownership.  At this stage, we need only one
 database: chimera.  This database holds dCache's namespace.
 
 
-And after installing dcache we run the command `dcache database update`.
+Later after installing dcache we run the command `dcache database update`.
 
 
 ### Installing dCache
@@ -173,21 +170,25 @@ Updating / installing...
 
 ### Configuring dCache users
 
-In this tutorial , we will used gPlazma (Grid-Aware Pluggable Authorization Management) service is a part of dCache,
+In this tutorial, we will used gPlazma (Grid-Aware Pluggable Authorization Management) service which is a part of dCache,
 providing services for access control, which are used by door-cells in order to
 implement their access control system.
 
 The dCache RPM comes with a default gPlazma configuration file **/etc/dcache/gplazma.conf**.
 
  gPlazma requires the CA- and VOMS-root-certificates, that it should use, to be
-present in /etc/grid-security/certificates/ and /etc/grid-security/
+present in **/etc/grid-security/certificates/** and **/etc/grid-security/**
 vomsdir respectively.
-In some cases, gPlazma requires X.509-host-certificates to be present in /etc/grid-security/.
+In some cases, gPlazma requires X.509-host-certificates to be present in **/etc/grid-security/**.
 However, X.509 credentials require a certificate authority, 
 which require considerable effort to set up. For this tutorial the certificates have been installed on our VMs.
 
 
-Gplazma is configured by the PAM-style: the first column is the phases of the authentication process. Each login attempt follows four phases: **auth**, **map**, **account** and **session**.  Second column describes how to handle errors. There are four different options: **optional** -,  **sufficient**, **required** and **requisite**. The third column defines plugins that should be used.  as back-end for its tasks
+Gplazma is configured by the PAM (Privileged Access Management)-style: the first column is the phases of the authentication process. Each login attempt follows four phases: **auth**, **map**, **account** and **session**. Each phase is comprised of plugins.  Second column describes how to handle errors. Running a plugin is either success or failure, plugins that fail sometimes is expected. There are four different options: **optional** ,  **sufficient**, **required** and **requisite**. 
+
+
+
+The third column defines plugins that should be used as back-end for its tasks
 and services. 
 
 Lets have a look on a complete configuration example and go through the each phase.
@@ -200,7 +201,7 @@ Lets have a look on a complete configuration example and go through the each pha
 cat >/etc/dcache/gplazma.conf <<EOF
 auth    optional    x509 #1.1
 auth    optional    voms #1.2
-auth    optional  htpasswd #1
+auth    sufficient  htpasswd #1.3
 
 map     optional    vorolemap #2.1
 map     optional    gridmap #2.2
@@ -219,11 +220,11 @@ During the login process they will be executed in the order **auth**, **map**, *
 
 
 
-  **auth**  phase - verifies user’s identity. auth-plug-ins are used to read the users public and private credentials and ask some authority, if those are valid for accessing the system.
+  **auth**  phase - verifies user’s identity ( Has the userproved who they are?).  Auth-plug-ins are used to read the users public and private credentials and ask some authority, if those are valid for accessing the system.
 
 **#1.1** This configuration tells gPlazma to use the **x.509** plugin used to extracts X.509 certificate chains from the credentials of a user to be used by other plug-ins
 If user comes with grid
-certificate and VOMS role: extract user’s DN (**#1.2**), checks if the username and password exist in database (**#1.3**), which should be added to
+certificate and VOMS role: **voms** plugin extracts user’s DN (**#1.2**), checks if the username and password exist in database (**#1.3**), which should be added to 
 
 password file **/etc/dcache/htpasswd**.
 
@@ -241,10 +242,11 @@ with passwords TooManySecrets and dickerelch respectively:
 
 
 
-**optional** here means, the success or failure of this plug-in is only important if it is the only plug-in in the stack associated
-with this type.
+**optional** label means, the success or failure of this plug-in doesn't matter; always move onto next one in the phase.
 
- **#2** **map** - converts this identity to some dCache user.
+
+
+ **#2** **map** - converts this identity to some dCache user (Who is this user in dCache terms: uid, gids?).
                                               
  **#2.1** the “grid-mapfile”-file, the client-certificate’s DN is mapped to a
 virtual user-name.                      
@@ -264,9 +266,7 @@ mapped to UID/GIDs by the authzdb plug-in.
 cat >/etc/grid-security/grid-vorolemap <<EOF
 "*" "/desy" desyuser
 EOF
- ```
- 
- 
+ ``` 
  
  
  **#2.3** Using the “storage-authzdb-style”-file, this virtual user-name is then mapped to
@@ -306,7 +306,7 @@ Jan 05 13:45:15 os-46-install1.novalocal dcache@dCacheDomain[25977]: 05 Jan 2023
  ```
 
  
- 
+ **account** - checks whether the user allowed to use this service.
 
 
 Finally, **session** adds some additional information, for example the user’s home directory.
@@ -315,23 +315,52 @@ Finally, **session** adds some additional information, for example the user’s 
 This ability to split login steps between different plugins may make the process seem complicated; however,
 it is also very powerful and allows dCache to work with many different authentication schemes.
 
-
+Hier **requisite**  means failling plugin finishes the phase with failure. 
+And the last one **required** failling plugin fails the phase but remaining plugins are still running.
 
 
 ### TOKENS WLCG
 
+dCache supports OIDC tokens.
+
+You will need to install oid-agent
+
+> wget https://rpmfind.net/linux/epel/9/Everything/x86_64/Packages/o/oidc-agent-cli-5.1.0-1.el9.x86_64.rpm
+>
+
+On the VM for this tutorial it was needed to instal epel
+
+> dnf config-manager --set-enabled crb
+> dnf install epel-release epel-next-release
+> dnf repolist epel
+
+Now we can insatll oid-agent and run:
+
+>  dnf install oidc-agent-cli-5.1.0-1.el9.x86_64
+>
+> oidc-agent
+
+
+
 ```ini
 
-[root@neic-demo-1 centos]# oidc-agent
 [root@neic-demo-1 centos]# OIDC_SOCK=/tmp/oidc-6XTqy6/oidc-agent.3910; export OIDC_SOCK;
 OIDCD_PID=17651; export OIDCD_PID;
 echo Agent pid $OIDCD_PID
-^C
+
 [root@neic-demo-1 centos]# OIDC_SOCK=/tmp/oidc-6XTqy6/oidc-agent.3910; export OIDC_SOCK;
 [root@neic-demo-1 centos]# OIDCD_PID=17651; export OIDCD_PID
 [root@neic-demo-1 centos]# echo $OIDCD_PID
 17651
-[root@neic-demo-1 centos]# oidc-gen wlcg-with-scope
+```
+
+And now we can generate token with scope
+
+>
+> oidc-gen wlcg-with-scope
+>
+
+```ini
 [1] https://bildungsproxy.aai.dfn.de
 [2] https://cilogon.org
 [3] https://iam.deep-hybrid-datacloud.eu/
@@ -355,8 +384,29 @@ echo Agent pid $OIDCD_PID
 [21] https://atlas-auth.web.cern.ch/
 [22] https://cms-auth.web.cern.ch/
 [23] https://lhcb-auth.web.cern.ch/
-Issuer [https://bildungsproxy.aai.dfn.de]: 19
+Issuer [https://bildungsproxy.aai.dfn.de]:
+
+
+```
+
+we give the number of the issues in our case it is WLG ([19] https://wlcg.cloud.cnaf.infn.it/
+)
+
+
+```ini
+Issuer [https://bildungsproxy.aai.dfn.de]:19
+
+
 The following scopes are supported: openid profile email offline_access wlcg wlcg.groups storage.read:/ storage.create:/ compute.read compute.modify compute.create compute.cancel storage.modify:/ eduperson_scoped_affiliation eduperson_entitlement eduperson_assurance storage.stage:/ entitlements
+
+```
+in the next step we enter wich scopes we want to have: 
+
+> Scopes or 'max' (space separated) [openid profile offline_access]: **openid profile offline_access wlcg wlcg.groups storage.read:/ storage.create:/ storage.modify:/ storage.stage:/**
+
+
+
+```ini
 Scopes or 'max' (space separated) [openid profile offline_access]: openid profile offline_access wlcg wlcg.groups storage.read:/ storage.create:/ storage.modify:/ storage.stage:/
 Registering Client ...
 Generating account configuration ...
@@ -368,9 +418,35 @@ https://wlcg.cloud.cnaf.infn.it/device
 And enter the code: 9Z4ERM
 Alternatively you can use the following QR code to visit the above listed URL.
 
+```
+
+After entering the code the divece is authorised:
+
+```ini
+
+Enter encryption password for account configuration 'wlcg-with-scope': 
+Confirm encryption Password: 
+Everything setup correctly!
 
 
 ```
+
+No we can get the token
+
+>  oidc-token wlcg-with-scope
+
+
+```ini
+
+eyJraWQiOiJyc2ExIiwiYWxnIjoiUlMyNTYifQ.eyJ3bGNnLnZlciI6IjEuMCIsInN1YiI6ImU0ZmYxOTFlLTc4NDUtNDEzYy1iNDM3LTkzNzhmOTIzZmE4ZCIsImF1ZCI6Imh0dHBzOlwvXC93bGNnLmNlcm4uY2hcL2p3dFwvdjFcL2FueSIsIm5iZiI6MTY4OTE0OTI2NSwic2NvcGUiOiJzdG9yYWdlLmNyZWF0ZTpcLyBvcGVuaWQgb2ZmbGluZV9hY2Nlc3MgcHJvZmlsZSBzdG9yYWdlLnJlYWQ6XC8gc3RvcmFnZS5zdGFnZTpcLyBzdG9yYWdlLm1vZGlmeTpcLyB3bGNnIHdsY2cuZ3JvdXBzIiwiaXNzIjoiaHR0cHM6XC9cL3dsY2cuY2xvdWQuY25hZi5pbmZuLml0XC8iLCJleHAiOjE2ODkxNTA0NjQsImlhdCI6MTY4OTE0OTI2NSwianRpIjoiNjRkMWQ0MTktYjkyMi00OTFmLWE5MzctODgyMTEyMDdjMGY3IiwiY2xpZW50X2lkIjoiZTlmOGRiMzktNGZkZS00NjdiLWI1ZjgtYjI1ZDllNDg5ZmZjIiwid2xjZy5ncm91cHMiOlsiXC93bGNnIiwiXC93bGNnXC94ZmVycyJdfQ.K392AfD0kGI72zZHXRYNOK7VEQF1742epUKSQaD14B7wn62fNRNtQekO9hMhpGTQ2nIYnHjeOCYAcg4J9H5Tkk7yUqXc6uya4qMRZ0t2qwfO5Ky_qsoOK0vOZJ9D8ZtDYCowmmdWbHQlqbUCHwi8KNyUk1gJo9RSNah-sL799Fc
+
+```
+
+>
+> TOKEN=$(oidc-token wlcg-with-scope)
+
+
+And hier is our token
 
 ```ini
 
@@ -392,22 +468,53 @@ Alternatively you can use the following QR code to visit the above listed URL.
   ]
 }
 ```
-```ini
-Enter encryption password for account configuration 'wlcg-with-scope': 
-Confirm encryption password: 
-Everything setup correctly!
-[root@neic-demo-1 centos]# oidc-token wlcg-with-scope
-eyJraWQiOiJyc2ExIiwiYWxnIjoiUlMyNTYifQ.eyJ3bGNnLnZlciI6IjEuMCIsInN1YiI6ImU0ZmYxOTFlLTc4NDUtNDEzYy1iNDM3LTkzNzhmOTIzZmE4ZCIsImF1ZCI6Imh0dHBzOlwvXC93bGNnLmNlcm4uY2hcL2p3dFwvdjFcL2FueSIsIm5iZiI6MTcxNjgzMTM2MCwic2NvcGUiOiJzdG9yYWdlLmNyZWF0ZTpcLyBvcGVuaWQgb2ZmbGluZV9hY2Nlc3MgcHJvZmlsZSBzdG9yYWdlLnJlYWQ6XC8gc3RvcmFnZS5zdGFnZTpcLyBzdG9yYWdlLm1vZGlmeTpcLyB3bGNnIHdsY2cuZ3JvdXBzIiwiaXNzIjoiaHR0cHM6XC9cL3dsY2cuY2xvdWQuY25hZi5pbmZuLml0XC8iLCJleHAiOjE3MTY4MzI1NjAsImlhdCI6MTcxNjgzMTM2MCwianRpIjoiN2VlYjEwMGUtZmZjZi00N2RkLWFmYTUtYjYxNWMzMDI0NzNlIiwiY2xpZW50X2lkIjoiYmYyNjNlMzQtNmUzOC00YjBhLTkxZmQtYjMwM2IwMWFlNWNjIiwid2xjZy5ncm91cHMiOlsiXC93bGNnIiwiXC93bGNnXC94ZmVycyJdfQ.OToSHuiWY3LzAAXFu84UPKIZs3AOfi6AFLZX78WkhtGyDW1hL-UP2tVMTqmFLRRmY1-moEiAswAQSiDQI4Ie1QdsGwbjCj01ZpNfV-xA4bkvcjVEPzf122uwwV0ZqIKn2KZks_p-n1zQ-KIcDTGAZRz6XBKDVlTQFPaCJAPfZOe5x-BHw59lsgaAJRKLEos_55M4Ki4aWtuD9rB8R-pnQ6QK6dAR42wR-ZuOudlwVnxZY8gfIhF-w2LBACjkieBd54k4bWoMBZ0muoqw_mO0dnnlNXAeudhOxDXZLgESoc7dDUiwMrN4XHzrrBedYv5q-kselU3oICMM-ZhivE-mWw
-[root@neic-demo-1 centos]# TOKEN=$(oidc-token wlcg-with-scope)
-[root@neic-demo-1 centos]# echo $TOKEN
-eyJraWQiOiJyc2ExIiwiYWxnIjoiUlMyNTYifQ.eyJ3bGNnLnZlciI6IjEuMCIsInN1YiI6ImU0ZmYxOTFlLTc4NDUtNDEzYy1iNDM3LTkzNzhmOTIzZmE4ZCIsImF1ZCI6Imh0dHBzOlwvXC93bGNnLmNlcm4uY2hcL2p3dFwvdjFcL2FueSIsIm5iZiI6MTcxNjgzMTM2MCwic2NvcGUiOiJzdG9yYWdlLmNyZWF0ZTpcLyBvcGVuaWQgb2ZmbGluZV9hY2Nlc3MgcHJvZmlsZSBzdG9yYWdlLnJlYWQ6XC8gc3RvcmFnZS5zdGFnZTpcLyBzdG9yYWdlLm1vZGlmeTpcLyB3bGNnIHdsY2cuZ3JvdXBzIiwiaXNzIjoiaHR0cHM6XC9cL3dsY2cuY2xvdWQuY25hZi5pbmZuLml0XC8iLCJleHAiOjE3MTY4MzI1NjAsImlhdCI6MTcxNjgzMTM2MCwianRpIjoiN2VlYjEwMGUtZmZjZi00N2RkLWFmYTUtYjYxNWMzMDI0NzNlIiwiY2xpZW50X2lkIjoiYmYyNjNlMzQtNmUzOC00YjBhLTkxZmQtYjMwM2IwMWFlNWNjIiwid2xjZy5ncm91cHMiOlsiXC93bGNnIiwiXC93bGNnXC94ZmVycyJdfQ.OToSHuiWY3LzAAXFu84UPKIZs3AOfi6AFLZX78WkhtGyDW1hL-UP2tVMTqmFLRRmY1-moEiAswAQSiDQI4Ie1QdsGwbjCj01ZpNfV-xA4bkvcjVEPzf122uwwV0ZqIKn2KZks_p-n1zQ-KIcDTGAZRz6XBKDVlTQFPaCJAPfZOe5x-BHw59lsgaAJRKLEos_55M4Ki4aWtuD9rB8R-pnQ6QK6dAR42wR-ZuOudlwVnxZY8gfIhF-w2LBACjkieBd54k4bWoMBZ0muoqw_mO0dnnlNXAeudhOxDXZLgESoc7dDUiwMrN4XHzrrBedYv5q-kselU3oICMM-ZhivE-mWw
-[root@neic-demo-1 centos]# echo $TOKEN | cut -d "." -f 2 | base64 -d 2>|/dev/null | jq 
-bash: jq: command not found
-[root@neic-demo-1 centos]# dnf install jq
-Last metadata expiration check: 0:15:07 ago on Mon 27 May 2024 01:22:43 PM EDT.
-Dependencies resolved.
+
+Now we need to adapt our gplazma and layout configurations.
+
+in **mylayout.conf** we add :
+
+gplazma.oidc.provider!wlcg = https://wlcg.cloud.cnaf.infn.it/ -profile=wlcg -prefix=/wlcg
+
+where -profile means
+
+
+we update **gplazma.conf** to add auth and map phase for oidc plugin.
+
+
+
+
+                              
+ ```ini
+
+cat >/etc/dcache/gplazma.conf <<EOF
+auth    optional    x509 #1.1
+auth    optional    voms #1.2
+auth    sufficient  htpasswd #1.3
+
+auth     optional     oidc
+map      sufficient   multimap gplazma.multimap.file=/etc/dcache/multi-mapfile.wlcg_jwt
+
+map     optional    vorolemap #2.1
+map     optional    gridmap #2.2
+map     requisite   authzdb #2.3
+
+account  requisite   banfile
+
+session requisite   roles #3.2
+session requisite   authzdb #3.2
+EOF                            
+```
+
+**/etc/dcache/multi-mapfile.wlcg_jwt**
+
+                             
+ ```ini
+
+op:wlcg               uid:1999 gid:1999,true username:wlcg_oidc
 
 ```
+
+
 
 ### Four main components in dCache
 -------------
