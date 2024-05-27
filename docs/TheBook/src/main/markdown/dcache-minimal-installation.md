@@ -6,7 +6,7 @@ server nodes, under a single virtual filesystem tree with a variety of standard 
 
 # Minimal dCache Installation Guide
 
-By doing this step-by-step, you have the opportunity to learn more
+By doing this step-by-step tutorial, you have the opportunity to learn more
 about how dCache works and explore some of the details of dCache
 configuration and administration without being overwhelmed.  As far as
 possible, you can simply copy the commands and end up with a working
@@ -159,9 +159,16 @@ All dCache packages are available directly from our website’s dCache releases 
 section.
 
 >     
->   rpm -ivh https://www.dcache.org/old/downloads/1.9/repo/8.2/dcache-8.2.9-1.noarch.rpm
+>   rpm -ivh https://www.dcache.org/old/downloads/1.9/repo/9.2/dcache-9.2.19-1.noarch.rpm
 
-
+...
+Retrieving https://www.dcache.org/old/downloads/1.9/repo/9.2/dcache-9.2.19-1.noarch.rpm
+warning: /var/tmp/rpm-tmp.gzWZPS: Header V4 RSA/SHA256 Signature, key ID 3321de4c: NOKEY
+Verifying...                          ################################# [100%]
+Preparing...                          ################################# [100%]
+Updating / installing...
+   1:dcache-9.2.19-1                  ################################# [100%]
+...
 
 ### Configuring dCache users
 
