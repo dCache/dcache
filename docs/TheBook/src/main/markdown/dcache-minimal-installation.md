@@ -3,8 +3,40 @@
 
 The dCache mission is to provide a system for storing and retrieving huge amounts of data, distributed among a large number of heterogeneous
 server nodes, under a single virtual filesystem tree with a variety of standard access methods.
+
+By doing this step-by-step, you have the opportunity to learn more
+about how dCache works and explore some of the details of dCache
+configuration and administration without being overwhelmed.  As far as
+possible, you can simply copy the commands and end up with a working
+dCache.  We've included some example commands that perform some basic
+tests, so you can have some confidence that everything is OK so far,
+before moving on to the next step.
+Please note that, although this chapter will provide you with a
+working dCache instance, you should not blindly use this chapter as a
+recipe for a production instance.  There are many ways to configure
+dCache.  The optimal choice depends on which hardware you wish to use
+and how dCache's users will interact with the system.  So, we cannot
+give a simple, single recipe that will provide the optimal solution in
+all cases.
      
 ### Minimum System Requirements
+
+For a minimal test installation:
+
+- Hardware:
+  - Contemporary CPU
+  - At least 1 GiB of RAM
+  - At least 500 MiB free disk space
+
+- Software:
+  - OpenJDK 11
+  - Postgres SQL Server 9.5 or later
+  - ZooKeeper version 3.5 (in case of a standalone ZooKeeper installation)
+
+For high performance production scenarios, the hardware requirements greatly
+differ, which makes it impossible to provide such parameters here. However, if
+you wish to setup a dCache-based storage system, just let us know and we will
+help you with your system specifications. Just contact us: <support@dcache.org>.
    
 #### Software:
 - OpenJDK 11
@@ -19,8 +51,21 @@ server nodes, under a single virtual filesystem tree with a variety of standard 
 
 ### Installing PostgreSQL
 
+In general, the database may be deployed on the same node as dCache or
+on some dedicated machine with db-specific hardware.  The decision
+involves trade-offs beyond the scope of this chapter; however, to keep
+this chapter simple, we are assuming the database will run on the same
+machine as the dCache services that use it.
+Please remember that, wherever you choose to deploy the database, it
+must be tuned for optimal performance for the available hardware.
+Without doing this, you will see poor performance as PostgreSQL
+typically experiences very poor performance with its default
+configuration.  
+
 To keep this simple, we are assuming that the database will run on the same machine as the dCache services that
 use it.
+
+First we install PostgreSQL's "Building Project" yum repository:
 
 > postgresql-setup --initdb
 > 
