@@ -1,8 +1,10 @@
-# Minimal dCache Installation Guide
+
 
 
 The dCache mission is to provide a system for storing and retrieving huge amounts of data, distributed among a large number of heterogeneous
 server nodes, under a single virtual filesystem tree with a variety of standard access methods.
+
+# Minimal dCache Installation Guide
 
 By doing this step-by-step, you have the opportunity to learn more
 about how dCache works and explore some of the details of dCache
@@ -11,12 +13,10 @@ possible, you can simply copy the commands and end up with a working
 dCache.  We've included some example commands that perform some basic
 tests, so you can have some confidence that everything is OK so far,
 before moving on to the next step.
-Please note that, although this chapter will provide you with a
-working dCache instance, you should not blindly use this chapter as a
-recipe for a production instance.  There are many ways to configure
+Please note that, although this tutorial will provide you with a
+working dCache instance, your production instance should be more complex.  There are many ways to configure
 dCache.  The optimal choice depends on which hardware you wish to use
-and how dCache's users will interact with the system.  So, we cannot
-give a simple, single recipe that will provide the optimal solution in
+and how dCache's users will interact with the system.  So, there is no a single recipe that will provide the optimal solution in
 all cases.
      
 ### Minimum System Requirements
@@ -39,13 +39,13 @@ you wish to setup a dCache-based storage system, just let us know and we will
 help you with your system specifications. Just contact us: <support@dcache.org>.
    
 #### Software:
-- OpenJDK 11
+- OpenJDK 11 (java 11 , and java 17 for dCache staring from version 10.1)
+  
  > yum install java-11-openjdk
  > 
  > dnf install java-11-openjdk-devel
  
-- Postgres SQL Server 9.5 or later
- > dnf -y install postgresql-server
+
 
 - ZooKeeper version 3.7 (in case of a standalone ZooKeeper installation)
 
@@ -56,6 +56,7 @@ on some dedicated machine with db-specific hardware.  The decision
 involves trade-offs beyond the scope of this chapter; however, to keep
 this chapter simple, we are assuming the database will run on the same
 machine as the dCache services that use it.
+
 Please remember that, wherever you choose to deploy the database, it
 must be tuned for optimal performance for the available hardware.
 Without doing this, you will see poor performance as PostgreSQL
@@ -65,35 +66,88 @@ configuration.
 To keep this simple, we are assuming that the database will run on the same machine as the dCache services that
 use it.
 
-First we install PostgreSQL's "Building Project" yum repository:
+Then, install the server package for PostgreSQL. The minimal supported PostgreSQL version
+is 9.5. In general, we recommend using the latest version and upgrading your PostgreSQL version as
+new versions becomes available.
+
+The example below uses PostgreSQL v10.
+
+First we install PostgreSQL's "Building Project" yum repository: -???
+
+- Postgres SQL Server 9.5 or later
+  
+ > dnf -y install postgresql-server
+
+With the database packages installed, we can initialise the database
+the service.  Note that we do not start the database at this point,
+as we will make some tweaks to the configuration.
 
 > postgresql-setup --initdb
-> 
-> systemctl enable --now postgresql 
+
+ ...
+[root@neic-demo-1 centos]#  postgresql-setup --initdb
+ * Initializing database in '/var/lib/pgsql/data'
+ * Initialized, logs are in /var/lib/pgsql/initdb_postgresql.log
+
+...
 
 The simplest configuration is to allow password-less access to the database. 
- 
+
+ The default setting  looks like this **/var/lib/pgsql/10/data/pg_hba.conf**:
+
+> [root@neic-demo-1 centos]# sudo grep -v -E "^#|^$" /var/lib/pgsql/data/pg_hba.conf 
+ ...
+local   all             all                                     peer
+host    all             all             127.0.0.1/32            ident
+host    all             all             ::1/128                 ident
+local   replication     all                                     peer
+host    replication     all             127.0.0.1/32            ident
+host    replication     all             ::1/128                 ident
+...
 
 To allow local users to access PostgreSQL without requiring a password, make sure the following three lines
 are the only uncommented lines in the file **/var/lib/pgsql/10/data/pg_hba.conf**
 
-> **NOTE**: the path to **/pg_hba.conf** is different for PostgreSQL 13 and higher versions.
-> It is **/var/lib/pgsql/data/pg_hba.conf**
 
-      ...
+   ...
     # TYPE  DATABASE    USER        IP-ADDRESS        IP-MASK           METHOD
     local   all         all                                             trust
     host    all         all         127.0.0.1/32                        trust
     host    all         all         ::1/128                             trust    
    ...
+
+
+   > **NOTE**: the path to **/pg_hba.conf** is different for PostgreSQL 13 and higher versions.
+> It is **/var/lib/pgsql/data/pg_hba.conf**
+
+
+
+Once this is done, we can configure the system to automatically start
+PostgreSQL on startup, and then manually start the database:
+
+> systemctl enable --now postgresql 
+
+   
    
    ### Creating PostgreSQL users and databases 
    
 > systemctl reload postgresql
 
+dCache will manage the database schema, creating and updating the
+database tables, indexes etc as necessary.  However, dCache does not
+create the databases.  That is a manual process, typically done only
+once.
+
+creating a single database user dcache:
+
 > createuser -U postgres --no-superuser --no-createrole --createdb --no-password dcache
-> 
+>
 > createdb -U dcache chimera
+
+
+The second line creates  the databases, using the correct database user to
+ensure correct database ownership.  At this stage, we need only one
+database: chimera.  This database holds dCache's namespace.
 
 
 And after installing dcache we run the command `dcache database update`.
