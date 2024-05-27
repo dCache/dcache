@@ -95,26 +95,27 @@ The simplest configuration is to allow password-less access to the database.
 
  The default setting  looks like this **/var/lib/pgsql/10/data/pg_hba.conf**:
 
-> [root@neic-demo-1 centos]# sudo grep -v -E "^#|^$" /var/lib/pgsql/data/pg_hba.conf 
- ...
+> [root@neic-demo-1 centos]# sudo grep -v -E "^#|^$" /var/lib/pgsql/data/pg_hba.conf
+
+ ```ini
 local   all             all                                     peer
 host    all             all             127.0.0.1/32            ident
 host    all             all             ::1/128                 ident
 local   replication     all                                     peer
 host    replication     all             127.0.0.1/32            ident
 host    replication     all             ::1/128                 ident
-...
+ ```
 
 To allow local users to access PostgreSQL without requiring a password, make sure the following three lines
 are the only uncommented lines in the file **/var/lib/pgsql/10/data/pg_hba.conf**
 
 
-   ...
+   ```ini
     # TYPE  DATABASE    USER        IP-ADDRESS        IP-MASK           METHOD
     local   all         all                                             trust
     host    all         all         127.0.0.1/32                        trust
     host    all         all         ::1/128                             trust    
-   ...
+   ```
 
 
    > **NOTE**: the path to **/pg_hba.conf** is different for PostgreSQL 13 and higher versions.
@@ -161,14 +162,14 @@ section.
 >     
 >   rpm -ivh https://www.dcache.org/old/downloads/1.9/repo/9.2/dcache-9.2.19-1.noarch.rpm
 
-...
+ ```ini
 Retrieving https://www.dcache.org/old/downloads/1.9/repo/9.2/dcache-9.2.19-1.noarch.rpm
 warning: /var/tmp/rpm-tmp.gzWZPS: Header V4 RSA/SHA256 Signature, key ID 3321de4c: NOKEY
 Verifying...                          ################################# [100%]
 Preparing...                          ################################# [100%]
 Updating / installing...
    1:dcache-9.2.19-1                  ################################# [100%]
-...
+ ```
 
 ### Configuring dCache users
 
@@ -205,6 +206,8 @@ map     optional    vorolemap #2.1
 map     optional    gridmap #2.2
 map     requisite   authzdb #2.3
 
+account  requisite   banfile
+
 session requisite   roles #3.2
 session requisite   authzdb #3.2
 EOF                            
@@ -223,7 +226,8 @@ If user comes with grid
 certificate and VOMS role: extract user’s DN (**#1.2**), checks if the username and password exist in database (**#1.3**), which should be added to
 
 password file **/etc/dcache/htpasswd**.
-The htpasswd plugin uses the Apache HTTPD server’s file format to record username and passwords. This
+
+The **htpasswd** plugin uses the Apache HTTPD server’s file format to record username and passwords. This
 file may be maintained by the htpasswd command.
 Let us create a new password file (/etc/dcache/htpasswd) and add these two users (”tester” and ”admin”)
 with passwords TooManySecrets and dickerelch respectively:
@@ -233,6 +237,8 @@ with passwords TooManySecrets and dickerelch respectively:
 > 
 > htpasswd -bm /etc/dcache/htpasswd admin admin
 >
+> htpasswd -bm /etc/dcache/htpasswd tester tester
+
 
 
 **optional** here means, the success or failure of this plug-in is only important if it is the only plug-in in the stack associated
