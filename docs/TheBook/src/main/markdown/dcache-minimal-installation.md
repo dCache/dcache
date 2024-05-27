@@ -318,10 +318,96 @@ it is also very powerful and allows dCache to work with many different authentic
 
 
 
+### TOKENS WLCG
+
+```ini
+
+[root@neic-demo-1 centos]# oidc-agent
+[root@neic-demo-1 centos]# OIDC_SOCK=/tmp/oidc-6XTqy6/oidc-agent.3910; export OIDC_SOCK;
+OIDCD_PID=17651; export OIDCD_PID;
+echo Agent pid $OIDCD_PID
+^C
+[root@neic-demo-1 centos]# OIDC_SOCK=/tmp/oidc-6XTqy6/oidc-agent.3910; export OIDC_SOCK;
+[root@neic-demo-1 centos]# OIDCD_PID=17651; export OIDCD_PID
+[root@neic-demo-1 centos]# echo $OIDCD_PID
+17651
+[root@neic-demo-1 centos]# oidc-gen wlcg-with-scope
+[1] https://bildungsproxy.aai.dfn.de
+[2] https://cilogon.org
+[3] https://iam.deep-hybrid-datacloud.eu/
+[4] https://aai.egi.eu/auth/realms/egi
+[5] https://aai-demo.egi.eu/auth/realms/egi
+[6] https://aai-dev.egi.eu/auth/realms/egi
+[7] https://login.elixir-czech.org/oidc/
+[8] https://b2access.eudat.eu:8443/oauth2
+[9] https://iam.extreme-datacloud.eu/
+[10] https://fels.scc.kit.edu/oidc/realms/fels
+[11] https://accounts.google.com
+[12] https://login.helmholtz.de/oauth2
+[13] https://login-dev.helmholtz.de/oauth2
+[14] https://iam-demo.cloud.cnaf.infn.it/
+[15] https://iam-test.indigo-datacloud.eu/
+[16] https://oidc.scc.kit.edu/auth/realms/kit
+[17] https://auth.didmos.nfdi-aai.de
+[18] https://regapp.nfdi-aai.de/oidc/realms/nfdi_demo
+[19] https://wlcg.cloud.cnaf.infn.it/
+[20] https://alice-auth.web.cern.ch/
+[21] https://atlas-auth.web.cern.ch/
+[22] https://cms-auth.web.cern.ch/
+[23] https://lhcb-auth.web.cern.ch/
+Issuer [https://bildungsproxy.aai.dfn.de]: 19
+The following scopes are supported: openid profile email offline_access wlcg wlcg.groups storage.read:/ storage.create:/ compute.read compute.modify compute.create compute.cancel storage.modify:/ eduperson_scoped_affiliation eduperson_entitlement eduperson_assurance storage.stage:/ entitlements
+Scopes or 'max' (space separated) [openid profile offline_access]: openid profile offline_access wlcg wlcg.groups storage.read:/ storage.create:/ storage.modify:/ storage.stage:/
+Registering Client ...
+Generating account configuration ...
+accepted
+
+Using a browser on any device, visit:
+https://wlcg.cloud.cnaf.infn.it/device
+
+And enter the code: 9Z4ERM
+Alternatively you can use the following QR code to visit the above listed URL.
 
 
 
+```
 
+```ini
+
+[root@neic-demo-1 centos]# echo $TOKEN | cut -d "." -f 2 | base64 -d 2>|/dev/null | jq 
+{
+  "wlcg.ver": "1.0",
+  "sub": "e4ff191e-7845-413c-b437-9378f923fa8d",
+  "aud": "https://wlcg.cern.ch/jwt/v1/any",
+  "nbf": 1716831360,
+  "scope": "storage.create:/ openid offline_access profile storage.read:/ storage.stage:/ storage.modify:/ wlcg wlcg.groups",
+  "iss": "https://wlcg.cloud.cnaf.infn.it/",
+  "exp": 1716832560,
+  "iat": 1716831360,
+  "jti": "7eeb100e-ffcf-47dd-afa5-b615c302473e",
+  "client_id": "bf263e34-6e38-4b0a-91fd-b303b01ae5cc",
+  "wlcg.groups": [
+    "/wlcg",
+    "/wlcg/xfers"
+  ]
+}
+```
+```ini
+Enter encryption password for account configuration 'wlcg-with-scope': 
+Confirm encryption password: 
+Everything setup correctly!
+[root@neic-demo-1 centos]# oidc-token wlcg-with-scope
+eyJraWQiOiJyc2ExIiwiYWxnIjoiUlMyNTYifQ.eyJ3bGNnLnZlciI6IjEuMCIsInN1YiI6ImU0ZmYxOTFlLTc4NDUtNDEzYy1iNDM3LTkzNzhmOTIzZmE4ZCIsImF1ZCI6Imh0dHBzOlwvXC93bGNnLmNlcm4uY2hcL2p3dFwvdjFcL2FueSIsIm5iZiI6MTcxNjgzMTM2MCwic2NvcGUiOiJzdG9yYWdlLmNyZWF0ZTpcLyBvcGVuaWQgb2ZmbGluZV9hY2Nlc3MgcHJvZmlsZSBzdG9yYWdlLnJlYWQ6XC8gc3RvcmFnZS5zdGFnZTpcLyBzdG9yYWdlLm1vZGlmeTpcLyB3bGNnIHdsY2cuZ3JvdXBzIiwiaXNzIjoiaHR0cHM6XC9cL3dsY2cuY2xvdWQuY25hZi5pbmZuLml0XC8iLCJleHAiOjE3MTY4MzI1NjAsImlhdCI6MTcxNjgzMTM2MCwianRpIjoiN2VlYjEwMGUtZmZjZi00N2RkLWFmYTUtYjYxNWMzMDI0NzNlIiwiY2xpZW50X2lkIjoiYmYyNjNlMzQtNmUzOC00YjBhLTkxZmQtYjMwM2IwMWFlNWNjIiwid2xjZy5ncm91cHMiOlsiXC93bGNnIiwiXC93bGNnXC94ZmVycyJdfQ.OToSHuiWY3LzAAXFu84UPKIZs3AOfi6AFLZX78WkhtGyDW1hL-UP2tVMTqmFLRRmY1-moEiAswAQSiDQI4Ie1QdsGwbjCj01ZpNfV-xA4bkvcjVEPzf122uwwV0ZqIKn2KZks_p-n1zQ-KIcDTGAZRz6XBKDVlTQFPaCJAPfZOe5x-BHw59lsgaAJRKLEos_55M4Ki4aWtuD9rB8R-pnQ6QK6dAR42wR-ZuOudlwVnxZY8gfIhF-w2LBACjkieBd54k4bWoMBZ0muoqw_mO0dnnlNXAeudhOxDXZLgESoc7dDUiwMrN4XHzrrBedYv5q-kselU3oICMM-ZhivE-mWw
+[root@neic-demo-1 centos]# TOKEN=$(oidc-token wlcg-with-scope)
+[root@neic-demo-1 centos]# echo $TOKEN
+eyJraWQiOiJyc2ExIiwiYWxnIjoiUlMyNTYifQ.eyJ3bGNnLnZlciI6IjEuMCIsInN1YiI6ImU0ZmYxOTFlLTc4NDUtNDEzYy1iNDM3LTkzNzhmOTIzZmE4ZCIsImF1ZCI6Imh0dHBzOlwvXC93bGNnLmNlcm4uY2hcL2p3dFwvdjFcL2FueSIsIm5iZiI6MTcxNjgzMTM2MCwic2NvcGUiOiJzdG9yYWdlLmNyZWF0ZTpcLyBvcGVuaWQgb2ZmbGluZV9hY2Nlc3MgcHJvZmlsZSBzdG9yYWdlLnJlYWQ6XC8gc3RvcmFnZS5zdGFnZTpcLyBzdG9yYWdlLm1vZGlmeTpcLyB3bGNnIHdsY2cuZ3JvdXBzIiwiaXNzIjoiaHR0cHM6XC9cL3dsY2cuY2xvdWQuY25hZi5pbmZuLml0XC8iLCJleHAiOjE3MTY4MzI1NjAsImlhdCI6MTcxNjgzMTM2MCwianRpIjoiN2VlYjEwMGUtZmZjZi00N2RkLWFmYTUtYjYxNWMzMDI0NzNlIiwiY2xpZW50X2lkIjoiYmYyNjNlMzQtNmUzOC00YjBhLTkxZmQtYjMwM2IwMWFlNWNjIiwid2xjZy5ncm91cHMiOlsiXC93bGNnIiwiXC93bGNnXC94ZmVycyJdfQ.OToSHuiWY3LzAAXFu84UPKIZs3AOfi6AFLZX78WkhtGyDW1hL-UP2tVMTqmFLRRmY1-moEiAswAQSiDQI4Ie1QdsGwbjCj01ZpNfV-xA4bkvcjVEPzf122uwwV0ZqIKn2KZks_p-n1zQ-KIcDTGAZRz6XBKDVlTQFPaCJAPfZOe5x-BHw59lsgaAJRKLEos_55M4Ki4aWtuD9rB8R-pnQ6QK6dAR42wR-ZuOudlwVnxZY8gfIhF-w2LBACjkieBd54k4bWoMBZ0muoqw_mO0dnnlNXAeudhOxDXZLgESoc7dDUiwMrN4XHzrrBedYv5q-kselU3oICMM-ZhivE-mWw
+[root@neic-demo-1 centos]# echo $TOKEN | cut -d "." -f 2 | base64 -d 2>|/dev/null | jq 
+bash: jq: command not found
+[root@neic-demo-1 centos]# dnf install jq
+Last metadata expiration check: 0:15:07 ago on Mon 27 May 2024 01:22:43 PM EDT.
+Dependencies resolved.
+
+```
 
 ### Four main components in dCache
 -------------
