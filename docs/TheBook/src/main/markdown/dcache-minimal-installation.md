@@ -67,9 +67,8 @@ Then, install the server package for PostgreSQL. The minimal supported PostgreSQ
 is 9.5. In general, we recommend using the latest version and upgrading your PostgreSQL version as
 new versions becomes available.
 
-The example below uses PostgreSQL v10.
 
-First we install PostgreSQL's "Building Project" yum repository: -???
+First we install PostgreSQL:
 
 - Postgres SQL Server 9.5 or later
   
@@ -90,7 +89,7 @@ as we will make some tweaks to the configuration.
 
 The simplest configuration is to allow password-less access to the database. 
 
- The default setting  looks like this **/var/lib/pgsql/10/data/pg_hba.conf**:
+ The default setting  looks like this **/var/lib/pgsql/data/pg_hba.conf**:
 
 > grep -v -E "^#|^$" /var/lib/pgsql/data/pg_hba.conf
 
@@ -104,7 +103,7 @@ host    replication     all             ::1/128                 ident
  ```
 
 To allow local users to access PostgreSQL without requiring a password, make sure the following three lines
-are the only uncommented lines in the file **/var/lib/pgsql/10/data/pg_hba.conf**
+are the only uncommented lines in the file **/var/lib/pgsql/data/pg_hba.conf**
 
 
    ```ini
@@ -179,6 +178,12 @@ The dCache RPM comes with a default gPlazma configuration file **/etc/dcache/gpl
  gPlazma requires the CA- and VOMS-root-certificates, that it should use, to be
 present in **/etc/grid-security/certificates/** and **/etc/grid-security/**
 vomsdir respectively.
+
+>
+> mkdir -p /etc/grid-security/
+> mkdir -p /etc/grid-security/certificates/
+>
+
  X.509 credentials require a certificate authority, 
 which require considerable effort to set up. For this tutorial the certificates have been installed on our VMs.
 
@@ -211,9 +216,9 @@ auth    optional    x509 #1.1
 auth    optional    voms #1.2
 auth    sufficient  htpasswd #1.3
 
-#map     optional    vorolemap #2.1
+#map    optional    vorolemap #2.1
 map     optional    gridmap #2.2
-map     requisite   authzdb #2.3
+map     optional    authzdb #2.3
 
 
 #session requisite   roles #3.2
@@ -237,10 +242,7 @@ EOF
 In this tutorila we use  **x.509**  we  need to create the directory **/etc/grid-security/** and **/etc/grid-security/certificates/**
 
 
->
-> mkdir -p /etc/grid-security/
-> mkdir -p /etc/grid-security/certificates/
->
+
 
 If user comes with grid
 certificate and VOMS role: **voms** plugin extracts user’s DN (**#1.2**).
@@ -472,7 +474,6 @@ in **mylayout.conf** we add :
 
 gplazma.oidc.provider!wlcg = https://wlcg.cloud.cnaf.infn.it/ -profile=wlcg -prefix=/wlcg
 
-where -profile means
 
 
 we update **gplazma.conf** to add auth and map phase for oidc plugin.
@@ -495,8 +496,7 @@ map     optional    gridmap #2.2iodc
 map     requisite   authzdb #2.3
 
 
-#session requisite   roles #3.2
-#session requisite   authzdb #3.2
+
 EOF                            
 ```
 
@@ -588,6 +588,8 @@ dcache.enable.space-reservation = false
  pnfsmanager.default-access-latency = ONLINE
 
 [dCacheDomain/gplazma]
+#gplazma.oidc.provider!wlcg = https://wlcg.cloud.cnaf.infn.it/ -profile=wlcg -prefix=/wlcg
+
 
 [dCacheDomain/poolmanager]
 [dCacheDomain/webdav]
@@ -607,14 +609,11 @@ Therefore the values for `pnfsmanager.default-retention-policy` and `pnfsmanager
 
 
 > `dcache.broker.scheme = none`
->  tells the domain that it is running stand-alone, and should not attempt to contact other domains. We will cover these in the next example, where  configurations for different domains  will be explained.
+>
 
->  webdav.authn.basic = true
+tells the domain that it is running stand-alone, and should not attempt to contact other domains. We will cover these in the next example, where  configurations for different domains  will be explained.
+
  
-
-
-
-
 Now we can add a new cell: Pool which is a service responsible for storing the contents of files and there must be always at least one pool.
 
 
@@ -629,9 +628,12 @@ No we will use the following command:
 
  > dcache pool create /srv/dcache/pool-1 pool1 dCacheDomain
  >
-> Created a pool in /srv/dcache/pool-1. The pool was added to dCacheDomain
-in file:/etc/dcache/layouts/mylayout.conf.
 
+```ini
+
+ Created a pool in /srv/dcache/pool-1. The pool was added to dCacheDomain
+in file:/etc/dcache/layouts/mylayout.conf.
+```
 
 Now if we open  `/etc/dcache/layouts/mylayout.conf` file, it should be updated to have
 an additional `pool` service:
@@ -710,9 +712,7 @@ To stop and restart dcache.target command are:
 > journalctl -f -u dcache@dCacheDomain
 
 
-> touch /etc/dcache/htpasswd ????
->
-> htpasswd -bm /etc/dcache/htpasswd admin dickerelch ?????
+
 
 So now you can upload a file:
 
