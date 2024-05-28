@@ -116,7 +116,7 @@ are the only uncommented lines in the file **/var/lib/pgsql/10/data/pg_hba.conf*
 
 
    > **NOTE**: the path to **/pg_hba.conf** is different for PostgreSQL 13 and higher versions.
-> It is **/var/lib/pgsql/data/pg_hba.conf**
+   > It is **/var/lib/pgsql/data/pg_hba.conf**
 
 
 
@@ -200,7 +200,7 @@ Lets have a look on a complete configuration example and go through the each pha
 
 cat >/etc/dcache/gplazma.conf <<EOF
 auth    optional    x509 #1.1
-#auth    optional    voms #1.2
+auth    optional    voms #1.2
 auth    sufficient  htpasswd #1.3
 
 #map     optional    vorolemap #2.1
@@ -222,7 +222,7 @@ EOF
 
 
 
-  **auth**  phase - verifies user’s identity ( Has the userproved who they are?).  Auth-plug-ins are used to read the users public and private credentials and ask some authority, if those are valid for accessing the system.
+  **auth**  phase - verifies user’s identity ( Has the user proved who they are?).  Auth-plug-ins are used to read the users public and private credentials and ask some authority, if those are valid for accessing the system.
 
 **#1.1** This configuration tells gPlazma to use the **x.509** plugin used to extracts X.509 certificate chains from the credentials of a user to be used by other plug-ins.
 
@@ -275,7 +275,7 @@ this is for voms
   ```ini
 
 cat >/etc/grid-security/grid-vorolemap <<EOF
-"*" "/desy/atlas" desyuserAtlas
+"*" "/desy" desyuser
 EOF
  ``` 
  
@@ -289,7 +289,7 @@ cat >/etc/grid-security/storage-authzdb <<EOF
 version 2.1
 
 authorize admin              read-write    0    0 / / /
-authorize desyuserAtlas      read-write 1000 2000 / / /
+authorize desyuser           read-write 1000 2000 / / /
 authorize kermit             read-write 1000 1000 / / / #(home, root) ????
 EOF
 ```
@@ -527,7 +527,7 @@ op:wlcg               uid:1999 gid:1999,true username:wlcg_oidc
 We need to change **/etc/grid-security/storage-authzdb**  
 
  ```ini
-authorize admin    read-write    0    0 / / /
+authorize admin         read-write    0    0 / / /
 authorize wlcg_oidc     read-write 1999 1999 / / /
 ```
 
