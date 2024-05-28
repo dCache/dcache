@@ -127,7 +127,10 @@ public final class JdbcRequestTargetUpdate extends JdbcUpdate {
     }
 
     public JdbcRequestTargetUpdate errorMessage(String errorMessage) {
-        set("error_message", truncate(errorMessage, 256, false));
+        set("error_message",
+            truncate(errorMessage,
+                     JdbcRequestTargetDao.REQUEST_TARGET_ERROR_MESSAGE_LENGTH,
+                     false));
         return this;
     }
 
@@ -154,7 +157,10 @@ public final class JdbcRequestTargetUpdate extends JdbcUpdate {
 
     public JdbcRequestTargetUpdate path(FsPath path) {
         if (path != null) {
-            set("path", truncate(path.toString(), 256,true));
+            set("path",
+                truncate(path.toString(),
+                         JdbcRequestTargetDao.REQUEST_TARGET_PATH_LENGTH,
+                         true));
         }
         return this;
     }
