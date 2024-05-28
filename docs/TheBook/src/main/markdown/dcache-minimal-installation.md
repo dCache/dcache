@@ -186,7 +186,17 @@ which require considerable effort to set up. For this tutorial the certificates 
 
 Gplazma is configured by the PAM (Privileged Access Management)-style: the first column is the phases of the authentication process. Each login attempt follows four phases: **auth**, **map**, **account** and **session**. Each phase is comprised of plugins.  Second column describes how to handle errors. Running a plugin is either success or failure, plugins that fail sometimes is expected. There are four different options: **optional** ,  **sufficient**, **required** and **requisite**. 
 
+**optional** label means, the success or failure of this plug-in doesn't matter; always move onto next one in the phase.
 
+**suﬀicient** Success of such a plug-in is enough to satisfy the authentication requirements of the stack of
+plug-ins (if a prior required plug-in has failed the success of this one is ignored). A failure of this plug-in is
+not deemed as fatal for the login attempt. If the plug-in succeeds gPlazma2 immediately proceeds with the
+next plug-in type or returns control to the door if this was the last stack.
+
+ **requisite**  means failling plugin finishes the phase with failure. 
+ **required** failling plugin fails the phase but remaining plugins are still running.
+
+In this tuturial we will use **optional** and **suﬀicient**.
 
 The third column defines plugins that should be used as back-end for its tasks
 and services. 
@@ -239,15 +249,14 @@ certificate and VOMS role: **voms** plugin extracts user’s DN (**#1.2**).
 
 The **htpasswd** plugin uses the Apache HTTPD server’s file format to record username and passwords. This
 file may be maintained by the htpasswd command.
-Let us create a new password file (/etc/dcache/htpasswd) and add these two users (”tester” and ”admin”)
-with passwords TooManySecrets and dickerelch respectively:
+Let us create a new password file (/etc/dcache/htpasswd) and add the user admin
+with passwords admin:
 
 > touch /etc/dcache/htpasswd
 > 
 > yum install httpd-tools
 > htpasswd -bm /etc/dcache/htpasswd admin admin
 >
-> htpasswd -bm /etc/dcache/htpasswd tester tester
 
 
 
@@ -270,7 +279,7 @@ EOF
 **#2.2** the vorolemap plug-in maps the users DN+FQAN to a username which is then
 mapped to UID/GIDs by the authzdb plug-in.
 
-this is for voms
+(this is for voms)
                                           
   ```ini
 
@@ -295,10 +304,6 @@ EOF
 ```
 
 
- **suﬀicient** Success of such a plug-in is enough to satisfy the authentication requirements of the stack of
-plug-ins (if a prior required plug-in has failed the success of this one is ignored). A failure of this plug-in is
-not deemed as fatal for the login attempt. If the plug-in succeeds gPlazma2 immediately proceeds with the
-next plug-in type or returns control to the door if this was the last stack.
 
 Here is an example of the output of this 3 phases.
 
@@ -326,8 +331,7 @@ Finally, **session** adds some additional information, for example the user’s 
 This ability to split login steps between different plugins may make the process seem complicated; however,
 it is also very powerful and allows dCache to work with many different authentication schemes.
 
-Hier **requisite**  means failling plugin finishes the phase with failure. 
-And the last one **required** failling plugin fails the phase but remaining plugins are still running.
+
 
 
 ### TOKENS WLCG
@@ -531,23 +535,7 @@ authorize admin         read-write    0    0 / / /
 authorize wlcg_oidc     read-write 1999 1999 / / /
 ```
 
-Now we can do ls using Tokens;
 
-> dnf install davix
-> davix-ls -k -H "Authorization: Bearer ${TOKEN}" https://neic-demo-2.desy.de:2880/
-
-To write a file we do 
-
-
- ```ini
-
-root@neic-demo-davix-put -k -H "Authorization: Bearer ${TOKEN}" /etc/grid-security/hostcert.pem https://neic-demo-2.desy.de:2880/marina-demo/test.file.1
-[root@neic-demo-2 centos]# davix-ls -k -H "Authorization: Bearer ${TOKEN}" https://neic-demo-2.desy.de:2880/
-lost%2Bfound
-marina-demo
-[root@neic-demo-2 centos]# davix-ls -k -H "Authorization: Bearer ${TOKEN}" https://neic-demo-2.desy.de:2880/marina-demo
-test.file.1
-```
 
 
 ### Four main components in dCache
@@ -748,6 +736,25 @@ To stop and restart dcache.target command are:
 So now you can upload a file:
 
 > curl -u admin:dickerelch -L -T /bin/bash http://localhost:2880/home/tester/test-file
+
+And using our tokens
+
+
+> dnf install davix
+> davix-ls -k -H "Authorization: Bearer ${TOKEN}" https://neic-demo-2.desy.de:2880/
+
+To write a file we do 
+
+
+ ```ini
+
+root@neic-demo-davix-put -k -H "Authorization: Bearer ${TOKEN}" /etc/grid-security/hostcert.pem https://neic-demo-2.desy.de:2880/marina-demo/test.file.1
+[root@neic-demo-2 centos]# davix-ls -k -H "Authorization: Bearer ${TOKEN}" https://neic-demo-2.desy.de:2880/
+lost%2Bfound
+marina-demo
+[root@neic-demo-2 centos]# davix-ls -k -H "Authorization: Bearer ${TOKEN}" https://neic-demo-2.desy.de:2880/marina-demo
+test.file.1
+```
 
 
 We can have a look on a log to see what are the messages we are getting
