@@ -527,6 +527,30 @@ op:wlcg               uid:1999 gid:1999,true username:wlcg_oidc
 
 ```
 
+We need to change **/etc/grid-security/storage-authzdb**  
+
+ ```ini
+authorize admin    read-write    0    0 / / /
+authorize wlcg_oidc     read-write 1999 1999 / / /
+```
+
+Now we can do ls using Tokens;
+
+> dnf install davix
+> davix-ls -k -H "Authorization: Bearer ${TOKEN}" https://neic-demo-2.desy.de:2880/
+
+To write a file we do 
+
+
+ ```ini
+
+root@neic-demo-davix-put -k -H "Authorization: Bearer ${TOKEN}" /etc/grid-security/hostcert.pem https://neic-demo-2.desy.de:2880/marina-demo/test.file.1
+[root@neic-demo-2 centos]# davix-ls -k -H "Authorization: Bearer ${TOKEN}" https://neic-demo-2.desy.de:2880/
+lost%2Bfound
+marina-demo
+[root@neic-demo-2 centos]# davix-ls -k -H "Authorization: Bearer ${TOKEN}" https://neic-demo-2.desy.de:2880/marina-demo
+test.file.1
+```
 
 
 ### Four main components in dCache
