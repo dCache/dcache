@@ -98,6 +98,8 @@ import org.springframework.jdbc.support.KeyHolder;
 public final class JdbcRequestTargetDao extends JdbcDaoSupport {
 
     public static final String TABLE_NAME = "request_target";
+    public static final int REQUEST_TARGET_PATH_LENGTH = 4096;
+    public static final int REQUEST_TARGET_ERROR_MESSAGE_LENGTH = 256;
 
     static class TargetPlaceholder {
         Long rid;
@@ -120,6 +122,7 @@ public final class JdbcRequestTargetDao extends JdbcDaoSupport {
     static final String UIDS_OF_FAILED
           = "SELECT r.uid FROM bulk_request r WHERE r.status = 'COMPLETED' AND EXISTS " +
           "(SELECT * FROM request_target t WHERE r.id = t.rid AND t.state = 'FAILED')";
+
 
     static final ParameterizedPreparedStatementSetter<TargetPlaceholder> SETTER = (ps, target) -> {
         Instant now = Instant.now();
@@ -187,7 +190,7 @@ public final class JdbcRequestTargetDao extends JdbcDaoSupport {
                 t.path = "invalid (empty) path";
                 t.state = FAILED.name();
             } else {
-                t.path = truncate(target, 256, true);
+                t.path = truncate(target, REQUEST_TARGET_PATH_LENGTH, true);
                 t.state = CREATED.name();
             }
             if (seen.contains(t.path)) {
