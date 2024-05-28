@@ -200,14 +200,13 @@ Lets have a look on a complete configuration example and go through the each pha
 
 cat >/etc/dcache/gplazma.conf <<EOF
 auth    optional    x509 #1.1
-auth    optional    voms #1.2
+#auth    optional    voms #1.2
 auth    sufficient  htpasswd #1.3
 
-map     optional    vorolemap #2.1
+#map     optional    vorolemap #2.1
 map     optional    gridmap #2.2
 map     requisite   authzdb #2.3
 
-account  requisite   banfile
 
 session requisite   roles #3.2
 session requisite   authzdb #3.2
@@ -215,14 +214,26 @@ EOF
 ```
 
 
-During the login process they will be executed in the order **auth**, **map**, **account** and
+
+
+
+ During the login process they will be executed in the order **auth**, **map**, **account** and
 **session**. The identity plugins are not used during login, but later on to map from UID+GID back to user. Within these groups they are used in the order they are specified.
 
 
 
   **auth**  phase - verifies user’s identity ( Has the userproved who they are?).  Auth-plug-ins are used to read the users public and private credentials and ask some authority, if those are valid for accessing the system.
 
-**#1.1** This configuration tells gPlazma to use the **x.509** plugin used to extracts X.509 certificate chains from the credentials of a user to be used by other plug-ins
+**#1.1** This configuration tells gPlazma to use the **x.509** plugin used to extracts X.509 certificate chains from the credentials of a user to be used by other plug-ins.
+
+In this tutorila we use  **x.509**  we  need to create the directory **/etc/grid-security/** and **/etc/grid-security/certificates/**
+
+
+>
+> mkdir -p /etc/grid-security/
+> mkdir -p /etc/grid-security/certificates/
+>
+
 If user comes with grid
 certificate and VOMS role: **voms** plugin extracts user’s DN (**#1.2**), checks if the username and password exist in database (**#1.3**), which should be added to 
 
@@ -260,11 +271,13 @@ EOF
  
 **#2.2** the vorolemap plug-in maps the users DN+FQAN to a username which is then
 mapped to UID/GIDs by the authzdb plug-in.
+
+this is for voms
                                           
   ```ini
 
 cat >/etc/grid-security/grid-vorolemap <<EOF
-"*" "/desy" desyuser
+"*" "/desy/atlas" desyuserAtlas
 EOF
  ``` 
  
@@ -277,9 +290,9 @@ the actual UNIX user-ID 4 and group-IDs 4
 cat >/etc/grid-security/storage-authzdb <<EOF
 version 2.1
 
-authorize admin    read-write    0    0 / / /
-authorize desyuser read-write 1000 2000 / / /
-authorize kermit   read-write 1000 1000 / / /
+authorize admin              read-write    0    0 / / /
+authorize desyuserAtlas      read-write 1000 2000 / / /
+authorize kermit             read-write 1000 1000 / / / #(home, root) ????
 EOF
 ```
 
@@ -349,7 +362,7 @@ OIDCD_PID=17651; export OIDCD_PID;
 echo Agent pid $OIDCD_PID
 
 [root@neic-demo-1 centos]# OIDC_SOCK=/tmp/oidc-6XTqy6/oidc-agent.3910; export OIDC_SOCK;
-[root@neic-demo-1 centos]# OIDCD_PID=17651; export OIDCD_PID
+[root@neic-demo-1 centos]# kill
 [root@neic-demo-1 centos]# echo $OIDCD_PID
 17651
 ```
@@ -490,12 +503,12 @@ cat >/etc/dcache/gplazma.conf <<EOF
 auth    optional    x509 #1.1
 auth    optional    voms #1.2
 auth    sufficient  htpasswd #1.3
-
 auth     optional     oidc
+
 map      sufficient   multimap gplazma.multimap.file=/etc/dcache/multi-mapfile.wlcg_jwt
 
 map     optional    vorolemap #2.1
-map     optional    gridmap #2.2
+map     optional    gridmap #2.2iodc
 map     requisite   authzdb #2.3
 
 account  requisite   banfile
