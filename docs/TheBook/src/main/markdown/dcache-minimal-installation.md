@@ -235,9 +235,7 @@ In this tutorila we use  **x.509**  we  need to create the directory **/etc/grid
 >
 
 If user comes with grid
-certificate and VOMS role: **voms** plugin extracts user’s DN (**#1.2**), checks if the username and password exist in database (**#1.3**), which should be added to 
-
-password file **/etc/dcache/htpasswd**.
+certificate and VOMS role: **voms** plugin extracts user’s DN (**#1.2**).
 
 The **htpasswd** plugin uses the Apache HTTPD server’s file format to record username and passwords. This
 file may be maintained by the htpasswd command.
@@ -501,7 +499,6 @@ we update **gplazma.conf** to add auth and map phase for oidc plugin.
 
 cat >/etc/dcache/gplazma.conf <<EOF
 auth    optional    x509 #1.1
-auth    optional    voms #1.2
 auth    sufficient  htpasswd #1.3
 auth     optional     oidc
 
