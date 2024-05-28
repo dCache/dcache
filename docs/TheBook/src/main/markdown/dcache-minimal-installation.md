@@ -92,7 +92,7 @@ The simplest configuration is to allow password-less access to the database.
 
  The default setting  looks like this **/var/lib/pgsql/10/data/pg_hba.conf**:
 
-> [root@neic-demo-1 centos]# sudo grep -v -E "^#|^$" /var/lib/pgsql/data/pg_hba.conf
+> grep -v -E "^#|^$" /var/lib/pgsql/data/pg_hba.conf
 
  ```ini
 local   all             all                                     peer
@@ -179,8 +179,7 @@ The dCache RPM comes with a default gPlazma configuration file **/etc/dcache/gpl
  gPlazma requires the CA- and VOMS-root-certificates, that it should use, to be
 present in **/etc/grid-security/certificates/** and **/etc/grid-security/**
 vomsdir respectively.
-In some cases, gPlazma requires X.509-host-certificates to be present in **/etc/grid-security/**.
-However, X.509 credentials require a certificate authority, 
+ X.509 credentials require a certificate authority, 
 which require considerable effort to set up. For this tutorial the certificates have been installed on our VMs.
 
 
@@ -196,7 +195,6 @@ next plug-in type or returns control to the door if this was the last stack.
  **requisite**  means failling plugin finishes the phase with failure. 
  **required** failling plugin fails the phase but remaining plugins are still running.
 
-In this tuturial we will use **optional** and **suﬀicient**.
 
 The third column defines plugins that should be used as back-end for its tasks
 and services. 
@@ -218,8 +216,8 @@ map     optional    gridmap #2.2
 map     requisite   authzdb #2.3
 
 
-session requisite   roles #3.2
-session requisite   authzdb #3.2
+#session requisite   roles #3.2
+#session requisite   authzdb #3.2
 EOF                            
 ```
 
@@ -260,7 +258,6 @@ with passwords admin:
 
 
 
-**optional** label means, the success or failure of this plug-in doesn't matter; always move onto next one in the phase.
 
 
 
@@ -269,8 +266,9 @@ with passwords admin:
  **#2.1** the “grid-mapfile”-file, the client-certificate’s DN is mapped to a
 virtual user-name.                      
 
-                                              
- ```ini
+CA user mapping:
+
+```ini
 cat >/etc/grid-security/grid-mapfile <<EOF
 "/C=DE/ST=Hamburg/O=dCache.ORG/CN=Kermit the frog" kermit
 EOF 
@@ -279,9 +277,9 @@ EOF
 **#2.2** the vorolemap plug-in maps the users DN+FQAN to a username which is then
 mapped to UID/GIDs by the authzdb plug-in.
 
-(this is for voms)
-                                          
-  ```ini
+Voms user mapping
+
+```ini
 
 cat >/etc/grid-security/grid-vorolemap <<EOF
 "*" "/desy" desyuser
@@ -290,7 +288,10 @@ EOF
  
  
  **#2.3** Using the “storage-authzdb-style”-file, this virtual user-name is then mapped to
-the actual UNIX user-ID 4 and group-IDs 4
+the actual UNIX user-ID 4 and group-IDs 4 and define the rights on read/write.
+
+The first and the second "/" are home and root directories respectivly.
+
 
 
 ```ini
@@ -305,21 +306,6 @@ EOF
 
 
 
-Here is an example of the output of this 3 phases.
-
-```console-root
-[centos@os-46-install1 ~]$ sudo journalctl -f -u dcache@dCacheDomain.service
-Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  |   +--gridmap OPTIONAL:FAIL (no mapping) => OK
-Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  |   |
-Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  |   +--authzdb REQUISITE:FAIL (no mappable principal) => FAIL (ends the phase)
-Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  |
-Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  +--(ACCOUNT) skipped
-Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  |
-Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  +--(SESSION) skipped
-Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  |
-Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  +--(VALIDATION) skipped
-Jan 05 13:45:15 os-46-install1.novalocal dcache@dCacheDomain[25977]: 05 Jan 2023 13:45:15 (pool1) [] The file system containing the data files appears to have less free space (40,453,738,496 bytes) than expected (40,453,779,120 bytes); reducing the pool size to 40,455,127,376 bytes to compensate. Notice that this does not leave any space for the meta data. If such data is stored on the same file system, then it is paramount that the pool size is reconfigured to leave enough space for the meta data.
- ```
 
  
  **account** - checks whether the user allowed to use this service.
@@ -334,14 +320,12 @@ it is also very powerful and allows dCache to work with many different authentic
 
 
 
-### TOKENS WLCG
+### Another way to authorise (TOKENS WLCG)
 
 dCache supports OIDC tokens.
 
 You will need to install oid-agent
 
-> wget https://rpmfind.net/linux/epel/9/Everything/x86_64/Packages/o/oidc-agent-cli-5.1.0-1.el9.x86_64.rpm
->
 
 On the VM for this tutorial it was needed to instal epel
 
@@ -351,7 +335,7 @@ On the VM for this tutorial it was needed to instal epel
 
 Now we can insatll oid-agent and run:
 
->  dnf install oidc-agent-cli-5.1.0-1.el9.x86_64
+>  dnf install oidc-agen
 >
 > oidc-agent
 
@@ -364,7 +348,6 @@ OIDCD_PID=17651; export OIDCD_PID;
 echo Agent pid $OIDCD_PID
 
 [root@neic-demo-1 centos]# OIDC_SOCK=/tmp/oidc-6XTqy6/oidc-agent.3910; export OIDC_SOCK;
-[root@neic-demo-1 centos]# kill
 [root@neic-demo-1 centos]# echo $OIDCD_PID
 17651
 ```
@@ -417,13 +400,12 @@ The following scopes are supported: openid profile email offline_access wlcg wlc
 ```
 in the next step we enter wich scopes we want to have: 
 
-> Scopes or 'max' (space separated) [openid profile offline_access]: **openid profile offline_access wlcg wlcg.groups storage.read:/ storage.create:/ storage.modify:/ storage.stage:/**
+> Scopes or 'max' (space separated) [openid profile offline_access]: max
 
 
 
 ```ini
-Scopes or 'max' (space separated) [openid profile offline_access]: openid profile offline_access wlcg wlcg.groups storage.read:/ storage.create:/ storage.modify:/ storage.stage:/
-Registering Client ...
+Scopes or 'max' (space separated) [openid profile offline_access]: max
 Generating account configuration ...
 accepted
 
@@ -512,10 +494,9 @@ map     optional    vorolemap #2.1
 map     optional    gridmap #2.2iodc
 map     requisite   authzdb #2.3
 
-account  requisite   banfile
 
-session requisite   roles #3.2
-session requisite   authzdb #3.2
+#session requisite   roles #3.2
+#session requisite   authzdb #3.2
 EOF                            
 ```
 
