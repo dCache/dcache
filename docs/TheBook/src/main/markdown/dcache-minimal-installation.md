@@ -235,7 +235,7 @@ with passwords TooManySecrets and dickerelch respectively:
 
 > touch /etc/dcache/htpasswd
 > 
-> 
+> yum install httpd-tools
 > htpasswd -bm /etc/dcache/htpasswd admin admin
 >
 > htpasswd -bm /etc/dcache/htpasswd tester tester
@@ -707,9 +707,9 @@ To stop and restart dcache.target command are:
 > journalctl -f -u dcache@dCacheDomain
 
 
-> touch /etc/dcache/htpasswd 
+> touch /etc/dcache/htpasswd ????
 >
-> htpasswd -bm /etc/dcache/htpasswd admin dickerelch
+> htpasswd -bm /etc/dcache/htpasswd admin dickerelch ?????
 
 So now you can upload a file:
 
