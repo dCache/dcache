@@ -263,7 +263,16 @@ with passwords admin:
 
 
 
- **#2** **map** - converts this identity to some dCache user (Who is this user in dCache terms: uid, gids?).
+ **#2** **map** - converts this identity to some dCache user (Who is this user in dCache terms: uid, gids).
+
+
+ In the next step, any extracted information needs to be mapped to a UID : GID pair to be used inside dCache. Until now, this was typically done with the vorolemap plugin.
+ 
+```ini
+ map    optional    vorolemap
+ ```
+
+The actual mapping was made inside a dedicated file (by default /etc/grid-security/grid-vorolemap). See step **2.2**.
                                               
  **#2.1** the “grid-mapfile”-file, the client-certificate’s DN is mapped to a
 virtual user-name.                      
@@ -302,7 +311,7 @@ version 2.1
 
 authorize admin              read-write    0    0 / / /
 authorize desyuser           read-write 1000 2000 / / /
-authorize kermit             read-write 1000 1000 / / / #(home, root) ????
+authorize kermit             read-write 1000 1000 / / / 
 EOF
 ```
 
