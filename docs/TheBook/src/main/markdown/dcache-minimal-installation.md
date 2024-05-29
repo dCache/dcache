@@ -197,7 +197,7 @@ Gplazma is configured by the PAM (Privileged Access Management)-style: the first
 
 **suﬀicient** Success of such a plug-in is enough to satisfy the authentication requirements of the stack of
 plug-ins (if a prior required plug-in has failed the success of this one is ignored). A failure of this plug-in is
-not deemed as fatal for the login attempt. If the plug-in succeeds gPlazma2 immediately proceeds with the
+not deemed as fatal for the login attempt. If the plug-in succeeds gPlazma immediately proceeds with the
 next plug-in type or returns control to the door if this was the last stack.
 
  **requisite**  means failling plugin finishes the phase with failure. 
@@ -219,13 +219,13 @@ auth    optional    x509 #1.1
 auth    optional    voms #1.2
 auth    sufficient  htpasswd #1.3
 
-#map    optional    vorolemap #2.1
+map    optional    vorolemap #2.1
 map     optional    gridmap #2.2
 map     optional    authzdb #2.3
 
 
-#session requisite   roles #3.2
-#session requisite   authzdb #3.2
+session requisite   roles #3.2
+session requisite   authzdb #3.2
 EOF                            
 ```
 
@@ -467,9 +467,11 @@ eyJraWQiOiJyc2ExIiwiYWxnIjoiUlMyNTYifQ.eyJ3bGNnLnZlciI6IjEuMCIsInN1YiI6ImU0ZmYxO
 
 And hier is our token
 
+>echo $TOKEN | cut -d "." -f 2 | base64 -d 2>|/dev/null | jq
+>
+
 ```ini
 
-[root@neic-demo-1 centos]# echo $TOKEN | cut -d "." -f 2 | base64 -d 2>|/dev/null | jq 
 {
   "wlcg.ver": "1.0",
   "sub": "e4ff191e-7845-413c-b437-9378f923fa8d",
@@ -503,14 +505,13 @@ map   optional   vorolemap
 
 ```
 
-The actual mapping was made inside a dedicated file (by default /etc/grid-security/grid-vorolemap). In a similar fashion, the new token based credential have to be mapped as well. Here, the multimap plugin is best suited to do so. For CMS the following setup is needed
+The actual mapping was made inside a dedicated file (by default /etc/grid-security/grid-vorolemap). In a similar fashion, the new token based credential have to be mapped as well. 
 
 
 ```ini
 map   sufficient   multimap gplazma.multimap.file=/etc/dcache/multi-mapfile.wlcg_jwt
-# Only needed for special scenarios and xrootd in releases < 8.2.32:
+# Or after sufficient 
 #map     optional        multimap gplazma.multimap.file=/etc/dcache/multi-mapfile.wlcg_jwt
-
 
 ```
 
@@ -533,9 +534,9 @@ gplazma.oidc.provider!wlcg=https://wlcg.cloud.cnaf.infn.it/ -profile=wlcg -prefi
 cat >/etc/dcache/gplazma.conf <<EOF
 auth    optional    x509 #1.1
 auth    sufficient  htpasswd #1.3
-auth     optional     oidc
+auth    optional     oidc
 
-map      sufficient   multimap gplazma.multimap.file=/etc/dcache/multi-mapfile.wlcg_jwt
+map     optional   multimap gplazma.multimap.file=/etc/dcache/multi-mapfile.wlcg_jwt
 
 map     optional    vorolemap #2.1
 map     optional    gridmap #2.2iodc
@@ -547,7 +548,7 @@ session requisite   authzdb #3.2
 EOF                            
 ```
 
-**/etc/dcache/multi-mapfile.wlcg_jwt**
+> vi **/etc/dcache/multi-mapfile.wlcg_jwt**
 
                              
  ```ini
@@ -776,7 +777,7 @@ Type 'exit' or Ctrl+D to exit.
 chimera:/# mkdir test
 chimera:/# chown 1999:1999 test
 chimera:/# ls test
-
+```
 So now you can upload a file:
 
 > curl  -v  -k -L -u   admin:admin   --upload-file /etc/grid-security/hostcert.pem https://neic-demo-2.desy.de:2880/test/file.test.2
@@ -797,7 +798,7 @@ To write a file we do
 [root@neic-demo-2 centos]# davix-put -k -H "Authorization: Bearer ${TOKEN}" /etc/grid-security/hostcert.pem https://neic-demo-2.desy.de:2880/test/test.file.1
 [root@neic-demo-2 centos]# davix-ls -k -H "Authorization: Bearer ${TOKEN}" https://neic-demo-2.desy.de:2880/
 lost%2Bfound
-marina-demo
+test
 [root@neic-demo-2 centos]# davix-ls -k -H "Authorization: Bearer ${TOKEN}" https://neic-demo-2.desy.de:2880/test
 test.file.1
 ```
