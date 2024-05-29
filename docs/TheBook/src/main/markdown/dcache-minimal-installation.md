@@ -514,6 +514,7 @@ map   sufficient   multimap gplazma.multimap.file=/etc/dcache/multi-mapfile.wlcg
 #map     optional        multimap gplazma.multimap.file=/etc/dcache/multi-mapfile.wlcg_jwt
 
 ```
+This configuration works by assigning a token with the correct storage.* claims the UID : GID while the **sufficient** options means, that no further mapping takes place in case the credentials are mapped. For non-authorised token, this map file will fail and the file below will be used to map the token credentials. 
 
 in **mylayout.conf** we add :
 
