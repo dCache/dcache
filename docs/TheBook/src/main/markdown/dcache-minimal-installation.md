@@ -541,7 +541,8 @@ map     optional    vorolemap #2.1
 map     optional    gridmap #2.2iodc
 map     requisite   authzdb #2.3
 
-
+session requisite   roles #3.2
+session requisite   authzdb #3.2
 
 EOF                            
 ```
@@ -571,6 +572,7 @@ authorize wlcg_oidc     read-write 1999 1999 / / /
 All components in dCache are CELLs and they are independent and can interact with each other by sending messages.
 Such architecture today knows as Microservices with message queue.
 For the minimal instalation of dCache the following cells must be configured in **/etc/dcache/dcache.conf** file.
+
 
 
 #### DOOR 
@@ -634,12 +636,17 @@ dcache.enable.space-reservation = false
  pnfsmanager.default-access-latency = ONLINE
 
 [dCacheDomain/gplazma]
-#gplazma.oidc.provider!wlcg = https://wlcg.cloud.cnaf.infn.it/ -profile=wlcg -prefix=/wlcg
+gplazma.oidc.audience-targets=https://wlcg.cern.ch/jwt/v1/any
+gplazma.oidc.provider!wlcg=https://wlcg.cloud.cnaf.infn.it/ -profile=wlcg -prefix=/ -suppress=audience
 
 
 [dCacheDomain/poolmanager]
 [dCacheDomain/webdav]
- webdav.authn.basic = true
+#webdav.authn.basic = true
+webdav.authn.protocol=https
+webdav.authz.readonly=false
+webdav.cell.name=WebDAV-${host.name}
+
  
 
 ```
@@ -729,7 +736,8 @@ Using systemd service dCache uses systemd’s generator functionality to create 
 domain in the layout file. That’s why, before starting the service all dynamic systemd units should be
 generated:
 
-  > systemctl daemon-reload 
+  > systemctl daemon-reload
+  > systemctl start dcache.target
 
 
 To inspect all generated units of dcache.target the systemd list-dependencies command can be used. In
@@ -760,26 +768,36 @@ To stop and restart dcache.target command are:
 
 
 
+```ini
+[root@neic-demo-3 centos]# chimera
+Type 'help' for help on commands.
+Type 'exit' or Ctrl+D to exit.
+chimera:/# mkdir test
+chimera:/# chown 1999:1999 test
+chimera:/# ls test
+
 So now you can upload a file:
 
-> curl -u admin:dickerelch -L -T /bin/bash http://localhost:2880/home/tester/test-file
+> curl  -v  -k -L -u   admin:admin   --upload-file /etc/grid-security/hostcert.pem https://neic-demo-2.desy.de:2880/test/file.test.2
 
 And using our tokens
 
 
 > dnf install davix
+> 
 > davix-ls -k -H "Authorization: Bearer ${TOKEN}" https://neic-demo-2.desy.de:2880/
 
 To write a file we do 
 
+```
 
  ```ini
 
-[root@neic-demo-2 centos]# davix-put -k -H "Authorization: Bearer ${TOKEN}" /etc/grid-security/hostcert.pem https://neic-demo-2.desy.de:2880/marina-demo/test.file.1
+[root@neic-demo-2 centos]# davix-put -k -H "Authorization: Bearer ${TOKEN}" /etc/grid-security/hostcert.pem https://neic-demo-2.desy.de:2880/test/test.file.1
 [root@neic-demo-2 centos]# davix-ls -k -H "Authorization: Bearer ${TOKEN}" https://neic-demo-2.desy.de:2880/
 lost%2Bfound
 marina-demo
-[root@neic-demo-2 centos]# davix-ls -k -H "Authorization: Bearer ${TOKEN}" https://neic-demo-2.desy.de:2880/marina-demo
+[root@neic-demo-2 centos]# davix-ls -k -H "Authorization: Bearer ${TOKEN}" https://neic-demo-2.desy.de:2880/test
 test.file.1
 ```
 
@@ -841,7 +859,7 @@ we will add two new pool domains:
  > 
  > dcache pool create /srv/dcache/pool-2 pool2 poolsDomain2
  
-
+We need to change the **dcache.broker.scheme = core**
 
 Please note, that we are still on the same node
 
@@ -971,7 +989,6 @@ dcache.broker.scheme = core
 
 
 [${host.name}_coreDomain/zookeeper]
-[${host.name}_coreDomain/zookeeper]
 [${host.name}_coreDomain/pnfsmanager]
  pnfsmanager.default-retention-policy = REPLICA
  pnfsmanager.default-access-latency = ONLINE
@@ -1028,7 +1045,6 @@ dcache.enable.space-reservation = false
 dcache.broker.scheme = core
 
 
-[${host.name}_coreDomain/zookeeper]
 [${host.name}_coreDomain/zookeeper]
 [${host.name}_coreDomain/pnfsmanager]
  pnfsmanager.default-retention-policy = REPLICA
