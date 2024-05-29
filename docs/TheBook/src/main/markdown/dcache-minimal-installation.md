@@ -563,6 +563,7 @@ authorize admin         read-write    0    0 / / /
 authorize wlcg_oidc     read-write 1999 1999 / / /
 ```
 
+>chown dcache:dcache /etc/grid-security/host*.pem
 
 
 
