@@ -738,7 +738,7 @@ To write a file we do
 
  ```ini
 
-root@neic-demo-davix-put -k -H "Authorization: Bearer ${TOKEN}" /etc/grid-security/hostcert.pem https://neic-demo-2.desy.de:2880/marina-demo/test.file.1
+[root@neic-demo-2 centos]# davix-put -k -H "Authorization: Bearer ${TOKEN}" /etc/grid-security/hostcert.pem https://neic-demo-2.desy.de:2880/marina-demo/test.file.1
 [root@neic-demo-2 centos]# davix-ls -k -H "Authorization: Bearer ${TOKEN}" https://neic-demo-2.desy.de:2880/
 lost%2Bfound
 marina-demo
