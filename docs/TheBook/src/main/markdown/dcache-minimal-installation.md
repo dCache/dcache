@@ -105,6 +105,8 @@ host    replication     all             ::1/128                 ident
 To allow local users to access PostgreSQL without requiring a password, make sure the following three lines
 are the only uncommented lines in the file **/var/lib/pgsql/data/pg_hba.conf**
 
+>vi /var/lib/pgsql/data/pg_hba.conf
+>
 
    ```ini
     # TYPE  DATABASE    USER        IP-ADDRESS        IP-MASK           METHOD
@@ -181,6 +183,7 @@ vomsdir respectively.
 
 >
 > mkdir -p /etc/grid-security/
+>
 > mkdir -p /etc/grid-security/certificates/
 >
 
@@ -255,6 +258,7 @@ with passwords admin:
 > touch /etc/dcache/htpasswd
 > 
 > yum install httpd-tools
+> 
 > htpasswd -bm /etc/dcache/htpasswd admin admin
 >
 
@@ -341,12 +345,15 @@ You will need to install oid-agent
 On the VM for this tutorial it was needed to instal epel
 
 > dnf config-manager --set-enabled crb
+> 
 > dnf install epel-release epel-next-release
+> 
 > dnf repolist epel
+> 
 
 Now we can insatll oid-agent and run:
 
->  dnf install oidc-agen
+>  dnf install oidc-agent
 >
 > oidc-agent
 
@@ -358,11 +365,15 @@ Now we can insatll oid-agent and run:
 OIDCD_PID=17651; export OIDCD_PID;
 echo Agent pid $OIDCD_PID
 
-[root@neic-demo-1 centos]# OIDC_SOCK=/tmp/oidc-6XTqy6/oidc-agent.3910; export OIDC_SOCK;
-[root@neic-demo-1 centos]# echo $OIDCD_PID
-17651
 ```
 
+>
+> export OIDC_SOCK=/tmp/oidc-BRujtJ/oidc-agent.4673
+>
+> export OIDCD_PID=18499
+> echo $OIDCD_PID
+>
+>
 And now we can generate token with scope
 
 >
@@ -478,17 +489,43 @@ And hier is our token
 ```
 
 Now we need to adapt our gplazma and layout configurations.
+We add to /etc/dcache/gplazma.conf 
+
+```ini
+auth   optional   x509
+auth   optional   voms
+auth   optional   oidc
+```
+where the oidc plugin extracts the storage claims, groups and unique identifier from the IAM-token. In the next step, any extracted information needs to be mapped to a UID : GID pair to be used inside dCache. Until now, this was typically done with the vorolemap plugin. This is used during the map step inside the /etc/dcache/gplazma.conf file:
+
+```ini
+map   optional   vorolemap
+
+```
+
+The actual mapping was made inside a dedicated file (by default /etc/grid-security/grid-vorolemap). In a similar fashion, the new token based credential have to be mapped as well. Here, the multimap plugin is best suited to do so. For CMS the following setup is needed
+
+
+```ini
+map   sufficient   multimap gplazma.multimap.file=/etc/dcache/multi-mapfile.wlcg_jwt
+# Only needed for special scenarios and xrootd in releases < 8.2.32:
+#map     optional        multimap gplazma.multimap.file=/etc/dcache/multi-mapfile.wlcg_jwt
+
+
+```
 
 in **mylayout.conf** we add :
 
-gplazma.oidc.provider!wlcg = https://wlcg.cloud.cnaf.infn.it/ -profile=wlcg -prefix=/wlcg
+
+```ini
+gplazma.oidc.audience-targets=https://wlcg.cern.ch/jwt/v1/any
+gplazma.oidc.provider!wlcg=https://wlcg.cloud.cnaf.infn.it/ -profile=wlcg -prefix=/ -suppress=audience
 
 
-
-we update **gplazma.conf** to add auth and map phase for oidc plugin.
-
+```
 
 
+ **gplazma.conf** looks like this now.
 
                               
  ```ini
