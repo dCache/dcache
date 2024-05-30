@@ -2,10 +2,10 @@
 
 . /init-grid-ui.sh
 
-yum install -y -q git-core python-pip boost-python
+yum install -y -q git-core python3-pip boost-python
 
 # version that works with centos7
-pip install robotframework==3.2.2
+pip3 install robotframework==3.2.2
 
 git clone --depth 1 https://github.com/dCache/Grid-tools-functional-test-suite.git
 cd Grid-tools-functional-test-suite
