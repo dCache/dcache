@@ -28,13 +28,21 @@
 
 
 stages:
+  # build rpm, tar, deb, oci container
   - build
+  # sign rpm, deb
   - sign
+  # create k8s namespace
   - testenv_pre
+  # deploy 3rd party infrastructure services
   - test_infra
+  # deploy dCache helm chart
   - test_deploy
+  # run tests
   - testing
+  # clean k8s namespace, collect logs
   - testenv_post
+  # on release, upload rpm, deb, tar, container
   - upload
 
 variables:
