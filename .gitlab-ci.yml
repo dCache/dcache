@@ -10,6 +10,7 @@
 #  PKG_UPLOAD_URL: URL to upload dCache release packages
 #  PKG_UPLOAD_USER: user name to use for authorization
 #  PKG_UPLOAD_PASS: password
+#  PKG_UPLOAD_OPTIONS: additional options to curl
 #
 #  DOCKER_HUB_USER: user name on docker hub
 #  DOCKER_HUB_ACCESS_KEY: Access Key or Password of the docker user
@@ -277,7 +278,7 @@ upload_rpm:
   script:
     - RPM_NAME=`ls packages/fhs/target/rpmbuild/RPMS/noarch/ | grep dcache`
     - VERSION=`echo $RPM_NAME | cut -d'-' -f 2 | cut -d'.' -f 1,2`
-    - curl -u $PKG_UPLOAD_USER:$PKG_UPLOAD_PASS --upload-file packages/fhs/target/rpmbuild/RPMS/noarch/$RPM_NAME "$PKG_UPLOAD_URL/$VERSION/$RPM_NAME"
+    - curl $PKG_UPLOAD_OPTIONS -u $PKG_UPLOAD_USER:$PKG_UPLOAD_PASS --upload-file packages/fhs/target/rpmbuild/RPMS/noarch/$RPM_NAME "$PKG_UPLOAD_URL/$VERSION/$RPM_NAME"
 
 upload_srm_client_rpm:
   stage: upload
@@ -288,7 +289,7 @@ upload_srm_client_rpm:
   script:
     - RPM_NAME=`ls modules/srm-client/target/rpmbuild/RPMS/noarch/ | grep dcache-srmclient`
     - VERSION=`echo $RPM_NAME | cut -d'-' -f 3 | cut -d'.' -f 1,2`
-    - curl -u $PKG_UPLOAD_USER:$PKG_UPLOAD_PASS --upload-file modules/srm-client/target/rpmbuild/RPMS/noarch/$RPM_NAME "$PKG_UPLOAD_URL/$VERSION/$RPM_NAME"
+    - curl $PKG_UPLOAD_OPTIONS -u $PKG_UPLOAD_USER:$PKG_UPLOAD_PASS --upload-file modules/srm-client/target/rpmbuild/RPMS/noarch/$RPM_NAME "$PKG_UPLOAD_URL/$VERSION/$RPM_NAME"
 
 upload_deb:
   stage: upload
@@ -299,7 +300,7 @@ upload_deb:
   script:
     - DEB_NAME=`ls packages/fhs/target/ | grep dcache`
     - VERSION=`echo $DEB_NAME | cut -d'_' -f 2 | cut -d'.' -f 1,2`
-    - curl -u $PKG_UPLOAD_USER:$PKG_UPLOAD_PASS --upload-file packages/fhs/target/$DEB_NAME "$PKG_UPLOAD_URL/$VERSION/$DEB_NAME"
+    - curl $PKG_UPLOAD_OPTIONS -u $PKG_UPLOAD_USER:$PKG_UPLOAD_PASS --upload-file packages/fhs/target/$DEB_NAME "$PKG_UPLOAD_URL/$VERSION/$DEB_NAME"
 
 upload_tar:
   stage: upload
@@ -310,7 +311,7 @@ upload_tar:
   script:
     - TAR_NAME=`ls packages/tar/target/ | grep dcache`
     - VERSION=`echo $TAR_NAME | cut -d'-' -f 2 | cut -d'.' -f 1,2`
-    - curl -u $PKG_UPLOAD_USER:$PKG_UPLOAD_PASS --upload-file packages/tar/target/$TAR_NAME "$PKG_UPLOAD_URL/$VERSION/$TAR_NAME"
+    - curl $PKG_UPLOAD_OPTIONS -u $PKG_UPLOAD_USER:$PKG_UPLOAD_PASS --upload-file packages/tar/target/$TAR_NAME "$PKG_UPLOAD_URL/$VERSION/$TAR_NAME"
 
 
 upload_container:
