@@ -1471,6 +1471,7 @@
         <module>modules/gplazma2-ldap</module>
         <module>modules/gplazma2-htpasswd</module>
         <module>modules/gplazma2-oidc</module>
+        <module>modules/gplazma2-oidc-te</module>
         <module>modules/gplazma2-omnisession</module>
         <module>modules/gplazma2-multimap</module>
         <module>modules/gplazma2-roles</module>
