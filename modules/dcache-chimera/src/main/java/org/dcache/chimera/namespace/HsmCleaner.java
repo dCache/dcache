@@ -21,6 +21,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -52,6 +53,11 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
       CellInfoProvider {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HsmCleaner.class);
+
+    /**
+     * The pools cleaner-hsm has sent a request to and is expecting a reply from.
+     **/
+    private final Set<String> _activePools = Collections.synchronizedSet(new HashSet<>());
 
     /**
      * Utility class to keep track of timeouts.
@@ -248,24 +254,25 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
             locations = subset;
         }
 
-        PoolInformation pool = _pools.getPoolWithHSM(hsm);
+        PoolInformation pool = _pools.getNewPoolWithHSM(hsm, _activePools);
         if (pool != null) {
-            String name = pool.getName();
-            PoolRemoveFilesFromHSMMessage message = new PoolRemoveFilesFromHSMMessage(name, hsm,
+            String poolName = pool.getName();
+            _activePools.add(poolName);
+            PoolRemoveFilesFromHSMMessage message = new PoolRemoveFilesFromHSMMessage(poolName, hsm,
                   locations);
 
             LOGGER.info("sending {} delete locations for HSM {} to pool {}", locations.size(), hsm,
-                  name);
+                  poolName);
 
-            _poolStub.notify(new CellPath(name), message);
+            _poolStub.notify(new CellPath(poolName), message);
 
-            Timeout timeout = new Timeout(hsm, name);
+            Timeout timeout = new Timeout(hsm, poolName);
             _timer.schedule(timeout, _hsmTimeoutUnit.toMillis(_hsmTimeout));
             _requestTimeoutPerHsm.put(hsm, timeout);
         } else {
             /* If there is no available pool, then we report failure on
              * all files. */
-            LOGGER.warn("No pools attached to HSM {} are available", hsm);
+            LOGGER.warn("No new pools attached to HSM {} are available", hsm);
 
             Iterator<URI> i = _locationsToDelete.get(hsm).iterator();
             while (i.hasNext()) {
@@ -287,9 +294,10 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
      * fix the bug in the pool.
      */
     private synchronized void timeout(String hsm, String pool) {
-        LOGGER.error("Timeout deleting files on HSM {} attached to {}", hsm, pool);
+        LOGGER.error("Timeout deleting files on HSM {} attached to pool {}", hsm, pool);
         removeHsmRequestTimeout(hsm);
         _pools.remove(pool);
+        _activePools.remove(pool);
         flush(hsm);
     }
 
@@ -350,6 +358,8 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
 
             }
         }
+
+        _activePools.remove(poolName);
 
         if (!isStaleReply) {
             removeHsmRequestTimeout(hsm);
@@ -456,6 +466,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
         // All not yet sent but cached requests can be cleared
         _locationsToDelete.keySet().removeIf(hsm -> !_requestTimeoutPerHsm.containsKey(hsm));
         _dbLastSeenTimestamp = new Timestamp(0);
+        _activePools.clear();
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -624,9 +635,15 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
     public void getInfo(PrintWriter pw) {
         pw.printf("Cleaning Interval: %s %s\n", _refreshInterval, _refreshIntervalUnit);
         pw.printf("Cleanup grace period: %s\n", TimeUtils.describe(_gracePeriod).orElse("-"));
-        pw.printf("Timeout for cleaning requests to HSM-pools: %s %s\n", _hsmTimeout, _hsmTimeoutUnit);
+        pw.printf("Timeout for cleaning requests to HSM-pools: %s %s\n", _hsmTimeout,
+              _hsmTimeoutUnit);
         pw.printf("Maximum number of cached delete locations:   %d\n", _maxCachedDeleteLocations);
         pw.printf("Maximum number of files to include in a single request:   %d\n",
               _maxFilesPerRequest);
+        Set<String> activePools = Set.copyOf(_activePools);
+        int activePoolCount = activePools.size();
+        String activePoolsString = activePoolCount == 0 ? "0"
+              : activePoolCount + " " + activePools;
+        pw.printf("Pools currently waited for: %s\n", activePoolsString);
     }
 }
