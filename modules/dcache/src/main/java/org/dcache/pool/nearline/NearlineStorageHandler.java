@@ -877,6 +877,16 @@ public class NearlineStorageHandler
                   .collect(Collectors.joining("\n"));
         }
 
+        public String printJobQueue(PnfsId pnfsId){
+            return requests
+                    .values()
+                    .stream()
+                    .map(Object::toString)
+                    .filter(id -> id.equals(pnfsId.toString()))
+                    .collect(Collectors.joining("\n"));
+
+        }
+
         public String printJobQueue(Comparator<R> ordering) {
             return requests.values().stream()
                   .sorted(ordering)
@@ -1566,10 +1576,18 @@ public class NearlineStorageHandler
                 "The columns in the output show: job id, job status, pnfs id, request counter, " +
                 "and request submission time.")
     class RestoreListCommand implements Callable<String> {
+        @Argument(metaVar = "pnfsid", required = false)
+        String arg;
 
         @Override
-        public String call() {
-            return stageRequests.printJobQueue(Comparator.naturalOrder());
+        public String call() throws NoSuchElementException, IllegalStateException {
+            if (arg == null){
+                stageRequests.printJobQueue(Comparator.naturalOrder());
+            } else {
+                var pnfsId = new PnfsId(arg);
+                stageRequests.printJobQueue(pnfsId);
+            }
+            return "Restore queue list initialized";
         }
     }
 
@@ -1634,10 +1652,18 @@ public class NearlineStorageHandler
                 "The columns in the output show: job id, job status, pnfs id, request counter, " +
                 "and request submission time.")
     class StoreListCommand implements Callable<String> {
+        @Argument(metaVar = "pnfsid", required = false)
+        String arg;
 
         @Override
-        public String call() {
-            return flushRequests.printJobQueue(Comparator.naturalOrder());
+        public String call() throws NoSuchElementException, IllegalStateException {
+            if(arg == null){
+                flushRequests.printJobQueue(Comparator.naturalOrder());
+            } else {
+                var pnfsId = new PnfsId(arg);
+                flushRequests.printJobQueue(pnfsId);
+            }
+            return "Store queue list initialized";
         }
     }
 
