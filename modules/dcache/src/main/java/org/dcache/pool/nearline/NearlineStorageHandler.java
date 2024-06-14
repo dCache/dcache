@@ -878,12 +878,14 @@ public class NearlineStorageHandler
         }
 
         public String printJobQueue(PnfsId pnfsId){
-            var requestWithPNFSID = requests.get(pnfsId);
-            if( requestWithPNFSID == null) {
-                throw new NullPointerException("PNFSID not in store queue");
-             }
+            R requestWithPNFSID;
+            try {
+                requestWithPNFSID = requests.get(pnfsId);
+            }catch (Exception e){
+                System.out.println(pnfsId + " not in store queue");
+                return pnfsId + " not in store queue";
+            }
             return requestWithPNFSID.toString();
-
         }
 
         public String printJobQueue(Comparator<R> ordering) {
