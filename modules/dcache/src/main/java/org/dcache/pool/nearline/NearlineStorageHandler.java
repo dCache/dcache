@@ -878,12 +878,11 @@ public class NearlineStorageHandler
         }
 
         public String printJobQueue(PnfsId pnfsId){
-            return requests
-                    .values()
-                    .stream()
-                    .map(Object::toString)
-                    .filter(id -> id.equals(pnfsId.toString()))
-                    .collect(Collectors.joining("\n"));
+            var requestWithPNFSID = requests.get(pnfsId);
+            if( requests.get(pnfsId) == null) {
+                throw new NullPointerException("PNFSID not in store queue");
+             }
+            return requestWithPNFSID.toString();
 
         }
 
@@ -1304,7 +1303,7 @@ public class NearlineStorageHandler
                         ReplicaState.FROM_STORE,
                         ReplicaState.CACHED,
                         Collections.emptyList(),
-                        EnumSet.noneOf(Repository.OpenFlags.class),
+                        EnumSet.noneOf(OpenFlags.class),
                         OptionalLong.empty());
             LOGGER.debug("Stage request created for {}.", pnfsId);
         }
@@ -1582,12 +1581,11 @@ public class NearlineStorageHandler
         @Override
         public String call() throws NoSuchElementException, IllegalStateException {
             if (arg == null){
-                stageRequests.printJobQueue(Comparator.naturalOrder());
+                return stageRequests.printJobQueue(Comparator.naturalOrder());
             } else {
                 var pnfsId = new PnfsId(arg);
-                stageRequests.printJobQueue(pnfsId);
+                return stageRequests.printJobQueue(pnfsId);
             }
-            return "Restore queue list initialized";
         }
     }
 
@@ -1658,12 +1656,11 @@ public class NearlineStorageHandler
         @Override
         public String call() throws NoSuchElementException, IllegalStateException {
             if(arg == null){
-                flushRequests.printJobQueue(Comparator.naturalOrder());
+                return flushRequests.printJobQueue(Comparator.naturalOrder());
             } else {
                 var pnfsId = new PnfsId(arg);
-                flushRequests.printJobQueue(pnfsId);
+                return flushRequests.printJobQueue(pnfsId);
             }
-            return "Store queue list initialized";
         }
     }
 
