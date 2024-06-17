@@ -877,15 +877,13 @@ public class NearlineStorageHandler
                   .collect(Collectors.joining("\n"));
         }
 
-        public String printJobQueue(PnfsId pnfsId){
-            R requestWithPNFSID;
-            try {
-                requestWithPNFSID = requests.get(pnfsId);
-            }catch (Exception e){
-                System.out.println(pnfsId + " not in store queue");
-                return pnfsId + " not in store queue";
+        public String printJobQueue(PnfsId pnfsId) {
+            R requestWithPNFSID = requests.get(pnfsId);
+            if (requestWithPNFSID == null) {
+                return pnfsId + " not in the queue";
+            } else {
+                return requestWithPNFSID.toString();
             }
-            return requestWithPNFSID.toString();
         }
 
         public String printJobQueue(Comparator<R> ordering) {
