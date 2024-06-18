@@ -34,9 +34,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.jdo.PersistenceManager;
-import javax.jdo.PersistenceManagerFactory;
-import javax.jdo.Transaction;
 import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.util.Args;
@@ -44,6 +41,7 @@ import org.dcache.util.CDCExecutorServiceDecorator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.kafka.core.KafkaTemplate;
 
 
@@ -81,7 +79,6 @@ public abstract class TransferManager extends AbstractCellComponent
     public final Set<PnfsId> justRequestedIDs = new HashSet<>();
     private final ExecutorService executor =
           new CDCExecutorServiceDecorator<>(Executors.newCachedThreadPool());
-    private PersistenceManagerFactory _pmf;
 
     public void cleanUp() {
         executor.shutdown();
@@ -89,7 +86,6 @@ public abstract class TransferManager extends AbstractCellComponent
 
     @Override
     public void getInfo(PrintWriter pw) {
-        pw.printf("DB logging            : %b\n", doDbLogging());
         pw.printf("Transfer ID generated : %s\n", idGenerator == null ? "locally" : "from DB");
         pw.printf("Next Transfer ID      : %d\n", nextMessageID);
         pw.printf("Active transfers      : %d\n", _numTransfers);
@@ -341,54 +337,15 @@ public abstract class TransferManager extends AbstractCellComponent
         }
     }
 
+    // TODO: get rid of?
     public void addActiveTransfer(long id, TransferManagerHandler handler) {
         _activeTransfers.put(id, handler);
-        if (doDbLogging()) {
-            PersistenceManager pm = _pmf.getPersistenceManager();
-            try {
-                Transaction tx = pm.currentTransaction();
-                try {
-                    tx.begin();
-                    pm.makePersistent(handler);
-                    tx.commit();
-                    LOGGER.debug("Recording new handler into database.");
-                } catch (Exception e) {
-                    LOGGER.error(e.toString());
-                } finally {
-                    rollbackIfActive(tx);
-                }
-            } finally {
-                pm.close();
-            }
-        }
     }
-
+    // TODO: get rid of?
     public void removeActiveTransfer(long id) {
         TransferManagerHandler handler = _activeTransfers.remove(id);
         if (handler == null) {
             return;
-        }
-        if (doDbLogging()) {
-            PersistenceManager pm = _pmf.getPersistenceManager();
-            try {
-                Transaction tx = pm.currentTransaction();
-                TransferManagerHandlerBackup handlerBackup
-                      = new TransferManagerHandlerBackup(handler);
-                try {
-                    tx.begin();
-                    pm.makePersistent(handler);
-                    pm.deletePersistent(handler);
-                    pm.makePersistent(handlerBackup);
-                    tx.commit();
-                    LOGGER.debug("handler removed from db");
-                } catch (Exception e) {
-                    LOGGER.error(e.toString());
-                } finally {
-                    rollbackIfActive(tx);
-                }
-            } finally {
-                pm.close();
-            }
         }
     }
 
@@ -424,41 +381,8 @@ public abstract class TransferManager extends AbstractCellComponent
         return _ioQueueName;
     }
 
-    public static void rollbackIfActive(Transaction tx) {
-        if (tx != null && tx.isActive()) {
-            tx.rollback();
-        }
-    }
-
-    public boolean doDbLogging() {
-        return _pmf != null;
-    }
-
     public int getMaxNumberOfDeleteRetries() {
         return _maxNumberOfDeleteRetries;
-    }
-
-    public void persist(Object o) {
-        if (doDbLogging()) {
-            PersistenceManager pm = _pmf.getPersistenceManager();
-            try {
-                Transaction tx = pm.currentTransaction();
-                try {
-                    tx.begin();
-                    pm.makePersistent(o);
-                    tx.commit();
-                    LOGGER.debug("[{}]: Recording new state of handler into database.",
-                          o);
-                } catch (Exception e) {
-                    LOGGER.error("[{}]: failed to persist object: {}.",
-                          o, e.getMessage());
-                } finally {
-                    rollbackIfActive(tx);
-                }
-            } finally {
-                pm.close();
-            }
-        }
     }
 
     @Override
@@ -475,7 +399,8 @@ public abstract class TransferManager extends AbstractCellComponent
     }
 
     @Autowired(required = false)
-    public void setTransferTemplate(KafkaTemplate kafkaTemplate) {
+    @Qualifier("")
+    public void setTransferTemplate( KafkaTemplate kafkaTemplate) {
         _kafkaSender = kafkaTemplate::sendDefault;
     }
 
@@ -509,10 +434,6 @@ public abstract class TransferManager extends AbstractCellComponent
 
     public void setOverwrite(boolean overwrite) {
         _overwrite = overwrite;
-    }
-
-    public void setPersistenceManagerFactory(PersistenceManagerFactory pmf) {
-        _pmf = pmf;
     }
 
     public void setTLogRoot(String tLogRoot) {

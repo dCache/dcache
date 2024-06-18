@@ -65,7 +65,6 @@ import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.KafkaException;
-import org.springframework.kafka.core.KafkaTemplate;
 
 public class TransferManagerHandler extends AbstractMessageCallback<Message> {
 
@@ -269,7 +268,6 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
     }
 
     private void sentToPnfsManager(PnfsMessage message) {
-        manager.persist(this);
         CellStub.addCallback(manager.getPnfsManagerStub().send(message), this, executor);
     }
 
@@ -339,7 +337,6 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
                     sendErrorReply();
                 }
             }
-            manager.persist(this);
         } catch (RuntimeException e) {
             LOGGER.error(
                   "Bug detected in transfermanager, please report this to <support@dCache.org>", e);
@@ -454,7 +451,6 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
 
     public void createEntryResponseArrived(PnfsCreateEntryMessage create) {
         created = true;
-        manager.persist(this);
 
         fileAttributes = create.getFileAttributes();
         pnfsId = create.getPnfsId();
@@ -470,15 +466,12 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
     }
 
     private void getFileAttributesArrived(FileAttributes attributes) {
-        manager.persist(this);
-
         fileAttributes = attributes;
         info.setStorageInfo(attributes.getStorageInfo());
         if (attributes.isDefined(STORAGEINFO)
               && attributes.getStorageInfo().getKey("path") != null) {
             info.setBillingPath(attributes.getStorageInfo().getKey("path"));
         }
-
         selectPool();
     }
 
@@ -490,7 +483,6 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
         info.setPnfsId(pnfsId);
         info.setStorageInfo(attributes.getStorageInfo());
         pnfsIdString = pnfsId.toString();
-        manager.persist(this);
         if (store) {
             synchronized (manager.justRequestedIDs) {
                 if (manager.justRequestedIDs.contains(id)) {
@@ -526,7 +518,6 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
         request.setSubject(transferRequest.getSubject());
         LOGGER.debug("PoolMgrSelectPoolMsg: {}", request);
         setState(WAITING_FOR_POOL_INFO_STATE);
-        manager.persist(this);
         CellStub.addCallback(manager.getPoolManagerStub().sendAsync(request), this, executor);
     }
 
@@ -540,7 +531,6 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
 
         setPool(pool_info.getPool());
         fileAttributes = pool_info.getFileAttributes();
-        manager.persist(this);
         LOGGER.debug("Positive reply from pool {}", pool);
         startMoverOnThePool();
     }
@@ -567,7 +557,6 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
         poolMessage.setInitiator(info.getTransaction());
         poolMessage.setId(id);
         setState(WAITING_FIRST_POOL_REPLY_STATE);
-        manager.persist(this);
         CellStub.addCallback(
               manager.getPoolManagerStub().startAsync(pool.getAddress(), poolMessage), this,
               executor);
@@ -581,15 +570,12 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
         LOGGER.debug("Starting moverTimeout timer");
         manager.startTimer(id);
         setMoverId(poolMessage.getMoverId());
-        manager.persist(this);
-
     }
 
     public void deletePnfsEntry() {
         if (state == RECEIVED_PNFS_CHECK_BEFORE_DELETE_STATE) {
             PnfsDeleteEntryMessage pnfsMsg = new PnfsDeleteEntryMessage(pnfsPath);
             setState(WAITING_FOR_PNFS_ENTRY_DELETE);
-            manager.persist(this);
             pnfsMsg.setReplyRequired(true);
             CellStub.addCallback(manager.getPnfsManagerStub().send(pnfsMsg), this, executor);
         } else {
@@ -641,7 +627,6 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
         sendDoorRequestInfo(replyCode, errorObject.toString());
 
         setState(SENT_ERROR_REPLY_STATE, errorObject);
-        manager.persist(this);
         manager.stopTimer(id);
 
         if (store) {
@@ -684,7 +669,6 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
         sendDoorRequestInfo(replyCode, errorObject.toString());
 
         setState(SENT_ERROR_REPLY_STATE, errorObject);
-        manager.persist(this);
         manager.stopTimer(id);
 
         if (store) {
@@ -719,7 +703,6 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
         }
         sendDoorRequestInfo(0, "");
         setState(SENT_SUCCESS_REPLY_STATE);
-        manager.persist(this);
         manager.stopTimer(id);
         if (store) {
             synchronized (manager.justRequestedIDs) {
