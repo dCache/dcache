@@ -132,7 +132,6 @@
         <property name="moverTimeoutUnit" value="${transfermanagers.limits.transfer-time.unit}"/>
         <property name="maxTransfers" value="${transfermanagers.limits.external-transfers}"/>
         <property name="ioQueueName" value="${transfermanagers.mover.queue}"/>
-        <property name="persistenceManagerFactory" ref="pmf"/>
         <property name="maxNumberOfDeleteRetries" value="1"/>
         <property name="overwrite" value="false"/>
     </bean>
