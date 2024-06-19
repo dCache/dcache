@@ -175,6 +175,7 @@ import org.dcache.pool.assumption.Assumptions;
 import org.dcache.poolmanager.CostException;
 import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.poolmanager.PoolMonitor;
+import org.dcache.rquota.QuotaSvc;
 import org.dcache.util.ByteUnit;
 import org.dcache.util.CDCScheduledExecutorServiceDecorator;
 import org.dcache.util.FireAndForgetTask;
@@ -263,6 +264,12 @@ public class NFSv41Door extends AbstractCellComponent implements
     private int _port;
 
     /**
+     * UDP port number used by remote quota protocol.
+     */
+    private int _rquotaPort;
+
+
+    /**
      * nfs versions to run.
      */
     private Set<String> _versions;
@@ -276,9 +283,14 @@ public class NFSv41Door extends AbstractCellComponent implements
     private NFSServerV41 _nfs4;
 
     /**
-     * RPC service
+     * NFS RPC service
      */
     private OncRpcSvc _rpcService;
+
+    /**
+     * Remote Quota RPC service
+     */
+    private OncRpcSvc _rquotaService;
 
     private StrategyIdMapper _idMapper;
 
@@ -407,6 +419,10 @@ public class NFSv41Door extends AbstractCellComponent implements
         _port = port;
     }
 
+    public void setQuotaPortNumber(int port) {
+        _rquotaPort = port;
+    }
+
     public void setVersions(String[] versions) {
         _versions = Sets.newHashSet(versions);
     }
@@ -473,6 +489,7 @@ public class NFSv41Door extends AbstractCellComponent implements
     public void init() throws Exception {
 
         _chimeraVfs = new ChimeraVfs(_fileFileSystemProvider, _idMapper);
+        var quotaSvc = new QuotaSvc(_chimeraVfs, _exportFile);
         _vfsCache = new VfsCache(_chimeraVfs, _vfsCacheConfig);
         _vfs = _eventNotifier == null ? _vfsCache : wrapWithMonitoring(_vfsCache);
 
@@ -567,9 +584,24 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         _rpcService = oncRpcSvcBuilder.build();
         _rpcService.start();
+
+        // we don't expect high traffic querying rquota, so we can use same thread strategy and limited number of threads
+        _rquotaService = new OncRpcSvcBuilder()
+                .withPort(_rquotaPort)
+                .withUDP()
+                .withServiceName("rquota")
+                .withAutoPublish()
+                .withSubjectPropagation()
+                .withSelectorThreadPoolSize(4)
+                .withSameThreadIoStrategy()
+                .withRpcService(new OncRpcProgram(100011, 2), quotaSvc)
+                .build();
+
+        _rquotaService.start();
     }
 
     public void destroy() throws IOException {
+        _rquotaService.stop();
         _rpcService.stop();
         _callbackExecutor.shutdown();
         if (_nfs4 != null) {

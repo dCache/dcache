@@ -261,6 +261,7 @@
         <property name="exportFile" ref="export"/>
         <property name="idMapper" ref="id-mapper"/>
         <property name="portNumber" value="${nfs.net.port}"/>
+        <property name="quotaPortNumber" value="${nfs.net.rquota.port}"/>
         <property name="versions" value="${nfs.version}"/>
         <property name="enableRpcsecGss" value="${nfs.rpcsec_gss}"/>
         <property name="loginBrokerPublisher" ref="lb"/>

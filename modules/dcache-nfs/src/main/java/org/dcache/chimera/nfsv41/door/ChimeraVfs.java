@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 - 2022 Deutsches Elektronen-Synchroton,
+ * Copyright (c) 2009 - 2024 Deutsches Elektronen-Synchroton,
  * Member of the Helmholtz Association, (DESY), HAMBURG, GERMANY
  *
  * This library is free software; you can redistribute it and/or modify
@@ -79,6 +79,7 @@ import org.dcache.chimera.PermissionDeniedChimeraFsException;
 import org.dcache.chimera.QuotaChimeraFsException;
 import org.dcache.chimera.StorageGenericLocation;
 import org.dcache.chimera.UnixPermission;
+import org.dcache.chimera.quota.Quota;
 import org.dcache.nfs.status.BadHandleException;
 import org.dcache.nfs.status.BadOwnerException;
 import org.dcache.nfs.status.DQuotException;
@@ -99,7 +100,6 @@ import org.dcache.nfs.v4.xdr.aceflag4;
 import org.dcache.nfs.v4.xdr.acemask4;
 import org.dcache.nfs.v4.xdr.acetype4;
 import org.dcache.nfs.v4.xdr.nfsace4;
-import org.dcache.nfs.v4.xdr.uint32_t;
 import org.dcache.nfs.v4.xdr.utf8str_mixed;
 import org.dcache.nfs.v4.xdr.verifier4;
 import org.dcache.nfs.vfs.AclCheckable;
@@ -109,18 +109,26 @@ import org.dcache.nfs.vfs.FsStat;
 import org.dcache.nfs.vfs.Inode;
 import org.dcache.nfs.vfs.Stat;
 import org.dcache.nfs.vfs.VirtualFileSystem;
+import org.dcache.rquota.QuotaVfs;
+import org.dcache.rquota.xdr.rquota;
+import org.dcache.rquota.xdr.sq_dqblk;
+import org.dcache.util.ByteUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Interface to a virtual file system.
  */
-public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
+public class ChimeraVfs implements VirtualFileSystem, AclCheckable, QuotaVfs {
 
     private static final Logger _log = LoggerFactory.getLogger(ChimeraVfs.class);
 
     private final String XATTR_TAG_PREFIX = "dcache.tag.";
 
+    /**
+     * Block size used to report and set quotas.
+     */
+    private final static int QUOTA_BLOCK_SIZE = ByteUnit.GiB.toBytes(1);
 
     private enum SpecialXattrs {
 
@@ -994,5 +1002,99 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
         // to avoid collisions when on hard links, generate cookie based on inumber and name hash
         // reset upper bit to have only positive numbers
         return (stat.getIno() << 32 | name.hashCode()) & 0x7FffffffffffffffL;
+    }
+
+    @Override
+    public rquota getQuota(int id, int type) {
+
+        rquota quota = new rquota();
+
+        if (!_fs.isQuotaEnabled()) {
+            quota.rq_active = false;
+            return quota;
+        }
+
+        Quota qq = switch (type) {
+            case 0 -> // user
+                  _fs.getQuota().getUserQuotas().get(id);
+            case 1 -> // group
+                  _fs.getQuota().getGroupQuotas().get(id);
+            default -> throw new IllegalArgumentException("Unknown quota type: " + type);
+        };
+
+        // no user quota
+        quota.rq_active = qq != null;
+        if (!quota.rq_active) {
+            return quota;
+        }
+
+        Long diskQuota = qq.getReplicaSpaceLimit();
+        if (diskQuota == null) {
+            quota.rq_active = false;
+            return quota;
+        }
+
+        int q = (int) (qq.getReplicaSpaceLimit() / QUOTA_BLOCK_SIZE);
+
+        quota.rq_bhardlimit = q;
+        quota.rq_bsoftlimit = q;
+
+        quota.rq_bsize = QUOTA_BLOCK_SIZE;
+        quota.rq_curblocks = (int)(qq.getUsedReplicaSpace() / QUOTA_BLOCK_SIZE);
+        quota.rq_fhardlimit = Integer.MAX_VALUE;
+        quota.rq_fsoftlimit = Integer.MAX_VALUE;
+        quota.rq_curfiles = Integer.MAX_VALUE;
+        quota.rq_btimeleft = (int)_fs.getQuota().nextQuotaRefresh().toSeconds();
+        quota.rq_ftimeleft = (int)_fs.getQuota().nextQuotaRefresh().toSeconds();
+
+        return quota;
+    }
+
+    @Override
+    public rquota setQuota(int id, int type, sq_dqblk sq) {
+
+        rquota quota = new rquota();
+        if (!_fs.isQuotaEnabled()) {
+            quota.rq_active = false;
+            return quota;
+        }
+
+        Quota qq = switch (type) {
+            case 0 -> // user
+                    _fs.getQuota().getUserQuotas().get(id);
+            case 1 -> // group
+                    _fs.getQuota().getGroupQuotas().get(id);
+            default -> throw new IllegalArgumentException("Unknown quota type: " + type);
+        };
+
+
+        if (qq == null) {
+            qq = new Quota(
+                    id,
+                    -1, null,
+                    -1, null,
+                    -1, null
+            );
+        }
+
+        qq.setReplicaSpaceLimit(((long)sq.rq_bhardlimit) * QUOTA_BLOCK_SIZE);
+        if (type == 0) {
+            _fs.getQuota().setUserQuota(qq);
+        } else {
+            _fs.getQuota().setGroupQuota(qq);
+        }
+
+        quota.rq_bhardlimit = sq.rq_bhardlimit;
+        quota.rq_bsoftlimit = sq.rq_bhardlimit;
+
+        quota.rq_bsize = QUOTA_BLOCK_SIZE;
+        quota.rq_curblocks = (int)(qq.getUsedReplicaSpace() / QUOTA_BLOCK_SIZE);
+        quota.rq_fhardlimit = Integer.MAX_VALUE;
+        quota.rq_fsoftlimit = Integer.MAX_VALUE;
+        quota.rq_curfiles = Integer.MAX_VALUE;
+        quota.rq_btimeleft = (int)_fs.getQuota().nextQuotaRefresh().toSeconds();
+        quota.rq_ftimeleft = (int)_fs.getQuota().nextQuotaRefresh().toSeconds();
+
+        return quota;
     }
 }

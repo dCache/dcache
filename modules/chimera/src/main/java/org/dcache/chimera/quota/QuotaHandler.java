@@ -62,6 +62,7 @@ package org.dcache.chimera.quota;
 
 
 import diskCacheV111.util.RetentionPolicy;
+import java.time.Duration;
 import java.util.Map;
 
 public interface QuotaHandler {
@@ -145,5 +146,12 @@ public interface QuotaHandler {
     void updateGroupQuotas();
 
     void scheduleRefreshQuota();
+
+    /**
+     * Returns the time until the next quota refresh.
+     *
+     * @return Duration until the next quota refresh.
+     */
+    Duration nextQuotaRefresh();
 
 }

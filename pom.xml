@@ -84,6 +84,7 @@
         <version.jna>5.4.0</version.jna>
         <jmh.version>1.35</jmh.version>
         <version.dropwizard>4.1.29</version.dropwizard>
+        <version.nfs4j>0.26.0</version.nfs4j>
 
 
 
@@ -765,7 +766,12 @@
         <dependency>
             <groupId>org.dcache</groupId>
             <artifactId>nfs4j-core</artifactId>
-            <version>0.26.0</version>
+            <version>${version.nfs4j}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.dcache</groupId>
+            <artifactId>rquota</artifactId>
+            <version>${version.nfs4j}</version>
         </dependency>
         <dependency>
             <groupId>com.github.nitram509</groupId>
