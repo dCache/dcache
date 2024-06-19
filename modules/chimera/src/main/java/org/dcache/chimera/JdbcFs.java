@@ -226,6 +226,14 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
         }
     }
 
+    public QuotaHandler getQuota() {
+        return _quota;
+    }
+
+    public boolean isQuotaEnabled() {
+        return _quotaEnabled;
+    }
+
     public void setDefaultRetentionPolicy(RetentionPolicy rp) {
         _defaultRetentionPolicy = rp;
     }

@@ -473,6 +473,7 @@ public class NFSv41Door extends AbstractCellComponent implements
     public void init() throws Exception {
 
         _chimeraVfs = new ChimeraVfs(_fileFileSystemProvider, _idMapper);
+        var q = new QuotaSvc(_chimeraVfs);
         _vfsCache = new VfsCache(_chimeraVfs, _vfsCacheConfig);
         _vfs = _eventNotifier == null ? _vfsCache : wrapWithMonitoring(_vfsCache);
 
@@ -482,6 +483,15 @@ public class NFSv41Door extends AbstractCellComponent implements
               .withAutoPublish()
               .withSubjectPropagation()
               .withWorkerThreadIoStrategy();
+
+        new OncRpcSvcBuilder()
+              .withPort(20491)
+              .withUDP()
+              .withAutoPublish()
+              .withSubjectPropagation()
+              .withWorkerThreadIoStrategy()
+        .withRpcService(new OncRpcProgram(100011, 2), q).build().start();
+
 
         if (_enableRpcsecGss) {
             oncRpcSvcBuilder.withGssSessionManager(new GssSessionManager(_idMapper));

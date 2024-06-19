@@ -32,11 +32,14 @@
 	<groupId>org.dcache</groupId>
 	<artifactId>nfs4j-core</artifactId>
     </dependency>
-
     <dependency>
       <groupId>org.hsqldb</groupId>
       <artifactId>hsqldb</artifactId>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.dcache</groupId>
+      <artifactId>rquota</artifactId>
     </dependency>
   </dependencies>
 </project>
