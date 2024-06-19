@@ -62,6 +62,7 @@ package org.dcache.chimera.quota;
 
 import diskCacheV111.util.RetentionPolicy;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -80,6 +81,8 @@ public class JdbcQuota implements QuotaHandler {
     private volatile Map<Integer, Quota> userQuotas;
     private volatile Map<Integer, Quota> groupQuotas;
     private ScheduledExecutorService quotaRefreshExecutor;
+    private volatile ScheduledFuture<?> refreshUserQuota;
+    private volatile ScheduledFuture<?> refreshGroupQuota;
 
     public JdbcQuota(DataSource ds)
           throws SQLException {
@@ -93,7 +96,7 @@ public class JdbcQuota implements QuotaHandler {
     }
 
     public void scheduleRefreshQuota() {
-        ScheduledFuture<?> refreshUserQuota = quotaRefreshExecutor.
+        refreshUserQuota = quotaRefreshExecutor.
               scheduleWithFixedDelay(
                     new FireAndForgetTask(new Runnable() {
                         @Override
@@ -109,7 +112,7 @@ public class JdbcQuota implements QuotaHandler {
                     60000,
                     TimeUnit.MILLISECONDS);
 
-        ScheduledFuture<?> refreshGroupQuota = quotaRefreshExecutor.
+        refreshGroupQuota = quotaRefreshExecutor.
               scheduleWithFixedDelay(
                     new FireAndForgetTask(new Runnable() {
                         @Override
@@ -211,5 +214,17 @@ public class JdbcQuota implements QuotaHandler {
     public void updateGroupQuotas() {
         LOGGER.info("Running updateGroupQuotas.");
         sqlDriver.updateGroupQuota();
+    }
+
+    public Duration nextQuotaRefresh() {
+        long nextRefresh = 0;
+        if (refreshUserQuota != null) {
+            nextRefresh = refreshUserQuota.getDelay(TimeUnit.SECONDS);
+        }
+        if (refreshGroupQuota != null) {
+            long tmp = refreshGroupQuota.getDelay(TimeUnit.SECONDS);
+            nextRefresh = Math.min(tmp, nextRefresh);
+        }
+        return Duration.ofSeconds(nextRefresh);
     }
 }

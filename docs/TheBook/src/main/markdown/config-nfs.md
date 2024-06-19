@@ -252,6 +252,25 @@ it false.
 
 > NOTICE: currently only the [ldap](config-gplazma.md#ldap) plugin supports group mapping by uid when `gplazma.ldap.try-uid-mapping` option is enabled.
 
+
+## Remote Quota Management
+
+The NFSv4.1 door supports remote quota protocol, which allows to query user and group quotas. Only files with
+the retention policy **REPLICA** are used to report disk usage (See: [quota system](quota.md)). The same value is
+reported for both the soft and hard quotas.
+
+Example output:
+
+```console-user
+$ quota -s -f /mnt
+    Disk quotas for user test (uid 1000):
+         Filesystem   space   quota   limit   grace   files   quota   limit   grace
+    dcache-lab:/
+                         0K    100T    100T           2148m*  2148m   2148m   00:00
+```
+
+The remote quota service uses UDP protocol and listens on port specified by `nfs.net.rquota.port` property.
+
 ## Accessing directory tags
 
 There are two ways to access dCache directory tags over NFS mount: the legacy one as via magic files and as extended attributes.
