@@ -85,7 +85,6 @@
   </beans>
 
   <beans profile="db.enabled-true">
-
     <bean id="dataSource" class="org.dcache.db.AlarmEnabledDataSource" destroy-method="close">
         <description>Database connection pool</description>
         <constructor-arg value="${transfermanagers.db.url}"/>
@@ -120,20 +119,6 @@
             </map>
         </constructor-arg>
         <property name="connectionFactory" ref="dataSource"/>
-    </bean>
-
-    <bean id="transferManager" class="diskCacheV111.services.RemoteTransferManager"
-            destroy-method="cleanUp">
-        <property name="poolManager" ref="poolmanager"/>
-        <property name="pnfsManager" ref="pnfsmanager"/>
-        <property name="pool" ref="pool"/>
-        <property name="billing" ref="billing"/>
-        <property name="moverTimeout" value="${transfermanagers.limits.transfer-time}"/>
-        <property name="moverTimeoutUnit" value="${transfermanagers.limits.transfer-time.unit}"/>
-        <property name="maxTransfers" value="${transfermanagers.limits.external-transfers}"/>
-        <property name="ioQueueName" value="${transfermanagers.mover.queue}"/>
-        <property name="maxNumberOfDeleteRetries" value="1"/>
-        <property name="overwrite" value="false"/>
     </bean>
  </beans>
 
