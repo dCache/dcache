@@ -184,9 +184,8 @@ specific `srm` frontends, each configured to talk to a specific logical backend
 
 ### `transfermanager`
 
-Transfermanager is fully replicable. Several instances must share the same
-database as requests will be load balanced over all instances. The configuration
-should be synchronized such that all instances are configured the same way.
+Transfermanager is fully replicable. The configuration should be synchronized such
+that all instances are configured the same way.
 
 ### `pnfsmanager`
 
