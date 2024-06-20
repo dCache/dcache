@@ -68,7 +68,6 @@
       <property name="maxTransfers" value="${transfermanagers.limits.internal-transfers}"/>
   </bean>
 
-  <beans profile="db.enabled-false">
     <bean id="transferManager" class="diskCacheV111.services.RemoteTransferManager"
             destroy-method="cleanUp">
         <property name="poolManager" ref="poolmanager"/>
@@ -82,61 +81,6 @@
         <property name="maxNumberOfDeleteRetries" value="1"/>
         <property name="overwrite" value="false"/>
     </bean>
-  </beans>
-
-  <beans profile="db.enabled-true">
-
-    <bean id="dataSource" class="org.dcache.db.AlarmEnabledDataSource" destroy-method="close">
-        <description>Database connection pool</description>
-        <constructor-arg value="${transfermanagers.db.url}"/>
-        <constructor-arg value="TransferManager"/>
-        <constructor-arg>
-            <bean id="hikariDataSource" class="com.zaxxer.hikari.HikariDataSource">
-                <constructor-arg>
-                    <bean class="com.zaxxer.hikari.HikariConfig">
-                        <constructor-arg>
-                            <bean class="org.dcache.util.configuration.ConfigurationPropertiesFactoryBean">
-                                <property name="prefix" value="transfer-manager.db.hikari-properties"/>
-                                <property name="staticEnvironment">
-                                    <map>
-                                        <entry key="jdbcUrl" value="${transfermanagers.db.url}"/>
-                                        <entry key="username" value="${transfermanagers.db.user}"/>
-                                        <entry key="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${transfermanagers.db.password.file}', '${transfermanagers.db.url}', '${transfermanagers.db.user}', '${transfermanagers.db.password}') }"/>
-                                    </map>
-				</property>
-                            </bean>
-                        </constructor-arg>
-                    </bean>
-                </constructor-arg>
-            </bean>
-        </constructor-arg>
-    </bean>
-
-    <bean id="pmf" class="org.datanucleus.api.jdo.JDOPersistenceManagerFactory"
-            destroy-method="close">
-        <constructor-arg>
-            <map>
-                <entry key="datanucleus.persistenceunitname" value="TransferManager"/>
-            </map>
-        </constructor-arg>
-        <property name="connectionFactory" ref="dataSource"/>
-    </bean>
-
-    <bean id="transferManager" class="diskCacheV111.services.RemoteTransferManager"
-            destroy-method="cleanUp">
-        <property name="poolManager" ref="poolmanager"/>
-        <property name="pnfsManager" ref="pnfsmanager"/>
-        <property name="pool" ref="pool"/>
-        <property name="billing" ref="billing"/>
-        <property name="moverTimeout" value="${transfermanagers.limits.transfer-time}"/>
-        <property name="moverTimeoutUnit" value="${transfermanagers.limits.transfer-time.unit}"/>
-        <property name="maxTransfers" value="${transfermanagers.limits.external-transfers}"/>
-        <property name="ioQueueName" value="${transfermanagers.mover.queue}"/>
-        <property name="persistenceManagerFactory" ref="pmf"/>
-        <property name="maxNumberOfDeleteRetries" value="1"/>
-        <property name="overwrite" value="false"/>
-    </bean>
- </beans>
 
   <beans profile="kafka-true">
 
