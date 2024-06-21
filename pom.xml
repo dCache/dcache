@@ -1033,9 +1033,6 @@
                     <configuration>
                         <showDeprecation>true</showDeprecation>
                         <release>${java.version}</release>
-                        <!-- without forking compilation happens in the
-                        same process, so no arguments are applied -->
-                        <fork>true</fork>
                     </configuration>
                 </plugin>
                 <plugin>
