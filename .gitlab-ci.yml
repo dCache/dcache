@@ -427,6 +427,9 @@ Add CVMFS Volume:
   script:
     - kubectl -n $K8S_NAMESPACE apply -f .ci/cvmfs-volume-storageclass-pvc.yaml
 
+#
+# Start Current dCache version and an old pools
+#
 Deploy dCache Helm Chart:
   stage: test_deploy
   extends: .helm_image
@@ -439,6 +442,7 @@ Deploy dCache Helm Chart:
     - helm repo add dcache ${DCACHE_HELM_REPO}
     - helm repo update
     - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=${tag} --set image.repository=${CI_REGISTRY_IMAGE} store dcache/dcache
+    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=9.2.20 --set "dcache.pools={d,f}" --set dcache.door.enabled=false --set image.repository=${CI_REGISTRY_IMAGE} old-store dcache/dcache
 
 
 #
