@@ -59,12 +59,14 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.tape;
 
+import static org.dcache.http.AuthenticationHandler.getLoginAttributes;
 import static org.dcache.restful.resources.bulk.BulkResources.getRestriction;
 import static org.dcache.restful.resources.bulk.BulkResources.getSubject;
 import static org.dcache.restful.util.HttpServletRequests.getUserRootAwareTargetPrefix;
 import static org.dcache.restful.util.JSONUtils.newBadRequestException;
 
 import com.google.common.base.Strings;
+import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -84,6 +86,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -93,8 +96,10 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import org.dcache.auth.attributes.LoginAttributes;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.CellStub;
+import org.dcache.http.PathMapper;
 import org.dcache.restful.providers.tape.StageRequestInfo;
 import org.dcache.restful.util.HandlerBuilders;
 import org.dcache.restful.util.bulk.BulkServiceCommunicator;
@@ -129,6 +134,9 @@ public final class StageResources {
 
     @Inject
     private BulkServiceCommunicator service;
+
+    @Inject
+    private PathMapper pathMapper;
 
     @Inject
     @Named("pnfs-stub")
@@ -281,7 +289,10 @@ public final class StageResources {
         Subject subject = getSubject();
         Restriction restriction = getRestriction();
 
-        BulkRequest request = toBulkRequest(requestPayload);
+        FsPath userRoot = LoginAttributes.getUserRoot(getLoginAttributes(request));
+        FsPath rootPath = pathMapper.effectiveRoot(userRoot, ForbiddenException::new);
+
+        BulkRequest request = toBulkRequest(requestPayload, rootPath);
 
         /*
          *  Frontend sets the URL.  The backend service provides the UUID.
@@ -340,7 +351,7 @@ public final class StageResources {
         return Response.ok().build();
     }
 
-    private BulkRequest toBulkRequest(String requestPayload) {
+    private BulkRequest toBulkRequest(String requestPayload, FsPath rootPath) {
         if (Strings.emptyToNull(requestPayload) == null) {
             throw new BadRequestException("empty request payload.");
         }
@@ -353,7 +364,7 @@ public final class StageResources {
         request.setActivity("STAGE");
 
         PnfsHandler handler = HandlerBuilders.unrestrictedPnfsHandler(pnfsmanager);
-        request.setTargetPrefix(getUserRootAwareTargetPrefix(this.request, null, handler));
+        request.setTargetPrefix(getUserRootAwareTargetPrefix(this.request, rootPath.toString(), handler));
 
         try {
             JSONObject reqPayload = new JSONObject(requestPayload);
