@@ -2,28 +2,28 @@ package org.dcache.tests.repository;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
 
 import diskCacheV111.util.PnfsId;
 import java.util.Random;
 import org.dcache.pool.repository.Account;
+import org.junit.Before;
 import org.junit.Test;
 
 public class DiskSpaceAllocatorTest {
 
     static final PnfsId ID = new PnfsId("000000000000000000000000000000000000");
 
-    @Test
+
+    private Account account;
+
+    @Before
+    public void setUp() {
+         account = new Account();
+    }
+
+    @Test(expected = IllegalArgumentException.class)
     public void testNegativeTotalSpace() {
-
-        try {
-            final Account account = new Account();
-            account.setTotal(-1);
-            fail("IllegalArgumentException should be thrown in case of totalSpace < 0");
-        } catch (final IllegalArgumentException e) {
-            // OK
-        }
-
+        account.setTotal(-1);
     }
 
 
@@ -33,7 +33,6 @@ public class DiskSpaceAllocatorTest {
         final Random random = new Random();
         final long space = Math.abs(random.nextLong());
 
-        final Account account = new Account();
         account.setTotal(space);
         assertEquals("set/getTotalSpace() miss match", space, account.getTotal());
 
@@ -45,7 +44,6 @@ public class DiskSpaceAllocatorTest {
         final Random random = new Random();
         final long space = Math.abs(random.nextLong());
 
-        final Account account = new Account();
         account.setTotal(space);
 
         assertEquals("getFreeSpace() do not match getTotalSpace() without allocations", space,
@@ -59,27 +57,17 @@ public class DiskSpaceAllocatorTest {
 
         final Random random = new Random();
         final long space = Math.abs(random.nextLong());
-
-        final Account account = new Account();
         account.setTotal(space);
 
         assertEquals("Non zero used space without allocations", 0, account.getUsed());
 
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void testBadSize() throws Exception {
 
-        final Account account = new Account();
         account.setTotal(2);
-
-        try {
-            account.allocate(ID, -1);
-            fail("IllegalArgumentException should be thrown in case of size < 0");
-        } catch (final IllegalArgumentException iae) {
-            //OK
-        }
-
+        account.allocate(ID, -1);
     }
 
 
@@ -89,7 +77,6 @@ public class DiskSpaceAllocatorTest {
         final Random random = new Random();
         final long space = Math.abs(random.nextLong());
 
-        final Account account = new Account();
         account.setTotal(space);
 
         final long allocSize = space / 2;
@@ -110,7 +97,6 @@ public class DiskSpaceAllocatorTest {
 
         final long allocSize = space / 4;
 
-        final Account account = new Account();
         account.setTotal(space);
 
         account.allocateNow(ID, allocSize);
@@ -129,7 +115,6 @@ public class DiskSpaceAllocatorTest {
         final Random random = new Random();
         final long space = Math.abs(random.nextLong());
 
-        final Account account = new Account();
         account.setTotal(space);
 
         final long allocSize = space / 2;
@@ -149,7 +134,6 @@ public class DiskSpaceAllocatorTest {
         final Random random = new Random();
         final long space = Math.abs(random.nextLong());
 
-        final Account account = new Account();
         account.setTotal(space);
 
         final long allocSize = space / 2;
@@ -168,7 +152,6 @@ public class DiskSpaceAllocatorTest {
 
         final long allocSize = space / 2;
 
-        final Account account = new Account();
         account.setTotal(space);
 
         account.allocateNow(ID, allocSize);
@@ -194,7 +177,6 @@ public class DiskSpaceAllocatorTest {
         final long space = Math.abs(random.nextLong());
         final long newTotal = space + 20;
 
-        final Account account = new Account();
         account.setTotal(space);
 
         final long allocSize = space / 4;
@@ -219,7 +201,6 @@ public class DiskSpaceAllocatorTest {
         final long space = Math.abs(random.nextLong());
         final long newTotal = space / 2;
 
-        final Account account = new Account();
         account.setTotal(space);
 
         final long allocSize = space / 4;
@@ -236,27 +217,19 @@ public class DiskSpaceAllocatorTest {
 
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void testSetTotalDecMissing() throws Exception {
 
         final Random random = new Random();
         final long space = Math.abs(random.nextLong());
         final long newTotal = space / 4;
 
-        final Account account = new Account();
         account.setTotal(space);
 
         final long allocSize = space / 2;
 
         account.allocateNow(ID, allocSize);
-
-        try {
-            account.setTotal(newTotal);
-            fail("new space can't be smaller than used space");
-        } catch (IllegalArgumentException e) {
-            // OK
-        }
-
+        account.setTotal(newTotal);
     }
 
 
@@ -265,7 +238,6 @@ public class DiskSpaceAllocatorTest {
 
         final long initialTotalSize = 1000;
 
-        final Account account = new Account();
         account.setTotal(initialTotalSize);
 
         final long newTotalSize = 2 * initialTotalSize;
@@ -295,9 +267,8 @@ public class DiskSpaceAllocatorTest {
 
         final Random random = new Random();
         final long space = Math.abs(random.nextLong());
-        final Account account = new Account();
-        account.setTotal(space);
 
+        account.setTotal(space);
         account.free(ID, 4);
     }
 }
