@@ -421,12 +421,6 @@ Deploy 3rd party infrastructure services:
     - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait cells bitnami/zookeeper
     - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set externalZookeeper.servers=cells-zookeeper --set kraft.enabled=false billing bitnami/kafka --version 23.0.7
 
-Add CVMFS Volume:
-  stage: test_infra
-  extends: .kubernetes_image
-  script:
-    - kubectl -n $K8S_NAMESPACE apply -f .ci/cvmfs-volume-storageclass-pvc.yaml
-
 #
 # Start Current dCache version and an old pools
 #
@@ -445,26 +439,13 @@ Deploy dCache Helm Chart:
     - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=9.2.20 --set "dcache.pools={d,f}" --set dcache.door.enabled=false --set image.repository=${CI_REGISTRY_IMAGE} old-store dcache/dcache
 
 
-#
-# Grid tests expects cluster-wide cvmfs volumes to be present.
-#
-# The deployment can be done as:
-#
-#  kubectl create -f .ci/cvmfs-storageclass.yaml
-#  helm repo add cern https://registry.cern.ch/chartrepo/cern
-#  helm repo update
-#  helm -n dcache-dev-infrastructure install -f .ci/values-cvmfs.yaml cvmfs cern/cvmfs-csi
-#
-# More info: https://github.com/cvmfs-contrib/cvmfs-csi/tree/master/docs
-#
-Grid EL7 WN tests:
+Grid EL9 WN tests:
   stage: testing
   extends: .kubernetes_image
   script:
     - kubectl -n $K8S_NAMESPACE apply -f .ci/wn-with-cvmfs.yaml
     - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod grid-tester; do sleep 1; done
-    - kubectl -n $K8S_NAMESPACE exec grid-tester -- ls /cvmfs/grid.cern.ch/umd-c7wn-latest/etc/profile.d/setup-c7-wn-example.sh
-    - kubectl -n $K8S_NAMESPACE cp .ci/init-grid-ui.sh grid-tester:/init-grid-ui.sh
+    - kubectl -n $K8S_NAMESPACE cp .ci/init-el9-ui.sh grid-tester:/init-el9-ui.sh
     - kubectl -n $K8S_NAMESPACE cp .ci/run-grid-tests.sh grid-tester:/run-grid-tests.sh
     - kubectl -n $K8S_NAMESPACE exec grid-tester -- /bin/sh /run-grid-tests.sh
     - kubectl -n $K8S_NAMESPACE cp grid-tester:/xunit .
@@ -516,8 +497,7 @@ gsi_xroot_tests:
   script:
     - kubectl -n $K8S_NAMESPACE apply -f .ci/wn-with-cvmfs-xroot.yaml
     - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod xroot-tester; do sleep 1; done
-    - kubectl -n $K8S_NAMESPACE exec xroot-tester -- ls /cvmfs/grid.cern.ch/umd-c7wn-latest/etc/profile.d/setup-c7-wn-example.sh
-    - kubectl -n $K8S_NAMESPACE cp .ci/init-grid-ui.sh xroot-tester:/init-grid-ui.sh
+    - kubectl -n $K8S_NAMESPACE cp .ci/init-el9-ui.sh xroot-tester:/init-el9-ui.sh
     - kubectl -n $K8S_NAMESPACE cp .ci/run-xroot-tests.sh xroot-tester:/run-xroot-tests.sh
     - kubectl -n $K8S_NAMESPACE exec xroot-tester -- /bin/sh /run-xroot-tests.sh
 
@@ -527,8 +507,7 @@ webdav_with_x509_tests:
   script:
     - kubectl -n $K8S_NAMESPACE apply -f .ci/webdav-wn-cvmfs.yaml
     - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod webdav-tester; do sleep 1; done
-    - kubectl -n $K8S_NAMESPACE exec webdav-tester -- ls /cvmfs/grid.cern.ch/umd-c7wn-latest/etc/profile.d/setup-c7-wn-example.sh
-    - kubectl -n $K8S_NAMESPACE cp .ci/init-grid-ui.sh webdav-tester:/init-grid-ui.sh
+    - kubectl -n $K8S_NAMESPACE cp .ci/init-el9-ui.sh webdav-tester:/init-el9-ui.sh
     - kubectl -n $K8S_NAMESPACE cp .ci/run-webdav-tests.sh webdav-tester:/run-webdav-tests.sh
     - kubectl -n $K8S_NAMESPACE exec webdav-tester -- /bin/sh /run-webdav-tests.sh
 

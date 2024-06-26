@@ -32,3 +32,7 @@ python3 ./autoca-client -n -k userkey.pem -c usercert.pem ${AUTOCA_URL} "Kermit 
 voms-proxy-init -cert=usercert.pem -key=userkey.pem -voms=desy
 voms-proxy-info -all
 
+# standard location for the proxy
+export X509_USER_PROXY=/tmp/x509up_u$(id -u)
+
+

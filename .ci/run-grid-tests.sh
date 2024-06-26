@@ -1,8 +1,10 @@
 #!/bin/sh
 
-. /init-grid-ui.sh
+. /init-el9-ui.sh
 
-yum install -y -q git-core python3-pip boost-python
+dnf install -y -q git-core python3-pip
+dnf install -y -q https://www.dcache.org/old/downloads/1.9/repo/9.2/dcache-srmclient-9.2.0-1.noarch.rpm
+dnf install -y -q dcap gfal2-all python3-gfal2-util
 
 # version that works with centos7
 pip3 install robotframework==3.2.2
@@ -31,7 +33,7 @@ TESTS="DccpTests GlobusurlcpTests SrmlsTests"
 declare -i ERRORS=0
 
 for name in $TESTS; do
-  robot -o ${name}_output --variable SRM_VERSION:2 --name ${name} -x /xunit/xunit-${name}.xml ${name}.robot || ERRORS+=$?
+  robot -o ${name}_output --name ${name} -x /xunit/xunit-${name}.xml ${name}.robot || ERRORS+=$?
 done
 
 exit $ERRORS

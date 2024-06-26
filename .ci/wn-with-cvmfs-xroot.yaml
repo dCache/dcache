@@ -5,17 +5,6 @@ metadata:
 spec:
   containers:
     - name: tester
-      image: centos:7
+      image: almalinux:9
       imagePullPolicy: IfNotPresent
       command: [ "/bin/sleep", "inf"]
-      volumeMounts:
-        - name: cvmfs
-          mountPath: /cvmfs
-          # CVMFS automount volumes must be mounted with HostToContainer mount propagation.
-          mountPropagation: HostToContainer
-  volumes:
-    - name: cvmfs
-      persistentVolumeClaim:
-        claimName: cvmfs
-
-
