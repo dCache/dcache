@@ -1,8 +1,8 @@
 #!/bin/sh
 
-. /init-grid-ui.sh
+. /init-el9-ui.sh
 
-yum install -y -q python36-urllib3
+dnf install -y -q python3-urllib3
 
 
 export DFTS_SUT=https://store-door-svc.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local:8083
