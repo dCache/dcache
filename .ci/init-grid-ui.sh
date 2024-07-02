@@ -1,5 +1,34 @@
 #!/bin/sh
 
+#
+# FIXME: enable DESY-local CentOS repo as official repos are down
+#
+
+rm /etc/yum.repos.d/*.repo
+
+cat > /etc/yum.repos.d/desy.repo <<EOF
+[desy]
+name=desy
+baseurl=https://nims.desy.de/centos/7/os/x86_64/
+enabled=1
+gpgcheck=0
+
+[desy-extra]
+name=desy-extra
+baseurl=https://nims.desy.de/centos/7/extras/x86_64/
+enabled=1
+gpgcheck=0
+
+[desy-update]
+name=desy-update
+baseurl=https://nims.desy.de/centos/7/updates/x86_64/
+enabled=1
+gpgcheck=0
+
+EOF
+
+
+
 # fail on error
 set -e
 
