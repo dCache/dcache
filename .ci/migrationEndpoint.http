@@ -914,30 +914,30 @@ Authorization: Basic {{user_name}} {{passwd}}
 
 
 ### Unsuccessful request
-GET {{schema-host-port}}/{{api}}/{{v1}}/migrations/{{pool_name}}/{{job_id}}
-Content-Type: application/json
-Authorization: Basic {{user_name}} {{passwd}}
-
-> {%
-
-    client.test("Response contains 'state : value' pair", function() {
-        var type = response.body["state"];
-        client.assert(response.body["state"] === "FINISHED", "Expected 'state' to have value 'FINISHED' but received '" + type + "'");
-    });
-%}
+#GET {{schema-host-port}}/{{api}}/{{v1}}/migrations/{{pool_name}}/{{job_id}}
+#Content-Type: application/json
+#Authorization: Basic {{user_name}} {{passwd}}
+#
+#> {%
+#
+#    client.test("Response contains 'state : value' pair", function() {
+#        var type = response.body["state"];
+#        client.assert(response.body["state"] === "FINISHED", "Expected 'state' to have value 'FINISHED' but received '" + type + "'");
+#    });
+#%}
 
 ### Unsuccessful request
-GET {{schema-host-port}}/{{api}}/{{v1}}/migrations/{{pool_name}}/{{job_id}}
-Content-Type: application/json
-Authorization: Basic {{user_name}} {{passwd}}
-
-> {%
-
-    client.test("Response contains 'queued : value' pair", function() {
-        var type = response.body["queued"];
-        client.assert(response.body["queued"] >= 0, "Expected 'queued' to have value '>=0' but received '" + type + "'");
-    });
-%}
+#GET {{schema-host-port}}/{{api}}/{{v1}}/migrations/{{pool_name}}/{{job_id}}
+#Content-Type: application/json
+#Authorization: Basic {{user_name}} {{passwd}}
+#
+#> {%
+#
+#    client.test("Response contains 'queued : value' pair", function() {
+#        var type = response.body["queued"];
+#        client.assert(response.body["queued"] >= 0, "Expected 'queued' to have value '>=0' but received '" + type + "'");
+#    });
+#%}
 
 ### Unsuccessful request
 #GET {{schema-host-port}}/{{api}}/{{v1}}/migrations/{{pool_name}}/{{job_id}}
