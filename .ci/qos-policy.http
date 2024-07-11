@@ -1,0 +1,114 @@
+### Successful request for QOS-POLICY endpoint with body
+POST {{schema-host-port}}/{{api}}/{{v1}}/{{qos-policy}}
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "name": "test102",
+  "states": [
+    {
+      "duration": "P10D",
+      "media": [
+        {
+          "storageMedium": "DISK",
+          "numberOfCopies": 2
+        }
+      ]
+    }
+  ]
+}
+
+> {%
+    client.test("Successful response when creating a policy", function() {
+        client.assert(response.status === 200, "Response was not 200");
+        // client.assert(response.body === "successful", "Unsuccessful")
+    });
+%}
+
+### Unsuccessful DELETE request for QOS-POLICY endpoint without authentication
+DELETE {{schema-host-port}}/{{api}}/{{v1}}/{{qos-policy}}/test102
+Content-Type: application/json
+
+> {%
+    client.test("Unsuccessful response when deleting a policy by name", function() {
+        client.assert(response.status === 401, "Response was not 401 - Unauthorized");
+    });
+%}
+
+### Successful DELETE request for policy name "test102"
+DELETE {{schema-host-port}}/{{api}}/{{v1}}/{{qos-policy}}/test102
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+> {%
+    client.test("Successful response when deleting a policy by name", function() {
+        client.assert(response.status === 200, "Response was not 401 - Unauthorized");
+    });
+%}
+
+### Unsuccessful GET request for QOS-POLICY endpoint with policy name
+GET {{schema-host-port}}/{{api}}/{{v1}}/{{qos-policy}}/test102
+Content-Type: application/json
+
+> {%
+    client.test("Unsuccessful response when deleting a policy by name", function() {
+        client.assert(response.status === 404, "Response was not 404");
+    });
+%}
+
+
+### Successful request for QOS-POLICY endpoint with body
+POST {{schema-host-port}}/{{api}}/{{v1}}/{{qos-policy}}
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "name": "test103",
+  "states": [
+    {
+      "duration": "P10D",
+      "media": [
+        {
+          "storageMedium": "DISK",
+          "numberOfCopies": 2
+        },
+        {
+          "storageMedium": "DISK",
+          "numberOfCopies": 3
+        }
+      ]
+    }
+  ]
+}
+
+> {%
+    client.test("Successful response when creating a policy", function() {
+        client.assert(response.status === 200, "Response was not 200");
+        // client.assert(response.body === "successful", "Unsuccessful")
+    });
+%}
+
+### Successful GET request for QOS-POLICY endpoint with policy name
+GET {{schema-host-port}}/{{api}}/{{v1}}/{{qos-policy}}/
+Content-Type: application/json
+
+> {%
+    client.test("Successful response when deleting a policy by name", function() {
+        client.assert(response.status === 200, "Response was not 200");
+    });
+%}
+
+
+### Successful DELETE request for policy name "test103"
+DELETE {{schema-host-port}}/{{api}}/{{v1}}/{{qos-policy}}/test103
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+> {%
+    client.test("Successful response when deleting a policy by name", function() {
+        client.assert(response.status === 200, "Response was not 401 - Unauthorized");
+    });
+%}
+
+
+
