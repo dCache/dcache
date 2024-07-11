@@ -1,5 +1,5 @@
-### Pool endpoint GET request
-GET {{schema-host-port}}/{{api}}/{{v1}}/pools
+### POOL endpoint GET request
+GET {{schema-host-port}}/{{api}}/{{v1}}/{{pools}}
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
