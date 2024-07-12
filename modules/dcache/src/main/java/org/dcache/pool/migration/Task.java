@@ -195,7 +195,7 @@ public class Task {
     public synchronized void
     messageArrived(PoolMigrationCopyFinishedMessage message) {
         if (_uuid.equals(message.getUUID())) {
-            _replicas.add(getTarget());
+            _replicas.add(message.getPool());
             _fsm.messageArrived(message);
         }
     }
