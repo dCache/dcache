@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2021-2022 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2021-2024 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -20,6 +20,8 @@ package org.dcache.util;
 
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
+
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -82,6 +84,11 @@ public class FileAttributesBuilder {
 
     public FileAttributesBuilder withChecksum(Checksum checksum) {
         _checksums.add(checksum);
+        return this;
+    }
+
+    public FileAttributesBuilder withLocations(String...locations) {
+        _attributes.setLocations(Arrays.asList(locations));
         return this;
     }
 
