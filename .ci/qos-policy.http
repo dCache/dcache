@@ -1,4 +1,4 @@
-### Successful request for QOS-POLICY endpoint with body
+### Create qos-policy "test102"
 POST {{schema-host-port}}/{{api}}/{{v1}}/{{qos-policy}}
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
@@ -25,7 +25,7 @@ Authorization: Basic {{user_name}} {{passwd}}
     });
 %}
 
-### Unsuccessful DELETE request for QOS-POLICY endpoint without authentication
+### Unsuccessful DELETE request for policy "test102" -- no authentication
 DELETE {{schema-host-port}}/{{api}}/{{v1}}/{{qos-policy}}/test102
 Content-Type: application/json
 
@@ -35,7 +35,7 @@ Content-Type: application/json
     });
 %}
 
-### Successful DELETE request for policy name "test102"
+### Successful DELETE request for policy "test102"
 DELETE {{schema-host-port}}/{{api}}/{{v1}}/{{qos-policy}}/test102
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
@@ -46,7 +46,7 @@ Authorization: Basic {{user_name}} {{passwd}}
     });
 %}
 
-### Unsuccessful GET request for QOS-POLICY endpoint with policy name
+### Not found GET request for policy "test102"
 GET {{schema-host-port}}/{{api}}/{{v1}}/{{qos-policy}}/test102
 Content-Type: application/json
 
@@ -56,8 +56,8 @@ Content-Type: application/json
     });
 %}
 
-
-### Successful request for QOS-POLICY endpoint with body
+###  FIX TEST: Change policies names to random.
+### Successful request for policy "test103" with 1 state and 2 medias
 POST {{schema-host-port}}/{{api}}/{{v1}}/{{qos-policy}}
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
@@ -84,16 +84,15 @@ Authorization: Basic {{user_name}} {{passwd}}
 > {%
     client.test("Successful response when creating a policy", function() {
         client.assert(response.status === 200, "Response was not 200");
-        // client.assert(response.body === "successful", "Unsuccessful")
     });
 %}
 
-### Successful GET request for QOS-POLICY endpoint with policy name
-GET {{schema-host-port}}/{{api}}/{{v1}}/{{qos-policy}}/
+### Get all policies
+GET {{schema-host-port}}/{{api}}/{{v1}}/{{qos-policy}}
 Content-Type: application/json
 
 > {%
-    client.test("Successful response when deleting a policy by name", function() {
+    client.test("Successful response when getting all policies' names", function() {
         client.assert(response.status === 200, "Response was not 200");
     });
 %}
