@@ -78,6 +78,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 import org.dcache.cells.CellStub;
+import org.dcache.namespace.FileAttribute;
 import org.dcache.poolmanager.CostException;
 import org.dcache.poolmanager.Partition;
 import org.dcache.poolmanager.PartitionManager;
@@ -363,10 +364,12 @@ public class RequestContainerV5
                          *
                          * in this construction we will fall down to next case
                          */
-                        if (rph.getPoolCandidate().equals(POOL_UNKNOWN_STRING)) {
+                        if (rph.getPoolCandidate().equals(POOL_UNKNOWN_STRING) || rph.expectedOnPool(poolName)) {
                             LOGGER.info("Restore Manager : retrying : {}", rph);
                             rph.retry();
                         }
+
+                        // fall through to retry requests scheduled on that pool
                     case PoolStatusChangedMessage.DOWN:
                         /*
                          * if pool is down, re-try all request scheduled to this
@@ -1037,6 +1040,16 @@ public class RequestContainerV5
             } else {
                 return POOL_UNKNOWN_STRING;
             }
+        }
+
+        /**
+         * Returns true if file is expected to be on specified pool.
+         * @param poolName pool name to check.
+         * @return true if file is expected to be on specified pool.
+         */
+        public boolean expectedOnPool(String poolName) {
+            return _fileAttributes.isDefined(FileAttribute.LOCATIONS)
+                    && _fileAttributes.getLocations().contains(poolName);
         }
 
         private String getPoolCandidateState() {
