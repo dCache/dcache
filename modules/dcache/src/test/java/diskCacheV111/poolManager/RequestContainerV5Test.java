@@ -3337,6 +3337,73 @@ public class RequestContainerV5Test {
                 is("rh kill 80D1B8B90CED30430608C58002811B3285FC"));
     }
 
+    @Test
+    public void shouldRetryOnPoolUpEvenForStage() throws Exception {
+        var stagePool = aPool("stage-pool@dCacheDomain");
+        given(aPartitionManager().withDefault(aPartition().withStageAllowed(true)));
+        given(aPoolSelectionUnit().withNetUnit("all-net", "192.168.1.1")
+                .withProtocolUnit("HTTP", "http/1"));
+        given(aPoolMonitor().thatReturns(aPoolSelectorThat()
+                .onReadThrows(aFileNotInCacheException())
+                .onStageSelects(stagePool)));
+
+        given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
+
+        whenReceiving(aReadRequest()
+                .by(ROOT)
+                .forFile("80D1B8B90CED30430608C58002811B3285FC")
+                .withBillingPath("/public/test")
+                .withTransferPath("/uploads/50/test")
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withLocations("some-pool")
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withProtocolInfo(aProtocolInfo().withProtocol("http")
+                        .withMajorVersion(1).withIPAddress("192.168.1.1")));
+
+        container.setPoolMonitor(poolMonitor);
+        whenReceiving(aPoolStatusChange().thatPool("some-pool").isUp());
+
+        var reply = replySentWith(endpoint);
+
+        then(reply).should().setFailed(eq(10021), any());
+        then(reply).should().setContext(eq(0), any());
+
+        then(endpoint).shouldHaveNoMoreInteractions();
+    }
+
+    @Test
+    public void shouldIgnoreOnRandomPoolUp() throws Exception {
+        var stagePool = aPool("stage-pool@dCacheDomain");
+        given(aPartitionManager().withDefault(aPartition().withStageAllowed(true)));
+        given(aPoolSelectionUnit().withNetUnit("all-net", "192.168.1.1")
+              .withProtocolUnit("HTTP", "http/1"));
+        given(aPoolMonitor().thatReturns(aPoolSelectorThat()
+              .onReadThrows(aFileNotInCacheException())
+              .onStageSelects(stagePool)));
+
+        given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
+
+        whenReceiving(aReadRequest()
+              .by(ROOT)
+              .forFile("80D1B8B90CED30430608C58002811B3285FC")
+              .withBillingPath("/public/test")
+              .withTransferPath("/uploads/50/test")
+              .withFileAttributes(fileAttributes().withSize(10, KiB)
+                    .withLocations("some-pool")
+                    .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+              .withProtocolInfo(aProtocolInfo().withProtocol("http")
+                    .withMajorVersion(1).withIPAddress("192.168.1.1")));
+
+        container.setPoolMonitor(poolMonitor);
+        whenReceiving(aPoolStatusChange().thatPool("random-pool").isUp());
+
+        var message = stageSentWith(endpoint);
+
+        // the only message we have is starting stage
+        assertThat(message.isReply(), is(false));
+        then(endpoint).shouldHaveNoMoreInteractions();
+    }
+
     private void given(ContainerBuilder builder) {
         container = builder.build();
     }
@@ -3404,6 +3471,11 @@ public class RequestContainerV5Test {
     private static PoolMgrSelectReadPoolMsg replySentWith(CellEndpoint endpointUsed) {
         var envelope = envelopeSentWith(endpointUsed);
         return (PoolMgrSelectReadPoolMsg) envelope.getMessageObject();
+    }
+
+    private static PoolFetchFileMessage stageSentWith(CellEndpoint endpointUsed) {
+        var envelope = envelopeSentWith(endpointUsed);
+        return (PoolFetchFileMessage) envelope.getMessageObject();
     }
 
     private static List<PoolMgrSelectReadPoolMsg> allRepliesSentWith(CellEndpoint endpointUsed) {
