@@ -1,5 +1,5 @@
 ### POOL endpoint GET request
-GET {{schema-host-port}}/{{api}}/{{v1}}/{{pools}}
+GET {{dcache-host-3880}}/{{api}}/{{v1}}/{{pools}}
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
