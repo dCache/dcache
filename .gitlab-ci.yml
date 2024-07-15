@@ -519,7 +519,6 @@ http_tests:
     reports:
       junit: rspec.xml
 
-
 webdav_with_x509_tests:
   stage: testing
   extends: .kubernetes_image
