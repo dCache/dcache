@@ -516,7 +516,7 @@ http_tests:
   artifacts:
     reports:
       junit:
-        - "reports/report.xml"
+        - "report.xml"
 
 #webdav_with_x509_tests:
 #  stage: testing
