@@ -1,5 +1,5 @@
 ### Create qos-policy "test102"
-POST {{schema-host-port}}/{{api}}/{{v1}}/{{qos-policy}}
+POST {{frontend-door}}/{{api}}/{{v1}}/{{qos-policy}}
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -26,7 +26,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### Unsuccessful DELETE request for policy "test102" -- no authentication
-DELETE {{schema-host-port}}/{{api}}/{{v1}}/{{qos-policy}}/test102
+DELETE {{frontend-door}}/{{api}}/{{v1}}/{{qos-policy}}/test102
 Content-Type: application/json
 
 > {%
@@ -36,7 +36,7 @@ Content-Type: application/json
 %}
 
 ### Successful DELETE request for policy "test102"
-DELETE {{schema-host-port}}/{{api}}/{{v1}}/{{qos-policy}}/test102
+DELETE {{frontend-door}}/{{api}}/{{v1}}/{{qos-policy}}/test102
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -47,7 +47,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### Not found GET request for policy "test102"
-GET {{schema-host-port}}/{{api}}/{{v1}}/{{qos-policy}}/test102
+GET {{frontend-door}}/{{api}}/{{v1}}/{{qos-policy}}/test102
 Content-Type: application/json
 
 > {%
@@ -58,7 +58,7 @@ Content-Type: application/json
 
 ###  FIX TEST: Change policies names to random.
 ### Successful request for policy "test103" with 1 state and 2 medias
-POST {{schema-host-port}}/{{api}}/{{v1}}/{{qos-policy}}
+POST {{frontend-door}}/{{api}}/{{v1}}/{{qos-policy}}
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -88,7 +88,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### Get all policies
-GET {{schema-host-port}}/{{api}}/{{v1}}/{{qos-policy}}
+GET {{frontend-door}}/{{api}}/{{v1}}/{{qos-policy}}
 Content-Type: application/json
 
 > {%
@@ -99,7 +99,7 @@ Content-Type: application/json
 
 
 ### Successful DELETE request for policy name "test103"
-DELETE {{schema-host-port}}/{{api}}/{{v1}}/{{qos-policy}}/test103
+DELETE {{frontend-door}}/{{api}}/{{v1}}/{{qos-policy}}/test103
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
