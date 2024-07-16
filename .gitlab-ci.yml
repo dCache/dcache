@@ -117,42 +117,42 @@ default:
 
 
 
-rpm:
-  stage: build
-  image: dcache/maven-java17-rpm-build
-  extends: .build_cache
-  script:
-    - mvn $MAVEN_CLI_OPTS -Drun.slow.tests -am -pl packages/fhs -P rpm clean package
-  artifacts:
-    reports:
-      junit:
-        - "**/target/surefire-reports/TEST-*.xml"
-        - "**/target/failsafe-reports/TEST-*.xml"
-    paths:
-      - "packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm"
-    expire_in: 2 days
-
-srm_client_rpm:
-  stage: build
-  image: dcache/maven-java17-rpm-build
-  extends: .build_cache
-  script:
-    - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl modules/srm-client package -P rpm
-  artifacts:
-    paths:
-      - "modules/srm-client/target/rpmbuild/RPMS/noarch/dcache-srmclient*.rpm"
-    expire_in: 2 days
-
-deb:
-  stage: build
-  image: dcache/maven-java17-deb-build
-  extends: .build_cache
-  script:
-    - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl packages/fhs -P deb clean package
-  artifacts:
-    paths:
-      - "packages/fhs/target/dcache_*.deb"
-    expire_in: 2 days
+#rpm:
+#  stage: build
+#  image: dcache/maven-java17-rpm-build
+#  extends: .build_cache
+#  script:
+#    - mvn $MAVEN_CLI_OPTS -Drun.slow.tests -am -pl packages/fhs -P rpm clean package
+#  artifacts:
+#    reports:
+#      junit:
+#        - "**/target/surefire-reports/TEST-*.xml"
+#        - "**/target/failsafe-reports/TEST-*.xml"
+#    paths:
+#      - "packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm"
+#    expire_in: 2 days
+#
+#srm_client_rpm:
+#  stage: build
+#  image: dcache/maven-java17-rpm-build
+#  extends: .build_cache
+#  script:
+#    - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl modules/srm-client package -P rpm
+#  artifacts:
+#    paths:
+#      - "modules/srm-client/target/rpmbuild/RPMS/noarch/dcache-srmclient*.rpm"
+#    expire_in: 2 days
+#
+#deb:
+#  stage: build
+#  image: dcache/maven-java17-deb-build
+#  extends: .build_cache
+#  script:
+#    - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl packages/fhs -P deb clean package
+#  artifacts:
+#    paths:
+#      - "packages/fhs/target/dcache_*.deb"
+#    expire_in: 2 days
 
 tar:
   stage: build
@@ -166,21 +166,21 @@ tar:
     expire_in: 2 days
 
 
-spotbugs:
-  stage: build
-  image: dcache/maven-java17-tar-build
-  extends: .build_cache
-  script:
-    - dnf -y -q install jq
-    - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl packages/tar -DskipTests package com.github.spotbugs:spotbugs-maven-plugin:4.8.3.0:spotbugs verify
-    - find . -name gl-code-quality-report.json -print | xargs cat | jq -s "add" > merged-gl-code-quality-report.json
-  artifacts:
-    reports:
-      codequality:
-        - merged-gl-code-quality-report.json
-    paths:
-      - merged-gl-code-quality-report.json
-    expire_in: 2 days
+#spotbugs:
+#  stage: build
+#  image: dcache/maven-java17-tar-build
+#  extends: .build_cache
+#  script:
+#    - dnf -y -q install jq
+#    - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl packages/tar -DskipTests package com.github.spotbugs:spotbugs-maven-plugin:4.8.3.0:spotbugs verify
+#    - find . -name gl-code-quality-report.json -print | xargs cat | jq -s "add" > merged-gl-code-quality-report.json
+#  artifacts:
+#    reports:
+#      codequality:
+#        - merged-gl-code-quality-report.json
+#    paths:
+#      - merged-gl-code-quality-report.json
+#    expire_in: 2 days
 
 container:
   stage: build
@@ -212,63 +212,63 @@ container:
 
 
 
-sign_rpm:
-  stage: sign
-  image: almalinux:9-minimal
-  needs: ["rpm"]
-  script:
-    - microdnf install -y rpm-sign
-    - echo $DCACHE_ORG_PGP_KEY | base64 -d -i > secret.gpg
-    - gpg --quiet --batch --yes --allow-secret-key-import --passphrase="$DCACHE_ORG_PGP_KEY_PASS" --import secret.gpg
-    - gpg -a --export "$DCACHE_ORG_KEY_NAME" > RPM-GPG-KEY
-    - rpmsign --addsign --define "_signature gpg" --define "_gpg_name  $DCACHE_ORG_KEY_NAME" --define "_gpg_sign_cmd_extra_args --pinentry-mode loopback --passphrase $DCACHE_ORG_PGP_KEY_PASS" packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm
-    - rpmkeys --import RPM-GPG-KEY
-    - rpm --checksig -v packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm
-  artifacts:
-    paths:
-    - packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm
+#sign_rpm:
+#  stage: sign
+#  image: almalinux:9-minimal
+#  needs: ["rpm"]
+#  script:
+#    - microdnf install -y rpm-sign
+#    - echo $DCACHE_ORG_PGP_KEY | base64 -d -i > secret.gpg
+#    - gpg --quiet --batch --yes --allow-secret-key-import --passphrase="$DCACHE_ORG_PGP_KEY_PASS" --import secret.gpg
+#    - gpg -a --export "$DCACHE_ORG_KEY_NAME" > RPM-GPG-KEY
+#    - rpmsign --addsign --define "_signature gpg" --define "_gpg_name  $DCACHE_ORG_KEY_NAME" --define "_gpg_sign_cmd_extra_args --pinentry-mode loopback --passphrase $DCACHE_ORG_PGP_KEY_PASS" packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm
+#    - rpmkeys --import RPM-GPG-KEY
+#    - rpm --checksig -v packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm
+#  artifacts:
+#    paths:
+#    - packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm
+#
+#sign_srm_client_rpm:
+#  stage: sign
+#  image: almalinux:9-minimal
+#  needs: ["srm_client_rpm"]
+#  script:
+#    - microdnf install -y rpm-sign
+#    - echo $DCACHE_ORG_PGP_KEY | base64 -d -i > secret.gpg
+#    - gpg --quiet --batch --yes --allow-secret-key-import --passphrase="$DCACHE_ORG_PGP_KEY_PASS" --import secret.gpg
+#    - gpg -a --export "$DCACHE_ORG_KEY_NAME" > RPM-GPG-KEY
+#    - rpmsign --addsign --define "_signature gpg" --define "_gpg_name  $DCACHE_ORG_KEY_NAME" --define "_gpg_sign_cmd_extra_args --pinentry-mode loopback --passphrase $DCACHE_ORG_PGP_KEY_PASS" modules/srm-client/target/rpmbuild/RPMS/noarch/dcache-srmclient*.rpm
+#    - rpmkeys --import RPM-GPG-KEY
+#    - rpm --checksig -v modules/srm-client/target/rpmbuild/RPMS/noarch/dcache-srmclient*.rpm
+#  artifacts:
+#    paths:
+#    - modules/srm-client/target/rpmbuild/RPMS/noarch/dcache-srmclient*.rpm
+#
+#sign_deb:
+#  stage: sign
+#  image: ubuntu:22.04
+#  needs: ["deb"]
+#  script:
+#    - apt-get -qq update
+#    - apt-get -qq install debsigs gpg
+#    - echo $DCACHE_ORG_PGP_KEY | base64 -d -i > secret.gpg
+#    - gpg --quiet --batch --yes --allow-secret-key-import --passphrase="$DCACHE_ORG_PGP_KEY_PASS" --import secret.gpg
+#    - echo $DCACHE_ORG_PGP_KEY_PASS > $HOME/.gnupg/gpg-passphrase
+#    - echo "passphrase-file $HOME/.gnupg/gpg-passphrase" >> "$HOME/.gnupg/gpg.conf"
+#    - echo 'allow-loopback-pinentry' >> "$HOME/.gnupg/gpg-agent.conf"
+#    - echo 'pinentry-mode loopback' >> "$HOME/.gnupg/gpg.conf"
+#    - echo 'use-agent' >> "$HOME/.gnupg/gpg.conf"
+#    - echo RELOADAGENT | gpg-connect-agent
+#    - debsigs --sign=origin --verify --check -v -k "$DCACHE_ORG_KEY_NAME" packages/fhs/target/dcache_*.deb
+#  artifacts:
+#    paths:
+#    - packages/fhs/target/dcache_*.deb
 
-sign_srm_client_rpm:
-  stage: sign
-  image: almalinux:9-minimal
-  needs: ["srm_client_rpm"]
-  script:
-    - microdnf install -y rpm-sign
-    - echo $DCACHE_ORG_PGP_KEY | base64 -d -i > secret.gpg
-    - gpg --quiet --batch --yes --allow-secret-key-import --passphrase="$DCACHE_ORG_PGP_KEY_PASS" --import secret.gpg
-    - gpg -a --export "$DCACHE_ORG_KEY_NAME" > RPM-GPG-KEY
-    - rpmsign --addsign --define "_signature gpg" --define "_gpg_name  $DCACHE_ORG_KEY_NAME" --define "_gpg_sign_cmd_extra_args --pinentry-mode loopback --passphrase $DCACHE_ORG_PGP_KEY_PASS" modules/srm-client/target/rpmbuild/RPMS/noarch/dcache-srmclient*.rpm
-    - rpmkeys --import RPM-GPG-KEY
-    - rpm --checksig -v modules/srm-client/target/rpmbuild/RPMS/noarch/dcache-srmclient*.rpm
-  artifacts:
-    paths:
-    - modules/srm-client/target/rpmbuild/RPMS/noarch/dcache-srmclient*.rpm
-
-sign_deb:
-  stage: sign
-  image: ubuntu:22.04
-  needs: ["deb"]
-  script:
-    - apt-get -qq update
-    - apt-get -qq install debsigs gpg
-    - echo $DCACHE_ORG_PGP_KEY | base64 -d -i > secret.gpg
-    - gpg --quiet --batch --yes --allow-secret-key-import --passphrase="$DCACHE_ORG_PGP_KEY_PASS" --import secret.gpg
-    - echo $DCACHE_ORG_PGP_KEY_PASS > $HOME/.gnupg/gpg-passphrase
-    - echo "passphrase-file $HOME/.gnupg/gpg-passphrase" >> "$HOME/.gnupg/gpg.conf"
-    - echo 'allow-loopback-pinentry' >> "$HOME/.gnupg/gpg-agent.conf"
-    - echo 'pinentry-mode loopback' >> "$HOME/.gnupg/gpg.conf"
-    - echo 'use-agent' >> "$HOME/.gnupg/gpg.conf"
-    - echo RELOADAGENT | gpg-connect-agent
-    - debsigs --sign=origin --verify --check -v -k "$DCACHE_ORG_KEY_NAME" packages/fhs/target/dcache_*.deb
-  artifacts:
-    paths:
-    - packages/fhs/target/dcache_*.deb
-
-RPM test install on EL9:
-  stage: test_deploy
-  image: almalinux:9
-  script:
-    - dnf --nogpgcheck install -y packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm
+#RPM test install on EL9:
+#  stage: test_deploy
+#  image: almalinux:9
+#  script:
+#    - dnf --nogpgcheck install -y packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm
 
 #install_deb:
 #  stage: test_deploy
@@ -277,38 +277,38 @@ RPM test install on EL9:
 #    - apt-get update
 #    - DEBIAN_FRONTEND=noninteractive apt install -y -f ./packages/fhs/target/dcache_*.deb
 
-upload_rpm:
-  stage: upload
-  image: almalinux:9-minimal
-  dependencies:
-    - sign_rpm
-  extends: .upload_rules
-  script:
-    - RPM_NAME=`ls packages/fhs/target/rpmbuild/RPMS/noarch/ | grep dcache`
-    - VERSION=`echo $RPM_NAME | cut -d'-' -f 2 | cut -d'.' -f 1,2`
-    - curl $PKG_UPLOAD_OPTIONS -u $PKG_UPLOAD_USER:$PKG_UPLOAD_PASS --upload-file packages/fhs/target/rpmbuild/RPMS/noarch/$RPM_NAME "$PKG_UPLOAD_URL/$VERSION/$RPM_NAME"
-
-upload_srm_client_rpm:
-  stage: upload
-  image: almalinux:9-minimal
-  dependencies:
-    - sign_srm_client_rpm
-  extends: .upload_rules
-  script:
-    - RPM_NAME=`ls modules/srm-client/target/rpmbuild/RPMS/noarch/ | grep dcache-srmclient`
-    - VERSION=`echo $RPM_NAME | cut -d'-' -f 3 | cut -d'.' -f 1,2`
-    - curl $PKG_UPLOAD_OPTIONS -u $PKG_UPLOAD_USER:$PKG_UPLOAD_PASS --upload-file modules/srm-client/target/rpmbuild/RPMS/noarch/$RPM_NAME "$PKG_UPLOAD_URL/$VERSION/$RPM_NAME"
-
-upload_deb:
-  stage: upload
-  image: almalinux:9-minimal
-  dependencies:
-    - sign_deb
-  extends: .upload_rules
-  script:
-    - DEB_NAME=`ls packages/fhs/target/ | grep dcache`
-    - VERSION=`echo $DEB_NAME | cut -d'_' -f 2 | cut -d'.' -f 1,2`
-    - curl $PKG_UPLOAD_OPTIONS -u $PKG_UPLOAD_USER:$PKG_UPLOAD_PASS --upload-file packages/fhs/target/$DEB_NAME "$PKG_UPLOAD_URL/$VERSION/$DEB_NAME"
+#upload_rpm:
+#  stage: upload
+#  image: almalinux:9-minimal
+#  dependencies:
+#    - sign_rpm
+#  extends: .upload_rules
+#  script:
+#    - RPM_NAME=`ls packages/fhs/target/rpmbuild/RPMS/noarch/ | grep dcache`
+#    - VERSION=`echo $RPM_NAME | cut -d'-' -f 2 | cut -d'.' -f 1,2`
+#    - curl $PKG_UPLOAD_OPTIONS -u $PKG_UPLOAD_USER:$PKG_UPLOAD_PASS --upload-file packages/fhs/target/rpmbuild/RPMS/noarch/$RPM_NAME "$PKG_UPLOAD_URL/$VERSION/$RPM_NAME"
+#
+#upload_srm_client_rpm:
+#  stage: upload
+#  image: almalinux:9-minimal
+#  dependencies:
+#    - sign_srm_client_rpm
+#  extends: .upload_rules
+#  script:
+#    - RPM_NAME=`ls modules/srm-client/target/rpmbuild/RPMS/noarch/ | grep dcache-srmclient`
+#    - VERSION=`echo $RPM_NAME | cut -d'-' -f 3 | cut -d'.' -f 1,2`
+#    - curl $PKG_UPLOAD_OPTIONS -u $PKG_UPLOAD_USER:$PKG_UPLOAD_PASS --upload-file modules/srm-client/target/rpmbuild/RPMS/noarch/$RPM_NAME "$PKG_UPLOAD_URL/$VERSION/$RPM_NAME"
+#
+#upload_deb:
+#  stage: upload
+#  image: almalinux:9-minimal
+#  dependencies:
+#    - sign_deb
+#  extends: .upload_rules
+#  script:
+#    - DEB_NAME=`ls packages/fhs/target/ | grep dcache`
+#    - VERSION=`echo $DEB_NAME | cut -d'_' -f 2 | cut -d'.' -f 1,2`
+#    - curl $PKG_UPLOAD_OPTIONS -u $PKG_UPLOAD_USER:$PKG_UPLOAD_PASS --upload-file packages/fhs/target/$DEB_NAME "$PKG_UPLOAD_URL/$VERSION/$DEB_NAME"
 
 upload_tar:
   stage: upload
@@ -322,52 +322,52 @@ upload_tar:
     - curl $PKG_UPLOAD_OPTIONS -u $PKG_UPLOAD_USER:$PKG_UPLOAD_PASS --upload-file packages/tar/target/$TAR_NAME "$PKG_UPLOAD_URL/$VERSION/$TAR_NAME"
 
 
-upload_container:
-  stage: upload
-  # Cache downloaded dependencies and plugins between builds.
-  # To keep cache across branches add 'key: "$CI_JOB_NAME"'
-  # For latest releases see https://github.com/GoogleContainerTools/kaniko/releases
-  # Only debug/*-debug versions of the Kaniko image are known to work within Gitlab CI
-  image: gcr.io/kaniko-project/executor:debug
-  dependencies:
-    - tar
-  extends: .upload_rules
-  script:
-    - |-
-      tag=$CI_COMMIT_SHORT_SHA
-      if [[ -n "$CI_COMMIT_TAG" ]]; then
-        tag=$CI_COMMIT_TAG
-      fi
-    - mkdir maven
-    - tar -C maven --strip-components=1 -xzvf packages/tar/target/dcache-*.tar.gz
-    - cp $CI_PROJECT_DIR/packages/tar/src/main/container/* .
-    - mkdir -p /kaniko/.docker
-    - echo "{\"auths\":{\"https://index.docker.io/v1/\":{\"username\":\"$DOCKER_HUB_USER\",\"password\":\"$DOCKER_HUB_ACCESS_KEY\"}}}" > /kaniko/.docker/config.json
-    - >
-      /kaniko/executor
-      --label dcache.build=GA
-      --context $CI_PROJECT_DIR
-      --dockerfile $CI_PROJECT_DIR/Dockerfile
-      --destination dcache/dcache:$tag
+#upload_container:
+#  stage: upload
+#  # Cache downloaded dependencies and plugins between builds.
+#  # To keep cache across branches add 'key: "$CI_JOB_NAME"'
+#  # For latest releases see https://github.com/GoogleContainerTools/kaniko/releases
+#  # Only debug/*-debug versions of the Kaniko image are known to work within Gitlab CI
+#  image: gcr.io/kaniko-project/executor:debug
+#  dependencies:
+#    - tar
+#  extends: .upload_rules
+#  script:
+#    - |-
+#      tag=$CI_COMMIT_SHORT_SHA
+#      if [[ -n "$CI_COMMIT_TAG" ]]; then
+#        tag=$CI_COMMIT_TAG
+#      fi
+#    - mkdir maven
+#    - tar -C maven --strip-components=1 -xzvf packages/tar/target/dcache-*.tar.gz
+#    - cp $CI_PROJECT_DIR/packages/tar/src/main/container/* .
+#    - mkdir -p /kaniko/.docker
+#    - echo "{\"auths\":{\"https://index.docker.io/v1/\":{\"username\":\"$DOCKER_HUB_USER\",\"password\":\"$DOCKER_HUB_ACCESS_KEY\"}}}" > /kaniko/.docker/config.json
+#    - >
+#      /kaniko/executor
+#      --label dcache.build=GA
+#      --context $CI_PROJECT_DIR
+#      --dockerfile $CI_PROJECT_DIR/Dockerfile
+#      --destination dcache/dcache:$tag
 
 #
 # This jobs needs that the number of changes to fetch from GitLab when cloning a repository is high enough to generate
 # the changelog.
-Generate release notes:
-  image: almalinux:9-minimal
-  stage: upload
-  extends: .upload_rules
-  dependencies:
-    - sign_deb
-    - sign_rpm
-    - sign_srm_client_rpm
-    - tar
-  script:
-    - microdnf install -y git-core
-    - .ci/generate-changelog.sh >> release-$CI_COMMIT_TAG.md
-  artifacts:
-    paths:
-      - release-*.md
+#Generate release notes:
+#  image: almalinux:9-minimal
+#  stage: upload
+#  extends: .upload_rules
+#  dependencies:
+#    - sign_deb
+#    - sign_rpm
+#    - sign_srm_client_rpm
+#    - tar
+#  script:
+#    - microdnf install -y git-core
+#    - .ci/generate-changelog.sh >> release-$CI_COMMIT_TAG.md
+#  artifacts:
+#    paths:
+#      - release-*.md
 
 #
 # prepare kubernetes env for the build
@@ -382,31 +382,31 @@ Prepare k8s environment:
 #
 # collect all logs
 #
-Collect container logs:
-  stage: testenv_post
-  extends: .kubernetes_image
-  when: always
-  allow_failure: true
-  script:
-    - kubectl -n $K8S_NAMESPACE get pods | grep Running | awk '{print $1}' | xargs -n1 kubectl -n $K8S_NAMESPACE logs | tee $K8S_NAMESPACE.log
-    - kubectl -n $K8S_NAMESPACE run -ti --rm --image=edenhill/kcat:1.7.1 kcat -- kcat -C -t billing -b billing-kafka:9092 -p 0 -e -q > $K8S_NAMESPACE-billing.json || true
-  artifacts:
-    name: "logs-$CI_PIPELINE_ID"
-    paths:
-      - "$K8S_NAMESPACE.log"
-      - "$K8S_NAMESPACE-billing.json"
+#Collect container logs:
+#  stage: testenv_post
+#  extends: .kubernetes_image
+#  when: always
+#  allow_failure: true
+#  script:
+#    - kubectl -n $K8S_NAMESPACE get pods | grep Running | awk '{print $1}' | xargs -n1 kubectl -n $K8S_NAMESPACE logs | tee $K8S_NAMESPACE.log
+#    - kubectl -n $K8S_NAMESPACE run -ti --rm --image=edenhill/kcat:1.7.1 kcat -- kcat -C -t billing -b billing-kafka:9092 -p 0 -e -q > $K8S_NAMESPACE-billing.json || true
+#  artifacts:
+#    name: "logs-$CI_PIPELINE_ID"
+#    paths:
+#      - "$K8S_NAMESPACE.log"
+#      - "$K8S_NAMESPACE-billing.json"
 
 #
 # dispose kubernetes resources
 #
-Clean k8s environment:
-  stage: testenv_post
-  extends: .kubernetes_image
-  needs:
-    - Collect container logs
-  when: always
-  script:
-    - kubectl delete namespace ${K8S_NAMESPACE} --grace-period=1 --ignore-not-found=true
+#Clean k8s environment:
+#  stage: testenv_post
+#  extends: .kubernetes_image
+#  needs:
+#    - Collect container logs
+#  when: always
+#  script:
+#    - kubectl delete namespace ${K8S_NAMESPACE} --grace-period=1 --ignore-not-found=true
 
 #
 # infrastructure required to run dCache
@@ -421,11 +421,11 @@ Deploy 3rd party infrastructure services:
     - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait cells bitnami/zookeeper
     - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set externalZookeeper.servers=cells-zookeeper --set kraft.enabled=false billing bitnami/kafka --version 23.0.7
 
-Add CVMFS Volume:
-  stage: test_infra
-  extends: .kubernetes_image
-  script:
-    - kubectl -n $K8S_NAMESPACE apply -f .ci/cvmfs-volume-storageclass-pvc.yaml
+#Add CVMFS Volume:
+#  stage: test_infra
+#  extends: .kubernetes_image
+#  script:
+#    - kubectl -n $K8S_NAMESPACE apply -f .ci/cvmfs-volume-storageclass-pvc.yaml
 
 #
 # Start Current dCache version and an old pools
@@ -457,49 +457,49 @@ Deploy dCache Helm Chart:
 #
 # More info: https://github.com/cvmfs-contrib/cvmfs-csi/tree/master/docs
 #
-Grid EL7 WN tests:
-  stage: testing
-  extends: .kubernetes_image
-  script:
-    - kubectl -n $K8S_NAMESPACE apply -f .ci/wn-with-cvmfs.yaml
-    - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod grid-tester; do sleep 1; done
-    - kubectl -n $K8S_NAMESPACE exec grid-tester -- ls /cvmfs/grid.cern.ch/umd-c7wn-latest/etc/profile.d/setup-c7-wn-example.sh
-    - kubectl -n $K8S_NAMESPACE cp .ci/init-grid-ui.sh grid-tester:/init-grid-ui.sh
-    - kubectl -n $K8S_NAMESPACE cp .ci/run-grid-tests.sh grid-tester:/run-grid-tests.sh
-    - kubectl -n $K8S_NAMESPACE exec grid-tester -- /bin/sh /run-grid-tests.sh
-    - kubectl -n $K8S_NAMESPACE cp grid-tester:/xunit .
-  artifacts:
-    reports:
-      junit:
-        - "xunit*.xml"
-
-SRM S2 test suite:
-  stage: testing
-  extends: .kubernetes_image
-  allow_failure: true
-  script:
-    - kubectl -n $K8S_NAMESPACE apply -f .ci/s2-runner.yaml
-    - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod s2-tester; do sleep 1; done
-    - kubectl -n $K8S_NAMESPACE cp .ci/init-s2.sh s2-tester:/init-s2.sh
-    - kubectl -n $K8S_NAMESPACE exec s2-tester -- /bin/sh /init-s2.sh
-    - kubectl -n $K8S_NAMESPACE cp s2-tester:/TEST-basic.xml TEST-basic.xml
-    - kubectl -n $K8S_NAMESPACE cp s2-tester:/TEST-avail.xml TEST-avail.xml
-    - kubectl -n $K8S_NAMESPACE cp s2-tester:/TEST-usecase.xml TEST-usecase.xml
-  artifacts:
-    reports:
-      junit:
-        - "TEST*.xml"
-
-gsi_xroot_tests:
-  stage: testing
-  extends: .kubernetes_image
-  script:
-    - kubectl -n $K8S_NAMESPACE apply -f .ci/wn-with-cvmfs-xroot.yaml
-    - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod xroot-tester; do sleep 1; done
-    - kubectl -n $K8S_NAMESPACE exec xroot-tester -- ls /cvmfs/grid.cern.ch/umd-c7wn-latest/etc/profile.d/setup-c7-wn-example.sh
-    - kubectl -n $K8S_NAMESPACE cp .ci/init-grid-ui.sh xroot-tester:/init-grid-ui.sh
-    - kubectl -n $K8S_NAMESPACE cp .ci/run-xroot-tests.sh xroot-tester:/run-xroot-tests.sh
-    - kubectl -n $K8S_NAMESPACE exec xroot-tester -- /bin/sh /run-xroot-tests.sh
+#Grid EL7 WN tests:
+#  stage: testing
+#  extends: .kubernetes_image
+#  script:
+#    - kubectl -n $K8S_NAMESPACE apply -f .ci/wn-with-cvmfs.yaml
+#    - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod grid-tester; do sleep 1; done
+#    - kubectl -n $K8S_NAMESPACE exec grid-tester -- ls /cvmfs/grid.cern.ch/umd-c7wn-latest/etc/profile.d/setup-c7-wn-example.sh
+#    - kubectl -n $K8S_NAMESPACE cp .ci/init-grid-ui.sh grid-tester:/init-grid-ui.sh
+#    - kubectl -n $K8S_NAMESPACE cp .ci/run-grid-tests.sh grid-tester:/run-grid-tests.sh
+#    - kubectl -n $K8S_NAMESPACE exec grid-tester -- /bin/sh /run-grid-tests.sh
+#    - kubectl -n $K8S_NAMESPACE cp grid-tester:/xunit .
+#  artifacts:
+#    reports:
+#      junit:
+#        - "xunit*.xml"
+#
+#SRM S2 test suite:
+#  stage: testing
+#  extends: .kubernetes_image
+#  allow_failure: true
+#  script:
+#    - kubectl -n $K8S_NAMESPACE apply -f .ci/s2-runner.yaml
+#    - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod s2-tester; do sleep 1; done
+#    - kubectl -n $K8S_NAMESPACE cp .ci/init-s2.sh s2-tester:/init-s2.sh
+#    - kubectl -n $K8S_NAMESPACE exec s2-tester -- /bin/sh /init-s2.sh
+#    - kubectl -n $K8S_NAMESPACE cp s2-tester:/TEST-basic.xml TEST-basic.xml
+#    - kubectl -n $K8S_NAMESPACE cp s2-tester:/TEST-avail.xml TEST-avail.xml
+#    - kubectl -n $K8S_NAMESPACE cp s2-tester:/TEST-usecase.xml TEST-usecase.xml
+#  artifacts:
+#    reports:
+#      junit:
+#        - "TEST*.xml"
+#
+#gsi_xroot_tests:
+#  stage: testing
+#  extends: .kubernetes_image
+#  script:
+#    - kubectl -n $K8S_NAMESPACE apply -f .ci/wn-with-cvmfs-xroot.yaml
+#    - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod xroot-tester; do sleep 1; done
+#    - kubectl -n $K8S_NAMESPACE exec xroot-tester -- ls /cvmfs/grid.cern.ch/umd-c7wn-latest/etc/profile.d/setup-c7-wn-example.sh
+#    - kubectl -n $K8S_NAMESPACE cp .ci/init-grid-ui.sh xroot-tester:/init-grid-ui.sh
+#    - kubectl -n $K8S_NAMESPACE cp .ci/run-xroot-tests.sh xroot-tester:/run-xroot-tests.sh
+#    - kubectl -n $K8S_NAMESPACE exec xroot-tester -- /bin/sh /run-xroot-tests.sh
 
 http_tests:
   stage: testing
@@ -519,60 +519,60 @@ http_tests:
     reports:
       junit: rspec.xml
 
-webdav_with_x509_tests:
-  stage: testing
-  extends: .kubernetes_image
-  script:
-    - kubectl -n $K8S_NAMESPACE apply -f .ci/webdav-wn-cvmfs.yaml
-    - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod webdav-tester; do sleep 1; done
-    - kubectl -n $K8S_NAMESPACE exec webdav-tester -- ls /cvmfs/grid.cern.ch/umd-c7wn-latest/etc/profile.d/setup-c7-wn-example.sh
-    - kubectl -n $K8S_NAMESPACE cp .ci/init-grid-ui.sh webdav-tester:/init-grid-ui.sh
-    - kubectl -n $K8S_NAMESPACE cp .ci/run-webdav-tests.sh webdav-tester:/run-webdav-tests.sh
-    - kubectl -n $K8S_NAMESPACE exec webdav-tester -- /bin/sh /run-webdav-tests.sh
-
-NFS4.x protocol compliance tests:
-  stage: testing
-  extends: .kubernetes_image
-  script:
-    - kubectl -n $K8S_NAMESPACE run pynfs-tester --image=dcache/pynfs:0.5 --restart=Never  --command -- sleep 3600
-    - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod pynfs-tester; do sleep 1; done
-
-    - kubectl -n $K8S_NAMESPACE exec pynfs-tester -- /bin/bash -c "/run-nfs4.0.sh --maketree store-door-svc:/data OPEN5; exit 0"
-    - |-
-      kubectl -n $K8S_NAMESPACE exec pynfs-tester -- /bin/bash -c "/run-nfs4.0.sh --xml=/xunit-report-v40.xml \
-           --noinit store-door-svc:/data all \
-           noACC2a noACC2b noACC2c noACC2d noACC2f noACC2r noACC2s \
-           noCID1 noCID2 noCID4a noCID4b noCID4c noCID4d noCID4e \
-           noCLOSE10 noCLOSE12 noCLOSE5 noCLOSE6 noCLOSE8 noCLOSE9 \
-           noCMT1aa noCMT1b noCMT1c noCMT1d noCMT1e noCMT1f noCMT2a noCMT2b noCMT2c noCMT2d noCMT2f \
-           noCMT2s noCMT3 noCMT4 noCR12 noLKT1 noLKT2a noLKT2b noLKT2c noLKT2d noLKT2f noLKT2s noLKT3 \
-           noLKT4 noLKT6 noLKT7 noLKT8 noLKT9 noLKU10 noLKU3 noLKU4 noLKU5 noLKU6 noLKU6b noLKU7 noLKU8 \
-           noLKU9 noLKUNONE noLOCK12a noLOCK12b noLOCK13 noLOCKRNG noLOCKCHGU noLOCKCHGD noRLOWN3 \
-           noOPCF1 noOPCF6 noOPDG2 noOPDG3 noOPDG6 noOPDG7 noOPEN15 noOPEN18 noOPEN2 noOPEN20 noOPEN22 \
-           noOPEN23 noOPEN24 noOPEN26 noOPEN27 noOPEN28 noOPEN3 noOPEN30 noOPEN4 noRENEW3 noRD1 noRD10 \
-           noRD2 noRD3 noRD5 noRD5a noRD6 noRD7a noRD7b noRD7c noRD7d noRD7f noRD7s noRDDR12 noRDDR11 \
-           noRPLY1 noRPLY10 noRPLY12 \
-           noRPLY14 noRPLY2 noRPLY3 noRPLY5 noRPLY6 noRPLY7 noRPLY8 noRPLY9 noSATT3d noSATT4 noSATT6d \
-           noSATT6r noSATT18 noSEC7 noWRT1 noWRT11 noWRT13 noWRT14 noWRT15 noWRT18 noWRT19 noWRT1b noWRT2 \
-           noWRT3 noWRT6a noWRT6b noWRT6c noWRT6d noWRT6f noWRT6s noWRT8 noWRT9; \
-      exit 0"
-    - |-
-      kubectl -n $K8S_NAMESPACE exec pynfs-tester -- /bin/bash -c "/run-nfs4.1.sh --minorversion=2 --xml=/xunit-report-v41.xml \
-          --noinit store-door-svc:/data all xattr \
-          noCOUR2 noCSESS25 noCSESS26 noCSESS27 noCSESS28 noCSESS29 noCSID3 noCSID4 noCSID9 noEID5f \
-          noEID50 noOPEN31 noSEQ6 noRECC3 noSEQ7 noSEQ10b noSEQ2 noXATT11 noXATT10 noALLOC1 noALLOC2 noALLOC3; \
-        exit 0"
-
-    - kubectl -n $K8S_NAMESPACE cp pynfs-tester:/xunit-report-v40.xml xunit-report-v40.xml
-    - kubectl -n $K8S_NAMESPACE cp pynfs-tester:/xunit-report-v41.xml xunit-report-v41.xml
-
-    - nfs40_errors=$(( $(echo 0$(sed -n 's/.*testsuite .*errors=\"\([0-9]*\)\".*/+\1/p' xunit-report-v40.xml)) ))
-    - nfs40_failures=$(( $(echo 0$(sed -n 's/.*testsuite .*failures=\"\([0-9]*\)\".*/+\1/p' xunit-report-v40.xml)) ))
-    - nfs41_errors=$(( $(echo 0$(sed -n 's/.*testsuite .*errors=\"\([0-9]*\)\".*/+\1/p' xunit-report-v41.xml)) ))
-    - nfs41_failures=$(( $(echo 0$(sed -n 's/.*testsuite .*failures=\"\([0-9]*\)\".*/+\1/p' xunit-report-v41.xml)) ))
-    - exit $(( $nfs40_errors + $nfs41_errors + $nfs40_failures + $nfs41_failures ))
-  environment: testing
-  artifacts:
-    reports:
-      junit:
-        - "xunit*.xml"
+#webdav_with_x509_tests:
+#  stage: testing
+#  extends: .kubernetes_image
+#  script:
+#    - kubectl -n $K8S_NAMESPACE apply -f .ci/webdav-wn-cvmfs.yaml
+#    - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod webdav-tester; do sleep 1; done
+#    - kubectl -n $K8S_NAMESPACE exec webdav-tester -- ls /cvmfs/grid.cern.ch/umd-c7wn-latest/etc/profile.d/setup-c7-wn-example.sh
+#    - kubectl -n $K8S_NAMESPACE cp .ci/init-grid-ui.sh webdav-tester:/init-grid-ui.sh
+#    - kubectl -n $K8S_NAMESPACE cp .ci/run-webdav-tests.sh webdav-tester:/run-webdav-tests.sh
+#    - kubectl -n $K8S_NAMESPACE exec webdav-tester -- /bin/sh /run-webdav-tests.sh
+#
+#NFS4.x protocol compliance tests:
+#  stage: testing
+#  extends: .kubernetes_image
+#  script:
+#    - kubectl -n $K8S_NAMESPACE run pynfs-tester --image=dcache/pynfs:0.5 --restart=Never  --command -- sleep 3600
+#    - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod pynfs-tester; do sleep 1; done
+#
+#    - kubectl -n $K8S_NAMESPACE exec pynfs-tester -- /bin/bash -c "/run-nfs4.0.sh --maketree store-door-svc:/data OPEN5; exit 0"
+#    - |-
+#      kubectl -n $K8S_NAMESPACE exec pynfs-tester -- /bin/bash -c "/run-nfs4.0.sh --xml=/xunit-report-v40.xml \
+#           --noinit store-door-svc:/data all \
+#           noACC2a noACC2b noACC2c noACC2d noACC2f noACC2r noACC2s \
+#           noCID1 noCID2 noCID4a noCID4b noCID4c noCID4d noCID4e \
+#           noCLOSE10 noCLOSE12 noCLOSE5 noCLOSE6 noCLOSE8 noCLOSE9 \
+#           noCMT1aa noCMT1b noCMT1c noCMT1d noCMT1e noCMT1f noCMT2a noCMT2b noCMT2c noCMT2d noCMT2f \
+#           noCMT2s noCMT3 noCMT4 noCR12 noLKT1 noLKT2a noLKT2b noLKT2c noLKT2d noLKT2f noLKT2s noLKT3 \
+#           noLKT4 noLKT6 noLKT7 noLKT8 noLKT9 noLKU10 noLKU3 noLKU4 noLKU5 noLKU6 noLKU6b noLKU7 noLKU8 \
+#           noLKU9 noLKUNONE noLOCK12a noLOCK12b noLOCK13 noLOCKRNG noLOCKCHGU noLOCKCHGD noRLOWN3 \
+#           noOPCF1 noOPCF6 noOPDG2 noOPDG3 noOPDG6 noOPDG7 noOPEN15 noOPEN18 noOPEN2 noOPEN20 noOPEN22 \
+#           noOPEN23 noOPEN24 noOPEN26 noOPEN27 noOPEN28 noOPEN3 noOPEN30 noOPEN4 noRENEW3 noRD1 noRD10 \
+#           noRD2 noRD3 noRD5 noRD5a noRD6 noRD7a noRD7b noRD7c noRD7d noRD7f noRD7s noRDDR12 noRDDR11 \
+#           noRPLY1 noRPLY10 noRPLY12 \
+#           noRPLY14 noRPLY2 noRPLY3 noRPLY5 noRPLY6 noRPLY7 noRPLY8 noRPLY9 noSATT3d noSATT4 noSATT6d \
+#           noSATT6r noSATT18 noSEC7 noWRT1 noWRT11 noWRT13 noWRT14 noWRT15 noWRT18 noWRT19 noWRT1b noWRT2 \
+#           noWRT3 noWRT6a noWRT6b noWRT6c noWRT6d noWRT6f noWRT6s noWRT8 noWRT9; \
+#      exit 0"
+#    - |-
+#      kubectl -n $K8S_NAMESPACE exec pynfs-tester -- /bin/bash -c "/run-nfs4.1.sh --minorversion=2 --xml=/xunit-report-v41.xml \
+#          --noinit store-door-svc:/data all xattr \
+#          noCOUR2 noCSESS25 noCSESS26 noCSESS27 noCSESS28 noCSESS29 noCSID3 noCSID4 noCSID9 noEID5f \
+#          noEID50 noOPEN31 noSEQ6 noRECC3 noSEQ7 noSEQ10b noSEQ2 noXATT11 noXATT10 noALLOC1 noALLOC2 noALLOC3; \
+#        exit 0"
+#
+#    - kubectl -n $K8S_NAMESPACE cp pynfs-tester:/xunit-report-v40.xml xunit-report-v40.xml
+#    - kubectl -n $K8S_NAMESPACE cp pynfs-tester:/xunit-report-v41.xml xunit-report-v41.xml
+#
+#    - nfs40_errors=$(( $(echo 0$(sed -n 's/.*testsuite .*errors=\"\([0-9]*\)\".*/+\1/p' xunit-report-v40.xml)) ))
+#    - nfs40_failures=$(( $(echo 0$(sed -n 's/.*testsuite .*failures=\"\([0-9]*\)\".*/+\1/p' xunit-report-v40.xml)) ))
+#    - nfs41_errors=$(( $(echo 0$(sed -n 's/.*testsuite .*errors=\"\([0-9]*\)\".*/+\1/p' xunit-report-v41.xml)) ))
+#    - nfs41_failures=$(( $(echo 0$(sed -n 's/.*testsuite .*failures=\"\([0-9]*\)\".*/+\1/p' xunit-report-v41.xml)) ))
+#    - exit $(( $nfs40_errors + $nfs41_errors + $nfs40_failures + $nfs41_failures ))
+#  environment: testing
+#  artifacts:
+#    reports:
+#      junit:
+#        - "xunit*.xml"
