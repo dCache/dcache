@@ -512,11 +512,11 @@ http_tests:
     - kubectl -n $K8S_NAMESPACE cp .ci/migrationEndpoint.http http-migration-tester:/migrationEndpoint.http
     - kubectl -n $K8S_NAMESPACE cp http-client.private.env.json http-migration-tester:/http-client.private.env.json
     - kubectl -n $K8S_NAMESPACE exec http-migration-tester -- java --add-opens=java.base/java.util=ALL-UNNAMED $IJHTTP_JAVA_OPTS -cp /intellij-http-client/\* com.intellij.httpClient.cli.HttpClientMain -e Test -D /poolEndpoint.http -p /http-client.private.env.json --insecure --report=httpTests
-    - kubectl -n $K8S_NAMESPACE cp http-migration-tester:/httpTests/report.xml
+    - kubectl -n $K8S_NAMESPACE cp http-migration-tester:/httpTests/report.xml migration-report.xml
   artifacts:
     reports:
       junit:
-        - "report.xml"
+        - "*-report.xml"
 
 #webdav_with_x509_tests:
 #  stage: testing
