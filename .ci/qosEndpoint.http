@@ -1,0 +1,113 @@
+### Generic Tests
+### qos type:file endpoint
+GET {{frontend-door}}/{{api}}/{{v1}}/qos-management/qos/file
+accept: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+> {%
+    client.test("Successful response for list of quality of services", function() {
+        client.assert(response.status === 200, "unsuccessful response");
+    });
+%}
+
+### qos type:directory endpoint
+GET {{frontend-door}}/{{api}}/{{v1}}/qos-management/qos/directory
+accept: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+> {%
+    client.test("Successful response for list of quality of services", function() {
+        client.assert(response.status === 200, "unsuccessful response");
+    });
+%}
+
+### qos file:tape endpoint
+GET {{frontend-door}}/{{api}}/{{v1}}/qos-management/qos/file/tape
+accept: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+> {%
+    client.test("Successful response for tape service", function() {
+        client.assert(response.status === 200, "unsuccessful response");
+    });
+%}
+
+### qos file:disk endpoint
+GET {{frontend-door}}/{{api}}/{{v1}}/qos-management/qos/file/disk
+accept: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+> {%
+    client.test("Successful response for disk service", function() {
+        client.assert(response.status === 200, "unsuccessful response");
+    });
+%}
+
+
+### qos file:disk+tape endpoint
+GET {{frontend-door}}/{{api}}/{{v1}}/qos-management/qos/file/disk+tape
+accept: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+> {%
+    client.test("Successful response for disk+tape service", function() {
+        client.assert(response.status === 200, "unsuccessful response");
+    });
+%}
+
+### qos file:volatile endpoint
+GET {{frontend-door}}/{{api}}/{{v1}}/qos-management/qos/file/volatile
+accept: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+> {%
+    client.test("Successful response for volatile service", function() {
+        client.assert(response.status === 200, "unsuccessful response");
+    });
+%}
+
+
+### qos directoy:tape endpoint
+GET {{frontend-door}}/{{api}}/{{v1}}/qos-management/qos/file/tape
+accept: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+> {%
+    client.test("Successful response for tape service", function() {
+        client.assert(response.status === 200, "unsuccessful response");
+    });
+%}
+
+### qos directoy:disk endpoint
+GET {{frontend-door}}/{{api}}/{{v1}}/qos-management/qos/file/disk
+accept: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+> {%
+    client.test("Successful response for disk service", function() {
+        client.assert(response.status === 200, "unsuccessful response");
+    });
+%}
+
+
+### qos directoy:disk+tape endpoint
+GET {{frontend-door}}/{{api}}/{{v1}}/qos-management/qos/file/disk+tape
+accept: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+> {%
+    client.test("Successful response for disk+tape service", function() {
+        client.assert(response.status === 200, "unsuccessful response");
+    });
+%}
+
+### qos directoy:volatile endpoint
+GET {{frontend-door}}/{{api}}/{{v1}}/qos-management/qos/file/volatile
+accept: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+> {%
+    client.test("Successful response for volatile service", function() {
+        client.assert(response.status === 200, "unsuccessful response");
+    });
+%}
