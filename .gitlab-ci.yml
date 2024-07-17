@@ -488,7 +488,6 @@ http_tests:
     - kubectl -n $K8S_NAMESPACE cp http-client.private.env.json http-tester:/http-client.private.env.json
     - kubectl -n $K8S_NAMESPACE exec http-tester -- java --add-opens=java.base/java.util=ALL-UNNAMED $IJHTTP_JAVA_OPTS -cp /intellij-http-client/\* com.intellij.httpClient.cli.HttpClientMain -e Test -D /poolEndpoint.http /qos.http -p /http-client.private.env.json --insecure --report=/httpTests
     - kubectl -n $K8S_NAMESPACE cp http-tester:/httpTests/report.xml pool-report.xml
-    - kubectl -n $K8S_NAMESPACE cp http-tester:/httpTests/report.xml qos-report.xml
   artifacts:
     reports:
       junit:
