@@ -473,6 +473,22 @@ Grid EL7 WN tests:
       junit:
         - "xunit*.xml"
 
+SRM S2 test suite:
+  stage: testing
+  extends: .kubernetes_image
+  allow_failure: true
+  script:
+    - kubectl -n $K8S_NAMESPACE apply -f .ci/s2-runner.yaml
+    - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod s2-tester; do sleep 1; done
+    - kubectl -n $K8S_NAMESPACE cp .ci/init-s2.sh s2-tester:/init-s2.sh
+    - kubectl -n $K8S_NAMESPACE exec s2-tester -- /bin/sh /init-s2.sh
+    - kubectl -n $K8S_NAMESPACE cp s2-tester:/TEST-basic.xml TEST-basic.xml
+    - kubectl -n $K8S_NAMESPACE cp s2-tester:/TEST-avail.xml TEST-avail.xml
+    - kubectl -n $K8S_NAMESPACE cp s2-tester:/TEST-usecase.xml TEST-usecase.xml
+  artifacts:
+    reports:
+      junit:
+        - "TEST*.xml"
 
 http_tests:
   stage: testing
@@ -481,7 +497,7 @@ http_tests:
     - kubectl -n $K8S_NAMESPACE apply -f .ci/http.yaml
     - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod http-tester; do sleep 1; done
     - kubectl -n $K8S_NAMESPACE cp .ci/poolEndpoint.http http-tester:/poolEndpoint.http
-    - kubectl -n $K8S_NAMESPACE cp .ci/qos.http http-tester:/qos.http
+    - kubectl -n $K8S_NAMESPACE cp .ci/qosEndpoint.http http-tester:/qosEndpoint.http
     - kubectl -n $K8S_NAMESPACE cp .ci/qos-policyEndpoint.http http-tester:/qos-policyEndpoint.http
     - kubectl -n $K8S_NAMESPACE cp README.md http-tester:/README.md
     - kubectl -n $K8S_NAMESPACE cp .ci/migrationEndpoint.http http-tester:/migrationEndpoint.http
@@ -492,6 +508,17 @@ http_tests:
     reports:
       junit:
         - "*-report.xml"
+
+gsi_xroot_tests:
+  stage: testing
+  extends: .kubernetes_image
+  script:
+    - kubectl -n $K8S_NAMESPACE apply -f .ci/wn-with-cvmfs-xroot.yaml
+    - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod xroot-tester; do sleep 1; done
+    - kubectl -n $K8S_NAMESPACE exec xroot-tester -- ls /cvmfs/grid.cern.ch/umd-c7wn-latest/etc/profile.d/setup-c7-wn-example.sh
+    - kubectl -n $K8S_NAMESPACE cp .ci/init-grid-ui.sh xroot-tester:/init-grid-ui.sh
+    - kubectl -n $K8S_NAMESPACE cp .ci/run-xroot-tests.sh xroot-tester:/run-xroot-tests.sh
+    - kubectl -n $K8S_NAMESPACE exec xroot-tester -- /bin/sh /run-xroot-tests.sh
 
 webdav_with_x509_tests:
   stage: testing
