@@ -70,7 +70,7 @@ public class HTMLWriter extends PrintWriter {
         println("<body>");
         println("<div id='header'>");
         println("<div id='bird_small'>");
-        println("<a href='/'><img src='/images/eagleredtrans.gif'></a>");
+        println("<a href='/'><img src='/images/dCache-logo.svg'></a>");
         println("<br/>Birds Home</div>");
         println("<div id='bird_large'><img src='/images/eagle-grey.gif'></div>");
         println("</div>");

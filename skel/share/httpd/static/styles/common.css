@@ -1,22 +1,61 @@
-body 
-{ 
-  background: url("/images/bg.svg");
+:root {
+  --v-page-background-color: #f1efed;
+  --v-page-text-color: #222831;
+  --v-table-border-color: rgba(64, 60, 56, 0.5);
+  --v-table-header-background-color: #403c38;
+  --v-tr-odd-background-color: #e9e9e9;
+  --v-tr-even-background-color: #f6f6f6;
+  --v-page-header-background-color: #403c38;
+  --v-page-header-text-color: #ffffff;
+  --v-page-header-separator-color: #e3513c;
+
+  --v-index-container-background-color: #e9e9e9;
+
+  --v-link-hover-color: #e3513c;
+
+  --v-space-precious: #F28585;
+  --v-space-sticky: #FFA447;
+  --v-space-cached: #FFFC9B;
+  --v-space-free: #B7E5B4;
+
 }
 
-img 
-{ 
+#index-page
+{
+  background: url("/images/bg.svg");
+  background-color: var(--v-page-background-color);
+  color: var(--v-page-text-color);
+  margin: 0px;
+}
+
+
+body
+{
+  /*background: url("/images/bg.svg"); */
+  background-color: var(--v-page-background-color);
+  color: var(--v-page-text-color);
+  margin: 0px;
+}
+
+img
+{
   border: 0;
 }
 
 #bird_small
 { 
-  color: red;
+  color: var(--v-page-header-text-color);
+  background-color: var(--v-page-header-background-color);
+  padding: 1rem;
+  border-bottom: 4px solid var(--v-page-header-separator-color);
 }
 
 #bird_large
 { 
   text-align: center;
+  display: none;
 }
+
 
 #main 
 {
@@ -30,29 +69,77 @@ img
   margin-top: 200px;
 }
 
-table
-{ 
-  border-spacing: 0;
-  border-collapse: collapse;
-  width: 100%;
+
+#index-page-table td
+{
+  text-align: left!important;
+  padding-left: 1rem;
+  padding-right: 1rem;
 }
+
+#index-page-table tr
+{
+  height: 1rem;
+}
+
+#index-container td
+{
+  background-color: var(--v-index-container-background-color);
+  a:link { color: var(--v-page-text-color); };
+  a:focus { color: var(--v-link-hover-color); };
+  a:visited { color: var(--v-page-text-color); };
+  a:hover { color: var(--v-link-hover-color); };
+}
+
+#index-page-table h1
+{
+  text-align: center!important;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+#index-page-table
+{
+  width: 90%;
+}
+
+table, tr, th, td {
+  border-collapse: collapse;
+  border: 0px solid;
+  height: 3rem;
+}
+
+table
+{
+  border-collapse: separate;
+  border-spacing: 0;
+  outline: 1px solid var(--v-table-border-color);
+  overflow: hidden;
+  width: 100%;
+  color: var(--v-page-text-color);
+  /*margin: 0 0 40px 0;*/
+};
+
 
 td, th
 { 
-  padding: 4px;
-  border: 1px solid gray;
+  padding: .5em 1em;
+  border: 0px solid gray;
+  margin-bottom: 10px;
+  padding: 0;
+  height: 6px;
 }
 
 th
 { 
   text-align: center;
-  background: #115259;
-  color: white;
+  background: var(--v-table-header-background-color);
+  color: #ffffff;
 }
 
 th > a
 { 
-  color: white;
+  color: #ffffff;
   text-decoration: none;
 }
 
@@ -63,12 +150,66 @@ td
 
 tr
 { 
-  background: #bebebe;
+  background: var(--v-tr-even-background-color);
 }
 
 tr.odd
 {
-  background: #efefef;
+  background: var(--v-tr-odd-background-color);
 }
 
 
+/*  used  to display pool/poolgroup usage bar and legend*/
+
+span.layout_precious
+{
+  color: var(--v-space-precious);
+}
+
+span.layout_sticky
+{
+  color: var(--v-space-sticky);
+}
+
+span.layout_cached
+{
+  color: var(--v-space-cached);
+}
+
+span.layout_free
+{
+  color: var(--v-space-free);
+}
+
+div.layout_precious
+{
+  float: left;
+  background: var(--v-space-precious);
+  height: 10px;
+}
+
+div.layout_sticky
+{
+  float: left;
+  background: var(--v-space-sticky);
+  height: 10px;
+}
+
+div.layout_cached
+{
+  float: left;
+  background: var(--v-space-cached);
+  height: 10px;
+}
+
+div.layout_free
+{
+  float: left;
+  background: var(--v-space-free);
+  height: 10px;
+}
+
+.errorcode, .errormessage
+{ 
+  color: red;
+}
