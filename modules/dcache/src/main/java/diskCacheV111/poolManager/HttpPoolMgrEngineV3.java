@@ -607,8 +607,7 @@ public class HttpPoolMgrEngineV3 implements
         }
 
         pw.println("<hr><address>Created " + (new Date())
-              + " $Id: HttpPoolMgrEngineV3.java,v 1.26 2007-08-16 20:20:56 behrmann Exp $");
-        pw.println("</body></html>");
+              + " $Id: HttpPoolMgrEngineV3.java,v 1.26 2007-08-16 20:20:56 behrmann Exp $</address>");
     }
 
     private void printParameterInMatrix(PrintWriter pw, Map<String, Partition> parameterMap) {
@@ -633,7 +632,7 @@ public class HttpPoolMgrEngineV3 implements
             row++;
         }
 
-        pw.println("<center><table class=\"s-table\"");
+        pw.println("<center><table class=\"s-table\">");
 
         pw.print("<tr class=\"s-table\">");
         pw.print("<th class=\"s-table\">Key</th><th class=\"s-table\">Default</th>");
@@ -1105,7 +1104,7 @@ public class HttpPoolMgrEngineV3 implements
     }
 
     private void showList(PrintWriter pw, Object[] array, int rows, String link) {
-        pw.println("<table class=\"l-table\"");
+        pw.println("<table class=\"l-table\">");
         Arrays.sort(array);
         for (int i = 0; i < array.length; i++) {
             if ((i % rows) == 0) {
@@ -1361,8 +1360,8 @@ public class HttpPoolMgrEngineV3 implements
             pw.print("<th rowspan=2 class=\"s-table\">Pools</th>");
             pw.println("</tr>");
             pw.println("<tr class=\"s-table\">");
-            pw.print("<th class=\"s-table\">Read</th><th class=\"s-table\">Write</font></th>");
-            pw.print("<th class=\"s-table\">Cache</th><th class=\"s-table\">P2p</font></th>");
+            pw.print("<th class=\"s-table\">Read</th><th class=\"s-table\">Write</th>");
+            pw.print("<th class=\"s-table\">Cache</th><th class=\"s-table\">P2p</th>");
             pw.println("</tr>");
             int row = 0;
             String[] rowColor = {"s-table-a", "s-table-b"};
