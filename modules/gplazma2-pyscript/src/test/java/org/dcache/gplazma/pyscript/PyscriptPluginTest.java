@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.hasItems;
 import java.security.Principal;
 import java.util.*;
 
+import org.dcache.auth.PasswordCredential;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
 import org.junit.Before;
@@ -25,15 +26,14 @@ public class PyscriptPluginTest {
 
     AUTHENTICATE:
         Condition:
-        - Either "Tom" is in the public credentials
-        - Or "Rose" is in the set of private credentials
+        - public_credentials contains at least one username:password combination
+        that is accepted (admin:dickerelch, Dust:Bowl)
         Result:
-        - the username principal "Joad" is added (as string "username:joad")
+        - We add the username principal corresponding to the accepted username
         - we return True
     REFUSE:
         Condition:
-        - Either "Connie" is in either one of the credentials
-        - No passing condition from above is met
+        - The above condition is not met.
         Result:
         - we return False
 
@@ -44,41 +44,50 @@ public class PyscriptPluginTest {
 
     @Before
     public void setUp() {
-        plugin = new PyscriptPlugin(new Properties());
+        // Properties
+        Properties properties = new Properties();
+        properties.setProperty("gplazma.pyscript.workdir", "gplazma2-pyscript");
+        plugin = new PyscriptPlugin(properties);
     }
 
     @Test
-    public void passesWithPublicCredential() throws Exception {
+    public void passesWithPasswordCredential() throws Exception {
+        // Credentials
+        PasswordCredential pwcred = new PasswordCredential("Dust", "Bowl");
         Set<Object> publicCredentials = new HashSet<>();
-        publicCredentials.add("Tom");
+        publicCredentials.add(pwcred);
+
+        // Principals
         Set<Principal> principals = new HashSet<>();
-        principals.add(new UserNamePrincipal("Casy"));
+        principals.add(new UserNamePrincipal("joad"));
+
+        // Execution
         plugin.authenticate(
                 publicCredentials,
                 Collections.emptySet(),
                 principals
         );
+
+        // Assert that principals has been added to
         assertThat(principals, hasItems(
-                new UserNamePrincipal("Joad"), // new principal added by plugin
-                new UserNamePrincipal("Casy")  // old principal still included
+                new UserNamePrincipal("Dust"),
+                new UserNamePrincipal("joad")
         ));
     }
 
-    @Test
-    public void passesWithPrivateCredential() throws Exception {
-        Set<Object> privateCredentials = new HashSet<>();
-        privateCredentials.add("Rose");
-        Set<Principal> principals = new HashSet<>();
-        principals.add(new UserNamePrincipal("Casy"));
+    @Test(expected = AuthenticationException.class)
+    public void failsOnBadPasswordCredential() throws Exception {
+        // Credentials
+        PasswordCredential pwcred = new PasswordCredential("Dustin", "Hoffman");
+        Set<Object> publicCredentials = new HashSet<>();
+        publicCredentials.add(pwcred);
+
+        // Execution
         plugin.authenticate(
+                publicCredentials,
                 Collections.emptySet(),
-                privateCredentials,
-                principals
+                Collections.emptySet()
         );
-        assertThat(principals, hasItems(
-                new UserNamePrincipal("Joad"), // new principal added by plugin
-                new UserNamePrincipal("Casy")  // old principal still included
-        ));
     }
 
     @Test(expected = AuthenticationException.class)
@@ -87,18 +96,6 @@ public class PyscriptPluginTest {
                 Collections.emptySet(),
                 Collections.emptySet(),
                 Collections.emptySet()
-        );
-    }
-
-    @Test(expected = AuthenticationException.class)
-    public void failsOnNoParametersDespitePrincipals() throws Exception {
-        Set<Principal> principals = new HashSet<>();
-        principals.add(new UserNamePrincipal("Ruthie"));
-        principals.add(new UserNamePrincipal("Casy"));
-        plugin.authenticate(
-                Collections.emptySet(),
-                Collections.emptySet(),
-                principals
         );
     }
 }
