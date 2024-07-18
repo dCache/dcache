@@ -490,7 +490,7 @@ SRM S2 test suite:
       junit:
         - "TEST*.xml"
 
-http_tests:
+Frontend test suite:
   stage: testing
   extends: .kubernetes_image
   script:
