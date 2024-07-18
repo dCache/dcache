@@ -1479,6 +1479,7 @@
         <module>modules/gplazma2-kpwd</module>
         <module>modules/gplazma2-ldap</module>
         <module>modules/gplazma2-htpasswd</module>
+        <module>modules/gplazma2-jython</module>
         <module>modules/gplazma2-oidc</module>
         <module>modules/gplazma2-oidc-te</module>
         <module>modules/gplazma2-omnisession</module>
