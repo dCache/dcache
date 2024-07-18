@@ -333,7 +333,7 @@ public class HttpPoolMgrEngineV3 implements
                     "Path", "path"
               };
         pw.println("<form name=\"input\" action=\"" + action + "\" method=\"get\">");
-        pw.println("<center><table border=0 cellspacing=2 width=\"95%\" bgcolor=\"" + tableColor
+        pw.println("<center><table width=\"95%\" bgcolor=\"" + tableColor
               + "\">");
         pw.println("   <tr>");
         pw.println("      <td align=center bgcolor=\"" + tableDataColor + "\">");
@@ -364,6 +364,7 @@ public class HttpPoolMgrEngineV3 implements
 
     }
 
+    // FIXME: REMOVE!
     private void printCssFile(PrintWriter pw, String filename) {
         if (filename.equals("test.html")) {
             //
@@ -394,6 +395,7 @@ public class HttpPoolMgrEngineV3 implements
         }
     }
 
+    // FIXME: REMOVE!
     private void printInternalCssFile(PrintWriter pw) {
         pw.println("body { background-color:orange; }");
         pw.println(
@@ -548,9 +550,14 @@ public class HttpPoolMgrEngineV3 implements
         pw.println("<link rel=\"stylesheet\" type=\"text/css\" href=\"" + _cssFile + "\">");
         pw.println("</head>");
 
+        pw.println("<body>");
+        pw.println("<div id='header'>");
+        pw.println("<div id='bird_small'>");
+        pw.println("<a href='/'><img src='/images/dCache-logo.svg'></a>");
+        pw.println("<br/>Birds Home</div>");
+        pw.println("<div id ='bird_large'><img src='/images/eagle-grey.gif'></div>");
+        pw.println("</div>");
         pw.println("<div id=\"main\">");
-        pw.println("<body class=\"m-body\">");
-
     }
 
     private void printConfigurationPages(PrintWriter pw, String[] urlItems, HttpRequest request)
@@ -704,7 +711,7 @@ public class HttpPoolMgrEngineV3 implements
         int column = 0;
         int maxColumn = 2;
 
-        pw.println("<center><table width=\"90%\" cellspacing=4 cellpadding=4 bgcolor=yellow>");
+        pw.println("<center><table id=\"params\">");
 
         pw.print("<tr>");
         for (int l = 0; l < (maxColumn + 1); l++) {
@@ -991,18 +998,11 @@ public class HttpPoolMgrEngineV3 implements
     }
 
     private void printPoolManagerHeader(PrintWriter pw, String title) {
-        pw.println("<table class=\"m-table\" border=0 cellpadding=10 cellspacing=0 width=\"90%\">");
-        pw.println("<tr><td align=center valign=center width=\"1%\">");
-        pw.println("<a href=\"/\"><img border=0 src=\"/images/eagleredtrans.gif\"></a>");
-        pw.println("<br><font color=red>Birds Home</font>");
-        pw.println("</td><td align=center>");
         if (title != null) {
             pw.println("<h1>" + title + "</h1>");
         } else {
             pw.println("<h1>Pool Manager Database V3</h1>");
         }
-        pw.println("</td></tr></table>");
-
     }
 
     private void showDirectory(PrintWriter pw) {
@@ -1241,7 +1241,7 @@ public class HttpPoolMgrEngineV3 implements
             boolean enabled = (Boolean) o[3];
             boolean rdOnly = (Boolean) o[5];
             long active = (Long) o[4];
-            pw.println("<table border=0 cellspacing=4 cellpadding=4>");
+            pw.println("<table id=\"pools\">");
             pw.print("<tr><th align=right>Enabled : </th><td align=left>");
             pw.print(enabled ? "Yes" : "No");
             pw.println("</td></tr>");
@@ -1277,7 +1277,7 @@ public class HttpPoolMgrEngineV3 implements
             String type = o[1].toString();
             Object[] groupList = (Object[]) o[2];
 
-            pw.println("<table border=0 cellspacing=4 cellpadding=4>");
+            pw.println("<table>");
             pw.print("<tr><th align=right>Selection Unit : </th><td align=left>");
             pw.print(unitName);
             pw.println("</td></tr>");
@@ -1367,8 +1367,8 @@ public class HttpPoolMgrEngineV3 implements
             pw.print("<th class=\"s-table\">Read</th><th class=\"s-table\">Write</th>");
             pw.print("<th class=\"s-table\">Cache</th><th class=\"s-table\">P2p</th>");
             pw.println("</tr>");
-            int row = 0;
 
+            int row = 0;
             for (LinkProperties lp : list) {
                 pw.println("<tr class=\"" + ROW_ODDNESS[row % ROW_ODDNESS.length] + "\">");
                 printLinkPropertyRow(pw, lp);
@@ -1528,7 +1528,7 @@ public class HttpPoolMgrEngineV3 implements
             Object[] unitList = (Object[]) o[1];
             Object[] linkList = (Object[]) o[2];
 
-            pw.println("<table border=0 cellspacing=4 cellpadding=4>");
+            pw.println("<table id=\"units\">");
             pw.print("<tr><th align=right>Unit Group : </th><td align=left>");
             pw.print(groupName);
             pw.println("</td></tr>");
@@ -1560,7 +1560,7 @@ public class HttpPoolMgrEngineV3 implements
             Object[] poolList = (Object[]) o[1];
             Object[] linkList = (Object[]) o[2];
 
-            pw.println("<table border=0 cellspacing=4 cellpadding=4>");
+            pw.println("<table id=\"pgroup\">");
             pw.print("<tr><th align=right>Pool Group : </th><td align=left>");
             pw.print(groupName);
             pw.println("</td></tr>");
