@@ -11,7 +11,7 @@
 h1, h2
 {
   text-align: center;
-  color: blue;
+  color: #3C3633;
 }
 
 table
@@ -23,13 +23,13 @@ table
 
 tr.total th, tr.total td
 {
-  background: #0000FF;
-  color: white;
+  background: #747264;
+  color: #EEEDEB;
 }
 
 a
 {
-  color: white;
+  color: #EEEDEB;
 }
 
 .action
