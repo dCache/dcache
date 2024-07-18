@@ -1,6 +1,8 @@
 body 
 { 
-  background: url("/images/bg.svg");
+  /*background: url("/images/bg.svg"); */
+  background-color: #403c38;
+  color: #eaeaea;
 }
 
 img 
@@ -30,29 +32,44 @@ img
   margin-top: 200px;
 }
 
-table
-{ 
-  border-spacing: 0;
+table, tr, th, td {
   border-collapse: collapse;
-  width: 100%;
+  border: 0px solid;
 }
+
+table
+{
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 0;
+  outline: 1px solid;
+  overflow: hidden;
+  width: 100%;
+  color: #403c38;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  margin: 0 0 40px 0;
+};
+
 
 td, th
 { 
-  padding: 4px;
-  border: 1px solid gray;
+  padding: .5em 1em;
+  border: 0px solid gray;
+  margin-bottom: 10px;
+  padding: 0;
+  height: 6px;
 }
 
 th
 { 
   text-align: center;
-  background: #115259;
-  color: white;
+  background: #e3513c;
+  color: #ffffff;
 }
 
 th > a
 { 
-  color: white;
+  color: #ffffff;
   text-decoration: none;
 }
 
@@ -63,12 +80,66 @@ td
 
 tr
 { 
-  background: #bebebe;
+  background: #f6f6f6;
 }
 
 tr.odd
 {
-  background: #efefef;
+  background: #e9e9e9;
 }
 
 
+/*  used  to display pool/poolgroup usage bar and legend*/
+
+span.layout_precious
+{
+  color: #F28585;
+}
+
+span.layout_sticky
+{
+  color: #FFA447;
+}
+
+span.layout_cached
+{
+  color: #FFFC9B;
+}
+
+span.layout_free
+{
+  color: #B7E5B4;
+}
+
+div.layout_precious
+{
+  float: left;
+  background: #F28585;
+  height: 10px;
+}
+
+div.layout_sticky
+{
+  float: left;
+  background: #FFA447;
+  height: 10px;
+}
+
+div.layout_cached
+{
+  float: left;
+  background: #FFFC9B;
+  height: 10px;
+}
+
+div.layout_free
+{
+  float: left;
+  background: #B7E5B4;
+  height: 10px;
+}
+
+.errorcode, .errormessage
+{ 
+  color: red;
+}
