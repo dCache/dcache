@@ -494,7 +494,7 @@ Frontend test suite:
   stage: testing
   extends: .kubernetes_image
   script:
-    - kubectl -n $K8S_NAMESPACE apply -f .ci/http.yaml
+    - kubectl -n $K8S_NAMESPACE apply -f .ci/frontend.yaml
     - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod http-tester; do sleep 1; done
     - kubectl -n $K8S_NAMESPACE cp .ci/poolEndpoint.http http-tester:/poolEndpoint.http
     - kubectl -n $K8S_NAMESPACE cp .ci/qosEndpoint.http http-tester:/qosEndpoint.http
