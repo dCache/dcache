@@ -41,7 +41,7 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
             NfsMover mover = nfsTransferService.getMoverByStateId(context, _args.opwrite.stateid);
             if (mover == null) {
                 res.status = nfsstat.NFSERR_BAD_STATEID;
-                _log.debug("No mover associated with given stateid: ", _args.opwrite.stateid);
+                _log.debug("No mover associated with given stateid: {}", _args.opwrite.stateid);
                 return;
             }
 
