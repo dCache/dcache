@@ -1,5 +1,4 @@
 ### Upload frontend file
-# curl -v -u admin:dickerelch -X PUT -d @/home/karenh/Desktop/frontend.txt "https://localhost:2881/tape/frontend"
 PUT {{webdav-door}}/{{frontend}}
 Authorization: Basic admin dickerelch
 Content-Type: application/octet-stream
