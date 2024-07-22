@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: http-tester
+spec:
+  containers:
+    - name: tester
+      image: jetbrains/intellij-http-client
+      imagePullPolicy: IfNotPresent
+      command: [ "/bin/sleep", "inf"]

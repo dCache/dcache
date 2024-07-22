@@ -86,7 +86,7 @@ default:
 .kubernetes_image:
   extends: .kubernetes_tags
   image: bitnami/kubectl:latest
-  
+
 .helm_image:
   extends: .kubernetes_tags
   image:
@@ -489,6 +489,25 @@ SRM S2 test suite:
     reports:
       junit:
         - "TEST*.xml"
+
+Frontend test suite:
+  stage: testing
+  extends: .kubernetes_image
+  script:
+    - kubectl -n $K8S_NAMESPACE apply -f .ci/frontend.yaml
+    - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod http-tester; do sleep 1; done
+    - kubectl -n $K8S_NAMESPACE cp .ci/poolEndpoint.http http-tester:/poolEndpoint.http
+    - kubectl -n $K8S_NAMESPACE cp .ci/qosEndpoint.http http-tester:/qosEndpoint.http
+    - kubectl -n $K8S_NAMESPACE cp .ci/qos-policyEndpoint.http http-tester:/qos-policyEndpoint.http
+    - kubectl -n $K8S_NAMESPACE cp README.md http-tester:/README.md
+    - kubectl -n $K8S_NAMESPACE cp .ci/migrationEndpoint.http http-tester:/migrationEndpoint.http
+    - kubectl -n $K8S_NAMESPACE cp http-client.private.env.json http-tester:/http-client.private.env.json
+    - kubectl -n $K8S_NAMESPACE exec http-tester -- java --add-opens=java.base/java.util=ALL-UNNAMED $IJHTTP_JAVA_OPTS -cp /intellij-http-client/\* com.intellij.httpClient.cli.HttpClientMain -e Test -D /poolEndpoint.http -p /http-client.private.env.json --insecure --report=/httpTests
+    - kubectl -n $K8S_NAMESPACE cp http-tester:/httpTests/report.xml pool-report.xml
+  artifacts:
+    reports:
+      junit:
+        - "*-report.xml"
 
 gsi_xroot_tests:
   stage: testing
