@@ -41,6 +41,8 @@ exec /usr/bin/java \
 	-Djava.awt.headless=true -DwantLog4jSetup=n \
 	-Ddcache.home=${DCACHE_HOME} \
 	-Ddcache.paths.defaults=${DCACHE_HOME}/share/defaults \
+	-XX:MaxRAMPercentage=75 \
+	-XX:+UseZGC \
 	-Dzookeeper.sasl.client=false \
 	--add-opens=java.base/java.lang=ALL-UNNAMED \
 	--add-opens=java.base/java.util=ALL-UNNAMED \
