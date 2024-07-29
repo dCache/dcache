@@ -1,0 +1,10 @@
+### POOL endpoint GET request
+GET {{frontend-door}}/{{api}}/{{v1}}/{{pools}}
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+> {%
+    client.test("Successful response when calling /pool", function() {
+        client.assert(response.status === 200, "Response was not 200");
+    });
+%}

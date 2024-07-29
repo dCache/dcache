@@ -19,7 +19,7 @@
 #
 #  KUBECONFIG: env file that contains kubernetes configuration to access the cluster
 #
-# dCache deplyment in kubernetes managed by helm chart
+# dCache deployment in kubernetes managed by helm chart
 #  https://gitlab.desy.de/dcache/dcache-helm
 #
 #
@@ -28,13 +28,21 @@
 
 
 stages:
+  # build rpm, tar, deb, oci container
   - build
+  # sign rpm, deb
   - sign
+  # create k8s namespace
   - testenv_pre
+  # deploy 3rd party infrastructure services
   - test_infra
+  # deploy dCache helm chart
   - test_deploy
+  # run tests
   - testing
+  # clean k8s namespace, collect logs
   - testenv_post
+  # on release, upload rpm, deb, tar, container
   - upload
 
 variables:
@@ -52,17 +60,20 @@ before_script:
       set +x
       echo "============== GitLab Agent =============="
       uname -a
+      date
       echo "Runner           : $CI_RUNNER_DESCRIPTION"
       echo "Runner id        : $CI_RUNNER_ID"
       echo "Runner version   : $CI_RUNNER_VERSION"
       echo "Runner revision  : $CI_RUNNER_REVISION"
-      echo "Runner tgas      : $CI_RUNNER_TAGS"
+      echo "Runner tags      : $CI_RUNNER_TAGS"
       echo "=========================================="
 
 default:
-  tags:
-    - dcache-dev
-
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - api_failure
 #
 # default tags and image for testing stages/kubernetes/helm 
 #
@@ -75,7 +86,7 @@ default:
 .kubernetes_image:
   extends: .kubernetes_tags
   image: bitnami/kubectl:latest
-  
+
 .helm_image:
   extends: .kubernetes_tags
   image:
@@ -108,10 +119,10 @@ default:
 
 rpm:
   stage: build
-  image: dcache/maven-java11-rpm-build
+  image: dcache/maven-java17-rpm-build
   extends: .build_cache
   script:
-    - mvn $MAVEN_CLI_OPTS -am -pl packages/fhs -P rpm clean package
+    - mvn $MAVEN_CLI_OPTS -Drun.slow.tests -am -pl packages/fhs -P rpm clean package
   artifacts:
     reports:
       junit:
@@ -123,7 +134,7 @@ rpm:
 
 srm_client_rpm:
   stage: build
-  image: dcache/maven-java11-rpm-build
+  image: dcache/maven-java17-rpm-build
   extends: .build_cache
   script:
     - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl modules/srm-client package -P rpm
@@ -134,7 +145,7 @@ srm_client_rpm:
 
 deb:
   stage: build
-  image: dcache/maven-java11-deb-build
+  image: dcache/maven-java17-deb-build
   extends: .build_cache
   script:
     - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl packages/fhs -P deb clean package
@@ -145,7 +156,7 @@ deb:
 
 tar:
   stage: build
-  image: dcache/maven-java11-tar-build
+  image: dcache/maven-java17-tar-build
   extends: .build_cache
   script:
     - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl packages/tar clean package
@@ -154,6 +165,22 @@ tar:
       - "packages/tar/target/dcache-*.tar.gz"
     expire_in: 2 days
 
+
+spotbugs:
+  stage: build
+  image: dcache/maven-java17-tar-build
+  extends: .build_cache
+  script:
+    - dnf -y -q install jq
+    - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl packages/tar -DskipTests package com.github.spotbugs:spotbugs-maven-plugin:4.8.3.0:spotbugs verify
+    - find . -name gl-code-quality-report.json -print | xargs cat | jq -s "add" > merged-gl-code-quality-report.json
+  artifacts:
+    reports:
+      codequality:
+        - merged-gl-code-quality-report.json
+    paths:
+      - merged-gl-code-quality-report.json
+    expire_in: 2 days
 
 container:
   stage: build
@@ -194,7 +221,7 @@ sign_rpm:
     - echo $DCACHE_ORG_PGP_KEY | base64 -d -i > secret.gpg
     - gpg --quiet --batch --yes --allow-secret-key-import --passphrase="$DCACHE_ORG_PGP_KEY_PASS" --import secret.gpg
     - gpg -a --export "$DCACHE_ORG_KEY_NAME" > RPM-GPG-KEY
-    - rpmsign --addsign --define "_signature gpg" --define "_gpg_name  $DCACHE_ORG_KEY_NAME" --define "_gpg_sign_cmd_extra_args --pinentry-mode loopback --passphrase $DCACHE_ORG_PGP_KEY_PASS" packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm*
+    - rpmsign --addsign --define "_signature gpg" --define "_gpg_name  $DCACHE_ORG_KEY_NAME" --define "_gpg_sign_cmd_extra_args --pinentry-mode loopback --passphrase $DCACHE_ORG_PGP_KEY_PASS" packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm
     - rpmkeys --import RPM-GPG-KEY
     - rpm --checksig -v packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm
   artifacts:
@@ -345,7 +372,7 @@ Generate release notes:
 #
 # prepare kubernetes env for the build
 #
-prepare_k8s_env:
+Prepare k8s environment:
   stage: testenv_pre
   extends: .kubernetes_image
   script:
@@ -355,7 +382,7 @@ prepare_k8s_env:
 #
 # collect all logs
 #
-collect_logs:
+Collect container logs:
   stage: testenv_post
   extends: .kubernetes_image
   when: always
@@ -372,11 +399,11 @@ collect_logs:
 #
 # dispose kubernetes resources
 #
-cleanup_k8s_env:
+Clean k8s environment:
   stage: testenv_post
   extends: .kubernetes_image
   needs:
-    - collect_logs
+    - Collect container logs
   when: always
   script:
     - kubectl delete namespace ${K8S_NAMESPACE} --grace-period=1 --ignore-not-found=true
@@ -384,7 +411,7 @@ cleanup_k8s_env:
 #
 # infrastructure required to run dCache
 #
-deploy_infrastructure:
+Deploy 3rd party infrastructure services:
   stage: test_infra
   extends: .helm_image
   script:
@@ -394,7 +421,10 @@ deploy_infrastructure:
     - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait cells bitnami/zookeeper
     - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set externalZookeeper.servers=cells-zookeeper --set kraft.enabled=false billing bitnami/kafka --version 23.0.7
 
-deploy_dcache_helm:
+#
+# Start Current dCache version and an old pools
+#
+Deploy dCache Helm Chart:
   stage: test_deploy
   extends: .helm_image
   script:
@@ -406,29 +436,16 @@ deploy_dcache_helm:
     - helm repo add dcache ${DCACHE_HELM_REPO}
     - helm repo update
     - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=${tag} --set image.repository=${CI_REGISTRY_IMAGE} store dcache/dcache
+    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=9.2.20 --set "dcache.pools={d,f}" --set dcache.door.enabled=false --set image.repository=${CI_REGISTRY_IMAGE} old-store dcache/dcache
 
 
-#
-# Grid tests expects cluster-wide cvmfs volumes to be present.
-#
-# The deployment can be done as:
-#
-#  kubectl create -f .ci/cvmfs-storageclass.yaml
-#  helm repo add cern https://registry.cern.ch/chartrepo/cern
-#  helm repo update
-#  helm -n dcache-dev-infrastructure install -f .ci/values-cvmfs.yaml cvmfs cern/cvmfs-csi
-#
-# More info: https://github.com/cvmfs-contrib/cvmfs-csi/tree/master/docs
-#
-grid_tests:
+Grid EL9 WN tests:
   stage: testing
   extends: .kubernetes_image
   script:
-    - kubectl -n $K8S_NAMESPACE apply -f .ci/cvmfs-volume-storageclass-pvc.yaml
     - kubectl -n $K8S_NAMESPACE apply -f .ci/wn-with-cvmfs.yaml
     - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod grid-tester; do sleep 1; done
-    - kubectl -n $K8S_NAMESPACE exec grid-tester -- ls /cvmfs/grid.cern.ch/umd-c7wn-latest/etc/profile.d/setup-c7-wn-example.sh
-    - kubectl -n $K8S_NAMESPACE cp .ci/init-grid-ui.sh grid-tester:/init-grid-ui.sh
+    - kubectl -n $K8S_NAMESPACE cp .ci/init-el9-ui.sh grid-tester:/init-el9-ui.sh
     - kubectl -n $K8S_NAMESPACE cp .ci/run-grid-tests.sh grid-tester:/run-grid-tests.sh
     - kubectl -n $K8S_NAMESPACE exec grid-tester -- /bin/sh /run-grid-tests.sh
     - kubectl -n $K8S_NAMESPACE cp grid-tester:/xunit .
@@ -437,19 +454,64 @@ grid_tests:
       junit:
         - "xunit*.xml"
 
+SRM S2 test suite:
+  stage: testing
+  extends: .kubernetes_image
+  allow_failure: true
+  script:
+    - kubectl -n $K8S_NAMESPACE apply -f .ci/s2-runner.yaml
+    - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod s2-tester; do sleep 1; done
+    - kubectl -n $K8S_NAMESPACE cp .ci/init-el9-ui.sh s2-tester:/init-el9-ui.sh
+    - kubectl -n $K8S_NAMESPACE cp .ci/run-s2.sh s2-tester:/run-s2.sh
+    - kubectl -n $K8S_NAMESPACE exec s2-tester -- /bin/sh /run-s2.sh
+    - kubectl -n $K8S_NAMESPACE cp s2-tester:/TEST-basic.xml TEST-basic.xml
+    - kubectl -n $K8S_NAMESPACE cp s2-tester:/TEST-avail.xml TEST-avail.xml
+    - kubectl -n $K8S_NAMESPACE cp s2-tester:/TEST-usecase.xml TEST-usecase.xml
+  artifacts:
+    reports:
+      junit:
+        - "TEST*.xml"
+
+Frontend test suite:
+  stage: testing
+  extends: .kubernetes_image
+  script:
+    - kubectl -n $K8S_NAMESPACE apply -f .ci/frontend.yaml
+    - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod http-tester; do sleep 1; done
+    - kubectl -n $K8S_NAMESPACE cp .ci/poolEndpoint.http http-tester:/poolEndpoint.http
+    - kubectl -n $K8S_NAMESPACE cp .ci/qosEndpoint.http http-tester:/qosEndpoint.http
+    - kubectl -n $K8S_NAMESPACE cp .ci/qos-policyEndpoint.http http-tester:/qos-policyEndpoint.http
+    - kubectl -n $K8S_NAMESPACE cp README.md http-tester:/README.md
+    - kubectl -n $K8S_NAMESPACE cp .ci/migrationEndpoint.http http-tester:/migrationEndpoint.http
+    - kubectl -n $K8S_NAMESPACE cp http-client.private.env.json http-tester:/http-client.private.env.json
+    - kubectl -n $K8S_NAMESPACE exec http-tester -- java --add-opens=java.base/java.util=ALL-UNNAMED $IJHTTP_JAVA_OPTS -cp /intellij-http-client/\* com.intellij.httpClient.cli.HttpClientMain -e Test -D /poolEndpoint.http -p /http-client.private.env.json --insecure --report=/httpTests
+    - kubectl -n $K8S_NAMESPACE cp http-tester:/httpTests/report.xml pool-report.xml
+  artifacts:
+    reports:
+      junit:
+        - "*-report.xml"
+
 gsi_xroot_tests:
   stage: testing
   extends: .kubernetes_image
   script:
-    - kubectl -n $K8S_NAMESPACE apply -f .ci/cvmfs-volume-storageclass-pvc.yaml
     - kubectl -n $K8S_NAMESPACE apply -f .ci/wn-with-cvmfs-xroot.yaml
     - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod xroot-tester; do sleep 1; done
-    - kubectl -n $K8S_NAMESPACE exec xroot-tester -- ls /cvmfs/grid.cern.ch/umd-c7wn-latest/etc/profile.d/setup-c7-wn-example.sh
-    - kubectl -n $K8S_NAMESPACE cp .ci/init-grid-ui.sh xroot-tester:/init-grid-ui.sh
+    - kubectl -n $K8S_NAMESPACE cp .ci/init-el9-ui.sh xroot-tester:/init-el9-ui.sh
     - kubectl -n $K8S_NAMESPACE cp .ci/run-xroot-tests.sh xroot-tester:/run-xroot-tests.sh
     - kubectl -n $K8S_NAMESPACE exec xroot-tester -- /bin/sh /run-xroot-tests.sh
 
-pynfs_tests:
+webdav_with_x509_tests:
+  stage: testing
+  extends: .kubernetes_image
+  script:
+    - kubectl -n $K8S_NAMESPACE apply -f .ci/webdav-wn-cvmfs.yaml
+    - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod webdav-tester; do sleep 1; done
+    - kubectl -n $K8S_NAMESPACE cp .ci/init-el9-ui.sh webdav-tester:/init-el9-ui.sh
+    - kubectl -n $K8S_NAMESPACE cp .ci/run-webdav-tests.sh webdav-tester:/run-webdav-tests.sh
+    - kubectl -n $K8S_NAMESPACE exec webdav-tester -- /bin/sh /run-webdav-tests.sh
+
+NFS4.x protocol compliance tests:
   stage: testing
   extends: .kubernetes_image
   script:

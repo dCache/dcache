@@ -1,0 +1,1145 @@
+### Upload frontend file
+PUT {{webdav-door}}/{{frontend}}
+Authorization: Basic admin dickerelch
+Content-Type: application/octet-stream
+
+< README.md
+
+
+### Migrate frontend file from pool_write to pool_res1
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}]
+}
+
+> {%
+    client.test("Frontend file migration successful", function() {
+        client.assert(response.status === 201, "Migration not successful");
+    });
+%}
+
+
+### Get the pnfsid for frontend file // make sure pnfsid is not null
+GET {{frontend-door}}/{{api}}/{{v1}}/{{namespace}}/frontend
+accept: application/json
+Content-Type: application/json
+
+
+> {%
+    client.test("Response status is 200 OK", function() {
+        client.assert(response.status === 200, "Response status is NOT 200 OK");
+
+    });
+
+    client.test("Retrieval of pnfsid successful", function() {
+        var pnfsId = response.body.pnfsId;
+        client.assert(pnfsId != null, "pnfsid not null");
+    });
+
+    client.global.set("pnfsId", response.body.pnfsId);
+%}
+
+### Get information about frontend file
+GET {{frontend-door}}/{{api}}/{{v1}}/id/{{pnfsId}}
+accept: application/json
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+> {%
+    client.test("Retrieval of pnfsid successful", function() {
+        client.assert(response.status === 200, "Retrieval not successful");
+    });
+%}
+
+
+
+###GENERIC TESTS
+### Incorrect path for POST
+POST {{frontend-door}}/{{api}}/{{v1}}/migration/copy
+
+> {%
+    client.test("Incorrect path", function() {
+        client.assert(response.status === 404, "Response status is not 404");
+    });
+%}
+
+### No authentication provided for POST
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": ["pool_res2"]
+}
+
+> {%
+    client.test("No authentication provided", function() {
+        client.assert(response.status === 401, "Response status is not 401");
+    });
+%}
+
+### Incorrect media type for POST
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+accept: application/json
+Content-Type: text/html
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+"sourcePool": "pool_write",
+"targetPools": [
+"pool_res3"
+]
+}
+
+> {%
+    client.test("Unsupported Media Type", function() {
+        client.assert(response.status === 415, "Response code not 415");
+        var type = response.contentType.mimeType;
+        client.assert(type != "application/json", "Expected different type of media");
+    });
+%}
+
+### Source pool not provided
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "targetPools": [{{targetPools}}]
+}
+
+> {%
+    client.test("Response is Bad request", function() {
+        client.assert(response.status === 400, "Response status is not 400");
+    });
+%}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### copy endpoint without authentication
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+accept: application/json
+Content-Type: application/json
+
+{
+  "sourcePool": "pool_res2",
+  "targetPools": [
+    "pool_res3"
+  ]
+}
+
+
+> {%
+    client.test("Request without authentication", function() {
+        client.assert(response.status === 401, "Response status is not 401 - Unauthorized");
+    });
+%}
+
+
+### copy endpoint with authentication
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}]
+}
+
+> {%
+    client.test("Request executed successfully", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+
+### test if response body is null
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}]
+}
+
+> {%
+    client.test("Response body is empty(null)", function() {
+        client.assert(response.body === null, "Response body was not null");
+    });
+%}
+
+### copy endpoint - bad request when sourcePool is not provided
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "targetPools": [{{targetPools}}]
+}
+
+> {%
+    client.test("Response is Bad request", function() {
+        client.assert(response.status === 400, "Response status is not 400");
+    });
+%}
+
+
+### copy endpoint - bad request when targetPool is not provided
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}}
+
+}
+
+> {%
+    client.test("Response is Bad request", function() {
+        client.assert(response.status === 400, "Response status is not 400");
+    });
+%}
+
+### copy endpoint - bad request when sourcePool is incorrect
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{wrong_src_pool_name}},
+  "targetPools": [{{targetPools}}]
+}
+
+> {%
+    client.test("Response is Bad request", function() {
+        client.assert(response.status === 400, "Response status is not 400");
+    });
+%}
+
+
+### copy endpoint - bad request when targetPool is incorrect
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{wrong_target_pool_name}}]
+}
+
+> {%
+    client.test("Response is Bad request", function() {
+        client.assert(response.status === 400, "Response status is not 400");
+    });
+%}
+
+### copy endpoint - bad request when targetPools array has no length
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": []
+}
+
+> {%
+    client.test("Response is Bad request", function() {
+        client.assert(response.status === 400, "Response status is not 400");
+    });
+%}
+
+### copy endpoint - bad request when provided array of targetPools
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}, {{wrong_target_pool_name}}]
+}
+
+> {%
+    client.test("Response is Bad request", function() {
+        client.assert(response.status === 400, "Response status is not 400");
+    });
+%}
+
+### copy endpoint - bad request when cocurrency is provided
+//TODO: concurrency should be a whole number
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}],
+  "concurrency": 3.98
+}
+
+> {%
+    client.test("Response is Bad request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+### copy endpoint - create request when sourcePool is not provided
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}],
+  "pins": "keep"
+}
+
+> {%
+    client.test("Response is create request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+### copy endpoint - create request when pins attribute set to move
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}],
+  "pins": "move"
+}
+
+> {%
+    client.test("Response is create request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+### copy endpoint - create request when smode attribute set to same
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}],
+  "smode": "same"
+}
+
+> {%
+    client.test("Response is create request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+### copy endpoint - create request when smode attribute set to cached
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}],
+  "smode": "cached"
+}
+
+> {%
+    client.test("Response is create request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+### copy endpoint - create request when smode attribute set to precious
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}],
+  "smode": "precious"
+}
+
+> {%
+    client.test("Response is create request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+### copy endpoint - create request when smode attribute set to removable
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}],
+  "smode": "removable"
+}
+
+> {%
+    client.test("Response is create request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+### copy endpoint - create request when smode attribute set to delete
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}],
+  "smode": "delete"
+}
+
+> {%
+    client.test("Response is create request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+### copy endpoint - create request when smode attribute set to delete+u2
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}],
+  "smode": "delete+u2"
+}
+
+> {%
+    client.test("Response is create request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+### copy endpoint - create request when tmode attribute set to same
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}],
+  "tmode": "same"
+}
+
+> {%
+    client.test("Response is create request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+### copy endpoint - create request when tmode attribute set to cached
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}],
+  "tmode": "cached"
+}
+
+> {%
+    client.test("Response is create request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+### copy endpoint - create request when tmode attribute set to precious
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}],
+  "tmode": "precious"
+}
+
+> {%
+    client.test("Response is create request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+### copy endpoint - create request when verify attribute set to true
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}],
+  "verify": true
+}
+
+> {%
+    client.test("Response is create request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+### copy endpoint - create request when verify attribute set to false
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}],
+  "verify": false
+}
+
+> {%
+    client.test("Response is create request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+### copy endpoint - create request when eager attribute set to true
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}],
+  "eager": true
+}
+
+> {%
+    client.test("Response is crete request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+### copy endpoint - create request when eager attribute set to false
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}],
+  "eager": false
+}
+
+> {%
+    client.test("Response is create request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+### copy endpoint - create request when exclude attribute set
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}],
+  "exclude": [{{excludePools}}]
+}
+
+> {%
+    client.test("Response is create request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+### copy endpoint - create request when include attribute set
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}],
+  "include" : [{{includePools}}]
+}
+
+
+> {%
+    client.test("Response is create request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+### copy endpoint - create request when refresh attribute set
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}],
+  "refresh" : {{refresh}}
+}
+
+
+> {%
+    client.test("Response is create request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+### copy endpoint - create request when refresh select set
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}],
+  "select" : "proportional"
+}
+
+
+> {%
+    client.test("Response is create request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+### copy endpoint - create request when target attribute set to hsm
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "target": {{target}},
+  "targetPools": [{{osm_targetPools}}]
+}
+
+
+> {%
+    client.test("Response is create request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+### copy endpoint - create request when select attribute set
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}],
+  "select" : "random"
+}
+
+
+> {%
+    client.test("Response is create request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+### copy endpoint - create request when target attribute set to pool
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}],
+  "target" : "pool"
+}
+
+
+> {%
+    client.test("Response is create request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+### copy endpoint - create request when target attribute set to pgroup
+#POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+#Content-Type: application/json
+#Authorization: Basic {{user_name}} {{passwd}}
+#
+#{
+#  "sourcePool": {{sourcePool}},
+#  "targetPools": [{{targetPools}}],
+#  "target" : "pgroup"
+#}
+#
+#
+#> {%
+#    client.test("Response is create request", function() {
+#        client.assert(response.status === 201, "Response status is not 201");
+#    });
+#%}
+
+### copy endpoint - create request when target attribute set to link
+#POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+#Content-Type: application/json
+#Authorization: Basic {{user_name}} {{passwd}}
+#
+#{
+#  "sourcePool": {{sourcePool}},
+#  "targetPools": [{{targetPools}}],
+#  "target" : "link"
+#}
+#
+#
+#> {%
+#    client.test("Response is Internal Server Error, when more targets are specified", function() {
+#        client.assert(response.status === 500, "Response status is not 500");
+#    });
+#%}
+
+### copy endpoint - create request when target attribute set
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{osm_targetPools}}],
+  "target" : {{target}}
+}
+
+
+> {%
+    client.test("Response is create request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+### copy endpoint - create request with fileAttributes
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}],
+  "fileAttributes" : {
+      "accessed" : {{accessed}},
+      "al" : "online",
+      "rp" : "custodial"
+  }
+}
+
+
+> {%
+    client.test("Response is create request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+### Test for additional attributes for POST
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{osm_targetPools}}],
+  "target": {{target}},
+  "pins": "move",
+  "smode": "same"
+
+}
+
+> {%
+    client.test("Successfully created request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+### Incorrect path for GET
+GET {{frontend-door}}/{{api}}/{{v1}}/migration/pool_write
+
+> {%
+    client.test("Incorrect path", function() {
+        client.assert(response.status === 404, "Response status is not 404");
+    });
+%}
+
+### No auth provided for GET
+GET {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/pool_write/1
+
+> {%
+    client.test("Incorrect path", function() {
+        client.assert(response.status === 401, "Response status is not 401");
+    });
+%}
+
+
+### GET request to test if response type is json
+GET {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/{{pool_name}}/1
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+> {%
+    client.test("Response content-type is json", function() {
+        var type = response.contentType.mimeType;
+        client.assert(type === "application/json", "Expected 'application/json' but received '" + type + "'");
+    });
+%}
+
+### copy endpoint - create request with fileAttributes
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}],
+  "fileAttributes" : {
+      "al" : "online"
+  }
+}
+
+
+> {%
+    client.test("Response is create request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+### copy endpoint - create request with fileAttributes
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}],
+  "fileAttributes" : {
+      "al" : "nearline"
+  }
+}
+
+
+> {%
+    client.test("Response is create request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+### copy endpoint - create request with fileAttributes
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}],
+  "fileAttributes" : {
+      "pnfsid" : [{{pnfsid}}]
+  }
+}
+
+
+> {%
+    client.test("Response is create request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+### copy endpoint - create request with fileAttributes
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}],
+  "fileAttributes" : {
+      "state" : "cached"
+  }
+}
+
+
+> {%
+    client.test("Response is crete request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+### copy endpoint - create request with fileAttributes
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}],
+  "fileAttributes" : {
+      "state" : "precious"
+  }
+}
+
+
+> {%
+    client.test("Response is create request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+### copy endpoint - create request with fileAttributes
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}],
+  "fileAttributes" : {
+      "rp" : "custodial"
+  }
+}
+
+> {%
+    client.test("Response is create request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+
+### copy endpoint - create request with fileAttributes
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}],
+  "fileAttributes" : {
+      "rp" : "replica"
+  }
+}
+
+
+> {%
+    client.test("Response is create request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+### copy endpoint - create request with fileAttributes
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}],
+  "fileAttributes" : {
+  "rp" : "output"
+  }
+}
+
+
+> {%
+    client.test("Response is create request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+### copy endpoint - create request with fileAttributes
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}],
+  "fileAttributes" : {
+      "size" : {{size}}
+  }
+}
+
+
+> {%
+    client.test("Response is create request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+### copy endpoint - create request with fileAttributes
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}],
+  "fileAttributes" : {
+    "sticky" : [{{owners}}]
+  }
+}
+
+> {%
+    client.test("Response is create request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+
+
+### copy endpoint - create request with fileAttributes
+POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}],
+  "fileAttributes" : {
+    "storage" : {{storage}}
+  }
+}
+
+
+> {%
+    client.test("Response is create request", function() {
+        client.assert(response.status === 201, "Response status is not 201");
+    });
+%}
+
+###-----------------migration info tests------------------------------------------------
+
+###  Unsuccessful request to get info from specific job id
+#GET {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/{{pool_name}}/2
+#Content-Type: application/json
+#Authorization: Basic {{user_name}} {{passwd}}
+#
+#> {%
+#    client.test("Get migration info", function() {
+#        client.assert(response.status === 400, "Response status was not 400");
+#    });
+#%}
+
+### Unsuccessful request
+GET {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/{{pool_name}}/{{job_id}}
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+> {%
+    client.test("Response content-type is json", function() {
+        var type = response.contentType.mimeType;
+        client.assert(type === "application/json", "Expected 'application/json' but received '" + type + "'");
+    });
+%}
+
+
+### Unsuccessful request
+#GET {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/{{pool_name}}/{{job_id}}
+#Content-Type: application/json
+#Authorization: Basic {{user_name}} {{passwd}}
+#
+#> {%
+#
+#    client.test("Response contains 'state : value' pair", function() {
+#        var type = response.body["state"];
+#        client.assert(response.body["state"] === "FINISHED", "Expected 'state' to have value 'FINISHED' but received '" + type + "'");
+#    });
+#%}
+
+### Unsuccessful request
+#GET {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/{{pool_name}}/{{job_id}}
+#Content-Type: application/json
+#Authorization: Basic {{user_name}} {{passwd}}
+#
+#> {%
+#
+#    client.test("Response contains 'queued : value' pair", function() {
+#        var type = response.body["queued"];
+#        client.assert(response.body["queued"] >= 0, "Expected 'queued' to have value '>=0' but received '" + type + "'");
+#    });
+#%}
+
+### Unsuccessful request
+#GET {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/{{pool_name}}/{{job_id}}
+#Content-Type: application/json
+#Authorization: Basic {{user_name}} {{passwd}}
+#
+#> {%
+#
+#    client.test("Response contains 'attempts : value' pair", function() {
+#        var type = response.body["attempts"];
+#        client.assert(response.body["attempts"] >= 1, "Expected 'attempts' to have value '>=1' but received '" + type + "'");
+#    });
+#%}
+
+### Unsuccessful request
+GET {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/{{pool_name}}/{{job_id}}
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+> {%
+
+    client.test("Response contains 'targetPools : value' pair", function() {
+        var type = response.body["targetPools"];
+        client.assert(response.body["targetPools"] !== null, "Expected 'targetPools' to have value != null, but received '" + type + "'");
+    });
+%}
+
+### Unsuccessful request
+GET {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/{{pool_name}}/{{job_id}}
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+> {%
+
+    client.test("Response contains 'completed : value' pair", function() {
+        var type = response.body["completed"];
+        client.assert(response.body["completed"] !== null, "Expected 'completed' to have value != null, but received '" + type + "'");
+    });
+%}
+
+### Unsuccessful request
+#GET {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/{{pool_name}}/{{job_id}}
+#Content-Type: application/json
+#Authorization: Basic {{user_name}} {{passwd}}
+#
+#> {%
+#
+#    client.test("Response contains 'total : value' pair", function() {
+#        var type = response.body["total"];
+#        client.assert(response.body["total"] >= 0, "Expected 'total' to have value '>= 0', but received '" + type + "'");
+#    });
+#%}
+
+### Unsuccessful request
+GET {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/{{pool_name}}/{{job_id}}
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+> {%
+
+    client.test("Response contains 'runningTasks : value' pair", function() {
+        var type = response.body["runningTasks"];
+        client.assert(response.body["runningTasks"] !== null, "Expected 'runningTasks' to have value != null, but received '" + type + "'");
+    });
+%}

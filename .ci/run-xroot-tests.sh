@@ -1,6 +1,8 @@
 #!/bin/sh
 
-. /init-grid-ui.sh
+. /init-el9-ui.sh
+
+dnf -y -q install xrootd-client
 
 xrdcp -f /etc/profile xroot://store-door-svc:1095//data/testfile
 

@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: xroot-tester
+  name: webdav-tester
 spec:
   containers:
     - name: tester
