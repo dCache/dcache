@@ -1,10 +1,12 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: xroot-tester
+  name: s2-tester
 spec:
   containers:
     - name: tester
       image: almalinux:9
       imagePullPolicy: IfNotPresent
       command: [ "/bin/sleep", "inf"]
+
+
