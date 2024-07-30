@@ -1,8 +1,6 @@
 Contributing to dCache
 ======
 
-------------------------
-
 **dCache** uses the linux kernel model where git is not only source repository, but also the way to track contributions and copyrights.
 
 This page intends to summarize basic information of interest for development, including helpful links to repositories and tools, but will also be used to document our workflows and link to the meeting notes. External contributions to the dCache project are welcome!
@@ -16,11 +14,10 @@ This page intends to summarize basic information of interest for development, in
 - [What to work on](#what-to-work-on)
 - [External contribution formalities](#external-contribution-formalities)
 
-------------------------
 
 ## Contributing a Patch
 
-In addition to the master branch, several production branches are maintained at any point in time following the dCache release policy, including the lastest feature releases (x.**0**, x.**1**) up to the newest golden release (x.**2**). A few feature is usually only added to the master branch, while bug fixes are commonly first committed to master and then backported to supported target release branches.
+In addition to the master branch, several production branches are maintained at any point in time following the dCache release policy, including the lastest feature releases (x.**0**, x.**1**) up to the newest golden release (x.**2**). A new feature is usually only added to the master branch, while bug fixes are commonly first committed to master and then backported to supported target release branches.
 
 In order to add a patch to the dCache codebase, external contributors must submit a **pull request**, which is then reviewed and eventually merged by development team members. This patch must have a "Signed-off-by" line as detailed [below](#external-contribution-formalities).
 
@@ -30,7 +27,7 @@ In order to create a bug fix for an older, supported version, the target commit 
 
 ## How We Use Git
 
-We like our git history clean, which is why the author of a commit should **rebase** against the target branch before committing or creating a pull request so as not to create an extra merge commit. If you branch contains multiple patches, please **squash** them first unless there is a good reason to keep them separate.
+We like our git history clean, which is why the author of a commit should **rebase** against the target branch before committing or creating a pull request so as not to create an extra merge commit. If your branch contains multiple patches, please **squash** them first unless there is a good reason to keep them separate.
 
 ## Code Style
 
