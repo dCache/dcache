@@ -1319,7 +1319,18 @@ public class RequestContainerV5
         }
 
         private boolean isFileStageable() {
-            return _parameter._hasHsmBackend && _storageInfo.isStored();
+            if (!_storageInfo.isStored()) {
+                LOGGER.debug("File is not stageable: not stored.");
+                return false;
+            }
+
+            if (!_parameter._hasHsmBackend) {
+                // REVISIT: include partition name
+                LOGGER.warn("File is not stageable: stage is not allowed by partition configuration.");
+                return false;
+            }
+
+            return true;
         }
 
         private boolean isStagingAllowed() {
