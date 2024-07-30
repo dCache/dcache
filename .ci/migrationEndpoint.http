@@ -1,5 +1,5 @@
 ### Upload frontend file
-PUT {{webdav-door}}/{{frontend}}
+PUT {{webdav-door}}/frontend
 Authorization: Basic admin dickerelch
 Content-Type: application/octet-stream
 
