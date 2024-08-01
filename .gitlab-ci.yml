@@ -47,7 +47,7 @@ stages:
 
 variables:
   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true -Dmaven.repo.local=.m2/repository"
-  K8S_NAMESPACE: dcache-build-$CI_PIPELINE_ID
+  K8S_NAMESPACE: dcb-$CI_PIPELINE_ID
   CHECK_TIMEOUT: --timeout=300s
   HELM_OPTS: --replace --timeout 10m0s
   AUTOCA_URL: https://ci.dcache.org/ca
