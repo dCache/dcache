@@ -4,14 +4,14 @@
   <parent>
     <groupId>org.dcache</groupId>
     <artifactId>dcache-parent</artifactId>
-    <version>10.1.0-SNAPSHOT</version>
+    <version>10.2.0-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
-  <artifactId>gplazma2-jython</artifactId>
+  <artifactId>gplazma2-pyscript</artifactId>
   <packaging>jar</packaging>
 
-  <name>gPlazma 2 Jython Generic plugin</name>
+  <name>gPlazma 2 Pyscript Generic plugin</name>
 
   <dependencies>
     <dependency>

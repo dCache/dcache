@@ -1,4 +1,4 @@
-package org.dcache.gplazma.jython;
+package org.dcache.gplazma.pyscript;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -24,39 +24,24 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-public class JythonPlugin implements GPlazmaAuthenticationPlugin {
+public class PyscriptPlugin implements GPlazmaAuthenticationPlugin {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(JythonPlugin.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PyscriptPlugin.class);
 
     private final PythonInterpreter PI = new PythonInterpreter();
     private List<Path> pluginPathList = new ArrayList<>();
 
-    public JythonPlugin(Properties properties) {
+    public PyscriptPlugin(Properties properties) {
         // constructor
         try {
-            pluginPathList = listDirectoryContents("gplazma2-jython");  // TODO fix this, currently just reads from local folder
+            pluginPathList = listDirectoryContents("gplazma2-pyscript");  // TODO fix this, currently just reads from local folder
         } catch (IOException e) {
-            LOGGER.error("Error reading Jython directory");
+            LOGGER.error("Error reading Pyscript directory");
         }
     }
 
     private static List<Path> listDirectoryContents(String directoryPath) throws IOException {
-        List<Path> elements = new ArrayList<>();
-        Path path = Paths.get(directoryPath);
-
-        // Check if the path is a directory
-        if (Files.isDirectory(path)) {
-            // Use DirectoryStream to iterate through the directory
-            try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(path)) {
-                for (Path p : directoryStream) {
-                    elements.add(p);
-                }
-            }
-        } else {
-            throw new IllegalArgumentException("Path is not a directory: " + directoryPath);
-        }
-
-        return elements;
+        return Files.list(Path.of(directoryPath)).toList();
     }
 
     public void authenticate(
@@ -72,11 +57,9 @@ public class JythonPlugin implements GPlazmaAuthenticationPlugin {
                 // IO
                 // ===========
                 // read file into string
-                LOGGER.debug("gplazma2-jython running " + pluginPath.toString());
-                String content = Files.lines(
-                        Paths.get(pluginPath.toString())
-                ).collect(
-                        Collectors.joining("\n")
+                LOGGER.debug("gplazma2-pyscript running {}", pluginPath);
+                String content = Files.lines(pluginPath).collect(
+                    Collectors.joining("\n")
                 );
                 // execute file content, loading the function "py_auth" into the namespace
                 PI.exec(content);
@@ -98,9 +81,8 @@ public class JythonPlugin implements GPlazmaAuthenticationPlugin {
                         pyPublicCredentials.add(pubCred);
                     } else {
                         LOGGER.warn(
-                            "GPlazma2-Jython: Public Credential "
-                            + pubCred.toString()
-                            + " dropped. Use String or Number."
+                            "gplazma2-pyscript: Public Credential {} dropped. Use String or Number.",
+                            pubCred
                         );
                     }
                 }
@@ -112,9 +94,8 @@ public class JythonPlugin implements GPlazmaAuthenticationPlugin {
                         pyPrivateCredentials.add(privCred);
                     } else {
                         LOGGER.warn(
-                            "GPlazma2-Jython: Private Credential "
-                            + privCred.toString()
-                            + " dropped. Use String or Number."
+                            "gplazma2-pyscript: Private Credential {} dropped. Use String or Number.",
+                            privCred.toString()
                         );
                     }
                 }
@@ -155,7 +136,8 @@ public class JythonPlugin implements GPlazmaAuthenticationPlugin {
                 // update principals
                 // =================
                 // Convert principals back from string representation
-                List<String> convertedPyPrincipals = pyPrincipals.stream().toList();
+                List<String> convertedPyPrincipals = List.copyOf(pyPrincipals);
+
                 // Update original Principals
                 principals.addAll(Subjects.principalsFromArgs(convertedPyPrincipals));
 
@@ -169,7 +151,7 @@ public class JythonPlugin implements GPlazmaAuthenticationPlugin {
 
 
         // finish authentication
-        LOGGER.debug("Finished gplazma2-jython step.");
+        LOGGER.debug("Finished gplazma2-pyscript step.");
     }
 
 }

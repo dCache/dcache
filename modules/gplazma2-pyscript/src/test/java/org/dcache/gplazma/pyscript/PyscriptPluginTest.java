@@ -1,23 +1,19 @@
-package org.dcache.gplazma.jython;
+package org.dcache.gplazma.pyscript;
 
-import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 
 import java.security.Principal;
 import java.util.*;
-import java.util.stream.Stream;
-
 
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
 import org.junit.Before;
 import org.junit.Test;
 
-public class JythonPluginTest {
+public class PyscriptPluginTest {
     /*
-    Test the gplazma2-jython module
+    Test the gplazma2-pyscript module
 
     This module reads the Python (2.7) files provided and runs each auth attempt
     through the auth function defined in each file. Authentication may fail and
@@ -44,11 +40,11 @@ public class JythonPluginTest {
      These JUnit tests are written accordingly.
      */
 
-    private static JythonPlugin plugin;
+    private static PyscriptPlugin plugin;
 
     @Before
     public void setUp() {
-        plugin = new JythonPlugin(new Properties());
+        plugin = new PyscriptPlugin(new Properties());
     }
 
     @Test

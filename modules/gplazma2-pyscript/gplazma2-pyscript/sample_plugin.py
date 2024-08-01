@@ -1,6 +1,6 @@
 def py_auth(public_credentials, private_credentials, principals):
     """
-    Function py_auth, sample implementation for a gplazma2-jython plugin
+    Function py_auth, sample implementation for a gplazma2-pyscript plugin
     :param public_credentials: set of public auth credentials
     :param private_credentials: set of private auth credentials
     :param principals: set of principals (string values)

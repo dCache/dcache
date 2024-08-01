@@ -1,6 +1,0 @@
-<plugins>
-  <plugin>
-    <name>Jython</name>
-    <class>org.dcache.gplazma.htpasswd.JythonPlugin</class>
-  </plugin>
-</plugins>
