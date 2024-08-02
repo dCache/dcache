@@ -106,11 +106,6 @@
         <version>${project.version}</version>
     </dependency>
     <dependency>
-        <groupId>org.dcache</groupId>
-        <artifactId>gplazma2-argus</artifactId>
-        <version>${project.version}</version>
-    </dependency>
-    <dependency>
       <groupId>org.dcache</groupId>
       <artifactId>gplazma2-fermi</artifactId>
       <version>${project.version}</version>

@@ -260,33 +260,6 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>org.glite.authz</groupId>
-                <artifactId>pep-common</artifactId>
-                <version>2.3.1</version>
-            </dependency>
-            <dependency>
-                <groupId>org.glite.authz</groupId>
-                <artifactId>pep-java</artifactId>
-                <version>2.3.0</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>commons-httpclient</groupId>
-                <artifactId>commons-httpclient</artifactId>
-                <version>3.1</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>commons-logging</groupId>
-                        <artifactId>commons-logging</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
                 <groupId>gov.fnal</groupId>
                 <artifactId>vox-alldepends</artifactId>
                 <version>1.0</version>
@@ -1467,7 +1440,6 @@
         <module>modules/common-security</module>
         <module>modules/cells</module>
         <module>modules/gplazma2</module>
-        <module>modules/gplazma2-argus</module>
         <module>modules/gplazma2-fermi</module>
         <module>modules/gplazma2-grid</module>
         <module>modules/gplazma2-krb5</module>

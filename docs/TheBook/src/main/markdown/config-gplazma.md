@@ -703,47 +703,6 @@ Properties
 
 #### account Plug-ins
 
-##### argus
-
- The argus plug-in bans users by their DN. It talks to your site’s ARGUS system (see [https://twiki.cern.ch/twiki/bin/view/EGEE/AuthorizationFramework](https://twiki.cern.ch/twiki/bin/view/EGEE/AuthorizationFramework)) to check for banned users.
-
-Properties
-
-**gplazma.argus.hostcert**
-
-   Path to host certificate
-   Default: `/etc/grid-security/hostcert.pem`
-
-
-
-**gplazma.argus.hostkey**
-
-   Path to host key
-   Default: `/etc/grid-security/hostkey.pem`
-
-
-
-**gplazma.argus.hostkey.password**
-
-   Password for host key
-   Default:
-
-
-
-**gplazma.argus.ca**
-
-   Path to CA certificates
-   Default: `/etc/grid-security/certificates`
-
-
-
-**gplazma.argus.endpoint**
-
-   URL of PEP service
-   Default: `https://localhost:8154/authz`
-
-
-
 ##### banfile
 
 The `banfile` plug-in bans users by their principal class and the associated name. It is configured via a simple plain text file.
