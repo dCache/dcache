@@ -1,5 +1,5 @@
 ### POOL endpoint GET request
-GET {{frontend-door}}/{{api}}/{{v1}}/{{pools}}
+GET {{frontend-door}}{{endpoint}}{{pools}}
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 

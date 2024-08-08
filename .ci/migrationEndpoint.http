@@ -7,7 +7,7 @@ Content-Type: application/octet-stream
 
 
 ### Migrate frontend file from pool_write to pool_res1
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -24,7 +24,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 
 
 ### Get the pnfsid for frontend file // make sure pnfsid is not null
-GET {{frontend-door}}/{{api}}/{{v1}}/{{namespace}}/frontend
+GET {{frontend-door}}{{endpoint}}{{namespace}}/frontend
 accept: application/json
 Content-Type: application/json
 
@@ -44,7 +44,7 @@ Content-Type: application/json
 %}
 
 ### Get information about frontend file
-GET {{frontend-door}}/{{api}}/{{v1}}/id/{{pnfsId}}
+GET {{frontend-door}}{{endpoint}}/id/{{pnfsId}}
 accept: application/json
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
@@ -59,7 +59,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 
 ###GENERIC TESTS
 ### Incorrect path for POST
-POST {{frontend-door}}/{{api}}/{{v1}}/migration/copy
+POST {{frontend-door}}{{endpoint}}/migration/copy
 
 > {%
     client.test("Incorrect path", function() {
@@ -68,7 +68,7 @@ POST {{frontend-door}}/{{api}}/{{v1}}/migration/copy
 %}
 
 ### No authentication provided for POST
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 
 {
@@ -83,7 +83,7 @@ Content-Type: application/json
 %}
 
 ### Incorrect media type for POST
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 accept: application/json
 Content-Type: text/html
 Authorization: Basic {{user_name}} {{passwd}}
@@ -104,7 +104,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### Source pool not provided
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -133,7 +133,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 
 
 ### copy endpoint without authentication
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 accept: application/json
 Content-Type: application/json
 
@@ -153,7 +153,7 @@ Content-Type: application/json
 
 
 ### copy endpoint with authentication
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -170,7 +170,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 
 
 ### test if response body is null
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -186,7 +186,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### copy endpoint - bad request when sourcePool is not provided
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -202,7 +202,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 
 
 ### copy endpoint - bad request when targetPool is not provided
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -218,7 +218,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### copy endpoint - bad request when sourcePool is incorrect
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -235,7 +235,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 
 
 ### copy endpoint - bad request when targetPool is incorrect
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -251,7 +251,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### copy endpoint - bad request when targetPools array has no length
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -267,7 +267,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### copy endpoint - bad request when provided array of targetPools
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -284,7 +284,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 
 ### copy endpoint - bad request when cocurrency is provided
 //TODO: concurrency should be a whole number
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -301,7 +301,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### copy endpoint - create request when sourcePool is not provided
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -318,7 +318,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### copy endpoint - create request when pins attribute set to move
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -335,7 +335,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### copy endpoint - create request when smode attribute set to same
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -352,7 +352,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### copy endpoint - create request when smode attribute set to cached
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -368,7 +368,7 @@ Authorization: Basic {{user_name}} {{passwd}}
     });
 %}
 ### copy endpoint - create request when smode attribute set to precious
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -385,7 +385,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### copy endpoint - create request when smode attribute set to removable
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -402,7 +402,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### copy endpoint - create request when smode attribute set to delete
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -419,7 +419,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### copy endpoint - create request when smode attribute set to delete+u2
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -436,7 +436,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### copy endpoint - create request when tmode attribute set to same
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -453,7 +453,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### copy endpoint - create request when tmode attribute set to cached
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -470,7 +470,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### copy endpoint - create request when tmode attribute set to precious
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -487,7 +487,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### copy endpoint - create request when verify attribute set to true
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -504,7 +504,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### copy endpoint - create request when verify attribute set to false
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -521,7 +521,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### copy endpoint - create request when eager attribute set to true
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -538,7 +538,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### copy endpoint - create request when eager attribute set to false
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -555,7 +555,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### copy endpoint - create request when exclude attribute set
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -572,7 +572,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### copy endpoint - create request when include attribute set
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -590,7 +590,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### copy endpoint - create request when refresh attribute set
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -608,7 +608,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### copy endpoint - create request when refresh select set
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -626,7 +626,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### copy endpoint - create request when target attribute set to hsm
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -644,7 +644,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### copy endpoint - create request when select attribute set
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -662,7 +662,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### copy endpoint - create request when target attribute set to pool
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -680,7 +680,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### copy endpoint - create request when target attribute set to pgroup
-#POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+#POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 #Content-Type: application/json
 #Authorization: Basic {{user_name}} {{passwd}}
 #
@@ -698,7 +698,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 #%}
 
 ### copy endpoint - create request when target attribute set to link
-#POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+#POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 #Content-Type: application/json
 #Authorization: Basic {{user_name}} {{passwd}}
 #
@@ -716,7 +716,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 #%}
 
 ### copy endpoint - create request when target attribute set
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -734,7 +734,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### copy endpoint - create request with fileAttributes
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -756,7 +756,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### Test for additional attributes for POST
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -776,7 +776,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### Incorrect path for GET
-GET {{frontend-door}}/{{api}}/{{v1}}/migration/pool_write
+GET {{frontend-door}}{{endpoint}}/migration/pool_write
 
 > {%
     client.test("Incorrect path", function() {
@@ -785,7 +785,7 @@ GET {{frontend-door}}/{{api}}/{{v1}}/migration/pool_write
 %}
 
 ### No auth provided for GET
-GET {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/pool_write/1
+GET {{frontend-door}}{{endpoint}}{{migrations}}/pool_write/1
 
 > {%
     client.test("Incorrect path", function() {
@@ -795,7 +795,7 @@ GET {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/pool_write/1
 
 
 ### GET request to test if response type is json
-GET {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/{{pool_name}}/1
+GET {{frontend-door}}{{endpoint}}{{migrations}}/{{pool_name}}/1
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -807,7 +807,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### copy endpoint - create request with fileAttributes
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -827,7 +827,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### copy endpoint - create request with fileAttributes
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -847,7 +847,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### copy endpoint - create request with fileAttributes
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -867,7 +867,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### copy endpoint - create request with fileAttributes
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -887,7 +887,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### copy endpoint - create request with fileAttributes
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -907,7 +907,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### copy endpoint - create request with fileAttributes
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -927,7 +927,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 
 
 ### copy endpoint - create request with fileAttributes
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -947,7 +947,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### copy endpoint - create request with fileAttributes
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -967,7 +967,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### copy endpoint - create request with fileAttributes
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -987,7 +987,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### copy endpoint - create request with fileAttributes
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -1008,7 +1008,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 
 
 ### copy endpoint - create request with fileAttributes
-POST {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/copy
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -1030,7 +1030,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 ###-----------------migration info tests------------------------------------------------
 
 ###  Unsuccessful request to get info from specific job id
-#GET {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/{{pool_name}}/2
+#GET {{frontend-door}}{{endpoint}}{{migrations}}/{{pool_name}}/2
 #Content-Type: application/json
 #Authorization: Basic {{user_name}} {{passwd}}
 #
@@ -1041,7 +1041,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 #%}
 
 ### Unsuccessful request
-GET {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/{{pool_name}}/{{job_id}}
+GET {{frontend-door}}{{endpoint}}{{migrations}}/{{pool_name}}/{{job_id}}
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -1054,7 +1054,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 
 
 ### Unsuccessful request
-#GET {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/{{pool_name}}/{{job_id}}
+#GET {{frontend-door}}{{endpoint}}{{migrations}}/{{pool_name}}/{{job_id}}
 #Content-Type: application/json
 #Authorization: Basic {{user_name}} {{passwd}}
 #
@@ -1067,7 +1067,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 #%}
 
 ### Unsuccessful request
-#GET {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/{{pool_name}}/{{job_id}}
+#GET {{frontend-door}}{{endpoint}}{{migrations}}/{{pool_name}}/{{job_id}}
 #Content-Type: application/json
 #Authorization: Basic {{user_name}} {{passwd}}
 #
@@ -1080,7 +1080,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 #%}
 
 ### Unsuccessful request
-#GET {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/{{pool_name}}/{{job_id}}
+#GET {{frontend-door}}{{endpoint}}{{migrations}}/{{pool_name}}/{{job_id}}
 #Content-Type: application/json
 #Authorization: Basic {{user_name}} {{passwd}}
 #
@@ -1093,7 +1093,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 #%}
 
 ### Unsuccessful request
-GET {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/{{pool_name}}/{{job_id}}
+GET {{frontend-door}}{{endpoint}}{{migrations}}/{{pool_name}}/{{job_id}}
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -1106,7 +1106,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### Unsuccessful request
-GET {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/{{pool_name}}/{{job_id}}
+GET {{frontend-door}}{{endpoint}}{{migrations}}/{{pool_name}}/{{job_id}}
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
@@ -1119,7 +1119,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 %}
 
 ### Unsuccessful request
-#GET {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/{{pool_name}}/{{job_id}}
+#GET {{frontend-door}}{{endpoint}}{{migrations}}/{{pool_name}}/{{job_id}}
 #Content-Type: application/json
 #Authorization: Basic {{user_name}} {{passwd}}
 #
@@ -1132,7 +1132,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 #%}
 
 ### Unsuccessful request
-GET {{frontend-door}}/{{api}}/{{v1}}/{{migrations}}/{{pool_name}}/{{job_id}}
+GET {{frontend-door}}{{endpoint}}{{migrations}}/{{pool_name}}/{{job_id}}
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
 
