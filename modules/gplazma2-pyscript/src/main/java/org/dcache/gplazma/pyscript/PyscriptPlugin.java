@@ -6,11 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.Principal;
-import java.util.Set;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.dcache.auth.Subjects;
@@ -29,12 +25,14 @@ public class PyscriptPlugin implements GPlazmaAuthenticationPlugin {
     private static final Logger LOGGER = LoggerFactory.getLogger(PyscriptPlugin.class);
 
     private final PythonInterpreter PI = new PythonInterpreter();
+    private final String pluginDirectoryString;
     private List<Path> pluginPathList = new ArrayList<>();
 
     public PyscriptPlugin(Properties properties) {
         // constructor
+        pluginDirectoryString = properties.getProperty("gplazma.pyscript.workdir");
         try {
-            pluginPathList = listDirectoryContents("gplazma2-pyscript");  // TODO fix this, currently just reads from local folder
+            pluginPathList = listDirectoryContents(pluginDirectoryString);
         } catch (IOException e) {
             LOGGER.error("Error reading Pyscript directory");
         }
@@ -49,7 +47,6 @@ public class PyscriptPlugin implements GPlazmaAuthenticationPlugin {
             Set<Object> privateCredentials,
             Set<Principal> principals
     ) throws AuthenticationException {
-
         for (Path pluginPath : pluginPathList) {
             // for each path in pluginPathList
             try {
@@ -72,44 +69,20 @@ public class PyscriptPlugin implements GPlazmaAuthenticationPlugin {
                 PySet pyPrivateCredentials = new PySet();
                 PySet pyPrincipals = new PySet();
 
-                // Only handle select datatypes
-                for (Object pubCred : publicCredentials) {
-                    if (
-                            pubCred instanceof String
-                            || pubCred instanceof Number // all number datatypes
-                    ) {
-                        pyPublicCredentials.add(pubCred);
-                    } else {
-                        LOGGER.warn(
-                            "gplazma2-pyscript: Public Credential {} dropped. Use String or Number.",
-                            pubCred
-                        );
-                    }
-                }
-                for (Object privCred : privateCredentials) {
-                    if (
-                        privCred instanceof String
-                        || privCred instanceof Number // all number datatypes
-                    ) {
-                        pyPrivateCredentials.add(privCred);
-                    } else {
-                        LOGGER.warn(
-                            "gplazma2-pyscript: Private Credential {} dropped. Use String or Number.",
-                            privCred.toString()
-                        );
-                    }
-                }
+                // add credentials regardless of type -> type handling is done in Python!
+                pyPublicCredentials.addAll(publicCredentials);
+                pyPrivateCredentials.addAll(privateCredentials);
 
                 // Convert principals into string representation
-                String principalsString = Subjects.toString(
-                    Subjects.ofPrincipals(principals)
-                );
-                String[] principalStringList = principalsString.substring(
-                    1, principalsString.length() - 1
-                ).split(", ");
-                pyPrincipals.addAll(Arrays.asList(principalStringList));
-
-
+                if (!principals.isEmpty()) {
+                    String principalsString = Subjects.toString(
+                            Subjects.ofPrincipals(principals)
+                    );
+                    String[] principalStringList = principalsString.substring(
+                            1, principalsString.length() - 1
+                    ).split(", ");
+                    pyPrincipals.addAll(Arrays.asList(principalStringList));
+                }
 
                 // =============
                 // Run in Python
@@ -136,11 +109,11 @@ public class PyscriptPlugin implements GPlazmaAuthenticationPlugin {
                 // update principals
                 // =================
                 // Convert principals back from string representation
-                List<String> convertedPyPrincipals = List.copyOf(pyPrincipals);
-
-                // Update original Principals
-                principals.addAll(Subjects.principalsFromArgs(convertedPyPrincipals));
-
+                if (!pyPrincipals.isEmpty()) {
+                    List<String> convertedPyPrincipals = List.copyOf(pyPrincipals);
+                    // Update original Principals
+                    principals.addAll(Subjects.principalsFromArgs(convertedPyPrincipals));
+                }
             } catch (IOException e) {
                 throw new AuthenticationException(
                     "Authentication failed due to I/O error: " + e.getMessage(), e
