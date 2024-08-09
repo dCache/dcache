@@ -556,6 +556,40 @@ In the OP definition:
     allows for custom behaviour if the token is adhering to dCache's
     authorisation model.
 
+##### pyscript
+
+A gplazma2 auth module which uses the Jython package to run Python files
+from within the Java runtime used for dCache. It is intended for site
+admins who want to quickly script authentication plugins without needing
+to understand or write the native dCache Java code.
+
+*Implementation Details*
+
+Jython limits the Python version to version 2.7. Multiple files can be inserted which will
+be executed sequentially but in no particular order.
+
+Each Python file shall be structured to contain one function `py_auth(public_credentials, private_credentials,
+principals)` which returns a boolean whether the authentication was successful. Returning `False` will trigger an
+`AuthenticationException` in Java. Each parameter passed to `py_auth` will be a Python set.
+
+- `private_credentials` is a set of Java credential objects.
+- `public_credentials` is the same as `private_credentials`
+- `principals` will be a set of strings in the form `<principal_type>:<value>`, i.e. a pair of strings separated by a
+  colon. Consider `org.dcache.auth.Subjects#principalsFromArgs` to see how the principal type string maps to the
+  principals classes.
+
+The conversion from a set of principals to a set of strings is done entirely within the `authenticate` method of the
+`PyscriptPlugin`-class. The Python file only ever sees a set of strings, while someone using the plugin will only ever
+need to pass a set of principals from within Java. The conversion is done using existing functions.
+
+You will need to write Python code to handle the credentials properly. Note that the credentials will *not* come as
+primitives but as objects. Read the [Jython](https://javadoc.io/doc/org.python/jython/latest/index.html) documentation
+on how to handle Java objects from within Python.
+
+You will need to set the property `gplazma.pyscript.workdir` which tells the interpreter where to search for the Python
+files.
+
+
 
 #### map Plug-ins
 
