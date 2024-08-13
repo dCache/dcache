@@ -63,10 +63,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.AccessController;
 import java.util.List;
-import javax.security.auth.Subject;
-import org.dcache.auth.Subjects;
 import org.dcache.chimera.posix.Stat;
 
 /**
@@ -98,11 +95,6 @@ public class FsInode_SURI extends FsInode {
         } catch (IllegalArgumentException e) {
             throw new URISyntaxException(line, e.getMessage());
         }
-    }
-
-    private static boolean isRoot() {
-        return Subjects.isRoot(
-              Subject.getSubject(AccessController.getContext()));
     }
 
     private List<StorageLocatable> locations;
