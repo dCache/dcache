@@ -59,11 +59,13 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.tape;
 
+import static org.dcache.http.AuthenticationHandler.getLoginAttributes;
 import static org.dcache.restful.util.HttpServletRequests.getUserRootAwareTargetPrefix;
 import static org.dcache.restful.util.JSONUtils.newBadRequestException;
 import static org.dcache.restful.util.RequestUser.getRestriction;
 import static org.dcache.restful.util.RequestUser.getSubject;
 
+import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -81,6 +83,7 @@ import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -88,8 +91,10 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.dcache.auth.attributes.LoginAttributes;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.CellStub;
+import org.dcache.http.PathMapper;
 import org.dcache.restful.util.HandlerBuilders;
 import org.dcache.restful.util.bulk.BulkServiceCommunicator;
 import org.dcache.services.bulk.BulkRequest;
@@ -115,6 +120,9 @@ public final class ReleaseResources {
 
     @Inject
     private BulkServiceCommunicator service;
+
+    @Inject
+    private PathMapper pathMapper;
 
     @Inject
     @Named("pnfs-stub")
@@ -170,6 +178,8 @@ public final class ReleaseResources {
 
         Subject subject = getSubject();
         Restriction restriction = getRestriction();
+        FsPath userRoot = LoginAttributes.getUserRoot(getLoginAttributes(request));
+        FsPath rootPath = pathMapper.effectiveRoot(userRoot, ForbiddenException::new);
 
         /*
          *  For WLCG, this is a fire-and-forget request, so it does not need to
@@ -184,7 +194,9 @@ public final class ReleaseResources {
 
         PnfsHandler handler = HandlerBuilders.unrestrictedPnfsHandler(pnfsmanager);
 
-        request.setTargetPrefix(getUserRootAwareTargetPrefix(this.request, null, handler));
+        request.setTargetPrefix(getUserRootAwareTargetPrefix(this.request,
+                                                             rootPath.toString(),
+                                                             handler));
 
         BulkRequestMessage message = new BulkRequestMessage(request, restriction);
         message.setSubject(subject);
