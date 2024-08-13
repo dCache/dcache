@@ -40,15 +40,19 @@ public class PyscriptPluginTest {
      These JUnit tests are written accordingly.
      */
 
-    private static PyscriptPlugin plugin;
+    private PyscriptPlugin plugin;
 
     @Before
     public void setUp() {
         // Properties
         Properties properties = new Properties();
-        properties.setProperty("gplazma.pyscript.workdir", "gplazma2-pyscript");
+        properties.setProperty("gplazma.pyscript.workdir", "src/test/resources/gplazma2-pyscript");
         plugin = new PyscriptPlugin(properties);
     }
+
+    /*
+        Auth tests
+     */
 
     @Test
     public void passesWithPasswordCredential() throws Exception {
@@ -97,5 +101,62 @@ public class PyscriptPluginTest {
                 Collections.emptySet(),
                 Collections.emptySet()
         );
+    }
+
+    /*
+        Map tests
+     */
+    @Test
+    public void testAddsPrincipal() throws Exception {
+        UserNamePrincipal name = new UserNamePrincipal("Rosasharn");
+        Set<Principal> principals = new HashSet<>();
+        principals.add(name);
+        plugin.map(
+                principals
+        );
+        assertThat(principals, hasItems(
+                new UserNamePrincipal("Rosasharn"),
+                new UserNamePrincipal("Tom")
+        ));
+    }
+
+    @Test(expected = AuthenticationException.class)
+    public void testExpectedMappingFailure() throws Exception {
+        UserNamePrincipal name = new UserNamePrincipal("Connie");
+        Set<Principal> principals = new HashSet<>();
+        principals.add(name);
+        plugin.map(
+                principals
+        );
+    }
+
+    @Test
+    public void testAuthAndMapping() throws Exception {
+        /*
+         * This test combines tests for map and auth performed sequentially!
+         * ===
+         * Log in with PasswordCredential Rosasharn:Joad
+         * This will set a UserNamePrincipal "Rosasharn"
+         * The map test will add the UserNamePrincipal "Tom"
+         */
+        PasswordCredential pwcred = new PasswordCredential("Rosasharn", "Joad");
+        Set<Object> publicCredentials = new HashSet<>();
+        publicCredentials.add(pwcred);
+        Set<Principal> principals = new HashSet<>();
+        plugin.authenticate(
+                publicCredentials,
+                Collections.emptySet(),
+                principals
+        );
+        assertThat(principals, hasItems(
+                new UserNamePrincipal("Rosasharn")
+        ));
+        plugin.map(
+                principals
+        );
+        assertThat(principals, hasItems(
+                new UserNamePrincipal("Rosasharn"),
+                new UserNamePrincipal("Tom")
+        ));
     }
 }
