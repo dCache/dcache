@@ -558,10 +558,11 @@ In the OP definition:
 
 ##### pyscript
 
-A gplazma2 auth module which uses the Jython package to run Python files
-from within the Java runtime used for dCache. It is intended for site
-admins who want to quickly script authentication plugins without needing
-to understand or write the native dCache Java code.
+A gplazma2 module which uses the Jython package to run Python files
+from within the Java runtime used for dCache. The gplazma2 *auth* and *map*
+steps are implemented. It is intended for site admins who want to quickly
+script authentication plugins without needing to understand or write the
+native dCache Java code.
 
 *Implementation Details*
 
@@ -578,9 +579,10 @@ principals)` which returns a boolean whether the authentication was successful. 
   colon. Consider `org.dcache.auth.Subjects#principalsFromArgs` to see how the principal type string maps to the
   principals classes.
 
-The conversion from a set of principals to a set of strings is done entirely within the `authenticate` method of the
-`PyscriptPlugin`-class. The Python file only ever sees a set of strings, while someone using the plugin will only ever
-need to pass a set of principals from within Java. The conversion is done using existing functions.
+The conversion from a set of principals to a set of strings is done entirely outside of Python.
+The Python file only ever sees a set of strings, while someone using the plugin will only ever
+need to pass a set of principals from within Java. The conversion is done using existing
+functions.
 
 You will need to write Python code to handle the credentials properly. Note that the credentials will *not* come as
 primitives but as objects. Read the [Jython](https://javadoc.io/doc/org.python/jython/latest/index.html) documentation

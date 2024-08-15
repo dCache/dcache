@@ -18,18 +18,36 @@ def py_auth(public_credentials, private_credentials, principals):
     """
     list_accepted = [
         ("admin", "dickerelch"),
-        ("Dust", "Bowl")
+        ("Dust", "Bowl"),
+        ("Rosasharn", "Joad")
     ]
     for pubcred in public_credentials:
         # public credentials iterated in random order
         # first username:password combination in list of accepted credentials leads to acceptance
         if (pubcred.getUsername(), pubcred.getPassword()) in list_accepted:
-            principals.add("username:%s" % (pubcred.getUsername()))  # Python 2-style String formatting
+            principals.add("user:%s" % (pubcred.getUsername()))  # Python 2-style String formatting
             return True
     for privcred in private_credentials:
         # public credentials iterated in random order
         # first username:password combination in list of accepted credentials leads to acceptance
         if (privcred.getUsername(), privcred.getPassword()) in list_accepted:
-            principals.add("username:%s" % (privcred.getUsername()))  # Python 2-style String formatting
+            principals.add("user:%s" % (privcred.getUsername()))  # Python 2-style String formatting
             return True
     return False
+
+def py_map(principals):
+    """
+    :param principals: set of principals (converted to strings)
+    :return: boolean whether mapping has passed (throw AuthenticationException if False)
+
+    In this example implementation, we just check whether some specific full-name principals
+    are present.
+    """
+    if "user:Connie" in principals:
+        # immediately fail
+        return False
+    elif "user:Rosasharn" in principals:
+        principals.add("user:Tom")
+        return True
+    else:
+        return True
