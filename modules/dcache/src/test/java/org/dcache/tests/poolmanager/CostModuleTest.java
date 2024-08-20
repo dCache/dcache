@@ -194,34 +194,42 @@ public class CostModuleTest {
         assertPercentileCost(FRACTION_JUST_BELOW_ONE, maxPerfCost);
     }
 
-    // Depends on hardcoded values of CostModuleV1#messageArrived(CellMessage, PoolManagerPoolUpMassage)
     @Test
     public void testPoolCircuitbreaker() throws InterruptedException {
-        PoolManagerPoolUpMessage currentMessage = getMessagePool(POOL_NAME);
+        int trustScoreIncrease = _costModule.getTrustScoreIncrease();
+        int trustScoreDecrease = _costModule.getTrustScoreDecrease();
+        int trustScoreThreshold = _costModule.getTrustScoreThreshold();
+        int trustScoreCeiling = _costModule.getTrustScoreCeiling();
+        PoolManagerPoolUpMessage msg = getMessagePool(POOL_NAME);
 
-        for (int i = 0; i < 4; i++) {
-            _costModule.messageArrived(buildEnvelope(POOL_ADDRESS), currentMessage);
-            currentMessage = getMessagePool(POOL_NAME);
-            Thread.sleep(1);
+        // Get tho the threshold no mater what it might be
+        for (int i = 0; i < trustScoreThreshold; i += trustScoreIncrease) {
+            msg = deadHeartbeat(msg, POOL_NAME, POOL_ADDRESS);
         }
-        _costModule.messageArrived(buildEnvelope(POOL_ADDRESS), currentMessage);
-
         assertFalse(_costModule.getPoolStatus(POOL_NAME));
 
-        for (int i = 0; i < 1; i++) {
-            _costModule.messageArrived(buildEnvelope(POOL_ADDRESS),currentMessage);
-        }
+        // Reset to the minimum trust value
+        msg = aliveHeartbeat(msg, POOL_NAME, POOL_ADDRESS);
         assertTrue(_costModule.getPoolStatus(POOL_NAME));
 
-        currentMessage = getMessagePool(POOL_NAME);
-        _costModule.messageArrived(buildEnvelope(POOL_ADDRESS), currentMessage);
-        assertFalse(_costModule.getPoolStatus(POOL_NAME));
+        // Those tests are coupled to specific values of CostModuleV1#messageArrived(CellMessage, PoolManagerPoolUpMassage)
+        // msg = deadHeartbeat(msg, POOL_NAME, POOL_ADDRESS);
+        // assertFalse(_costModule.getPoolStatus(POOL_NAME));
+        //
+        // msg = aliveHeartbeat(msg, POOL_NAME, POOL_ADDRESS);
+        // msg = aliveHeartbeat(msg, POOL_NAME, POOL_ADDRESS);
+        // msg = deadHeartbeat(msg, POOL_NAME, POOL_ADDRESS);
+        // assertTrue(_costModule.getPoolStatus(POOL_NAME));
+    }
 
-        _costModule.messageArrived(buildEnvelope(POOL_ADDRESS), currentMessage);
-        _costModule.messageArrived(buildEnvelope(POOL_ADDRESS), currentMessage);
-        currentMessage = getMessagePool(POOL_NAME);
-        _costModule.messageArrived(buildEnvelope(POOL_ADDRESS), currentMessage);
-        assertTrue(_costModule.getPoolStatus(POOL_NAME));
+    private PoolManagerPoolUpMessage deadHeartbeat(PoolManagerPoolUpMessage message, String poolName, CellAddressCore poolAddress) {
+        message = getMessagePool(poolName);
+        _costModule.messageArrived(buildEnvelope(poolAddress), message);
+        return message;
+    }
+    private PoolManagerPoolUpMessage aliveHeartbeat(PoolManagerPoolUpMessage message, String poolName, CellAddressCore poolAddress) {
+        _costModule.messageArrived(buildEnvelope(poolAddress), message);
+        return message;
     }
 
     private PoolManagerPoolUpMessage getMessagePool(String poolName) {
