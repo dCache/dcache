@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
-       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xmlns:context="http://www.springframework.org/schema/context"
-       xsi:schemaLocation="
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:context="http://www.springframework.org/schema/context"
+  xsi:schemaLocation="
            http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
            http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
@@ -10,210 +10,213 @@
   <context:annotation-config/>
 
   <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
-      <description>Undeliverable message logger</description>
+    <description>Undeliverable message logger</description>
   </bean>
 
   <bean id="scheduled-executor"
-        class="org.dcache.util.CDCScheduledExecutorServiceDecorator">
-      <description>Task scheduler</description>
-      <constructor-arg>
-          <bean class="java.util.concurrent.Executors"
-                factory-method="newScheduledThreadPool"
-                destroy-method="shutdown">
-              <constructor-arg value="2"/>
-          </bean>
-      </constructor-arg>
+    class="org.dcache.util.CDCScheduledExecutorServiceDecorator">
+    <description>Task scheduler</description>
+    <constructor-arg>
+      <bean class="java.util.concurrent.Executors"
+        factory-method="newScheduledThreadPool"
+        destroy-method="shutdown">
+        <constructor-arg value="2"/>
+      </bean>
+    </constructor-arg>
   </bean>
 
   <bean id="pnfs-stub" class="org.dcache.cells.CellStub">
-      <description>PNFS manager communication stub</description>
-      <property name="destination" value="${pinmanager.service.pnfsmanager}"/>
-      <property name="timeout" value="${pinmanager.service.pnfsmanager.timeout}"/>
-      <property name="timeoutUnit" value="${pinmanager.service.pnfsmanager.timeout.unit}"/>
+    <description>PNFS manager communication stub</description>
+    <property name="destination" value="${pinmanager.service.pnfsmanager}"/>
+    <property name="timeout" value="${pinmanager.service.pnfsmanager.timeout}"/>
+    <property name="timeoutUnit" value="${pinmanager.service.pnfsmanager.timeout.unit}"/>
   </bean>
 
   <bean id="pool-manager-stub" class="org.dcache.cells.CellStub">
-      <description>Pool manager communication stub</description>
-      <property name="destination" value="${pinmanager.service.poolmanager}"/>
-      <property name="timeout" value="${pinmanager.service.poolmanager.timeout}"/>
-      <property name="timeoutUnit" value="${pinmanager.service.poolmanager.timeout.unit}"/>
+    <description>Pool manager communication stub</description>
+    <property name="destination" value="${pinmanager.service.poolmanager}"/>
+    <property name="timeout" value="${pinmanager.service.poolmanager.timeout}"/>
+    <property name="timeoutUnit" value="${pinmanager.service.poolmanager.timeout.unit}"/>
   </bean>
 
   <bean id="pool-stub" class="org.dcache.cells.CellStub">
-      <description>Pool communication stub</description>
-      <property name="timeout" value="${pinmanager.service.pool.timeout}"/>
-      <property name="timeoutUnit" value="${pinmanager.service.pool.timeout.unit}"/>
+    <description>Pool communication stub</description>
+    <property name="timeout" value="${pinmanager.service.pool.timeout}"/>
+    <property name="timeoutUnit" value="${pinmanager.service.pool.timeout.unit}"/>
   </bean>
 
   <bean id="pool-monitor" class="org.dcache.poolmanager.RemotePoolMonitor">
-      <description>Maintains runtime information about all pools</description>
-      <property name="poolManagerStub" ref="pool-manager-stub"/>
+    <description>Maintains runtime information about all pools</description>
+    <property name="poolManagerStub" ref="pool-manager-stub"/>
   </bean>
 
   <bean id="pinmanager" class="org.dcache.pinmanager.PinManager" init-method="init">
-      <property name="expirationPeriod" value="${pinmanager.expiration-period}"/>
-      <property name="expirationPeriodUnit" value="${pinmanager.expiration-period.unit}"/>
-      <property name="maxUnpinsPerRun" value="${pinmanager.max-unpins-per-run}"/>
-      <property name="resetFailedUnpinsPeriod"
-                value="#{ T(org.dcache.util.TimeUtils).durationOf('${pinmanager.reset-failed-unpins-period}',
+    <property name="expirationPeriod" value="${pinmanager.expiration-period}"/>
+    <property name="expirationPeriodUnit" value="${pinmanager.expiration-period.unit}"/>
+    <property name="maxUnpinsPerRun" value="${pinmanager.max-unpins-per-run}"/>
+    <property name="resetFailedUnpinsPeriod"
+      value="#{ T(org.dcache.util.TimeUtils).durationOf('${pinmanager.reset-failed-unpins-period}',
                 '${pinmanager.reset-failed-unpins-period.unit}')}"/>
-      <property name="poolStub" ref="pool-stub"/>
-      <property name="dao" ref="dao"/>
-      <property name="executor" ref="scheduled-executor"/>
-      <property name="poolMonitor" ref="pool-monitor"/>
+    <property name="poolStub" ref="pool-stub"/>
+    <property name="dao" ref="dao"/>
+    <property name="executor" ref="scheduled-executor"/>
+    <property name="poolMonitor" ref="pool-monitor"/>
   </bean>
 
   <bean id="pool-manager-handler" class="org.dcache.poolmanager.PoolManagerHandlerSubscriber">
-      <description>Pool manager client</description>
-      <property name="poolManager" ref="pool-manager-stub"/>
+    <description>Pool manager client</description>
+    <property name="poolManager" ref="pool-manager-stub"/>
   </bean>
 
   <bean id="pin-processor" class="org.dcache.pinmanager.PinRequestProcessor">
-      <description>Processes pin requests</description>
-      <property name="poolManagerStub">
-          <bean class="org.dcache.poolmanager.PoolManagerStub">
-              <property name="handler" ref="pool-manager-handler"/>
-              <property name="maximumPoolManagerTimeout" value="${pinmanager.service.poolmanager.timeout}"/>
-              <property name="maximumPoolManagerTimeoutUnit" value="${pinmanager.service.poolmanager.timeout.unit}"/>
-              <property name="maximumPoolTimeout" value="${pinmanager.service.pool.timeout}"/>
-              <property name="maximumPoolTimeoutUnit" value="${pinmanager.service.pool.timeout.unit}"/>
-          </bean>
-      </property>
-      <property name="poolStub" ref="pool-stub"/>
-      <property name="pnfsStub" ref="pnfs-stub"/>
-      <property name="dao" ref="dao"/>
-      <property name="scheduledExecutor" ref="scheduled-executor"/>
-      <property name="executor">
-          <bean id="workerThreadPool"
-                class="org.dcache.util.CDCExecutorDecorator">
-              <constructor-arg ref="message-executor"/>
-          </bean>
-      </property>
-      <property name="stagePermission" ref="stage-permission"/>
-      <property name="maxLifetime" value="${pinmanager.limits.pin-duration}"/>
-      <property name="maxLifetimeUnit" value="${pinmanager.limits.pin-duration.unit}"/>
-      <property name="poolMonitor" ref="pool-monitor"/>
+    <description>Processes pin requests</description>
+    <property name="poolManagerStub">
+      <bean class="org.dcache.poolmanager.PoolManagerStub">
+        <property name="handler" ref="pool-manager-handler"/>
+        <property name="maximumPoolManagerTimeout"
+          value="${pinmanager.service.poolmanager.timeout}"/>
+        <property name="maximumPoolManagerTimeoutUnit"
+          value="${pinmanager.service.poolmanager.timeout.unit}"/>
+        <property name="maximumPoolTimeout" value="${pinmanager.service.pool.timeout}"/>
+        <property name="maximumPoolTimeoutUnit" value="${pinmanager.service.pool.timeout.unit}"/>
+      </bean>
+    </property>
+    <property name="poolStub" ref="pool-stub"/>
+    <property name="pnfsStub" ref="pnfs-stub"/>
+    <property name="dao" ref="dao"/>
+    <property name="scheduledExecutor" ref="scheduled-executor"/>
+    <property name="executor">
+      <bean id="workerThreadPool"
+        class="org.dcache.util.CDCExecutorDecorator">
+        <constructor-arg ref="message-executor"/>
+      </bean>
+    </property>
+    <property name="stagePermission" ref="stage-permission"/>
+    <property name="maxLifetime" value="${pinmanager.limits.pin-duration}"/>
+    <property name="maxLifetimeUnit" value="${pinmanager.limits.pin-duration.unit}"/>
+    <property name="poolMonitor" ref="pool-monitor"/>
   </bean>
 
   <bean id="unpin-processor" class="org.dcache.pinmanager.UnpinRequestProcessor">
-      <description>Processes unpin requests</description>
-      <property name="dao" ref="dao"/>
-      <property name="authorizationPolicy" ref="pdp"/>
+    <description>Processes unpin requests</description>
+    <property name="dao" ref="dao"/>
+    <property name="authorizationPolicy" ref="pdp"/>
   </bean>
 
-
-    <bean id="query-pin-processor" class="org.dcache.pinmanager.QueryRequestProcessor">
-        <description>Processes unpin requests</description>
-        <property name="dao" ref="dao"/>
-    </bean>
+  <bean id="query-pin-processor" class="org.dcache.pinmanager.QueryRequestProcessor">
+    <description>Processes unpin requests</description>
+    <property name="dao" ref="dao"/>
+  </bean>
 
   <bean id="list-pin-processor" class="org.dcache.pinmanager.ListRequestProcessor">
-      <description>Processes pin list requests</description>
-      <constructor-arg ref="dao"/>
-      <constructor-arg ref="pdp"/>
+    <description>Processes pin list requests</description>
+    <constructor-arg ref="dao"/>
+    <constructor-arg ref="pdp"/>
   </bean>
 
   <bean id="move-pin-processor" class="org.dcache.pinmanager.MovePinRequestProcessor">
-      <description>Processes pin extension requests</description>
-      <property name="dao" ref="dao"/>
-      <property name="poolStub" ref="pool-stub"/>
-      <property name="authorizationPolicy" ref="pdp"/>
-      <property name="maxLifetime" value="${pinmanager.limits.pin-duration}"/>
-      <property name="maxLifetimeUnit" value="${pinmanager.limits.pin-duration.unit}"/>
-      <property name="poolMonitor" ref="pool-monitor"/>
+    <description>Processes pin extension requests</description>
+    <property name="dao" ref="dao"/>
+    <property name="poolStub" ref="pool-stub"/>
+    <property name="authorizationPolicy" ref="pdp"/>
+    <property name="maxLifetime" value="${pinmanager.limits.pin-duration}"/>
+    <property name="maxLifetimeUnit" value="${pinmanager.limits.pin-duration.unit}"/>
+    <property name="poolMonitor" ref="pool-monitor"/>
   </bean>
 
   <bean id="pinmanager-cli" class="org.dcache.pinmanager.PinManagerCLI">
-      <description>Command line interface</description>
-      <property name="pinManager" ref="pinmanager"/>
-      <property name="pnfsStub" ref="pnfs-stub"/>
-      <property name="dao" ref="dao"/>
-      <property name="pinProcessor" ref="pin-processor"/>
-      <property name="unpinProcessor" ref="unpin-processor"/>
-      <property name="moveProcessor" ref="move-pin-processor"/>
-      <property name="poolMonitor" ref="pool-monitor"/>
+    <description>Command line interface</description>
+    <property name="pinManager" ref="pinmanager"/>
+    <property name="pnfsStub" ref="pnfs-stub"/>
+    <property name="dao" ref="dao"/>
+    <property name="pinProcessor" ref="pin-processor"/>
+    <property name="unpinProcessor" ref="unpin-processor"/>
+    <property name="moveProcessor" ref="move-pin-processor"/>
+    <property name="poolMonitor" ref="pool-monitor"/>
   </bean>
 
   <bean id="pdp" class="org.dcache.pinmanager.DefaultAuthorizationPolicy">
-      <description>Makes authorization decisions</description>
+    <description>Makes authorization decisions</description>
   </bean>
 
   <bean id="stage-permission" class="diskCacheV111.util.CheckStagePermission">
-      <description>Stage permission checker</description>
-      <constructor-arg value="${pinmanager.authz.staging}"/>
+    <description>Stage permission checker</description>
+    <constructor-arg value="${pinmanager.authz.staging}"/>
   </bean>
 
   <bean id="ha-service-leadership-manager" class="org.dcache.cells.HAServiceLeadershipManager"
-        init-method="initZkLeaderListener" destroy-method="shutdown">
-      <description>Coordinates which pinmanager handles pin expiry and removal</description>
-      <constructor-arg value="pinmanager/PinManager"/>
-      <constructor-arg value="service"/>
-      <property name="leadershipListener">
-          <ref bean="leaderlistener-group"/>
-      </property>
+    init-method="initZkLeaderListener" destroy-method="shutdown">
+    <description>Coordinates which pinmanager handles pin expiry and removal</description>
+    <constructor-arg value="pinmanager/PinManager"/>
+    <constructor-arg value="service"/>
+    <property name="leadershipListener">
+      <ref bean="leaderlistener-group"/>
+    </property>
   </bean>
 
   <bean id="leaderlistener-group" class="org.dcache.cells.LeadershipListenerGroup">
-      <description>Propagates leadership change notifications to managed listeners</description>
-      <property name="leaderElectionAwareComponents">
-          <set>
-              <ref bean="pinmanager"/>
-          </set>
-      </property>
+    <description>Propagates leadership change notifications to managed listeners</description>
+    <property name="leaderElectionAwareComponents">
+      <set>
+        <ref bean="pinmanager"/>
+      </set>
+    </property>
   </bean>
 
   <!--  DATABASE BEANS
   -->
 
-    <bean id="data-source" class="com.zaxxer.hikari.HikariDataSource"
-          destroy-method="close">
-        <description>Database connection pool</description>
+  <bean id="data-source" class="com.zaxxer.hikari.HikariDataSource"
+    destroy-method="close">
+    <description>Database connection pool</description>
+    <constructor-arg>
+      <bean class="com.zaxxer.hikari.HikariConfig">
         <constructor-arg>
-            <bean class="com.zaxxer.hikari.HikariConfig">
-                <constructor-arg>
-                    <bean class="org.dcache.util.configuration.ConfigurationPropertiesFactoryBean">
-                        <property name="prefix" value="pinmanager.db.hikari-properties"/>
-                        <property name="staticEnvironment">
-                            <map>
-                                <entry key="jdbcUrl" value="${pinmanager.db.url}"/>
-                                <entry key="username" value="${pinmanager.db.user}"/>
-                                <entry key="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${pinmanager.db.password.file}', '${pinmanager.db.url}', '${pinmanager.db.user}', '${pinmanager.db.password}') }"/>
-                                <entry key="autoCommit" value="true"/>
-                                <entry key="transactionIsolation" value="TRANSACTION_READ_COMMITTED"/>
-                                <entry key="minimumIdle" value="${pinmanager.db.connections.idle}"/>
-                                <entry key="maximumPoolSize" value="${pinmanager.db.connections.max}"/>
-                            </map>
-                        </property>
-                    </bean>
-                </constructor-arg>
-            </bean>
+          <bean class="org.dcache.util.configuration.ConfigurationPropertiesFactoryBean">
+            <property name="prefix" value="pinmanager.db.hikari-properties"/>
+            <property name="staticEnvironment">
+              <map>
+                <entry key="jdbcUrl" value="${pinmanager.db.url}"/>
+                <entry key="username" value="${pinmanager.db.user}"/>
+                <entry key="password"
+                  value="#{ T(diskCacheV111.util.Pgpass).getPassword('${pinmanager.db.password.file}', '${pinmanager.db.url}', '${pinmanager.db.user}', '${pinmanager.db.password}') }"/>
+                <entry key="autoCommit" value="true"/>
+                <entry key="transactionIsolation" value="TRANSACTION_READ_COMMITTED"/>
+                <entry key="minimumIdle" value="${pinmanager.db.connections.idle}"/>
+                <entry key="maximumPoolSize" value="${pinmanager.db.connections.max}"/>
+              </map>
+            </property>
+          </bean>
         </constructor-arg>
-    </bean>
+      </bean>
+    </constructor-arg>
+  </bean>
 
-    <bean id="liquibase" class="org.dcache.util.SpringLiquibase">
-        <description>Database schema manager</description>
+  <bean id="liquibase" class="org.dcache.util.SpringLiquibase">
+    <description>Database schema manager</description>
+    <property name="dataSource" ref="data-source"/>
+    <property name="changeLog" value="classpath:${pinmanager.db.schema.changelog}"/>
+    <property name="shouldUpdate" value="${pinmanager.db.schema.auto}"/>
+  </bean>
+
+  <bean id="dao" class="org.dcache.pinmanager.LoggingDao">
+    <description>Data access object</description>
+
+    <constructor-arg>
+      <bean class="org.dcache.pinmanager.JdbcDao">
         <property name="dataSource" ref="data-source"/>
-        <property name="changeLog" value="classpath:${pinmanager.db.schema.changelog}"/>
-        <property name="shouldUpdate" value="${pinmanager.db.schema.auto}"/>
-    </bean>
+      </bean>
+    </constructor-arg>
+  </bean>
 
-    <bean id="dao" class="org.dcache.pinmanager.LoggingDao">
-        <description>Data access object</description>
+  <bean id="tx-manager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+    <description>Database transaction manager</description>
+    <property name="dataSource" ref="data-source"/>
+  </bean>
 
-        <constructor-arg>
-            <bean class="org.dcache.pinmanager.JdbcDao">
-                <property name="dataSource" ref="data-source"/>
-            </bean>
-        </constructor-arg>
-    </bean>
-
-    <bean id="tx-manager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
-        <description>Database transaction manager</description>
-        <property name="dataSource" ref="data-source"/>
-    </bean>
-
-    <bean id="tx-annotation-processor" class="org.dcache.util.aspects.PerInstanceAnnotationTransactionBeanPostProcessor">
-        <description>Annotated transaction demarcation processor</description>
-        <property name="transactionManager" ref="tx-manager"/>
-    </bean>
+  <bean id="tx-annotation-processor"
+    class="org.dcache.util.aspects.PerInstanceAnnotationTransactionBeanPostProcessor">
+    <description>Annotated transaction demarcation processor</description>
+    <property name="transactionManager" ref="tx-manager"/>
+  </bean>
 </beans>
