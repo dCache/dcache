@@ -643,12 +643,6 @@
             </dependency>
 
             <dependency>
-                <groupId>saxon</groupId>
-                <artifactId>saxon</artifactId>
-                <version>6.5.3</version>
-            </dependency>
-
-            <dependency>
                 <groupId>java.jndi</groupId>
                 <artifactId>nis</artifactId>
                 <version>1.2.1</version>

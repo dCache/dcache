@@ -215,11 +215,6 @@
       <artifactId>dcache-view-admin</artifactId>
     </dependency>
 
-    <dependency>
-        <groupId>saxon</groupId>
-        <artifactId>saxon</artifactId>
-        <scope>runtime</scope>
-    </dependency>
   </dependencies>
 
   <modules>
