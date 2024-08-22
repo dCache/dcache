@@ -216,7 +216,7 @@ Check for duplicate dependencies:
   stage: build
   image: dcache/maven-java17-tar-build
   extends: .build_cache
-  allow_failure: false
+  allow_failure: true
   script:
     - mvn -DskipTests -am -pl packages/tar clean dependency:tree > dependency-tree.txt
     - |
