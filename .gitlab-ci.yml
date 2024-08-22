@@ -209,8 +209,24 @@ container:
       --dockerfile $CI_PROJECT_DIR/Dockerfile
       --destination $CI_REGISTRY_IMAGE:$tag
 
-
-
+#
+# Get maven non-test dependencies, make unique sort, drop the version and check for duplicates
+#
+Check for duplicate dependencies:
+  stage: build
+  image: dcache/maven-java17-tar-build
+  extends: .build_cache
+  allow_failure: false
+  script:
+    - mvn -DskipTests -am -pl packages/tar clean dependency:tree > dependency-tree.txt
+    - |
+      grep :jar dependency-tree.txt | \
+      awk '{print $NF}' | \
+      awk -F: '!/.*:test$/ {printf("%s:%s:%s\n", $1, $2, $4);}' | \
+      sort -u | \
+      cut -d : -f 1,2 | \
+      uniq -D > duplicate-dependencies.txt
+    - if [ -s duplicate-dependencies.txt ]; then cat duplicate-dependencies.txt; exit 1; fi
 
 sign_rpm:
   stage: sign
