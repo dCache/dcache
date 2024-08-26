@@ -74,7 +74,7 @@
         <version.dcache-view-admin>3.0.0</version.dcache-view-admin>
         <version.netty>4.1.108.Final</version.netty>
         <version.dcache>${project.version}</version.dcache>
-        <version.swagger-ui>3.1.7</version.swagger-ui>
+        <version.swagger-ui>3.23.11</version.swagger-ui>
 
         <!-- Remember to update modules/logback-test-config/pom.xml
              when upgrading logback. -->
