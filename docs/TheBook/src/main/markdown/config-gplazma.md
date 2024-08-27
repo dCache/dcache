@@ -380,6 +380,8 @@ The following provides a minimal example of configuring an OP:
 In this example, an OP is configured with the alias `EXAMPLE`.  The
 OP's issuer URL is `https://op.example.org/`.
 
+> NOTE: The Issuer Identifier for the OpenID Provider **MUST** exactly match the value of the iss (issuer) Claim.
+
 The OP configuration allows for some configuration of dCache's
 behaviour when accepting tokens from that OP.  This configuration are
 key-value pairs, with a dash (`-`) before the key and an equals (`=`)
