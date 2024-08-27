@@ -85,6 +85,8 @@ import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 import org.dcache.acl.ACE;
 import org.dcache.acl.ACL;
+import org.dcache.alarms.AlarmMarkerFactory;
+import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.auth.Subjects;
 import org.dcache.chimera.ChimeraDirectoryEntry;
 import org.dcache.chimera.ChimeraFsException;
@@ -1334,6 +1336,10 @@ public class ChimeraNameSpaceProvider
                         /* Not an error; files may be deleted during the
                          * list operation.
                          */
+                    } catch (CacheException e) {
+                        LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.INACCESSIBLE_FILE,
+                                        "namespace"),
+                                "Failed to retrieve file attributes {} : {}", entry.getStat().getId(), e.toString());
                     }
                 }
             }
