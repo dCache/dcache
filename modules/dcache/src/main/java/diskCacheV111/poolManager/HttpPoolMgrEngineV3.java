@@ -65,6 +65,9 @@ public class HttpPoolMgrEngineV3 implements
     private static final Logger LOGGER =
           LoggerFactory.getLogger(HttpPoolMgrEngineV3.class);
 
+    // ROW_ODDNESS is used to alternate the row colors in the HTML table
+    private static final String[] ROW_ODDNESS = {"even", "odd"};
+
     private static final long TIMEOUT = 20000;
 
     private final Thread _restoreCollector;
@@ -97,7 +100,7 @@ public class HttpPoolMgrEngineV3 implements
     private final Object _updateLock = new Object();
     private boolean _addStorageInfo;
     private String[] _siDetails;
-    private String _cssFile = "/poolInfo/css/default.css";
+    private String _cssFile = "/styles/common.css";
     private Map<String, Object> _context;
 
     private CellEndpoint _endpoint;
@@ -532,6 +535,7 @@ public class HttpPoolMgrEngineV3 implements
             }
             pw.println("</ul>");
         } finally {
+            pw.println("</div>");
             pw.println("</body>");
             pw.println("</html>");
         }
@@ -544,6 +548,7 @@ public class HttpPoolMgrEngineV3 implements
         pw.println("<link rel=\"stylesheet\" type=\"text/css\" href=\"" + _cssFile + "\">");
         pw.println("</head>");
 
+        pw.println("<div id=\"main\">");
         pw.println("<body class=\"m-body\">");
 
     }
@@ -644,7 +649,6 @@ public class HttpPoolMgrEngineV3 implements
         Map<String, Object[]> defaultMap = new TreeMap<>(defaultParas.toMap());
         row = 0;
         String[] setColor = {"s-table-disabled", "s-table-regular"};
-        String[] rowClass = {"s-table-a", "s-table-b"};
 
         for (Map.Entry<String, Object[]> entry : defaultMap.entrySet()) {
             String key = entry.getKey();
@@ -655,10 +659,10 @@ public class HttpPoolMgrEngineV3 implements
             //
             // the keys
             //
-            pw.print("<tr class=\"" + rowClass[row % rowClass.length] + "\">");
-            pw.print("<th class=\"s-table\">");
+            pw.print("<tr class=\"" + ROW_ODDNESS[row % ROW_ODDNESS.length] + "\">");
+            pw.print("<td class=\"s-table\">");
             pw.print(key);
-            pw.print("</th>");
+            pw.print("</td>");
             //
             // default values
             //
@@ -1364,10 +1368,9 @@ public class HttpPoolMgrEngineV3 implements
             pw.print("<th class=\"s-table\">Cache</th><th class=\"s-table\">P2p</th>");
             pw.println("</tr>");
             int row = 0;
-            String[] rowColor = {"s-table-a", "s-table-b"};
 
             for (LinkProperties lp : list) {
-                pw.println("<tr class=\"" + rowColor[row % rowColor.length] + "\">");
+                pw.println("<tr class=\"" + ROW_ODDNESS[row % ROW_ODDNESS.length] + "\">");
                 printLinkPropertyRow(pw, lp);
                 pw.println("</tr>");
                 row++;
