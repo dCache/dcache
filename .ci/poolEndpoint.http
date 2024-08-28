@@ -1,4 +1,4 @@
-### Upload frontend file
+### Upload readme file
 PUT {{webdav-door}}/data/pool-a/ReadMeFile
 Authorization: Basic {{user_name}} {{passwd}}
 Content-Type: application/octet-stream
@@ -8,5 +8,33 @@ Content-Type: application/octet-stream
 > {%
     client.test("Successful response when uploading a file", function() {
         client.assert(response.status === 201, "Response was not 201");
+    });
+%}
+
+
+### Verify location of readme file
+GET {{frontend-door}}{{endpoint}}{{namespace}}/%2Fdata%2Fpool-a%2FReadMeFile?children=false&locality=false&locations=true&qos=false&optional=false
+
+> {%
+    client.test("Successful response when verifying location of file", function() {
+        client.assert(response.status === 200, "Response was not 200");
+        client.assert(response.body["locations"][0] == "pool-a", "Locations not found");
+    });
+%}
+
+
+### Migrate ReadMeFile from pool_a to pool_b
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "sourcePool": {{sourcePool}},
+  "targetPools": [{{targetPools}}]
+}
+
+> {%
+    client.test("ReadMe file migration successful", function() {
+        client.assert(response.status === 201, "Migration not successful");
     });
 %}
