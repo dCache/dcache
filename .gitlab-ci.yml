@@ -215,7 +215,6 @@ container:
 Check for duplicate dependencies:
   stage: build
   image: almalinux:9-minimal
-  allow_failure: true
   needs:
     - tar
   dependencies:

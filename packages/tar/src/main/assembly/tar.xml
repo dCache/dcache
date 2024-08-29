@@ -3,11 +3,23 @@
     <includeBaseDirectory>true</includeBaseDirectory>
 
     <dependencySets>
+        <!-- Two dependencies same name. Rename one of them -->
+        <dependencySet>
+            <includes>
+                <include>io.dropwizard.metrics:metrics-core</include>
+            </includes>
+            <outputDirectory>share/classes</outputDirectory>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputFileNameMapping>dropwizard-metrics-core-${version.dropwizard}.jar</outputFileNameMapping>
+            <fileMode>644</fileMode>
+            <directoryMode>755</directoryMode>
+        </dependencySet>
         <dependencySet>
             <excludes>
                 <exclude>*:*:war:*</exclude>
                 <exclude>org.dcache:dcache-view:jar:*</exclude>
                 <exclude>org.dcache:dcache-view-admin:jar:*</exclude>
+                <exclude>io.dropwizard.metrics:metrics-core</exclude>
             </excludes>
             <outputDirectory>share/classes</outputDirectory>
             <useProjectArtifact>false</useProjectArtifact>
