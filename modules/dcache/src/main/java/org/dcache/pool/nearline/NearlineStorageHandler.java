@@ -606,6 +606,12 @@ public class NearlineStorageHandler
                         task.cancel(false);
                     }
                 }
+            } else {
+                /*
+                 Request already canceled, but if attempted again, probably ignored by HSM, so remind it.
+                 Assume that canceling is idempotent.
+                 */
+                storage.cancel(uuid);
             }
         }
 
