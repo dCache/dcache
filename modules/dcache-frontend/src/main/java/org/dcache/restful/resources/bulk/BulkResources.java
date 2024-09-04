@@ -595,13 +595,23 @@ public final class BulkResources {
                 int close = stringTarget.indexOf("]");
                 stringTarget = stringTarget.substring(open+1, close);
             }
-            return Arrays.stream(stringTarget.split("[,]")).collect(Collectors.toList());
+            return Arrays.stream(stringTarget.split("[,]"))
+		.filter(i-> !i.isEmpty())
+		.collect(Collectors.toList());
         } else if (target instanceof String[]) {
-            return Arrays.stream(((String) target).split("[,]")).collect(Collectors.toList());
+            return Arrays.stream(((String) target).split("[,]"))
+		.map(String::strip)
+		.filter(i-> !i.isEmpty())
+		.collect(Collectors.toList());
         } else {
-            return (List<String>) target;
+            return ((List<String>) target)
+		.stream()
+		.map(String::strip)
+		.filter(i -> !i.isEmpty())
+		.collect(Collectors.toList());
         }
     }
+
 
     private static <T> T removeEntry(Map map, Class<T> clzz, String... names) {
         T value = null;
