@@ -1,0 +1,13 @@
+s3:
+  endpoint: tape-minio:9000
+  region: us-east-1
+  access_key: dcache
+  secret_key: let-me-in
+  ssl: false
+  enc: false
+  trace: false
+  s3version: 4
+
+hsm:
+  instance: s3
+  type: osm

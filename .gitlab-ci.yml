@@ -425,15 +425,48 @@ Clean k8s environment:
 #
 # infrastructure required to run dCache
 #
-Deploy 3rd party infrastructure services:
+Deploy PostgreSQL:
   stage: test_infra
   extends: .helm_image
   script:
     - helm repo add bitnami https://charts.bitnami.com/bitnami
     - helm repo update
     - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set auth.username=dcache --set auth.password=let-me-in --set auth.database=chimera  chimera bitnami/postgresql --version=12.12.10
+
+#
+# infrastructure required to run dCache
+#
+Deploy Zookeeper:
+  stage: test_infra
+  extends: .helm_image
+  script:
+    - helm repo add bitnami https://charts.bitnami.com/bitnami
+    - helm repo update
     - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait cells bitnami/zookeeper
+
+#
+# infrastructure required to run dCache
+#
+Deploy Kafka:
+  stage: test_infra
+  extends: .helm_image
+  needs:
+    - Deploy Zookeeper
+  script:
+    - helm repo add bitnami https://charts.bitnami.com/bitnami
+    - helm repo update
     - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set externalZookeeper.servers=cells-zookeeper --set kraft.enabled=false billing bitnami/kafka --version 23.0.7
+
+#
+# infrastructure required to run dCache
+#
+Deploy MinIO as Tape:
+  stage: test_infra
+  extends: .helm_image
+  script:
+    - helm repo add bitnami https://charts.bitnami.com/bitnami
+    - helm repo update
+    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --set-string auth.rootUser=dcache --set-string auth.rootPassword=let-me-in --set-string defaultBuckets="hsm" --wait tape bitnami/minio
 
 #
 # Start Current dCache version and an old pools
@@ -449,7 +482,7 @@ Deploy dCache Helm Chart:
       fi
     - helm repo add dcache ${DCACHE_HELM_REPO}
     - helm repo update
-    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=${tag} --set image.repository=${CI_REGISTRY_IMAGE} store dcache/dcache
+    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=${tag} --set dcache.hsm.enabled=true --set image.repository=${CI_REGISTRY_IMAGE} store dcache/dcache
     - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=9.2.20 --set "dcache.pools={d,f}" --set dcache.door.enabled=false --set image.repository=${CI_REGISTRY_IMAGE} old-store dcache/dcache
 
 
