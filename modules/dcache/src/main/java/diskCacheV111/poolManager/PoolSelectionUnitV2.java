@@ -2623,6 +2623,25 @@ public class PoolSelectionUnitV2
     }
 
     @Override
+    public Collection<SelectionPool> getPoolsBySourcePoolPoolGroup(String sourcePool)
+          throws NoSuchElementException {
+        Collection<SelectionPoolGroup> groups;
+        try {
+            groups = getPoolGroupsOfPool(sourcePool);
+        } catch (NoSuchElementException e) {
+            throw new NoSuchElementException("No pool group for nonexistent source pool: " + sourcePool);
+        }
+
+        if (groups.isEmpty()) {
+            throw new NoSuchElementException("No pool group for source pool: " + sourcePool);
+        } else if (groups.size() > 1) {
+            throw new NoSuchElementException("No unique pool group for source pool: " + sourcePool);
+        }
+
+        return new ArrayList<>(groups.iterator().next().getPools());
+    }
+
+    @Override
     public Collection<SelectionPool> getAllDefinedPools(boolean enabledOnly) {
         List<SelectionPool> pools = new ArrayList<>(_pools.size());
         rlock();

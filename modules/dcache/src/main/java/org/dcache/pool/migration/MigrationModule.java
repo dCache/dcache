@@ -487,7 +487,7 @@ public class MigrationModule
         @Option(name = "target", values = {"pool", "pgroup", "link", "hsm"},
               category = "Target options",
               usage = "Determines the interpretation of the target names.")
-        String target = "pool";
+        String target = null;
 
         @Option(name = "meta-only",
               category = "Target options",
@@ -545,7 +545,12 @@ public class MigrationModule
 
         private RefreshablePoolList createPoolList(String type, List<String> targets) {
             CellStub poolManager = _context.getPoolManagerStub();
-
+            if (type == null) {
+                type = "pgroup";
+                if (targets.isEmpty()) {
+                    return new PoolListBySourcePoolPoolGroup(poolManager, _context.getPoolName());
+                }
+            }
             switch (type) {
                 case "pool":
                     return new PoolListByNames(poolManager, targets);
