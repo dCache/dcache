@@ -18,6 +18,7 @@ import diskCacheV111.vehicles.PoolManagerGetPoolsByHsmMessage;
 import diskCacheV111.vehicles.PoolManagerGetPoolsByLinkMessage;
 import diskCacheV111.vehicles.PoolManagerGetPoolsByNameMessage;
 import diskCacheV111.vehicles.PoolManagerGetPoolsByPoolGroupMessage;
+import diskCacheV111.vehicles.PoolManagerGetPoolsByPoolGroupOfPoolMessage;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import diskCacheV111.vehicles.PoolManagerPoolModeMessage;
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
@@ -42,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -519,6 +521,30 @@ public class PoolManagerV5
             Collection<PoolManagerPoolInformation> empty =
                   Collections.emptyList();
             msg.setPools(empty);
+            msg.setSucceeded();
+        }
+        return msg;
+    }
+
+    public PoolManagerGetPoolsByPoolGroupOfPoolMessage
+    messageArrived(PoolManagerGetPoolsByPoolGroupOfPoolMessage msg) {
+        try {
+            Collection<PoolSelectionUnit.SelectionPoolGroup> poolGroups =
+                  _selectionUnit.getPoolGroupsOfPool(msg.getPoolName());
+            Map<String, List<PoolManagerPoolInformation>> poolsMap = new HashMap<>();
+            List<String> offlinePools = new ArrayList<>();
+            for (PoolSelectionUnit.SelectionPoolGroup poolGroup : poolGroups) {
+                List<PoolManagerPoolInformation> pools = new ArrayList<>();
+                getPoolInformation(_selectionUnit.getPoolsByPoolGroup(poolGroup.getName()),
+                      pools, offlinePools);
+                poolsMap.put(poolGroup.getName(), pools);
+            }
+            msg.setPoolsMap(poolsMap);
+            msg.setOfflinePools(offlinePools);
+            msg.setSucceeded();
+        } catch (NoSuchElementException e) {
+            Map<String, List<PoolManagerPoolInformation>> empty = Map.of();
+            msg.setPoolsMap(empty);
             msg.setSucceeded();
         }
         return msg;
