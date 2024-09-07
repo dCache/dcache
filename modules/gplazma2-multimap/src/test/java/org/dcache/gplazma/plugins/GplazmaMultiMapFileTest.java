@@ -8,6 +8,7 @@ import static org.hamcrest.Matchers.not;
 
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
+import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -22,14 +23,26 @@ import org.dcache.auth.EmailAddressPrincipal;
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
+import org.dcache.auth.OAuthProviderPrincipal;
 import org.dcache.auth.OidcSubjectPrincipal;
 import org.dcache.auth.OpenIdGroupPrincipal;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
 import org.junit.Before;
 import org.junit.Test;
-
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+import static java.util.Objects.requireNonNull;
+import org.hamcrest.Description;
+import org.hamcrest.Matcher;
+import org.hamcrest.TypeSafeMatcher;
+import org.slf4j.LoggerFactory;
 
 public class GplazmaMultiMapFileTest {
 
@@ -37,6 +50,7 @@ public class GplazmaMultiMapFileTest {
     private Set<Principal> mappedPrincipals;
     private Path config;
     private List<String> warnings;
+    private List<ILoggingEvent> logEvents;
 
     @Before
     public void setup() throws Exception {
@@ -46,6 +60,13 @@ public class GplazmaMultiMapFileTest {
         mapFile = new GplazmaMultiMapFile(config);
         warnings = new ArrayList<>();
         mapFile.setWarningConsumer(warnings::add);
+
+        // Capture logging activity
+        Logger logger = (Logger) LoggerFactory.getLogger(GplazmaMultiMapFile.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        logEvents = appender.list;
     }
 
     @Test
@@ -431,6 +452,71 @@ public class GplazmaMultiMapFileTest {
         assertThat(mappedPrincipals, hasItem(new UidPrincipal(2000)));
     }
 
+    @Test
+    public void shouldMatchOpWithSameName() throws Exception {
+        givenConfig("op:FOO uid:1000 gid:2000");
+
+        whenMapping(new OAuthProviderPrincipal("FOO", URI.create("https://my-op.example.org/")));
+
+        assertThat(warnings, is(empty()));
+        assertThat(mappedPrincipals, hasItem(new UidPrincipal(1000)));
+        assertThat(mappedPrincipals, hasItem(new GidPrincipal(2000, false)));
+    }
+
+    @Test
+    public void shouldNotMatchOpWithDifferentName() throws Exception {
+        givenConfig("op:FOO uid:1000 gid:2000");
+
+        whenMapping(new OAuthProviderPrincipal("BAR", URI.create("https://my-op.example.org/")));
+
+        assertThat(warnings, is(empty()));
+        assertThat(mappedPrincipals, is(empty()));
+    }
+
+    @Test
+    public void shouldNotMatchOpWithDn() throws Exception {
+        givenConfig("op:FOO uid:1000 gid:2000");
+
+        whenMapping(new GlobusPrincipal("\"dn:/C=DE/S=Hamburg/OU=desy.de/CN=Kermit The Frog\""));
+
+        assertThat(warnings, is(empty()));
+        assertThat(mappedPrincipals, is(empty()));
+    }
+
+
+    @Test
+    public void shouldAddOpWithoutIssuer() throws Exception {
+        givenConfig("email:kermit@dcache.org  op:FOO");
+
+        whenMapping(new EmailAddressPrincipal("kermit@dcache.org"));
+
+        assertThat(logEvents, hasItem(new LogEventMatcher(Level.WARN,
+                allOf(containsString("op:FOO"),
+                containsString("'iss' claim value")))));
+
+        var opPrincipals = mappedPrincipals.stream()
+                .filter(OAuthProviderPrincipal.class::isInstance)
+                .toList();
+        // Avoid asserting the OP's placeholder issuer URL because we don't
+        // guarantee that value.
+        assertThat(opPrincipals.size(), equalTo(1));
+        var opPrincipal = opPrincipals.get(0);
+        assertThat(opPrincipal.getName(), is(equalTo("FOO")));
+    }
+
+    @Test
+    public void shouldAddOpWithIssuer() throws Exception {
+        givenConfig("email:kermit@dcache.org  op:FOO:https://my-op.example.org/");
+
+        whenMapping(new EmailAddressPrincipal("kermit@dcache.org"));
+
+        assertThat(warnings, is(empty()));
+        assertThat(logEvents, not(hasItem(new LogEventMatcher(Level.WARN,
+                containsString("op:FOO")))));
+        assertThat(mappedPrincipals, hasItem(new OAuthProviderPrincipal("FOO",
+                URI.create("https://my-op.example.org/"))));
+    }
+
     /*----------------------- Helpers -----------------------------*/
 
     private void givenConfig(String mapping) throws Exception {
@@ -453,5 +539,31 @@ public class GplazmaMultiMapFileTest {
               .map(e -> e.getValue())
               .findFirst()
               .orElse(Collections.emptySet());
+    }
+
+    /**
+     * A simple Hamcrest matcher that allows for assertions against Logback
+     * events.
+     */
+    private static class LogEventMatcher extends TypeSafeMatcher<ILoggingEvent> {
+        private final Level level;
+        private final Matcher<String> messageMatcher;
+
+        public LogEventMatcher(Level level, Matcher<String> messageMatcher) {
+            this.level = requireNonNull(level);
+            this.messageMatcher = requireNonNull(messageMatcher);
+        }
+
+        @Override
+        protected boolean matchesSafely(ILoggingEvent item) {
+            return item.getLevel() == level && messageMatcher.matches(item.getFormattedMessage());
+        }
+
+        @Override
+        public void describeTo(Description description) {
+            description.appendText("a log entry logged at ").appendValue(level)
+                    .appendText(" and with formatted message ")
+                    .appendDescriptionOf(messageMatcher);
+        }
     }
 }
