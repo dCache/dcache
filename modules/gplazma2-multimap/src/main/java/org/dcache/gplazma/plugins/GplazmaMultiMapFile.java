@@ -6,6 +6,8 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -43,6 +45,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class GplazmaMultiMapFile {
+
+    private static final URI PLACEHOLDER_ISSUER = URI.create("https://unknown-issuer.invalid/");
 
     /**
      * Information about the principals that may be mapped.
@@ -116,7 +120,36 @@ public class GplazmaMultiMapFile {
         UID("uid", UidPrincipal.class),
         USER_NAME("username", UserNamePrincipal.class),
         ENTITLEMENT("entitlement", EntitlementPrincipal.class),
-        OP("op", OAuthProviderPrincipal.class),
+        OP("op", OAuthProviderPrincipal.class) {
+            @Override
+            public Principal buildPrincipal(String value)
+                    throws GplazmaParseMapFileException {
+                List<String> items = Splitter.on(':').limit(2).splitToList(value);
+                URI issuer;
+                if (items.size() == 1) { // Backwards compatibility
+                    issuer = PLACEHOLDER_ISSUER;
+                    LOGGER.warn("Please replace \"op:{}\" with \"op:{}:URL\""
+                            + " where URL is the issuer URL (the 'iss' claim"
+                            + " value).", value, value);
+                } else {
+                    try {
+                        issuer = new URI(items.get(1));
+                    } catch (URISyntaxException e) {
+                        throw new GplazmaParseMapFileException("Invalid URL: "
+                                + e.getMessage());
+                    }
+                }
+                var name = items.get(0);
+                return new OAuthProviderPrincipal(name, issuer);
+            }
+
+            @Override
+            public PrincipalMatcher buildMatcher(String value)
+                  throws GplazmaParseMapFileException {
+                return (Principal p) -> p instanceof OAuthProviderPrincipal
+                        && ((OAuthProviderPrincipal)p).getName().equals(value);
+            }
+        },
         ROLES("roles", RolePrincipal.class);
 
         private final String label;
