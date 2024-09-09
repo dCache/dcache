@@ -481,6 +481,18 @@ Deploy MinIO as Tape:
     - helm repo update
     - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --set-string auth.rootUser=dcache --set-string auth.rootPassword=let-me-in --set-string defaultBuckets="hsm" --wait tape bitnami/minio
 
+
+#
+# OIDC provided for token-based testing
+#
+Deploy Keycloak:
+  stage: test_infra
+  extends: .kubernetes_image
+  script:
+    - kubectl -n $K8S_NAMESPACE apply -f .ci/keycloack-deployment.yaml
+    # FIXME: add readiness check
+    # - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready deployment.apps/keycloak; do sleep 1; done
+
 #
 # Start Current dCache version and an old pools
 #
@@ -617,3 +629,12 @@ NFS4.x protocol compliance tests:
     reports:
       junit:
         - "xunit*.xml"
+
+Run OIDC test:
+  stage: testing
+  extends: .kubernetes_image
+  script:
+    - kubectl -n $K8S_NAMESPACE run oidc-tester --image=almalinux:9 --restart=Never  --command -- sleep 3600
+    - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod oidc-tester; do sleep 1; done
+    - kubectl -n $K8S_NAMESPACE cp .ci/run-oidc-test.sh oidc-tester:/run-oidc-test.sh
+    - kubectl -n $K8S_NAMESPACE exec oidc-tester -- /bin/sh /run-oidc-test.sh
