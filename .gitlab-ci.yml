@@ -367,10 +367,11 @@ upload_container:
 #
 # This jobs needs that the number of changes to fetch from GitLab when cloning a repository is high enough to generate
 # the changelog.
-Generate release notes:
+AI Generated Release Notes:
   image: almalinux:9-minimal
   stage: upload
   extends: .upload_rules
+  allow_failure: true
   dependencies:
     - sign_deb
     - sign_rpm
@@ -378,7 +379,19 @@ Generate release notes:
     - tar
   script:
     - microdnf install -y git-core
+    - git fetch --refetch --all --tags
     - .ci/generate-changelog.sh >> release-$CI_COMMIT_TAG.md
+    - curl -L -o chatgpt https://github.com/kardolus/chatgpt-cli/releases/latest/download/chatgpt-linux-amd64 && chmod +x chatgpt
+    - LAST_TAG=$(.ci/get-git-version.sh $CI_COMMIT_TAG)
+    - |-
+      git log $LAST_TAG..$CI_COMMIT_TAG | \
+        OPENAI_API_KEY=$LLM_API_KEY \
+        OPENAI_URL=$LLM_API_ENDPOINT \
+        OPENAI_MODEL=$LLM_MODEL \
+        OPENAI_COMPLETIONS_PATH=$LLM_COMPLETIONS_PATH \
+        OPENAI_ROLE="You are a helpful tech writer working on release notes of the dCache project." \
+        ./chatgpt "$LLM_PROMPT" | \
+        tee -a release-$CI_COMMIT_TAG.md
   artifacts:
     paths:
       - release-*.md
