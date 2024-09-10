@@ -1,5 +1,6 @@
 package org.dcache.gplazma.plugins;
 
+import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItem;
@@ -496,7 +497,7 @@ public class GplazmaMultiMapFileTest {
 
         var opPrincipals = mappedPrincipals.stream()
                 .filter(OAuthProviderPrincipal.class::isInstance)
-                .toList();
+                .collect(toList());
         // Avoid asserting the OP's placeholder issuer URL because we don't
         // guarantee that value.
         assertThat(opPrincipals.size(), equalTo(1));
