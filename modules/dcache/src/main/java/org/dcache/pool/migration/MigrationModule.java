@@ -537,8 +537,12 @@ public class MigrationModule
               usage = "Enables the transfer of files from a disabled pool.")
         boolean forceSourceMode;
 
-        @Argument(metaVar = "target")
-        String[] targets;
+        @Argument(metaVar = "target",
+                required = false,
+                usage = "Required unless -target=pgroup is supplied, in which case we" +
+                        "default to the unique pool group of which the source pool is a member," +
+                        "if such exists.")
+         String[] targets = {};
 
         @CommandLine
         String commandLine;
@@ -804,8 +808,13 @@ public class MigrationModule
             Expression includeExpression =
                   createPoolPredicate(includeWhen, TRUE_EXPRESSION);
 
+            List<String> targets_list = asList(targets);
+            if (targets_list.isEmpty() && ! target.equals("pgroup")) {
+                throw new IllegalArgumentException("target(s) required when target type is " + target);
+            }
+
             RefreshablePoolList poolList =
-                  new PoolListFilter(createPoolList(target, asList(targets)),
+                  new PoolListFilter(createPoolList(target, targets_list),
                         excluded, excludeExpression,
                         included, includeExpression,
                         sourceList);
