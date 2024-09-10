@@ -1,4 +1,4 @@
-### Upload readme file
+### Upload ReadMeFile
 PUT {{webdav-door}}/data/pool-a/ReadMeFile
 Authorization: Basic {{user_name}} {{passwd}}
 Content-Type: application/octet-stream
@@ -6,24 +6,24 @@ Content-Type: application/octet-stream
 < /README.md
 
 > {%
-    client.test("Successful response when uploading a file", function() {
+    client.test("Successful file upload", function() {
         client.assert(response.status === 201, "Response was not 201");
     });
 %}
 
-
-### Verify location of readme file
+### Verify location of ReadMeFile
 GET {{frontend-door}}{{endpoint}}{{namespace}}/%2Fdata%2Fpool-a%2FReadMeFile?children=false&locality=false&locations=true&qos=false&optional=false
 
 > {%
-    client.test("Successful response when verifying location of file", function() {
+    client.test("Successful verification of file location", function() {
         client.assert(response.status === 200, "Response was not 200");
         client.assert(response.body["locations"][0] == "pool-a", "Locations not found");
+        client.assert(response.body["pnfsId"] != null, "pnfsId not found");
+        client.global.set("pnfsId", response.body["pnfsId"]);
     });
 %}
 
-
-### Migrate ReadMeFile from pool_a to pool_b
+### Migrate ReadMeFile from source pool (pool-a) to target pool (pool-b)
 POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 Authorization: Basic {{user_name}} {{passwd}}
@@ -34,7 +34,57 @@ Authorization: Basic {{user_name}} {{passwd}}
 }
 
 > {%
-    client.test("ReadMe file migration successful", function() {
+    client.test("Successful file migration", function() {
         client.assert(response.status === 201, "Migration not successful");
+        client.global.set("migration-job-id", response.headers.valueOf("migration-job-id"));
+    });
+%}
+
+### Get information about migration job ( Verify the job started)
+GET {{frontend-door}}{{endpoint}}{{migrations}}/{{sourcePool}}/{{migration-job-id}}
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+> {%
+    client.test("Getting migration information", function() {
+        client.assert(response.status === 200, "Unsuccessful migration");
+        client.assert(response.body["state"] === "SLEEPING" , "Unexpected state");
+        client.assert(response.body["queued"] != "0" , "Something in the queue");
+        client.assert(response.body["targetPools"][0] === "pool-b" , "Incorrect migration pool");
+    });
+%}
+
+### Check contents of target pool after migration
+GET {{frontend-door}}{{endpoint}}{{pools}}/{{targetPools}}/{{pnfsId}}
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+> {%
+    client.test("Getting migration information for pool-b", function() {
+        client.assert(response.status === 200, "Unsuccessful migration to pool-b");
+        client.assert(response.body.length != 0, "Body is empty");
+    });
+%}
+
+### Check contents of pool-c after migration
+GET {{frontend-door}}{{endpoint}}{{pools}}/pool-c/{{pnfsId}}
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+> {%
+    client.test("Getting migration information for pool-c", function() {
+        client.assert(response.status === 200, "Unsuccessful migration to pool-c");
+        client.assert(response.body.length !=0, "Body is empty");
+    });
+%}
+
+### Check contents of pool-c after entering an incorrect id -- should give a bad request
+GET {{frontend-door}}{{endpoint}}{{pools}}/pool-c/0000A9995C9903D846CFB1CBCED3CC7F323F526325147896325
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+> {%
+    client.test("Getting information for incorrect id in pool-c", function() {
+        client.assert(response.status === 404, "Incorrect pnfsId");
     });
 %}
