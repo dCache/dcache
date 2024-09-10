@@ -137,7 +137,7 @@ database tables, indexes etc as necessary.  However, dCache does not
 create the databases.  That is a manual process, typically done only
 once.
 
- Let us creat a single database user dcache:
+ Let us create a single database user dcache:
 
 > createuser -U postgres --no-superuser --no-createrole --createdb --no-password dcache
 >
@@ -200,8 +200,8 @@ plug-ins (if a prior required plug-in has failed the success of this one is igno
 not deemed as fatal for the login attempt. If the plug-in succeeds gPlazma immediately proceeds with the
 next plug-in type or returns control to the door if this was the last stack.
 
- **requisite**  means failling plugin finishes the phase with failure. 
- **required** failling plugin fails the phase but remaining plugins are still running.
+ **requisite**  means failing plugin finishes the phase with failure. 
+ **required** failing plugin fails the phase but remaining plugins are still running.
 
 
 The third column defines plugins that should be used as back-end for its tasks
@@ -242,7 +242,7 @@ EOF
 
 **#1.1** This configuration tells gPlazma to use the **x.509** plugin used to extracts X.509 certificate chains from the credentials of a user to be used by other plug-ins.
 
-In this tutorila we use  **x.509**  we  need to create the directory **/etc/grid-security/** and **/etc/grid-security/certificates/**
+In this tutorial we use  **x.509**  we  need to create the directory **/etc/grid-security/** and **/etc/grid-security/certificates/**
 
 
 
@@ -305,7 +305,7 @@ EOF
  **#2.3** Using the “storage-authzdb-style”-file, this virtual user-name is then mapped to
 the actual UNIX user-ID 4 and group-IDs 4 and define the rights on read/write.
 
-The first and the second "/" are home and root directories respectivly.
+The first and the second "/" are home and root directories respectively.
 
 
 
@@ -342,7 +342,7 @@ dCache supports OIDC tokens.
 You will need to install oid-agent
 
 
-On the VM for this tutorial it was needed to instal epel
+On the VM for this tutorial it was needed to install epel
 
 > dnf config-manager --set-enabled crb
 > 
@@ -351,7 +351,7 @@ On the VM for this tutorial it was needed to instal epel
 > dnf repolist epel
 > 
 
-Now we can insatll oid-agent and run:
+Now we can install oid-agent and run:
 
 >  dnf install oidc-agent
 >
@@ -420,7 +420,7 @@ Issuer [https://bildungsproxy.aai.dfn.de]:19
 The following scopes are supported: openid profile email offline_access wlcg wlcg.groups storage.read:/ storage.create:/ compute.read compute.modify compute.create compute.cancel storage.modify:/ eduperson_scoped_affiliation eduperson_entitlement eduperson_assurance storage.stage:/ entitlements
 
 ```
-in the next step we enter wich scopes we want to have: 
+in the next step we enter which scopes we want to have: 
 
 > Scopes or 'max' (space separated) [openid profile offline_access]: max
 
@@ -439,7 +439,7 @@ Alternatively you can use the following QR code to visit the above listed URL.
 
 ```
 
-After entering the code the divece is authorised:
+After entering the code the device is authorised:
 
 ```ini
 
@@ -465,7 +465,7 @@ eyJraWQiOiJyc2ExIiwiYWxnIjoiUlMyNTYifQ.eyJ3bGNnLnZlciI6IjEuMCIsInN1YiI6ImU0ZmYxO
 > TOKEN=$(oidc-token wlcg-with-scope)
 
 
-And hier is our token
+And here is our token
 
 >echo $TOKEN | cut -d "." -f 2 | base64 -d 2>|/dev/null | jq
 >
