@@ -183,7 +183,7 @@ public final class BulkServiceCommands implements CellCommandListener {
     /**
      * name | class | type | permits
      */
-    private static final String FORMAT_ACTIVITY = "%-20s | %100s | %7s | %10s";
+    private static final String FORMAT_ACTIVITY = "%-20s | %100s | %7s";
 
     /**
      * name | required | description
@@ -552,7 +552,7 @@ public final class BulkServiceCommands implements CellCommandListener {
                 return "There are no mapped activities!";
             }
 
-            return String.format(FORMAT_ACTIVITY, "NAME", "CLASS", "TYPE", "RATE")
+            return String.format(FORMAT_ACTIVITY, "NAME", "CLASS", "TYPE")
                   + "\n" + activities;
         }
     }
