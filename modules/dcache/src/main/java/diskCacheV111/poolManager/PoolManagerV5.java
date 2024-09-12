@@ -18,7 +18,7 @@ import diskCacheV111.vehicles.PoolManagerGetPoolsByHsmMessage;
 import diskCacheV111.vehicles.PoolManagerGetPoolsByLinkMessage;
 import diskCacheV111.vehicles.PoolManagerGetPoolsByNameMessage;
 import diskCacheV111.vehicles.PoolManagerGetPoolsByPoolGroupMessage;
-import diskCacheV111.vehicles.PoolManagerGetPoolsBySourcePoolPoolGroupMessage;
+import diskCacheV111.vehicles.PoolManagerGetPoolsByPoolGroupOfPoolMessage;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import diskCacheV111.vehicles.PoolManagerPoolModeMessage;
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
@@ -525,12 +525,12 @@ public class PoolManagerV5
         return msg;
     }
 
-    public PoolManagerGetPoolsBySourcePoolPoolGroupMessage
-    messageArrived(PoolManagerGetPoolsBySourcePoolPoolGroupMessage msg) {
+    public PoolManagerGetPoolsByPoolGroupOfPoolMessage
+    messageArrived(PoolManagerGetPoolsByPoolGroupOfPoolMessage msg) {
         try {
             List<PoolManagerPoolInformation> pools = new ArrayList<>();
             List<String> offlinePools = new ArrayList<>();
-            getPoolInformation(_selectionUnit.getPoolsBySourcePoolPoolGroup(msg.getSourcePool()), pools,
+            getPoolInformation(_selectionUnit.getPoolsByPoolGroupOfPool(msg.getPoolName()), pools,
                       offlinePools);
             msg.setPools(pools);
             msg.setOfflinePools(offlinePools);

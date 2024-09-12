@@ -170,8 +170,8 @@ final class TestSelectionUnit implements PoolSelectionUnit {
     }
 
     @Override
-    public Collection<SelectionPool> getPoolsBySourcePoolPoolGroup(String sourcePool) throws NoSuchElementException {
-        return psu.getPoolsBySourcePoolPoolGroup(sourcePool);
+    public Collection<SelectionPool> getPoolsByPoolGroupOfPool(String poolName) throws NoSuchElementException {
+        return psu.getPoolsByPoolGroupOfPool(poolName);
     }
 
     @Override

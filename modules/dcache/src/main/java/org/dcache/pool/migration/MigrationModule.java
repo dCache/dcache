@@ -556,7 +556,7 @@ public class MigrationModule
                     return new PoolListByHsm(poolManager, targets);
                 case "pgroup":
                     if (targets.isEmpty()) {
-                        return new PoolListBySourcePoolPoolGroup(poolManager, _context.getPoolName());
+                        return new PoolListByPoolGroupOfPool(poolManager, _context.getPoolName());
                     } else {
                         return new PoolListByPoolGroup(poolManager, targets);
                     }
