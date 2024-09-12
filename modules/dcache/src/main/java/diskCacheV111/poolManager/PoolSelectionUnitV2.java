@@ -10,13 +10,13 @@ import static org.dcache.namespace.FileAttribute.CACHECLASS;
 import static org.dcache.namespace.FileAttribute.HSM;
 import static org.dcache.namespace.FileAttribute.STORAGECLASS;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -97,7 +97,7 @@ public class PoolSelectionUnitV2
     private final Map<String, UGroup> _uGroups = new HashMap<>();
     private final Map<String, Unit> _units = new HashMap<>();
     private final Cache<String, PoolPreferenceLevel[]> cachedMatchValue =
-          CacheBuilder.newBuilder()
+          Caffeine.newBuilder()
                 .maximumSize(100000)
                 .build();
     private boolean _useRegex;

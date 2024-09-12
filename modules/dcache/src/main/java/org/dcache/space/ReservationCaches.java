@@ -69,11 +69,10 @@ import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.SettableFuture;
+import com.github.benmanes.caffeine.cache.AsyncCacheLoader;
+import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import diskCacheV111.services.space.Space;
 import diskCacheV111.services.space.message.GetSpaceMetaData;
 import diskCacheV111.services.space.message.GetSpaceTokens;
@@ -89,6 +88,7 @@ import java.util.EnumSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import javax.security.auth.Subject;
 import org.dcache.cells.AbstractMessageCallback;
@@ -153,16 +153,22 @@ public class ReservationCaches {
      */
     public static LoadingCache<GetSpaceTokensKey, long[]> buildOwnerDescriptionLookupCache(
           CellStub spaceManager, Executor executor) {
-        return CacheBuilder.newBuilder()
-              .maximumSize(1000)
-              .expireAfterWrite(30, SECONDS)
-              .refreshAfterWrite(10, SECONDS)
-              .recordStats()
-              .build(new CacheLoader<GetSpaceTokensKey, long[]>() {
+        return Caffeine.newBuilder().maximumSize(1000).expireAfterWrite(30, SECONDS)
+              .refreshAfterWrite(10, SECONDS).recordStats().executor(executor)
+              .buildAsync(new AsyncCacheLoader<GetSpaceTokensKey, long[]>() {
+                  private GetSpaceTokens createRequest(GetSpaceTokensKey key) {
+                      GetSpaceTokens message = new GetSpaceTokens(key.description);
+                      message.setSubject(new Subject(true, key.principals, Collections.emptySet(),
+                            Collections.emptySet()));
+                      return message;
+                  }
+
                   @Override
-                  public long[] load(GetSpaceTokensKey key) throws Exception {
+                  public CompletableFuture<long[]> asyncLoad(GetSpaceTokensKey key,
+                        Executor executor) throws Exception {
                       try {
-                          return spaceManager.sendAndWait(createRequest(key)).getSpaceTokens();
+                          return CompletableFuture.completedFuture(
+                                spaceManager.sendAndWait(createRequest(key)).getSpaceTokens());
                       } catch (TimeoutCacheException e) {
                           throw new SRMInternalErrorException("Space manager timeout", e);
                       } catch (InterruptedException e) {
@@ -170,132 +176,137 @@ public class ReservationCaches {
                       } catch (CacheException e) {
                           LOGGER.warn("GetSpaceTokens failed with rc={} error={}", e.getRc(),
                                 e.getMessage());
-                          throw new SRMException("GetSpaceTokens failed with rc=" + e.getRc() +
-                                " error=" + e.getMessage(), e);
+                          throw new SRMException(
+                                "GetSpaceTokens failed with rc=" + e.getRc() + " error="
+                                      + e.getMessage(), e);
                       }
                   }
 
-                  private GetSpaceTokens createRequest(GetSpaceTokensKey key) {
-                      GetSpaceTokens message = new GetSpaceTokens(key.description);
-                      message.setSubject(new Subject(true, key.principals,
-                            Collections.emptySet(), Collections.emptySet()));
-                      return message;
-                  }
-
                   @Override
-                  public ListenableFuture<long[]> reload(GetSpaceTokensKey key, long[] oldValue)
-                        throws Exception {
-                      final SettableFuture<long[]> future = SettableFuture.create();
-                      CellStub.addCallback(
-                            spaceManager.send(createRequest(key)),
-                            new AbstractMessageCallback<GetSpaceTokens>() {
+                  public CompletableFuture<long[]> asyncReload(GetSpaceTokensKey key,
+                        long[] oldValue, Executor executor) {
+                      // A future we are going to complete in the Cell Callback.
+                      final CompletableFuture<long[]> future = new CompletableFuture<>();
+
+                      CellStub.addCallback(spaceManager.send(createRequest(key)),
+                            new AbstractMessageCallback<>() {
                                 @Override
                                 public void success(GetSpaceTokens message) {
-                                    future.set(message.getSpaceTokens());
+                                    future.complete(message.getSpaceTokens());
                                 }
 
                                 @Override
                                 public void failure(int rc, Object error) {
-                                    CacheException exception = CacheExceptionFactory.exceptionOf(
-                                          rc, Objects.toString(error, null));
-                                    future.setException(exception);
+                                    CacheException exception = CacheExceptionFactory.exceptionOf(rc,
+                                          Objects.toString(error, null));
+                                    future.completeExceptionally(exception);
                                 }
                             }, executor);
                       return future;
                   }
-              });
+              }).synchronous();
     }
 
     /**
      * Build a loading cache for looking up space reservations by space token.
      */
-    public static LoadingCache<String, Optional<Space>> buildSpaceLookupCache(CellStub spaceManager,
+    public static LoadingCache<String, Optional<Space>> buildSpaceLookupCache(
+          CellStub spaceManager,
           Executor executor) {
-        return CacheBuilder.newBuilder()
+        return Caffeine.newBuilder()
               .maximumSize(1000)
               .expireAfterWrite(10, MINUTES)
               .refreshAfterWrite(30, SECONDS)
               .recordStats()
-              .build(
-                    new CacheLoader<String, Optional<Space>>() {
-                        @Override
-                        public Optional<Space> load(String token)
-                              throws CacheException, NoRouteToCellException, InterruptedException {
-                            Space space =
-                                  spaceManager.sendAndWait(new GetSpaceMetaData(token))
-                                        .getSpaces()[0];
-                            return Optional.ofNullable(space);
-                        }
-
-                        @Override
-                        public ListenableFuture<Optional<Space>> reload(String token,
-                              Optional<Space> oldValue) {
-                            final SettableFuture<Optional<Space>> future = SettableFuture.create();
-                            CellStub.addCallback(
-                                  spaceManager.send(new GetSpaceMetaData(token)),
-                                  new AbstractMessageCallback<GetSpaceMetaData>() {
-                                      @Override
-                                      public void success(GetSpaceMetaData message) {
-                                          future.set(Optional.ofNullable(message.getSpaces()[0]));
-                                      }
-
-                                      @Override
-                                      public void failure(int rc, Object error) {
-                                          CacheException exception = CacheExceptionFactory.exceptionOf(
-                                                rc, Objects.toString(error, null));
-                                          future.setException(exception);
-                                      }
-                                  }, executor);
-                            return future;
-                        }
-                    });
-    }
-
-    /**
-     * Cache queries to discover if a directory has the "WriteToken" tag set.
-     */
-    public static LoadingCache<FsPath, java.util.Optional<String>> buildWriteTokenLookupCache(
-          PnfsHandler pnfs, Executor executor) {
-        return CacheBuilder.newBuilder()
-              .maximumSize(1000)
-              .expireAfterWrite(10, MINUTES)
-              .refreshAfterWrite(5, MINUTES)
-              .recordStats()
-              .build(new CacheLoader<FsPath, java.util.Optional<String>>() {
-                  private java.util.Optional<String> writeToken(FileAttributes attr) {
-                      StorageInfo info = attr.getStorageInfo();
-                      return java.util.Optional.ofNullable(info.getMap().get("writeToken"));
-                  }
-
+              .executor(executor)
+              .buildAsync(new AsyncCacheLoader<String, Optional<Space>>() {
                   @Override
-                  public java.util.Optional<String> load(FsPath path)
+                  public CompletableFuture<Optional<Space>> asyncLoad(String token,
+                        Executor executor)
                         throws CacheException, NoRouteToCellException, InterruptedException {
-                      return writeToken(
-                            pnfs.getFileAttributes(path, EnumSet.of(FileAttribute.STORAGEINFO)));
+
+                      Space space = spaceManager.sendAndWait(new GetSpaceMetaData(token))
+                            .getSpaces()[0];
+
+                      return CompletableFuture.completedFuture(Optional.ofNullable(space));
                   }
 
                   @Override
-                  public ListenableFuture<java.util.Optional<String>> reload(FsPath path,
-                        java.util.Optional<String> old) {
-                      PnfsGetFileAttributes message = new PnfsGetFileAttributes(path.toString(),
-                            EnumSet.of(FileAttribute.STORAGEINFO));
-                      SettableFuture<java.util.Optional<String>> future = SettableFuture.create();
-                      CellStub.addCallback(pnfs.requestAsync(message),
-                            new AbstractMessageCallback<PnfsGetFileAttributes>() {
+                  public CompletableFuture<Optional<Space>> asyncReload(String token,
+                        Optional<Space> oldValue, Executor executor) {
+                      // A future we are going to complete in the Cell Callback.
+                      final CompletableFuture<Optional<Space>> future = new CompletableFuture<>();
+
+                      CellStub.addCallback(
+                            spaceManager.send(new GetSpaceMetaData(token)),
+                            new AbstractMessageCallback<>() {
                                 @Override
-                                public void success(PnfsGetFileAttributes message) {
-                                    future.set(writeToken(message.getFileAttributes()));
+                                public void success(GetSpaceMetaData message) {
+                                    future.complete(Optional.ofNullable(message.getSpaces()[0]));
                                 }
 
                                 @Override
                                 public void failure(int rc, Object error) {
                                     CacheException exception = CacheExceptionFactory.exceptionOf(
                                           rc, Objects.toString(error, null));
-                                    future.setException(exception);
+                                    future.completeExceptionally(exception);
                                 }
                             }, executor);
                       return future;
                   }
-              });
+              }).synchronous();
+    }
+
+    /**
+     * Cache queries to discover if a directory has the "WriteToken" tag set.
+     */
+    public static LoadingCache<FsPath, Optional<String>> buildWriteTokenLookupCache(
+          PnfsHandler pnfs, Executor executor) {
+        return Caffeine.newBuilder()
+              .maximumSize(1000)
+              .expireAfterWrite(10, MINUTES)
+              .refreshAfterWrite(5, MINUTES)
+              .recordStats()
+              .executor(executor)
+              .buildAsync(new AsyncCacheLoader<FsPath, Optional<String>>() {
+                  private Optional<String> writeToken(FileAttributes attr) {
+                      StorageInfo info = attr.getStorageInfo();
+                      return Optional.ofNullable(info.getMap().get("writeToken"));
+                  }
+
+                  @Override
+                  public CompletableFuture<Optional<String>> asyncLoad(FsPath path,
+                        Executor executor)
+                        throws CacheException {
+                      return CompletableFuture.completedFuture(writeToken(
+                            pnfs.getFileAttributes(path, EnumSet.of(FileAttribute.STORAGEINFO))));
+                  }
+
+                  @Override
+                  public CompletableFuture<Optional<String>> asyncReload(FsPath path,
+                        Optional<String> old, Executor executor) {
+                      // A future we are going to complete in the Cell Callback.
+                      final CompletableFuture<Optional<String>> future = new CompletableFuture<>();
+
+                      PnfsGetFileAttributes message = new PnfsGetFileAttributes(path.toString(),
+                            EnumSet.of(FileAttribute.STORAGEINFO));
+
+                      CellStub.addCallback(pnfs.requestAsync(message),
+                            new AbstractMessageCallback<>() {
+                                @Override
+                                public void success(PnfsGetFileAttributes message) {
+                                    future.complete(writeToken(message.getFileAttributes()));
+                                }
+
+                                @Override
+                                public void failure(int rc, Object error) {
+                                    CacheException exception = CacheExceptionFactory.exceptionOf(
+                                          rc, Objects.toString(error, null));
+                                    future.completeExceptionally(exception);
+                                }
+                            }, executor);
+                      return future;
+                  }
+              }).synchronous();
     }
 }
