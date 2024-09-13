@@ -551,6 +551,18 @@ The `jtm` periodically scans specified queue to discover expired movers. If requ
 
 pool command.
 
+## Pool health check
 
-  [admin interface]: #intouch-admin
-  [???]: #in-install-layout
+The pool health check is a mechanism to monitor the health of a pool's repository. By default, the health check is performed
+periodically by creating and deleting an empty file in the pool's repository. For more sophisticated health checks, the pool
+can execute a script that is specified by `pool.check-health-command`. The return value of the script is used to determine
+the health of the pool.  If the exit code is 0 (zero), the pool is assumed to be okay. If the exit  code is 1 (one), the
+pool is marked read-only. Any other exit code, including failure to execute the script, will disable the pool.
+
+For example, the default test can be implemented as:
+
+```
+pool.check-health-command=/bin/sh -c "touch ${pool.path}/test_file; rm ${pool.path}/test_file"
+```
+
+> NOTE: if external command is specified, then internal check is disabled.

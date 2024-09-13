@@ -2,13 +2,18 @@ package org.dcache.pool.repository.v5;
 
 import static org.dcache.util.Exceptions.messageOrClassName;
 
-import java.io.BufferedReader;
+
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import com.google.common.annotations.VisibleForTesting;
+import dmg.cells.nucleus.CellInfoProvider;
 import org.apache.log4j.NDC;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
@@ -20,7 +25,7 @@ import org.dcache.pool.repository.SpaceRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class CheckHealthTask implements Runnable {
+class CheckHealthTask implements Runnable, CellInfoProvider {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CheckHealthTask.class);
     public static final int GRACE_PERIOD_ON_FREE = 60_000;
@@ -43,6 +48,11 @@ class CheckHealthTask implements Runnable {
      */
     private String[] _commands = {};
 
+    /**
+     * Last time the health check was performed.
+     */
+    private volatile Instant _lastCheck = null;
+
     public void setRepository(ReplicaRepository repository) {
         _repository = repository;
     }
@@ -59,6 +69,10 @@ class CheckHealthTask implements Runnable {
         _commands = new Scanner(s).scan();
     }
 
+    private boolean hasExternalCheck() {
+        return _commands.length > 0;
+    }
+
     @Override
     public void run() {
         switch (_repository.getState()) {
@@ -69,13 +83,19 @@ class CheckHealthTask implements Runnable {
             case CLOSED:
                 break;
             case OPEN:
-                if (_replicaStore.isOk() == FileStoreState.FAILED) {
-                    _repository.fail(FaultAction.DISABLED, "I/O test failed");
-                }else if (_replicaStore.isOk() == FileStoreState.READ_ONLY){
-                    LOGGER.error(
-                          "Read-only file system");
 
-                    _repository.fail(FaultAction.READONLY, "I/O test failed, READ_ONLY Error");
+                _lastCheck = Instant.now();
+                var state = hasExternalCheck() ? checkHealthCommand() : _replicaStore.isOk();
+                switch (state) {
+                    case OK:
+                        break;
+                    case FAILED:
+                        _repository.fail(FaultAction.DISABLED, "I/O test failed");
+                        break;
+                    case READ_ONLY:
+                        LOGGER.error("Read-only file system");
+                        _repository.fail(FaultAction.READONLY, "I/O test failed, READ_ONLY Error");
+                        break;
                 }
 
                 if (!checkSpaceAccounting()) {
@@ -86,47 +106,42 @@ class CheckHealthTask implements Runnable {
 
                 adjustFreeSpace();
         }
-
-        checkHealthCommand();
     }
 
-    private void checkHealthCommand() {
-        if (_commands.length > 0) {
+    @VisibleForTesting
+    FileStoreState checkHealthCommand() {
+
             NDC.push("health-check");
             try {
                 ProcessBuilder builder = new ProcessBuilder(_commands);
                 builder.redirectErrorStream(true);
                 Process process = builder.start();
                 try {
-                    StringBuilder output = new StringBuilder();
+                    String output;
                     try (InputStream in = process.getInputStream()) {
-                        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-                        String line = reader.readLine();
-                        while (line != null) {
-                            output.append(line).append('\n');
-                            line = reader.readLine();
-                        }
+                        output = new String(in.readAllBytes(), StandardCharsets.UTF_8);
                     }
                     int code = process.waitFor();
-                    switch (code) {
-                        case 0:
+                    return switch (code) {
+                        case 0 -> {
                             if (output.length() > 0) {
                                 LOGGER.debug("{}", output);
                             }
-                            break;
-                        case 1:
-                            _repository.fail(FaultAction.READONLY,
-                                  "Health check command failed with exit code 1");
+                            yield FileStoreState.OK;
+                        }
+                        case 1 -> {
                             if (output.length() > 0) {
                                 LOGGER.warn("{}", output);
                             }
-                        default:
-                            _repository.fail(FaultAction.DISABLED,
-                                  "Health check command failed with exit code " + code);
+                            yield FileStoreState.READ_ONLY;
+                        }
+                        default -> {
                             if (output.length() > 0) {
                                 LOGGER.warn("{}", output);
                             }
-                    }
+                            yield FileStoreState.FAILED;
+                        }
+                    };
                 } catch (InterruptedException e) {
                     LOGGER.debug("Health check command was interrupted");
                     process.destroy();
@@ -137,7 +152,9 @@ class CheckHealthTask implements Runnable {
             } finally {
                 NDC.pop();
             }
-        }
+
+            // If we reach here, then the health check failed.
+            return FileStoreState.FAILED;
     }
 
     private boolean checkSpaceAccounting() {
@@ -389,4 +406,9 @@ class CheckHealthTask implements Runnable {
         }
     }
 
+    @Override
+    public void getInfo(PrintWriter pw) {
+        pw.println("    Check command  : " + (hasExternalCheck() ? Arrays.toString(_commands) : " -- internal --"));
+        pw.println("    Last check at  : " + (_lastCheck == null ? "N/A" : _lastCheck));
+    }
 }
