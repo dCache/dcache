@@ -3,7 +3,9 @@
 dnf -q install -y epel-release
 dnf install -q -y oidc-agent-cli jq
 
-eval `oidc-agent`
+eval `oidc-agent --quiet`
+oidc-agent  --status
+
 oidc-gen --pub --scope-max \
     --iss http://keycloak:8080/realms/dcache-test \
     --flow=password \
