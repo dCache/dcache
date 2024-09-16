@@ -3,6 +3,12 @@
 dnf -q install -y epel-release
 dnf install -q -y oidc-agent-cli jq
 
+#
+# See: https://github.com/indigo-dc/oidc-agent/pull/601
+#
+mkdir -p ~/.config/oidc-agent
+echo '{}' > ~/.config/oidc-agent/issuer.config
+
 eval `oidc-agent --quiet`
 oidc-agent  --status
 
