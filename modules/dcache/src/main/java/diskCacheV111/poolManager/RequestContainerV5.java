@@ -738,6 +738,16 @@ public class RequestContainerV5
               .toArray(RestoreHandlerInfo[]::new);
     }
 
+    @VisibleForTesting
+    void fail(String id, int errorCode, String errorMessage) {
+        synchronized (_handlerHash) {
+            PoolRequestHandler rph = _handlerHash.get(id);
+            if (rph != null) {
+                rph.fail(errorCode, errorMessage);
+            }
+        }
+    }
+
     public void messageArrived(CellMessage envelope,
           PoolMgrSelectReadPoolMsg request)
           throws PatternSyntaxException, IOException {
@@ -1161,6 +1171,20 @@ public class RequestContainerV5
             _currentRc = code;
             _currentRm = message;
             updateStatus("Failed: " + message);
+
+            switch (_state) {
+                case ST_WAITING_FOR_STAGING:
+                    _stageCandidate.ifPresent(c -> {
+                        // FIXME: we need a new message here
+                        var cancelMessage = new CellMessage(c.address(), "rh kill " + _fileAttributes.getPnfsId());
+                        sendMessage(cancelMessage);
+                    });
+                case ST_WAITING_FOR_POOL_2_POOL:
+                    // FIXME: cancel p2p
+                    break;
+                default:
+                    // noop
+            }
 
             answerRequests();
             nextStep(RequestState.ST_OUT);
