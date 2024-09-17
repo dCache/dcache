@@ -282,8 +282,6 @@ public interface PoolSelectionUnit {
 
     Collection<SelectionPool> getPoolsByPoolGroup(String poolGroup) throws NoSuchElementException;
 
-    Collection<SelectionPool> getPoolsByPoolGroupOfPool(String poolName) throws NoSuchElementException;
-
     Collection<SelectionPool> getAllDefinedPools(boolean enabledOnly);
 
     Collection<SelectionPoolGroup> getPoolGroupsOfPool(String PoolName);
