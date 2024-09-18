@@ -534,7 +534,7 @@ public class PoolManagerV5
             msg.setOfflinePools(offlinePools);
             msg.setSucceeded();
         } catch (NoSuchElementException e) {
-            Map<String, List<PoolManagerPoolInformation>> empty = new HashMap<>();
+            Map<String, List<PoolManagerPoolInformation>> empty = Map.of();
             msg.setPoolsMap(empty);
             msg.setSucceeded();
         }
