@@ -149,13 +149,9 @@ public class CostModuleV1
         // TODO: Refactor those variables out into a config
 
         //int tsIncrease = 16; // W/ a threshold of 35 and tsDecrease of 1.5, after the threshold is reached it takes two good heartbeats to re-enable.
-        int tsIncrease = _trustScoreIncrease;
         //int tsDecrease = 2; //1.5;
-        int tsDecrease = _trustScoreDecrease;
         //int tsThreshold = 35; // After the third consecutive reboot a pool is disabled.
-        int tsThreshold = _trustScoreThreshold;
         //int tsCeiling = 150; // After Ceiling is reached, it takes 4 good heartbeats to re-enable.
-        int tsCeiling = _trustScoreCeiling;
 
         long msgSerialId = msg.getSerialId();
         int nextTrustScore = 0;
@@ -175,19 +171,19 @@ public class CostModuleV1
             long lastSerailId = poolEntry.getSerialId();
 
             if (msgSerialId == lastSerailId) { // Pool has not rebooted
-                nextTrustScore = lastTrustScore / tsDecrease;
-                if (nextTrustScore < tsThreshold && !poolEntry.getEnabledStatus()) { // Pool was disabled, should now be re-ENABLED
+                nextTrustScore = lastTrustScore / _trustScoreDecrease;
+                if (nextTrustScore < _trustScoreThreshold && !poolEntry.getEnabledStatus()) { // Pool was disabled, should now be re-ENABLED
                     LOGGER.error("Pool {} WOULD now be re-ENABLED, BUT IS NOT", poolName);
                     // TODO: enable here
                 }
 
             } else { // Pool has rebooted
-                if (lastTrustScore < tsCeiling) {
-                    nextTrustScore = lastTrustScore + tsIncrease;
+                if (lastTrustScore < _trustScoreCeiling) {
+                    nextTrustScore = lastTrustScore + _trustScoreIncrease;
                 } // INCREASE trust score as long as it is not higher than the ceiling
                 LOGGER.error("Pool {} rebooted and changed ID from {} to {}, Trust Score now at {}", poolName, lastSerailId, msgSerialId, lastTrustScore);
 
-                if (nextTrustScore > tsThreshold) { // Set pool as DISABLED
+                if (nextTrustScore > _trustScoreThreshold) { // Set pool as DISABLED
                     nextEnabledStatus = false;
                     LOGGER.error("Pool {} WOULD now marked as DISABLED, BUT IS NOT", poolName);
                     // TODO: disable here
