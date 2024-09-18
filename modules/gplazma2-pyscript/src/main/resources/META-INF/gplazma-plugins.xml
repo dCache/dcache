@@ -1,0 +1,6 @@
+<plugins>
+  <plugin>
+    <name>pyscript</name>
+    <class>org.dcache.gplazma.pyscript.PyscriptPlugin</class>
+  </plugin>
+</plugins>

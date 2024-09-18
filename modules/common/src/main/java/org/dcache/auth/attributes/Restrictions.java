@@ -30,6 +30,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Class containing utility methods.
@@ -145,6 +147,8 @@ public class Restrictions {
      */
     private static class CompositeRestriction implements Restriction {
 
+         private static final Logger LOGGER =
+              LoggerFactory.getLogger(CompositeRestriction.class);
         private static final long serialVersionUID = 1854305439062458336L;
         private final Set<Restriction> restrictions;
         private transient Function<FsPath, FsPath> resolver;
@@ -155,8 +159,10 @@ public class Restrictions {
 
         @Override
         public boolean isRestricted(Activity activity, FsPath path) {
-            for (Restriction r : restrictions) {
-                r.setPathResolver(getPathResolver());
+             LOGGER.debug("Checking restrictions on {} for activity {}", path, activity);
+             for (Restriction r : restrictions) {
+                  LOGGER.debug("Checking component restriction of type {}", r.getClass());
+                 r.setPathResolver(getPathResolver());
                 if (r.isRestricted(activity, path)) {
                     return true;
                 }
@@ -166,8 +172,10 @@ public class Restrictions {
 
         @Override
         public boolean isRestricted(Activity activity, FsPath directory, String name, boolean skipPrefixCheck) {
+             LOGGER.debug("Checking restrictions on {} for activity {} and name {}{}", directory, activity, name, skipPrefixCheck ? " (skipping prefix check)" : "");
             for (Restriction r : restrictions) {
                 r.setPathResolver(getPathResolver());
+                LOGGER.debug("Checking component restriction of type {} for name {}", r.getClass(), name);
                 if (r.isRestricted(activity, directory, name, skipPrefixCheck)) {
                     return true;
                 }

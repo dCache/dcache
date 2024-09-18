@@ -57,6 +57,7 @@ import org.dcache.chimera.FsInodeType;
 import org.dcache.chimera.FsInode_CKSTYP;
 import org.dcache.chimera.FsInode_CONST;
 import org.dcache.chimera.FsInode_ID;
+import org.dcache.chimera.FsInode_LABEL;
 import org.dcache.chimera.FsInode_NAMEOF;
 import org.dcache.chimera.FsInode_PARENT;
 import org.dcache.chimera.FsInode_PATHOF;
@@ -71,6 +72,7 @@ import org.dcache.chimera.FsInode_TAGS;
 import org.dcache.chimera.InvalidArgumentChimeraException;
 import org.dcache.chimera.IsDirChimeraException;
 import org.dcache.chimera.JdbcFs;
+import org.dcache.chimera.NoLabelChimeraException;
 import org.dcache.chimera.NoXdataChimeraException;
 import org.dcache.chimera.NotDirChimeraException;
 import org.dcache.chimera.PermissionDeniedChimeraFsException;
@@ -202,6 +204,8 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
             return toInode(fsInode);
         } catch (FileNotFoundChimeraFsException e) {
             throw new NoEntException("Path Do not exist.");
+        } catch (NoLabelChimeraException e) {
+            throw new NoEntException("Label Do not exist.");
         }
     }
 
@@ -348,7 +352,6 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
                               directoryCookieOf(e.getStat(), e.getName()))
                   )
                   .collect(Collectors.toCollection(TreeSet::new));
-
             return new DirectoryStream(currentVerifier, list);
         }
     }
@@ -958,6 +961,10 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
 
             case CKSTYP:
                 inode = new FsInode_CKSTYP(fs, ino);
+                break;
+
+            case LABEL:
+                inode = new FsInode_LABEL(fs, ino);
                 break;
 
             default:

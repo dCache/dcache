@@ -1,7 +1,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.dcache</groupId>
-    <version>10.1.0-SNAPSHOT</version>
+    <version>10.2.0-SNAPSHOT</version>
     <artifactId>dcache-parent</artifactId>
     <packaging>pom</packaging>
 
@@ -56,13 +56,13 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>11</java.version>
+        <java.version>17</java.version>
         <argLine>--add-modules=java.security.jgss</argLine>
 
 
         <version.slf4j>1.7.32</version.slf4j>
         <version.milton>2.7.3.0-dcache-1</version.milton>
-        <version.spring>5.3.27</version.spring>
+        <version.spring>5.3.39</version.spring>
         <!-- Remember to sync aspectj version in dcache.properties -->
         <version.aspectj>1.9.9.1</version.aspectj>
         <version.smc>6.6.0</version.smc>
@@ -72,9 +72,9 @@
         <version.jersey>2.41</version.jersey>
         <version.dcache-view>3.0.0</version.dcache-view>
         <version.dcache-view-admin>3.0.0</version.dcache-view-admin>
-        <version.netty>4.1.94.Final</version.netty>
+        <version.netty>4.1.108.Final</version.netty>
         <version.dcache>${project.version}</version.dcache>
-        <version.swagger-ui>3.1.7</version.swagger-ui>
+        <version.swagger-ui>3.23.11</version.swagger-ui>
 
         <!-- Remember to update modules/logback-test-config/pom.xml
              when upgrading logback. -->
@@ -91,34 +91,10 @@
         <version.spring_kafka>2.9.11</version.spring_kafka>
         <version.kafka>3.1.0</version.kafka>
 
-        <!-- BouncyCastle seems to change the naming convention of
-             their ArtifactId fairly often.  Here is a summary of
-             information gathered so far.
+        <bouncycastle.bcprov>bcprov-jdk18on</bouncycastle.bcprov>
+        <bouncycastle.bcpkix>bcpkix-jdk18on</bouncycastle.bcpkix>
+        <bouncycastle.version>1.78</bouncycastle.version>
 
-             Note that each ArtifactId has two flavours: 'bcprov-nnn'
-             and 'bcprov-ext-nnn'.  The '-ext-' flavour includes "the
-             IDEA implementation as well as NTRU" which is missing
-             from the non '-ext-' version.  These features were
-             removed since v1.40 "at the request of a number of
-             users".
-
-               Version  ArtifactId      Notes:
-               1.47     bcprov-jdk15on  JDK v1.5 and later
-
-               1.46     bcprov-jdk15+   JDK v1.5 (and later?), the '+'
-                                        seems to confuse maven.
-
-               1.46     bcprov-jdk15    JDK v1.5
-
-               1.46     bcprov-jdk16    JDK v1.6
-
-               1.45     bcprov-jdk16    JDK v1.6; used by JGlobus-2.x
-
-               1.43     bcprov-jdk16    JDK v1.6; used by JGlobus-1.8.x
-         -->
-        <bouncycastle.bcprov>bcprov-jdk15on</bouncycastle.bcprov>
-        <bouncycastle.bcpkix>bcpkix-jdk15on</bouncycastle.bcpkix>
-        <bouncycastle.version>1.67</bouncycastle.version>
         <datanucleus-core.version>6.0.6</datanucleus-core.version>
         <datanucleus.plugin.version>6.0.0-release</datanucleus.plugin.version>
         <asm.version>9.5</asm.version>
@@ -187,7 +163,7 @@
             <dependency>
                 <groupId>org.apache.curator</groupId>
                 <artifactId>curator-recipes</artifactId>
-                <version>5.6.0</version>
+                <version>5.7.0</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.slf4j</groupId>
@@ -202,7 +178,7 @@
             <dependency>
                 <groupId>org.apache.zookeeper</groupId>
                 <artifactId>zookeeper</artifactId>
-                <version>3.7.2</version>
+                <version>3.8.4</version>
                 <exclusions>
                     <exclusion>
                         <groupId>com.sun.jmx</groupId>
@@ -262,37 +238,24 @@
             <dependency>
                 <groupId>eu.eu-emi.security</groupId>
                 <artifactId>canl</artifactId>
-                <version>2.6.0</version>
+                <version>2.8.3</version>
             </dependency>
             <dependency>
                 <groupId>org.italiangrid</groupId>
                 <artifactId>voms-api-java</artifactId>
                 <version>3.3.0</version>
-            </dependency>
-            <dependency>
-                <groupId>org.glite.authz</groupId>
-                <artifactId>pep-common</artifactId>
-                <version>2.3.1</version>
-            </dependency>
-            <dependency>
-                <groupId>org.glite.authz</groupId>
-                <artifactId>pep-java</artifactId>
-                <version>2.3.0</version>
                 <exclusions>
                     <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
+                        <groupId>org.bouncycastle</groupId>
+                        <artifactId>bcprov-jdk15on</artifactId>
                     </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>commons-httpclient</groupId>
-                <artifactId>commons-httpclient</artifactId>
-                <version>3.1</version>
-                <exclusions>
                     <exclusion>
-                        <groupId>commons-logging</groupId>
-                        <artifactId>commons-logging</artifactId>
+                        <groupId>org.bouncycastle</groupId>
+                        <artifactId>bcpkix-jdk15on</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>eu.eu-emi.security</groupId>
+                        <artifactId>canl</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -567,8 +530,14 @@
 	    <dependency>
 	      <groupId>org.apache.sshd</groupId>
 	      <artifactId>sshd-core</artifactId>
-	      <version>2.7.0</version>
+	      <version>2.13.1</version>
 	    </dependency>
+        <!-- For ed25519 support -->
+        <dependency>
+            <groupId>net.i2p.crypto</groupId>
+            <artifactId>eddsa</artifactId>
+            <version>0.3.0</version>
+        </dependency>
             <dependency>
                 <!-- Newer versions have two problems. A performance regression causes it to block on non-responding network
                      interfaces (https://liquibase.jira.com/browse/CORE-2549). There is also an as of yet unreported regression
@@ -674,12 +643,6 @@
             </dependency>
 
             <dependency>
-                <groupId>saxon</groupId>
-                <artifactId>saxon</artifactId>
-                <version>6.5.3</version>
-            </dependency>
-
-            <dependency>
                 <groupId>java.jndi</groupId>
                 <artifactId>nis</artifactId>
                 <version>1.2.1</version>
@@ -713,6 +676,12 @@
                 <groupId>org.dcache</groupId>
                 <artifactId>xrootd4j-gsi</artifactId>
                 <version>${version.xrootd4j}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.bouncycastle</groupId>
+                        <artifactId>bcprov-jdk15on</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.dcache</groupId>
@@ -733,6 +702,12 @@
                 <groupId>org.dcache</groupId>
                 <artifactId>xrootd4j-authz-plugin-alice</artifactId>
                 <version>1.2.0</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.bouncycastle</groupId>
+                        <artifactId>bcprov-jdk15on</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
@@ -832,6 +807,12 @@
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>4.13.1</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.hamcrest</groupId>
+                        <artifactId>hamcrest-core</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.dcache</groupId>
@@ -1047,9 +1028,6 @@
                     <configuration>
                         <showDeprecation>true</showDeprecation>
                         <release>${java.version}</release>
-                        <!-- without forking compilation happens in the
-                        same process, so no arguments are applied -->
-                        <fork>true</fork>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -1456,7 +1434,7 @@
         <module>modules/common-security</module>
         <module>modules/cells</module>
         <module>modules/gplazma2</module>
-        <module>modules/gplazma2-argus</module>
+        <module>modules/gplazma2-alise</module>
         <module>modules/gplazma2-fermi</module>
         <module>modules/gplazma2-grid</module>
         <module>modules/gplazma2-krb5</module>
@@ -1468,7 +1446,9 @@
         <module>modules/gplazma2-kpwd</module>
         <module>modules/gplazma2-ldap</module>
         <module>modules/gplazma2-htpasswd</module>
+        <module>modules/gplazma2-pyscript</module>
         <module>modules/gplazma2-oidc</module>
+        <module>modules/gplazma2-oidc-te</module>
         <module>modules/gplazma2-omnisession</module>
         <module>modules/gplazma2-multimap</module>
         <module>modules/gplazma2-roles</module>

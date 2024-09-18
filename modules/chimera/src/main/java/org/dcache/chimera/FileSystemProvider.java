@@ -521,6 +521,15 @@ public interface FileSystemProvider extends Closeable {
 
 
     /**
+     * Returns the Label name.
+     *
+     * @param ino of a file.
+     * @throws ChimeraFsException
+     */
+    String getLabelById(long ino) throws ChimeraFsException;
+
+
+    /**
      * Delete a given  labels of a given file system object.
      *
      * @param inode file system object.

@@ -1,0 +1,117 @@
+### upload building file
+PUT {{webdav-door}}/building
+Authorization: Basic admin dickerelch
+Content-Type: application/octet-stream
+
+< BUILDING.md
+
+### upload readme file
+PUT {{webdav-door}}/readme
+Authorization: Basic admin dickerelch
+Content-Type: application/octet-stream
+
+< README.md
+
+### make sure readme file is there
+GET {{frontend-door}}{{endpoint}}{{namespace}}/readme
+
+### add "firststep" label to building file
+# curl -X POST -u admin:dickerelch -H "Accept: application/json" -H "Content-Type: application/json" {{frontend-door}}{{endpoint}}{{namespace}}/building -d '{"action" : "set-label", "label" : "firststep" }'
+POST {{frontend-door}}{{endpoint}}{{namespace}}/building
+Authorization: Basic admin dickerelch
+Accept: application/json
+Content-Type: application/json
+
+{"action" : "set-label", "label" : "firststep" }
+
+### add "blue" label to readme file
+POST {{frontend-door}}{{endpoint}}{{namespace}}/readme
+Authorization: Basic admin dickerelch
+Accept: application/json
+Content-Type: application/json
+
+{"action" : "set-label", "label" : "blue" }
+
+### add "firststep" label to readme file
+POST {{frontend-door}}{{endpoint}}{{namespace}}/readme
+Authorization: Basic admin dickerelch
+Accept: application/json
+Content-Type: application/json
+
+{"action" : "set-label", "label" : "firststep" }
+
+
+### get file(s) that has "firststep" label
+GET {{frontend-door}}{{endpoint}}{{labels}}/firststep
+
+
+### get file(s) that has "blue" label
+GET {{frontend-door}}{{endpoint}}{{labels}}/blue
+
+### make sure "firststep" label is there
+GET {{frontend-door}}{{endpoint}}{{namespace}}/building/?labels=true
+
+### make sure "blue" and "firststep" label is there
+GET {{frontend-door}}{{endpoint}}{{namespace}}/readme/?labels=true
+
+> {%
+  client.test("Response file name  is", function () {
+
+    var label1 = response.body["labels"]
+
+    client.log("Response filename 1: " + label1);
+
+    client.assert(label1[0] === "firststep",
+        "Expected 'label' to have value 'firststep' but received '" + label1 + "'");
+
+  });
+
+%}
+
+### remove "blue" label
+POST {{frontend-door}}{{endpoint}}{{namespace}}/readme
+Authorization: Basic admin dickerelch
+Accept: application/json
+Content-Type: application/json
+
+{"action" : "rm-label", "label" : "blue" }
+
+### make sure "blue" label is NOT in readme file
+GET {{frontend-door}}{{endpoint}}{{namespace}}/readme/?labels=true
+
+> {%
+  client.test("Response file name  is", function () {
+
+    var label1 = response.body["labels"]
+
+    client.log("Response filename 1: " + label1);
+
+    client.assert(label1[1] !== null,
+        "Expected 'label blue' to have value != null, but received '" + label1 + "'");
+
+  });
+
+%}
+
+
+### get file(s) name that has "firststep" label
+#Traversing the response
+GET {{frontend-door}}{{endpoint}}{{labels}}/firststep
+
+> {%
+  client.test("Response file name  is", function() {
+
+    var fileName1 = response.body["children"][0]["fileName"];
+    var fileName2 = response.body["children"][1]["fileName"];
+
+
+    client.log("Response filename 1: " + fileName1);
+    client.log("Response filename 1: " + fileName2);
+
+    client.assert(fileName1 === "building-0", "Expected 'fileName' to have value 'building-0' but received '" + fileName1 + "'");
+    client.assert(fileName2 === "readme-0", "Expected 'fileName' to have value 'readme-0' but received '" + fileName2 + "'");
+
+  });
+
+
+%}

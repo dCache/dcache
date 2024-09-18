@@ -8,6 +8,8 @@ import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.vehicles.FileAttributes;
 
+import java.io.ObjectStreamException;
+
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -36,7 +38,7 @@ public abstract class TransferManagerMessage extends Message {
     private String remoteUrl;
     private boolean spaceReservationStrict;
     private Long credentialId;
-    private Restriction restriction;
+    private Restriction restriction = Restrictions.none();
     private PnfsId pnfsId;
     @Nullable
     private FileAttributes attributes;
@@ -71,12 +73,11 @@ public abstract class TransferManagerMessage extends Message {
     }
 
     public void setRestriction(Restriction restriction) {
-        this.restriction = (restriction != null && !Restrictions.none().equals(restriction)) ?
-              restriction : null;
+        this.restriction = requireNonNull(restriction);
     }
 
     public Restriction getRestriction() {
-        return restriction == null ? Restrictions.none() : restriction;
+        return restriction;
     }
 
     public void setPnfsId(PnfsId id) {
@@ -194,6 +195,12 @@ public abstract class TransferManagerMessage extends Message {
     public CellAddressCore getTransferManager() {
         return transferManager;
     }
+
+    private Object readResolve() throws ObjectStreamException {
+        if (restriction == null) { restriction = Restrictions.none(); }
+        return this;
+    }
+
 }
 
 

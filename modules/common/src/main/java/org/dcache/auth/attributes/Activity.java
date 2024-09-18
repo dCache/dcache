@@ -79,5 +79,10 @@ public enum Activity {
      * Update metadata about the target.  This includes modifying a file's permissions, ownership,
      * ACL, etc.
      */
-    UPDATE_METADATA
+    UPDATE_METADATA,
+
+    /**
+     * Stage the target from offline storage.
+     */
+    STAGE
 }

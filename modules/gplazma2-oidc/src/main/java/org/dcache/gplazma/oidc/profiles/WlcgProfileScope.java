@@ -18,13 +18,7 @@
 package org.dcache.gplazma.oidc.profiles;
 
 import static java.util.Arrays.asList;
-import static org.dcache.auth.attributes.Activity.DELETE;
-import static org.dcache.auth.attributes.Activity.DOWNLOAD;
-import static org.dcache.auth.attributes.Activity.LIST;
-import static org.dcache.auth.attributes.Activity.MANAGE;
-import static org.dcache.auth.attributes.Activity.READ_METADATA;
-import static org.dcache.auth.attributes.Activity.UPDATE_METADATA;
-import static org.dcache.auth.attributes.Activity.UPLOAD;
+import static org.dcache.auth.attributes.Activity.*;
 import static org.dcache.gplazma.oidc.profiles.InvalidScopeException.checkScopeValid;
 
 import com.google.common.collect.ImmutableMap;
@@ -80,7 +74,7 @@ public class WlcgProfileScope implements AuthorisationSupplier {
          * Read the data, potentially causing data to be staged from a nearline resource to an
          * online resource. This is a superset of {@literal storage.read}.
          */
-        STAGE("storage.stage", true, LIST, READ_METADATA, DOWNLOAD), // FIXME need to allow staging.
+        STAGE("storage.stage", true, LIST, READ_METADATA, DOWNLOAD, Activity.STAGE),
 
         /**
          * "Read" or query information about job status and attributes.

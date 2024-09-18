@@ -1,6 +1,0 @@
-<plugins>
-    <plugin>
-        <name>argus</name>
-        <class>org.dcache.gplazma.plugins.GPlazmaArgusPlugin</class>
-    </plugin>
-</plugins>

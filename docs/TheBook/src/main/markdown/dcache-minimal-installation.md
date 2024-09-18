@@ -1,57 +1,155 @@
-# Minimal dCache Installation Guide
+
 
 
 The dCache mission is to provide a system for storing and retrieving huge amounts of data, distributed among a large number of heterogeneous
 server nodes, under a single virtual filesystem tree with a variety of standard access methods.
+
+# Minimal dCache Installation Guide
+
+By doing this step-by-step tutorial, you have the opportunity to learn more
+about how dCache works and explore some of the details of dCache
+configuration and administration without being overwhelmed.  As far as
+possible, you can simply copy the commands and end up with a working
+dCache.  We've included some example commands that perform some basic
+tests, so you can have some confidence that everything is OK so far,
+before moving on to the next step.
+Please note that, although this tutorial will provide you with a
+working dCache instance, your production instance should be more complex.  There are many ways to configure
+dCache.  The optimal choice depends on which hardware you wish to use
+and how dCache's users will interact with the system.  So, there is no a single recipe that will provide the optimal solution in
+all cases.
      
 ### Minimum System Requirements
+
+For a minimal test installation:
+
+- Hardware:
+  - Contemporary CPU
+  - At least 1 GiB of RAM
+  - At least 500 MiB free disk space
+
+- Software:
+  - OpenJDK 11
+  - Postgres SQL Server 9.5 or later
+  - ZooKeeper version 3.5 (in case of a standalone ZooKeeper installation)
+
+For high performance production scenarios, the hardware requirements greatly
+differ, which makes it impossible to provide such parameters here. However, if
+you wish to setup a dCache-based storage system, just let us know and we will
+help you with your system specifications. Just contact us: <support@dcache.org>.
    
 #### Software:
-- OpenJDK 11
+
+- OpenJDK 11 (java 11 , and java 17 for dCache staring from version 10.1)
+  
  > yum install java-11-openjdk
  > 
  > dnf install java-11-openjdk-devel
- 
-- Postgres SQL Server 9.5 or later
- > dnf -y install postgresql-server
+
 
 - ZooKeeper version 3.7 (in case of a standalone ZooKeeper installation)
 
 ### Installing PostgreSQL
 
+
+
+Please remember that, wherever you choose to deploy the database, it
+must be tuned for optimal performance for the available hardware.
+Without doing this, you will see poor performance as PostgreSQL
+typically experiences very poor performance with its default
+configuration.  In general, the database may be deployed on the same node as dCache or
+on some dedicated machine with db-specific hardware.
+
 To keep this simple, we are assuming that the database will run on the same machine as the dCache services that
 use it.
 
+Then, install the server package for PostgreSQL. The minimal supported PostgreSQL version
+is 9.5. In general, we recommend using the latest version and upgrading your PostgreSQL version as
+new versions becomes available.
+
+
+First we install PostgreSQL:
+
+- Postgres SQL Server 9.5 or later
+  
+ > dnf -y install postgresql-server
+
+With the database packages installed, we can initialise the database
+the service.  Note that we do not start the database at this point,
+as we will make some tweaks to the configuration.
+
 > postgresql-setup --initdb
-> 
-> systemctl enable --now postgresql 
+
+ ...
+[root@neic-demo-1 centos]#  postgresql-setup --initdb
+ * Initializing database in '/var/lib/pgsql/data'
+ * Initialized, logs are in /var/lib/pgsql/initdb_postgresql.log
+
+...
 
 The simplest configuration is to allow password-less access to the database. 
- 
+
+ The default setting  looks like this **/var/lib/pgsql/data/pg_hba.conf**:
+
+> grep -v -E "^#|^$" /var/lib/pgsql/data/pg_hba.conf
+
+ ```ini
+local   all             all                                     peer
+host    all             all             127.0.0.1/32            ident
+host    all             all             ::1/128                 ident
+local   replication     all                                     peer
+host    replication     all             127.0.0.1/32            ident
+host    replication     all             ::1/128                 ident
+ ```
 
 To allow local users to access PostgreSQL without requiring a password, make sure the following three lines
-are the only uncommented lines in the file **/var/lib/pgsql/10/data/pg_hba.conf**
+are the only uncommented lines in the file **/var/lib/pgsql/data/pg_hba.conf**
 
-> **NOTE**: the path to **/pg_hba.conf** is different for PostgreSQL 13 and higher versions.
-> It is **/var/lib/pgsql/data/pg_hba.conf**
+>vi /var/lib/pgsql/data/pg_hba.conf
+>
 
-      ...
+   ```ini
     # TYPE  DATABASE    USER        IP-ADDRESS        IP-MASK           METHOD
     local   all         all                                             trust
     host    all         all         127.0.0.1/32                        trust
     host    all         all         ::1/128                             trust    
-   ...
+   ```
+
+
+   > **NOTE**: the path to **/pg_hba.conf** is different for PostgreSQL 13 and higher versions.
+   > It is **/var/lib/pgsql/data/pg_hba.conf**
+
+
+
+Once this is done, we can configure the system to automatically start
+PostgreSQL on startup, and then manually start the database:
+
+> systemctl enable --now postgresql 
+
+   
    
    ### Creating PostgreSQL users and databases 
    
 > systemctl reload postgresql
 
+dCache will manage the database schema, creating and updating the
+database tables, indexes etc as necessary.  However, dCache does not
+create the databases.  That is a manual process, typically done only
+once.
+
+ Let us creat a single database user dcache:
+
 > createuser -U postgres --no-superuser --no-createrole --createdb --no-password dcache
-> 
+>
 > createdb -U dcache chimera
 
 
-And after installing dcache we run the command `dcache database update`.
+The second line creates  the databases, using the correct database user to
+ensure correct database ownership.  At this stage, we need only one
+database: chimera.  This database holds dCache's namespace.
+
+
+Later after installing dcache we run the command `dcache database update`.
 
 
 ### Installing dCache
@@ -60,27 +158,53 @@ All dCache packages are available directly from our website’s dCache releases 
 section.
 
 >     
->   rpm -ivh https://www.dcache.org/old/downloads/1.9/repo/8.2/dcache-8.2.9-1.noarch.rpm
+>   rpm -ivh https://www.dcache.org/old/downloads/1.9/repo/9.2/dcache-9.2.19-1.noarch.rpm
 
-
+ ```ini
+Retrieving https://www.dcache.org/old/downloads/1.9/repo/9.2/dcache-9.2.19-1.noarch.rpm
+warning: /var/tmp/rpm-tmp.gzWZPS: Header V4 RSA/SHA256 Signature, key ID 3321de4c: NOKEY
+Verifying...                          ################################# [100%]
+Preparing...                          ################################# [100%]
+Updating / installing...
+   1:dcache-9.2.19-1                  ################################# [100%]
+ ```
 
 ### Configuring dCache users
 
-In this tutorial , we will used gPlazma (Grid-Aware Pluggable Authorization Management) service is a part of dCache,
+In this tutorial, we will used gPlazma (Grid-Aware Pluggable Authorization Management) service which is a part of dCache,
 providing services for access control, which are used by door-cells in order to
 implement their access control system.
 
 The dCache RPM comes with a default gPlazma configuration file **/etc/dcache/gplazma.conf**.
 
  gPlazma requires the CA- and VOMS-root-certificates, that it should use, to be
-present in /etc/grid-security/certificates/ and /etc/grid-security/
+present in **/etc/grid-security/certificates/** and **/etc/grid-security/**
 vomsdir respectively.
-In some cases, gPlazma requires X.509-host-certificates to be present in /etc/grid-security/.
-However, X.509 credentials require a certificate authority, 
+
+>
+> mkdir -p /etc/grid-security/
+>
+> mkdir -p /etc/grid-security/certificates/
+>
+
+ X.509 credentials require a certificate authority, 
 which require considerable effort to set up. For this tutorial the certificates have been installed on our VMs.
 
 
-Gplazma is configured by the PAM-style: the first column is the phases of the authentication process. Each login attempt follows four phases: **auth**, **map**, **account** and **session**.  Second column describes how to handle errors. There are four different options: **optional** -,  **sufficient**, **required** and **requisite**. The third column defines plugins that should be used.  as back-end for its tasks
+Gplazma is configured by the PAM (Privileged Access Management)-style: the first column is the phases of the authentication process. Each login attempt follows four phases: **auth**, **map**, **account** and **session**. Each phase is comprised of plugins.  Second column describes how to handle errors. Running a plugin is either success or failure, plugins that fail sometimes is expected. There are four different options: **optional** ,  **sufficient**, **required** and **requisite**. 
+
+**optional** label means, the success or failure of this plug-in doesn't matter; always move onto next one in the phase.
+
+**suﬀicient** Success of such a plug-in is enough to satisfy the authentication requirements of the stack of
+plug-ins (if a prior required plug-in has failed the success of this one is ignored). A failure of this plug-in is
+not deemed as fatal for the login attempt. If the plug-in succeeds gPlazma immediately proceeds with the
+next plug-in type or returns control to the door if this was the last stack.
+
+ **requisite**  means failling plugin finishes the phase with failure. 
+ **required** failling plugin fails the phase but remaining plugins are still running.
+
+
+The third column defines plugins that should be used as back-end for its tasks
 and services. 
 
 Lets have a look on a complete configuration example and go through the each phase.
@@ -93,11 +217,12 @@ Lets have a look on a complete configuration example and go through the each pha
 cat >/etc/dcache/gplazma.conf <<EOF
 auth    optional    x509 #1.1
 auth    optional    voms #1.2
-auth    optional  htpasswd #1
+auth    sufficient  htpasswd #1.3
 
-map     optional    vorolemap #2.1
+map    optional    vorolemap #2.1
 map     optional    gridmap #2.2
-map     requisite   authzdb #2.3
+map     optional    authzdb #2.3
+
 
 session requisite   roles #3.2
 session requisite   authzdb #3.2
@@ -105,40 +230,60 @@ EOF
 ```
 
 
-During the login process they will be executed in the order **auth**, **map**, **account** and
+
+
+
+ During the login process they will be executed in the order **auth**, **map**, **account** and
 **session**. The identity plugins are not used during login, but later on to map from UID+GID back to user. Within these groups they are used in the order they are specified.
 
 
 
-  **auth**  phase - verifies user’s identity. auth-plug-ins are used to read the users public and private credentials and ask some authority, if those are valid for accessing the system.
+  **auth**  phase - verifies user’s identity ( Has the user proved who they are?).  Auth-plug-ins are used to read the users public and private credentials and ask some authority, if those are valid for accessing the system.
 
-**#1.1** This configuration tells gPlazma to use the **x.509** plugin used to extracts X.509 certificate chains from the credentials of a user to be used by other plug-ins
+**#1.1** This configuration tells gPlazma to use the **x.509** plugin used to extracts X.509 certificate chains from the credentials of a user to be used by other plug-ins.
+
+In this tutorila we use  **x.509**  we  need to create the directory **/etc/grid-security/** and **/etc/grid-security/certificates/**
+
+
+
+
 If user comes with grid
-certificate and VOMS role: extract user’s DN (**#1.2**), checks if the username and password exist in database (**#1.3**), which should be added to
+certificate and VOMS role: **voms** plugin extracts user’s DN (**#1.2**).
 
-password file **/etc/dcache/htpasswd**.
-The htpasswd plugin uses the Apache HTTPD server’s file format to record username and passwords. This
+The **htpasswd** plugin uses the Apache HTTPD server’s file format to record username and passwords. This
 file may be maintained by the htpasswd command.
-Let us create a new password file (/etc/dcache/htpasswd) and add these two users (”tester” and ”admin”)
-with passwords TooManySecrets and dickerelch respectively:
+Let us create a new password file (/etc/dcache/htpasswd) and add the user admin
+with passwords admin:
 
 > touch /etc/dcache/htpasswd
 > 
+> yum install httpd-tools
 > 
 > htpasswd -bm /etc/dcache/htpasswd admin admin
 >
 
 
-**optional** here means, the success or failure of this plug-in is only important if it is the only plug-in in the stack associated
-with this type.
 
- **#2** **map** - converts this identity to some dCache user.
+
+
+
+ **#2** **map** - converts this identity to some dCache user (Who is this user in dCache terms: uid, gids).
+
+
+ In the next step, any extracted information needs to be mapped to a UID : GID pair to be used inside dCache. Until now, this was typically done with the vorolemap plugin.
+ 
+```ini
+ map    optional    vorolemap
+ ```
+
+The actual mapping was made inside a dedicated file (by default /etc/grid-security/grid-vorolemap). See step **2.2**.
                                               
  **#2.1** the “grid-mapfile”-file, the client-certificate’s DN is mapped to a
 virtual user-name.                      
 
-                                              
- ```ini
+CA user mapping:
+
+```ini
 cat >/etc/grid-security/grid-mapfile <<EOF
 "/C=DE/ST=Hamburg/O=dCache.ORG/CN=Kermit the frog" kermit
 EOF 
@@ -146,55 +291,39 @@ EOF
  
 **#2.2** the vorolemap plug-in maps the users DN+FQAN to a username which is then
 mapped to UID/GIDs by the authzdb plug-in.
-                                          
-  ```ini
+
+Voms user mapping
+
+```ini
 
 cat >/etc/grid-security/grid-vorolemap <<EOF
 "*" "/desy" desyuser
 EOF
- ```
- 
- 
+ ``` 
  
  
  **#2.3** Using the “storage-authzdb-style”-file, this virtual user-name is then mapped to
-the actual UNIX user-ID 4 and group-IDs 4
+the actual UNIX user-ID 4 and group-IDs 4 and define the rights on read/write.
+
+The first and the second "/" are home and root directories respectivly.
+
 
 
 ```ini
 cat >/etc/grid-security/storage-authzdb <<EOF
 version 2.1
 
-authorize admin    read-write    0    0 / / /
-authorize desyuser read-write 1000 2000 / / /
-authorize kermit   read-write 1000 1000 / / /
+authorize admin              read-write    0    0 / / /
+authorize desyuser           read-write 1000 2000 / / /
+authorize kermit             read-write 1000 1000 / / / 
 EOF
 ```
 
 
- **suﬀicient** Success of such a plug-in is enough to satisfy the authentication requirements of the stack of
-plug-ins (if a prior required plug-in has failed the success of this one is ignored). A failure of this plug-in is
-not deemed as fatal for the login attempt. If the plug-in succeeds gPlazma2 immediately proceeds with the
-next plug-in type or returns control to the door if this was the last stack.
 
-Here is an example of the output of this 3 phases.
-
-```console-root
-[centos@os-46-install1 ~]$ sudo journalctl -f -u dcache@dCacheDomain.service
-Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  |   +--gridmap OPTIONAL:FAIL (no mapping) => OK
-Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  |   |
-Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  |   +--authzdb REQUISITE:FAIL (no mappable principal) => FAIL (ends the phase)
-Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  |
-Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  +--(ACCOUNT) skipped
-Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  |
-Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  +--(SESSION) skipped
-Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  |
-Jan 05 13:44:47 os-46-install1.novalocal dcache@dCacheDomain[25977]:  +--(VALIDATION) skipped
-Jan 05 13:45:15 os-46-install1.novalocal dcache@dCacheDomain[25977]: 05 Jan 2023 13:45:15 (pool1) [] The file system containing the data files appears to have less free space (40,453,738,496 bytes) than expected (40,453,779,120 bytes); reducing the pool size to 40,455,127,376 bytes to compensate. Notice that this does not leave any space for the meta data. If such data is stored on the same file system, then it is paramount that the pool size is reconfigured to leave enough space for the meta data.
- ```
 
  
- 
+ **account** - checks whether the user allowed to use this service.
 
 
 Finally, **session** adds some additional information, for example the user’s home directory.
@@ -206,8 +335,237 @@ it is also very powerful and allows dCache to work with many different authentic
 
 
 
+### Another way to authorise (TOKENS WLCG)
+
+dCache supports OIDC tokens.
+
+You will need to install oid-agent
 
 
+On the VM for this tutorial it was needed to instal epel
+
+> dnf config-manager --set-enabled crb
+> 
+> dnf install epel-release epel-next-release
+> 
+> dnf repolist epel
+> 
+
+Now we can insatll oid-agent and run:
+
+>  dnf install oidc-agent
+>
+> oidc-agent
+
+
+
+```ini
+
+[root@neic-demo-1 centos]# OIDC_SOCK=/tmp/oidc-6XTqy6/oidc-agent.3910; export OIDC_SOCK;
+OIDCD_PID=17651; export OIDCD_PID;
+echo Agent pid $OIDCD_PID
+
+```
+
+>
+> export OIDC_SOCK=/tmp/oidc-BRujtJ/oidc-agent.4673
+>
+> export OIDCD_PID=18499
+> echo $OIDCD_PID
+>
+>
+And now we can generate token with scope
+
+>
+> oidc-gen wlcg-with-scope
+>
+
+```ini
+[1] https://bildungsproxy.aai.dfn.de
+[2] https://cilogon.org
+[3] https://iam.deep-hybrid-datacloud.eu/
+[4] https://aai.egi.eu/auth/realms/egi
+[5] https://aai-demo.egi.eu/auth/realms/egi
+[6] https://aai-dev.egi.eu/auth/realms/egi
+[7] https://login.elixir-czech.org/oidc/
+[8] https://b2access.eudat.eu:8443/oauth2
+[9] https://iam.extreme-datacloud.eu/
+[10] https://fels.scc.kit.edu/oidc/realms/fels
+[11] https://accounts.google.com
+[12] https://login.helmholtz.de/oauth2
+[13] https://login-dev.helmholtz.de/oauth2
+[14] https://iam-demo.cloud.cnaf.infn.it/
+[15] https://iam-test.indigo-datacloud.eu/
+[16] https://oidc.scc.kit.edu/auth/realms/kit
+[17] https://auth.didmos.nfdi-aai.de
+[18] https://regapp.nfdi-aai.de/oidc/realms/nfdi_demo
+[19] https://wlcg.cloud.cnaf.infn.it/
+[20] https://alice-auth.web.cern.ch/
+[21] https://atlas-auth.web.cern.ch/
+[22] https://cms-auth.web.cern.ch/
+[23] https://lhcb-auth.web.cern.ch/
+Issuer [https://bildungsproxy.aai.dfn.de]:
+
+
+```
+
+we give the number of the issues in our case it is WLG ([19] https://wlcg.cloud.cnaf.infn.it/
+)
+
+
+```ini
+Issuer [https://bildungsproxy.aai.dfn.de]:19
+
+
+The following scopes are supported: openid profile email offline_access wlcg wlcg.groups storage.read:/ storage.create:/ compute.read compute.modify compute.create compute.cancel storage.modify:/ eduperson_scoped_affiliation eduperson_entitlement eduperson_assurance storage.stage:/ entitlements
+
+```
+in the next step we enter wich scopes we want to have: 
+
+> Scopes or 'max' (space separated) [openid profile offline_access]: max
+
+
+
+```ini
+Scopes or 'max' (space separated) [openid profile offline_access]: max
+Generating account configuration ...
+accepted
+
+Using a browser on any device, visit:
+https://wlcg.cloud.cnaf.infn.it/device
+
+And enter the code: 9Z4ERM
+Alternatively you can use the following QR code to visit the above listed URL.
+
+```
+
+After entering the code the divece is authorised:
+
+```ini
+
+Enter encryption password for account configuration 'wlcg-with-scope': 
+Confirm encryption Password: 
+Everything setup correctly!
+
+
+```
+
+No we can get the token
+
+>  oidc-token wlcg-with-scope
+
+
+```ini
+
+eyJraWQiOiJyc2ExIiwiYWxnIjoiUlMyNTYifQ.eyJ3bGNnLnZlciI6IjEuMCIsInN1YiI6ImU0ZmYxOTFlLTc4NDUtNDEzYy1iNDM3LTkzNzhmOTIzZmE4ZCIsImF1ZCI6Imh0dHBzOlwvXC93bGNnLmNlcm4uY2hcL2p3dFwvdjFcL2FueSIsIm5iZiI6MTY4OTE0OTI2NSwic2NvcGUiOiJzdG9yYWdlLmNyZWF0ZTpcLyBvcGVuaWQgb2ZmbGluZV9hY2Nlc3MgcHJvZmlsZSBzdG9yYWdlLnJlYWQ6XC8gc3RvcmFnZS5zdGFnZTpcLyBzdG9yYWdlLm1vZGlmeTpcLyB3bGNnIHdsY2cuZ3JvdXBzIiwiaXNzIjoiaHR0cHM6XC9cL3dsY2cuY2xvdWQuY25hZi5pbmZuLml0XC8iLCJleHAiOjE2ODkxNTA0NjQsImlhdCI6MTY4OTE0OTI2NSwianRpIjoiNjRkMWQ0MTktYjkyMi00OTFmLWE5MzctODgyMTEyMDdjMGY3IiwiY2xpZW50X2lkIjoiZTlmOGRiMzktNGZkZS00NjdiLWI1ZjgtYjI1ZDllNDg5ZmZjIiwid2xjZy5ncm91cHMiOlsiXC93bGNnIiwiXC93bGNnXC94ZmVycyJdfQ.K392AfD0kGI72zZHXRYNOK7VEQF1742epUKSQaD14B7wn62fNRNtQekO9hMhpGTQ2nIYnHjeOCYAcg4J9H5Tkk7yUqXc6uya4qMRZ0t2qwfO5Ky_qsoOK0vOZJ9D8ZtDYCowmmdWbHQlqbUCHwi8KNyUk1gJo9RSNah-sL799Fc
+
+```
+
+>
+> TOKEN=$(oidc-token wlcg-with-scope)
+
+
+And hier is our token
+
+>echo $TOKEN | cut -d "." -f 2 | base64 -d 2>|/dev/null | jq
+>
+
+```ini
+
+{
+  "wlcg.ver": "1.0",
+  "sub": "e4ff191e-7845-413c-b437-9378f923fa8d",
+  "aud": "https://wlcg.cern.ch/jwt/v1/any",
+  "nbf": 1716831360,
+  "scope": "storage.create:/ openid offline_access profile storage.read:/ storage.stage:/ storage.modify:/ wlcg wlcg.groups",
+  "iss": "https://wlcg.cloud.cnaf.infn.it/",
+  "exp": 1716832560,
+  "iat": 1716831360,
+  "jti": "7eeb100e-ffcf-47dd-afa5-b615c302473e",
+  "client_id": "bf263e34-6e38-4b0a-91fd-b303b01ae5cc",
+  "wlcg.groups": [
+    "/wlcg",
+    "/wlcg/xfers"
+  ]
+}
+```
+
+Now we need to adapt our gplazma and layout configurations.
+We add to /etc/dcache/gplazma.conf 
+
+```ini
+auth   optional   x509
+auth   optional   voms
+auth   optional   oidc
+```
+where the oidc plugin extracts the storage claims, groups and unique identifier from the IAM-token. In the next step, any extracted information needs to be mapped to a UID : GID pair to be used inside dCache. Until now, this was typically done with the vorolemap plugin. This is used during the map step inside the /etc/dcache/gplazma.conf file:
+
+```ini
+map   optional   vorolemap
+
+```
+
+The actual mapping was made inside a dedicated file (by default /etc/grid-security/grid-vorolemap). In a similar fashion, the new token based credential have to be mapped as well. 
+
+
+```ini
+map   sufficient   multimap gplazma.multimap.file=/etc/dcache/multi-mapfile.wlcg_jwt
+# Or after sufficient 
+#map     optional        multimap gplazma.multimap.file=/etc/dcache/multi-mapfile.wlcg_jwt
+
+```
+This configuration works by assigning a token with the correct storage.* claims the UID : GID while the **sufficient** options means, that no further mapping takes place in case the credentials are mapped. For non-authorised token, this map file will fail and the file below will be used to map the token credentials. 
+
+in **mylayout.conf** we add :
+
+
+```ini
+gplazma.oidc.audience-targets=https://wlcg.cern.ch/jwt/v1/any
+gplazma.oidc.provider!wlcg=https://wlcg.cloud.cnaf.infn.it/ -profile=wlcg -prefix=/ -suppress=audience
+
+
+```
+
+
+ **gplazma.conf** looks like this now.
+
+                              
+ ```ini
+
+cat >/etc/dcache/gplazma.conf <<EOF
+auth    optional    x509 #1.1
+auth    sufficient  htpasswd #1.3
+auth    optional     oidc
+
+map     optional   multimap gplazma.multimap.file=/etc/dcache/multi-mapfile.wlcg_jwt
+
+map     optional    vorolemap #2.1
+map     optional    gridmap #2.2iodc
+map     requisite   authzdb #2.3
+
+session requisite   roles #3.2
+session requisite   authzdb #3.2
+
+EOF                            
+```
+
+> vi **/etc/dcache/multi-mapfile.wlcg_jwt**
+
+                             
+ ```ini
+
+op:wlcg               uid:1999 gid:1999,true username:wlcg_oidc
+
+```
+
+We need to change **/etc/grid-security/storage-authzdb**  
+
+ ```ini
+authorize admin         read-write    0    0 / / /
+authorize wlcg_oidc     read-write 1999 1999 / / /
+```
+
+>chown dcache:dcache /etc/grid-security/host*.pem
 
 
 
@@ -217,6 +575,7 @@ it is also very powerful and allows dCache to work with many different authentic
 All components in dCache are CELLs and they are independent and can interact with each other by sending messages.
 Such architecture today knows as Microservices with message queue.
 For the minimal instalation of dCache the following cells must be configured in **/etc/dcache/dcache.conf** file.
+
 
 
 #### DOOR 
@@ -280,10 +639,17 @@ dcache.enable.space-reservation = false
  pnfsmanager.default-access-latency = ONLINE
 
 [dCacheDomain/gplazma]
+gplazma.oidc.audience-targets=https://wlcg.cern.ch/jwt/v1/any
+gplazma.oidc.provider!wlcg=https://wlcg.cloud.cnaf.infn.it/ -profile=wlcg -prefix=/ -suppress=audience
+
 
 [dCacheDomain/poolmanager]
 [dCacheDomain/webdav]
- webdav.authn.basic = true
+#webdav.authn.basic = true
+webdav.authn.protocol=https
+webdav.authz.readonly=false
+webdav.cell.name=WebDAV-${host.name}
+
  
 
 ```
@@ -299,14 +665,11 @@ Therefore the values for `pnfsmanager.default-retention-policy` and `pnfsmanager
 
 
 > `dcache.broker.scheme = none`
->  tells the domain that it is running stand-alone, and should not attempt to contact other domains. We will cover these in the next example, where  configurations for different domains  will be explained.
+>
 
->  webdav.authn.basic = true
+tells the domain that it is running stand-alone, and should not attempt to contact other domains. We will cover these in the next example, where  configurations for different domains  will be explained.
+
  
-
-
-
-
 Now we can add a new cell: Pool which is a service responsible for storing the contents of files and there must be always at least one pool.
 
 
@@ -321,9 +684,12 @@ No we will use the following command:
 
  > dcache pool create /srv/dcache/pool-1 pool1 dCacheDomain
  >
-> Created a pool in /srv/dcache/pool-1. The pool was added to dCacheDomain
-in file:/etc/dcache/layouts/mylayout.conf.
 
+```ini
+
+ Created a pool in /srv/dcache/pool-1. The pool was added to dCacheDomain
+in file:/etc/dcache/layouts/mylayout.conf.
+```
 
 Now if we open  `/etc/dcache/layouts/mylayout.conf` file, it should be updated to have
 an additional `pool` service:
@@ -373,7 +739,8 @@ Using systemd service dCache uses systemd’s generator functionality to create 
 domain in the layout file. That’s why, before starting the service all dynamic systemd units should be
 generated:
 
-  > systemctl daemon-reload 
+  > systemctl daemon-reload
+  > systemctl start dcache.target
 
 
 To inspect all generated units of dcache.target the systemd list-dependencies command can be used. In
@@ -402,13 +769,40 @@ To stop and restart dcache.target command are:
 > journalctl -f -u dcache@dCacheDomain
 
 
-> touch /etc/dcache/htpasswd 
->
-> htpasswd -bm /etc/dcache/htpasswd admin dickerelch
 
+
+```ini
+[root@neic-demo-3 centos]# chimera
+Type 'help' for help on commands.
+Type 'exit' or Ctrl+D to exit.
+chimera:/# mkdir test
+chimera:/# chown 1999:1999 test
+chimera:/# ls test
+```
 So now you can upload a file:
 
-> curl -u admin:dickerelch -L -T /bin/bash http://localhost:2880/home/tester/test-file
+> curl  -v  -k -L -u   admin:admin   --upload-file /etc/grid-security/hostcert.pem https://neic-demo-2.desy.de:2880/test/file.test.2
+
+And using our tokens
+
+
+> dnf install davix
+> 
+> davix-ls -k -H "Authorization: Bearer ${TOKEN}" https://neic-demo-2.desy.de:2880/
+
+To write a file we do 
+
+```
+
+ ```ini
+
+[root@neic-demo-2 centos]# davix-put -k -H "Authorization: Bearer ${TOKEN}" /etc/grid-security/hostcert.pem https://neic-demo-2.desy.de:2880/test/test.file.1
+[root@neic-demo-2 centos]# davix-ls -k -H "Authorization: Bearer ${TOKEN}" https://neic-demo-2.desy.de:2880/
+lost%2Bfound
+test
+[root@neic-demo-2 centos]# davix-ls -k -H "Authorization: Bearer ${TOKEN}" https://neic-demo-2.desy.de:2880/test
+test.file.1
+```
 
 
 We can have a look on a log to see what are the messages we are getting
@@ -468,7 +862,7 @@ we will add two new pool domains:
  > 
  > dcache pool create /srv/dcache/pool-2 pool2 poolsDomain2
  
-
+We need to change the **dcache.broker.scheme = core**
 
 Please note, that we are still on the same node
 
@@ -598,7 +992,6 @@ dcache.broker.scheme = core
 
 
 [${host.name}_coreDomain/zookeeper]
-[${host.name}_coreDomain/zookeeper]
 [${host.name}_coreDomain/pnfsmanager]
  pnfsmanager.default-retention-policy = REPLICA
  pnfsmanager.default-access-latency = ONLINE
@@ -655,7 +1048,6 @@ dcache.enable.space-reservation = false
 dcache.broker.scheme = core
 
 
-[${host.name}_coreDomain/zookeeper]
 [${host.name}_coreDomain/zookeeper]
 [${host.name}_coreDomain/pnfsmanager]
  pnfsmanager.default-retention-policy = REPLICA

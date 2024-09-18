@@ -171,12 +171,6 @@ a client may see a token as `fb1991c5:-1093540442`, where `fb1991c5` is a
 backend indentifier and `-1093540442` is the backend token. One may map the
 backend identifier to an instance through ZooKeeper:
 
-### `transfermanager`
-
-Transfermanager is fully replicable. Several instances must share the same
-database as requests will be load balanced over all instances. The configuration
-should be synchronized such that all instances are configured the same way.
-
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 \c System
 zk get /dcache/srm/backends/fb1991c5
@@ -187,6 +181,11 @@ Each logical instance may have one or more physical instances. This may be
 useful to provide VO specific configuration. In such a setup one would have VO
 specific `srm` frontends, each configured to talk to a specific logical backend
 (which in turn may be implemented by several physical instances).
+
+### `transfermanager`
+
+Transfermanager is fully replicable. The configuration should be synchronized such
+that all instances are configured the same way.
 
 ### `pnfsmanager`
 

@@ -69,20 +69,4 @@
         </properties>
     </persistence-unit>
 
-    <persistence-unit name="TransferManager">
-      <mapping-file>diskCacheV111/services/package.jdo</mapping-file>
-        <properties>
-            <property name="datanucleus.detachAllOnCommit" value="true"/>
-            <property name="javax.jdo.option.Optimistic" value="true"/>
-            <property name="javax.jdo.option.NontransactionalRead" value="true"/>
-            <property name="javax.jdo.option.RetainValues" value="true"/>
-            <property name="javax.jdo.option.Multithreaded" value="true"/>
-            <property name="datanucleus.autoCreateSchema" value="true"/>
-            <property name="datanucleus.validateTables" value="false"/>
-            <property name="datanucleus.validateConstraints" value="false"/>
-            <property name="datanucleus.autoCreateColumns" value="true"/>
-            <property name="datanucleus.connectionPoolingType" value="None"/>
-	    <property name="datanucleus.schema.autoCreateTables" value="true"/>
-        </properties>
-    </persistence-unit>
 </persistence>

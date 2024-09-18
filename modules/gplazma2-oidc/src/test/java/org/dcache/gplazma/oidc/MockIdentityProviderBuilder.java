@@ -20,7 +20,9 @@ package org.dcache.gplazma.oidc;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.MissingNode;
 import java.net.URI;
+import org.dcache.gplazma.oidc.helpers.ReasonBearingMissingNode;
 import org.mockito.BDDMockito;
 
 import static org.mockito.Mockito.mock;
@@ -30,6 +32,7 @@ import static org.mockito.Mockito.mock;
  */
 public class MockIdentityProviderBuilder {
     private final IdentityProvider provider = mock(IdentityProvider.class);
+    private boolean hasEndpoint;
 
     static public MockIdentityProviderBuilder anIp(String name) {
         return new MockIdentityProviderBuilder(name);
@@ -42,6 +45,7 @@ public class MockIdentityProviderBuilder {
     public MockIdentityProviderBuilder withEndpoint(String endpoint) {
         URI url = URI.create(endpoint);
         BDDMockito.given(provider.getIssuerEndpoint()).willReturn(url);
+        hasEndpoint = true;
         return this;
     }
 
@@ -66,12 +70,27 @@ public class MockIdentityProviderBuilder {
         return this;
     }
 
+    public MockIdentityProviderBuilder withMissingDiscoveryWithoutReason() {
+        var missingNode = MissingNode.getInstance();
+        BDDMockito.given(provider.discoveryDocument()).willReturn(missingNode);
+        return this;
+    }
+
+    public MockIdentityProviderBuilder withMissingDiscoveryWithReason(String reason) {
+        var missingNode = new ReasonBearingMissingNode(reason);
+        BDDMockito.given(provider.discoveryDocument()).willReturn(missingNode);
+        return this;
+    }
+
     public MockIdentityProviderBuilder withSuppress(String keyword) {
         BDDMockito.given(provider.isSuppressed(keyword)).willReturn(true);
         return this;
     }
 
     public IdentityProvider build() {
+        if (!hasEndpoint) {
+            withEndpoint("https://example.org/");
+        }
         return provider;
     }
 }

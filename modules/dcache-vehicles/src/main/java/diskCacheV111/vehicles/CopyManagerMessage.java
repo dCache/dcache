@@ -3,6 +3,9 @@ package diskCacheV111.vehicles;
 import static java.util.Objects.requireNonNull;
 
 import org.dcache.auth.attributes.Restriction;
+import org.dcache.auth.attributes.Restrictions;
+
+import java.io.ObjectStreamException;
 
 /**
  * @author Patrick F.
@@ -18,7 +21,7 @@ public class CopyManagerMessage extends Message {
     private final String dstPnfsPath;
     private int returnCode;
     private String description;
-    private Restriction restriction;
+    private Restriction restriction = Restrictions.none();
 
     private static final long serialVersionUID = -1490534904266183106L;
 
@@ -123,6 +126,12 @@ public class CopyManagerMessage extends Message {
         this.numberOfPerformedRetries++;
     }
 
+    private Object readResolve() throws ObjectStreamException {
+        if (restriction == null) {
+            restriction = Restrictions.none();
+        }
+        return this;
+    }
 
 }
 

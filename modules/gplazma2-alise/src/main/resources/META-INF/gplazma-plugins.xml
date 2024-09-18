@@ -1,0 +1,6 @@
+<plugins>
+    <plugin>
+        <name>alise</name>
+        <class>org.dcache.gplazma.alise.AlisePlugin</class>
+    </plugin>
+</plugins>

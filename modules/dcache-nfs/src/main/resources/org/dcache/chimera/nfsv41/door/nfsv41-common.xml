@@ -269,6 +269,10 @@
         <property name="manageGroups" value="${nfs.idmap.manage-gids}" />
         <property name="clientStore" ref="clientStore" />
         <property name="poolMonitor" ref="pool-monitor"/>
+        <property name="enableTls" value="${nfs.enable.rpc-over-tls}"/>
+        <property name="certFile" value="${nfs.tls.hostcert.cert}"/>
+        <property name="keyFile" value="${nfs.tls.hostcert.key}"/>
+        <property name="caPath" value="${nfs.tls.capath}"/>
     </bean>
 
     <bean id="pool-manager-handler" class="org.dcache.poolmanager.PoolManagerHandlerSubscriber">

@@ -36,9 +36,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.attributes.Restriction;
+import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
@@ -138,6 +140,10 @@ public class PnfsHandler implements CellMessageSender {
 
     public void setRestriction(Restriction restriction) {
         _restriction = restriction;
+    }
+
+    @Nullable public Restriction getRestriction() {
+        return _restriction;
     }
 
     /**

@@ -27,7 +27,9 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.dcache.acl.ACE;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.AceType;
@@ -990,7 +992,8 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
 
     @Test(expected = FileNotFoundChimeraFsException.class)
     public void testMoveNotExists() throws Exception {
-        _fs.rename(_rootInode, _rootInode, "foo", _rootInode, "bar");
+        FsInode dummy = new FsInode(_fs, 31415);
+        _fs.rename(dummy, _rootInode, "foo", _rootInode, "bar");
     }
 
     @Test(expected = DirNotEmptyChimeraFsException.class)
@@ -1850,6 +1853,44 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
     }
 
     @Test
+    public void testLsWithLabel() throws Exception {
+
+        FsInode dir = _fs.mkdir("/test");
+        FsInode inodeA = _fs.createFile(dir, "aFile");
+        FsInode inodeB = _fs.createFile(dir, "bFile");
+        FsInode inodeC = _fs.createFile(dir, "cFile");
+
+        FsInode dir1 = _fs.mkdir("/test1");
+        FsInode inodeB2 = _fs.createFile(dir1, "bFile");
+
+        String[] labels = {"cat", "dog", "yellow", "green"};
+
+        for (String labelName : labels) {
+            _fs.addLabel(inodeA, labelName);
+            _fs.addLabel(inodeB, labelName);
+            _fs.addLabel(inodeB2, labelName);
+        }
+
+        FsInode newInode = _fs.inodeOf(_rootInode, (".(collection)(cat)"), NO_STAT);
+
+        Collection<String> dirLs = new HashSet<>();
+        try (DirectoryStreamB<ChimeraDirectoryEntry> dirStream = _fs.newDirectoryStream(
+              newInode)) {
+
+            for (ChimeraDirectoryEntry entry : dirStream) {
+                dirLs.add(entry.getInode().getId());
+
+            }
+        }
+
+        assertThat("List file's pnfsid without order", dirLs,
+              containsInAnyOrder(inodeA.getId(), inodeB.getId(), inodeB2.getId()));
+        assertEquals("Unexpected number of entries", 3, getDirEntryCount(newInode));
+
+
+    }
+
+    @Test
     public void testaddLabelsExist() throws Exception {
 
         FsInode dir = _fs.mkdir("/test");
@@ -2044,6 +2085,36 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
         _fs.removeXattr(inode, key);
         assertThat("inode generation must be update on xattr remote",
               _fs.stat(inode).getGeneration(), greaterThan(s0.getGeneration()));
+    }
+
+    @Test
+    public void testNoMtimeUpdateForHardlinks() throws Exception {
+
+        FsInode dir = _fs.mkdir("/test");
+        FsInode inode = _fs.createFile(dir, "aFile");
+        long mtime0 = inode.stat().getMTime();
+
+        FsInode hlink = _fs.createHLink(dir, inode, "hlink");
+        long mtime1 = inode.stat().getMTime();
+
+        assertThat("file mtine shoud not be changes on hardlink creation", mtime1, is(mtime0));
+    }
+
+    @Test(expected = InvalidArgumentChimeraException.class)
+    public void testMvDirectoryIntoItself() throws Exception {
+
+        FsInode dir = _fs.mkdir("/dir");
+        _fs.rename(dir, _rootInode, "dir", dir, "subdir");
+    }
+
+    @Test(expected = InvalidArgumentChimeraException.class)
+    public void testMvDirectoryOwnSubtree() throws Exception {
+
+        FsInode dir = _fs.mkdir("/dir");
+        _fs.mkdir("/dir/subdir1");
+        FsInode dir2 = _fs.mkdir("/dir/subdir1/subdir2");
+
+        _fs.rename(dir, _rootInode, "dir", dir2, "subdir3");
     }
 
     private long getDirEntryCount(FsInode dir) throws IOException {

@@ -5,6 +5,8 @@ import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.dcache.util.Args;
 
@@ -45,17 +47,22 @@ public class PoolInformationBase implements CellMessageReceiver {
         return _pools.values();
     }
 
+    public synchronized PoolInformation getPoolWithHSM(String hsm) {
+        return getNewPoolWithHSM(hsm, Collections.EMPTY_SET);
+    }
+
     /**
-     * Returns a pool attached to a given HSM instance.
+     * Returns a pool attached to a given HSM instance which is not in excludedPools.
      *
      * @param hsm An HSM instance name.
      */
-    public synchronized PoolInformation getPoolWithHSM(String hsm) {
+    public synchronized PoolInformation getNewPoolWithHSM(String hsm, Set<String> excludedPools) {
         Collection<PoolInformation> pools = _hsmToPool.get(hsm);
         if (pools != null) {
             for (PoolInformation pool : pools) {
                 if (pool.getAge() <= TIMEOUT
-                      && !pool.isDisabled(PoolV2Mode.DISABLED_STAGE)) {
+                      && !pool.isDisabled(PoolV2Mode.DISABLED_STAGE)
+                      && !excludedPools.contains(pool.getName())) {
                     return pool;
                 }
             }

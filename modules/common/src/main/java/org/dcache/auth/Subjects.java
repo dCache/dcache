@@ -551,6 +551,87 @@ public class Subjects {
         return principals;
     }
 
+    private static String toString(Principal principal) {
+        StringBuilder sb = new StringBuilder();
+
+        if (principal instanceof GlobusPrincipal) {
+            sb.append("dn:");
+            appendOptionallyInQuotes(sb, principal.getName());
+        } else if (principal instanceof KerberosPrincipal) {
+            sb.append("kerberos:");
+            appendOptionallyInQuotes(sb, principal.getName());
+        } else if (principal instanceof FQANPrincipal) {
+            sb.append("fqan:");
+            String label = ((FQANPrincipal) principal).isPrimaryGroup()
+                    ? "!" + principal.getName()
+                    : principal.getName();
+            appendOptionallyInQuotes(sb, label);
+        } else if (principal instanceof LoginNamePrincipal) {
+            sb.append("desired-username:");
+            appendOptionallyInQuotes(sb, principal.getName());
+        } else if (principal instanceof Origin) {
+            sb.append("origin:");
+            appendOptionallyInQuotes(sb, principal.getName());
+        } else if (principal instanceof OidcSubjectPrincipal) {
+            sb.append("oidc:");
+            appendOptionallyInQuotes(sb, principal.getName());
+        } else if (principal instanceof EmailAddressPrincipal) {
+            sb.append("email:");
+            appendOptionallyInQuotes(sb, principal.getName());
+        } else if (principal instanceof UserNamePrincipal) {
+            sb.append("user:");
+            appendOptionallyInQuotes(sb, principal.getName());
+        } else if (principal instanceof GroupNamePrincipal) {
+            sb.append("group:");
+            String label = ((GroupNamePrincipal) principal).isPrimaryGroup()
+                    ? "!" + principal.getName()
+                    : principal.getName();
+            appendOptionallyInQuotes(sb, label);
+        } else if (principal instanceof UidPrincipal) {
+            sb.append("uid:").append(((UidPrincipal) principal).getUid());
+        } else if (principal instanceof GidPrincipal) {
+            sb.append("gid:");
+            if (((GidPrincipal) principal).isPrimaryGroup()) {
+                sb.append('!');
+            }
+            sb.append(principal.getName());
+        } else if (principal instanceof DesiredRole) {
+            sb.append("desired-role:");
+            appendOptionallyInQuotes(sb, principal.getName());
+        } else if (principal instanceof EntityDefinitionPrincipal) {
+            sb.append("entity-defn:").append(principal.getName());
+        } else if (principal instanceof FullNamePrincipal) {
+            sb.append("full-name:");
+            appendOptionallyInQuotes(sb, principal.getName());
+        } else if (principal instanceof IGTFPolicyPrincipal) {
+            sb.append("IGTF-policy:");
+            appendOptionallyInQuotes(sb, principal.getName());
+        } else if (principal instanceof IGTFStatusPrincipal) {
+            sb.append("IGTF-status:");
+            appendOptionallyInQuotes(sb, principal.getName());
+        } else if (principal instanceof LoAPrincipal) {
+            sb.append("LoA:");
+            appendOptionallyInQuotes(sb, principal.getName());
+        } else if (principal instanceof LoginGidPrincipal) {
+            sb.append("desired-gid:").append(((LoginGidPrincipal) principal).getGid());
+        } else if (principal instanceof LoginUidPrincipal) {
+            sb.append("desired-uid:").append(((LoginUidPrincipal) principal).getUid());
+        } else if (principal instanceof MacaroonPrincipal) {
+            sb.append("macaroon:");
+            appendOptionallyInQuotes(sb, principal.getName());
+        } else if (principal instanceof OpenIdGroupPrincipal) {
+            sb.append("oidc-group:");
+            appendOptionallyInQuotes(sb, principal.getName());
+        } else if (principal instanceof Origin) {
+            sb.append("origin:").append(principal.getName());
+        } else {
+            sb.append(principal.getClass().getSimpleName()).append(':');
+            appendOptionallyInQuotes(sb, principal.getName());
+        }
+
+        return sb.toString();
+    }
+
     /**
      * Provide a one-line description of argument.  This is ostensibly the same job as
      * Subject#toString.  In contrast, this method never includes any line-break characters,
@@ -594,82 +675,22 @@ public class Subjects {
 
         for (Principal principal : subject.getPrincipals()) {
             appendComma(sb);
-            if (principal instanceof GlobusPrincipal) {
-                sb.append("dn:");
-                appendOptionallyInQuotes(sb, principal.getName());
-            } else if (principal instanceof KerberosPrincipal) {
-                sb.append("kerberos:");
-                appendOptionallyInQuotes(sb, principal.getName());
-            } else if (principal instanceof FQANPrincipal) {
-                sb.append("fqan:");
-                String label = ((FQANPrincipal) principal).isPrimaryGroup()
-                      ? "!" + principal.getName()
-                      : principal.getName();
-                appendOptionallyInQuotes(sb, label);
-            } else if (principal instanceof LoginNamePrincipal) {
-                sb.append("desired-username:");
-                appendOptionallyInQuotes(sb, principal.getName());
-            } else if (principal instanceof Origin) {
-                sb.append("origin:");
-                appendOptionallyInQuotes(sb, principal.getName());
-            } else if (principal instanceof OidcSubjectPrincipal) {
-                sb.append("oidc:");
-                appendOptionallyInQuotes(sb, principal.getName());
-            } else if (principal instanceof EmailAddressPrincipal) {
-                sb.append("email:");
-                appendOptionallyInQuotes(sb, principal.getName());
-            } else if (principal instanceof UserNamePrincipal) {
-                sb.append("user:");
-                appendOptionallyInQuotes(sb, principal.getName());
-            } else if (principal instanceof GroupNamePrincipal) {
-                sb.append("group:");
-                String label = ((GroupNamePrincipal) principal).isPrimaryGroup()
-                      ? "!" + principal.getName()
-                      : principal.getName();
-                appendOptionallyInQuotes(sb, label);
-            } else if (principal instanceof UidPrincipal) {
-                sb.append("uid:").append(((UidPrincipal) principal).getUid());
-            } else if (principal instanceof GidPrincipal) {
-                sb.append("gid:");
-                if (((GidPrincipal) principal).isPrimaryGroup()) {
-                    sb.append('!');
-                }
-                sb.append(principal.getName());
-            } else if (principal instanceof DesiredRole) {
-                sb.append("desired-role:");
-                appendOptionallyInQuotes(sb, principal.getName());
-            } else if (principal instanceof EntityDefinitionPrincipal) {
-                sb.append("entity-defn:").append(principal.getName());
-            } else if (principal instanceof FullNamePrincipal) {
-                sb.append("full-name:");
-                appendOptionallyInQuotes(sb, principal.getName());
-            } else if (principal instanceof IGTFPolicyPrincipal) {
-                sb.append("IGTF-policy:");
-                appendOptionallyInQuotes(sb, principal.getName());
-            } else if (principal instanceof IGTFStatusPrincipal) {
-                sb.append("IGTF-status:");
-                appendOptionallyInQuotes(sb, principal.getName());
-            } else if (principal instanceof LoAPrincipal) {
-                sb.append("LoA:");
-                appendOptionallyInQuotes(sb, principal.getName());
-            } else if (principal instanceof LoginGidPrincipal) {
-                sb.append("desired-gid:").append(((LoginGidPrincipal) principal).getGid());
-            } else if (principal instanceof LoginUidPrincipal) {
-                sb.append("desired-uid:").append(((LoginUidPrincipal) principal).getUid());
-            } else if (principal instanceof MacaroonPrincipal) {
-                sb.append("macaroon:");
-                appendOptionallyInQuotes(sb, principal.getName());
-            } else if (principal instanceof OpenIdGroupPrincipal) {
-                sb.append("oidc-group:");
-                appendOptionallyInQuotes(sb, principal.getName());
-            } else if (principal instanceof Origin) {
-                sb.append("origin:").append(principal.getName());
-            } else {
-                sb.append(principal.getClass().getSimpleName()).append(':');
-                appendOptionallyInQuotes(sb, principal.getName());
-            }
+            sb.append(toString(principal));
         }
         return "{" + sb + "}";
+    }
+
+    /**
+     * Provide a list principals of one subject converted into strings.
+     * @param subject the identity to print
+     * @return a list of strings, where each string identifies one principal of the subject.
+     */
+    public static List<String> toStringList(Subject subject) {
+        List<String> stringList = new ArrayList<String>();
+        for (Principal principal : subject.getPrincipals()) {
+            stringList.add(toString(principal));
+        }
+        return stringList;
     }
 
     private static StringBuilder appendX509Array(StringBuilder sb, X509Certificate[] chain) {

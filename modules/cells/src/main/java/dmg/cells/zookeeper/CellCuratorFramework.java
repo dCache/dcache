@@ -92,6 +92,7 @@ import org.apache.curator.framework.state.ConnectionStateErrorPolicy;
 import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.curator.utils.EnsurePath;
 import org.apache.curator.utils.ThreadUtils;
+import org.apache.curator.utils.ZookeeperCompatibility;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Watcher;
@@ -341,6 +342,11 @@ public class CellCuratorFramework implements CuratorFramework {
     public CuratorZookeeperClient getZookeeperClient() {
         /* WARNING: The client is not decorated! */
         return inner.getZookeeperClient();
+    }
+
+    @Override
+    public ZookeeperCompatibility getZookeeperCompatibility() {
+        return inner.getZookeeperCompatibility();
     }
 
     @Override

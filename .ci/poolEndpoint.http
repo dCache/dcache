@@ -1,0 +1,12 @@
+### Upload frontend file
+PUT {{webdav-door}}/data/pool-a/ReadMeFile
+Authorization: Basic {{user_name}} {{passwd}}
+Content-Type: application/octet-stream
+
+< /README.md
+
+> {%
+    client.test("Successful response when uploading a file", function() {
+        client.assert(response.status === 201, "Response was not 201");
+    });
+%}

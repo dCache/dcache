@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.dcache</groupId>
     <artifactId>dcache-parent</artifactId>
-    <version>10.1.0-SNAPSHOT</version>
+    <version>10.2.0-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
@@ -204,6 +204,11 @@
     <dependency>
         <groupId>org.apache.sshd</groupId>
         <artifactId>sshd-core</artifactId>
+    </dependency>
+    <!-- For ed25519 support -->
+    <dependency>
+        <groupId>net.i2p.crypto</groupId>
+        <artifactId>eddsa</artifactId>
     </dependency>
     <dependency>
         <groupId>commons-codec</groupId>

@@ -5,20 +5,10 @@
     <dependencySets>
         <dependencySet>
             <excludes>
-                <exclude>*saxon:saxon*:*:*</exclude>
                 <exclude>org.dcache:dcache-view:jar:*</exclude>
                 <exclude>org.dcache:dcache-view-admin:jar:*</exclude>
             </excludes>
             <outputDirectory>usr/share/dcache/classes</outputDirectory>
-            <useProjectArtifact>false</useProjectArtifact>
-            <fileMode>644</fileMode>
-            <directoryMode>755</directoryMode>
-        </dependencySet>
-        <dependencySet>
-            <includes>
-                <include>*saxon:saxon*:*:*</include>
-            </includes>
-            <outputDirectory>usr/share/dcache/classes/saxon</outputDirectory>
             <useProjectArtifact>false</useProjectArtifact>
             <fileMode>644</fileMode>
             <directoryMode>755</directoryMode>

@@ -126,7 +126,9 @@ public final class StageActivity extends PinManagerActivity {
             checkStageable(attributes);
 
             PinManagerPinMessage message
-                  = new PinManagerPinMessage(attributes, getProtocolInfo(), id,
+                  = new PinManagerPinMessage(attributes, getProtocolInfo(),
+                  pnfsHandler.getRestriction(),
+                  id,
                   getLifetimeInMillis(target));
             message.setSubject(subject);
 

@@ -41,6 +41,7 @@ import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
+import javax.ws.rs.BadRequestException;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pinmanager.PinManagerCountPinsMessage;
@@ -55,6 +56,7 @@ import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 
 /**
  * This is a very rudimentary impplementation of support for QoS transitions. The code has been
@@ -145,14 +147,14 @@ public class QoSTransitionEngine {
                 return DISK;
             } else if (targetString.equalsIgnoreCase("tape")) {
                 return TAPE;
-            } else if (targetString.equalsIgnoreCase("disk+tape")) {
+            } else if (targetString.equalsIgnoreCase("disk+tape") || targetString.equalsIgnoreCase("tape+disk")) {
                 return DISK_TAPE;
             } else if (targetString.equalsIgnoreCase("volatile")) {
                 return VOLATILE;
             } else if (targetString.equalsIgnoreCase("unavailable")) {
                 return UNAVAILABLE;
             } else {
-                throw new IllegalArgumentException("no such qos type: "
+                throw new BadRequestException("no such qos type: "
                       + targetString);
             }
         }
@@ -496,6 +498,7 @@ public class QoSTransitionEngine {
         PinManagerPinMessage message =
               new PinManagerPinMessage(attributes,
                     protocolInfo,
+                    pnfsHandler.getRestriction(),
                     QOS_PIN_REQUEST_ID,
                     -1);
 

@@ -85,6 +85,8 @@ import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 import org.dcache.acl.ACE;
 import org.dcache.acl.ACL;
+import org.dcache.alarms.AlarmMarkerFactory;
+import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.auth.Subjects;
 import org.dcache.chimera.ChimeraDirectoryEntry;
 import org.dcache.chimera.ChimeraFsException;
@@ -96,6 +98,7 @@ import org.dcache.chimera.FileState;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FileSystemProvider.SetXattrMode;
 import org.dcache.chimera.FsInode;
+import org.dcache.chimera.FsInode_LABEL;
 import org.dcache.chimera.NoXdataChimeraException;
 import org.dcache.chimera.NotDirChimeraException;
 import org.dcache.chimera.StorageGenericLocation;
@@ -260,6 +263,11 @@ public class ChimeraNameSpaceProvider
           throws ChimeraFsException, CacheException {
         if (Subjects.isExemptFromNamespaceChecks(subject)) {
             return new ExtendedInode(_fs, _fs.path2inode(path));
+        }
+
+        if (path.startsWith("/.(collection)")) {
+            ExtendedInode dir = new ExtendedInode(_fs, _fs.path2inode(path));
+            return dir.inodeOf(path, STAT);
         }
 
         List<FsInode> inodes;
@@ -1289,6 +1297,7 @@ public class ChimeraNameSpaceProvider
         try {
             Pattern pattern = (glob == null) ? null : glob.toPattern();
             ExtendedInode dir = pathToInode(subject, path);
+            // TODO this should be checkt for virtual directories and test casse for list() must e added
             if (!dir.isDirectory()) {
                 throw new NotDirCacheException("Not a directory: " + path);
             }
@@ -1327,6 +1336,10 @@ public class ChimeraNameSpaceProvider
                         /* Not an error; files may be deleted during the
                          * list operation.
                          */
+                    } catch (CacheException e) {
+                        LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.INACCESSIBLE_FILE,
+                                        "namespace"),
+                                "Failed to retrieve file attributes {} : {}", entry.getStat().getId(), e.toString());
                     }
                 }
             }
