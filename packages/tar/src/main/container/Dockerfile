@@ -19,7 +19,7 @@ RUN echo "dcache:x:994:1000::/home/dcache:/bin/bash" >> /etc/passwd
 RUN echo "dcache:!!:18438::::::" >> /etc/shadow
 
 # Add JRE
-RUN microdnf -y install java-17-openjdk-headless hostname which procps-ng tar gzip
+RUN microdnf -y install java-21-openjdk-headless hostname which procps-ng tar gzip
 
 # Add dCache
 COPY maven /opt/dcache
