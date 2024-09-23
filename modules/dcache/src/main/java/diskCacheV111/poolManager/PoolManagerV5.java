@@ -39,7 +39,16 @@ import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.DelayedReply;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -521,13 +530,13 @@ public class PoolManagerV5
     messageArrived(PoolManagerGetPoolsByPoolGroupOfPoolMessage msg) {
         try {
             Collection<PoolSelectionUnit.SelectionPoolGroup> poolGroups =
-                    _selectionUnit.getPoolGroupsOfPool(msg.getPoolName());
+                  _selectionUnit.getPoolGroupsOfPool(msg.getPoolName());
             Map<String, List<PoolManagerPoolInformation>> poolsMap = new HashMap<>();
             List<String> offlinePools = new ArrayList<>();
             for (PoolSelectionUnit.SelectionPoolGroup poolGroup : poolGroups) {
                 List<PoolManagerPoolInformation> pools = new ArrayList<>();
                 getPoolInformation(_selectionUnit.getPoolsByPoolGroup(poolGroup.getName()),
-                        pools, offlinePools);
+                      pools, offlinePools);
                 poolsMap.put(poolGroup.getName(), pools);
             }
             msg.setPoolsMap(poolsMap);
