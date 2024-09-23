@@ -1,12 +1,12 @@
 package diskCacheV111.vehicles;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static java.util.Objects.requireNonNull;
 
 public class PoolManagerGetPoolsByPoolGroupOfPoolMessage
       extends Message {
@@ -26,19 +26,19 @@ public class PoolManagerGetPoolsByPoolGroupOfPoolMessage
         return _poolName;
     }
 
-    public void setPoolsMap(Map<String, List<PoolManagerPoolInformation>> poolsMap) {
-        _poolsMap = new HashMap<>(poolsMap);
-    }
-
-    public void setOfflinePools(Collection<String> _offlinePools) {
-        this._offlinePools = _offlinePools;
-    }
-
     public Map<String, List<PoolManagerPoolInformation>> getPoolsMap() {
         return _poolsMap;
     }
 
+    public void setPoolsMap(Map<String, List<PoolManagerPoolInformation>> poolsMap) {
+        _poolsMap = new HashMap<>(poolsMap);
+    }
+
     public Collection<String> getOfflinePools() {
         return (_offlinePools == null) ? Collections.emptyList() : _offlinePools;
+    }
+
+    public void setOfflinePools(Collection<String> _offlinePools) {
+        this._offlinePools = _offlinePools;
     }
 }

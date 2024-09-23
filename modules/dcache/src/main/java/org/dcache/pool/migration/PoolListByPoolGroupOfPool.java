@@ -5,22 +5,20 @@ import static java.util.Objects.requireNonNull;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.MoreExecutors;
-import diskCacheV111.vehicles.Pool;
 import diskCacheV111.vehicles.PoolManagerGetPoolsByPoolGroupOfPoolMessage;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
+import java.util.List;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-
 class PoolListByPoolGroupOfPool
-        extends AbstractMessageCallback<PoolManagerGetPoolsByPoolGroupOfPoolMessage>
-        implements RefreshablePoolList {
+      extends AbstractMessageCallback<PoolManagerGetPoolsByPoolGroupOfPoolMessage>
+      implements RefreshablePoolList {
 
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(PoolListByPoolGroupOfPool.class);
+          LoggerFactory.getLogger(PoolListByPoolGroupOfPool.class);
 
     private final CellStub _poolManager;
     private final String _poolName;
@@ -47,8 +45,8 @@ class PoolListByPoolGroupOfPool
     @Override
     public ImmutableList<PoolManagerPoolInformation> getPools() {
         return _poolsMap.isEmpty() ?
-                ImmutableList.of() :
-                ImmutableList.copyOf(_poolsMap.values().iterator().next());
+              ImmutableList.of() :
+              ImmutableList.copyOf(_poolsMap.values().iterator().next());
     }
 
     @Override
@@ -61,7 +59,7 @@ class PoolListByPoolGroupOfPool
     @Override
     public String toString() {
         return String.format("source pool %s, %d pools",
-                _poolName, getPools().size());
+              _poolName, getPools().size());
     }
 
     @Override

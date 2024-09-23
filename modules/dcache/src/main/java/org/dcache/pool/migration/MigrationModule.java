@@ -538,11 +538,11 @@ public class MigrationModule
         boolean forceSourceMode;
 
         @Argument(metaVar = "target",
-                required = false,
-                usage = "Required unless -target=pgroup is supplied, in which case we" +
-                        "default to the unique pool group of which the source pool is a member," +
-                        "if such exists.")
-         String[] targets = {};
+              required = false,
+              usage = "Required unless -target=pgroup is supplied, in which case we" +
+                    "default to the unique pool group of which the source pool is a member," +
+                    "if such exists.")
+        String[] targets = {};
 
         @CommandLine
         String commandLine;
@@ -562,7 +562,7 @@ public class MigrationModule
                     }
                 case "link":
                     if (targets.size() != 1) {
-                        throw new IllegalArgumentException(targets.toString() +
+                        throw new IllegalArgumentException(targets +
                               ": Only one target supported for -type=link");
                     }
                     return new PoolListByLink(poolManager, targets.get(0));
@@ -809,8 +809,9 @@ public class MigrationModule
                   createPoolPredicate(includeWhen, TRUE_EXPRESSION);
 
             List<String> targets_list = asList(targets);
-            if (targets_list.isEmpty() && ! target.equals("pgroup")) {
-                throw new IllegalArgumentException("target(s) required when target type is " + target);
+            if (targets_list.isEmpty() && !target.equals("pgroup")) {
+                throw new IllegalArgumentException(
+                      "target(s) required when target type is " + target);
             }
 
             RefreshablePoolList poolList =
