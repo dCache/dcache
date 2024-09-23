@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2016 - 2022 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 - 2024 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -21,6 +21,7 @@ package org.dcache.poolmanager;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
+import static org.dcache.util.CompletableFutures.fromCompletableFuture;
 
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -99,7 +100,7 @@ public class RemotePoolManagerHandler implements SerializablePoolManagerHandler 
         FutureCellMessageAnswerable<T> callback = new FutureCellMessageAnswerable<>(reply);
         endpoint.sendMessage(new CellMessage(path, msg), callback, MoreExecutors.directExecutor(),
               timeout);
-        return callback;
+        return fromCompletableFuture(callback);
     }
 
     @Override

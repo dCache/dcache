@@ -4,6 +4,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.util.concurrent.Uninterruptibles.getUninterruptibly;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.dcache.util.CompletableFutures.fromCompletableFuture;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ObjectArrays;
@@ -21,6 +22,7 @@ import dmg.cells.nucleus.CellMessageSender;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import java.io.Serializable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
@@ -358,7 +360,7 @@ public class CellStub
     public <T extends Message> ListenableFuture<T> send(CellPath destination, T message,
           long timeout, CellEndpoint.SendFlag... flags) {
         message.setReplyRequired(true);
-        return send(destination, message, (Class<T>) message.getClass(), timeout, flags);
+        return fromCompletableFuture(send(destination, message, (Class<T>) message.getClass(), timeout, flags));
     }
 
     public <T> ListenableFuture<T> send(Serializable message, Class<T> type,
@@ -369,27 +371,29 @@ public class CellStub
     public <T> ListenableFuture<T> send(
           CellPath destination, Serializable message, Class<T> type,
           CellEndpoint.SendFlag... flags) {
-        return send(destination, message, type, getTimeoutInMillis(), flags);
+        return fromCompletableFuture(send(destination, message, type, getTimeoutInMillis(), flags));
     }
 
     public <T> ListenableFuture<T> send(
           Serializable message, Class<T> type, long timeout, CellEndpoint.SendFlag... flags) {
-        return send(_destination, message, type, timeout, flags);
+        return fromCompletableFuture(send(_destination, message, type, timeout, flags));
     }
 
-    public <T> ListenableFuture<T> send(
-          CellPath destination, Serializable message, Class<T> type, long timeout,
-          CellEndpoint.SendFlag... flags) {
+    public <T> CompletableFuture<T> send(
+            CellPath destination, Serializable message, Class<T> type, long timeout,
+            CellEndpoint.SendFlag... flags) {
         CellMessage envelope = new CellMessage(requireNonNull(destination),
-              requireNonNull(message));
+                requireNonNull(message));
         Semaphore concurrency = _concurrency;
-        CallbackFuture<T> future = new CallbackFuture<>(type, concurrency);
+
+        FutureCellMessageAnswerable<T> future = new FutureCellMessageAnswerable<T>(type);
+        future.whenComplete((v, e) -> concurrency.release());
         concurrency.acquireUninterruptibly();
         _rateLimiter.acquire();
-        _endpoint.sendMessage(envelope, future, MoreExecutors.directExecutor(), timeout,
-              mergeFlags(_flags, flags));
+        _endpoint.sendMessage(envelope, future, MoreExecutors.directExecutor(), timeout, mergeFlags(_flags, flags));
         return future;
     }
+
 
     private CellEndpoint.SendFlag[] mergeFlags(CellEndpoint.SendFlag[] a,
           CellEndpoint.SendFlag[] b) {
@@ -584,37 +588,6 @@ public class CellStub
                 throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                       cause.getMessage(), cause);
             }
-        }
-    }
-
-    /**
-     * Adapter class to turn a CellMessageAnswerable callback into a ListenableFuture.
-     */
-    private static class CallbackFuture<T> extends FutureCellMessageAnswerable<T> {
-
-        private final Semaphore _concurrency;
-
-        CallbackFuture(Class<? extends T> type, Semaphore concurrency) {
-            super(type);
-            _concurrency = concurrency;
-        }
-
-        @Override
-        protected boolean set(T value) {
-            boolean result = super.set(value);
-            if (result) {
-                _concurrency.release();
-            }
-            return result;
-        }
-
-        @Override
-        protected boolean setException(Throwable throwable) {
-            boolean result = super.setException(throwable);
-            if (result) {
-                _concurrency.release();
-            }
-            return result;
         }
     }
 

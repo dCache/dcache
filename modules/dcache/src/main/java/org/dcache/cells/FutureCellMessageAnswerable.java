@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2016 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 - 2024 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -18,17 +18,18 @@
  */
 package org.dcache.cells;
 
-import com.google.common.util.concurrent.AbstractFuture;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TimeoutCacheException;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
 import org.dcache.util.CacheExceptionFactory;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * A ListenableFuture that can be used as CellMessageAnswerable callback.
  */
-public class FutureCellMessageAnswerable<T> extends AbstractFuture<T> implements
+public class FutureCellMessageAnswerable<T> extends CompletableFuture<T> implements
       CellMessageAnswerable {
 
     protected final Class<? extends T> _type;
@@ -41,18 +42,18 @@ public class FutureCellMessageAnswerable<T> extends AbstractFuture<T> implements
     public void answerArrived(CellMessage request, CellMessage answer) {
         Object o = answer.getMessageObject();
         if (_type.isInstance(o)) {
-            set(_type.cast(o));
+            complete(_type.cast(o));
         } else if (o instanceof Exception) {
             exceptionArrived(request, (Exception) o);
         } else {
-            setException(new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+            completeExceptionally(new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                   "Unexpected reply: " + o));
         }
     }
 
     @Override
     public void answerTimedOut(CellMessage request) {
-        setException(new TimeoutCacheException(
+        completeExceptionally(new TimeoutCacheException(
               "Request to " + request.getDestinationPath() + " timed out."));
     }
 
@@ -62,6 +63,6 @@ public class FutureCellMessageAnswerable<T> extends AbstractFuture<T> implements
             CacheException e = (CacheException) exception;
             exception = CacheExceptionFactory.exceptionOf(e.getRc(), e.getMessage(), e);
         }
-        setException(exception);
+        completeExceptionally(exception);
     }
 }

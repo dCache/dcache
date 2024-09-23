@@ -70,6 +70,7 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.SerializationException;
 import java.io.Serializable;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import org.dcache.cells.CellStub;
 
@@ -137,17 +138,19 @@ final class TestStub extends CellStub {
         return future;
     }
 
-    public <T> ListenableFuture<T> send(CellPath destination,
-          Serializable message,
-          Class<T> type,
-          long timeout,
-          CellEndpoint.SendFlag... flags) {
-        ListenableFutureTask<T> future;
-        future = ListenableFutureTask.create(() -> {
+    public <T> CompletableFuture<T> send(CellPath destination,
+                                         Serializable message,
+                                         Class<T> type,
+                                         long timeout,
+                                         CellEndpoint.SendFlag... flags) {
+
+        CompletableFuture<T> future = new CompletableFuture<>();
+        try {
             processor.processMessage((Message) message);
-            return type.cast(message);
-        });
-        future.run();
+            future.complete(type.cast(message));
+        } catch (Exception e) {
+            future.completeExceptionally(e);
+        }
         return future;
     }
 

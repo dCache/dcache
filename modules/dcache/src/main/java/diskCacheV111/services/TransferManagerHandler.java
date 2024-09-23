@@ -9,10 +9,6 @@ import static org.dcache.namespace.FileAttribute.STORAGEINFO;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.MoreExecutors;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileIsNewCacheException;
 import diskCacheV111.util.PnfsId;
@@ -47,6 +43,7 @@ import java.util.EnumSet;
 import java.util.Map;
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import javax.security.auth.Subject;
 import org.dcache.acl.enums.AccessMask;
@@ -849,22 +846,19 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
 
         final MessageReply<TransferStatusQueryMessage> reply = new MessageReply<>();
 
-        final ListenableFuture<IoJobInfo> future = manager.getPoolStub().
+        final CompletableFuture<IoJobInfo> future = manager.getPoolStub().
               send(new CellPath(pool.getAddress()), "mover ls -binary " + moverId,
                     IoJobInfo.class, poolQueryTimeout);
-        Futures.addCallback(future, new FutureCallback<IoJobInfo>() {
-            @Override
-            public void onSuccess(IoJobInfo info) {
+
+        future.whenComplete((info, e) -> {
+            if (e != null) {
+                reply.fail(message, CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                      "failed to query pool " + pool.getName() + ": " + e.getMessage());
+            } else {
                 message.setMoverInfo(info);
                 reply.reply(message);
             }
-
-            @Override
-            public void onFailure(Throwable e) {
-                reply.fail(message, CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                      "failed to query pool " + pool.getName() + ": " + e.getMessage());
-            }
-        }, MoreExecutors.directExecutor());
+        });
 
         return reply;
     }
