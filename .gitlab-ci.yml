@@ -170,6 +170,8 @@ spotbugs:
   stage: build
   image: dcache/maven-java17-tar-build
   extends: .build_cache
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   script:
     - dnf -y -q install jq
     - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl packages/tar -DskipTests package com.github.spotbugs:spotbugs-maven-plugin:4.8.3.0:spotbugs verify
