@@ -808,14 +808,14 @@ public class MigrationModule
             Expression includeExpression =
                   createPoolPredicate(includeWhen, TRUE_EXPRESSION);
 
-            List<String> targets_list = asList(targets);
-            if (targets_list.isEmpty() && !target.equals("pgroup")) {
+            List<String> listOfTargets = asList(targets);
+            if (listOfTargets.isEmpty() && !target.equals("pgroup")) {
                 throw new IllegalArgumentException(
                       "target(s) required when target type is " + target);
             }
 
             RefreshablePoolList poolList =
-                  new PoolListFilter(createPoolList(target, targets_list),
+                  new PoolListFilter(createPoolList(target, listOfTargets),
                         excluded, excludeExpression,
                         included, includeExpression,
                         sourceList);
