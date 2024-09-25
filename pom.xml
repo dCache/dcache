@@ -640,7 +640,7 @@
                 <!-- https://sourceforge.net/p/hsqldb/bugs/1341/ prevents updating to 2.3.2 -->
                 <groupId>org.hsqldb</groupId>
                 <artifactId>hsqldb</artifactId>
-                <version>2.3.1</version>
+                <version>2.7.1</version>
             </dependency>
 
             <dependency>
