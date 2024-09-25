@@ -19,6 +19,7 @@ package org.dcache.auth.attributes;
 
 import diskCacheV111.util.FsPath;
 import java.io.Serializable;
+import java.util.function.Function;
 
 /**
  * A Restriction provides an overlay authorisation layer where some actions of that a user would
@@ -115,7 +116,22 @@ public interface Restriction extends LoginAttribute, Serializable {
      * @param child     The name of the target object within directory.
      * @return true if the user is not allowed this activity.
      */
-    boolean isRestricted(Activity activity, FsPath directory, String child);
+    default boolean isRestricted(Activity activity, FsPath directory, String child) {
+        return isRestricted(activity, directory, child, false);
+    }
+
+    /**
+     * An optimised version of isRestricted.  A restriction must respond as if {@literal
+     * isRestricted(activity, new FsPath(directory).add(child));} were called, but the method may be
+     * able to avoid creating a new FsPath object.
+     *
+     * @param activity  What the user is attempting.
+     * @param directory The directory containing the target
+     * @param child     The name of the target object within directory.
+     * @param skipSymlinkResolution If true, do not resolve symlinks.
+     * @return true if the user is not allowed this activity.
+     */
+    boolean isRestricted(Activity activity, FsPath directory, String child, boolean skipSymlinkResolution);
 
     /**
      * Return true iff there is a child of the supplied path whether the activity is not
@@ -146,6 +162,22 @@ public interface Restriction extends LoginAttribute, Serializable {
      * {@code #isRestricted} returns true.
      */
     boolean isSubsumedBy(Restriction other);
+
+    /**
+     * @param resolver function to use for resolving paths.
+     */
+    void setPathResolver(Function<FsPath, FsPath> resolver);
+
+    /**
+     * @return returns NOP resolver.  Should be overridden by implementations.
+     */
+    default Function<FsPath, FsPath> getPathResolver() {
+        return getIdentityResolver();
+    }
+
+    default Function<FsPath, FsPath> getIdentityResolver() {
+        return Function.identity();
+    }
 
     /**
      * Provide a short, single-line description of this restriction.

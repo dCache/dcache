@@ -59,6 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.qos.remote.receivers;
 
+import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
@@ -69,6 +70,7 @@ import org.dcache.qos.services.engine.handler.FileQoSStatusHandler;
 import org.dcache.qos.util.MessageGuard;
 import org.dcache.qos.util.MessageGuard.Status;
 import org.dcache.vehicles.CorruptFileMessage;
+import org.dcache.vehicles.qos.FileQoSPolicyInfoMessage;
 import org.dcache.vehicles.qos.QoSActionCompleteMessage;
 import org.dcache.vehicles.qos.QoSCancelRequirementsModifiedMessage;
 import org.dcache.vehicles.qos.QoSRequirementsModifiedMessage;
@@ -151,13 +153,16 @@ public final class QoSRequirementsReceiver implements CellMessageReceiver, Consu
         return reply;
     }
 
-    public QoSRequirementsModifiedMessage messageArrived(QoSRequirementsModifiedMessage message) {
+    public MessageReply<QoSRequirementsModifiedMessage> messageArrived(QoSRequirementsModifiedMessage message) {
+        MessageReply<QoSRequirementsModifiedMessage> reply = new MessageReply<>();
         if (messageGuard.getStatus("QoSRequirementsModifiedMessage", message)
               == Status.DISABLED) {
-            return message;
+            message.setFailed(CacheException.SERVICE_UNAVAILABLE, "messages disabled");
+            reply.reply(message);
+            return reply;
         }
-        fileStatusHandler.handleQoSModification(message.getRequirements());
-        return message;
+
+        return fileStatusHandler.handleQoSModification(message);
     }
 
     public void messageArrived(QoSCancelRequirementsModifiedMessage message) {
@@ -165,7 +170,7 @@ public final class QoSRequirementsReceiver implements CellMessageReceiver, Consu
               == Status.DISABLED) {
             return;
         }
-        fileStatusHandler.handleQoSModificationCancelled(message.getPnfsId());
+        fileStatusHandler.handleQoSModificationCancelled(message.getPnfsId(), message.getSubject());
     }
 
     public void messageArrived(QoSActionCompleteMessage message) {
@@ -178,6 +183,13 @@ public final class QoSRequirementsReceiver implements CellMessageReceiver, Consu
               .forEach(action -> fileStatusHandler.handleActionCompleted(action.getPnfsId(),
                     action.getAction(),
                     action.getError()));
+    }
+
+    public MessageReply messageArrived(FileQoSPolicyInfoMessage message) {
+        MessageReply<Message> reply = new MessageReply<>();
+        fileStatusHandler.handleQoSPolicyInfoRequest(message, reply);
+
+        return reply;
     }
 
     public void setMessageGuard(MessageGuard messageGuard) {

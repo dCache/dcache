@@ -11,18 +11,20 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.dcache.nfs.nfsstat;
 import org.dcache.nfs.status.DelayException;
+import org.dcache.nfs.v4.ClientSession;
 import org.dcache.nfs.v4.CompoundBuilder;
 import org.dcache.nfs.v4.xdr.COMPOUND4args;
 import org.dcache.nfs.v4.xdr.COMPOUND4res;
 import org.dcache.nfs.v4.xdr.READ4resok;
+import org.dcache.nfs.v4.xdr.SEQUENCE4args;
 import org.dcache.nfs.v4.xdr.WRITE4resok;
 import org.dcache.nfs.v4.xdr.clientid4;
 import org.dcache.nfs.v4.xdr.nfs4_prot;
+import org.dcache.nfs.v4.xdr.nfs_argop4;
 import org.dcache.nfs.v4.xdr.nfs_fh4;
 import org.dcache.nfs.v4.xdr.nfs_opnum4;
-import org.dcache.nfs.v4.xdr.nfs_resop4;
 import org.dcache.nfs.v4.xdr.sequenceid4;
-import org.dcache.nfs.v4.xdr.sessionid4;
+import org.dcache.nfs.v4.xdr.slotid4;
 import org.dcache.nfs.v4.xdr.state_protect_how4;
 import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.nfs.vfs.Inode;
@@ -39,13 +41,9 @@ import org.dcache.oncrpc4j.rpc.net.IpProtocolType;
 import org.dcache.util.NetworkUtils;
 
 /**
- * A {@link ProxyIoAdapter} which proxies requests to an other NFSv4.1 server.
+ * A {@link ProxyIoAdapter} which proxies requests to another NFSv4.1 server.
  */
 public class NfsProxyIo implements ProxyIoAdapter {
-
-    // FIXME: for now we will use only a single slot. e.q serialize all requests
-    private static final int SLOT_ID = 0;
-    private static final int MAX_SLOT_ID = 0;
 
     private static final int ROOT_UID = 0;
     private static final int ROOT_GID = 0;
@@ -68,7 +66,6 @@ public class NfsProxyIo implements ProxyIoAdapter {
 
     private clientid4 _clientIdByServer;
     private sequenceid4 _sequenceID;
-    private sessionid4 _sessionid;
 
     private final stateid4 stateid;
     private final nfs_fh4 fh;
@@ -78,6 +75,8 @@ public class NfsProxyIo implements ProxyIoAdapter {
     private final OncRpcSvc rpcsvc;
     private final RpcTransport transport;
     private final ScheduledExecutorService sessionThread;
+
+    private ClientSession clientSession;
 
     public NfsProxyIo(InetSocketAddress poolAddress, InetSocketAddress remoteClient, Inode inode,
           stateid4 stateid, long timeout, TimeUnit timeUnit) throws IOException {
@@ -121,12 +120,11 @@ public class NfsProxyIo implements ProxyIoAdapter {
 
         int needToRead = dst.remaining();
         COMPOUND4args args = new CompoundBuilder()
-              .withSequence(false, _sessionid, _sequenceID.value, SLOT_ID, MAX_SLOT_ID)
               .withPutfh(fh)
               .withRead(dst.remaining(), position, stateid)
               .withTag("pNFS read")
               .build();
-        COMPOUND4res compound4res = sendCompound(args);
+        COMPOUND4res compound4res = sendCompoundInSession(args);
         READ4resok res = compound4res.resarray.get(2).opread.resok4;
         dst.put(res.data);
         return new ReadResult(needToRead - dst.remaining(), res.eof);
@@ -137,13 +135,12 @@ public class NfsProxyIo implements ProxyIoAdapter {
           throws IOException {
 
         COMPOUND4args args = new CompoundBuilder()
-              .withSequence(false, _sessionid, _sequenceID.value, SLOT_ID, MAX_SLOT_ID)
               .withPutfh(fh)
               .withWrite(position, src, stateid)
               .withTag("pNFS write")
               .build();
 
-        COMPOUND4res compound4res = sendCompound(args);
+        COMPOUND4res compound4res = sendCompoundInSession(args);
         WRITE4resok res = compound4res.resarray.get(2).opwrite.resok4;
         return new VirtualFileSystem.WriteResult(
               VirtualFileSystem.StabilityLevel.fromStableHow(res.committed), res.count.value);
@@ -167,6 +164,7 @@ public class NfsProxyIo implements ProxyIoAdapter {
         sessionThread.shutdown();
         try {
             destroy_session();
+            destroy_clientid();
         } finally {
             rpcsvc.stop();
         }
@@ -197,13 +195,65 @@ public class NfsProxyIo implements ProxyIoAdapter {
         return client.getTransport();
     }
 
-    private COMPOUND4res sendCompound(COMPOUND4args compound4args)
-          throws OncRpcException, IOException {
+    private COMPOUND4res sendCompound(COMPOUND4args compound4args) throws IOException {
 
-        COMPOUND4res compound4res = nfsProcCompound(compound4args);
-        processSequence(compound4res);
+        COMPOUND4res compound4res;
+        /*
+         * TODO: escape if it takes too long
+         */
+        do {
+            compound4res = nfsProcCompound(compound4args);
+        } while (canRetry(compound4res.status));
+
         nfsstat.throwIfNeeded(compound4res.status);
         return compound4res;
+    }
+
+    private COMPOUND4res sendCompoundInSession(COMPOUND4args compound4args)
+          throws OncRpcException, IOException {
+
+        if (compound4args.argarray[0].argop == nfs_opnum4.OP_SEQUENCE) {
+            throw new IllegalArgumentException("The operation sequence should not be included");
+        }
+
+        nfs_argop4[] extendedOps = new nfs_argop4[compound4args.argarray.length + 1];
+        System.arraycopy(compound4args.argarray, 0, extendedOps, 1, compound4args.argarray.length);
+        compound4args.argarray = extendedOps;
+
+        var slot = clientSession.acquireSlot();
+        try {
+
+            COMPOUND4res compound4res;
+            /*
+             * TODO: escape if it takes too long
+             */
+            do {
+                nfs_argop4 op = new nfs_argop4();
+                op.argop = nfs_opnum4.OP_SEQUENCE;
+                op.opsequence = new SEQUENCE4args();
+                op.opsequence.sa_cachethis = false;
+
+                op.opsequence.sa_slotid = slot.getId();
+                op.opsequence.sa_highest_slotid = new slotid4(clientSession.maxRequests() - 1);
+                op.opsequence.sa_sequenceid = slot.nextSequenceId();
+                op.opsequence.sa_sessionid = clientSession.sessionId();
+
+                compound4args.argarray[0] = op;
+
+                compound4res = nfsProcCompound(compound4args);
+
+            } while (canRetry(compound4res.status));
+
+            nfsstat.throwIfNeeded(compound4res.status);
+            return compound4res;
+        } finally {
+            clientSession.releaseSlot(slot);
+        }
+    }
+
+    private boolean canRetry(int status) {
+        // as we do proxy, the only expected retryable error is DELAY
+        return status ==  nfsstat.NFSERR_DELAY;
     }
 
     private synchronized void exchange_id() throws OncRpcException, IOException {
@@ -234,8 +284,13 @@ public class NfsProxyIo implements ProxyIoAdapter {
 
         COMPOUND4res compound4res = sendCompound(args);
 
-        _sessionid = compound4res.resarray.get(0).opcreate_session.csr_resok4.csr_sessionid;
+        var createSesssionRep = compound4res.resarray.get(0).opcreate_session.csr_resok4;
+        var sessionid = createSesssionRep.csr_sessionid;
+        int maxRequests = createSesssionRep.csr_fore_chan_attrs.ca_maxrequests.value;
+
         _sequenceID.value = 0;
+
+        clientSession = new ClientSession(sessionid, maxRequests);
 
         sessionThread.scheduleAtFixedRate(() -> {
                   try {
@@ -247,30 +302,31 @@ public class NfsProxyIo implements ProxyIoAdapter {
               60, 60, TimeUnit.SECONDS);
     }
 
-    public void processSequence(COMPOUND4res compound4res) {
-
-        nfs_resop4 res = compound4res.resarray.get(0);
-        if (res.resop == nfs_opnum4.OP_SEQUENCE && res.opsequence.sr_status == nfsstat.NFS_OK) {
-            ++_sequenceID.value;
-        }
-    }
-
     private synchronized void sequence() throws OncRpcException, IOException {
 
         COMPOUND4args args = new CompoundBuilder()
-              .withSequence(false, _sessionid, _sequenceID.value, SLOT_ID, MAX_SLOT_ID)
               .withTag("sequence")
               .build();
-        COMPOUND4res compound4res = sendCompound(args);
+        COMPOUND4res compound4res = sendCompoundInSession(args);
     }
 
     private synchronized void destroy_session() throws OncRpcException, IOException {
 
         COMPOUND4args args = new CompoundBuilder()
-              .withDestroysession(_sessionid)
+              .withDestroysession(clientSession.sessionId())
               .withTag("destroy_session")
               .build();
 
+        COMPOUND4res compound4res = sendCompound(args);
+    }
+
+    private void destroy_clientid() throws OncRpcException, IOException {
+
+        COMPOUND4args args = new CompoundBuilder()
+              .withDestroyclientid(_clientIdByServer)
+              .withTag("destroy_clientid")
+              .build();
+        @SuppressWarnings("unused")
         COMPOUND4res compound4res = sendCompound(args);
     }
 }

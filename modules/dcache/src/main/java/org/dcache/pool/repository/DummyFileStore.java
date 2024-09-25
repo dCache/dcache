@@ -94,7 +94,7 @@ class DummyFileStore implements FileStore {
     }
 
     @Override
-    public boolean isOk() {
-        return false;
+    public FileStoreState isOk() {
+        return FileStoreState.FAILED;
     }
 }

@@ -60,6 +60,7 @@ documents or software obtained from this server.
 package org.dcache.qos.remote.clients;
 
 import diskCacheV111.util.PnfsId;
+import javax.security.auth.Subject;
 import org.dcache.cells.CellStub;
 import org.dcache.qos.QoSException;
 import org.dcache.qos.listeners.QoSVerificationListener;
@@ -97,8 +98,17 @@ public final class RemoteQoSVerificationClient implements QoSVerificationListene
     }
 
     @Override
-    public void fileQoSVerificationCancelled(PnfsId pnfsId) throws QoSException {
-        verificationService.send(new QoSVerificationCancelledMessage(pnfsId));
+    public void fileQoSVerificationCancelled(PnfsId pnfsId, Subject subject) throws QoSException {
+        QoSVerificationCancelledMessage msg = new QoSVerificationCancelledMessage(pnfsId);
+        /*
+         *  The only cancellation that can currently take place is either
+         *  through the Bulk service or the admin interface.
+         *  In the former case, a pre-authorization check of the subject is done;
+         *  in the latter, the subject has the admin role.
+         *  Hence no further authorization is necessary here and no futher checks of
+         *  the subject are done.
+         */
+        verificationService.send(msg);
     }
 
     public void fileQoSBatchedVerificationCancelled(String id) {

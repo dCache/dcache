@@ -1,6 +1,8 @@
 package org.dcache.chimera.namespace;
 
 import static diskCacheV111.util.CacheException.INVALID_UPDATE;
+import static org.dcache.chimera.FileState.CREATED;
+import static org.dcache.qos.QoSPolicy.TAG_QOS_POLICY;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
@@ -15,7 +17,7 @@ import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileNotFoundChimeraFsException;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.StorageGenericLocation;
-import org.dcache.chimera.posix.Stat;
+import org.dcache.chimera.posix.Stat.StatAttributes;
 import org.dcache.chimera.store.InodeStorageInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,7 +65,7 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
             if (inode.isDirectory()) {
                 dirInode = inode;
             } else {
-                if (inode.statCache().isDefined(Stat.StatAttributes.ACCESS_LATENCY)) {
+                if (inode.statCache().isDefined(StatAttributes.ACCESS_LATENCY)) {
                     return inode.statCache().getAccessLatency();
                 }
                 dirInode = inode.getParent();
@@ -105,7 +107,7 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
             if (inode.isDirectory()) {
                 dirInode = inode;
             } else {
-                if (inode.statCache().isDefined(Stat.StatAttributes.RETENTION_POLICY)) {
+                if (inode.statCache().isDefined(StatAttributes.RETENTION_POLICY)) {
                     return inode.statCache().getRetentionPolicy();
                 }
                 dirInode = inode.getParent();
@@ -130,6 +132,84 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
             }
 
             return getDefaultRetentionPolicy();
+        } catch (FileNotFoundChimeraFsException e) {
+            throw new FileNotFoundCacheException(e.getMessage(), e);
+        } catch (ChimeraFsException e) {
+            throw new CacheException("Failed to obtain RetentionPolicy: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public String getQosPolicy(ExtendedInode inode) throws CacheException {
+        try {
+            if (!inode.exists()) {
+                throw new FileNotFoundCacheException(inode.toString() + " does not exist");
+            }
+
+            ExtendedInode dirInode;
+            if (inode.isDirectory()) {
+                dirInode = inode;
+            } else {
+                if (inode.statCache().isDefined(StatAttributes.QOS_POLICY)) {
+                    String policy = inode.getFs().qosPolicyIdToName(inode.statCache().getQosPolicy());
+                    if (policy != null) {
+                        return policy;
+                    }
+                }
+                dirInode = inode.getParent();
+                if (dirInode == null) {
+                    throw new FileNotFoundCacheException("File " + inode + " has been deleted.");
+                }
+            }
+
+            /*
+             * If just created, then use the tag if it exists.
+             */
+            if (inode.statCache().getState() == CREATED) {
+                Optional<String> qosPolicy = getFirstLine(dirInode.getTag(TAG_QOS_POLICY));
+                if (qosPolicy.isPresent()) {
+                    try {
+                        return qosPolicy.get();
+                    } catch (IllegalArgumentException e) {
+                        LOGGER.error("Badly formatted QosPolicy tag in {}: {}", dirInode,
+                              e.getMessage());
+                    }
+                }
+            }
+
+            return null;
+        } catch (FileNotFoundChimeraFsException e) {
+            throw new FileNotFoundCacheException(e.getMessage(), e);
+        } catch (ChimeraFsException e) {
+            throw new CacheException("Failed to obtain RetentionPolicy: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public Integer getQosState(ExtendedInode inode) throws CacheException {
+        try {
+            if (!inode.exists()) {
+                throw new FileNotFoundCacheException(inode.toString() + " does not exist");
+            }
+
+            ExtendedInode dirInode;
+            if (inode.isDirectory()) {
+                dirInode = inode;
+            } else {
+                if (inode.statCache().isDefined(StatAttributes.QOS_STATE)) {
+                    return inode.statCache().getQosState();
+                }
+                dirInode = inode.getParent();
+                if (dirInode == null) {
+                    throw new FileNotFoundCacheException("File " + inode + " has been deleted.");
+                }
+            }
+
+            if (getFirstLine(dirInode.getTag(TAG_QOS_POLICY)).isPresent()) {
+                return 0;
+            }
+
+            return null;
         } catch (FileNotFoundChimeraFsException e) {
             throw new FileNotFoundCacheException(e.getMessage(), e);
         } catch (ChimeraFsException e) {

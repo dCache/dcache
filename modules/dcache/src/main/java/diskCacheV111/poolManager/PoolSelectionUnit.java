@@ -196,6 +196,7 @@ public interface PoolSelectionUnit {
         boolean isResilient();
 
         List<? extends SelectionPool> getPools();
+        List<? extends SelectionPoolGroup> getPoolGroups();
     }
 
     interface SelectionLinkGroup extends SelectionEntity {
@@ -299,6 +300,8 @@ public interface PoolSelectionUnit {
     Map<String, SelectionUnit> getSelectionUnits();
 
     Map<String, SelectionUnitGroup> getUnitGroups();
+
+    SelectionPoolGroup getPoolGroupByName(String poolGroup);
 
     boolean isEnabledRegex();
 }

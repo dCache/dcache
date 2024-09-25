@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 - 2022 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2023 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -183,11 +183,13 @@ public class NearlineStorageHandler
     private PnfsHandler pnfs;
     private CellStub billingStub;
     private HsmSet hsmSet;
-    private long stageTimeout = TimeUnit.HOURS.toMillis(4);
-    private long flushTimeout = TimeUnit.HOURS.toMillis(4);
-    private long removeTimeout = TimeUnit.HOURS.toMillis(4);
+    private OptionalLong stageTimeout = OptionalLong.empty();
+    private OptionalLong flushTimeout = OptionalLong.empty();
+    private OptionalLong removeTimeout = OptionalLong.empty();
     private ScheduledFuture<?> timeoutFuture;
     private boolean _addFromNearlineStorage;
+    private TimeUnit stickyOnStageDurationUnit;
+    private long stickyOnStageDuration;
 
     /**
      * Allocator used to use when space allocation is required.
@@ -258,6 +260,18 @@ public class NearlineStorageHandler
         this.fileStore = fileStore;
     }
 
+    @Required
+    public void setStickyOnStageDuration(long stickyOnStageDuration) {
+	checkArgument(stickyOnStageDuration >= -1,
+		      "Sticky on stage duration must be >= -1");
+        this.stickyOnStageDuration = stickyOnStageDuration;
+    }
+
+    @Required
+    public void setStickyOnStageDurationUnit(TimeUnit stickyOnStageDurationUnit) {
+        this.stickyOnStageDurationUnit = stickyOnStageDurationUnit;
+    }
+
     @PostConstruct
     public void init() {
         timeoutFuture = scheduledExecutor.scheduleWithFixedDelay(new TimeoutTask(), 30, 30,
@@ -315,17 +329,26 @@ public class NearlineStorageHandler
         info.setQueuedRemoves(getRemoveQueueSize());
         info.setQueuedRestores(getFetchQueueSize());
         info.setQueuedStores(getStoreQueueSize());
-        info.setRemoveTimeoutInSeconds(TimeUnit.MILLISECONDS.toSeconds(removeTimeout));
-        info.setStoreTimeoutInSeconds(TimeUnit.MILLISECONDS.toSeconds(flushTimeout));
-        info.setRestoreTimeoutInSeconds(TimeUnit.MILLISECONDS.toSeconds(stageTimeout));
+        info.setRemoveTimeoutInSeconds(
+              removeTimeout.stream().map(TimeUnit.MILLISECONDS::toSeconds).findAny().orElse(-1));
+        info.setStoreTimeoutInSeconds(
+              flushTimeout.stream().map(TimeUnit.MILLISECONDS::toSeconds).findAny().orElse(-1));
+        info.setRestoreTimeoutInSeconds(
+              stageTimeout.stream().map(TimeUnit.MILLISECONDS::toSeconds).findAny().orElse(-1));
         return info;
     }
 
     @Override
     public void printSetup(PrintWriter pw) {
-        pw.append("rh set timeout ").println(TimeUnit.MILLISECONDS.toSeconds(stageTimeout));
-        pw.append("st set timeout ").println(TimeUnit.MILLISECONDS.toSeconds(flushTimeout));
-        pw.append("rm set timeout ").println(TimeUnit.MILLISECONDS.toSeconds(removeTimeout));
+        stageTimeout
+              .ifPresent(
+                    v -> pw.append("rh set timeout ").println(TimeUnit.MILLISECONDS.toSeconds(v)));
+        flushTimeout
+              .ifPresent(
+                    v -> pw.append("st set timeout ").println(TimeUnit.MILLISECONDS.toSeconds(v)));
+        removeTimeout
+              .ifPresent(
+                    v -> pw.append("rm set timeout ").println(TimeUnit.MILLISECONDS.toSeconds(v)));
     }
 
     /**
@@ -583,6 +606,12 @@ public class NearlineStorageHandler
                         task.cancel(false);
                     }
                 }
+            } else {
+                /*
+                 Request already canceled, but if attempted again, probably ignored by HSM, so remind it.
+                 Assume that canceling is idempotent.
+                 */
+                storage.cancel(uuid);
             }
         }
 
@@ -854,6 +883,15 @@ public class NearlineStorageHandler
                   .collect(Collectors.joining("\n"));
         }
 
+        public String printJobQueue(PnfsId pnfsId) {
+            R requestWithPNFSID = requests.get(pnfsId);
+            if (requestWithPNFSID == null) {
+                return pnfsId + " not in the queue";
+            } else {
+                return requestWithPNFSID.toString();
+            }
+        }
+
         public String printJobQueue(Comparator<R> ordering) {
             return requests.values().stream()
                   .sorted(ordering)
@@ -988,7 +1026,8 @@ public class NearlineStorageHandler
 
         @Override
         public long getDeadline() {
-            return (state.get() == State.ACTIVE) ? activatedAt + flushTimeout : Long.MAX_VALUE;
+            return (state.get() == State.ACTIVE && flushTimeout.isPresent()) ? activatedAt
+                  + flushTimeout.getAsLong() : Long.MAX_VALUE;
         }
 
         @Override
@@ -1173,12 +1212,10 @@ public class NearlineStorageHandler
             addFromNearlineStorage(infoMsg, storage);
 
             billingStub.notify(infoMsg);
-
             try {
                 _kafkaSender.accept(infoMsg);
-            } catch (KafkaException e) {
-                LOGGER.warn(Throwables.getRootCause(e).getMessage());
-
+            } catch (KafkaException | org.apache.kafka.common.KafkaException e) {
+                LOGGER.warn("Failed to send message to kafka: {} ", Throwables.getRootCause(e).getMessage());
             }
             flushRequests.removeAndCallback(pnfsId, cause);
         }
@@ -1272,7 +1309,7 @@ public class NearlineStorageHandler
                         ReplicaState.FROM_STORE,
                         ReplicaState.CACHED,
                         Collections.emptyList(),
-                        EnumSet.noneOf(Repository.OpenFlags.class),
+                        EnumSet.noneOf(OpenFlags.class),
                         OptionalLong.empty());
             LOGGER.debug("Stage request created for {}.", pnfsId);
         }
@@ -1315,7 +1352,8 @@ public class NearlineStorageHandler
 
         @Override
         public long getDeadline() {
-            return (state.get() == State.ACTIVE) ? activatedAt + stageTimeout : Long.MAX_VALUE;
+            return (state.get() == State.ACTIVE && stageTimeout.isPresent()) ? activatedAt
+                  + stageTimeout.getAsLong() : Long.MAX_VALUE;
         }
 
         @Override
@@ -1376,6 +1414,22 @@ public class NearlineStorageHandler
             }
             try {
                 descriptor.close();
+                if (cause == null) {
+                    /**
+                     * A sticky bit with hardcoded 5 minute lifetime is added
+                     * when a cached file is written to the pool.
+                     * Below we add ability to override the hardcoded default which
+                     * is useful for some workflows (e.g. when using permanent migration).
+                     */
+                    long expiration = stickyOnStageDuration == -1 ? -1
+                          : System.currentTimeMillis() +
+                                stickyOnStageDurationUnit.toMillis(stickyOnStageDuration);
+
+                    repository.setSticky(pnfsId,
+                          "self",
+                          expiration,
+                          true);
+                }
             } catch (Exception e) {
                 if (cause == null) {
                     cause = e;
@@ -1394,9 +1448,8 @@ public class NearlineStorageHandler
             billingStub.notify(infoMsg);
             try {
                 _kafkaSender.accept(infoMsg);
-            } catch (KafkaException e) {
-                LOGGER.warn(Throwables.getRootCause(e).getMessage());
-
+            } catch (KafkaException | org.apache.kafka.common.KafkaException e) {
+                LOGGER.warn("Failed to send message to kafka: {} ", Throwables.getRootCause(e).getMessage());
             }
             stageRequests.removeAndCallback(pnfsId, cause);
         }
@@ -1438,7 +1491,8 @@ public class NearlineStorageHandler
 
         @Override
         public long getDeadline() {
-            return (state.get() == State.ACTIVE) ? activatedAt + removeTimeout : Long.MAX_VALUE;
+            return (state.get() == State.ACTIVE && removeTimeout.isPresent()) ? activatedAt
+                  + removeTimeout.getAsLong() : Long.MAX_VALUE;
         }
 
         public void failed(Exception cause) {
@@ -1480,7 +1534,22 @@ public class NearlineStorageHandler
         @Override
         public String call() {
             synchronized (NearlineStorageHandler.this) {
-                stageTimeout = TimeUnit.SECONDS.toMillis(timeout);
+                stageTimeout = OptionalLong.of(TimeUnit.SECONDS.toMillis(timeout));
+            }
+            return "";
+        }
+    }
+
+    @AffectsSetup
+    @Command(name = "rh unset timeout",
+          hint = "unset restore timeout",
+          description = "Unset restore timeout for the HSM script.")
+    class RestoreUnsetTimeoutCommand implements Callable<String> {
+
+        @Override
+        public String call() {
+            synchronized (NearlineStorageHandler.this) {
+                stageTimeout = OptionalLong.empty();
             }
             return "";
         }
@@ -1491,12 +1560,17 @@ public class NearlineStorageHandler
           description = "Remove an HSM restore request.")
     class RestoreKillCommand implements Callable<String> {
 
-        @Argument
-        PnfsId pnfsId;
+        @Argument(metaVar = "pnfsid|*")
+        String arg;
 
         @Override
         public String call() throws NoSuchElementException, IllegalStateException {
-            stageRequests.cancel(pnfsId);
+            if ("*".equals(arg)) {
+                stageRequests.cancelRequests();
+            } else {
+                var pnfsId = new PnfsId(arg);
+                stageRequests.cancel(pnfsId);
+            }
             return "Kill initialized";
         }
     }
@@ -1507,10 +1581,17 @@ public class NearlineStorageHandler
                 "The columns in the output show: job id, job status, pnfs id, request counter, " +
                 "and request submission time.")
     class RestoreListCommand implements Callable<String> {
+        @Argument(metaVar = "pnfsid", required = false)
+        String arg;
 
         @Override
-        public String call() {
-            return stageRequests.printJobQueue(Comparator.naturalOrder());
+        public String call() throws NoSuchElementException, IllegalStateException {
+            if (arg == null){
+                return stageRequests.printJobQueue(Comparator.naturalOrder());
+            } else {
+                var pnfsId = new PnfsId(arg);
+                return stageRequests.printJobQueue(pnfsId);
+            }
         }
     }
 
@@ -1527,7 +1608,22 @@ public class NearlineStorageHandler
         @Override
         public String call() {
             synchronized (NearlineStorageHandler.this) {
-                flushTimeout = TimeUnit.SECONDS.toMillis(timeout);
+                flushTimeout = OptionalLong.of(TimeUnit.SECONDS.toMillis(timeout));
+            }
+            return "";
+        }
+    }
+
+    @AffectsSetup
+    @Command(name = "st unset timeout",
+          hint = "unset store timeout",
+          description = "Unset store timeout for the HSM script.")
+    class StoreUnsetTimeoutCommand implements Callable<String> {
+
+        @Override
+        public String call() {
+            synchronized (NearlineStorageHandler.this) {
+                flushTimeout = OptionalLong.empty();
             }
             return "";
         }
@@ -1538,12 +1634,18 @@ public class NearlineStorageHandler
           description = "Remove an HSM store request.")
     class StoreKillCommand implements Callable<String> {
 
-        @Argument
-        PnfsId pnfsId;
+        @Argument(metaVar = "pnfsid|*")
+        String arg;
 
         @Override
         public String call() throws NoSuchElementException, IllegalStateException {
-            flushRequests.cancel(pnfsId);
+
+            if ("*".equals(arg)) {
+                flushRequests.cancelRequests();
+            } else {
+                var pnfsId = new PnfsId(arg);
+                flushRequests.cancel(pnfsId);
+            }
             return "Kill initialized";
         }
     }
@@ -1554,10 +1656,17 @@ public class NearlineStorageHandler
                 "The columns in the output show: job id, job status, pnfs id, request counter, " +
                 "and request submission time.")
     class StoreListCommand implements Callable<String> {
+        @Argument(metaVar = "pnfsid", required = false)
+        String arg;
 
         @Override
-        public String call() {
-            return flushRequests.printJobQueue(Comparator.naturalOrder());
+        public String call() throws NoSuchElementException, IllegalStateException {
+            if(arg == null){
+                return flushRequests.printJobQueue(Comparator.naturalOrder());
+            } else {
+                var pnfsId = new PnfsId(arg);
+                return flushRequests.printJobQueue(pnfsId);
+            }
         }
     }
 
@@ -1574,7 +1683,22 @@ public class NearlineStorageHandler
         @Override
         public String call() {
             synchronized (NearlineStorageHandler.this) {
-                removeTimeout = TimeUnit.SECONDS.toMillis(timeout);
+                removeTimeout = OptionalLong.of(TimeUnit.SECONDS.toMillis(timeout));
+            }
+            return "";
+        }
+    }
+
+    @AffectsSetup
+    @Command(name = "rm unset timeout",
+          hint = "unset tape remove timeout",
+          description = "Unset remove timeout for the HSM script.")
+    class RemoveUnsetTimeoutCommand implements Callable<String> {
+
+        @Override
+        public String call() {
+            synchronized (NearlineStorageHandler.this) {
+                removeTimeout = OptionalLong.empty();
             }
             return "";
         }
@@ -1598,12 +1722,17 @@ public class NearlineStorageHandler
           description = "Remove and cancel the requests to remove a file from HSM.\n\n")
     class RemoveKillCommand implements Callable<String> {
 
-        @Argument(metaVar = "HSM uri")
-        String uri;
+        @Argument(metaVar = "uri|*")
+        String arg;
 
         @Override
         public String call() {
-            removeRequests.cancel(URI.create(uri));
+
+            if ("*".equals(arg)) {
+                removeRequests.cancelRequests();
+            } else {
+                removeRequests.cancel(URI.create(arg));
+            }
             return "Kill initialized";
         }
     }

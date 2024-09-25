@@ -2,6 +2,7 @@ package org.dcache.restful.resources.namespace;
 
 import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.Range;
 import diskCacheV111.util.AttributeExistsCacheException;
 import diskCacheV111.util.CacheException;
@@ -38,6 +39,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
@@ -65,6 +67,7 @@ import org.dcache.namespace.FileType;
 import org.dcache.pinmanager.PinManagerPinMessage;
 import org.dcache.pinmanager.PinManagerUnpinMessage;
 import org.dcache.poolmanager.PoolMonitor;
+import org.dcache.qos.QoSTransitionEngine;
 import org.dcache.qos.data.FileQoSRequirements;
 import org.dcache.qos.remote.clients.RemoteQoSRequirementsClient;
 import org.dcache.restful.providers.JsonFileAttributes;
@@ -81,6 +84,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 import org.springframework.stereotype.Component;
 
 /**
@@ -125,6 +129,8 @@ public class FileResources {
     @Inject
     @Named("qos-engine")
     private CellStub qosEngine;
+
+    private boolean useQosService;
 
     @GET
     @ApiOperation(value = "Find metadata and optionally directory contents.",
@@ -173,7 +179,7 @@ public class FileResources {
                     isChecksum,
                     isOptional);
         PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager);
-        FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new);
+        FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new, handler);
         try {
 
             FileAttributes namespaceAttributes = handler.getFileAttributes(path, attributes);
@@ -421,9 +427,8 @@ public class FileResources {
             JSONObject reqPayload = new JSONObject(requestPayload);
             String action = (String) reqPayload.get("action");
             PnfsHandler pnfsHandler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager);
-            FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new);
+            FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new, pnfsHandler);
             PnfsId pnfsId;
-            Long uid;
             switch (action) {
                 case "mkdir":
                     String name = (String) reqPayload.get("name");
@@ -434,29 +439,46 @@ public class FileResources {
                     break;
                 case "mv":
                     String dest = (String) reqPayload.get("destination");
-                    FsPath target = pathMapper.resolve(request, path, dest);
+                    FsPath target = pathMapper.resolve(request, path.parent(), dest);
                     pnfsHandler.renameEntry(path.toString(), target.toString(), true);
                     break;
                 case "qos":
-                    String targetQos = reqPayload.getString("target");
-                    /*
-                     *  fire and forget, does not wait for transition to complete
-                     */
-                    FileAttributes attr
-                          = pnfsHandler.getFileAttributes(path.toString(),
-                          NamespaceUtils.getRequestedAttributes(false, false,
-                                true, false, false));
-                    FileQoSRequirements requirements = getBasicRequirements(targetQos, attr);
-                    RemoteQoSRequirementsClient client = new RemoteQoSRequirementsClient();
-                    client.setRequirementsService(qosEngine);
-                    client.fileQoSRequirementsModified(requirements);
+                    String targetQos =
+                          reqPayload.has("target") ? reqPayload.getString("target") : null;
+                    String qosPolicy =
+                          reqPayload.has("policy") ? reqPayload.getString("policy") : null;
+                    Integer qosState =
+                          reqPayload.has("state") ? (Integer) reqPayload.get("state") : null;
+                    Subject subject = RequestUser.getSubject();
+                    if (!useQosService) {
+                        new QoSTransitionEngine(poolmanager,
+                              poolMonitor,
+                              pnfsHandler,
+                              pinmanager)
+                              .adjustQoS(path,
+                                    targetQos, request.getRemoteHost());
+                    } else {
+                        /*
+                         *  fire and forget, does not wait for transition to complete
+                         */
+                        FileAttributes attr
+                              = pnfsHandler.getFileAttributes(path.toString(),
+                              NamespaceUtils.getRequestedAttributes(false, false,
+                                    true, false, true));
+                        FileQoSRequirements requirements = getBasicRequirements(targetQos,
+                              qosPolicy, qosState, attr);
+                        RemoteQoSRequirementsClient client = new RemoteQoSRequirementsClient();
+                        client.setRequirementsService(qosEngine);
+                        client.fileQoSRequirementsModified(requirements, subject);
+                    }
                     break;
                 case "pin":
                     Integer lifetime = reqPayload.optInt("lifetime");
                     if (lifetime == null) {
                         lifetime = 0;
                     }
-                    String lifetimeUnitVal = reqPayload.optString("lifetime-unit");
+                    String lifetimeUnitVal = Strings.emptyToNull(
+                          reqPayload.optString("lifetime-unit"));
                     TimeUnit lifetimeUnit = lifetimeUnitVal == null ?
                           TimeUnit.SECONDS : TimeUnit.valueOf(lifetimeUnitVal);
                     pnfsId = pnfsHandler.getPnfsIdByPath(path.toString());
@@ -465,7 +487,9 @@ public class FileResources {
                      *  Fire-and-forget, as it was in 5.2
                      */
                     pinmanager.notify(new PinManagerPinMessage(FileAttributes.ofPnfsId(pnfsId),
-                          getProtocolInfo(), getRequestId(),
+                          getProtocolInfo(),
+                          HttpServletRequests.roleAwareRestriction(request),
+                          getRequestId(),
                           lifetimeUnit.toMillis(lifetime)));
                     break;
                 case "unpin":
@@ -583,7 +607,7 @@ public class FileResources {
     public Response deleteFileEntry(@ApiParam(value = "Path of file or directory.", required = true)
     @PathParam("path") String requestPath) throws CacheException {
         PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager);
-        FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new);
+        FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new, handler);
 
         try {
             handler.deletePnfsEntry(path.toString());
@@ -605,9 +629,21 @@ public class FileResources {
         return successfulResponse(Response.Status.OK);
     }
 
-    private FileQoSRequirements getBasicRequirements(String targetQos, FileAttributes attributes) {
+    @Required
+    public void setUseQosService(boolean useQosService) {
+        this.useQosService = useQosService;
+    }
+
+    private FileQoSRequirements getBasicRequirements(String targetQos, String qosPolicy,
+          Integer qosState, FileAttributes attributes) {
         FileQoSRequirements requirements = new FileQoSRequirements(attributes.getPnfsId(),
               attributes);
+
+        if (qosPolicy != null) {
+            requirements.setRequiredQoSPolicy(qosPolicy);
+            requirements.setRequiredQoSStateIndex( qosState == null ? 0 : qosState);
+            return requirements;
+        }
 
         if (targetQos == null) {
             throw new IllegalArgumentException("no target qos given.");

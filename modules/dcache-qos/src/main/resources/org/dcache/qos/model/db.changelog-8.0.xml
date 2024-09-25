@@ -153,4 +153,33 @@
         </createIndex>
         <rollback/>
     </changeSet>
+
+    <changeSet author="rossi" id="6">
+    <preConditions onFail="MARK_RAN">
+        <not>
+            <columnExists tableName="qos_operation" columnName="subject"/>
+        </not>
+    </preConditions>
+        <addColumn tableName="qos_operation">
+            <column name="subject" type="varchar(4096)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="rossi" id="6.1">
+        <preConditions onFail="MARK_RAN">
+                <tableExists tableName="qos_operation"/>
+        </preConditions>
+
+        <dropIndex tableName="qos_operation" indexName="idx_state_qos"/>
+        <dropColumn tableName="qos_operation" columnName="state"/>
+        <dropColumn tableName="qos_operation" columnName="action"/>
+        <dropColumn tableName="qos_operation" columnName="prev_action"/>
+        <dropColumn tableName="qos_operation" columnName="needed"/>
+        <dropColumn tableName="qos_operation" columnName="retried"/>
+        <dropColumn tableName="qos_operation" columnName="rc"/>
+        <dropColumn tableName="qos_operation" columnName="tried"/>
+        <dropColumn tableName="qos_operation" columnName="error"/>
+        <dropColumn tableName="qos_operation" columnName="updated"/>
+        <rollback/>
+    </changeSet>
 </databaseChangeLog>

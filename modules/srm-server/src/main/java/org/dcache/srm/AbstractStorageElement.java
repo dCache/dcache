@@ -405,7 +405,7 @@ public interface AbstractStorageElement {
      * @param surl      SURL
      * @param recursive Whether to delete directories recursively
      * @throws SRMAuthorizationException     if {@code subject} is not authorized to delete {@code
-     *                                       dir}  or one of its subdirectories.
+     *                                       dir}  or one of its subdirectories.
      * @throws SRMNonEmptyDirectoryException if {@code dir} is not empty.
      * @throws SRMInternalErrorException     in case of transient errors.
      * @throws SRMInvalidPathException       if {@code dir} is not a directory or does not exist

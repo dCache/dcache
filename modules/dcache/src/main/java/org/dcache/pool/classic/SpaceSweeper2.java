@@ -26,6 +26,8 @@ import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
+import java.util.function.Predicate;
+
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.PoolDataBeanProvider;
 import org.dcache.pool.classic.json.SweeperData;
@@ -224,19 +226,25 @@ public class SpaceSweeper2
                 "even if it has been marked for removal.")
     public class SweeperPurgeCommand implements Callable<String> {
 
+
+        @Option(name="storageClass", usage = "Purge only files of the specified storage class.", metaVar = "storage-class")
+        String storageClass;
+
         @Override
         public String call() {
             new Thread("sweeper-purge") {
                 @Override
                 public void run() {
                     try {
-                        long bytes = reclaim(Long.MAX_VALUE, "'sweeper purge' command");
-                        LOGGER.info("'sweeper purge' reclaimed {} bytes.", bytes);
+                        Predicate<CacheEntry> filter = storageClass == null ? e -> true
+                                : e -> e.getFileAttributes().getStorageClass().equals(storageClass);
+                        long bytes = reclaim(Long.MAX_VALUE, "'sweeper purge' command", filter);
+                        LOGGER.info("'sweeper purge' reclaimed {} bytes.", bytes);
                     } catch (InterruptedException e) {
                     }
                 }
             }.start();
-            return "Purging all removable files from pool.";
+            return "Purging "  + (storageClass == null ? "all" : storageClass) + " removable files from pool.";
         }
     }
 
@@ -254,8 +262,8 @@ public class SpaceSweeper2
                 @Override
                 public void run() {
                     try {
-                        long bytes = reclaim(bytesToFree, "'sweeper free' command");
-                        LOGGER.info("'sweeper free {}' reclaimed {} bytes.", bytesToFree, bytes);
+                        long bytes = reclaim(bytesToFree, "'sweeper free' command", e -> true);
+                        LOGGER.info("'sweeper free {}' reclaimed {} bytes.", bytesToFree, bytes);
                     } catch (InterruptedException e) {
                     }
                 }
@@ -402,7 +410,15 @@ public class SpaceSweeper2
         }
     }
 
-    private long reclaim(long amount, String why)
+    /**
+     * Reclaims space by removing removable files from the pool.
+     * @param amount the amount of space to reclaim.
+     * @param why the reason for reclaiming space.
+     * @param filter remove only files that match the filter
+     * @return the amount of space reclaimed.
+     * @throws InterruptedException
+     */
+    private long reclaim(long amount, String why, Predicate<CacheEntry> filter)
           throws InterruptedException {
         LOGGER.debug("Sweeper tries to reclaim {} bytes.", amount);
 
@@ -426,6 +442,11 @@ public class SpaceSweeper2
                 }
                 if (!isRemovable(entry)) {
                     LOGGER.debug("File skipped by sweeper (not removable): {}", entry);
+                    continue;
+                }
+
+                if (!filter.test(entry)) {
+                    LOGGER.debug("File skipped by sweeper (filter): {}", entry);
                     continue;
                 }
 
@@ -475,7 +496,7 @@ public class SpaceSweeper2
     public void run() {
         try {
             while (true) {
-                if (reclaim(waitForRequests(), "sweeper making space for new data") == 0) {
+                if (reclaim(waitForRequests(), "sweeper making space for new data", e -> true) == 0) {
                     /* The list maintained by the sweeper is imperfect
                      * in the sense that it can contain locked entries
                      * or entries in use. Thus we could be caught in a
@@ -513,7 +534,7 @@ public class SpaceSweeper2
         /**
          * Elements sorted by access time and value.
          * <p>
-         * The comparator uses {@code timeStamps} to look up the time of keys. A compound comparator
+         * The comparator uses {@code timeStamps} to look up the time of keys. A compound comparator
          * is used to ensure consistency with equals (otherwise two keys with the same time would be
          * collapsed to a single element in the set).
          * <p>

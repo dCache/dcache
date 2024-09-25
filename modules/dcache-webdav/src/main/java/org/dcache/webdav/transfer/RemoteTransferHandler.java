@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014-2022 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014-2024 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -59,6 +59,7 @@ import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.IoDoorEntry;
 import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.vehicles.IpProtocolInfo;
+import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
 import diskCacheV111.vehicles.RemoteHttpsDataTransferProtocolInfo;
@@ -138,6 +139,7 @@ import org.dcache.util.LineIndentingPrintWriter;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.Strings;
 import org.dcache.util.URIs;
+import org.dcache.util.Xattrs;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.webdav.transfer.CopyFilter.CredentialSource;
 import org.eclipse.jetty.http.HttpFields;
@@ -267,7 +269,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
     private static final Duration CELL_MESSAGE_LATENCY = Duration.of(2, MINUTES);
 
     private final Queue<Duration> _messageQueueTime = EvictingQueue.<Duration>create(MESSAGE_QUEUE_HISTORY);
-    private final Map<Long, RemoteTransfer> _transfers = new ConcurrentHashMap<>();
+    private final Map<String, RemoteTransfer> _transfers = new ConcurrentHashMap<>();
 
     private long _performanceMarkerPeriod;
     private CellStub _genericTransferManager;
@@ -682,9 +684,29 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         return transfer.start();
     }
 
+    /**
+     * Create a transfer id based on envelope source and message id.
+     * @param envelope message envelope.
+     * @param message message.
+     * @return transfer id.
+     */
+    private static String getTransferId(CellMessage envelope, Message message) {
+        return envelope.getSourceAddress() + "-" +message.getId();
+    }
+
+    /**
+     * Create a transfer id based on cell stub destination and the specified id.
+     * @param cellStub cellStub to use.
+     * @param id message id.
+     * @return transfer id.
+     */
+    private static String getTransferId(CellStub cellStub, long id) {
+        return cellStub.getDestinationPath().toAddressString() + "-" + id;
+    }
+
     public void messageArrived(CellMessage envelope, TransferCompleteMessage message) {
         messageArrived(Duration.of(envelope.getLocalAge(), MILLIS));
-        RemoteTransfer transfer = _transfers.get(message.getId());
+        RemoteTransfer transfer = _transfers.get(getTransferId(envelope, message));
         if (transfer != null) {
             _activity.execute(() -> transfer.completed(null));
         }
@@ -692,7 +714,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
 
     public void messageArrived(CellMessage envelope, TransferFailedMessage message) {
         messageArrived(Duration.of(envelope.getLocalAge(), MILLIS));
-        RemoteTransfer transfer = _transfers.get(message.getId());
+        RemoteTransfer transfer = _transfers.get(getTransferId(envelope, message));
         if (transfer != null) {
             String error = String.valueOf(message.getErrorObject());
             _activity.execute(() -> transfer.completed(error));
@@ -858,6 +880,10 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                               .fileType(FileType.REGULAR)
                               .xattr("xdg.origin.url", _destination.toASCIIString())
                               .build();
+
+                        Xattrs.from(ServletRequest.getRequest().getParameterMap())
+                              .forEach(attributes::updateXattr);
+
                         try {
                             msg = _pnfs.createPnfsEntry(_path.toString(), attributes,
                                     TransferManagerHandler.ATTRIBUTES_FOR_PULL);
@@ -919,7 +945,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                     _transferManager = _genericTransferManager.withDestination(path);
                 }
                 _id = response.getId();
-                _transfers.put(_id, this);
+                _transfers.put(getTransferId(_transferManager, _id), this);
                 addDigestResponseHeader(attributes);
             } catch (NoRouteToCellException | TimeoutCacheException e) {
                 LOGGER.error("Failed to send request to transfer manager: {}", e.getMessage());
@@ -1109,7 +1135,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         }
 
         private void completed(String transferError) {
-            if (_transfers.remove(_id) == null) {
+            if (_transfers.remove(getTransferId(_transferManager, _id)) == null) {
                 // Something else called complete, so do nothing.
                 return;
             }

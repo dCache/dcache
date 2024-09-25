@@ -19,6 +19,7 @@ package org.dcache.gplazma.oidc.jwt;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.security.PublicKey;
+import java.util.Base64;
 import java.util.Optional;
 import org.apache.http.client.HttpClient;
 import org.dcache.gplazma.AuthenticationException;
@@ -32,10 +33,12 @@ import org.junit.Test;
 import org.mockito.BDDMockito;
 
 import static com.google.common.base.Preconditions.checkState;
+import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.dcache.gplazma.oidc.MockHttpClientBuilder.aClient;
 import static org.dcache.gplazma.oidc.MockIdentityProviderBuilder.anIp;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -77,6 +80,55 @@ public class IssuerTest {
         String endpoint = issuer.getEndpoint();
 
         assertThat(endpoint, is(equalTo("https://oidc.example.org/")));
+    }
+
+    @Test
+    public void shouldNotShowSuppressedByDefault() throws Exception {
+        given(aClient());
+        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/"));
+        given(anIssuer().withoutHistory());
+
+        assertThat(issuer.isOfflineSuppressed(), is(equalTo(false)));
+    }
+
+    @Test
+    public void shouldShowOfflineSuppressedWhenConfigured() throws Exception {
+        given(aClient());
+        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/").withSuppress("offline"));
+        given(anIssuer().withoutHistory());
+
+        assertThat(issuer.isOfflineSuppressed(), is(equalTo(true)));
+    }
+
+    @Test
+    public void shouldPropagateErrorWhenCannotFetchDiscoveryDocument() throws Exception {
+        given(aClient().onGet("https://oidc.example.org/.well-known/openid-configuration").responds()
+                .withStatusCode(SC_NOT_FOUND).withoutEntity());
+        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/")
+                .withMissingDiscoveryWithReason("fnord"));
+        given(aMockJwt().withoutKid().withoutJti().signedBy(jwtFactory.publicKey()));
+        given(anIssuer().withoutHistory());
+
+        try {
+            issuer.checkIssued(jwt);
+            fail("checkIssued unexpectedly passed");
+        } catch (AuthenticationException e) {
+            String msg = e.getMessage();
+            assertThat(msg, containsString("fnord"));
+        }
+    }
+
+    // Perhaps this case (MissingDiscoveryWithoutReason) could be dropped in the future.
+    @Test(expected=AuthenticationException.class)
+    public void shouldPropagateDefaultErrorWhenCannotFetchDiscoveryDocument() throws Exception {
+        given(aClient().onGet("https://oidc.example.org/.well-known/openid-configuration").responds()
+                .withStatusCode(SC_NOT_FOUND).withoutEntity());
+        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/")
+                .withMissingDiscoveryWithoutReason());
+        given(aMockJwt().withoutKid().withoutJti().signedBy(jwtFactory.publicKey()));
+        given(anIssuer().withoutHistory());
+
+        issuer.checkIssued(jwt);
     }
 
     @Test
@@ -137,6 +189,301 @@ public class IssuerTest {
     }
 
     @Test
+    public void shouldRejectJwtWithDiscoveryNoJwksUri() throws Exception {
+        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/")
+                .withDiscovery("{}"));
+        given(aClient().onGet("https://oidc.example.org/jwks").responds()
+                .withStatusCode(SC_NOT_FOUND).withoutEntity());
+        given(anIssuer().withoutHistory());
+        given(aMockJwt().withKid("key-1").withoutJti().signedBy(jwtFactory.publicKey()));
+
+        try {
+            issuer.checkIssued(jwt);
+            fail("checkIssued returned success");
+        } catch (AuthenticationException e) {
+            assertThat(e.getMessage(), containsString("jwks_uri"));
+            assertThat(e.getMessage(), containsString("missing"));
+        }
+    }
+
+    @Test
+    public void shouldRejectJwtWithDiscoveryNonTextualJwksUri() throws Exception {
+        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/")
+                .withDiscovery("{\"jwks_uri\": null}"));
+        given(aClient().onGet("https://oidc.example.org/jwks").responds()
+                .withStatusCode(SC_NOT_FOUND).withoutEntity());
+        given(anIssuer().withoutHistory());
+        given(aMockJwt().withKid("key-1").withoutJti().signedBy(jwtFactory.publicKey()));
+
+        try {
+            issuer.checkIssued(jwt);
+            fail("checkIssued returned success");
+        } catch (AuthenticationException e) {
+            assertThat(e.getMessage(), containsString("jwks_uri"));
+            assertThat(e.getMessage(), containsString("non-textual"));
+        }
+    }
+
+    @Test
+    public void shouldRejectJwtWithDiscoveryEmptyJwksUri() throws Exception {
+        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/")
+                .withDiscovery("{\"jwks_uri\": \"\"}"));
+        given(aClient().onGet("https://oidc.example.org/jwks").responds()
+                .withStatusCode(SC_NOT_FOUND).withoutEntity());
+        given(anIssuer().withoutHistory());
+        given(aMockJwt().withKid("key-1").withoutJti().signedBy(jwtFactory.publicKey()));
+
+        try {
+            issuer.checkIssued(jwt);
+            fail("checkIssued returned success");
+        } catch (AuthenticationException e) {
+            assertThat(e.getMessage(), containsString("jwks_uri"));
+            assertThat(e.getMessage(), containsString("empty"));
+        }
+    }
+
+    @Test
+    public void shouldRejectJwtWithDiscoveryBadUriJwksUri() throws Exception {
+        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/")
+                .withDiscovery("{\"jwks_uri\": \":bad URI\"}"));
+        given(aClient().onGet("https://oidc.example.org/jwks").responds()
+                .withStatusCode(SC_NOT_FOUND).withoutEntity());
+        given(anIssuer().withoutHistory());
+        given(aMockJwt().withKid("key-1").withoutJti().signedBy(jwtFactory.publicKey()));
+
+        try {
+            issuer.checkIssued(jwt);
+            fail("checkIssued returned success");
+        } catch (AuthenticationException e) {
+            assertThat(e.getMessage(), containsString("jwks_uri"));
+            assertThat(e.getMessage(), containsString("URI"));
+        }
+    }
+
+    @Test
+    public void shouldRejectJwtWithJwksNotValidJson() throws Exception {
+        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/")
+                .withDiscovery("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}"));
+        given(aClient().onGet("https://oidc.example.org/jwks").responds()
+                .withEntity("NOT JSON"));
+        given(anIssuer().withoutHistory());
+        given(aMockJwt().withKid("key-1").withoutJti().signedBy(jwtFactory.publicKey()));
+
+        try {
+            issuer.checkIssued(jwt);
+            fail("checkIssued returned success");
+        } catch (AuthenticationException e) {
+            assertThat(e.getMessage(), containsString("public keys"));
+            assertThat(e.getMessage(), containsString("https://oidc.example.org/jwks"));
+            assertThat(e.getMessage(), containsString("Unrecognized token"));
+        }
+    }
+
+    @Test
+    public void shouldRejectJwtWithJwksNotObject() throws Exception {
+        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/")
+                .withDiscovery("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}"));
+        given(aClient().onGet("https://oidc.example.org/jwks").responds()
+                .withEntity("[]"));
+        given(anIssuer().withoutHistory());
+        given(aMockJwt().withKid("key-1").withoutJti().signedBy(jwtFactory.publicKey()));
+
+        try {
+            issuer.checkIssued(jwt);
+            fail("checkIssued returned success");
+        } catch (AuthenticationException e) {
+            assertThat(e.getMessage(), containsString("public keys"));
+            assertThat(e.getMessage(), containsString("wrong type"));
+        }
+    }
+
+    @Test
+    public void shouldRejectJwtWithJwksMissingKeys() throws Exception {
+        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/")
+                .withDiscovery("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}"));
+        given(aClient().onGet("https://oidc.example.org/jwks").responds()
+                .withEntity("{}"));
+        given(anIssuer().withoutHistory());
+        given(aMockJwt().withKid("key-1").withoutJti().signedBy(jwtFactory.publicKey()));
+
+        try {
+            issuer.checkIssued(jwt);
+            fail("checkIssued returned success");
+        } catch (AuthenticationException e) {
+            assertThat(e.getMessage(), containsString("public keys"));
+            assertThat(e.getMessage(), containsString("missing"));
+            assertThat(e.getMessage(), containsString("\"keys\""));
+        }
+    }
+
+    @Test
+    public void shouldRejectJwtWithJwksKeysNotArray() throws Exception {
+        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/")
+                .withDiscovery("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}"));
+        given(aClient().onGet("https://oidc.example.org/jwks").responds()
+                .withEntity("{\"keys\": null}"));
+        given(anIssuer().withoutHistory());
+        given(aMockJwt().withKid("key-1").withoutJti().signedBy(jwtFactory.publicKey()));
+
+        try {
+            issuer.checkIssued(jwt);
+            fail("checkIssued returned success");
+        } catch (AuthenticationException e) {
+            assertThat(e.getMessage(), containsString("public keys"));
+            assertThat(e.getMessage(), containsString("wrong type"));
+        }
+    }
+
+    @Test
+    public void shouldRejectJwtWithKeySignedWithMalformedKeysArray() throws Exception {
+        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/")
+                .withDiscovery("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}"));
+        given(aClient().onGet("https://oidc.example.org/jwks").responds()
+                .withEntity("{\"keys\": [ \"a random string\"]}"));
+        given(anIssuer().withoutHistory());
+        given(aMockJwt().withKid("key-1").withoutJti().signedBy(jwtFactory.publicKey()));
+
+        try {
+            issuer.checkIssued(jwt);
+            fail("checkIssued returned success");
+        } catch (AuthenticationException e) {
+            assertThat(e.getMessage(), containsString("no public key"));
+        }
+    }
+
+    @Test
+    public void shouldRejectJwtWithKeySignedWithKeyOfUnknownKeyType() throws Exception {
+        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/")
+                .withDiscovery("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}"));
+        given(aClient().onGet("https://oidc.example.org/jwks").responds()
+                .withEntity("{\"keys\": [{"
+                        + "\"kid\": \"key-1\","
+                        + "\"kty\": \"UNKNOWN_KEY_TYPE\"}]}"));
+        given(anIssuer().withoutHistory());
+        given(aMockJwt().withKid("key-1").withoutJti().signedBy(jwtFactory.publicKey()));
+
+        try {
+            issuer.checkIssued(jwt);
+            fail("checkIssued returned success");
+        } catch (AuthenticationException e) {
+            assertThat(e.getMessage(), containsString("key type"));
+            assertThat(e.getMessage(), containsString("UNKNOWN_KEY_TYPE"));
+        }
+    }
+
+    @Test
+    public void shouldRejectJwtWithKeySignedWithKeyWithMissingKeyType() throws Exception {
+        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/")
+                .withDiscovery("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}"));
+        var description = jwtFactory.describePublicKey().put("kid", "key-1").without("kty");
+        given(aClient().onGet("https://oidc.example.org/jwks").responds()
+                .withEntity("{\"keys\": [" + description + "]}"));
+        given(anIssuer().withoutHistory());
+        given(aMockJwt().withKid("key-1").withoutJti().signedBy(jwtFactory.publicKey()));
+
+        try {
+            issuer.checkIssued(jwt);
+            fail("checkIssued returned success");
+        } catch (AuthenticationException e) {
+            assertThat(e.getMessage(), containsStringIgnoringCase("attribute"));
+            assertThat(e.getMessage(), containsString("kty")); //REVISIT shouldn't kty be in quotes?
+        }
+    }
+
+    @Test
+    public void shouldRejectJwtWithKeySignedWithKeyWithNonTexturalKeyType() throws Exception {
+        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/")
+                .withDiscovery("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}"));
+        var description = jwtFactory.describePublicKey()
+                .put("kid", "key-1")
+                .put("kty", 42);
+        given(aClient().onGet("https://oidc.example.org/jwks").responds()
+                .withEntity("{\"keys\": [" + description + "]}"));
+        given(anIssuer().withoutHistory());
+        given(aMockJwt().withKid("key-1").withoutJti().signedBy(jwtFactory.publicKey()));
+
+        try {
+            issuer.checkIssued(jwt);
+            fail("checkIssued returned success");
+        } catch (AuthenticationException e) {
+            assertThat(e.getMessage(), containsStringIgnoringCase("attribute"));
+            assertThat(e.getMessage(), containsString("textual"));
+            assertThat(e.getMessage(), containsString("kty")); //REVISIT shouldn't kty be in quotes?
+        }
+    }
+
+    @Test
+    public void shouldRejectJwtWithNoKidNotSignedByPublicKey() throws Exception {
+        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/")
+                .withDiscovery("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}"));
+        var description = jwtFactory.describePublicKey();
+        given(aClient().onGet("https://oidc.example.org/jwks").responds()
+                .withEntity("{\"keys\": [" + description + "]}"));
+        given(anIssuer().withoutHistory());
+        given(aMockJwt().withoutKid().withoutJti().signedBy(anotherJwtFactory.publicKey()));
+
+        try {
+            issuer.checkIssued(jwt);
+            fail("checkIssued returned success");
+        } catch (AuthenticationException e) {
+            assertThat(e.getMessage(), containsString("public key"));
+        }
+    }
+
+    @Test
+    public void shouldRejectJwtWithNoKidNotSignedByPublicKeyThatHasAProblem() throws Exception {
+        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/")
+                .withDiscovery("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}"));
+        var description = jwtFactory.describePublicKey().put("kty", "UNKNOWN_ALG");
+        given(aClient().onGet("https://oidc.example.org/jwks").responds()
+                .withEntity("{\"keys\": [" + description + "]}"));
+        given(anIssuer().withoutHistory());
+        given(aMockJwt().withoutKid().withoutJti().signedBy(anotherJwtFactory.publicKey()));
+
+        try {
+            issuer.checkIssued(jwt);
+            fail("checkIssued returned success");
+        } catch (AuthenticationException e) {
+            assertThat(e.getMessage(), containsStringIgnoringCase("issuer"));
+            assertThat(e.getMessage(), containsString("public key"));
+            assertThat(e.getMessage(), containsString("UNKNOWN_ALG"));
+        }
+    }
+
+    private ObjectNode mangle(ObjectNode description) {
+        String encodedN = description.get("n").asText();
+        byte[] n = Base64.getUrlDecoder().decode(encodedN);
+
+        // Mangle the modulus
+        byte[] mangledN = new byte[2];
+        System.arraycopy( n, 0, mangledN, 0, 2);
+        String encodedMangledN = Base64.getUrlEncoder().encodeToString(mangledN);
+
+        return description.deepCopy().put("n", encodedMangledN);
+    }
+
+    @Test
+    public void shouldRejectJwtWithNoKidNotSignedByPublicKeyThatHasACryptoProblem() throws Exception {
+        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/")
+                .withDiscovery("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}"));
+        var description = mangle(jwtFactory.describePublicKey())
+                .put("kid", "key-1");
+        given(aClient().onGet("https://oidc.example.org/jwks").responds()
+                .withEntity("{\"keys\": [" + description + "]}"));
+        given(anIssuer().withoutHistory());
+        given(aMockJwt().withKid("key-1").withoutJti().signedBy(anotherJwtFactory.publicKey()));
+
+        try {
+            issuer.checkIssued(jwt);
+            fail("checkIssued returned success");
+        } catch (AuthenticationException e) {
+            assertThat(e.getMessage(), containsString("public key"));
+            assertThat(e.getMessage(), containsString("RSA"));
+            assertThat(e.getMessage(), containsString("512 bits long"));
+        }
+    }
+
+    @Test
     public void shouldAcceptJwtFromKey1FromOpWithMultipleKeys() throws Exception {
         ObjectNode description1 = jwtFactory.describePublicKey().put("kid", "key-1");
         ObjectNode description2 = anotherJwtFactory.describePublicKey().put("kid", "key-2");
@@ -151,6 +498,49 @@ public class IssuerTest {
 
         verify(jwt).isSignedBy(eq(jwtFactory.publicKey()));
         verify(jwt, never()).isSignedBy(eq(anotherJwtFactory.publicKey()));
+    }
+
+    @Test
+    public void shouldRejectJwtWithKidSignedByKeyWithInvalidKid() throws Exception {
+        // Description has invalid 'kid' value: it should be a string, not a number.
+        ObjectNode description = jwtFactory.describePublicKey().put("kid", 42);
+        given(aClient().onGet("https://oidc.example.org/jwks").responds()
+                .withEntity("{\"keys\": [" + description + "]}"));
+        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/")
+                .withDiscovery("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}"));
+        given(anIssuer().withoutHistory());
+        given(aMockJwt().withKid("42").withoutJti().signedBy(jwtFactory.publicKey()));
+
+        // NB. The current strategy rejects this JWT; however, this isn't a
+        // requirement.  Some future patch might implement a fall-back strategy
+        // that would allow this case to succeed.
+        //
+        // This test exists to exercise the corresponding code-path (ensuring
+        // dCache handles this case robustly) and to ensure the corresponding
+        // error message contains the expected content.
+
+        try {
+            issuer.checkIssued(jwt);
+            fail("checkIssued returned success");
+        } catch (AuthenticationException e) {
+            assertThat(e.getMessage(), containsString("issuer"));
+            assertThat(e.getMessage(), containsString("public key"));
+            assertThat(e.getMessage(), containsString("\"42\""));
+        }
+    }
+
+    @Test
+    public void shouldAcceptJwtWithoutKidSignedByKeyWithInvalidKid() throws Exception {
+        // Description has invalid 'kid' value: it should be a string, not a number.
+        ObjectNode description = jwtFactory.describePublicKey().put("kid", 42);
+        given(aClient().onGet("https://oidc.example.org/jwks").responds()
+                .withEntity("{\"keys\": [" + description + "]}"));
+        given(anIp("EXAMPLE").withEndpoint("https://oidc.example.org/")
+                .withDiscovery("{\"jwks_uri\": \"https://oidc.example.org/jwks\"}"));
+        given(anIssuer().withoutHistory());
+        given(aMockJwt().withoutKid().withoutJti().signedBy(jwtFactory.publicKey()));
+
+        issuer.checkIssued(jwt);
     }
 
     @Test

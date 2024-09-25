@@ -60,10 +60,16 @@ documents or software obtained from this server.
 package org.dcache.services.bulk.util;
 
 import static java.util.Objects.requireNonNull;
+import static org.dcache.services.bulk.util.BulkRequestTarget.State.CANCELLED;
+import static org.dcache.services.bulk.util.BulkRequestTarget.State.CREATED;
+import static org.dcache.services.bulk.util.BulkRequestTarget.State.READY;
+import static org.dcache.services.bulk.util.BulkRequestTarget.State.RUNNING;
 
+import com.google.common.base.Throwables;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 import java.sql.Timestamp;
+import java.util.Optional;
 import org.dcache.namespace.FileType;
 import org.dcache.services.bulk.BulkServiceException;
 import org.dcache.vehicles.FileAttributes;
@@ -77,8 +83,8 @@ import org.dcache.vehicles.FileAttributes;
  */
 public final class BulkRequestTarget {
 
-    public static final State[] NON_TERMINAL = new State[]{State.CREATED, State.READY,
-          State.RUNNING};
+    public static final State[] NON_TERMINAL = new State[]{CREATED, READY,
+          RUNNING};
 
     public static FsPath computeFsPath(String prefix, String target) {
         if (prefix == null) {
@@ -104,7 +110,7 @@ public final class BulkRequestTarget {
           "%s: invalid target state transition %s to %s; please report this to dcache.org.";
 
     private static final String TARGET_FORMAT =
-          "TARGET [%s, %s, %s][%s][%s: (C %s)(S %s)(U %s)(ret %s)][%s] %s : %s (err %s)";
+          "TARGET [%s, %s, %s][%s][%s: (C %s)(S %s)(U %s)(ret %s)][%s] %s : %s (err %s %s)";
 
     private static final String KEY_SEPARATOR = "::";
 
@@ -114,24 +120,32 @@ public final class BulkRequestTarget {
         return key.split(KEY_SEPARATOR);
     }
 
+    private final Optional<BulkServiceStatistics> statistics;
+
     private Long id;
     private PID pid;
-    private String rid;
+    private Long rid;
+    private String ruid;
     private FsPath path;
-    private String activity;  /** denormalized from request **/
+    private String activity;
     private State state;
     private long createdAt;
     private Long startedAt;
     private long lastUpdated;
     private int retried;
-    private Throwable errorObject;
+    private String errorType;
+    private String errorMessage;
     private FileAttributes attributes;
 
-    BulkRequestTarget() {
+    BulkRequestTarget(BulkServiceStatistics statistics) {
+        this.statistics = Optional.ofNullable(statistics);
         /**
          * Constructed by fluid builder.
          */
-        state = State.CREATED;
+        state = CREATED;
+        if (statistics != null) {
+            statistics.increment(CREATED.name());
+        }
         createdAt = System.currentTimeMillis();
     }
 
@@ -140,9 +154,11 @@ public final class BulkRequestTarget {
             case CREATED:
             case READY:
             case RUNNING:
-                state = State.CANCELLED;
-                if (errorObject == null) {
-                    errorObject = new BulkServiceException(getKey() + ": " + state);
+                updateCounters(CANCELLED);
+                state = CANCELLED;
+                if (errorType == null) {
+                    errorType = BulkServiceException.class.getCanonicalName();
+                    errorMessage = getKey() + ": " + state;
                 }
 
                 return true;
@@ -186,8 +202,9 @@ public final class BulkRequestTarget {
 
     public synchronized void resetToReady() {
         ++retried;
-        state = State.READY;
-        errorObject = null;
+        updateCounters(READY);
+        state = READY;
+        setErrorObject(null);
         lastUpdated = System.currentTimeMillis();
     }
 
@@ -208,7 +225,7 @@ public final class BulkRequestTarget {
     }
 
     public String getKey() {
-        return String.format(KEY_FORMAT, rid, id);
+        return String.format(KEY_FORMAT, ruid, id);
     }
 
     public long getLastUpdated() {
@@ -231,24 +248,32 @@ public final class BulkRequestTarget {
         return retried;
     }
 
-    public String getRid() {
+    public Long getRid() {
         return rid;
+    }
+
+    public String getRuid() {
+        return ruid;
     }
 
     public Long getStartedAt() {
         return startedAt;
     }
 
-    public State getState() {
+    public synchronized State getState() {
         return state;
-    }
-
-    public Throwable getThrowable() {
-        return errorObject;
     }
 
     public FileType getType() {
         return attributes == null ? null : attributes.getFileType();
+    }
+
+    public String getErrorType() {
+        return errorType;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
     }
 
     public void setActivity(String activity) {
@@ -264,14 +289,28 @@ public final class BulkRequestTarget {
     }
 
     public void setErrorObject(Object error) {
+        Throwable errorObject;
+        errorType = null;
         if (error != null) {
             if (error instanceof Throwable) {
-                errorObject = (Throwable) error;
+                errorObject = Throwables.getRootCause((Throwable) error);
             } else {
-                errorObject = new Throwable(String.valueOf(error));
+                errorObject = Throwables.getRootCause(new Throwable(String.valueOf(error)));
             }
-            setState(State.FAILED);
+
+            errorType = errorObject.getClass().getCanonicalName();
+            errorMessage = errorObject.getMessage();
+
+            setState(errorObject instanceof InterruptedException ? State.CANCELLED : State.FAILED);
         }
+    }
+
+    public void setErrorType(String errorType) {
+        this.errorType = errorType;
+    }
+
+    public void setErrorMessage(String errorMessage) {
+        this.errorMessage = errorMessage;
     }
 
     public void setId(Long id) {
@@ -290,8 +329,12 @@ public final class BulkRequestTarget {
         this.pid = pid;
     }
 
-    public void setRid(String rid) {
+    public void setRid(Long rid) {
         this.rid = rid;
+    }
+
+    public void setRuid(String ruid) {
+        this.ruid = ruid;
     }
 
     public void setRetried(int retried) {
@@ -321,6 +364,7 @@ public final class BulkRequestTarget {
                     case COMPLETED:
                     case FAILED:
                     case SKIPPED:
+                        updateCounters(state);
                         this.state = state;
                         lastUpdated = System.currentTimeMillis();
                         return true;
@@ -338,6 +382,7 @@ public final class BulkRequestTarget {
                     case FAILED:
                     case SKIPPED:
                     case RUNNING:
+                        updateCounters(state);
                         this.state = state;
                         lastUpdated = System.currentTimeMillis();
                         return true;
@@ -350,6 +395,7 @@ public final class BulkRequestTarget {
                 }
             case CREATED:
             default:
+                updateCounters(state);
                 this.state = state;
                 lastUpdated = System.currentTimeMillis();
                 return true;
@@ -358,8 +404,15 @@ public final class BulkRequestTarget {
 
     @Override
     public String toString() {
-        return String.format(TARGET_FORMAT, id, pid, rid, activity,
+        return String.format(TARGET_FORMAT, id, pid, ruid, activity,
               state, new Timestamp(createdAt), startedAt == null ? null : new Timestamp(startedAt),
-              new Timestamp(lastUpdated), retried, getType(), getPnfsId(), path, errorObject);
+              new Timestamp(lastUpdated), retried, getType(), getPnfsId(), path, errorType, errorMessage);
+    }
+
+    private void updateCounters(State state) {
+        statistics.ifPresent(s -> {
+            s.decrement(this.state.name());
+            s.increment(state.name());
+        });
     }
 }

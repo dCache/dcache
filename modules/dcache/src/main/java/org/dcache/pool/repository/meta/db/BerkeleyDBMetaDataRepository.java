@@ -21,6 +21,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.dcache.pool.repository.FileStoreState;
 import org.dcache.pool.repository.DuplicateEntryException;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.ReplicaRecord;
@@ -66,13 +67,13 @@ public class BerkeleyDBMetaDataRepository extends AbstractBerkeleyDBReplicaStore
 
             Stopwatch watch = Stopwatch.createStarted();
             Set<PnfsId> files = _fileStore.index();
-            LOGGER.info("Indexed {} entries in {} in {}.", files.size(), _fileStore, watch);
+            LOGGER.info("Indexed {} entries in {} in {}.", files.size(), _fileStore, watch);
 
             if (indexOptions.contains(IndexOption.ALLOW_REPAIR)) {
 
                 watch.reset().start();
                 Set<String> records = views.collectKeys(Collectors.toSet());
-                LOGGER.info("Indexed {} entries in {} in {}.", records.size(), dir, watch);
+                LOGGER.info("Indexed {} entries in {} in {}.", records.size(), dir, watch);
 
                 for (String id : records) {
                     if (!files.contains(new PnfsId(id))) {
@@ -174,8 +175,16 @@ public class BerkeleyDBMetaDataRepository extends AbstractBerkeleyDBReplicaStore
     }
 
     @Override
-    public boolean isOk() {
-        return _fileStore.isOk() && super.isOk();
+    public FileStoreState isOk() {
+        if (_fileStore.isOk() == FileStoreState.OK && super.isOk() == FileStoreState.OK){
+            return FileStoreState.OK;
+        } else if (_fileStore.isOk() == FileStoreState.READ_ONLY && super.isOk() == FileStoreState.READ_ONLY){
+            return FileStoreState.READ_ONLY;
+
+        }
+      else {
+            return FileStoreState.FAILED;
+        }
 
     }
 

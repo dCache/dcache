@@ -61,7 +61,7 @@ package org.dcache.qos.services.verifier.util;
 
 import java.util.concurrent.TimeUnit;
 import org.dcache.qos.services.verifier.data.PoolInfoMap;
-import org.dcache.qos.services.verifier.data.VerifyOperationDelegatingMap;
+import org.dcache.qos.services.verifier.data.VerifyOperationManager;
 import org.dcache.qos.util.MapInitializer;
 import org.dcache.qos.util.PoolMonitorChangeHandler;
 
@@ -73,13 +73,13 @@ import org.dcache.qos.util.PoolMonitorChangeHandler;
 public final class VerifierMapInitializer extends MapInitializer {
 
     private PoolInfoMap poolInfoMap;
-    private VerifyOperationDelegatingMap verifyOperationMap;
+    private VerifyOperationManager manager;
     private PoolMonitorChangeHandler poolMonitorChangeHandler;
 
     public synchronized void shutDown() {
-        if (verifyOperationMap.isRunning()) {
+        if (manager.isRunning()) {
             LOGGER.info("Shutting down file operation map.");
-            verifyOperationMap.shutdown();
+            manager.shutdown();
         }
 
         super.shutDown();
@@ -109,21 +109,22 @@ public final class VerifierMapInitializer extends MapInitializer {
         LOGGER.info("Pool maps initialized.");
         messageGuard.enable();
 
-        LOGGER.info("Messages are now activated; starting file operation consumer.");
-        verifyOperationMap.initialize();
+        LOGGER.info("Messages are now activated; starting operation manager.");
+        manager.initialize();
 
-        LOGGER.info("File operation consumer is running; activating admin commands.");
+        LOGGER.info("Manager is running; activating admin commands.");
         setInitialized();
 
         LOGGER.info("Starting the periodic pool monitor refresh check.");
         poolMonitorChangeHandler.startWatchdog();
 
-        LOGGER.info("Resetting RUNNING operations to READY.");
-        verifyOperationMap.reload();
+        LOGGER.info("Reloading incomplete operations from storage; queues will be started "
+              + "after reload completes.");
+        manager.reload();
     }
 
-    public void setVerifyOperationMap(VerifyOperationDelegatingMap verifyOperationMap) {
-        this.verifyOperationMap = verifyOperationMap;
+    public void setManager(VerifyOperationManager manager) {
+        this.manager = manager;
     }
 
     public void setPoolInfoMap(PoolInfoMap poolInfoMap) {

@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2018 - 2022 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2018 - 2023 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,8 +17,10 @@
  */
 package org.dcache.kafka;
 
+import com.google.common.base.Throwables;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.common.errors.TimeoutException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.support.ProducerListener;
@@ -30,15 +32,18 @@ public class LoggingProducerListener<K, V> implements ProducerListener<K, V> {
 
     @Override
     public void onSuccess(ProducerRecord<K, V> record, RecordMetadata recordMetadata) {
-        LOGGER.info("Successful!");
     }
 
     @Override
     public void onError(ProducerRecord<K, V> producerRecord,
           @Nullable RecordMetadata recordMetadata, Exception exception) {
-        LOGGER.error("Producer exception occurred while publishing message : {}, exception : {}",
-              producerRecord, exception);
+        if (exception instanceof TimeoutException && exception.getCause() == null) {
+            LOGGER.error("Producer failed to send the message,"
+                  + " the broker is down or the connection was refused ");
+        } else {
+            LOGGER.error(
+                  "Producer exception occurred while publishing message : {}, exception : {}",
+                  producerRecord, Throwables.getRootCause(exception).getMessage());
+        }
     }
-
-
 }

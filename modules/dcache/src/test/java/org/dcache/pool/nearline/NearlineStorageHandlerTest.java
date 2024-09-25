@@ -24,6 +24,7 @@ import java.nio.channels.CompletionHandler;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import org.dcache.cells.CellStub;
@@ -78,6 +79,8 @@ public class NearlineStorageHandlerTest {
         nsh.setPnfsHandler(pnfs);
         nsh.setFileStore(fileStore);
         nsh.setChecksumModule(csm);
+        nsh.setStickyOnStageDuration(5);
+        nsh.setStickyOnStageDurationUnit(TimeUnit.MINUTES);
 
         hsmMigrationRequestCallack = mock(CompletionHandler.class);
         hsmRemoveRequestCallack = mock(CompletionHandler.class);

@@ -6,6 +6,7 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import java.util.Date;
 import java.util.Optional;
 import javax.security.auth.Subject;
+import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.MessageReply;
 import org.dcache.pinmanager.model.Pin;
 import org.dcache.vehicles.FileAttributes;
@@ -55,6 +56,8 @@ public class PinTask {
     public ProtocolInfo getProtocolInfo() {
         return _request.getProtocolInfo();
     }
+
+    public Restriction getRestriction() { return _request.getRestriction(); }
 
     public Subject getSubject() {
         return _request.getSubject();

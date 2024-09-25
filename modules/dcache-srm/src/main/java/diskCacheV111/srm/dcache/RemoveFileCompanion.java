@@ -76,6 +76,7 @@ package diskCacheV111.srm.dcache;
 import static org.dcache.namespace.FileType.LINK;
 import static org.dcache.namespace.FileType.REGULAR;
 
+import com.google.common.base.Throwables;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
@@ -83,15 +84,21 @@ import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
 import dmg.cells.nucleus.CellAddressCore;
 import java.util.EnumSet;
 import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 import javax.security.auth.Subject;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
 import org.dcache.srm.RemoveFileCallback;
+import org.springframework.kafka.KafkaException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RemoveFileCompanion
       extends AbstractMessageCallback<PnfsDeleteEntryMessage> {
+
+    private static final Logger _log = LoggerFactory.getLogger(Storage.class);
 
     private final Subject _subject;
     private final RemoveFileCallback _callback;
@@ -99,17 +106,20 @@ public class RemoveFileCompanion
     private final CellAddressCore _myAddress;
 
     private final CellStub _billingStub;
+    private final Consumer<DoorRequestInfoMessage> _kafkaSender;
 
     private RemoveFileCompanion(Subject subject,
           String path,
           RemoveFileCallback callbacks,
           CellAddressCore address,
-          CellStub billingStub) {
+          CellStub billingStub,
+          Consumer<DoorRequestInfoMessage> kafkaSender) {
         _subject = subject;
         _path = path;
         _callback = callbacks;
         _myAddress = address;
         _billingStub = billingStub;
+        _kafkaSender = kafkaSender;
     }
 
     public static void removeFile(Subject subject,
@@ -118,10 +128,11 @@ public class RemoveFileCompanion
           RemoveFileCallback callbacks,
           CellStub pnfsStub,
           CellStub billingStub,
+          Consumer<DoorRequestInfoMessage> kafkaSender,
           CellAddressCore address,
           Executor executor) {
         RemoveFileCompanion companion =
-              new RemoveFileCompanion(subject, path, callbacks, address, billingStub);
+              new RemoveFileCompanion(subject, path, callbacks, address, billingStub, kafkaSender);
         PnfsDeleteEntryMessage message =
               new PnfsDeleteEntryMessage(path, EnumSet.of(LINK, REGULAR));
         message.setSubject(subject);
@@ -181,6 +192,13 @@ public class RemoveFileCompanion
         msg.setClient(Subjects.getOrigin(_subject).getAddress().getHostAddress());
 
         _billingStub.notify(msg);
+
+        try {
+            _kafkaSender.accept(msg);
+        } catch (KafkaException | org.apache.kafka.common.KafkaException e) {
+            _log.warn("Failed to send message to kafka: {} ",
+                      Throwables.getRootCause(e).getMessage());
+        }
     }
 }
 

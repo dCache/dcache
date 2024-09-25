@@ -39,7 +39,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 import javax.net.ssl.SSLContext;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
@@ -64,6 +63,7 @@ import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.StickyRecord;
+import org.dcache.util.AdjustableSemaphore;
 import org.dcache.util.Checksum;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.Version;
@@ -157,6 +157,11 @@ class Companion {
     private SSLContext _sslContext;
 
     /**
+     * Semaphore to limit the number of concurrent pool-to-pool transfers.
+     */
+    private final AdjustableSemaphore _concurrency;
+
+    /**
      * Creates a new instance.
      *
      * @param executor                      Executor used for state machine callbacks
@@ -190,7 +195,8 @@ class Companion {
           CacheFileAvailable callback,
           boolean forceSourceMode,
           Long atime,
-          Supplier<SSLContext> getContextIfNeeded) {
+          SSLContext sslContext,
+          AdjustableSemaphore concurrency) {
         _fsm = new CompanionContext(this);
 
         _executor = executor;
@@ -207,7 +213,7 @@ class Companion {
               "Destination domain name is unknown.");
         _fileAttributes = requireNonNull(fileAttributes, "File attributes is missing.");
 
-        _sslContext = getContextIfNeeded.get();
+        _sslContext = sslContext;
 
         if (!_fileAttributes.isDefined(FileAttribute.PNFSID)) {
             throw new IllegalArgumentException(
@@ -223,6 +229,7 @@ class Companion {
         _stickyRecords = new ArrayList<>(stickyRecords);
 
         _id = _nextId.getAndIncrement();
+        _concurrency = concurrency;
 
         synchronized (this) {
             _fsm.start();
@@ -258,7 +265,7 @@ class Companion {
     public String toString() {
         // Unsynchronized access to the fsm state means we may show an old value, but it
         // avoids blocking in toString().
-        return _id + " " + _pnfsId + " " + _fsm.getState();
+        return _id + " " + _pnfsId + " " + _fsm.getState() + " << " + _sourcePoolName;
     }
 
     /**
@@ -328,7 +335,7 @@ class Companion {
     }
 
     private Set<Checksum> copy(String uri, ReplicaDescriptor handle)
-          throws IOException, InterruptedException {
+          throws IOException, InterruptedException, CacheException {
         RepositoryChannel channel = handle.createChannel();
         try {
             HttpGet get = new HttpGet(uri);
@@ -565,8 +572,20 @@ class Companion {
         new Thread("P2P Transfer - " + _pnfsId + " " + _sourcePoolName) {
             @Override
             public void run() {
-                cdc.restore();
-                transfer(uri);
+
+                boolean release = false;
+                try {
+                    _concurrency.acquire();
+                    release = true;
+                    cdc.restore();
+                    transfer(uri);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                } finally {
+                    if(release) {
+                        _concurrency.release();
+                    }
+                }
             }
         }.start();
     }

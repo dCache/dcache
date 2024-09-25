@@ -72,7 +72,7 @@ import org.dcache.alarms.AlarmMarkerFactory;
 
 /**
  * While logback provides MDC and Marker TurboFilters, these do not work exactly as what is required
- * here – that is, specifically on the remote appender and not on the context as a whole.
+ * here - that is, specifically on the remote appender and not on the context as a whole.
  * <p>
  * Hardcoding the behavior here also has the advantage of not exposing the special property keys
  * (ALARM, ALARMS_INTERNAL) in the logback.xml, though users still might inadvertently remove the

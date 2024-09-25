@@ -60,6 +60,7 @@ documents or software obtained from this server.
 package org.dcache.util.histograms;
 
 import static java.util.Objects.requireNonNull;
+import static org.dcache.util.MathUtils.nanToZero;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.io.Serializable;
@@ -194,7 +195,7 @@ public final class HistogramMetadata implements Serializable {
     }
 
     public void rotate(int units) {
-        units = units >= numBins ? numBins : units;
+        units = Math.min(units, numBins);
 
         long now = System.currentTimeMillis();
 
@@ -251,8 +252,8 @@ public final class HistogramMetadata implements Serializable {
             return 0.0;
         }
 
-        double variance = (sumOfSquares / count)
-              - FastMath.pow(sum / count, 2);
+        double variance = nanToZero((sumOfSquares / count)
+              - FastMath.pow(sum / count, 2));
 
         return FastMath.sqrt(variance);
     }

@@ -36,7 +36,7 @@ The QoS service is actually made up of four different components.
    the bulk service (also accessible through the REST API). The engine also
    manages the logic, or rules, for determining what a file's QoS is.
 1. the ``QoS Verifier``:  This used to be the heart of the Resilience service.
-   It is now responsible only for verification––that is, determining the state of
+   It is now responsible only for verification--that is, determining the state of
    a file and what needs to be done to make it satisfy its specified QoS.
    The operations are now maintained in a database for reliable survival on restart, and
    the component assures that enough iterations over the file will occur
@@ -146,6 +146,10 @@ With respect to the example scanner domain: the scanner communicates directly wi
 so `chimera.db.host` should be set explicitly if it is not running on the same host
 as the database.
 
+> NOTE:  As of dCache 9.2, the singleton configuration has been removed.  Each of the
+> separate services can be run together in one domain or in separate domains, but it is
+> no longer possible to run the entire QoS component suite as a single service.
+
 ### Memory requirements
 
 While it is possible to run QoS in the same domain as other services,
@@ -190,16 +194,40 @@ is indefinitely set to "sticky".  To change the file back to cached, a second
 modification request is required. In the future, this may be done via a time-bound
 set of rules given to the engine (not yet implemented).
 
-File QoS modification can be achieved through the RESTful frontend for single files,
+File QoS modification can be achieved through the RESTful frontend, either
+for single files using `/api/v1/namespace`, or in bulk, using `/api/v1/bulk-requests`,
+the latter communicating with the [dCache Bulk Service](config-bulk.md).  Please
+refer to the SWAGGER pages at (`https://example.org:3880/api/v1`) for a description
+of the available RESTful resources.  Admins can also submit and control bulk qos
+transitions directly through the admin shell commands for the Bulk service.
 
-[dCache Frontend Service/A Note on the RESTful resource for QoS transitions](config-frontend.md/)
+#### QoS file policy (since 9.2)
 
-of through the Bulk service for file sets.
+With version 9.2, a "rule engine" capability has been added to the QoS Engine.  The
+way this works is as follows:
 
-[dCache Bulk Service/Job plugins](config-bulk.md)
+1. A QoS Policy is defined (it is expressed in JSON).
+2. The policy is uploaded through the Frontend REST API (`qos-policy`).  This stores the policy
+   in the namespace.  The API also allows one to list current policies, view a policy's JSON,
+   and remove the policy.  Adding and removal require admin privileges.
+3. Directories can be tagged using the `QosPolicy` tag, which should indicate the
+   name of the policy.  All files written to this directory will be associated with this policy.
+4. The policy defines a set of transitions (media states), each having a specific duration.
+   The QoS Engine keeps track of the current transition and its expiration.  Upon expiration,
+   it consults the policy to see what the next state is, and asks the QoS Verifier to apply it.
+   When a file has reached the final state of its policy, it is no longer checked by the QoS Engine;
+   however, if the file's final state includes `ONLINE` access latency, the QoS Scanner will
+   check it during the periodic online scans; on the other hand, if the file's final state
+   includes `NEARLINE` access latency, but its retention policy is `CUSTODIAL`, the QoS Scanner
+   will check to make sure it has a tape location.  *_Note that there is no requirement for a file
+   in dCache to have a QoS policy._*
+5. The Bulk service's `UPDATE_QOS` activity now allows for transitioning files both by
+   `targetQos` (`disk`, `tape`, `disk+tape`), but also by `qosPolicy` (associate with the
+   file with a policy by this name); in addition, it is possible to skip transitions in that
+   policy using the `qosState` argument to indicate which index of the transition
+   list to begin at (0 by default).
 
-In addition, the administrator can issue transition requests directly through the admin interface
-for the Bulk service using ``request submit``.
+For more information on policies, with some examples, see the QoS Policy cookbook.
 
 ### QoS and "resilience"
 
@@ -585,10 +613,10 @@ of any pool scan operations:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 [fndcatemp2] (qos@qosDomain) admin > pool ls
 [fndcatemp2] (qos-scanner@qosSDomain) admin > pool ls
-dcatest03-1	(completed: 0 / 0 : ?%) – (updated: 2022/04/29 13:54:52)(finished: 2022/04/29 13:54:52)(prev UNINITIALIZED)(curr UNINITIALIZED)(IDLE)
-dcatest03-2	(completed: 0 / 0 : ?%) – (updated: 2022/04/29 13:54:52)(finished: 2022/04/29 13:54:52)(prev UNINITIALIZED)(curr UNINITIALIZED)(IDLE)
-dcatest03-3	(completed: 0 / 0 : ?%) – (updated: 2022/04/29 13:54:52)(finished: 2022/04/29 13:54:52)(prev UNINITIALIZED)(curr UNINITIALIZED)(IDLE)
-dcatest03-4	(completed: 0 / 0 : ?%) – (updated: 2022/04/29 13:54:52)(finished: 2022/04/29 13:54:52)(prev UNINITIALIZED)(curr UNINITIALIZED)(IDLE)
+dcatest03-1	(completed: 0 / 0 : ?%) - (updated: 2022/04/29 13:54:52)(finished: 2022/04/29 13:54:52)(prev UNINITIALIZED)(curr UNINITIALIZED)(IDLE)
+dcatest03-2	(completed: 0 / 0 : ?%) - (updated: 2022/04/29 13:54:52)(finished: 2022/04/29 13:54:52)(prev UNINITIALIZED)(curr UNINITIALIZED)(IDLE)
+dcatest03-3	(completed: 0 / 0 : ?%) - (updated: 2022/04/29 13:54:52)(finished: 2022/04/29 13:54:52)(prev UNINITIALIZED)(curr UNINITIALIZED)(IDLE)
+dcatest03-4	(completed: 0 / 0 : ?%) - (updated: 2022/04/29 13:54:52)(finished: 2022/04/29 13:54:52)(prev UNINITIALIZED)(curr UNINITIALIZED)(IDLE)
 ...
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -659,7 +687,7 @@ restage it before considering it inaccessible.
 ### Pool scan vs Sys scan
 
 For the scanner component, there are two kinds of scans.  The pool scan runs a query
-by location (= pool) and verifies each of the files that the namespace indicates is
+by location (= pool) and verifies each of the ``ONLINE`` files that the namespace indicates is
 resident on that pool.  This is generally useful for disk-resident replicas, but
 will not be able to detect missing replicas (say, from faulty migration, where the
 old pool is no longer in the pool configuration). Nevertheless, a pool scan
@@ -681,10 +709,26 @@ copy, regardless of the current available pools, and will stage it back in if it
  SCANNING, QOS vs Resilience
 
  Formerly (in resilience), individual pool scans were both triggered by pool state changes
- and were run periodically; in QoS, however, they are only triggered by state changes
- (or by an explicit admin command).  The sys scans, on the other hand, run periodically
- in the background, touching each file in the natural order of their primary key in the
- namespace.
+ and were run periodically; in QoS, they are still triggered by state changes
+ (or by an explicit admin command), but there is an option as to how to run ONLINE scans
+ periodically.  By enabling 'online' scans (the default), the sys scans will
+ touch each file in the natural order of their primary key in the namespace.
+ The advantage to this is avoiding scanning the same file more than once if
+ it has more than one location.  The disadvantage is that files whose locations
+ are currently offline or have been removed from the dCache configuration will
+ trigger an alarm.  If 'online' is disabled, the old-style pool scan (more properly,
+ location-based scan) will be triggered instead.  This will look at only ONLINE
+ files on IDLE pools that are ENABLED, but will end up running redundant checks
+ for files with multiple replicas.
+
+ With the advent of the rule engine (9.2), the NEARLINE scan has been limited to
+ files with a defined qos policy.
+
+ NEARLINE is no longer turned off by default, since it no longer necessarily
+ encompasses all files on tape, but just the ones for which the policy state
+ currently involves state.  Of course, if the majority of files in the dCache
+ instance have a policy, then this scan will again involve a much longer run-time
+ and thus the window should be adjusted accordingly.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ----------------------
@@ -901,7 +945,7 @@ status        ENABLED
 last update   Thu Jun 16 09:24:21 CDT 2016
 
 \s qos-scanner pool ls rw-dmsdca24-1
-rw-dmsdca24-1   (completed: 0 / 0 : ?%) – (updated: Thu Jun 16 09:25:42 CDT 2016)(scanned: Thu Jun 16 09:25:42 CDT 2016)(prev ENABLED)(curr ENABLED)(IDLE)
+rw-dmsdca24-1   (completed: 0 / 0 : ?%) - (updated: Thu Jun 16 09:25:42 CDT 2016)(scanned: Thu Jun 16 09:25:42 CDT 2016)(prev ENABLED)(curr ENABLED)(IDLE)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When the pool is added, a scan is scheduled for it, provided it is in an
@@ -929,16 +973,16 @@ We observe the pool has been queued for a scan:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 \s qos-scanner pool ls rw-
-rw-dmsdca24-2   (completed: 0 / 0 : ?%) – (updated: Thu Jun 16 17:17:09 CDT 2016)(scanned: Thu Jun 16 17:14:33 CDT 2016)(prev ENABLED)(curr ENABLED)(WAITING)
-rw-dmsdca24-3   (completed: 0 / 0 : ?%) – (updated: Thu Jun 16 17:14:33 CDT 2016)(scanned: Thu Jun 16 17:14:33 CDT 2016)(prev UNINITIALIZED)(curr ENABLED)(IDLE)
-rw-dmsdca24-4   (completed: 0 / 0 : ?%) – (updated: Thu Jun 16 17:14:33 CDT 2016)(scanned: Thu Jun 16 17:14:33 CDT 2016)(prev UNINITIALIZED)(curr ENABLED)(IDLE)
+rw-dmsdca24-2   (completed: 0 / 0 : ?%) - (updated: Thu Jun 16 17:17:09 CDT 2016)(scanned: Thu Jun 16 17:14:33 CDT 2016)(prev ENABLED)(curr ENABLED)(WAITING)
+rw-dmsdca24-3   (completed: 0 / 0 : ?%) - (updated: Thu Jun 16 17:14:33 CDT 2016)(scanned: Thu Jun 16 17:14:33 CDT 2016)(prev UNINITIALIZED)(curr ENABLED)(IDLE)
+rw-dmsdca24-4   (completed: 0 / 0 : ?%) - (updated: Thu Jun 16 17:14:33 CDT 2016)(scanned: Thu Jun 16 17:14:33 CDT 2016)(prev UNINITIALIZED)(curr ENABLED)(IDLE)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When the scan starts, we can see it is doing some work:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 \s qos-scanner pool ls rw-dmsdca24-2
-rw-dmsdca24-2   (completed: 491 / ? : ?%) – (updated: Thu Jun 16 17:17:19 CDT 2016)(scanned: Thu Jun 16 17:14:33 CDT 2016)(prev ENABLED)(curr ENABLED)(RUNNING)
+rw-dmsdca24-2   (completed: 491 / ? : ?%) - (updated: Thu Jun 16 17:17:19 CDT 2016)(scanned: Thu Jun 16 17:14:33 CDT 2016)(prev ENABLED)(curr ENABLED)(RUNNING)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Because this is a demo pool, there aren't many files, so the scan completes
@@ -1279,6 +1323,16 @@ be scheduled for scans.
 >   to change replica counts for individual files.**
 >
 >   **Use the QoS transition to change existing disk+tape files to tape.**
+
+### Changing pool tags
+
+If a pool's tags are used to determine replica distribution (based on the storage
+unit definition of `onlyOneCopyPer`) and these are changed, QoS will not automatically
+force the pool to be scanned immediately upon restart (it will just be
+scheduled for a restart scan based on the defined grace period).
+
+>   If it is desirable to rescan a pool's replicas immediately after its
+>   tags have been changed, this must be done manually (see above).
 
 ### Troubleshooting operations
 

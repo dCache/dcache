@@ -69,6 +69,45 @@
 
     <!-- ***************************************** QOS ENGINE ***************************************** -->
 
+    <bean id="engine-data-source" class="com.zaxxer.hikari.HikariDataSource"
+      destroy-method="close">
+      <description>Encapsulates the engine database connection pool and properties.</description>
+      <constructor-arg>
+      <bean class="com.zaxxer.hikari.HikariConfig">
+        <constructor-arg>
+          <bean class="org.dcache.util.configuration.ConfigurationPropertiesFactoryBean">
+            <property name="prefix" value="qos-engine.db.hikari-properties"/>
+            <property name="staticEnvironment">
+              <map>
+                <entry key="jdbcUrl" value="${qos-engine.db.url}"/>
+                <entry key="username" value="${qos-engine.db.user}"/>
+                <entry key="password"
+                  value="#{ T(diskCacheV111.util.Pgpass).getPassword('${qos-engine.db.password.file}', '${qos-engine.db.url}', '${qos-engine.db.user}', '${qos-engine.db.password}') }"/>
+                <entry key="autoCommit" value="true"/>
+                <entry key="transactionIsolation" value="TRANSACTION_READ_COMMITTED"/>
+                <entry key="minimumIdle" value="${qos-engine.db.connections.idle}"/>
+                <entry key="maximumPoolSize" value="${qos-engine.db.connections.max}"/>
+              </map>
+            </property>
+          </bean>
+        </constructor-arg>
+      </bean>
+    </constructor-arg>
+  </bean>
+
+    <bean id="engine-dao" class="org.dcache.qos.services.engine.data.db.JdbcQoSEngineDao">
+      <description>Bulk data access shared methods.</description>
+      <property name="dataSource" ref="engine-data-source"/>
+      <property name="fetchSize" value="${qos-engine.db.fetch-size}"/>
+    </bean>
+
+    <bean id="policy-cache" class="org.dcache.qos.services.engine.util.QoSPolicyCache" init-method="initialize">
+      <property name="capacity" value="${qos.limits.policy-cache-capacity}"/>
+      <property name="expiry" value="${qos.limits.policy-cache-expiry}"/>
+      <property name="expiryUnit" value="${qos.limits.policy-cache-expiry.unit}"/>
+      <property name="pnfs" ref="pnfs-manager"/>
+    </bean>
+
     <bean id="engine-counters" class="org.dcache.qos.services.engine.util.QoSEngineCounters"
           init-method="initialize">
       <description>Tracks request message statistics.</description>
@@ -80,17 +119,44 @@
       </property>
     </bean>
 
-    <bean id="file-status-handler" class="org.dcache.qos.services.engine.handler.FileQoSStatusHandler">
+    <bean id="file-status-handler" class="org.dcache.qos.services.engine.handler.FileQoSStatusHandler" init-method="initialize">
       <description>Processes incoming request messages.</description>
       <property name="requirementsListener" ref="requirements-client"/>
       <property name="verificationListener" ref="verifier-client"/>
       <property name="qosTransitionTopic" ref="transition-topic"/>
       <property name="qoSEngineCounters" ref="engine-counters"/>
-      <property name="executor">
+      <property name="engineDao" ref="engine-dao"/>
+      <property name="cache" ref="policy-cache"/>
+      <property name="namespaceRequestExecutor">
         <bean class="org.dcache.util.BoundedCachedExecutor" destroy-method="shutdownNow">
-          <constructor-arg value="${qos.limits.requirements.submit-threads}"/>
+          <constructor-arg value="${qos.limits.engine.namespace-request-threads}"/>
         </bean>
       </property>
+      <property name="policyStateExecutor">
+        <bean class="org.dcache.util.BoundedCachedExecutor" destroy-method="shutdownNow">
+          <constructor-arg value="${qos.limits.engine.qos-policy-state-threads}"/>
+        </bean>
+      </property>
+      <!-- so as not to overwhelm the engine, the bulk service should throttle these with
+           a semaphor equal to the number of engine threads-->
+      <property name="qosModifyExecutor">
+        <bean class="org.dcache.util.BoundedCachedExecutor" destroy-method="shutdownNow">
+          <constructor-arg value="${qos.limits.engine.qos-modify-request-threads}"/>
+        </bean>
+      </property>
+      <!-- so as not to overwhelm the engine, the verifier should throttle these with
+           a semaphor equal to the number of engine threads-->
+      <property name="verifierRequestExecutor">
+        <bean class="org.dcache.util.BoundedCachedExecutor" destroy-method="shutdownNow">
+          <constructor-arg value="${qos.limits.messages.max-requirement-requests}"/>
+        </bean>
+      </property>
+      <property name="manager">
+        <bean class="java.util.concurrent.ScheduledThreadPoolExecutor" destroy-method="shutdownNow">
+          <constructor-arg value="1"/>
+        </bean>
+      </property>
+      <property name="namespace" ref="pnfs-manager"/>
     </bean>
 
     <bean id="requirements-receiver" class="org.dcache.qos.remote.receivers.QoSRequirementsReceiver">
@@ -99,16 +165,20 @@
       <property name="fileStatusHandler" ref="file-status-handler"/>
     </bean>
 
-    <bean id="requirements-provider" class="org.dcache.qos.services.engine.provider.ALRPStorageUnitQoSProvider">
+    <bean id="requirements-provider" class="org.dcache.qos.services.engine.provider.PolicyBasedQoSProvider">
       <description>The implementation of the rule engine for requirements.</description>
       <property name="pnfsManager" ref="pnfs-manager"/>
+      <property name="cache" ref="policy-cache"/>
+      <property name="engineDao" ref="engine-dao"/>
+      <property name="enableRoles" value="${qos.require-roles}" />
       <!-- pool monitor is received via message -->
     </bean>
-    
+
     <bean id="engine-admin" class="org.dcache.qos.services.engine.admin.QoSEngineAdmin">
       <description>Commands for monitoring engine progress.</description>
       <property name="messageGuard" ref="message-guard"/>
       <property name="counters" ref="engine-counters"/>
+      <property name="handler" ref="file-status-handler"/>
     </bean>
 
 </beans>

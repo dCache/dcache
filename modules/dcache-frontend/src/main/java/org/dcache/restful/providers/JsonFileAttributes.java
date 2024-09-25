@@ -130,6 +130,13 @@ public class JsonFileAttributes {
     @ApiModelProperty("File's labels.")
     private Set<String> labels;
 
+    @ApiModelProperty("File's QoS policy.")
+    private String qosPolicy;
+
+    @ApiModelProperty("File's current QoS policy state index.")
+    private Integer qosState;
+
+
     public ACL getAcl() {
         return _acl;
     }
@@ -406,5 +413,21 @@ public class JsonFileAttributes {
 
     public Set<String> getLabels() {
         return labels == null ? new HashSet() : labels;
+    }
+
+    public String getQosPolicy() {
+        return qosPolicy;
+    }
+
+    public void setQosPolicy(String qosPolicy) {
+        this.qosPolicy = qosPolicy;
+    }
+
+    public Integer getQosState() {
+        return qosState;
+    }
+
+    public void setQosState(Integer qosState) {
+        this.qosState = qosState;
     }
 }

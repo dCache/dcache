@@ -456,9 +456,9 @@ See above (under ZTN) for an example layout configuration.
 Note that the above configuration enforces TLS (STRICT); this is highly recommended
 with SciToken authorization as the token hash is not secure unless encrypted.
 While it is not strictly required to start TLS at login (since the actual token
-is not passed until a request involving a path, in this case, 'open') ––
+is not passed until a request involving a path, in this case, 'open') --
 ``xrootd.security.tls.require-session=true``
-would have been sufficient –– the extra protection on login of course will not
+would have been sufficient -- the extra protection on login of course will not
 hurt. (The same applies to GSI: TLS is of course redundant for the handshake, but can further
 guarantee data protection and integrity if on thereafter. For GSI-only doors, then, one can also
 opt to start the TLS session after login using 'session'.)
@@ -539,13 +539,6 @@ does not support TLS, but the triggering client has expressed 'tls.tpc=1'
 As of 6.2, dCache has not yet implemented the GP file or data channel options;
 stay tuned for further developments in those areas.
 
-> **A note on TLS configuration for the pools**
->
->Given that pools may need to service clients that do not support TLS (they
->may, for instance, be using a non-xroot protocol), it is probably not
->practical to make the pools require TLS by setting
->``pool.mover.xrootd.security.tls.mode=STRICT``.
-
 > **Host cert and key**
 >
 > These are required to be there when the SSHHandlerFactory (which provides
@@ -559,42 +552,34 @@ stay tuned for further developments in those areas.
 As of 8.1, dCache now supports the chaining of authentication plugins/protocols on the door.
 This means that a single door can tell the client to try each or any of the protocols indicated.
 
-The defaults have been modified so that dCache can be used out of the box in most cases
-without further concern to configure doors and pools.   To summarize, for the door:
+The defaults have been set so that dCache can be used out of the box in most cases
+without further concern to configure doors and pools.  To enforce TLS, which is
+mandatory for token-based authentication/authorization, change the following property
+on the *doors* from its default value (`OPTIONAL`) to:
 
 ```
-xrootd.plugins=gplazma:ztn,gplazma:gsi,gplazma:none,authz:scitokens
-xrootd.security.tls.mode=OPTIONAL
-xrootd.plugin!scitokens.strict=false
+xrootd.security.tls.mode=STRICT
 ```
 
-These defaults guarantee that the client
+Otherwise, attempts to use a token will be rejected by the door _unless_ the client
+uses the `xroots`/`roots` URL protocol, in which case it is telling the server/door
+that it requires TLS.
 
-1. will try ZTN first, because if it has no discoverable cert keys and no proxy,
-   the client will fail a GSI request unless `export XrdSecGSICREATEPROXY=0` is set;
-2. will then try GSI if it has no token;
-3. if it tries ZTN it must turn on/request TLS or that protocol will be rejected (xroots:// must be used)
-4. if those fail, it can be logged in anonymously and potentially receive further authorization
-   downstream from another token;
-5. if ZTN succeeds and there is no authorization token on the path URL, the ZTN token
-   will be used as fallback (the scitoken requirement is not strict);
-6. third-party-copy will succeed with dCache doors as sources because the third-party
-   client can connect using the rendezvous token without further authentication
-   (gplazma:none).
-7. NOTE:  it is possible to use GSI rather than ZTN and als provide a scitoken/JWT token on the path
-   URL; TLS must be activated in this case.  The usage scenario for this would, however, be rare.
+When TLS is set to `STRICT`, and other defaults remain as they are, the following apply:
 
-Of course, these remain configurable in case of special requirements.
+1. clients using an xroot protocol version prior to 5 will not be rejected; they
+   will be allowed to authenticate using x509 as previously;
+2. clients that use a protocol version of 5 or higher will be told to turn on TLS;
+3. clients will be told to try `ZTN` first; if there is no token available, they will
+   either look for a different credential (e.g., an x509 proxy) or log in anonymously
+   (if this is permitted by the door).
 
-The pool defaults
+If it is not desirable to force all data transfers to be encrypted, the *pool* configuration
+should leave the TLS mode at its default value (`OPTIONAL`).
 
-```
-pool.mover.xrootd.tpc-authn-plugins=gsi,unix,ztn
-```
-
-have been updated to load the ZTN module, but currently this results in a NOP
-because there is no agreed-upon strategy for getting the token to the third-party client;
-this may change in the near future.
+For more information about how to allow clients to (a) support multiple credentials or
+(b) to require encryption (especially on third-party transfers), see
+the User Guide under *_xroot_*.
 
 ### Tried-hosts
 
@@ -683,6 +668,22 @@ xrootd.net.proxy.response-timeout-in-secs=30
 > solution to this conundrum, so you are advised to be aware that when
 > proxying is on, such partitioning may be defeated for transfers that go
 > through that specific door.
+
+> BEST PRACTICE:  Memory consumption (Java direct memory, not heap) for a proxied
+> door is somewhat higher than normal, since it not only has double the connections
+> from the outside (one for the initial request, the second for the redirect to
+> the proxy), but must also sustain the passage of data packets through it
+> (and on to the pool).  For the default chunk size used for xrootd (8 MiB),
+> there seems to be required approximately 28MiB  of direct memory per transfer.
+> Hence the dCache default (512MiB) will very likely be insufficient.  This needs
+> to be adjusted according to expected traffic, but keep in mind that something
+> like 500 _concurrent_ transfers through the proxy door would require
+> setting it to at least 16GiB on the door domain, e.g.:
+
+```
+[xrootd-1095-${host.name}Domain]
+dcache.java.memory.direct=16384m
+```
 
 ### Other configuration options
 

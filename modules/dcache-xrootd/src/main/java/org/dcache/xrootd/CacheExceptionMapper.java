@@ -51,6 +51,7 @@ import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ChkSumErr;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_FSError;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_FileLocked;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_IOError;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ItExists;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_NotAuthorized;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_NotFile;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_NotFound;
@@ -91,9 +92,11 @@ public class CacheExceptionMapper {
             case FILE_CORRUPTED:
                 return kXR_ChkSumErr;
 
+            case FILE_EXISTS:
+                return kXR_ItExists;
+
             case FILE_NOT_IN_REPOSITORY:
             case FILE_NOT_ONLINE:
-            case FILE_EXISTS:
             case FILE_PRECIOUS:
             case FILE_NOT_STORED:
             case FILESIZE_UNKNOWN:

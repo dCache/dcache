@@ -25,6 +25,7 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Properties;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -50,6 +51,7 @@ import static org.hamcrest.Matchers.hasEntry;
 public class QueryUserInfoEndpointTest {
     private static final Profile IGNORE_ALL = (i,c) -> new ProfileResult(Collections.emptySet());
     private static final Duration CACHE_DURATION = Duration.ofSeconds(1);
+    private static final List<String> NO_SUPPRESSIONS = List.of();
 
     /**
      * Fluent class for building QueryUserInfoEndpoint.
@@ -122,7 +124,7 @@ public class QueryUserInfoEndpointTest {
                         + "\"array_claim\": [ \"first\", \"second\"]}"));
         given(aQueryUserInfoEndpoint()
                 .withIdentityProvider(new IdentityProvider("EXAMPLE", URI.create("https://oidc.example.org/"),
-                        IGNORE_ALL, client, CACHE_DURATION)));
+                        IGNORE_ALL, client, CACHE_DURATION, NO_SUPPRESSIONS)));
 
         var result = processor.extract("an-access-token");
 
@@ -149,9 +151,9 @@ public class QueryUserInfoEndpointTest {
             .onGet("https://other-oidc.example.com/userinfo").responds().withStatusCode(404).withoutEntity());
         given(aQueryUserInfoEndpoint()
                 .withIdentityProvider(new IdentityProvider("EXAMPLE-1", URI.create("https://oidc.example.org/"),
-                        IGNORE_ALL, client, CACHE_DURATION))
+                        IGNORE_ALL, client, CACHE_DURATION, NO_SUPPRESSIONS))
                 .withIdentityProvider(new IdentityProvider("EXAMPLE-2", URI.create("https://other-oidc.example.com/"),
-                        IGNORE_ALL, client, CACHE_DURATION)));
+                        IGNORE_ALL, client, CACHE_DURATION, NO_SUPPRESSIONS)));
         given(aJwt().withPayloadClaim("iss", "https://oidc.example.org/"));
 
         var result = processor.extract(jwt);
@@ -168,7 +170,7 @@ public class QueryUserInfoEndpointTest {
         given(aClient());
         given(aQueryUserInfoEndpoint()
                 .withIdentityProvider(new IdentityProvider("EXAMPLE-1", URI.create("https://oidc.example.org/"),
-                        IGNORE_ALL, client, CACHE_DURATION)));
+                        IGNORE_ALL, client, CACHE_DURATION, NO_SUPPRESSIONS)));
         given(aJwt().withPayloadClaim("iss", "https://another-oidc.example.coms/"));
 
         processor.extract(jwt);
@@ -179,7 +181,7 @@ public class QueryUserInfoEndpointTest {
         given(aClient());
         given(aQueryUserInfoEndpoint()
                 .withIdentityProvider(new IdentityProvider("EXAMPLE-1", URI.create("https://oidc.example.org/"),
-                        IGNORE_ALL, client, CACHE_DURATION)));
+                        IGNORE_ALL, client, CACHE_DURATION, NO_SUPPRESSIONS)));
         given(aJwt().withPayloadClaim("iss", "0:0"));
 
         processor.extract(jwt);
@@ -201,9 +203,9 @@ public class QueryUserInfoEndpointTest {
             .onGet("https://other-oidc.example.com/userinfo").responds().withStatusCode(SC_NOT_FOUND).withoutEntity());
         given(aQueryUserInfoEndpoint()
                 .withIdentityProvider(new IdentityProvider("EXAMPLE-1", URI.create("https://oidc.example.org/"),
-                        IGNORE_ALL, client, CACHE_DURATION))
+                        IGNORE_ALL, client, CACHE_DURATION, NO_SUPPRESSIONS))
                 .withIdentityProvider(new IdentityProvider("EXAMPLE-2", URI.create("https://other-oidc.example.com/"),
-                        IGNORE_ALL, client, CACHE_DURATION)));
+                        IGNORE_ALL, client, CACHE_DURATION, NO_SUPPRESSIONS)));
         given(aJwt().withPayload("jwt payload that is not a valid json object"));
 
         processor.extract(jwt);
@@ -225,9 +227,9 @@ public class QueryUserInfoEndpointTest {
             .onGet("https://other-oidc.example.com/userinfo").responds().withStatusCode(SC_NOT_FOUND).withoutEntity());
         given(aQueryUserInfoEndpoint()
                 .withIdentityProvider(new IdentityProvider("EXAMPLE-1", URI.create("https://oidc.example.org/"),
-                        IGNORE_ALL, client, CACHE_DURATION))
+                        IGNORE_ALL, client, CACHE_DURATION, NO_SUPPRESSIONS))
                 .withIdentityProvider(new IdentityProvider("EXAMPLE-2", URI.create("https://other-oidc.example.com/"),
-                        IGNORE_ALL, client, CACHE_DURATION)));
+                        IGNORE_ALL, client, CACHE_DURATION, NO_SUPPRESSIONS)));
         given(aJwt());
 
         var result = processor.extract(jwt);
@@ -254,9 +256,9 @@ public class QueryUserInfoEndpointTest {
                         + "\"error_description\": \"the token is unknown\"}"));
         given(aQueryUserInfoEndpoint()
                 .withIdentityProvider(new IdentityProvider("EXAMPLE-1", URI.create("https://oidc.example.org/"),
-                        IGNORE_ALL, client, CACHE_DURATION))
+                        IGNORE_ALL, client, CACHE_DURATION, NO_SUPPRESSIONS))
                 .withIdentityProvider(new IdentityProvider("EXAMPLE-2", URI.create("https://other-oidc.example.com/"),
-                        IGNORE_ALL, client, CACHE_DURATION)));
+                        IGNORE_ALL, client, CACHE_DURATION, NO_SUPPRESSIONS)));
 
         processor.extract("an-access-token");
     }
@@ -274,9 +276,9 @@ public class QueryUserInfoEndpointTest {
                 .withEntity("{\"sub\": \"another-identity\"}"));
         given(aQueryUserInfoEndpoint()
                 .withIdentityProvider(new IdentityProvider("EXAMPLE-1", URI.create("https://oidc.example.org/"),
-                        IGNORE_ALL, client, CACHE_DURATION))
+                        IGNORE_ALL, client, CACHE_DURATION, NO_SUPPRESSIONS))
                 .withIdentityProvider(new IdentityProvider("EXAMPLE-2", URI.create("https://other-oidc.example.com/"),
-                        IGNORE_ALL, client, CACHE_DURATION)));
+                        IGNORE_ALL, client, CACHE_DURATION, NO_SUPPRESSIONS)));
 
         processor.extract("an-access-token");
     }
@@ -288,7 +290,7 @@ public class QueryUserInfoEndpointTest {
             .withStatusCode(SC_INTERNAL_SERVER_ERROR).withoutEntity());
         given(aQueryUserInfoEndpoint()
                 .withIdentityProvider(new IdentityProvider("EXAMPLE", URI.create("https://oidc.example.org/"),
-                        IGNORE_ALL, client, CACHE_DURATION)));
+                        IGNORE_ALL, client, CACHE_DURATION, NO_SUPPRESSIONS)));
 
         processor.extract("an-access-token");
     }
@@ -302,7 +304,7 @@ public class QueryUserInfoEndpointTest {
                 .withStatusCode(SC_INTERNAL_SERVER_ERROR).withoutEntity());
         given(aQueryUserInfoEndpoint()
                 .withIdentityProvider(new IdentityProvider("EXAMPLE", URI.create("https://oidc.example.org/"),
-                        IGNORE_ALL, client, CACHE_DURATION)));
+                        IGNORE_ALL, client, CACHE_DURATION, NO_SUPPRESSIONS)));
 
         processor.extract("an-access-token");
     }
@@ -316,7 +318,7 @@ public class QueryUserInfoEndpointTest {
                 .withEntity("\"a valid json string\""));
         given(aQueryUserInfoEndpoint()
                 .withIdentityProvider(new IdentityProvider("EXAMPLE", URI.create("https://oidc.example.org/"),
-                        IGNORE_ALL, client, CACHE_DURATION)));
+                        IGNORE_ALL, client, CACHE_DURATION, NO_SUPPRESSIONS)));
 
         processor.extract("an-access-token");
     }
@@ -330,7 +332,7 @@ public class QueryUserInfoEndpointTest {
                 .withEntity("{}"));
         given(aQueryUserInfoEndpoint()
                 .withIdentityProvider(new IdentityProvider("EXAMPLE", URI.create("https://oidc.example.org/"),
-                        IGNORE_ALL, client, CACHE_DURATION)));
+                        IGNORE_ALL, client, CACHE_DURATION, NO_SUPPRESSIONS)));
 
         processor.extract("an-access-token");
     }
@@ -344,7 +346,7 @@ public class QueryUserInfoEndpointTest {
                 .withEntity("Not valid JSON"));
         given(aQueryUserInfoEndpoint()
                 .withIdentityProvider(new IdentityProvider("EXAMPLE", URI.create("https://oidc.example.org/"),
-                        IGNORE_ALL, client, CACHE_DURATION)));
+                        IGNORE_ALL, client, CACHE_DURATION, NO_SUPPRESSIONS)));
 
         processor.extract("an-access-token");
     }
@@ -356,7 +358,7 @@ public class QueryUserInfoEndpointTest {
                 .withEntity("{}"));
         given(aQueryUserInfoEndpoint()
                 .withIdentityProvider(new IdentityProvider("EXAMPLE", URI.create("https://oidc.example.org/"),
-                        IGNORE_ALL, client, CACHE_DURATION)));
+                        IGNORE_ALL, client, CACHE_DURATION, NO_SUPPRESSIONS)));
 
         processor.extract("an-access-token");
     }

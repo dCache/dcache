@@ -61,7 +61,9 @@ package org.dcache.services.bulk.activity.plugin.pin;
 
 import static diskCacheV111.util.CacheException.INVALID_ARGS;
 import static org.dcache.services.bulk.activity.plugin.pin.StageActivityProvider.DISK_LIFETIME;
+import static org.dcache.services.bulk.activity.plugin.pin.StageActivityProvider.DISK_LIFETIME_UNIT;
 
+import com.google.common.base.Strings;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import diskCacheV111.util.CacheException;
@@ -76,9 +78,11 @@ import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.dcache.pinmanager.PinManagerPinMessage;
 import org.dcache.services.bulk.BulkServiceException;
+import org.dcache.services.bulk.activity.BulkActivityArgumentDescriptor;
 import org.dcache.services.bulk.util.BulkRequestTarget;
 import org.dcache.vehicles.FileAttributes;
 import org.json.JSONObject;
@@ -122,8 +126,17 @@ public final class StageActivity extends PinManagerActivity {
             checkStageable(attributes);
 
             PinManagerPinMessage message
-                  = new PinManagerPinMessage(attributes, getProtocolInfo(), id,
+                  = new PinManagerPinMessage(attributes, getProtocolInfo(),
+                  pnfsHandler.getRestriction(),
+                  id,
                   getLifetimeInMillis(target));
+            message.setSubject(subject);
+
+            Optional<ListenableFuture<Message>> skipOption = skipIfOnline(attributes, message);
+            if (skipOption.isPresent()) {
+                return skipOption.get();
+            }
+
             return pinManager.send(message, Long.MAX_VALUE);
         } catch (URISyntaxException | CacheException e) {
             return Futures.immediateFailedFuture(e);
@@ -133,8 +146,14 @@ public final class StageActivity extends PinManagerActivity {
     @Override
     protected void configure(Map<String, String> arguments) {
         if (arguments != null) {
-            jsonLifetimes = new JSONObject(arguments.get("diskLifetime"));
-            jsonMetadata = new JSONObject(arguments.get("targetedMetadata"));
+            String value = arguments.get("diskLifetime");
+            if (value != null) {
+                jsonLifetimes = new JSONObject(value);
+            }
+            value = arguments.get("targetedMetadata");
+            if (value != null) {
+                jsonMetadata = new JSONObject(value);
+            }
         }
     }
 
@@ -146,14 +165,10 @@ public final class StageActivity extends PinManagerActivity {
     }
 
     private long getLifetimeInMillis(FsPath path) {
-        String ptString = null;
+        String ptString = jsonLifetimes == null ? null : jsonLifetimes.optString(path.toString());
 
-        if (jsonLifetimes != null) {
-            ptString = jsonLifetimes.getString(path.toString());
-        }
-
-        if (ptString == null) {
-            ptString = DISK_LIFETIME.getDefaultValue();
+        if (Strings.emptyToNull(ptString) == null) {
+            return defaultLifetimeInMillis();
         }
 
         return TimeUnit.SECONDS.toMillis(Duration.parse(ptString).get(ChronoUnit.SECONDS));
@@ -165,5 +180,20 @@ public final class StageActivity extends PinManagerActivity {
         if (attributes.getRetentionPolicy() != RetentionPolicy.CUSTODIAL) {
             throw new CacheException(INVALID_ARGS, "File not on tape.");
         }
+    }
+
+    private long defaultLifetimeInMillis() {
+        long value = 0L;
+        TimeUnit unit = TimeUnit.SECONDS;
+
+        for (BulkActivityArgumentDescriptor d: descriptors) {
+            if (d.getName().equals(DISK_LIFETIME)) {
+                value = Long.parseLong(d.getDefaultValue());
+            } else if (d.getName().equals(DISK_LIFETIME_UNIT)) {
+                unit = TimeUnit.valueOf(d.getDefaultValue());
+            }
+        }
+
+        return unit.toMillis(value);
     }
 }

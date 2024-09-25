@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013-2015 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013-2024 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -40,8 +40,8 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.logging.LoggingHandler;
-import io.netty.handler.timeout.IdleStateHandler;
-import java.net.InetAddress;
+
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.util.EnumSet;
@@ -64,9 +64,9 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.movers.NettyMover;
 import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.util.CDCThreadFactory;
-import org.dcache.util.NetworkUtils;
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
 import org.dcache.vehicles.XrootdProtocolInfo;
+import org.dcache.xrootd.OutboundExceptionHandler;
 import org.dcache.xrootd.core.XrootdDecoder;
 import org.dcache.xrootd.core.XrootdEncoder;
 import org.dcache.xrootd.core.XrootdHandshakeHandler;
@@ -159,7 +159,7 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
     private ServerProtocolFlags serverProtocolFlags;
     private long tpcServerResponseTimeout;
     private TimeUnit tpcServerResponseTimeoutUnit;
-    private Map<String, Timer> reconnectTimers;
+    private Map<UUID, Timer> reconnectTimers;
     private long readReconnectTimeout;
     private TimeUnit readReconnectTimeoutUnit;
     private int tpcClientChunkSize;
@@ -186,7 +186,7 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
     }
 
     @Override
-    public synchronized void start() {
+    public synchronized void start() throws IOException {
         super.start();
         ThreadFactory factory = new ThreadFactoryBuilder()
               .setNameFormat("xrootd-tpc-client-%d")
@@ -206,7 +206,7 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
      * @param uuid of the mover (channel)
      */
     public synchronized void cancelReconnectTimeoutForMover(UUID uuid) {
-        Timer timer = reconnectTimers.remove(uuid.toString());
+        Timer timer = reconnectTimers.remove(uuid);
         if (timer != null) {
             timer.cancel();
             LOGGER.debug("cancelReconnectTimeoutForMover, timer cancelled for {}.", uuid);
@@ -239,7 +239,7 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
                           key);
                 }
             };
-            reconnectTimers.put(key.toString(), timer);
+            reconnectTimers.put(key, timer);
             timer.schedule(task, readReconnectTimeoutUnit.toMillis(readReconnectTimeout));
         } else {
             LOGGER.debug("setReconnectTimeoutForMover for {}; " +
@@ -385,17 +385,15 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
      * Sends our address to the door. Copied from the old xrootd mover.
      */
     @Override
-    protected void sendAddressToDoor(NettyMover<XrootdProtocolInfo> mover, int port)
+    protected void sendAddressToDoor(NettyMover<XrootdProtocolInfo> mover, InetSocketAddress localEndpoint)
           throws SocketException, CacheException {
         XrootdProtocolInfo protocolInfo = mover.getProtocolInfo();
-        InetAddress localIP = NetworkUtils.getLocalAddress(
-              protocolInfo.getSocketAddress().getAddress());
         CellPath cellpath = protocolInfo.getXrootdDoorCellPath();
+
         XrootdDoorAdressInfoMessage doorMsg =
-              new XrootdDoorAdressInfoMessage(protocolInfo.getXrootdFileHandle(),
-                    new InetSocketAddress(localIP, port));
+              new XrootdDoorAdressInfoMessage(protocolInfo.getXrootdFileHandle(), localEndpoint);
         doorStub.notify(cellpath, doorMsg);
-        LOGGER.debug("sending redirect {} to Xrootd-door {}", localIP, cellpath);
+        LOGGER.debug("sending redirect {} to Xrootd-door {}", localEndpoint, cellpath);
     }
 
     @Override
@@ -403,7 +401,7 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
         super.initChannel(ch);
 
         ChannelPipeline pipeline = ch.pipeline();
-
+        pipeline.addLast("outerrors", new OutboundExceptionHandler());
         pipeline.addLast("handshake",
               new XrootdHandshakeHandler(XrootdProtocol.DATA_SERVER));
         pipeline.addLast("encoder", new XrootdEncoder());
@@ -432,10 +430,7 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
             pipeline.addLast("plugin:" + plugin.getName(),
                   plugin.createHandler());
         }
-        pipeline.addLast("timeout", new IdleStateHandler(0,
-              0,
-              clientIdleTimeout,
-              clientIdleTimeoutUnit));
+
         pipeline.addLast("chunkedWriter", new ChunkedResponseWriteHandler());
 
         /*
@@ -507,6 +502,6 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
     }
 
     private synchronized void removeReadReconnectTimer(UUID key) {
-        reconnectTimers.remove(key.toString());
+        reconnectTimers.remove(key);
     }
 }

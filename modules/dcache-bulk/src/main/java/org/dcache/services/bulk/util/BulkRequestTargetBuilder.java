@@ -71,11 +71,11 @@ public final class BulkRequestTargetBuilder {
 
     private final BulkRequestTarget target;
 
-    public static BulkRequestTargetBuilder builder() {
-        return new BulkRequestTargetBuilder();
+    public static BulkRequestTargetBuilder builder(BulkServiceStatistics statistics) {
+        return new BulkRequestTargetBuilder(statistics);
     }
 
-    public BulkRequestTargetBuilder id(long id) {
+    public BulkRequestTargetBuilder id(Long id) {
         target.setId(id);
         return this;
     }
@@ -85,8 +85,13 @@ public final class BulkRequestTargetBuilder {
         return this;
     }
 
-    public BulkRequestTargetBuilder rid(String rid) {
+    public BulkRequestTargetBuilder rid(Long rid) {
         target.setRid(rid);
+        return this;
+    }
+
+    public BulkRequestTargetBuilder ruid(String ruid) {
+        target.setRuid(ruid);
         return this;
     }
 
@@ -130,8 +135,13 @@ public final class BulkRequestTargetBuilder {
         return this;
     }
 
-    public BulkRequestTargetBuilder error(Object error) {
-        target.setErrorObject(error);
+    public BulkRequestTargetBuilder errorType(String errorType) {
+        target.setErrorType(errorType);
+        return this;
+    }
+
+    public BulkRequestTargetBuilder errorMessage(String errorMessage) {
+        target.setErrorMessage(errorMessage);
         return this;
     }
 
@@ -139,7 +149,7 @@ public final class BulkRequestTargetBuilder {
         return target;
     }
 
-    private BulkRequestTargetBuilder() {
-        target = new BulkRequestTarget();
+    private BulkRequestTargetBuilder(BulkServiceStatistics statistics) {
+        target = new BulkRequestTarget(statistics);
     }
 }

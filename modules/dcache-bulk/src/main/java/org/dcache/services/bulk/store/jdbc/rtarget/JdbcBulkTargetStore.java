@@ -60,13 +60,12 @@ documents or software obtained from this server.
 package org.dcache.services.bulk.store.jdbc.rtarget;
 
 import static org.dcache.services.bulk.util.BulkRequestTarget.NON_TERMINAL;
+import static org.dcache.services.bulk.util.BulkRequestTarget.PID.DISCOVERED;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.CREATED;
-import static org.dcache.util.Strings.truncate;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.dcache.namespace.FileType;
 import org.dcache.services.bulk.BulkStorageException;
 import org.dcache.services.bulk.store.BulkTargetStore;
@@ -85,23 +84,24 @@ public final class JdbcBulkTargetStore implements BulkTargetStore {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JdbcBulkTargetStore.class);
 
-    private static final String MATCH_PATH = "select rid from request_target where path LIKE ?";
-
     private JdbcRequestTargetDao targetDao;
 
     @Override
     public void abort(BulkRequestTarget target)
           throws BulkStorageException {
-        LOGGER.trace("targetAborted {}, {}, {}.", target.getRid(), target.getPath(),
-              target.getThrowable());
+        LOGGER.trace("targetAborted {}, {}, {}, {}.", target.getRuid(), target.getPath(),
+              target.getErrorType(), target.getErrorMessage());
 
         /*
-         * If aborted, the target has not yet been stored ...
+         * If aborted, the placeholder target has not yet been stored ...
          */
         targetDao.insert(
               targetDao.set().pid(target.getPid()).rid(target.getRid())
                     .pnfsid(target.getPnfsId()).path(target.getPath()).type(target.getType())
-                    .activity(target.getActivity()).errorObject(target.getThrowable()).aborted());
+                    .errorType(target.getErrorType()).errorMessage(target.getErrorMessage())
+                    .aborted());
+
+        cancelAll(target.getRid());
     }
 
     @Override
@@ -110,7 +110,7 @@ public final class JdbcBulkTargetStore implements BulkTargetStore {
     }
 
     @Override
-    public void cancelAll(String rid) {
+    public void cancelAll(Long rid) {
         targetDao.update(targetDao.where().rid(rid).state(NON_TERMINAL),
               targetDao.set().state(State.CANCELLED));
     }
@@ -121,12 +121,12 @@ public final class JdbcBulkTargetStore implements BulkTargetStore {
     }
 
     @Override
-    public int countUnprocessed(String rid) throws BulkStorageException {
+    public int countUnprocessed(Long rid) throws BulkStorageException {
         return targetDao.count(targetDao.where().rid(rid).state(NON_TERMINAL));
     }
 
     @Override
-    public int countFailed(String rid) throws BulkStorageException {
+    public int countFailed(Long rid) throws BulkStorageException {
         return targetDao.count(targetDao.where().rid(rid).state(State.FAILED));
     }
 
@@ -148,40 +148,33 @@ public final class JdbcBulkTargetStore implements BulkTargetStore {
     @Override
     public List<BulkRequestTarget> find(BulkTargetFilter jobFilter, Integer limit)
           throws BulkStorageException {
-        return targetDao.get(targetDao.where().filter(jobFilter).sorter("id"), limit);
+        return targetDao.get(targetDao.where().filter(jobFilter).sorter("request_target.id"), limit);
     }
 
     @Override
-    public List<String> getInitialTargetPaths(String requestId, boolean nonterminal) {
-        JdbcRequestTargetCriterion criterion = targetDao.where().rid(requestId).pid(PID.INITIAL)
-              .sorter("id");
+    public List<BulkRequestTarget> getInitialTargets(Long rid, boolean nonterminal) {
+        JdbcRequestTargetCriterion criterion = targetDao.where().rid(rid).pids(PID.INITIAL.ordinal())
+              .sorter("request_target.id");
         if (nonterminal) {
             criterion.state(NON_TERMINAL);
         }
-        return targetDao.get(criterion, Integer.MAX_VALUE).stream()
-              .map(t -> t.getPath().toString()).collect(Collectors.toList());
+        return targetDao.get(criterion, Integer.MAX_VALUE);
     }
 
     @Override
-    public List<BulkRequestTarget> nextReady(String rid, FileType type, Integer limit)
+    public List<BulkRequestTarget> nextReady(Long rid, FileType type, Integer limit)
           throws BulkStorageException {
-        return targetDao.get(targetDao.where().rid(rid).state(CREATED).type(type).sorter("id"),
-              limit);
+        return targetDao.get(
+              targetDao.where().rid(rid).state(CREATED).type(type).sorter("request_target.id")
+                    .join(), limit);
     }
 
     public Optional<BulkRequestTarget> getTarget(long id) throws BulkStorageException {
-        List<BulkRequestTarget> list = targetDao.get(targetDao.where().id(id), 1);
+        List<BulkRequestTarget> list = targetDao.get(targetDao.where().id(id).join(), 1);
         if (list.isEmpty()) {
             return Optional.empty();
         }
         return Optional.of(list.get(0));
-    }
-
-    @Override
-    public List<String> ridsOf(String targetPath) {
-        targetPath = truncate(targetPath, 256,true);
-        return targetDao.getJdbcTemplate()
-              .queryForList(MATCH_PATH, String.class, "%" + targetPath + "%");
     }
 
     @Required
@@ -198,28 +191,35 @@ public final class JdbcBulkTargetStore implements BulkTargetStore {
 
     @Override
     public void storeOrUpdate(BulkRequestTarget target) throws BulkStorageException {
-        targetDao.insertOrUpdate(prepareUpdate(target))
-              .ifPresent(keyHolder -> target.setId((Long) keyHolder.getKeys().get("id")));
+        Long id = target.getId();
+        if (id == null) {
+            store(target);
+        } else {
+            targetDao.update(targetDao.where().id(id), prepareUpdate(target));
+        }
     }
 
     @Override
-    public void update(Long id, State state, Throwable errorObject) throws BulkStorageException {
+    public void update(Long id, State state, String errorType, String errorMessage) throws BulkStorageException {
         targetDao.update(targetDao.where().id(id),
-              targetDao.set().state(state).errorObject(errorObject));
+              targetDao.set().state(state).errorType(errorType).errorMessage(errorMessage));
     }
 
     private JdbcRequestTargetUpdate prepareUpdate(BulkRequestTarget target) {
         JdbcRequestTargetUpdate update = targetDao.set().pid(target.getPid())
-              .rid(target.getRid()).pnfsid(target.getPnfsId()).path(target.getPath())
-              .type(target.getType()).activity(target.getActivity())
-              .state(target.getState());
+              .rid(target.getRid()).pnfsid(target.getPnfsId())
+              .type(target.getType()).state(target.getState());
+
+        if (target.getId() == null || target.getPid() == DISCOVERED) {
+            update.path(target.getPath());
+        }
 
         switch (target.getState()) {
             case COMPLETED:
             case FAILED:
             case CANCELLED:
                 update = update.targetStart(target.getCreatedAt())
-                      .errorObject(target.getThrowable());
+                      .errorType(target.getErrorType()).errorMessage(target.getErrorMessage());
                 break;
             case RUNNING:
                 update.targetStart(target.getCreatedAt());

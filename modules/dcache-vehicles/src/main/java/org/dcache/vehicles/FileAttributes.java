@@ -19,6 +19,8 @@ import static org.dcache.namespace.FileAttribute.NLINK;
 import static org.dcache.namespace.FileAttribute.OWNER;
 import static org.dcache.namespace.FileAttribute.OWNER_GROUP;
 import static org.dcache.namespace.FileAttribute.PNFSID;
+import static org.dcache.namespace.FileAttribute.QOS_POLICY;
+import static org.dcache.namespace.FileAttribute.QOS_STATE;
 import static org.dcache.namespace.FileAttribute.RETENTION_POLICY;
 import static org.dcache.namespace.FileAttribute.SIZE;
 import static org.dcache.namespace.FileAttribute.STORAGECLASS;
@@ -200,6 +202,16 @@ public class FileAttributes implements Serializable, Cloneable {
 
     private Set<String> _labels;
 
+    /**
+     * QoS policy name.
+     */
+    private String _qosPolicy;
+
+    /**
+     * QoS state (index number)
+     */
+    private int _qosState;
+
     @Override
     public FileAttributes clone() {
         try {
@@ -299,6 +311,15 @@ public class FileAttributes implements Serializable, Cloneable {
             if (isDefined(LABELS)) {
                 clone.setLabels(_labels);
             }
+
+            if (isDefined(QOS_POLICY)) {
+                clone.setQosPolicy(_qosPolicy);
+            }
+
+            if (isDefined(QOS_STATE)) {
+                clone.setQosState(_qosState);
+            }
+
             return clone;
         } catch (CloneNotSupportedException e) {
             throw new RuntimeException("Bad clone: " + e, e);
@@ -748,6 +769,34 @@ public class FileAttributes implements Serializable, Cloneable {
         return _fileType;
     }
 
+    public Optional<String> getQosPolicyIfPresent() {
+        return toOptional(QOS_POLICY, _qosPolicy);
+    }
+
+    public String getQosPolicy() {
+        guard(QOS_POLICY);
+        return _qosPolicy;
+    }
+
+    public void setQosPolicy(String qosPolicy) {
+        define(QOS_POLICY);
+        _qosPolicy = qosPolicy;
+    }
+
+    public Optional<Integer> getQosStateIfPresent() {
+        return toOptional(QOS_STATE, _qosState);
+    }
+
+    public int getQosState() {
+        guard(QOS_STATE);
+        return _qosState;
+    }
+
+    public void setQosState(int qosState) {
+        define(QOS_STATE);
+        _qosState = qosState;
+    }
+
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
@@ -774,6 +823,8 @@ public class FileAttributes implements Serializable, Cloneable {
               .add("hsm", _hsm)
               .add("xattr", _xattr)
               .add("labels", _labels)
+              .add("qosPolicy", _qosPolicy)
+              .add("qosState", _qosState)
               .omitNullValues()
               .toString();
     }
@@ -987,6 +1038,16 @@ public class FileAttributes implements Serializable, Cloneable {
 
         public Builder pnfsId(PnfsId id) {
             setPnfsId(id);
+            return this;
+        }
+
+        public Builder qosPolicy(String policyName) {
+            setQosPolicy(policyName);
+            return this;
+        }
+
+        public Builder qosState(int qosState) {
+            setQosState(qosState);
             return this;
         }
 

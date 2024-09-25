@@ -2081,7 +2081,7 @@ public class FTPClient {
      * whole file existing on the server. The syntax is:
      * CKSM <algorithm> <offset> <length> <path> CRLF
      * Server executes this command by calculating specified type of checksum over
-     * portion of the file starting at the offset and of the specified length. If length is –1,
+     * portion of the file starting at the offset and of the specified length. If length is -1,
      * the checksum will be calculated through the end of the file. On success, the server
      * replies with
      * 2xx <checksum value>

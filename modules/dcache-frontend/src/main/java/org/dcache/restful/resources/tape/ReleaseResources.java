@@ -59,9 +59,14 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.tape;
 
+import static org.dcache.http.AuthenticationHandler.getLoginAttributes;
+import static org.dcache.restful.util.HttpServletRequests.getUserRootAwareTargetPrefix;
+import static org.dcache.restful.util.JSONUtils.newBadRequestException;
 import static org.dcache.restful.util.RequestUser.getRestriction;
 import static org.dcache.restful.util.RequestUser.getSubject;
 
+import diskCacheV111.util.FsPath;
+import diskCacheV111.util.PnfsHandler;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -73,10 +78,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -84,7 +91,11 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.dcache.auth.attributes.LoginAttributes;
 import org.dcache.auth.attributes.Restriction;
+import org.dcache.cells.CellStub;
+import org.dcache.http.PathMapper;
+import org.dcache.restful.util.HandlerBuilders;
 import org.dcache.restful.util.bulk.BulkServiceCommunicator;
 import org.dcache.services.bulk.BulkRequest;
 import org.dcache.services.bulk.BulkRequest.Depth;
@@ -110,6 +121,13 @@ public final class ReleaseResources {
     @Inject
     private BulkServiceCommunicator service;
 
+    @Inject
+    private PathMapper pathMapper;
+
+    @Inject
+    @Named("pnfs-stub")
+    private CellStub pnfsmanager;
+
     /**
      * Release files belonging to a bulk STAGE request.
      * <p>
@@ -133,7 +151,8 @@ public final class ReleaseResources {
     @Produces(MediaType.APPLICATION_JSON)
     public Response release(
           @PathParam("id") String id,
-          @ApiParam(value = "List of file paths to release. If any path does not belong to the "
+          @ApiParam(value = "Request structure:\n\n"
+                + "**paths** - array of paths for files to release. If any path does not belong to the "
                 + "stage request corresponding to the id, this request will fail.", required = true)
                 String requestPayload) {
 
@@ -154,12 +173,13 @@ public final class ReleaseResources {
                 targetPaths.add(paths.getString(i));
             }
         } catch (JSONException e) {
-            throw new BadRequestException(
-                  String.format("badly formed json object (%s): %s.", requestPayload, e));
+            throw newBadRequestException(requestPayload, e);
         }
 
         Subject subject = getSubject();
         Restriction restriction = getRestriction();
+        FsPath userRoot = LoginAttributes.getUserRoot(getLoginAttributes(request));
+        FsPath rootPath = pathMapper.effectiveRoot(userRoot, ForbiddenException::new);
 
         /*
          *  For WLCG, this is a fire-and-forget request, so it does not need to
@@ -171,6 +191,12 @@ public final class ReleaseResources {
          *  Frontend sets the URL.  The backend service provides the UUID.
          */
         request.setUrlPrefix(this.request.getRequestURL().toString());
+
+        PnfsHandler handler = HandlerBuilders.unrestrictedPnfsHandler(pnfsmanager);
+
+        request.setTargetPrefix(getUserRootAwareTargetPrefix(this.request,
+                                                             rootPath.toString(),
+                                                             handler));
 
         BulkRequestMessage message = new BulkRequestMessage(request, restriction);
         message.setSubject(subject);
@@ -185,7 +211,6 @@ public final class ReleaseResources {
     private static BulkRequest toEphemeralBulkRequest(String id, String activity,
           List<String> targetPaths) {
         BulkRequest request = new BulkRequest();
-        request.setPrestore(false);
         request.setExpandDirectories(Depth.NONE);
         request.setCancelOnFailure(true);
         request.setClearOnFailure(true);

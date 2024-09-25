@@ -36,6 +36,7 @@ import org.dcache.pool.p2p.json.P2PData;
 import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.StickyRecord;
+import org.dcache.util.AdjustableSemaphore;
 import org.dcache.vehicles.FileAttributes;
 
 enum TlsMode {
@@ -60,14 +61,12 @@ public class P2PClient
     private InetAddress _interface;
     private TlsMode _p2pTlsMode;
 
-    private SSLContext _sslContext;
+    private Callable<SSLContext> _sslContext;
 
-    // TODO: cross zone behaves as ALYWAYS as long as we can't distinct zones
-    private Supplier<SSLContext> getContextIfNeeded = () -> {
-
-        return _p2pTlsMode == TlsMode.NEVER ? null : _sslContext;
-    };
-
+    /**
+     * Semaphore to limit the number of concurrent pool-to-pool transfers.
+     */
+    private final AdjustableSemaphore _concurrency = new AdjustableSemaphore(Integer.MAX_VALUE);
 
     public synchronized void setExecutor(ScheduledExecutorService executor) {
         _executor = executor;
@@ -90,10 +89,10 @@ public class P2PClient
     }
 
     public synchronized int getActiveJobs() {
-        return _companions.size();
+        return _concurrency.getUsedPermits();
     }
 
-    public synchronized void setSslContext(SSLContext sslContext) {
+    public synchronized void setSslContext(Callable<SSLContext> sslContext) {
         _sslContext = sslContext;
     }
 
@@ -243,6 +242,15 @@ public class P2PClient
 
         Callback cb = new Callback(callback);
 
+        SSLContext context = null;
+        if (_p2pTlsMode != TlsMode.NEVER) {
+            try {
+                context = _sslContext.call();
+            } catch (Exception e) {
+                throw new IOException(e.getMessage(), e);
+            }
+        }
+
         Companion companion =
               new Companion(_executor, _interface, _repository,
                     _checksumModule,
@@ -254,7 +262,8 @@ public class P2PClient
                     targetState, stickyRecords,
                     cb, forceSourceMode,
                     atime,
-                    getContextIfNeeded
+                    context,
+                    _concurrency
               );
 
         int id = addCompanion(companion);
@@ -294,6 +303,7 @@ public class P2PClient
         P2PData info = new P2PData();
         info.setLabel("Pool to Pool");
         info.setPpInterface(_interface);
+        info.setMaxActive(_concurrency.getMaxPermits());
         return info;
     }
 
@@ -302,6 +312,9 @@ public class P2PClient
         pw.println("#\n#  Pool to Pool (P2P)\n#");
         if (_interface != null) {
             pw.println("pp interface " + _interface.getHostAddress());
+        }
+        if (_concurrency.getMaxPermits() != Integer.MAX_VALUE) {
+            pw.println("pp set max active " + _concurrency.getMaxPermits());
         }
     }
 
@@ -319,15 +332,29 @@ public class P2PClient
         }
     }
 
-    @Command(name = "pp set max active")
-    @Deprecated
+    @AffectsSetup
+    @Command(name = "pp set max active",
+            hint = "set the maximum number of active pool-to-pool client transfers",
+            description = "Set the maximum number of active pool-to-pool " +
+                    "(client) concurrent transfers allowed. Any further " +
+                    "requests will be queued. The default is unlimited.")
     public class PpSetMaxActiveCommand implements Callable<String> {
 
-        @Argument
+        @Argument(usage = "Specify the maximum number of active pool-to-pool " +
+                "client transfers. The negative value means unlimited.", metaVar = "max active")
         int maxActiveAllowed;
 
         @Override
         public String call() throws IllegalArgumentException {
+            if (maxActiveAllowed == 0) {
+                throw new IllegalArgumentException("Max active must be greater than 0");
+            }
+
+            if (maxActiveAllowed < 0) {
+                maxActiveAllowed = Integer.MAX_VALUE;
+            }
+
+            _concurrency.setMaxPermits(maxActiveAllowed);
             return "";
         }
     }

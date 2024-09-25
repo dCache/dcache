@@ -2,6 +2,8 @@ package diskCacheV111.vehicles;
 
 import diskCacheV111.util.PnfsId;
 import dmg.cells.nucleus.CellAddressCore;
+
+import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.Optional;
 
@@ -23,6 +25,8 @@ public class MoverInfoMessage extends PnfsFileInfoMessage {
 
     private static final long serialVersionUID = -7013160118909496211L;
     private String _transferPath;
+
+    private InetSocketAddress _localEndpoint;
 
     public MoverInfoMessage(CellAddressCore address, PnfsId pnfsId) {
         super("transfer", "pool", address, pnfsId);
@@ -129,6 +133,13 @@ public class MoverInfoMessage extends PnfsFileInfoMessage {
         return Optional.ofNullable(_writeActive);
     }
 
+    public void setLocalEndpoint(InetSocketAddress endpoint) {
+        _localEndpoint = endpoint;
+    }
+
+    public Optional<InetSocketAddress> getLocalEndpoint() {
+        return Optional.ofNullable(_localEndpoint);
+    }
     @Override
     public String toString() {
         return "MoverInfoMessage{" +
@@ -145,6 +156,7 @@ public class MoverInfoMessage extends PnfsFileInfoMessage {
               ", readActive='" + _readActive + '\'' +
               ", writeIdle='" + _writeIdle + '\'' +
               ", writeActive='" + _writeActive + '\'' +
+              ", localEndporint='" + _localEndpoint + '\'' +
               "} " + super.toString();
     }
 

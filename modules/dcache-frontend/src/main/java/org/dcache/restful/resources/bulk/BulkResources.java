@@ -59,11 +59,15 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.bulk;
 
+import static org.dcache.restful.util.HttpServletRequests.getUserRootAwareTargetPrefix;
+import static org.dcache.restful.util.JSONUtils.newBadRequestException;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
+import diskCacheV111.util.PnfsHandler;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -81,6 +85,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
@@ -98,11 +103,17 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
+import org.dcache.cells.CellStub;
+import org.dcache.restful.util.HandlerBuilders;
 import org.dcache.restful.util.RequestUser;
 import org.dcache.restful.util.bulk.BulkServiceCommunicator;
+import org.dcache.services.bulk.BulkArchivedRequestInfo;
+import org.dcache.services.bulk.BulkArchivedRequestInfoMessage;
+import org.dcache.services.bulk.BulkArchivedSummaryFilter;
+import org.dcache.services.bulk.BulkArchivedSummaryInfo;
+import org.dcache.services.bulk.BulkArchivedSummaryInfoMessage;
 import org.dcache.services.bulk.BulkRequest;
 import org.dcache.services.bulk.BulkRequest.Depth;
 import org.dcache.services.bulk.BulkRequestCancelMessage;
@@ -133,6 +144,10 @@ public final class BulkResources {
     @Inject
     private BulkServiceCommunicator service;
 
+    @Inject
+    @Named("pnfs-stub")
+    private CellStub pnfsmanager;
+
     /**
      * @return List of bulk request summaries that have not been cleared.
      * If the client includes no query string then the response contains all bulk requests
@@ -144,9 +159,8 @@ public final class BulkResources {
      * @owner A comma-separated list of owners to match; unspecified returns all requests.
      */
     @GET
-    @ApiOperation("Get the summary info of current bulk operations.  If the number of requests "
-          + "returned equals 10K, retry using the offset (highest returned seqNo + 1) "
-          + "to fetch more requests.")
+    @ApiOperation("Get the summary info of current bulk operations.  If nextId != -1 "
+          + "retry using the offset = nextId to fetch more requests.")
     @ApiResponses({
           @ApiResponse(code = 400, message = "Bad request"),
           @ApiResponse(code = 500, message = "Internal Server Error")
@@ -208,17 +222,20 @@ public final class BulkResources {
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces(MediaType.APPLICATION_JSON)
     public Response submit(
-          @ApiParam(value = "Description of the request, which defines the following: "
-                + "target (list), target_prefix, activity, cancel_on_failure, "
-                + "clear_on_success, clear_on_failure, delay_clear, expand_directories "
-                + "(NONE, TARGETS, ALL), pre_store (store all targets first), "
-                + "and arguments (map of name:value "
-                + "pairs) if required.", required = true)
+          @ApiParam(value = "Description of the request, which defines the following:\n\n"
+                + "**target** - Array of file paths.  Required.\n"
+                + "**targetPrefix** - String path prefix, applied to all targets. Optional.\n"
+                + "**activity** - String, name of the activity (PIN, UNPIN, DELETE, UPDATE_QOS). Required.\n"
+                + "**cancelOnFailure** - Boolean. Optional, defaults to false.\n"
+                + "**clearOnSuccess** - Boolean, Optional, defaults to false.\n"
+                + "**clearOnFailure** - Boolean, Optional, defaults to false.\n"
+                + "**expandDirectories** - String (NONE, TARGETS, ALL). Optional, defaults to NONE\n"
+                + "**arguments** - Object (map) of name:value pairs. Optional, specific to activity.", required = true)
                 String requestPayload) {
         Subject subject = getSubject();
         Restriction restriction = getRestriction();
-
-        BulkRequest request = toBulkRequest(requestPayload);
+        PnfsHandler handler = HandlerBuilders.unrestrictedPnfsHandler(pnfsmanager);
+        BulkRequest request = toBulkRequest(requestPayload, this.request, handler);
 
         /*
          *  Frontend sets the URL.  The backend service provides the UUID.
@@ -245,9 +262,7 @@ public final class BulkResources {
      * data fields.
      */
     @GET
-    @ApiOperation("Get the status information for an individual bulk request. If the number of "
-          + "request targets equals 10K, retry using the offset (highest returned seqNo + 1) "
-          + "to fetch more targets.")
+    @ApiOperation("Get the status information for an individual bulk request.")
     @ApiResponses({
           @ApiResponse(code = 400, message = "Bad request"),
           @ApiResponse(code = 401, message = "Unauthorized"),
@@ -268,6 +283,85 @@ public final class BulkResources {
         BulkRequestStatusMessage message = new BulkRequestStatusMessage(id, restriction);
         message.setSubject(subject);
         message.setOffset(offset);
+        message = service.send(message);
+        return message.getInfo();
+    }
+
+    @GET
+    @ApiOperation("List the status information for an individual bulk request matching"
+          + " the query parameters (if any).")
+    @ApiResponses({
+          @ApiResponse(code = 400, message = "Bad request"),
+          @ApiResponse(code = 401, message = "Unauthorized"),
+          @ApiResponse(code = 403, message = "Forbidden"),
+          @ApiResponse(code = 404, message = "Not found"),
+          @ApiResponse(code = 500, message = "Internal Server Error")
+    })
+    @Path("/archived")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<BulkArchivedSummaryInfo> getArchivedSummaryList(
+          @ApiParam("A datetime string formatted as 'yyyy/MM/dd-HH:mm:ss'.")
+          @QueryParam("before") String before,
+          @ApiParam("A datetime string formatted as 'yyyy/MM/dd-HH:mm:ss'.")
+          @QueryParam("after") String after,
+          @ApiParam("A comma-separated list of non-repeating elements, "
+                + "each of which is an activity type.")
+          @QueryParam("activity") String activity,
+          @ApiParam("A comma-separated list of non-repeating elements, "
+          + "each of which is one of: completed, cancelled.")
+          @QueryParam("status") String status,
+          @ApiParam("A comma-separated list of owners to match; unspecified returns all requests.")
+          @QueryParam("owner") String owner,
+          @ApiParam("Max number of entries to return for the request list (default = 5K).")
+          @DefaultValue("5000")
+          @QueryParam("limit") int limit) {
+        BulkArchivedSummaryFilter filter = new BulkArchivedSummaryFilter();
+        filter.setAfter(after);
+        filter.setBefore(before);
+        filter.setLimit(limit);
+        if (activity != null) {
+            filter.setActvity(Arrays.stream(activity.split("[,]")).collect(Collectors.toSet()));
+        }
+        if (status != null) {
+            filter.setStatus(Arrays.stream(status.split("[,]")).collect(Collectors.toSet()));
+        }
+        if (owner != null) {
+            filter.setOwner(Arrays.stream(owner.split("[,]")).collect(Collectors.toSet()));
+        }
+        Subject subject = getSubject();
+        Restriction restriction = getRestriction();
+        BulkArchivedSummaryInfoMessage message = new BulkArchivedSummaryInfoMessage(filter, restriction);
+        message.setSubject(subject);
+        message = service.send(message);
+        return message.getInfo();
+    }
+
+    /**
+     * Get archived information for a request.
+     * <p>
+     * NOTE: users logged in with the admin role can obtain info on any request.
+     *
+     * @param id of the request.
+     * @return Object which describes the request. See {@link BulkArchivedRequestInfo} for the
+     * data fields.
+     */
+    @GET
+    @ApiOperation("Get the information for a bulk request which has been archived.")
+    @ApiResponses({
+          @ApiResponse(code = 400, message = "Bad request"),
+          @ApiResponse(code = 401, message = "Unauthorized"),
+          @ApiResponse(code = 403, message = "Forbidden"),
+          @ApiResponse(code = 404, message = "Not found"),
+          @ApiResponse(code = 500, message = "Internal Server Error")
+    })
+    @Path("/archived/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public BulkArchivedRequestInfo getArchivedRequestInfo(@ApiParam("The unique id of the request.")
+    @PathParam("id") String id) {
+        Subject subject = getSubject();
+        Restriction restriction = getRestriction();
+        BulkArchivedRequestInfoMessage message = new BulkArchivedRequestInfoMessage(id, restriction);
+        message.setSubject(subject);
         message = service.send(message);
         return message.getInfo();
     }
@@ -359,6 +453,7 @@ public final class BulkResources {
           @ApiResponse(code = 400, message = "Bad request"),
           @ApiResponse(code = 401, message = "Unauthorized"),
           @ApiResponse(code = 403, message = "Forbidden"),
+          @ApiResponse(code = 404, message = "Not Found"),
           @ApiResponse(code = 500, message = "Internal Server Error")
     })
     @Path("/{id}")
@@ -383,10 +478,6 @@ public final class BulkResources {
             throw new NotAuthorizedException("User cannot be anonymous.");
         }
 
-        if (RequestUser.isAdmin()) {
-            return Subjects.ROOT;
-        }
-
         return RequestUser.getSubject();
     }
 
@@ -407,7 +498,7 @@ public final class BulkResources {
      * they are defined in the Bulk service as well.
      */
     @VisibleForTesting
-    static BulkRequest toBulkRequest(String requestPayload) {
+    static BulkRequest toBulkRequest(String requestPayload, HttpServletRequest httpServletRequest, PnfsHandler handler) {
         if (Strings.emptyToNull(requestPayload) == null) {
             throw new BadRequestException("empty request payload.");
         }
@@ -416,8 +507,7 @@ public final class BulkResources {
         try {
             map = new Gson().fromJson(requestPayload, Map.class);
         } catch (JsonParseException e) {
-            throw new BadRequestException(
-                  String.format("badly formed json object (%s): %s.", requestPayload, e));
+            throw newBadRequestException(requestPayload, e);
         }
 
         BulkRequest request = new BulkRequest();
@@ -441,7 +531,11 @@ public final class BulkResources {
 
         string = removeEntry(map, String.class, "target_prefix", "target-prefix",
               "targetPrefix");
-        request.setTargetPrefix(string);
+        if (httpServletRequest != null) {
+            request.setTargetPrefix(getUserRootAwareTargetPrefix(httpServletRequest, string, handler));
+        } else {
+            request.setTargetPrefix(string);
+        }
 
         string = removeEntry(map, String.class, "expand_directories", "expand-directories",
               "expandDirectories");
@@ -472,12 +566,11 @@ public final class BulkResources {
             request.setCancelOnFailure(Boolean.valueOf(String.valueOf(value)));
         }
 
-        value = removeEntry(map, Object.class, "pre_store", "pre-store", "prestore");
-        if (value instanceof Boolean) {
-            request.setPrestore((boolean) value);
-        } else {
-            request.setPrestore(Boolean.valueOf(String.valueOf(value)));
-        }
+        /*
+         *  "prestore" has been deprecated, but we allow it still to be present
+         *   in the attributes for backward compatibility.
+         */
+        removeEntry(map, Object.class, "pre_store", "pre-store", "prestore");
 
         if (!map.isEmpty()) {
             throw new BadRequestException("unsupported arguments: " + map.keySet());
@@ -502,13 +595,23 @@ public final class BulkResources {
                 int close = stringTarget.indexOf("]");
                 stringTarget = stringTarget.substring(open+1, close);
             }
-            return Arrays.stream(stringTarget.split("[,]")).collect(Collectors.toList());
+            return Arrays.stream(stringTarget.split("[,]"))
+		.filter(i-> !i.isEmpty())
+		.collect(Collectors.toList());
         } else if (target instanceof String[]) {
-            return Arrays.stream(((String) target).split("[,]")).collect(Collectors.toList());
+            return Arrays.stream(((String) target).split("[,]"))
+		.map(String::strip)
+		.filter(i-> !i.isEmpty())
+		.collect(Collectors.toList());
         } else {
-            return (List<String>) target;
+            return ((List<String>) target)
+		.stream()
+		.map(String::strip)
+		.filter(i -> !i.isEmpty())
+		.collect(Collectors.toList());
         }
     }
+
 
     private static <T> T removeEntry(Map map, Class<T> clzz, String... names) {
         T value = null;

@@ -59,13 +59,16 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.store.jdbc.request;
 
-import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.dcache.services.bulk.BulkRequest;
 import org.dcache.services.bulk.BulkRequest.Depth;
 import org.dcache.services.bulk.BulkRequestInfo;
@@ -73,6 +76,8 @@ import org.dcache.services.bulk.BulkRequestStatus;
 import org.dcache.services.bulk.BulkRequestStatusInfo;
 import org.dcache.services.bulk.BulkStorageException;
 import org.dcache.services.bulk.store.jdbc.JdbcBulkDaoUtils;
+import org.dcache.services.bulk.store.jdbc.rtarget.JdbcRequestTargetDao;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -84,9 +89,28 @@ import org.springframework.jdbc.support.KeyHolder;
  */
 public final class JdbcBulkRequestDao extends JdbcDaoSupport {
 
+    public static final String TABLE_NAME = "bulk_request";
+
     private static final Logger LOGGER = LoggerFactory.getLogger(JdbcBulkRequestDao.class);
 
-    private static final String TABLE_NAME = "bulk_request";
+    private static final String ARGUMENTS_TABLE_NAME = "request_arguments";
+
+    private static final String INSERT_ARGS =
+          "INSERT INTO " + ARGUMENTS_TABLE_NAME + " VALUES (?, ?)";
+
+    private static final String SELECT = "SELECT bulk_request.*";
+
+    private static final String SELECT_UID = "SELECT uid";
+
+    private static final String FULL_SELECT =
+          "SELECT " + TABLE_NAME + ".*, " + ARGUMENTS_TABLE_NAME + ".arguments as arguments";
+
+    private static final String JOINED_WITH_TARGET_TABLE_NAMES =
+          TABLE_NAME + ", " + JdbcRequestTargetDao.TABLE_NAME;
+
+    private static final String JOINED_WITH_ARGUMENTS_TABLE_NAMES =
+          TABLE_NAME + " LEFT OUTER JOIN " + ARGUMENTS_TABLE_NAME
+                + " ON bulk_request.id = request_arguments.rid";
 
     /**
      * Update queries which permit the avoidance of fetch-and-set semantics requiring in-memory
@@ -97,17 +121,21 @@ public final class JdbcBulkRequestDao extends JdbcDaoSupport {
           + "(t.state = 'CREATED' OR t.state = 'READY' OR t.state='RUNNING'))";
 
     private static final String UPDATE_COMPLETED_IF_DONE =
-          "UPDATE bulk_request r SET status='COMPLETED', last_modified = ? WHERE r.id = ? AND "
+          "UPDATE bulk_request r SET status='COMPLETED', last_modified = ? WHERE r.uid = ? AND "
                 + NO_UNPROCESSED_TARGETS;
 
     private static final String UPDATE_CANCELLED_IF_DONE =
-          "UPDATE bulk_request r SET status='CANCELLED', last_modified = ? WHERE r.id = ? "
+          "UPDATE bulk_request r SET status='CANCELLED', last_modified = ? WHERE r.uid = ? "
                 + "AND r.status='CANCELLING' AND " + NO_UNPROCESSED_TARGETS;
 
     private JdbcBulkDaoUtils utils;
 
     public int count(JdbcBulkRequestCriterion criterion) {
         return utils.count(criterion, TABLE_NAME, this);
+    }
+
+    public Map<String, Long> countStatus() {
+        return utils.countGrouped(where().classifier("status"), TABLE_NAME, this);
     }
 
     /*
@@ -117,16 +145,42 @@ public final class JdbcBulkRequestDao extends JdbcDaoSupport {
         return utils.delete(criterion, TABLE_NAME, this);
     }
 
-    public List<BulkRequest> get(JdbcBulkRequestCriterion criterion, int limit) {
-        return utils.get(criterion, limit, TABLE_NAME, this, this::toRequest);
+    public List<BulkRequest> get(JdbcBulkRequestCriterion criterion, int limit,
+          boolean includeArgs) {
+        if (criterion.isJoined()) {
+            return utils.get(SELECT, criterion, limit, JOINED_WITH_TARGET_TABLE_NAMES, this,
+                  this::toRequest);
+        }
+
+        if (includeArgs) {
+            return utils.get(FULL_SELECT, criterion, limit, JOINED_WITH_ARGUMENTS_TABLE_NAMES, this,
+                  this::toFullRequest);
+        } else {
+            return utils.get(criterion, limit, TABLE_NAME, this, this::toRequest);
+        }
+    }
+
+    public List<String> getUids(JdbcBulkRequestCriterion criterion, int limit) {
+        return utils.get(SELECT_UID, criterion, limit, TABLE_NAME, this,
+              (rs, rowNum) -> rs.getString(1));
     }
 
     public Optional<KeyHolder> insert(JdbcBulkRequestUpdate update) {
         return utils.insert(update, TABLE_NAME, this);
     }
 
+    public void insertArguments(BulkRequest request) {
+        Map<String, String> arguments = request.getArguments();
+        if (arguments != null && !arguments.isEmpty()) {
+            String argumentsText = arguments.entrySet().stream()
+                  .map(e -> e.getKey() + ":" + e.getValue())
+                  .collect(Collectors.joining(","));
+            utils.insert(INSERT_ARGS, List.of(request.getId(), argumentsText), this);
+        }
+    }
+
     public JdbcBulkRequestUpdate set() {
-        return new JdbcBulkRequestUpdate(utils);
+        return new JdbcBulkRequestUpdate();
     }
 
     @Required
@@ -136,7 +190,7 @@ public final class JdbcBulkRequestDao extends JdbcDaoSupport {
 
     /**
      * Based on the ResultSet returned by the query, construct a BulkRequest object for a given
-     * request.
+     * request.  Does not include arguments.
      *
      * @param rs  from the query.
      * @param row unused, but needs to be there to satisfy the template function signature.
@@ -145,9 +199,9 @@ public final class JdbcBulkRequestDao extends JdbcDaoSupport {
      */
     public BulkRequest toRequest(ResultSet rs, int row) throws SQLException {
         BulkRequest request = new BulkRequest();
-        request.setSeqNo(rs.getLong("seq_no"));
-        String id = rs.getString("id");
-        request.setId(id);
+        request.setId(rs.getLong("id"));
+        String uid = rs.getString("uid");
+        request.setUid(uid);
         request.setActivity(rs.getString("activity"));
         request.setExpandDirectories(Depth.valueOf(rs.getString("expand_directories")));
         request.setUrlPrefix(rs.getString("url_prefix"));
@@ -155,11 +209,6 @@ public final class JdbcBulkRequestDao extends JdbcDaoSupport {
         request.setClearOnSuccess(rs.getBoolean("clear_on_success"));
         request.setClearOnFailure(rs.getBoolean("clear_on_failure"));
         request.setCancelOnFailure(rs.getBoolean("cancel_on_failure"));
-        request.setPrestore(rs.getBoolean("prestore"));
-        String args = rs.getString("arguments");
-        if (Strings.emptyToNull(args) != null) {
-            request.setArguments(Splitter.on(",").withKeyValueSeparator(":").split(args));
-        }
         BulkRequestStatusInfo statusInfo = new BulkRequestStatusInfo();
         statusInfo.setUser(rs.getString("owner"));
         statusInfo.setCreatedAt(rs.getTimestamp("arrived_at").getTime());
@@ -178,6 +227,29 @@ public final class JdbcBulkRequestDao extends JdbcDaoSupport {
         return request;
     }
 
+    /**
+     * Based on the ResultSet returned by the query, construct a BulkRequest object for a given
+     * request.  Includes arguments.
+     *
+     * @param rs  from the query.
+     * @param row unused, but needs to be there to satisfy the template function signature.
+     * @return request wrapper object.
+     * @throws SQLException if access to the ResultSet fails or there is a deserialization error.
+     */
+    public BulkRequest toFullRequest(ResultSet rs, int row) throws SQLException {
+        BulkRequest request = toRequest(rs, row);
+        String args = rs.getString("arguments");
+        if (Strings.emptyToNull(args) != null) {
+            JSONObject argObj = new JSONObject("{" + args + "}");
+            Map<String, String> arguments = new HashMap<>();
+            for (Iterator<String> keys = argObj.keys(); keys.hasNext(); ) {
+                String key = keys.next();
+                arguments.put(key, String.valueOf(argObj.get(key)));
+            }
+            request.setArguments(arguments);
+        }
+        return request;
+    }
     /**
      * Based on the ResultSet returned by the query, construct a BulkRequestInfo for a given
      * request.
@@ -208,18 +280,18 @@ public final class JdbcBulkRequestDao extends JdbcDaoSupport {
      * us not to synchronize when checking and setting the final state of the request.
      *
      * @param status either CANCELLED or COMPLETED.
-     * @param id     of the request.
+     * @param uuid   of the request.
      * @return whether the update succeeded.  False means there are still incomplete targets.
      */
-    public int updateTo(BulkRequestStatus status, String id) {
+    public int updateTo(BulkRequestStatus status, String uuid) {
         Timestamp now = new Timestamp(System.currentTimeMillis());
         switch (status) {
             case COMPLETED:
                 return getJdbcTemplate().update(UPDATE_COMPLETED_IF_DONE,
-                      new Object[]{now, id});
+                      new Object[]{now, uuid});
             case CANCELLED:
                 return getJdbcTemplate().update(UPDATE_CANCELLED_IF_DONE,
-                      new Object[]{now, id});
+                      new Object[]{now, uuid});
             default:
                 return 0;
         }
@@ -227,13 +299,12 @@ public final class JdbcBulkRequestDao extends JdbcDaoSupport {
 
     public JdbcBulkRequestUpdate updateFrom(BulkRequest request, String user)
           throws BulkStorageException {
-        return set().activity(request.getActivity()).arguments(request.getArguments())
-              .cancelOnFailure(request.isCancelOnFailure()).id(request.getId())
+        return set().activity(request.getActivity())
+              .cancelOnFailure(request.isCancelOnFailure()).uid(request.getUid())
               .clearOnSuccess(request.isClearOnSuccess()).clearOnFailure(request.isClearOnFailure())
-              .prestore(request.isPrestore())
               .depth(request.getExpandDirectories())
               .targetPrefix(request.getTargetPrefix()).urlPrefix(request.getUrlPrefix()).user(user)
-              .status(BulkRequestStatus.QUEUED).arrivedAt(System.currentTimeMillis());
+              .status(BulkRequestStatus.INCOMPLETE).arrivedAt(System.currentTimeMillis());
     }
 
     public JdbcBulkRequestCriterion where() {

@@ -59,6 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.activity;
 
+import java.util.Map;
 import java.util.Set;
 import org.dcache.services.bulk.BulkServiceException;
 import org.dcache.services.bulk.activity.BulkActivity.TargetType;
@@ -72,7 +73,6 @@ public abstract class BulkActivityProvider<J extends BulkActivity> {
 
     protected final String activity;
     protected final TargetType targetType;
-    protected int maxPermits;
 
     protected BulkActivityProvider(String activity, TargetType targetType) {
         this.activity = activity;
@@ -87,14 +87,6 @@ public abstract class BulkActivityProvider<J extends BulkActivity> {
         return targetType;
     }
 
-    public int getMaxPermits() {
-        return maxPermits;
-    }
-
-    public void setMaxPermits(int maxPermits) {
-        this.maxPermits = maxPermits;
-    }
-
     /**
      * @return an instance of the specific activity type to be configured by factory.
      *
@@ -102,7 +94,7 @@ public abstract class BulkActivityProvider<J extends BulkActivity> {
      */
     public J createActivity() throws BulkServiceException {
         J activity = activityInstance();
-        activity.setMaxPermits(maxPermits);
+        activity.setDescriptors(getDescriptors());
         return activity;
     }
 
@@ -118,7 +110,9 @@ public abstract class BulkActivityProvider<J extends BulkActivity> {
      *
      * @return argument set.
      */
-    public abstract Set<BulkActivityArgumentDescriptor> getArguments();
+    public abstract Set<BulkActivityArgumentDescriptor> getDescriptors();
+
+    public abstract void configure(Map<String, Object> environment);
 
     protected abstract J activityInstance() throws BulkServiceException;
 }

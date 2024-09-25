@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013 - 2017 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013 - 2023 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -198,4 +198,10 @@ public interface Mover<T extends ProtocolInfo> {
     default Long getBytesExpected() {
         return null;
     }
+
+    /**
+     * Returns the {@link Optional} containing {@link InetSocketAddress} of the local endpoint used by clients
+     * to access the mover.
+     */
+    Optional<InetSocketAddress> getLocalEndpoint();
 }

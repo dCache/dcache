@@ -59,8 +59,10 @@ documents or software obtained from this server.
  */
 package org.dcache.services.httpd.handlers;
 
+import diskCacheV111.util.CacheException;
 import dmg.util.HttpRequest;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.Optional;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -68,6 +70,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.dcache.services.httpd.exceptions.OnErrorException;
 import org.dcache.services.httpd.util.StandardHttpRequest;
 import org.dcache.services.httpd.wellknown.WellKnownContentProducer;
+import org.dcache.services.httpd.wellknown.WellKnownForwardingProducer;
+import org.dcache.services.httpd.wellknown.WellKnownProducer;
 import org.dcache.services.httpd.wellknown.WellKnownProducerFactory;
 import org.dcache.services.httpd.wellknown.WellKnownProducerFactoryProvider;
 import org.eclipse.jetty.server.Request;
@@ -89,18 +93,26 @@ public class WellKnownHandler extends AbstractHandler {
             String[] tokens = proxy.getRequestTokens();
             Optional<WellKnownProducerFactory> factory = factoryProvider.getFactory(tokens[1]);
             if (factory.isEmpty()) {
-                throw new OnErrorException("No such endpoint");
+                response.sendError(HttpServletResponse.SC_NOT_FOUND, "No such endpoint");
+                return;
             }
 
-            WellKnownContentProducer producer = factory.get().createProducer();
-            response.setContentType(producer.getContentType());
-            response.setCharacterEncoding(producer.getCharacterEncoding());
-            response.setStatus(HttpServletResponse.SC_OK);
-            proxy.getPrintWriter().print(producer.getContent());
-            proxy.getPrintWriter().flush();
-            baseRequest.setHandled(true);
-        } catch (Exception t) {
-            throw new ServletException("WellKnownHandler", t);
+            WellKnownProducer producer = factory.get().createProducer();
+            if (producer instanceof WellKnownContentProducer) {
+                WellKnownContentProducer contentProducer = (WellKnownContentProducer)producer;
+                response.setContentType(contentProducer.getContentType());
+                response.setCharacterEncoding(contentProducer.getCharacterEncoding());
+                response.setStatus(HttpServletResponse.SC_OK);
+                proxy.getPrintWriter().print(contentProducer.getContent());
+                proxy.getPrintWriter().flush();
+                baseRequest.setHandled(true);
+            } else if (producer instanceof WellKnownForwardingProducer) {
+                response.sendRedirect(((WellKnownForwardingProducer)producer).getForwardingAddress());
+                baseRequest.setHandled(true);
+            }
+
+        } catch (CacheException | URISyntaxException e) {
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
 

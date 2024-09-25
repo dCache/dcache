@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 - 2022 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2023 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -96,6 +96,8 @@ import javax.security.auth.Subject;
 import org.dcache.acl.enums.AccessType;
 import org.dcache.auth.Origin;
 import org.dcache.auth.Subjects;
+import org.dcache.auth.UnionLoginStrategy;
+import org.dcache.auth.UnionLoginStrategy.AccessLevel;
 import org.dcache.auth.attributes.Activity;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.CellStub;
@@ -118,6 +120,7 @@ import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
+import org.dcache.vehicles.PnfsResolveSymlinksMessage;
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
 import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.xrootd.door.proxy.NettyXrootProxyAdapter;
@@ -222,6 +225,8 @@ public class XrootdDoor
     private int proxyResponseTimeoutInSeconds;
     private InetAddress _internalAddress;
 
+    private UnionLoginStrategy.AccessLevel anonymousUserAccess = AccessLevel.NONE;
+
     @Autowired(required = false)
     private void setKafkaTemplate(
           @Qualifier("billing-template") KafkaTemplate kafkaTemplate) {
@@ -308,6 +313,11 @@ public class XrootdDoor
             list.add(FsPath.create(path));
         }
         return list;
+    }
+
+    public PnfsResolveSymlinksMessage sendResolveRequest(String root, String path)
+          throws CacheException {
+        return _pnfs.request(new PnfsResolveSymlinksMessage(path, root));
     }
 
     /**
@@ -423,6 +433,15 @@ public class XrootdDoor
                     _tpcFdIndex)),
               TPC_EVICT_DELAY, TPC_EVICT_DELAY,
               TimeUnit.MILLISECONDS);
+    }
+
+    @Required
+    public void setAnonymousAccess(AccessLevel level) {
+        anonymousUserAccess = level;
+    }
+
+    public AccessLevel getAnonymousUserAccess() {
+        return anonymousUserAccess;
     }
 
     public boolean isTriedHostsEnabled() {
@@ -712,9 +731,8 @@ public class XrootdDoor
 
         try {
             _kafkaSender.accept(infoRemove);
-        } catch (KafkaException e) {
-            _log.warn(Throwables.getRootCause(e).getMessage());
-
+        } catch (KafkaException | org.apache.kafka.common.KafkaException e) {
+            _log.warn("Failed to send message to kafka: {} ", Throwables.getRootCause(e).getMessage());
         }
     }
 
@@ -755,7 +773,14 @@ public class XrootdDoor
         }
 
         if (createParents) {
-            pnfsHandler.createDirectories(path);
+            try {
+                pnfsHandler.createDirectories(path);
+            } catch (FileExistsCacheException e) {
+                /*
+                 *  The behavior of the xroot vanilla server is to ignore this error
+                 *  for createParents.
+                 */
+            }
         } else {
             pnfsHandler.createPnfsDirectory(path.toString());
         }
@@ -1027,8 +1052,18 @@ public class XrootdDoor
         }
     }
 
-    private int getFileStatusFlags(Subject subject, Restriction restriction,
+    private int getFileStatusFlagsForListing(Subject subject, Restriction restriction,
           FsPath path, FileAttributes attributes) {
+        return getFileStatusFlags(subject, restriction, path, attributes, true);
+    }
+
+    private int getFileStatusFlags(Subject subject, Restriction restriction,
+          FsPath path, FileAttributes attributes ) {
+        return getFileStatusFlags(subject, restriction, path, attributes, false);
+    }
+
+    private int getFileStatusFlags(Subject subject, Restriction restriction,
+          FsPath path, FileAttributes attributes, boolean skipPoscCheck) {
         int flags = 0;
         switch (attributes.getFileType()) {
             case DIR:
@@ -1068,7 +1103,7 @@ public class XrootdDoor
                 if (canReadFile) {
                     flags |= kXR_readable;
                 }
-                if (attributes.getStorageInfo().isCreatedOnly()) {
+                if (!skipPoscCheck && attributes.getStorageInfo().isCreatedOnly()) {
                     flags |= kXR_poscpend;
                 }
                 break;
@@ -1099,12 +1134,25 @@ public class XrootdDoor
         return getFileStatus(subject, restriction, fullPath, clientHost, attributes);
     }
 
+    public EnumSet<FileAttribute> getRequiredAttributesForFileStatusList() {
+        EnumSet<FileAttribute> requestedAttributes = EnumSet.of(TYPE, SIZE, MODIFICATION_TIME);
+        requestedAttributes.addAll(_pdp.getRequiredAttributes());
+        return requestedAttributes;
+    }
+
     public EnumSet<FileAttribute> getRequiredAttributesForFileStatus() {
         EnumSet<FileAttribute> requestedAttributes = EnumSet.of(TYPE, SIZE, MODIFICATION_TIME,
               STORAGEINFO);
         requestedAttributes.addAll(PoolMonitorV5.getRequiredAttributesForFileLocality());
         requestedAttributes.addAll(_pdp.getRequiredAttributes());
         return requestedAttributes;
+    }
+
+    public FileStatus getFileStatusForListing(Subject subject, Restriction restriction, FsPath fullPath,
+          FileAttributes attributes) {
+        int flags = getFileStatusFlagsForListing(subject, restriction, fullPath, attributes);
+        return new FileStatus(0, attributes.getSizeIfPresent().orElse(0L), flags,
+              attributes.getModificationTime() / 1000);
     }
 
     public FileStatus getFileStatus(Subject subject, Restriction restriction,

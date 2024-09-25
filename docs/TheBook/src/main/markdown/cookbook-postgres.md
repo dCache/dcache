@@ -1,7 +1,7 @@
 Chapter 24. PostgreSQL and dCache
 =================================
 
-PostgreSQL is used for various things in a dCache system: The [SRM](rf-glossary.md#storage-resource-manager-srm), the [pin manager](rf-glossary.md#pin-manager), the [space manager](rf-glossary.md#space-manager), the [replica manager](rf-glossary.md#replica-manager), the [billing](rf-glossary.md#billing), and the pnfs server might make use of one or more databases in a single or several separate PostgreSQL servers.
+PostgreSQL is used for various things in a dCache system: The [SRM](rf-glossary.md#storage-resource-manager-srm), the [pin manager](rf-glossary.md#pin-manager), the [space manager](rf-glossary.md#space-manager), the [replica manager](rf-glossary.md#replica-manager), the [billing](rf-glossary.md#billing), and the pnfs server might make use of one or more databases in single or several separate PostgreSQL servers.
 
 The `SRM`, the pin manager, the space manager and the replica manager will use the PostgreSQL database as configured at cell start-up in the corresponding batch files. The `billing` will only write the accounting information into a database if it is configured with the option `-useSQL`. The `pnfs` server will use a PostgreSQL server if the `pnfs-posgresql` version is used. It will use several databases in the PostgreSQL server.
 
@@ -11,20 +11,21 @@ The `SRM`, the pin manager, the space manager and the replica manager will use t
 
 ## Installing a PSQL Server
 
-The preferred way to set up a PSQL server should be the installation of the version provided by your OS distribution; however, version 8.3 or later is required. Version 9.5 is recommended, as it has a more efficient locking mechanism that improves performance.
+The preferred way to set up a PSQL server should be the installation of the version provided by your OS distribution; however, version 9.5 or later is required. Running the latest version
+is recommended, as usually they provide better performance and stability.
 
 Install the PSQL server, client and JDBC support with the tools of the operating system.
 
-Initialize the database directory (for PSQL version 9.2 this is
-`/var/lib/pgsql/9.2/data/`) , start the database server, and make sure
+Initialize the database directory (for PSQL version 9.5 this is
+`/var/lib/pgsql/9.5/data/`), start the database server, and make sure
 that it is started at system start-up.
 
 ```console-root
-service postgresql-9.2 initdb
+service postgresql-9.5 initdb
 |Initializing database:                  [  OK  ]
-service postgresql-9.2 start
-|Starting postgresql-9.2 service:        [  OK  ]
-chkconfig postgresql-9.2 on
+service postgresql-9.5 start
+|Starting postgresql-9.5 service:        [  OK  ]
+chkconfig postgresql-9.5 on
 ```
 
 ## Configuring Access to PSQL
@@ -50,7 +51,7 @@ The databases can be secured by restricting access with this file. E.g.
     ...
     # TYPE  DATABASE    USER        IP-ADDRESS        METHOD
     local   all         postgres                      ident sameuser
-    local   all         pnfsserver                    password
+    local   all         dcache                    password
     local   all         all                           md5
     host    all         all         127.0.0.1/32      md5
     host    all         all         ::1/128           md5
@@ -62,21 +63,9 @@ To make the server aware of this you need to reload the configuration file as th
 su -s `which pg_ctl` postgres reload
 ```
 
-And the password for e.g. the user `pnfsserver` can be set with
+The password the the user `dcache` can be set with
 
-    [postgres] # psql template1 -c "ALTER USER pnfsserver WITH PASSWORD '<yourPassword>'"
-
-The PNFS server is made aware of this password by changing the
-variable `dbConnectString` in the file `/usr/etc/pnfsSetup`:
-
-    ...
-    export dbConnectString="user=pnfsserver password=<yourPassword>"
-
-User access should be prohibited to this file with
-
-```console-root
-chmod go-rwx /usr/etc/pnfsSetup
-```
+    [postgres] # psql template1 -c "ALTER USER dcache WITH PASSWORD '<yourPassword>'"
 
 ## Performance of the PostgreSQL Server
 

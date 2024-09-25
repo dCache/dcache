@@ -59,11 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.store.jdbc.rtarget;
 
-import static org.dcache.util.Strings.truncate;
-
 import diskCacheV111.util.PnfsId;
 import java.sql.Timestamp;
-import java.util.Arrays;
 import org.dcache.db.JdbcCriterion;
 import org.dcache.namespace.FileType;
 import org.dcache.services.bulk.util.BulkRequestTarget.PID;
@@ -76,13 +73,16 @@ import org.dcache.services.bulk.util.BulkTargetFilter;
 public final class JdbcRequestTargetCriterion extends JdbcCriterion {
 
     public JdbcRequestTargetCriterion() {
-        sorter = "last_updated";
+        sorter = "request_target.last_updated";
+    }
+
+    public JdbcRequestTargetCriterion join() {
+        addJoin("bulk_request.id = rid");
+        return this;
     }
 
     public JdbcRequestTargetCriterion id(Long id) {
-        if (id != null) {
-            addClause("id = ?", id);
-        }
+        addClause("request_target.id = ?", id);
         return this;
     }
 
@@ -92,46 +92,45 @@ public final class JdbcRequestTargetCriterion extends JdbcCriterion {
     }
 
     public JdbcRequestTargetCriterion offset(Long id) {
-        if (id != null) {
-            addClause("id >= ?", id);
-        }
+        addClause("request_target.id >= ?", id);
         return this;
     }
 
-    public JdbcRequestTargetCriterion pid(PID pid) {
-        if (pid != null) {
-            addClause("pid = ?", pid.ordinal());
-        }
+    public JdbcRequestTargetCriterion pids(Integer... pid) {
+        addOrClause("pid = ?", o->o, pid);
         return this;
     }
 
-    public JdbcRequestTargetCriterion rid(String rid) {
+    public JdbcRequestTargetCriterion rid(Long rid) {
         addClause("rid = ?", rid);
         return this;
     }
 
-    public JdbcRequestTargetCriterion rids(String[] rid) {
-        addOrClause("rid = ?", rid);
+    public JdbcRequestTargetCriterion ruids(String... ruid) {
+        addOrClause("bulk_request.uid = ?", ruid);
+        if (ruid != null) {
+            return join();
+        }
         return this;
     }
 
     public JdbcRequestTargetCriterion createdBefore(long createdAt) {
-        addClause("created_at <= ?", new Timestamp(createdAt));
+        addClause("request_target.created_at <= ?", new Timestamp(createdAt));
         return this;
     }
 
     public JdbcRequestTargetCriterion createdAfter(long createdAt) {
-        addClause("created_at >= ?", new Timestamp(createdAt));
+        addClause("request_target.created_at >= ?", new Timestamp(createdAt));
         return this;
     }
 
     public JdbcRequestTargetCriterion updatedBefore(long lastUpdated) {
-        addClause("last_updated <= ?", new Timestamp(lastUpdated));
+        addClause("request_target.last_updated <= ?", new Timestamp(lastUpdated));
         return this;
     }
 
     public JdbcRequestTargetCriterion updatedAfter(long lastUpdated) {
-        addClause("last_updated >= ?", new Timestamp(lastUpdated));
+        addClause("request_target.last_updated >= ?", new Timestamp(lastUpdated));
         return this;
     }
 
@@ -147,21 +146,14 @@ public final class JdbcRequestTargetCriterion extends JdbcCriterion {
         return this;
     }
 
-    public JdbcRequestTargetCriterion pnfsids(String[] pnfsids) {
+    public JdbcRequestTargetCriterion pnfsids(String ... pnfsids) {
         addOrClause("pnfsid = ?", pnfsids);
         return this;
     }
 
-    public JdbcRequestTargetCriterion path(String[] path) {
-        path = Arrays.stream(path).map(p -> truncate(p, 256,true))
-              .toArray(String[]::new);
-        addOrClause("path = ?", path);
-        return this;
-    }
-
-    public JdbcRequestTargetCriterion activity(String[] activity) {
-        addOrClause("activity = ?", activity);
-        return this;
+    public JdbcRequestTargetCriterion activity(String ... activity) {
+        addOrClause("bulk_request.activity = ?", activity);
+        return join();
     }
 
     public JdbcRequestTargetCriterion type(FileType type) {
@@ -169,7 +161,7 @@ public final class JdbcRequestTargetCriterion extends JdbcCriterion {
         return this;
     }
 
-    public JdbcRequestTargetCriterion type(String[] types) {
+    public JdbcRequestTargetCriterion type(String ... types) {
         addOrClause("type = ?", types);
         return this;
     }
@@ -197,10 +189,9 @@ public final class JdbcRequestTargetCriterion extends JdbcCriterion {
     public JdbcRequestTargetCriterion filter(BulkTargetFilter filter) {
         if (filter != null) {
             offset(filter.getOffset());
-            pid(filter.getPid());
-            rids(filter.getRids());
+            pids(filter.getPids());
+            ruids(filter.getRids());
             pnfsids(filter.getPnfsIds());
-            path(filter.getPaths());
             activity(filter.getActivities());
             type(filter.getTypes());
             state(filter.getStates());

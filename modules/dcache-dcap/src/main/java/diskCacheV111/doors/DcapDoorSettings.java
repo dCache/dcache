@@ -26,6 +26,9 @@ import diskCacheV111.util.CheckStagePermission;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellPath;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
@@ -42,8 +45,11 @@ import org.dcache.poolmanager.PoolManagerHandler;
 import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.services.login.RemoteLoginStrategy;
 import org.dcache.util.Option;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DcapDoorSettings {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DcapDoorSettings.class);
 
     @Option(name = "authorization")
     protected String auth;
@@ -98,6 +104,9 @@ public class DcapDoorSettings {
 
     @Option(name = "kafka-clientid")
     protected String kafkaclientid;
+
+    @Option(name = "kafka-config-file")
+    protected String kafkaConfigFile;
 
 
     @Option(name = "hsm",
@@ -332,6 +341,24 @@ public class DcapDoorSettings {
 
     public KafkaProducer createKafkaProducer() {
         Properties props = new Properties();
+	if (kafkaConfigFile != null && !kafkaConfigFile.trim().isEmpty()) {
+	    try {
+		FileInputStream fis = new FileInputStream(kafkaConfigFile);
+		try {
+		    props.load(fis);
+		} catch (IOException ex) {
+		    LOGGER.error("failed to load configuration ", ex);
+		} finally {
+		    try {
+			fis.close();
+		    } catch (IOException ex) {
+			LOGGER.error("failed to close " + kafkaConfigFile, ex);
+		    }
+		}
+	    } catch (FileNotFoundException ex) {
+		LOGGER.error(ex.toString());
+	    }
+	}
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBootstrapServer);
         props.put(ProducerConfig.CLIENT_ID_CONFIG, kafkaclientid);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,

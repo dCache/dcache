@@ -35,9 +35,11 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
+import java.nio.file.ReadOnlyFileSystemException;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import org.dcache.pool.repository.FileStoreState;
 import org.dcache.pool.repository.ReplicaStore;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.configuration.ConfigurationMapFactoryBean;
@@ -147,20 +149,26 @@ public abstract class AbstractBerkeleyDBReplicaStore implements ReplicaStore, En
     }
 
     @Override
-    public synchronized boolean isOk() {
+    public synchronized FileStoreState isOk() {
         Path tmp = dir.resolve(".repository_is_ok");
         try {
             Files.deleteIfExists(tmp);
             Files.createFile(tmp);
 
+            //TODO check
             if (database.isFailed()) {
-                return false;
+                return FileStoreState.FAILED;
             }
 
-            return true;
+            return FileStoreState.OK;
         } catch (IOException e) {
-            LOGGER.error("Failed to touch {}: {}", tmp, messageOrClassName(e));
-            return false;
+            if (e.getMessage().contains("Read-only file system")) {
+                LOGGER.error("Filesystem in read-only mode {}: {}", tmp, messageOrClassName(e));
+                return FileStoreState.READ_ONLY;
+            } else {
+                LOGGER.error("Failed to touch {}: {}", tmp, messageOrClassName(e));
+                return FileStoreState.FAILED;
+            }
         }
     }
 

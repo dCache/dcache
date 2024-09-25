@@ -1,0 +1,81 @@
+
+In order to enable OIDC authentication we need to configure the fallowing configuration files
+###Gplazma cell: define endpoint provider
+**gplazma.conf**, **multimap-id-to-username.conf**, **multimap-id-to-group+gid.conf** and 
+
+
+1. **gplazma.conf**
+
+      ...
+auth     sufficient  htpasswd
+auth     optional    x509
+auth     sufficient  voms
+
+# send username and password to LDAP server
+auth     optional    jaas       gplazma.jaas.name=LdapGplazma
+auth     optional    oidc
+auth     optional    scitoken
+map      optional    vorolemap
+map      optional    gridmap
+map      sufficient  authzdb
+
+# convert LDAP specific result to dCache internal principals
+map      optional    mutator gplazma.mutator.accept=com.sun.security.auth.UserPrincipal gplazma.mutator.produce=username
+map      optional    multimap gplazma.multimap.file=/etc/dcache/multimap-id-to-group+gid.conf
+map      optional    multimap gplazma.multimap.file=/etc/dcache/multimap-id-to-username.conf
+map      sufficient  multimap gplazma.multimap.file=/etc/dcache/multimap-username-to-uid+gid.conf
+map      sufficient  multimap gplazma.multimap.file=/etc/dcache/multimap-groupname-to-username+uid.conf
+map      requisite   nsswitch
+identity requisite   nsswitch
+session  optional    roles
+session  sufficient  nsswitch
+session  sufficient  authzdb
+
+   
+   ...
+  
+  
+  ...
+   
+   # cat multimap-id-to-username.conf
+#### Utilitzem aquest fitxer per mapejar usuaris individuals a usuaris locals ####
+# Format
+# oidc:<oidc toquen?>       username:dteam001
+
+# exemple DN #
+"dn:/DC=org/DC=terena/DC=tcs/C=ES/O=Port dInformacio Cientifica/CN=Kermit Frog Planas kermit@desy.de"      username:dteam001
+
+#### IAM WLCG ####
+#kermit
+oidc:6d30bb78-6a87-47e8-a670-d7805cdc3c44  username:wlcg001
+
+#### idp-test ####
+#kermit
+oidc:6c9a1786-4acd-421c-a21c-0dc6eff0cebd@PIC  username:dteam001
+
+...
+
+
+**frontend**
+```
+############################################
+# Domain: frontend-dccore15Domain
+[frontend-${host.name}Domain]
+dcache.java.memory.heap=1024m
+dcache.java.options.extra=-Dcom.sun.management.jmxremote.port=7071 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false
+# Cell: frontend
+[frontend-${host.name}Domain/frontend]
+frontend.authn.accept-client-cert=false
+frontend.authn.protocol=https
+frontend.authz.anonymous-operations=READONLY
+frontend.authz.unlimited-operation-visibility=true
+frontend.root=/pnfs/pic.es/data/dteam
+frontend.service.pool-info.timeout=5
+frontend.service.pool-info.update-threads=20
+frontend.static!dcache-view.endpoints.webdav=
+frontend.static!dcache-view.oidc-authz-endpoint-extra=-
+frontend.static!dcache-view.oidc-authz-endpoint-list=
+frontend.static!dcache-view.oidc-client-id-list=dcache-view
+frontend.static!dcache-view.oidc-provider-name-list=DESY
+frontend.static!dcache-view.org-name=desy.de
+ ```  

@@ -1,0 +1,113 @@
+### Create qos-policy "test102"
+POST {{frontend-door}}{{endpoint}}{{qos-policy}}
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "name": "test102",
+  "states": [
+    {
+      "duration": "P10D",
+      "media": [
+        {
+          "storageMedium": "DISK",
+          "numberOfCopies": 2
+        }
+      ]
+    }
+  ]
+}
+
+> {%
+    client.test("Successful response when creating a policy", function() {
+        client.assert(response.status === 200, "Response was not 200");
+        // client.assert(response.body === "successful", "Unsuccessful")
+    });
+%}
+
+### Unsuccessful DELETE request for policy "test102" -- no authentication
+DELETE {{frontend-door}}{{endpoint}}{{qos-policy}}/test102
+Content-Type: application/json
+
+> {%
+    client.test("Unsuccessful response when deleting a policy by name", function() {
+        client.assert(response.status === 401, "Response was not 401 - Unauthorized");
+    });
+%}
+
+### Successful DELETE request for policy "test102"
+DELETE {{frontend-door}}{{endpoint}}{{qos-policy}}/test102
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+> {%
+    client.test("Successful response when deleting a policy by name", function() {
+        client.assert(response.status === 200, "Response was not 401 - Unauthorized");
+    });
+%}
+
+### Not found GET request for policy "test102"
+GET {{frontend-door}}{{endpoint}}{{qos-policy}}/test102
+Content-Type: application/json
+
+> {%
+    client.test("Unsuccessful response when deleting a policy by name", function() {
+        client.assert(response.status === 404, "Response was not 404");
+    });
+%}
+
+###  FIX TEST: Change policies names to random.
+### Successful request for policy "test103" with 1 state and 2 medias
+POST {{frontend-door}}{{endpoint}}{{qos-policy}}
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+{
+  "name": "test103",
+  "states": [
+    {
+      "duration": "P10D",
+      "media": [
+        {
+          "storageMedium": "DISK",
+          "numberOfCopies": 2
+        },
+        {
+          "storageMedium": "DISK",
+          "numberOfCopies": 3
+        }
+      ]
+    }
+  ]
+}
+
+> {%
+    client.test("Successful response when creating a policy", function() {
+        client.assert(response.status === 200, "Response was not 200");
+    });
+%}
+
+### Get all policies
+GET {{frontend-door}}{{endpoint}}{{qos-policy}}
+Content-Type: application/json
+
+> {%
+    client.test("Successful response when getting all policies' names", function() {
+        client.assert(response.status === 200, "Response was not 200");
+    });
+%}
+
+
+### Successful DELETE request for policy name "test103"
+DELETE {{frontend-door}}{{endpoint}}{{qos-policy}}/test103
+Content-Type: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+> {%
+    client.test("Successful response when deleting a policy by name", function() {
+        client.assert(response.status === 200, "Response was not 401 - Unauthorized");
+    });
+%}
+
+
+

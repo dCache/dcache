@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<persistence xmlns="http://java.sun.com/xml/ns/persistence"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://java.sun.com/xml/ns/persistence
-                        http://java.sun.com/xml/ns/persistence/persistence_1_0.xsd"
-                        version="1.0">
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence
+        https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd" version="3.1">
 
     <persistence-unit name="AlarmsXML">
       <mapping-file>org/dcache/alarms/dao/package.jdo</mapping-file>
@@ -70,20 +69,4 @@
         </properties>
     </persistence-unit>
 
-    <persistence-unit name="TransferManager">
-      <mapping-file>diskCacheV111/services/package.jdo</mapping-file>
-        <properties>
-            <property name="datanucleus.detachAllOnCommit" value="true"/>
-            <property name="javax.jdo.option.Optimistic" value="true"/>
-            <property name="javax.jdo.option.NontransactionalRead" value="true"/>
-            <property name="javax.jdo.option.RetainValues" value="true"/>
-            <property name="javax.jdo.option.Multithreaded" value="true"/>
-            <property name="datanucleus.autoCreateSchema" value="true"/>
-            <property name="datanucleus.validateTables" value="false"/>
-            <property name="datanucleus.validateConstraints" value="false"/>
-            <property name="datanucleus.autoCreateColumns" value="true"/>
-            <property name="datanucleus.connectionPoolingType" value="None"/>
-	    <property name="datanucleus.schema.autoCreateTables" value="true"/>
-        </properties>
-    </persistence-unit>
 </persistence>

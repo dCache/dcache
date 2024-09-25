@@ -7,6 +7,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.dcache.acl.enums.AccessType.ACCESS_ALLOWED;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.NO_STAT;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
+import static org.dcache.chimera.posix.Stat.StatAttributes.QOS_POLICY;
 import static org.dcache.namespace.FileAttribute.ACCESS_LATENCY;
 import static org.dcache.namespace.FileAttribute.CACHECLASS;
 import static org.dcache.namespace.FileAttribute.CHECKSUM;
@@ -84,6 +85,8 @@ import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 import org.dcache.acl.ACE;
 import org.dcache.acl.ACL;
+import org.dcache.alarms.AlarmMarkerFactory;
+import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.auth.Subjects;
 import org.dcache.chimera.ChimeraDirectoryEntry;
 import org.dcache.chimera.ChimeraFsException;
@@ -95,6 +98,7 @@ import org.dcache.chimera.FileState;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FileSystemProvider.SetXattrMode;
 import org.dcache.chimera.FsInode;
+import org.dcache.chimera.FsInode_LABEL;
 import org.dcache.chimera.NoXdataChimeraException;
 import org.dcache.chimera.NotDirChimeraException;
 import org.dcache.chimera.StorageGenericLocation;
@@ -261,6 +265,11 @@ public class ChimeraNameSpaceProvider
             return new ExtendedInode(_fs, _fs.path2inode(path));
         }
 
+        if (path.startsWith("/.(collection)")) {
+            ExtendedInode dir = new ExtendedInode(_fs, _fs.path2inode(path));
+            return dir.inodeOf(path, STAT);
+        }
+
         List<FsInode> inodes;
         try {
             inodes = _fs.path2inodes(path);
@@ -368,6 +377,7 @@ public class ChimeraNameSpaceProvider
                     fileAttributes.setSize(Long.parseLong(size.get(0)));
                 }
             }
+
             return fileAttributes;
         } catch (NotDirChimeraException e) {
             throw new NotDirCacheException("Not a directory: " + parentPath);
@@ -785,6 +795,8 @@ public class ChimeraNameSpaceProvider
             }
 
             return locations;
+        } catch (FileNotFoundChimeraFsException e) {
+            throw new FileNotFoundCacheException("No such file or directory: " + pnfsId, e);
         } catch (ChimeraFsException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
         }
@@ -1052,6 +1064,18 @@ public class ChimeraNameSpaceProvider
                 case LABELS:
                     attributes.setLabels(_fs.getLabels(inode));
                     break;
+                case QOS_POLICY:
+                    String qosPolicy = _extractor.getQosPolicy(inode);
+                    if (qosPolicy != null) {
+                        attributes.setQosPolicy(qosPolicy);
+                    }
+                    break;
+                case QOS_STATE:
+                    Integer qosState = _extractor.getQosState(inode);
+                    if (qosState != null) {
+                        attributes.setQosState(qosState);
+                    }
+                    break;
                 default:
                     throw new UnsupportedOperationException(
                           "Attribute " + attribute + " not supported yet.");
@@ -1179,12 +1203,25 @@ public class ChimeraNameSpaceProvider
                         break;
                     case LABELS:
                         break;
+                    case QOS_POLICY:
+                        stat.setQosPolicy(_fs.qosPolicyNameToId(attr.getQosPolicy()));
+                        if (stat.getQosPolicy() == null) {
+                            stat.setQosState(null);
+                        }
+                        break;
+                    case QOS_STATE:
+                        stat.setQosState(attr.getQosState());
+                        break;
                     default:
                         throw new UnsupportedOperationException(
                               "Attribute " + attribute + " not supported yet.");
                 }
             }
+
             if (stat.isDefinedAny()) {
+                if (stat.isDefined(QOS_POLICY) && stat.getQosPolicy() == null) {
+                    stat.setQosState(null);
+                }
                 inode.setStat(stat);
             }
 
@@ -1260,6 +1297,7 @@ public class ChimeraNameSpaceProvider
         try {
             Pattern pattern = (glob == null) ? null : glob.toPattern();
             ExtendedInode dir = pathToInode(subject, path);
+            // TODO this should be checkt for virtual directories and test casse for list() must e added
             if (!dir.isDirectory()) {
                 throw new NotDirCacheException("Not a directory: " + path);
             }
@@ -1298,6 +1336,10 @@ public class ChimeraNameSpaceProvider
                         /* Not an error; files may be deleted during the
                          * list operation.
                          */
+                    } catch (CacheException e) {
+                        LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.INACCESSIBLE_FILE,
+                                        "namespace"),
+                                "Failed to retrieve file attributes {} : {}", entry.getStat().getId(), e.toString());
                     }
                 }
             }
@@ -1730,7 +1772,7 @@ public class ChimeraNameSpaceProvider
     private void removeRecursively(ExtendedInode parent, String name, ExtendedInode inode,
           Consumer<ExtendedInode> deleted) throws ChimeraFsException, CacheException {
         try {
-            if (inode.isDirectory() && inode.stat().getNlink() > 2) {
+            if (inode.isDirectory()) {
                 try (DirectoryStreamB<ChimeraDirectoryEntry> list = _fs.newDirectoryStream(inode)) {
                     for (ChimeraDirectoryEntry entry : list) {
                         String child = entry.getName();
@@ -1803,16 +1845,16 @@ public class ChimeraNameSpaceProvider
                 }
             }
 
-            FileSystemProvider.SetXattrMode m;
+            SetXattrMode m;
             switch (mode) {
                 case CREATE:
-                    m = FileSystemProvider.SetXattrMode.CREATE;
+                    m = SetXattrMode.CREATE;
                     break;
                 case REPLACE:
-                    m = FileSystemProvider.SetXattrMode.REPLACE;
+                    m = SetXattrMode.REPLACE;
                     break;
                 case EITHER:
-                    m = FileSystemProvider.SetXattrMode.EITHER;
+                    m = SetXattrMode.EITHER;
                     break;
                 default:
                     throw new RuntimeException();
@@ -1923,5 +1965,21 @@ public class ChimeraNameSpaceProvider
                   + Exceptions.messageOrClassName(e), e);
         }
 
+    }
+
+    @Override
+    public String resolveSymlinks(Subject subject, String path) throws CacheException {
+        try {
+            /*
+             *  All calls to this method are done by the PnfsManager itself as ROOT.
+             */
+            if (!Subjects.ROOT.equals(subject)) {
+                throw new PermissionDeniedCacheException("Subject not allowed to call this method.");
+            }
+            return _fs.resolvePath(path);
+        } catch (ChimeraFsException e) {
+            throw new CacheException("Failed to resolve symlinks for " + path
+                  + ": " + Exceptions.messageOrClassName(e), e);
+        }
     }
 }

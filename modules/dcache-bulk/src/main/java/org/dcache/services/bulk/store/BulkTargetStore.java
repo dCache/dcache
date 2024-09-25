@@ -94,7 +94,7 @@ public interface BulkTargetStore {
      *
      * @param rid of this request.
      */
-    void cancelAll(String rid);
+    void cancelAll(Long rid);
 
     /**
      * @param filter to match.
@@ -106,13 +106,13 @@ public interface BulkTargetStore {
      * @param rid of this request.
      * @return the number of unprocessed targets.
      */
-    int countUnprocessed(String rid) throws BulkStorageException;
+    int countUnprocessed(Long rid) throws BulkStorageException;
 
     /**
      * @param rid of this request.
      * @return the number of unprocessed jobs.
      */
-    int countFailed(String rid) throws BulkStorageException;
+    int countFailed(Long rid) throws BulkStorageException;
 
     /**
      * @param filter     on targets to be included in the count.
@@ -137,11 +137,11 @@ public interface BulkTargetStore {
           throws BulkStorageException;
 
     /**
-     * @param requestId of the request the targets belong to.
+     * @param rid of the request the targets belong to.
      * @param nonterminal only the initial targets which have not yet run.
      * @return paths of the targets
      */
-    List<String> getInitialTargetPaths(String requestId, boolean nonterminal);
+    List<BulkRequestTarget> getInitialTargets(Long rid, boolean nonterminal);
 
     /**
      * @param type  REGULAR or DIR.
@@ -149,7 +149,7 @@ public interface BulkTargetStore {
      * @return a list of targets which are ready to run.
      * @throws BulkStorageException
      */
-    List<BulkRequestTarget> nextReady(String rid, FileType type, Integer limit)
+    List<BulkRequestTarget> nextReady(Long rid, FileType type, Integer limit)
           throws BulkStorageException;
 
     /**
@@ -158,13 +158,6 @@ public interface BulkTargetStore {
      * @throws BulkStorageException
      */
     Optional<BulkRequestTarget> getTarget(long id) throws BulkStorageException;
-
-    /**
-     * @param targetPath to match
-     * @return all requests whose targets include this path as either parent or full path.
-     * @throws BulkStorageException
-     */
-    List<String> ridsOf(String targetPath);
 
     /**
      * Store the target.
@@ -188,8 +181,9 @@ public interface BulkTargetStore {
      *
      * @param id
      * @param state
-     * @param errorObject
+     * @param errorType
+     * @param errorMessage
      * @throws BulkStorageException
      */
-    void update(Long id, State state, Throwable errorObject) throws BulkStorageException;
+    void update(Long id, State state, String errorType, String errorMessage) throws BulkStorageException;
 }

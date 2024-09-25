@@ -80,8 +80,9 @@ public class ProxyErrorHandler extends ChannelDuplexHandler {
         this.proxyId = proxyId;
     }
 
-    public void channelInactive(ChannelHandlerContext ctx) {
+    public void channelInactive(ChannelHandlerContext ctx) throws InterruptedException {
         LOGGER.warn("proxy {}, channel inactive event received on {}.", proxyId, ctx.channel());
+        requestHandler.shutdown();
         ctx.fireChannelInactive();
     }
 

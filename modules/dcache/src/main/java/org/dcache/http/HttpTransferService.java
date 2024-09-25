@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013-2015 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013-2024 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -38,15 +38,14 @@ import io.netty.handler.codec.http.cors.CorsConfigBuilder;
 import io.netty.handler.codec.http.cors.CorsHandler;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
-import io.netty.handler.timeout.IdleStateHandler;
-import java.net.InetAddress;
+
+import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.UUID;
 import org.dcache.pool.movers.NettyMover;
 import org.dcache.pool.movers.NettyTransferService;
-import org.dcache.util.NetworkUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -110,19 +109,19 @@ public class HttpTransferService extends NettyTransferService<HttpProtocolInfo> 
      * Send the network address of this mover to the door, along with the UUID identifying it.
      */
     @Override
-    protected void sendAddressToDoor(NettyMover<HttpProtocolInfo> mover, int port)
+    protected void sendAddressToDoor(NettyMover<HttpProtocolInfo> mover, InetSocketAddress localEndppoint)
           throws SocketException, CacheException {
         HttpProtocolInfo protocolInfo = mover.getProtocolInfo();
         String uri;
         try {
-            uri = getUri(protocolInfo, port, mover.getUuid()).toASCIIString();
+            uri = getUri(protocolInfo, localEndppoint, mover.getUuid()).toASCIIString();
         } catch (URISyntaxException e) {
             throw new RuntimeException(
                   "Failed to create URI for HTTP mover. Please report to support@dcache.org", e);
         }
         CellAddressCore httpDoor = new CellAddressCore(
               protocolInfo.getHttpDoorCellName(), protocolInfo.getHttpDoorDomainName());
-        LOGGER.debug("Sending redirect URI {} to {}", uri, httpDoor);
+        LOGGER.debug("Sending redirect URI {} to {}", uri, httpDoor);
         HttpDoorUrlInfoMessage httpDoorMessage =
               new HttpDoorUrlInfoMessage(mover.getFileAttributes().getPnfsId().toString(), uri);
         httpDoorMessage.setId(protocolInfo.getSessionId());
@@ -130,18 +129,16 @@ public class HttpTransferService extends NettyTransferService<HttpProtocolInfo> 
         doorStub.notify(new CellPath(httpDoor), httpDoorMessage);
     }
 
-    protected URI getUri(HttpProtocolInfo protocolInfo, int port, UUID uuid)
+    protected URI getUri(HttpProtocolInfo protocolInfo, InetSocketAddress localEndpoint, UUID uuid)
           throws SocketException, CacheException, URISyntaxException {
         String path = protocolInfo.getPath();
         if (!path.startsWith("/")) {
             path = "/" + path;
         }
-        InetAddress localIP =
-              NetworkUtils.getLocalAddress(protocolInfo.getSocketAddress().getAddress());
         return new URI(PROTOCOL_HTTP,
               null,
-              localIP.getHostAddress(),
-              port,
+              localEndpoint.getAddress().getHostAddress(),
+              localEndpoint.getPort(),
               path,
               UUID_QUERY_PARAM + QUERY_PARAM_ASSIGN + uuid.toString(),
               null);
@@ -160,7 +157,7 @@ public class HttpTransferService extends NettyTransferService<HttpProtocolInfo> 
         return true;
     }
 
-    protected void addChannelHandlers(ChannelPipeline pipeline) {
+    protected void addChannelHandlers(ChannelPipeline pipeline) throws Exception {
         // construct HttpRequestDecoder as netty defaults, except configurable chunk size
         pipeline.addLast("decoder", new HttpRequestDecoder(4096, 8192, getChunkSize(), true));
         pipeline.addLast("encoder", new HttpResponseEncoder());
@@ -168,11 +165,6 @@ public class HttpTransferService extends NettyTransferService<HttpProtocolInfo> 
         if (LOGGER.isDebugEnabled()) {
             pipeline.addLast("logger", new LoggingHandler());
         }
-        pipeline.addLast("idle-state-handler",
-              new IdleStateHandler(0,
-                    0,
-                    clientIdleTimeout,
-                    clientIdleTimeoutUnit));
         pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());
         pipeline.addLast("keepalive", new KeepAliveHandler());
 

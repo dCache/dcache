@@ -6,10 +6,11 @@ import static java.util.stream.Collectors.toSet;
 import static org.dcache.util.Exceptions.messageOrClassName;
 
 import com.google.common.base.Stopwatch;
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientOptions;
-import com.mongodb.MongoClientURI;
+import com.mongodb.ConnectionString;
+import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoException;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.event.ServerClosedEvent;
 import com.mongodb.event.ServerDescriptionChangedEvent;
@@ -29,6 +30,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.bson.Document;
+import org.dcache.pool.repository.FileStoreState;
 import org.dcache.pool.repository.DuplicateEntryException;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.ReplicaRecord;
@@ -110,7 +112,7 @@ public class MongoDbMetadataRepository implements ReplicaStore, EnvironmentAware
     /**
      * Flag, which indicates client connection status.
      */
-    private volatile boolean isOk;
+    private volatile FileStoreState dIskFailerState;
 
     /**
      * {@link FileStore} used to store data files.
@@ -125,19 +127,18 @@ public class MongoDbMetadataRepository implements ReplicaStore, EnvironmentAware
           boolean isReadOnly) {
         this.fileStore = fileStore;
         this.pool = poolName;
-        this.isOk = false;
+        this.dIskFailerState = FileStoreState.FAILED;
     }
 
     @Override
     public void init() throws CacheException {
+        MongoClientSettings settings = MongoClientSettings.builder()
+              .applicationName("dCache-" + Version.of(MongoDbMetadataRepository.class).getVersion())
+              .applyToServerSettings(builder -> builder.addServerListener(this))
+              .applyConnectionString(new ConnectionString(url))
+              .build();
+        mongo = MongoClients.create(settings);
 
-        MongoClientOptions.Builder optionBuilder = new MongoClientOptions.Builder()
-              .addServerListener(this)
-              .description(pool)
-              .applicationName(
-                    "dCache-" + Version.of(MongoDbMetadataRepository.class).getVersion());
-
-        mongo = new MongoClient(new MongoClientURI(url, optionBuilder));
         collection = mongo.getDatabase(dbName).getCollection(collectionName);
     }
 
@@ -156,7 +157,7 @@ public class MongoDbMetadataRepository implements ReplicaStore, EnvironmentAware
 
             Stopwatch watch = Stopwatch.createStarted();
             Set<PnfsId> files = fileStore.index();
-            LOGGER.info("Indexed {} entries in {} in {}.", files.size(), fileStore, watch);
+            LOGGER.info("Indexed {} entries in {} in {}.", files.size(), fileStore, watch);
 
             if (indexOptions.contains(IndexOption.ALLOW_REPAIR)) {
                 watch.reset().start();
@@ -169,7 +170,7 @@ public class MongoDbMetadataRepository implements ReplicaStore, EnvironmentAware
                           .filter(id -> !files.contains(new PnfsId(id)))
                           .collect(toList());
                 }
-                LOGGER.info("Found {} orphaned meta data entries in {}.",
+                LOGGER.info("Found {} orphaned meta data entries in {}.",
                       metaFilesToBeDeleted.size(), watch);
 
                 metaFilesToBeDeleted.forEach((id) -> {
@@ -223,7 +224,7 @@ public class MongoDbMetadataRepository implements ReplicaStore, EnvironmentAware
             deleteIfExists(id);
 
         } catch (IOException | MongoException e) {
-            isOk = false;
+            dIskFailerState = FileStoreState.FAILED;
             throw new DiskErrorCacheException(
                   "Failed to remove " + id + ": " + messageOrClassName(e), e);
         }
@@ -247,8 +248,8 @@ public class MongoDbMetadataRepository implements ReplicaStore, EnvironmentAware
     }
 
     @Override
-    public boolean isOk() {
-        return isOk;
+    public FileStoreState isOk() {
+        return dIskFailerState;
     }
 
     @Override
@@ -278,7 +279,7 @@ public class MongoDbMetadataRepository implements ReplicaStore, EnvironmentAware
 
     @Override
     public String toString() {
-        return String.format("[data=%s;meta=%s]", fileStore, mongo.getConnectPoint());
+        return String.format("[data=%s;meta=%s]", fileStore, url);
     }
 
     @Override
@@ -291,13 +292,13 @@ public class MongoDbMetadataRepository implements ReplicaStore, EnvironmentAware
     @Override
     public void serverOpening(ServerOpeningEvent event) {
         LOGGER.info("Connected to server {}", event.getServerId());
-        isOk = true;
+        dIskFailerState = FileStoreState.OK;
     }
 
     @Override
     public void serverClosed(ServerClosedEvent event) {
         LOGGER.info("Lost connection with server {}", event.getServerId());
-        isOk = false;
+        dIskFailerState = FileStoreState.FAILED;
     }
 
     @Override

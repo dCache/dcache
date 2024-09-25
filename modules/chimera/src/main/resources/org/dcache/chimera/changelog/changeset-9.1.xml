@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet id="34" author="tigran" dbms="postgresql">
+        <comment>Introduce weak consistency for mtime,ctime,generation updates</comment>
+        <createTable tableName="t_lazy_wcc">
+            <column name="inumber" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="nlink" type="int">
+                <constraints nullable="false" />
+            </column>
+            <column name="ts" type="DATETIME">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+        <createIndex tableName="t_lazy_wcc" indexName="i_inumber">
+            <column name="inumber"></column>
+        </createIndex>
+        <createProcedure>
+            CREATE OR REPLACE FUNCTION f_propagate_wcc() RETURNS void AS
+            $$
+            DECLARE
+                lazy RECORD;
+            BEGIN
+                LOCK TABLE t_lazy_wcc;
+                FOR lazy IN
+                    SELECT inumber, count(*) AS count, sum(nlink) as nlink, max(ts) as ts FROM t_lazy_wcc GROUP BY inumber
+                    LOOP
+                        UPDATE t_inodes
+                        SET imtime=lazy.ts,
+                            ictime=lazy.ts,
+                            igeneration=igeneration + lazy.count,
+                            inlink=inlink + lazy.nlink
+                        WHERE inumber = lazy.inumber;
+                    END LOOP;
+                    TRUNCATE t_lazy_wcc;
+            END;
+            $$ language plpgsql;
+        </createProcedure>
+        <createProcedure>
+            CREATE OR REPLACE FUNCTION f_create_inode95_lazy_wcc(parent bigint, name varchar, id varchar, type integer, mode integer, nlink integer, uid integer, gid int, size bigint, io integer, now timestamp) RETURNS bigint AS $$
+            DECLARE
+                newid bigint;
+            BEGIN
+                INSERT INTO t_inodes (ipnfsid, itype, imode, inlink, iuid, igid, isize, iio, ictime, iatime, imtime, icrtime, igeneration)
+                    VALUES (id,type,mode,nlink,uid,gid,size,io,now,now,now,now,0) RETURNING inumber INTO newid;
+                INSERT INTO t_dirs (iparent, ichild, iname) VALUES (parent, newid, name) ON CONFLICT ON CONSTRAINT t_dirs_pkey DO NOTHING;
+                IF NOT FOUND THEN
+                    -- no rows get updated
+                    RETURN -1;
+                END IF;
+                IF type = 16384 THEN
+                    INSERT INTO t_lazy_wcc (inumber, nlink, ts) VALUES (parent, 1, now);
+                ELSE
+                    INSERT INTO t_lazy_wcc (inumber, nlink, ts) VALUES (parent, 0, now);
+                END IF;
+                RETURN newid;
+            END;
+            $$ LANGUAGE plpgsql;
+        </createProcedure>
+        <createProcedure>
+            CREATE OR REPLACE FUNCTION f_create_inode95(parent bigint, name varchar, id varchar, type integer, mode integer, nlink integer, uid integer, gid int, size bigint, io integer, now timestamp) RETURNS bigint AS $$
+            DECLARE
+                newid bigint;
+            BEGIN
+                INSERT INTO t_inodes (ipnfsid, itype, imode, inlink, iuid, igid, isize, iio, ictime, iatime, imtime, icrtime, igeneration)
+                    VALUES (id,type,mode,nlink,uid,gid,size,io,now,now,now,now,0) RETURNING inumber INTO newid;
+                INSERT INTO t_dirs (iparent, ichild, iname) VALUES (parent, newid, name) ON CONFLICT ON CONSTRAINT t_dirs_pkey DO NOTHING;
+                IF NOT FOUND THEN
+                    -- no rows get updated
+                    RETURN -1;
+                END IF;
+                IF type = 16384 THEN
+                    UPDATE t_inodes SET inlink=inlink+1,imtime=now,ictime=now,igeneration=igeneration+1 WHERE inumber = parent;
+                ELSE
+                    UPDATE t_inodes SET imtime=now,ictime=now,igeneration=igeneration+1 WHERE inumber = parent;
+                END IF;
+                RETURN newid;
+            END;
+            $$ LANGUAGE plpgsql;
+        </createProcedure>
+        <rollback>
+            <sql>
+                DROP FUNCTION IF EXISTS f_create_inode95_lazy_wcc(parent bigint, name varchar, id varchar, type integer, mode integer, nlink integer, uid integer, gid int, size bigint, io integer, now timestamp);
+                DROP FUNCTION IF EXISTS f_propagate_wcc();
+                DROP TABLE IF EXISTS t_lazy_wcc;
+            </sql>
+            <createProcedure>
+                CREATE OR REPLACE FUNCTION f_create_inode95(parent bigint, name varchar, id varchar, type integer, mode integer, nlink integer, uid integer, gid int, size bigint, io integer, now timestamp) RETURNS bigint AS $$
+                DECLARE
+                    newid bigint;
+                BEGIN
+                    INSERT INTO t_inodes (ipnfsid, itype, imode, inlink, iuid, igid, isize, iio, ictime, iatime, imtime, icrtime, igeneration)
+                          VALUES (id,type,mode,nlink,uid,gid,size,io,now,now,now,now,0) RETURNING inumber INTO newid;
+                    INSERT INTO t_dirs (iparent, ichild, iname) VALUES (parent, newid, name) ON CONFLICT ON CONSTRAINT t_dirs_pkey DO NOTHING;
+                    IF NOT FOUND THEN
+                        -- no rows get updated
+                        RETURN -1;
+                    END IF;
+                    UPDATE t_inodes SET inlink=inlink+1,imtime=now,ictime=now,igeneration=igeneration+1 WHERE inumber = parent;
+                    RETURN newid;
+                END;
+                $$ LANGUAGE plpgsql;
+            </createProcedure>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

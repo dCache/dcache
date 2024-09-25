@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.google.common.base.Throwables;
 import java.net.URI;
+import java.util.NoSuchElementException;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotFoundException;
@@ -60,7 +61,7 @@ public class ErrorResponseProvider implements ExceptionMapper<Exception> {
             // Unfortunately Jackson builds multiline messages, we work around this.
             return buildResponse(Response.Status.BAD_REQUEST,
                   "Unable to interpret JSON: " + firstLineOf(e.getMessage()));
-        } else if (e instanceof BadRequestException) {
+        } else if (e instanceof BadRequestException || e instanceof NoSuchElementException) {
             return buildResponse(Response.Status.BAD_REQUEST,
                   getMessage(e, "Bad request"));
         } else if (e instanceof NotFoundException) {

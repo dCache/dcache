@@ -21,6 +21,7 @@ package org.dcache.chimera.nfs.v4.xdr;
 
 import java.io.Serializable;
 
+@Deprecated(forRemoval = true)
 public class uint32_t implements Serializable {
 
     static final long serialVersionUID = -6603937444681096490L;

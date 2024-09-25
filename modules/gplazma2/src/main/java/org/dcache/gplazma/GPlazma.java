@@ -139,6 +139,23 @@ public class GPlazma {
             loginObservers.forEach(o -> o.accept(result));
             return reply;
         } catch (AuthenticationException e) {
+            /* REVISIT The following is a work-around to ensure the set of
+             * door-supplied information is available.  This is only done if
+             * the AUTH phase is not attempted to avoid creating extra work
+             * for the common case (AUTH phase is attempted).
+             */
+            if (!result.hasStarted()) {
+                var authPhase = result.getAuthPhase();
+                authPhase.setPublicCredentials(subject.getPublicCredentials());
+                authPhase.setPrivateCredentials(subject.getPrivateCredentials());
+                result.setInitialPrincipals(subject.getPrincipals());
+                /* FIXME currently need to treat a failure to initialise
+                 * gPlazma as a validation error in order to inject the error
+                 * message in the logged response.
+                 */
+                result.setValidationResult(Result.FAIL);
+                result.setValidationError(e.getMessage());
+            }
             loginObservers.forEach(o -> o.accept(result));
             throw e;
         }
@@ -290,7 +307,7 @@ public class GPlazma {
                 plugin = pluginLoader.newPluginByName(pluginName, combinedProperties);
             } catch (PluginLoadingException e) {
                 throw new PluginLoadingException(
-                      "failed to create " + pluginName + ": " + e.getMessage(), e);
+                      "failed to create plugin \"" + pluginName + "\": " + e.getMessage(), e);
             }
 
             ConfigurationItemControl control = item.getControl();

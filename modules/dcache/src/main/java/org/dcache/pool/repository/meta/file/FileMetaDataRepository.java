@@ -14,10 +14,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
+import java.nio.file.ReadOnlyFileSystemException;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
+import org.dcache.pool.repository.FileStoreState;
 import org.dcache.pool.repository.DuplicateEntryException;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.ReplicaRecord;
@@ -84,7 +86,7 @@ public class FileMetaDataRepository
 
             Stopwatch watch = Stopwatch.createStarted();
             Set<PnfsId> files = _fileStore.index();
-            LOGGER.info("Indexed {} entries in {} in {}.", files.size(), _fileStore, watch);
+            LOGGER.info("Indexed {} entries in {} in {}.", files.size(), _fileStore, watch);
 
             if (indexOptions.contains(IndexOption.ALLOW_REPAIR)) {
                 watch.reset().start();
@@ -98,7 +100,7 @@ public class FileMetaDataRepository
                           })
                           .collect(toList());
                 }
-                LOGGER.info("Found {} orphaned meta data entries in {} in {}.",
+                LOGGER.info("Found {} orphaned meta data entries in {} in {}.",
                       metaFilesToBeDeleted.size(), _metadir, watch);
 
                 for (Path name : metaFilesToBeDeleted) {
@@ -180,18 +182,23 @@ public class FileMetaDataRepository
     }
 
     @Override
-    public synchronized boolean isOk() {
-        if (!_fileStore.isOk()) {
-            return false;
+    public synchronized FileStoreState isOk() {
+        if (_fileStore.isOk() == FileStoreState.FAILED) {
+            return FileStoreState.FAILED;
         }
         Path tmp = _metadir.resolve(".repository_is_ok");
         try {
             Files.deleteIfExists(tmp);
             Files.createFile(tmp);
-            return true;
+            return FileStoreState.OK;
         } catch (IOException e) {
-            LOGGER.error("Failed to touch " + tmp + ": " + messageOrClassName(e), e);
-            return false;
+            if (e.getMessage().contains("Read-only file system")) {
+                LOGGER.error("Filesystem in read-only mode {}: {}", tmp, messageOrClassName(e));
+                return FileStoreState.READ_ONLY;
+            } else {
+                LOGGER.error("Failed to touch {}: {}", tmp, messageOrClassName(e));
+                return FileStoreState.FAILED;
+            }
         }
     }
 

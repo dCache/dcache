@@ -62,6 +62,7 @@ package org.dcache.restful.providers.selection;
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.Comparator;
@@ -76,8 +77,13 @@ public final class PoolGroup extends SelectionTypeWithLinks {
     @ApiModelProperty("The pools that are a member of this poolgroup.")
     private final List<String> pools;
 
+    @ApiModelProperty("The Nested poolGroups that are a member of this poolgroup.")
+    private final List<String> nestedPoolGroups;
+
     public PoolGroup() {
         this.pools = null;
+        this.nestedPoolGroups = null;
+
     }
 
     public PoolGroup(String group, PoolSelectionUnit psu) {
@@ -87,10 +93,18 @@ public final class PoolGroup extends SelectionTypeWithLinks {
               .sorted(Comparator.comparing(SelectionPool::getName))
               .map(SelectionPool::getName)
               .collect(Collectors.toList());
+
+        nestedPoolGroups = psu.getPoolGroupByName(name).getPoolGroups().stream()
+              .map((SelectionPoolGroup::getName))
+              .collect(Collectors.toList());
     }
 
     public List<String> getPools() {
         return pools;
+    }
+
+    public List<String> getNestedPoolGroups() {
+        return nestedPoolGroups;
     }
 
     @Override

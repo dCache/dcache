@@ -17,6 +17,7 @@ import com.sun.security.auth.UnixNumericGroupPrincipal;
 import com.sun.security.auth.UnixNumericUserPrincipal;
 import java.security.Principal;
 import java.util.HashSet;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import javax.security.auth.Subject;
@@ -319,7 +320,8 @@ public class SubjectsTest {
         assertTrue(Subjects.hasGid(dcacheSubject, GID2));
         assertEquals(Subjects.getLoginName(dcacheSubject), USERNAME1);
 
-        assertThat("UidPrincipal not injected", dcacheSubject.getPrincipals(), hasItem(any(UidPrincipal.class)));
+        assertThat("UidPrincipal not injected", dcacheSubject.getPrincipals(), hasItem(any(
+              UidPrincipal.class)));
         assertThat("GidPrincipal not injected", dcacheSubject.getPrincipals(), hasItem(any(GidPrincipal.class)));
 
         assertThat("UnixNumericUserPrincipal not removed", dcacheSubject.getPrincipals(), not(hasItem(any(UnixNumericUserPrincipal.class))));
@@ -344,5 +346,29 @@ public class SubjectsTest {
 
         assertThat(principals.size(), is(equalTo(1)));
         assertThat(principals, contains(new GroupNamePrincipal("my-group", false)));
+    }
+
+    @Test
+    public void principalFullString() {
+        String s1 = Subjects.toString(_subject1);
+        assertTrue("Full string must contain UID substring",
+                s1.contains("uid:" + UID1));
+        assertTrue("Full string must contain Username Substring",
+                s1.contains("user:" + USERNAME1));
+        assertTrue("Full string must have correct amount of commas",
+                s1.chars().filter(c -> c == ',').count() == _subject1.getPrincipals().size() - 1);
+        assertTrue("Full string must begin and end with curly braces",
+                (s1.charAt(0) == '{') && (s1.charAt(s1.length() - 1) == '}'));
+    }
+
+    @Test
+    public void principalStringList() {
+        List<String> stringList1 = Subjects.toStringList(_subject1);
+        assertTrue("Subject must have string-formatted UidPrincipal",
+                stringList1.contains("uid:" + UID1));
+        assertTrue("Subject must have string-formatted UserNamePrincipal",
+                stringList1.contains("user:" + USERNAME1));
+        assertEquals("Length of list is as expected",
+                stringList1.size(), _subject1.getPrincipals().size());
     }
 }

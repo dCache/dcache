@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2024 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -43,11 +43,16 @@ import org.dcache.pool.nearline.AbstractBlockingNearlineStorage;
 import org.dcache.pool.nearline.spi.FlushRequest;
 import org.dcache.pool.nearline.spi.RemoveRequest;
 import org.dcache.pool.nearline.spi.StageRequest;
+import org.dcache.util.AdjustableSemaphore;
 import org.dcache.util.ByteUnit;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
 
 public abstract class FileSystemNearlineStorage extends AbstractBlockingNearlineStorage {
+
+    public static final String CONCURRENT_PUTS = "c:puts";
+    public static final String CONCURRENT_GETS = "c:gets";
+    public static final String CONCURRENT_REMOVES = "c:removes";
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private Path directory;
@@ -55,6 +60,21 @@ public abstract class FileSystemNearlineStorage extends AbstractBlockingNearline
     private TimeUnit stageDelayUnit = SECONDS;
     private ByteUnit stageDelayPer = MiB;
     private boolean noUrl;
+
+    /**
+     * Limits the number of concurrent flush operations.
+     */
+    private final AdjustableSemaphore flushLimit = new AdjustableSemaphore(1);
+
+    /**
+     * Limits the number of concurrent stage operations.
+     */
+    private final AdjustableSemaphore stageLimit = new AdjustableSemaphore(1);
+
+    /**
+     * Limits the number of concurrent remove operations.
+     */
+    private final AdjustableSemaphore removeLimit = new AdjustableSemaphore(1);
 
     public FileSystemNearlineStorage(String type, String name) {
         super(type, name);
@@ -83,49 +103,64 @@ public abstract class FileSystemNearlineStorage extends AbstractBlockingNearline
     }
 
     @Override
-    protected Set<URI> flush(FlushRequest request) throws IOException, URISyntaxException {
-        Path file = Paths.get(request.getReplicaUri());
-        flush(file, getExternalPath(file.getFileName().toString()));
-        URI uri = new URI(type, name, '/' + request.getFileAttributes().getPnfsId().toString(),
-              null, null);
-        return noUrl ? Collections.emptySet() : Collections.singleton(uri);
+    protected Set<URI> flush(FlushRequest request) throws IOException, URISyntaxException, InterruptedException {
+        flushLimit.acquire();
+        try {
+            Path file = Paths.get(request.getReplicaUri());
+            flush(file, getExternalPath(file.getFileName().toString()));
+            URI uri = new URI(type, name, '/' + request.getFileAttributes().getPnfsId().toString(),
+                    null, null);
+            return noUrl ? Collections.emptySet() : Collections.singleton(uri);
+        } finally {
+            flushLimit.release();
+        }
     }
 
     @Override
-    protected Set<Checksum> stage(StageRequest request) throws CacheException, IOException {
-        FileAttributes fileAttributes = request.getFileAttributes();
-        URI location = Iterables.getFirst(getLocations(fileAttributes), null);
-        if (location == null) {
-            throw new CacheException(CacheException.BROKEN_ON_TAPE,
-                  "File not on nearline storage: " + fileAttributes.getPnfsId());
-        }
-        String path = location.getPath();
-        if (path == null) {
-            throw new InvalidMessageCacheException("Invalid nearline storage URI: " + location);
-        }
-        stage(getExternalPath(path.substring(1)), request.getFile().toPath());
-
-        long millis = computeSimulatedDelayInMillis(request.getFileAttributes());
-
-        if (millis > 0) {
-            try {
-                Thread.sleep(millis);
-            } catch (InterruptedException e) {
-                // ignore
+    protected Set<Checksum> stage(StageRequest request) throws CacheException, IOException, InterruptedException {
+        stageLimit.acquire();
+        try {
+            FileAttributes fileAttributes = request.getFileAttributes();
+            URI location = Iterables.getFirst(getLocations(fileAttributes), null);
+            if (location == null) {
+                throw new CacheException(CacheException.BROKEN_ON_TAPE,
+                        "File not on nearline storage: " + fileAttributes.getPnfsId());
             }
-        }
+            String path = location.getPath();
+            if (path == null) {
+                throw new InvalidMessageCacheException("Invalid nearline storage URI: " + location);
+            }
+            stage(getExternalPath(path.substring(1)), request.getFile().toPath());
 
-        return Collections.emptySet();
+            long millis = computeSimulatedDelayInMillis(request.getFileAttributes());
+
+            if (millis > 0) {
+                try {
+                    Thread.sleep(millis);
+                } catch (InterruptedException e) {
+                    // ignore
+                }
+            }
+
+            return Collections.emptySet();
+        } finally {
+            stageLimit.release();
+        }
     }
 
     @Override
-    public void remove(RemoveRequest request) throws IOException, InvalidMessageCacheException {
-        String path = request.getUri().getPath();
-        if (path == null) {
-            throw new InvalidMessageCacheException(
-                  "Invalid nearline storage URI: " + request.getUri());
+    public void remove(RemoveRequest request) throws IOException, InvalidMessageCacheException, InterruptedException {
+        removeLimit.acquire();
+        try {
+            String path = request.getUri().getPath();
+            if (path == null) {
+                throw new InvalidMessageCacheException(
+                        "Invalid nearline storage URI: " + request.getUri());
+            }
+            remove(getExternalPath(path.substring(1)));
+        } finally {
+            removeLimit.release();
         }
-        remove(getExternalPath(path.substring(1)));
     }
 
     @Override
@@ -141,6 +176,23 @@ public abstract class FileSystemNearlineStorage extends AbstractBlockingNearline
         stageDelayPer = value == null ? MiB : ByteUnit.valueOf(value);
         value = properties.get("broken-flush");
         noUrl = Boolean.parseBoolean(value);
+
+        // adjust the limits, if defined
+        var puts = properties.get(CONCURRENT_PUTS);
+        var gets = properties.get(CONCURRENT_GETS);
+        var removes = properties.get(CONCURRENT_REMOVES);
+
+        if (puts != null) {
+            flushLimit.setMaxPermits(Integer.parseInt(puts));
+        }
+
+        if (gets != null) {
+            stageLimit.setMaxPermits(Integer.parseInt(gets));
+        }
+
+        if (removes != null) {
+            removeLimit.setMaxPermits(Integer.parseInt(removes));
+        }
     }
 
     @Override

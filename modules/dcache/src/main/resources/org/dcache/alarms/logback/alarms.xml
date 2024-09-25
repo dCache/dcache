@@ -94,7 +94,7 @@
             <description>Database persistence manager</description>
             <constructor-arg>
                 <map>
-                    <entry key="datanucleus.PersistenceUnitName" value="AlarmsXML"/>
+                    <entry key="datanucleus.persistenceunitname" value="AlarmsXML"/>
                     <entry key="datanucleus.ConnectionURL" value="${alarms.db.url}"/>
                 </map>
             </constructor-arg>
@@ -144,7 +144,7 @@
             <description>Database persistence manager</description>
             <constructor-arg>
                  <map>
-                    <entry key="datanucleus.PersistenceUnitName" value="AlarmsRDBMS"/>
+                    <entry key="datanucleus.persistenceunitname" value="AlarmsRDBMS"/>
                 </map>
             </constructor-arg>
             <property name="connectionFactory" ref="dataSource"/>

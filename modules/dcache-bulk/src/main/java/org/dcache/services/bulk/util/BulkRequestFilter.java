@@ -72,9 +72,7 @@ public final class BulkRequestFilter {
     private final Long after;
     private final Set<String> owner;
     private final Set<String> urlPrefix;
-    private final Set<String> id;
-    private final Set<String> target;
-    private final Set<String> targetPrefix;
+    private final Set<String> uuid;
     private final Set<String> activity;
     private final Set<BulkRequestStatus> statuses;
     private final Boolean cancelOnFailure;
@@ -82,20 +80,19 @@ public final class BulkRequestFilter {
     private final Boolean clearOnFailure;
     private final Boolean delayClear;
     private final Depth expandDirectories;
-    private final Boolean prestore;
 
-    private Long seqNo;
+    private Long id;
 
     public BulkRequestFilter(Set<BulkRequestStatus> statuses) {
         this(null, null, null, null, null, null,
-              null, null, statuses, null, null,
-              null, null, null, null);
+              statuses, null, null,
+              null, null, null);
     }
 
     public BulkRequestFilter(Long before, Long after, Set<String> owner, Set<String> urlPrefix,
-          Set<String> id, Set<String> target, Set<String> targetPrefix, Set<String> activity,
-          Set<BulkRequestStatus> statuses, Boolean cancelOnFailure, Boolean clearOnSuccess,
-          Boolean clearOnFailure, Boolean delayClear, Depth expandDirectories, Boolean prestore) {
+          Set<String> uuid, Set<String> activity, Set<BulkRequestStatus> statuses,
+          Boolean cancelOnFailure, Boolean clearOnSuccess, Boolean clearOnFailure,
+          Boolean delayClear, Depth expandDirectories) {
         this.before = before;
         this.after = after;
         this.activity = activity;
@@ -107,10 +104,7 @@ public final class BulkRequestFilter {
         this.expandDirectories = expandDirectories;
         this.owner = owner;
         this.urlPrefix = urlPrefix;
-        this.id = id;
-        this.target = target;
-        this.targetPrefix = targetPrefix;
-        this.prestore = prestore;
+        this.uuid = uuid;
     }
 
     public Long getAfter() {
@@ -141,41 +135,31 @@ public final class BulkRequestFilter {
         return delayClear;
     }
 
-    public Boolean getPrestore() { return prestore; }
-
     public Depth getExpandDirectories() {
         return expandDirectories;
     }
 
-    public String[] getId() {
-        return id == null ? null : id.toArray(String[]::new);
+    public String[] getUuids() {
+        return id == null ? null : uuid.toArray(String[]::new);
     }
 
     public String[] getOwner() {
         return owner == null ? null : owner.toArray(String[]::new);
     }
 
-    public Long getSeqNo() {
-        return seqNo;
+    public Long getId() {
+        return id;
     }
 
     public BulkRequestStatus[] getStatuses() {
         return statuses == null ? null : statuses.toArray(BulkRequestStatus[]::new);
     }
 
-    public String[] getTarget() {
-        return target == null ? null : target.toArray(String[]::new);
-    }
-
-    public String[] getTargetPrefix() {
-        return targetPrefix == null ? null : targetPrefix.toArray(String[]::new);
-    }
-
     public String[] getUrlPrefix() {
         return urlPrefix == null ? null : urlPrefix.toArray(String[]::new);
     }
 
-    public void setSeqNo(Long seqNo) {
-        this.seqNo = seqNo;
+    public void setId(Long id) {
+        this.id = id;
     }
 }

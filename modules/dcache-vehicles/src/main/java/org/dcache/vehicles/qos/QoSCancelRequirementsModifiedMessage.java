@@ -61,13 +61,15 @@ package org.dcache.vehicles.qos;
 
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
+import javax.security.auth.Subject;
 
 public class QoSCancelRequirementsModifiedMessage extends Message {
 
     private final PnfsId pnfsId;
 
-    public QoSCancelRequirementsModifiedMessage(PnfsId pnfsId) {
+    public QoSCancelRequirementsModifiedMessage(PnfsId pnfsId, Subject subject) {
         this.pnfsId = pnfsId;
+        setSubject(subject);
     }
 
     public PnfsId getPnfsId() {

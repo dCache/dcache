@@ -44,16 +44,6 @@ contain replicas. It is the responsibility of the nearline storage driver to
 copy replicas from the pool to the nearline storage and to copy replicas back
 from the nearline storage into the pool.
 
-Traditionally, dCache pools have stored replicas in the local file system, and a
-flush or stage request would refer to the replica in the local file system by
-path. Starting with dCache 3.0, *replica store plugins* may provide alternative
-backends such as CEPH and thus replicas in a pool may not be accessible through
-the local file system. For this reason, dCache 3.0 and newer identify the
-replica in the pool by URI. Unless an alternative replica store is used, such a
-URI will always use the `file:` scheme. If compatibility with versions earlier
-than 2.17 is desired, a driver should refrain from using the `getReplicaUri`
-method.
-
 Once flushed to a nearline storage, the replica is identified by a URI generated
 by the driver. This URI should use the nearline storage type (typically
 `enstore` or `osm`) as the scheme and the nearline storage instance name as the
@@ -253,17 +243,17 @@ $ tree
 └── src
     └── main
         ├── assembly
-        │   └── plugin.xml
+        │   └── plugin.xml
         ├── defaults
-        │   └── org.example.test.properties
+        │   └── org.example.test.properties
         ├── docs
-        │   └── README.md
+        │   └── README.md
         ├── java
-        │   └── org
-        │       └── example
-        │           └── dcache
-        │               ├── PluginNearlineStorage.java
-        │               └── PluginNearlineStorageProvider.java
+        │   └── org
+        │       └── example
+        │           └── dcache
+        │               ├── PluginNearlineStorage.java
+        │               └── PluginNearlineStorageProvider.java
         └── resources
             └── META-INF
                 └── services

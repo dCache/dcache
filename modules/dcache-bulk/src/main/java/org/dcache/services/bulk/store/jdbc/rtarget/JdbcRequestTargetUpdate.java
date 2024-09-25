@@ -60,13 +60,10 @@ documents or software obtained from this server.
 package org.dcache.services.bulk.store.jdbc.rtarget;
 
 import static java.util.stream.Collectors.joining;
-import static org.dcache.services.bulk.store.jdbc.rtarget.JdbcRequestTargetDao.TABLE_NAME;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.FAILED;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.RUNNING;
 import static org.dcache.util.Strings.truncate;
 
-import com.google.common.base.Strings;
-import com.google.common.base.Throwables;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 import java.sql.Timestamp;
@@ -79,6 +76,12 @@ import org.dcache.services.bulk.util.BulkRequestTarget.State;
  * Implementation of the update class for the request target table.
  */
 public final class JdbcRequestTargetUpdate extends JdbcUpdate {
+
+    public String getUpdate() {
+        return updates.keySet().stream()
+              .map(s -> s + " = ?")
+              .collect(joining(","));
+    }
 
     public JdbcRequestTargetUpdate state(State state) {
         if (state != null) {
@@ -118,12 +121,16 @@ public final class JdbcRequestTargetUpdate extends JdbcUpdate {
         return this;
     }
 
-    public JdbcRequestTargetUpdate errorObject(Throwable errorObject) {
-        if (errorObject != null) {
-            Throwable root = Throwables.getRootCause(errorObject);
-            set("error_type", root.getClass().getCanonicalName());
-            set("error_message", truncate(root.getMessage(), 256, false));
-        }
+    public JdbcRequestTargetUpdate errorType(String errorType) {
+        set("error_type", errorType);
+        return this;
+    }
+
+    public JdbcRequestTargetUpdate errorMessage(String errorMessage) {
+        set("error_message",
+            truncate(errorMessage,
+                     JdbcRequestTargetDao.REQUEST_TARGET_ERROR_MESSAGE_LENGTH,
+                     false));
         return this;
     }
 
@@ -132,8 +139,8 @@ public final class JdbcRequestTargetUpdate extends JdbcUpdate {
         return this;
     }
 
-    public JdbcRequestTargetUpdate rid(String rid) {
-        if (Strings.emptyToNull(rid) != null) {
+    public JdbcRequestTargetUpdate rid(Long rid) {
+        if (rid != null) {
             set("rid", rid);
         }
         return this;
@@ -150,7 +157,10 @@ public final class JdbcRequestTargetUpdate extends JdbcUpdate {
 
     public JdbcRequestTargetUpdate path(FsPath path) {
         if (path != null) {
-            set("path", truncate(path.toString(), 256,true));
+            set("path",
+                truncate(path.toString(),
+                         JdbcRequestTargetDao.REQUEST_TARGET_PATH_LENGTH,
+                         true));
         }
         return this;
     }
@@ -162,24 +172,5 @@ public final class JdbcRequestTargetUpdate extends JdbcUpdate {
             set("type", "?");
         }
         return this;
-    }
-
-    public JdbcRequestTargetUpdate activity(String activity) {
-        if (Strings.emptyToNull(activity) != null) {
-            set("activity", activity);
-        }
-        return this;
-    }
-
-    /**
-     * REVISIT  this syntax is specific to POSTGRES;
-     *          we need eventually to push this into a postgres-specific package.
-     */
-    public String getInsertOrUpdateSql() {
-        return "INSERT INTO " + TABLE_NAME + " " + getInsert() +
-              " ON CONFLICT ON CONSTRAINT i_target_pkey DO UPDATE SET " + updates.keySet().stream()
-              .collect(joining(",", "(", ")")) + " = " + updates.keySet().stream()
-              .map(a -> "EXCLUDED." + a)
-              .collect(joining(",", "(", ")"));
     }
 }

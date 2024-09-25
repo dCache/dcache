@@ -22,13 +22,19 @@ import static org.dcache.namespace.FileAttribute.NLINK;
 import static org.dcache.namespace.FileAttribute.OWNER;
 import static org.dcache.namespace.FileAttribute.OWNER_GROUP;
 import static org.dcache.namespace.FileAttribute.PNFSID;
+import static org.dcache.namespace.FileAttribute.QOS_POLICY;
+import static org.dcache.namespace.FileAttribute.QOS_STATE;
 import static org.dcache.namespace.FileAttribute.SIZE;
 import static org.dcache.namespace.FileAttribute.TYPE;
 import static org.dcache.namespace.FileAttribute.XATTR;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
+import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -96,6 +102,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
@@ -109,6 +116,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
@@ -118,7 +126,9 @@ import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Activity;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.CellStub;
+import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.UnixPermission;
+import org.dcache.chimera.qos.JdbcQos;
 import org.dcache.chimera.quota.JdbcQuota;
 import org.dcache.chimera.quota.Quota;
 import org.dcache.chimera.quota.QuotaHandler;
@@ -128,6 +138,7 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.namespace.ListHandler;
 import org.dcache.namespace.PermissionHandler;
+import org.dcache.qos.QoSPolicy;
 import org.dcache.quota.data.QuotaInfo;
 import org.dcache.quota.data.QuotaRequest;
 import org.dcache.quota.data.QuotaType;
@@ -144,7 +155,15 @@ import org.dcache.vehicles.PnfsCreateSymLinkMessage;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.vehicles.PnfsRemoveChecksumMessage;
+import org.dcache.vehicles.PnfsResolveSymlinksMessage;
 import org.dcache.vehicles.PnfsSetFileAttributes;
+import org.dcache.vehicles.qos.PnfsManagerAddQoSPolicyMessage;
+import org.dcache.vehicles.qos.PnfsManagerGetQoSPolicyMessage;
+import org.dcache.vehicles.qos.PnfsManagerGetQoSPolicyStatsMessage;
+import org.dcache.vehicles.qos.PnfsManagerInvalidateQoSPolicyMessage;
+import org.dcache.vehicles.qos.PnfsManagerListQoSPoliciesMessage;
+import org.dcache.vehicles.qos.PnfsManagerQoSPolicyMessage;
+import org.dcache.vehicles.qos.PnfsManagerRmQoSPolicyMessage;
 import org.dcache.vehicles.quota.PnfsManagerGetQuotaMessage;
 import org.dcache.vehicles.quota.PnfsManagerQuotaMessage;
 import org.dcache.vehicles.quota.PnfsManagerRemoveQuotaMessage;
@@ -207,7 +226,8 @@ public class PnfsManagerV3
     private boolean quotaEnabled;
 
     private boolean useParentHashOnCreate;
-
+    private boolean useParallelListing;
+    private int maxListRequestsInQueue;
 
     /**
      * Whether to use folding.
@@ -215,9 +235,9 @@ public class PnfsManagerV3
     private boolean _canFold;
 
     /**
-     * Queues for list operations. There is one queue per thread group.
+     * Queues for list operations.
      */
-    private BlockingQueue<CellMessage> _listQueue;
+    private BlockingQueue<CellMessage>[] _listQueues;
 
     /**
      * Tasks queues used for messages that do not operate on cache locations.
@@ -251,9 +271,13 @@ public class PnfsManagerV3
     private List<String> _flushNotificationTargets;
     private List<String> _cancelUploadNotificationTargets = Collections.emptyList();
 
-    private List<ProcessThread> _listProcessThreads = new ArrayList<>();
+    private final List<ProcessThread> _listProcessThreads = new ArrayList<>();
 
     private JdbcQuota quotaSystem;
+
+    private JdbcQos qosManager;
+
+    private final Function<FsPath, FsPath> pathResolver = p -> resolveSymlinks(p.toString());
 
     private void populateRequestMap() {
         _gauges.addGauge(PnfsAddCacheLocationMessage.class);
@@ -310,8 +334,19 @@ public class PnfsManagerV3
         this.quotaEnabled = quotaEnabled;
     }
 
+    @Required
     public void setUseParentHashOnCreate(boolean useParentHashOnCreate) {
         this.useParentHashOnCreate = useParentHashOnCreate;
+    }
+
+    @Required
+    public void setUseParallelListing(boolean useParallelListing) {
+        this.useParallelListing = useParallelListing;
+    }
+
+    @Required
+    public void setMaxListRequestsInQueue(int maxListRequestsInQueue) {
+        this.maxListRequestsInQueue = maxListRequestsInQueue;
     }
 
     @Required
@@ -425,21 +460,49 @@ public class PnfsManagerV3
             executor.execute(new ProcessThread(_fifos[i]));
         }
 
-        /* Start a seperate queue for list operations.  We use a shared queue,
-         * as list operations are read only and thus there is no need
-         * to serialize the operations.
-         */
-        _listQueue = new LinkedBlockingQueue<>();
-        for (int j = 0; j < _listThreads; j++) {
-            ProcessThread t = new ProcessThread(_listQueue);
-            _listProcessThreads.add(t);
-            executor.execute(t);
+        if (useParallelListing) {
+            /**
+             * when using parallel listing we have _listThreads
+             * consumers serving a single queue.
+             */
+            _listQueues = new BlockingQueue[1];
+            if (_queueMaxSize > 0) {
+                _listQueues[0] = new LinkedBlockingQueue<>(_queueMaxSize);
+            } else {
+                _listQueues[0] = new LinkedBlockingQueue<>();
+            }
+
+            /**
+             * spawn consumers
+             */
+            for (int i = 0; i < _listThreads; i++) {
+                ProcessThread t = new ProcessThread(_listQueues[0]);
+                _listProcessThreads.add(t);
+                executor.execute(t);
+            }
+        } else {
+            /**
+             * Start separate _listThreads queues for list operations.
+             * each consumer processes a dedicated queue
+             */
+            _listQueues = new BlockingQueue[_listThreads];
+            for (int i = 0; i < _listQueues.length; i++) {
+                if (_queueMaxSize > 0) {
+                    _listQueues[i] = new LinkedBlockingQueue<>(_queueMaxSize);
+                } else {
+                    _listQueues[i] = new LinkedBlockingQueue<>();
+                }
+                ProcessThread t = null;
+                t = new ProcessThread(_listQueues[i]);
+                _listProcessThreads.add(t);
+                executor.execute(t);
+            }
         }
     }
 
     public void shutdown() throws InterruptedException {
         drainQueues(_fifos);
-        drainQueue(_listQueue);
+        drainQueues(_listQueues);
         MoreExecutors.shutdownAndAwaitTermination(executor, 1, TimeUnit.SECONDS);
     }
 
@@ -476,7 +539,7 @@ public class PnfsManagerV3
                             }
                         }
                     }),
-                    100000,
+                    updateFsStatIntervalUnit.toMillis(updateFsStatInterval),
                     updateFsStatIntervalUnit.toMillis(updateFsStatInterval),
                     TimeUnit.MILLISECONDS);
 
@@ -489,7 +552,7 @@ public class PnfsManagerV3
                                 quotaSystem.updateGroupQuotas();
                             }
                         }),
-                        600000,
+                        updateQuotaIntervalUnit.toMillis(updateQuotaInterval),
                         updateQuotaIntervalUnit.toMillis(updateQuotaInterval),
                         TimeUnit.MILLISECONDS);
 
@@ -501,7 +564,7 @@ public class PnfsManagerV3
                                 quotaSystem.updateUserQuotas();
                             }
                         }),
-                        600000,
+                        updateQuotaIntervalUnit.toMillis(updateQuotaInterval),
                         updateQuotaIntervalUnit.toMillis(updateQuotaInterval),
                         TimeUnit.MILLISECONDS);
         }
@@ -525,7 +588,9 @@ public class PnfsManagerV3
             pw.println(TimeUnit.MILLISECONDS.toSeconds(_atimeGap));
         }
         pw.println();
-        pw.println("List queue: " + _listQueue.size());
+        pw.println("List queue: "
+              + Arrays.stream(_listQueues)
+              .mapToInt(BlockingQueue::size).sum());
         pw.println();
         pw.println("Threads (" + _fifos.length + ") Queue");
         for (int i = 0; i < _fifos.length; i++) {
@@ -541,21 +606,26 @@ public class PnfsManagerV3
         pw.println(_foldedCounters.toString());
     }
 
-    @Command(name = "reset stats", hint="reset statistics",
-            description = "Reset the counters and gauge statistics describing PnfsManager.  These"
-                    + " statistics are shown as part of the 'info' command output.")
+    @Required
+    public void setQosManager(JdbcQos qosManager) {
+        this.qosManager = qosManager;
+    }
+
+    @Command(name = "reset stats", hint = "reset statistics",
+          description = "Reset the counters and gauge statistics describing PnfsManager.  These"
+                + " statistics are shown as part of the 'info' command output.")
     public class ResetStatsCommand implements Callable<String> {
 
-        @Option(name="target", usage="Which statistics to reset:\n"
-                + "\n"
-                + "\"calls\" is the cell message call gauges, labelled 'PnfsManagerV3'.\n"
-                + "\n"
-                + "\"folds\" is the message folding counts, labelled 'PnfsManagerV3.Folded'.\n"
-                + "\n"
-                + "\"all\" resets everything.\n"
-                + "\n"
-                + "If this option is not specified then \"all\" is assumed.",
-                values={"calls", "folds", "all"})
+        @Option(name = "target", usage = "Which statistics to reset:\n"
+              + "\n"
+              + "\"calls\" is the cell message call gauges, labelled 'PnfsManagerV3'.\n"
+              + "\n"
+              + "\"folds\" is the message folding counts, labelled 'PnfsManagerV3.Folded'.\n"
+              + "\n"
+              + "\"all\" resets everything.\n"
+              + "\n"
+              + "If this option is not specified then \"all\" is assumed.",
+              values = {"calls", "folds", "all"})
         private String target;
 
         @Override
@@ -564,18 +634,18 @@ public class PnfsManagerV3
                 target = "all";
             }
             switch (target) {
-            case "all":
-                _gauges.reset();
-                _foldedCounters.reset();
-                break;
-            case "calls":
-                _gauges.reset();
-                break;
-            case "folds":
-                _foldedCounters.reset();
-                break;
-            default:
-                throw new CommandException("Unknown target \"" + target + "\".");
+                case "all":
+                    _gauges.reset();
+                    _foldedCounters.reset();
+                    break;
+                case "calls":
+                    _gauges.reset();
+                    break;
+                case "folds":
+                    _foldedCounters.reset();
+                    break;
+                default:
+                    throw new CommandException("Unknown target \"" + target + "\".");
             }
             return "";
         }
@@ -952,6 +1022,40 @@ public class PnfsManagerV3
         }
     }
 
+    @Command(name = "qos policies",
+          hint = "List qos policy names",
+          description = "Show list of policy names")
+
+    public class ListQosPolicyCommand implements Callable<String> {
+        @Override
+        public String call() throws CacheException {
+           return qosManager.listQoSPolicies().stream().collect(Collectors.joining("\n"));
+        }
+    }
+
+    @Command(name = "show qos policy",
+          hint = "Print qos policy",
+          description = "Display qos policy")
+
+    public class ShowQosPolicyCommand implements Callable<String> {
+        @Argument(usage = "The policy name.")
+        String policy;
+
+        public String call() throws CacheException {
+           Optional<QoSPolicy> optional = qosManager.getQosPolicy(policy);
+           if (optional.isPresent()) {
+               ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
+               try {
+                   return ow.writeValueAsString(optional.get());
+               } catch (JsonProcessingException e) {
+                   throw new CacheException(CacheException.INVALID_ARGS, e.getMessage());
+               }
+           }
+
+           return policy + " not found.";
+        }
+    }
+
     @Command(name = "show group quota",
           hint = "Print group quota",
           description = "Display group quota")
@@ -1222,6 +1326,56 @@ public class PnfsManagerV3
         public String call() throws CacheException {
             quotaSystem.deleteGroupQuota(gid);
             return "Removed group quota for " + gid;
+        }
+    }
+
+    @Command(name = "file policy",
+          hint = "shows qos policy info",
+          description = "Reports policy name and state for the file, if defined.")
+    public class FileQoSPolicy implements Callable<String> {
+
+        @Argument(usage = "<pnfsid>|<path>.")
+        String pathOrId;
+
+        @Override
+        public String call() throws CacheException {
+            PnfsId pnfsId;
+
+            if (pathOrId.contains("/")) {
+                pnfsId = _nameSpaceProvider.pathToPnfsid(ROOT, pathOrId, true);
+            } else {
+                pnfsId = new PnfsId(pathOrId);
+            }
+
+            FileAttributes attr =
+                  _nameSpaceProvider.getFileAttributes(ROOT, pnfsId,
+                                                       EnumSet.of(QOS_POLICY, QOS_STATE));
+
+            String policy =
+                  attr.isDefined(QOS_POLICY) ? attr.getQosPolicy() : "undefined.";
+            String state = attr.isDefined(QOS_STATE) ? Integer.toString(attr.getQosState())
+                  : "undefined.";
+
+            return "QOS POLICY: " + policy + "\nQOS STATE: " + state;
+        }
+    }
+
+    @Command(name = "file policy stats",
+                    hint = "shows summary of qos policy info",
+                    description = "Gives a list of policy names, states and "
+                                    + "respective file counts.")
+    public class FileQoSPolicyStats implements Callable<String> {
+
+        @Override
+        public String call() throws Exception {
+            PnfsManagerGetQoSPolicyStatsMessage message
+                            = new PnfsManagerGetQoSPolicyStatsMessage();
+            message = (PnfsManagerGetQoSPolicyStatsMessage) messageArrived(
+                            message);
+            message.setSubject(ROOT);
+            StringBuilder sb = new StringBuilder();
+            message.getPolicyStats().forEach(ps -> sb.append(ps));
+            return sb.toString();
         }
     }
 
@@ -1518,9 +1672,13 @@ public class PnfsManagerV3
         public String call() {
             ColumnWriter writer = buildColumnWriter();
 
-            if (!_listQueue.isEmpty()) {
+            if (Arrays.stream(_listQueues).anyMatch(q -> !q.isEmpty())) {
                 writer.section("QUEUED REQUESTS");
-                _listQueue.forEach(e -> addRow(writer.row(), e));
+                for (BlockingQueue<CellMessage> queue : _listQueues) {
+                    if (!queue.isEmpty()) {
+                        queue.forEach(e -> addRow(writer.row(), e));
+                    }
+                }
             }
 
             List<ActivityReport> activity = _listProcessThreads.stream()
@@ -1788,6 +1946,7 @@ public class PnfsManagerV3
 
         FsPath path = message.getFsPath();
         Restriction restriction = message.getRestriction();
+        restriction.setPathResolver(pathResolver);
 
         /* As a special case, if the user is allowed to upload into
          * a child directory then they are also allowed to create this
@@ -2066,6 +2225,7 @@ public class PnfsManagerV3
                 sourcePath = _nameSpaceProvider.pnfsidToPath(msg.getSubject(), pnfsId);
             }
             LOGGER.info("Rename {} to new name: {}", sourcePath, destinationPath);
+            msg.getRestriction().setPathResolver(pathResolver);
             checkRestriction(msg, MANAGE, FsPath.create(sourcePath).parent());
             checkRestriction(msg, MANAGE, FsPath.create(destinationPath).parent());
             boolean overwrite = msg.getOverwrite()
@@ -2150,10 +2310,12 @@ public class PnfsManagerV3
         private final Restriction _restriction;
         private long _deadline;
         private int _messageCount;
+        private final BlockingQueue<CellMessage> _fifo;
 
         public ListHandlerImpl(CellPath requestor, UOID uoid,
               PnfsListDirectoryMessage msg,
-              long initialDelay, long delay) {
+              long initialDelay, long delay,
+              BlockingQueue<CellMessage> fifo) {
             _msg = msg;
             _requestor = requestor;
             _uoid = uoid;
@@ -2161,27 +2323,52 @@ public class PnfsManagerV3
             _directory = requireNonNull(_msg.getFsPath());
             _subject = _msg.getSubject();
             _restriction = _msg.getRestriction();
+            _restriction.setPathResolver(pathResolver);
             _deadline =
                   (delay == Long.MAX_VALUE)
                         ? Long.MAX_VALUE
                         : System.currentTimeMillis() + initialDelay;
+            _fifo = fifo;
         }
 
         private void sendPartialReply() {
             _msg.setReply();
-
             CellMessage envelope = new CellMessage(_requestor, _msg);
             envelope.setLastUOID(_uoid);
             sendMessage(envelope);
             _messageCount++;
+            _msg.setMessageCount(_messageCount);
 
+
+            if (!useParallelListing) {
+                /**
+                 * fold other list requests for the same target in the queue
+                 */
+
+                for (CellMessage message : _fifo) {
+                    PnfsMessage other = (PnfsMessage) message.getMessageObject();
+
+                    if (other.invalidates(_msg)) {
+                        break;
+                    }
+
+                    if (other.fold(_msg)) {
+                        other.setReply();
+                        CellPath source = message.getSourcePath().revert();
+                        CellMessage parcel = new CellMessage(source, other);
+                        parcel.setLastUOID(message.getUOID());
+                        sendMessage(parcel);
+                        ((PnfsListDirectoryMessage)other).clear();
+                    }
+                }
+            }
             _msg.clear();
         }
 
         @Override
         public void addEntry(String name, FileAttributes attrs) {
             if (Subjects.isRoot(_subject)
-                  || !_restriction.isRestricted(READ_METADATA, _directory, name)) {
+                  || !_restriction.isRestricted(READ_METADATA, _directory, name, true)) {
                 long now = System.currentTimeMillis();
                 _msg.addEntry(name, attrs);
                 if (_msg.getEntries().size() >= _directoryListLimit ||
@@ -2198,7 +2385,8 @@ public class PnfsManagerV3
         }
     }
 
-    private void listDirectory(CellMessage envelope, PnfsListDirectoryMessage msg) {
+    private void listDirectory(CellMessage envelope, PnfsListDirectoryMessage msg,
+          BlockingQueue<CellMessage> fifo) {
         if (!msg.getReplyRequired()) {
             return;
         }
@@ -2216,8 +2404,8 @@ public class PnfsManagerV3
                         : delay - envelope.getLocalAge();
             CellPath source = envelope.getSourcePath().revert();
             ListHandlerImpl handler =
-                new ListHandlerImpl(source, envelope.getUOID(),
-                                    msg, initialDelay, delay);
+                  new ListHandlerImpl(source, envelope.getUOID(),
+                        msg, initialDelay, delay, fifo);
 
             if (msg.getPathType() == PnfsListDirectoryMessage.PathType.LABEL) {
                 _nameSpaceProvider.listVirtualDirectory(msg.getSubject(), path.substring(1),
@@ -2307,12 +2495,25 @@ public class PnfsManagerV3
                             sendTimeout(message, "TTL exceeded");
                             continue;
                         }
-
-                        processPnfsMessage(message, pnfs);
+                        if (!(pnfs instanceof PnfsListDirectoryMessage)) {
+                            processPnfsMessage(message, pnfs);
+                        } else {
+                            long ctime = System.currentTimeMillis();
+                            listDirectory(message, (PnfsListDirectoryMessage) pnfs, _fifo);
+                            long duration = System.currentTimeMillis() - ctime;
+                            _gauges.update(pnfs.getClass(), duration);
+                            if (_logSlowThreshold != THRESHOLD_DISABLED &&
+                                  duration > _logSlowThreshold) {
+                                LOGGER.warn("{} processed in {} ms", pnfs.getClass(), duration);
+                            } else {
+                                LOGGER.info("{} processed in {} ms", pnfs.getClass(), duration);
+                            }
+                            postProcessMessage(message, pnfs);
+                        }
                         fold(pnfs);
                     } catch (Throwable e) {
-                        LOGGER.warn("processPnfsMessage: {} : {}", Thread.currentThread().getName(),
-                              e);
+                        LOGGER.warn("processPnfsMessage: {} : {}",
+                              Thread.currentThread().getName(), e);
                     } finally {
                         clearActivity();
                         CDC.clearMessageContext();
@@ -2338,10 +2539,8 @@ public class PnfsManagerV3
                     if (other.fold(message)) {
                         LOGGER.info("Folded {}", other.getClass().getSimpleName());
                         _foldedCounters.incrementRequests(message.getClass());
-
                         i.remove();
                         envelope.revertDirection();
-
                         sendMessage(envelope);
                     }
                 }
@@ -2543,17 +2742,114 @@ public class PnfsManagerV3
         }
     }
 
+
+    /*
+     *  --------------------------------------- QOS POLICY --------------------------------------
+     */
+    public PnfsManagerQoSPolicyMessage messageArrived(PnfsManagerQoSPolicyMessage message) {
+        try {
+            if (message instanceof PnfsManagerAddQoSPolicyMessage) {
+                processSetQoSPolicy((PnfsManagerAddQoSPolicyMessage) message);
+            } else if (message instanceof PnfsManagerRmQoSPolicyMessage) {
+                processRmQoSPolicy((PnfsManagerRmQoSPolicyMessage) message);
+            } else if (message instanceof PnfsManagerGetQoSPolicyMessage) {
+                processGetQoSPolicy((PnfsManagerGetQoSPolicyMessage) message);
+            } else if (message instanceof PnfsManagerListQoSPoliciesMessage) {
+                processListQoSPolicies((PnfsManagerListQoSPoliciesMessage) message);
+            } else if (message instanceof PnfsManagerGetQoSPolicyStatsMessage) {
+                processQoSPolicyStats((PnfsManagerGetQoSPolicyStatsMessage)message);
+            } else if (message instanceof PnfsManagerInvalidateQoSPolicyMessage) {
+                processInvalidateQoSPolcy((PnfsManagerInvalidateQoSPolicyMessage)message);
+            } else {
+                LOGGER.warn("Unexpected message type {}", message.getClass());
+                throw new CacheException(CacheException.INVALID_ARGS, "Unexpected message type.");
+            }
+            message.setSucceeded();
+        } catch (CacheException e) {
+            message.setFailed(e.getRc(), e.getMessage());
+        }
+        return message;
+    }
+
+    private void processQoSPolicyStats(PnfsManagerGetQoSPolicyStatsMessage message) {
+        message.setPolicyStats(qosManager.getPolicyStatsByPolicyName());
+    }
+
+    private void processGetQoSPolicy(PnfsManagerGetQoSPolicyMessage message) throws CacheException {
+        Optional<QoSPolicy> policy = qosManager.getQosPolicy(message.getPolicyName());
+        if (policy.isPresent()) {
+            message.setPolicy(policy.get());
+        } else {
+            throw new MissingResourceCacheException(message.getPolicyName());
+        }
+    }
+
+    private void processRmQoSPolicy(PnfsManagerRmQoSPolicyMessage message) throws CacheException {
+        try {
+            message.setPolicyId(qosManager.removeQosPolicy(message.getPolicyName()));
+        } catch (ChimeraFsException e) {
+            throw new CacheException(CacheException.RESOURCE, e.getMessage());
+        }
+    }
+
+    private void processSetQoSPolicy(PnfsManagerAddQoSPolicyMessage message) throws CacheException {
+        try {
+            qosManager.addQosPolicy(message.getPolicy());
+        } catch (ChimeraFsException e) {
+            throw new CacheException(CacheException.RESOURCE, e.getMessage());
+        }
+    }
+
+    private void processListQoSPolicies(PnfsManagerListQoSPoliciesMessage message) {
+        message.setPolicies(qosManager.listQoSPolicies());
+    }
+
+    private void processInvalidateQoSPolcy(PnfsManagerInvalidateQoSPolicyMessage message) {
+        qosManager.invalidate(message.getPolicyId());
+    }
+
     /*
      *  ----------------------------------------------------------------------------------------
      */
 
     public void messageArrived(CellMessage envelope, PnfsListDirectoryMessage message)
           throws CacheException {
+
         String path = message.getPnfsPath();
+
         if (path == null) {
             throw new InvalidMessageCacheException("Missing PNFS id and path");
         }
-        if (!_listQueue.offer(envelope)) {
+
+	/**
+	 * when useParallelListing is true, we only have 1 queue in the
+	 * list of queues below
+	 */
+	int index = 0;
+
+	if (!useParallelListing) {
+	    index = (int)(Math.abs((long)Objects.hashCode(path.toString())) % _listThreads);
+	}
+        BlockingQueue<CellMessage> queue = _listQueues[index];
+
+        /**
+         * Do counts only if maxListRequestsInQueue is enabled
+         */
+        if (maxListRequestsInQueue < Integer.MAX_VALUE) {
+            int counter = 0;
+            for (CellMessage i : queue) {
+                PnfsListDirectoryMessage msg = (PnfsListDirectoryMessage)i.getMessageObject();
+                if (msg.getPnfsPath().equals(path))  {
+                    if (counter > maxListRequestsInQueue) {
+                        LOGGER.warn("Too many list requests for the same directory {}  in PnfsManager queue", path);
+                        throw new MissingResourceCacheException("Too many list requests for the same directory in PndsManager queue");
+                    }
+                    counter += 1;
+                }
+            }
+        }
+
+        if (!queue.offer(envelope)) {
             throw new MissingResourceCacheException("PnfsManager queue limit exceeded");
         }
     }
@@ -2629,7 +2925,7 @@ public class PnfsManagerV3
     }
 
     @Transactional
-    private boolean processMessageTransactionally(CellMessage message, PnfsMessage pnfsMessage) {
+    boolean processMessageTransactionally(CellMessage message, PnfsMessage pnfsMessage) {
         if (pnfsMessage instanceof PnfsAddCacheLocationMessage) {
             addCacheLocation((PnfsAddCacheLocationMessage) pnfsMessage);
         } else if (pnfsMessage instanceof PnfsClearCacheLocationMessage) {
@@ -2656,8 +2952,6 @@ public class PnfsManagerV3
             processFlushMessage((PoolFileFlushedMessage) pnfsMessage);
         } else if (pnfsMessage instanceof PnfsGetParentMessage) {
             getParent((PnfsGetParentMessage) pnfsMessage);
-        } else if (pnfsMessage instanceof PnfsListDirectoryMessage) {
-            listDirectory(message, (PnfsListDirectoryMessage) pnfsMessage);
         } else if (pnfsMessage instanceof PnfsGetFileAttributes) {
             getFileAttributes((PnfsGetFileAttributes) pnfsMessage);
         } else if (pnfsMessage instanceof PnfsSetFileAttributes) {
@@ -2674,6 +2968,8 @@ public class PnfsManagerV3
             removeExtendedAttributes((PnfsRemoveExtendedAttributesMessage) pnfsMessage);
         } else if (pnfsMessage instanceof PnfsRemoveLabelsMessage) {
             removeLabel((PnfsRemoveLabelsMessage) pnfsMessage);
+        } else if (pnfsMessage instanceof PnfsResolveSymlinksMessage) {
+            resolveSymlinks((PnfsResolveSymlinksMessage) pnfsMessage);
         } else {
             LOGGER.warn("Unexpected message class [{}] from source [{}]",
                   pnfsMessage.getClass(), message.getSourcePath());
@@ -3247,7 +3543,7 @@ public class PnfsManagerV3
         throw new RuntimeException("Unexpected AccessMask: " + mask);
     }
 
-    private static void checkRestrictionOnParent(PnfsMessage message, Activity activity)
+    private void checkRestrictionOnParent(PnfsMessage message, Activity activity)
           throws PermissionDeniedCacheException {
         if (!Subjects.isRoot(message.getSubject())) {
             FsPath path = message.getFsPath();
@@ -3258,7 +3554,7 @@ public class PnfsManagerV3
         }
     }
 
-    private static void checkRestriction(PnfsMessage message, Activity activity)
+    private void checkRestriction(PnfsMessage message, Activity activity)
           throws PermissionDeniedCacheException {
         if (!Subjects.isRoot(message.getSubject())) {
             FsPath path = message.getFsPath();
@@ -3272,7 +3568,7 @@ public class PnfsManagerV3
         }
     }
 
-    private static void checkRestriction(PnfsMessage message, Activity activity,
+    private void checkRestriction(PnfsMessage message, Activity activity,
           FsPath path) throws PermissionDeniedCacheException {
         if (!Subjects.isRoot(message.getSubject())) {
             checkRestriction(message.getRestriction(), message.getAccessMask(),
@@ -3280,8 +3576,10 @@ public class PnfsManagerV3
         }
     }
 
-    private static void checkRestriction(Restriction restriction, Set<AccessMask> mask,
+    private void checkRestriction(Restriction restriction, Set<AccessMask> mask,
           Activity activity, FsPath path) throws PermissionDeniedCacheException {
+        restriction.setPathResolver(pathResolver);
+        LOGGER.debug("Checking restriction of type {} on path {} for activity", restriction.getClass(), path, activity);
         if (mask.stream()
               .map(PnfsManagerV3::toActivity)
               .anyMatch(a -> restriction.isRestricted(a, path))) {
@@ -3291,13 +3589,53 @@ public class PnfsManagerV3
                   .collect(Collectors.toSet());
 
             throw new PermissionDeniedCacheException(
-                  "Restriction " + restriction + " denied access for " + denied + " on " + path);
+                  "Restriction " + restriction + " denied access for " + denied + " on "
+                        + resolveSymlinks(path.toString()));
         }
 
         if (restriction.isRestricted(activity, path)) {
             throw new PermissionDeniedCacheException(
-                  "Restriction " + restriction + " denied activity " + activity + " on " + path);
+                  "Restriction " + restriction + " denied activity " + activity + " on "
+                        + resolveSymlinks(path.toString()));
         }
+    }
+
+    private void resolveSymlinks(PnfsResolveSymlinksMessage message) {
+        String prefix = message.getPrefix();
+        String path = message.getPnfsPath();
+        if (Strings.emptyToNull(prefix) != null) {
+            message.setResolvedPrefix(resolveSymlinks(prefix).toString());
+        }
+
+        message.setResolvedPath(resolveSymlinks(path).toString());
+        message.setSucceeded();
+    }
+
+    private FsPath resolveSymlinks(String target) {
+        try {
+            return recursivelyResolveSymlinks(target);
+        } catch (CacheException e) {
+            LOGGER.error("resolveSymlinks failed: {}; returning original target.",
+                  Throwables.getRootCause(e).toString());
+            return FsPath.create(target);
+        }
+    }
+
+    private FsPath recursivelyResolveSymlinks(String target) throws CacheException {
+        String resolved = _nameSpaceProvider.resolveSymlinks(Subjects.ROOT, target);
+
+        if (Strings.emptyToNull(resolved) != null) {
+            return FsPath.create(resolved);
+        }
+
+        File file = new File(target);
+        File parent = file.getParentFile();
+        if (parent == null) {
+            return FsPath.create(target);
+        }
+
+        FsPath resolvedParent = recursivelyResolveSymlinks(parent.getAbsolutePath());
+        return FsPath.create(new File(resolvedParent.toString(), file.getName()).getAbsolutePath());
     }
 
     /**

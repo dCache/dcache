@@ -48,8 +48,11 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import javax.sql.DataSource;
+import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.dcache.acl.ACE;
 import org.dcache.acl.enums.RsType;
 import org.dcache.chimera.posix.Stat;
@@ -75,7 +78,7 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
  * @Immutable
  * @Threadsafe
  */
-public class JdbcFs implements FileSystemProvider {
+public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
 
     /**
      * common error message for unimplemented
@@ -181,20 +184,35 @@ public class JdbcFs implements FileSystemProvider {
      */
     private RetentionPolicy _defaultRetentionPolicy;
 
-    public JdbcFs(DataSource dataSource, PlatformTransactionManager txManager)
+    /**
+     * File attribute consistency policy.
+     */
+    private final String _attributeConsistency;
+
+    private final ScheduledExecutorService maintenanceTaskExecutor = Executors.newSingleThreadScheduledExecutor(
+          new ThreadFactoryBuilder()
+                .setNameFormat("chimera-maintenance-executor-%d")
+                .build()
+    );
+
+    private ScheduledFuture<?> maintenanceTask;
+
+
+    public JdbcFs(DataSource dataSource, PlatformTransactionManager txManager, String consistency)
           throws SQLException, ChimeraFsException {
-        this(dataSource, txManager, 0);
+        this(dataSource, txManager, 0, consistency);
     }
 
-    public JdbcFs(DataSource dataSource, PlatformTransactionManager txManager, int id)
+    public JdbcFs(DataSource dataSource, PlatformTransactionManager txManager, int id, String consistency)
           throws SQLException, ChimeraFsException {
         _dbConnectionsPool = dataSource;
         _fsId = id;
 
         _tx = txManager;
 
+        _attributeConsistency = consistency;
         // try to get database dialect specific query engine
-        _sqlDriver = FsSqlDriver.getDriverInstance(dataSource);
+        _sqlDriver = FsSqlDriver.getDriverInstance(dataSource, _attributeConsistency);
     }
 
     public void setQuota(QuotaHandler quota) {
@@ -349,8 +367,8 @@ public class JdbcFs implements FileSystemProvider {
                 }
 
                 _sqlDriver.createEntryInParent(parent, name, inode);
-                _sqlDriver.incNlink(inode);
-                _sqlDriver.incNlink(parent);
+                _sqlDriver.incNlinkForFile(inode);
+                _sqlDriver.incNlinkForDir(parent, 0);
             } catch (DuplicateKeyException e) {
                 throw new FileExistsChimeraFsException(e);
             }
@@ -521,7 +539,11 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public DirectoryStreamB<ChimeraDirectoryEntry> newDirectoryStream(FsInode dir)
           throws ChimeraFsException {
-        return _sqlDriver.newDirectoryStream(dir);
+        if ((dir.type() == FsInodeType.LABEL)) {
+            return _sqlDriver.virtualDirectoryStream(dir, _sqlDriver.getLabelById(dir.ino()));
+        } else {
+            return _sqlDriver.newDirectoryStream(dir);
+        }
     }
 
     @Override
@@ -598,7 +620,7 @@ public class JdbcFs implements FileSystemProvider {
         if (stat == null) {
             throw FileNotFoundChimeraFsException.of(inode);
         }
-        if (level == 0) {
+        if (level == 0 ){
             _inoCache.put(stat.getId(), stat.getIno());
             _idCache.put(stat.getIno(), stat.getId());
         }
@@ -724,7 +746,6 @@ public class JdbcFs implements FileSystemProvider {
             throw new RuntimeException(e.getCause());
         }
     }
-
     @Override
     public FsInode id2inode(String id, StatCacheOption option) throws ChimeraFsException {
         if (option == NO_STAT) {
@@ -843,6 +864,20 @@ public class JdbcFs implements FileSystemProvider {
                     throw FileNotFoundChimeraFsException.ofFileInDirectory(parent, name);
                 }
                 return nameofInode;
+            }
+
+            if (name.startsWith(".(collection)(")) {
+                String[] cmd = PnfsCommandProcessor.process(name);
+                if (cmd.length != 2) {
+                    throw FileNotFoundChimeraFsException.ofFileInDirectory(parent, name);
+                }
+                FsInode labelInode = new FsInode_LABEL(this, _sqlDriver.getLabel(cmd[1]));
+                if (!(labelInode.type() == FsInodeType.LABEL)) {
+                    if (!labelInode.exists()) {
+                        throw FileNotFoundChimeraFsException.ofFileInDirectory(parent, name);
+                    }
+                }
+                return labelInode;
             }
 
             if (name.startsWith(".(const)(")) {
@@ -1264,14 +1299,6 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     @Override
-    public void removeTag(FsInode dir) throws ChimeraFsException {
-        inTransaction(status -> {
-            _sqlDriver.removeTag(dir);
-            return null;
-        });
-    }
-
-    @Override
     public int getTag(FsInode inode, String tagName, byte[] data, int offset, int len)
           throws ChimeraFsException {
         return _sqlDriver.getTag(inode, tagName, data, offset, len);
@@ -1469,6 +1496,7 @@ public class JdbcFs implements FileSystemProvider {
             sb.append("rootID    : ").append(e.getMessage()).append('\n');
         }
         sb.append("FsId      : ").append(_fsId).append('\n');
+        sb.append("Wcc       : ").append(_attributeConsistency).append("\n");
         return sb.toString();
     }
 
@@ -1479,7 +1507,7 @@ public class JdbcFs implements FileSystemProvider {
      */
     @Override
     public void close() throws IOException {
-        // enforced by the interface
+        maintenanceTaskExecutor.shutdown();
     }
 
     @Override
@@ -1539,11 +1567,14 @@ public class JdbcFs implements FileSystemProvider {
             return null;
         });
     }
-
-
     @Override
     public Set<String> getLabels(FsInode inode) throws ChimeraFsException {
         return inTransaction(status -> _sqlDriver.getLabels(inode));
+    }
+
+    @Override
+    public String getLabelById(long ino) throws ChimeraFsException {
+        return inTransaction(status -> _sqlDriver.getLabelById(ino));
     }
 
     @Override
@@ -1570,6 +1601,33 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public List<PinInfo> listPins(FsInode pnfsid) throws ChimeraFsException {
         throw new ChimeraFsException(NOT_IMPL);
+    }
+
+    @Override
+    public String resolvePath(String path) throws ChimeraFsException {
+        try {
+            return _sqlDriver.resolvePath(new RootInode(this, _sqlDriver.getRootInumber()), path);
+        } catch (SQLException e) {
+            throw new ChimeraFsException(e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public String qosPolicyIdToName(Integer id) throws ChimeraFsException {
+        try {
+            return _sqlDriver.getQoSPolicyName(id);
+        } catch (SQLException e) {
+            throw new ChimeraFsException(e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public Integer qosPolicyNameToId(String name) throws ChimeraFsException {
+        try {
+            return _sqlDriver.getQoSPolicyId(name);
+        } catch (SQLException e) {
+            throw new ChimeraFsException(e.getMessage(), e);
+        }
     }
 
     private interface FallibleTransactionCallback<T> {
@@ -1642,4 +1700,30 @@ public class JdbcFs implements FileSystemProvider {
                   String.format("%s user quota exceeded for uid=%d", rp, uid));
         }
     }
+
+    private synchronized void enableMaintenanceTask() {
+        if (maintenanceTask == null) {
+            maintenanceTask = maintenanceTaskExecutor.scheduleWithFixedDelay(
+                  () -> _sqlDriver.performMaintenanceTask(), 10, 20, TimeUnit.SECONDS
+            );
+        }
+    }
+
+    private synchronized void disableMaintenanceTask() {
+        if (maintenanceTask != null) {
+            maintenanceTask.cancel(false);
+            maintenanceTask = null;
+        }
+    }
+
+    @Override
+    public void isLeader() {
+        enableMaintenanceTask();
+    }
+
+    @Override
+    public void notLeader() {
+        disableMaintenanceTask();
+    }
+
 }

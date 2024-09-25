@@ -60,27 +60,23 @@ documents or software obtained from this server.
 package org.dcache.services.bulk.store.jdbc.request;
 
 import com.google.common.base.Strings;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.sql.Timestamp;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Base64;
 import javax.security.auth.Subject;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.db.JdbcUpdate;
 import org.dcache.services.bulk.BulkRequest.Depth;
 import org.dcache.services.bulk.BulkRequestStatus;
 import org.dcache.services.bulk.BulkStorageException;
-import org.dcache.services.bulk.store.jdbc.JdbcBulkDaoUtils;
 
 /**
- *  Implementation of the update class for the bulk request table.
+ * Implementation of the update class for the bulk request table.
  */
 public final class JdbcBulkRequestUpdate extends JdbcUpdate {
-
-    private final JdbcBulkDaoUtils utils;
-
-    public JdbcBulkRequestUpdate(JdbcBulkDaoUtils utils) {
-        this.utils = utils;
-    }
 
     public JdbcBulkRequestUpdate arrivedAt(long firstArrived) {
         set("arrived_at", new Timestamp(firstArrived));
@@ -112,9 +108,16 @@ public final class JdbcBulkRequestUpdate extends JdbcUpdate {
         return this;
     }
 
-    public JdbcBulkRequestUpdate id(String id) {
-        if (Strings.emptyToNull(id) != null) {
+    public JdbcBulkRequestUpdate permId(Long id) {
+        if (id != null) {
             set("id", id);
+        }
+        return this;
+    }
+
+    public JdbcBulkRequestUpdate uid(String uid) {
+        if (Strings.emptyToNull(uid) != null) {
+            set("uid", uid);
         }
         return this;
     }
@@ -125,16 +128,17 @@ public final class JdbcBulkRequestUpdate extends JdbcUpdate {
         }
         return this;
     }
+
     public JdbcBulkRequestUpdate subject(Subject subject) throws BulkStorageException {
         if (subject != null) {
-            set("subject", utils.serializeToBase64("subject", subject));
+            set("subject", serializeToBase64("subject", subject));
         }
         return this;
     }
 
     public JdbcBulkRequestUpdate restriction(Restriction restriction) throws BulkStorageException {
         if (restriction != null) {
-            set("restriction", utils.serializeToBase64("restriction", restriction));
+            set("restriction", serializeToBase64("restriction", restriction));
         }
         return this;
     }
@@ -168,21 +172,8 @@ public final class JdbcBulkRequestUpdate extends JdbcUpdate {
         return this;
     }
 
-    public JdbcBulkRequestUpdate prestore(boolean prestore) {
-        set("prestore", prestore);
-        return this;
-    }
-
     public JdbcBulkRequestUpdate delayClear(int delayClear) {
         set("delay_clear", delayClear);
-        return this;
-    }
-
-    public JdbcBulkRequestUpdate arguments(Map<String, String> arguments) {
-        if (arguments != null && !arguments.isEmpty()) {
-            set("arguments", arguments.entrySet().stream().map(e -> e.getKey() + ":" + e.getValue())
-                  .collect(Collectors.joining(",")));
-        }
         return this;
     }
 
@@ -191,5 +182,17 @@ public final class JdbcBulkRequestUpdate extends JdbcUpdate {
             set("expand_directories", depth.name());
         }
         return this;
+    }
+
+    private static String serializeToBase64(String field, Serializable serializable)
+          throws BulkStorageException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ObjectOutputStream ostream = new ObjectOutputStream(baos)) {
+            ostream.writeObject(serializable);
+        } catch (IOException e) {
+            throw new BulkStorageException("problem serializing "
+                  + field, e);
+        }
+        return Base64.getEncoder().encodeToString(baos.toByteArray());
     }
 }

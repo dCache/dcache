@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2018 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2018-2024 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -25,12 +25,18 @@ import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import com.google.common.base.Splitter;
 import static java.util.Objects.requireNonNull;
 
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.apache.http.client.HttpClient;
+import org.dcache.gplazma.oidc.helpers.ReasonBearingMissingNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,12 +63,13 @@ public class IdentityProvider {
     private final Profile profile;
     private final HttpClient client;
     private final Duration cacheDurationWhenSuccessful;
+    private final List<String> suppress;
 
     private Instant nextDiscoveryFetch = Instant.now();
     private JsonNode discoveryDocument = MissingNode.getInstance();
 
     public IdentityProvider(String name, URI endpoint, Profile profile, HttpClient client,
-            Duration discoveryCacheDuration) {
+            Duration discoveryCacheDuration, List<String> suppress) {
         checkArgument(!name.isEmpty(), "Empty name not allowed");
         this.name = name;
         this.issuer = requireNonNull(endpoint);
@@ -72,6 +79,7 @@ public class IdentityProvider {
         configuration = issuer.resolve(
               withTrailingSlash(issuer.getPath()) + ".well-known/openid-configuration");
         cacheDurationWhenSuccessful = requireNonNull(discoveryCacheDuration);
+        this.suppress = requireNonNull(suppress);
     }
 
     private static String withTrailingSlash(String path) {
@@ -88,6 +96,10 @@ public class IdentityProvider {
 
     public Profile getProfile() {
         return profile;
+    }
+
+    public boolean isSuppressed(String value) {
+        return suppress.stream().anyMatch(v -> v.equals(value));
     }
 
     /**
@@ -115,7 +127,7 @@ public class IdentityProvider {
                 nextDiscoveryFetch = now.plus(cacheDurationWhenSuccessful);
             } catch (IOException e) {
                 LOGGER.warn("Failed to fetch discovery document for {}: {}", name, e.toString());
-                discoveryDocument = MissingNode.getInstance();
+                discoveryDocument = new ReasonBearingMissingNode(e.toString());
                 nextDiscoveryFetch = now.plus(CACHE_DURATION_WHEN_UNSUCCESSFUL);
             }
         }

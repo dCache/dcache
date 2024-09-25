@@ -59,12 +59,17 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.store.jdbc.request;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import javax.security.auth.Subject;
 import org.dcache.auth.attributes.Restriction;
+import org.dcache.auth.attributes.Restrictions;
 import org.dcache.services.bulk.BulkStorageException;
 import org.dcache.services.bulk.store.jdbc.JdbcBulkDaoUtils;
 import org.slf4j.Logger;
@@ -82,16 +87,19 @@ public final class JdbcBulkRequestPermissionsDao extends JdbcDaoSupport {
 
     private static final String TABLE_NAME = "request_permissions";
 
-    private JdbcBulkDaoUtils utils;
+    private static final String SELECT = "SELECT request_permissions.*";
 
-    public int delete(JdbcBulkRequestCriterion criterion) {
-        return utils.delete(criterion, TABLE_NAME, this);
-    }
+    private static final String JOINED_TABLE_NAMES_FOR_SELECT =
+          JdbcBulkRequestDao.TABLE_NAME + ", " + TABLE_NAME;
+
+    private JdbcBulkDaoUtils utils;
 
     public Optional<JdbcBulkRequestPermissions> get(JdbcBulkRequestCriterion criterion)
           throws BulkStorageException {
-        List<JdbcBulkRequestPermissions> list = utils.get(criterion.sorter("id"), 1, TABLE_NAME,
-              this, this::toPermissions);
+
+        List<JdbcBulkRequestPermissions> list = utils.get(SELECT,
+              criterion.sorter("request_permissions.id"), 1, JOINED_TABLE_NAMES_FOR_SELECT, this,
+              this::toPermissions);
 
         if (list.isEmpty()) {
             return Optional.empty();
@@ -111,7 +119,7 @@ public final class JdbcBulkRequestPermissionsDao extends JdbcDaoSupport {
     }
 
     public JdbcBulkRequestUpdate set() {
-        return new JdbcBulkRequestUpdate(utils);
+        return new JdbcBulkRequestUpdate();
     }
 
     @Required
@@ -131,18 +139,36 @@ public final class JdbcBulkRequestPermissionsDao extends JdbcDaoSupport {
     public JdbcBulkRequestPermissions toPermissions(ResultSet rs, int row)
           throws SQLException {
         JdbcBulkRequestPermissions wrapper = new JdbcBulkRequestPermissions();
-        String id = rs.getString("id");
+        Long id = rs.getLong("id");
         wrapper.setId(id);
         wrapper.setSubject(
-              (Subject) utils.deserializeFromBase64(id, "subject", rs.getString("subject")));
-        wrapper.setRestriction(
-              (Restriction) utils.deserializeFromBase64(id, "restriction",
-                    rs.getString("restriction")));
+              (Subject) deserializeFromBase64(id, "subject", rs.getString("subject")));
+        wrapper.setRestriction((Restriction) deserializeFromBase64(id, "restriction",
+              rs.getString("restriction")));
+        if (wrapper.getRestriction() == null) { wrapper.setRestriction(Restrictions.none()); }
         LOGGER.debug("toPermissions, returning wrapper for {}.", id);
         return wrapper;
     }
 
     public JdbcBulkRequestCriterion where() {
         return new JdbcBulkRequestCriterion();
+    }
+
+    /**
+     * @throws SQLException in order to support the jdbc template API.
+     */
+    private static Object deserializeFromBase64(Long id, String field, String base64)
+          throws SQLException {
+        if (base64 == null) {
+            return null;
+        }
+        byte[] array = Base64.getDecoder().decode(base64);
+        ByteArrayInputStream bais = new ByteArrayInputStream(array);
+        try (ObjectInputStream istream = new ObjectInputStream(bais)) {
+            return istream.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            throw new SQLException("problem deserializing " + field + " for "
+                  + id, e);
+        }
     }
 }

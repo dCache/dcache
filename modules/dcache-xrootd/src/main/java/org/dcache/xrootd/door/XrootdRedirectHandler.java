@@ -26,7 +26,7 @@ import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ArgMissing;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_FileNotOpen;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_IOError;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_InvalidRequest;
-import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_NotAuthorized;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ItExists;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_Qcksum;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_Qconfig;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ServerError;
@@ -99,6 +99,7 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Checksum;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
+import org.dcache.vehicles.PnfsResolveSymlinksMessage;
 import org.dcache.xrootd.LoginTokens;
 import org.dcache.xrootd.core.XrootdException;
 import org.dcache.xrootd.core.XrootdSession;
@@ -141,6 +142,26 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
     private static final Logger _log =
           LoggerFactory.getLogger(XrootdRedirectHandler.class);
 
+    private static final String EFFECTIVE_ROOT_NAME = "org.dcache.effectiveRoot";
+
+    private static Map<String, String> safelyExtractOpaque(String opaqueString) {
+        Map<String, String> opaque;
+        try {
+            opaque = OpaqueStringParser.getOpaqueMap(opaqueString);
+            if (opaque.isEmpty()) {
+                /*
+                 * create a new HashMap as empty opaque map is immutable
+                 */
+                opaque = new HashMap<>();
+            }
+        } catch (ParseException e) {
+            _log.warn("Ignoring malformed open opaque {}: {}", opaqueString,
+                  e.getMessage());
+            opaque = new HashMap<>();
+        }
+        return opaque;
+    }
+
     private class LoginSessionInfo {
 
         private final Subject subject;
@@ -159,7 +180,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
 
         LoginSessionInfo(LoginReply reply) {
             subject = reply.getSubject();
-            restriction = reply.getRestriction();
+            restriction = computeRestriction(reply);
             userRootPath = reply.getLoginAttributes().stream()
                   .filter(RootDirectory.class::isInstance)
                   .findFirst()
@@ -189,6 +210,21 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
 
         public boolean isLoggedIn() {
             return loggedIn;
+        }
+
+        private Restriction computeRestriction(LoginReply reply) {
+            if (!Subjects.isNobody(subject)) {
+                return reply.getRestriction();
+            }
+
+            switch(_door.getAnonymousUserAccess()) {
+                case READONLY:
+                    return Restrictions.readOnly();
+                case FULL:
+                    return Restrictions.none();
+                default:
+                    return Restrictions.denyAll();
+            }
         }
     }
 
@@ -314,24 +350,10 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
         InetSocketAddress remoteAddress = getSourceAddress();
         LoginSessionInfo loginSessionInfo = sessionInfo();
 
-        Map<String, String> opaque;
+        Map<String, String> opaque = safelyExtractOpaque(req.getOpaque());
 
         try {
-            opaque = OpaqueStringParser.getOpaqueMap(req.getOpaque());
-            if (opaque.isEmpty()) {
-                /*
-                 * create a new HashMap as empty opaque map is immutable
-                 */
-                opaque = new HashMap<>();
-            }
-        } catch (ParseException e) {
-            _log.warn("Ignoring malformed open opaque {}: {}", req.getOpaque(),
-                  e.getMessage());
-            opaque = new HashMap<>();
-        }
-
-        try {
-            FsPath path = createFullPath(req.getPath());
+            FsPath path = createFullPath(req.getPath(), opaque);
 
             XrootdResponse response
                   = conditionallyHandleThirdPartyRequest(ctx,
@@ -398,8 +420,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
                       loginSessionInfo.getSubject(),
                       loginSessionInfo.getRestriction(),
                       persistOnSuccessfulClose,
-                      ((loginSessionInfo.isLoggedIn()) ?
-                            loginSessionInfo.getUserRootPath() : _rootPath),
+                      effectiveRoot(),
                       req.getSession().getDelegatedCredential(),
                       opaque);
             } else {
@@ -458,7 +479,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
         } catch (FileNotFoundCacheException e) {
             return withError(ctx, req, xrootdErrorCode(e.getRc()), "No such file");
         } catch (FileExistsCacheException e) {
-            return withError(ctx, req, kXR_NotAuthorized, "File already exists");
+            return withError(ctx, req, kXR_ItExists, "File already exists");
         } catch (TimeoutCacheException e) {
             return withError(ctx, req, xrootdErrorCode(e.getRc()), "Internal timeout");
         } catch (PermissionDeniedCacheException e) {
@@ -578,7 +599,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
 
         String tpcKey = opaque.get("tpc.key");
         if (tpcKey == null) {
-            _log.debug("{} –– not a third-party request.", req);
+            _log.debug("{} -- not a third-party request.", req);
             return null;  // proceed as usual with mover + redirect
         }
 
@@ -588,7 +609,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
          * to the TPC client.
          */
         if (req.getSession().getDelegatedCredential() != null) {
-            _log.debug("{} –– third-party request with delegation.", req);
+            _log.debug("{} -- third-party request with delegation.", req);
             return null;  // proceed as usual with mover + redirect
         }
 
@@ -619,7 +640,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
                  * remove the key and return immediately.
                  */
                 _door.removeTpcPlaceholder(tpcKey);
-                _log.debug("{} –– request contains authorization token.", req);
+                _log.debug("{} -- request contains authorization token.", req);
                 return null;  // proceed as usual with mover + redirect
             }
 
@@ -712,6 +733,11 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
             _log.debug("Open request {} from client to door as destination: OK;"
                   + "removing info {}.", req, info);
             _door.removeTpcPlaceholder(info.getFd());
+            /*
+             *  The TPC client will need the resolved path in case it logs in to the
+             *  source using the rendezvous key rather than a delegated credential.
+             */
+            opaque.put(EFFECTIVE_ROOT_NAME, effectiveRoot().toString());
             return null; // proceed as usual with mover + redirect
         }
 
@@ -829,7 +855,8 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
             LoginSessionInfo loginSessionInfo = sessionInfo();
             InetSocketAddress client = getSourceAddress();
 
-            return new StatResponse(req, _door.getFileStatus(createFullPath(path),
+            return new StatResponse(req, _door.getFileStatus(createFullPath(path,
+                        safelyExtractOpaque(req.getOpaque())),
                   loginSessionInfo.getSubject(),
                   loginSessionInfo.getRestriction(),
                   client.getAddress().getHostAddress()));
@@ -855,7 +882,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
         try {
             FsPath[] paths = new FsPath[req.getPaths().length];
             for (int i = 0; i < paths.length; i++) {
-                paths[i] = createFullPath(req.getPaths()[i]);
+                paths[i] = createFullPath(req.getPaths()[i], safelyExtractOpaque(req.getOpaques()[i]));
             }
             LoginSessionInfo loginSessionInfo = sessionInfo();
             Subject subject = loginSessionInfo.getSubject();
@@ -887,7 +914,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
 
         try {
             LoginSessionInfo loginSessionInfo = sessionInfo();
-            _door.deleteFile(createFullPath(req.getPath()),
+            _door.deleteFile(createFullPath(req.getPath(), safelyExtractOpaque(req.getOpaque())),
                   loginSessionInfo.getSubject(),
                   loginSessionInfo.getRestriction());
             return withOk(req);
@@ -915,7 +942,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
 
         try {
             LoginSessionInfo loginSessionInfo = sessionInfo();
-            _door.deleteDirectory(createFullPath(req.getPath()),
+            _door.deleteDirectory(createFullPath(req.getPath(), safelyExtractOpaque(req.getOpaque())),
                   loginSessionInfo.getSubject(),
                   loginSessionInfo.getRestriction());
             return withOk(req);
@@ -942,7 +969,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
 
         try {
             LoginSessionInfo loginSessionInfo = sessionInfo();
-            _door.createDirectory(createFullPath(req.getPath()),
+            _door.createDirectory(createFullPath(req.getPath(), safelyExtractOpaque(req.getOpaque())),
                   req.shouldMkPath(),
                   loginSessionInfo.getSubject(),
                   loginSessionInfo.getRestriction());
@@ -977,8 +1004,8 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
 
         try {
             LoginSessionInfo loginSessionInfo = sessionInfo();
-            _door.moveFile(createFullPath(req.getSourcePath()),
-                  createFullPath(req.getTargetPath()),
+            _door.moveFile(createFullPath(req.getSourcePath(), safelyExtractOpaque(req.getSourceOpaque())),
+                  createFullPath(req.getTargetPath(), safelyExtractOpaque(req.getTargetOpaque())),
                   loginSessionInfo.getSubject(),
                   loginSessionInfo.getRestriction());
             return withOk(req);
@@ -1044,7 +1071,8 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
                     ChecksumInfo checksumInfo = new ChecksumInfo(msg.getPath(),
                           msg.getOpaque());
                     LoginSessionInfo loginSessionInfo = sessionInfo();
-                    Set<Checksum> checksums = _door.getChecksums(createFullPath(msg.getPath()),
+                    Set<Checksum> checksums = _door.getChecksums(createFullPath(msg.getPath(),
+                                safelyExtractOpaque(msg.getOpaque())),
                           loginSessionInfo.getSubject(),
                           loginSessionInfo.getRestriction());
                     return selectChecksum(checksumInfo, checksums, msg);
@@ -1067,7 +1095,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
             }
 
             _log.info("Listing directory {}", listPath);
-            FsPath fullListPath = createFullPath(listPath);
+            FsPath fullListPath = createFullPath(listPath, safelyExtractOpaque(request.getOpaque()));
 
             if (!_door.isReadAllowed(fullListPath)) {
                 throw new PermissionDeniedCacheException("Permission denied.");
@@ -1078,14 +1106,14 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
             if (request.isDirectoryStat()) {
                 _door.listPath(fullListPath, subject, restriction,
                       new StatListCallback(request, subject, restriction, fullListPath, ctx),
-                      _door.getRequiredAttributesForFileStatus());
+                      _door.getRequiredAttributesForFileStatusList());
             } else {
                 _door.listPath(fullListPath, subject, restriction,
                       new ListCallback(request, ctx),
                       EnumSet.noneOf(FileAttribute.class));
             }
             return null;
-        } catch (PermissionDeniedCacheException e) {
+        } catch (CacheException e) {
             throw xrootdException(e);
         }
     }
@@ -1314,10 +1342,10 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
         @Override
         public void success(PnfsListDirectoryMessage message) {
             message.getEntries().stream().forEach(
-                  e -> _response.add(e.getName(), _door.getFileStatus(_subject,
+                  e -> _response.add(e.getName(), _door.getFileStatusForListing(_subject,
                         _restriction,
                         _dirPath.child(e.getName()),
-                        _client, e.getFileAttributes())));
+                        e.getFileAttributes())));
             if (message.isFinal()) {
                 respond(_context, _response.buildFinal());
             } else {
@@ -1344,12 +1372,41 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
     }
 
     /**
-     * Forms a full PNFS path. The path is created by concatenating the root path and path. The root
-     * path is guaranteed to be a prefix of the path returned.
+     * The path is created by concatenating the root path and path. If the path is already absolute,
+     * the extra root prefix is first stripped. The root path is guaranteed to be a prefix
+     * of the path returned.
      */
-    private FsPath createFullPath(String path)
-          throws PermissionDeniedCacheException {
-        return _rootPath.chroot(path);
+    private FsPath createFullPath(String path, Map<String, String> opaque)
+          throws CacheException {
+        String fromOpaque = opaque.get(EFFECTIVE_ROOT_NAME);
+        FsPath root = fromOpaque != null ? FsPath.create(fromOpaque) : effectiveRoot();
+
+        if (path.charAt(0) != '/') {
+            path = "/" + path;
+        }
+
+        PnfsResolveSymlinksMessage message = _door.sendResolveRequest(root.toString(), path);
+
+        root = FsPath.create(message.getResolvedPrefix());
+        FsPath fullPath = FsPath.create(message.getResolvedPath());
+
+        if (fullPath.hasPrefix(root)) {
+            path = fullPath.stripPrefix(root);
+        }
+
+        return root.chroot(path);
+    }
+
+    private FsPath effectiveRoot() {
+        LoginSessionInfo loginSessionInfo = sessionInfo();
+        if (Subjects.isNobody(loginSessionInfo.getSubject())) {
+            return _rootPath;
+        }
+        FsPath userRoot = loginSessionInfo != null ? loginSessionInfo.getUserRootPath() : null;
+        if (userRoot == null) {
+            return  _rootPath;
+        }
+        return userRoot.contains(_rootPath.toString()) ? userRoot : _rootPath;
     }
 
     /**

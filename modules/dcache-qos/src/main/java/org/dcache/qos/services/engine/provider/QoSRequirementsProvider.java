@@ -59,6 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.qos.services.engine.provider;
 
+import diskCacheV111.util.CacheException;
+import javax.security.auth.Subject;
 import org.dcache.qos.QoSException;
 import org.dcache.qos.data.FileQoSRequirements;
 import org.dcache.qos.data.FileQoSUpdate;
@@ -76,10 +78,21 @@ public interface QoSRequirementsProvider {
     FileQoSRequirements fetchRequirements(FileQoSUpdate update) throws QoSException;
 
     /**
+     * Used internally to avoid another call to the PnfsManager.
+     *
+     * @param update containing file pnfsid, originating type of message, and optional location for
+     *               the file source.
+     * @param descriptor initialized by a previous call to the PnfsManager.
+     * @return requirements, in particular the number and distribution of persistent disk and tape
+     */
+    FileQoSRequirements fetchRequirements(FileQoSUpdate update, FileQoSRequirements descriptor) throws QoSException;
+
+    /**
      * Implementation-dependent response to requested change in QoS requirements.
      *
      * @param newRequirements in particular the number and distribution of persistent disk and tape
      *                        replicas.
+     * @param subject subject of the request.
      */
-    void handleModifiedRequirements(FileQoSRequirements newRequirements) throws QoSException;
+    void handleModifiedRequirements(FileQoSRequirements newRequirements, Subject subject) throws QoSException, CacheException;
 }

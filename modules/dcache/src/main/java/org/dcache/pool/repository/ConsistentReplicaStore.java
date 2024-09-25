@@ -9,7 +9,6 @@ import static org.dcache.namespace.FileAttribute.SIZE;
 import static org.dcache.namespace.FileAttribute.STORAGEINFO;
 import static org.dcache.util.Exceptions.messageOrClassName;
 
-import com.google.common.collect.Sets;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
@@ -306,7 +305,7 @@ public class ConsistentReplicaStore
      * Calls through to the wrapped meta data store.
      */
     @Override
-    public boolean isOk() {
+    public FileStoreState isOk() {
         return _replicaStore.isOk();
     }
 

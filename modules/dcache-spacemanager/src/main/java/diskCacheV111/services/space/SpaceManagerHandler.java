@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2016 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 - 2024 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -20,6 +20,7 @@ package diskCacheV111.services.space;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
+import static org.dcache.util.CompletableFutures.fromCompletableFuture;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -34,6 +35,7 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import org.dcache.cells.FutureCellMessageAnswerable;
 import org.dcache.poolmanager.SerializablePoolManagerHandler;
+import org.dcache.util.CompletableFutures;
 
 /**
  * PoolManagerHandler published by space manager.
@@ -116,7 +118,7 @@ public class SpaceManagerHandler implements SerializablePoolManagerHandler {
               (Class<T>) msg.getClass());
         endpoint.sendMessage(new CellMessage(path, msg), callback, MoreExecutors.directExecutor(),
               timeout);
-        return callback;
+        return fromCompletableFuture(callback);
     }
 
     protected <T extends PoolManagerMessage> boolean shouldIntercept(T msg) {

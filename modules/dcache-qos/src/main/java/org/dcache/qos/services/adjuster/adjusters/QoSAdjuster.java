@@ -61,6 +61,7 @@ package org.dcache.qos.services.adjuster.adjusters;
 
 import com.google.common.collect.ImmutableList;
 import diskCacheV111.util.PnfsId;
+import javax.security.auth.Subject;
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.qos.data.QoSAction;
@@ -85,12 +86,14 @@ public abstract class QoSAdjuster implements Cancellable {
     protected PnfsId pnfsId;
     protected FileAttributes attributes;
     protected QoSAction action;
+    protected Subject subject ;
     protected QoSAdjustTaskCompletionHandler completionHandler;
 
     public void adjustQoS(QoSAdjusterTask task) {
         pnfsId = task.getPnfsId();
         action = task.getAction();
         attributes = task.getAttributes();
+        subject = task.getSubject();
 
         /*
          *  Generate the SESSION ID.   This is used by the QoS status endpoint

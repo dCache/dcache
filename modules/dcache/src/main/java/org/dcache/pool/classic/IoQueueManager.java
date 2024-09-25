@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,6 +27,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
@@ -206,8 +208,14 @@ public class IoQueueManager
     }
 
     private static void toMoverString(MoverRequestScheduler.PrioritizedRequest j,
-          StringBuilder sb) {
+          StringBuilder sb, boolean displaySubject) {
         sb.append(j.getId()).append(" : ").append(j).append('\n');
+        if (displaySubject) {
+            sb.append(
+                  j.getMover().getSubject().getPrincipals().stream().map(Objects::toString).collect(
+                        Collectors.joining(",", "    <", ">")))
+            .append("\n");
+        }
     }
 
     @AffectsSetup
@@ -405,6 +413,9 @@ public class IoQueueManager
         @Option(name = "r", usage = "Sort output in reverse order.")
         boolean reverseSort;
 
+        @Option(name = "u", usage = "Include user subject into output.")
+        boolean displaySubject;
+
         @Override
         public Serializable call() throws CommandException {
             if (id != null) {
@@ -457,12 +468,12 @@ public class IoQueueManager
                         sb.append("[").append(q.getName()).append("]\n");
                         q.getJobs()
                               .sorted()
-                              .forEach(j -> IoQueueManager.toMoverString(j, sb));
+                              .forEach(j -> toMoverString(j, sb, displaySubject));
                     });
                 } else {
                     queues.stream().flatMap(s -> s.getJobs())
                           .sorted(comparator)
-                          .forEach(j -> IoQueueManager.toMoverString(j, sb));
+                          .forEach(j -> toMoverString(j, sb, displaySubject));
                 }
                 return sb.toString();
             }
@@ -490,7 +501,7 @@ public class IoQueueManager
             } else {
                 StringBuilder sb = new StringBuilder();
                 p2pQueue.getJobs()
-                      .forEach(j -> IoQueueManager.toMoverString(j, sb));
+                      .forEach(j -> toMoverString(j, sb, false));
                 return sb.toString();
             }
         }

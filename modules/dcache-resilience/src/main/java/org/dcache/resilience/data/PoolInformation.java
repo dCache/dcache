@@ -66,7 +66,7 @@ import java.util.Date;
 import java.util.Map;
 
 /**
- * <p>Encapsulates "live" pool information – pool mode, status, and cost.
+ * <p>Encapsulates "live" pool information - pool mode, status, and cost.
  * Also stores pool tags.</p>
  *
  * <p>This object is held by the {@link PoolInfoMap}; status, mode, tags

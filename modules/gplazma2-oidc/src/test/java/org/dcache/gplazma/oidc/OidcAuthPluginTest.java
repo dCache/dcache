@@ -107,6 +107,68 @@ public class OidcAuthPluginTest {
         assertThat(provider.getName(), is(equalTo("EXAMPLE")));
         assertThat(provider.getIssuerEndpoint(), is(equalTo(URI.create("https://oidc.example.org/"))));
         assertThat(provider.getProfile(), is(instanceOf(OidcProfile.class)));
+        assertThat(provider.isSuppressed("example-1"), is(equalTo(false)));
+        assertThat(provider.isSuppressed("example-2"), is(equalTo(false)));
+        OidcProfile oidcProfile = (OidcProfile)provider.getProfile();
+        assertThat(oidcProfile.isPreferredUsernameClaimAccepted(), is(equalTo(false)));
+        assertThat(oidcProfile.isGroupsClaimMappedToGroupName(), is(equalTo(false)));
+    }
+
+    @Test
+    public void shouldReturnSingleIdentityProviderWithSingleSuppressWithSingleItem() throws Exception {
+        Properties properties = new Properties();
+        properties.setProperty("gplazma.oidc.provider!EXAMPLE", "https://oidc.example.org/ -suppress=example-1");
+
+        var identityProviders = OidcAuthPlugin.buildProviders(properties, aClient().build(),
+                Duration.ofSeconds(2));
+
+        assertThat(identityProviders, hasSize(1));
+        IdentityProvider provider = identityProviders.iterator().next();
+        assertThat(provider.getName(), is(equalTo("EXAMPLE")));
+        assertThat(provider.getIssuerEndpoint(), is(equalTo(URI.create("https://oidc.example.org/"))));
+        assertThat(provider.getProfile(), is(instanceOf(OidcProfile.class)));
+        assertThat(provider.isSuppressed("example-1"), is(equalTo(true)));
+        assertThat(provider.isSuppressed("example-2"), is(equalTo(false)));
+        OidcProfile oidcProfile = (OidcProfile)provider.getProfile();
+        assertThat(oidcProfile.isPreferredUsernameClaimAccepted(), is(equalTo(false)));
+        assertThat(oidcProfile.isGroupsClaimMappedToGroupName(), is(equalTo(false)));
+    }
+
+    @Test
+    public void shouldReturnSingleIdentityProviderWithTwoSuppressItemsEachWithSingleItem() throws Exception {
+        Properties properties = new Properties();
+        properties.setProperty("gplazma.oidc.provider!EXAMPLE", "https://oidc.example.org/ -suppress=example-1 -suppress=example-2");
+
+        var identityProviders = OidcAuthPlugin.buildProviders(properties, aClient().build(),
+                Duration.ofSeconds(2));
+
+        assertThat(identityProviders, hasSize(1));
+        IdentityProvider provider = identityProviders.iterator().next();
+        assertThat(provider.getName(), is(equalTo("EXAMPLE")));
+        assertThat(provider.getIssuerEndpoint(), is(equalTo(URI.create("https://oidc.example.org/"))));
+        assertThat(provider.getProfile(), is(instanceOf(OidcProfile.class)));
+        assertThat(provider.isSuppressed("example-1"), is(equalTo(true)));
+        assertThat(provider.isSuppressed("example-2"), is(equalTo(true)));
+        OidcProfile oidcProfile = (OidcProfile)provider.getProfile();
+        assertThat(oidcProfile.isPreferredUsernameClaimAccepted(), is(equalTo(false)));
+        assertThat(oidcProfile.isGroupsClaimMappedToGroupName(), is(equalTo(false)));
+    }
+
+    @Test
+    public void shouldReturnSingleIdentityProviderWithSingleSuppressItemsWithTwoItems() throws Exception {
+        Properties properties = new Properties();
+        properties.setProperty("gplazma.oidc.provider!EXAMPLE", "https://oidc.example.org/ -suppress=example-1,example-2");
+
+        var identityProviders = OidcAuthPlugin.buildProviders(properties, aClient().build(),
+                Duration.ofSeconds(2));
+
+        assertThat(identityProviders, hasSize(1));
+        IdentityProvider provider = identityProviders.iterator().next();
+        assertThat(provider.getName(), is(equalTo("EXAMPLE")));
+        assertThat(provider.getIssuerEndpoint(), is(equalTo(URI.create("https://oidc.example.org/"))));
+        assertThat(provider.getProfile(), is(instanceOf(OidcProfile.class)));
+        assertThat(provider.isSuppressed("example-1"), is(equalTo(true)));
+        assertThat(provider.isSuppressed("example-2"), is(equalTo(true)));
         OidcProfile oidcProfile = (OidcProfile)provider.getProfile();
         assertThat(oidcProfile.isPreferredUsernameClaimAccepted(), is(equalTo(false)));
         assertThat(oidcProfile.isGroupsClaimMappedToGroupName(), is(equalTo(false)));
@@ -439,6 +501,34 @@ public class OidcAuthPluginTest {
     }
 
     @Test
+    public void shouldAcceptSingleAudWithSpaceMatchesSingleAllowedValue() throws Exception {
+        var profile = aProfile().thatReturns(aProfileResult()
+                .withPrincipals(Collections.singleton(new OidcSubjectPrincipal("sub-claim-value", "MY-OP"))))
+                .build();
+        var op = anIp("MY-OP").withProfile(profile).build();
+        var claims = claims()
+                .withStringClaim("sub", "sub-claim-value")
+                .withStringClaim("aud", "my target")
+                .build();
+        given(aPlugin()
+            .withProperty("gplazma.oidc.audience-targets", "\"my target\"")
+            .withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(op).containing(claims))));
+
+        when(invoked().withBearerToken("FOO"));
+
+        verify(processor).extract(eq("FOO"));
+        verify(profile).processClaims(eq(op), eq(claims));
+        assertThat(principals, hasItem(new OidcSubjectPrincipal("sub-claim-value", "MY-OP")));
+        assertThat(principals, not(hasItem(any(OpenIdGroupPrincipal.class))));
+        assertThat(principals, not(hasItem(any(FullNamePrincipal.class))));
+        assertThat(principals, not(hasItem(any(EmailAddressPrincipal.class))));
+        assertThat(principals, not(hasItem(any(LoAPrincipal.class))));
+        assertThat(principals, not(hasItem(any(EntitlementPrincipal.class))));
+        assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
+        assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
+    }
+
+    @Test
     public void shouldAcceptWhenSingleAudMatchesOneFromMultipleAllowedValue() throws Exception {
         var profile = aProfile().thatReturns(aProfileResult()
                 .withPrincipals(Collections.singleton(new OidcSubjectPrincipal("sub-claim-value", "MY-OP"))))
@@ -475,6 +565,27 @@ public class OidcAuthPluginTest {
                         .withStringClaim("aud", "another-service.example.org")))));
 
         when(invoked().withBearerToken("FOO"));
+    }
+
+    @Test
+    public void shouldAcceptSingleAuthClaimWithNoMatchingAudiencesIfAudienceSuppressed() throws Exception {
+        var profile = aProfile().thatReturns(aProfileResult()
+                .withPrincipals(Collections.singleton(new OidcSubjectPrincipal("sub-claim-value", "MY-OP"))))
+                .build();
+        var op = anIp("MY-OP").withProfile(profile).withSuppress("audience").build();
+        var claims = claims()
+                .withStringClaim("sub", "sub-claim-value")
+                .withStringClaim("aud", "another-service.example.org")
+                .build();
+        given(aPlugin()
+            .withProperty("gplazma.oidc.audience-targets", "dcache.example.org")
+            .withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(op).containing(claims))));
+
+        when(invoked().withBearerToken("FOO"));
+
+        verify(processor).extract(eq("FOO"));
+        verify(profile).processClaims(eq(op), eq(claims));
+        assertThat(principals, hasItem(new OidcSubjectPrincipal("sub-claim-value", "MY-OP")));
     }
 
     @Test(expected=AuthenticationException.class)

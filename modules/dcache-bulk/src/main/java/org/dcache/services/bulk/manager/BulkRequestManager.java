@@ -60,7 +60,7 @@ documents or software obtained from this server.
 package org.dcache.services.bulk.manager;
 
 import java.util.List;
-import org.dcache.services.bulk.job.AbstractRequestContainerJob;
+import org.dcache.services.bulk.job.BulkRequestContainerJob;
 import org.dcache.services.bulk.util.BulkRequestTarget;
 import org.dcache.util.SignalAware;
 
@@ -90,6 +90,11 @@ public interface BulkRequestManager extends SignalAware {
     void cancelTargets(String id, List<String> targetPaths);
 
     /**
+     * Should wipe out any in-memory request state.
+     */
+    void shutdown() throws Exception;
+
+    /**
      * Implementation-specific.
      */
     void initialize() throws Exception;
@@ -99,7 +104,7 @@ public interface BulkRequestManager extends SignalAware {
      *
      * @param job to be submitted to the queue.
      */
-    void submit(AbstractRequestContainerJob job);
+    void submit(BulkRequestContainerJob job);
 
     /**
      * @param maxActiveRequests max number of requests that can be in the active state at a given

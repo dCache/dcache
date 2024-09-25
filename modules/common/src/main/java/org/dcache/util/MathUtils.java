@@ -72,4 +72,15 @@ public class MathUtils {
 
         return (a < 0) ? Long.MIN_VALUE : Long.MAX_VALUE;
     }
+
+    /**
+     *  For applications where this is appropriate (like a Histogram value),
+     *  convert NaN to 0.0.
+     *
+     * @param value the double result of the computation.
+     * @return 0.0 if the value is NaN; otherwise, the value (including null).
+     */
+    public static Double nanToZero(Double value) {
+        return value != null && Double.isNaN(value) ? (Double)0.0 : value;
+    }
 }

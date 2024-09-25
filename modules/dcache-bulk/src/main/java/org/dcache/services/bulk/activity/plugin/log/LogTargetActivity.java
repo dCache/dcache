@@ -63,6 +63,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import diskCacheV111.util.FsPath;
 import java.util.Map;
+import java.util.concurrent.Future;
 import org.dcache.services.bulk.activity.BulkActivity;
 import org.dcache.services.bulk.util.BulkRequestTarget;
 import org.dcache.services.bulk.util.BulkRequestTarget.State;
@@ -79,7 +80,7 @@ public final class LogTargetActivity extends BulkActivity<BulkRequestTarget> {
     private static final Logger LOGGER = LoggerFactory.getLogger(LogTargetActivity.class);
 
     /**
-     * id | updated | rid | type | [pnfsid]: target
+     * id | updated | ruid | type | [pnfsid]: target
      */
     private static final String FORMAT_TARGET = "%-12s | %19s | %40s | %9s | [%s]: %s";
 
@@ -88,11 +89,11 @@ public final class LogTargetActivity extends BulkActivity<BulkRequestTarget> {
     }
 
     @Override
-    public ListenableFuture<BulkRequestTarget> perform(String rid, long tid, FsPath path,
+    public ListenableFuture<BulkRequestTarget> perform(String ruid, long tid, FsPath path,
           FileAttributes attributes) {
         long now = System.currentTimeMillis();
-        BulkRequestTarget t = BulkRequestTargetBuilder.builder().activity(this.getName()).id(tid)
-              .rid(rid).state(State.RUNNING).path(path).createdAt(now).attributes(attributes)
+        BulkRequestTarget t = BulkRequestTargetBuilder.builder(null).activity(this.getName()).id(tid)
+              .ruid(ruid).state(State.RUNNING).path(path).createdAt(now).attributes(attributes)
               .startedAt(now).lastUpdated(now).build();
 
         String type;
@@ -105,12 +106,12 @@ public final class LogTargetActivity extends BulkActivity<BulkRequestTarget> {
             pnfsid = "?";
         }
 
-        LOGGER.info("{}", String.format(FORMAT_TARGET, tid, now, rid, type, pnfsid, path));
+        LOGGER.info("{}", String.format(FORMAT_TARGET, tid, now, ruid, type, pnfsid, path));
         return Futures.immediateFuture(t);
     }
 
     @Override
-    protected void handleCompletion(BulkRequestTarget target, ListenableFuture future) {
+    public void handleCompletion(BulkRequestTarget target, Future future) {
         target.setState(State.COMPLETED);
     }
 

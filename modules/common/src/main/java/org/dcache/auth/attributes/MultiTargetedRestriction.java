@@ -25,12 +25,21 @@ import diskCacheV111.util.FsPath;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class represents a restriction that only allows certain activities with specific paths.
  */
 public class MultiTargetedRestriction implements Restriction {
+
+    private static final Logger LOGGER =
+          LoggerFactory.getLogger(MultiTargetedRestriction.class);
+    private static final long serialVersionUID = -4604505680192926544L;
 
     private static final EnumSet<Activity> ALLOWED_PARENT_ACTIVITIES
           = EnumSet.of(Activity.LIST, Activity.READ_METADATA);
@@ -94,6 +103,8 @@ public class MultiTargetedRestriction implements Restriction {
 
     private final Collection<Authorisation> authorisations;
 
+    private transient Function<FsPath, FsPath> resolver;
+
     /**
      * Create a Restriction based on the supplied collection of Authorisations. An Authorisation
      * with the path FsPath.ROOT implies its activities are unrestricted.  If no authorisation has a
@@ -105,19 +116,29 @@ public class MultiTargetedRestriction implements Restriction {
         this.authorisations = authorisations.stream().sorted().collect(toImmutableList());
     }
 
+    public MultiTargetedRestriction alsoAuthorising(Collection<Authorisation> authz) {
+        Set<Authorisation> combined = new HashSet(authorisations);
+        combined.addAll(authz);
+        return new MultiTargetedRestriction(combined);
+    }
+
     @Override
     public boolean hasUnrestrictedChild(Activity activity, FsPath parent) {
-        for (Authorisation authorisation : authorisations) {
-            FsPath allowedPath = authorisation.getPath();
-            EnumSet<Activity> allowedActivity = authorisation.getActivity();
+        if (!authorisations.isEmpty()) {
+            Function<FsPath, FsPath> resolver = getPathResolver();
+            parent = resolver.apply(parent);
+            for (Authorisation authorisation : authorisations) {
+                FsPath allowedPath = resolver.apply(authorisation.getPath());
+                EnumSet<Activity> allowedActivity = authorisation.getActivity();
 
-            /*  As an example, if allowedPath is /path/to/dir then we return
-             *  true if parent is /path or if parent is /path/to/dir/my-data,
-             *  but return false if parent is /path/to/other/dir.
-             */
-            if (allowedActivity.contains(activity) &&
-                  (allowedPath.hasPrefix(parent) || parent.hasPrefix(allowedPath))) {
-                return true;
+                /*  As an example, if allowedPath is /path/to/dir then we return
+                 *  true if parent is /path or if parent is /path/to/dir/my-data,
+                 *  but return false if parent is /path/to/other/dir.
+                 */
+                if (allowedActivity.contains(activity) &&
+                        (allowedPath.hasPrefix(parent) || parent.hasPrefix(allowedPath))) {
+                    return true;
+                }
             }
         }
         return false;
@@ -125,26 +146,13 @@ public class MultiTargetedRestriction implements Restriction {
 
     @Override
     public boolean isRestricted(Activity activity, FsPath path) {
-        for (Authorisation authorisation : authorisations) {
-            FsPath allowedPath = authorisation.getPath();
-            EnumSet<Activity> allowedActivity = authorisation.getActivity();
-            if (allowedActivity.contains(activity) && path.hasPrefix(allowedPath)) {
-                return false;
-            }
-
-            // As a special case, certain activities are always allowed for
-            // parents of an AllowedPath.
-            if (ALLOWED_PARENT_ACTIVITIES.contains(activity) && allowedPath.hasPrefix(path)) {
-                return false;
-            }
-        }
-
-        return true;
+        return isRestricted(activity, path, false);
     }
 
     @Override
-    public boolean isRestricted(Activity activity, FsPath directory, String child) {
-        return isRestricted(activity, directory.child(child));
+    public boolean isRestricted(Activity activity, FsPath directory, String child,
+          boolean skipPrefixCheck) {
+        return isRestricted(activity, directory.child(child), skipPrefixCheck);
     }
 
     @Override
@@ -179,10 +187,11 @@ public class MultiTargetedRestriction implements Restriction {
      */
     private boolean hasAuthorisationSubsumedBy(Authorisation other) {
         EnumSet<Activity> disallowedOtherActivities = EnumSet.complementOf(other.activities);
+        Function<FsPath, FsPath> resolver = getPathResolver();
         return authorisations.stream()
               .anyMatch(
                     ap -> disallowedOtherActivities.containsAll(EnumSet.complementOf(ap.activities))
-                          && other.getPath().hasPrefix(ap.getPath()));
+                          && resolver.apply(other.getPath()).hasPrefix(resolver.apply(ap.getPath())));
     }
 
     @Override
@@ -195,9 +204,56 @@ public class MultiTargetedRestriction implements Restriction {
     }
 
     @Override
+    public void setPathResolver(Function<FsPath, FsPath> resolver) {
+        this.resolver = resolver;
+    }
+
+    @Override
+    public Function<FsPath, FsPath> getPathResolver() {
+        return resolver != null ? resolver : Restriction.super.getPathResolver();
+    }
+
+
+    @Override
     public String toString() {
         return authorisations.stream()
               .map(Object::toString)
               .collect(Collectors.joining(", ", "MultiTargetedRestriction[", "]"));
+    }
+
+    private boolean isRestricted(Activity activity, FsPath path, boolean skipPrefixCheck) {
+        if (!authorisations.isEmpty()) {
+            Function<FsPath, FsPath> resolver = getPathResolver();
+            FsPath resolvedPath = resolver.apply(path);
+            LOGGER.debug("Checking {} restrictions on path {} -> {}", activity, path, resolvedPath);
+            for (Authorisation authorisation : authorisations) {
+                EnumSet<Activity> allowedActivity = authorisation.getActivity();
+                if (skipPrefixCheck) {
+                    if (allowedActivity.contains(activity)) {
+                        return false;
+                    }
+
+                    if (ALLOWED_PARENT_ACTIVITIES.contains(activity)) {
+                        return false;
+                    }
+                } else {
+                    FsPath allowedPath = resolver.apply(authorisation.getPath());
+                    if (allowedActivity.contains(activity)) {
+                         LOGGER.debug("Checking whether {} on {} is allowed by {} -> {}",
+                                      activity, resolvedPath, authorisation.getPath(), allowedPath);
+                         if (resolvedPath.hasPrefix(allowedPath)) {
+                              return false;
+                         }
+                    }
+
+                    // As a special case, certain activities are always allowed for
+                    // parents of an AllowedPath.
+                    if (ALLOWED_PARENT_ACTIVITIES.contains(activity) && allowedPath.hasPrefix(resolvedPath)) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
     }
 }

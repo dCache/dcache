@@ -62,6 +62,7 @@ package org.dcache.qos.listeners;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import dmg.cells.nucleus.NoRouteToCellException;
+import javax.security.auth.Subject;
 import org.dcache.qos.QoSException;
 import org.dcache.qos.data.FileQoSRequirements;
 import org.dcache.qos.data.FileQoSUpdate;
@@ -79,11 +80,12 @@ public interface QoSRequirementsListener {
 
     /**
      * A client sends this when it wishes to change a file's QoS requirements.
+     * This call is assumed to block.
      *
      * @param newRequirements describing principally how many peristent disk and tape copies are
      *                        required.
      */
-    void fileQoSRequirementsModified(FileQoSRequirements newRequirements)
+    void fileQoSRequirementsModified(FileQoSRequirements newRequirements, Subject subject)
           throws QoSException, CacheException, NoRouteToCellException, InterruptedException;
 
     /**
@@ -91,5 +93,5 @@ public interface QoSRequirementsListener {
      *
      * @param pnfsid of the file for which the modification was requested.
      */
-    void fileQoSRequirementsModifiedCancelled(PnfsId pnfsid) throws QoSException;
+    void fileQoSRequirementsModifiedCancelled(PnfsId pnfsid, Subject subject) throws QoSException;
 }

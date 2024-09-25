@@ -122,12 +122,24 @@ public class StorageHandlerData implements Serializable {
     }
 
     public void print(PrintWriter pw) {
-        pw.append(" Restore Timeout  : ").print(restoreTimeoutInSeconds);
-        pw.println(" seconds");
-        pw.append("   Store Timeout  : ").print(storeTimeoutInSeconds);
-        pw.println(" seconds");
-        pw.append("  Remove Timeout  : ").print(removeTimeoutInSeconds);
-        pw.println(" seconds");
+        if (restoreTimeoutInSeconds < 0) {
+            pw.println(" Restore Timeout  : -");
+        } else {
+            pw.append(" Restore Timeout  : ").print(restoreTimeoutInSeconds);
+            pw.println(" seconds");
+        }
+        if (storeTimeoutInSeconds < 0) {
+            pw.println("   Store Timeout  : -");
+        } else {
+            pw.append("   Store Timeout  : ").print(storeTimeoutInSeconds);
+            pw.println(" seconds");
+        }
+        if (removeTimeoutInSeconds < 0) {
+            pw.println("  Remove Timeout  : -");
+        } else {
+            pw.append("  Remove Timeout  : ").print(removeTimeoutInSeconds);
+            pw.println(" seconds");
+        }
         pw.println("  Job Queues (active/queued)");
         pw.append("    to store   ").print(activeStores);
         pw.append("/").print(queuedStores);

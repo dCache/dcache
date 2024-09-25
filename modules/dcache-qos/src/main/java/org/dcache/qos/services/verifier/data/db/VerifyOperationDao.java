@@ -18,19 +18,12 @@
  */
 package org.dcache.qos.services.verifier.data.db;
 
-import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
-import org.dcache.qos.data.QoSAction;
+import org.dcache.qos.QoSException;
 import org.dcache.qos.data.QoSMessageType;
 import org.dcache.qos.services.verifier.data.VerifyOperation;
-import org.dcache.qos.services.verifier.data.VerifyOperationState;
-import org.springframework.dao.IncorrectResultSizeDataAccessException;
-import org.springframework.jdbc.JdbcUpdateAffectedIncorrectNumberOfRowsException;
 
 /**
  * Data Access Object abstraction for VerifyOperation persistence.
@@ -47,15 +40,7 @@ public interface VerifyOperationDao {
 
         VerifyOperationCriterion pnfsIds(PnfsId... ids);
 
-        VerifyOperationCriterion updatedBefore(Long epochMillis);
-
-        VerifyOperationCriterion updatedAfter(Long epochMillis);
-
         VerifyOperationCriterion messageType(QoSMessageType... messageType);
-
-        VerifyOperationCriterion action(QoSAction... action);
-
-        VerifyOperationCriterion state(VerifyOperationState... state);
 
         VerifyOperationCriterion parent(String parent);
 
@@ -67,21 +52,15 @@ public interface VerifyOperationDao {
 
         VerifyOperationCriterion unit(String unit);
 
-        VerifyOperationCriterion retriedMoreThan(Integer retried);
+        VerifyOperationCriterion arrivedBefore(Long epochMillis);
 
-        VerifyOperationCriterion classifier(String classifier);
+        VerifyOperationCriterion arrivedAfter(Long epochMillis);
 
         VerifyOperationCriterion sorter(String sorter);
 
         VerifyOperationCriterion reverse(Boolean reverse);
-    }
 
-    /**
-     * Fluent interface to construct unique (pnfsid) selection criteria.
-     */
-    interface UniqueOperationCriterion extends VerifyOperationCriterion {
-
-        UniqueOperationCriterion pnfsId(PnfsId id);
+        boolean isEmpty();
     }
 
     /**
@@ -91,25 +70,11 @@ public interface VerifyOperationDao {
 
         VerifyOperationUpdate pnfsid(PnfsId pnfsId);
 
+        VerifyOperationUpdate subject(String subject);
+
         VerifyOperationUpdate arrivalTime(long epochMillis);
 
-        VerifyOperationUpdate lastUpdate(long epochMillis);
-
         VerifyOperationUpdate messageType(QoSMessageType messageType);
-
-        VerifyOperationUpdate action(QoSAction action);
-
-        VerifyOperationUpdate previous(QoSAction action);
-
-        VerifyOperationUpdate state(VerifyOperationState state);
-
-        VerifyOperationUpdate needed(int needed);
-
-        VerifyOperationUpdate retried(int retried);
-
-        VerifyOperationUpdate tried(Collection<String> tried);
-
-        VerifyOperationUpdate exception(CacheException exception);
 
         VerifyOperationUpdate poolGroup(String poolGroup);
 
@@ -123,74 +88,17 @@ public interface VerifyOperationDao {
     }
 
     /**
-     * Returns a criterion builder.
-     */
-    VerifyOperationCriterion where();
-
-    /**
-     * Returns a unique criterion builder.
-     */
-    UniqueOperationCriterion whereUnique();
-
-    /**
-     * Returns a field value builder.
-     */
-    VerifyOperationUpdate set();
-
-    /**
-     * Returns a field value builder based on the fields of the file operation which can change
-     * while being processed.
-     */
-    VerifyOperationUpdate fromOperation(VerifyOperation operation);
-
-    /**
      * Returns true if stored, false if not.
      */
-    boolean store(VerifyOperation operation);
+    boolean store(VerifyOperation operation) throws QoSException;
 
-    /**
-     * Returns the VerifyOperations matching a selection criterion with an upper limit on the
-     * number of VerifyOperations returned.
-     */
-    List<VerifyOperation> get(VerifyOperationCriterion criterion, int limit);
+    int delete(VerifyOperationCriterion operation);
 
-    /**
-     * Returns the VerifyOperation matching a unique criterion.
-     *
-     * @return The matching VerifyOperation or null if the criterion did not match a
-     * VerifyOperation
-     * @throws IncorrectResultSizeDataAccessException if more than one VerifyOperation has been
-     *                                                found for the given criterion.
-     */
-    @Nullable
-    VerifyOperation get(UniqueOperationCriterion criterion);
+    void deleteBatch(List<PnfsId> targets, int batchSize);
 
-    /**
-     * Returns a Map<String, Long> of counts matching an or'd criterion.
-     */
-    Map<String, Long> counts(VerifyOperationCriterion criterion);
+    List<VerifyOperation> load() throws QoSException;
 
-    /*
-     *  Returns count of operations matching the criterion.
-     */
-    int count(VerifyOperationCriterion criterion);
+    VerifyOperationCriterion where();
 
-    /**
-     * Updates a specific VerifyOperation with the given field values.
-     *
-     * @return The updated pin or null if the criterion did not match a pin
-     * @throws JdbcUpdateAffectedIncorrectNumberOfRowsException if more than one row is updated.
-     */
-    @Nullable
-    int update(UniqueOperationCriterion criterion, VerifyOperationUpdate update);
-
-    /**
-     * Updates all matching operations.
-     */
-    int update(VerifyOperationCriterion criterion, VerifyOperationUpdate update);
-
-    /**
-     * Deletes all VerifyOperations matching a selection criterion.
-     */
-    int delete(VerifyOperationCriterion criterion);
+    VerifyOperationUpdate set();
 }

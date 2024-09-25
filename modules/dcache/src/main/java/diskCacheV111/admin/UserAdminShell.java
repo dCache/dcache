@@ -71,6 +71,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -1189,7 +1190,7 @@ public class UserAdminShell
         }
 
         /* Submit */
-        List<Map.Entry<String, ListenableFuture<Serializable>>> futures = new ArrayList<>();
+        List<Map.Entry<String, CompletableFuture<Serializable>>> futures = new ArrayList<>();
         for (String cell : destinations) {
             futures.add(immutableEntry(cell,
                   _cellStub.send(new CellPath(cell), object, Serializable.class, _timeout)));
@@ -1197,7 +1198,7 @@ public class UserAdminShell
 
         /* Collect results */
         StringBuilder result = new StringBuilder();
-        for (Map.Entry<String, ListenableFuture<Serializable>> entry : futures) {
+        for (Map.Entry<String, CompletableFuture<Serializable>> entry : futures) {
             result.append(Ansi.ansi().bold().a(entry.getKey()).boldOff()).append(":");
             try {
                 String reply = Objects.toString(entry.getValue().get(), "");
@@ -1224,7 +1225,7 @@ public class UserAdminShell
                 /* Cancel all uncompleted tasks. Doesn't actually cancel any requests, but will cause
                  * the remaining uncompleted futures to throw a CancellationException.
                  */
-                for (Map.Entry<String, ListenableFuture<Serializable>> entry2 : futures) {
+                for (Map.Entry<String, CompletableFuture<Serializable>> entry2 : futures) {
                     entry2.getValue().cancel(true);
                 }
             } catch (CancellationException e) {

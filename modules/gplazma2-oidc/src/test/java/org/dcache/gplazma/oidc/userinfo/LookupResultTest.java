@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import org.dcache.gplazma.oidc.IdentityProvider;
 import org.dcache.gplazma.oidc.MockHttpClientBuilder;
@@ -41,7 +42,8 @@ public class LookupResultTest {
             URI.create("https://example.org/"),
             IGNORE_ALL,
             MockHttpClientBuilder.aClient().build(),
-            Duration.ofSeconds(1));
+            Duration.ofSeconds(1),
+            List.of());
 
     @Test(expected=NullPointerException.class)
     public void shouldThrowNpeOnErrorWithNullIp() {

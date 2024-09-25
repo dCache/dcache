@@ -57,7 +57,8 @@ public class LinkgroupDetailsDga extends SkelPeriodicActivity {
 
         LOGGER.trace("Sending linkgroup details request message");
 
-        _sender.sendMessage(_metricLifetime, _spacemanager, new GetLinkGroupsMessage());
+        _sender.sendMessage(_metricLifetime, _spacemanager, triggerPeriod(),
+                new GetLinkGroupsMessage());
     }
 
 

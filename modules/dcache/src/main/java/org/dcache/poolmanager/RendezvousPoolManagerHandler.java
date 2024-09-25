@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2016 - 2022 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 - 2024 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -23,6 +23,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
+import static org.dcache.util.CompletableFutures.fromCompletableFuture;
 
 import com.google.common.collect.Ordering;
 import com.google.common.hash.Hashing;
@@ -157,7 +158,7 @@ public class RendezvousPoolManagerHandler implements SerializablePoolManagerHand
         FutureCellMessageAnswerable<T> callback = new FutureCellMessageAnswerable<>(reply);
         endpoint.sendMessage(new CellMessage(path, msg), callback, MoreExecutors.directExecutor(),
               timeout);
-        return callback;
+        return fromCompletableFuture(callback);
     }
 
     @Override

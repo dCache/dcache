@@ -60,28 +60,29 @@ documents or software obtained from this server.
 package org.dcache.services.bulk.activity;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.RateLimiter;
 import diskCacheV111.util.FsPath;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import javax.security.auth.Subject;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.services.bulk.BulkServiceException;
 import org.dcache.services.bulk.activity.retry.BulkTargetRetryPolicy;
 import org.dcache.services.bulk.activity.retry.NoRetryPolicy;
-import org.dcache.services.bulk.util.BatchedResult;
 import org.dcache.services.bulk.util.BulkRequestTarget;
 import org.dcache.vehicles.FileAttributes;
 
 /**
- * Base definition for a bulk activity.  Specifies the interfaces for executing the action on a
+ * Base definition for a bulk activity. Specifies the interfaces for executing
+ * the action on a
  * given target and for listening (asynchronously) for a result.
  * <p>
  * An instance of an activity is constructed on a request-by-request basis
- * by the JobFactory.  It should not be shared between requests.
+ * by the JobFactory. It should not be shared between requests.
  *
  * @param <R> the type of object returned with the listenable future.
  */
@@ -91,39 +92,30 @@ public abstract class BulkActivity<R> {
         FILE, DIR, BOTH
     }
 
-    public static final Set<FileAttribute> MINIMALLY_REQUIRED_ATTRIBUTES
-          = Collections.unmodifiableSet(EnumSet.of(FileAttribute.PNFSID, FileAttribute.TYPE,
-          FileAttribute.RETENTION_POLICY));
+    public static final Set<FileAttribute> MINIMALLY_REQUIRED_ATTRIBUTES = Collections
+          .unmodifiableSet(EnumSet.of(FileAttribute.PNFSID, FileAttribute.TYPE,
+                FileAttribute.OWNER_GROUP, FileAttribute.OWNER, FileAttribute.ACCESS_LATENCY,
+                FileAttribute.RETENTION_POLICY));
 
     private static final BulkTargetRetryPolicy DEFAULT_RETRY_POLICY = new NoRetryPolicy();
-
-    private static final int DEFAULT_PERMITS = 50;
 
     protected final String name;
     protected final TargetType targetType;
 
     protected Subject subject;
     protected Restriction restriction;
-    protected Set<FileAttribute> requiredAttributes;
-    protected int maxPermits;
-    protected ExecutorService activityExecutor;
-    protected ExecutorService callbackExecutor;
+    protected RateLimiter rateLimiter;
     protected BulkTargetRetryPolicy retryPolicy;
+    protected Set<BulkActivityArgumentDescriptor> descriptors;
 
     protected BulkActivity(String name, TargetType targetType) {
         this.name = name;
         this.targetType = targetType;
-        requiredAttributes = MINIMALLY_REQUIRED_ATTRIBUTES;
-        maxPermits = DEFAULT_PERMITS;
         retryPolicy = DEFAULT_RETRY_POLICY;
     }
 
     public void cancel(BulkRequestTarget target) {
         target.cancel();
-    }
-
-    public int getMaxPermits() {
-        return maxPermits;
     }
 
     public String getName() {
@@ -138,12 +130,22 @@ public abstract class BulkActivity<R> {
         this.retryPolicy = retryPolicy;
     }
 
-    public TargetType getTargetType() {
-        return targetType;
+    public void throttle() {
+        if (rateLimiter != null) {
+            rateLimiter.acquire();
+        }
     }
 
-    public Set<FileAttribute> getRequiredAttributes() {
-        return requiredAttributes;
+    public RateLimiter getRateLimiter() {
+        return rateLimiter;
+    }
+
+    public void setRateLimiter(RateLimiter rateLimiter) {
+        this.rateLimiter = rateLimiter;
+    }
+
+    public TargetType getTargetType() {
+        return targetType;
     }
 
     public Subject getSubject() {
@@ -162,54 +164,30 @@ public abstract class BulkActivity<R> {
         this.restriction = restriction;
     }
 
-    public ExecutorService getActivityExecutor() {
-        return activityExecutor;
-    }
-
-    public void setActivityExecutor(ExecutorService activityExecutor) {
-        this.activityExecutor = activityExecutor;
-    }
-
-    public ExecutorService getCallbackExecutor() {
-        return callbackExecutor;
-    }
-
-    public void setCallbackExecutor(ExecutorService callbackExecutor) {
-        this.callbackExecutor = callbackExecutor;
-    }
-
-    public void setMaxPermits(int maxPermits) {
-        this.maxPermits = maxPermits;
-    }
-
-    /**
-     * Completion handler method. Calls the internal implementation.
-     *
-     * @param result of the targeted activity.
-     */
-    public void handleCompletion(BatchedResult<R> result) {
-        handleCompletion(result.getTarget(), result.getFuture());
+    public void setDescriptors(Set<BulkActivityArgumentDescriptor> descriptors) {
+        this.descriptors = descriptors;
     }
 
     /**
      * Performs the activity.
      *
-     * @param rid of the request.
-     * @param tid       of the target.
-     * @param path      of the target on which to perform the activity.
+     * @param rid  of the request.
+     * @param tid  of the target.
+     * @param path of the target on which to perform the activity.
      * @return future result of the activity.
      * @throws BulkServiceException
      */
     public abstract ListenableFuture<R> perform(String rid, long tid, FsPath path, FileAttributes attributes)
-          throws BulkServiceException;
+            throws BulkServiceException;
 
     /**
-     * An activity instance is on a request-by-request basis, so the parameters need to be
+     * An activity instance is on a request-by-request basis, so the parameters need
+     * to be
      * configured by the factory.
      *
      * @param arguments parameters of the specific activity.
      */
-    protected abstract void configure(Map<String, String> arguments);
+    protected abstract void configure(Map<String, String> arguments) throws BulkServiceException;
 
     /**
      * Internal implementation of completion handler taking full target.
@@ -217,5 +195,5 @@ public abstract class BulkActivity<R> {
      * @param target which has terminate.
      * @param future the future returned by the activity call to perform();
      */
-    protected abstract void handleCompletion(BulkRequestTarget target, ListenableFuture<R> future);
+    public abstract void handleCompletion(BulkRequestTarget target, Future<R> future);
 }

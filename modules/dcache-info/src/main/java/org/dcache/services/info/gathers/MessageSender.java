@@ -19,9 +19,10 @@ public interface MessageSender {
      *
      * @param ttl     how long, in seconds, resulting metrics should last
      * @param path    the destination for this request
+     * @param timeout the number of milliseconds to wait for a response.
      * @param message the vehicle to send
      */
-    void sendMessage(long ttl, CellPath path, Message message);
+    void sendMessage(long ttl, CellPath path, long timeout, Message message);
 
     /**
      * Send some arbitrary CellMessage (which includes the payload and the target Cell). The
@@ -33,9 +34,10 @@ public interface MessageSender {
      *
      * @param ttl      how long, in seconds, resulting metrics should last
      * @param handler  the object that is to receive reply message
+     * @param timeout the number of milliseconds to wait for a response.
      * @param envelope the complete message envelope to send
      */
-    void sendMessage(long ttl, CellMessageAnswerable handler,
+    void sendMessage(long ttl, CellMessageAnswerable handler, long timeout,
           CellMessage envelope);
 
     /**
@@ -49,8 +51,9 @@ public interface MessageSender {
      * @param ttl           how long, in seconds, resulting metrics should last
      * @param handler       the object that is to receive reply message
      * @param path          the destination for this request
+     * @param timeout the number of milliseconds to wait for a response.
      * @param requestString the String sent to the cell's shell
      */
     void sendMessage(long ttl, CellMessageAnswerable handler, CellPath path,
-          String requestString);
+          long timeout, String requestString);
 }

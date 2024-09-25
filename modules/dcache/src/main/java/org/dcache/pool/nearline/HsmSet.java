@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014-2022 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014-2023 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -18,6 +18,8 @@
 package org.dcache.pool.nearline;
 
 import static java.util.Collections.unmodifiableSet;
+import static java.util.Objects.requireNonNull;
+import static org.dcache.util.Exceptions.messageOrClassName;
 
 import com.google.common.collect.Maps;
 import diskCacheV111.util.FileNotInCacheException;
@@ -32,19 +34,28 @@ import dmg.util.Formats;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.CommandLine;
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.ServiceLoader;
+import java.util.ServiceLoader.Provider;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import javax.annotation.PreDestroy;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
@@ -56,9 +67,6 @@ import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-
-import static java.util.Objects.requireNonNull;
-import static org.dcache.util.Exceptions.messageOrClassName;
 
 /**
  * An HsmSet encapsulates information about attached HSMs. The HsmSet also acts as a cell command
@@ -76,11 +84,26 @@ import static org.dcache.util.Exceptions.messageOrClassName;
  */
 public class HsmSet
       implements CellCommandListener, CellSetupProvider, CellLifeCycleAware,
-        CellDynamicCommandProvider {
+      CellDynamicCommandProvider {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HsmSet.class);
-    private static final ServiceLoader<NearlineStorageProvider> PROVIDERS =
-          ServiceLoader.load(NearlineStorageProvider.class);
+
+    /**
+     * Nearline storage provides that are part of the dCache on located in standard plugin
+     * classpath.
+     */
+    private static final Map<String, NearlineStorageProvider> EMBEDDED_PROVIDERS =
+          ServiceLoader.load(NearlineStorageProvider.class)
+                .stream()
+                .map(Provider::get)
+                .collect(Collectors.toUnmodifiableMap(NearlineStorageProvider::getName,
+                      Function.identity()));
+
+    /**
+     * Nearline storage provides that dynamically at the runtime.
+     */
+    private final Map<String, NearlineStorageProvider> dynamicProviders = new ConcurrentHashMap<>();
+    private final Map<NearlineStorageProvider, String> dynamicProviderPath = new ConcurrentHashMap<>();
     private static final String DEFAULT_PROVIDER = "script";
 
     private final ConcurrentMap<String, HsmInfo> _newConfig = Maps.newConcurrentMap();
@@ -95,17 +118,20 @@ public class HsmSet
     private String _poolName;
 
     /**
-     * Looks for a specific available provided.
+     * Looks for an embedded on dynamically loaded configured provided.
      *
      * @param name of the nearline storage provider to find.
      * @return nearline storage provider.
-     * @throws NoSuchElementException if provider with a given name not found.
+     * @throws IllegalArgumentException if provider with a given name not found.
      */
     private NearlineStorageProvider findProvider(String name) {
-        for (NearlineStorageProvider provider : PROVIDERS) {
-            if (provider.getName().equals(name)) {
-                return provider;
-            }
+        var p = EMBEDDED_PROVIDERS.get(name);
+        if (p != null) {
+            return p;
+        }
+        p = dynamicProviders.get(name);
+        if (p != null) {
+            return p;
         }
         throw new NoSuchElementException("No such nearline storage provider: " + name);
     }
@@ -276,6 +302,7 @@ public class HsmSet
         /**
          * Call the NearlineStorage start method.  This method may only be called once and must be
          * called before calling any other method, other than {@literal configure}.
+         *
          * @throws IOException if the underlying NearlinePlugin threw an exception.
          */
         public void start() throws IOException {
@@ -350,6 +377,103 @@ public class HsmSet
     }
 
     @AffectsSetup
+    @Command(name = "hsm load provider", hint = "Load a provider from the specified directory",
+          description = "Loads an external provider. The provided path should point to a directory"
+                + " containing jar files. If the directory contains a provider with a name that already"
+                + " configured, then new provider will not be installed.")
+    public class LoadProvider implements Callable<String> {
+
+        @Argument(usage = "Path to directory containing provider.")
+        private String path;
+
+        @Override
+        public String call() throws CommandException {
+            ColumnWriter writer = new ColumnWriter();
+            writer.header("PROVIDER").left("provider").space();
+            writer.header("DESCRIPTION").left("description");
+
+            var f = new File(path);
+            if (!f.exists()) {
+                throw new CommandException(1, "No such directory: " + path);
+            }
+
+            if (!f.isDirectory()) {
+                throw new CommandException(1, "Provided path is not a directory: " + path);
+            }
+
+            var v = Arrays.stream(f.listFiles())
+                  .map(p -> {
+                      try {
+                          return p.toURL();
+                      } catch (MalformedURLException e) {
+                          throw new RuntimeException(e);
+                      }
+                  })
+                  .toArray(URL[]::new);
+
+            URLClassLoader classLoader = URLClassLoader.newInstance(
+                  v, Thread.currentThread().getContextClassLoader()
+            );
+
+            var newProviderLoader = ServiceLoader.load(NearlineStorageProvider.class, classLoader);
+
+            for (var p : newProviderLoader) {
+                if (EMBEDDED_PROVIDERS.containsKey(p.getName())) {
+                    // skip as classloader sees all of them
+                    continue;
+                }
+
+                dynamicProviderPath.put(p, path);
+                var old = dynamicProviders.putIfAbsent(p.getName(), p);
+                if (old == null) {
+                    writer.row()
+                          .value("provider", p.getName())
+                          .value("description", p.getDescription());
+                }
+            }
+
+            return "New providers: \n" + writer;
+        }
+    }
+
+    @AffectsSetup
+    @Command(name = "hsm unload provider", hint = "Unload user provided nearline storage provider",
+          description =
+                "Unloads user loaded provide. After unloading, the provider can be used anymore."
+                      + " The system behaviour in undefined, if plugin is removed while corresponding hsm still"
+                      + " in use.")
+    public class UnloadProvider implements Callable<String> {
+
+        @Argument(usage = "Provider name to unload")
+        private String provider;
+
+        @Override
+        public String call() throws CommandException {
+
+            ColumnWriter writer = new ColumnWriter();
+            writer.header("PROVIDER").left("provider").space();
+            writer.header("DESCRIPTION").left("description");
+
+            var p = dynamicProviders.remove(provider);
+            if (p != null) {
+                dynamicProviderPath.remove(p);
+                dynamicProviders.remove(p.getName());
+                writer.row()
+                      .value("provider", p.getName())
+                      .value("description", p.getDescription());
+                try {
+                    ((URLClassLoader) (p.getClass().getClassLoader())).close();
+                } catch (IOException e) {
+                    throw new CommandException(1,
+                          "Can't unload " + provider + " : " + e.getMessage());
+                }
+            }
+
+            return "Removed providers: \n" + writer;
+        }
+    }
+
+    @AffectsSetup
     @Command(name = "hsm create", hint = "create nearline storage",
           description =
                 "Creates a nearline storage. A nearline storage is dCache's interface to external "
@@ -418,7 +542,7 @@ public class HsmSet
                     info.start();
                 } catch (IOException e) {
                     throw new CommandException(1, "Nearline plugin failed on start: "
-                            + messageOrClassName(e));
+                          + messageOrClassName(e));
                 }
                 _hsm.put(instance, info);
             }
@@ -528,11 +652,19 @@ public class HsmSet
         public String call() {
             ColumnWriter writer = new ColumnWriter();
             writer.header("PROVIDER").left("provider").space();
-            writer.header("DESCRIPTION").left("description");
-            for (NearlineStorageProvider provider : PROVIDERS) {
+            writer.header("DESCRIPTION").left("description").space();
+            writer.header("DYNAMIC").right("dynamic");
+            for (NearlineStorageProvider provider : EMBEDDED_PROVIDERS.values()) {
                 writer.row()
                       .value("provider", provider.getName())
-                      .value("description", provider.getDescription());
+                      .value("description", provider.getDescription())
+                      .value("dynamic", "no");
+            }
+            for (NearlineStorageProvider provider : dynamicProviders.values()) {
+                writer.row()
+                      .value("provider", provider.getName())
+                      .value("description", provider.getDescription())
+                      .value("dynamic", "yes");
             }
             return writer.toString();
         }
@@ -540,8 +672,17 @@ public class HsmSet
 
     @Override
     public void printSetup(PrintWriter pw) {
-        if (!_hsm.isEmpty()) {
+        if (!dynamicProviders.isEmpty() || !_hsm.isEmpty()) {
             pw.println("#\n# Nearline storage\n#");
+        }
+        if (!dynamicProviders.isEmpty()) {
+            for (NearlineStorageProvider provider : dynamicProviders.values()) {
+                pw.print("hsm load provider ");
+                pw.print(dynamicProviderPath.get(provider));
+                pw.println();
+            }
+        }
+        if (!_hsm.isEmpty()) {
             for (HsmInfo info : _hsm.values()) {
                 pw.print("hsm create ");
                 pw.print(info.getType());
@@ -573,9 +714,9 @@ public class HsmSet
 
         /* Remove the stores that are not in the new configuration.
          */
-        Iterator<Map.Entry<String,HsmInfo>> iterator = _hsm.entrySet().iterator();
+        Iterator<Map.Entry<String, HsmInfo>> iterator = _hsm.entrySet().iterator();
         while (iterator.hasNext()) {
-            Map.Entry<String,HsmInfo> entry = iterator.next();
+            Map.Entry<String, HsmInfo> entry = iterator.next();
 
             if (_newConfig.containsKey(entry.getKey())) {
                 continue;
@@ -593,7 +734,8 @@ public class HsmSet
             try {
                 hsm.refresh();
             } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Error configuring hsm \"" + hsm.getInstance() + "\": " + e.getMessage());
+                throw new IllegalArgumentException(
+                      "Error configuring hsm \"" + hsm.getInstance() + "\": " + e.getMessage());
             }
         }
 
@@ -608,13 +750,13 @@ public class HsmSet
                         entry.getValue().start();
                     } catch (IOException e) {
                         LOGGER.warn(
-                                AlarmMarkerFactory.getMarker(
-                                        PredefinedAlarm.HSM_STARTUP_FAILED,
-                                        _poolName,
-                                        instance),
-                                "Removing HSM \"{}\" as it failed to start: {}",
-                                instance,
-                                messageOrClassName(e));
+                              AlarmMarkerFactory.getMarker(
+                                    PredefinedAlarm.HSM_STARTUP_FAILED,
+                                    _poolName,
+                                    instance),
+                              "Removing HSM \"{}\" as it failed to start: {}",
+                              instance,
+                              messageOrClassName(e));
                         itr.remove();
                     }
                 }
@@ -638,13 +780,13 @@ public class HsmSet
             } catch (IOException e) {
                 String instance = entry.getKey();
                 LOGGER.warn(
-                        AlarmMarkerFactory.getMarker(
-                                PredefinedAlarm.HSM_STARTUP_FAILED,
-                                _poolName,
-                                instance),
-                        "Removing HSM \"{}\" as it failed to start: {}",
-                        instance,
-                        messageOrClassName(e));
+                      AlarmMarkerFactory.getMarker(
+                            PredefinedAlarm.HSM_STARTUP_FAILED,
+                            _poolName,
+                            instance),
+                      "Removing HSM \"{}\" as it failed to start: {}",
+                      instance,
+                      messageOrClassName(e));
                 itr.remove();
             }
         }

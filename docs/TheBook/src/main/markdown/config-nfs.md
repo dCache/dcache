@@ -161,6 +161,41 @@ door must configure Java’s security module:
 
 Now your NFS client can securely access dCache.
 
+## Configuring NFSv4.1 with RPC-over-TLS
+
+dCache NFS door supports RPC-over-TLS protocol extension for data-in-transit protection. To work
+with pNFS, host certificates must be installed on NFS doors and pools. As pNFS uses multipath addresses
+for client redirection, the host certificates must include the IPv4/IPv6 records
+in `Subject Alternative Name`.
+
+To enable, the RPC-over-TLS capability on pools and nfs doors the following properties must be enabled:
+
+```
+pool.mover.nfs.enable.rpc-over-tls=true
+nfs.enable.rpc-over-tls=true
+```
+
+or
+
+```
+dcache.enable.rpc-over-tls=true
+```
+
+> NOTE: the TLS layer is only used for in-flight data protection and have no influence on user mapping or authentication.
+
+### Client side configuration
+
+To support certificate handling by the Linux kernel the `tlshd` service must be installed and running (provided by
+ktls-utils package on RHEL and clones). If dCache certificates are not signed by OS-wide trusted CA, then
+`/etc/tlshd.conf` should be updated such, that `x509.truststore` points server the trust certificate chain in PEM
+format.
+
+The mount option `xprtsec` controls the transport security for NFS:
+
+```
+mount -o xprtsec=tls nfs-door:/data /mnt/
+```
+
 ## Configuring principal-id mapping for NFS access
 
 The `NFSv4.1` uses utf8 based strings to represent user and group names:
@@ -178,7 +213,7 @@ id-mapping service. Please refer to [Chapter 10, Authorization in
 dCache](config-gplazma.md) for instructions about how to configure
 `gPlazma.
 
-For correct user id mapping nfs4 requires that server and client use the same naming scope, called nfs4domain. This implies a consistent configuration on both sides. To reduce deployment overhead a special auto-discovery mechanism was introduced by SUN Microsystems - a [DNS TXT](http://docs.oracle.com/cd/E19253-01/816-4555/epubp/index.html) record. dCache supports this discovery mechanism. When `nfs.domain` property is set, it gets used. If it’s left unset, then DNS TXT record for `_nfsv4idmapdomain` is taken or the default `localdomain` is used when DNS record is absent.
+For correct user id mapping nfs4 requires that server and client use the same naming scope, called nfs4domain. This implies a consistent configuration on both sides. To reduce deployment overhead a special auto-discovery mechanism was introduced by SUN Microsystems ( now Oracle) - a [DNS TXT](https://docs.oracle.com/cd/E19253-01/816-4555/epubp/index.html) record. dCache supports this discovery mechanism. When `nfs.domain` property is set, it gets used. If it’s left unset, then DNS TXT record for `_nfsv4idmapdomain` is taken or the default `localdomain` is used when DNS record is absent.
 
 To avoid big latencies and avoiding multiple queries for the same
 information, like ownership of a files in a big directory, the results

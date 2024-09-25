@@ -62,7 +62,12 @@ package org.dcache.services.bulk;
 import static dmg.util.PagedCommandResult.EOL;
 import static java.util.stream.Collectors.joining;
 import static org.dcache.services.bulk.store.jdbc.JdbcBulkDaoUtils.toSetOrNull;
+import static org.dcache.services.bulk.util.BulkServiceStatistics.DATE_FORMAT;
+import static org.dcache.services.bulk.util.BulkServiceStatistics.DATE_FORMATTER;
+import static org.dcache.services.bulk.util.BulkServiceStatistics.getTimestamp;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.common.base.Splitter;
 import diskCacheV111.util.PnfsId;
 import dmg.cells.nucleus.CellCommandListener;
@@ -74,22 +79,25 @@ import java.io.Serializable;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
+import org.dcache.auth.RolePrincipal;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
@@ -102,6 +110,9 @@ import org.dcache.services.bulk.handler.BulkSubmissionHandler;
 import org.dcache.services.bulk.manager.BulkRequestManager;
 import org.dcache.services.bulk.store.BulkRequestStore;
 import org.dcache.services.bulk.store.BulkTargetStore;
+import org.dcache.services.bulk.store.jdbc.request.JdbcArchivedBulkRequestCriterion;
+import org.dcache.services.bulk.store.jdbc.request.JdbcBulkArchiveDao;
+import org.dcache.services.bulk.store.jdbc.request.JdbcBulkRequestArchiver;
 import org.dcache.services.bulk.util.BulkRequestFilter;
 import org.dcache.services.bulk.util.BulkRequestTarget;
 import org.dcache.services.bulk.util.BulkRequestTarget.PID;
@@ -122,14 +133,20 @@ public final class BulkServiceCommands implements CellCommandListener {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkServiceCommands.class);
 
     /**
-     * seqno | arrived | started | modified | owner | activity | depth | prestore | status :
-     * urlPrefix/id
+     * id | arrived | started | modified | owner | activity | depth | status :
+     * urlPrefix/uid
      */
     private static final String FORMAT_REQUEST_FULL
-          = "%-12s | %-19s | %19s | %19s | %12s | %15s | %7s | %11s | %8s | %s/%s";
+          = "%-12s | %-19s | %19s | %19s | %12s | %15s | %7s | %8s | %s/%s";
 
     /**
-     * (urlPrefix/id):   target string
+     * rid | owner | last modified |  activity | status
+     */
+    private static final String FORMAT_ARCHIVED
+          = "%-40s | %11s | %19s | %12s | %8s ";
+
+    /**
+     * (urlPrefix/uid):   target string
      */
     private static final String FORMAT_REQUEST_TARGET = "(%s/%s):    %s";
 
@@ -146,27 +163,27 @@ public final class BulkServiceCommands implements CellCommandListener {
     /**
      * error type | error message
      */
-    private static final String FORMAT_TARGET_INFO_ERROR = " –– (ERROR: %s : %s)";
+    private static final String FORMAT_TARGET_INFO_ERROR = " -- (ERROR: %s : %s)";
 
     /**
-     * arrived | modified | owner | status | id
+     * id | arrived | modified | owner | status | uid
      */
     private static final String FORMAT_REQUEST = "%-12s | %-19s | %19s | %12s | %10s | %s";
 
     /**
-     * seqno | created | updated | id | activity | state | type | [pnfsid]: target
+     * id | pid | created | updated | ruid | activity | state | type | [pnfsid]: path
      */
-    private static final String FORMAT_TARGET_FULL = "%-12s | %-19s | %-19s | %36s | %15s | %11s | %8s | [%s]: %s";
+    private static final String FORMAT_TARGET_FULL = "%-16s | %-12s | %-19s | %-19s | %36s | %15s | %11s | %8s | [%s]: %s";
 
     /**
-     * seqno | updated | id | | pnfsid
+     * id | updated | rid | path
      */
-    private static final String FORMAT_TARGET = "%-12s | %-19s | %40s | %s";
+    private static final String FORMAT_TARGET = "%-16s | %-19s | %12s | %s";
 
     /**
      * name | class | type | permits
      */
-    private static final String FORMAT_ACTIVITY = "%-20s | %100s | %7s | %10s ";
+    private static final String FORMAT_ACTIVITY = "%-20s | %100s | %7s";
 
     /**
      * name | required | description
@@ -178,15 +195,9 @@ public final class BulkServiceCommands implements CellCommandListener {
      */
     private static final String FORMAT_COUNTS = "%11s | %15s";
 
-    /**
-     * Date format
-     */
-    private static final String DATE_FORMAT = "yyyy/MM/dd-HH:mm:ss";
-
-    private static final DateTimeFormatter DATE_FORMATTER
-          = DateTimeFormatter.ofPattern(DATE_FORMAT).withZone(ZoneId.systemDefault());
-
     private static final int MAX_PARTIAL_RESULT = 10000;
+
+    private JdbcBulkRequestArchiver archiver;
 
     private static class Sorter implements Comparator<String> {
 
@@ -227,11 +238,11 @@ public final class BulkServiceCommands implements CellCommandListener {
 
         @Override
         public String nextCommand() {
-            if (command.contains("-seqNo=")) {
-                return command.replaceFirst("-seqNo=[\\d]+", " -seqNo=" + offset);
+            if (command.contains("-id=")) {
+                return command.replaceFirst("-id=[\\d]+", " -id=" + offset);
             }
 
-            return command + " -seqNo=" + offset;
+            return command + " -id=" + offset;
         }
     }
 
@@ -253,21 +264,13 @@ public final class BulkServiceCommands implements CellCommandListener {
         }
     }
 
-    private static Long getTimestamp(String datetime) throws ParseException {
-        if (datetime == null) {
-            return null;
-        }
-
-        return Instant.from(DATE_FORMATTER.parse(datetime)).toEpochMilli();
-    }
-
-    private static String formatActivity(Entry<String, BulkActivityProvider> entry) {
+    private static String formatActivity(Entry<String, BulkActivityProvider> entry, BulkActivityFactory factory) {
         BulkActivityProvider provider = entry.getValue();
+
         return String.format(FORMAT_ACTIVITY,
               entry.getKey(),
               provider.getActivityClass(),
-              provider.getTargetType(),
-              provider.getMaxPermits());
+              provider.getTargetType());
     }
 
     private static String formatArgument(BulkActivityArgumentDescriptor descriptor) {
@@ -285,9 +288,10 @@ public final class BulkServiceCommands implements CellCommandListener {
             FileType type = target.getType();
             return String.format(FORMAT_TARGET_FULL,
                   target.getId(),
+                  target.getPid().name(),
                   DATE_FORMATTER.format(Instant.ofEpochMilli(target.getCreatedAt())),
                   DATE_FORMATTER.format(Instant.ofEpochMilli(target.getLastUpdated())),
-                  target.getRid(),
+                  target.getRuid(),
                   target.getActivity(),
                   target.getState().name(),
                   type == null ? "?" : type,
@@ -299,24 +303,32 @@ public final class BulkServiceCommands implements CellCommandListener {
               target.getId(),
               DATE_FORMATTER.format(Instant.ofEpochMilli(target.getLastUpdated())),
               target.getRid(),
-              target.getPnfsId());
+              target.getPath());
     }
 
     private static String formatRequest(BulkRequest request,
           BulkRequestStore store,
           RequestListOption option) {
 
-        String requestId = request.getId();
+        String uid = request.getUid();
         Optional<Subject> subject;
 
         String statusName = null;
+        /*
+         *  If there is an exception, log to pinboard (INFO) and allow the request to be
+         *  processed without subject.
+         */
         try {
-            subject = store.getSubject(requestId);
-        } catch (BulkStorageException e) {
+            subject = store.getSubject(uid);
+        } catch (RuntimeException e) {
+            LOGGER.info("could not fetch Subject for {}", uid, e);
+            subject = Optional.empty();
+        } catch (Exception e) {
+            LOGGER.info("could not fetch Subject for {}: {}.", uid, e.toString());
             subject = Optional.empty();
         }
 
-        String user = subject.isPresent() ? BulkRequestStore.uidGidKey(subject.get()) : "?";
+        String user = subject.map(BulkRequestStore::uidGidKey).orElse("?");
 
         long arrivalTime = 0L;
         long modifiedTime = 0L;
@@ -340,7 +352,7 @@ public final class BulkServiceCommands implements CellCommandListener {
         switch (option) {
             case FULL:
                 return String.format(FORMAT_REQUEST_FULL,
-                      request.getSeqNo(),
+                      request.getId(),
                       DATE_FORMATTER.format(Instant.ofEpochMilli(arrivalTime)),
                       startedAt,
                       DATE_FORMATTER.format(Instant.ofEpochMilli(modifiedTime)),
@@ -348,23 +360,22 @@ public final class BulkServiceCommands implements CellCommandListener {
                       request.getActivity(),
                       request.getExpandDirectories(),
                       statusName,
-                      request.isPrestore(),
                       request.getUrlPrefix(),
-                      requestId);
+                      uid);
             case TARGET:
                 return String.format(FORMAT_REQUEST_TARGET,
                       request.getUrlPrefix(),
-                      requestId,
+                      uid,
                       request.getTarget());
             case SHORT:
             default:
                 return String.format(FORMAT_REQUEST,
-                      request.getSeqNo(),
+                      request.getId(),
                       DATE_FORMATTER.format(Instant.ofEpochMilli(arrivalTime)),
                       DATE_FORMATTER.format(Instant.ofEpochMilli(modifiedTime)),
                       user,
                       statusName,
-                      requestId);
+                      uid);
         }
     }
 
@@ -382,8 +393,6 @@ public final class BulkServiceCommands implements CellCommandListener {
         protected Set<String> activities;
         protected Set<String> owners;
         protected Set<String> urlPrefixes;
-        protected Set<String> targets;
-        protected Set<String> targetPrefixes;
         protected Set<BulkRequestStatus> statuses;
         protected Depth depth;
 
@@ -392,11 +401,11 @@ public final class BulkServiceCommands implements CellCommandListener {
         @Argument(usage = "The request id proper; can be a single string,"
               + " '*' for all, or a comma-delimited list.)",
               required = false)
-        String id;
+        String uid;
 
-        @Option(name = "seqNo",
-              usage = "Select requests with a sequence number greater than or equal to this.")
-        long seqNo = 0L;
+        @Option(name = "id",
+              usage = "Select requests with an id greater than or equal to this.")
+        long id = 0L;
 
         @Option(name = "before",
               valueSpec = DATE_FORMAT,
@@ -417,16 +426,6 @@ public final class BulkServiceCommands implements CellCommandListener {
               separator = ",",
               usage = "The url preceding the <id> part of the request identifier.")
         String[] urlPrefix;
-
-        @Option(name = "target",
-              separator = ",",
-              usage = "The request target (path).")
-        String[] target;
-
-        @Option(name = "targetPrefix",
-              separator = ",",
-              usage = "The request targetPrefix.")
-        String[] targetPrefix;
 
         @Option(name = "activity",
               separator = ",",
@@ -454,11 +453,6 @@ public final class BulkServiceCommands implements CellCommandListener {
               usage = "The recursion depth of the request.")
         String expandDirectories;
 
-        @Option(name = "prestore",
-              usage = "True means the request has indicated that all targets be stored "
-                    + "first before processing.")
-        Boolean prestore;
-
         @Option(name = "status",
               valueSpec = "QUEUED|STARTED|COMPLETED|CANCELLED",
               separator = ",",
@@ -466,12 +460,12 @@ public final class BulkServiceCommands implements CellCommandListener {
         String[] status;
 
         protected void configureFilters() throws ParseException {
-            if (id == null || id.equals("*")) {
+            if (uid == null || uid.equals("*")) {
                 ids = Set.of();
-            } else if (id.indexOf(",") > 0) {
-                ids = Arrays.stream(id.split(",")).collect(Collectors.toSet());
+            } else if (uid.indexOf(",") > 0) {
+                ids = Arrays.stream(uid.split(",")).collect(Collectors.toSet());
             } else {
-                ids = Set.of(id);
+                ids = Set.of(uid);
             }
 
             Long beforeStart = getTimestamp(before);
@@ -484,8 +478,6 @@ public final class BulkServiceCommands implements CellCommandListener {
             }
             owners = toSetOrNull(owner);
             urlPrefixes = toSetOrNull(urlPrefix);
-            targets = toSetOrNull(target);
-            targetPrefixes = toSetOrNull(targetPrefix);
             if (status != null) {
                 statuses = toSetOrNull(status).stream().map(String::toUpperCase)
                       .map(BulkRequestStatus::valueOf)
@@ -497,12 +489,12 @@ public final class BulkServiceCommands implements CellCommandListener {
             }
 
             rFilter = new BulkRequestFilter(beforeStart, afterStart, owners, urlPrefixes, ids,
-                  targets, targetPrefixes, activities, statuses, cancelOnFailure, clearOnSuccess,
-                  clearOnFailure, delayClear, depth, prestore);
-            rFilter.setSeqNo(seqNo);
+                  activities, statuses, cancelOnFailure, clearOnSuccess, clearOnFailure, delayClear,
+                  depth);
+            rFilter.setId(id);
         }
 
-        protected List<String> requestIds() throws BulkStorageException {
+        protected List<String> requestUids() throws BulkStorageException {
             /*
              *  The find() method uses inclusive matching, in the sense
              *  that it interprets null clauses as always true, not false.
@@ -519,7 +511,7 @@ public final class BulkServiceCommands implements CellCommandListener {
             return requestStore
                   .find(Optional.of(rFilter), null)
                   .stream()
-                  .map(BulkRequest::getId)
+                  .map(BulkRequest::getUid)
                   .collect(Collectors.toList());
         }
 
@@ -528,8 +520,7 @@ public final class BulkServiceCommands implements CellCommandListener {
                   && after == null
                   && owner == null
                   && urlPrefix == null
-                  && id == null
-                  && target == null
+                  && uid == null
                   && activity == null
                   && clearOnFailure == null
                   && clearOnSuccess == null
@@ -554,15 +545,85 @@ public final class BulkServiceCommands implements CellCommandListener {
             Sorter sorter = new Sorter(SortOrder.valueOf(sort.toUpperCase()));
             String activities = activityFactory.getProviders().entrySet()
                   .stream()
-                  .map(BulkServiceCommands::formatActivity)
+                  .map(e -> formatActivity(e, activityFactory))
                   .sorted(sorter)
                   .collect(joining("\n"));
             if (activities == null) {
                 return "There are no mapped activities!";
             }
 
-            return String.format(FORMAT_ACTIVITY, "NAME", "CLASS", "TYPE", "PERMITS")
+            return String.format(FORMAT_ACTIVITY, "NAME", "CLASS", "TYPE")
                   + "\n" + activities;
+        }
+    }
+
+    @Command(name = "archiver reset",
+          hint = "Change the archiver settings.",
+          description = "Interrupts the archiver and resets the period and/or window.")
+    class ArchiverReset implements Callable<String> {
+
+        @Option(name = "period",
+              usage = "how often to run the archiver.")
+        Long period;
+
+        @Option(name = "periodUnit",
+              valueSpec = "MILLISECONDS|SECONDS|MINUTES|HOURS|DAYS",
+              usage = "unit for how often to run the archiver.")
+        TimeUnit periodUnit;
+
+        @Option(name = "window",
+              usage = "how far into the past from now the cutoff should be; requests "
+                    + "whose last modification time is before this point and have "
+                    + "completed will be deleted.")
+        Long window;
+
+        @Option(name = "windowUnit",
+              valueSpec = "MILLISECONDS|SECONDS|MINUTES|HOURS|DAYS",
+              usage = "unit for the cutoff window.")
+        TimeUnit windowUnit;
+
+        @Override
+        public String call() throws Exception {
+            boolean changed = false;
+
+            if (period != null) {
+                changed = true;
+                archiver.setArchiverPeriod(period);
+            }
+
+            if (periodUnit != null) {
+                changed = true;
+                archiver.setArchiverPeriodUnit(periodUnit);
+            }
+
+            if (window != null) {
+                changed = true;
+                archiver.setArchiverWindow(window);
+            }
+
+            if (windowUnit != null) {
+                changed = true;
+                archiver.setArchiverWindowUnit(windowUnit);
+            }
+
+            if (changed) {
+                archiver.reset();
+            }
+
+            return archiver.getInfo();
+        }
+    }
+
+    @Command(name = "archiver run",
+          hint = "Run the archiver now.",
+          description = "Interrupts the archiver, schedules it to run now, and then "
+                + "periodically, as before.")
+    class ArchiverRun implements Callable<String> {
+
+        @Override
+        public String call() throws Exception {
+            archiver.runNow();
+            return "Archiver running ...";
         }
     }
 
@@ -584,7 +645,7 @@ public final class BulkServiceCommands implements CellCommandListener {
             Sorter sorter = new Sorter(SortOrder.valueOf(sort.toUpperCase()));
             Set<BulkActivityArgumentDescriptor> descriptors = activityFactory.getProviders()
                   .get(activity)
-                  .getArguments();
+                  .getDescriptors();
             String arguments = descriptors.stream()
                   .map(BulkServiceCommands::formatArgument)
                   .sorted(sorter)
@@ -608,6 +669,131 @@ public final class BulkServiceCommands implements CellCommandListener {
         }
     }
 
+    @Command(name = "request archived clear",
+          hint = "Clear archived requests",
+          description = ".")
+    class RequestArchivedClear implements Callable<String> {
+        @Option(name = "owner",
+              separator = ",",
+              usage = "The owner of the request.")
+        String[] owner;
+
+        @Option(name = "before",
+              valueSpec = DATE_FORMAT,
+              usage = "Select requests with last modified date-time before date-time.")
+        String before;
+
+        @Option(name = "after",
+              valueSpec = DATE_FORMAT,
+              usage = "Select requests with last modified date-time after date-time.")
+        String after;
+
+        @Option(name = "activity",
+              separator = ",",
+              usage = "The request activity.")
+        String[] activity;
+
+        @Option(name = "status",
+              valueSpec = "COMPLETED|CANCELLED",
+              separator = ",",
+              usage = "Status of the request.")
+        String[] status;
+
+        @Override
+        public String call() throws Exception {
+            JdbcArchivedBulkRequestCriterion criterion =
+                  archiveDao.where().modifiedBefore(getTimestamp(before))
+                  .modifiedAfter(getTimestamp(after)).owner(owner).activity(activity)
+                  .status(status);
+
+            int count = archiveDao.count(criterion);
+            executor.submit(() -> archiveDao.delete(criterion));
+            return "Removing " + count + " archived requests.";
+        }
+    }
+
+    @Command(name = "request archived ls",
+          hint = "List archived requests",
+          description = "Display the uid, owner, last modified, activity and status for"
+                + "      the archived request, or just counts if option is true.")
+    class RequestArchivedLs implements Callable<String> {
+
+        @Option(name = "owner",
+              separator = ",",
+              usage = "The owner of the request.")
+        String[] owner;
+
+        @Option(name = "before",
+              valueSpec = DATE_FORMAT,
+              usage = "Select requests with last modified date-time before date-time.")
+        String before;
+
+        @Option(name = "after",
+              valueSpec = DATE_FORMAT,
+              usage = "Select requests with last modified date-time after date-time.")
+        String after;
+
+        @Option(name = "activity",
+              separator = ",",
+              usage = "The request activity.")
+        String[] activity;
+
+        @Option(name = "status",
+              valueSpec = "COMPLETED|CANCELLED",
+              separator = ",",
+              usage = "Status of the request.")
+        String[] status;
+
+        @Option(name = "count",
+              usage = "return only the count of the matching requests.")
+        Boolean count = false;
+
+        @Option(name = "limit",
+              usage = "Return maximum of this many entries.")
+        Integer limit = 5000;
+
+        @Override
+        public String call() throws Exception {
+            if (count) {
+                return String.valueOf(
+                      archiveDao.count(archiveDao.where().modifiedBefore(getTimestamp(before))
+                            .modifiedAfter(getTimestamp(after)).owner(owner).activity(activity)
+                            .status(status)));
+            }
+
+            List<BulkArchivedSummaryInfo> list =
+                  archiveDao.list(archiveDao.where().modifiedBefore(getTimestamp(before))
+                        .modifiedAfter(getTimestamp(after)).owner(owner).activity(activity)
+                        .status(status), limit);
+            StringBuilder builder = new StringBuilder();
+            list.forEach(info ->
+                  builder.append(String.format(FORMAT_ARCHIVED, info.getUid(), info.getOwner(),
+                              new Date(info.getLastModified()), info.getActivity(), info.getStatus()))
+                        .append("\n"));
+            return builder.toString();
+        }
+    }
+
+    @Command(name = "request archived info",
+          hint = "Get archived request info",
+          description = "Display the JSON info for a single archived request.")
+    class RequestArchivedInfo implements Callable<String> {
+
+        @Argument(usage = "The id of the request.")
+        String rid;
+
+        @Override
+        public String call() throws Exception {
+            List<BulkArchivedRequestInfo> list
+                  = archiveDao.get(archiveDao.where().uids(rid), 1);
+            if (list.isEmpty()) {
+                return rid + " not found.";
+            }
+            ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
+            return ow.writeValueAsString(list.get(0));
+        }
+    }
+
     @Command(name = "request cancel",
           hint = "Cancel one or more requests.",
           description = "Recursively cancels all jobs that have not yet completed or run; signals "
@@ -619,11 +805,11 @@ public final class BulkServiceCommands implements CellCommandListener {
         @Override
         public String call() throws Exception {
             configureFilters();
-            List<String> ids = requestIds();
+            List<String> uids = requestUids();
             StringBuilder requests = new StringBuilder();
-            ids.stream().forEach(id -> requests.append("\t").append(id).append("\n"));
+            uids.forEach(id -> requests.append("\t").append(id).append("\n"));
 
-            for (String id : ids) {
+            for (String id : uids) {
                 try {
                     submissionHandler.cancelRequest(Subjects.ROOT, id);
                     requestManager.signal();
@@ -658,7 +844,7 @@ public final class BulkServiceCommands implements CellCommandListener {
             List<String> targetPaths = List.of(path);
             requestManager.cancelTargets(rid, targetPaths);
             return "Request " + rid + ", cancelled: \n"
-                  + targetPaths.stream().collect(Collectors.joining("\n"));
+                  + String.join("\n", targetPaths);
         }
     }
 
@@ -671,24 +857,25 @@ public final class BulkServiceCommands implements CellCommandListener {
         @Override
         public String call() throws Exception {
             configureFilters();
-            List<String> ids = requestIds();
+            List<String> uids = requestUids();
             StringBuilder requests = new StringBuilder();
             StringBuilder errors = new StringBuilder();
-            for (String id : ids) {
-                try {
-                    submissionHandler.clearRequest(Subjects.ROOT, id, false);
-                    requestManager.signal();
-                    requests.append("\t").append(id).append("\n");
-                } catch (BulkServiceException e) {
-                    errors.append(id).append(": ").append(e).append("\n");
-                }
+            BulkRequestClearMessage message;
+            for (String id : uids) {
+                message = new BulkRequestClearMessage(id, Restrictions.none());
+                message.setSubject(Subjects.ROOT);
+                message.setCancelIfRunning(false);
+                service.messageArrived(message);
+                requests.append("\t").append(id).append("\n");
             }
+
+            requestManager.signal();
 
             if (errors.length() > 0) {
                 return "The following requests could not be cleared:\n" + errors;
             }
 
-            return "Cleared:\n" + requests;
+            return "Clear submitted for:\n" + requests;
         }
     }
 
@@ -701,7 +888,7 @@ public final class BulkServiceCommands implements CellCommandListener {
         String id;
 
         @Option(name = "offset",
-              usage = "Offset into the target list:  targets must have this sequence number or "
+              usage = "Offset into the target list:  targets must have this id or "
                     + "greater to be included (only 5K targets in the list at a time).")
         long offset = 0L;
 
@@ -731,7 +918,7 @@ public final class BulkServiceCommands implements CellCommandListener {
                 return new PagedTargetResult(builder.toString(), EOL);
             }
 
-            return new PagedTargetResult(builder.toString(), info.getNextSeqNo());
+            return new PagedTargetResult(builder.toString(), info.getNextId());
         }
 
         private String format(BulkRequestTargetInfo info) {
@@ -801,10 +988,9 @@ public final class BulkServiceCommands implements CellCommandListener {
             switch (option) {
                 case FULL:
                     partialResult =
-                          String.format(FORMAT_REQUEST_FULL, "SEQNO", "ARRIVED", "STARTED",
-                                "MODIFIED", "OWNER", "ACTIVITY", "DEPTH", "STATUS", "PRESTORE",
-                                "URL PREF",
-                                "ID") + "\n" + requests;
+                          String.format(FORMAT_REQUEST_FULL, "ID", "ARRIVED", "STARTED",
+                                "MODIFIED", "OWNER", "ACTIVITY", "DEPTH", "STATUS",
+                                "URL PREF", "UID") + "\n" + requests;
                     break;
                 case TARGET:
                     partialResult = String.format(FORMAT_REQUEST_TARGET, "URL PREF", "ID", "TARGET")
@@ -812,15 +998,15 @@ public final class BulkServiceCommands implements CellCommandListener {
                     break;
                 case SHORT:
                 default:
-                    partialResult = String.format(FORMAT_REQUEST, "SEQNO", "ARRIVED", "MODIFIED",
-                          "OWNER", "STATUS", "ID") + "\n" + requests;
+                    partialResult = String.format(FORMAT_REQUEST, "ID", "ARRIVED", "MODIFIED",
+                          "OWNER", "STATUS", "UID") + "\n" + requests;
             }
 
             if (len < MAX_PARTIAL_RESULT) {
                 return new PagedRequestResult(partialResult, EOL);
             }
 
-            long offset = results.toArray(BulkRequest[]::new)[len - 1].getSeqNo();
+            long offset = results.toArray(BulkRequest[]::new)[len - 1].getId();
             return new PagedRequestResult(partialResult, offset);
         }
     }
@@ -906,22 +1092,25 @@ public final class BulkServiceCommands implements CellCommandListener {
         }
     }
 
-
     @Command(name = "request reset",
           hint = "Reset requests to be rerun.",
           description =
                 "Sets status back to QUEUED, zeros out status counts and removes all targets.")
     class RequestReset extends FilteredRequest {
 
+        @Option(name = "skipTerminated",
+               usage = "Do not reset the targets which completed.")
+        boolean skipTerminated = false;
+
         @Override
         public String call() throws Exception {
             configureFilters();
-            List<String> ids = requestIds();
+            List<String> uids = requestUids();
             StringBuilder requests = new StringBuilder();
-            for (String id : ids) {
+            for (String id : uids) {
                 executor.submit(()-> {
                     try {
-                        requestStore.reset(id);
+                        requestStore.reset(id, skipTerminated);
                     } catch (BulkStorageException e) {
                         LOGGER.error("could not reset {}: {}.", id, e.toString());
                     }
@@ -930,6 +1119,26 @@ public final class BulkServiceCommands implements CellCommandListener {
             }
 
             return "Resetting:\n" + requests + "\nCheck pinboard for any errors.";
+        }
+    }
+
+    @Command(name = "request retry failed",
+          hint = "Retry only those requests which have failed targets.",
+          description = "Calls reset on the requests matching this criterion.")
+    class RequestRetryFailed implements Callable<String> {
+
+        @Override
+        public String call() throws Exception {
+            executor.submit(()-> {
+                try {
+                    int count = requestStore.retryFailed();
+                    LOGGER.info("{} requests with failed targets have been reset.", count);
+                } catch (BulkStorageException e) {
+                    LOGGER.error("could not reset failed: {}.", e.toString());
+                }
+            });
+
+            return "Resetting requests with failed targets.";
         }
     }
 
@@ -967,20 +1176,15 @@ public final class BulkServiceCommands implements CellCommandListener {
               usage = "Remove request from storage if all targets succeeded.")
         Boolean clearOnSuccess = false;
 
-        @Option(name = "prestore",
-              usage =
-                    "Store all targets first before performing the activity on them. (This applies "
-                          + "to recursive as well as non-recursive, and usually results in significantly "
-                          + "lower throughput.)")
-        Boolean prestore = false;
-
         @Option(name = "arguments",
               usage = "Optional comma-delimited list of name:value strings specific to the activity.")
         String arguments;
 
         @Override
         public String call() {
-            Subject subject = Subjects.ROOT;
+            Subject subject = new Subject();
+            Subjects.ROOT.getPrincipals().forEach(subject.getPrincipals()::add);
+            subject.getPrincipals().add(new RolePrincipal("admin"));
             Restriction restriction = Restrictions.none();
             BulkRequest request = new BulkRequest();
             request.setUrlPrefix("ssh://admin");
@@ -990,8 +1194,7 @@ public final class BulkServiceCommands implements CellCommandListener {
             request.setClearOnSuccess(clearOnSuccess);
             request.setClearOnFailure(clearOnFailure);
             request.setExpandDirectories(Depth.valueOf(expand.toUpperCase()));
-            request.setId(UUID.randomUUID().toString());
-            request.setPrestore(activity.equalsIgnoreCase("STAGE") || prestore);
+            request.setUid(UUID.randomUUID().toString());
 
             if (arguments != null) {
                 request.setArguments(Splitter.on(',')
@@ -1007,7 +1210,7 @@ public final class BulkServiceCommands implements CellCommandListener {
             service.messageArrived(message);
 
             return "Sent message to service to submit " + request.getUrlPrefix() + "/"
-                  + request.getId();
+                  + request.getUid();
         }
     }
 
@@ -1022,12 +1225,34 @@ public final class BulkServiceCommands implements CellCommandListener {
         }
     }
 
+    @Command(name = "status counts",
+          hint = "Display counts for requests and targets in various states.",
+          description = "Runs two database queries for actual counts.")
+    class StatusCounts implements Callable<String> {
+
+        @Override
+        public String call() {
+            Map<String, Long> requests = requestStore.countsByStatus();
+            Map<String, Long> targets = targetStore.countsByState();
+
+           return new StringBuilder()
+                 .append("---------- REQUESTS ----------\n")
+                 .append(String.format(FORMAT_COUNTS + "\n", "STATUS", "COUNT"))
+                 .append(requests.entrySet().stream().map(e -> String.format(FORMAT_COUNTS,
+                       e.getKey(), e.getValue())).collect(joining("\n")))
+                 .append("\n\n---------- TARGETS -----------\n")
+                 .append(String.format(FORMAT_COUNTS + "\n", "STATE", "COUNT"))
+                 .append(targets.entrySet().stream().map(e -> String.format(FORMAT_COUNTS,
+                       e.getKey(), e.getValue())).collect(joining("\n"))).toString();
+        }
+    }
+
     @Command(name = "target cancel",
           hint = "Cancel a job bound to a single target.",
           description = "Signals the manager to cancel a single target.")
     class TargetCancel implements Callable<String> {
 
-        @Argument(usage = "The target id (sequence number).")
+        @Argument(usage = "The target id.")
         long id;
 
         @Override
@@ -1046,7 +1271,7 @@ public final class BulkServiceCommands implements CellCommandListener {
           description = "Prints out the target metadata.")
     class TargetInfo implements Callable<String> {
 
-        @Argument(usage = "The target id (sequence number).")
+        @Argument(usage = "The target id.")
         long id;
 
         @Override
@@ -1058,10 +1283,9 @@ public final class BulkServiceCommands implements CellCommandListener {
 
             BulkRequestTarget target = optional.get();
             StringBuilder builder = new StringBuilder(formatTarget(target, true)).append("\n");
-            Throwable t = target.getThrowable();
-            if (t != null) {
-                builder.append("ERROR: ").append(t.getClass().getCanonicalName()).append(" : ")
-                      .append(t.getMessage()).append("\n");
+            if (target.getErrorType() != null) {
+                builder.append("ERROR[").append(target.getErrorType()).append(" : ")
+                      .append(target.getErrorMessage()).append("]\n");
             }
             return builder.toString();
         }
@@ -1076,30 +1300,26 @@ public final class BulkServiceCommands implements CellCommandListener {
         Boolean l = false;
 
         @Option(name = "offset",
-              usage = "Print only those targets with an id (sequence number) greater than "
+              usage = "Print only those targets with an id greater than "
                     + "or equal to this.")
         long offset = 0L;
 
         @Option(name = "pid",
+              separator = ",",
               valueSpec = "ROOT|INITIAL|DISCOVERED",
               usage = "Node type of the target.")
 
-        String pid;
+        String[] pid;
 
         @Option(name = "rid",
               separator = ",",
               usage = "Ids of the request(s) to which the target belongs.")
-        String[] id;
+        String[] rid;
 
         @Option(name = "pnfsid",
               separator = ",",
               usage = "The pnfsid of the target.")
         String[] pnfsid;
-
-        @Option(name = "path",
-              separator = ",",
-              usage = "The path of the target.")
-        String[] path;
 
         @Option(name = "activity",
               separator = ",",
@@ -1118,10 +1338,6 @@ public final class BulkServiceCommands implements CellCommandListener {
               usage = "File type of the target.")
         String[] type;
 
-        @Option(name = "excludeRoot",
-              usage = "Whether to exclude 'root' targets (the container '==request target==').")
-        boolean excludeRoot = true;
-
         @Option(name = "limit",
               usage = "Return no more than this many results at a time (maximum 5000).")
         Integer limit = MAX_PARTIAL_RESULT;
@@ -1135,7 +1351,7 @@ public final class BulkServiceCommands implements CellCommandListener {
 
         @Override
         public PagedTargetResult call() throws Exception {
-            Set<String> ids = toSetOrNull(id);
+            Set<String> rids = toSetOrNull(rid);
             Set<String> activities = toSetOrNull(activity);
             if (activities != null) {
                 activities = activities.stream().map(String::toUpperCase)
@@ -1146,7 +1362,13 @@ public final class BulkServiceCommands implements CellCommandListener {
                 types = types.stream().map(String::toUpperCase).collect(Collectors.toSet());
             }
             Set<String> pnfsids = toSetOrNull(pnfsid);
-            Set<String> paths = toSetOrNull(path);
+            Set<String> pids = toSetOrNull(pid);
+            Set<Integer> nodeType = null;
+            if (pids != null) {
+                nodeType = pids.stream().map(String::toUpperCase).map(PID::valueOf)
+                      .map(PID::ordinal).collect(Collectors.toSet());
+            }
+
             Set<State> states = null;
             if (state != null) {
                 if (Arrays.asList(state).contains("ALL")) {
@@ -1157,13 +1379,12 @@ public final class BulkServiceCommands implements CellCommandListener {
                 }
             }
 
-            PID nodeType = pid == null ? null : PID.valueOf(pid);
-
-            BulkTargetFilter filter = new BulkTargetFilter(ids, offset, nodeType, pnfsids, paths,
+            BulkTargetFilter filter = new BulkTargetFilter(rids, offset, nodeType, pnfsids,
                   activities, types, states);
 
             if (count) {
                 if (states != null) {
+                    boolean excludeRoot = nodeType != null && !nodeType.contains(PID.ROOT.ordinal());
                     return new PagedTargetResult(
                           String.format(FORMAT_COUNTS + "\n", "STATE", "COUNT") +
                                 targetStore.counts(filter, excludeRoot, "state").entrySet().stream()
@@ -1187,9 +1408,9 @@ public final class BulkServiceCommands implements CellCommandListener {
                   .collect(joining("\n"));
 
             String header =
-                  l ? String.format(FORMAT_TARGET_FULL, "SEQNO", "CREATED", "UPDATED", "REQUEST",
+                  l ? String.format(FORMAT_TARGET_FULL, "ID", "PID", "CREATED", "UPDATED", "REQUEST",
                         "ACTIVITY", "STATE", "TYPE", "PNFSID", "PATH") :
-                        String.format(FORMAT_TARGET, "SEQNO", "STARTED", "REQUEST", "PNFSID");
+                        String.format(FORMAT_TARGET, "ID", "STARTED", "REQUEST", "PATH");
 
             partialResult = header + "\n" + targets;
 
@@ -1209,7 +1430,9 @@ public final class BulkServiceCommands implements CellCommandListener {
     private BulkActivityFactory activityFactory;
     private BulkTargetStore targetStore;
     private BulkServiceStatistics statistics;
-    private ExecutorService executor;
+    private ExecutorService executor = Executors.newSingleThreadExecutor();
+
+    private JdbcBulkArchiveDao archiveDao;
 
     @Required
     public void setActivityFactory(BulkActivityFactory activityFactory) {
@@ -1217,8 +1440,13 @@ public final class BulkServiceCommands implements CellCommandListener {
     }
 
     @Required
-    public void setExecutor(ExecutorService executor) {
-        this.executor = executor;
+    public void setArchiver(JdbcBulkRequestArchiver archiver) {
+        this.archiver = archiver;
+    }
+
+    @Required
+    public void setArchiveDao(JdbcBulkArchiveDao archiveDao) {
+        this.archiveDao = archiveDao;
     }
 
     @Required

@@ -39,6 +39,7 @@ import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
 import com.google.common.net.InetAddresses;
 import com.google.common.net.MediaType;
+import com.google.common.net.PercentEscaper;
 import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.services.space.Space;
 import diskCacheV111.services.space.SpaceException;
@@ -68,7 +69,6 @@ import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
-import io.milton.http.FileItem;
 import io.milton.http.HttpManager;
 import io.milton.http.Request;
 import io.milton.http.ResourceFactory;
@@ -101,7 +101,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -111,11 +110,15 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
 import org.dcache.auth.Origin;
+import org.dcache.auth.RolePrincipal;
+import org.dcache.auth.RolePrincipal.Role;
 import org.dcache.auth.SubjectWrapper;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.LoginAttribute;
@@ -167,6 +170,9 @@ public class DcacheResourceFactory
     private static final Logger LOGGER =
           LoggerFactory.getLogger(DcacheResourceFactory.class);
 
+    private static final XMLOutputFactory XML_OUTPUT_FACTORY = XMLOutputFactory.newFactory();
+
+
     public static final String TRANSACTION_ATTRIBUTE = "org.dcache.transaction";
 
     private static final Set<FileAttribute> REQUIRED_ATTRIBUTES =
@@ -193,6 +199,15 @@ public class DcacheResourceFactory
 
     private static final Splitter PATH_SPLITTER =
           Splitter.on('/').omitEmptyStrings();
+
+    private static final PercentEscaper METALINK_NAME_ESCAPER = new PercentEscaper("", false);
+
+    // See https://www.iana.org/assignments/hash-function-text-names/hash-function-text-names.xhtml
+    private static final Map<ChecksumType,String> METALINK_NAMES_FOR_CHECKSUMS = Map.of(
+            ChecksumType.MD5_TYPE, "md5",
+            ChecksumType.SHA1, "sha-1",
+            ChecksumType.SHA256, "sha-256",
+            ChecksumType.SHA512, "sha-512");
 
     /**
      * In progress transfers. The key of the map is the session id of the transfer.
@@ -1074,6 +1089,125 @@ public class DcacheResourceFactory
     }
 
     /**
+     * Performs a directory listing, writing a metalink description.
+     */
+    public void metalink(FsPath path, Writer out, URI uri)
+            throws InterruptedException, CacheException, IOException, XMLStreamException {
+        if (!_isAnonymousListingAllowed && Subjects.isNobody(getSubject())) {
+            throw new PermissionDeniedCacheException("Access denied");
+        }
+
+        XMLStreamWriter sw = XML_OUTPUT_FACTORY.createXMLStreamWriter(out);
+
+        sw.writeStartDocument();
+
+        DirectoryListPrinter printer =
+              new DirectoryListPrinter() {
+                  @Override
+                  public Set<FileAttribute> getRequiredAttributes() {
+                      return Set.of(MODIFICATION_TIME, TYPE, SIZE, CHECKSUM);
+                  }
+
+                  private FileAttributes entryAttributes(FsPath dir, DirectoryEntry entry) {
+                      FileAttributes attr = entry.getFileAttributes();
+                      switch (attr.getFileType()) {
+                          case LINK:
+                              String entryPath = dir.child(entry.getName()).toString();
+                              try {
+                                  return _pnfs.getFileAttributes(entryPath,
+                                        getRequiredAttributes());
+                              } catch (CacheException e) {
+                                  LOGGER.debug("Symlink lookup of {} failed with {}",
+                                        entryPath, e.getMessage());
+                                  return attr;
+                              }
+
+                          default:
+                              return attr;
+                      }
+                  }
+
+                  @Override
+                  public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry) {
+                      FileAttributes attr = entryAttributes(dir, entry);
+                      var mtime = Instant.ofEpochMilli(attr.getModificationTime());
+                      String safeName = METALINK_NAME_ESCAPER.escape(entry.getName());
+                      URI target = uri.resolve(safeName);
+
+                      if (attr.getFileType() != REGULAR && attr.getFileType() != LINK) {
+                          return;
+                      }
+
+                      /* FIXME: SIZE is defined if client specifies the
+                       * file's size before uploading.
+                       */
+                      if (attr.getFileType() == REGULAR && !attr.isDefined(SIZE)) {
+                          return;
+                      }
+
+                      try {
+                          sw.writeStartElement("file");
+                          try {
+                              sw.writeAttribute("name", entry.getName());
+
+                              if (attr.isDefined(SIZE)) {
+                                  sw.writeStartElement("size");
+                                  try {
+                                      sw.writeCharacters(Long.toString(attr.getSize()));
+                                  } finally {
+                                      sw.writeEndElement();
+                                  }
+                              }
+                              if (attr.isDefined(CHECKSUM)) {
+                                  for (Checksum checksum : attr.getChecksums()) {
+                                        String type = METALINK_NAMES_FOR_CHECKSUMS.get(checksum.getType());
+                                        if (type == null) {
+                                            continue;
+                                        }
+                                        sw.writeStartElement("hash");
+                                        try {
+                                            sw.writeAttribute("type", type);
+                                            sw.writeCharacters(checksum.getValue());
+                                        } finally {
+                                            sw.writeEndElement();
+                                        }
+                                  }
+                              }
+                              sw.writeStartElement("url");
+                              try {
+                                  sw.writeCharacters(target.toASCIIString());
+                              } finally {
+                                  sw.writeEndElement();
+                              }
+                              sw.writeStartElement("updated");
+                              try {
+                                  sw.writeCharacters(mtime.toString());
+                              } finally {
+                                  sw.writeEndElement();
+                              }
+                          } finally {
+                              sw.writeEndElement();
+                          }
+                      } catch (XMLStreamException e) {
+                          LOGGER.warn("Failed to process directory item {}: {}", entry.getName(),
+                              e.toString());
+                      }
+                  }
+              };
+
+        sw.writeStartElement("metalink");
+        sw.writeDefaultNamespace("urn:ietf:params:xml:ns:metalink");
+        try {
+            _list.printDirectory(getSubject(), getRestriction(), printer, path, null,
+                  Range.<Integer>all());
+        } finally {
+            sw.writeEndElement();
+        }
+
+        sw.writeEndDocument();
+    }
+
+    /**
      * Deletes a file.
      */
     public void deleteFile(FileAttributes attributes, FsPath path)
@@ -1097,9 +1231,8 @@ public class DcacheResourceFactory
 
         try {
             _kafkaSender.accept(infoRemove);
-        } catch (KafkaException e) {
-            LOGGER.warn(Throwables.getRootCause(e).getMessage());
-
+        } catch (KafkaException | org.apache.kafka.common.KafkaException e) {
+            LOGGER.warn("Failed to send message to kafka: {} ", Throwables.getRootCause(e).getMessage());
         }
     }
 
@@ -1307,9 +1440,9 @@ public class DcacheResourceFactory
     }
 
     private boolean isAdmin() {
-        Set<LoginAttribute> attributes = AuthenticationHandler.getLoginAttributes(
-              ServletRequest.getRequest());
-        return LoginAttributes.hasAdminRole(attributes);
+        return getSubject().getPrincipals().stream()
+              .filter(p->p instanceof RolePrincipal)
+              .anyMatch(p->((RolePrincipal) p).hasRole(Role.ADMIN));
     }
 
     private PnfsHandler roleAwarePnfsHandler() {
@@ -1349,14 +1482,7 @@ public class DcacheResourceFactory
      * Returns request params.
      */
     private static Map<String, String> getXattrsFromRequest() {
-        Map<String, String> m = new HashMap<>();
-        Map<String, FileItem> files = new HashMap<>();
-        try {
-            HttpManager.request().parseRequestParameters(m, files);
-        } catch (Exception e) {
-            throw new RuntimeException();
-        }
-        return Xattrs.from(m);
+        return Xattrs.from(ServletRequest.getRequest().getParameterMap());
     }
 
     /**
@@ -1553,14 +1679,20 @@ public class DcacheResourceFactory
         protected HttpProtocolInfo.Disposition _disposition;
         private boolean _isSSL;
 
+        /**
+         * The original request path that will be passed to pool for fall-back redirect.
+         */
+        private final String _requestPath;
+
         public HttpTransfer(PnfsHandler pnfs, Subject subject,
               Restriction restriction, FsPath path) throws URISyntaxException {
             super(pnfs, subject, restriction, path);
             initializeTransfer(this, subject);
             _clientAddressForPool = getClientAddress();
 
-            ServletRequest.getRequest().setAttribute(TRANSACTION_ATTRIBUTE,
-                  getTransaction());
+            var request = ServletRequest.getRequest();
+            request.setAttribute(TRANSACTION_ATTRIBUTE, getTransaction());
+            _requestPath = Requests.stripToPath(request.getRequestURL().toString());
         }
 
         protected ProtocolInfo createProtocolInfo(InetSocketAddress address) {
@@ -1571,7 +1703,7 @@ public class DcacheResourceFactory
                         PROTOCOL_INFO_MINOR_VERSION,
                         address,
                         getCellName(), getCellDomainName(),
-                        _path.toString(),
+                        _requestPath,
                         _location,
                         _disposition,
                         _wantedChecksum);

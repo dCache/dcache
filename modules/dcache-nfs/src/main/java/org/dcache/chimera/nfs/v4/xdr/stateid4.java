@@ -23,6 +23,7 @@ import com.google.common.io.BaseEncoding;
 import java.io.Serializable;
 import java.util.Arrays;
 
+@Deprecated(forRemoval = true)
 public class stateid4 implements Serializable {
 
     static final long serialVersionUID = -6677150504723505919L;

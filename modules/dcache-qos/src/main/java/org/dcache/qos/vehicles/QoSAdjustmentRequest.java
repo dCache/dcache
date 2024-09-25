@@ -62,14 +62,16 @@ package org.dcache.qos.vehicles;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import java.io.Serializable;
+import javax.security.auth.Subject;
 import org.dcache.qos.data.QoSAction;
 import org.dcache.vehicles.FileAttributes;
 
 public class QoSAdjustmentRequest implements Serializable {
 
-    private static final long serialVersionUID = -1201617117743113180L;
+    private static final long serialVersionUID = -561618660521542972L;
 
     private PnfsId pnfsId;
+    private Subject subject;
     private QoSAction action;
     private FileAttributes attributes;
     private PoolManagerPoolInformation targetInfo;
@@ -131,5 +133,13 @@ public class QoSAdjustmentRequest implements Serializable {
 
     public void setPoolGroup(String poolGroup) {
         this.poolGroup = poolGroup;
+    }
+
+    public Subject getSubject() {
+        return subject;
+    }
+
+    public void setSubject(Subject subject) {
+        this.subject = subject;
     }
 }

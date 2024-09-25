@@ -62,19 +62,21 @@ package org.dcache.services.bulk.activity.plugin.delete;
 import static org.dcache.services.bulk.activity.BulkActivity.TargetType.BOTH;
 
 import com.google.common.collect.ImmutableSet;
+import java.util.Map;
 import java.util.Set;
 import org.dcache.services.bulk.BulkServiceException;
 import org.dcache.services.bulk.activity.BulkActivityArgumentDescriptor;
 import org.dcache.services.bulk.activity.BulkActivityProvider;
 
 public final class DeleteActivityProvider extends BulkActivityProvider<DeleteActivity> {
+    static final String SKIP_DIRS = "skipDirs";
 
-    static final BulkActivityArgumentDescriptor SKIP_DIRS =
-          new BulkActivityArgumentDescriptor("skipDirs",
-                "do not attempt to remove directories",
-                "true|false",
-                false,
-                "false");
+    private static final BulkActivityArgumentDescriptor DEFAULT_DESCRIPTOR
+          = new BulkActivityArgumentDescriptor(SKIP_DIRS,
+          "do not attempt to remove directories",
+          "true|false",
+          false,
+          "false");
 
     public DeleteActivityProvider() {
         super("DELETE", BOTH);
@@ -86,8 +88,13 @@ public final class DeleteActivityProvider extends BulkActivityProvider<DeleteAct
     }
 
     @Override
-    public Set<BulkActivityArgumentDescriptor> getArguments() {
-        return ImmutableSet.of(SKIP_DIRS);
+    public Set<BulkActivityArgumentDescriptor> getDescriptors() {
+        return ImmutableSet.of(DEFAULT_DESCRIPTOR);
+    }
+
+    @Override
+    public void configure(Map<String, Object> environment) {
+        // NOP
     }
 
     @Override

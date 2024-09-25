@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013 - 2019 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013 - 2023 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -24,12 +24,14 @@ import com.google.common.base.Strings;
 import com.google.common.reflect.TypeToken;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
+import diskCacheV111.util.FileCorruptedCacheException;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import dmg.cells.nucleus.CellPath;
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.net.InetSocketAddress;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.CompletionHandler;
 import java.nio.file.OpenOption;
@@ -80,6 +82,8 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
     private final Set<Checksum> _checksums = new HashSet<>();
     private volatile ChecksumChannel _checksumChannel;
     private volatile Optional<RepositoryChannel> _channel = Optional.empty();
+
+    private volatile InetSocketAddress _localEndpoint;
 
     public AbstractMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor,
           TransferService<M> transferService) {
@@ -271,7 +275,8 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
      * @throws InterruptedIOException  if the mover was cancelled
      * @throws DiskErrorCacheException If the file could not be opened
      */
-    public RepositoryChannel openChannel() throws DiskErrorCacheException, InterruptedIOException {
+    public RepositoryChannel openChannel()
+          throws DiskErrorCacheException, InterruptedIOException, CacheException {
         RepositoryChannel channel;
         try {
             channel = _handle.createChannel();
@@ -282,7 +287,9 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
             throw new DiskErrorCacheException(
                   "File could not be opened; please check the file system: "
                         + messageOrClassName(e), e);
+
         }
+
 
         synchronized (_checksumTypes) {
             _checksumChannel = channel.optionallyAs(ChecksumChannel.class).orElse(null);
@@ -350,4 +357,13 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
     }
 
     protected abstract String getStatus();
+
+    public void setLocalEndpoint(InetSocketAddress addr) {
+        _localEndpoint = addr;
+    }
+
+    @Override
+    public Optional<InetSocketAddress> getLocalEndpoint() {
+        return Optional.ofNullable(_localEndpoint);
+    }
 }

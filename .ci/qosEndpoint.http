@@ -1,0 +1,136 @@
+### Generic Tests
+### successful qos type:file
+GET {{frontend-door}}{{endpoint}}{{qos-management}}/file
+accept: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+> {%
+    client.test("Successful response for list of quality of services", function() {
+        client.assert(response.status === 200, "unsuccessful response");
+    });
+%}
+
+### successful qos type:directory
+GET {{frontend-door}}{{endpoint}}{{qos-management}}/directory
+accept: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+> {%
+    client.test("Successful response for list of quality of services", function() {
+        client.assert(response.status === 200, "unsuccessful response");
+    });
+%}
+
+### successful qos file:tape
+GET {{frontend-door}}{{endpoint}}{{qos-management}}/file/tape
+accept: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+> {%
+    client.test("Successful response for tape service", function() {
+        client.assert(response.status === 200, "unsuccessful response");
+    });
+%}
+
+### successful qos file:disk
+GET {{frontend-door}}{{endpoint}}{{qos-management}}/file/disk
+accept: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+> {%
+    client.test("Successful response for disk service", function() {
+        client.assert(response.status === 200, "unsuccessful response");
+    });
+%}
+
+
+### successful qos file:disk+tape
+GET {{frontend-door}}{{endpoint}}{{qos-management}}/file/disk+tape
+accept: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+> {%
+    client.test("Successful response for disk+tape service", function() {
+        client.assert(response.status === 200, "unsuccessful response");
+    });
+%}
+
+### successful qos file:volatile
+GET {{frontend-door}}{{endpoint}}{{qos-management}}/file/volatile
+accept: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+> {%
+    client.test("Successful response for volatile service", function() {
+        client.assert(response.status === 200, "unsuccessful response");
+    });
+%}
+
+
+### Not defined QoS
+GET {{frontend-door}}{{endpoint}}{{qos-management}}/file/test
+accept: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+> {%
+    client.test("qos requested does not exist", function() {
+        client.assert(response.status === 400, "not a bad request");
+    });
+%}
+
+### Incorrect basic authentication credentials
+GET {{frontend-door}}{{endpoint}}{{qos-management}}/file/test
+accept: application/json
+Authorization: Basic {{user_name}} {{incorrect_passwd}}
+
+> {%
+    client.test("Incorrect basic authentication credentials ", function() {
+        client.assert(response.status === 401, "not login failed");
+    });
+%}
+
+
+### successful qos directoy:tape
+GET {{frontend-door}}{{endpoint}}{{qos-management}}/directory/tape
+accept: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+> {%
+    client.test("Successful response for tape service", function() {
+        client.assert(response.status === 200, "unsuccessful response");
+    });
+%}
+
+### successful qos directoy:disk
+GET {{frontend-door}}{{endpoint}}{{qos-management}}/directory/disk
+accept: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+> {%
+    client.test("Successful response for disk service", function() {
+        client.assert(response.status === 200, "unsuccessful response");
+    });
+%}
+
+
+### successful qos directoy:disk+tape
+GET {{frontend-door}}{{endpoint}}{{qos-management}}/directory/disk+tape
+accept: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+> {%
+    client.test("Successful response for disk+tape service", function() {
+        client.assert(response.status === 200, "unsuccessful response");
+    });
+%}
+
+### successful qos directoy:volatile
+GET {{frontend-door}}{{endpoint}}{{qos-management}}/directory/volatile
+accept: application/json
+Authorization: Basic {{user_name}} {{passwd}}
+
+> {%
+    client.test("Successful response for volatile service", function() {
+        client.assert(response.status === 200, "unsuccessful response");
+    });
+%}

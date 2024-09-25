@@ -3303,6 +3303,40 @@ public class RequestContainerV5Test {
         then(endpoint).shouldHaveNoMoreInteractions();
     }
 
+    @Test
+    public void shouldCancelStageRequestOnFail() throws Exception {
+
+        var stagePool = aPool("stage-pool@dCacheDomain");
+        given(aPartitionManager().withDefault(aPartition().withStageAllowed(true)));
+        given(aPoolSelectionUnit().withNetUnit("all-net", "192.168.1.1")
+                .withProtocolUnit("HTTP", "http/1"));
+        given(aPoolMonitor().thatReturns(aPoolSelectorThat()
+                .onReadThrows(aFileNotInCacheException())
+                .onStageSelects(stagePool)));
+        given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
+
+        SettableFuture<CellMessage> killMessage = SettableFuture.create();
+        given(aCell("stage-pool@dCacheDomain").communicatingVia(endpoint)
+                .thatOnReceiving(String.class).storesRequestIn(killMessage));
+
+        given(aReadRequest()
+                .by(ROOT)
+                .forFile("80D1B8B90CED30430608C58002811B3285FC")
+                .withPath("/public/test")
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withProtocolInfo(aProtocolInfo().withProtocol("http")
+                        .withMajorVersion(1).withIPAddress("192.168.1.1")));
+
+        var requests = container.getRestoreHandlerInfo();
+        assertThat("Expected 1 request", requests.size(), is(1));
+
+        container.fail(requests.get(0).getName(), 1, "test case");
+        assertThat("rh kill message expected",
+                killMessage.get().getMessageObject(),
+                is("rh kill 80D1B8B90CED30430608C58002811B3285FC"));
+    }
+
     private void given(ContainerBuilder builder) {
         container = builder.build();
     }

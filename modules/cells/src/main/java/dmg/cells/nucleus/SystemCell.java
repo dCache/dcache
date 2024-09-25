@@ -5,13 +5,17 @@ import static java.util.stream.Collectors.toMap;
 import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.MoreExecutors;
 import dmg.util.AuthorizedString;
+import dmg.util.command.Argument;
 import dmg.util.command.Command;
+import dmg.util.command.Option;
 import dmg.util.logback.FilterShell;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +27,8 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
+import jdk.jfr.Configuration;
+import jdk.jfr.Recording;
 import org.apache.curator.framework.CuratorFramework;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
@@ -42,6 +48,9 @@ public class SystemCell
 
     private final CellShell _cellShell;
     private final CellNucleus _nucleus;
+
+    private volatile Recording recording;
+
     private int _packetsReceived,
           _packetsAnswered,
           _packetsForwarded,
@@ -137,6 +146,56 @@ public class SystemCell
         }
     }
 
+
+    @Command(name = "jfr start", hint = "Starts Java flight recorder.",
+          description = "Starts Java flight recorder. The JFR configuration can be specified as optional"
+                + " parameter: either as one of JVM pre-defined configuration names 'default' or 'profile', or"
+                + " as an absolute path to a custom configuration."
+    )
+    public class StartJFR implements Callable<String> {
+
+        @Argument(usage = "Predefined JFR configuration.", metaVar = "configuration", required = false, valueSpec = "[default|profile|<path>]")
+        String config = "default";
+
+        @Override
+        public String call() throws Exception {
+
+            if (recording != null) {
+                return "Another record in progress.";
+            }
+
+            var configuration = config.startsWith("/") ?
+                  Configuration.create(Path.of(config)) : Configuration.getConfiguration(config);
+            recording = new Recording(configuration);
+            recording.setName(getCellDomainName());
+            recording.start();
+
+            return "enabled with config: " + configuration.getName();
+        }
+    }
+
+    @Command(name = "jfr stop", hint = "Stops Java flight recorder", description = "Stops JFR")
+    public class StopJFR implements Callable<String> {
+
+        @Option(name = "out", usage = "Path where to write flight recorder output")
+        String outFileName;
+
+        @Override
+        public String call() throws Exception {
+
+            recording.stop();
+            try {
+                var outFile =
+                      outFileName == null ? Files.createTempFile(getCellDomainName() + "_", ".jfr")
+                            : Path.of(outFileName);
+                recording.dump(outFile);
+                return "recorded into " + outFile.toAbsolutePath();
+            } finally {
+                recording = null;
+            }
+        }
+    }
+
     private void shutdownSystem() {
         List<String> names = _nucleus.getCellNames();
         List<String> nonSystem = new ArrayList<>(names.size());
@@ -180,7 +239,7 @@ public class SystemCell
               name -> () -> {
                   long time = System.currentTimeMillis() - start;
                   if (time > softTimeout) {
-                      _log.warn("Killed {} in {} ms", name, time);
+                      _log.warn("Killed {} in {} ms", name, time);
                   } else {
                       _log.info("Killed {}", name);
                   }

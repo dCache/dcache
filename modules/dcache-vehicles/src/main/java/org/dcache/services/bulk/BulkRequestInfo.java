@@ -71,8 +71,8 @@ public class BulkRequestInfo implements Serializable {
 
     public static final long NO_FURTHER_ENTRIES = -1;
 
-    private long nextSeqNo = 0L;
-    private String id;
+    private long nextId = 0L;
+    private String uid;
     private Long arrivedAt;
     private Long startedAt;
     private Long lastModified;
@@ -80,12 +80,12 @@ public class BulkRequestInfo implements Serializable {
     private String targetPrefix;
     private List<BulkRequestTargetInfo> targets;
 
-    public String getId() {
-        return id;
+    public String getUid() {
+        return uid;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setUid(String uid) {
+        this.uid = uid;
     }
 
     public Long getArrivedAt() {
@@ -112,12 +112,12 @@ public class BulkRequestInfo implements Serializable {
         this.lastModified = lastModified;
     }
 
-    public long getNextSeqNo() {
-        return nextSeqNo;
+    public long getNextId() {
+        return nextId;
     }
 
-    public void setNextSeqNo(long nextSeqNo) {
-        this.nextSeqNo = nextSeqNo;
+    public void setNextId(long nextId) {
+        this.nextId = nextId;
     }
 
     public BulkRequestStatus getStatus() {

@@ -5,8 +5,6 @@ onerror shutdown
 check -strong cleaner-disk.cell.name
 check cleaner-disk.cell.consume
 check cleaner-disk.cell.subscribe
-check -strong cleaner-disk.service.pool.retry-period
-check -strong cleaner-disk.service.pool.retry-period.unit
 check -strong cleaner-disk.service.pool.timeout
 check -strong cleaner-disk.service.pool.timeout.unit
 check -strong cleaner-disk.service.spacemanager

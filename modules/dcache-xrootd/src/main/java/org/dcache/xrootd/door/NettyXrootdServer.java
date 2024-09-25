@@ -35,6 +35,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.dcache.util.CDCThreadFactory;
 import org.dcache.util.NDC;
+import org.dcache.xrootd.OutboundExceptionHandler;
 import org.dcache.xrootd.core.XrootdAuthenticationHandler;
 import org.dcache.xrootd.core.XrootdDecoder;
 import org.dcache.xrootd.core.XrootdEncoder;
@@ -220,6 +221,7 @@ public class NettyXrootdServer implements CellIdentityAware {
                             Longs.toByteArray(sessionCounter.next()));
 
                       ChannelPipeline pipeline = ch.pipeline();
+                      pipeline.addLast("outerrors", new OutboundExceptionHandler());
                       pipeline.addLast("session", new SessionHandler(session));
                       if (_expectProxyProtocol) {
                           pipeline.addLast("haproxy", new HAProxyMessageDecoder());

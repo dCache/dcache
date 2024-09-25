@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2015 - 2022 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2015 - 2023 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -315,6 +315,7 @@ public class CanlContextFactory implements SslContextFactory {
             Callable newContext = () -> {
                 PEMCredential credential
                       = new PEMCredential(keyPath.toString(), certificatePath.toString(), new char[]{});
+                LOGGER.info("Reloading host credential {} {}", certificatePath, keyPath);
                 return factory.getContext(contextType, credential);
             };
 

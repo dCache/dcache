@@ -400,6 +400,20 @@ public class ConfigurationPropertiesTests {
     }
 
     @Test
+    public void testGetReplacementExpandingEnv() {
+        //  we assume that this HOME env variable always set
+        _standardProperties.setProperty(SIMPLE_PROPERTY_NAME, propertyReference("env.HOME"));
+        _standardProperties.getProperty(SIMPLE_PROPERTY_NAME);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetReplacementMissingEnv() {
+        //  we assume that this env variable actually never exists
+        _standardProperties.setProperty(SIMPLE_PROPERTY_NAME, propertyReference("env.NO_NO_NO"));
+        _standardProperties.getProperty(SIMPLE_PROPERTY_NAME);
+    }
+
+    @Test
     public void testTwoDeepExpansion() {
         String expanding1Value = propertyReference(SIMPLE_PROPERTY_NAME);
         _standardProperties.setProperty(EXPANDING_PROPERTY_NAME, expanding1Value);

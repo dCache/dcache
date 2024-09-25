@@ -67,15 +67,15 @@ import org.dcache.auth.attributes.Restriction;
  */
 public final class JdbcBulkRequestPermissions {
 
-    private String id;
+    private Long id;
     private Subject subject;
     private Restriction restriction;
 
-    public String getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(Long id) {
         this.id = id;
     }
 

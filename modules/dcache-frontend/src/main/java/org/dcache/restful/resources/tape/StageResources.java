@@ -59,10 +59,15 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.tape;
 
+import static org.dcache.http.AuthenticationHandler.getLoginAttributes;
 import static org.dcache.restful.resources.bulk.BulkResources.getRestriction;
 import static org.dcache.restful.resources.bulk.BulkResources.getSubject;
+import static org.dcache.restful.util.HttpServletRequests.getUserRootAwareTargetPrefix;
+import static org.dcache.restful.util.JSONUtils.newBadRequestException;
 
 import com.google.common.base.Strings;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.util.PnfsHandler;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -75,11 +80,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -89,8 +96,12 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import org.dcache.auth.attributes.LoginAttributes;
 import org.dcache.auth.attributes.Restriction;
+import org.dcache.cells.CellStub;
+import org.dcache.http.PathMapper;
 import org.dcache.restful.providers.tape.StageRequestInfo;
+import org.dcache.restful.util.HandlerBuilders;
 import org.dcache.restful.util.bulk.BulkServiceCommunicator;
 import org.dcache.services.bulk.BulkRequest;
 import org.dcache.services.bulk.BulkRequest.Depth;
@@ -100,6 +111,7 @@ import org.dcache.services.bulk.BulkRequestInfo;
 import org.dcache.services.bulk.BulkRequestMessage;
 import org.dcache.services.bulk.BulkRequestStatusMessage;
 import org.dcache.services.bulk.BulkRequestTargetInfo;
+import org.dcache.util.TimeUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -122,6 +134,13 @@ public final class StageResources {
 
     @Inject
     private BulkServiceCommunicator service;
+
+    @Inject
+    private PathMapper pathMapper;
+
+    @Inject
+    @Named("pnfs-stub")
+    private CellStub pnfsmanager;
 
     private String[] supportedSitenames;
 
@@ -165,7 +184,7 @@ public final class StageResources {
             message = service.send(message);
             lastInfo = message.getInfo();
             targetInfos.addAll(lastInfo.getTargets());
-            offset = lastInfo.getNextSeqNo();
+            offset = lastInfo.getNextId();
         }
 
         lastInfo.setTargets(targetInfos);
@@ -187,6 +206,7 @@ public final class StageResources {
           @ApiResponse(code = 400, message = "Bad request"),
           @ApiResponse(code = 401, message = "Unauthorized"),
           @ApiResponse(code = 403, message = "Forbidden"),
+          @ApiResponse(code = 404, message = "Not Found"),
           @ApiResponse(code = 429, message = "Too many requests"),
           @ApiResponse(code = 500, message = "Internal Server Error")
     })
@@ -198,10 +218,16 @@ public final class StageResources {
                 + "does not belong to that stage request, this request will fail.", required = true)
                 String requestPayload) {
 
-        JSONObject reqPayload = new JSONObject(requestPayload);
-        JSONArray paths = reqPayload.getJSONArray("paths");
-        if (paths == null) {
-            throw new BadRequestException("cancellation request contains no paths.");
+        JSONObject reqPayload;
+        JSONArray paths;
+        try {
+            reqPayload = new JSONObject(requestPayload);
+            paths = reqPayload.getJSONArray("paths");
+            if (paths == null) {
+                throw new BadRequestException("cancellation request contains no paths.");
+            }
+        } catch (JSONException e) {
+            throw newBadRequestException(requestPayload, e);
         }
 
         List<String> targetPaths = new ArrayList<>();
@@ -249,15 +275,24 @@ public final class StageResources {
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces(MediaType.APPLICATION_JSON)
     public Response submit(
-          @ApiParam(value = "Description of the request, which consists of a list of file objects "
-                + "containing path, optional diskLifetime, and targetedMetadata. The latter is keyed "
-                + "to the sitename-from-well-known, and contains a map/object with site "
-                + "and implementation-specific attributes.", required = true)
+          @ApiParam(value = "Request structure:\n\n"
+                + "**files** - Array of File objects.  Required.\n"
+                + "File object structure:\n"
+                + "**path**:  - String.  Path of the file.  Duplicates will be sanitized.  Required.\n"
+                + "**diskLifetime**: - String of ISO 8601 format.  Duration after which the replica is considered no longer needed."
+                + "  Optional (defaults to system default for pin lifetime).\n"
+                + "**targetdMetadata** - targeted metadata object. Keyed to the sitename-from-well-known, "
+                + "and contains a map/object with site and implementation-specific attributes. "
+                + "Currently ignored by dCache.\n"
+                + "See further https://docs.google.com/document/d/1Zx_H5dRkQRfju3xIYZ2WgjKoOvmLtsafP2pKGpHqcfY/edit#heading=h.93yzfvog73oc.", required = true)
                 String requestPayload) {
         Subject subject = getSubject();
         Restriction restriction = getRestriction();
 
-        BulkRequest request = toBulkRequest(requestPayload);
+        FsPath userRoot = LoginAttributes.getUserRoot(getLoginAttributes(request));
+        FsPath rootPath = pathMapper.effectiveRoot(userRoot, ForbiddenException::new);
+
+        BulkRequest request = toBulkRequest(requestPayload, rootPath);
 
         /*
          *  Frontend sets the URL.  The backend service provides the UUID.
@@ -300,6 +335,7 @@ public final class StageResources {
           @ApiResponse(code = 400, message = "Bad request"),
           @ApiResponse(code = 401, message = "Unauthorized"),
           @ApiResponse(code = 403, message = "Forbidden"),
+          @ApiResponse(code = 404, message = "Not Found"),
           @ApiResponse(code = 500, message = "Internal Server Error")
     })
     @Path("/{id}")
@@ -315,18 +351,20 @@ public final class StageResources {
         return Response.ok().build();
     }
 
-    private BulkRequest toBulkRequest(String requestPayload) {
+    private BulkRequest toBulkRequest(String requestPayload, FsPath rootPath) {
         if (Strings.emptyToNull(requestPayload) == null) {
             throw new BadRequestException("empty request payload.");
         }
 
         BulkRequest request = new BulkRequest();
-        request.setPrestore(true);
         request.setExpandDirectories(Depth.NONE);
         request.setCancelOnFailure(false);
         request.setClearOnFailure(false);
         request.setClearOnSuccess(false);
         request.setActivity("STAGE");
+
+        PnfsHandler handler = HandlerBuilders.unrestrictedPnfsHandler(pnfsmanager);
+        request.setTargetPrefix(getUserRootAwareTargetPrefix(this.request, rootPath.toString(), handler));
 
         try {
             JSONObject reqPayload = new JSONObject(requestPayload);
@@ -355,7 +393,8 @@ public final class StageResources {
                 String path = file.getString("path");
                 paths.add(path);
                 if (file.has("diskLifetime")) {
-                    jsonLifetimes.put(path, file.getString("diskLifetime"));
+                    jsonLifetimes.put(path,
+                          TimeUtils.validateDuration(file.getString("diskLifetime")));
                 }
                 if (file.has("targetedMetadata")) {
                     getTargetedMetadataForPath(file).ifPresent(mdata ->
@@ -367,9 +406,9 @@ public final class StageResources {
             Map<String, String> arguments = new HashMap<>();
             arguments.put("diskLifetime", jsonLifetimes.toString());
             arguments.put("targetedMetadata", jsonMetadata.toString());
-        } catch (JSONException e) {
-            throw new BadRequestException(
-                  String.format("badly formed json object (%s): %s.", requestPayload, e));
+            request.setArguments(arguments);
+        } catch (JSONException | IllegalArgumentException e) {
+            throw newBadRequestException(requestPayload, e);
         }
 
         return request;

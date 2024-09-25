@@ -77,6 +77,7 @@ import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 import org.dcache.util.NettyPortRange;
 import org.dcache.util.NetworkUtils;
+import org.dcache.xrootd.OutboundExceptionHandler;
 import org.dcache.xrootd.core.XrootdEncoder;
 import org.dcache.xrootd.core.XrootdHandshakeHandler;
 import org.dcache.xrootd.security.TLSSessionInfo;
@@ -186,6 +187,7 @@ public class NettyXrootProxyAdapter {
         ProxyErrorHandler errorHandler = new ProxyErrorHandler(proxyId);
         errorHandler.setRequestHandler(requestHandler);
         ChannelPipeline pipeline = ch.pipeline();
+        pipeline.addLast("outerrors", new OutboundExceptionHandler());
         pipeline.addLast("handshake", new XrootdHandshakeHandler(DATA_SERVER));
         pipeline.addLast("sender", new XrootdEncoder());
         pipeline.addLast("decoder", new ProxyRequestDecoder(proxyId, requestHandler));

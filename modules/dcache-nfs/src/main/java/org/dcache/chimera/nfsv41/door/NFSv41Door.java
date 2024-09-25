@@ -46,6 +46,7 @@ import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -75,6 +76,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.concurrent.GuardedBy;
 import javax.security.auth.Subject;
+
+import eu.emi.security.authn.x509.CrlCheckingMode;
+import eu.emi.security.authn.x509.OCSPCheckingMode;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreMutex;
 import org.apache.curator.utils.ZKPaths;
@@ -89,11 +93,13 @@ import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.FsInodeType;
 import org.dcache.chimera.JdbcFs;
+import org.dcache.chimera.nfsv41.common.LegacyUtils;
 import org.dcache.chimera.nfsv41.common.StatsDecoratedOperationExecutor;
 import org.dcache.chimera.nfsv41.door.proxy.NfsProxyIoFactory;
 import org.dcache.chimera.nfsv41.door.proxy.ProxyIoFactory;
 import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
+import org.dcache.http.JdkSslContextFactory;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.ExportFile;
@@ -177,6 +183,7 @@ import org.dcache.util.NDC;
 import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
+import org.dcache.util.Version;
 import org.dcache.vehicles.DoorValidateMoverMessage;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
@@ -335,6 +342,27 @@ public class NFSv41Door extends AbstractCellComponent implements
      */
     private ClientRecoveryStore _clientStore;
 
+
+    /**
+     * Host certificate file.
+     */
+    private String _certFile;
+
+    /**
+     * Host private key file.
+     */
+    private String _keyFile;
+
+    /**
+     * Path to directory CA certificates
+     */
+    private String _caPath;
+
+    /**
+     * Enable RPC-over-TLS for NFS.
+     */
+    private boolean _enableTls;
+
     public void setEventNotifier(EventNotifier notifier) {
         _eventNotifier = notifier;
     }
@@ -418,6 +446,22 @@ public class NFSv41Door extends AbstractCellComponent implements
         _poolMonitor = poolMonitor;
     }
 
+    public void setCertFile(String certFile) {
+        _certFile = certFile;
+    }
+
+    public void setKeyFile(String keyFile) {
+        _keyFile = keyFile;
+    }
+
+    public void setCaPath(String caPath) {
+        _caPath = caPath;
+    }
+
+    public void setEnableTls(boolean enableTls) {
+        _enableTls = enableTls;
+    }
+
     public VirtualFileSystem wrapWithMonitoring(VirtualFileSystem inner) {
         MonitoringVfs monitor = new MonitoringVfs();
         monitor.setInner(inner);
@@ -441,6 +485,20 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         if (_enableRpcsecGss) {
             oncRpcSvcBuilder.withGssSessionManager(new GssSessionManager(_idMapper));
+        }
+
+        if (_enableTls) {
+            // FIXME: the certificate reload is not handled
+            JdkSslContextFactory sslContextFactory = new JdkSslContextFactory();
+            sslContextFactory.setServerCertificatePath(Path.of(_certFile));
+            sslContextFactory.setServerKeyPath(Path.of(_keyFile));
+            sslContextFactory.setServerCaPath(Path.of(_caPath));
+            sslContextFactory.setOcspCheckingMode(OCSPCheckingMode.IGNORE);
+            sslContextFactory.setCrlCheckingMode(CrlCheckingMode.IF_VALID);
+            sslContextFactory.init();
+
+            oncRpcSvcBuilder.withSSLContext(sslContextFactory.call());
+            oncRpcSvcBuilder.withStartTLS();
         }
 
         for (String version : _versions) {
@@ -485,6 +543,8 @@ public class NFSv41Door extends AbstractCellComponent implements
                           .withExportTable(_exportFile)
                           .withVfs(_vfs)
                           .withOperationExecutor(_executor)
+                          .withImplementationName("dcache-" + Version.of(this.getClass()).getBuild())
+                          .withImplementationDate(Instant.parse(Version.of(this.getClass()).getBuildTime()))
                           .build();
 
                     oncRpcSvcBuilder.withRpcService(
@@ -525,8 +585,7 @@ public class NFSv41Door extends AbstractCellComponent implements
      * and NFSv4.1 device id. Finally, notify waiting request that we have got
      * the reply for LAYOUTGET
      */
-    public void messageArrived(
-          PoolPassiveIoFileMessage<org.dcache.chimera.nfs.v4.xdr.stateid4> message) {
+    public void messageArrived(PoolPassiveIoFileMessage<?> message) {
 
         String poolName = message.getPoolName();
         long verifier = message.getVerifier();
@@ -536,9 +595,13 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         PoolDS device = _poolDeviceMap.getOrCreateDS(poolName, verifier, poolAddresses);
 
-        org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateid = message.challange();
-        NfsTransfer transfer = _transfers.get(
-              new stateid4(legacyStateid.other, legacyStateid.seqid.value));
+
+        // REVISIT 11.0: remove drop legacy support. Old polls will send legacy stateid.
+        // stateid4 stateid = message.challange();
+        Object stateObject = message.challange();
+        stateid4 stateid = LegacyUtils.toStateid(stateObject);
+        NfsTransfer transfer = _transfers.get(stateid);
+
         /*
          * We got a notification for a transfer which was not
          * started by us.
@@ -588,10 +651,12 @@ public class NFSv41Door extends AbstractCellComponent implements
         }
     }
 
-    public DoorValidateMoverMessage<org.dcache.chimera.nfs.v4.xdr.stateid4> messageArrived(
-          DoorValidateMoverMessage<org.dcache.chimera.nfs.v4.xdr.stateid4> message) {
-        org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateid = message.getChallenge();
-        stateid4 stateid = new stateid4(legacyStateid.other, legacyStateid.seqid.value);
+    public DoorValidateMoverMessage<?> messageArrived(DoorValidateMoverMessage<?> message) {
+
+        // REVISIT 11.0: remove drop legacy support. Old polls will send legacy stateid.
+        // stateid4 stateid = message.getChallenge();
+        Object stateObject = message.getChallenge();
+        stateid4 stateid = LegacyUtils.toStateid(stateObject);
 
         boolean isValid = false;
         try {
@@ -711,7 +776,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                 final InetSocketAddress remote = context.getRpcCall().getTransport()
                       .getRemoteSocketAddress();
                 final NFS4ProtocolInfo protocolInfo = new NFS4ProtocolInfo(remote,
-                      new org.dcache.chimera.nfs.v4.xdr.stateid4(stateid),
+                      new org.dcache.chimera.nfs.v4.xdr.stateid4(openStateId.stateid()),
                       nfsInode.toNfsHandle()
                 );
 
@@ -724,10 +789,10 @@ public class NFSv41Door extends AbstractCellComponent implements
 
                     transfer = args.loga_iomode == layoutiomode4.LAYOUTIOMODE4_RW ?
 
-                          new WriteTransfer(_pnfsHandler, client, openStateId, nfsInode,
+                          new WriteTransfer(_pnfsHandler, client, layoutType, openStateId, nfsInode,
                                 context.getRpcCall().getCredential().getSubject())
                           :
-                                new ReadTransfer(_pnfsHandler, client, openStateId, nfsInode,
+                                new ReadTransfer(_pnfsHandler, client, layoutType, openStateId, nfsInode,
                                       context.getRpcCall().getCredential().getSubject());
 
                     transfer.setProtocolInfo(protocolInfo);
@@ -740,47 +805,9 @@ public class NFSv41Door extends AbstractCellComponent implements
                     transfer.setIoQueue(_ioQueue);
                     transfer.setKafkaSender(_kafkaSender);
 
-                    /*
-                     * As all our layouts marked 'return-on-close', stop mover when
-                     * open-state disposed on CLOSE.
-                     */
                     final NfsTransfer t = transfer;
-                    openStateId.addDisposeListener(state -> {
-                        /*
-                         * Cleanup transfer when state invalidated.
-                         */
-                        if (t.hasMover()) {
-                            // FIXME: as long as we can identify client's capabilities the workaround apply to flex_files layouts
-                            // to work correctly with proxy-io. As modern rhel clients (>= 7) use flex_files by default it's ok.
-                            if (layoutType == layouttype4.LAYOUT4_FLEX_FILES && client.isLeaseValid() && client.getCB() != null) {
-                                /*
-                                 * Due to race in the Linux kernel client, a server might see CLOSE before
-                                 * the last WRITE operation have been processed by a data server. Thus,
-                                 * recall the layout (enforce dirty page flushing) and return a NFS4ERR_DELAY.
-                                 *
-                                 * see: https://bugzilla.redhat.com/show_bug.cgi?id=1901524
-                                 */
-                                _log.warn(
-                                      "Deploying work-around for buggy client {} issuing CLOSE before LAYOUT_RETURN for transfer {}@{} of {}",
-                                      t.getMoverId(), t.getPool(), t.getPnfsId(),
-                                      t.getClient().getRemoteAddress());
-                                t.recallLayout(_callbackExecutor);
-                                throw new DelayException("Close before layoutreturn");
-                            } else {
-                                _log.warn("Removing orphan mover: {}@{} for {} by {}",
-                                      t.getMoverId(), t.getPool(), t.getPnfsId(),
-                                      t.getClient().getRemoteAddress());
-                                t.shutdownMover();
-                            }
-                        }
-                        if (t.isWrite()) {
-                            /* write request keep in the message map to
-                             * avoid re-creates and trigger errors.
-                             */
-                            _transfers.remove(openStateId.stateid());
-                        }
-                    });
-
+                    /* clean dead transfers associated with open. */
+                    openStateId.addDisposeListener(state -> _transfers.remove(openStateId.stateid()));
                     _transfers.put(openStateId.stateid(), transfer);
                 } else {
                     // keep debug context in sync
@@ -800,7 +827,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             layout.lo_iomode = args.loga_iomode;
             layout.lo_offset = new offset4(0);
             layout.lo_length = new length4(nfs4_prot.NFS4_UINT64_MAX);
-            layout.lo_content = layoutDriver.getLayoutContent(stateid,
+            layout.lo_content = layoutDriver.getLayoutContent(openStateId.stateid(),
                   NFSv4Defaults.NFS4_STRIPE_SIZE, new nfs_fh4(nfsInode.toNfsHandle()), devices);
 
             layoutStateId.bumpSeqid();
@@ -844,21 +871,28 @@ public class NFSv41Door extends AbstractCellComponent implements
     private void logLayoutErrors(CompoundContext context, ff_layoutreturn4 lr) {
         for (ff_ioerr4 ioerr : lr.fflr_ioerr_report) {
             for (device_error4 de : ioerr.ffie_errors) {
-                PoolDS ds = _poolDeviceMap.getByDeviceId(de.de_deviceid);
-                String pool = ds == null ? "an unknown pool" : ("pool " + ds.getName());
-                _log.error("Client {} reports error {} on {} for op {}", toAddrString(context.getRemoteSocketAddress().getAddress()),
-                      nfsstat.toString(de.de_status), pool, nfs_opnum4.toString(de.de_opnum));
-
-                // rise an alarm when client can't connect to the pool
-                if (de.de_status == nfsstat.NFSERR_NXIO) {
-                    _log.error(
-                          AlarmMarkerFactory.getMarker(PredefinedAlarm.CLIENT_CONNECTION_REJECTED,
-                                pool),
-                          "Client {} failed to connect to {}", toAddrString(context.getRemoteSocketAddress().getAddress()), pool);
-                }
+                reportLayoutError(context, de);
             }
         }
     }
+
+    private void reportLayoutError(CompoundContext context, device_error4 de) {
+        PoolDS ds = _poolDeviceMap.getByDeviceId(de.de_deviceid);
+        String pool = ds == null ? "an unknown pool" : ("pool " + ds.getName());
+        _log.error("Client {} reports error {} on {} for op {}", toAddrString(
+                    context.getRemoteSocketAddress().getAddress()),
+              nfsstat.toString(de.de_status), pool, nfs_opnum4.toString(de.de_opnum));
+
+        // rise an alarm when client can't connect to the pool
+        if (de.de_status == nfsstat.NFSERR_NXIO) {
+            _log.error(
+                  AlarmMarkerFactory.getMarker(PredefinedAlarm.CLIENT_CONNECTION_REJECTED,
+                        pool),
+                  "Client {} failed to connect to {}", toAddrString(
+                        context.getRemoteSocketAddress().getAddress()), pool);
+        }
+    }
+
 
     /*
      * (non-Javadoc)
@@ -930,7 +964,9 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     @Override
     public void layoutError(CompoundContext context, LAYOUTERROR4args args) throws IOException {
-        // NOP for now. Forced by interface
+        var errors = args.lea_errors;
+        Arrays.stream(errors)
+              .forEach(e -> reportLayoutError(context, e));
     }
 
     @Override
@@ -1293,9 +1329,9 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     private class ReadTransfer extends NfsTransfer {
 
-        public ReadTransfer(PnfsHandler pnfs, NFS4Client client, NFS4State openStateId,
+        public ReadTransfer(PnfsHandler pnfs, NFS4Client client, layouttype4 layouttype, NFS4State openStateId,
               Inode nfsInode, Subject ioSubject) throws ChimeraNFSException {
-            super(pnfs, client, openStateId, nfsInode, ioSubject);
+            super(pnfs, client, layouttype, openStateId, nfsInode, ioSubject);
         }
 
         @Override
@@ -1358,9 +1394,9 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     private class WriteTransfer extends NfsTransfer {
 
-        public WriteTransfer(PnfsHandler pnfs, NFS4Client client, NFS4State openStateId,
+        public WriteTransfer(PnfsHandler pnfs, NFS4Client client, layouttype4 layoutType, NFS4State openStateId,
               Inode nfsInode, Subject ioSubject) throws ChimeraNFSException {
-            super(pnfs, client, openStateId, nfsInode, ioSubject);
+            super(pnfs, client, layoutType, openStateId, nfsInode, ioSubject);
         }
 
         @Override
@@ -1427,7 +1463,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         private final NFS4Client _client;
         protected boolean shutdownInProgress;
 
-        NfsTransfer(PnfsHandler pnfs, NFS4Client client, NFS4State openStateId,
+        NfsTransfer(PnfsHandler pnfs, NFS4Client client, layouttype4 layoutType, NFS4State openStateId,
               Inode nfsInode, Subject ioSubject) throws ChimeraNFSException {
             super(pnfs, Subjects.ROOT, Restrictions.none(), Subjects.fromUnixNumericSubject(ioSubject), null);
 
@@ -1435,6 +1471,41 @@ public class NFSv41Door extends AbstractCellComponent implements
 
             // layout, or a transfer in dCache language, must have a unique stateid
             _stateid = client.createState(openStateId.getStateOwner(), openStateId);
+
+            /*
+             * As all our layouts marked 'return-on-close', stop mover when
+             * layout-state disposed (which will trigger by open state disposal) on CLOSE.
+             */
+            _stateid.addDisposeListener(state -> {
+                /*
+                 * Cleanup transfer when state invalidated.
+                 */
+                var t = this;
+                if (t.hasMover()) {
+                    // FIXME: as long as we can identify client's capabilities the workaround apply to flex_files layouts
+                    // to work correctly with proxy-io. As modern rhel clients (>= 7) use flex_files by default it's ok.
+                    if (layoutType == layouttype4.LAYOUT4_FLEX_FILES && client.isLeaseValid() && client.getCB() != null) {
+                        /*
+                         * Due to race in the Linux kernel client, a server might see CLOSE before
+                         * the last WRITE operation have been processed by a data server. Thus,
+                         * recall the layout (enforce dirty page flushing) and return a NFS4ERR_DELAY.
+                         *
+                         * see: https://bugzilla.redhat.com/show_bug.cgi?id=1901524
+                         */
+                        _log.warn(
+                              "Deploying work-around for buggy client {} issuing CLOSE before LAYOUT_RETURN for transfer {}@{} of {}",
+                              t.getMoverId(), t.getPool(), t.getPnfsId(),
+                              t.getClient().getRemoteAddress());
+                        t.recallLayout(_callbackExecutor);
+                        throw new DelayException("Close before layoutreturn");
+                    } else {
+                        _log.warn("Removing orphan mover: {}@{} for {} by {}",
+                              t.getMoverId(), t.getPool(), t.getPnfsId(),
+                              t.getClient().getRemoteAddress());
+                        t.shutdownMover();
+                    }
+                }
+            });
             _openStateid = openStateId;
             _client = client;
         }
@@ -1489,6 +1560,12 @@ public class NFSv41Door extends AbstractCellComponent implements
             ChimeraNFSException error = _errorHolder.get();
             if (error != null) {
                 throw error;
+            }
+
+            if (shutdownInProgress) {
+                // race with competing open. Let wait for pending mover shutdown to complete.
+                _log.info("Waiting for pending mover shutdown to complete: {}@{} ", this.getMoverId(), this.getPool());
+                throw new DelayException("Waiting for pending mover shutdown to complete");
             }
 
             /*

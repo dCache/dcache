@@ -361,8 +361,6 @@ public interface FileSystemProvider extends Closeable {
     void removeTag(FsInode dir, String tagName)
           throws ChimeraFsException;
 
-    void removeTag(FsInode dir) throws ChimeraFsException;
-
     int getTag(FsInode inode, String tagName, byte[] data,
           int offset, int len) throws ChimeraFsException;
 
@@ -523,6 +521,15 @@ public interface FileSystemProvider extends Closeable {
 
 
     /**
+     * Returns the Label name.
+     *
+     * @param ino of a file.
+     * @throws ChimeraFsException
+     */
+    String getLabelById(long ino) throws ChimeraFsException;
+
+
+    /**
      * Delete a given  labels of a given file system object.
      *
      * @param inode file system object.
@@ -570,4 +577,25 @@ public interface FileSystemProvider extends Closeable {
      */
     void removeXattr(FsInode inode, String attr) throws ChimeraFsException;
 
+    /**
+     * Returns the path with symlinks resolved.
+     *
+     * @param path to resolve.
+     * @return resolved path.
+     */
+    String resolvePath(String path) throws ChimeraFsException;
+
+    /**
+     * @param id of the policy.
+     * @return name of the policy.
+     * @throws ChimeraFsException
+     */
+    String qosPolicyIdToName(Integer id) throws ChimeraFsException;
+
+    /**
+     * @param name of the policy.
+     * @return id of the policy.
+     * @throws ChimeraFsException
+     */
+    Integer qosPolicyNameToId(String name) throws ChimeraFsException;
 }

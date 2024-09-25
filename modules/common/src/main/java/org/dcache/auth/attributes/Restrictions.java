@@ -28,7 +28,10 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Class containing utility methods.
@@ -144,8 +147,11 @@ public class Restrictions {
      */
     private static class CompositeRestriction implements Restriction {
 
+         private static final Logger LOGGER =
+              LoggerFactory.getLogger(CompositeRestriction.class);
         private static final long serialVersionUID = 1854305439062458336L;
         private final Set<Restriction> restrictions;
+        private transient Function<FsPath, FsPath> resolver;
 
         public CompositeRestriction(Set<Restriction> restrictions) {
             this.restrictions = restrictions;
@@ -153,7 +159,10 @@ public class Restrictions {
 
         @Override
         public boolean isRestricted(Activity activity, FsPath path) {
-            for (Restriction r : restrictions) {
+             LOGGER.debug("Checking restrictions on {} for activity {}", path, activity);
+             for (Restriction r : restrictions) {
+                  LOGGER.debug("Checking component restriction of type {}", r.getClass());
+                 r.setPathResolver(getPathResolver());
                 if (r.isRestricted(activity, path)) {
                     return true;
                 }
@@ -162,9 +171,12 @@ public class Restrictions {
         }
 
         @Override
-        public boolean isRestricted(Activity activity, FsPath directory, String name) {
+        public boolean isRestricted(Activity activity, FsPath directory, String name, boolean skipPrefixCheck) {
+             LOGGER.debug("Checking restrictions on {} for activity {} and name {}{}", directory, activity, name, skipPrefixCheck ? " (skipping prefix check)" : "");
             for (Restriction r : restrictions) {
-                if (r.isRestricted(activity, directory, name)) {
+                r.setPathResolver(getPathResolver());
+                LOGGER.debug("Checking component restriction of type {} for name {}", r.getClass(), name);
+                if (r.isRestricted(activity, directory, name, skipPrefixCheck)) {
                     return true;
                 }
             }
@@ -173,6 +185,7 @@ public class Restrictions {
 
         @Override
         public boolean hasUnrestrictedChild(Activity activity, FsPath parent) {
+            restrictions.forEach(r -> r.setPathResolver(getPathResolver()));
             return !restrictions.stream().anyMatch(r -> !r.hasUnrestrictedChild(activity, parent));
         }
 
@@ -198,6 +211,7 @@ public class Restrictions {
             }
 
             for (Restriction r : restrictions) {
+                r.setPathResolver(getPathResolver());
                 if (!r.isSubsumedBy(other)) {
                     return false;
                 }
@@ -205,8 +219,19 @@ public class Restrictions {
             return true;
         }
 
+        @Override
+        public void setPathResolver(Function<FsPath, FsPath> resolver) {
+            this.resolver = resolver;
+        }
+
+        @Override
+        public Function<FsPath, FsPath> getPathResolver() {
+            return resolver != null ? resolver : Restriction.super.getPathResolver();
+        }
+
         private boolean isSubsumedBy(CompositeRestriction other) {
             for (Restriction r : restrictions) {
+                r.setPathResolver(getPathResolver());
                 if (!other.subsumes(r)) {
                     return false;
                 }
@@ -216,6 +241,7 @@ public class Restrictions {
 
         private boolean subsumes(Restriction other) {
             for (Restriction r : restrictions) {
+                r.setPathResolver(getPathResolver());
                 if (other.isSubsumedBy(r)) {
                     return true;
                 }

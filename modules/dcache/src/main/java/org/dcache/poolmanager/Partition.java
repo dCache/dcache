@@ -75,7 +75,7 @@ public abstract class Partition implements Serializable {
                 .put("p2p-allowed", "yes")
                 .put("p2p-oncost", "no")
                 .put("p2p-fortransfer", "no")
-                .put("stage-allowed", "no")
+                .put("stage-allowed", "yes")
                 .put("stage-oncost", "no")
                 .build();
 

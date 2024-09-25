@@ -51,6 +51,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -390,7 +391,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
             Map<String, String> opaqueMap = getOpaqueMap(msg.getOpaque());
             UUID uuid = getUuid(opaqueMap);
             if (uuid == null) {
-                _log.info("Request to open {} contains no UUID.", msg.getPath());
+                _log.info("Request to open {} contains no UUID.", msg.getPath());
                 throw new XrootdException(kXR_NotAuthorized, "Request lacks the "
                       + UUID_PREFIX + " property.");
             }
@@ -431,7 +432,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
                     boolean posc = (msg.getOptions() & kXR_posc) == kXR_posc ||
                           protocolInfo.getFlags().contains(XrootdProtocolInfo.Flags.POSC);
                     if (opaqueMap.containsKey("tpc.src")) {
-                        _log.debug("Request to open {} is as third-party destination.", msg);
+                        _log.debug("Request to open {} is as third-party destination.", msg);
                         XrootdTpcInfo tpcInfo = new XrootdTpcInfo(opaqueMap);
                         tpcInfo.setDelegatedProxy(protocolInfo.getDelegatedCredential());
                         tpcInfo.setUid(protocolInfo.getTpcUid());
@@ -522,7 +523,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
                 int fd = msg.getFhandle();
                 FileDescriptor descriptor = getDescriptor(fd);
                 if (descriptor instanceof TpcWriteDescriptor) {
-                    _log.debug("Request to stat {} is for third-party transfer.", msg);
+                    _log.debug("Request to stat {} is for third-party transfer.", msg);
                     return ((TpcWriteDescriptor) descriptor).handleStat(msg);
                 } else {
                     try {
@@ -945,7 +946,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
 
     @GuardedBy("writeLock")
     private void removeAllDescriptorsAtomically() {
-        _descriptors.forEach(FileDescriptor::close);
+        _descriptors.stream().filter(Objects::nonNull).forEach(FileDescriptor::close);
         _descriptors.clear();
     }
 

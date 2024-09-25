@@ -47,6 +47,10 @@ class PGroup extends PoolCore implements SelectionPoolGroup {
         return allPools;
     }
 
+    @Override
+    public List<PGroup> getPoolGroups() {
+        return _pgroupList;
+    }
 
     // check whatever there is a pool group that exist in there reference list
     // IOW, A ->  B -> C ; C -> A not allowed.
@@ -80,8 +84,14 @@ class PGroup extends PoolCore implements SelectionPoolGroup {
     }
 
     public void addSubgroup(PGroup subGroup) {
-        checkLoop(this, subGroup);
-        _pgroupList.add(subGroup);
+        if (!this._pgroupList.contains(subGroup)) {
+            checkLoop(this, subGroup);
+            _pgroupList.add(subGroup);
+        } else {
+            throw new IllegalArgumentException(
+                  "Subgroup " + subGroup.getName() + " is already defined in " + this.getName());
+        }
+
     }
 
     @Override

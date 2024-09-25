@@ -537,25 +537,32 @@ public class MigrationModule
               usage = "Enables the transfer of files from a disabled pool.")
         boolean forceSourceMode;
 
-        @Argument(metaVar = "target")
-        String[] targets;
+        @Argument(metaVar = "target",
+              required = false,
+              usage = "Required unless -target=pgroup is supplied, in which case we" +
+                    "default to the unique pool group of which the source pool is a member," +
+                    "if such exists.")
+        String[] targets = {};
 
         @CommandLine
         String commandLine;
 
         private RefreshablePoolList createPoolList(String type, List<String> targets) {
             CellStub poolManager = _context.getPoolManagerStub();
-
             switch (type) {
                 case "pool":
                     return new PoolListByNames(poolManager, targets);
                 case "hsm":
                     return new PoolListByHsm(poolManager, targets);
                 case "pgroup":
-                    return new PoolListByPoolGroup(poolManager, targets);
+                    if (targets.isEmpty()) {
+                        return new PoolListByPoolGroupOfPool(poolManager, _context.getPoolName());
+                    } else {
+                        return new PoolListByPoolGroup(poolManager, targets);
+                    }
                 case "link":
                     if (targets.size() != 1) {
-                        throw new IllegalArgumentException(targets.toString() +
+                        throw new IllegalArgumentException(targets +
                               ": Only one target supported for -type=link");
                     }
                     return new PoolListByLink(poolManager, targets.get(0));
@@ -801,8 +808,14 @@ public class MigrationModule
             Expression includeExpression =
                   createPoolPredicate(includeWhen, TRUE_EXPRESSION);
 
+            List<String> listOfTargets = asList(targets);
+            if (listOfTargets.isEmpty() && !target.equals("pgroup")) {
+                throw new IllegalArgumentException(
+                      "target(s) required when target type is " + target);
+            }
+
             RefreshablePoolList poolList =
-                  new PoolListFilter(createPoolList(target, asList(targets)),
+                  new PoolListFilter(createPoolList(target, listOfTargets),
                         excluded, excludeExpression,
                         included, includeExpression,
                         sourceList);

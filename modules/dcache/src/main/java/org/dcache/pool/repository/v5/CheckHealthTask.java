@@ -14,6 +14,7 @@ import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.repository.Account;
+import org.dcache.pool.repository.FileStoreState;
 import org.dcache.pool.repository.ReplicaStore;
 import org.dcache.pool.repository.SpaceRecord;
 import org.slf4j.Logger;
@@ -68,8 +69,13 @@ class CheckHealthTask implements Runnable {
             case CLOSED:
                 break;
             case OPEN:
-                if (!_replicaStore.isOk()) {
+                if (_replicaStore.isOk() == FileStoreState.FAILED) {
                     _repository.fail(FaultAction.DISABLED, "I/O test failed");
+                }else if (_replicaStore.isOk() == FileStoreState.READ_ONLY){
+                    LOGGER.error(
+                          "Read-only file system");
+
+                    _repository.fail(FaultAction.READONLY, "I/O test failed, READ_ONLY Error");
                 }
 
                 if (!checkSpaceAccounting()) {

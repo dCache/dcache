@@ -211,6 +211,7 @@
       </bean>
     </property>
     <property name="proxyResponseTimeoutInSeconds" value="${xrootd.net.proxy.response-timeout-in-secs}"/>
+    <property name="anonymousAccess" value="${xrootd.authz.anonymous-operations}"/>
   </bean>
 
   <bean id="pool-manager-handler" class="org.dcache.poolmanager.PoolManagerHandlerSubscriber">

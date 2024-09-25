@@ -44,7 +44,6 @@ This part contains guides for specific tasks a system administrator might want t
     - [Examples](cookbook-pool.md#examples)
     - [Renaming a Pool](cookbook-pool.md#renaming-a-pool)
     - [Pinning Files to a Pool](cookbook-pool.md#pinning-files-to-a-pool)
-    - [Running pool with CEPH backend](cookbook-pool.md#running-pools-with-ceph-backends)
     - [Keeping metadata on MongoDB](cookbook-pool.md#keeping-metadata-on-mongodb)
     - [Handling orphan movers](cookbook-pool.md#handling-orphan-movers)
 
@@ -68,6 +67,11 @@ This part contains guides for specific tasks a system administrator might want t
     - [AbstractBlockingNearlineStorage](cookbook-writing-hsm-plugins.md#abstractblockingnearlinestorage)
     - [Maven Archetype](cookbook-writing-hsm-plugins.md#maven-archetype)
     - [Examples](cookbook-writing-hsm-plugins.md#examples)
+
+- [QoS Policies](cookbook-qos-policies.md)
+    - [QoS Policy Schema](cookbook-qos-policies.md#qos-policy-definition)
+    - [QoS Policy Management](cookbook-qos-policies.md#managing-policies)
+    - [Applying a QoS Policy to a file](cookbook-qos-policies.md#applying-policies-to-files)
 
 - [Advanced Tuning](cookbook-advanced.md)
    - [Multiple Queues for Movers in each Pool](cookbook-advanced.md#multiple-queues-for-movers-in-each-pool)

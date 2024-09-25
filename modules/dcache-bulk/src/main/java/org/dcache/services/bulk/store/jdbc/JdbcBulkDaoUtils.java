@@ -59,17 +59,9 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.store.jdbc;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -80,7 +72,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.dcache.db.JdbcCriterion;
 import org.dcache.db.JdbcUpdate;
-import org.dcache.services.bulk.BulkStorageException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -155,30 +146,22 @@ public final class JdbcBulkDaoUtils {
         return support.getJdbcTemplate().update(sql, criterion.getArgumentsAsArray());
     }
 
-    /**
-     * @throws SQLException in order to support the jdbc template API.
-     */
-    public Object deserializeFromBase64(String request, String field, String base64)
-          throws SQLException {
-        if (base64 == null) {
-            return null;
-        }
-        byte[] array = Base64.getDecoder().decode(base64);
-        ByteArrayInputStream bais = new ByteArrayInputStream(array);
-        try (ObjectInputStream istream = new ObjectInputStream(bais)) {
-            return istream.readObject();
-        } catch (IOException | ClassNotFoundException e) {
-            throw new SQLException("problem deserializing " + field + " for "
-                  + request, e);
-        }
+    public int delete(JdbcCriterion criterion, String tableName, String secondaryTable,
+          JdbcDaoSupport support) {
+        LOGGER.trace("delete {}.", criterion);
+        String sql =
+              "DELETE FROM " + tableName + " WHERE EXISTS (SELECT * FROM " + secondaryTable
+                    + " WHERE " + criterion.getPredicate() + ")";
+        LOGGER.trace("delete {} ({}).", sql, criterion.getArguments());
+        return support.getJdbcTemplate().update(sql, criterion.getArgumentsAsArray());
     }
 
-    public <T> List<T> get(JdbcCriterion criterion, int limit, String tableName,
+    public <T> List<T> get(String select, JdbcCriterion criterion, int limit, String tableName,
           JdbcDaoSupport support, RowMapper<T> mapper) {
-        LOGGER.trace("get {}, limit {}.", criterion, limit);
+        LOGGER.trace("get {}, {}, limit {}.", select, criterion, limit);
         Boolean reverse = criterion.reverse();
         String direction = reverse == null || !reverse ? "ASC" : "DESC";
-        String sql = "SELECT * FROM " + tableName + " WHERE " + criterion.getPredicate()
+        String sql = select + " FROM " + tableName + " WHERE " + criterion.getPredicate()
               + " ORDER BY " + criterion.orderBy() + " " + direction + " LIMIT " + limit;
 
         LOGGER.trace("get {} ({}).", sql, criterion.getArguments());
@@ -188,13 +171,17 @@ public final class JdbcBulkDaoUtils {
         return template.query(sql, criterion.getArgumentsAsArray(), mapper);
     }
 
+    public <T> List<T> get(JdbcCriterion criterion, int limit, String tableName,
+          JdbcDaoSupport support, RowMapper<T> mapper) {
+        return get("SELECT *", criterion, limit, tableName, support, mapper);
+    }
+
     public <T> List<T> get(String sql, List args, int limit, JdbcDaoSupport support,
           RowMapper<T> mapper) {
         LOGGER.trace("get {}, {}, limit {}.", sql, args, limit);
         JdbcTemplate template = support.getJdbcTemplate();
         template.setFetchSize(fetchSize);
-        args.add(limit);
-        return template.query(sql, args.toArray(Object[]::new), mapper);
+        return template.query(sql + " LIMIT " + limit, args.toArray(Object[]::new), mapper);
     }
 
     public Optional<KeyHolder> insert(JdbcUpdate update, String tableName, JdbcDaoSupport support) {
@@ -206,18 +193,6 @@ public final class JdbcBulkDaoUtils {
     public <T> void insertBatch(List<T> targets, String sql,
           ParameterizedPreparedStatementSetter<T> setter, JdbcDaoSupport support) {
         support.getJdbcTemplate().batchUpdate(sql, targets, 100, setter);
-    }
-
-    public String serializeToBase64(String field, Serializable serializable)
-          throws BulkStorageException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (ObjectOutputStream ostream = new ObjectOutputStream(baos)) {
-            ostream.writeObject(serializable);
-        } catch (IOException e) {
-            throw new BulkStorageException("problem serializing "
-                  + field, e);
-        }
-        return Base64.getEncoder().encodeToString(baos.toByteArray());
     }
 
     @Required
@@ -236,13 +211,19 @@ public final class JdbcBulkDaoUtils {
               concatArguments(update.getArguments(), criterion.getArguments()));
     }
 
-    public Optional<KeyHolder> upsert(String sql, Collection<Object> arguments,
-          JdbcDaoSupport support) {
-        LOGGER.trace("upsert {}, {}.", sql, arguments);
-        return insert(sql, arguments, support);
+    public int update(JdbcCriterion criterion, JdbcUpdate update, String tableName,
+          String secondaryTable, JdbcDaoSupport support) {
+        LOGGER.trace("update {} : {}.", criterion, update);
+        String sql =
+              "UPDATE " + tableName + " SET " + update.getUpdate() + " FROM " + secondaryTable
+                    + " WHERE " + criterion.getPredicate();
+        LOGGER.trace("update {} ({}, {}).", sql, update.getArguments(),
+              criterion.getArguments());
+        return support.getJdbcTemplate().update(sql,
+              concatArguments(update.getArguments(), criterion.getArguments()));
     }
 
-    private Optional<KeyHolder> insert(String sql, Collection<Object> arguments,
+    public Optional<KeyHolder> insert(String sql, Collection<Object> arguments,
           JdbcDaoSupport support) {
         KeyHolder keyHolder = new GeneratedKeyHolder();
 

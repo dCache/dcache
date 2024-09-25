@@ -649,7 +649,7 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware {
      * <p>
      * The return map contains {@code keys} elements. Each key is mapped to a future value. If
      * {@code future} fails, all returned futures fail with the same error. Otherwise {@code mapper}
-     * maps the return value of {@code future} to a map of values. {@code acceptor} is called for
+     * maps the return value of {@code future} to a map of values. {@code acceptor} is called for
      * each value, applying the value to the settable future in the returned map.
      *
      * @param keys       The keys of the map to return.

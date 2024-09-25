@@ -22,6 +22,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 import diskCacheV111.util.FsPath;
 import java.io.IOException;
+import java.util.function.Function;
 
 /**
  * A Restriction that allows a user to perform only activity on paths with a particular prefix.
@@ -32,7 +33,10 @@ public class PrefixRestriction implements Restriction {
 
     private ImmutableSet<FsPath> prefixes;
 
+    private transient Function<FsPath, FsPath> resolver;
+
     public PrefixRestriction(FsPath... prefixes) {
+
         this.prefixes = ImmutableSet.copyOf(prefixes);
     }
 
@@ -42,26 +46,21 @@ public class PrefixRestriction implements Restriction {
 
     @Override
     public boolean isRestricted(Activity activity, FsPath path) {
-        for (FsPath prefix : prefixes) {
-            if (path.hasPrefix(prefix)) {
-                return false;
-            }
-            if (prefix.hasPrefix(path) && (activity == Activity.READ_METADATA
-                  || activity == Activity.LIST)) {
-                return false;
-            }
-        }
-        return true;
+        return isRestricted(activity, path, false);
     }
 
     @Override
-    public boolean isRestricted(Activity activity, FsPath directory, String child) {
-        return isRestricted(activity, directory.child(child));
+    public boolean isRestricted(Activity activity, FsPath directory, String child,
+          boolean skipPrefixCheck) {
+        return isRestricted(activity, directory.child(child), skipPrefixCheck);
     }
 
     @Override
     public boolean hasUnrestrictedChild(Activity activity, FsPath parent) {
-        return prefixes.stream().anyMatch(p -> p.hasPrefix(parent) && !p.equals(parent));
+        Function<FsPath, FsPath> resolver = getPathResolver();
+        FsPath resolvedParent = resolver.apply(parent);
+        return prefixes.stream().map(resolver::apply)
+              .anyMatch(p -> p.hasPrefix(resolvedParent) && !p.equals(resolvedParent));
     }
 
     @Override
@@ -80,6 +79,17 @@ public class PrefixRestriction implements Restriction {
         return other instanceof PrefixRestriction && ((PrefixRestriction) other).subsumes(this);
     }
 
+    @Override
+    public void setPathResolver(Function<FsPath, FsPath> resolver) {
+        this.resolver = resolver;
+    }
+
+    @Override
+    public Function<FsPath, FsPath> getPathResolver() {
+        return resolver != null ? resolver : Restriction.super.getPathResolver();
+    }
+
+
     private boolean subsumes(PrefixRestriction restriction) {
         for (FsPath prefix : prefixes) {
             if (restriction.isRestricted(prefix)) {
@@ -91,6 +101,9 @@ public class PrefixRestriction implements Restriction {
 
     private boolean isRestricted(FsPath path) {
         for (FsPath prefix : prefixes) {
+            Function<FsPath, FsPath> resolver = getPathResolver();
+            prefix = resolver.apply(prefix);
+            path = resolver.apply(path);
             if (path.hasPrefix(prefix)) {
                 return false;
             }
@@ -116,6 +129,9 @@ public class PrefixRestriction implements Restriction {
         }
     }
 
+    /**
+     * @return string representation of prefixes before resolution
+     */
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("PrefixRestrict[");
@@ -126,5 +142,25 @@ public class PrefixRestriction implements Restriction {
             sb.append("prefixes={").append(Joiner.on(',').join(prefixes)).append('}');
         }
         return sb.append(']').toString();
+    }
+
+    private boolean isRestricted(Activity activity, FsPath path, boolean skipPrefixCheck) {
+        if (skipPrefixCheck) {
+            return !(activity == Activity.READ_METADATA || activity == Activity.LIST);
+        } else {
+            for (FsPath prefix : prefixes) {
+                prefix = getPathResolver().apply(prefix);
+                path = getPathResolver().apply(path);
+                if (path.hasPrefix(prefix)) {
+                    return false;
+                }
+                if (prefix.hasPrefix(path) && (activity == Activity.READ_METADATA
+                      || activity == Activity.LIST)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 }

@@ -63,33 +63,31 @@ import static org.dcache.services.bulk.activity.BulkActivity.TargetType.FILE;
 import static org.dcache.services.bulk.activity.BulkActivityArgumentDescriptor.EMPTY_DEFAULT;
 
 import com.google.common.collect.ImmutableSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import org.dcache.services.bulk.BulkServiceException;
 import org.dcache.services.bulk.activity.BulkActivityArgumentDescriptor;
 import org.dcache.services.bulk.activity.BulkActivityProvider;
 
 public final class PinActivityProvider extends BulkActivityProvider<PinActivity> {
 
-    static final BulkActivityArgumentDescriptor LIFETIME
-          = new BulkActivityArgumentDescriptor("lifetime",
-          "duration of the pin",
-          "long",
-          false,
-          "5");
+    static final String LIFETIME = "lifetime";
+    static final String LIFETIME_UNIT = "lifetimeUnit";
+    static final String PIN_REQUEST_ID = "id";
 
-    static final BulkActivityArgumentDescriptor LIFETIME_UNIT =
-          new BulkActivityArgumentDescriptor("lifetimeUnit",
-                "time unit for duration of the pin",
-                "SECONDS|MINUTES|HOURS|DAYS",
-                false,
-                "MINUTES");
-
-    static final BulkActivityArgumentDescriptor PIN_REQUEST_ID
-          = new BulkActivityArgumentDescriptor("id",
+    static final BulkActivityArgumentDescriptor DEFAULT_PIN_REQUEST_ID
+          = new BulkActivityArgumentDescriptor(PIN_REQUEST_ID,
           "to use for this pin.  If null, the id of the current request will be used.",
           "string",
           false,
           EMPTY_DEFAULT);
+
+    private static final String DEFAULT_PIN_LIFETIME = "bulk.plugin!pin.default-lifetime";
+    private static final String DEFAULT_PIN_LIFETIME_UNIT = "bulk.plugin!pin.default-lifetime.unit";
+
+    private String defaultLifetime;
+    private String defaultLifetimeUnit;
 
     public PinActivityProvider() {
         super("PIN", FILE);
@@ -101,12 +99,35 @@ public final class PinActivityProvider extends BulkActivityProvider<PinActivity>
     }
 
     @Override
-    public Set<BulkActivityArgumentDescriptor> getArguments() {
-        return ImmutableSet.of(LIFETIME, LIFETIME_UNIT, PIN_REQUEST_ID);
+    public Set<BulkActivityArgumentDescriptor> getDescriptors() {
+        return ImmutableSet.of(getLifetime(), getLifetimeUnit(), DEFAULT_PIN_REQUEST_ID);
     }
 
     @Override
     protected PinActivity activityInstance() throws BulkServiceException {
         return new PinActivity(activity, targetType);
+    }
+
+    @Override
+    public void configure(Map<String, Object> environment) {
+        defaultLifetime = String.valueOf(environment.getOrDefault(DEFAULT_PIN_LIFETIME,5L));
+        defaultLifetimeUnit = String.valueOf(environment.getOrDefault(DEFAULT_PIN_LIFETIME_UNIT,
+              TimeUnit.MINUTES));
+    }
+
+    private BulkActivityArgumentDescriptor getLifetime() {
+        return new BulkActivityArgumentDescriptor(LIFETIME,
+              "duration of the pin",
+              "long",
+              false,
+              defaultLifetime);
+    }
+
+    private BulkActivityArgumentDescriptor getLifetimeUnit() {
+        return new BulkActivityArgumentDescriptor(LIFETIME_UNIT,
+              "time unit for duration of the pin",
+              "SECONDS|MINUTES|HOURS|DAYS",
+              false,
+              defaultLifetimeUnit);
     }
 }

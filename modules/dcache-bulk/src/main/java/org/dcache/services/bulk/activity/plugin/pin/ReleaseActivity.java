@@ -91,6 +91,6 @@ public final class ReleaseActivity extends PinManagerActivity {
 
     @Override
     protected void configure(Map<String, String> arguments) {
-        id = arguments == null ? null : arguments.get(REQUEST_ID.getName());
+        id = arguments == null ? null : arguments.get(REQUEST_ID);
     }
 }

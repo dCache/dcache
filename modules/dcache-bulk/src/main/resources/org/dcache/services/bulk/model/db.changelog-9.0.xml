@@ -145,4 +145,429 @@
         <modifyDataType tableName="request_target" columnName="error_message" newDataType="varchar(256)"/>
     </changeSet>
 
+    <changeSet author="arossi" id="4.6" runInTransaction="false">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <columnExists tableName="bulk_request" columnName="delay_clear"/>
+            </and>
+        </preConditions>
+        <dropColumn tableName="bulk_request" columnName="delay_clear"/>
+    </changeSet>
+
+    <!-- For clarity and consistency, we rename the seq_no and id tables of bulk_request. -->
+
+    <changeSet author="arossi" id="5.1.0">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <columnExists tableName="bulk_request" columnName="id"/>
+            </and>
+        </preConditions>
+        <renameColumn tableName="bulk_request" oldColumnName="id" newColumnName="uid"/>
+    </changeSet>
+
+    <changeSet author="arossi" id="5.1.1">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <columnExists tableName="bulk_request" columnName="seq_no"/>
+            </and>
+        </preConditions>
+        <renameColumn tableName="bulk_request" oldColumnName="seq_no" newColumnName="id"/>
+    </changeSet>
+
+    <!-- Change the foreign key type of the permissions table:
+
+         1. drop the constraints on column id
+         2. rename the column id to ruid (temporarily)
+         3. add a new bigint column id
+         4. update the column to hold current request id corresponding to the ruuid
+         5. drop the ruuid column
+         6. add back the constraints -->
+
+    <changeSet author="arossi" id="5.2.0">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <foreignKeyConstraintExists foreignKeyName="request_permissions_id_fkey"/>
+            </and>
+        </preConditions>
+        <dropForeignKeyConstraint baseTableName="request_permissions" constraintName="request_permissions_id_fkey"/>
+    </changeSet>
+
+    <changeSet author="arossi" id="5.2.1">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <primaryKeyExists primaryKeyName="idx_request_perm_id"/>
+            </and>
+        </preConditions>
+        <dropPrimaryKey constraintName="idx_request_perm_id" tableName="request_permissions"/>
+    </changeSet>
+
+    <changeSet author="arossi" id="5.2.2">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <columnExists tableName="request_permissions" columnName="id"/>
+            </and>
+        </preConditions>
+        <renameColumn tableName="request_permissions" oldColumnName="id" newColumnName="ruuid"/>
+    </changeSet>
+
+    <changeSet author="arossi" id="5.2.3">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <not>
+                    <columnExists tableName="request_permissions" columnName="rid"/>
+                </not>
+            </and>
+        </preConditions>
+        <addColumn tableName="request_permissions">
+            <column name="rid" type="bigint"/>
+        </addColumn>
+    </changeSet>
+
+    <!-- I can find no equivalent for the kind of update we need to do (based on a join) in HSQLDB,
+         so I am constrained to mark this as postgresql.
+
+         The chances of someone having already run the previous change sets over a different
+         database and then needing to preserve values is rather remote.  But if that comes up,
+         we can concoct a new change set for that specific dbms.
+
+         I cite as precedent for postgresql-specific change sets the pin manager
+         db.changelog-2.16.xml change set #3. -->
+
+    <changeSet author="arossi" id="5.2.4p" runInTransaction="false" dbms="postgresql">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <columnExists columnName="rid" tableName="request_permissions"/>
+            </and>
+        </preConditions>
+        <sql splitStatements="false">
+            UPDATE request_permissions SET rid = r.id FROM bulk_request r WHERE ruuid = r.uid;
+        </sql>
+    </changeSet>
+
+    <changeSet author="arossi" id="5.2.5">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <columnExists tableName="request_permissions" columnName="ruuid"/>
+            </and>
+        </preConditions>
+        <dropColumn tableName="request_permissions" columnName="ruuid"/>
+    </changeSet>
+
+    <changeSet author="arossi" id="5.2.6">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <columnExists tableName="request_permissions" columnName="rid"/>
+            </and>
+        </preConditions>
+        <renameColumn tableName="request_permissions" oldColumnName="rid" newColumnName="id"/>
+    </changeSet>
+
+    <changeSet author="arossi" id="5.2.7">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <columnExists tableName="request_permissions" columnName="id"/>
+            </and>
+        </preConditions>
+        <addNotNullConstraint tableName="request_permissions" columnName="id"/>
+    </changeSet>
+
+    <changeSet author="arossi" id="5.2.8">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <not>
+                    <foreignKeyConstraintExists foreignKeyName="request_permissions_id_fkey"/>
+                </not>
+            </and>
+        </preConditions>
+        <addForeignKeyConstraint baseColumnNames="id" baseTableName="request_permissions"
+          constraintName="request_permissions_id_fkey"
+          deferrable="false"
+          initiallyDeferred="false"
+          onDelete="CASCADE"
+          onUpdate="CASCADE"
+          referencedColumnNames="id"
+          referencedTableName="bulk_request"/>
+    </changeSet>
+
+    <changeSet author="arossi" id="5.2.9">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <not>
+                    <primaryKeyExists primaryKeyName="idx_request_perm_id"/>
+                </not>
+            </and>
+        </preConditions>
+        <addPrimaryKey constraintName="idx_request_perm_id" tableName="request_permissions" columnNames="id"/>
+    </changeSet>
+
+    <!-- Normalize request_target by removing activity which is unique per bulk_request
+         and which can be restored in memory if the activity is run as prestore=true. -->
+
+    <changeSet author="arossi" id="5.3">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <columnExists tableName="request_target" columnName="activity"/>
+            </and>
+        </preConditions>
+        <dropColumn tableName="request_target" columnName="activity"/>
+    </changeSet>
+
+    <!-- Migrate request_target rid from a varchar referencing
+         bulk_request.id to a bigint referencing bulk_request.seq_no.
+
+         1. drop all constraints and indices on rid
+         2. rename the column to ruid (temporarily)
+         3. add a new bigint column rid
+         4. add back index and constraints
+         5. update the column to hold current seq_nos corresponding to the ruid
+         6. drop the ruid column -->
+
+    <changeSet author="arossi" id="5.4.0">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <foreignKeyConstraintExists foreignKeyName="request_target_rid_fkey"/>
+            </and>
+        </preConditions>
+        <dropForeignKeyConstraint baseTableName="request_target" constraintName="request_target_rid_fkey"/>
+    </changeSet>
+
+    <changeSet author="arossi" id="5.4.1">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <indexExists indexName="idx_target_id_rid"/>
+            </and>
+        </preConditions>
+        <dropIndex indexName="idx_target_id_rid" tableName="request_target"/>
+    </changeSet>
+
+    <changeSet author="arossi" id="5.4.2">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <primaryKeyExists primaryKeyName="i_target_pkey"/>
+            </and>
+        </preConditions>
+        <dropPrimaryKey constraintName="i_target_pkey" tableName="request_target"/>
+    </changeSet>
+
+    <changeSet author="arossi" id="5.4.3">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <columnExists tableName="id" columnName="request_target"/>
+            </and>
+        </preConditions>
+        <dropUniqueConstraint tableName="request_target" constraintName="request_target_id_key"/>
+    </changeSet>
+
+    <changeSet author="arossi" id="5.4.4">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <columnExists tableName="request_target" columnName="rid"/>
+            </and>
+        </preConditions>
+        <renameColumn tableName="request_target" oldColumnName="rid" newColumnName="ruid"/>
+    </changeSet>
+
+    <changeSet author="arossi" id="5.4.5">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <not>
+                    <columnExists tableName="request_target" columnName="rid"/>
+                </not>
+            </and>
+        </preConditions>
+        <addColumn tableName="request_target">
+            <column name="rid" type="bigint"/>
+        </addColumn>
+    </changeSet>
+
+    <!-- See above @5.2.4.p -->
+
+    <changeSet author="arossi" id="5.4.6p" runInTransaction="false" dbms="postgresql">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <columnExists columnName="rid" tableName="request_target"/>
+            </and>
+        </preConditions>
+        <sql splitStatements="false">
+            UPDATE request_target SET rid = r.id FROM bulk_request r WHERE ruid = r.uid;
+        </sql>
+    </changeSet>
+
+    <changeSet author="arossi" id="5.4.7">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <columnExists tableName="request_target" columnName="rid"/>
+            </and>
+        </preConditions>
+        <addNotNullConstraint tableName="request_target" columnName="rid"/>
+    </changeSet>
+
+    <changeSet author="arossi" id="5.4.8">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <not>
+                    <foreignKeyConstraintExists foreignKeyName="request_target_rid_fkey"/>
+                </not>
+            </and>
+        </preConditions>
+        <addForeignKeyConstraint baseColumnNames="rid" baseTableName="request_target"
+          constraintName="request_target_rid_fkey"
+          deferrable="false"
+          initiallyDeferred="false"
+          onDelete="CASCADE"
+          onUpdate="CASCADE"
+          referencedColumnNames="id"
+          referencedTableName="bulk_request"/>
+    </changeSet>
+
+    <!-- This is still needed in order to return the auto-generated id on insert -->
+
+    <changeSet author="arossi" id="5.4.9" dbms="postgresql">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <not>
+                    <primaryKeyExists primaryKeyName="i_target_pkey"/>
+                </not>
+            </and>
+        </preConditions>
+        <addPrimaryKey constraintName="i_target_pkey" tableName="request_target" columnNames="id"/>
+    </changeSet>
+
+    <changeSet author="arossi" id="5.4.10">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <columnExists tableName="request_target" columnName="ruid"/>
+            </and>
+        </preConditions>
+        <dropColumn tableName="request_target" columnName="ruid"/>
+    </changeSet>
+
+    <!-- still necessary to support paging on target:
+         (select * from request_target where rid = ? order by id limit ?)
+         because otherwise the optimizer chooses to do a full table scan with
+         a filter on the rid -->
+    <changeSet author="arossi" id="5.4.11">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <not>
+                    <indexExists indexName="idx_target_id_rid"/>
+                </not>
+            </and>
+        </preConditions>
+        <createIndex indexName="idx_target_id_rid" tableName="request_target">
+            <column name="rid"/>
+            <column name="id"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- Maintaining a separate table for the text arguments presents the
+         advantage that, in the case of very large maps (as, for instance, with
+         STAGE requests), queries on the bulk_request table that do not need
+         to return the arguments run faster. The requests can also be more easily
+         inspected in the db interpreter. -->
+
+    <changeSet author="arossi" id="6.0">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="request_arguments"/>
+            </not>
+        </preConditions>
+
+        <createTable tableName="request_arguments">
+            <column name="rid" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="arguments" type="text">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="request_arguments"
+          indexName="idx_request_arguments_rid">
+            <column name="rid"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="rid" baseTableName="request_arguments"
+          constraintName="request_arguments_rid_fkey"
+          deferrable="false"
+          initiallyDeferred="false"
+          onDelete="CASCADE"
+          onUpdate="CASCADE"
+          referencedColumnNames="id"
+          referencedTableName="bulk_request"/>
+        <rollback/>
+    </changeSet>
+
+    <!-- See above @5.2.6p -->
+    <changeSet author="arossi" id="6.1p" runInTransaction="false" dbms="postgresql">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <columnExists columnName="arguments" tableName="bulk_request"/>
+            </and>
+        </preConditions>
+        <sql splitStatements="false">
+            INSERT INTO request_arguments SELECT id, arguments FROM bulk_request;
+        </sql>
+    </changeSet>
+
+    <changeSet author="arossi" id="6.2">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <columnExists columnName="arguments" tableName="bulk_request"/>
+            </and>
+        </preConditions>
+        <dropColumn tableName="bulk_request" columnName="arguments"/>
+    </changeSet>
+
+    <changeSet author="arossi" id="7.0" dbms="postgresql">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="request_archive"/>
+            </not>
+        </preConditions>
+
+        <createTable tableName="request_archive">
+            <column name="uid" type="varchar(64)">
+                <constraints primaryKey="true" nullable="false" primaryKeyName="idx_request_archive_id"/>
+            </column>
+            <column name="owner" type="varchar(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_modified" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="varchar(16)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="activity" type="varchar(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="info" type="bytea">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="request_archive"
+          indexName="idx_request_archive_owner">
+            <column name="owner"/>
+        </createIndex>
+
+        <createIndex tableName="request_archive"
+          indexName="idx_request_archive_lastmodified">
+            <column name="last_modified"/>
+        </createIndex>
+
+        <createIndex tableName="request_archive"
+          indexName="idx_request_archive_activity">
+            <column name="activity"/>
+        </createIndex>
+
+        <createIndex tableName="request_archive"
+          indexName="idx_request_archive_status">
+            <column name="status"/>
+        </createIndex>
+
+        <rollback/>
+    </changeSet>
+
 </databaseChangeLog>

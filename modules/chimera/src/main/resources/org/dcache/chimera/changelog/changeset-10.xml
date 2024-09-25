@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet id="36" author="litvinse" dbms="postgresql">
+        <createProcedure>
+            CREATE OR REPLACE FUNCTION uri_encode(input_txt text) RETURNS text
+                LANGUAGE plpgsql IMMUTABLE STRICT
+                AS $$
+                     DECLARE
+                         output_txt text = '';
+                         ch text;
+                     BEGIN
+                         IF input_txt IS NULL THEN
+                             return NULL;
+                         END IF;
+                         FOR ch IN (select (regexp_matches(input_txt, '(.)', 'g'))[1]) LOOP
+                             --
+                             -- chr(39) is a single quote
+                             --
+                             IF ch ~ '[-a-zA-Z0-9.*_!~()/]' THEN
+                                 output_txt = output_txt || ch;
+                             ELSIF ch = chr(39) THEN
+                                 output_txt = output_txt || '%27';
+                             ELSIF ch = chr(92) THEN
+                                 output_txt = output_txt || '%5c';
+                             ELSE
+                                 output_txt = output_txt || '%' || encode(ch::bytea,'hex');
+                             END IF;
+                         END LOOP;
+                         RETURN output_txt;
+                     EXCEPTION WHEN OTHERS THEN
+                         raise exception 'uri_encode, failed to process input: %', input_txt;
+                     END
+                     $$;
+        </createProcedure>
+    </changeSet>
+</databaseChangeLog>

@@ -738,6 +738,16 @@ public class RequestContainerV5
               .toArray(RestoreHandlerInfo[]::new);
     }
 
+    @VisibleForTesting
+    void fail(String id, int errorCode, String errorMessage) {
+        synchronized (_handlerHash) {
+            PoolRequestHandler rph = _handlerHash.get(id);
+            if (rph != null) {
+                rph.fail(errorCode, errorMessage);
+            }
+        }
+    }
+
     public void messageArrived(CellMessage envelope,
           PoolMgrSelectReadPoolMsg request)
           throws PatternSyntaxException, IOException {
@@ -1162,6 +1172,20 @@ public class RequestContainerV5
             _currentRm = message;
             updateStatus("Failed: " + message);
 
+            switch (_state) {
+                case ST_WAITING_FOR_STAGING:
+                    _stageCandidate.ifPresent(c -> {
+                        // FIXME: we need a new message here
+                        var cancelMessage = new CellMessage(c.address(), "rh kill " + _fileAttributes.getPnfsId());
+                        sendMessage(cancelMessage);
+                    });
+                case ST_WAITING_FOR_POOL_2_POOL:
+                    // FIXME: cancel p2p
+                    break;
+                default:
+                    // noop
+            }
+
             answerRequests();
             nextStep(RequestState.ST_OUT);
         }
@@ -1319,7 +1343,18 @@ public class RequestContainerV5
         }
 
         private boolean isFileStageable() {
-            return _parameter._hasHsmBackend && _storageInfo.isStored();
+            if (!_storageInfo.isStored()) {
+                LOGGER.debug("File is not stageable: not stored.");
+                return false;
+            }
+
+            if (!_parameter._hasHsmBackend) {
+                // REVISIT: include partition name
+                LOGGER.warn("File is not stageable: stage is not allowed by partition configuration.");
+                return false;
+            }
+
+            return true;
         }
 
         private boolean isStagingAllowed() {
@@ -1339,7 +1374,8 @@ public class RequestContainerV5
                           (PoolMgrSelectReadPoolMsg) envelope.getMessageObject();
                     if (_stagePolicyDecisionPoint.canPerformStaging(msg.getSubject(),
                           msg.getFileAttributes(),
-                          msg.getProtocolInfo())) {
+                          msg.getProtocolInfo(),
+                          msg.getRestriction())) {
                         return true;
                     }
                 } catch (IOException | PatternSyntaxException e) {

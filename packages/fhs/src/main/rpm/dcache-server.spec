@@ -11,7 +11,9 @@ AutoReqProv: no
 
 Requires(pre): shadow-utils
 Requires: which
-Requires: java-11
+Requires: hostname
+Requires: procps-ng
+Requires: java-17-headless
 
 %{?systemd_requires}
 BuildRequires: systemd
@@ -68,6 +70,7 @@ exit 0
 
 %post
 %systemd_post dcache.target
+/usr/bin/systemctl daemon-reload >/dev/null 2>&1 ||:
 
 # generate admin door ssh2 server key
 if [ ! -f /etc/dcache/admin/ssh_host_rsa_key ]; then
@@ -84,6 +87,7 @@ chown dcache:dcache /var/lib/dcache
 
 %postun
 %systemd_postun dcache.target
+/usr/bin/systemctl daemon-reload >/dev/null 2>&1 ||:
 
 %posttrans
 if [ ! -f /usr/share/dcache/lib/services.sh ]; then

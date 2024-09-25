@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2016 - 2020 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 - 2024 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -92,6 +92,7 @@ import org.apache.curator.framework.state.ConnectionStateErrorPolicy;
 import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.curator.utils.EnsurePath;
 import org.apache.curator.utils.ThreadUtils;
+import org.apache.curator.utils.ZookeeperCompatibility;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Watcher;
@@ -344,6 +345,11 @@ public class CellCuratorFramework implements CuratorFramework {
     }
 
     @Override
+    public ZookeeperCompatibility getZookeeperCompatibility() {
+        return inner.getZookeeperCompatibility();
+    }
+
+    @Override
     @Deprecated
     public EnsurePath newNamespaceAwareEnsurePath(String path) {
         return inner.newNamespaceAwareEnsurePath(path);
@@ -543,6 +549,11 @@ public class CellCuratorFramework implements CuratorFramework {
         public CreateBackgroundModeStatACLable compressed() {
             return new CreateBackgroundModeStatACLableDecorator(inner.compressed());
         }
+
+        @Override
+        public CreateBuilder2 idempotent() {
+            return inner.idempotent();
+        }
     }
 
     private class DeleteBuilderDecorator implements DeleteBuilder {
@@ -613,6 +624,11 @@ public class CellCuratorFramework implements CuratorFramework {
         @Override
         public DeleteBuilderMain quietly() {
             return inner.quietly();
+        }
+
+        @Override
+        public DeleteBuilderMain idempotent() {
+            return inner.idempotent();
         }
     }
 
@@ -839,6 +855,11 @@ public class CellCuratorFramework implements CuratorFramework {
         @Override
         public BackgroundPathAndBytesable<Stat> withVersion(int version) {
             return new BackgroundPathAndBytesableDecorator<>(inner.withVersion(version));
+        }
+
+        @Override
+        public SetDataBuilder idempotent() {
+            return inner.idempotent();
         }
     }
 

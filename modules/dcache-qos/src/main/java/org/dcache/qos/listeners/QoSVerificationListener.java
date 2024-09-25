@@ -60,6 +60,7 @@ documents or software obtained from this server.
 package org.dcache.qos.listeners;
 
 import diskCacheV111.util.PnfsId;
+import javax.security.auth.Subject;
 import org.dcache.qos.QoSException;
 import org.dcache.qos.vehicles.QoSAdjustmentResponse;
 import org.dcache.qos.vehicles.QoSScannerVerificationRequest;
@@ -95,8 +96,9 @@ public interface QoSVerificationListener {
      * This is a notification to cancel and remove the verification operation for a file.
      *
      * @param pnfsId the file for which to cancel verification operation.
+     * @param subject of the request
      */
-    void fileQoSVerificationCancelled(PnfsId pnfsId) throws QoSException;
+    void fileQoSVerificationCancelled(PnfsId pnfsId, Subject subject) throws QoSException;
 
     /**
      * Scanning activity has been cancelled; this is a notification to cancel all outstanding

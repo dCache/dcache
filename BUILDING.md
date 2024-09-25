@@ -4,11 +4,7 @@ Building dCache
 Requirements
 ------------
 
-To build dCache, you need Maven 3.5.0 or newer. Centos/Redhat 7
-comes with version 3.0.5. See https://maven.apache.org/install.html
-on how to install a newer version.
-
-dCache requires Java-11 for building. Running the resulting 
+To build dCache, you need Maven 3.5.0 or newer and Java-17 for building. Running the resulting
 binaries on newer JDKs should be possible.
 
 Building
@@ -91,20 +87,14 @@ module:
 Building a docker image
 -----------------------
 
-Building a docker image is disabled by default.  This is because it
+Building a container image is disabled by default.  This is because it
 requires a running docker deployment, which not all developers have
 installed.
 
-You may enable building of docker images by activating the `docker`
-profile; e.g.,
+You may enable building of docker images by activating the `container`
+profile for the `tar` packaging:
 
-    mvn clean package -Pdocker
-
-To build only the docker image, you may select the docker module,
-`packages/docker` explicitly, as above.  However, it is still required
-to enable the `docker` profile; e.g.,
-
-    mvn clean package -am -pl packages/docker -Pdocker
+    mvn clean package -am -pl packages/tar -P container
 
 
 The system-test module
@@ -116,10 +106,14 @@ thus to run without postgresql. To build it simply run:
 
     mvn clean package -am -pl packages/system-test
 
+You will need to install `OpenSsl` toolkit and the `patch` utility for it to succeed.
 This entails a completely self-contained dCache instance in
 `packages/system-test/target/dcache`. It can be started using:
 
     packages/system-test/target/bin/ctlcluster start
+
+
+Next .
 
 To use GSI and TLS protocols, you may have to copy the test CA certificates
 into your `/etc/grid-security/certificates/` directory. Follow the instructions
@@ -147,7 +141,7 @@ older versions using
 This will download a tarball release of that version and install it in
 `packages/system-test/target`. The `ctlcluster` utility can be used to control
 all versions at once. Using the switch subcommand, particular services can
-be moved between versions, eg.
+be moved between versions, e.g.
 
     packages/system-test/target/bin/ctlcluster switch pool.name=pool_write 2.7.5
 
@@ -159,7 +153,7 @@ versions. Such incompatibilities have to be resolved manually.
 Unit tests
 ----------
 
-By default Maven executes all unit tests while building. This can be
+By default, Maven executes all unit tests while building. This can be
 time consuming and will fail if no internet connection is
 available. The unit tests can be disabled by appending the `-DskipTests`
 option to any mvn command.

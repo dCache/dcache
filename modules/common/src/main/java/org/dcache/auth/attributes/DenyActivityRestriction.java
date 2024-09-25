@@ -21,6 +21,7 @@ package org.dcache.auth.attributes;
 import com.google.common.base.Joiner;
 import diskCacheV111.util.FsPath;
 import java.util.EnumSet;
+import java.util.function.Function;
 
 /**
  * A Restriction that allows a user to perform only activity from the supplied set of activities.
@@ -59,7 +60,7 @@ public class DenyActivityRestriction implements Restriction {
     }
 
     @Override
-    public boolean isRestricted(Activity activity, FsPath directory, String name) {
+    public boolean isRestricted(Activity activity, FsPath directory, String name, boolean skipPrefixCheck) {
         return denied.contains(activity);
     }
 
@@ -88,6 +89,11 @@ public class DenyActivityRestriction implements Restriction {
         EnumSet<Activity> otherDenied = ((DenyActivityRestriction) other).denied;
 
         return otherDenied.containsAll(denied);
+    }
+
+    @Override
+    public void setPathResolver(Function<FsPath, FsPath> resolver) {
+        //NOP
     }
 
     @Override

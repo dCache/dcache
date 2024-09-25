@@ -32,6 +32,10 @@ public final class AdjustableSemaphore {
         // no op
     }
 
+    public AdjustableSemaphore(int maxPermits) {
+        setMaxPermits(maxPermits);
+    }
+
     /*
      * Must be synchronized because the underlying int is not thread safe
      */

@@ -64,7 +64,7 @@ public interface ReplicaStore extends Closeable {
      * Returns whether the store appears healthy. How this is determined is up to the
      * implementation.
      */
-    boolean isOk();
+    FileStoreState isOk();
 
     /**
      * Closes the store and frees any associated resources.

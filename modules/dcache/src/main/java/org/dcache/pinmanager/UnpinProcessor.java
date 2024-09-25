@@ -63,6 +63,9 @@ public class UnpinProcessor implements Runnable {
               Executors.newSingleThreadExecutor());
         NDC.push("BackgroundUnpinner-" + _count.incrementAndGet());
         try {
+            // Fist try to unpin all poolless pins from the DB, for which chunking is unnecessary.
+            unpin_poolless();
+
             Semaphore idle = new Semaphore(MAX_RUNNING);
             unpin(idle, executor);
             idle.acquire(MAX_RUNNING);
@@ -82,6 +85,15 @@ public class UnpinProcessor implements Runnable {
     }
 
     @Transactional
+    protected void unpin_poolless() {
+        PinDao.PinCriterion criterion = _dao.where().state(READY_TO_UNPIN).pool(null);
+        int deleted = _dao.delete(criterion);
+        if (deleted > 0) {
+            LOGGER.debug("Deleted {} poolless pin(s) from the database.", deleted);
+        }
+    }
+
+    @Transactional
     protected void unpin(final Semaphore idle, final Executor executor)
           throws InterruptedException {
         if (_maxUnpinsPerRun == NO_UNPIN_LIMIT_PER_RUN) {
@@ -93,6 +105,7 @@ public class UnpinProcessor implements Runnable {
     }
 
     private void upin(Semaphore idle, Executor executor, Pin pin) throws InterruptedException {
+        LOGGER.info("Unpining {}", pin.toString());
         if (pin.getPool() == null) {
             LOGGER.debug("No pool found for pin {}, pnfsid {}; no sticky flags to clear",
                   pin.getPinId(), pin.getPnfsId());
@@ -115,7 +128,7 @@ public class UnpinProcessor implements Runnable {
               .getPool(pin.getPool());
         if (pool == null || !pool.isActive()) {
             LOGGER.warn(
-                  "Unable to clear sticky flag for pin {} on pnfsid {} because pool {} is unavailable",
+                  "Unable to clear sticky flag for pin {} on pnfsid {} because pool {} is unavailable",
                   pin.getPinId(), pin.getPnfsId(), pin.getPool());
             failedToUnpin(pin);
             return;

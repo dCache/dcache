@@ -439,8 +439,8 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
     public List<LinkGroup> get(LinkGroupCriterion criterion) {
         JdbcCriterion c = (JdbcCriterion) criterion;
         return getJdbcTemplate().query(
-              "SELECT * from " + LINKGROUP_TABLE + " WHERE " + c.getPredicate(), c.getArguments(),
-              this::toLinkGroup);
+              "SELECT * from " + LINKGROUP_TABLE + " WHERE " + c.getPredicate(), this::toLinkGroup,
+              c.getArguments());
     }
 
     @Override
@@ -454,15 +454,15 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
         return getJdbcTemplate().query(
               "SELECT * FROM " + SPACE_TABLE + " WHERE " + c.getPredicate() + (limit != null ?
                     " LIMIT " + limit : ""),
-              c.getArguments(), this::toSpace);
+              this::toSpace, c.getArguments());
     }
 
     @Override
     public List<Long> getSpaceTokensOf(SpaceCriterion criterion) {
         JdbcCriterion c = (JdbcCriterion) criterion;
         return getJdbcTemplate().queryForList(
-              "SELECT id FROM " + SPACE_TABLE + " WHERE " + c.getPredicate(), c.getArguments(),
-              Long.class);
+              "SELECT id FROM " + SPACE_TABLE + " WHERE " + c.getPredicate(), Long.class,
+              c.getArguments());
     }
 
     @Override
@@ -470,7 +470,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
         JdbcCriterion c = (JdbcCriterion) criterion;
         return getJdbcTemplate().queryForObject(
               "SELECT count(*) FROM " + SPACE_TABLE + " WHERE " + c.getPredicate(),
-              c.getArguments(), Integer.class);
+              Integer.class, c.getArguments());
     }
 
     @Override
@@ -484,7 +484,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
         return getJdbcTemplate().query(
               "SELECT * FROM " + SPACEFILE_TABLE + " WHERE " + c.getPredicate() + (limit != null ?
                     " LIMIT " + limit : ""),
-              c.getArguments(), this::toFile);
+              this::toFile, c.getArguments());
     }
 
     @Override
@@ -492,8 +492,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
         JdbcCriterion c = (JdbcCriterion) criterion;
         return getJdbcTemplate().queryForObject(
               "SELECT count(*) FROM " + SPACEFILE_TABLE + " WHERE " + c.getPredicate(),
-              c.getArguments(),
-              Integer.class);
+              Integer.class, c.getArguments());
     }
 
     @Override

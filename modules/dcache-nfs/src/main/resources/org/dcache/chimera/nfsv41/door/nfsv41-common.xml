@@ -134,6 +134,7 @@
         <description>Chimera Filesystem</description>
         <constructor-arg ref="dataSource" />
         <constructor-arg ref="tx-manager" />
+        <constructor-arg value="${chimera.attr-consistency}" />
         <property name="pnfsHandler" ref="pnfs"/>
         <property name="poolMonitor" ref="pool-monitor"/>
         <property name="pinManagerStub" ref="pinManagerStub"/>
@@ -143,6 +144,24 @@
 	<property name="quotaEnabled" value="${nfs.enable.quota}"/>
 	<property name="defaultRetentionPolicy" value="#{ T(diskCacheV111.util.RetentionPolicy).getRetentionPolicy('${nfs.default-retention-policy}') }"/>
 
+    </bean>
+
+    <bean id="chimera-maintenance-leadership-manager" class="org.dcache.cells.HAServiceLeadershipManager"
+      init-method="initZkLeaderListener" destroy-method="shutdown">
+        <description>Coordinates which components performs maintenance tasks</description>
+        <constructor-arg value="chimera-maintenance"/>
+        <property name="leadershipListener">
+            <ref bean="chimera-maintenance-leaderlistener-group"/>
+        </property>
+    </bean>
+
+    <bean id="chimera-maintenance-leaderlistener-group" class="org.dcache.cells.LeadershipListenerGroup">
+        <description>Propagates leadership change notifications to managed listeners</description>
+        <property name="leaderElectionAwareComponents">
+            <set>
+                <ref bean="fileSystem"/>
+            </set>
+        </property>
     </bean>
 
     <bean id="export" class="org.dcache.nfs.ExportFile">
@@ -250,6 +269,10 @@
         <property name="manageGroups" value="${nfs.idmap.manage-gids}" />
         <property name="clientStore" ref="clientStore" />
         <property name="poolMonitor" ref="pool-monitor"/>
+        <property name="enableTls" value="${nfs.enable.rpc-over-tls}"/>
+        <property name="certFile" value="${nfs.tls.hostcert.cert}"/>
+        <property name="keyFile" value="${nfs.tls.hostcert.key}"/>
+        <property name="caPath" value="${nfs.tls.capath}"/>
     </bean>
 
     <bean id="pool-manager-handler" class="org.dcache.poolmanager.PoolManagerHandlerSubscriber">
@@ -350,4 +373,5 @@
     <beans profile="inotify-false">
         <bean parent="door"/>
     </beans>
+
 </beans>

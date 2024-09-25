@@ -45,7 +45,7 @@ public class SimpleSpaceManagerAuthorizationPolicy
                 FQAN fqan = principal.getFqan();
                 if (spaceGroup.equals(fqan.getGroup()) && (spaceRole == null || spaceRole.equals(
                       fqan.getRole()))) {
-                    logger.debug("Subject with fqan {} has permission to release space {}",
+                    logger.debug("Subject with fqan {} has permission to release space {}",
                           fqan, space);
                     return;
                 }

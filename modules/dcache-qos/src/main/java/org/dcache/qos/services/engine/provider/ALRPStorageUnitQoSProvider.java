@@ -67,13 +67,14 @@ import static org.dcache.qos.data.QoSMessageType.CLEAR_CACHE_LOCATION;
 import static org.dcache.qos.data.QoSMessageType.QOS_MODIFIED;
 import static org.dcache.qos.data.QoSMessageType.SYSTEM_SCAN;
 import static org.dcache.qos.data.QoSMessageType.VALIDATE_ONLY;
+import static org.dcache.qos.util.QoSPermissionUtils.canModifyQos;
 
 import com.google.common.annotations.VisibleForTesting;
 import diskCacheV111.poolManager.PoolSelectionUnit;
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnit;
 import diskCacheV111.poolManager.StorageUnit;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
@@ -85,6 +86,7 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import javax.security.auth.Subject;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.CellStub;
@@ -98,6 +100,7 @@ import org.dcache.qos.data.QoSMessageType;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Standard provisioning of (fixed) file requirements.  Uses access latency, retention policy, and
@@ -113,8 +116,10 @@ import org.slf4j.LoggerFactory;
  */
 public class ALRPStorageUnitQoSProvider implements QoSRequirementsProvider, CellMessageReceiver {
 
-    public static final Set<FileAttribute> REQUIRED_QOS_ATTRIBUTES
+    public static final Set<FileAttribute> REQUIRED_ATTRIBUTES
           = Collections.unmodifiableSet(EnumSet.of(FileAttribute.PNFSID,
+          FileAttribute.OWNER,
+          FileAttribute.OWNER_GROUP,
           FileAttribute.ACCESS_LATENCY,
           FileAttribute.RETENTION_POLICY,
           FileAttribute.STORAGEINFO,
@@ -131,6 +136,11 @@ public class ALRPStorageUnitQoSProvider implements QoSRequirementsProvider, Cell
 
     private CellStub pnfsManager;
     private PoolMonitor poolMonitor;
+
+    /**
+     * Whether users require a QoS role to perform a transition.
+     */
+    private boolean enableRoles;
 
     public synchronized void messageArrived(SerializablePoolMonitor poolMonitor) {
         setPoolMonitor(poolMonitor);
@@ -154,18 +164,23 @@ public class ALRPStorageUnitQoSProvider implements QoSRequirementsProvider, Cell
             return null;
         }
 
+        return fetchRequirements(update, descriptor);
+    }
+
+    @Override
+    public FileQoSRequirements fetchRequirements(FileQoSUpdate update, FileQoSRequirements descriptor)
+          throws QoSException {
         FileAttributes attributes = descriptor.getAttributes();
-        AccessLatency accessLatency = attributes.getAccessLatency();
-        RetentionPolicy retentionPolicy = attributes.getRetentionPolicy();
+        AccessLatency accessLatency = attributes.getAccessLatencyIfPresent().orElse(null);
+        RetentionPolicy retentionPolicy = attributes.getRetentionPolicyIfPresent().orElse(null);
 
         String unitKey = attributes.getStorageClass() + "@" + attributes.getHsm();
-        SelectionUnit unit = poolSelectionUnit().getStorageUnit(unitKey);
-        if (!(unit instanceof StorageUnit)) {
+        StorageUnit storageUnit = poolSelectionUnit().getStorageUnit(unitKey);
+        if (storageUnit == null) {
             throw new QoSException(unitKey + " does not correspond to a storage unit; "
                   + "cannot retrieve requirements for " + descriptor.getPnfsId());
         }
 
-        StorageUnit storageUnit = (StorageUnit) unit;
         Integer required = storageUnit.getRequiredCopies();
         List<String> onlyOneCopyPer = storageUnit.getOnlyOneCopyPer();
 
@@ -180,8 +195,7 @@ public class ALRPStorageUnitQoSProvider implements QoSRequirementsProvider, Cell
 
         if (accessLatency == ONLINE) {
             /*
-             *  REVISIT -- current override of file AL based on storage unit
-             *  REVISIT -- eventually we will want to override the storage unit default for a given file
+             *  override of file AL based on storage unit
              */
             descriptor.setRequiredDisk(required == null ? 1 : required);
             if (onlyOneCopyPer != null) {
@@ -197,11 +211,11 @@ public class ALRPStorageUnitQoSProvider implements QoSRequirementsProvider, Cell
     }
 
     /*
-     *  REVISIT For now, we do not handle changes to number or partitioning of copies.
+     *  Does not handle changes to number or partitioning of copies.
      */
     @Override
-    public void handleModifiedRequirements(FileQoSRequirements newRequirements)
-          throws QoSException {
+    public void handleModifiedRequirements(FileQoSRequirements newRequirements, Subject subject)
+          throws CacheException, QoSException {
         PnfsId pnfsId = newRequirements.getPnfsId();
 
         LOGGER.debug("handleModifiedRequirements for {}.", pnfsId);
@@ -216,31 +230,8 @@ public class ALRPStorageUnitQoSProvider implements QoSRequirementsProvider, Cell
             currentAttributes = fetchAttributes(pnfsId);
         }
 
-        if (currentAttributes.getRetentionPolicy() == CUSTODIAL
-              && newRequirements.getRequiredTape() == 0) {
-            throw new QoSException("Unsupported transition from tape to disk: "
-                  + "QoS currently does not support removal of tape locations.");
-        }
-
-        FileAttributes modifiedAttributes = new FileAttributes();
-        if (newRequirements.getRequiredDisk() > 0) {
-            modifiedAttributes.setAccessLatency(ONLINE);
-        } else {
-            modifiedAttributes.setAccessLatency(NEARLINE);
-        }
-
-        if (newRequirements.getRequiredTape() > 0) {
-            modifiedAttributes.setRetentionPolicy(CUSTODIAL);
-        } else {
-            modifiedAttributes.setRetentionPolicy(REPLICA);
-        }
-
-        try {
-            pnfsHandler().setFileAttributes(pnfsId, modifiedAttributes);
-        } catch (CacheException e) {
-            throw new QoSException("Failed to set attributes for " + newRequirements.getPnfsId(),
-                  e);
-        }
+        modifyRequirements(pnfsId, currentAttributes, new FileAttributes(), newRequirements,
+              subject);
     }
 
     public void setPnfsManager(CellStub pnfsManager) {
@@ -254,13 +245,13 @@ public class ALRPStorageUnitQoSProvider implements QoSRequirementsProvider, Cell
     protected FileAttributes fetchAttributes(PnfsId pnfsId) throws QoSException {
         try {
             LOGGER.debug("fetchAttributes for {}.", pnfsId);
-            return pnfsHandler().getFileAttributes(pnfsId, REQUIRED_QOS_ATTRIBUTES);
+            return pnfsHandler().getFileAttributes(pnfsId, REQUIRED_ATTRIBUTES);
         } catch (CacheException e) {
             throw new QoSException(String.format("No attributes returned for %s", pnfsId), e);
         }
     }
 
-    private FileQoSRequirements initialize(FileQoSUpdate update) throws QoSException {
+    protected FileQoSRequirements initialize(FileQoSUpdate update) throws QoSException {
         PnfsId pnfsId = update.getPnfsId();
         QoSMessageType messageType = update.getMessageType();
 
@@ -291,11 +282,41 @@ public class ALRPStorageUnitQoSProvider implements QoSRequirementsProvider, Cell
         return new FileQoSRequirements(pnfsId, attributes);
     }
 
-    private PnfsHandler pnfsHandler() {
+    protected PnfsHandler pnfsHandler() {
         PnfsHandler pnfsHandler = new PnfsHandler(pnfsManager);
         pnfsHandler.setSubject(Subjects.ROOT);
         pnfsHandler.setRestriction(Restrictions.none());
         return pnfsHandler;
+    }
+
+    protected void modifyRequirements(PnfsId pnfsId, FileAttributes currentAttributes,
+          FileAttributes modifiedAttributes, FileQoSRequirements newRequirements, Subject subject)
+          throws QoSException, CacheException {
+
+        if (currentAttributes.getRetentionPolicy() == CUSTODIAL
+              && newRequirements.getRequiredTape() == 0) {
+            throw new QoSException("Unsupported transition from tape to disk: "
+                  + "QoS currently does not support removal of tape locations.");
+        }
+
+        if (newRequirements.getRequiredDisk() > 0) {
+            modifiedAttributes.setAccessLatency(ONLINE);
+        } else {
+            modifiedAttributes.setAccessLatency(NEARLINE);
+        }
+
+        if (newRequirements.getRequiredTape() > 0) {
+            modifiedAttributes.setRetentionPolicy(CUSTODIAL);
+        } else {
+            modifiedAttributes.setRetentionPolicy(REPLICA);
+        }
+
+        if (canModifyQos(subject, isEnableRoles(), currentAttributes)) {
+            pnfsHandler().setFileAttributes(pnfsId, modifiedAttributes);
+        } else {
+            throw new PermissionDeniedCacheException("User does not have permissions to set "
+                  + "attributes for " + newRequirements.getPnfsId());
+        }
     }
 
     private synchronized PoolSelectionUnit poolSelectionUnit() throws QoSException {
@@ -358,5 +379,14 @@ public class ALRPStorageUnitQoSProvider implements QoSRequirementsProvider, Cell
         LOGGER.debug("After call to namespace, {} has locations {}.", pnfsId,
               attributes.getLocations());
         return attributes;
+    }
+
+    public boolean isEnableRoles() {
+        return enableRoles;
+    }
+
+    @Required
+    public void setEnableRoles(boolean enableRoles) {
+        this.enableRoles = enableRoles;
     }
 }

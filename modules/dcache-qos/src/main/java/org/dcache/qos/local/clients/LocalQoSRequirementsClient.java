@@ -59,7 +59,9 @@ documents or software obtained from this server.
  */
 package org.dcache.qos.local.clients;
 
+import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
+import javax.security.auth.Subject;
 import org.dcache.qos.QoSException;
 import org.dcache.qos.data.FileQoSRequirements;
 import org.dcache.qos.data.FileQoSUpdate;
@@ -80,13 +82,13 @@ public final class LocalQoSRequirementsClient implements QoSRequirementsListener
     }
 
     @Override
-    public void fileQoSRequirementsModified(FileQoSRequirements newRequirements)
-          throws QoSException {
-        provider.handleModifiedRequirements(newRequirements);
+    public void fileQoSRequirementsModified(FileQoSRequirements newRequirements, Subject subject)
+          throws QoSException, CacheException {
+        provider.handleModifiedRequirements(newRequirements, subject);
     }
 
     @Override
-    public void fileQoSRequirementsModifiedCancelled(PnfsId pnfsid) {
+    public void fileQoSRequirementsModifiedCancelled(PnfsId pnfsid, Subject subject) {
         /*
          *   The local client is an embedded one and thus would not be used to
          *   dispatch a cancellation request.   This is a NOP.

@@ -45,4 +45,11 @@ public class HandlerBuilders {
 
         return handler;
     }
+
+    public static PnfsHandler unrestrictedPnfsHandler(CellStub pnfsManager) {
+        PnfsHandler handler = pnfsHandler(pnfsManager);
+        handler.setSubject(Subjects.ROOT);
+        handler.setRestriction(Restrictions.none());
+        return handler;
+    }
 }

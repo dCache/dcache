@@ -75,5 +75,5 @@ public interface FileStore {
      * Returns whether the store appears healthy. How this is determined is up to the
      * implementation.
      */
-    boolean isOk();
+    FileStoreState isOk();
 }

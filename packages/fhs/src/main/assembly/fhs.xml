@@ -3,21 +3,24 @@
     <includeBaseDirectory>false</includeBaseDirectory>
 
     <dependencySets>
+        <!-- Two dependencies same name. Rename one of them -->
         <dependencySet>
-            <excludes>
-                <exclude>*saxon:saxon*:*:*</exclude>
-                <exclude>org.dcache:dcache-view:jar:*</exclude>
-            </excludes>
+            <includes>
+                <include>io.dropwizard.metrics:metrics-core</include>
+            </includes>
             <outputDirectory>usr/share/dcache/classes</outputDirectory>
             <useProjectArtifact>false</useProjectArtifact>
+            <outputFileNameMapping>dropwizard-metrics-core-${version.dropwizard}.jar</outputFileNameMapping>
             <fileMode>644</fileMode>
             <directoryMode>755</directoryMode>
         </dependencySet>
         <dependencySet>
-            <includes>
-                <include>*saxon:saxon*:*:*</include>
-            </includes>
-            <outputDirectory>usr/share/dcache/classes/saxon</outputDirectory>
+            <excludes>
+                <exclude>org.dcache:dcache-view:jar:*</exclude>
+                <exclude>org.dcache:dcache-view-admin:jar:*</exclude>
+                <exclude>io.dropwizard.metrics:metrics-core</exclude>
+            </excludes>
+            <outputDirectory>usr/share/dcache/classes</outputDirectory>
             <useProjectArtifact>false</useProjectArtifact>
             <fileMode>644</fileMode>
             <directoryMode>755</directoryMode>
@@ -27,6 +30,16 @@
                 <include>org.dcache:dcache-view:jar:*</include>
             </includes>
             <outputDirectory>usr/share/dcache/dcache-view</outputDirectory>
+            <useProjectArtifact>false</useProjectArtifact>
+            <fileMode>644</fileMode>
+            <directoryMode>755</directoryMode>
+            <unpack>true</unpack>
+        </dependencySet>
+        <dependencySet>
+            <includes>
+                <include>org.dcache:dcache-view-admin:jar:*</include>
+            </includes>
+            <outputDirectory>usr/share/dcache/dcache-view-admin</outputDirectory>
             <useProjectArtifact>false</useProjectArtifact>
             <fileMode>644</fileMode>
             <directoryMode>755</directoryMode>

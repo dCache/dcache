@@ -59,11 +59,12 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.Serializable;
 
 public class BulkRequestTargetInfo implements Serializable {
 
-    private static final long serialVersionUID = 2969530669727797575L;
+    private static final long serialVersionUID = 6429036134346585765L;
 
     private String target;
     private String state;
@@ -72,14 +73,25 @@ public class BulkRequestTargetInfo implements Serializable {
     private Long finishedAt;
     private String errorType;
     private String errorMessage;
-    private long seqNo;
+    private long id;
 
-    public long getSeqNo() {
-        return seqNo;
+    @JsonIgnore
+    private transient boolean initial;
+
+    public boolean isInitial() {
+        return initial;
     }
 
-    public void setSeqNo(long seqNo) {
-        this.seqNo = seqNo;
+    public void setInitial(boolean initial) {
+        this.initial = initial;
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
     }
 
     public String getTarget() {

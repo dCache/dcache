@@ -71,6 +71,7 @@ import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import org.dcache.namespace.FileType;
 import org.dcache.services.bulk.activity.BulkActivity;
 import org.dcache.services.bulk.util.BulkRequestTarget;
@@ -91,6 +92,7 @@ public final class DeleteActivity extends BulkActivity<PnfsDeleteEntryMessage> i
     public ListenableFuture<PnfsDeleteEntryMessage> perform(String rid, long tid, FsPath path,
           FileAttributes attributes) {
         PnfsDeleteEntryMessage msg = new PnfsDeleteEntryMessage(path.toString());
+        msg.setSubject(subject);
         if (attributes != null && attributes.getFileType() == FileType.DIR && skipDirs) {
             msg.setSucceeded();
             return Futures.immediateFuture(msg);
@@ -104,8 +106,8 @@ public final class DeleteActivity extends BulkActivity<PnfsDeleteEntryMessage> i
     }
 
     @Override
-    protected void handleCompletion(BulkRequestTarget target,
-          ListenableFuture<PnfsDeleteEntryMessage> future) {
+    public void handleCompletion(BulkRequestTarget target,
+          Future<PnfsDeleteEntryMessage> future) {
         PnfsDeleteEntryMessage reply;
         try {
             reply = getUninterruptibly(future);
@@ -130,9 +132,12 @@ public final class DeleteActivity extends BulkActivity<PnfsDeleteEntryMessage> i
     @Override
     protected void configure(Map<String, String> arguments) {
         if (arguments == null) {
-            skipDirs = Boolean.parseBoolean(SKIP_DIRS.getDefaultValue());
+            /*
+             *  There is only one descriptor.
+             */
+            skipDirs = Boolean.parseBoolean(descriptors.iterator().next().getDefaultValue());
         } else {
-            skipDirs = Boolean.parseBoolean(arguments.get(SKIP_DIRS.getName()));
+            skipDirs = Boolean.parseBoolean(arguments.get(SKIP_DIRS));
         }
     }
 }

@@ -3,12 +3,9 @@ package org.dcache.chimera;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.dcache.chimera.FileSystemProvider.SetXattrMode;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.NO_STAT;
+import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -20,8 +17,6 @@ import static org.junit.Assert.fail;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.AbstractFuture;
-import com.google.common.util.concurrent.ListenableFuture;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -32,12 +27,9 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import java.util.Set;
 import org.dcache.acl.ACE;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.AceType;
@@ -135,13 +127,23 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
 
         FsInode newFile = base.create("testCreateFile", 0, 0, 0644);
 
-        assertEquals("file creation has to increase parent's nlink count by one",
-              base.stat().getNlink(), stat.getNlink() + 1);
+        assertEquals("file creation shouldn't change parent's nlink count",
+              base.stat().getNlink(), stat.getNlink());
+
         assertTrue("file creation has to update parent's mtime",
               base.stat().getMTime() > stat.getMTime());
         assertEquals("new file should have link count equal to one", newFile.stat().getNlink(), 1);
         assertTrue("change count is not updated",
               stat.getGeneration() != base.stat().getGeneration());
+    }
+
+    @Test
+    public void testNlinkCountOfNewDir() throws Exception {
+
+        int parentNlink = _rootInode.stat().getNlink();
+        FsInode newDir = _rootInode.mkdir("junit", 1, 2, 0755);
+        assertEquals(parentNlink + 1, _rootInode.stat().getNlink());
+        assertEquals(2, newDir.stat().getNlink());
     }
 
     @Test
@@ -233,8 +235,7 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
 
         base.remove("testCreateFile");
 
-        assertEquals("remove have to decrease parents link count", base.stat().getNlink(),
-              stat.getNlink() - 1);
+        assertEquals("remove should not decrement parents link count", base.stat().getNlink(), stat.getNlink());
         assertFalse("remove have to update parent's mtime",
               stat.getMTime() == base.stat().getMTime());
 
@@ -245,7 +246,7 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
 
         FsInode base = _rootInode.mkdir("junit");
 
-        base.create("testCreateDir", 0, 0, 0644);
+        base.mkdir("testCreateDir", 0, 0, 0644);
         Stat stat = base.stat();
 
         Thread.sleep(1); // ensure updated directory mtime is distinct from creation mtime
@@ -292,76 +293,6 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
         } catch (NotDirChimeraException nde) {
             // OK
         }
-    }
-
-    private final static int PARALLEL_THREADS_COUNT = 10;
-
-    /**
-     * Run some database activity in a separate thread, providing a ListenableFuture of that
-     * activity's result. A <i>CountDownLatch</i> is accepted for synchronising the start of the
-     * task.
-     */
-    private static class ParallelDbFuture<T> extends AbstractFuture<T> implements Runnable {
-
-        private final Thread _thread;
-        private final Callable<T> _task;
-        private final CountDownLatch _start;
-
-        public ParallelDbFuture(CountDownLatch start, Callable<T> task) {
-            _thread = new Thread(this);
-            _start = start;
-            _task = task;
-        }
-
-        public void start() {
-            _thread.start();
-        }
-
-        @Override
-        public void run() {
-            _start.countDown();
-            try {
-                _start.await();
-                set(_task.call());
-            } catch (Exception e) {
-                setException(e);
-            }
-        }
-    }
-
-    @Test(timeout = 60_000)
-    public void testParallelCreate() throws ChimeraFsException {
-        FsInode base = _rootInode.mkdir("junit");
-        Stat stat = base.stat();
-
-        CountDownLatch start = new CountDownLatch(PARALLEL_THREADS_COUNT);
-        List<ParallelDbFuture> futures = IntStream.range(0, PARALLEL_THREADS_COUNT)
-              .mapToObj(i -> "file-" + i)
-              .map(name -> new ParallelDbFuture<>(start, () -> base.create(name, 0, 0, 0644)))
-              .collect(Collectors.toList());
-        futures.stream().forEach(ParallelDbFuture::start);
-
-        int nlink = stat.getNlink();
-        int exceptions = 0;
-        for (ListenableFuture<Void> f : futures) {
-            try {
-                f.get();
-                nlink++;
-            } catch (ExecutionException e) {
-                LOGGER.warn("ExecutionException, triggered by {}", String.valueOf(e.getCause()));
-                exceptions++;
-            } catch (InterruptedException e) {
-                LOGGER.warn("Interrupted.");
-            }
-        }
-
-        assertEquals("Checking nlink count of dir", nlink, base.stat().getNlink());
-
-        // REVISIT: we fail this test if any exceptions are found.  The
-        // motivation is to draw attendion to any such exception, but exceptions
-        // due to TransientDataAccessException or RecoverableDataAccessException
-        // are not indicative of an error.
-        assertEquals("Expecting no exceptions", 0, exceptions);
     }
 
     @Test
@@ -470,7 +401,14 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
               preStatBase.getNlink(), base.stat().getNlink());
         assertEquals("link count of file shold not be modified in case of rename",
               preStatFile.getNlink(), fileInode.stat().getNlink());
-
+        try {
+            base.inodeOf("testCreateFile", NO_STAT);
+            fail("Some inode exists under source name");
+        } catch (FileNotFoundChimeraFsException e) {
+            // Success.
+        }
+        assertEquals("should resolve same inode under target name", fileInode,
+                base.inodeOf("testCreateFile2", NO_STAT));
     }
 
     @Test
@@ -486,8 +424,15 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
         boolean ok = _fs.rename(fileInode, base, "testCreateFile", base, "testCreateFile2");
 
         assertTrue("can't move", ok);
-        assertEquals("link count of base directory should decrease by one",
-              preStatBase.getNlink() - 1, base.stat().getNlink());
+        assertEquals("link count of base directory shouldn't change", preStatBase.getNlink(), base.stat().getNlink());
+        try {
+            base.inodeOf("testCreateFile", NO_STAT);
+            fail("Some inode exists under source name");
+        } catch (FileNotFoundChimeraFsException e) {
+            // Success.
+        }
+        assertEquals("should resolve same inode under target name", fileInode,
+                base.inodeOf("testCreateFile2", NO_STAT));
 
         assertFalse("ghost file", file2Inode.exists());
 
@@ -507,14 +452,31 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
         boolean ok = _fs.rename(fileInode, base, "testCreateFile", base2, "testCreateFile2");
 
         assertTrue("can't move", ok);
-        assertEquals("link count of source directory should decrese on move out",
-              preStatBase.getNlink() - 1,
+        assertEquals("link count of source directory shouldn't change on move out", preStatBase.getNlink(),
               base.stat().getNlink());
-        assertEquals("link count of destination directory should increase on move in",
-              preStatBase2.getNlink() + 1, base2.stat().getNlink());
-        assertEquals("link count of file shold not be modified on move", preStatFile.getNlink(),
+        assertEquals("link count of destination directory should change on move in", preStatBase2.getNlink(), base2.stat().getNlink());
+        assertEquals("link count of file should not be modified on move", preStatFile.getNlink(),
               fileInode.stat().getNlink());
-
+        try {
+            base.inodeOf("testCreateFile", NO_STAT);
+            fail("Some inode exists under source name in source directory");
+        } catch (FileNotFoundChimeraFsException e) {
+            // Success.
+        }
+        try {
+            base2.inodeOf("testCreateFile", NO_STAT);
+            fail("Some inode exists under source name in target directory.");
+        } catch (FileNotFoundChimeraFsException e) {
+            // Success.
+        }
+        try {
+            base.inodeOf("testCreateFile2", NO_STAT);
+            fail("Some inode exists under target name in source directory");
+        } catch (FileNotFoundChimeraFsException e) {
+            // Success.
+        }
+        assertEquals("should resolve same inode under target name in target directory",
+                fileInode, base2.inodeOf("testCreateFile2", NO_STAT));
     }
 
     @Test
@@ -533,15 +495,32 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
         boolean ok = _fs.rename(fileInode, base, "testCreateFile", base2, "testCreateFile2");
 
         assertTrue("can't move", ok);
-        assertEquals("link count of source directory should decrese on move out",
-              preStatBase.getNlink() - 1,
+        assertEquals("link count of source directory should should not be modified", preStatBase.getNlink(),
               base.stat().getNlink());
-        assertEquals("link count of destination directory should not be modified on replace",
-              preStatBase2.getNlink(), base2.stat().getNlink());
-        assertEquals("link count of file shold not be modified on move", preStatFile.getNlink(),
-              fileInode.stat().getNlink());
+        assertEquals("link count of destination directory should not be modified on replace", preStatBase2.getNlink(), base2.stat().getNlink());
+        assertEquals("link count of file shold not be modified on move", preStatFile.getNlink(), fileInode.stat().getNlink());
 
         assertFalse("ghost file", fileInode2.exists());
+        try {
+            base.inodeOf("testCreateFile", NO_STAT);
+            fail("Some inode exists under source name in source directory");
+        } catch (FileNotFoundChimeraFsException e) {
+            // Success.
+        }
+        try {
+            base2.inodeOf("testCreateFile", NO_STAT);
+            fail("Some inode exists under source name in target directory.");
+        } catch (FileNotFoundChimeraFsException e) {
+            // Success.
+        }
+        try {
+            base.inodeOf("testCreateFile2", NO_STAT);
+            fail("Some inode exists under target name in source directory");
+        } catch (FileNotFoundChimeraFsException e) {
+            // Success.
+        }
+        assertEquals("should resolve same inode under target name in target directory",
+                fileInode, base2.inodeOf("testCreateFile2", NO_STAT));
     }
 
     @Test
@@ -562,7 +541,10 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
         assertEquals("link count of file should not be modified in case of rename",
               preStatFile.getNlink(),
               fileInode.stat().getNlink());
-
+        assertEquals("should resolve same inode under target name in target directory",
+                fileInode, base.inodeOf("testCreateFile", NO_STAT));
+        assertEquals("should resolve same inode under target name in target directory",
+                linkInode, base.inodeOf("testCreateFile2", NO_STAT));
     }
 
     @Test
@@ -587,7 +569,22 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
               preStatBase2.getNlink(), base2.stat().getNlink());
         assertEquals("link count of file should not be modified in case of rename",
               preStatFile.getNlink(), fileInode.stat().getNlink());
-
+        assertEquals("should resolve same inode under target name in target directory",
+                fileInode, base.inodeOf("testCreateFile", NO_STAT));
+        try {
+            base.inodeOf("testCreateFile2", NO_STAT);
+            fail("Some inode exists under destination name in source directory");
+        } catch (FileNotFoundChimeraFsException e) {
+            // Success.
+        }
+        try {
+            base2.inodeOf("testCreateFile", NO_STAT);
+            fail("Some inode exists under source name in target directory");
+        } catch (FileNotFoundChimeraFsException e) {
+            // Success.
+        }
+        assertEquals("should resolve same inode under target name in target directory",
+                linkInode, base2.inodeOf("testCreateFile2", NO_STAT));
     }
 
     @Test
@@ -995,7 +992,8 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
 
     @Test(expected = FileNotFoundChimeraFsException.class)
     public void testMoveNotExists() throws Exception {
-        _fs.rename(_rootInode, _rootInode, "foo", _rootInode, "bar");
+        FsInode dummy = new FsInode(_fs, 31415);
+        _fs.rename(dummy, _rootInode, "foo", _rootInode, "bar");
     }
 
     @Test(expected = DirNotEmptyChimeraFsException.class)
@@ -1039,6 +1037,53 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
         String tooLongName = Strings.repeat("a", 257);
         FsInode inode = _rootInode.mkdir("testNameTooMoveLong");
         _fs.rename(inode, _rootInode, "testNameTooMoveLong", _rootInode, tooLongName);
+    }
+
+    @Test
+    public void testTagPropagation() throws ChimeraFsException {
+
+        var tagName = "aTag";
+
+        _fs.createTag(_rootInode, tagName);
+        FsInode tagInode = new FsInode_TAG(_fs, _rootInode.ino(), tagName);
+        byte[] data = "data".getBytes(UTF_8);
+        tagInode.write(0, data, 0, data.length);
+
+        var dir = _fs.mkdir(_rootInode, "dir.0", 0, 0, 0755);
+        _fs.statTag(dir, tagName);
+    }
+
+    @Test(expected = FileNotFoundChimeraFsException.class)
+    public void testStatMissingTag() throws ChimeraFsException {
+        var dir = _fs.mkdir(_rootInode, "dir.0", 0, 0, 0755);
+        _fs.statTag(dir, "aTag");
+    }
+
+    @Test
+    public void testTagDisposal() throws ChimeraFsException, SQLException {
+
+        var tagName = "aTag";
+
+        var dir = _fs.mkdir(_rootInode, "dir.0", 0, 0, 0755);
+        _fs.createTag(dir, tagName);
+
+        FsInode tagInode = new FsInode_TAG(_fs, dir.ino(), tagName);
+        byte[] data = "data".getBytes(UTF_8);
+        tagInode.write(0, data, 0, data.length);
+
+        long tagId = tagInode.stat().getIno();
+
+        try (var conn = _dataSource.getConnection()) {
+            var found = conn.createStatement().executeQuery("SELECT * FROM t_tags_inodes WHERE itagid="+tagId).next();
+            assertTrue("tag inodes is not populated with a new entry", found);
+        }
+
+        _fs.remove(_rootInode, "dir.0", dir);
+
+        try (var conn = _dataSource.getConnection()) {
+            var found = conn.createStatement().executeQuery("SELECT * FROM t_tags_inodes WHERE itagid="+tagId).next();
+            assertFalse("tag is not disposed on last reference removal", found);
+        }
     }
 
     @Test
@@ -1124,6 +1169,273 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
     public void testGetParentOnRoot() throws Exception {
         String id = _rootInode.statCache().getId();
         _rootInode.inodeOf(".(parent)(" + id + ")", NO_STAT);
+    }
+
+    @Test
+    @Ignore("See https://github.com/dCache/dcache/issues/7487")
+    public void testCreateFileDotUseLevel0ForExistingFile() throws Exception {
+        FsInode file = _rootInode.create("normal-file", 1, 2, 0644);
+
+        FsInode level0 = _fs.createFile(_rootInode, ".(use)(0)(normal-file)",
+                3, 4, 0755);
+
+        assertThat(level0, notNullValue());
+        assertThat(level0, equalTo(file));
+        assertThat(level0.getLevel(), equalTo(0));
+        assertThat(level0.type(), equalTo(FsInodeType.INODE));
+
+        var fileStat = file.getStatCache();
+        var stat = level0.getStatCache();
+
+        assertThat(stat.getUid(), equalTo(1));
+        assertThat(stat.getGid(), equalTo(2));
+        assertThat(stat.getMode(), equalTo(0644 | UnixPermission.S_IFREG));
+        assertThat(stat.getIno(), equalTo(fileStat.getIno()));
+        assertThat(stat.getId(), equalTo(fileStat.getId()));
+        assertThat(stat.getGeneration(), equalTo(0L));
+        assertThat(stat.getSize(), equalTo(0L));
+        assertThat(stat.getNlink(), equalTo(1));
+        assertThat(stat.getDev(), equalTo(17));
+        assertThat(stat.getRdev(), equalTo(13));
+    }
+
+    @Test(expected=FileNotFoundChimeraFsException.class)
+    public void testCreateFileDotUseLevel0ForMissingFile() throws Exception {
+        _fs.createFile(_rootInode, ".(use)(0)(no-such-file)", 0, 0, 0644);
+    }
+
+    @Test
+    public void testCreateFileDotUseLevel1ForExistingFile() throws Exception {
+        FsInode file = _rootInode.create("normal-file", 2, 3, 0644);
+
+        FsInode level0 = _fs.createFile(_rootInode, ".(use)(1)(normal-file)",
+                4, 5, 0755);
+
+        assertThat(level0, notNullValue());
+        assertThat(level0, not(equalTo(file)));
+        assertThat(level0.getLevel(), equalTo(1));
+        assertThat(level0.type(), equalTo(FsInodeType.INODE));
+
+        var fileStat = file.getStatCache();
+        var stat = level0.getStatCache();
+
+        assertThat(stat.getUid(), equalTo(2));
+        assertThat(stat.getGid(), equalTo(3));
+        assertThat(stat.getMode(), equalTo(0644 | UnixPermission.S_IFREG));
+        assertThat(stat.getIno(), equalTo(fileStat.getIno()));
+        assertThat(stat.getGeneration(), equalTo(0L));
+        assertThat(stat.getSize(), equalTo(0L));
+        assertThat(stat.getNlink(), equalTo(1));
+        assertThat(stat.getDev(), equalTo(17));
+        assertThat(stat.getRdev(), equalTo(13));
+    }
+
+    @Test(expected=FileNotFoundChimeraFsException.class)
+    public void testCreateFileDotUseLevel1ForMissingFile() throws Exception {
+        _fs.createFile(_rootInode, ".(use)(1)(no-such-file)", 0, 0, 0644);
+    }
+
+    @Test
+    public void testInodeOfDotIdExistingFile() throws Exception {
+        FsInode file = _rootInode.create("normal-file", 1, 2, 0644);
+
+        FsInode id = _fs.inodeOf(_rootInode, ".(id)(normal-file)", STAT);
+
+        assertThat(id, notNullValue());
+        assertThat(id, not(equalTo(file)));
+        assertThat(id.getLevel(), equalTo(0));
+        assertThat(id.type(), equalTo(FsInodeType.ID));
+
+        assertContents(id, file.getId() + "\n");
+    }
+
+    @Test(expected=FileNotFoundChimeraFsException.class)
+    public void testInodeOfDotIdFileNotExisting() throws Exception {
+        _fs.inodeOf(_rootInode, ".(id)(normal-file)", STAT);
+    }
+
+    @Test
+    public void testInodeOfDotUseLevel0ExistingFile() throws Exception {
+        FsInode file = _rootInode.create("normal-file", 1, 2, 0644);
+
+        FsInode use = _fs.inodeOf(_rootInode, ".(use)(0)(normal-file)", STAT);
+
+        assertThat(use, notNullValue());
+        assertThat(use, equalTo(file));
+        assertThat(use.getLevel(), equalTo(0));
+        assertThat(use.type(), equalTo(FsInodeType.INODE));
+
+        var fileStat = file.statCache();
+        var stat = use.statCache();
+
+        assertThat(stat.getUid(), equalTo(1));
+        assertThat(stat.getGid(), equalTo(2));
+        assertThat(stat.getMode(), equalTo(0644 | UnixPermission.S_IFREG));
+        assertThat(stat.getIno(), equalTo(fileStat.getIno()));
+        assertThat(stat.getId(), equalTo(fileStat.getId()));
+        assertThat(stat.getGeneration(), equalTo(0L));
+        assertThat(stat.getSize(), equalTo(0L));
+        assertThat(stat.getNlink(), equalTo(1));
+        assertThat(stat.getDev(), equalTo(17));
+        assertThat(stat.getRdev(), equalTo(13));
+    }
+
+    @Test(expected=FileNotFoundChimeraFsException.class)
+    public void testInodeOfDotUseLevel0NonExistingFile() throws Exception {
+        _fs.inodeOf(_rootInode, ".(use)(0)(normal-file)", STAT);
+    }
+
+    @Test
+    public void testInodeOfDotSuriExistingFile() throws Exception {
+        FsInode file = _rootInode.create("normal-file", 1, 2, 0644);
+        String location = "hsm://somesystem/target";
+        _fs.addInodeLocation(file, StorageGenericLocation.TAPE, location);
+
+        FsInode suri = _fs.inodeOf(_rootInode, ".(suri)(normal-file)", STAT);
+
+        assertThat(suri, notNullValue());
+        assertThat(suri, not(equalTo(file)));
+        assertThat(suri.getLevel(), equalTo(0));
+        assertThat(suri.type(), equalTo(FsInodeType.SURI));
+
+        var fileStat = file.statCache();
+        var stat = suri.statCache();
+
+        assertThat(stat.getUid(), equalTo(1));
+        assertThat(stat.getGid(), equalTo(2));
+        assertThat(stat.getMode(), equalTo(0644 | UnixPermission.S_IFREG));
+        assertThat(stat.getIno(), equalTo(fileStat.getIno()));
+        assertThat(stat.getId(), equalTo(fileStat.getId()));
+        assertThat(stat.getGeneration(), equalTo(fileStat.getGeneration() +1)); // work-around for NFS.
+        assertThat(stat.getNlink(), equalTo(1));
+        assertThat(stat.getDev(), equalTo(17));
+        assertThat(stat.getRdev(), equalTo(13));
+
+        assertContents(suri, location + "\n");
+    }
+
+    @Test(expected=FileNotFoundChimeraFsException.class)
+    public void testInodeOfDotSuriNonExistingFile() throws Exception {
+        _fs.inodeOf(_rootInode, ".(suri)(normal-file)", STAT);
+    }
+
+    @Test
+    public void testInodeOfDotGetChecksumExistingFileWithNoChecksums() throws Exception {
+        FsInode file = _rootInode.create("normal-file", 1, 2, 0644);
+
+        FsInode checksums = _fs.inodeOf(_rootInode, ".(get)(normal-file)(checksums)", STAT);
+
+        assertThat(checksums, notNullValue());
+        assertThat(checksums, not(equalTo(file)));
+        assertThat(checksums.getLevel(), equalTo(0));
+        assertThat(checksums.type(), equalTo(FsInodeType.PCRC));
+
+        var fileStat = file.statCache();
+        var stat = checksums.statCache();
+
+        assertThat(stat.getUid(), equalTo(1));
+        assertThat(stat.getGid(), equalTo(2));
+        assertThat(stat.getMode(), equalTo(0644 | UnixPermission.S_IFREG));
+        assertThat(stat.getIno(), equalTo(fileStat.getIno()));
+        assertThat(stat.getId(), equalTo(fileStat.getId()));
+        assertThat(stat.getGeneration(), equalTo(fileStat.getGeneration()));
+        assertThat(stat.getNlink(), equalTo(1));
+        assertThat(stat.getDev(), equalTo(17));
+        assertThat(stat.getRdev(), equalTo(13));
+
+        assertContents(checksums, "\n\r");
+    }
+
+    @Test(expected=FileNotFoundChimeraFsException.class)
+    public void testInodeOfDotGetChecksumNonExistingFile() throws Exception {
+        _fs.inodeOf(_rootInode, ".(get)(normal-file)(checksums)", STAT);
+    }
+
+    @Test
+    public void testInodeOfDotConfigExistingFile() throws Exception {
+        buildWormhole();
+        FsInode worm = _fs.inodeOf(_rootInode, ".(config)", STAT);
+        FsInode origCfgFile = worm.create("test.config", 1, 2, 0644);
+
+        FsInode cfgFile = _fs.inodeOf(_rootInode, ".(config)(test.config)", STAT);
+
+        assertThat(cfgFile, notNullValue());
+        assertThat(cfgFile, equalTo(origCfgFile));
+
+        var origCfgStat = origCfgFile.statCache();
+        var stat = cfgFile.statCache();
+
+        assertThat(stat.getUid(), equalTo(1));
+        assertThat(stat.getGid(), equalTo(2));
+        assertThat(stat.getMode(), equalTo(0644 | UnixPermission.S_IFREG));
+        assertThat(stat.getIno(), equalTo(origCfgStat.getIno()));
+        assertThat(stat.getId(), equalTo(origCfgStat.getId()));
+        assertThat(stat.getGeneration(), equalTo(origCfgStat.getGeneration()));
+        assertThat(stat.getNlink(), equalTo(1));
+        assertThat(stat.getDev(), equalTo(17));
+        assertThat(stat.getRdev(), equalTo(13));
+    }
+
+    @Test(expected=FileNotFoundChimeraFsException.class)
+    public void testInodeOfDotConfigNotExistingFile() throws Exception {
+        buildWormhole();
+
+        _fs.inodeOf(_rootInode, ".(config)(no-such-file.config)", STAT);
+    }
+
+    @Test
+    public void testInodeOfDotFsetChecksum() throws Exception {
+        FsInode file = _rootInode.create("normal-file", 1, 2, 0644);
+
+        FsInode fset = _fs.inodeOf(_rootInode,
+                ".(fset)(normal-file)(checksum)(MD5)(d41d8cd98f00b204e9800998ecf8427e)",
+                STAT);
+
+        // simulate the 'touch' command.
+        var touchStat = new Stat();
+        touchStat.setMTime(System.currentTimeMillis());
+        fset.setStat(touchStat);
+
+        var checksums = _fs.getInodeChecksums(file);
+        assertThat(checksums, hasSize(1));
+        Checksum actual = checksums.iterator().next();
+        Checksum expected = new Checksum(ChecksumType.MD5_TYPE,
+                "d41d8cd98f00b204e9800998ecf8427e");
+
+        assertThat(actual, equalTo(expected));
+    }
+
+    @Test(expected=FileNotFoundChimeraFsException.class)
+    public void testInodeOfDotFsetChecksumMissingFile() throws Exception {
+        _fs.inodeOf(_rootInode, ".(fset)(missing-file)(checksum)(MD5)(d41d8cd98f00b204e9800998ecf8427e)", STAT);
+    }
+
+    @Test
+    public void testInodeOfNormalFile() throws Exception {
+        FsInode file = _rootInode.create("normal-file", 1, 2, 0644);
+
+        FsInode result = _fs.inodeOf(_rootInode, "normal-file", STAT);
+
+        assertThat(result, notNullValue());
+        assertThat(result, equalTo(file));
+
+        var fileStat = file.statCache();
+        var stat = result.statCache();
+
+        assertThat(stat.getUid(), equalTo(1));
+        assertThat(stat.getGid(), equalTo(2));
+        assertThat(stat.getMode(), equalTo(0644 | UnixPermission.S_IFREG));
+        assertThat(stat.getIno(), equalTo(fileStat.getIno()));
+        assertThat(stat.getId(), equalTo(fileStat.getId()));
+        assertThat(stat.getGeneration(), equalTo(fileStat.getGeneration()));
+        assertThat(stat.getNlink(), equalTo(1));
+        assertThat(stat.getDev(), equalTo(17));
+        assertThat(stat.getRdev(), equalTo(13));
+    }
+
+    @Test(expected=FileNotFoundChimeraFsException.class)
+    public void testInodeOfMissingFile() throws Exception {
+        _fs.inodeOf(_rootInode, "missing-file", STAT);
     }
 
     @Test
@@ -1303,12 +1615,7 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
         assertEquals("Tag ref count mismatch", 1, tagInode.stat().getNlink());
 
         FsInode sub = top.mkdir("sub");
-        assertEquals("Tag ref count not incremented on create", 2, tagInode.stat().getNlink());
-
         _fs.remove(top, "sub", sub);
-        assertEquals("Tag ref count decremented on remove", 1, tagInode.stat().getNlink());
-
-        // remove last reference
         _fs.remove(_rootInode, "top", top);
 
         // as we don't have a way to access tags, use direct SQL
@@ -1438,10 +1745,10 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
               labelname)) {
 
             for (ChimeraDirectoryEntry entry : dirStream) {
-                fileNames.add(entry.getName());
+                fileNames.add(entry.getInode().getId());
             }
         }
-        assertTrue(fileNames.containsAll(Lists.newArrayList(parentDirName+"/aFile", parentDirName+"/bFile")));
+        assertTrue(fileNames.containsAll(Lists.newArrayList(inodeA.getId(), inodeB.getId())));
     }
 
     @Test
@@ -1541,6 +1848,44 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
 
         assertEquals("Unexpected number of attributes", 4, labelsSet.size());
         assertThat("List labels without order", labelsSet, containsInAnyOrder(labels));
+
+
+    }
+
+    @Test
+    public void testLsWithLabel() throws Exception {
+
+        FsInode dir = _fs.mkdir("/test");
+        FsInode inodeA = _fs.createFile(dir, "aFile");
+        FsInode inodeB = _fs.createFile(dir, "bFile");
+        FsInode inodeC = _fs.createFile(dir, "cFile");
+
+        FsInode dir1 = _fs.mkdir("/test1");
+        FsInode inodeB2 = _fs.createFile(dir1, "bFile");
+
+        String[] labels = {"cat", "dog", "yellow", "green"};
+
+        for (String labelName : labels) {
+            _fs.addLabel(inodeA, labelName);
+            _fs.addLabel(inodeB, labelName);
+            _fs.addLabel(inodeB2, labelName);
+        }
+
+        FsInode newInode = _fs.inodeOf(_rootInode, (".(collection)(cat)"), NO_STAT);
+
+        Collection<String> dirLs = new HashSet<>();
+        try (DirectoryStreamB<ChimeraDirectoryEntry> dirStream = _fs.newDirectoryStream(
+              newInode)) {
+
+            for (ChimeraDirectoryEntry entry : dirStream) {
+                dirLs.add(entry.getInode().getId());
+
+            }
+        }
+
+        assertThat("List file's pnfsid without order", dirLs,
+              containsInAnyOrder(inodeA.getId(), inodeB.getId(), inodeB2.getId()));
+        assertEquals("Unexpected number of entries", 3, getDirEntryCount(newInode));
 
 
     }
@@ -1742,10 +2087,61 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
               _fs.stat(inode).getGeneration(), greaterThan(s0.getGeneration()));
     }
 
+    @Test
+    public void testNoMtimeUpdateForHardlinks() throws Exception {
+
+        FsInode dir = _fs.mkdir("/test");
+        FsInode inode = _fs.createFile(dir, "aFile");
+        long mtime0 = inode.stat().getMTime();
+
+        FsInode hlink = _fs.createHLink(dir, inode, "hlink");
+        long mtime1 = inode.stat().getMTime();
+
+        assertThat("file mtine shoud not be changes on hardlink creation", mtime1, is(mtime0));
+    }
+
+    @Test(expected = InvalidArgumentChimeraException.class)
+    public void testMvDirectoryIntoItself() throws Exception {
+
+        FsInode dir = _fs.mkdir("/dir");
+        _fs.rename(dir, _rootInode, "dir", dir, "subdir");
+    }
+
+    @Test(expected = InvalidArgumentChimeraException.class)
+    public void testMvDirectoryOwnSubtree() throws Exception {
+
+        FsInode dir = _fs.mkdir("/dir");
+        _fs.mkdir("/dir/subdir1");
+        FsInode dir2 = _fs.mkdir("/dir/subdir1/subdir2");
+
+        _fs.rename(dir, _rootInode, "dir", dir2, "subdir3");
+    }
+
     private long getDirEntryCount(FsInode dir) throws IOException {
         try (var s = _fs.newDirectoryStream(dir)) {
             return s.stream().count();
         }
     }
 
+    private void buildWormhole() throws ChimeraFsException {
+        _fs.mkdir("/admin");
+        _fs.mkdir("/admin/etc");
+        _fs.mkdir("/admin/etc/config");
+    }
+
+    private void assertContents(FsInode inode, String expectedContents)
+            throws ChimeraFsException {
+        var stat = inode.statCache();
+
+        long expectedSize = expectedContents.getBytes(UTF_8).length;
+
+        assertThat(stat.getSize(), equalTo(expectedSize));
+
+        int requestedReadSize = (int)expectedSize;
+        byte[] data = new byte[requestedReadSize];
+        int actualSize = inode.read(0, data, 0, requestedReadSize);
+        assertThat(actualSize, equalTo(requestedReadSize));
+        String actualContents = new String(data, UTF_8);
+        assertThat(actualContents, equalTo(expectedContents));
+    }
 }

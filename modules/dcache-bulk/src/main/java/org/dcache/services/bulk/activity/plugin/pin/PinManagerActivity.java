@@ -61,18 +61,24 @@ package org.dcache.services.bulk.activity.plugin.pin;
 
 import static com.google.common.util.concurrent.Uninterruptibles.getUninterruptibly;
 import static diskCacheV111.util.CacheException.INVALID_ARGS;
+import static org.dcache.services.bulk.util.BulkRequestTarget.State.SKIPPED;
 
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.NamespaceHandlerAware;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
+import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import org.dcache.cells.CellStub;
 import org.dcache.pinmanager.PinManagerAware;
+import org.dcache.pinmanager.PinManagerPinMessage;
 import org.dcache.pinmanager.PinManagerUnpinMessage;
 import org.dcache.services.bulk.activity.BulkActivity;
 import org.dcache.services.bulk.util.BulkRequestTarget;
@@ -99,12 +105,15 @@ abstract class PinManagerActivity extends BulkActivity<Message> implements PinMa
     }
 
     @Override
-    protected void handleCompletion(BulkRequestTarget target, ListenableFuture<Message> future) {
+    public void handleCompletion(BulkRequestTarget target, Future<Message> future) {
         Message reply;
         try {
             reply = getUninterruptibly(future);
             if (reply.getReturnCode() != 0) {
                 target.setErrorObject(reply.getErrorObject());
+            } else if (reply instanceof PinManagerPinMessage
+                  && ((PinManagerPinMessage) reply).getLifetime() == -1L) {
+                target.setState(SKIPPED);
             } else {
                 target.setState(State.COMPLETED);
             }
@@ -132,6 +141,7 @@ abstract class PinManagerActivity extends BulkActivity<Message> implements PinMa
 
     protected PinManagerUnpinMessage unpinMessage(String id, PnfsId pnfsId) {
         PinManagerUnpinMessage message = new PinManagerUnpinMessage(pnfsId);
+        message.setSubject(subject);
         message.setRequestId(id);
         return message;
     }
@@ -142,5 +152,17 @@ abstract class PinManagerActivity extends BulkActivity<Message> implements PinMa
             case DIR:
                 throw new CacheException(INVALID_ARGS, "Not a regular file.");
         }
+    }
+
+    protected Optional<ListenableFuture<Message>> skipIfOnline(FileAttributes attributes,
+          PinManagerPinMessage message) {
+        ListenableFuture<Message> future = null;
+        if (attributes.getAccessLatency() == AccessLatency.ONLINE) {
+            message.setReply();
+            message.setLifetime(-1L);
+            future = Futures.immediateFuture(message);
+        }
+
+        return Optional.ofNullable(future);
     }
 }

@@ -1,3 +1,0 @@
-access_id_CA    X509    '/DC=org/DC=dCache/CN=Disposable CA 2017-05-05 13:18:48'
-pos_rights      globus  CA:sign
-cond_subjects   globus  '"/DC=org/DC=dCache/*"'

@@ -77,9 +77,9 @@ public class BulkRequest implements Serializable {
         NONE, TARGETS, ALL
     }
 
-    private Long seqNo;
+    private Long id;
     private String urlPrefix;
-    private String id;
+    private String uid;
     private List<String> target;
     private String targetPrefix;
     private String activity;
@@ -95,7 +95,7 @@ public class BulkRequest implements Serializable {
     private BulkRequestStatusInfo statusInfo;
 
     public int hashCode() {
-        return Objects.hashCode(id);
+        return Objects.hashCode(uid);
     }
 
     public boolean equals(Object other) {
@@ -105,11 +105,11 @@ public class BulkRequest implements Serializable {
 
         BulkRequest otherRequest = (BulkRequest) other;
 
-        if (id == null || otherRequest.id == null) {
+        if (uid == null || otherRequest.uid == null) {
             return false;
         }
 
-        return id.equals(otherRequest.id);
+        return uid.equals(otherRequest.uid);
     }
 
     public String getActivity() {
@@ -124,12 +124,12 @@ public class BulkRequest implements Serializable {
         return expandDirectories;
     }
 
-    public String getId() {
-        return id;
+    public String getUid() {
+        return uid;
     }
 
-    public Long getSeqNo() {
-        return seqNo;
+    public Long getId() {
+        return id;
     }
 
     public List<String> getTarget() {
@@ -182,16 +182,16 @@ public class BulkRequest implements Serializable {
         this.expandDirectories = expandDirectories;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setUid(String uid) {
+        this.uid = uid;
     }
 
     public void setPrestore(boolean prestore) {
         this.prestore = prestore;
     }
 
-    public void setSeqNo(Long seqNo) {
-        this.seqNo = seqNo;
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public void setTarget(List<String> target) {

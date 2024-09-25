@@ -167,6 +167,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.naming.NamingEnumeration;
@@ -235,7 +236,10 @@ import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.pool.CacheEntryInfoMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.kafka.KafkaException;
+import org.springframework.kafka.core.KafkaTemplate;
 
 /**
  * The Storage class bridges between the SRM server and dCache.
@@ -273,6 +277,7 @@ public final class Storage
     private CellStub _transferManagerStub;
     private CellStub _pinManagerStub;
     private CellStub _billingStub;
+    private Consumer<DoorRequestInfoMessage> _kafkaSender = (s) -> {};
 
     private PnfsHandler _pnfs;
     private final PermissionHandler permissionHandler =
@@ -382,6 +387,11 @@ public final class Storage
     @Required
     public void setBillingStub(CellStub billingStub) {
         _billingStub = billingStub;
+    }
+
+    @Autowired(required = false)
+    public void setTransferTemplate(KafkaTemplate kafkaTemplate) {
+        _kafkaSender = kafkaTemplate::sendDefault;
     }
 
     @Required
@@ -1144,6 +1154,12 @@ public final class Storage
                 infoMsg.setClient(origin.getAddress().getHostAddress());
             }
             _billingStub.notify(infoMsg);
+            try {
+                _kafkaSender.accept(infoMsg);
+            } catch (KafkaException | org.apache.kafka.common.KafkaException e) {
+                _log.warn("Failed to send message to kafka: {} ",
+                          Throwables.getRootCause(e).getMessage());
+            }
         } catch (FileNotFoundCacheException e) {
             throw new SRMInvalidPathException(e.getMessage(), e);
         } catch (FileIsNewCacheException | FileCorruptedCacheException e) {
@@ -1230,6 +1246,12 @@ public final class Storage
                     infoMsg.setClient(origin.getAddress().getHostAddress());
                 }
                 _billingStub.notify(infoMsg);
+                try {
+                    _kafkaSender.accept(infoMsg);
+                } catch (KafkaException | org.apache.kafka.common.KafkaException e) {
+                    _log.warn("Failed to send message to kafka: {} ",
+                              Throwables.getRootCause(e).getMessage());
+                }
             }
         } catch (PermissionDeniedCacheException e) {
             throw new SRMAuthorizationException("Permission denied.", e);
@@ -1402,6 +1424,7 @@ public final class Storage
                   callbacks,
                   _pnfsStub,
                   _billingStub,
+                  _kafkaSender,
                   getCellAddress(),
                   _executor);
         } catch (SRMInvalidPathException e) {
@@ -1652,7 +1675,7 @@ public final class Storage
           CopyCallbacks callbacks)
           throws SRMException {
         FsPath path = FsPath.create(fileId);
-        _log.debug("getFromRemoteTURL from {} to {}", remoteTURL, path);
+        _log.debug("getFromRemoteTURL from {} to {}", remoteTURL, path);
         return performRemoteTransfer(user, remoteTURL, path, true,
               extraInfo,
               remoteCredentialId,

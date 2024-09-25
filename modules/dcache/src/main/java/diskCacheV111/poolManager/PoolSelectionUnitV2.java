@@ -15,10 +15,11 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import com.google.common.collect.Streams;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.PnfsHandler;
@@ -59,7 +60,6 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.ws.rs.HEAD;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Args;
 import org.dcache.util.Glob;
@@ -96,8 +96,13 @@ public class PoolSelectionUnitV2
     private final Map<String, LinkGroup> _linkGroups = new HashMap<>();
     private final Map<String, UGroup> _uGroups = new HashMap<>();
     private final Map<String, Unit> _units = new HashMap<>();
+    private final Cache<String, PoolPreferenceLevel[]> cachedMatchValue =
+          CacheBuilder.newBuilder()
+                .maximumSize(100000)
+                .build();
     private boolean _useRegex;
     private boolean _allPoolsActive;
+    public  boolean _cachingEnabeled;
 
     /**
      * Ok, this is the critical part of PoolManager, but (!!!) the whole select path is READ-ONLY,
@@ -110,8 +115,12 @@ public class PoolSelectionUnitV2
     private final Lock _psuWriteLock = _psuReadWriteLock.writeLock();
 
     private final NetHandler _netHandler = new NetHandler();
-
     private transient PnfsHandler _pnfsHandler;
+
+    public void setCachingEnabeled(boolean cachingEnabeled) {
+        _cachingEnabeled = cachingEnabeled;
+    }
+
 
     @Override
     public Map<String, SelectionLink> getLinks() {
@@ -307,13 +316,13 @@ public class PoolSelectionUnitV2
                       pw.println();
                   });
             pw.println();
+
             _pGroups.values().stream().sorted(comparing(PGroup::getName)).forEachOrdered(
                   group -> {
                       pw.append("psu create pgroup ").append(group.getName());
                       if (group.isPrimary()) {
                           pw.append(" -resilient");
                       }
-
                       // don't explicitly add pools into dynamic pool groups
                       if (group instanceof DynamicPGroup) {
                           pw.append(" -dynamic");
@@ -332,8 +341,27 @@ public class PoolSelectionUnitV2
                                             .append(group.getName())
                                             .append(" ")
                                             .println(pool.getName())
+
                                 );
                       }
+
+                      pw.println();
+                  });
+            //nested -pools
+            _pGroups.values().stream().sorted(comparing(PGroup::getName)).forEachOrdered(
+                  group -> {
+                      pw.println();
+                      group._pgroupList.stream().sorted(comparing(PGroup::getName))
+                            .forEachOrdered(
+                                  groupS -> {pw
+                                            .append("psu addto pgroup ")
+                                            .append(group.getName())
+                                            .append(" ")
+                                            .println("@" + groupS.getName());
+                                      LOGGER.info(groupS.getName() + " " + group.getName());
+                                  }
+                            );
+
                       pw.println();
                   });
             _links.values().stream().sorted(comparing(Link::getName)).forEachOrdered(
@@ -607,6 +635,8 @@ public class PoolSelectionUnitV2
         String hsm = storageInfo.getHsm();
         String dCacheUnitName = storageInfo.getCacheClass();
 
+
+
         /*
          *  The preference level build requires these to be present in the file attributes.
          */
@@ -625,11 +655,42 @@ public class PoolSelectionUnitV2
         String storeUnitName = storageClass + "@" + hsm;
 
         Map<String, String> variableMap = storageInfo.getMap();
+        String netUnitGroup = null;
 
         LOGGER.debug(
               "running match: type={} store={} dCacheUnit={} net={} protocol={} keys={} locations={} linkGroup={}",
               type, storeUnitName, dCacheUnitName, netUnitName, protocolUnitName,
               variableMap, storageInfo.locations(), linkGroupName);
+
+
+
+        String cacheKey = null;
+        if (_cachingEnabeled) {
+
+            try {
+                Unit unit = _netHandler.match(netUnitName);
+                netUnitGroup = unit._uGroupList.values()
+                      .stream()
+                      .map(UGroup::getName).findFirst().get();
+
+            LOGGER.debug("this IP address  belongs to {} in uGroup {} ", netUnitName, netUnitGroup);
+
+
+            } catch (UnknownHostException e) {
+                LOGGER.error("Caching did not work, please check the configuration " + e);
+            }
+
+            cacheKey = type.toString() + storeUnitName + dCacheUnitName +
+                  netUnitGroup + protocolUnitName + linkGroupName;
+
+            PoolPreferenceLevel[] cachedMatchValueTmp = cachedMatchValue.getIfPresent(cacheKey);
+            if (cachedMatchValueTmp != null) {
+                //counter = counter + 1;
+                //System.out.println("counter " + counter);
+                return cachedMatchValueTmp;
+
+            }
+        }
 
         PoolPreferenceLevel[] result = null;
         rlock();
@@ -653,7 +714,9 @@ public class PoolSelectionUnitV2
         if (LOGGER.isDebugEnabled()) {
             logResult(result);
         }
-
+        if (_cachingEnabeled){
+            cachedMatchValue.put(cacheKey, result);
+        }
         return result;
     }
 
@@ -1020,6 +1083,17 @@ public class PoolSelectionUnitV2
             if (unit != null && unit.getType() == STORE) {
                 return (StorageUnit) unit;
             }
+
+            /*
+             *  If not found, and regex is on, try to resolve it.
+             */
+            if (_useRegex) {
+                List<Unit> units = new ArrayList<>();
+                resolveStorageUnit(units, storageClass);
+                if (!units.isEmpty()) {
+                    return (StorageUnit) units.iterator().next();
+                }
+            }
         } finally {
             _psuReadLock.unlock();
         }
@@ -1100,7 +1174,7 @@ public class PoolSelectionUnitV2
                     break;
                 default:
                     throw new IllegalArgumentException(
-                          "Syntax error," + " no such mode: " + mode);
+                          "Syntax error, no such mode: " + mode);
             }
         } finally {
             wunlock();
@@ -1474,11 +1548,13 @@ public class PoolSelectionUnitV2
                           + groupName);
                 }
 
-                Object[] result = new Object[4];
+                Object[] result = new Object[5];
                 result[0] = groupName;
                 result[1] = group._poolList.keySet().toArray();
                 result[2] = group._linkList.keySet().toArray();
                 result[3] = group.isPrimary();
+                result[4] = group._pgroupList.stream().sorted(comparing(PGroup::getName))
+                      .map(PGroup::getName).toArray();
                 xlsResult = result;
             }
         } finally {
@@ -1744,6 +1820,7 @@ public class PoolSelectionUnitV2
                     group._poolList.values().stream().sorted(comparing(Pool::getName))
                           .forEachOrdered(
                                 pool -> sb.append("   ").append(pool.toString()).append("\n"));
+                    sb.append("nested groups  = ").append(group._pgroupList).append("\n") ;
                 }
             }
         } finally {
@@ -2218,7 +2295,6 @@ public class PoolSelectionUnitV2
     //
 
     public void addToPoolGroup(String pGroupName, String poolName) {
-
         wlock();
         try {
             PGroup group = _pGroups.get(pGroupName);
@@ -2487,6 +2563,18 @@ public class PoolSelectionUnitV2
     }
 
     @Override
+    public PGroup getPoolGroupByName(String pgroup) {
+        PGroup poolGroup = null;
+        rlock();
+        try {
+            poolGroup = _pGroups.get(pgroup);
+        } finally {
+            runlock();
+        }
+        return poolGroup;
+    }
+
+    @Override
     public Collection<SelectionPoolGroup> getPoolGroupsOfPool(String poolName) {
         rlock();
         try {
@@ -2572,7 +2660,11 @@ public class PoolSelectionUnitV2
     }
 
     protected void wlock() {
+
         _psuWriteLock.lock();
+        if (_cachingEnabeled) {
+            cachedMatchValue.invalidateAll();
+        }
     }
 
     protected void wunlock() {

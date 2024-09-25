@@ -18,8 +18,10 @@ package org.dcache.chimera;
 
 import static java.util.stream.Collectors.toList;
 import static org.dcache.chimera.FileSystemProvider.SetXattrMode;
+import static org.dcache.chimera.FileSystemProvider.StatCacheOption.NO_STAT;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
 
+import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Ints;
@@ -38,6 +40,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.sql.Types;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -48,6 +52,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.OptionalLong;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -59,6 +64,7 @@ import org.dcache.acl.enums.RsType;
 import org.dcache.acl.enums.Who;
 import org.dcache.chimera.FileSystemProvider.StatCacheOption;
 import org.dcache.chimera.posix.Stat;
+import org.dcache.chimera.posix.Stat.StatAttributes;
 import org.dcache.chimera.spi.DBDriverProvider;
 import org.dcache.chimera.store.InodeStorageInformation;
 import org.dcache.util.Checksum;
@@ -306,15 +312,12 @@ public class FsSqlDriver {
             return false;
         }
 
-        // A directory contains two pseudo entries for '.' and '..'
-        decNlink(inode, 2);
-
         // ensure that t_inodes and t_tags_inodes updated in the same order as
         // in mkdir
-        decNlink(parent);
-        removeTag(inode);
+        decNlinkForDir(parent);
+        removeAllTags(inode);
 
-        if (!removeInodeIfUnlinked(inode)) {
+        if (!removeInodeIfUnlinked(inode, true)) {
             throw new DirNotEmptyChimeraFsException("directory is not empty");
         }
 
@@ -327,45 +330,49 @@ public class FsSqlDriver {
         if (!removeEntryInParent(parent, name, inode)) {
             return false;
         }
-        decNlink(inode);
+        // hard link counts
+        decNlinkForFile(inode);
+        // ignore the result as the file might have a hardlink
+        removeInodeIfUnlinked(inode, false);
 
-        removeInodeIfUnlinked(inode);
-
-        /* During bulk deletion of files in the same directory,
-         * updating the parent inode is often a contention point. The
-         * link count on the parent is updated last to reduce the time
-         * in which the directory inode is locked by the database.
-         */
-        decNlink(parent);
-
+        // trigger mtime update of parent dir.
+        // Postgres driver makes it different.
+        decNlinkForDir(parent, 0);
         return true;
     }
 
-    void remove(FsInode inode) {
-        if (inode.isDirectory()) {
-            removeTag(inode);
-        }
+    void remove(FsInode inode) throws DirNotEmptyChimeraFsException {
 
         /* Updating the inode effectively blocks anybody else from changing it and thus also from
          * adding more links.
          */
-        _jdbc.update("UPDATE t_inodes SET inlink=0 WHERE inumber=?", inode.ino());
+        _jdbc.update("UPDATE t_inodes SET ictime=now() WHERE inumber=?", inode.ino());
 
         /* Remove all hard-links. */
         List<Long> parents =
               _jdbc.queryForList(
                     "SELECT iparent FROM t_dirs WHERE ichild=?",
                     Long.class, inode.ino());
-        for (Long parent : parents) {
-            decNlink(new FsInode(inode.getFs(), parent));
+
+        boolean isDir = inode.isDirectory();
+        if (isDir) {
+            removeAllTags(inode);
         }
+
+        for (Long parent : parents) {
+            decNlinkForDir(new FsInode(inode.getFs(), parent), isDir ? 1 : 0);
+        }
+
         int n = _jdbc.update("DELETE FROM t_dirs WHERE ichild=?", inode.ino());
         if (n != parents.size()) {
             throw new JdbcUpdateAffectedIncorrectNumberOfRowsException(
                   "DELETE FROM t_dirs WHERE ichild=?", parents.size(), n);
         }
 
-        removeInodeIfUnlinked(inode);
+        boolean removed = removeInodeIfUnlinked(inode, isDir);
+        if (!removed && isDir) {
+            throw new DirNotEmptyChimeraFsException("directory is not empty");
+        }
     }
 
     public Stat stat(String id) {
@@ -380,6 +387,12 @@ public class FsSqlDriver {
     }
 
     public Stat stat(FsInode inode, int level) {
+        if (inode.type() == FsInodeType.LABEL) {
+            return _jdbc.query(
+                  "SELECT * FROM t_labels_ref where label_id=?",
+                  ps -> ps.setLong(1, inode.ino()),
+                  rs -> rs.next() ? toStatForLabel(rs) : null);
+        }
         if (level == 0) {
             return _jdbc.query(
                   "SELECT * FROM t_inodes WHERE inumber=?",
@@ -390,6 +403,53 @@ public class FsSqlDriver {
                   "SELECT * FROM t_level_" + level + " WHERE inumber=?",
                   ps -> ps.setLong(1, inode.ino()),
                   rs -> rs.next() ? toStatLevel(rs) : null);
+        }
+    }
+
+    private Stat toStatForLabel(ResultSet rs) throws SQLException {
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        Stat stat = new Stat();
+        // TODO create fake pnfsid for label
+        String pnfsIdSecond = "0000000000000000";
+        String pnfsIdThird = "F0000000000000000000";
+        int lenghtLabelId = ("F" + rs.getLong("label_id") + "A").length();
+        String temp = "F" + rs.getLong("label_id") + "A";
+        String replace = pnfsIdThird.substring(0, lenghtLabelId);
+        String pnfsID = pnfsIdSecond + pnfsIdThird.replaceAll(replace, temp);
+        stat.setIno(rs.getLong("label_id"));
+        // TODO could be changed latter or should be deleted
+        stat.setId(pnfsID);
+        stat.setCrTime(now.getTime());
+        stat.setGeneration(LocalDateTime.now().getMinute());
+        stat.setSize(512);
+        stat.setATime(now.getTime());
+        stat.setCTime(now.getTime());
+        stat.setMTime(now.getTime());
+        stat.setUid(0000);
+        stat.setGid(0000);
+        stat.setMode(0755 | UnixPermission.S_IFDIR);
+        stat.setDev(19);
+        stat.setRdev(23);
+        stat.setNlink(13);
+        return stat;
+    }
+
+
+    /**
+     * Returns the Label name.
+     *
+     * @param labelId of a label.
+     * @throws ChimeraFsException
+     */
+    String getLabelById(Long labelId) throws ChimeraFsException {
+        try {
+            return _jdbc.queryForObject("SELECT labelname FROM t_labels where  label_id=?",
+                  (rs, rn) -> {
+                      return (rs.getString("labelname"));
+                  }, labelId);
+
+        } catch (EmptyResultDataAccessException e) {
+            throw new NoLabelChimeraException("wrong id");
         }
     }
 
@@ -407,6 +467,8 @@ public class FsSqlDriver {
         if (!rs.wasNull()) {
             stat.setAccessLatency(AccessLatency.getAccessLatency(al));
         }
+        stat.setQosPolicy((Integer)rs.getObject("iqos_policy")); // can be null
+        stat.setQosState((Integer)rs.getObject("iqos_state")); // can be null
         stat.setSize(rs.getLong("isize"));
         stat.setATime(rs.getTimestamp("iatime").getTime());
         stat.setCTime(rs.getTimestamp("ictime").getTime());
@@ -468,7 +530,13 @@ public class FsSqlDriver {
      * @param inode
      * @return true if moved, false if source did not exist
      */
-    boolean rename(FsInode inode, FsInode srcDir, String source, FsInode destDir, String dest) {
+    boolean rename(FsInode inode, FsInode srcDir, String source, FsInode destDir, String dest) throws ChimeraFsException {
+
+        // If source is a directory check that we don't move into its own subdirectory
+        if (inode.isDirectory()) {
+            checkLoop(inode, destDir);
+        }
+
         String moveLink = "UPDATE t_dirs SET iparent=?, iname=? WHERE iparent=? AND iname=? AND ichild=?";
         int n = _jdbc.update(moveLink,
               ps -> {
@@ -485,11 +553,16 @@ public class FsSqlDriver {
             throw new JdbcUpdateAffectedIncorrectNumberOfRowsException(moveLink, 1, n);
         }
 
+        int nlinkDelta = 0;
+        if (inode.isDirectory()) {
+            nlinkDelta = 1;
+        }
+
         if (!srcDir.equals(destDir)) {
-            incNlink(destDir);
-            decNlink(srcDir);
+            incNlinkForDir(destDir, nlinkDelta);
+            decNlinkForDir(srcDir, nlinkDelta);
         } else {
-            incNlink(srcDir, 0);
+            incNlinkForDir(srcDir, 0);
         }
         return true;
     }
@@ -524,13 +597,28 @@ public class FsSqlDriver {
                           rs -> rs.next() ? new FsInode(parent.getFs(), rs.getLong("inumber"),
                                 FsInodeType.INODE, 0, toStat(rs)) : null);
                 } else {
-                    return _jdbc.query("SELECT ichild FROM t_dirs WHERE iparent=? AND iname=?",
-                          ps -> {
-                              ps.setLong(1, parent.ino());
-                              ps.setString(2, name);
-                          },
-                          rs -> rs.next() ? new FsInode(parent.getFs(), rs.getLong("ichild"))
-                                : null);
+
+                    Long parentIno;
+                    String nameChild;
+                    int  prefixParent = name.lastIndexOf("-");
+                    if (parent.type() == FsInodeType.LABEL) {
+
+                        parentIno = Long.valueOf(
+                              name.substring( prefixParent + 1, name.length()));
+                        nameChild = name.substring(0, prefixParent);
+                    }else {
+                        parentIno = parent.ino();
+                        nameChild = name;
+
+                    }
+                        return _jdbc.query("SELECT ichild FROM t_dirs WHERE iparent=? AND iname=?",
+                              ps -> {
+                                  ps.setLong(1, parentIno);
+                                  ps.setString(2, nameChild);
+                              },
+                              rs -> rs.next() ? new FsInode(parent.getFs(), rs.getLong("ichild"))
+                                    : null);
+
                 }
         }
     }
@@ -566,13 +654,37 @@ public class FsSqlDriver {
         }
     }
 
+    protected void checkLoop(FsInode inode, FsInode dst) throws InvalidArgumentChimeraException {
+        if (inode.ino() == dst.ino()) {
+            throw new InvalidArgumentChimeraException("Cannot move directory into itself.");
+        }
+
+        long destInumber = dst.ino();
+        while (true) {
+            OptionalLong parent = _jdbc.query("SELECT iparent FROM t_dirs WHERE ichild=?",
+                    rs -> rs.next() ? OptionalLong.of(rs.getLong("iparent")) : OptionalLong.empty(),
+                    destInumber);
+
+            if (parent.isEmpty()) {
+                // we have reached the root of the three
+                break;
+            }
+
+            long parentIno = parent.getAsLong();
+            if (parentIno == inode.ino()) {
+                throw new InvalidArgumentChimeraException("Cannot move directory into its own subdirectory.");
+            }
+            destInumber = parentIno;
+        }
+    }
+
     FsInode createInodeInParent(FsInode parent, String name, String id, int owner, int group,
           int mode,
           int type, int nlink, long size) {
         Stat stat = createInode(id, type, owner, group, mode, nlink, size);
         FsInode inode = new FsInode(parent.getFs(), stat.getIno(), FsInodeType.INODE, 0, stat);
         createEntryInParent(parent, name, inode);
-        incNlink(parent);
+        incNlinkForDir(parent, type == UnixPermission.S_IFDIR ? 1 : 0);
         return inode;
     }
 
@@ -672,10 +784,17 @@ public class FsSqlDriver {
         return new FsInode(inode.getFs(), inode.ino(), FsInodeType.INODE, level, stat);
     }
 
-    boolean removeInodeIfUnlinked(FsInode inode) {
+    boolean removeInodeIfUnlinked(FsInode inode, boolean isDir) {
+        if (isDir) {
+            int n = _jdbc.update(
+                  "DELETE FROM t_inodes WHERE inumber=? AND NOT EXISTS (SELECT 1 FROM t_dirs WHERE iparent = ? LIMIT 1)",
+                  inode.ino(), inode.ino());
+            return n > 0;
+        }
+
         List<String> ids
               = _jdbc.queryForList(
-              "SELECT ipnfsid FROM t_inodes WHERE inumber=? AND inlink=0 FOR UPDATE",
+              "SELECT ipnfsid FROM t_inodes WHERE inumber=? FOR UPDATE",
               String.class, inode.ino());
         if (ids.isEmpty()) {
             return false;
@@ -702,8 +821,10 @@ public class FsSqlDriver {
                   ps.setTimestamp(2, now);
                   ps.setTimestamp(3, now);
               });
-        _jdbc.update("DELETE FROM t_inodes WHERE inumber=?", inode.ino());
-        return true;
+        int n = _jdbc.update(
+              "DELETE FROM t_inodes WHERE inumber=? AND NOT EXISTS (SELECT 1 FROM t_dirs WHERE ichild = ? LIMIT 1)",
+              inode.ino(), inode.ino());
+        return n > 0;
     }
 
     boolean removeInodeLevel(FsInode inode, int level) {
@@ -715,8 +836,8 @@ public class FsSqlDriver {
      *
      * @param inode
      */
-    void incNlink(FsInode inode) {
-        incNlink(inode, 1);
+    void incNlinkForFile(FsInode inode) {
+        incNlinkForFile(inode, 1);
     }
 
     /**
@@ -725,10 +846,63 @@ public class FsSqlDriver {
      * @param inode
      * @param delta
      */
-    void incNlink(FsInode inode, int delta) {
+    void incNlinkForFile(FsInode inode, int delta) {
         Timestamp now = new Timestamp(System.currentTimeMillis());
         _jdbc.update(
-              "UPDATE t_inodes SET inlink=inlink +?,imtime=?,ictime=?,igeneration=igeneration+1 WHERE inumber=?",
+              "UPDATE t_inodes SET inlink=inlink +?,ictime=?,igeneration=igeneration+1 WHERE inumber=?",
+              ps -> {
+                  ps.setInt(1, delta);
+                  ps.setTimestamp(2, now);
+                  ps.setLong(3, inode.ino());
+              });
+    }
+
+    /**
+     * increase inode reference count by 1; the same as incNlink(dbConnection, inode, 1)
+     *
+     * @param inode
+     */
+    void incNlinkForDir(FsInode inode) {
+        incNlinkForDir(inode, 1);
+    }
+
+    /**
+     * increases the reference count of the inode by delta
+     *
+     * @param inode
+     * @param delta
+     */
+    void incNlinkForDir(FsInode inode, int delta) {
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        _jdbc.update(
+                "UPDATE t_inodes SET inlink=inlink +?,imtime=?,ictime=?,igeneration=igeneration+1 WHERE inumber=?",
+                ps -> {
+                    ps.setInt(1, delta);
+                    ps.setTimestamp(2, now);
+                    ps.setTimestamp(3, now);
+                    ps.setLong(4, inode.ino());
+                });
+    }
+
+    /**
+     * decreases inode reverence count by 1. the same as decNlink(dbConnection, inode, 1)
+     *
+     * @param inode
+     */
+    void decNlinkForDir(FsInode inode) {
+        decNlinkForDir(inode, 1);
+    }
+
+    /**
+     * decreases inode reference count by delta
+     *
+     * @param inode
+     * @param delta
+     */
+    void decNlinkForDir(FsInode inode, int delta) {
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        _jdbc.update(
+              "UPDATE t_inodes SET inlink=inlink -?,imtime=?,ictime=?,igeneration=igeneration+1 WHERE inumber=?",
               ps -> {
                   ps.setInt(1, delta);
                   ps.setTimestamp(2, now);
@@ -742,8 +916,8 @@ public class FsSqlDriver {
      *
      * @param inode
      */
-    void decNlink(FsInode inode) {
-        decNlink(inode, 1);
+    void decNlinkForFile(FsInode inode) {
+        decNlinkForFile(inode, 1);
     }
 
     /**
@@ -752,17 +926,17 @@ public class FsSqlDriver {
      * @param inode
      * @param delta
      */
-    void decNlink(FsInode inode, int delta) {
+    void decNlinkForFile(FsInode inode, int delta) {
         Timestamp now = new Timestamp(System.currentTimeMillis());
         _jdbc.update(
-              "UPDATE t_inodes SET inlink=inlink -?,imtime=?,ictime=?,igeneration=igeneration+1 WHERE inumber=?",
-              ps -> {
-                  ps.setInt(1, delta);
-                  ps.setTimestamp(2, now);
-                  ps.setTimestamp(3, now);
-                  ps.setLong(4, inode.ino());
-              });
+                "UPDATE t_inodes SET inlink=inlink -?,ictime=?,igeneration=igeneration+1 WHERE inumber=?",
+                ps -> {
+                    ps.setInt(1, delta);
+                    ps.setTimestamp(2, now);
+                    ps.setLong(3, inode.ino());
+                });
     }
+
 
     /**
      * creates an entry name for the inode in the directory parent. parent's reference count is not
@@ -1278,23 +1452,14 @@ public class FsSqlDriver {
             _jdbc.update("INSERT INTO t_tags (inumber,itagid,isorign,itagname) VALUES (?, ?, 0, ?)",
                   id, tagid, tagName);
         });
-
-        _jdbc.update("UPDATE t_tags_inodes SET inlink = inlink + ? WHERE itagid=?", subtrees.size(),
-              tagid);
         return subtrees.size();
     }
 
-    void incTagNlink(long tagId) {
-        _jdbc.update("UPDATE t_tags_inodes SET inlink = inlink + 1 WHERE itagid=?", tagId);
-    }
-
     void decTagNlinkOrRemove(long tagId) {
-        // shortcut: delete right away, if there is only one reference left
-        int n = _jdbc.update("DELETE FROM t_tags_inodes WHERE itagid=? AND inlink = 1", tagId);
-        // if delete didn't happen, then just indicate that one reference in gone
-        if (n == 0) {
-            _jdbc.update("UPDATE t_tags_inodes SET inlink = inlink - 1 WHERE itagid=?", tagId);
-        }
+        // delete tag record, if not referenced anymore
+        _jdbc.update(
+              "DELETE FROM t_tags_inodes WHERE itagid = ? AND NOT EXISTS (SELECT inumber FROM t_tags WHERE itagid=? LIMIT 1)",
+              tagId, tagId);
     }
 
     void removeTag(FsInode dir, String tag) {
@@ -1305,7 +1470,7 @@ public class FsSqlDriver {
         }
     }
 
-    void removeTag(FsInode dir) {
+    protected void removeAllTags(FsInode dir) {
         /* Get the name of the tags to be removed.
          */
         _jdbc.queryForList("SELECT itagname FROM t_tags WHERE inumber=?", String.class, dir.ino())
@@ -1430,15 +1595,9 @@ public class FsSqlDriver {
      * @param destination
      */
     void copyTags(FsInode orign, FsInode destination) {
-        int n = _jdbc.update(
+        _jdbc.update(
               "INSERT INTO t_tags (inumber,itagid,isorign,itagname) (SELECT ?,itagid,0,itagname from t_tags WHERE inumber=?)",
               destination.ino(), orign.ino());
-        if (n > 0) {
-            // if tags was copied, then bump the reference counts.
-            _jdbc.update(
-                  "UPDATE t_tags_inodes SET inlink = inlink + 1 WHERE itagid IN (SELECT itagid from t_tags where inumber=?)",
-                  destination.ino());
-        }
     }
 
     void setTagOwner(FsInode_TAG tagInode, int newOwner) throws FileNotFoundChimeraFsException {
@@ -1786,18 +1945,38 @@ public class FsSqlDriver {
     }
 
     /**
+     * Should return the actual absolute path with all symlinks followed.
+     * <p>
+     * This base implementation composes inode2path(path2inode).
+     *
+     * @param root node from which to begin path three walk.
+     * @param path to check for symlinks.
+     * @return path with all symlinks resolved; if does not exist, return the original path.
+     * @throws ChimeraFsException
+     * @throws SQLException
+     */
+    String resolvePath(FsInode root, String path) throws ChimeraFsException, SQLException {
+        FsInode pathInode = path2inode(root, path);
+        if (pathInode == null) {
+            return null;
+        }
+        return inode2path(pathInode, root);
+    }
+
+    /**
      * creates an instance of org.dcache.chimera.&lt;dialect&gt;FsSqlDriver or default driver, if
      * specific driver not available
      *
      * @param dataSource database data source
+     * @param consistency desired file system attribute consistency
      * @return FsSqlDriver
      */
-    static FsSqlDriver getDriverInstance(DataSource dataSource)
+    static FsSqlDriver getDriverInstance(DataSource dataSource, String consistency)
           throws ChimeraFsException, SQLException {
 
         for (DBDriverProvider driverProvider : ALL_PROVIDERS) {
             if (driverProvider.isSupportDB(dataSource)) {
-                FsSqlDriver driver = driverProvider.getDriver(dataSource);
+                FsSqlDriver driver = driverProvider.getDriver(dataSource, consistency);
                 LOGGER.info("Using DBDriverProvider: {}", driver.getClass().getName());
                 return driver;
             }
@@ -1811,7 +1990,7 @@ public class FsSqlDriver {
           FsInode inode, Stat stat, int level)
           throws SQLException {
 
-        if (stat.isDefined(Stat.StatAttributes.ATIME)
+        if (stat.isDefined(StatAttributes.ATIME)
               && stat.getDefinedAttributeses().size() == 1) {
             /*
              * ATIME only update. The CTIME must stay unchanged.
@@ -1828,51 +2007,57 @@ public class FsSqlDriver {
                     ? "UPDATE t_inodes SET ictime=?,igeneration=igeneration+1"
                     : ("UPDATE t_level_" + level + " SET ictime=?");
         final String attrUpdateSuffix =
-              (level == 0 && stat.isDefined(Stat.StatAttributes.SIZE))
+              (level == 0 && stat.isDefined(StatAttributes.SIZE))
                     ? " WHERE inumber=? AND itype = " + UnixPermission.S_IFREG
                     : " WHERE inumber=?";
 
         StringBuilder sb = new StringBuilder(128);
-        long ctime = stat.isDefined(Stat.StatAttributes.CTIME) ? stat.getCTime() :
+        long ctime = stat.isDefined(StatAttributes.CTIME) ? stat.getCTime() :
               System.currentTimeMillis();
 
         // set size always must trigger mtime update
-        if (stat.isDefined(Stat.StatAttributes.SIZE) && !stat.isDefined(
-              Stat.StatAttributes.MTIME)) {
+        if (stat.isDefined(StatAttributes.SIZE) && !stat.isDefined(
+              StatAttributes.MTIME)) {
             stat.setMTime(ctime);
         }
 
         sb.append(attrUpdatePrefix);
 
-        if (stat.isDefined(Stat.StatAttributes.UID)) {
+        if (stat.isDefined(StatAttributes.UID)) {
             sb.append(",iuid=?");
         }
-        if (stat.isDefined(Stat.StatAttributes.GID)) {
+        if (stat.isDefined(StatAttributes.GID)) {
             sb.append(",igid=?");
         }
-        if (stat.isDefined(Stat.StatAttributes.SIZE)) {
+        if (stat.isDefined(StatAttributes.SIZE)) {
             sb.append(",isize=?");
         }
-        if (stat.isDefined(Stat.StatAttributes.MODE)) {
+        if (stat.isDefined(StatAttributes.MODE)) {
             sb.append(",imode=?");
         }
-        if (stat.isDefined(Stat.StatAttributes.MTIME)) {
+        if (stat.isDefined(StatAttributes.MTIME)) {
             sb.append(",imtime=?");
         }
-        if (stat.isDefined(Stat.StatAttributes.ATIME)) {
+        if (stat.isDefined(StatAttributes.ATIME)) {
             sb.append(",iatime=?");
         }
-        if (stat.isDefined(Stat.StatAttributes.CRTIME)) {
+        if (stat.isDefined(StatAttributes.CRTIME)) {
             sb.append(",icrtime=?");
         }
-        if (stat.isDefined(Stat.StatAttributes.ACCESS_LATENCY)) {
+        if (stat.isDefined(StatAttributes.ACCESS_LATENCY)) {
             sb.append(",iaccess_latency=?");
         }
-        if (stat.isDefined(Stat.StatAttributes.RETENTION_POLICY)) {
+        if (stat.isDefined(StatAttributes.RETENTION_POLICY)) {
             sb.append(",iretention_policy=?");
         }
-        if (stat.isDefined(Stat.StatAttributes.STATE)) {
+        if (stat.isDefined(StatAttributes.STATE)) {
             sb.append(",iio=?");
+        }
+        if (stat.isDefined(StatAttributes.QOS_POLICY)) {
+            sb.append(",iqos_policy=?");
+        }
+        if (stat.isDefined(StatAttributes.QOS_STATE)) {
+            sb.append(",iqos_state=?");
         }
         sb.append(attrUpdateSuffix);
 
@@ -1882,35 +2067,49 @@ public class FsSqlDriver {
         int idx = 1;
         preparedStatement.setTimestamp(idx++, new Timestamp(ctime));
         // NOTICE: order here MUST match the order of processing attributes above.
-        if (stat.isDefined(Stat.StatAttributes.UID)) {
+        if (stat.isDefined(StatAttributes.UID)) {
             preparedStatement.setInt(idx++, stat.getUid());
         }
-        if (stat.isDefined(Stat.StatAttributes.GID)) {
+        if (stat.isDefined(StatAttributes.GID)) {
             preparedStatement.setInt(idx++, stat.getGid());
         }
-        if (stat.isDefined(Stat.StatAttributes.SIZE)) {
+        if (stat.isDefined(StatAttributes.SIZE)) {
             preparedStatement.setLong(idx++, stat.getSize());
         }
-        if (stat.isDefined(Stat.StatAttributes.MODE)) {
+        if (stat.isDefined(StatAttributes.MODE)) {
             preparedStatement.setInt(idx++, stat.getMode() & UnixPermission.S_PERMS);
         }
-        if (stat.isDefined(Stat.StatAttributes.MTIME)) {
+        if (stat.isDefined(StatAttributes.MTIME)) {
             preparedStatement.setTimestamp(idx++, new Timestamp(stat.getMTime()));
         }
-        if (stat.isDefined(Stat.StatAttributes.ATIME)) {
+        if (stat.isDefined(StatAttributes.ATIME)) {
             preparedStatement.setTimestamp(idx++, new Timestamp(stat.getATime()));
         }
-        if (stat.isDefined(Stat.StatAttributes.CRTIME)) {
+        if (stat.isDefined(StatAttributes.CRTIME)) {
             preparedStatement.setTimestamp(idx++, new Timestamp(stat.getCrTime()));
         }
-        if (stat.isDefined(Stat.StatAttributes.ACCESS_LATENCY)) {
+        if (stat.isDefined(StatAttributes.ACCESS_LATENCY)) {
             preparedStatement.setInt(idx++, stat.getAccessLatency().getId());
         }
-        if (stat.isDefined(Stat.StatAttributes.RETENTION_POLICY)) {
+        if (stat.isDefined(StatAttributes.RETENTION_POLICY)) {
             preparedStatement.setInt(idx++, stat.getRetentionPolicy().getId());
         }
-        if (stat.isDefined(Stat.StatAttributes.STATE)) {
+        if (stat.isDefined(StatAttributes.STATE)) {
             preparedStatement.setInt(idx++, stat.getState().getValue());
+        }
+        if (stat.isDefined(StatAttributes.QOS_POLICY)) {
+            if (stat.getQosPolicy() == null) {
+                preparedStatement.setNull(idx++, Types.NULL);
+            } else {
+                preparedStatement.setObject(idx++, stat.getQosPolicy());
+            }
+        }
+        if (stat.isDefined(StatAttributes.QOS_STATE)) {
+            if (stat.getQosState() == null) {
+                preparedStatement.setNull(idx++, Types.NULL);
+            } else {
+                preparedStatement.setObject(idx++, stat.getQosState());
+            }
         }
         preparedStatement.setLong(idx++, inode.ino());
         return preparedStatement;
@@ -2008,11 +2207,15 @@ public class FsSqlDriver {
         setInodeAttributes(inode, 0, new Stat());
     }
 
-    Long getLabel(String labelname) {
-        return _jdbc.queryForObject("SELECT label_id FROM t_labels where labelname=?",
+    Long getLabel(String labelname) throws NoLabelChimeraException {
+        try {
+            return _jdbc.queryForObject("SELECT label_id FROM t_labels where labelname=?",
               (rs, rn) -> {
                   return (rs.getLong("label_id"));
               }, labelname);
+        } catch (EmptyResultDataAccessException e) {
+            throw new NoLabelChimeraException("wrong label");
+        }
 
     }
 
@@ -2051,7 +2254,6 @@ public class FsSqlDriver {
 
                 Long label_id = getLabel(labelname);
 
-
                 Integer n = _jdbc.queryForObject(
                       "SELECT count(*) FROM t_labels_ref WHERE inumber=? and label_id = ?",
                       Integer.class, inode.ino(), label_id);
@@ -2074,7 +2276,6 @@ public class FsSqlDriver {
                       });
 
 
-
             }
 
         } catch (EmptyResultDataAccessException e) {
@@ -2091,8 +2292,11 @@ public class FsSqlDriver {
      * @param labelname a name of the label attached to files
      * @return stream of files  having the given label
      */
-    DirectoryStreamB<ChimeraDirectoryEntry> virtualDirectoryStream(FsInode dir, String labelname) {
+    DirectoryStreamB<ChimeraDirectoryEntry> virtualDirectoryStream(FsInode dir, String labelname)
+          throws ChimeraFsException {
+
         return new DirectoryStreamB<ChimeraDirectoryEntry>() {
+
             final VirtualDirectoryStreamImpl stream = new VirtualDirectoryStreamImpl(labelname,
                   _jdbc);
 
@@ -2129,9 +2333,7 @@ public class FsSqlDriver {
 
                             FsInode inode = new FsInode(dir.getFs(), rs.getLong("fileid"),
                                   FsInodeType.INODE, 0);
-                            String path = inode2path(rs.getLong("fileid"), _root);
-                            return new ChimeraDirectoryEntry(path, inode, stat);
-
+                            return new ChimeraDirectoryEntry(rs.getString("filename"), inode, stat);
 
                         } catch (SQLException e) {
                             LOGGER.error("failed to fetch next entry: {}", e.getMessage());
@@ -2193,4 +2395,36 @@ public class FsSqlDriver {
         setInodeAttributes(inode, 0, new Stat());
     }
 
+
+    /**
+     * File system backend specific periodic maintenance task. It's recommended to run the
+     * maintenance task runs as a single transaction, or as a series of transactions, if sub-tasks
+     * are involved. The thread running the tasks might be interrupted, for example, due to shutdown
+     * of the dCache processes.
+     * <p>
+     * The implementation should handle multiple instances of the maintenance task running
+     * concurrently,
+     */
+    void performMaintenanceTask() {
+
+    }
+
+    /**
+     * These are for converting between the Inode (Stat) layer and the FileAttributes layer.
+     * In essence, the inode table stores an int foreign key ref to the policy, but the attributes
+     * store the policy name.
+     */
+    String getQoSPolicyName(Integer id) throws SQLException {
+        if (id == null) {
+            return null;
+        }
+        return _jdbc.queryForObject("SELECT name FROM t_qos_policy WHERE id=?", String.class, id);
+    }
+
+    Integer getQoSPolicyId(String name) throws SQLException {
+        if (Strings.emptyToNull(name) == null) {
+            return null;
+        }
+        return _jdbc.queryForObject("SELECT id FROM t_qos_policy WHERE name=?", Integer.class, name);
+    }
 }

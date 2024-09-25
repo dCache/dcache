@@ -24,17 +24,9 @@ check -strong transfermanagers.limits.transfer-time.unit
 check -strong transfermanagers.limits.internal-transfers
 check -strong transfermanagers.limits.external-transfers
 
-check -strong transfermanagers.enable.db
-
-check -strong transfermanagers.db.url
-check -strong transfermanagers.db.user
-
-check transfermanagers.db.password
-check transfermanagers.db.password.file
-
 check transfermanagers.mover.queue
 
 create org.dcache.cells.UniversalSpringCell ${transfermanagers.cell.name} \
         "classpath:diskCacheV111/services/transfer-manager.xml \
         -consume=${transfermanagers.cell.consume} \
-        -profiles=db.enabled-${transfermanagers.enable.db}"
+        -profiles=kafka-${transfermanagers.enable.kafka}"

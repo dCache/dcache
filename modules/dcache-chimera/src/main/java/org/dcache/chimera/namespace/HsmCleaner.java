@@ -21,6 +21,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -52,6 +53,11 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
       CellInfoProvider {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HsmCleaner.class);
+
+    /**
+     * The pools cleaner-hsm has sent a request to and is expecting a reply from.
+     **/
+    private final Set<String> _activePools = Collections.synchronizedSet(new HashSet<>());
 
     /**
      * Utility class to keep track of timeouts.
@@ -248,24 +254,25 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
             locations = subset;
         }
 
-        PoolInformation pool = _pools.getPoolWithHSM(hsm);
+        PoolInformation pool = _pools.getNewPoolWithHSM(hsm, _activePools);
         if (pool != null) {
-            String name = pool.getName();
-            PoolRemoveFilesFromHSMMessage message = new PoolRemoveFilesFromHSMMessage(name, hsm,
+            String poolName = pool.getName();
+            _activePools.add(poolName);
+            PoolRemoveFilesFromHSMMessage message = new PoolRemoveFilesFromHSMMessage(poolName, hsm,
                   locations);
 
             LOGGER.info("sending {} delete locations for HSM {} to pool {}", locations.size(), hsm,
-                  name);
+                  poolName);
 
-            _poolStub.notify(new CellPath(name), message);
+            _poolStub.notify(new CellPath(poolName), message);
 
-            Timeout timeout = new Timeout(hsm, name);
+            Timeout timeout = new Timeout(hsm, poolName);
             _timer.schedule(timeout, _hsmTimeoutUnit.toMillis(_hsmTimeout));
             _requestTimeoutPerHsm.put(hsm, timeout);
         } else {
             /* If there is no available pool, then we report failure on
              * all files. */
-            LOGGER.warn("No pools attached to HSM {} are available", hsm);
+            LOGGER.warn("No new pools attached to HSM {} are available", hsm);
 
             Iterator<URI> i = _locationsToDelete.get(hsm).iterator();
             while (i.hasNext()) {
@@ -287,9 +294,10 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
      * fix the bug in the pool.
      */
     private synchronized void timeout(String hsm, String pool) {
-        LOGGER.error("Timeout deleting files on HSM {} attached to {}", hsm, pool);
+        LOGGER.error("Timeout deleting files on HSM {} attached to pool {}", hsm, pool);
         removeHsmRequestTimeout(hsm);
         _pools.remove(pool);
+        _activePools.remove(pool);
         flush(hsm);
     }
 
@@ -306,12 +314,20 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
         }
 
         String hsm = msg.getHsm();
+        String poolName = msg.getPoolName();
         Collection<URI> locations = _locationsToDelete.get(hsm);
         Collection<URI> success = msg.getSucceeded();
         Collection<URI> failures = msg.getFailed();
 
-        LOGGER.info("Pool delete responses for HSM {}: {} success, {} failures", hsm,
-              success.size(), failures.size());
+        boolean isStaleReply = false;
+        HsmCleaner.Timeout currHsmTimeout = _requestTimeoutPerHsm.get(hsm);
+        if (currHsmTimeout == null || !poolName.equals(currHsmTimeout.getPool())) {
+            LOGGER.warn(
+                  "Received a remove reply from pool {}, which is no longer waited for. "
+                        + "The cleaner pool timeout might be too small.",
+                  poolName);
+            isStaleReply = true;
+        }
 
         if (locations == null) {
             /* Seems we got a reply for something this instance did
@@ -319,14 +335,12 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
              * ignore it.
              */
             LOGGER.warn(
-                  "Received confirmation from a pool, for an action this cleaner did not request.");
+                  "Received confirmation from a pool for an action this cleaner did not request.");
             return;
         }
 
-        if (!failures.isEmpty()) {
-            LOGGER.warn("Pool reported that it failed to delete {} files from HSM {}. "
-                  + "Will try again later.", failures.size(), hsm);
-        }
+        LOGGER.info("Pool delete responses for HSM {}: {} success, {} failures", hsm,
+              success.size(), failures.size());
 
         for (URI location : success) {
             assert location.getAuthority().equals(hsm);
@@ -345,8 +359,12 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
             }
         }
 
-        removeHsmRequestTimeout(hsm);
-        flush(hsm);
+        _activePools.remove(poolName);
+
+        if (!isStaleReply) {
+            removeHsmRequestTimeout(hsm);
+            flush(hsm);
+        }
     }
 
     /**
@@ -371,8 +389,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
         if (queryLimit <= 0) {
             LOGGER.debug(
                   "The number of cached HSM locations is already the maximum permissible size. "
-                        +
-                        "Not adding further entries.");
+                        + "Not adding further entries.");
             _locationsToDelete.keySet().forEach(
                   this::flush); // avoid not processing the remaining requests and being stuck
             return;
@@ -449,6 +466,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
         // All not yet sent but cached requests can be cleared
         _locationsToDelete.keySet().removeIf(hsm -> !_requestTimeoutPerHsm.containsKey(hsm));
         _dbLastSeenTimestamp = new Timestamp(0);
+        _activePools.clear();
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -615,13 +633,17 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
 
     @Override
     public void getInfo(PrintWriter pw) {
-        pw.printf("Cleaning Interval: %s\n", _refreshInterval);
-        pw.printf("Cleaning Interval Unit: %s\n", _refreshIntervalUnit);
+        pw.printf("Cleaning Interval: %s %s\n", _refreshInterval, _refreshIntervalUnit);
         pw.printf("Cleanup grace period: %s\n", TimeUtils.describe(_gracePeriod).orElse("-"));
-        pw.printf("Timeout for cleaning requests to HSM-pools: %s\n", _hsmTimeout);
-        pw.printf("Timeout Unit for cleaning requests to HSM-pools: %s\n", _hsmTimeoutUnit);
+        pw.printf("Timeout for cleaning requests to HSM-pools: %s %s\n", _hsmTimeout,
+              _hsmTimeoutUnit);
         pw.printf("Maximum number of cached delete locations:   %d\n", _maxCachedDeleteLocations);
         pw.printf("Maximum number of files to include in a single request:   %d\n",
               _maxFilesPerRequest);
+        Set<String> activePools = Set.copyOf(_activePools);
+        int activePoolCount = activePools.size();
+        String activePoolsString = activePoolCount == 0 ? "0"
+              : activePoolCount + " " + activePools;
+        pw.printf("Pools currently waited for: %s\n", activePoolsString);
     }
 }

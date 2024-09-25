@@ -78,7 +78,7 @@ public final class PoolScanOperation extends ScanOperation<PoolScanTask> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PoolScanOperation.class);
 
-    private static final String TO_STRING = "(completed: %s / %s : %s%%) – "
+    private static final String TO_STRING = "(completed: %s / %s : %s%%) - "
           + "(updated: %s)(%s: %s)(prev %s)(curr %s)(%s) %s";
 
     enum State {

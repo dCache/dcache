@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013 - 2019 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013 - 2024 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -20,16 +20,19 @@ package org.dcache.pool.movers;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.collect.Maps;
+import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TimeoutCacheException;
+import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellIdentityAware;
+import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import io.netty.bootstrap.ServerBootstrap;
@@ -44,6 +47,8 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.CompletionHandler;
@@ -66,14 +71,16 @@ import org.dcache.util.CDCThreadFactory;
 import org.dcache.util.ChannelCdcSessionHandlerWrapper;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
-import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.NettyPortRange;
+import org.dcache.util.NetworkUtils;
 import org.dcache.util.TryCatchTemplate;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
-import org.springframework.context.SmartLifecycle;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 
 /**
  * Abstract base class for Netty based transfer services. This class provides most methods needed by
@@ -84,7 +91,7 @@ import org.springframework.context.SmartLifecycle;
  * the Netty channel to close.
  */
 public abstract class NettyTransferService<P extends ProtocolInfo>
-      implements TransferService<NettyMover<P>>, MoverFactory, CellIdentityAware, SmartLifecycle {
+      implements TransferService<NettyMover<P>>, MoverFactory, CellIdentityAware, CellInfoProvider {
 
     private static final Logger LOGGER =
           LoggerFactory.getLogger(NettyTransferService.class);
@@ -185,24 +192,6 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
         this.postTransferService = postTransferService;
     }
 
-    public long getClientIdleTimeout() {
-        return clientIdleTimeout;
-    }
-
-    @Required
-    public void setClientIdleTimeout(long clientIdleTimeout) {
-        this.clientIdleTimeout = clientIdleTimeout;
-    }
-
-    public TimeUnit getClientIdleTimeoutUnit() {
-        return clientIdleTimeoutUnit;
-    }
-
-    @Required
-    public void setClientIdleTimeoutUnit(TimeUnit clientIdleTimeoutUnit) {
-        this.clientIdleTimeoutUnit = clientIdleTimeoutUnit;
-    }
-
     public long getConnectTimeout() {
         return connectTimeout;
     }
@@ -247,7 +236,6 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
             public void channelInactive(ChannelHandlerContext ctx) throws Exception {
                 super.channelInactive(ctx);
                 openChannels.remove(ctx.channel());
-                conditionallyStopServer();
             }
         });
     }
@@ -293,8 +281,8 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
     /**
      * Method used by Spring to tell this bean to start.
      */
-    @Override
-    public synchronized void start() {
+    @PostConstruct
+    public synchronized void start() throws IOException {
         timeoutScheduler =
               Executors.newSingleThreadScheduledExecutor(
                     new ThreadFactoryBuilder().setNameFormat(name + "-connect-timeout").build());
@@ -303,46 +291,20 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
         socketGroup = new NioEventLoopGroup(threads,
               new CDCThreadFactory(new ThreadFactoryBuilder().setNameFormat(
                     name + "-net-%d").build()));
-    }
 
-    @Override
-    public synchronized boolean isRunning() {
-        return timeoutScheduler != null;
-    }
 
+        startServer();
+    }
 
     /**
      * Method used by Spring to tell this bean to shutdown synchronously.
      */
-    @Override
+    @PreDestroy
     public synchronized void stop() {
         LOGGER.debug("NettyTransferService#stop started");
         initialiseShutdown();
         awaitShutdownCompletion();
         LOGGER.debug("NettyTransferService#stop completed");
-    }
-
-    /**
-     * Method used by Spring to tell this bean to shutdown asynchronously.
-     *
-     * @param callback The callback that must be called.
-     */
-    @Override
-    public synchronized void stop(final Runnable callback) {
-        LOGGER.debug("NettyTransferService#stop (with callback) started");
-        initialiseShutdown();
-        LOGGER.debug("NettyTransferService#stop (with callback) shutdown initialised");
-        Runnable reportShutdownCompleted = new FireAndForgetTask(() ->
-        {
-            LOGGER.debug("NettyTransferService#stop (with callback) waiting thread started");
-            try {
-                awaitShutdownCompletion();
-                LOGGER.debug("NettyTransferService#stop (with callback) shutdown completed");
-            } finally {
-                callback.run();
-            }
-        });
-        new Thread(reportShutdownCompleted, name + "-async-shutdown").start();
     }
 
     protected void initialiseShutdown() {
@@ -368,24 +330,6 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-        }
-    }
-
-    /**
-     * Start server if there are any registered channels.
-     */
-    protected synchronized void conditionallyStartServer() throws IOException {
-        if (!uuids.isEmpty()) {
-            startServer();
-        }
-    }
-
-    /**
-     * Stop server if there are no channels.
-     */
-    protected synchronized void conditionallyStopServer() {
-        if (openChannels.isEmpty() && uuids.isEmpty()) {
-            stopServer();
         }
     }
 
@@ -421,9 +365,14 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
                 if (uuids.putIfAbsent(uuid, channel) != null) {
                     throw new IllegalStateException("UUID conflict");
                 }
-                conditionallyStartServer();
+
                 setCancellable(channel);
-                sendAddressToDoor(mover, getServerAddress().getPort());
+                InetAddress localIP =
+                        NetworkUtils.getLocalAddress(((IpProtocolInfo)mover.getProtocolInfo()).getSocketAddress().getAddress());
+
+                InetSocketAddress localEndpoint = new InetSocketAddress(localIP, getServerAddress().getPort());
+                mover.setLocalEndpoint(localEndpoint);
+                sendAddressToDoor(mover, localEndpoint);
             }
 
             @Override
@@ -665,7 +614,6 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
             } else {
                 channel.done();
             }
-            conditionallyStopServer();
         }
     }
 
@@ -674,8 +622,15 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
         postTransferService.execute(mover, completionHandler);
     }
 
-    protected abstract void sendAddressToDoor(NettyMover<P> mover, int port)
+    protected abstract void sendAddressToDoor(NettyMover<P> mover, InetSocketAddress localEndpoint)
           throws Exception;
 
     protected abstract UUID createUuid(P protocolInfo);
+
+    @Override
+    public void getInfo(PrintWriter pw) {
+        CellInfoProvider.super.getInfo(pw);
+        var endpoint = getServerAddress();
+        pw.printf("   Listening on: %s:%d\n", InetAddresses.toUriString(endpoint.getAddress()), endpoint.getPort());
+    }
 }

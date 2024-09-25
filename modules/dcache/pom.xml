@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.dcache</groupId>
     <artifactId>dcache-parent</artifactId>
-    <version>9.0.0-SNAPSHOT</version>
+    <version>10.2.0-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
@@ -124,7 +124,24 @@
         <groupId>com.github.parboiled1</groupId>
         <artifactId>grappa</artifactId>
     </dependency>
-    <dependency>
+      <!-- grappa needs asm to work -->
+      <dependency>
+          <groupId>org.ow2.asm</groupId>
+          <artifactId>asm</artifactId>
+      </dependency>
+      <dependency>
+          <groupId>org.ow2.asm</groupId>
+          <artifactId>asm-tree</artifactId>
+      </dependency>
+      <dependency>
+          <groupId>org.ow2.asm</groupId>
+          <artifactId>asm-analysis</artifactId>
+      </dependency>
+      <dependency>
+          <groupId>org.ow2.asm</groupId>
+          <artifactId>asm-util</artifactId>
+      </dependency>
+      <dependency>
         <groupId>org.datanucleus</groupId>
         <artifactId>datanucleus-core</artifactId>
     </dependency>
@@ -187,6 +204,11 @@
     <dependency>
         <groupId>org.apache.sshd</groupId>
         <artifactId>sshd-core</artifactId>
+    </dependency>
+    <!-- For ed25519 support -->
+    <dependency>
+        <groupId>net.i2p.crypto</groupId>
+        <artifactId>eddsa</artifactId>
     </dependency>
     <dependency>
         <groupId>commons-codec</groupId>
@@ -301,10 +323,6 @@
         <artifactId>jimfs</artifactId>
         <scope>test</scope>
     </dependency>
-    <dependency>
-        <groupId>org.dcache</groupId>
-        <artifactId>rados4j</artifactId>
-    </dependency>
 
     <!-- used by alarms, needs to be deployed -->
     <dependency>
@@ -313,7 +331,7 @@
     </dependency>
     <dependency>
         <groupId>org.mongodb</groupId>
-        <artifactId>mongo-java-driver</artifactId>
+        <artifactId>mongodb-driver-sync</artifactId>
     </dependency>
 
       <dependency>

@@ -64,6 +64,7 @@ import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import java.util.Optional;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import javax.security.auth.Subject;
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.migration.PoolMigrationCopyFinishedMessage;
 import org.dcache.qos.data.FileQoSUpdate;
@@ -86,6 +87,7 @@ public final class QoSAdjusterTask extends ErrorAwareTask implements Cancellable
 
     private final PnfsId pnfsId;
     private final QoSAction type;
+    private final Subject subject;
     private final int retry;
     private final QoSAdjusterFactory factory;
     private final FileAttributes attributes;
@@ -120,13 +122,13 @@ public final class QoSAdjusterTask extends ErrorAwareTask implements Cancellable
         this.source = request.getSource();
         this.target = request.getTarget();
         this.poolGroup = request.getPoolGroup();
+        this.subject = request.getSubject();
         this.status = Status.INITIALIZED;
     }
 
     public QoSAdjusterTask(QoSAdjusterTask task, int retry) {
         this.pnfsId = task.pnfsId;
         this.type = task.type;
-        ;
         this.retry = retry;
         this.factory = task.factory;
         this.attributes = task.attributes;
@@ -134,7 +136,8 @@ public final class QoSAdjusterTask extends ErrorAwareTask implements Cancellable
         this.source = task.source;
         this.target = task.target;
         this.poolGroup = task.poolGroup;
-        this.status = task.status;
+        this.subject = task.subject;
+        this.status = Status.INITIALIZED;
     }
 
     @Override
@@ -142,7 +145,6 @@ public final class QoSAdjusterTask extends ErrorAwareTask implements Cancellable
         synchronized (this) {
             status = Status.RUNNING;
             exception = null;
-            adjuster = factory.newBuilder().of(type).build();
             startTime = System.currentTimeMillis();
         }
 
@@ -154,6 +156,7 @@ public final class QoSAdjusterTask extends ErrorAwareTask implements Cancellable
                 if (isCancelled()) {
                     break;
                 }
+                adjuster = factory.newBuilder().of(type).build();
                 adjuster.adjustQoS(this);
                 break;
         }
@@ -219,6 +222,10 @@ public final class QoSAdjusterTask extends ErrorAwareTask implements Cancellable
 
     public String getSource() {
         return source;
+    }
+
+    public Subject getSubject() {
+        return subject;
     }
 
     public String getTarget() {

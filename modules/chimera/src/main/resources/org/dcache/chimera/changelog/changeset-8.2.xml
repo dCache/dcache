@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <!-- For safety in backporting, we introduce a separate procedure rather
+         than trying to integrate/modify an existing one. -->
+    <changeSet id="34" author="arossi" dbms="postgresql">
+        <comment>Symlink resolution calling inumber2path(path2inumber)</comment>
+        <createProcedure>
+            CREATE OR REPLACE FUNCTION resolve_path(root bigint, path varchar) RETURNS varchar
+                AS
+            $$
+                BEGIN
+                IF path LIKE '/%' THEN
+                    path := substring(path from 2);
+                END IF;
+                return inumber2path(path2inumber(root, path));
+            END;
+            $$ LANGUAGE plpgsql;
+        </createProcedure>
+        <rollback>
+        </rollback>
+    </changeSet>
+
+    <!-- Fixes bug when handling empty or root paths. -->
+    <changeSet id="34.1" author="arossi" dbms="postgresql">
+        <comment>Symlink resolution calling inumber2path(path2inumber)</comment>
+        <createProcedure>
+            CREATE OR REPLACE FUNCTION resolve_path(root bigint, path varchar) RETURNS varchar
+                AS
+            $$
+                DECLARE
+                    len int;
+                BEGIN
+                len := length(path);
+                IF len = 0 THEN
+                    path := '/';
+                ELSIF path LIKE '/%' AND len > 1 THEN
+                    path := substring(path from 2);
+                END IF;
+                return inumber2path(path2inumber(root, path));
+            END;
+            $$ LANGUAGE plpgsql;
+        </createProcedure>
+        <rollback>
+        </rollback>
+    </changeSet>
+</databaseChangeLog>

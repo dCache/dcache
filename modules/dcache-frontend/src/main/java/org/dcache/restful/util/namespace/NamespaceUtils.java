@@ -242,6 +242,14 @@ public final class NamespaceUtils {
             json.setStorageInfo(info);
             json.setSuris(info.locations());
         }
+
+        if (attributes.isDefined(FileAttribute.QOS_POLICY)) {
+            json.setQosPolicy(attributes.getQosPolicy());
+        }
+
+        if (attributes.isDefined(FileAttribute.QOS_STATE)) {
+            json.setQosState(attributes.getQosState());
+        }
     }
 
     public static Set<FileAttribute> getRequestedAttributes(boolean locality,
@@ -287,6 +295,8 @@ public final class NamespaceUtils {
             attributes.add(FileAttribute.OWNER_GROUP);
             attributes.add(FileAttribute.OWNER);
             attributes.add(FileAttribute.STORAGECLASS);
+            attributes.add(FileAttribute.QOS_POLICY);
+            attributes.add(FileAttribute.QOS_STATE);
         }
 
         return ImmutableSet.copyOf(attributes);

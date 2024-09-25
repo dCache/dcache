@@ -2653,6 +2653,12 @@ what values they automatically are given for the WLCG Tape API requests:
 
 The following two tables compare the usage for the ``bulk-request`` and WLCG resources, respectively:
 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ NOTE:  In the following charts, the resource URL is out of date.  The current
+        WLCG resources are all prefixed by '/tape'; i.e., '/tape/stage',
+        '/tape/release', and '/tape/archiveinfo'.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 ![Bulk vs WLCG (1)](images/bulk-wlcg-2.png)
 
 ![Bulk vs WLCG (2)](images/bulk-wlcg-3.png)
@@ -2670,3 +2676,70 @@ at ``https://<host>:3880/api/v1``.
        before clearing a request on success or failure has been deprecated
        and is no longer supported.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+## Support for .well-known
+
+From version 8.2 on, the frontend service exposes the `.well-known` resource on
+port 3880.  Currently, two endpoints are supported.
+
+For the WLCG TAPE API, a .json file should be configured to provide the actual host
+and port at which the RESTful service may be contacted.  An example is provided:
+
+```
+/var/lib/dcache/httpd/wlcg-tape-rest-api.json
+```
+The property:
+
+```
+dcache.wellknown!wlcg-tape-rest-api.path=${dcache.paths.httpd}/wlcg-tape-rest-api.json
+```
+should be configured to point to the file should its location be changed or
+multiple such files are used.
+
+See https://docs.google.com/document/d/1Zx_H5dRkQRfju3xIYZ2WgjKoOvmLtsafP2pKGpHqcfY/edit#heading=h.ozszs1lr7q93
+for fuller information (version 1).
+
+The `security.txt` well-known endpoint is also supported on both the frontend
+at port 3880 and on webdav at port 2880.  The property:
+
+```
+dcache.wellknown!security-txt.uri=${dcache.paths.httpd}/security.txt
+```
+
+should be configured to point to either a URL with host and port that provides
+this information, or a local path with the appropriate `security.txt` file.
+See https://securitytxt.org/ for further information.
+
+## Asserting a desired role using an http header
+
+It is now possible to assert roles without recourse to the password
+authentication plugin.
+
+For instance, with `curl`, instead of `-u user#role`, you can do the following:
+
+```
+curl  -k -L -H "Roles: admin"  --capath /etc/grid-security/certificates --cert /tmp/x509up_u`uid` --cacert /tmp/x509up_u`uid` --key /tmp/x509up_u`uid` -X  POST "https://fndcatemp2.fnal.gov:3880/api/v1/quota/user/8888" -H "accept: application/json" -H "content-type: application/json"
+```
+
+or
+
+```
+curl  -k -L -H "Roles: admin" -H "Authorization: Bearer ${TOKEN}" -X  POST "https://fndcatemp2.fnal.gov:3880/api/v1/quota/user/8888" -H "accept: application/json" -H "content-type: application/json"
+```
+
+The `Roles` header takes a comma-delimited list of available roles the user wishes to assert.
+Whether those roles are assigned, of course, depends upon whether the user has actually
+been authorized to have them.
+
+## Deprecation of the "prestore" option
+
+With 9.2, this option is no longer supported, for several reasons.
+See The Book, CHAPTER 18. THE BULK SERVICE, for an explanation.
+
+Note that this change has no effect on the handling of flat/non-recursive
+requests such as those specified by the TAPE REST API.
+
+From the standpoint of the JSON bulk description, we still allow
+for the presence of `prestore`/`preStore`/`pre_store`, etc. so
+that current scripts (if any) do not need to change.  But the
+option will simply be discarded by the frontend resource.

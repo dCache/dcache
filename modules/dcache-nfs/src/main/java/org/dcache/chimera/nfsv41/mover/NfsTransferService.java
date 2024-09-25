@@ -1,6 +1,7 @@
 package org.dcache.chimera.nfsv41.mover;
 
 import com.google.common.collect.Sets;
+import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
@@ -14,9 +15,13 @@ import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellPath;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
+import eu.emi.security.authn.x509.CrlCheckingMode;
+import eu.emi.security.authn.x509.OCSPCheckingMode;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.io.PrintWriter;
 import java.net.BindException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -25,6 +30,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
+import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.time.Instant;
@@ -42,11 +48,12 @@ import java.util.function.Predicate;
 import javax.annotation.Nullable;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
+import org.dcache.chimera.nfsv41.common.LegacyUtils;
 import org.dcache.chimera.nfsv41.common.StatsDecoratedOperationExecutor;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
+import org.dcache.http.JdkSslContextFactory;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.status.BadHandleException;
-import org.dcache.nfs.status.BadStateidException;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.nfs.v4.AbstractOperationExecutor;
 import org.dcache.nfs.v4.CompoundContext;
@@ -68,6 +75,7 @@ import org.dcache.nfs.v4.xdr.nfs4_prot;
 import org.dcache.nfs.v4.xdr.nfs_argop4;
 import org.dcache.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.nfs.v4.xdr.stateid4;
+import org.dcache.oncrpc4j.grizzly.GrizzlyUtils;
 import org.dcache.oncrpc4j.rpc.IoStrategy;
 import org.dcache.oncrpc4j.rpc.OncRpcException;
 import org.dcache.oncrpc4j.rpc.OncRpcProgram;
@@ -83,9 +91,13 @@ import org.dcache.pool.movers.Mover;
 import org.dcache.pool.movers.MoverFactory;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository;
+import org.dcache.util.ByteUnit;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.PortRange;
 import org.dcache.vehicles.DoorValidateMoverMessage;
+import org.glassfish.grizzly.Buffer;
+import org.glassfish.grizzly.memory.MemoryManager;
+import org.glassfish.grizzly.memory.PooledMemoryManager;
 import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -155,6 +167,57 @@ public class NfsTransferService
 
     private CellAddressCore _cellAddress;
 
+
+    /**
+     * Host certificate file.
+     */
+    private String _certFile;
+
+    /**
+     * Host private key file.
+     */
+    private String _keyFile;
+
+    /**
+     * Path to directory CA certificates
+     */
+    private String _caPath;
+
+    /**
+     * Enable RPC-over-TLS for NFS.
+     */
+    private boolean _enableTls;
+
+
+    // This is a workaround for the issue with the grizzly allocator.
+    // (which uses a fraction of heap memory for direct buffers, instead of configured direct memory limit
+    // See: https://github.com/eclipse-ee4j/grizzly/issues/2201
+
+    // as we know in advance how much memory is going to be used, we can pre-calculate the desired fraction.
+    // The expected direct buffer allocation is `<chunk size> * <expected concurrency>` (with an assumption,
+    // that we use only one memory pool, i.g. no grow).
+
+    private final int expectedConcurrency =  GrizzlyUtils.getDefaultWorkerPoolSize();
+    private final int allocationChunkSize = ByteUnit.MiB.toBytes(1); // one pool with 1MB chunks (max NFS rsize)
+    private final float heapFraction = (allocationChunkSize * expectedConcurrency) / (float) Runtime.getRuntime().maxMemory();
+
+    /**
+     * Buffer pool for IO operations.
+     * One pool with 1MB chunks (max NFS rsize).
+     */
+    private final MemoryManager<? extends Buffer> pooledBufferAllocator =
+            new PooledMemoryManager(// one pool with 1MB chunks (max NFS rsize)
+                    allocationChunkSize / 16, // Grizzly allocates at least 16 chunks per slice,
+                                              // for 1MB buffers 16MB in total.
+                                              // Pass 1/16 of the desired buffer size to compensate the over commitment.
+                    1, // number of pools
+                    2, // grow facter per pool, ignored, see above
+                    expectedConcurrency, // expected concurrency
+                    heapFraction, // fraction of heap memory to use for direct buffers
+                    PooledMemoryManager.DEFAULT_PREALLOCATED_BUFFERS_PERCENTAGE,
+                    true  // direct buffers
+            );
+
     @Override
     public void setCellAddress(CellAddressCore address) {
         _cellAddress = address;
@@ -168,7 +231,7 @@ public class NfsTransferService
         );
     }
 
-    public void init() throws IOException, GSSException, OncRpcException {
+    public void init() throws Exception {
 
         tryToStartRpcService();
 
@@ -189,7 +252,7 @@ public class NfsTransferService
         _cleanerExecutor.scheduleAtFixedRate(new MoverResendRedirect(), 30, 30, TimeUnit.SECONDS);
     }
 
-    private void tryToStartRpcService() throws GSSException, IOException {
+    private void tryToStartRpcService() throws Exception {
 
         PortRange portRange;
         int minTcpPort = _minTcpPort;
@@ -242,6 +305,21 @@ public class NfsTransferService
                     RpcLoginService rpcLoginService = (t, gss) -> Subjects.NOBODY;
                     GssSessionManager gss = new GssSessionManager(rpcLoginService);
                     oncRpcSvcBuilder.withGssSessionManager(gss);
+                }
+
+
+                if (_enableTls) {
+                    // FIXME: the certificate reload is not handled
+                    JdkSslContextFactory sslContextFactory = new JdkSslContextFactory();
+                    sslContextFactory.setServerCertificatePath(Path.of(_certFile));
+                    sslContextFactory.setServerKeyPath(Path.of(_keyFile));
+                    sslContextFactory.setServerCaPath(Path.of(_caPath));
+                    sslContextFactory.setOcspCheckingMode(OCSPCheckingMode.IGNORE);
+                    sslContextFactory.setCrlCheckingMode(CrlCheckingMode.IF_VALID);
+                    sslContextFactory.init();
+
+                    oncRpcSvcBuilder.withSSLContext(sslContextFactory.call());
+                    oncRpcSvcBuilder.withStartTLS();
                 }
 
                 _rpcService = oncRpcSvcBuilder.build();
@@ -307,6 +385,22 @@ public class NfsTransferService
         _tcpPortFile = path;
     }
 
+    public void setCertFile(String certFile) {
+        _certFile = certFile;
+    }
+
+    public void setKeyFile(String keyFile) {
+        _keyFile = keyFile;
+    }
+
+    public void setCaPath(String caPath) {
+        _caPath = caPath;
+    }
+
+    public void setEnableTls(boolean enableTls) {
+        _enableTls = enableTls;
+    }
+
     public void shutdown() throws IOException {
         _cleanerExecutor.shutdown();
         _embededDS.getStateHandler().shutdown();
@@ -329,7 +423,7 @@ public class NfsTransferService
     @Override
     public Cancellable executeMover(final NfsMover mover,
             final CompletionHandler<Void, Void> completionHandler)
-            throws DiskErrorCacheException, InterruptedIOException {
+            throws DiskErrorCacheException, InterruptedIOException, CacheException {
         final Cancellable cancellableMover = mover.enable(completionHandler);
         notifyDoorWithRedirect(mover);
 
@@ -341,11 +435,16 @@ public class NfsTransferService
 
     public void notifyDoorWithRedirect(NfsMover mover) {
         CellPath directDoorPath = new CellPath(mover.getPathToDoor().getDestinationAddress());
-        final org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateId = mover.getProtocolInfo()
-              .stateId();
+
+        // REVISIT 11.0: remove drop legacy support
+        // stateid4 stateid = mover.getProtocolInfo().stateId();
+        Object stateObject = mover.getProtocolInfo().stateId();
+        stateid4 stateid = LegacyUtils.toStateid(stateObject);
+
+        // never send legacy stateid.
         _door.notify(directDoorPath,
               new PoolPassiveIoFileMessage<>(_cellAddress.getCellName(), _localSocketAddresses,
-                    legacyStateId,
+                    stateid,
                     _bootVerifier));
     }
 
@@ -387,6 +486,9 @@ public class NfsTransferService
     @Nullable NfsMover getMoverByStateId(CompoundContext context, stateid4 stateid) {
         NfsMover mover = _activeIO.get(stateid);
         if (mover != null) {
+            if (mover.attachSession(context.getSession())) {
+                mover.setLocalEndpoint(context.getRemoteSocketAddress());
+            }
             mover.attachSession(context.getSession());
         }
         return mover;
@@ -551,5 +653,20 @@ public class NfsTransferService
                       notifyDoorWithRedirect(mover);
                   });
         }
+    }
+
+    @Override
+    public void getInfo(PrintWriter pw) {
+        CellInfoProvider.super.getInfo(pw);
+        var endpoint = _rpcService.getInetSocketAddress(IpProtocolType.TCP);
+        pw.printf("   Listening on: %s:%d\n", InetAddresses.toUriString(endpoint.getAddress()), endpoint.getPort());
+    }
+
+    /**
+     * Get IO buffer allocator.
+     * @return IO buffer allocator.
+     */
+    public MemoryManager<? extends Buffer> getIOBufferAllocator() {
+        return pooledBufferAllocator;
     }
 }

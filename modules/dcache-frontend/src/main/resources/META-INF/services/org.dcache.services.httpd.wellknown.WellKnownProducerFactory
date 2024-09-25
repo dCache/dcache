@@ -1,1 +1,2 @@
 org.dcache.restful.providers.wellknown.WellKnownWlcgProducerFactory
+org.dcache.services.httpd.wellknown.security.WellKnownSecurityTxtProducerFactory

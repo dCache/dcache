@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2020 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2020 - 2024 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -28,8 +28,10 @@ import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.zookeeper.CDCLeaderLatchListener;
 import dmg.util.CommandException;
 import dmg.util.command.Command;
+import dmg.util.command.CommandPrefix;
 import java.io.PrintWriter;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.leader.LeaderLatch;
@@ -55,8 +57,16 @@ public class HAServiceLeadershipManager implements CellIdentityAware, CellComman
     private LeaderLatch zkLeaderLatch;
     private LeaderLatchListener leadershipListener;
 
-    public HAServiceLeadershipManager(String serviceName) {
-        createZkLeadershipPath(serviceName);
+    @CommandPrefix
+    private final String cmdServiceName;
+
+    public HAServiceLeadershipManager(String zkServiceName) {
+        this(zkServiceName, zkServiceName);
+    }
+
+    public HAServiceLeadershipManager(String zkServiceName, String cmdServiceName) {
+        this.cmdServiceName = Objects.requireNonNull(cmdServiceName);
+        createZkLeadershipPath(zkServiceName);
     }
 
     @Override
@@ -72,6 +82,10 @@ public class HAServiceLeadershipManager implements CellIdentityAware, CellComman
     @Required
     public void setLeadershipListener(LeaderLatchListener leadershipListener) {
         this.leadershipListener = leadershipListener;
+    }
+
+    public CellAddressCore getLeaderAddress() throws Exception {
+        return new CellAddressCore(zkLeaderLatch.getLeader().getId());
     }
 
     public void shutdown() {

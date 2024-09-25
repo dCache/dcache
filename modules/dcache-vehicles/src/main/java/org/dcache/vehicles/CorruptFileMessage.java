@@ -86,7 +86,7 @@ public class CorruptFileMessage extends Message {
     }
 
     public String toString() {
-        return String.format("%s: (pnfsid %s) (pool %s) – %s", getMessageName(),
+        return String.format("%s: (pnfsid %s) (pool %s) - %s", getMessageName(),
               pnfsId, pool, super.toString());
     }
 }
