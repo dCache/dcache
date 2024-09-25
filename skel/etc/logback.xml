@@ -301,6 +301,12 @@
         <level>error</level>
     </threshold>
     <threshold>
+      <!-- ZK logs transient errors at warning log level, thus confusing dCache admins.
+          See: https://github.com/dCache/dcache/issues/7564 -->
+      <logger>org.apache.zookeeper.ClientCnxn</logger>
+      <level>error</level>
+    </threshold>
+    <threshold>
       <logger>liquibase</logger>
       <level>warn</level>
     </threshold>
