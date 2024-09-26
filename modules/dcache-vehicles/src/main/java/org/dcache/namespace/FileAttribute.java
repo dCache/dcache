@@ -10,7 +10,7 @@ public enum FileAttribute {
     ACCESS_LATENCY,
     ACCESS_TIME,
     ACL,
-    CACHECLASS,    // Not supported before 2.12, so be careful not to send this to pools
+    CACHECLASS,
     CHECKSUM,
     CHANGE_TIME,
     CREATION_TIME,
@@ -32,11 +32,11 @@ public enum FileAttribute {
     /**
      * @since 3.0
      */
-    NLINK,   // Be careful not to send this to pools before next golden release
+    NLINK,
     /**
      * @since 6.2
      */
-    XATTR, // Be careful not to send this to pools before next golden release (7.2)
+    XATTR,
 
     /**
      * @since 7.2
