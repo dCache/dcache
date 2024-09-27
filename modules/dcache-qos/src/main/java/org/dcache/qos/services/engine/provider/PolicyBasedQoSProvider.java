@@ -203,25 +203,14 @@ public class PolicyBasedQoSProvider extends ALRPStorageUnitQoSProvider {
 
         FileAttributes modifiedAttributes = new FileAttributes();
 
-        if (currentAttributes.isDefined(FileAttribute.QOS_POLICY)
-            && !newRequirements.hasRequiredQoSPolicy()) {
-            modifiedAttributes.setQosPolicy(null);  // remove the policy from the stored state
-            modifyRequirements(pnfsId, currentAttributes, modifiedAttributes, newRequirements,
-                  subject);
-            return;
-        }
-
         if (newRequirements.hasRequiredQoSPolicy()) {
             modifiedAttributes.setQosPolicy(newRequirements.getRequiredQoSPolicy());
             modifiedAttributes.setQosState(newRequirements.getRequiredQoSStateIndex());
+        } else {
+            modifiedAttributes.setQosPolicy(null);  // remove the policy from the stored state
         }
 
-        if (canModifyQos(subject, isEnableRoles(), currentAttributes)) {
-            pnfsHandler().setFileAttributes(pnfsId, modifiedAttributes);
-        } else {
-            throw new PermissionDeniedCacheException("User does not have permissions to set "
-                  + "attributes for " + newRequirements.getPnfsId());
-        }
+        modifyRequirements(pnfsId, currentAttributes, modifiedAttributes, newRequirements, subject);
     }
 
     @Required

@@ -28,6 +28,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import diskCacheV111.poolManager.RequestContainerV5.RequestState;
+import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.util.FileExistsCacheException;
@@ -750,7 +751,7 @@ public class Transfer implements Comparable<Transfer> {
     }
 
     private ListenableFuture<Void> readNameSpaceEntryAsync(boolean allowWrite, long timeout) {
-        Set<FileAttribute> attr = EnumSet.of(PNFSID, TYPE, STORAGEINFO, SIZE, CREATION_TIME);
+        Set<FileAttribute> attr = EnumSet.of(PNFSID, TYPE, STORAGEINFO, SIZE, CREATION_TIME, QOS_STATE);
         attr.addAll(_additionalAttributes);
         attr.addAll(PoolMgrSelectReadPoolMsg.getRequiredAttributes());
         Set<AccessMask> mask;
@@ -925,12 +926,21 @@ public class Transfer implements Comparable<Transfer> {
      */
     public ListenableFuture<Void> selectPoolAsync(long timeout) {
 
+        FileAttributes fileAttributes = getFileAttributes();
+
+        // if this is a read, and the file has QoS policy nearline,
+        // then read is forbidden independent of is there cached copy or not.
+        if (!isWrite() && fileAttributes.isDefined(QOS_STATE) &&
+                fileAttributes.getAccessLatency().equals(AccessLatency.NEARLINE)) {
+            return immediateFailedFuture(
+                    new PermissionDeniedCacheException(
+                            "Read is forbidden for file with QoS policy nearline"));
+        }
+
         if (getPool() != null) {
             // we have a valid preselected pool. Let use it as long as clearPoolSelection is not called.
             return immediateFuture(null);
         }
-
-        FileAttributes fileAttributes = getFileAttributes();
 
         ProtocolInfo protocolInfo = getProtocolInfoForPoolManager();
         ListenableFuture<? extends PoolMgrSelectPoolMsg> reply;
