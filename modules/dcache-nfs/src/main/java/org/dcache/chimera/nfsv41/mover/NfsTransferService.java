@@ -38,6 +38,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -188,6 +189,10 @@ public class NfsTransferService
      */
     private boolean _enableTls;
 
+    /**
+     * IP addresses that should be advertised to clients.
+     */
+    private String[] _multipathAddresses;
 
     // This is a workaround for the issue with the grizzly allocator.
     // (which uses a fraction of heap memory for direct buffers, instead of configured direct memory limit
@@ -236,7 +241,12 @@ public class NfsTransferService
         tryToStartRpcService();
 
         int localPort = _rpcService.getInetSocketAddress(IpProtocolType.TCP).getPort();
-        _localSocketAddresses = localSocketAddresses(NetworkUtils.getLocalAddresses(), localPort);
+
+        if (_multipathAddresses == null || _multipathAddresses.length == 0) {
+            _localSocketAddresses = localSocketAddresses(NetworkUtils.getLocalAddresses(), localPort);
+        } else {
+            _localSocketAddresses = localSocketAddresses(_multipathAddresses, localPort);
+        }
 
         _embededDS = new NFSServerV41.Builder()
               .withOperationExecutor(_operationFactory)
@@ -401,6 +411,10 @@ public class NfsTransferService
         _enableTls = enableTls;
     }
 
+    public void setMultipathAddresses(String[] multipathAddresses) {
+        _multipathAddresses = multipathAddresses;
+    }
+
     public void shutdown() throws IOException {
         _cleanerExecutor.shutdown();
         _embededDS.getStateHandler().shutdown();
@@ -459,6 +473,14 @@ public class NfsTransferService
 
     private InetSocketAddress[] localSocketAddresses(Collection<InetAddress> addresses, int port) {
         return addresses.stream().map(address -> new InetSocketAddress(address, port))
+              .toArray(InetSocketAddress[]::new);
+    }
+
+
+    private InetSocketAddress[] localSocketAddresses(String[] addresses, int port) {
+        return Arrays.stream(addresses)
+              .map(InetAddresses::forString)
+              .map(a -> new InetSocketAddress(a, port))
               .toArray(InetSocketAddress[]::new);
     }
 
@@ -659,7 +681,8 @@ public class NfsTransferService
     public void getInfo(PrintWriter pw) {
         CellInfoProvider.super.getInfo(pw);
         var endpoint = _rpcService.getInetSocketAddress(IpProtocolType.TCP);
-        pw.printf("   Listening on: %s:%d\n", InetAddresses.toUriString(endpoint.getAddress()), endpoint.getPort());
+        pw.printf("   Listening on       : %s:%d\n", InetAddresses.toUriString(endpoint.getAddress()), endpoint.getPort());
+        pw.printf("   Multipath addresses: %s\n", Optional.ofNullable(_multipathAddresses).map(Arrays::toString));
     }
 
     /**

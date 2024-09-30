@@ -366,6 +366,7 @@
       <property name="certFile" value="${pool.mover.nfs.hostcert.cert}"/>
       <property name="keyFile" value="${pool.mover.nfs.hostcert.key}"/>
       <property name="caPath" value="${pool.mover.nfs.capath}"/>
+      <property name="multipathAddresses" value="${pool.mover.nfs.multipath}"/>
   </bean>
 
   <bean id="signing-policy"
