@@ -64,7 +64,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
     private String _status = "None";
     private boolean _io_ok = true;
     private Exception ioException = null;
-    private long _ioError = -1;
+
     private PnfsId _pnfsId;
     private int _sessionId = -1;
 
@@ -259,13 +259,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         //    Prepare the tunable parameters                                  //
         //                                                                    //
 
-        try {
-            String io = storage.getKey("io-error");
-            if (io != null) {
-                _ioError = Long.parseLong(io);
-            }
-        } catch (NumberFormatException e) { /* bad values are ignored */}
-        _log.info("ioError = {}", _ioError);
         MoverIoBuffer bufferSize = new MoverIoBuffer(_defaultBufferSize);
         _log.info("Client : Buffer Sizes : {}", bufferSize);
         _bigBuffer = ByteBuffer.allocate(bufferSize.getIoBufferSize());
@@ -938,10 +931,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
                 }
                 rest -= rc;
                 _bytesTransferred += rc;
-                if ((_ioError > 0L) &&
-                      (_bytesTransferred > _ioError)) {
-                    _io_ok = false;
-                }
             }
 
             _log.debug("Block Done");
@@ -996,10 +985,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
             socketChannel.write(_bigBuffer);
             rest -= rc;
             _bytesTransferred += rc;
-            if ((_ioError > 0L) && (_bytesTransferred > _ioError)) {
-                _io_ok = false;
-                break;
-            }
             if (rest <= 0) {
                 break;
             }
