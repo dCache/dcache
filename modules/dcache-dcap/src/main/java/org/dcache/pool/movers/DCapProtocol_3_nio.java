@@ -17,6 +17,7 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import java.io.EOFException;
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -723,7 +724,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
                     if (rc <= 0) {
                         break;
                     }
-                } catch (ClosedByInterruptException ee) {
+                } catch (ClosedByInterruptException | InterruptedIOException ee) {
                     // clear interrupted state
                     Thread.interrupted();
                     throw new InterruptedException(ee.getMessage());
@@ -917,7 +918,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
 
                         _bigBuffer.flip();
                         bytesAdded += fileChannel.write(_bigBuffer);
-                    } catch (ClosedByInterruptException ee) {
+                    } catch (ClosedByInterruptException | InterruptedIOException ee) {
                         // clear interrupted state
                         Thread.interrupted();
                         throw new InterruptedException(ee.getMessage());
