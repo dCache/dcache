@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 - 2023 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2024 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -519,7 +519,7 @@ public class NearlineStorageHandler
      */
     private abstract static class AbstractRequest<K> implements Comparable<AbstractRequest<K>> {
 
-        protected enum State {QUEUED, ACTIVE, CANCELED}
+        protected enum State {QUEUED, ACTIVE, CANCELED, REMOVED}
 
         private final List<CompletionHandler<Void, K>> callbacks = new ArrayList<>();
         protected final long createdAt = System.currentTimeMillis();
@@ -650,7 +650,7 @@ public class NearlineStorageHandler
         }
 
         public void removeFromQueue() {
-            State currentState = state.get();
+            State currentState = state.getAndSet(State.REMOVED);
             switch (currentState) {
                 case QUEUED:
                     decQueued();
@@ -660,6 +660,9 @@ public class NearlineStorageHandler
                     break;
                 case CANCELED:
                     decCanceled();
+                    break;
+                case REMOVED:
+                    LOGGER.warn("Request {} was already removed from the queue.", this);
                     break;
                 default:
                     throw new RuntimeException();
