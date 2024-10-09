@@ -18,6 +18,11 @@ jobs:
         run: |
           echo "current_branch=$(echo ${{ github.head_ref }})" >> $GITHUB_ENV
 
+      - name: Redefine branch on push
+        if: github.event_name == 'push'
+        run: |
+          echo "current_branch=$(echo ${{ github.ref }} | sed -E 's|refs/[a-zA-Z]+/||')" >> $GITHUB_ENV
+
       - name: Mirror + trigger CI
         uses: SvanBoxel/gitlab-mirror-and-ci-action@0.6
         with:
