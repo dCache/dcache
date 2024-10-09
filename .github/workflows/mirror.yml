@@ -13,16 +13,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Redefine branch on pull_request
-        if: github.event_name == 'pull_request'
-        run: |
-          echo "current_branch=$(echo ${{ github.head_ref }})" >> $GITHUB_ENV
-
-      - name: Redefine branch on push
-        if: github.event_name == 'push'
-        run: |
-          echo "current_branch=$(echo ${{ github.ref }} | sed -E 's|refs/[a-zA-Z]+/||')" >> $GITHUB_ENV
-
       - name: Mirror + trigger CI
         uses: SvanBoxel/gitlab-mirror-and-ci-action@0.6
         with:
@@ -36,4 +26,3 @@ jobs:
           GITLAB_PROJECT_ID: "21"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           POLL_TIMEOUT: 60
-          GITHUB_REF_NAME: ${{ env.current_branch }} # Overwrite the branch name for pull requests
