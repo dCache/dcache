@@ -31,4 +31,4 @@ jobs:
           GITLAB_PROJECT_ID: "21"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           POLL_TIMEOUT: 60
-          CHECKOUT_BRANCH: ${{ env.current_branch }} # New non-GITHUB variable to make push and PR work
+          GITHUB_REF_NAME: ${{ env.current_branch }} # Overwrite the branch name for pull requests
