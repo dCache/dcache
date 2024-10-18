@@ -62,7 +62,7 @@
 
         <version.slf4j>1.7.32</version.slf4j>
         <version.milton>2.7.3.0-dcache-1</version.milton>
-        <version.spring>5.3.39</version.spring>
+        <version.spring>6.1.14</version.spring>
         <!-- Remember to sync aspectj version in dcache.properties -->
         <version.aspectj>1.9.21.2</version.aspectj>
         <version.smc>6.6.0</version.smc>
