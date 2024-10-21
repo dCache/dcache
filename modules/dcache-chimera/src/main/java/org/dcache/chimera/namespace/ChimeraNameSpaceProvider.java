@@ -846,7 +846,7 @@ public class ChimeraNameSpaceProvider
     public PnfsId pathToPnfsid(Subject subject, String path, boolean followLink)
           throws CacheException {
         try {
-            // TODO this case is used when downloading files in webdav, cold be done in smarter way
+            // TODO this case is used when downloading files in webdav, could be done in smarter way
             if (path.startsWith("/.(collection)") && path.contains(")/")) {
 
                 long inodeNum = Long.parseLong(
