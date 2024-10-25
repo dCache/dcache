@@ -1696,6 +1696,9 @@ public class DcacheResourceFactory
         }
 
         protected ProtocolInfo createProtocolInfo(InetSocketAddress address) {
+            List<ChecksumType> wantedChecksums = _wantedChecksum == null
+                    ? Collections.emptyList()
+                    : List.of(_wantedChecksum);
             HttpProtocolInfo protocolInfo =
                   new HttpProtocolInfo(
                         _isSSL ? PROTOCOL_INFO_SSL_NAME : PROTOCOL_INFO_NAME,
@@ -1706,7 +1709,7 @@ public class DcacheResourceFactory
                         _requestPath,
                         _location,
                         _disposition,
-                        _wantedChecksum);
+                        wantedChecksums);
             protocolInfo.setSessionId((int) getId());
             return protocolInfo;
         }
