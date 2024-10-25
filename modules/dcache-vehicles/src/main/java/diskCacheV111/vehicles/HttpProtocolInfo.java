@@ -1,8 +1,13 @@
 package diskCacheV111.vehicles;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
-import java.util.Optional;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import org.dcache.util.ChecksumType;
 
 /**
@@ -42,7 +47,10 @@ public class HttpProtocolInfo implements IpProtocolInfo {
     private final String httpDoorDomainName;
     private final String path;
     private final URI _location;
+    @Nullable
     private final ChecksumType _wantedChecksum;
+    @Nonnull
+    private Set<ChecksumType> _wantedChecksums;
 
     private final Disposition _disposition;
 
@@ -55,7 +63,7 @@ public class HttpProtocolInfo implements IpProtocolInfo {
           String path,
           URI location) {
         this(protocol, major, minor, clientSocketAddress, httpDoorCellName,
-              httpDoorDomainName, path, location, null, null);
+              httpDoorDomainName, path, location, null, Collections.emptyList());
     }
 
     public HttpProtocolInfo(String protocol, int major, int minor,
@@ -66,9 +74,15 @@ public class HttpProtocolInfo implements IpProtocolInfo {
           URI location,
           Disposition disposition) {
         this(protocol, major, minor, clientSocketAddress, httpDoorCellName,
-              httpDoorDomainName, path, location, disposition, null);
+              httpDoorDomainName, path, location, disposition,
+              Collections.emptyList());
     }
 
+    /**
+     * @param wantedChecksums Desired checksum to calculate for this transfer.
+     * The first checksum is used as a fall-back for old pools that only support
+     * a single checksum.
+     */
     public HttpProtocolInfo(String protocol, int major, int minor,
           InetSocketAddress clientSocketAddress,
           String httpDoorCellName,
@@ -76,7 +90,8 @@ public class HttpProtocolInfo implements IpProtocolInfo {
           String path,
           URI location,
           Disposition disposition,
-          ChecksumType wantedChecksum) {
+          @Nonnull
+          List<ChecksumType> wantedChecksums) {
         _name = protocol;
         _minor = minor;
         _major = major;
@@ -86,7 +101,8 @@ public class HttpProtocolInfo implements IpProtocolInfo {
         this.path = path;
         _location = location;
         _disposition = disposition;
-        _wantedChecksum = wantedChecksum;
+        _wantedChecksum = wantedChecksums.isEmpty() ? null : wantedChecksums.get(0);
+        _wantedChecksums = Set.copyOf(wantedChecksums);
     }
 
     public String getHttpDoorCellName() {
@@ -109,8 +125,8 @@ public class HttpProtocolInfo implements IpProtocolInfo {
         _sessionId = sessionId;
     }
 
-    public Optional<ChecksumType> getWantedChecksum() {
-        return Optional.ofNullable(_wantedChecksum);
+    public Set<ChecksumType> getWantedChecksums() {
+        return _wantedChecksums;
     }
 
     //
@@ -196,6 +212,18 @@ public class HttpProtocolInfo implements IpProtocolInfo {
      */
     public Disposition getDisposition() {
         return _disposition != null ? _disposition : Disposition.ATTACHMENT;
+    }
+
+    private void readObject(java.io.ObjectInputStream stream)
+          throws ClassNotFoundException, IOException {
+        stream.defaultReadObject();
+
+        // Handle objects sent from old doors.
+        if (_wantedChecksums == null) {
+            _wantedChecksums = _wantedChecksum == null
+                    ? Collections.emptySet()
+                    : Set.of(_wantedChecksum);
+        }
     }
 }
 
