@@ -238,7 +238,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
         _channel = new MoverChannel<>(access, attributes, info, channel);
 
         channel.optionallyAs(ChecksumChannel.class).ifPresent(c -> {
-            info.getDesiredChecksum().ifPresent(t -> {
+            info.getDesiredChecksums().forEach(t -> {
                 try {
                     c.addType(t);
                 } catch (IOException e) {

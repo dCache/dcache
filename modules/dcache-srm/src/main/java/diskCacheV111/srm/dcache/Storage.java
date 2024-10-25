@@ -151,6 +151,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -1784,7 +1785,7 @@ public final class Storage
                       remoteTURL.toString(), isVerifyRequired(extraInfo),
                       httpHeaders(extraInfo),
                       credential,
-                      Optional.empty());
+                      Collections.emptyList());
                 break;
 
             case "http":
@@ -1792,7 +1793,7 @@ public final class Storage
                       1, 1, remoteAddr,
                       remoteTURL.toString(), isVerifyRequired(extraInfo),
                       httpHeaders(extraInfo),
-                      Optional.empty());
+                      Collections.emptyList());
                 break;
 
             default:
