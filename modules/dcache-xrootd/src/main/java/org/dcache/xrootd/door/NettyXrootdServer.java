@@ -1,3 +1,4 @@
+
 package org.dcache.xrootd.door;
 
 import static org.dcache.xrootd.plugins.tls.SSLHandlerFactory.SERVER_TLS;
@@ -286,7 +287,8 @@ public class NettyXrootdServer implements CellIdentityAware {
                       }
 
                       XrootdRedirectHandler handler = new XrootdRedirectHandler(_door, _rootPath,
-                            _requestExecutor, _queryConfig, _appIoQueues);
+										_requestExecutor, _queryConfig,
+										_appIoQueues, _expectProxyProtocol);
                       handler.setSigningPolicy(_signingPolicy);
                       handler.setTlsSessionInfo(tlsSessionInfo);
                       pipeline.addLast("redirector", handler);
