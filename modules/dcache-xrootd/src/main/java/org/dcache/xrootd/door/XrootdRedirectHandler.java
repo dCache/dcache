@@ -234,6 +234,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
     private final Deque<LoginSessionInfo> _logins;
     private final FsPath _rootPath;
     private final AtomicInteger openRetry = new AtomicInteger(0);
+    private boolean _expectProxy;
 
     /**
      * Custom entries for kXR_Qconfig requests.
@@ -247,9 +248,13 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
      */
     private volatile Thread onOpenThread;
 
-    public XrootdRedirectHandler(XrootdDoor door, FsPath rootPath, ExecutorService executor,
-          Map<String, String> queryConfig,
-          Map<String, String> appIoQueues) {
+    public XrootdRedirectHandler(XrootdDoor door,
+				 FsPath rootPath,
+				 ExecutorService executor,
+				 Map<String, String> queryConfig,
+				 Map<String, String> appIoQueues,
+				 boolean expectProxy
+				 ) {
         super(executor);
         _door = door;
         _rootPath = rootPath;
@@ -257,6 +262,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
         _appIoQueues = appIoQueues;
         _defaultLoginSessionInfo = new LoginSessionInfo(Restrictions.denyAll());
         _logins = new ArrayDeque<>(2);
+	_expectProxy = expectProxy;
     }
 
     @Override
@@ -516,7 +522,8 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
          * Use the advertised endpoint, if possble, otherwise fall back to the
          * address to which the client connected.
          */
-        return _door.publicEndpoint().orElse(getDestinationAddress());
+        return _expectProxy ? getDestinationAddress() :
+	    _door.publicEndpoint().orElse(getDestinationAddress());
     }
 
     /**
