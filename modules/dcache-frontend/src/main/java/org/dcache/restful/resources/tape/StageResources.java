@@ -115,6 +115,8 @@ import org.dcache.util.TimeUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.stereotype.Component;
 
@@ -127,6 +129,7 @@ import org.springframework.stereotype.Component;
 @Api(value = "tape", authorizations = {@Authorization("basicAuth")})
 @Path("tape/stage")
 public final class StageResources {
+    private static final Logger LOGGER = LoggerFactory.getLogger(StageResources.class);
     private static final String STAGE = "STAGE";
 
     @Context
@@ -167,6 +170,8 @@ public final class StageResources {
     @PathParam("id") String id) {
         Subject subject = getSubject();
         Restriction restriction = getRestriction();
+        FsPath userRoot = LoginAttributes.getUserRoot(getLoginAttributes(request));
+        FsPath rootPath = pathMapper.effectiveRoot(userRoot, ForbiddenException::new);
 
         BulkRequestInfo lastInfo = null;
         List<BulkRequestTargetInfo> targetInfos = new ArrayList<>();
@@ -187,6 +192,7 @@ public final class StageResources {
             offset = lastInfo.getNextId();
         }
 
+	targetInfos.forEach(ti -> ti.setTarget(FsPath.create(ti.getTarget()).stripPrefix(rootPath)));
         lastInfo.setTargets(targetInfos);
 
         return new StageRequestInfo(lastInfo);
@@ -218,7 +224,9 @@ public final class StageResources {
                 + "does not belong to that stage request, this request will fail.", required = true)
                 String requestPayload) {
 
-        JSONObject reqPayload;
+	FsPath userRoot = LoginAttributes.getUserRoot(getLoginAttributes(request));
+        FsPath rootPath = pathMapper.effectiveRoot(userRoot, ForbiddenException::new);
+	JSONObject reqPayload;
         JSONArray paths;
         try {
             reqPayload = new JSONObject(requestPayload);
@@ -233,7 +241,9 @@ public final class StageResources {
         List<String> targetPaths = new ArrayList<>();
         int len = paths.length();
         for (int i = 0; i < len; ++i) {
-            targetPaths.add(paths.getString(i));
+	    String requestPath = paths.getString(i);
+	    String path = rootPath.chroot(requestPath).toString();
+            targetPaths.add(path);
         }
 
         Subject subject = getSubject();
@@ -390,11 +400,13 @@ public final class StageResources {
                 if (!file.has("path")) {
                     throw new BadRequestException("file object " + i + " has no path.");
                 }
-                String path = file.getString("path");
+                String requestPath = file.getString("path");
+		String path = rootPath.chroot(requestPath).toString();
                 paths.add(path);
                 if (file.has("diskLifetime")) {
                     jsonLifetimes.put(path,
                           TimeUtils.validateDuration(file.getString("diskLifetime")));
+		    LOGGER.error("Path {}, diskLifetime {}, {}", path, file.getString("diskLifetime"),  TimeUtils.validateDuration(file.getString("diskLifetime")));
                 }
                 if (file.has("targetedMetadata")) {
                     getTargetedMetadataForPath(file).ifPresent(mdata ->
