@@ -115,8 +115,6 @@ import org.dcache.util.TimeUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.stereotype.Component;
 
@@ -129,7 +127,6 @@ import org.springframework.stereotype.Component;
 @Api(value = "tape", authorizations = {@Authorization("basicAuth")})
 @Path("tape/stage")
 public final class StageResources {
-    private static final Logger LOGGER = LoggerFactory.getLogger(StageResources.class);
     private static final String STAGE = "STAGE";
 
     @Context
@@ -406,7 +403,6 @@ public final class StageResources {
                 if (file.has("diskLifetime")) {
                     jsonLifetimes.put(path,
                           TimeUtils.validateDuration(file.getString("diskLifetime")));
-		    LOGGER.error("Path {}, diskLifetime {}, {}", path, file.getString("diskLifetime"),  TimeUtils.validateDuration(file.getString("diskLifetime")));
                 }
                 if (file.has("targetedMetadata")) {
                     getTargetedMetadataForPath(file).ifPresent(mdata ->
