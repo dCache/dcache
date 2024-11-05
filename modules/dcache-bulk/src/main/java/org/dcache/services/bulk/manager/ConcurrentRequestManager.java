@@ -405,6 +405,7 @@ public final class ConcurrentRequestManager implements BulkRequestManager {
         if (processorFuture != null) {
             processorFuture.cancel(true);
         }
+        processorExecutorService.shutdown();
         requestJobs = null;
         cancelledTargets = null;
         requestStore.clearCache();

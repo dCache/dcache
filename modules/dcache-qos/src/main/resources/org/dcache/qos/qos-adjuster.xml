@@ -67,7 +67,7 @@
   <bean id="adjuster-executor" class="org.dcache.util.CDCExecutorServiceDecorator">
     <description>Preserves the QOS session id generated for the task.</description>
     <constructor-arg>
-      <bean class="org.dcache.util.BoundedCachedExecutor">
+      <bean class="org.dcache.util.BoundedCachedExecutor" destroy-method="shutdown">
         <constructor-arg value="${qos.limits.adjuster.submit-threads}"/>
       </bean>
     </constructor-arg>
