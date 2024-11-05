@@ -262,7 +262,7 @@
     <property name="requestStore" ref="request-store"/>
   </bean>
 
-  <bean id="request-manager" class="org.dcache.services.bulk.manager.ConcurrentRequestManager">
+  <bean id="request-manager" class="org.dcache.services.bulk.manager.ConcurrentRequestManager" destroy-method="shutdown">
     <description>Core of the service which manages the request and target job lifecycle.</description>
     <property name="statistics" ref="statistics"/>
     <property name="targetStore" ref="target-store"/>
