@@ -159,6 +159,9 @@ public final class ReleaseResources {
         JSONArray paths;
         List<String> targetPaths;
 
+	FsPath userRoot = LoginAttributes.getUserRoot(getLoginAttributes(request));
+        FsPath rootPath = pathMapper.effectiveRoot(userRoot, ForbiddenException::new);
+
         try {
             JSONObject reqPayload = new JSONObject(requestPayload);
             paths = reqPayload.getJSONArray("paths");
@@ -170,7 +173,9 @@ public final class ReleaseResources {
             int len = paths.length();
             targetPaths = new ArrayList<>();
             for (int i = 0; i < len; ++i) {
-                targetPaths.add(paths.getString(i));
+		String requestPath = paths.getString(i);
+		String path = rootPath.chroot(requestPath).toString();
+		targetPaths.add(path);
             }
         } catch (JSONException e) {
             throw newBadRequestException(requestPayload, e);
@@ -178,8 +183,6 @@ public final class ReleaseResources {
 
         Subject subject = getSubject();
         Restriction restriction = getRestriction();
-        FsPath userRoot = LoginAttributes.getUserRoot(getLoginAttributes(request));
-        FsPath rootPath = pathMapper.effectiveRoot(userRoot, ForbiddenException::new);
 
         /*
          *  For WLCG, this is a fire-and-forget request, so it does not need to
