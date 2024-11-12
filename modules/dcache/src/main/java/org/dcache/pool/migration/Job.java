@@ -109,7 +109,7 @@ public class Job
               context.getExecutor(), definition.selectionStrategy,
               definition.poolList, definition.isEager, definition.isMetaOnly,
               definition.computeChecksumOnUpdate, definition.forceSourceMode,
-              definition.maintainAtime, definition.replicas);
+              definition.maintainAtime, definition.replicas, definition.waitForTargets);
 
         _pinPrefix = context.getPinManagerStub().getDestinationPath().getDestinationAddress()
               .getCellName();
