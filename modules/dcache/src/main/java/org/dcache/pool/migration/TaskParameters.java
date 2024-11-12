@@ -88,11 +88,16 @@ public class TaskParameters {
      */
     public final int replicas;
 
+    /**
+     * Whether to wait for targets to become available to satisfy number of replicas.
+     */
+    public final boolean waitForTargets;
+
     public TaskParameters(CellStub pool, CellStub pnfs, CellStub pinManager,
           ScheduledExecutorService executor,
           PoolSelectionStrategy selectionStrategy, RefreshablePoolList poolList, boolean isEager,
           boolean isMetaOnly, boolean computeChecksumOnUpdate, boolean forceSourceMode,
-          boolean maintainAtime, int replicas) {
+          boolean maintainAtime, int replicas, boolean waitForTargets) {
         this.pool = pool;
         this.pnfs = pnfs;
         this.pinManager = pinManager;
@@ -105,5 +110,6 @@ public class TaskParameters {
         this.forceSourceMode = forceSourceMode;
         this.maintainAtime = maintainAtime;
         this.replicas = replicas;
+        this.waitForTargets = waitForTargets;
     }
 }
