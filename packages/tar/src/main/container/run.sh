@@ -10,7 +10,15 @@ fi
 echo $DOMAIN
 
 DCACHE_HOME=${DCACHE_INSTALL_DIR}
-export CLASSPATH=${DCACHE_HOME}/share/classes/*
+
+PLUGINS_CLASSPATH=""
+if [ -d ${DCACHE_HOME}/share/plugins ]
+then
+  PLUGINS_CLASSPATH=`find ${DCACHE_HOME}/share/plugins -type f -name \*.jar -printf "%p:"`
+fi
+
+export CLASSPATH=${DCACHE_HOME}/share/classes/*:${PLUGINS_CLASSPATH}
+
 
 # we hope that there is only one agent file and it the right one
 ASPECT_AGENT=`ls ${DCACHE_HOME}/share/classes/aspectjweaver-*.jar`
