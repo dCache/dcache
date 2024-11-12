@@ -798,8 +798,7 @@ possible to configure pools so they are limited.
 Finally, dCache can be started now.
 
 There are two ways to start dCache. These are as a classic `sysV` -like daemon or as a  `systemd` service.
-The latter one is preferred and enforced by default when the hosts operating system supports it. To change this
-be behavior set
+The latter one is preferred and enforced by default when the hosts operating system supports it. To change this behavior set
 
 ```
 dcache.systemd.strict=false
@@ -1328,14 +1327,14 @@ output from the billing service and, by default, is written as files
 in the directory based on the year and month; e.g.,
 `/var/lib/dcache/billing/2019/07`.
 
-The file's contain considerable information about each time a file is
+The files contain considerable information about each time a file is
 uploaded into dCache, written to tape, read back from tape, internally
 (within dCache) copied, read back by a client, and deleted.  This
 often proves very useful in understanding why a file is no longer
 present, or checking when a file was written to tape.
 
 Whenever a file is transferred between a client and dCache, two
-records a written: one from the door and one from the pool.  Also,
+records are written: one from the door and one from the pool.  Also,
 when a file is deleted, the door writes a billing record when the file
 is deleted in the namespace, and the pool writes a record when the
 file's data is removed.
