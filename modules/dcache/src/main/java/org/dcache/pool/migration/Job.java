@@ -785,6 +785,18 @@ public class Job
         }
     }
 
+    @Override
+    public void taskCompletedWithNote(Task task, String msg) {
+        _lock.lock();
+        try {
+            taskCompleted(task);
+
+            addNote(new Note(task.getId(), task.getPnfsId(), msg));
+        } finally {
+            _lock.unlock();
+        }
+    }
+
     public Object messageArrived(CellMessage envelope, PoolMigrationJobCancelMessage message) {
         DelayedReply reply = new DelayedReply();
         _lock.lock();
