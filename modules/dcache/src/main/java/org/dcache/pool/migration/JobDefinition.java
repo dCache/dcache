@@ -103,6 +103,12 @@ public class JobDefinition {
      */
     public final int replicas;
 
+    /**
+     * Whether to wait for targets to become available to satisfy number of replicas.
+     */
+    public final boolean waitForTargets;
+
+
     public JobDefinition(Predicate<CacheEntry> filter,
           CacheEntryMode sourceMode,
           CacheEntryMode targetMode,
@@ -120,7 +126,8 @@ public class JobDefinition {
           boolean maintainAtime,
           Expression pauseWhen,
           Expression stopWhen,
-          boolean forceSourceMode) {
+          boolean forceSourceMode,
+          boolean waitForTargets) {
         this.filter = filter;
         this.sourceMode = sourceMode;
         this.targetMode = targetMode;
@@ -139,5 +146,6 @@ public class JobDefinition {
         this.pauseWhen = pauseWhen;
         this.stopWhen = stopWhen;
         this.forceSourceMode = forceSourceMode;
+        this.waitForTargets = waitForTargets;
     }
 }

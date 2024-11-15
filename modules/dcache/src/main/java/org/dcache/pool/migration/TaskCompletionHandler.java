@@ -26,4 +26,5 @@ public interface TaskCompletionHandler {
      * The task completed without error.
      */
     void taskCompleted(Task task);
+    default void taskCompletedWithNote(Task task, String msg) { taskCompleted(task); }
 }

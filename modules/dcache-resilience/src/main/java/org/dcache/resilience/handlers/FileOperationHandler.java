@@ -380,7 +380,8 @@ public class FileOperationHandler implements CellMessageSender {
               false,  // compute checksum on update; should not happen
               false,  // force copy even if pool not readable
               true,   // maintain atime
-              1);
+              1,       // only one copy per task
+              true);   // wait for new targets if necessary
 
         Task task = new Task(taskParameters, completionHandler, source, pnfsId,
               ReplicaState.CACHED, ONLINE_STICKY_RECORD,

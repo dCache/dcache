@@ -81,7 +81,7 @@ public class Job
     private final Set<PnfsId> _queued = new LinkedHashSet<>();
     private final Map<PnfsId, Long> _sizes = new HashMap<>();
     private final Map<PnfsId, Task> _running = new HashMap<>();
-    private final BlockingQueue<Error> _errors = new ArrayBlockingQueue<>(15);
+    private final BlockingQueue<Note> _notes = new ArrayBlockingQueue<>(15);
     private final Map<PoolMigrationJobCancelMessage, DelayedReply> _cancelRequests =
           new HashMap<>();
 
@@ -109,7 +109,7 @@ public class Job
               context.getExecutor(), definition.selectionStrategy,
               definition.poolList, definition.isEager, definition.isMetaOnly,
               definition.computeChecksumOnUpdate, definition.forceSourceMode,
-              definition.maintainAtime, definition.replicas);
+              definition.maintainAtime, definition.replicas, definition.waitForTargets);
 
         _pinPrefix = context.getPinManagerStub().getDestinationPath().getDestinationAddress()
               .getCellName();
@@ -189,11 +189,11 @@ public class Job
         }
     }
 
-    public void addError(Error error) {
+    public void addNote(Note note) {
         _lock.lock();
         try {
-            while (!_errors.offer(error)) {
-                _errors.poll();
+            while (!_notes.offer(note)) {
+                _notes.poll();
             }
         } finally {
             _lock.unlock();
@@ -255,10 +255,10 @@ public class Job
                 task.getInfo(pw);
             }
 
-            if (!_errors.isEmpty()) {
-                pw.println("Most recent errors:");
-                for (Error error : _errors) {
-                    pw.println(error);
+            if (!_notes.isEmpty()) {
+                pw.println("Most recent notes:");
+                for (Note note : _notes) {
+                    pw.println(note);
                 }
             }
         } finally {
@@ -516,7 +516,7 @@ public class Job
 
                 PnfsId pnfsId = i.next();
                 if (!_context.lock(pnfsId)) {
-                    addError(new Error(0, pnfsId, "File is locked"));
+                    addNote(new Note(0, pnfsId, "File is locked"));
                     continue;
                 }
 
@@ -742,7 +742,7 @@ public class Job
                 schedule();
             }
 
-            addError(new Error(task.getId(), pnfsId, msg));
+            addNote(new Note(task.getId(), pnfsId, msg));
         } finally {
             _lock.unlock();
         }
@@ -761,7 +761,7 @@ public class Job
             _context.unlock(pnfsId);
             schedule();
 
-            addError(new Error(task.getId(), pnfsId, msg));
+            addNote(new Note(task.getId(), pnfsId, msg));
         } finally {
             _lock.unlock();
         }
@@ -780,6 +780,18 @@ public class Job
             _context.unlock(pnfsId);
             _statistics.addCompleted(_sizes.remove(pnfsId));
             schedule();
+        } finally {
+            _lock.unlock();
+        }
+    }
+
+    @Override
+    public void taskCompletedWithNote(Task task, String msg) {
+        _lock.lock();
+        try {
+            taskCompleted(task);
+
+            addNote(new Note(task.getId(), task.getPnfsId(), msg));
         } finally {
             _lock.unlock();
         }
@@ -939,23 +951,23 @@ public class Job
         return expression.evaluateBoolean(symbols);
     }
 
-    protected static class Error {
+    protected static class Note {
 
         private final long _id;
         private final long _time;
         private final PnfsId _pnfsId;
-        private final String _error;
+        private final String _note;
 
-        public Error(long id, PnfsId pnfsId, String error) {
+        public Note(long id, PnfsId pnfsId, String note) {
             _id = id;
             _time = System.currentTimeMillis();
             _pnfsId = pnfsId;
-            _error = error;
+            _note = note;
         }
 
         public String toString() {
             return String.format("%tT [%d] %s: %s",
-                  _time, _id, _pnfsId, _error);
+                  _time, _id, _pnfsId, _note);
         }
     }
 }

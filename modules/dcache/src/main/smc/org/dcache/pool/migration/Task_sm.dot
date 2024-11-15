@@ -1,0 +1,410 @@
+digraph Task {
+
+    node
+        [shape=Mrecord width=1.5];
+
+    subgraph cluster_TASK {
+
+        label="TASK";
+
+        //
+        // States (Nodes)
+        //
+
+        "TASK::Queued"
+            [label="{Queued|Default()/\l}"];
+
+        "TASK::GettingLocations"
+            [label="{GettingLocations|Entry/\l&nbsp;&nbsp;&nbsp;queryLocations();\l|Default()/\l}"];
+
+        "TASK::UpdatingExistingFile"
+            [label="{UpdatingExistingFile|Entry/\l&nbsp;&nbsp;&nbsp;updateExistingReplica();\l|copy_noroute()\l\[ ctxt.hasMoreLocations() \]/\l&nbsp;&nbsp;&nbsp;updateExistingReplica();\lcopy_failure(rc: Integer, cause: Object)\l\[ ctxt.hasMoreLocations() \]/\l&nbsp;&nbsp;&nbsp;updateExistingReplica();\lDefault()/\l}"];
+
+        "TASK::InitiatingCopy"
+            [label="{InitiatingCopy|Entry/\l&nbsp;&nbsp;&nbsp;initiateCopy();\l|Default()/\l}"];
+
+        "TASK::WaitingForCopyReplicaReply"
+            [label="{WaitingForCopyReplicaReply|Default()/\l}"];
+
+        "TASK::Copying"
+            [label="{Copying|Entry/\l&nbsp;&nbsp;&nbsp;startTimer(ctxt.getPingPeriod());\lExit/\l&nbsp;&nbsp;&nbsp;stopTimer();\l|Default()/\l}"];
+
+        "TASK::Pinging"
+            [label="{Pinging|Entry/\l&nbsp;&nbsp;&nbsp;ping();\l|Default()/\l}"];
+
+        "TASK::NoResponse"
+            [label="{NoResponse|Entry/\l&nbsp;&nbsp;&nbsp;startTimer(ctxt.getNoResponseTimeout());\lExit/\l&nbsp;&nbsp;&nbsp;stopTimer();\l|timer()/\l&nbsp;&nbsp;&nbsp;ping();\lDefault()/\l}"];
+
+        "TASK::WaitingForCopyFinishedMessage"
+            [label="{WaitingForCopyFinishedMessage|Entry/\l&nbsp;&nbsp;&nbsp;startTimer(ctxt.getTaskDeadTimeout());\lExit/\l&nbsp;&nbsp;&nbsp;stopTimer();\l|Default()/\l}"];
+
+        "TASK::MovingPin"
+            [label="{MovingPin|Entry/\l&nbsp;&nbsp;&nbsp;movePin();\l|Default()/\l}"];
+
+        "TASK::Cancelling"
+            [label="{Cancelling|Entry/\l&nbsp;&nbsp;&nbsp;startTimer(ctxt.getTaskDeadTimeout());\l&nbsp;&nbsp;&nbsp;cancelCopy();\lExit/\l&nbsp;&nbsp;&nbsp;stopTimer();\l|cancel_success()/\lcancel_failure(rc: Integer, cause: Object)/\lcancel_timeout()/\lDefault()/\l}"];
+
+        "TASK::Cancelled"
+            [label="{Cancelled|Entry/\l&nbsp;&nbsp;&nbsp;notifyCancelled();\l|Default()/\l}"];
+
+        "TASK::Failed"
+            [label="{Failed|Default()/\l}"];
+
+        "TASK::Done"
+            [label="{Done|Entry/\l|Default()/\l}"];
+
+        "%start"
+            [label="" shape=circle style=filled fillcolor=black width=0.25];
+
+        //
+        // Transitions (Edges)
+        //
+
+        "TASK::Queued" -> "TASK::GettingLocations"
+            [label="startWithoutLocations()/\l"];
+
+        "TASK::Queued" -> "TASK::UpdatingExistingFile"
+            [label="startWithLocations()\l\[ ctxt.hasMoreLocations() \]/\l"];
+
+        "TASK::Queued" -> "TASK::InitiatingCopy"
+            [label="startWithLocations()\l\[ !ctxt.isMetaOnly() \]/\l"];
+
+        "TASK::Queued" -> "TASK::Failed"
+            [label="startWithLocations()/\lfailPermanently(FILE_NOT_IN_REPOSITORY, \"File skipped because it has no existing replicas\");\l"];
+
+        "TASK::GettingLocations" -> "TASK::Failed"
+            [label="query_timeout()/\lfail(TIMEOUT, \"PnfsManager failed (no response)\");\l"];
+
+        "TASK::GettingLocations" -> "TASK::Failed"
+            [label="query_noroute()/\lfail(SERVICE_UNAVAILABLE, \"PnfsManager failed (no route to cell)\");\l"];
+
+        "TASK::GettingLocations" -> "TASK::Failed"
+            [label="query_failure(rc: Integer, cause: Object)\l\[ rc == FILE_NOT_FOUND \]/\lfailPermanently(FILE_NOT_FOUND, \"File does not exist, skipped\");\l"];
+
+        "TASK::GettingLocations" -> "TASK::Failed"
+            [label="query_failure(rc: Integer, cause: Object)/\lfail(rc, \"PnfsManager failed (\" + cause + \")\");\l"];
+
+        "TASK::GettingLocations" -> "TASK::Cancelled"
+            [label="cancel()/\l"];
+
+        "TASK::GettingLocations" -> "TASK::UpdatingExistingFile"
+            [label="query_success()\l\[ ctxt.hasMoreLocations() \]/\l"];
+
+        "TASK::GettingLocations" -> "TASK::InitiatingCopy"
+            [label="query_success()\l\[ !ctxt.isMetaOnly() \]/\l"];
+
+        "TASK::GettingLocations" -> "TASK::Failed"
+            [label="query_success()/\lfailPermanently(FILE_NOT_IN_REPOSITORY, \"File skipped because it has no existing replicas\");\l"];
+
+        "TASK::UpdatingExistingFile" -> "TASK::UpdatingExistingFile"
+            [label="copy_timeout()\l\[ ctxt.hasMoreLocations() \]/\l"];
+
+        "TASK::UpdatingExistingFile" -> "TASK::InitiatingCopy"
+            [label="copy_timeout()\l\[ ctxt.isEager() && !ctxt.isMetaOnly() \]/\l"];
+
+        "TASK::UpdatingExistingFile" -> "TASK::Failed"
+            [label="copy_timeout()/\lfail(TIMEOUT, \"Remote pool failed (no response)\");\l"];
+
+        "TASK::UpdatingExistingFile" -> "TASK::InitiatingCopy"
+            [label="copy_noroute()\l\[ ctxt.isEager() && !ctxt.isMetaOnly() \]/\l"];
+
+        "TASK::UpdatingExistingFile" -> "TASK::Failed"
+            [label="copy_noroute()/\lfail(SERVICE_UNAVAILABLE, \"Remote pool failed (no route to cell)\");\l"];
+
+        "TASK::UpdatingExistingFile" -> "TASK::Failed"
+            [label="copy_failure(rc: Integer, cause: Object)\l\[ rc == LOCKED \]/\lfail(rc, \"Replica is locked on target pool\");\l"];
+
+        "TASK::UpdatingExistingFile" -> "TASK::InitiatingCopy"
+            [label="copy_failure(rc: Integer, cause: Object)\l\[ !ctxt.isMetaOnly() \]/\l"];
+
+        "TASK::UpdatingExistingFile" -> "TASK::Failed"
+            [label="copy_failure(rc: Integer, cause: Object)/\lfail(rc, String.format(\"Transfer to %s failed (%s)\", ctxt.getTarget(), cause));\l"];
+
+        "TASK::UpdatingExistingFile" -> "TASK::Copying"
+            [label="copy_success()/\l"];
+
+        "TASK::UpdatingExistingFile" -> "TASK::Cancelling"
+            [label="cancel()/\l"];
+
+        "TASK::UpdatingExistingFile" -> "TASK::Failed"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ message.getReturnCode() == FILE_NOT_FOUND \]/\lfailPermanently(message.getReturnCode(), String.format(\"Transfer to %s failed (%s); will not be retried\",
+                                                      ctxt.getTarget(),
+                                                      message.getErrorObject()));\l"];
+
+        "TASK::UpdatingExistingFile" -> "TASK::Failed"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ message.getReturnCode() != 0 \]/\lfail(message.getReturnCode(), String.format(\"Transfer to %s failed (%s)\",
+                                           ctxt.getTarget(),
+                                           message.getErrorObject()));\l"];
+
+        "TASK::UpdatingExistingFile" -> "TASK::WaitingForCopyReplicaReply"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.needsMoreReplicas() \]/\l"];
+
+        "TASK::UpdatingExistingFile" -> "TASK::MovingPin"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.getMustMovePins() \]/\l"];
+
+        "TASK::UpdatingExistingFile" -> "TASK::Done"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)/\lnotifyCompleted();\l"];
+
+        "TASK::InitiatingCopy" -> "TASK::Copying"
+            [label="copy_success()/\l"];
+
+        "TASK::InitiatingCopy" -> "TASK::Failed"
+            [label="copy_nopools()/\lfail(NO_POOL_ONLINE, \"No targets\");\l"];
+
+        "TASK::InitiatingCopy" -> "TASK::Failed"
+            [label="copy_noroute()/\lfail(SERVICE_UNAVAILABLE, String.format(\"Pool %s failed (no route to cell)\",
+                                           ctxt.getTarget()));\l"];
+
+        "TASK::InitiatingCopy" -> "TASK::Failed"
+            [label="copy_failure(rc: Integer, cause: Object)\l\[ rc == FILE_CORRUPTED \]/\lfailPermanently(rc, String.format(\"Pool %s failed (%s)\",
+                                            ctxt.getTarget(), cause));\l"];
+
+        "TASK::InitiatingCopy" -> "TASK::Failed"
+            [label="copy_failure(rc: Integer, cause: Object)/\lfail(rc, String.format(\"Pool %s failed (%s)\",
+                                           ctxt.getTarget(), cause));\l"];
+
+        "TASK::InitiatingCopy" -> "TASK::WaitingForCopyFinishedMessage"
+            [label="copy_timeout()/\lcancelCopy(\"Timeout waiting for target pool \"
+                            + ctxt.getTarget());\l"];
+
+        "TASK::InitiatingCopy" -> "TASK::Cancelling"
+            [label="cancel()/\l"];
+
+        "TASK::InitiatingCopy" -> "TASK::Failed"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ message.getReturnCode() == FILE_NOT_FOUND || message.getReturnCode() == FILE_CORRUPTED \]/\lfailPermanently(message.getReturnCode(), String.format(\"Transfer to %s failed (%s); will not be retried\",
+                                                      ctxt.getTarget(),
+                                                      message.getErrorObject()));\l"];
+
+        "TASK::InitiatingCopy" -> "TASK::Failed"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ message.getReturnCode() != 0 \]/\lfail(message.getReturnCode(), String.format(\"Transfer to %s failed (%s)\",
+                                           ctxt.getTarget(),
+                                           message.getErrorObject()));\l"];
+
+        "TASK::InitiatingCopy" -> "TASK::WaitingForCopyReplicaReply"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.needsMoreReplicas() \]/\l"];
+
+        "TASK::InitiatingCopy" -> "TASK::MovingPin"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.getMustMovePins() \]/\l"];
+
+        "TASK::InitiatingCopy" -> "TASK::Done"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)/\lnotifyCompleted();\l"];
+
+        "TASK::WaitingForCopyReplicaReply" -> "TASK::UpdatingExistingFile"
+            [label="copy_success()\l\[ ctxt.hasMoreLocations() \]/\l"];
+
+        "TASK::WaitingForCopyReplicaReply" -> "TASK::InitiatingCopy"
+            [label="copy_success()\l\[ !ctxt.isMetaOnly() \]/\l"];
+
+        "TASK::WaitingForCopyReplicaReply" -> "TASK::Failed"
+            [label="copy_success()/\lfailPermanently(FILE_NOT_IN_REPOSITORY, \"File skipped because it does not have enough existing replicas\");\l"];
+
+        "TASK::WaitingForCopyReplicaReply" -> "TASK::Failed"
+            [label="copy_nopools()/\lfail(NO_POOL_ONLINE, \"No targets\");\l"];
+
+        "TASK::WaitingForCopyReplicaReply" -> "TASK::Failed"
+            [label="copy_noroute()/\lfail(SERVICE_UNAVAILABLE, String.format(\"Pool %s failed (no route to cell)\",
+                                           ctxt.getTarget()));\l"];
+
+        "TASK::WaitingForCopyReplicaReply" -> "TASK::Failed"
+            [label="copy_failure(rc: Integer, cause: Object)/\lfail(rc, String.format(\"Pool %s failed (%s)\",
+                                           ctxt.getTarget(), cause));\l"];
+
+        "TASK::WaitingForCopyReplicaReply" -> "TASK::Failed"
+            [label="copy_timeout()/\lfail(TIMEOUT, String.format(\"Pool %s failed (no response)\",
+                                           ctxt.getTarget()));\l"];
+
+        "TASK::WaitingForCopyReplicaReply" -> "TASK::Cancelled"
+            [label="cancel()/\l"];
+
+        "TASK::Copying" -> "TASK::Pinging"
+            [label="timer()/\l"];
+
+        "TASK::Copying" -> "TASK::Failed"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ message.getReturnCode() == FILE_NOT_FOUND || message.getReturnCode() == FILE_CORRUPTED \]/\lfailPermanently(message.getReturnCode(), String.format(\"Transfer to %s failed (%s); will not be retried\",
+                                                      ctxt.getTarget(),
+                                                      message.getErrorObject()));\l"];
+
+        "TASK::Copying" -> "TASK::Failed"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ message.getReturnCode() != 0 \]/\lfail(message.getReturnCode(), String.format(\"Transfer to %s failed (%s)\",
+                                           ctxt.getTarget(),
+                                           message.getErrorObject()));\l"];
+
+        "TASK::Copying" -> "TASK::UpdatingExistingFile"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.needsMoreReplicas() && ctxt.hasMoreLocations() \]/\l"];
+
+        "TASK::Copying" -> "TASK::Done"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.needsMoreReplicas() && ! (ctxt.moreReplicasPossible() || ctxt.isMetaOnly()) \]/\lnotifyCompletedWithInsufficientReplicas();\l"];
+
+        "TASK::Copying" -> "TASK::InitiatingCopy"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.needsMoreReplicas() && !ctxt.isMetaOnly() \]/\l"];
+
+        "TASK::Copying" -> "TASK::Failed"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.needsMoreReplicas() \]/\lfailPermanently(FILE_NOT_IN_REPOSITORY, \"File skipped because it does not have enough existing replicas\");\l"];
+
+        "TASK::Copying" -> "TASK::MovingPin"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.getMustMovePins() \]/\l"];
+
+        "TASK::Copying" -> "TASK::Done"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)/\lnotifyCompleted();\l"];
+
+        "TASK::Copying" -> "TASK::Cancelling"
+            [label="cancel()/\l"];
+
+        "TASK::Pinging" -> "TASK::Copying"
+            [label="ping_success()/\l"];
+
+        "TASK::Pinging" -> "TASK::WaitingForCopyFinishedMessage"
+            [label="ping_failure(rc: Integer, cause: Object)/\l"];
+
+        "TASK::Pinging" -> "TASK::NoResponse"
+            [label="ping_noroute()/\l"];
+
+        "TASK::Pinging" -> "TASK::NoResponse"
+            [label="ping_timeout()/\l"];
+
+        "TASK::Pinging" -> "TASK::Failed"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ message.getReturnCode() == FILE_NOT_FOUND \]/\lfailPermanently(message.getReturnCode(), String.format(\"Transfer to %s failed (%s); will not be retried\",
+                                                      ctxt.getTarget(),
+                                                      message.getErrorObject()));\l"];
+
+        "TASK::Pinging" -> "TASK::Failed"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ message.getReturnCode() != 0 \]/\lfail(message.getReturnCode(), String.format(\"Transfer to %s failed (%s)\",
+                                           ctxt.getTarget(),
+                                           message.getErrorObject()));\l"];
+
+        "TASK::Pinging" -> "TASK::UpdatingExistingFile"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.needsMoreReplicas() && ctxt.hasMoreLocations() \]/\l"];
+
+        "TASK::Pinging" -> "TASK::Done"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.needsMoreReplicas() && ! (ctxt.moreReplicasPossible() || ctxt.isMetaOnly()) \]/\lnotifyCompletedWithInsufficientReplicas();\l"];
+
+        "TASK::Pinging" -> "TASK::InitiatingCopy"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.needsMoreReplicas() && !ctxt.isMetaOnly() \]/\l"];
+
+        "TASK::Pinging" -> "TASK::Failed"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.needsMoreReplicas() \]/\lfailPermanently(FILE_NOT_IN_REPOSITORY, \"File skipped because it does not have enough existing replicas\");\l"];
+
+        "TASK::Pinging" -> "TASK::MovingPin"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.getMustMovePins() \]/\l"];
+
+        "TASK::Pinging" -> "TASK::Done"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)/\lnotifyCompleted();\l"];
+
+        "TASK::Pinging" -> "TASK::Cancelling"
+            [label="cancel()/\l"];
+
+        "TASK::NoResponse" -> "TASK::Copying"
+            [label="ping_success()/\l"];
+
+        "TASK::NoResponse" -> "TASK::WaitingForCopyFinishedMessage"
+            [label="ping_failure(rc: Integer, cause: Object)/\l"];
+
+        "TASK::NoResponse" -> "TASK::Failed"
+            [label="ping_noroute()/\lfail(SERVICE_UNAVAILABLE, String.format(\"Pool %s failed (no route to cell)\",
+                                           ctxt.getTarget()));\l"];
+
+        "TASK::NoResponse" -> "TASK::Failed"
+            [label="ping_timeout()/\lfail(TIMEOUT, String.format(\"Pool %s failed (no response)\",
+                                           ctxt.getTarget()));\l"];
+
+        "TASK::NoResponse" -> "TASK::Failed"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ message.getReturnCode() == FILE_NOT_FOUND \]/\lfailPermanently(message.getReturnCode(), String.format(\"Transfer to %s failed (%s); will not be retried\",
+                                                      ctxt.getTarget(),
+                                                      message.getErrorObject()));\l"];
+
+        "TASK::NoResponse" -> "TASK::Failed"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ message.getReturnCode() != 0 \]/\lfail(message.getReturnCode(), String.format(\"Transfer to %s failed (%s)\",
+                                           ctxt.getTarget(),
+                                           message.getErrorObject()));\l"];
+
+        "TASK::NoResponse" -> "TASK::UpdatingExistingFile"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.needsMoreReplicas() && ctxt.hasMoreLocations() \]/\l"];
+
+        "TASK::NoResponse" -> "TASK::Done"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.needsMoreReplicas() && ! (ctxt.moreReplicasPossible() || ctxt.isMetaOnly()) \]/\lnotifyCompletedWithInsufficientReplicas();\l"];
+
+        "TASK::NoResponse" -> "TASK::InitiatingCopy"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.needsMoreReplicas() && !ctxt.isMetaOnly() \]/\l"];
+
+        "TASK::NoResponse" -> "TASK::Failed"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.needsMoreReplicas() \]/\lfailPermanently(FILE_NOT_IN_REPOSITORY, \"File skipped because it does not have enough existing replicas\");\l"];
+
+        "TASK::NoResponse" -> "TASK::MovingPin"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.getMustMovePins() \]/\l"];
+
+        "TASK::NoResponse" -> "TASK::Done"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)/\lnotifyCompleted();\l"];
+
+        "TASK::NoResponse" -> "TASK::Cancelling"
+            [label="cancel()/\l"];
+
+        "TASK::WaitingForCopyFinishedMessage" -> "TASK::Failed"
+            [label="timer()/\lfail(TIMEOUT, String.format(\"Pool %s failed (no response)\",
+                                           ctxt.getTarget()));\l"];
+
+        "TASK::WaitingForCopyFinishedMessage" -> "TASK::Failed"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ message.getReturnCode() == FILE_NOT_FOUND \]/\lfailPermanently(message.getReturnCode(), String.format(\"Transfer to %s failed (%s); will not be retried\",
+                                                      ctxt.getTarget(),
+                                                      message.getErrorObject()));\l"];
+
+        "TASK::WaitingForCopyFinishedMessage" -> "TASK::Failed"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ message.getReturnCode() != 0 \]/\lfail(message.getReturnCode(), String.format(\"Transfer to %s failed (%s)\",
+                                           ctxt.getTarget(),
+                                           message.getErrorObject()));\l"];
+
+        "TASK::WaitingForCopyFinishedMessage" -> "TASK::UpdatingExistingFile"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.needsMoreReplicas() && ctxt.hasMoreLocations() \]/\l"];
+
+        "TASK::WaitingForCopyFinishedMessage" -> "TASK::Done"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.needsMoreReplicas() && ! (ctxt.moreReplicasPossible() || ctxt.isMetaOnly()) \]/\lnotifyCompletedWithInsufficientReplicas();\l"];
+
+        "TASK::WaitingForCopyFinishedMessage" -> "TASK::InitiatingCopy"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.needsMoreReplicas() && !ctxt.isMetaOnly() \]/\l"];
+
+        "TASK::WaitingForCopyFinishedMessage" -> "TASK::Failed"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.needsMoreReplicas() \]/\lfailPermanently(FILE_NOT_IN_REPOSITORY, \"File skipped because it does not have enough existing replicas\");\l"];
+
+        "TASK::WaitingForCopyFinishedMessage" -> "TASK::MovingPin"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.getMustMovePins() \]/\l"];
+
+        "TASK::WaitingForCopyFinishedMessage" -> "TASK::Done"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)/\lnotifyCompleted();\l"];
+
+        "TASK::MovingPin" -> "TASK::Done"
+            [label="move_success()/\lnotifyCompleted();\l"];
+
+        "TASK::MovingPin" -> "TASK::Failed"
+            [label="move_failure(rc: Integer, cause: Object)/\lfail(rc, \"Pin manager failed (\" + cause + \")\");\l"];
+
+        "TASK::MovingPin" -> "TASK::Failed"
+            [label="move_noroute()/\lfail(SERVICE_UNAVAILABLE, \"Pin manager failed (no route to cell)\");\l"];
+
+        "TASK::MovingPin" -> "TASK::Failed"
+            [label="move_timeout()/\lfail(TIMEOUT, \"Pin manager failed (timeout)\");\l"];
+
+        "TASK::MovingPin" -> "TASK::Failed"
+            [label="cancel()/\lfail(DEFAULT_ERROR_CODE, String.format(\"Cancelling task (%s) failed (data migrated but pin movement still underway)\",
+                                           ctxt.getCancelReason()));\l"];
+
+        "TASK::Cancelling" -> "TASK::Failed"
+            [label="timer()/\lfail(TIMEOUT, String.format(\"Cancelling task (%s) failed (no response from %s)\",
+                                           ctxt.getCancelReason(), ctxt.getTarget()));\l"];
+
+        "TASK::Cancelling" -> "TASK::Cancelled"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ message.getReturnCode() != 0 \]/\l"];
+
+        "TASK::Cancelling" -> "TASK::Failed"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ message.getReturnCode() == 0 && ctxt.getMustMovePins() \]/\lfail(DEFAULT_ERROR_CODE, String.format(\"Cancelling task (%s) failed (data migrated but still pins to move)\",
+                                           ctxt.getCancelReason()));\l"];
+
+        "TASK::Cancelling" -> "TASK::Done"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ message.getReturnCode() == 0 \]/\lnotifyCompleted();\l"];
+
+        "TASK::Cancelling" -> "TASK::Failed"
+            [label="cancel_noroute()/\lfail(SERVICE_UNAVAILABLE, String.format(\"Cancelling task (%s) failed (no route)\",
+                                           ctxt.getCancelReason()));\l"];
+
+        "%start" -> "TASK::Queued"
+    }
+
+}

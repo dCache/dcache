@@ -537,6 +537,16 @@ public class MigrationModule
               usage = "Enables the transfer of files from a disabled pool.")
         boolean forceSourceMode;
 
+        @Option(name = "target-deficit-mode", metaVar = "tdmode",
+                values = { "wait", "limit" },
+                category = "Transfer options",
+                usage = "Behaviour when requested replicas exceeds available targets:\n" +
+                        "wait:\n" +
+                        "    wait for new targets to become available.\n" +
+                        "limit:\n" +
+                        "    limit the number of replicas to that of the currently-available targets.\n")
+        String targetDeficitMode = "wait";
+
         @Argument(metaVar = "target",
               required = false,
               usage = "Required unless -target=pgroup is supplied, in which case we" +
@@ -838,7 +848,8 @@ public class MigrationModule
                         maintainAtime,
                         createLifetimePredicate(pauseWhen),
                         createLifetimePredicate(stopWhen),
-                        forceSourceMode);
+                        forceSourceMode,
+                        targetDeficitMode.equals("wait"));
 
             if (definition.targetMode.state == CacheEntryMode.State.DELETE
                   || definition.targetMode.state == CacheEntryMode.State.REMOVABLE) {

@@ -136,7 +136,8 @@ public class CopyAdjuster extends QoSAdjuster {
               false,   // compute checksum on update; should not happen
               false,   // force copy even if pool is not readable
               true,    // maintain atime
-              1);      // only one copy per task
+              1,       // only one copy per task
+              true);   // wait for new targets if necessary
 
         createTask(taskParameters, source);
 
