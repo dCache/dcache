@@ -398,6 +398,30 @@ AI Generated Release Notes:
     paths:
       - release-*.md
 
+
+#
+# Prepare releases download table in html format
+#
+Release Notes Table:
+  image: almalinux:9-minimal
+  stage: upload
+  extends: .upload_rules
+  allow_failure: true
+  dependencies:
+    - sign_deb
+    - sign_rpm
+    - sign_srm_client_rpm
+    - tar
+  script:
+    - microdnf install -y git-core
+    - git fetch --refetch --all --tags
+    - .ci/generate-releases-xml.sh >> release-$CI_COMMIT_TAG.xml
+
+        #tee -a release-$CI_COMMIT_TAG.md
+  artifacts:
+    paths:
+      - release1-*.md
+
 #
 # prepare kubernetes env for the build
 #
