@@ -86,7 +86,7 @@ import org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator;
 /**
  * SQL driver
  */
-public class FsSqlDriver {
+public class FsSqlDriver implements AutoCloseable {
     /**
      * Simple class to hold a tag assignment's directory inumber and its value.
      */
@@ -2435,5 +2435,13 @@ public class FsSqlDriver {
             return null;
         }
         return _jdbc.queryForObject("SELECT id FROM t_qos_policy WHERE name=?", Integer.class, name);
+    }
+
+    /**
+     * Close driver and free DB resources.
+     */
+    @Override
+    public void close() {
+        // to be overwritten by subclasses
     }
 }

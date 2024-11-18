@@ -1539,6 +1539,7 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
     @Override
     public void close() throws IOException {
         maintenanceTaskExecutor.shutdown();
+        _sqlDriver.close();
     }
 
     @Override
