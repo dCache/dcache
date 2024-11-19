@@ -225,7 +225,7 @@ public class LocationManager extends CellAdapter {
                 }
             } catch (IOException ie) {
                 throw new IllegalArgumentException(
-                      "Failed deserializing LocationManager Cores as uri: {}", ie.getCause());
+                      "Failed deserializing LocationManager Cores as uri", ie);
             }
         }
 
@@ -513,6 +513,10 @@ public class LocationManager extends CellAdapter {
         public void reset(Mode mode, State state) {
         }
 
+        private boolean hasNoData(ChildData data) {
+            return data == null || data.getData() == null || data.getData().length == 0;
+        }
+
         public void update(PathChildrenCacheEvent event) {
             LOGGER.info("{}", event);
             String cell;
@@ -525,12 +529,22 @@ public class LocationManager extends CellAdapter {
                     }
                     break;
                 case CHILD_UPDATED:
-                    cell = connectors.remove(ZKPaths.getNodeFromPath(event.getData().getPath()));
+                    if (hasNoData(event.getData())) {
+                        LOGGER.warn("Ignoring empty data on UPDATED for {}", event.getData().getPath());
+                        break;
+                    }
+                    cell = connectors.remove(
+                          ZKPaths.getNodeFromPath(event.getData().getPath()));
                     if (cell != null) {
                         killConnector(cell);
                     }
                     // fall through
                 case CHILD_ADDED:
+                    if (hasNoData(event.getData())) {
+                        LOGGER.warn("Ignoring empty data on ADDED for {}", event.getData().getPath());
+                        break;
+                    }
+
                     //Log if the Core Domain Information received is incompatible with previous
                     CoreDomainInfo info = infoFromZKEvent(event);
                     String domain = ZKPaths.getNodeFromPath(event.getData().getPath());
