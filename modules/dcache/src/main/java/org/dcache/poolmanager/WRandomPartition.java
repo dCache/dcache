@@ -98,18 +98,18 @@ public class WRandomPartition extends Partition
             totalFree += spaceToUse;
         }
 
-        WeightedPool[] weghtedPools = new WeightedPool[costInfos.size()];
+        WeightedPool[] weightedPools = new WeightedPool[costInfos.size()];
         int i = 0;
         for (PoolInfo costInfo : costInfos) {
             long spaceToUse = costInfo.getCostInfo().getSpaceInfo().getFreeSpace()
                     + costInfo.getCostInfo().getSpaceInfo().getRemovableSpace();
 
-            weghtedPools[i] = new WeightedPool(costInfo, (double) spaceToUse / totalFree);
+            weightedPools[i] = new WeightedPool(costInfo, (double) spaceToUse / totalFree);
             i++;
         }
 
-        Arrays.sort(weghtedPools, new CostComparator());
-        return weghtedPools;
+        Arrays.sort(weightedPools, new CostComparator());
+        return weightedPools;
     }
 
     private static class CostComparator implements Comparator<WeightedPool>
