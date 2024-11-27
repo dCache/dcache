@@ -398,6 +398,9 @@
               <groupId>org.codehaus.mojo</groupId>
               <artifactId>smc-maven-plugin</artifactId>
               <version>1.0-alpha-1</version>
+              <configuration>
+                <verbose>true</verbose>
+              </configuration>
               <executions>
                   <execution>
                       <goals>
@@ -405,9 +408,6 @@
                       </goals>
                   </execution>
               </executions>
-              <configuration>
-                  <verbose>true</verbose>
-              </configuration>
               <dependencies>
                   <dependency>
                       <groupId>net.sf.smc</groupId>
@@ -521,4 +521,41 @@
         </plugins>
       </pluginManagement>
   </build>
+
+  <profiles>
+    <profile>
+      <id>smc-dot</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>smc-maven-plugin</artifactId>
+            <version>1.0-alpha-1</version>
+            <configuration>
+              <targetLanguage>graph</targetLanguage>
+              <glevel>2</glevel>
+              <verbose>true</verbose>
+            </configuration>
+            <executions>
+              <execution>
+                <id>smc-dot</id>
+                <goals>
+                  <goal>smc</goal>
+                </goals>
+              </execution>
+            </executions>
+            <dependencies>
+              <dependency>
+                <groupId>net.sf.smc</groupId>
+                <artifactId>smc</artifactId>
+                <version>${version.smc}</version>
+              </dependency>
+            </dependencies>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
 </project>
+
