@@ -66,9 +66,9 @@
                             </pluginExecution>
                             <pluginExecution>
                                 <pluginExecutionFilter>
-                                    <groupId>org.codehaus.mojo</groupId>
+                                    <groupId>net.sf.smc</groupId>
                                     <artifactId>smc-maven-plugin</artifactId>
-                                    <versionRange>[1.0-alpha-1,)</versionRange>
+                                    <versionRange>[7.6.0,)</versionRange>
                                     <goals>
                                         <goal>smc</goal>
                                     </goals>
