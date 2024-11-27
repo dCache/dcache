@@ -81,7 +81,7 @@
                                 <pluginExecutionFilter>
                                     <groupId>net.sf.smc</groupId>
                                     <artifactId>smc-maven-plugin</artifactId>
-                                    <versionRange>[7.6.0,)</versionRange>
+                                    <versionRange>[${version.smc},)</versionRange>
                                     <goals>
                                         <goal>smc</goal>
                                     </goals>

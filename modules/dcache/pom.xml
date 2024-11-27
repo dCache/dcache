@@ -19,24 +19,24 @@
       <artifactId>slf4j-api</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>jul-to-slf4j</artifactId>
+      <groupId>org.slf4j</groupId>
+      <artifactId>jul-to-slf4j</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>jcl-over-slf4j</artifactId>
+      <groupId>org.slf4j</groupId>
+      <artifactId>jcl-over-slf4j</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>log4j-over-slf4j</artifactId>
+      <groupId>org.slf4j</groupId>
+      <artifactId>log4j-over-slf4j</artifactId>
     </dependency>
     <dependency>
-        <groupId>ch.qos.logback</groupId>
-        <artifactId>logback-classic</artifactId>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
     </dependency>
     <dependency>
-        <groupId>ch.qos.logback</groupId>
-        <artifactId>logback-core</artifactId>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-core</artifactId>
     </dependency>
     <dependency>
       <groupId>org.codehaus.janino</groupId>
@@ -97,131 +97,131 @@
       <artifactId>HikariCP</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.postgresql</groupId>
-        <artifactId>postgresql</artifactId>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
     </dependency>
     <dependency>
-        <groupId>io.netty</groupId>
-        <artifactId>netty-codec-http</artifactId>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-codec-http</artifactId>
     </dependency>
     <dependency>
-        <groupId>io.netty</groupId>
-        <artifactId>netty-handler</artifactId>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-handler</artifactId>
     </dependency>
     <dependency>
-        <groupId>io.netty</groupId>
-        <artifactId>netty-codec-haproxy</artifactId>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-codec-haproxy</artifactId>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-tcnative-boringssl-static</artifactId>
     </dependency>
     <dependency>
-        <groupId>com.sleepycat</groupId>
-        <artifactId>je</artifactId>
+      <groupId>com.sleepycat</groupId>
+      <artifactId>je</artifactId>
     </dependency>
     <dependency>
-        <groupId>com.github.parboiled1</groupId>
-        <artifactId>grappa</artifactId>
+      <groupId>com.github.parboiled1</groupId>
+      <artifactId>grappa</artifactId>
     </dependency>
-      <!-- grappa needs asm to work -->
-      <dependency>
-          <groupId>org.ow2.asm</groupId>
-          <artifactId>asm</artifactId>
-      </dependency>
-      <dependency>
-          <groupId>org.ow2.asm</groupId>
-          <artifactId>asm-tree</artifactId>
-      </dependency>
-      <dependency>
-          <groupId>org.ow2.asm</groupId>
-          <artifactId>asm-analysis</artifactId>
-      </dependency>
-      <dependency>
-          <groupId>org.ow2.asm</groupId>
-          <artifactId>asm-util</artifactId>
-      </dependency>
-      <dependency>
-        <groupId>org.datanucleus</groupId>
-        <artifactId>datanucleus-core</artifactId>
+    <!-- grappa needs asm to work -->
+    <dependency>
+      <groupId>org.ow2.asm</groupId>
+      <artifactId>asm</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.ow2.asm</groupId>
+      <artifactId>asm-tree</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.ow2.asm</groupId>
+      <artifactId>asm-analysis</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.ow2.asm</groupId>
+      <artifactId>asm-util</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.datanucleus</groupId>
+      <artifactId>datanucleus-core</artifactId>
     </dependency>
     <dependency>
       <groupId>org.datanucleus</groupId>
       <artifactId>javax.jdo</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.datanucleus</groupId>
-        <artifactId>datanucleus-cache</artifactId>
+      <groupId>org.datanucleus</groupId>
+      <artifactId>datanucleus-cache</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.datanucleus</groupId>
-        <artifactId>datanucleus-api-jdo</artifactId>
+      <groupId>org.datanucleus</groupId>
+      <artifactId>datanucleus-api-jdo</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.datanucleus</groupId>
-        <artifactId>datanucleus-rdbms</artifactId>
+      <groupId>org.datanucleus</groupId>
+      <artifactId>datanucleus-rdbms</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.datanucleus</groupId>
-        <artifactId>datanucleus-xml</artifactId>
+      <groupId>org.datanucleus</groupId>
+      <artifactId>datanucleus-xml</artifactId>
     </dependency>
     <dependency>
-        <groupId>net.sf.saxon</groupId>
-        <artifactId>saxon-dom</artifactId>
+      <groupId>net.sf.saxon</groupId>
+      <artifactId>saxon-dom</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.eclipse.jetty</groupId>
-        <artifactId>jetty-server</artifactId>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-server</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.eclipse.jetty</groupId>
-        <artifactId>jetty-deploy</artifactId>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-deploy</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.eclipse.jetty</groupId>
-        <artifactId>jetty-webapp</artifactId>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-webapp</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.eclipse.jetty</groupId>
-        <artifactId>jetty-servlets</artifactId>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-servlets</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.eclipse.jetty</groupId>
-        <artifactId>jetty-plus</artifactId>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-plus</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.eclipse.jetty</groupId>
-        <artifactId>jetty-security</artifactId>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-security</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.eclipse.jetty</groupId>
-        <artifactId>jetty-rewrite</artifactId>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-rewrite</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.antlr</groupId>
-        <artifactId>ST4</artifactId>
+      <groupId>org.antlr</groupId>
+      <artifactId>ST4</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.apache.sshd</groupId>
-        <artifactId>sshd-core</artifactId>
+      <groupId>org.apache.sshd</groupId>
+      <artifactId>sshd-core</artifactId>
     </dependency>
     <!-- For ed25519 support -->
     <dependency>
-        <groupId>net.i2p.crypto</groupId>
-        <artifactId>eddsa</artifactId>
+      <groupId>net.i2p.crypto</groupId>
+      <artifactId>eddsa</artifactId>
     </dependency>
     <dependency>
-        <groupId>commons-codec</groupId>
-        <artifactId>commons-codec</artifactId>
-        <version>1.4</version>
+      <groupId>commons-codec</groupId>
+      <artifactId>commons-codec</artifactId>
+      <version>1.4</version>
     </dependency>
     <dependency>
-        <groupId>org.apache.commons</groupId>
-        <artifactId>commons-compress</artifactId>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-compress</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.liquibase</groupId>
-        <artifactId>liquibase-core</artifactId>
+      <groupId>org.liquibase</groupId>
+      <artifactId>liquibase-core</artifactId>
     </dependency>
     <dependency>
       <groupId>com.mattbertolini</groupId>
@@ -229,100 +229,99 @@
     </dependency>
 
     <dependency>
-        <groupId>org.springframework</groupId>
-        <artifactId>spring-beans</artifactId>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-beans</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.springframework</groupId>
-        <artifactId>spring-context</artifactId>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-context</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.springframework</groupId>
-        <artifactId>spring-core</artifactId>
-        <exclusions>
-            <exclusion>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-jcl</artifactId>
-            </exclusion>
-        </exclusions>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-core</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>org.springframework</groupId>
+          <artifactId>spring-jcl</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
-        <groupId>org.springframework</groupId>
-        <artifactId>spring-expression</artifactId>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-expression</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.springframework</groupId>
-        <artifactId>spring-jdbc</artifactId>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-jdbc</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.springframework</groupId>
-        <artifactId>spring-orm</artifactId>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-orm</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.springframework</groupId>
-        <artifactId>spring-web</artifactId>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-web</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.springframework</groupId>
-        <artifactId>spring-aspects</artifactId>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-aspects</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.springframework</groupId>
-        <artifactId>spring-tx</artifactId>
-    </dependency>
-
-    <dependency>
-        <groupId>org.aspectj</groupId>
-        <artifactId>aspectjrt</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.aspectj</groupId>
-        <artifactId>aspectjweaver</artifactId>
-        <scope>runtime</scope>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-tx</artifactId>
     </dependency>
 
     <dependency>
-        <groupId>org.json</groupId>
-        <artifactId>json</artifactId>
+      <groupId>org.aspectj</groupId>
+      <artifactId>aspectjrt</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.aspectj</groupId>
+      <artifactId>aspectjweaver</artifactId>
+      <scope>runtime</scope>
     </dependency>
 
     <dependency>
-        <groupId>net.sf.smc</groupId>
-        <artifactId>library</artifactId>
-        <version>${version.smc}</version>
+      <groupId>org.json</groupId>
+      <artifactId>json</artifactId>
     </dependency>
 
     <dependency>
-        <groupId>org.hsqldb</groupId>
-        <artifactId>hsqldb</artifactId>
-        <scope>test</scope>
+      <groupId>net.sf.smc</groupId>
+      <artifactId>library</artifactId>
     </dependency>
 
     <dependency>
-        <groupId>org.python</groupId>
-        <artifactId>jython-standalone</artifactId>
-        <scope>test</scope>
+      <groupId>org.hsqldb</groupId>
+      <artifactId>hsqldb</artifactId>
+      <scope>test</scope>
     </dependency>
-      <dependency>
-          <groupId>com.google.code.gson</groupId>
-          <artifactId>gson</artifactId>
-      </dependency>
+
     <dependency>
-        <groupId>org.apache.httpcomponents</groupId>
-        <artifactId>httpclient</artifactId>
-    </dependency>
-      <dependency>
-          <groupId>org.jdom</groupId>
-          <artifactId>jdom</artifactId>
-      </dependency>
-    <dependency>
-        <groupId>org.glassfish.jersey.media</groupId>
-        <artifactId>jersey-media-json-jackson</artifactId>
+      <groupId>org.python</groupId>
+      <artifactId>jython-standalone</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
-        <groupId>com.google.jimfs</groupId>
-        <artifactId>jimfs</artifactId>
-        <scope>test</scope>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.jdom</groupId>
+      <artifactId>jdom</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.glassfish.jersey.media</groupId>
+      <artifactId>jersey-media-json-jackson</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.google.jimfs</groupId>
+      <artifactId>jimfs</artifactId>
+      <scope>test</scope>
     </dependency>
 
     <!-- used by alarms, needs to be deployed -->
@@ -331,227 +330,209 @@
       <artifactId>mail</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.mongodb</groupId>
-        <artifactId>mongodb-driver-sync</artifactId>
+      <groupId>org.mongodb</groupId>
+      <artifactId>mongodb-driver-sync</artifactId>
     </dependency>
 
-      <dependency>
-          <groupId>org.springframework.kafka</groupId>
-          <artifactId>spring-kafka</artifactId>
-      </dependency>
-      <dependency>
-          <groupId>org.springframework.integration</groupId>
-          <artifactId>spring-integration-kafka</artifactId>
-      </dependency>
+    <dependency>
+      <groupId>org.springframework.kafka</groupId>
+      <artifactId>spring-kafka</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.integration</groupId>
+      <artifactId>spring-integration-kafka</artifactId>
+    </dependency>
 
-      <dependency>
-          <groupId>org.apache.kafka</groupId>
-          <artifactId>kafka_2.12</artifactId>
-      </dependency>
-      <dependency>
-          <groupId>org.apache.kafka</groupId>
-          <artifactId>kafka-clients</artifactId>
-      </dependency>
+    <dependency>
+      <groupId>org.apache.kafka</groupId>
+      <artifactId>kafka_2.12</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.kafka</groupId>
+      <artifactId>kafka-clients</artifactId>
+    </dependency>
 
-      <dependency>
-          <groupId>com.github.danielwegener</groupId>
-          <artifactId>logback-kafka-appender</artifactId>
-      </dependency>
+    <dependency>
+      <groupId>com.github.danielwegener</groupId>
+      <artifactId>logback-kafka-appender</artifactId>
+    </dependency>
 
-      <!-- ch.qos.logback.contrib.jackson.JacksonJsonFormatter -->
-      <dependency>
-          <groupId>ch.qos.logback.contrib</groupId>
-          <artifactId>logback-jackson</artifactId>
-      </dependency>
+    <!-- ch.qos.logback.contrib.jackson.JacksonJsonFormatter -->
+    <dependency>
+      <groupId>ch.qos.logback.contrib</groupId>
+      <artifactId>logback-jackson</artifactId>
+    </dependency>
 
-      <!-- ch.qos.logback.contrib.json.classic.JsonLayout -->
-      <dependency>
-          <groupId>ch.qos.logback.contrib</groupId>
-          <artifactId>logback-json-classic</artifactId>
-      </dependency>
+    <!-- ch.qos.logback.contrib.json.classic.JsonLayout -->
+    <dependency>
+      <groupId>ch.qos.logback.contrib</groupId>
+      <artifactId>logback-json-classic</artifactId>
+    </dependency>
 
-      <!-- com.fasterxml.jackson.databind.ObjectMapper -->
-      <dependency>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-databind</artifactId>
-      </dependency>
+    <!-- com.fasterxml.jackson.databind.ObjectMapper -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+    </dependency>
 
-      <dependency>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-annotations</artifactId>
-      </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-annotations</artifactId>
+    </dependency>
 
-      <dependency>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-core</artifactId>
-      </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
+    </dependency>
 
-      <dependency>
-        <groupId>com.github.erosb</groupId>
-        <artifactId>everit-json-schema</artifactId>
-        <scope>test</scope>
-      </dependency>
+    <dependency>
+      <groupId>com.github.erosb</groupId>
+      <artifactId>everit-json-schema</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
+    <plugins>
+      <plugin>
+        <groupId>net.sf.smc</groupId>
+        <artifactId>smc-maven-plugin</artifactId>
+        <version>${version.smc}</version>
+        <executions>
+          <execution>
+            <id>src-build</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>smc</goal>
+            </goals>
+            <configuration>
+              <targetLanguage>java7</targetLanguage>
+              <verbose>true</verbose>
+              <sync>true</sync>
+              <reflection>true</reflection>
+              <generic7>true</generic7>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>com.nickwongdev</groupId>
+        <artifactId>aspectj-maven-plugin</artifactId>
+      </plugin>
+
+      <plugin>
+        <groupId>org.datanucleus</groupId>
+        <artifactId>datanucleus-maven-plugin</artifactId>
+        <configuration>
+          <verbose>false</verbose>
+        </configuration>
+        <executions>
+          <execution>
+            <id>datanucleus-enhance-jdo</id>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>enhance</goal>
+            </goals>
+            <configuration>
+              <metadataIncludes>**/*.jdo</metadataIncludes>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>com.github.spotbugs</groupId>
+        <artifactId>spotbugs-maven-plugin</artifactId>
+        <configuration>
+          <excludeFilterFile>src/main/spotbugs/exclude-filter.xml</excludeFilterFile>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>3.0.2</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>test-jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+    <pluginManagement>
       <plugins>
-          <plugin>
-              <groupId>net.sf.smc</groupId>
-              <artifactId>smc-maven-plugin</artifactId>
-              <version>7.6.0</version>
-              <configuration>
-                <targetLanguage>java7</targetLanguage>
-                <verbose>true</verbose>
-              </configuration>
-              <executions>
-                  <execution>
-                      <id>src-build</id>
-                      <phase>generate-sources</phase>
-                      <goals>
-                          <goal>smc</goal>
-                      </goals>
-                  </execution>
-              </executions>
-          </plugin>
-
-          <plugin>
-              <groupId>com.nickwongdev</groupId>
-              <artifactId>aspectj-maven-plugin</artifactId>
-          </plugin>
-
-          <plugin>
-              <groupId>org.datanucleus</groupId>
-              <artifactId>datanucleus-maven-plugin</artifactId>
-              <configuration>
-                  <verbose>false</verbose>
-              </configuration>
-              <executions>
-                  <execution>
-                      <id>datanucleus-enhance-jdo</id>
-                      <phase>process-classes</phase>
-                      <goals>
-                          <goal>enhance</goal>
-                      </goals>
-                      <configuration>
-                          <metadataIncludes>**/*.jdo</metadataIncludes>
-                      </configuration>
-                  </execution>
-              </executions>
-          </plugin>
-          <plugin>
-              <groupId>com.github.spotbugs</groupId>
-              <artifactId>spotbugs-maven-plugin</artifactId>
-              <configuration>
-                  <excludeFilterFile>src/main/spotbugs/exclude-filter.xml</excludeFilterFile>
-              </configuration>
-          </plugin>
-          <plugin>
-              <groupId>org.apache.maven.plugins</groupId>
-              <artifactId>maven-jar-plugin</artifactId>
-              <version>3.0.2</version>
-              <executions>
-                <execution>
-                  <goals>
-                    <goal>test-jar</goal>
-                  </goals>
-                </execution>
-              </executions>
-          </plugin>
+        <!--This plugin's configuration is used to store Eclipse
+            m2e settings only. It has no influence on the Maven
+            build itself.-->
+        <plugin>
+          <groupId>org.eclipse.m2e</groupId>
+          <artifactId>lifecycle-mapping</artifactId>
+          <version>1.0.0</version>
+          <configuration>
+            <lifecycleMappingMetadata>
+              <pluginExecutions>
+                <pluginExecution>
+                  <pluginExecutionFilter>
+                    <groupId>org.datanucleus</groupId>
+                    <artifactId>datanucleus-maven-plugin</artifactId>
+                    <!-- The following line is only necessary to work around a NPE in
+                         the m2e plugin. This is a known bug reported here:
+                         https://bugs.eclipse.org/bugs/show_bug.cgi?id=347602 -->
+                    <versionRange>${datanucleus.plugin.version}</versionRange>
+                    <goals>
+                      <goal>enhance</goal>
+                    </goals>
+                  </pluginExecutionFilter>
+                  <action>
+                    <ignore />
+                  </action>
+                </pluginExecution>
+                <pluginExecution>
+                  <pluginExecutionFilter>
+                    <groupId>net.sf.smc</groupId>
+                    <artifactId>smc-maven-plugin</artifactId>
+                    <versionRange>[${version.smc},)</versionRange>
+                    <goals>
+                      <goal>smc</goal>
+                    </goals>
+                  </pluginExecutionFilter>
+                  <action>
+                    <execute>
+                      <runOnIncremental>false</runOnIncremental>
+                    </execute>
+                  </action>
+                </pluginExecution>
+              </pluginExecutions>
+            </lifecycleMappingMetadata>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-pmd-plugin</artifactId>
+          <configuration>
+            <excludeRoots>
+              <!-- Don't check SMC generated source code. -->
+              <excludeRoot>target/generated-sources/smc/smc</excludeRoot>
+            </excludeRoots>
+          </configuration>
+        </plugin>
       </plugins>
-      <pluginManagement>
-        <plugins>
-            <!--This plugin's configuration is used to store Eclipse
-                m2e settings only. It has no influence on the Maven
-                build itself.-->
-            <plugin>
-                <groupId>org.eclipse.m2e</groupId>
-                <artifactId>lifecycle-mapping</artifactId>
-                <version>1.0.0</version>
-                <configuration>
-                    <lifecycleMappingMetadata>
-                        <pluginExecutions>
-                            <pluginExecution>
-                                <pluginExecutionFilter>
-                                    <groupId>org.datanucleus</groupId>
-                                    <artifactId>datanucleus-maven-plugin</artifactId>
-                                    <!-- The following line is only necessary to work around a NPE in
-                                         the m2e plugin. This is a known bug reported here:
-                                         https://bugs.eclipse.org/bugs/show_bug.cgi?id=347602 -->
-                                    <versionRange>${datanucleus.plugin.version}</versionRange>
-                                    <goals>
-                                        <goal>enhance</goal>
-                                    </goals>
-                                </pluginExecutionFilter>
-                                <action>
-                                    <ignore />
-                                </action>
-                            </pluginExecution>
-                            <pluginExecution>
-                                <pluginExecutionFilter>
-                                    <groupId>net.sf.smc</groupId>
-                                    <artifactId>smc-maven-plugin</artifactId>
-                                    <versionRange>[7.6.0,)</versionRange>
-                                    <goals>
-                                        <goal>smc</goal>
-                                    </goals>
-                                </pluginExecutionFilter>
-                                <action>
-                                    <execute>
-                                        <runOnIncremental>false</runOnIncremental>
-                                    </execute>
-                                </action>
-                            </pluginExecution>
-                        </pluginExecutions>
-                    </lifecycleMappingMetadata>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-pmd-plugin</artifactId>
-                <configuration>
-                    <excludeRoots>
-                        <!-- Don't check SMC generated source code. -->
-                        <excludeRoot>target/generated-sources/smc/smc</excludeRoot>
-                    </excludeRoots>
-                </configuration>
-            </plugin>
-        </plugins>
-      </pluginManagement>
+    </pluginManagement>
   </build>
 
-  <profiles>
-    <profile>
-      <id>smc-dot</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>net.sf.smc</groupId>
-            <artifactId>smc-maven-plugin</artifactId>
-            <version>7.6.0</version>
-            <configuration>
-              <targetLanguage>graph</targetLanguage>
-              <glevel>2</glevel>
-              <verbose>true</verbose>
-            </configuration>
-            <executions>
-              <execution>
-                <id>smc-dot</id>
-                <phase>generate-sources</phase>
-                <goals>
-                  <goal>smc</goal>
-                </goals>
-              </execution>
-            </executions>
-            <dependencies>
-              <dependency>
-                <groupId>net.sf.smc</groupId>
-                <artifactId>smc</artifactId>
-                <version>${version.smc}</version>
-              </dependency>
-            </dependencies>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>net.sf.smc</groupId>
+        <artifactId>smc-maven-plugin</artifactId>
+        <version>${version.smc}</version>
+        <configuration>
+          <targetLanguage>graph</targetLanguage>
+          <glevel>2</glevel>
+          <verbose>true</verbose>
+        </configuration>
+      </plugin>
+    </plugins>
+  </reporting>
 </project>

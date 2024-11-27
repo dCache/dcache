@@ -45,7 +45,7 @@ import statemap.TransitionUndefinedException;
  * <p>
  * This class mostly contains utility methods and auxiliary state used by the state machine.
  */
-public class Task {
+public final class Task {
 
     private static final AtomicInteger _counter = new AtomicInteger();
 

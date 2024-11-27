@@ -3,6 +3,7 @@
 %}
 
 %class Task
+%fsmclass TaskContext
 %package org.dcache.pool.migration
 %access package
 %import static diskCacheV111.util.CacheException.*
