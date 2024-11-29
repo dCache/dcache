@@ -14,7 +14,12 @@ package diskCacheV111.util;
  */
 public class DiskErrorCacheException extends CacheException {
 
+
     private static final long serialVersionUID = -5386946146340646052L;
+
+    public enum FileStoreState {
+        READ_ONLY, FAILED
+    }
 
     public DiskErrorCacheException(String msg) {
         super(CacheException.ERROR_IO_DISK, msg);
@@ -23,4 +28,13 @@ public class DiskErrorCacheException extends CacheException {
     public DiskErrorCacheException(String message, Throwable cause) {
         super(CacheException.ERROR_IO_DISK, message, cause);
     }
+
+    public FileStoreState checkStatus(String message) {
+        if (message.contains("No space available.")) {
+            return FileStoreState.READ_ONLY;
+        } else {
+            return FileStoreState.FAILED;
+        }
+    }
+
 }
