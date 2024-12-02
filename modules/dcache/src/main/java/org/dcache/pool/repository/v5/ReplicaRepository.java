@@ -38,6 +38,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -222,6 +223,11 @@ public class ReplicaRepository
      */
     @GuardedBy("_stateLock")
     private DiskSpace _runtimeMaxSize = DiskSpace.UNSPECIFIED;
+
+    /**
+     * Whatever the pool size is a factor of the total disk space.
+     */
+    private OptionalInt _diskPercentage = OptionalInt.empty();
 
     /**
      * Pool size configured in the configuration files.
@@ -1005,6 +1011,7 @@ public class ReplicaRepository
             info.setFileSystemFree(fsFree);
             info.setFileSystemRatioFreeToTotal(((double) fsFree) / fsTotal);
             info.setFileSystemMaxSpace(fsFree + used);
+            _diskPercentage.ifPresent(p -> info.setPercentage(p));
             info.setStaticallyConfiguredMax(
                   _staticMaxSize.isSpecified() ? _staticMaxSize.longValue() : null);
             info.setRuntimeConfiguredMax(
@@ -1174,16 +1181,30 @@ public class ReplicaRepository
                 "executed.")
     class SetMaxDiskspaceCommand implements Callable<String> {
 
-        @Argument(valueSpec = "-|BYTES[k|m|g|t]",
-              usage = "Disk space in bytes, kibibytes, mebibytes, gibibytes, or tebibytes. If " +
-                    "- is specified, then the pool will return to the size configured in " +
+        @Argument(valueSpec = "-|BYTES[k|m|g|t|%]",
+              usage = "Disk space in bytes, kibibytes, mebibytes, gibibytes, tebibytes or percentage of physical partition." +
+                    "If - is specified, then the pool will return to the size configured in " +
                     "the configuration file, or no maximum if such a size is not defined.")
-        DiskSpace size;
+        String sizeStr;
 
         @Override
         public String call() throws IllegalArgumentException {
             _stateLock.writeLock().lock();
             try {
+
+                DiskSpace size;
+                if (sizeStr.charAt(sizeStr.length() -1) == '%') {
+                    int percent = Integer.parseInt(sizeStr.substring(0, sizeStr.length() - 1));
+                    if (percent < 1 || percent > 100) {
+                        throw new IllegalArgumentException("Percentage must be between 1 and 100");
+                    }
+                    _diskPercentage = OptionalInt.of(percent);
+                    size = DiskSpace.UNSPECIFIED;
+                } else {
+                    _diskPercentage = OptionalInt.empty();
+                    size = new DiskSpace(sizeStr);
+                }
+
                 _runtimeMaxSize = size;
                 if (_state == State.OPEN) {
                     updateAccountSize();
@@ -1245,7 +1266,11 @@ public class ReplicaRepository
         }
 
         if (runtimeMaxSize.isSpecified()) {
-            pw.println("set max diskspace " + runtimeMaxSize);
+            if (_diskPercentage.isPresent()) {
+                pw.println("set max diskspace " + _diskPercentage.getAsInt() + "%");
+            } else {
+                pw.println("set max diskspace " + runtimeMaxSize);
+            }
         }
         if (gap.isSpecified()) {
             pw.println("set gap " + gap);
@@ -1255,6 +1280,13 @@ public class ReplicaRepository
     private DiskSpace getConfiguredMaxSize() {
         _stateLock.readLock().lock();
         try {
+
+            if (_diskPercentage.isPresent()) {
+                long total = _store.getTotalSpace();
+                double percentFactor = _diskPercentage.getAsInt()*0.01;
+                return new DiskSpace((long) (total * percentFactor));
+            }
+
             return _runtimeMaxSize.orElse(_staticMaxSize);
         } finally {
             _stateLock.readLock().unlock();

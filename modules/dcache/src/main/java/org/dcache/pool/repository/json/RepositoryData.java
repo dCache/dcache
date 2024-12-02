@@ -89,6 +89,7 @@ public class RepositoryData implements Serializable {
     private Long fileSystemMaxSpace;
     private Long staticallyConfiguredMax;
     private Long runtimeConfiguredMax;
+    private Integer percentage;
     private Long gap;
     private Long lru;
 
@@ -176,6 +177,14 @@ public class RepositoryData implements Serializable {
         return usedDiskSpaceRatio;
     }
 
+    public Integer getPercentage() {
+        return percentage;
+    }
+
+    public void setPercentage(Integer percentage) {
+        this.percentage = percentage;
+    }
+
     public void print(PrintWriter pw) {
         pw.append("State : ").append(String.valueOf(state));
         if (initializationProgress != null) {
@@ -205,7 +214,8 @@ public class RepositoryData implements Serializable {
         pw.println("    Free : " + fileSystemFree +
               "    [" + fileSystemRatioFreeToTotal + "]");
         pw.println("Limits for maximum disk space");
-        pw.println("    File system          : " + fileSystemMaxSpace);
+        pw.println("    File system (limit)  : " + fileSystemMaxSpace + " ("
+                + (percentage == null ? "100" : percentage.toString())+"%)");
         pw.println("    Statically configured: " + (staticallyConfiguredMax == null ? "-"
               : staticallyConfiguredMax.toString()));
         pw.println("    Runtime configured   : " + (runtimeConfiguredMax == null ? "-"
