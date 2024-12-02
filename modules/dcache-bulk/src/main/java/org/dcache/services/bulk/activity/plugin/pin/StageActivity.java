@@ -180,7 +180,7 @@ public final class StageActivity extends PinManagerActivity {
         checkPinnable(attributes);
 
         if (attributes.getRetentionPolicy() != RetentionPolicy.CUSTODIAL) {
-            throw new CacheException(INVALID_ARGS, "File not on tape.");
+            throw new CacheException(INVALID_ARGS, "Cannot stage DISK only files");
         }
     }
 
