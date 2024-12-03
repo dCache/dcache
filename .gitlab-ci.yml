@@ -391,7 +391,7 @@ AI Generated Release Notes:
         OPENAI_URL=$LLM_API_ENDPOINT \
         OPENAI_MODEL=$LLM_MODEL \
         OPENAI_COMPLETIONS_PATH=$LLM_COMPLETIONS_PATH \
-        OPENAI_ROLE="You are a helpful tech writer working on release notes of the dCache project." \
+        OPENAI_ROLE="You are a helpful tech writer working on release notes of the dCache project, ignoring commits with messages starting with '[maven-release-plugin]'." \
         ./chatgpt "$LLM_PROMPT" | \
         tee -a release-$CI_COMMIT_TAG.md
   artifacts:
