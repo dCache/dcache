@@ -386,7 +386,7 @@ AI Generated Release Notes:
     - curl -L -o chatgpt https://github.com/kardolus/chatgpt-cli/releases/latest/download/chatgpt-linux-amd64 && chmod +x chatgpt
     - LAST_TAG=$(.ci/get-git-version.sh $CI_COMMIT_TAG)
     - |-
-      git log $LAST_TAG..$CI_COMMIT_TAG | \
+      git log --grep=maven-release-plugin --invert-grep $LAST_TAG..$CI_COMMIT_TAG | \
         OPENAI_API_KEY=$LLM_API_KEY \
         OPENAI_URL=$LLM_API_ENDPOINT \
         OPENAI_MODEL=$LLM_MODEL \
