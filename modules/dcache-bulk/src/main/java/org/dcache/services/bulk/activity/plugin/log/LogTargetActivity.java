@@ -89,7 +89,7 @@ public final class LogTargetActivity extends BulkActivity<BulkRequestTarget> {
     }
 
     @Override
-    public ListenableFuture<BulkRequestTarget> perform(String ruid, long tid, FsPath path,
+    public ListenableFuture<BulkRequestTarget> perform(String ruid, long tid, String prefix, FsPath path,
           FileAttributes attributes) {
         long now = System.currentTimeMillis();
         BulkRequestTarget t = BulkRequestTargetBuilder.builder(null).activity(this.getName()).id(tid)

@@ -61,6 +61,7 @@ package org.dcache.services.bulk.activity.plugin.pin;
 
 import static com.google.common.util.concurrent.Uninterruptibles.getUninterruptibly;
 import static diskCacheV111.util.CacheException.INVALID_ARGS;
+import static org.dcache.services.bulk.util.BulkRequestTarget.computeFsPath;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.SKIPPED;
 
 import com.google.common.util.concurrent.Futures;
@@ -130,11 +131,12 @@ abstract class PinManagerActivity extends BulkActivity<Message> implements PinMa
         return pnfsHandler.getFileAttributes(path, MINIMALLY_REQUIRED_ATTRIBUTES);
     }
 
-    protected PinManagerUnpinMessage unpinMessage(String id, BulkRequestTarget target)
+    protected PinManagerUnpinMessage unpinMessage(String id, String prefix, BulkRequestTarget target)
           throws CacheException {
         PnfsId pnfsId = target.getPnfsId();
         if (pnfsId == null) {
-            pnfsId = getAttributes(target.getPath()).getPnfsId();
+            FsPath absolutePath = computeFsPath(prefix, target.getPath().toString());
+            pnfsId = getAttributes(absolutePath).getPnfsId();
         }
         return unpinMessage(id, pnfsId);
     }

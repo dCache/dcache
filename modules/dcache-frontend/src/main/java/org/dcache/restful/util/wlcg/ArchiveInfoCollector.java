@@ -64,6 +64,7 @@ import static com.google.common.util.concurrent.Uninterruptibles.getUninterrupti
 import com.google.common.base.Throwables;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileLocality;
+import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.util.command.Argument;
@@ -117,12 +118,12 @@ public class ArchiveInfoCollector implements CellCommandListener {
     private ExecutorService service;
     private int maxPaths;
 
-    public List<ArchiveInfo> getInfo(PnfsHandler pnfsHandler, List<String> paths) {
+    public List<ArchiveInfo> getInfo(PnfsHandler pnfsHandler, String prefix, List<String> paths) {
         Map<String, Future<FileLocality>> futures = new HashMap<>();
         List<ArchiveInfo> infoList = new ArrayList<>();
 
         for (String path : paths) {
-            futures.put(path, service.submit(() -> getInfo(path, pnfsHandler)));
+            futures.put(path, service.submit(() -> getInfo(path, prefix, pnfsHandler)));
         }
 
         for (Entry<String, Future<FileLocality>> future : futures.entrySet()) {
@@ -162,9 +163,23 @@ public class ArchiveInfoCollector implements CellCommandListener {
         this.service = service;
     }
 
-    private FileLocality getInfo(String path, PnfsHandler pnfsHandler) throws CacheException {
-        FileAttributes attributes = pnfsHandler.getFileAttributes(path, REQUIRED_ATTRIBUTES,
+    private FileLocality getInfo(String path, String prefix, PnfsHandler pnfsHandler) throws CacheException {
+        String absolutePath = computeFsPath(prefix, path).toString();
+        FileAttributes attributes = pnfsHandler.getFileAttributes(absolutePath, REQUIRED_ATTRIBUTES,
               ACCESS_MASK, false);
         return poolMonitor.getFileLocality(attributes, "localhost");
     }
+
+    public static FsPath computeFsPath(String prefix, String target) {
+        FsPath absolutePath = FsPath.create(FsPath.ROOT + target);
+        if (prefix != null) {
+            FsPath pref = FsPath.create(prefix);
+            if (!absolutePath.hasPrefix(pref)) {
+                absolutePath = FsPath.create(
+                                             FsPath.ROOT + (prefix.endsWith("/") ? prefix : prefix + "/") + target);
+            }
+        }
+        return absolutePath;
+    }
+
 }
