@@ -60,6 +60,7 @@ documents or software obtained from this server.
 package org.dcache.services.bulk.activity.plugin.pin;
 
 import static org.dcache.services.bulk.activity.plugin.pin.UnpinActivityProvider.UNPIN_REQUEST_ID;
+import static org.dcache.services.bulk.util.BulkRequestTarget.computeFsPath;
 
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -78,11 +79,12 @@ public final class UnpinActivity extends PinManagerActivity {
     }
 
     @Override
-    public ListenableFuture<Message> perform(String rid, long tid, FsPath target,
+    public ListenableFuture<Message> perform(String rid, long tid, String prefix, FsPath path,
           FileAttributes attributes) {
         try {
             if (attributes == null) {
-                attributes = getAttributes(target);
+                FsPath absolutePath = computeFsPath(prefix, path.toString());
+                attributes = getAttributes(absolutePath);
             }
             return pinManager.send(unpinMessage(id, attributes.getPnfsId()));
         } catch (CacheException e) {

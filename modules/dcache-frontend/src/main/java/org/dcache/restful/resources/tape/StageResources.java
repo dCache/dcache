@@ -127,6 +127,7 @@ import org.springframework.stereotype.Component;
 @Api(value = "tape", authorizations = {@Authorization("basicAuth")})
 @Path("tape/stage")
 public final class StageResources {
+
     private static final String STAGE = "STAGE";
 
     @Context
@@ -189,7 +190,6 @@ public final class StageResources {
             offset = lastInfo.getNextId();
         }
 
-	targetInfos.forEach(ti -> ti.setTarget(FsPath.create(ti.getTarget()).stripPrefix(rootPath)));
         lastInfo.setTargets(targetInfos);
 
         return new StageRequestInfo(lastInfo);
@@ -238,8 +238,7 @@ public final class StageResources {
         List<String> targetPaths = new ArrayList<>();
         int len = paths.length();
         for (int i = 0; i < len; ++i) {
-	    String requestPath = paths.getString(i);
-	    String path = rootPath.chroot(requestPath).toString();
+	    String path = paths.getString(i);
             targetPaths.add(path);
         }
 
@@ -397,8 +396,7 @@ public final class StageResources {
                 if (!file.has("path")) {
                     throw new BadRequestException("file object " + i + " has no path.");
                 }
-                String requestPath = file.getString("path");
-		String path = rootPath.chroot(requestPath).toString();
+                String path = file.getString("path");
                 paths.add(path);
                 if (file.has("diskLifetime")) {
                     jsonLifetimes.put(path,

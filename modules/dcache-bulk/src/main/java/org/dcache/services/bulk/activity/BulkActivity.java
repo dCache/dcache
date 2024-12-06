@@ -114,7 +114,7 @@ public abstract class BulkActivity<R> {
         retryPolicy = DEFAULT_RETRY_POLICY;
     }
 
-    public void cancel(BulkRequestTarget target) {
+    public void cancel(String prefix, BulkRequestTarget target) {
         target.cancel();
     }
 
@@ -173,11 +173,12 @@ public abstract class BulkActivity<R> {
      *
      * @param rid  of the request.
      * @param tid  of the target.
+     * @param prefix target prefix
      * @param path of the target on which to perform the activity.
      * @return future result of the activity.
      * @throws BulkServiceException
      */
-    public abstract ListenableFuture<R> perform(String rid, long tid, FsPath path, FileAttributes attributes)
+    public abstract ListenableFuture<R> perform(String rid, long tid, String prefix, FsPath path, FileAttributes attributes)
             throws BulkServiceException;
 
     /**
