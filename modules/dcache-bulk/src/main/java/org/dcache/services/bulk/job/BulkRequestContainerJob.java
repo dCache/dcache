@@ -121,7 +121,6 @@ import org.dcache.util.list.DirectoryStream;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
-import org.dcache.vehicles.PnfsResolveSymlinksMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -141,18 +140,7 @@ public final class BulkRequestContainerJob
     static final AtomicLong taskCounter = new AtomicLong(0L);
 
     public static FsPath findAbsolutePath(String prefix, String path) {
-        FsPath absPath = computeFsPath(null, path);
-        if (prefix == null) {
-            return absPath;
-        }
-
-        FsPath pref = FsPath.create(prefix);
-
-        if (!absPath.hasPrefix(pref)) {
-            absPath = computeFsPath(prefix, path);
-        }
-
-        return absPath;
+        return computeFsPath(prefix, path);
     }
 
     /**
@@ -236,7 +224,7 @@ public final class BulkRequestContainerJob
      * proper paths and attributes from listing.
      */
     enum TaskState {
-        RESOLVE_PATH, FETCH_ATTRIBUTES, HANDLE_TARGET, HANDLE_DIR_TARGET
+        FETCH_ATTRIBUTES, HANDLE_TARGET, HANDLE_DIR_TARGET
     }
 
     /**
@@ -465,7 +453,7 @@ public final class BulkRequestContainerJob
             }
 
             if (target != null) {
-                activity.cancel(target);
+                activity.cancel(targetPrefix, target);
                 LOGGER.debug("{} - target cancelled for task {}.", ruid, seqNo);
             }
 
@@ -477,9 +465,6 @@ public final class BulkRequestContainerJob
             try {
                 checkForRequestCancellation();
                 switch (state) {
-                    case RESOLVE_PATH:
-                        resolvePath();
-                        break;
                     case FETCH_ATTRIBUTES:
                         fetchAttributes();
                         break;
@@ -534,43 +519,15 @@ public final class BulkRequestContainerJob
         }
 
         /**
-         * (1) symlink resolution on initial targets; bypassed for discovered targets.
-         */
-        private void resolvePath() {
-            LOGGER.debug("{} - resolvePath, resolving {}", ruid, target.getPath());
-            PnfsResolveSymlinksMessage message = new PnfsResolveSymlinksMessage(
-                  target.getPath().toString(), null);
-            ListenableFuture<PnfsResolveSymlinksMessage> requestFuture = pnfsHandler.requestAsync(
-                  message);
-            CellStub.addCallback(requestFuture, new AbstractMessageCallback<>() {
-                @Override
-                public void success(PnfsResolveSymlinksMessage message) {
-                    LOGGER.debug("{} - resolvePath {}, callback success.", ruid, target.getPath());
-                    FsPath path = FsPath.create(message.getResolvedPath());
-                    if (targetPrefix != null && !path.contains(targetPrefix)) {
-                        path = computeFsPath(targetPrefix, path.toString());
-                    }
-                    LOGGER.debug("{} - resolvePath, resolved path {}", ruid, path);
-                    target.setPath(path);
-                    state = TaskState.FETCH_ATTRIBUTES;
-                    taskFuture = executor.submit(TargetTask.this);
-                }
-
-                @Override
-                public void failure(int rc, Object error) {
-                    LOGGER.error("{} - resolvePath, callback failure for {}.", ruid, target);
-                    storeOrUpdate(CacheExceptionFactory.exceptionOf(
-                          rc, Objects.toString(error, null)));
-                }
-            }, callbackExecutor);
-        }
-
-        /**
-         * (2) retrieval of required file attributes.
+         * (1) retrieval of required file attributes.
          */
         private void fetchAttributes() {
-            LOGGER.debug("{} - fetchAttributes for path {}", ruid, target.getPath());
-            PnfsGetFileAttributes message = new PnfsGetFileAttributes(target.getPath().toString(),
+            FsPath absolutePath = findAbsolutePath(targetPrefix,
+                                                   target.getPath().toString());
+            LOGGER.debug("{} - fetchAttributes for path {}, prefix {}, absolute path {} ", ruid, target.getPath(), targetPrefix, absolutePath);
+
+
+            PnfsGetFileAttributes message = new PnfsGetFileAttributes(absolutePath.toString(),
                   MINIMALLY_REQUIRED_ATTRIBUTES);
             ListenableFuture<PnfsGetFileAttributes> requestFuture = pnfsHandler.requestAsync(
                   message);
@@ -595,7 +552,7 @@ public final class BulkRequestContainerJob
         }
 
         /**
-         * (3b) either recurs on directory or performs activity on file.
+         * (2b) either recurs on directory or performs activity on file.
          */
         private void handleTarget() throws InterruptedException {
             LOGGER.debug("{} - handleTarget for {}, path {}.", ruid, target.getActivity(),
@@ -633,17 +590,20 @@ public final class BulkRequestContainerJob
             FsPath path = target.getPath();
             FileAttributes attributes = target.getAttributes();
             LOGGER.debug("{} - performActivity {} on {}.", ruid, activity, path);
-
             storeOrUpdate(null);
 
             if (hasBeenSpecificallyCancelled(this)) {
                 LOGGER.debug("{} - performActivity hasBeenSpecificallyCancelled for {}.", ruid,
-                      path);
+                             path);
                 remove();
             }
 
             try {
-                activityFuture = activity.perform(ruid, id == null ? seqNo : id, path, attributes);
+                activityFuture = activity.perform(ruid,
+                                                  id == null ? seqNo : id,
+                                                  targetPrefix,
+                                                  path,
+                                                  attributes);
                 if (async) {
                     activityFuture.addListener(() -> handleCompletion(), callbackExecutor);
                     permitHolder.throttledRelease();
@@ -1099,7 +1059,7 @@ public final class BulkRequestContainerJob
         for (BulkRequestTarget target : requestTargets) {
             try {
                 checkForRequestCancellation();
-                new TargetTask(target, TaskState.RESOLVE_PATH).submitAsync();
+                new TargetTask(target, TaskState.FETCH_ATTRIBUTES).submitAsync();
             } catch (InterruptedException e) {
                 /*
                  * Cancel most likely called; stop processing.

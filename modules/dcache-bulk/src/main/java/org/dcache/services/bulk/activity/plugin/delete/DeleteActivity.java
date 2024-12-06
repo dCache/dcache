@@ -89,9 +89,10 @@ public final class DeleteActivity extends BulkActivity<PnfsDeleteEntryMessage> i
     }
 
     @Override
-    public ListenableFuture<PnfsDeleteEntryMessage> perform(String rid, long tid, FsPath path,
+    public ListenableFuture<PnfsDeleteEntryMessage> perform(String rid, long tid, String prefix, FsPath path,
           FileAttributes attributes) {
-        PnfsDeleteEntryMessage msg = new PnfsDeleteEntryMessage(path.toString());
+        FsPath absolutePath = BulkRequestTarget.computeFsPath(prefix, path.toString());
+        PnfsDeleteEntryMessage msg = new PnfsDeleteEntryMessage(absolutePath.toString());
         msg.setSubject(subject);
         if (attributes != null && attributes.getFileType() == FileType.DIR && skipDirs) {
             msg.setSucceeded();
