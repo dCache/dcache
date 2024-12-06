@@ -102,8 +102,8 @@ public class LocationManagerConnector
                     } finally {
                         getNucleus().kill(tunnel.getCellName());
                     }
-                } catch (InterruptedIOException | ClosedByInterruptException e) {
-                    throw e;
+                } catch (InterruptedIOException | InterruptedException | ClosedByInterruptException e) {
+                    _log.warn("Connection to {} ({}) interrupted. Reason: {}", _domain, _address, e.toString());
                 } catch (ExecutionException | IOException e) {
                     String error = Exceptions.meaningfulMessage(Throwables.getRootCause(e));
                     _log.warn(AlarmMarkerFactory.getMarker(PredefinedAlarm.LOCATION_MANAGER_FAILURE,
@@ -116,11 +116,16 @@ public class LocationManagerConnector
                 _status = "Sleeping";
                 long sleep = random.nextInt(16000) + 4000;
                 _log.warn("Sleeping {} seconds", sleep / 1000);
-                Thread.sleep(sleep);
+                try {
+                    Thread.sleep(sleep);
+                } catch (InterruptedException e) {
+                    // restore interrupted status
+                    Thread.currentThread().interrupt();
+                }
             }
-        } catch (InterruptedIOException | InterruptedException | ClosedByInterruptException ignored) {
         } finally {
             NDC.pop();
+            _thread = null;
             _status = "Terminated";
         }
     }
