@@ -59,6 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.bulk;
 
+import static org.dcache.http.AuthenticationHandler.getLoginAttributes;
 import static org.dcache.restful.util.HttpServletRequests.getUserRootAwareTargetPrefix;
 import static org.dcache.restful.util.JSONUtils.newBadRequestException;
 
@@ -67,6 +68,7 @@ import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
+import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -93,6 +95,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.PATCH;
 import javax.ws.rs.POST;
@@ -103,9 +106,11 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.dcache.auth.attributes.LoginAttributes;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.CellStub;
+import org.dcache.http.PathMapper;
 import org.dcache.restful.util.HandlerBuilders;
 import org.dcache.restful.util.RequestUser;
 import org.dcache.restful.util.bulk.BulkServiceCommunicator;
@@ -143,6 +148,9 @@ public final class BulkResources {
 
     @Inject
     private BulkServiceCommunicator service;
+
+    @Inject
+    private PathMapper pathMapper;
 
     @Inject
     @Named("pnfs-stub")
@@ -235,11 +243,14 @@ public final class BulkResources {
         Subject subject = getSubject();
         Restriction restriction = getRestriction();
         PnfsHandler handler = HandlerBuilders.unrestrictedPnfsHandler(pnfsmanager);
-        BulkRequest request = toBulkRequest(requestPayload, this.request, handler);
+        FsPath userRoot = LoginAttributes.getUserRoot(getLoginAttributes(request));
+        FsPath rootPath = pathMapper.effectiveRoot(userRoot, ForbiddenException::new);
+        BulkRequest request = toBulkRequest(requestPayload, this.request, handler, rootPath);
 
         /*
          *  Frontend sets the URL.  The backend service provides the UUID.
          */
+
         request.setUrlPrefix(this.request.getRequestURL().toString());
 
         BulkRequestMessage message = new BulkRequestMessage(request, restriction);
@@ -498,7 +509,7 @@ public final class BulkResources {
      * they are defined in the Bulk service as well.
      */
     @VisibleForTesting
-    static BulkRequest toBulkRequest(String requestPayload, HttpServletRequest httpServletRequest, PnfsHandler handler) {
+    static BulkRequest toBulkRequest(String requestPayload, HttpServletRequest httpServletRequest, PnfsHandler handler, FsPath rootPath) {
         if (Strings.emptyToNull(requestPayload) == null) {
             throw new BadRequestException("empty request payload.");
         }
@@ -531,10 +542,13 @@ public final class BulkResources {
 
         string = removeEntry(map, String.class, "target_prefix", "target-prefix",
               "targetPrefix");
+
         if (httpServletRequest != null) {
-            request.setTargetPrefix(getUserRootAwareTargetPrefix(httpServletRequest, string, handler));
+            request.setTargetPrefix(getUserRootAwareTargetPrefix(httpServletRequest,
+                                                                 string != null ? string : rootPath.toString(),
+                                                                 handler));
         } else {
-            request.setTargetPrefix(string);
+            request.setTargetPrefix(string != null ? string : rootPath.toString());
         }
 
         string = removeEntry(map, String.class, "expand_directories", "expand-directories",

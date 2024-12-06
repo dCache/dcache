@@ -112,10 +112,24 @@ public class UpdateQoSActivity extends BulkActivity<QoSTransitionCompletedMessag
     }
 
     @Override
-    public synchronized void cancel(BulkRequestTarget target) {
+    public synchronized void cancel(String prefix, BulkRequestTarget target) {
         RemoteQoSRequirementsClient client = new RemoteQoSRequirementsClient();
         client.setRequirementsService(qosEngine);
-        PnfsId pnfsId = target.getAttributes().getPnfsId();
+        PnfsId pnfsId = null;
+        if (target.getAttributes() == null) {
+            FsPath absolutePath = BulkRequestTarget.computeFsPath(prefix,
+                                                                  target.getPath().toString());
+            try {
+                pnfsId = pnfsHandler.getFileAttributes(absolutePath.toString(),
+                                                       MINIMALLY_REQUIRED_ATTRIBUTES).getPnfsId();
+            } catch (CacheException e) {
+              LOGGER.error("fileQoSRequirementsModifiedCancelled failed: failed to fetch attributes for {} {}.",
+                           target.getPath().toString(),
+                           e.getMessage());
+            }
+        } else {
+            pnfsId = target.getAttributes().getPnfsId();
+        }
         try {
             client.fileQoSRequirementsModifiedCancelled(pnfsId, subject);
         } catch (QoSException e) {
@@ -123,19 +137,20 @@ public class UpdateQoSActivity extends BulkActivity<QoSTransitionCompletedMessag
                   e.getMessage());
         }
         responseReceiver.cancel(pnfsId.toString());
-        super.cancel(target);
+        super.cancel(prefix, target);
     }
 
     @Override
     public ListenableFuture<QoSTransitionCompletedMessage> perform(String rid, long tid,
-          FsPath path, FileAttributes attributes) throws BulkServiceException {
+          String prefix, FsPath path, FileAttributes attributes) throws BulkServiceException {
         if (targetQos == null && qosPolicy == null) {
             return Futures.immediateFailedFuture(new IllegalArgumentException("no target qos or policy given."));
         }
 
         if (attributes == null) {
             try {
-                attributes = pnfsHandler.getFileAttributes(path, MINIMALLY_REQUIRED_ATTRIBUTES);
+                FsPath absolutePath = BulkRequestTarget.computeFsPath(prefix, path.toString());
+                attributes = pnfsHandler.getFileAttributes(absolutePath.toString(), MINIMALLY_REQUIRED_ATTRIBUTES);
             } catch (CacheException e) {
                 throw new BulkServiceException("failed to retrieve file attributes", e);
             }
@@ -232,6 +247,3 @@ public class UpdateQoSActivity extends BulkActivity<QoSTransitionCompletedMessag
         this.pnfsHandler = pnfsHandler;
     }
 }
-
-
-
