@@ -173,8 +173,7 @@ public final class ReleaseResources {
             int len = paths.length();
             targetPaths = new ArrayList<>();
             for (int i = 0; i < len; ++i) {
-		String requestPath = paths.getString(i);
-		String path = rootPath.chroot(requestPath).toString();
+		String path = paths.getString(i);
 		targetPaths.add(path);
             }
         } catch (JSONException e) {
