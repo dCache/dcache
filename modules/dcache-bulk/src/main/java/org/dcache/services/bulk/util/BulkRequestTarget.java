@@ -87,12 +87,15 @@ public final class BulkRequestTarget {
           RUNNING};
 
     public static FsPath computeFsPath(String prefix, String target) {
-        if (prefix == null) {
-            return FsPath.create(FsPath.ROOT + target);
-        } else {
-            return FsPath.create(
-                  FsPath.ROOT + (prefix.endsWith("/") ? prefix : prefix + "/") + target);
+        FsPath absolutePath = FsPath.create(FsPath.ROOT + target);
+        if (prefix != null) {
+            FsPath pref = FsPath.create(prefix);
+            if (!absolutePath.hasPrefix(pref)) {
+                absolutePath = FsPath.create(
+                                             FsPath.ROOT + (prefix.endsWith("/") ? prefix : prefix + "/") + target);
+            }
         }
+        return absolutePath;
     }
 
     public static final FsPath ROOT_REQUEST_PATH = computeFsPath(null, "=request_target=");
