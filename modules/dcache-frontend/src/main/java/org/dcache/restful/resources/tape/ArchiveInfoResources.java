@@ -160,19 +160,17 @@ public final class ArchiveInfoResources {
             paths = new ArrayList<>();
             for (int i = 0; i < len; ++i) {
                 String requestedPath = jsonArray.getString(i);
-                String dcachePath = rootPath.chroot(requestedPath).toString();
-                paths.add(dcachePath);
+                paths.add(requestedPath);
             }
         } catch (JSONException e) {
             throw newBadRequestException(requestPayload, e);
         }
 
         var archiveInfos = archiveInfoCollector.getInfo(HandlerBuilders.roleAwarePnfsHandler(pnfsManager),
-              paths);
-
-        archiveInfos.forEach(ai ->
-            ai.setPath(FsPath.create(ai.getPath()).stripPrefix(rootPath)));
-
+                                                        rootPath.toString(),
+                                                        paths);
         return archiveInfos;
     }
+
+
 }
