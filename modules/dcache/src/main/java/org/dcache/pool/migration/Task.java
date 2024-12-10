@@ -241,6 +241,10 @@ public class Task {
         return _replicas.size() < _parameters.replicas;
     }
 
+    synchronized boolean moreReplicasPossible() {
+      return _parameters.waitForTargets || (_replicas.size() < _parameters.poolList.getPools().size());
+    }
+
     /**
      * FSM Action
      */
@@ -345,6 +349,16 @@ public class Task {
     void notifyCompleted() {
         _parameters.executor.execute(
               new FireAndForgetTask(() -> _callbackHandler.taskCompleted(Task.this)));
+    }
+
+    /**
+     * FSM Action
+     */
+    void notifyCompletedWithInsufficientReplicas() {
+      _parameters.executor.execute(
+              new FireAndForgetTask(() -> _callbackHandler.taskCompletedWithNote(Task.this,
+                      String.format("File replicas truncated at %s due to pool availability (%s requested)",
+                                    _replicas.size(), _parameters.replicas))));
     }
 
     /**
