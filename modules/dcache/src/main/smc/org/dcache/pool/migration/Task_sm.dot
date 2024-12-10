@@ -51,7 +51,7 @@ digraph Task {
             [label="{Failed|Default()/\l}"];
 
         "TASK::Done"
-            [label="{Done|Entry/\l&nbsp;&nbsp;&nbsp;notifyCompleted();\l|Default()/\l}"];
+            [label="{Done|Entry/\l|Default()/\l}"];
 
         "%start"
             [label="" shape=circle style=filled fillcolor=black width=0.25];
@@ -143,7 +143,7 @@ digraph Task {
             [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.getMustMovePins() \]/\l"];
 
         "TASK::UpdatingExistingFile" -> "TASK::Done"
-            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)/\l"];
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)/\lnotifyCompleted();\l"];
 
         "TASK::InitiatingCopy" -> "TASK::Copying"
             [label="copy_success()/\l"];
@@ -187,7 +187,7 @@ digraph Task {
             [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.getMustMovePins() \]/\l"];
 
         "TASK::InitiatingCopy" -> "TASK::Done"
-            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)/\l"];
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)/\lnotifyCompleted();\l"];
 
         "TASK::WaitingForCopyReplicaReply" -> "TASK::UpdatingExistingFile"
             [label="copy_success()\l\[ ctxt.hasMoreLocations() \]/\l"];
@@ -232,6 +232,9 @@ digraph Task {
         "TASK::Copying" -> "TASK::UpdatingExistingFile"
             [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.needsMoreReplicas() && ctxt.hasMoreLocations() \]/\l"];
 
+        "TASK::Copying" -> "TASK::Done"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.needsMoreReplicas() && ! (ctxt.moreReplicasPossible() || ctxt.isMetaOnly()) \]/\lnotifyCompletedWithInsufficientReplicas();\l"];
+
         "TASK::Copying" -> "TASK::InitiatingCopy"
             [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.needsMoreReplicas() && !ctxt.isMetaOnly() \]/\l"];
 
@@ -242,7 +245,7 @@ digraph Task {
             [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.getMustMovePins() \]/\l"];
 
         "TASK::Copying" -> "TASK::Done"
-            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)/\l"];
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)/\lnotifyCompleted();\l"];
 
         "TASK::Copying" -> "TASK::Cancelling"
             [label="cancel()/\l"];
@@ -272,6 +275,9 @@ digraph Task {
         "TASK::Pinging" -> "TASK::UpdatingExistingFile"
             [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.needsMoreReplicas() && ctxt.hasMoreLocations() \]/\l"];
 
+        "TASK::Pinging" -> "TASK::Done"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.needsMoreReplicas() && ! (ctxt.moreReplicasPossible() || ctxt.isMetaOnly()) \]/\lnotifyCompletedWithInsufficientReplicas();\l"];
+
         "TASK::Pinging" -> "TASK::InitiatingCopy"
             [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.needsMoreReplicas() && !ctxt.isMetaOnly() \]/\l"];
 
@@ -282,7 +288,7 @@ digraph Task {
             [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.getMustMovePins() \]/\l"];
 
         "TASK::Pinging" -> "TASK::Done"
-            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)/\l"];
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)/\lnotifyCompleted();\l"];
 
         "TASK::Pinging" -> "TASK::Cancelling"
             [label="cancel()/\l"];
@@ -314,6 +320,9 @@ digraph Task {
         "TASK::NoResponse" -> "TASK::UpdatingExistingFile"
             [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.needsMoreReplicas() && ctxt.hasMoreLocations() \]/\l"];
 
+        "TASK::NoResponse" -> "TASK::Done"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.needsMoreReplicas() && ! (ctxt.moreReplicasPossible() || ctxt.isMetaOnly()) \]/\lnotifyCompletedWithInsufficientReplicas();\l"];
+
         "TASK::NoResponse" -> "TASK::InitiatingCopy"
             [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.needsMoreReplicas() && !ctxt.isMetaOnly() \]/\l"];
 
@@ -324,7 +333,7 @@ digraph Task {
             [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.getMustMovePins() \]/\l"];
 
         "TASK::NoResponse" -> "TASK::Done"
-            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)/\l"];
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)/\lnotifyCompleted();\l"];
 
         "TASK::NoResponse" -> "TASK::Cancelling"
             [label="cancel()/\l"];
@@ -346,6 +355,9 @@ digraph Task {
         "TASK::WaitingForCopyFinishedMessage" -> "TASK::UpdatingExistingFile"
             [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.needsMoreReplicas() && ctxt.hasMoreLocations() \]/\l"];
 
+        "TASK::WaitingForCopyFinishedMessage" -> "TASK::Done"
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.needsMoreReplicas() && ! (ctxt.moreReplicasPossible() || ctxt.isMetaOnly()) \]/\lnotifyCompletedWithInsufficientReplicas();\l"];
+
         "TASK::WaitingForCopyFinishedMessage" -> "TASK::InitiatingCopy"
             [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.needsMoreReplicas() && !ctxt.isMetaOnly() \]/\l"];
 
@@ -356,10 +368,10 @@ digraph Task {
             [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ ctxt.getMustMovePins() \]/\l"];
 
         "TASK::WaitingForCopyFinishedMessage" -> "TASK::Done"
-            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)/\l"];
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)/\lnotifyCompleted();\l"];
 
         "TASK::MovingPin" -> "TASK::Done"
-            [label="move_success()/\l"];
+            [label="move_success()/\lnotifyCompleted();\l"];
 
         "TASK::MovingPin" -> "TASK::Failed"
             [label="move_failure(rc: Integer, cause: Object)/\lfail(rc, \"Pin manager failed (\" + cause + \")\");\l"];
@@ -386,7 +398,7 @@ digraph Task {
                                            ctxt.getCancelReason()));\l"];
 
         "TASK::Cancelling" -> "TASK::Done"
-            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ message.getReturnCode() == 0 \]/\l"];
+            [label="messageArrived(message: PoolMigrationCopyFinishedMessage)\l\[ message.getReturnCode() == 0 \]/\lnotifyCompleted();\l"];
 
         "TASK::Cancelling" -> "TASK::Failed"
             [label="cancel_noroute()/\lfail(SERVICE_UNAVAILABLE, String.format(\"Cancelling task (%s) failed (no route)\",

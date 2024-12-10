@@ -181,6 +181,7 @@ Entry
         messageArrived(message: PoolMigrationCopyFinishedMessage)
                 Done
                 {
+                        notifyCompleted();
                 }
 
 }
@@ -266,6 +267,7 @@ Entry
         messageArrived(message: PoolMigrationCopyFinishedMessage)
                 Done
                 {
+                        notifyCompleted();
                 }
 }
 
@@ -360,6 +362,12 @@ Exit
                 {
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ ctxt.needsMoreReplicas() && ! (ctxt.moreReplicasPossible() || ctxt.isMetaOnly()) ]
+                Done
+                {
+                        notifyCompletedWithInsufficientReplicas();
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
                 [ ctxt.needsMoreReplicas() && !ctxt.isMetaOnly() ]
                 InitiatingCopy
                 {
@@ -378,6 +386,7 @@ Exit
         messageArrived(message: PoolMigrationCopyFinishedMessage)
                 Done
                 {
+                        notifyCompleted();
                 }
         cancel
                 Cancelling
@@ -436,6 +445,12 @@ Entry
                 {
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ ctxt.needsMoreReplicas() && ! (ctxt.moreReplicasPossible() || ctxt.isMetaOnly()) ]
+                Done
+                {
+                        notifyCompletedWithInsufficientReplicas();
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
                 [ ctxt.needsMoreReplicas() && !ctxt.isMetaOnly() ]
                 InitiatingCopy
                 {
@@ -454,6 +469,7 @@ Entry
         messageArrived(message: PoolMigrationCopyFinishedMessage)
                 Done
                 {
+                        notifyCompleted();
                 }
         cancel
                 Cancelling
@@ -528,6 +544,12 @@ Exit
                 {
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ ctxt.needsMoreReplicas() && ! (ctxt.moreReplicasPossible() || ctxt.isMetaOnly()) ]
+                Done
+                {
+                        notifyCompletedWithInsufficientReplicas();
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
                 [ ctxt.needsMoreReplicas() && !ctxt.isMetaOnly() ]
                 InitiatingCopy
                 {
@@ -546,6 +568,7 @@ Exit
         messageArrived(message: PoolMigrationCopyFinishedMessage)
                 Done
                 {
+                        notifyCompleted();
                 }
         cancel
                 Cancelling
@@ -596,6 +619,12 @@ Exit
                 {
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ ctxt.needsMoreReplicas() && ! (ctxt.moreReplicasPossible() || ctxt.isMetaOnly()) ]
+                Done
+                {
+                        notifyCompletedWithInsufficientReplicas();
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
                 [ ctxt.needsMoreReplicas() && !ctxt.isMetaOnly() ]
                 InitiatingCopy
                 {
@@ -614,6 +643,7 @@ Exit
         messageArrived(message: PoolMigrationCopyFinishedMessage)
                 Done
                 {
+                        notifyCompleted();
                 }
 }
 
@@ -626,6 +656,7 @@ Entry
         move_success
                 Done
                 {
+                        notifyCompleted();
                 }
         move_failure(rc: Integer, cause: Object)
                 Failed
@@ -689,6 +720,7 @@ Exit
                 [ message.getReturnCode() == 0 ]
                 Done
                 {
+                        notifyCompleted();
                 }
         cancel_success
                 nil
@@ -731,7 +763,6 @@ Failed
 Done
 Entry
 {
-        notifyCompleted();
 }
 {
 }
