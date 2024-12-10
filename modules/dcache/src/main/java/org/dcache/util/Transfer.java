@@ -74,10 +74,17 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.security.auth.Subject;
+
+import jdk.jfr.Category;
+import jdk.jfr.Enabled;
+import jdk.jfr.Event;
+import jdk.jfr.Label;
+import jdk.jfr.Name;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
@@ -171,6 +178,27 @@ public class Transfer implements Comparable<Transfer> {
     private synchronized EnumSet<RequestState> getAllowedRequestStates() {
         return EnumSet.copyOf(_allowedRequestStates);
     }
+
+    @Category({"dCache", "Transfer"})
+    @Name("org.dcache.door.Messages")
+    @Label("Messages")
+    @Enabled(true)
+    static class MessageEvent extends Event {
+        @Label("Message")
+        String message;
+
+        @Name("Source")
+        String source;
+
+        @Name("Destination")
+        String destination;
+    }
+
+    /**
+     * Optional close event. The close uses notifications, thus we can't use cellMessage reply callback.
+     * So, use a call field that will commit message on finish.
+     */
+    private final AtomicReference<MessageEvent> killMoverEventHolder = new AtomicReference<>();
 
     /**
      * Constructs a new Transfer object.
@@ -543,6 +571,12 @@ public class Transfer implements Comparable<Transfer> {
      * Signals that the mover of this transfer finished.
      */
     public final synchronized void finished(DoorTransferFinishedMessage msg) {
+
+        var killMoverEvent = killMoverEventHolder.getAndSet(null);
+        if (killMoverEvent != null) {
+            killMoverEvent.commit();
+        }
+
         setFileAttributes(msg.getFileAttributes());
         setProtocolInfo(msg.getProtocolInfo());
         moverInfoMessage = msg.getMoverInfo();
@@ -774,12 +808,19 @@ public class Transfer implements Comparable<Transfer> {
         }
         request.setAccessMask(mask);
         request.setUpdateAtime(true);
+
+        MessageEvent nameSpaceReadEvent = new MessageEvent();
+        nameSpaceReadEvent.source = getCellName() + "@" + getDomainName();
+        nameSpaceReadEvent.destination = "PnfsManager";
+        nameSpaceReadEvent.message = PnfsGetFileAttributes.class.getSimpleName();
+        nameSpaceReadEvent.begin();
         ListenableFuture<PnfsGetFileAttributes> reply = _pnfs.requestAsync(request, timeout);
 
         setStatusUntil("PnfsManager: Fetching storage info", reply);
 
         return CellStub.transformAsync(reply,
               msg -> {
+                  nameSpaceReadEvent.commit();
                   FileAttributes attributes = msg.getFileAttributes();
                   /* We can only transfer regular files.
                    */
@@ -942,6 +983,13 @@ public class Transfer implements Comparable<Transfer> {
             return immediateFuture(null);
         }
 
+        // init JFR event
+        MessageEvent poolSelectEvent = new MessageEvent();
+        poolSelectEvent.source = getCellName() + "@" + getDomainName();
+        poolSelectEvent.destination = "PoolManager";
+        poolSelectEvent.message = isWrite() ? PoolMgrSelectReadPoolMsg.class.getSimpleName() : PoolMgrSelectWritePoolMsg.class.getSimpleName();
+        poolSelectEvent.begin();
+
         ProtocolInfo protocolInfo = getProtocolInfoForPoolManager();
         ListenableFuture<? extends PoolMgrSelectPoolMsg> reply;
         if (isWrite()) {
@@ -998,6 +1046,7 @@ public class Transfer implements Comparable<Transfer> {
         setStatusUntil("PoolManager: Selecting pool", reply);
         return CellStub.transform(reply,
               (PoolMgrSelectPoolMsg msg) -> {
+                  poolSelectEvent.commit();
                   setPool(msg.getPool());
                   setFileAttributes(msg.getFileAttributes());
                   return null;
@@ -1038,6 +1087,13 @@ public class Transfer implements Comparable<Transfer> {
         message.setId(_id);
         message.setSubject(_subject);
 
+        // init JFR event
+        MessageEvent moverStartEvent = new MessageEvent();
+        moverStartEvent.source = getCellName() + "@" + getDomainName();
+        moverStartEvent.destination = pool.getName();
+        moverStartEvent.message = message.getClass().getSimpleName();
+        moverStartEvent.begin();
+
         /*
          * SpaceManager needs to spy mover shutdown to adjust the space reservation. for this reason we have to
          * proxy mover start messages through SpaceManager. However, reads can be sent directly to pools.
@@ -1056,6 +1112,7 @@ public class Transfer implements Comparable<Transfer> {
 
         setStatusUntil("Pool " + pool + ": Creating mover", reply);
         return CellStub.transformAsync(reply, msg -> {
+            moverStartEvent.commit();
             setMoverId(msg.getMoverId());
             return immediateFuture(null);
         });
@@ -1096,6 +1153,17 @@ public class Transfer implements Comparable<Transfer> {
             PoolMoverKillMessage message =
                   new PoolMoverKillMessage(pool.getName(), moverId, explanation);
             message.setReplyRequired(false);
+
+            // init JFR event
+            var killMoverEvent = new MessageEvent();
+            killMoverEvent.source = getCellName() + "@" + getDomainName();
+            killMoverEvent.destination = pool.getName();
+            killMoverEvent.message = message.getClass().getSimpleName();
+
+            if (killMoverEventHolder.compareAndSet(null, killMoverEvent)) {
+                killMoverEvent.begin();
+            }
+
             _poolStub.notify(new CellPath(pool.getAddress()), message);
 
             /* To reduce the risk of orphans when using PNFS, we wait
