@@ -59,6 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.qos.services.engine.provider;
 
+import static org.dcache.qos.util.QoSPermissionUtils.canModifyQos;
+
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsId;
