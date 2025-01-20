@@ -2726,7 +2726,7 @@ public class PoolSelectionUnitV2
     @AffectsSetup
     public String ac_psu_clear_im_really_sure(Args args) {
         clear();
-        return "Voila, now everthing is really gone";
+        return "Voila, now everything is really gone";
     }
 
     public static final String hh_psu_create_link = "<link> <unit group> [...]";
