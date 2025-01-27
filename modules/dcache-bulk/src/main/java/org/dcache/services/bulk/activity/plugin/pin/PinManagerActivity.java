@@ -112,9 +112,6 @@ abstract class PinManagerActivity extends BulkActivity<Message> implements PinMa
             reply = getUninterruptibly(future);
             if (reply.getReturnCode() != 0) {
                 target.setErrorObject(reply.getErrorObject());
-            } else if (reply instanceof PinManagerPinMessage
-                  && ((PinManagerPinMessage) reply).getLifetime() == -1L) {
-                target.setState(SKIPPED);
             } else {
                 target.setState(State.COMPLETED);
             }
