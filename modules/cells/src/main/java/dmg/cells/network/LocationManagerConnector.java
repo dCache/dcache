@@ -54,8 +54,8 @@ public class LocationManagerConnector
     @Override
     protected void started() {
         _thread = getNucleus().newThread(this, "TunnelConnector-" + _domain);
-        _thread.start();
         _isRunning = true;
+        _thread.start();
     }
 
     private StreamEngine connect()
