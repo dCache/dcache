@@ -367,7 +367,12 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
                                 String errmsg = "WRITE failed : " + (ioException == null ? "IOError"
                                       : Exceptions.messageOrClassName(ioException));
                                 int rc;
-                                if (ioException instanceof OutOfDiskException) {
+                                // TODO: To be checked (in production) if the error is an IOException;
+                                //  we can check it only by the error message.
+                                if (ioException instanceof OutOfDiskException ||
+                                      (ioException != null && ioException.getCause().getMessage()
+                                            .contains("No space available."))
+                                ) {
                                     _log.debug(errmsg);
                                     rc = CacheException.RESOURCE;
                                 } else {
@@ -535,7 +540,11 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
                                       "SEEK_AND_WRITE failed : " + (ioException == null ? "IOError"
                                             : Exceptions.messageOrClassName(ioException));
                                 int rc;
-                                if (ioException instanceof OutOfDiskException) {
+                                // TODO: To be checked (in production) if the error is an IOException;
+                                //  we can check it only by the error message.
+                                if (ioException instanceof OutOfDiskException ||
+                                      (ioException != null && ioException.getCause().getMessage()
+                                            .contains("No space available."))) {
                                     _log.debug(errmsg);
                                     rc = CacheException.RESOURCE;
                                 } else {
@@ -678,10 +687,19 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
                 if (ioException instanceof OutOfDiskException) {
                     throw ioException;
                 } else {
-                    throw new
-                          DiskErrorCacheException(
-                          "Disk I/O Error " +
-                                (ioException != null ? ioException.toString() : ""));
+                    //TODO since the OutOfDiskException is not  catched the error ist IOexception
+                    // this is a workaround
+                    if (ioException != null && ioException.getCause().getMessage().contains("No space available.")) {
+                        throw new
+                              OutOfDiskException(
+                              "No space available." +
+                                    ioException.toString());
+                    } else {
+                        throw new
+                              DiskErrorCacheException(
+                              "Disk I/O Error " +
+                                    (ioException != null ? ioException.toString() : ""));
+                    }
                 }
             } else {
                 if (ioException != null && !(ioException instanceof EOFException)) {
@@ -922,6 +940,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
                         // clear interrupted state
                         Thread.interrupted();
                         throw new InterruptedException(ee.getMessage());
+                        // TODO: In the case of a "no space left" error message, this will not work.
                     } catch (OutOfDiskException e) {
                         _io_ok = false;
                         ioException = e;
