@@ -41,6 +41,7 @@ import org.dcache.pool.FaultListener;
 import org.dcache.pool.movers.Mover;
 import org.dcache.pool.movers.json.MoverData;
 import org.dcache.pool.repository.FileStore;
+import org.dcache.pool.repository.OutOfDiskException;
 import org.dcache.util.AdjustableSemaphore;
 import org.dcache.util.IoPrioritizable;
 import org.dcache.util.IoPriority;
@@ -527,6 +528,13 @@ public class MoverRequestScheduler {
                               FaultEvent faultEvent = new FaultEvent("transfer",
                                       faultAction, exc.getMessage(), exc);
                               _faultListeners.forEach(l -> l.faultOccurred(faultEvent));
+                          } else if (exc instanceof OutOfDiskException) {
+                              FaultEvent faultEvent = new FaultEvent(
+                                    "post-processing",
+                                    FaultAction.READONLY,
+                                    exc.getMessage(), exc);
+                              _faultListeners.forEach(
+                                    l -> l.faultOccurred(faultEvent));
                           }
                           postprocess();
                       }
@@ -555,6 +563,13 @@ public class MoverRequestScheduler {
                                                 FaultEvent faultEvent = new FaultEvent(
                                                       "post-processing",
                                                         faultAction,
+                                                      exc.getMessage(), exc);
+                                                _faultListeners.forEach(
+                                                      l -> l.faultOccurred(faultEvent));
+                                            } else if (exc instanceof OutOfDiskException) {
+                                                FaultEvent faultEvent = new FaultEvent(
+                                                      "post-processing",
+                                                      FaultAction.READONLY,
                                                       exc.getMessage(), exc);
                                                 _faultListeners.forEach(
                                                       l -> l.faultOccurred(faultEvent));
