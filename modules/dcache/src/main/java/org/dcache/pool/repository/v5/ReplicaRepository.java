@@ -838,8 +838,16 @@ public class ReplicaRepository
             SpaceRecord space = _account.getSpaceRecord();
             long lru = (System.currentTimeMillis() - _sweeper.getLru()) / 1000L;
             long gap = _gap.orElse(Math.min(space.getTotalSpace() / 4, DEFAULT_GAP));
+
+            // REVISIT: This workaround addresses a filesystem behavior where the effective free space
+            // may be smaller than the total - used.
+            // To ensure correctness, we take the minimum of the disk reported and
+            // the dCache accounting expected free spaces.
+            long storeFreeSpace = _store.getFreeSpace();
+            long effectiveFreeSpace = Math.min(storeFreeSpace, space.getFreeSpace());
+
             return new SpaceRecord(space.getTotalSpace(),
-                  space.getFreeSpace(),
+                  effectiveFreeSpace,
                   space.getPreciousSpace(),
                   space.getRemovableSpace(),
                   lru,
