@@ -831,7 +831,7 @@ public class FileAttributes implements Serializable, Cloneable {
 
     @Nonnull
     private <T> Optional<T> toOptional(FileAttribute attribute, T value) {
-        return isDefined(attribute) ? Optional.of(value) : Optional.empty();
+        return isDefined(attribute) ? Optional.ofNullable(value) : Optional.empty();
     }
 
     private void readObject(ObjectInputStream stream)
