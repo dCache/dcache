@@ -71,6 +71,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Collections.synchronizedList;
 import static java.util.Objects.requireNonNull;
 import static org.dcache.acl.enums.AccessType.ACCESS_ALLOWED;
 import static org.dcache.auth.attributes.Activity.DELETE;
@@ -102,11 +103,11 @@ import static org.dcache.util.Strings.describeSize;
 import static org.dcache.util.TransferRetryPolicy.maximumTries;
 import static org.dcache.util.TransferRetryPolicy.tryOnce;
 
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
-import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
@@ -200,7 +201,7 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -266,8 +267,6 @@ import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static java.util.Collections.synchronizedList;
 
 @Inherited
 @Retention(RUNTIME)
@@ -1522,11 +1521,13 @@ public abstract class AbstractFtpDoorV1
         _executor = new CDCExecutorDecorator<>(executor);
     }
 
-    public void setSpaceDescriptionCache(LoadingCache<GetSpaceTokensKey, long[]> cache) {
+    public void setSpaceDescriptionCache(
+          LoadingCache<GetSpaceTokensKey, long[]> cache) {
         _spaceDescriptionCache = cache;
     }
 
-    public void setSpaceLookupCache(LoadingCache<String, Optional<Space>> cache) {
+    public void setSpaceLookupCache(
+          LoadingCache<String, Optional<Space>> cache) {
         _spaceLookupCache = cache;
     }
 
@@ -3233,7 +3234,7 @@ public abstract class AbstractFtpDoorV1
                 default:
                     throw new FTPCommandException(451, "Operation failed: " + e.getMessage(), e);
             }
-        } catch (ExecutionException e) {
+        } catch (CompletionException e) {
             Throwable cause = e.getCause();
             Throwables.throwIfUnchecked(cause);
             throw new FTPCommandException(451,

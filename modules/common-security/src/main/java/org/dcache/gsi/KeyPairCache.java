@@ -17,17 +17,14 @@
  */
 package org.dcache.gsi;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ListenableFutureTask;
+import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -52,35 +49,18 @@ public class KeyPairCache {
     private static final Executor _executor = Executors.newCachedThreadPool(
           new ThreadFactoryBuilder().setNameFormat("KeyPair-generator-%d").setDaemon(true).build());
 
-    private final LoadingCache<Integer, KeyPair> _cache;
+    private final AsyncLoadingCache<Integer, KeyPair> _cache;
     private String algorithm = DEFAULT_ALGORITHM;
     private String provider = DEFAULT_PROVIDER;
 
     public KeyPairCache(long lifetime, TimeUnit unit) {
         if (lifetime > 0) {
-            _cache = CacheBuilder.newBuilder()
+            _cache = Caffeine.newBuilder()
                   .maximumSize(1000)
                   .expireAfterWrite(EXPIRE_AFTER, TimeUnit.DAYS)
                   .refreshAfterWrite(lifetime, unit)
-                  .build(
-                        new CacheLoader<Integer, KeyPair>() {
-                            @Override
-                            public KeyPair load(Integer keySize) throws
-                                  NoSuchAlgorithmException,
-                                  NoSuchProviderException {
-                                return generate(keySize);
-                            }
-
-                            @Override
-                            public ListenableFuture<KeyPair> reload(final
-                            Integer keySize, KeyPair previous) {
-                                ListenableFutureTask<KeyPair> task =
-                                      ListenableFutureTask.create(() -> generate(keySize));
-                                _executor.execute(task);
-                                return task;
-                            }
-                        }
-                  );
+                  .executor(_executor)
+                  .buildAsync(this::generate);
         } else {
             _cache = null;
         }
@@ -109,8 +89,8 @@ public class KeyPairCache {
             return generate(bits);
         } else {
             try {
-                return _cache.get(bits);
-            } catch (ExecutionException e) {
+                return _cache.synchronous().get(bits);
+            } catch (CompletionException e) {
                 // propagate
                 throw new RuntimeException();
             }
