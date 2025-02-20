@@ -1,6 +1,5 @@
 package org.dcache.util.jetty;
 
-import com.google.common.collect.ImmutableMap;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Map;
@@ -15,7 +14,7 @@ public class ImmutableAttributesMap implements Attributes {
     private final Map<String, Object> map;
 
     public ImmutableAttributesMap(Map<String, Object> map) {
-        this.map = ImmutableMap.copyOf(map);
+        this.map = Map.copyOf(map);
     }
 
     @Override
@@ -30,7 +29,7 @@ public class ImmutableAttributesMap implements Attributes {
 
     @Override
     public Object getAttribute(String name) {
-        return map == null ? null : map.get(name);
+        return map.get(name);
     }
 
     @Override
@@ -48,15 +47,15 @@ public class ImmutableAttributesMap implements Attributes {
     }
 
     public int size() {
-        return map == null ? 0 : map.size();
+        return map.size();
     }
 
     @Override
     public String toString() {
-        return map == null ? "{}" : map.toString();
+        return map.toString();
     }
 
     private Set<String> keySet() {
-        return map == null ? Collections.emptySet() : map.keySet();
+        return map.keySet();
     }
 }
