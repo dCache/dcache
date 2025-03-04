@@ -31,7 +31,7 @@ We like our git history clean, which is why the author of a commit should **reba
 
 ## Code Style
 
-We use an adapted version of the [`Google style guide for Java`](https://github.com/google/styleguide) that can be found in the root of this project for IntelliJ.
+We use an adapted version of the [`Google style guide for Java`](https://github.com/google/styleguide) that can be found in the [root of this project for IntelliJ](https://github.com/dCache/dcache/blob/master/intellij-java-google-dcache-style.xml).
 The used reformatting involves optimization of imports (reordering), application of all syntactical sugar settings, but does not include code rearrangement (fields, methods, classes) or code cleanup for existing code. Reformatting should be applied to the changed code before submitting a patch.
 
 ## Testing
