@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <!--
+    IMPORTANT:
+        This file contains changes that should be applied prior any other schema changes,
+        typically to fix liquibase or schema issues that prevent other changes from being applied.
+    -->
+
+    <changeSet id="0.1" author="tigran" runOrder="first">
+
+        <comment>
+            Fix liquibase issue with duplicate id and mismatching md5sums in databasechangelog table.
+            This change set should be applied before any other changes.
+        </comment>
+
+        <sql>
+            UPDATE databasechangelog SET md5sum = '7:3cf94dc86efe2152925a739c69fd464d' WHERE md5sum = '7:0e1c15013e23f1df41d4035279a1e832';
+            UPDATE databasechangelog SET md5sum = '7:59f95bea151c12b6f158a7f5dc330095' WHERE md5sum = '7:6956b64fca6692e79e878e317715a628';
+        </sql>
+    </changeSet>
+</databaseChangeLog>
