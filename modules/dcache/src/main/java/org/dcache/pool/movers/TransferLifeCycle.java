@@ -86,7 +86,7 @@ public class TransferLifeCycle {
 
         var data = new FlowMarkerBuilder()
               .withStartedAt(Instant.now())
-              .withExperimentId(getExperimentId(subject))
+              .withExperimentId(getExperimentId(protocolInfo))
               .withActivityId(getActivity(protocolInfo))
               .wittApplication(getApplication(protocolInfo))
               .withProtocol("tcp")
@@ -123,7 +123,7 @@ public class TransferLifeCycle {
         var data = new FlowMarkerBuilder()
               .withStartedAt(Instant.now())
               .withFinishedAt(Instant.now())
-              .withExperimentId(getExperimentId(subject))
+              .withExperimentId(getExperimentId(protocolInfo))
               .withActivityId(getActivity(protocolInfo))
               .wittApplication(getApplication(protocolInfo))
               .withProtocol("tcp")
@@ -177,6 +177,9 @@ public class TransferLifeCycle {
 
     private boolean needMarker(ProtocolInfo protocolInfo) {
 
+        if (protocolInfo.getSciTag() == 0)
+            return false;
+
         switch (protocolInfo.getProtocol().toLowerCase()) {
             case "xrootd":
             case "http":
@@ -191,21 +194,9 @@ public class TransferLifeCycle {
         return protocolInfo.getProtocol().toLowerCase();
     }
 
-    private int getExperimentId(Subject subject) {
-
-        var vo = Subjects.getPrimaryFqan(subject);
-        if (vo == null) {
-            return 0;
-        }
-
-        switch (vo.getGroup().toLowerCase()) {
-            case "atlas":
-                return 16;
-            case "cms":
-                return 23;
-            default:
-                return 0;
-        }
+    private int getExperimentId(ProtocolInfo protocolInfo) {
+        // scitag = exp_id << 6 | act_id
+        return (int) protocolInfo.getSciTag() >> 6;
     }
 
     private boolean isLocalTransfer(InetSocketAddress dst) {
@@ -214,8 +205,8 @@ public class TransferLifeCycle {
     }
 
     private int getActivity(ProtocolInfo protocolInfo) {
-        // REVISIT: the activity should come from protocol info
-        return 14; // production
+        // scitag = exp_id << 6 | act_id
+        return protocolInfo.getSciTag() & 0x3F;
     }
 
     private String toAFI(InetSocketAddress dst) {
