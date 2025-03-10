@@ -1683,7 +1683,7 @@ public class DcacheResourceFactory
          * The original request path that will be passed to pool for fall-back redirect.
          */
         private final String _requestPath;
-        private int _sciTag;
+        private int _sciTag = -1;
 
         public HttpTransfer(PnfsHandler pnfs, Subject subject,
               Restriction restriction, FsPath path) throws URISyntaxException {
@@ -1717,7 +1717,8 @@ public class DcacheResourceFactory
                         _disposition,
                         wantedChecksums);
             protocolInfo.setSessionId((int) getId());
-            protocolInfo.setSciTag(_sciTag);
+            if(_sciTag > 64 && _sciTag < 65536)
+                protocolInfo.setSciTag(_sciTag);
             return protocolInfo;
         }
 
