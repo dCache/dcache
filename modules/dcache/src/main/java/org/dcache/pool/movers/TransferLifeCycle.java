@@ -76,9 +76,9 @@ public class TransferLifeCycle {
             return;
         }
 
-        if (isLocalTransfer(src)) {
+        /* if (isLocalTransfer(src)) {
             return;
-        }
+        }*/ // REVISIT: this is not needed
 
         if (!needMarker(protocolInfo)) {
             return;
@@ -112,9 +112,9 @@ public class TransferLifeCycle {
             return;
         }
 
-        if (isLocalTransfer(src)) {
+        /* if (isLocalTransfer(src)) {
             return;
-        }
+        } */ // REVISIT: this is not needed
 
         if (!needMarker(protocolInfo)) {
             return;
@@ -177,7 +177,7 @@ public class TransferLifeCycle {
 
     private boolean needMarker(ProtocolInfo protocolInfo) {
 
-        if (protocolInfo.getSciTag() == 0)
+        if (protocolInfo.getSciTag() == -1)
             return false;
 
         switch (protocolInfo.getProtocol().toLowerCase()) {
