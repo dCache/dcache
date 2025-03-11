@@ -68,7 +68,7 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
         _uuid = uuid;
         _doorAddress = doorAddress;
         _flags = Sets.newEnumSet(asList(flags), Flags.class);
-        _sciTag = 0;
+        _sciTag = -1;
     }
 
     public Serializable getDelegatedCredential() {

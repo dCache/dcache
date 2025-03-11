@@ -104,7 +104,7 @@ public class HttpProtocolInfo implements IpProtocolInfo {
         _disposition = disposition;
         _wantedChecksum = wantedChecksums.isEmpty() ? null : wantedChecksums.get(0);
         _wantedChecksums = Set.copyOf(wantedChecksums);
-        _sciTag = 0;
+        _sciTag = -1;
     }
 
     public String getHttpDoorCellName() {
