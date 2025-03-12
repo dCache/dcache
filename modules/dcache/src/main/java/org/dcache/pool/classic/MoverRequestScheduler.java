@@ -12,6 +12,7 @@ import static org.dcache.pool.classic.IoRequestState.RUNNING;
 import diskCacheV111.pools.PoolCostInfo.NamedPoolQueueInfo;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
+import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.vehicles.JobInfo;
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -55,6 +56,10 @@ public class MoverRequestScheduler {
 
     private static final long DEFAULT_LAST_ACCESSED = 0;
     private static final long DEFAULT_TOTAL = 0;
+
+    public long pendingRequestsFor(PnfsId pnfsId) {
+        return _queue.stream().filter((pr) -> pr.getMover().getFileAttributes().getPnfsId() == pnfsId).count();
+    }
 
     /**
      * A RuntimeException that wraps a CacheException.
