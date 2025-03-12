@@ -103,6 +103,7 @@ import org.dcache.pool.assumption.Assumption;
 import org.dcache.pool.json.PoolDataDetails;
 import org.dcache.pool.json.PoolDataDetails.Lsf;
 import org.dcache.pool.json.PoolDataDetails.P2PMode;
+import org.dcache.pool.migration.HotFileReplicator;
 import org.dcache.pool.movers.Mover;
 import org.dcache.pool.nearline.HsmSet;
 import org.dcache.pool.nearline.NearlineStorageHandler;
@@ -213,6 +214,7 @@ public class PoolV4
     };
 
     private ThreadFactory _threadFactory;
+    private HotFileReplicator _hotFileReplicator;
 
 
     protected void assertNotRunning(String error) {
@@ -732,6 +734,7 @@ public class PoolV4
     private void ioFile(CellMessage envelope, PoolIoFileMessage message) {
         try {
             message.setMoverId(queueIoRequest(envelope, message));
+            _hotFileReplicator.maybeReplicate(message, _ioQueue.numberOfRequestsFor(message.getPnfsId()));
             message.setSucceeded();
         } catch (OutOfDateCacheException e) {
             if (_pingLimiter.tryAcquire()) {
