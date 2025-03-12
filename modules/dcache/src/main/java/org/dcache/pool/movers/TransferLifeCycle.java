@@ -36,10 +36,8 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import javax.annotation.Nonnull;
 import javax.security.auth.Subject;
-import org.dcache.auth.Subjects;
 import org.dcache.net.FlowMarker.FlowMarkerBuilder;
 import org.dcache.util.IPMatcher;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -162,10 +160,10 @@ public class TransferLifeCycle {
      * @param payload the marker
      * @throws IllegalStateException if flow marker ist not build.
      */
-    private void send(InetSocketAddress dst, @Nonnull JSONObject payload)
+    private void send(InetSocketAddress dst, @Nonnull String payload)
           throws IllegalStateException {
 
-        byte[] data = payload.toString().getBytes(StandardCharsets.UTF_8);
+        byte[] data = payload.getBytes(StandardCharsets.UTF_8);
         DatagramPacket p = new DatagramPacket(data, data.length);
         try (DatagramSocket socket = new DatagramSocket()) {
             socket.connect(dst);
