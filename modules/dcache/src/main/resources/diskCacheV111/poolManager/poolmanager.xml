@@ -38,6 +38,10 @@
 
   <bean id="cm" class="diskCacheV111.poolManager.CostModuleV1">
     <description>Cost module</description>
+    <property name="trustScoreIncrease" value="16"/>
+    <property name="trustScoreDecrease" value="2"/>
+    <property name="trustScoreThreshold" value="35"/>
+    <property name="trustScoreCeiling" value="150"/>
   </bean>
 
   <bean id="pm" class="org.dcache.poolmanager.PartitionManager">
