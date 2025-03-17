@@ -104,6 +104,7 @@ public class FsInode {
     public FsInode(FileSystemProvider fs, long ino, FsInodeType type, int level, Stat stat) {
         checkArgument(level >= 0 && level <= JdbcFs.LEVELS_NUMBER,
               "invalid level number: " + level);
+        System.out.println("test Lablessssss " + type + "ino "+ ino);
         _ino = ino;
         _fs = fs;
         _level = level;
@@ -251,6 +252,7 @@ public class FsInode {
      */
     public FsInode inodeOf(String name, FileSystemProvider.StatCacheOption stat)
           throws ChimeraFsException {
+        System.out.println("test where is i called");
         return _fs.inodeOf(this, name, stat);
     }
 

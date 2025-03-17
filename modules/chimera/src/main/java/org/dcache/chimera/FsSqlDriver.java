@@ -1552,6 +1552,31 @@ public class FsSqlDriver implements AutoCloseable {
         }
     }
 
+
+    public Stat statLabelsParent(FsInode dir) throws ChimeraFsException {
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        Stat stat = new Stat();
+        String pnfsIdSecond = "FFFFF0000000000000000";
+        String tempId = String.format("%016x", 0);
+        String pnfsID = pnfsIdSecond + tempId;
+        stat.setIno(0);
+        // TODO could be changed latter or should be deleted
+        stat.setId(pnfsID);
+        stat.setCrTime(now.getTime());
+        stat.setGeneration(LocalDateTime.now().getMinute());
+        stat.setSize(512);
+        stat.setATime(now.getTime());
+        stat.setCTime(now.getTime());
+        stat.setMTime(now.getTime());
+        stat.setUid(0000);
+        stat.setGid(0000);
+        stat.setMode(0755 | UnixPermission.S_IFDIR);
+        stat.setDev(19);
+        stat.setRdev(23);
+        stat.setNlink(13);
+        return stat;
+    }
+
     /**
      * checks for tag ownership
      *
@@ -2294,6 +2319,68 @@ public class FsSqlDriver implements AutoCloseable {
         setInodeAttributes(inode, 0, new Stat());
     }
 
+    /**
+     * Returns {@link DirectoryStreamB} of ChimeraDirectoryEntry for virtual directory.     *
+     *
+     * @return stream of files  having the given label
+     */
+    DirectoryStreamB<ChimeraDirectoryEntry> labelsDirectoryStream(FsInode dir)
+            throws ChimeraFsException {
+
+        return new DirectoryStreamB<ChimeraDirectoryEntry>() {
+
+            final LabelsDirectorySreamImpl stream = new LabelsDirectorySreamImpl(
+                    _jdbc);
+
+
+            @Override
+            public Iterator<ChimeraDirectoryEntry> iterator() {
+                return new Iterator<ChimeraDirectoryEntry>() {
+                    private ChimeraDirectoryEntry current = innerNext();
+
+                    @Override
+                    public boolean hasNext() {
+                        return current != null;
+                    }
+
+                    @Override
+                    public ChimeraDirectoryEntry next() {
+                        if (current == null) {
+                            throw new NoSuchElementException("No more entries");
+                        }
+                        ChimeraDirectoryEntry entry = current;
+                        current = innerNext();
+                        return entry;
+                    }
+
+                    protected ChimeraDirectoryEntry innerNext() {
+                        try {
+                            ResultSet rs = stream.next();
+                            if (rs == null) {
+                                return null;
+                            }
+
+                            Stat stat = toStat(rs);
+                            //TODO get set _fs in constractor
+
+                            FsInode inode = new FsInode(dir.getFs(), rs.getLong("lable_id"),
+                                    FsInodeType.INODE, 0);
+                            return new ChimeraDirectoryEntry(rs.getString("labelname"), inode, stat);
+
+                        } catch (SQLException e) {
+                            LOGGER.error("failed to fetch next entry: {}", e.getMessage());
+                            return null;
+                        }
+                    }
+                };
+            }
+
+            @Override
+            public void close() throws IOException {
+                stream.close();
+            }
+        };
+    }
 
     /**
      * Returns {@link DirectoryStreamB} of ChimeraDirectoryEntry for virtual directory.     *

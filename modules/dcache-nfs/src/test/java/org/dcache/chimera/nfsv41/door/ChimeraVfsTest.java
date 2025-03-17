@@ -109,7 +109,7 @@ public class ChimeraVfsTest {
         _fs.addLabel(inodeB, labelnameCat);
         _fs.addLabel(inodeC, labelnameDog);
 
-        Inode inode = _chimeraVfs.lookup(_chimeraVfs.getRootInode(), ".(collection)(cat)");
+        Inode inode = _chimeraVfs.lookup(_chimeraVfs.getRootInode(), ".(collection)/cat");
 
         byte[] verifier = {};
 

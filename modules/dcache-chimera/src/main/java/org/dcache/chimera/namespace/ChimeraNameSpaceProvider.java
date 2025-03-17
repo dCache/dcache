@@ -265,7 +265,10 @@ public class ChimeraNameSpaceProvider
             return new ExtendedInode(_fs, _fs.path2inode(path));
         }
 
+        System.out.println("tttsssss exetinnnn " + path);
+
         if (path.startsWith("/.(collection)")) {
+            System.out.println("tttsssss exetinnnn");
             ExtendedInode dir = new ExtendedInode(_fs, _fs.path2inode(path));
             return dir;
         }
@@ -847,13 +850,33 @@ public class ChimeraNameSpaceProvider
           throws CacheException {
         try {
             // TODO this case is used when downloading files in webdav, could be done in smarter way
-            if (path.startsWith("/.(collection)") && path.contains(")/")) {
+            /*if (path.startsWith("/.(collection)") && path.endsWith(")/")) {
 
                 long inodeNum = Long.parseLong(
                       path.substring(path.lastIndexOf("-") + 1, (path.length())));
 
                 String tmpPath = _fs.inode2path(new FsInode(_fs, inodeNum)) +
                       path.substring(path.indexOf(")/") + 1, path.lastIndexOf("-"));
+                return pathToInode(subject, tmpPath).getPnfsId();
+            }*/
+
+            System.out.println("test CHIMERA inodeNum " + path);
+
+            if (path.startsWith("/.(collection)") && path.endsWith("/")) {
+
+                long inodeNum = Long.parseLong(
+                        path.substring(path.lastIndexOf("-") + 1, (path.length())));
+                System.out.println("test  inodeNum  CHIMERA " + inodeNum);
+                System.out.println("test  tmpPath CHIMERA ");
+
+                        System.out.println("test  tmpPath  CHIMERA" + path.substring(path.indexOf(")/") + 1, path.lastIndexOf("-")));
+
+
+                String tmpPath = _fs.inode2path(new FsInode(_fs, inodeNum)) +
+                        path.substring(path.indexOf(")/") + 1, path.lastIndexOf("-"));
+
+                System.out.println("test  tmpPath CHIMERA " + tmpPath);
+
                 return pathToInode(subject, tmpPath).getPnfsId();
             }
             return pathToInode(subject, path).getPnfsId();

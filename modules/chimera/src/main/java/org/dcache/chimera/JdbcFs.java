@@ -548,7 +548,12 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
     @Override
     public DirectoryStreamB<ChimeraDirectoryEntry> newDirectoryStream(FsInode dir)
           throws ChimeraFsException {
-        if ((dir.type() == FsInodeType.LABEL)) {
+        System.out.println("tettst   the luck up");
+        if(dir.type() == FsInodeType.LABELS){
+            return _sqlDriver.labelsDirectoryStream(dir);
+
+
+        }else if ((dir.type() == FsInodeType.LABEL)) {
             return _sqlDriver.virtualDirectoryStream(dir, _sqlDriver.getLabelById(dir.ino()));
         } else {
             return _sqlDriver.newDirectoryStream(dir);
@@ -732,10 +737,34 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
     public FsInode path2inode(String path, FsInode startFrom) throws ChimeraFsException {
         //TODO check and add pnfsid Creation to FsInode_LABEL
         if (path.startsWith("/.(collection)")) {
+            System.out.println("test changes path2inode 1 " + path);
             Long labelId;
             try {
-                labelId = _sqlDriver.getLabel(
-                      path.substring("/.(collection)".length() + 1, path.length() - 1));
+                /*labelId = _sqlDriver.getLabel(
+                      path.substring("/.(collection)".length() + 1, path.length() - 1));*/
+
+
+                String tempLabelId = path.substring("/.(collection)".length() + 1, path.length() );
+
+                System.out.println("labelId 1" + tempLabelId);
+
+
+               // System.out.println("labelId 3 " + tempLabelId.substring(tempLabelId.indexOf(0) , tempLabelId.indexOf(0) )
+                //);
+
+
+                if (tempLabelId.contains("/")){
+
+                    labelId = _sqlDriver.getLabel(
+                            tempLabelId.substring(tempLabelId.indexOf("/") , tempLabelId.length()));
+                }else {
+
+                    labelId = _sqlDriver.getLabel(
+                            path.substring("/.(collection)".length() + 1, path.length()));
+                }
+
+                System.out.println("labelId 2" + labelId);
+
             } catch (NoLabelChimeraException e) {
                 throw FileNotFoundChimeraFsException.ofPath(path);
             }
@@ -825,6 +854,22 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
     public FsInode inodeOf(FsInode parent, String name, StatCacheOption cacheOption)
           throws ChimeraFsException {
         // only if it's PNFS command
+        System.out.println("TEST NFS " + name);
+
+        System.out.println("TEST type parent  " + parent.type());
+
+        if (parent.type() == FsInodeType.LABELS) {
+            System.out.println("test lables");
+            FsInode labelInode = new FsInode_LABEL(this, _sqlDriver.getLabel(name));
+            if (!(labelInode.type() == FsInodeType.LABEL)) {
+                if (!labelInode.exists()) {
+                    throw FileNotFoundChimeraFsException.ofFileInDirectory(parent, name);
+                }
+            }
+            return labelInode;
+        }
+
+
         if (name.startsWith(".(")) {
 
             if (name.startsWith(".(id)(")) {
@@ -897,12 +942,53 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
                 return nameofInode;
             }
 
-            if (name.startsWith(".(collection)(")) {
+            if (name.equals(".(collection)")){
+                try {
+                    System.out.println(10/0);
+                } catch (ArithmeticException e) {
+                    e.printStackTrace();
+                    // System.err.println(e.toString());
+                    //System.err.println(e.getMessage());
+                }
+                System.out.println("test cmd indsied " +name);
+                Stat stat = _sqlDriver.statLabelsParent(parent);
+
+
+
+                FsInode labelInode = new FsInode_LABELS(this, 0,stat);
+
+                System.out.println("test cmd indsied 2 " +name);
+
+
+                if (!(labelInode.type() == FsInodeType.LABELS)) {
+                    if (!labelInode.exists()) {
+                        throw FileNotFoundChimeraFsException.ofFileInDirectory(parent, name);
+                    }
+                }
+                System.out.println("test cmd indsied 3 " +name);
+
+                return labelInode;
+
+            }
+
+            if (name.startsWith(".(collection)/")) {
+                System.out.println("test cmd " +name);
+
                 String[] cmd = PnfsCommandProcessor.process(name);
+               /* System.out.println("test cmd 2 " + cmd.length + " " + cmd[0]);
+
+
+                String labelId = name.substring(".(collection)".length() + 1, name.length());
+
+
+                System.out.println("labelId 1 " + labelId );*/
+
+                //System.out.println("test cmd 3" + cmd.length + " " + cmd[1]);
+
                 if (cmd.length != 2) {
                     throw FileNotFoundChimeraFsException.ofFileInDirectory(parent, name);
                 }
-                FsInode labelInode = new FsInode_LABEL(this, _sqlDriver.getLabel(cmd[1]));
+                FsInode labelInode = new FsInode_LABEL(this, _sqlDriver.getLabel(cmd[2]));
                 if (!(labelInode.type() == FsInodeType.LABEL)) {
                     if (!labelInode.exists()) {
                         throw FileNotFoundChimeraFsException.ofFileInDirectory(parent, name);
@@ -910,6 +996,8 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
                 }
                 return labelInode;
             }
+
+
 
             if (name.startsWith(".(const)(")) {
                 String[] cmd = PnfsCommandProcessor.process(name);
@@ -1338,6 +1426,11 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
     @Override
     public Stat statTag(FsInode dir, String name) throws ChimeraFsException {
         return _sqlDriver.statTag(dir, name);
+    }
+
+    @Override
+    public Stat statLabelsParent(FsInode dir) throws ChimeraFsException {
+        return _sqlDriver.statLabelsParent( dir);
     }
 
     @Override

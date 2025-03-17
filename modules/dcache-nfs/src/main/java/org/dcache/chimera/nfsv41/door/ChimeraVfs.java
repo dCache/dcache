@@ -44,41 +44,7 @@ import org.dcache.acl.ACE;
 import org.dcache.acl.enums.AceFlags;
 import org.dcache.acl.enums.AceType;
 import org.dcache.acl.enums.Who;
-import org.dcache.chimera.ChimeraDirectoryEntry;
-import org.dcache.chimera.ChimeraFsException;
-import org.dcache.chimera.DirNotEmptyChimeraFsException;
-import org.dcache.chimera.DirectoryStreamHelper;
-import org.dcache.chimera.FileExistsChimeraFsException;
-import org.dcache.chimera.FileNotFoundChimeraFsException;
-import org.dcache.chimera.FileState;
-import org.dcache.chimera.FileSystemProvider;
-import org.dcache.chimera.FsInode;
-import org.dcache.chimera.FsInodeType;
-import org.dcache.chimera.FsInode_CKSTYP;
-import org.dcache.chimera.FsInode_CONST;
-import org.dcache.chimera.FsInode_ID;
-import org.dcache.chimera.FsInode_LABEL;
-import org.dcache.chimera.FsInode_NAMEOF;
-import org.dcache.chimera.FsInode_PARENT;
-import org.dcache.chimera.FsInode_PATHOF;
-import org.dcache.chimera.FsInode_PCRC;
-import org.dcache.chimera.FsInode_PCUR;
-import org.dcache.chimera.FsInode_PINS;
-import org.dcache.chimera.FsInode_PLOC;
-import org.dcache.chimera.FsInode_PSET;
-import org.dcache.chimera.FsInode_SURI;
-import org.dcache.chimera.FsInode_TAG;
-import org.dcache.chimera.FsInode_TAGS;
-import org.dcache.chimera.InvalidArgumentChimeraException;
-import org.dcache.chimera.IsDirChimeraException;
-import org.dcache.chimera.JdbcFs;
-import org.dcache.chimera.NoLabelChimeraException;
-import org.dcache.chimera.NoXdataChimeraException;
-import org.dcache.chimera.NotDirChimeraException;
-import org.dcache.chimera.PermissionDeniedChimeraFsException;
-import org.dcache.chimera.QuotaChimeraFsException;
-import org.dcache.chimera.StorageGenericLocation;
-import org.dcache.chimera.UnixPermission;
+import org.dcache.chimera.*;
 import org.dcache.chimera.quota.Quota;
 import org.dcache.nfs.status.BadHandleException;
 import org.dcache.nfs.status.BadOwnerException;
@@ -207,8 +173,16 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable, QuotaVfs {
     @Override
     public Inode lookup(Inode parent, String path) throws IOException {
         try {
+            System.out.println("tets parent  " + parent + " " + path);
             FsInode parentFsInode = toFsInode(parent);
+            System.out.println("tets parent  2" + parent + " " + path);
+
             FsInode fsInode = parentFsInode.inodeOf(path, NO_STAT);
+            System.out.println("tets parent  4 " + parent + " " + path);
+
+            System.out.println("tets parent  4 " + parent + " " + fsInode.type());
+
+
             return toInode(fsInode);
         } catch (FileNotFoundChimeraFsException e) {
             throw new NoEntException("Path Do not exist.");
@@ -973,6 +947,10 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable, QuotaVfs {
 
             case LABEL:
                 inode = new FsInode_LABEL(fs, ino);
+                break;
+
+            case LABELS:
+                inode = new FsInode_LABELS(fs, ino);
                 break;
 
             default:
