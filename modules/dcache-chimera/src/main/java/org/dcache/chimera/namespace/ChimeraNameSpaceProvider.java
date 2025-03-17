@@ -846,16 +846,6 @@ public class ChimeraNameSpaceProvider
     public PnfsId pathToPnfsid(Subject subject, String path, boolean followLink)
           throws CacheException {
         try {
-            // TODO this case is used when downloading files in webdav, could be done in smarter way
-            if (path.startsWith("/.(collection)") && path.contains(")/")) {
-
-                long inodeNum = Long.parseLong(
-                      path.substring(path.lastIndexOf("-") + 1, (path.length())));
-
-                String tmpPath = _fs.inode2path(new FsInode(_fs, inodeNum)) +
-                      path.substring(path.indexOf(")/") + 1, path.lastIndexOf("-"));
-                return pathToInode(subject, tmpPath).getPnfsId();
-            }
             return pathToInode(subject, path).getPnfsId();
         } catch (FileNotFoundChimeraFsException e) {
             throw new FileNotFoundCacheException("No such file or directory " + path);

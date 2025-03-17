@@ -33,7 +33,9 @@ public enum FsInodeType {
     SURI(12),    // read, write or update/overwrite location info for type TAPE
     PINS(13),    // the content of the inode is a list of current pins
     CKSTYP(14),  // the available checksum types
-    LABEL(15);   // virtual directory type (ls labels)
+    LABEL(15),   // virtual directory type (ls virtual dir)
+    LABELS(16);   // virtual directory parent type (ls labels)
+
     private final int _id;
 
     FsInodeType(int id) {

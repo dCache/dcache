@@ -58,6 +58,7 @@ import org.dcache.chimera.FsInode_CKSTYP;
 import org.dcache.chimera.FsInode_CONST;
 import org.dcache.chimera.FsInode_ID;
 import org.dcache.chimera.FsInode_LABEL;
+import org.dcache.chimera.FsInode_LABELS;
 import org.dcache.chimera.FsInode_NAMEOF;
 import org.dcache.chimera.FsInode_PARENT;
 import org.dcache.chimera.FsInode_PATHOF;
@@ -995,6 +996,10 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable, QuotaVfs {
 
             case LABEL:
                 inode = new FsInode_LABEL(fs, ino);
+                break;
+
+            case LABELS:
+                inode = new FsInode_LABELS(fs, ino);
                 break;
 
             default:

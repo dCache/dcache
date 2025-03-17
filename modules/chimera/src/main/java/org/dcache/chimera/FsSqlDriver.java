@@ -431,6 +431,10 @@ public class FsSqlDriver implements AutoCloseable {
         stat.setGid(0000);
         stat.setMode(0755 | UnixPermission.S_IFDIR);
         stat.setDev(19);
+        //TODO this is the case when the label_id is 0, we have conflict in nfs, this not teh correct solution
+        if (stat.getIno()==0L){
+            stat.setIno(stat.getDev()+stat.getIno());
+        }
         stat.setRdev(23);
         stat.setNlink(13);
         return stat;
@@ -1553,6 +1557,33 @@ public class FsSqlDriver implements AutoCloseable {
     }
 
     /**
+     * set stat for virtual dirs parent .(collection)
+     *
+     */
+    public Stat statLabelsParent() throws ChimeraFsException {
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        Stat stat = new Stat();
+        String pnfsIdSecond = "FFFFF000000000000000";
+        String tempId = String.format("%016x", 0);
+        String pnfsID = pnfsIdSecond + tempId;
+        stat.setIno(0);
+        stat.setId(pnfsID);
+        stat.setCrTime(now.getTime());
+        stat.setGeneration(LocalDateTime.now().getMinute());
+        stat.setSize(512);
+        stat.setATime(now.getTime());
+        stat.setCTime(now.getTime());
+        stat.setMTime(now.getTime());
+        stat.setUid(0000);
+        stat.setGid(0000);
+        stat.setMode(0755 | UnixPermission.S_IFDIR);
+        stat.setDev(19);
+        stat.setRdev(23);
+        stat.setNlink(13);
+        return stat;
+    }
+
+    /**
      * checks for tag ownership
      *
      * @param dir
@@ -2294,6 +2325,65 @@ public class FsSqlDriver implements AutoCloseable {
         setInodeAttributes(inode, 0, new Stat());
     }
 
+    /**
+     * Returns {@link DirectoryStreamB} of ChimeraDirectoryEntry for listing labels.     *
+     *
+     * @return stream of list of existing labels
+     */
+    DirectoryStreamB<ChimeraDirectoryEntry> labelsDirectoryStream(FsInode dir)
+            throws ChimeraFsException {
+
+        return new DirectoryStreamB<ChimeraDirectoryEntry>() {
+
+            final LabelsDirectorySreamImpl stream = new LabelsDirectorySreamImpl(
+                    _jdbc);
+
+
+            @Override
+            public Iterator<ChimeraDirectoryEntry> iterator() {
+                return new Iterator<ChimeraDirectoryEntry>() {
+                    private ChimeraDirectoryEntry current = innerNext();
+
+                    @Override
+                    public boolean hasNext() {
+                        return current != null;
+                    }
+
+                    @Override
+                    public ChimeraDirectoryEntry next() {
+                        if (current == null) {
+                            throw new NoSuchElementException("No more entries");
+                        }
+                        ChimeraDirectoryEntry entry = current;
+                        current = innerNext();
+                        return entry;
+                    }
+
+                    protected ChimeraDirectoryEntry innerNext() {
+                        try {
+                            ResultSet rs = stream.next();
+                            if (rs == null) {
+                                return null;
+                            }
+
+                            Stat stat = toStatForLabel(rs);
+                            FsInode inode = new FsInode_LABEL(dir.getFs(), rs.getLong("label_id"));
+                            return new ChimeraDirectoryEntry(rs.getString("labelname"), inode, stat);
+
+                        } catch (SQLException e) {
+                            LOGGER.error("failed to fetch next entry: {}", e.getMessage());
+                            return null;
+                        }
+                    }
+                };
+            }
+
+            @Override
+            public void close() throws IOException {
+                stream.close();
+            }
+        };
+    }
 
     /**
      * Returns {@link DirectoryStreamB} of ChimeraDirectoryEntry for virtual directory.     *

@@ -109,7 +109,46 @@ public class ChimeraVfsTest {
         _fs.addLabel(inodeB, labelnameCat);
         _fs.addLabel(inodeC, labelnameDog);
 
-        Inode inode = _chimeraVfs.lookup(_chimeraVfs.getRootInode(), ".(collection)(cat)");
+        Inode inodeParent = _chimeraVfs.lookup(_chimeraVfs.getRootInode(), ".(collection)");
+        Inode inodeT = _chimeraVfs.lookup(inodeParent, "cat");
+
+        byte[] verifier = {};
+
+        DirectoryStream result = _chimeraVfs.list(inodeT, verifier, 0);
+        Collection<String> dirLs = new HashSet<>();
+
+        Iterator<DirectoryEntry> i = result.iterator();
+        while (i.hasNext()) {
+            DirectoryEntry entry = i.next();
+            FsInode newInode = _chimeraVfs.toFsInode(entry.getInode());
+            dirLs.add(newInode.getId());
+
+        }
+        assertTrue(dirLs.containsAll(Lists.newArrayList(inodeA.getId(), inodeB.getId())));
+
+    }
+
+
+    @Test
+    public void shouldReturnListOfLabels() throws Exception {
+
+        FsInode _rootInode;
+        _rootInode = _fs.path2inode("/");
+
+        FsInode dir = _rootInode.mkdir("parent");
+
+        FsInode inodeA = _fs.createFile(dir, "aFile");
+        FsInode inodeB = _fs.createFile(dir, "bFile");
+        FsInode inodeC = _fs.createFile(dir, "cFile");
+
+        String labelnameCat = "cat";
+        String labelnameDog = "dog";
+
+        _fs.addLabel(inodeA, labelnameCat);
+        _fs.addLabel(inodeB, labelnameCat);
+        _fs.addLabel(inodeC, labelnameDog);
+
+        Inode inode = _chimeraVfs.lookup(_chimeraVfs.getRootInode(), ".(collection)");
 
         byte[] verifier = {};
 
@@ -117,18 +156,13 @@ public class ChimeraVfsTest {
         Collection<String> dirLs = new HashSet<>();
 
         Iterator<DirectoryEntry> i = result.iterator();
-
         while (i.hasNext()) {
-
             DirectoryEntry entry = i.next();
-
-            FsInode newInnode = _chimeraVfs.toFsInode(entry.getInode());
-            dirLs.add(newInnode.getId());
-
+            dirLs.add(entry.getName());
         }
-        assertTrue(dirLs.containsAll(Lists.newArrayList(inodeA.getId(), inodeB.getId())));
-
+        assertTrue(dirLs.containsAll(Lists.newArrayList("cat", "dog")));
     }
+
 
 
     @Test(expected = NoEntException.class)
