@@ -123,6 +123,9 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable, QuotaVfs {
 
     private static final Logger _log = LoggerFactory.getLogger(ChimeraVfs.class);
 
+    /**
+     * Xattr prefix for dCache tags.
+     */
     private final String XATTR_TAG_PREFIX = "dcache.tag.";
 
     /**
@@ -388,10 +391,21 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable, QuotaVfs {
               fsStat.getUsedFiles());
     }
 
+    /**
+     * Converts NFS provided file handle to chimera inode.
+     * @param inode nfs file handle
+     * @return chimera inode
+     * @throws IOException
+     */
     FsInode toFsInode(Inode inode) throws IOException {
         return inodeFromBytes(inode.getFileId());
     }
 
+    /**
+     * Chimera inode to NFS file handle.
+     * @param inode chimera inode
+     * @return NFS file handle
+     */
     private Inode toInode(final FsInode inode) {
         return Inode.forFile(inodeToBytes(inode));
     }
@@ -881,6 +895,14 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable, QuotaVfs {
         return inodeFromBytes(_fs, handle);
     }
 
+    /**
+     * Get a {code FsInode} corresponding to provided bytes for the given file system provider.
+     *
+     * @param fs file system provider.
+     * @param handle to construct inode from.
+     * @return object inode.
+     * @throws BadHandleException if provided {@code handle} can't be converted into FsInode.
+     */
     public static FsInode inodeFromBytes(FileSystemProvider fs, byte[] handle)
           throws BadHandleException {
         FsInode inode;
@@ -981,6 +1003,12 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable, QuotaVfs {
         return inode;
     }
 
+    /**
+     * For magic dot files, get supplied arguments.
+     * @param b handle buffer
+     * @param opaqueLen length of opaque data
+     * @return array of arguments
+     */
     private static String[] getArgs(ByteBuffer b, int opaqueLen) {
 
         StringTokenizer st = new StringTokenizer(
