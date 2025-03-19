@@ -57,8 +57,8 @@ public class MoverRequestScheduler {
     private static final long DEFAULT_LAST_ACCESSED = 0;
     private static final long DEFAULT_TOTAL = 0;
 
-    public long pendingRequestsFor(PnfsId pnfsId) {
-        return _queue.stream().filter((pr) -> pr.getMover().getFileAttributes().getPnfsId() == pnfsId).count();
+    public long numberOfRequestsFor(PnfsId pnfsId) {
+        return _jobs.values().stream().filter((pr) -> pr.getMover().getFileAttributes().getPnfsId() == pnfsId).count();
     }
 
     /**
