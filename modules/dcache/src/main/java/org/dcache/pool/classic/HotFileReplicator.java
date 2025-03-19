@@ -8,7 +8,7 @@ import dmg.cells.nucleus.CellSetupProvider;
 import java.util.HashSet;
 import java.util.Set;
 
-public class HotspotManager implements CellMessageReceiver, CellCommandListener, CellSetupProvider {
+public class HotFileReplicator implements CellMessageReceiver, CellCommandListener, CellSetupProvider {
 
     private static final long defaultNumReplicas = 10;
     private static final long defaultHotspotThreshold = 5;
@@ -17,7 +17,7 @@ public class HotspotManager implements CellMessageReceiver, CellCommandListener,
     private long _hotspotThreshold = defaultHotspotThreshold;
     private Set<PnfsId> _inFlightMigrations;
 
-    public HotspotManager() {
+    public HotFileReplicator() {
         _inFlightMigrations = new HashSet<PnfsId>();
     }
 

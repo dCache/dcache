@@ -217,7 +217,7 @@ public class PoolV4
     };
 
     private ThreadFactory _threadFactory;
-    private HotspotManager _hotspotManager;
+    private HotFileReplicator _hotFileReplicator;
 
 
     protected void assertNotRunning(String error) {
@@ -763,7 +763,7 @@ public class PoolV4
     private void ioFile(CellMessage envelope, PoolIoFileMessage message) {
         try {
             message.setMoverId(queueIoRequest(envelope, message));
-            _hotspotManager.maybeReplicate(message, _ioQueue.numberOfReqeustsFor(message.getPnfsId()));
+            _hotFileReplicator.maybeReplicate(message, _ioQueue.numberOfReqeustsFor(message.getPnfsId()));
             message.setSucceeded();
         } catch (OutOfDateCacheException e) {
             if (_pingLimiter.tryAcquire()) {
