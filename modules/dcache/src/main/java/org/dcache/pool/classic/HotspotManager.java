@@ -25,12 +25,12 @@ public class HotspotManager implements CellMessageReceiver, CellCommandListener,
         _inFlightMigrations.remove(message.getPnfsId());
     }
 
-    void maybeReplicate(PoolIoFileMessage message, long numPendingRequests) {
-        if  (! (numPendingRequests < _hotspotThreshold || _inFlightMigrations.contains(message.getPnfsId())) {
+    void maybeReplicate(PoolIoFileMessage message, long numberOfRequests) {
+        if  (! (numberOfRequests < _hotspotThreshold || _inFlightMigrations.contains(message.getPnfsId())) {
             // TODO: Compose and send migration message.
 
             // Blacklist
-            _inFlightMigrations.add(pnfsId);
+            _inFlightMigrations.add(message.getPnfsId());
         }
     }
 }
