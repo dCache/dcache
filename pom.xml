@@ -72,7 +72,7 @@
         <version.jersey>2.41</version.jersey>
         <version.dcache-view>3.0.0</version.dcache-view>
         <version.dcache-view-admin>3.0.0</version.dcache-view-admin>
-        <version.netty>4.1.108.Final</version.netty>
+        <version.netty>4.1.118.Final</version.netty>
         <version.dcache>${project.version}</version.dcache>
         <version.swagger-ui>3.23.11</version.swagger-ui>
 
