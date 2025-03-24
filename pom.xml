@@ -72,7 +72,7 @@
         <version.jersey>2.41</version.jersey>
         <version.dcache-view>3.0.0</version.dcache-view>
         <version.dcache-view-admin>3.0.0</version.dcache-view-admin>
-        <version.netty>4.1.108.Final</version.netty>
+        <version.netty>4.1.118.Final</version.netty>
         <version.dcache>${project.version}</version.dcache>
         <version.swagger-ui>3.23.11</version.swagger-ui>
 
@@ -532,14 +532,8 @@
 	    <dependency>
 	      <groupId>org.apache.sshd</groupId>
 	      <artifactId>sshd-core</artifactId>
-	      <version>2.13.1</version>
+	      <version>2.15.0</version>
 	    </dependency>
-        <!-- For ed25519 support -->
-        <dependency>
-            <groupId>net.i2p.crypto</groupId>
-            <artifactId>eddsa</artifactId>
-            <version>0.3.0</version>
-        </dependency>
             <dependency>
                 <groupId>org.liquibase</groupId>
                 <artifactId>liquibase-core</artifactId>

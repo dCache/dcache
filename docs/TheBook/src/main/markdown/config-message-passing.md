@@ -13,7 +13,7 @@ Each domain runs in a separate Java virtual machine and each cell is run as a se
 >
 > The `TCP` communication controlled by the location manager service is for the short control messages sent between cells. Any transfer of the data stored within dCache does not use these connections; instead, dedicated `TCP` connections are established as needed.
 
-Within this framework, cells send messages to other cells addressing them in the form cellName@domainName. This way, cells can communicate without knowledge about the host they run on. Some cells are [well known](rf-glossary.md#well-known-cell), i.e. they can be addressed just by their name without @domainName. Evidently, this can only work properly if the name of the cell is unique throughout the whole system. If two well known cells with the same name are present, the system will behave in an undefined way. Therefore it is wise to take care when starting, naming, or renaming the well known cells. In particular this is true for pools, which are well known cells.
+Within this framework, cells send messages to other cells addressing them in the form cellName@domainName. This way, cells can communicate without knowledge about the host they run on. Some cells are [well known](rf-glossary.md#well-known-cell), i.e. they can be addressed just by their name without @domainName. Evidently, this can only work properly if the name of the cell is unique throughout the whole system. If two well known cells with the same name are present, the system will behave in an undefined way. Therefore, it is wise to take care when starting, naming, or renaming the well known cells. In particular this is true for pools, which are well known cells.
 
 A domain is started with a shell script **bin/dcache start** domainName. The routing manager and location manager cells are started in each domain and are part of the underlying cell package structure. Each domain will contain at least one cell in addition to them.
 
@@ -164,7 +164,7 @@ routed along one of the queue routes chosen at random.
 All domains default to being satellite domains. Unless some domain is explicitly
 marked as a core domain, domains will be disconnected from each other.
 
-In a mulit-domain (and multi node) deployments at least one of the domains **must** be configured as `core` domain.
+In a multi-domain (and multi-node) deployments at least one of the domains **must** be configured as `core` domain.
 
 ### Explicit configuration of the core domain
 
