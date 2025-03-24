@@ -74,9 +74,9 @@ public class TransferLifeCycle {
             return;
         }
 
-        /* if (isLocalTransfer(src)) {
+        if (isLocalTransfer(src)) {
             return;
-        }*/ // REVISIT: this is not needed
+        }
 
         if (!needMarker(protocolInfo)) {
             return;
@@ -110,9 +110,9 @@ public class TransferLifeCycle {
             return;
         }
 
-        /* if (isLocalTransfer(src)) {
+        if (isLocalTransfer(src)) {
             return;
-        } */ // REVISIT: this is not needed
+        }
 
         if (!needMarker(protocolInfo)) {
             return;
