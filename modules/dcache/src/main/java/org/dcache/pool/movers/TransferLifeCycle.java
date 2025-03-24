@@ -175,8 +175,20 @@ public class TransferLifeCycle {
 
     private boolean needMarker(ProtocolInfo protocolInfo) {
 
-        if (protocolInfo.getSciTag() == -1)
+        if (protocolInfo.getTransferTag().isEmpty()) {
             return false;
+        }
+
+        try {
+            var transferTag = Integer.parseInt(protocolInfo.getTransferTag());
+            if(transferTag > 64 && transferTag < 65536) {
+                LOGGER.warn("Invalid integer range for transfer tag: %s", protocolInfo.getTransferTag());
+                return false;
+            }
+        } catch (NumberFormatException e) {
+            LOGGER.warn("Invalid transfer tag: %s", protocolInfo.getTransferTag());
+            return false;
+        }
 
         switch (protocolInfo.getProtocol().toLowerCase()) {
             case "xrootd":
@@ -194,7 +206,7 @@ public class TransferLifeCycle {
 
     private int getExperimentId(ProtocolInfo protocolInfo) {
         // scitag = exp_id << 6 | act_id
-        return (int) protocolInfo.getSciTag() >> 6;
+        return Integer.parseInt(protocolInfo.getTransferTag()) >> 6;
     }
 
     private boolean isLocalTransfer(InetSocketAddress dst) {
@@ -204,7 +216,7 @@ public class TransferLifeCycle {
 
     private int getActivity(ProtocolInfo protocolInfo) {
         // scitag = exp_id << 6 | act_id
-        return protocolInfo.getSciTag() & 0x3F;
+        return Integer.parseInt(protocolInfo.getTransferTag()) & 0x3F;
     }
 
     private String toAFI(InetSocketAddress dst) {

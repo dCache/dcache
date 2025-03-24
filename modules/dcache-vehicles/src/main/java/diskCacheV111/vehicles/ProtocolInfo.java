@@ -23,7 +23,7 @@ public interface ProtocolInfo extends Serializable {
 
     String getVersionString();
 
-    default int getSciTag() {
-        return -1;
+    default String getTransferTag() {
+        return "";
     }
 }

@@ -31,18 +31,14 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress> {
     private boolean proxiedTransfer;
     private final XrootdTpcInfo tpcInfo;
     private final Restriction restriction;
-    private int _sciTag;
+    private String _transferTag;
 
     public XrootdTransfer(PnfsHandler pnfs, Subject subject,
             Restriction restriction, FsPath path, Map<String, String> opaque) throws ParseException {
         super(pnfs, subject, restriction, path);
         this.restriction = requireNonNull(restriction);
         tpcInfo = new XrootdTpcInfo(opaque);
-        try {
-            _sciTag = Integer.parseInt(opaque.getOrDefault("scitag.flow", "-1"));
-        } catch (NumberFormatException e) {
-            _sciTag = -1;
-        }
+        _transferTag = opaque.getOrDefault("scitag.flow", "");
         try {
             tpcInfo.setUid(Subjects.getUid(subject));
         } catch (NoSuchElementException e) {
@@ -124,8 +120,8 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress> {
                 _fileHandle,
                 _uuid,
                 _doorAddress);
-        if(_sciTag > 64 && _sciTag < 65536)
-            protocolInfo.setSciTag(_sciTag);
+
+            protocolInfo.setTransferTag(_transferTag);
         return protocolInfo;
     }
 

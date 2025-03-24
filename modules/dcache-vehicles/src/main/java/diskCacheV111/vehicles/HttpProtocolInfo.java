@@ -38,7 +38,7 @@ public class HttpProtocolInfo implements IpProtocolInfo {
     private final InetSocketAddress _clientSocketAddress;
     private long _transferTime;
     private long _bytesTransferred;
-    private int _sciTag;
+    private String _transferTag;
 
     /* TODO: Change this to long (but remember backwards compatibility!) */
     private int _sessionId;
@@ -104,7 +104,7 @@ public class HttpProtocolInfo implements IpProtocolInfo {
         _disposition = disposition;
         _wantedChecksum = wantedChecksums.isEmpty() ? null : wantedChecksums.get(0);
         _wantedChecksums = Set.copyOf(wantedChecksums);
-        _sciTag = -1;
+        _transferTag = "";
     }
 
     public String getHttpDoorCellName() {
@@ -173,13 +173,13 @@ public class HttpProtocolInfo implements IpProtocolInfo {
         return _bytesTransferred;
     }
 
-    public void setSciTag(int tag) {
-        _sciTag = tag;
+    public void setTransferTag(String tag) {
+        _transferTag = tag;
     }
 
     @Override
-    public int getSciTag() {
-        return _sciTag;
+    public String getTransferTag() {
+        return _transferTag;
     }
 
     public String toString() {

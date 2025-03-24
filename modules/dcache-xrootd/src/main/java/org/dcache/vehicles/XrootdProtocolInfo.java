@@ -52,7 +52,7 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
 
     private boolean _overwriteAllowed;
 
-    private int _sciTag;
+    private String _transferTag;
 
     public XrootdProtocolInfo(String protocol, int major, int minor,
           InetSocketAddress clientAddress, CellPath pathToDoor, PnfsId pnfsID,
@@ -68,7 +68,7 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
         _uuid = uuid;
         _doorAddress = doorAddress;
         _flags = Sets.newEnumSet(asList(flags), Flags.class);
-        _sciTag = -1;
+        _transferTag = "";
     }
 
     public Serializable getDelegatedCredential() {
@@ -170,12 +170,12 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
         _overwriteAllowed = overwriteAllowed;
     }
 
-    public void setSciTag(int tag) {
-        _sciTag = tag;
+    public void setTransferTag(String tag) {
+        _transferTag = tag;
     }
 
     @Override
-    public int getSciTag() {
-        return _sciTag;
+    public String getTransferTag() {
+        return _transferTag;
     }
 }
