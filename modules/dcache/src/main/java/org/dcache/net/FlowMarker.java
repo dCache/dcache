@@ -125,7 +125,7 @@ public class FlowMarker {
 
             String jsonPayload = payload.toString();
             String time = DateTimeFormatter.ISO_INSTANT.format(Instant.now());
-            String host = flow.getString("src-ip");
+            String host = flow.has("src-ip") ? flow.getString("src-ip") : "localhost";
             String syslogHeader = String.format("<134>1 %s %s dCache - firefly-json - ", time, host);
 
             return syslogHeader + jsonPayload;
