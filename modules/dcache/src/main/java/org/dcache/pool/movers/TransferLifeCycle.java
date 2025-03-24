@@ -180,13 +180,13 @@ public class TransferLifeCycle {
         }
 
         try {
-            var transferTag = Integer.parseInt(protocolInfo.getTransferTag());
-            if(transferTag > 64 && transferTag < 65536) {
-                LOGGER.warn("Invalid integer range for transfer tag: %s", protocolInfo.getTransferTag());
+            int transferTag = Integer.parseInt(protocolInfo.getTransferTag());
+            if (transferTag <= 64 || transferTag >= 65536) {
+                LOGGER.warn("Invalid integer range for transfer tag: {}", protocolInfo.getTransferTag());
                 return false;
             }
         } catch (NumberFormatException e) {
-            LOGGER.warn("Invalid transfer tag: %s", protocolInfo.getTransferTag());
+            LOGGER.warn("Invalid transfer tag: {}", protocolInfo.getTransferTag());
             return false;
         }
 
