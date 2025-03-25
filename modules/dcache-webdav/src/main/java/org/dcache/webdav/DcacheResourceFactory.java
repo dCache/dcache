@@ -1694,11 +1694,7 @@ public class DcacheResourceFactory
             var request = ServletRequest.getRequest();
             request.setAttribute(TRANSACTION_ATTRIBUTE, getTransaction());
             _requestPath = Requests.stripToPath(request.getRequestURL().toString());
-            try {
-                _transferTag = request.getHeader("SciTag");
-            } catch(NumberFormatException e) {
-                LOGGER.warn("Invalid value for SciTag header");
-            }
+            _transferTag = request.getHeader("SciTag");
         }
 
         protected ProtocolInfo createProtocolInfo(InetSocketAddress address) {
