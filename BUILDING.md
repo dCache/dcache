@@ -149,6 +149,10 @@ will move the pool_write pool to version 2.7.5. The utility can however not
 compensate for changes in configuration properties or database schemas between
 versions. Such incompatibilities have to be resolved manually.
 
+The log files are available in the directory:
+
+    packages/system-test/target/dcache/var/log/
+
 
 Unit tests
 ----------
