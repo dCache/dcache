@@ -39,6 +39,7 @@ import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
 import java.util.Arrays;
@@ -681,15 +682,6 @@ public class LocationManager extends CellAdapter {
           throws ExecutionException, InterruptedException, BadConfigException {
         checkArgument(args.hasOption("mode"), "No mode specified to run connector");
 
-        String cellName = "c-" + remoteDomain + '*';
-        String clientKey = args.getOpt("clientKey");
-        clientKey =
-              (clientKey != null) && (!clientKey.isEmpty()) ? ("-clientKey=" + clientKey) : "";
-        String clientName = args.getOpt("clientUserName");
-        clientName =
-              (clientName != null) && (!clientName.isEmpty()) ? ("-clientUserName=" + clientName)
-                    : "";
-
         HostAndPort where;
         SocketFactory socketFactory;
         Mode mode = Mode.fromString(args.getOption("mode"));
@@ -724,16 +716,10 @@ public class LocationManager extends CellAdapter {
                       "Invalid mode to start connector: " + args.getOption("mode"));
         }
 
-        String cellArgs = "-domain=" + remoteDomain + ' '
-              + "-lm=" + getCellName() + ' '
-              + "-role=" + role + ' '
-              + "-where=" + where + ' '
-              + clientKey + ' '
-              + clientName;
-
-        LOGGER.info("Starting connector with {}", cellArgs);
-        LocationManagerConnector c = new LocationManagerConnector(cellName, cellArgs,
-              socketFactory);
+        String cellName = "c-" + remoteDomain + '*';
+        LOGGER.info("Starting connector {} to {} ({})", cellName, remoteDomain, where);
+        InetSocketAddress tunnelEndpoint = new InetSocketAddress(where.getHost(), where.getPort());
+        LocationManagerConnector c = new LocationManagerConnector(cellName, socketFactory, remoteDomain, tunnelEndpoint);
         c.start().get();
         return c.getCellName();
     }
