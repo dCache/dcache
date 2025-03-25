@@ -31,12 +31,14 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress> {
     private boolean proxiedTransfer;
     private final XrootdTpcInfo tpcInfo;
     private final Restriction restriction;
+    private String _transferTag;
 
     public XrootdTransfer(PnfsHandler pnfs, Subject subject,
-          Restriction restriction, FsPath path, Map<String, String> opaque) throws ParseException {
+            Restriction restriction, FsPath path, Map<String, String> opaque) throws ParseException {
         super(pnfs, subject, restriction, path);
         this.restriction = requireNonNull(restriction);
         tpcInfo = new XrootdTpcInfo(opaque);
+        _transferTag = opaque.getOrDefault("scitag.flow", "");
         try {
             tpcInfo.setUid(Subjects.getUid(subject));
         } catch (NoSuchElementException e) {
@@ -109,15 +111,18 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress> {
     }
 
     private XrootdProtocolInfo createXrootdProtocolInfo() {
-        return new XrootdProtocolInfo(XrootdDoor.XROOTD_PROTOCOL_STRING,
-              XrootdProtocol.PROTOCOL_VERSION_MAJOR,
-              XrootdProtocol.PROTOCOL_VERSION_MINOR,
-              getClientAddress(),
-              new CellPath(getCellName(), getDomainName()),
-              getPnfsId(),
-              _fileHandle,
-              _uuid,
-              _doorAddress);
+        XrootdProtocolInfo protocolInfo = new XrootdProtocolInfo(XrootdDoor.XROOTD_PROTOCOL_STRING,
+                XrootdProtocol.PROTOCOL_VERSION_MAJOR,
+                XrootdProtocol.PROTOCOL_VERSION_MINOR,
+                getClientAddress(),
+                new CellPath(getCellName(), getDomainName()),
+                getPnfsId(),
+                _fileHandle,
+                _uuid,
+                _doorAddress);
+
+            protocolInfo.setTransferTag(_transferTag);
+        return protocolInfo;
     }
 
     @Override

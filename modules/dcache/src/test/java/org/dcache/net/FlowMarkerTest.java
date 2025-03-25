@@ -1,5 +1,7 @@
 package org.dcache.net;
 
+import static org.junit.Assert.assertTrue;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
@@ -66,7 +68,7 @@ public class FlowMarkerTest {
               .withSource(new InetSocketAddress(InetAddress.getLoopbackAddress(), 5678))
               .build("start");
 
-        assertJson(data);
+        assertFirefly(data);
     }
 
     @Test
@@ -83,7 +85,7 @@ public class FlowMarkerTest {
               .withSource(new InetSocketAddress(InetAddress.getLoopbackAddress(), 5678))
               .build("end");
 
-        assertJson(data);
+        assertFirefly(data);
     }
 
     @Test
@@ -99,7 +101,7 @@ public class FlowMarkerTest {
               .withSource(new InetSocketAddress(InetAddress.getLoopbackAddress(), 5678))
               .build("ongoing");
 
-        assertJson(data);
+        assertFirefly(data);
     }
 
     @Test(expected = AssertionError.class)
@@ -107,11 +109,14 @@ public class FlowMarkerTest {
         var data = new FlowMarkerBuilder()
               .build("start");
 
-        assertJson(data);
+        assertFirefly(data);
     }
 
 
-    private void assertJson(JSONObject json) {
+    private void assertFirefly(String firefly) {
+        assertTrue(firefly.contains("dCache - firefly-json -"));
+        assertTrue(firefly.contains("<134>1"));
+        var json = new JSONObject(firefly.substring(firefly.indexOf("{")));
         try {
             SCHEMA.validate(json);
         } catch (ValidationException e) {

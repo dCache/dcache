@@ -22,4 +22,8 @@ public interface ProtocolInfo extends Serializable {
     int getMajorVersion();
 
     String getVersionString();
+
+    default String getTransferTag() {
+        return "";
+    }
 }
