@@ -1683,6 +1683,7 @@ public class DcacheResourceFactory
          * The original request path that will be passed to pool for fall-back redirect.
          */
         private final String _requestPath;
+        private String _transferTag = "";
 
         public HttpTransfer(PnfsHandler pnfs, Subject subject,
               Restriction restriction, FsPath path) throws URISyntaxException {
@@ -1693,6 +1694,7 @@ public class DcacheResourceFactory
             var request = ServletRequest.getRequest();
             request.setAttribute(TRANSACTION_ATTRIBUTE, getTransaction());
             _requestPath = Requests.stripToPath(request.getRequestURL().toString());
+            _transferTag = request.getHeader("SciTag");
         }
 
         protected ProtocolInfo createProtocolInfo(InetSocketAddress address) {
@@ -1711,6 +1713,7 @@ public class DcacheResourceFactory
                         _disposition,
                         wantedChecksums);
             protocolInfo.setSessionId((int) getId());
+            protocolInfo.setTransferTag(_transferTag);
             return protocolInfo;
         }
 

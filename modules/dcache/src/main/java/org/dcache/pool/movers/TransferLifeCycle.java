@@ -36,10 +36,8 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import javax.annotation.Nonnull;
 import javax.security.auth.Subject;
-import org.dcache.auth.Subjects;
 import org.dcache.net.FlowMarker.FlowMarkerBuilder;
 import org.dcache.util.IPMatcher;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -86,7 +84,7 @@ public class TransferLifeCycle {
 
         var data = new FlowMarkerBuilder()
               .withStartedAt(Instant.now())
-              .withExperimentId(getExperimentId(subject))
+              .withExperimentId(getExperimentId(protocolInfo))
               .withActivityId(getActivity(protocolInfo))
               .wittApplication(getApplication(protocolInfo))
               .withProtocol("tcp")
@@ -123,7 +121,7 @@ public class TransferLifeCycle {
         var data = new FlowMarkerBuilder()
               .withStartedAt(Instant.now())
               .withFinishedAt(Instant.now())
-              .withExperimentId(getExperimentId(subject))
+              .withExperimentId(getExperimentId(protocolInfo))
               .withActivityId(getActivity(protocolInfo))
               .wittApplication(getApplication(protocolInfo))
               .withProtocol("tcp")
@@ -162,10 +160,10 @@ public class TransferLifeCycle {
      * @param payload the marker
      * @throws IllegalStateException if flow marker ist not build.
      */
-    private void send(InetSocketAddress dst, @Nonnull JSONObject payload)
+    private void send(InetSocketAddress dst, @Nonnull String payload)
           throws IllegalStateException {
 
-        byte[] data = payload.toString().getBytes(StandardCharsets.UTF_8);
+        byte[] data = payload.getBytes(StandardCharsets.UTF_8);
         DatagramPacket p = new DatagramPacket(data, data.length);
         try (DatagramSocket socket = new DatagramSocket()) {
             socket.connect(dst);
@@ -176,6 +174,21 @@ public class TransferLifeCycle {
     }
 
     private boolean needMarker(ProtocolInfo protocolInfo) {
+
+        if (protocolInfo.getTransferTag().isEmpty()) {
+            return false;
+        }
+
+        try {
+            int transferTag = Integer.parseInt(protocolInfo.getTransferTag());
+            if (transferTag <= 64 || transferTag >= 65536) {
+                LOGGER.warn("Invalid integer range for transfer tag: {}", protocolInfo.getTransferTag());
+                return false;
+            }
+        } catch (NumberFormatException e) {
+            LOGGER.warn("Invalid transfer tag: {}", protocolInfo.getTransferTag());
+            return false;
+        }
 
         switch (protocolInfo.getProtocol().toLowerCase()) {
             case "xrootd":
@@ -191,21 +204,9 @@ public class TransferLifeCycle {
         return protocolInfo.getProtocol().toLowerCase();
     }
 
-    private int getExperimentId(Subject subject) {
-
-        var vo = Subjects.getPrimaryFqan(subject);
-        if (vo == null) {
-            return 0;
-        }
-
-        switch (vo.getGroup().toLowerCase()) {
-            case "atlas":
-                return 16;
-            case "cms":
-                return 23;
-            default:
-                return 0;
-        }
+    private int getExperimentId(ProtocolInfo protocolInfo) {
+        // scitag = exp_id << 6 | act_id
+        return Integer.parseInt(protocolInfo.getTransferTag()) >> 6;
     }
 
     private boolean isLocalTransfer(InetSocketAddress dst) {
@@ -214,8 +215,8 @@ public class TransferLifeCycle {
     }
 
     private int getActivity(ProtocolInfo protocolInfo) {
-        // REVISIT: the activity should come from protocol info
-        return 14; // production
+        // scitag = exp_id << 6 | act_id
+        return Integer.parseInt(protocolInfo.getTransferTag()) & 0x3F;
     }
 
     private String toAFI(InetSocketAddress dst) {

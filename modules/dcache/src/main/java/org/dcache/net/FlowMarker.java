@@ -104,7 +104,7 @@ public class FlowMarker {
             return this;
         }
 
-        public JSONObject build(String state) {
+        public String build(String state) {
 
             switch (state) {
                 case "start":
@@ -123,7 +123,12 @@ public class FlowMarker {
             lifecycle.put("state", state);
             lifecycle.put("current-time", DateTimeFormatter.ISO_INSTANT.format(Instant.now()));
 
-            return payload;
+            String jsonPayload = payload.toString();
+            String time = DateTimeFormatter.ISO_INSTANT.format(Instant.now());
+            String host = flow.has("src-ip") ? flow.getString("src-ip") : "localhost";
+            String syslogHeader = String.format("<134>1 %s %s dCache - firefly-json - ", time, host);
+
+            return syslogHeader + jsonPayload;
         }
     }
 }
