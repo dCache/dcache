@@ -461,26 +461,29 @@ For each partition you can choose the load balancing policy. You do this by chos
 
 Currently four different partition types are supported:
 
-**classic**:
-This is the pool selection algorithm used in the versions of dCache prior to version 2.0. See [the section called “Classic Partitions”](#classic-partitions) for a detailed description.
+**buffer**:
+This partition type is for pools that are used as temporary transfer buffers rather than for long term storage. The pool selection does not take free space into account. Pools are selected by load only, using a randomized weighted selection with `1/2^(cc * mc * n)` as the weight, where n is the number of movers on the pool, mc is the mover cost factor of the pool and cc is the cpucostfactor as configured in the partition. Mover queue limits do not influence pool selection.
 
-**random**:
-This pool selection algorithm selects a pool randomly from the set of available pools.
+**classic**:
+This is the legacy pool selection algorithm used in the versions of dCache prior to version 2.0. See [the section called “Classic Partitions”](#classic-partitions) for a detailed description.
 
 **lru**:
 This pool selection algorithm selects the "least recently used" pool, i.e. the one that has not been used the longest.
 
+**random**:
+This pool selection algorithm selects a pool randomly from the set of available pools.
+
 **wass**:
 This pool selection algorithm selects pools randomly weighted by available space, while incorporating age and amount of garbage collectible files and information about load.
 
-This is the partition type of the default partition.
+**wrandom**:
+A weighted random partition, wherein the algorithm probabilistically selects a weighted destination pool. The weight of a pool is calculated as `free space / total free space`, where 'free space' is a sum of free and removable space.
 
 Commands related to dCache partitioning:
 
 -   `pm types`
 
 Lists available partition types. New partition types can be added through plugins.
-
 
 -   `pm create`
 
