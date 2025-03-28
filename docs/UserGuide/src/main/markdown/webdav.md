@@ -1354,7 +1354,8 @@ activities are defined:
 | DELETE          | Delete a file or directory or overwrite an existing file
 | MANAGE          | Rename and move files or directories
 | READ_METADATA   | Obtain file metadata
-| UPDATE_METADATA | Modify file metadata, stage a file or change its QoS
+| UPDATE_METADATA | Modify file metadata, change its QoS
+| STAGE           | Stage (restore) a file from tape
 
 The <tt>READ_METADATA</tt> is implied if any other activity is specified.
 For example, the caveat <tt>activity:LIST,DOWNLOAD</tt> restricts the
