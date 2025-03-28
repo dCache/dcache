@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: 2025 DESY and the Constellation authors
+# SPDX-License-Identifier: CC0-1.0
+
+name: Mirror and run GitLab CI
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, edited]
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      GITLAB_REPOSITORY: "gitlab.desy.de/dcache/gitlab-sync-test"
+      GITLAB_PROJECT_TOKEN: ${{ secrets.GITLAB_PASSWORD }}
+      REMOTE_TARGET_BRANCH: "master"
+      REMOTE_BRANCH_PREFIX: "github"
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          fetch-depth: 0
+
+      - name: Add GitLab as remote
+        run: |
+          git remote add gitlab https://dcache:$GITLAB_PROJECT_TOKEN@$GITLAB_REPOSITORY.git
+          git fetch gitlab $REMOTE_TARGET_BRANCH
+
+      - name: Push branch to GitLab
+        env:
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_LINK: ${{ github.event.pull_request.html_url }}
+          PR_DESCRIPTION: ${{ github.event.pull_request.body }}
+        run: |
+          PR_DESCRIPTION="${PR_DESCRIPTION//$'\n'/\\n}" # escape newlines
+          git push gitlab --force "$PR_BRANCH:$REMOTE_BRANCH_PREFIX-$PR_AUTHOR-$PR_BRANCH" \
+            -o merge_request.create -o merge_request.target=$REMOTE_TARGET_BRANCH \
+            -o merge_request.title="$PR_TITLE" -o merge_request.label=github \
+            -o merge_request.description="[GitHub PR #$PR_NUMBER]($PR_LINK)\n\n$PR_DESCRIPTION"
