@@ -11,7 +11,7 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     env:
-      GITLAB_REPOSITORY: "gitlab.desy.de/dcache/gitlab-sync-test"
+      GITLAB_REPOSITORY: "gitlab.desy.de/dcache/dcache"
       GITLAB_PROJECT_TOKEN: ${{ secrets.GITLAB_PASSWORD }}
       REMOTE_TARGET_BRANCH: "master"
       REMOTE_BRANCH_PREFIX: "github"
