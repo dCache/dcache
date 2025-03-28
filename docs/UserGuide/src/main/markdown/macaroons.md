@@ -168,8 +168,8 @@ has a couple of important consequences:
 
 dCache defines seven activities that describe what someone using the
 macaroon is allowed to do.  These are `READ_METADATA`,
-`UPDATE_METADATA`, `LIST`, `DOWNLOAD`, `MANAGE`, `UPLOAD` and
-`DELETE`,
+`UPDATE_METADATA`, `LIST`, `DOWNLOAD`, `MANAGE`, `UPLOAD`,
+`DELETE` and `STAGE`.
 
 <dl>
   <dt>READ_METADATA</dt>
@@ -186,7 +186,7 @@ macaroon is allowed to do.  These are `READ_METADATA`,
   <dd>
     <p>Any request that attempts to update the metadata about the
     file: modifying the POSIX permissions, updating ACLs, updating
-    extended attributes, updating QoS or locality (staging).</p>
+    extended attributes, updating QoS.</p>
   </dd>
 
   <dt>LIST</dt>
@@ -230,6 +230,12 @@ macaroon is allowed to do.  These are `READ_METADATA`,
     to authorisation (see UPDATE_METADATA activity). Making data
     inaccessible from one path but accessible from another is namespace
     management (see MANAGE activity).</p>
+  </dd>
+
+  <dt>STAGE</dt>
+
+  <dd>
+    <p>Any request that stages (restores) files from tape.</p>
   </dd>
 </dl>
 
