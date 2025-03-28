@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.dcache</groupId>
     <artifactId>dcache-parent</artifactId>
-    <version>10.2.11</version>
+    <version>10.2.12-SNAPSHOT</version>
   </parent>
 
   <artifactId>packaging</artifactId>
@@ -198,7 +198,7 @@
       <dependency>
           <groupId>org.dcache</groupId>
           <artifactId>gplazma2-pyscript</artifactId>
-          <version>10.2.11</version>
+          <version>10.2.12-SNAPSHOT</version>
       </dependency>
       <dependency>
           <groupId>org.dcache</groupId>
