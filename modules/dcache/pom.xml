@@ -290,7 +290,7 @@
 
     <dependency>
         <groupId>org.python</groupId>
-        <artifactId>jython-standalone</artifactId>
+        <artifactId>jython-slim</artifactId>
         <scope>test</scope>
     </dependency>
       <dependency>

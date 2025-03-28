@@ -745,8 +745,14 @@
             </dependency>
             <dependency>
                 <groupId>org.python</groupId>
-                <artifactId>jython-standalone</artifactId>
+                <artifactId>jython-slim</artifactId>
                 <version>2.7.3</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.github.jnr</groupId>
+                        <artifactId>jffi</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
         <dependency>
             <groupId>org.dcache</groupId>
