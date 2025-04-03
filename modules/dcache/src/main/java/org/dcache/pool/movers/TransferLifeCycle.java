@@ -34,8 +34,11 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.Map;
+import java.util.HashMap;
 import javax.annotation.Nonnull;
 import javax.security.auth.Subject;
+import org.dcache.auth.Subjects;
 import org.dcache.net.FlowMarker.FlowMarkerBuilder;
 import org.dcache.util.IPMatcher;
 import org.slf4j.Logger;
@@ -60,6 +63,8 @@ public class TransferLifeCycle {
 
     private boolean enabled;
 
+    private Map<String, Integer> voToExpId = new HashMap<>();
+
     /**
      * Mark transfer start.
      * @param src remote client endpoint
@@ -82,9 +87,14 @@ public class TransferLifeCycle {
             return;
         }
 
+        int expId = getExperimentId(protocolInfo, subject);
+        if (expId == -1) {
+            return;
+        }
+
         var data = new FlowMarkerBuilder()
               .withStartedAt(Instant.now())
-              .withExperimentId(getExperimentId(protocolInfo))
+              .withExperimentId(expId)
               .withActivityId(getActivity(protocolInfo))
               .wittApplication(getApplication(protocolInfo))
               .withProtocol("tcp")
@@ -118,10 +128,15 @@ public class TransferLifeCycle {
             return;
         }
 
+        int expId = getExperimentId(protocolInfo, subject);
+        if (expId == -1) {
+            return;
+        }
+
         var data = new FlowMarkerBuilder()
               .withStartedAt(Instant.now())
               .withFinishedAt(Instant.now())
-              .withExperimentId(getExperimentId(protocolInfo))
+              .withExperimentId(expId)
               .withActivityId(getActivity(protocolInfo))
               .wittApplication(getApplication(protocolInfo))
               .withProtocol("tcp")
@@ -154,6 +169,29 @@ public class TransferLifeCycle {
     }
 
     /**
+     * Configures VO (Virtual Organization) to Experiment ID mapping.
+     *       
+     * @param voMap A comma-separated string of VO mapping entries in the format
+     *              "voName:expId".
+     */
+    public void setVoMapping(String voMap) {
+        voToExpId.clear();
+
+        for (String entry : voMap.split(",")) {
+            String[] parts = entry.split(":");
+            if (parts.length == 2) {
+                try {
+                    voToExpId.put(parts[0].trim().toLowerCase(), Integer.parseInt(parts[1].trim()));
+                } catch (NumberFormatException e) {
+                    LOGGER.warn("Invalid VO mapping entry: {}", entry);
+                }        
+            } else {
+                LOGGER.warn("Invalid VO mapping entry: {}", entry);
+            }
+        }
+    }
+
+    /**
      * Send flow marker.
      *
      * @param dst     Inet address where to flow markers should be sent.
@@ -175,21 +213,6 @@ public class TransferLifeCycle {
 
     private boolean needMarker(ProtocolInfo protocolInfo) {
 
-        if (protocolInfo.getTransferTag().isEmpty()) {
-            return false;
-        }
-
-        try {
-            int transferTag = Integer.parseInt(protocolInfo.getTransferTag());
-            if (transferTag <= 64 || transferTag >= 65536) {
-                LOGGER.warn("Invalid integer range for transfer tag: {}", protocolInfo.getTransferTag());
-                return false;
-            }
-        } catch (NumberFormatException e) {
-            LOGGER.warn("Invalid transfer tag: {}", protocolInfo.getTransferTag());
-            return false;
-        }
-
         switch (protocolInfo.getProtocol().toLowerCase()) {
             case "xrootd":
             case "http":
@@ -204,9 +227,36 @@ public class TransferLifeCycle {
         return protocolInfo.getProtocol().toLowerCase();
     }
 
-    private int getExperimentId(ProtocolInfo protocolInfo) {
-        // scitag = exp_id << 6 | act_id
-        return Integer.parseInt(protocolInfo.getTransferTag()) >> 6;
+    /**
+     * Determine experiment ID, initially from the ProtocolInfo (xroot/http), 
+     * if that fails then fallback to the Subject's primary FQAN. 
+     *
+     * @param protocolInfo the ProtocolInfo object containing transfer-related metadata
+     * @param subject the Subject representing the user or entity associated with the transfer
+     * @return the experiment ID, or -1 if it cannot be determined
+     */
+    private int getExperimentId(ProtocolInfo protocolInfo, Subject subject) {
+        if (!protocolInfo.getTransferTag().isEmpty()) {
+            try {
+                int transferTag = Integer.parseInt(protocolInfo.getTransferTag());
+                if (transferTag <= 64 || transferTag >= 65536) {
+                    LOGGER.warn("Invalid integer range for transfer tag: {}", protocolInfo.getTransferTag());
+                    return -1;
+                }
+                // scitag = exp_id << 6 | act_id
+                return transferTag >> 6;
+            } catch (NumberFormatException e) {
+                LOGGER.warn("Invalid transfer tag: {}", protocolInfo.getTransferTag());
+                return -1;
+            }
+        }
+
+        var vo = Subjects.getPrimaryFqan(subject);
+        if (vo == null) {
+            return -1;
+        }
+
+        return voToExpId.getOrDefault(vo.getGroup().toLowerCase(), -1);
     }
 
     private boolean isLocalTransfer(InetSocketAddress dst) {
@@ -215,8 +265,13 @@ public class TransferLifeCycle {
     }
 
     private int getActivity(ProtocolInfo protocolInfo) {
-        // scitag = exp_id << 6 | act_id
-        return Integer.parseInt(protocolInfo.getTransferTag()) & 0x3F;
+        if (!protocolInfo.getTransferTag().isEmpty()) {
+            // scitag = exp_id << 6 | act_id
+            return Integer.parseInt(protocolInfo.getTransferTag()) & 0x3F;
+        } else {
+            // default activity id = 1
+            return 1;
+        }
     }
 
     private String toAFI(InetSocketAddress dst) {
