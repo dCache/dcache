@@ -74,14 +74,14 @@ rpm -ivh https://www.dcache.org/old/downloads/1.9/repo/##SERIES##/dcache-##VERSI
 |   1:dcache-##VERSION##-1                   ################################# [100%]
 ```
 
-For example, `##SERIES##` could be `9.1` and `##VERSION##` could be `9.1.1`.
+For example, `##SERIES##` could be `10.1` and `##VERSION##` could be `10.1.1`.
 
 ### Installing prerequisite packages
 
 First, install OpenJDK and httpd-tools packages.
 
 ```console-root
-yum install java-11-openjdk-headless httpd-tools
+yum install java-17-openjdk-headless httpd-tools
 ```
 
 ### Installing PostgreSQL
