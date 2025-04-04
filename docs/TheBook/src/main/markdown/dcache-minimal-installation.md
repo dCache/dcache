@@ -13,21 +13,21 @@ and how dCache's users will interact with the system.  There is no one size fits
   - At least 500 MiB free disk space
 
 - Software:
-  - OpenJDK 11
+  - OpenJDK 17
   - Postgres SQL Server 13.0 or later
   - ZooKeeper version 3.5 (embedded)
 
 ## Minimal Installation
 
 ### Java 
-For this installation, we use OpenJDK 11 (java 17 for dCache version 10.2 and later)
+For this installation, we use OpenJDK 17.
 
 ```bash
 sudo -s
 
-yum install java-11-openjdk
+dnf install java-17-openjdk
 
-dnf install java-11-openjdk-devel
+dnf install java-17-openjdk-devel
 ```
 For a production installation, you will need standalone ZooKeeper version 3.8 or later.  
 
