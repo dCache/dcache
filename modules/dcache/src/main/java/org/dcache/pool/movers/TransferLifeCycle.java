@@ -35,6 +35,7 @@ import java.time.Instant;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.HashMap;
 import javax.annotation.Nonnull;
 import javax.security.auth.Subject;
@@ -87,14 +88,14 @@ public class TransferLifeCycle {
             return;
         }
 
-        int expId = getExperimentId(protocolInfo, subject);
-        if (expId == -1) {
+        var optionalExpId = getExperimentId(protocolInfo, subject);
+        if (optionalExpId.isEmpty()) {
             return;
         }
 
         var data = new FlowMarkerBuilder()
               .withStartedAt(Instant.now())
-              .withExperimentId(expId)
+              .withExperimentId(optionalExpId.getAsInt())
               .withActivityId(getActivity(protocolInfo))
               .wittApplication(getApplication(protocolInfo))
               .withProtocol("tcp")
@@ -128,15 +129,15 @@ public class TransferLifeCycle {
             return;
         }
 
-        int expId = getExperimentId(protocolInfo, subject);
-        if (expId == -1) {
+        var optionalExpId = getExperimentId(protocolInfo, subject);
+        if (optionalExpId.isEmpty()) {
             return;
         }
 
         var data = new FlowMarkerBuilder()
               .withStartedAt(Instant.now())
               .withFinishedAt(Instant.now())
-              .withExperimentId(expId)
+              .withExperimentId(optionalExpId.getAsInt())
               .withActivityId(getActivity(protocolInfo))
               .wittApplication(getApplication(protocolInfo))
               .withProtocol("tcp")
@@ -235,28 +236,30 @@ public class TransferLifeCycle {
      * @param subject the Subject representing the user or entity associated with the transfer
      * @return the experiment ID, or -1 if it cannot be determined
      */
-    private int getExperimentId(ProtocolInfo protocolInfo, Subject subject) {
+    private OptionalInt getExperimentId(ProtocolInfo protocolInfo, Subject subject) {
         if (protocolInfo.getTransferTag() != null && !protocolInfo.getTransferTag().isEmpty()) {
             try {
                 int transferTag = Integer.parseInt(protocolInfo.getTransferTag());
                 if (transferTag <= 64 || transferTag >= 65536) {
                     LOGGER.warn("Invalid integer range for transfer tag: {}", protocolInfo.getTransferTag());
-                    return -1;
+                    return OptionalInt.empty();
                 }
                 // scitag = exp_id << 6 | act_id
-                return transferTag >> 6;
+                return OptionalInt.of(transferTag >> 6);
             } catch (NumberFormatException e) {
                 LOGGER.warn("Invalid transfer tag: {}", protocolInfo.getTransferTag());
-                return -1;
+                return OptionalInt.empty();
             }
         }
 
         var vo = Subjects.getPrimaryFqan(subject);
         if (vo == null) {
-            return -1;
+            return OptionalInt.empty();
         }
 
-        return voToExpId.getOrDefault(vo.getGroup().toLowerCase(), -1);
+        return voToExpId.containsKey(vo.getGroup().toLowerCase()) 
+                ? OptionalInt.of(voToExpId.get(vo.getGroup().toLowerCase())) 
+                : OptionalInt.empty();
     }
 
     private boolean isLocalTransfer(InetSocketAddress dst) {
