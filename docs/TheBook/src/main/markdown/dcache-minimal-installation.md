@@ -29,7 +29,7 @@ For a minimal test installation:
   - At least 500 MiB free disk space
 
 - Software:
-  - OpenJDK 11
+  - OpenJDK 17
   - Postgres SQL Server 9.5 or later
   - ZooKeeper version 3.5 (in case of a standalone ZooKeeper installation)
 
@@ -40,11 +40,11 @@ help you with your system specifications. Just contact us: <support@dcache.org>.
    
 #### Software:
 
-- OpenJDK 11 (java 11 , and java 17 for dCache staring from version 10.1)
+- OpenJDK 17 (or OpenJDK 11 for dCache versions before 10.1)
   
- > yum install java-11-openjdk
+ > yum install java-17-openjdk
  > 
- > dnf install java-11-openjdk-devel
+ > dnf install java-17-openjdk-devel
 
 
 - ZooKeeper version 3.7 (in case of a standalone ZooKeeper installation)
