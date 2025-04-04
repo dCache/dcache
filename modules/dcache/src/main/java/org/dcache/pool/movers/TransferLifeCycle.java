@@ -236,7 +236,7 @@ public class TransferLifeCycle {
      * @return the experiment ID, or -1 if it cannot be determined
      */
     private int getExperimentId(ProtocolInfo protocolInfo, Subject subject) {
-        if (!protocolInfo.getTransferTag().isEmpty()) {
+        if (protocolInfo.getTransferTag() != null && !protocolInfo.getTransferTag().isEmpty()) {
             try {
                 int transferTag = Integer.parseInt(protocolInfo.getTransferTag());
                 if (transferTag <= 64 || transferTag >= 65536) {
