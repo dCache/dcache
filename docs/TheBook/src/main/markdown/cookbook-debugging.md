@@ -4,7 +4,7 @@ This chapter provides an information on how to exam running dCache system, ident
 
 ## Java Flight recorder
 
-When debugging an issue on a running system often we need to collect jvm performance stats with `Java flight recorder`. Starting from release 7.2 the Java flight recorder attach listener is enabled by default. Site admins can collect and provide developers with additional information when high CPU load, memory consumption or file descriptor leaks are observed. To enable the `flight recorder` _jcmd_ command is used, which is typically provided as a part of `java-11-openjdk-devel` (on RHEL and clones).
+When debugging an issue on a running system often we need to collect jvm performance stats with `Java flight recorder`. Starting from release 7.2 the Java flight recorder attach listener is enabled by default. Site admins can collect and provide developers with additional information when high CPU load, memory consumption or file descriptor leaks are observed. To enable the `flight recorder` _jcmd_ command is used, which is typically provided as a part of `java-17-openjdk-headless` (on RHEL and clones).
 
 To control recoding the following subcommands of _jcmd_ available:
 
