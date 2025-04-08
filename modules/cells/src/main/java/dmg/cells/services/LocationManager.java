@@ -67,6 +67,7 @@ import org.apache.curator.framework.recipes.cache.NodeCache;
 import org.apache.curator.framework.recipes.cache.NodeCacheListener;
 import org.apache.curator.framework.recipes.cache.PathChildrenCache;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
+import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent.Type;
 import org.apache.curator.utils.CloseableUtils;
 import org.apache.curator.utils.ZKPaths;
 import org.apache.zookeeper.CreateMode;
@@ -216,7 +217,9 @@ public class LocationManager extends CellAdapter {
                     switch (entry.getScheme()) {
                         case "tls":
                         case "tcp":
-                            endpoints.add(entry);
+                            if (canResoveHost(entry)) {
+                                endpoints.add(entry);
+                            }
                             break;
                         default:
                             LOGGER.warn("Unknown Scheme for LocationManager Cores: {}", entry);
@@ -227,6 +230,26 @@ public class LocationManager extends CellAdapter {
                 throw new IllegalArgumentException(
                       "Failed deserializing LocationManager Cores as uri", ie);
             }
+        }
+
+        /**
+         * Check if hostname provided by urc can be resolved.
+         * @param endpoint core domain endpoint
+         * @return true it host name can be resolved. Otherwise false.
+         */
+        private boolean canResoveHost(URI endpoint) {
+            var h = endpoint.getHost();
+            if (h == null) {
+                LOGGER.warn("Ignoring URL without host: {}", endpoint);
+                return false;
+            }
+            try {
+                var ip = java.net.InetAddress.getByName(h);
+            } catch (UnknownHostException e) {
+                LOGGER.warn("Ignoring unknown host: {} : {}", endpoint, e.toString());
+                return false;
+            }
+            return true;
         }
 
         void addCore(String scheme, String host, int port) {
@@ -521,46 +544,38 @@ public class LocationManager extends CellAdapter {
             LOGGER.info("{}", event);
             String cell;
 
+            if (hasNoData(event.getData())) {
+                LOGGER.warn("Ignoring empty event {}", event.getType());
+                return;
+            }
+
+            String domain = ZKPaths.getNodeFromPath(event.getData().getPath());
+
             switch (event.getType()) {
                 case CHILD_REMOVED:
-                    cell = connectors.remove(ZKPaths.getNodeFromPath(event.getData().getPath()));
+                    cell = connectors.remove(domain);
                     if (cell != null) {
                         killConnector(cell);
                     }
                     break;
                 case CHILD_UPDATED:
-                    if (hasNoData(event.getData())) {
-                        LOGGER.warn("Ignoring empty data on UPDATED for {}", event.getData().getPath());
-                        break;
-                    }
-                    cell = connectors.remove(
-                          ZKPaths.getNodeFromPath(event.getData().getPath()));
-                    if (cell != null) {
-                        killConnector(cell);
-                    }
-                    // fall through
                 case CHILD_ADDED:
-                    if (hasNoData(event.getData())) {
-                        LOGGER.warn("Ignoring empty data on ADDED for {}", event.getData().getPath());
+
+                    CoreDomainInfo info = infoFromZKEvent(event);
+                    if (info.endpoints.isEmpty()) {
+                        LOGGER.warn("Ignoring invalid core URI", domain);
                         break;
                     }
 
-                    //Log if the Core Domain Information received is incompatible with previous
-                    CoreDomainInfo info = infoFromZKEvent(event);
-                    String domain = ZKPaths.getNodeFromPath(event.getData().getPath());
+                    if (event.getType() == Type.CHILD_UPDATED) {
+                        cell = connectors.remove(domain);
+                        if (cell != null) {
+                            killConnector(cell);
+                        }
+                    }
 
                     try {
                         if (shouldConnectTo(domain)) {
-                            cell = connectors.remove(domain);
-                            if (cell != null) {
-                                LOGGER.error(
-                                      "About to create tunnel to core domain {}, but to my surprise "
-                                            +
-                                            "a tunnel called {} already exists. Will kill it. Please contact "
-                                            +
-                                            "support@dcache.org.", domain, cell);
-                                killConnector(cell);
-                            }
                             cell = connectors.put(domain, startConnector(domain, info));
                             if (cell != null) {
                                 LOGGER.error(
