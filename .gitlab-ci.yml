@@ -640,8 +640,8 @@ NFS4.x protocol compliance tests:
            noOPEN23 noOPEN24 noOPEN26 noOPEN27 noOPEN28 noOPEN3 noOPEN30 noOPEN4 noRENEW3 noRD1 noRD10 \
            noRD2 noRD3 noRD5 noRD5a noRD6 noRD7a noRD7b noRD7c noRD7d noRD7f noRD7s noRDDR12 noRDDR11 \
            noRPLY1 noRPLY10 noRPLY12 \
-           noRPLY14 noRPLY2 noRPLY3 noRPLY5 noRPLY6 noRPLY7 noRPLY8 noRPLY9 noSATT3d noSATT4 noSATT6d \
-           noSATT6r noSATT18 noSEC7 noWRT1 noWRT11 noWRT13 noWRT14 noWRT15 noWRT18 noWRT19 noWRT1b noWRT2 \
+           noRPLY14 noRPLY2 noRPLY3 noRPLY5 noRPLY6 noRPLY7 noRPLY8 noRPLY9 \
+           noSEC7 noWRT1 noWRT11 noWRT13 noWRT14 noWRT15 noWRT18 noWRT19 noWRT1b noWRT2 \
            noWRT3 noWRT6a noWRT6b noWRT6c noWRT6d noWRT6f noWRT6s noWRT8 noWRT9; \
       exit 0"
     - |-
