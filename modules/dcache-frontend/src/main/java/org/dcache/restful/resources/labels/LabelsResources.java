@@ -33,6 +33,7 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import javax.inject.Inject;
@@ -56,6 +57,7 @@ import org.dcache.http.PathMapper;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.JsonFileAttributes;
+import org.dcache.restful.providers.JsonListLabels;
 import org.dcache.restful.util.HttpServletRequests;
 import org.dcache.restful.util.RequestUser;
 import org.dcache.restful.util.namespace.NamespaceUtils;
@@ -108,6 +110,86 @@ public class LabelsResources {
 
 
     @GET
+    @ApiOperation(value = "List all existing labels.",
+            notes = "The method offers the possibility to list the list of all existing labels.")
+    @ApiResponses({
+            @ApiResponse(code = 401, message = "Unauthorized"),
+            @ApiResponse(code = 403, message = "Forbidden"),
+            @ApiResponse(code = 404, message = "Not Found"),
+            @ApiResponse(code = 500, message = "Internal Server Error"),
+    })
+    //@Path("{path : /}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public JsonListLabels getListLabels(//@ApiParam("Path of file or directory.")
+                                              //  @PathParam("path") String requestPath,
+            @ApiParam("Limit number of replies in labels listing.")
+            @QueryParam("limit") String limit,
+            @ApiParam("Number of entries to skip in labels listing.")
+            @QueryParam("offset") String offset) throws CacheException {
+
+        JsonListLabels labels = new JsonListLabels();
+
+        Set<FileAttribute> attributes =
+                NamespaceUtils.getRequestedAttributes(false,
+                        false,
+                        false,
+                        false,
+                        false);
+
+        FsPath path = pathMapper.asDcachePath(request, "/", ForbiddenException::new);
+
+
+        Range<Integer> range;
+        try {
+            int lower = (offset == null) ? 0 : Integer.parseInt(offset);
+            int ceiling = (limit == null) ? Integer.MAX_VALUE : Integer.parseInt(limit);
+            if (ceiling < 0 || lower < 0) {
+                throw new BadRequestException("limit and offset can not be less than zero.");
+            }
+            range = (Integer.MAX_VALUE - lower < ceiling) ? Range.atLeast(lower)
+                    : Range.closedOpen(lower, lower + ceiling);
+        } catch (NumberFormatException e) {
+            throw new BadRequestException("limit and offset must be an integer value.");
+        }
+        try {
+            System.out.println("tets listing labels 555" );
+            DirectoryStream stream = listDirectoryHandler.listLabels(
+                    HttpServletRequests.roleAwareSubject(request),
+                    HttpServletRequests.roleAwareRestriction(request),
+                    path,
+                    range,
+                    attributes);
+
+            System.out.println("tets listing labels 66666" );
+
+            Set<String> labelsList = new HashSet<>();
+
+            for (DirectoryEntry entry : stream) {
+                String labelName = entry.getName();
+                labelsList.add(labelName);
+                System.out.println("test " + labelName);
+            }
+
+            labels.setLabels(labelsList);
+
+
+        }  catch (PermissionDeniedCacheException e) {
+            if (RequestUser.isAnonymous()) {
+                throw new NotAuthorizedException(e);
+            } else {
+                throw new ForbiddenException(e);
+            }
+        } catch (CacheException | InterruptedException  ex) {
+            LOGGER.warn(Exceptions.meaningfulMessage(ex));
+            throw new InternalServerErrorException(ex);
+        }
+        return labels;
+    }
+
+
+
+
+    @GET
     @ApiOperation(value = "Find metadata and optionally virtual directory contents.",
           notes = "The method offers the possibility to list the content of a virtual"
                 + "directory for labels.")
@@ -149,6 +231,7 @@ public class LabelsResources {
                     false);
 
         FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new);
+        System.out.println("path " + path);
 
         Range<Integer> range;
         try {
@@ -164,6 +247,7 @@ public class LabelsResources {
         }
         try {
             List<JsonFileAttributes> children = new ArrayList<>();
+            System.out.println("TEST THE PATH " + path);
 
             DirectoryStream stream = listDirectoryHandler.listVirtualDirectory(
                   HttpServletRequests.roleAwareSubject(request),

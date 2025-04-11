@@ -160,6 +160,19 @@ public interface FileSystemProvider extends Closeable {
     DirectoryStreamB<ChimeraDirectoryEntry> newDirectoryStream(FsInode dir)
           throws ChimeraFsException;
 
+    /**
+     * Returns {@link DirectoryStreamB} of ChimeraDirectoryEntry in the directory.
+     * <p>
+     * The returned stream may keep system resources allocated. The try-with-resources construct
+     * should be used to ensure that the stream's close method is invoked after the stream
+     * operations are completed.
+     *
+     * @param dir inode of the directory to list
+     * @return stream of directory entries
+     */
+    DirectoryStreamB<ChimeraDirectoryEntry> listLabelsStream(FsInode dir)
+            throws ChimeraFsException;
+
 
     /**
      * Returns {@link DirectoryStreamB} of ChimeraDirectoryEntry in the directory.
@@ -173,6 +186,20 @@ public interface FileSystemProvider extends Closeable {
      */
     DirectoryStreamB<ChimeraDirectoryEntry> virtualDirectoryStream(FsInode dir, String labelname)
           throws ChimeraFsException;
+
+
+    /**
+     * Returns {@link DirectoryStreamB} of ChimeraDirectoryEntry in the directory.
+     * <p>
+     * The returned stream may keep system resources allocated. The try-with-resources construct
+     * should be used to ensure that the stream's close method is invoked after the stream
+     * operations are completed.
+     *
+     * @param labelname inode of the directory to list
+     * @return stream of directory entries
+     *//*
+    DirectoryStreamB<ChimeraDirectoryEntry> listLabels(FsInode dir, String labelname)
+            throws ChimeraFsException;*/
 
     void remove(String path) throws ChimeraFsException;
 

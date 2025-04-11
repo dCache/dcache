@@ -150,13 +150,7 @@ import org.dcache.util.ColumnWriter;
 import org.dcache.util.ColumnWriter.TabulatedRow;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.TimeUtils;
-import org.dcache.vehicles.FileAttributes;
-import org.dcache.vehicles.PnfsCreateSymLinkMessage;
-import org.dcache.vehicles.PnfsGetFileAttributes;
-import org.dcache.vehicles.PnfsListDirectoryMessage;
-import org.dcache.vehicles.PnfsRemoveChecksumMessage;
-import org.dcache.vehicles.PnfsResolveSymlinksMessage;
-import org.dcache.vehicles.PnfsSetFileAttributes;
+import org.dcache.vehicles.*;
 import org.dcache.vehicles.qos.PnfsManagerAddQoSPolicyMessage;
 import org.dcache.vehicles.qos.PnfsManagerGetQoSPolicyMessage;
 import org.dcache.vehicles.qos.PnfsManagerGetQoSPolicyStatsMessage;
@@ -2385,6 +2379,138 @@ public class PnfsManagerV3
         }
     }
 
+
+    private class ListHandlerLabelsImpl implements ListHandler {
+
+        private final CellPath _requestor;
+        private final PnfsListLabelsMessage _msg;
+        private final long _delay;
+        private final UOID _uoid;
+        private final FsPath _directory;
+        private final Subject _subject;
+        private final Restriction _restriction;
+        private long _deadline;
+        private int _messageCount;
+        private final BlockingQueue<CellMessage> _fifo;
+
+        public ListHandlerLabelsImpl(CellPath requestor, UOID uoid,
+                               PnfsListLabelsMessage msg,
+                               long initialDelay, long delay,
+                               BlockingQueue<CellMessage> fifo) {
+            _msg = msg;
+            _requestor = requestor;
+            _uoid = uoid;
+            _delay = delay;
+            _directory = requireNonNull(_msg.getFsPath());
+            _subject = _msg.getSubject();
+            _restriction = _msg.getRestriction();
+            _restriction.setPathResolver(pathResolver);
+            _deadline =
+                    (delay == Long.MAX_VALUE)
+                            ? Long.MAX_VALUE
+                            : System.currentTimeMillis() + initialDelay;
+            _fifo = fifo;
+        }
+
+        private void sendPartialReply() {
+            _msg.setReply();
+            CellMessage envelope = new CellMessage(_requestor, _msg);
+            envelope.setLastUOID(_uoid);
+            sendMessage(envelope);
+            _messageCount++;
+            _msg.setMessageCount(_messageCount);
+
+
+            if (!useParallelListing) {
+                /**
+                 * fold other list requests for the same target in the queue
+                 */
+
+                for (CellMessage message : _fifo) {
+                    PnfsMessage other = (PnfsMessage) message.getMessageObject();
+
+                    if (other.invalidates(_msg)) {
+                        break;
+                    }
+
+                    if (other.fold(_msg)) {
+                        other.setReply();
+                        CellPath source = message.getSourcePath().revert();
+                        CellMessage parcel = new CellMessage(source, other);
+                        parcel.setLastUOID(message.getUOID());
+                        sendMessage(parcel);
+                        ((PnfsListDirectoryMessage)other).clear();
+                    }
+                }
+            }
+            _msg.clear();
+        }
+
+        @Override
+        public void addEntry(String name, FileAttributes attrs) {
+            if (Subjects.isRoot(_subject)
+                    || !_restriction.isRestricted(READ_METADATA, _directory, name, true)) {
+                long now = System.currentTimeMillis();
+                _msg.addEntry(name, attrs);
+                if (_msg.getEntries().size() >= _directoryListLimit ||
+                        now > _deadline) {
+                    sendPartialReply();
+                    _deadline =
+                            (_delay == Long.MAX_VALUE) ? Long.MAX_VALUE : now + _delay;
+                }
+            }
+        }
+
+        public int getMessageCount() {
+            return _messageCount;
+        }
+    }
+
+
+    private void listLabels(CellMessage envelope, PnfsListLabelsMessage msg,
+                               BlockingQueue<CellMessage> fifo) {
+        if (!msg.getReplyRequired()) {
+            return;
+        }
+
+        try {
+            String path = msg.getPnfsPath();
+
+            checkMask(msg.getSubject(), path, msg.getAccessMask());
+            checkRestriction(msg, LIST);
+
+            long delay = envelope.getAdjustedTtl();
+            long initialDelay =
+                    (delay == Long.MAX_VALUE)
+                            ? Long.MAX_VALUE
+                            : delay - envelope.getLocalAge();
+            CellPath source = envelope.getSourcePath().revert();
+            ListHandlerLabelsImpl handler =
+                    new ListHandlerLabelsImpl(source, envelope.getUOID(),
+                            msg, initialDelay, delay, fifo);
+
+            System.out.println("test labels 66666666 NEW");
+
+                _nameSpaceProvider.listLabels(msg.getSubject(), path.substring(1),
+                        msg.getRange(),
+                        null,
+                        handler);
+
+            System.out.println("test labels 3 c");
+
+
+            msg.setSucceeded(handler.getMessageCount() + 1);
+        } catch (FileNotFoundCacheException | NotDirCacheException e) {
+            msg.setFailed(e.getRc(), e.getMessage());
+        } catch (CacheException e) {
+            LOGGER.warn(e.toString());
+            msg.setFailed(e.getRc(), e.getMessage());
+        } catch (RuntimeException e) {
+            LOGGER.error(e.toString(), e);
+            msg.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                    e.getMessage());
+        }
+    }
     private void listDirectory(CellMessage envelope, PnfsListDirectoryMessage msg,
           BlockingQueue<CellMessage> fifo) {
         if (!msg.getReplyRequired()) {
@@ -2407,13 +2533,13 @@ public class PnfsManagerV3
                   new ListHandlerImpl(source, envelope.getUOID(),
                         msg, initialDelay, delay, fifo);
 
-            if (msg.getPathType() == PnfsListDirectoryMessage.PathType.LABEL) {
+           if (msg.getPathType() == PnfsListDirectoryMessage.PathType.LABEL) {
                 _nameSpaceProvider.listVirtualDirectory(msg.getSubject(), path.substring(1),
                       msg.getRange(),
                       msg.getRequestedAttributes(),
                       handler);
-
-            } else {
+            }
+            else {
                 _nameSpaceProvider.list(msg.getSubject(), path,
                       msg.getPattern(),
                       msg.getRange(),
@@ -2432,6 +2558,8 @@ public class PnfsManagerV3
                   e.getMessage());
         }
     }
+
+
 
     private static class ActivityReport {
 
@@ -2477,6 +2605,8 @@ public class PnfsManagerV3
         @Override
         public void run() {
             try {
+                System.out.println("test labels 4");
+
                 for (CellMessage message = _fifo.take(); message != SHUTDOWN_SENTINEL;
                       message = _fifo.take()) {
                     CDC.setMessageContext(message);
@@ -2495,6 +2625,29 @@ public class PnfsManagerV3
                             sendTimeout(message, "TTL exceeded");
                             continue;
                         }
+                        System.out.println("test labels 5 " + ( pnfs instanceof PnfsListLabelsMessage) );
+
+                        if (pnfs instanceof PnfsListLabelsMessage){
+                            System.out.println("test labels 3");
+                            long ctime = System.currentTimeMillis();
+                            listLabels(message, (PnfsListLabelsMessage) pnfs, _fifo);
+
+                            System.out.println("test labels 3 b");
+
+                            long duration = System.currentTimeMillis() - ctime;
+                            _gauges.update(pnfs.getClass(), duration);
+                            if (_logSlowThreshold != THRESHOLD_DISABLED &&
+                                    duration > _logSlowThreshold) {
+                                LOGGER.warn("{} processed in {} ms", pnfs.getClass(), duration);
+                            } else {
+                                LOGGER.info("{} processed in {} ms", pnfs.getClass(), duration);
+                            }
+
+                            System.out.println("test labels 3 f");
+
+                            postProcessListLabels(message, pnfs);
+                        }
+
                         if (!(pnfs instanceof PnfsListDirectoryMessage)) {
                             processPnfsMessage(message, pnfs);
                         } else {
@@ -3011,6 +3164,22 @@ public class PnfsManagerV3
                   new PnfsSetFileAttributes(message.getPnfsId(),
                         attributes)));
         }
+    }
+
+    private void postProcessListLabels(CellMessage envelope, PnfsMessage message) {
+
+        System.out.println("test labels 3 d" );
+
+        if (message.getReplyRequired()) {
+            System.out.println("test labels 4" );
+
+            envelope.revertDirection();
+
+            System.out.println("test labels 6 " + envelope.getDestinationPath() );
+
+            sendMessage(envelope);
+        }
+
     }
 
     private void postProcessFlush(CellMessage envelope, PoolFileFlushedMessage pnfsMessage) {

@@ -164,6 +164,13 @@ public abstract class ForwardingNameSpaceProvider implements NameSpaceProvider {
     }
 
     @Override
+    public void listLabels(Subject subject, String path, Range<Integer> range,
+                                     Set<FileAttribute> attrs, ListHandler handler) throws CacheException
+    {
+        delegate().listLabels(subject, path, range, attrs, handler);
+    }
+
+    @Override
     public FsPath createUploadPath(Subject subject, FsPath path, FsPath rootPath,
           Long size, AccessLatency al, RetentionPolicy rp, String spaceToken,
           Set<CreateOption> options) throws CacheException {

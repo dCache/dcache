@@ -22,6 +22,7 @@ import org.dcache.util.CacheExceptionFactory;
 import org.dcache.util.Glob;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
+import org.dcache.vehicles.PnfsListLabelsMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -129,6 +130,7 @@ public class ListDirectoryHandler
          Range<Integer> range, Set<FileAttribute> attributes)
             throws InterruptedException, CacheException
     {
+        System.out.println("test listing labels !");
         String dir = path.toString();
         PnfsListDirectoryMessage msg =
                 new PnfsListDirectoryMessage(dir, null, range, attributes);
@@ -137,6 +139,36 @@ public class ListDirectoryHandler
         Stream stream = new Stream(dir, uuid);
         try {
             msg.setPathType(PnfsListDirectoryMessage.PathType.LABEL);
+            msg.setSubject(subject);
+
+            msg.setRestriction(restriction);
+            _replies.put(uuid, stream);
+            _pnfs.send(msg);
+            stream.waitForMoreEntries();
+            success = true;
+            return stream;
+        } finally {
+            if (!success) {
+                _replies.remove(uuid);
+            }
+        }
+    }
+
+
+    @Override
+    public DirectoryStream
+    listLabels(Subject subject, Restriction restriction, FsPath path,
+                         Range<Integer> range, Set<FileAttribute> attributes)
+            throws InterruptedException, CacheException
+    {
+        System.out.println("test listing labels !");
+        String dir = path.toString();
+        PnfsListLabelsMessage msg =
+                new PnfsListLabelsMessage(dir, null, range, attributes);
+        UUID uuid = msg.getUUID();
+        boolean success = false;
+        Stream stream = new Stream(dir, uuid);
+        try {
             msg.setSubject(subject);
 
             msg.setRestriction(restriction);
