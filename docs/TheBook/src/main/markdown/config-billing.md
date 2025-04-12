@@ -126,10 +126,10 @@ over the database configuration.
 
     ```console-root
     dcache database ls
-    |DOMAIN          CELL        DATABASE HOST      USER    MANAGEABLE AUTO
-    |namespaceDomain PnfsManager chimera  localhost dcache  Yes        Yes
-    |namespaceDomain cleaner     chimera  localhost dcache  No         No
-    |billingDomain   billing     billing  localhost dcache  Yes        Yes
+    |DOMAIN          CELL         DATABASE HOST      USER    MANAGEABLE AUTO
+    |namespaceDomain PnfsManager  chimera  localhost dcache  Yes        Yes
+    |namespaceDomain cleaner-disk chimera  localhost dcache  No         No
+    |billingDomain   billing      billing  localhost dcache  Yes        Yes
     ```
 
 -   Database inserts are batched for performance. Since 2.8, improvements
