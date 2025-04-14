@@ -59,10 +59,11 @@ documents or software obtained from this server.
  */
 package diskCacheV111.poolManager;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import diskCacheV111.vehicles.RestoreHandlerInfo;
 import dmg.cells.nucleus.CellMessageReceiver;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -81,7 +82,7 @@ public class RestoreRequestsReceiver implements CellMessageReceiver {
     private TimeUnit lifetimeUnit = TimeUnit.HOURS;
 
     public void initialize() {
-        restores = CacheBuilder.newBuilder()
+        restores = Caffeine.newBuilder()
               .expireAfterWrite(lifetime, lifetimeUnit)
               .build();
     }
@@ -92,7 +93,7 @@ public class RestoreRequestsReceiver implements CellMessageReceiver {
     public List<RestoreHandlerInfo> getAllRequests() {
         return restores.asMap().values()
               .stream()
-              .flatMap(list -> list.stream())
+              .flatMap(Collection::stream)
               .collect(Collectors.toList());
     }
 
