@@ -208,12 +208,14 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
         SnapshotStatistics writeStats = writes.statistics();
 
         if (readStats.requestedBytes().getN() > 0) {
+            info.setBytesRead(readStats.transferredBytes().getMax());
             info.setMeanReadBandwidth(readStats.instantaneousBandwidth().getMean());
             info.setReadActive(reads.active());
             info.setReadIdle(reads.idle());
         }
 
         if (writeStats.requestedBytes().getN() > 0) {
+            info.setBytesWritten(writeStats.transferredBytes().getMax());
             info.setMeanWriteBandwidth(writeStats.instantaneousBandwidth().getMean());
             info.setWriteActive(writes.active());
             info.setWriteIdle(writes.idle());
@@ -240,8 +242,7 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
         mover.getLocalEndpoint().ifPresent(e ->
                 transferLifeCycle.onEnd(((IpProtocolInfo) mover.getProtocolInfo()).getSocketAddress(),
                         e,
-                        mover.getProtocolInfo(),
-                        mover.getSubject()));
+                        moverInfoMessage));
 
         _door.notify(mover.getPathToDoor(), finished);
     }

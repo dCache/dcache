@@ -351,6 +351,7 @@
     <property name="fireflyDestination" value="${pool.firefly.destination}" />
     <property name="excludes" value="${pool.firefly.excludes}" />
     <property name="voMapping" value="${pool.firefly.vo-mapping}" />
+    <property name="storageStatisticsEnabled" value="${pool.firefly.storage-statistics}" />
   </bean>
 
   <bean id="default-transfer-service" class="org.dcache.pool.classic.MoverMapTransferService"
