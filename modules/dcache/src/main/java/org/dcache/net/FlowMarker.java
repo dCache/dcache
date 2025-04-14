@@ -113,20 +113,20 @@ public class FlowMarker {
         public FlowMarkerBuilder withUsage(double bytesRead, double bytesWritten) {
             // approx. - assumes bytesWritten to disk are bytes "received" over the network
             // and bytesRead from disk are bytes "sent" to the network
-            flow.put("received", Double.isNaN(bytesWritten) ? 0 : bytesRead);
-            flow.put("sent", Double.isNaN(bytesRead) ? 0 : bytesWritten);
+            usage.put("received", Double.isFinite(bytesWritten) ? (long) bytesWritten : 0L);
+            usage.put("sent", Double.isFinite(bytesRead) ? (long) bytesRead : 0L);
             return this;
         }
 
         public FlowMarkerBuilder withStats(MoverInfoMessage message) {
             stats.put("bytes-transferred", message.getDataTransferred());
             stats.put("connection-time", message.getConnectionTime());
-            stats.put("read-bw", message.getMeanReadBandwidth());
-            stats.put("write-bw", message.getMeanWriteBandwidth()); 
-            stats.put("read-active", message.getReadActive());  
-            stats.put("read-idle", message.getReadIdle());  
-            stats.put("write-active", message.getWriteActive());
-            stats.put("write-idle", message.getWriteIdle());
+            stats.put("read-bw", Double.isFinite(message.getMeanReadBandwidth()) ? (long) message.getMeanReadBandwidth() : 0L);
+            stats.put("write-bw", Double.isFinite(message.getMeanWriteBandwidth()) ? (long) message.getMeanWriteBandwidth() : 0L);
+            stats.put("read-active", message.getReadActive().isPresent() ? message.getReadActive().get().toString() : "0");
+            stats.put("read-idle", message.getReadIdle().isPresent() ? message.getReadIdle().get().toString() : "0");  
+            stats.put("write-active", message.getWriteActive().isPresent() ? message.getWriteActive().get().toString() : "0");  
+            stats.put("write-idle", message.getWriteIdle().isPresent() ? message.getWriteIdle().get().toString() : "0");
             return this;
         }
 
@@ -151,7 +151,8 @@ public class FlowMarker {
             payload.put("context", context);
             payload.put("flow-id", flow);
             payload.put("usage", usage);
-            payload.put("storage-stats", stats);
+            if(!stats.isEmpty())
+                payload.put("storage-stats", stats);
 
             lifecycle.put("state", state);
             lifecycle.put("current-time", DateTimeFormatter.ISO_INSTANT.format(Instant.now()));
