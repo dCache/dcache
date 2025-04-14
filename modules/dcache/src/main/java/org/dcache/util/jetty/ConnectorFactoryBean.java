@@ -308,6 +308,10 @@ public class ConnectorFactoryBean implements FactoryBean<ServerConnector> {
         checkState(protocol == PLAIN || certificateAuthorityPath != null);
 
         HttpConnectionFactory httpConnectionFactory = new HttpConnectionFactory();
+        /*
+         * disable reporting of Jetty version
+         */
+        httpConnectionFactory.getHttpConfiguration().setSendServerVersion(false);
 
         switch (protocol) {
             case PLAIN:
