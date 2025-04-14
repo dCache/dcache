@@ -133,7 +133,7 @@ case $xsltProcessor in
         export XML_CATALOG_FILES="$catalog"
         xmllint --noent --xinclude $xylophoneXMLFile | grep -v dCache-config > $t
 	"${JAVA}" -classpath "${saxonDir}/*" \
-            com.icl.saxon.StyleSheet $t  \
+            net.sf.saxon.Transform $t  \
 	    "$xylophoneXSLTFile" xml-src-uri="$uri"
         rm $t
 	;;
