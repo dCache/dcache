@@ -22,6 +22,8 @@ import static com.google.common.net.InetAddresses.forString;
 
 import com.google.common.base.Strings;
 import com.google.common.net.HostAndPort;
+
+import diskCacheV111.vehicles.MoverInfoMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -63,6 +65,7 @@ public class TransferLifeCycle {
     private Predicate<InetAddress> localSubnet = a -> false;
 
     private boolean enabled;
+    private boolean storageStatisticsEnabled;
 
     private Map<String, Integer> voToExpId = new HashMap<>();
 
@@ -75,7 +78,7 @@ public class TransferLifeCycle {
      */
     public void onStart(InetSocketAddress src, InetSocketAddress dst, ProtocolInfo protocolInfo,
           Subject subject) {
-
+        
         if (!enabled) {
             return;
         }
@@ -114,9 +117,11 @@ public class TransferLifeCycle {
      * @param protocolInfo access protocol information
      * @param subject associated with the transfer
      */
-    public void onEnd(InetSocketAddress src, InetSocketAddress dst, ProtocolInfo protocolInfo,
-          Subject subject) {
+    public void onEnd(InetSocketAddress src, InetSocketAddress dst, MoverInfoMessage mover) {
+        ProtocolInfo protocolInfo = mover.getProtocolInfo();
+        Subject subject = mover.getSubject();
 
+        
         if (!enabled) {
             return;
         }
@@ -140,13 +145,17 @@ public class TransferLifeCycle {
               .withExperimentId(optionalExpId.getAsInt())
               .withActivityId(getActivity(protocolInfo))
               .wittApplication(getApplication(protocolInfo))
+              .withUsage(mover.getBytesRead(), mover.getBytesWritten())
               .withProtocol("tcp")
               .withAFI(toAFI(dst))
               .withDestination(dst)
-              .withSource(src)
-              .build("end");
+              .withSource(src);
+        if (storageStatisticsEnabled) {
+            data.withStats(mover);
+        }
+        var firefly = data.build("end");
 
-        send(toFireflyDestination.apply(src), data);
+        send(toFireflyDestination.apply(src), firefly);
     }
 
     public void setFireflyDestination(String addr) {
@@ -167,6 +176,10 @@ public class TransferLifeCycle {
 
     public void setEnabled(boolean isEnabled) {
         enabled = isEnabled;
+    }
+
+    public void setStorageStatisticsEnabled(boolean isEnabled) {
+        storageStatisticsEnabled = isEnabled;
     }
 
     /**

@@ -22,6 +22,8 @@ public class MoverInfoMessage extends PnfsFileInfoMessage {
     private Duration _readIdle;
     private Duration _writeActive;
     private Duration _writeIdle;
+    private double bytesRead = Double.NaN;
+    private double bytesWritten = Double.NaN;
 
     private static final long serialVersionUID = -7013160118909496211L;
     private String _transferPath;
@@ -140,6 +142,23 @@ public class MoverInfoMessage extends PnfsFileInfoMessage {
     public Optional<InetSocketAddress> getLocalEndpoint() {
         return Optional.ofNullable(_localEndpoint);
     }
+
+    public double getBytesRead() {
+        return bytesRead;
+    }
+
+    public void setBytesRead(double bytesRead) {
+        this.bytesRead = bytesRead;
+    }
+
+    public double getBytesWritten() {
+        return bytesWritten;
+    }
+
+    public void setBytesWritten(double bytesWritten) {
+        this.bytesWritten = bytesWritten;
+    }
+
     @Override
     public String toString() {
         return "MoverInfoMessage{" +

@@ -18,9 +18,13 @@
 package org.dcache.net;
 
 import com.google.common.net.InetAddresses;
+
+import diskCacheV111.vehicles.MoverInfoMessage;
+
 import java.net.InetSocketAddress;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +44,8 @@ public class FlowMarker {
         private final JSONObject lifecycle = new JSONObject();
         private final JSONObject context = new JSONObject();
         private final JSONObject flow = new JSONObject();
+        private final JSONObject usage = new JSONObject();
+        private final JSONObject stats = new JSONObject();
 
         public FlowMarkerBuilder withStartedAt(Instant startTime) {
             lifecycle.put("start-time", DateTimeFormatter.ISO_INSTANT.format(startTime));
@@ -104,6 +110,31 @@ public class FlowMarker {
             return this;
         }
 
+        public FlowMarkerBuilder withUsage(double bytesRead, double bytesWritten) {
+            // approx. - assumes bytesWritten to disk are bytes "received" over the network
+            // and bytesRead from disk are bytes "sent" to the network
+            usage.put("received", Double.isFinite(bytesWritten) ? (long) bytesWritten : 0L);
+            usage.put("sent", Double.isFinite(bytesRead) ? (long) bytesRead : 0L);
+            return this;
+        }
+
+        public FlowMarkerBuilder withStats(MoverInfoMessage message) {
+            stats.put("bytes-transferred", message.getDataTransferred());
+            stats.put("connection-time", message.getConnectionTime());
+            stats.put("read-bw", Double.isFinite(message.getMeanReadBandwidth()) ? (long) message.getMeanReadBandwidth() : 0L);
+            stats.put("write-bw", Double.isFinite(message.getMeanWriteBandwidth()) ? (long) message.getMeanWriteBandwidth() : 0L);
+            stats.put("read-active", message.getReadActive().isPresent() ? message.getReadActive().get().toString() : "0");
+            stats.put("read-idle", message.getReadIdle().isPresent() ? message.getReadIdle().get().toString() : "0");  
+            stats.put("write-active", message.getWriteActive().isPresent() ? message.getWriteActive().get().toString() : "0");  
+            stats.put("write-idle", message.getWriteIdle().isPresent() ? message.getWriteIdle().get().toString() : "0");
+            return this;
+        }
+
+        public FlowMarkerBuilder withFlowId(String id) {
+            flow.put("flow-id", id);
+            return this;
+        }
+
         public String build(String state) {
 
             switch (state) {
@@ -119,6 +150,9 @@ public class FlowMarker {
             payload.put("flow-lifecycle", lifecycle);
             payload.put("context", context);
             payload.put("flow-id", flow);
+            payload.put("usage", usage);
+            if(!stats.isEmpty())
+                payload.put("storage-stats", stats);
 
             lifecycle.put("state", state);
             lifecycle.put("current-time", DateTimeFormatter.ISO_INSTANT.format(Instant.now()));
