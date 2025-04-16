@@ -7,11 +7,12 @@ import java.net.InetSocketAddress;
 import java.security.KeyStoreException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.Optional;
+import java.util.List;
 import org.dcache.auth.OpenIdCredential;
 import org.dcache.util.ChecksumType;
 
 import static java.util.Objects.requireNonNull;
+import javax.annotation.Nonnull;
 
 /**
  * Provides information for HTTP transfer of a file using SSL/TLS encryption.
@@ -23,34 +24,53 @@ public class RemoteHttpsDataTransferProtocolInfo extends RemoteHttpDataTransferP
     private final PrivateKey key;
     private final X509Certificate[] certChain;
 
+    /**
+     * @param desiredChecksums Desired checksum to calculate for this transfer.
+     * The first checksum is used as a fall-back for old pools that only support
+     * a single checksum.
+     */
     public RemoteHttpsDataTransferProtocolInfo(String protocol, int major,
           int minor, InetSocketAddress addr, String url,
           boolean isVerificationRequired, ImmutableMap<String, String> headers,
           X509Credential credential,
-          Optional<ChecksumType> desiredChecksum) {
+          @Nonnull
+          List<ChecksumType> desiredChecksums) {
         this(protocol, major, minor, addr, url, isVerificationRequired,
               headers, credential == null ? null : credential.getKey(),
               credential == null ? null : credential.getCertificateChain(),
-              desiredChecksum);
+              desiredChecksums);
     }
 
+    /**
+     * @param desiredChecksums Desired checksum to calculate for this transfer.
+     * The first checksum is used as a fall-back for old pools that only support
+     * a single checksum.
+     */
     public RemoteHttpsDataTransferProtocolInfo(String protocol, int major,
           int minor, InetSocketAddress addr, String url,
           boolean isVerificationRequired, ImmutableMap<String, String> headers,
           PrivateKey privateKey, X509Certificate[] certificateChain,
-          Optional<ChecksumType> desiredChecksum) {
-        super(protocol, major, minor, addr, url, isVerificationRequired, headers, desiredChecksum);
+          @Nonnull
+          List<ChecksumType> desiredChecksums) {
+        super(protocol, major, minor, addr, url, isVerificationRequired, headers,
+                desiredChecksums);
         key = privateKey;
         certChain = certificateChain;
     }
 
+    /**
+     * @param desiredChecksums Desired checksum to calculate for this transfer.
+     * The first checksum is used as a fall-back for old pools that only support
+     * a single checksum.
+     */
     public RemoteHttpsDataTransferProtocolInfo(String protocol, int major,
           int minor, InetSocketAddress addr, String url,
           boolean isVerificationRequired, ImmutableMap<String, String> headers,
-          Optional<ChecksumType> desiredChecksum,
+          @Nonnull
+          List<ChecksumType> desiredChecksums,
           OpenIdCredential token) {
-        super(protocol, major, minor, addr, url, isVerificationRequired, headers, desiredChecksum,
-              token);
+        super(protocol, major, minor, addr, url, isVerificationRequired, headers,
+                desiredChecksums, token);
         key = null;
         certChain = null;
     }

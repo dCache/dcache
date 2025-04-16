@@ -521,7 +521,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
                 file.truncate(file.getFileAttributes().getSize());
             }
 
-            file.getProtocolInfo().getWantedChecksum().ifPresent(file::addChecksumType);
+            file.getProtocolInfo().getWantedChecksums().forEach(file::addChecksumType);
             _wantedDigest = wantDigest(request).flatMap(Checksums::parseWantDigest);
             _wantedDigest.ifPresent(file::addChecksumType);
 

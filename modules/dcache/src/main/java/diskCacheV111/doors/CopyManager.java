@@ -26,6 +26,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.ArrayDeque;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
@@ -460,7 +461,7 @@ public class CopyManager extends AbstractCellComponent
                   urlRemote,
                   false,
                   ImmutableMap.of(),
-                  Optional.empty());
+                  Collections.emptyList());
 
         }
 

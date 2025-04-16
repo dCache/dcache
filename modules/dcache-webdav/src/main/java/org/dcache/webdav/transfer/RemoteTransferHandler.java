@@ -151,6 +151,7 @@ import org.springframework.beans.factory.annotation.Required;
 
 import static diskCacheV111.services.TransferManagerHandler.RECEIVED_FIRST_POOL_REPLY_STATE;
 import static dmg.util.CommandException.checkCommand;
+import java.util.Collections;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.summingInt;
 
@@ -1030,6 +1031,9 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
 
             Optional<ChecksumType> desiredChecksum = _wantDigest.flatMap(
                   Checksums::parseWantDigest);
+            var desiredChecksums = desiredChecksum
+                    .map(List::of)
+                    .orElseGet(Collections::emptyList);
 
             switch (_type) {
                 case GSIFTP:
@@ -1042,20 +1046,21 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                     return new RemoteHttpDataTransferProtocolInfo("RemoteHttpDataTransfer",
                           1, 1, address, _destination.toASCIIString(),
                           _flags.contains(TransferFlag.REQUIRE_VERIFICATION),
-                          _transferHeaders, desiredChecksum);
+                          _transferHeaders, desiredChecksums);
 
                 case HTTPS:
                     if (_source == CredentialSource.OIDC) {
                         return new RemoteHttpsDataTransferProtocolInfo("RemoteHttpsDataTransfer",
                               1, 1, address, _destination.toASCIIString(),
                               _flags.contains(TransferFlag.REQUIRE_VERIFICATION),
-                              _transferHeaders, desiredChecksum, _oidCredential);
+                              _transferHeaders, desiredChecksums,
+                              _oidCredential);
                     } else {
                         return new RemoteHttpsDataTransferProtocolInfo("RemoteHttpsDataTransfer",
                               1, 1, address, _destination.toASCIIString(),
                               _flags.contains(TransferFlag.REQUIRE_VERIFICATION),
                               _transferHeaders, _privateKey, _certificateChain,
-                              desiredChecksum);
+                              desiredChecksums);
                     }
             }
 
