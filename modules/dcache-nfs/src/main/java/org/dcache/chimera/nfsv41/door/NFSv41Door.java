@@ -580,7 +580,6 @@ public class NFSv41Door extends AbstractCellComponent implements
                     flex_files_prot.FF_FLAGS_NO_IO_THRU_MDS,
                     ByteUnit.MiB.toBytes(1),
                     new utf8str_mixed("17"), new utf8str_mixed("17"), this::logLayoutErrors));
-        _supportedDrivers.put(layouttype4.LAYOUT4_NFSV4_1_FILES, new NfsV41FileLayoutDriver());
 
         _rpcService = oncRpcSvcBuilder.build();
         _rpcService.start();
