@@ -117,6 +117,7 @@ import org.dcache.nfs.status.NoMatchingLayoutException;
 import org.dcache.nfs.status.PermException;
 import org.dcache.nfs.status.ServerFaultException;
 import org.dcache.nfs.status.StaleException;
+import org.dcache.nfs.status.StaleStateidException;
 import org.dcache.nfs.status.UnknownLayoutTypeException;
 import org.dcache.nfs.v3.MountServer;
 import org.dcache.nfs.v3.NfsServerV3;
@@ -135,7 +136,6 @@ import org.dcache.nfs.v4.NFSv41DeviceManager;
 import org.dcache.nfs.v4.NFSv41Session;
 import org.dcache.nfs.v4.NFSv4Defaults;
 import org.dcache.nfs.v4.NFSv4StateHandler;
-import org.dcache.nfs.v4.NfsV41FileLayoutDriver;
 import org.dcache.nfs.v4.Stateids;
 import org.dcache.nfs.v4.ff.ff_ioerr4;
 import org.dcache.nfs.v4.ff.ff_layoutreturn4;
@@ -220,6 +220,17 @@ public class NFSv41Door extends AbstractCellComponent implements
      * Mapping between open state id and corresponding transfer.
      */
     private final Map<stateid4, NfsTransfer> _transfers = new ConcurrentHashMap<>();
+
+
+    /**
+     * Record that binds NFS client with a file handle.
+     */
+    public record OpenFile(clientid4 clientid, Inode inode) {}
+
+    /**
+     * NFS client+ file handle to layout stateid mapping.
+     */
+    private final Map<OpenFile, stateid4> layoutStates = new ConcurrentHashMap<>();
 
     /**
      * Maximal time the NFS request will blocked before we reply with NFSERR_DELAY. The usual
@@ -793,8 +804,11 @@ public class NFSv41Door extends AbstractCellComponent implements
 
             deviceid4[] devices;
 
+            var ioKey = new OpenFile(client.getId(), nfsInode);
+            stateid4 layoutStateid = layoutStates.get(ioKey);
+
             final NFS4State openStateId = client.state(stateid).getOpenState();
-            final NFS4State layoutStateId;
+            final NFS4State layoutState;
 
             // serialize all requests by the same stateid
             synchronized (openStateId) {
@@ -806,27 +820,33 @@ public class NFSv41Door extends AbstractCellComponent implements
                     throw new LayoutUnavailableException("special DOT file");
                 }
 
-                final InetSocketAddress remote = context.getRpcCall().getTransport()
-                      .getRemoteSocketAddress();
-                final NFS4ProtocolInfo protocolInfo = new NFS4ProtocolInfo(remote,
-                      new org.dcache.chimera.nfs.v4.xdr.stateid4(openStateId.stateid()),
-                      nfsInode.toNfsHandle()
-                );
-
-                NfsTransfer transfer = _transfers.get(openStateId.stateid());
+                NfsTransfer transfer = layoutStateid != null ? _transfers.get(layoutStateid) : null;
                 if (transfer == null) {
                     Transfer.initSession(false, false);
                     NDC.push(pnfsId.toString());
                     NDC.push(
-                          context.getRpcCall().getTransport().getRemoteSocketAddress().toString());
+                            context.getRpcCall().getTransport().getRemoteSocketAddress().toString());
+
+                    // layout, or a transfer in dCache language, must have a unique stateid
+                    layoutState = client.createLayoutState(openStateId.getStateOwner());
+                    layoutStateid = layoutState.stateid();
 
                     transfer = args.loga_iomode == layoutiomode4.LAYOUTIOMODE4_RW ?
 
-                          new WriteTransfer(_pnfsHandler, client, layoutType, openStateId, nfsInode,
-                                context.getRpcCall().getCredential().getSubject())
-                          :
-                                new ReadTransfer(_pnfsHandler, client, layoutType, openStateId, nfsInode,
-                                      context.getRpcCall().getCredential().getSubject());
+                            new WriteTransfer(_pnfsHandler, client, layoutType, layoutState, nfsInode,
+                                    context.getRpcCall().getCredential().getSubject())
+                            :
+                            new ReadTransfer(_pnfsHandler, client, layoutType, layoutState, nfsInode,
+                                    context.getRpcCall().getCredential().getSubject());
+
+                    _transfers.put(layoutStateid, transfer);
+                    layoutStates.put(ioKey, layoutStateid);
+
+                    final InetSocketAddress remote = client.getRemoteAddress();
+
+                    final NFS4ProtocolInfo protocolInfo = new NFS4ProtocolInfo(remote,
+                            new org.dcache.chimera.nfs.v4.xdr.stateid4(layoutStateid), nfsInode.toNfsHandle()
+                    );
 
                     transfer.setProtocolInfo(protocolInfo);
                     transfer.setCellAddress(getCellAddress());
@@ -838,19 +858,14 @@ public class NFSv41Door extends AbstractCellComponent implements
                     transfer.setIoQueue(_ioQueue);
                     transfer.setKafkaSender(_kafkaSender);
 
-                    final NfsTransfer t = transfer;
-                    /* clean dead transfers associated with open. */
-                    openStateId.addDisposeListener(state -> _transfers.remove(openStateId.stateid()));
-                    _transfers.put(openStateId.stateid(), transfer);
                 } else {
                     // keep debug context in sync
                     transfer.restoreSession();
+                    layoutState = transfer.getStateid();
                     NDC.push(pnfsId.toString());
                     NDC.push(
-                          context.getRpcCall().getTransport().getRemoteSocketAddress().toString());
+                            context.getRpcCall().getTransport().getRemoteSocketAddress().toString());
                 }
-
-                layoutStateId = transfer.getStateid();
 
                 devices = transfer.getPoolDataServers(NFS_REQUEST_BLOCKING);
             }
@@ -860,16 +875,15 @@ public class NFSv41Door extends AbstractCellComponent implements
             layout.lo_iomode = args.loga_iomode;
             layout.lo_offset = new offset4(0);
             layout.lo_length = new length4(nfs4_prot.NFS4_UINT64_MAX);
-            layout.lo_content = layoutDriver.getLayoutContent(openStateId.stateid(),
-                  NFSv4Defaults.NFS4_STRIPE_SIZE, new nfs_fh4(nfsInode.toNfsHandle()), devices);
+            layout.lo_content = layoutDriver.getLayoutContent(layoutStateid, NFSv4Defaults.NFS4_STRIPE_SIZE, new nfs_fh4(nfsInode.toNfsHandle()), devices);
 
-            layoutStateId.bumpSeqid();
+            layoutState.bumpSeqid();
             if (args.loga_iomode == layoutiomode4.LAYOUTIOMODE4_RW) {
                 // in case of WRITE, invalidate vfs cache on close
-                layoutStateId.addDisposeListener(state -> _vfsCache.invalidateStatCache(nfsInode));
+                layoutState.addDisposeListener(state -> _vfsCache.invalidateStatCache(nfsInode));
             }
 
-            return new Layout(true, layoutStateId.stateid(), new layout4[]{layout});
+            return new Layout(true, layoutStateid, new layout4[]{layout});
 
         } catch (FileNotFoundCacheException e) {
             /*
@@ -948,16 +962,11 @@ public class NFSv41Door extends AbstractCellComponent implements
                 client = context.getStateHandler().getClientIdByStateId(stateid);
             }
 
-            final NFS4State layoutState = client.state(stateid);
-            final NFS4State openState = layoutState.getOpenState();
-
-            _log.debug("Releasing layout by stateid: {}, open-state: {}", stateid,
-                  openState.stateid());
-
+            _log.debug("Releasing layout by stateid: {}", stateid);
             getLayoutDriver(layoutType).acceptLayoutReturnData(context,
                   args.lora_layoutreturn.lr_layout.lrf_body);
 
-            NfsTransfer transfer = _transfers.get(openState.stateid());
+            NfsTransfer transfer = _transfers.get(stateid);
             if (transfer != null) {
                 transfer.shutdownMover();
             }
@@ -971,15 +980,17 @@ public class NFSv41Door extends AbstractCellComponent implements
           throws IOException {
 
         final stateid4 stateid = Stateids.getCurrentStateidIfNeeded(context, args.loca_stateid);
-        final NFS4Client client = context.getStateHandler().getClientIdByStateId(stateid);
 
-        final NFS4State layoutState = client.state(stateid);
-        final NFS4State openState = layoutState.getOpenState();
+        var transfer = _transfers.get(stateid);
+        if (transfer == null) {
+            throw new StaleStateidException("No layout for stateid: " + stateid);
+        } else if (!transfer.isWrite()) {
+            throw new BadLayoutException("Invalid open mode");
+        }
 
         Inode nfsInode = context.currentInode();
 
-        _log.debug("Committing layout by stateid: {}, open-state: {}", stateid,
-              openState.stateid());
+        _log.debug("Committing layout by stateid: {}", stateid);
 
         if (args.loca_last_write_offset.no_newoffset) {
             long currentSize = _chimeraVfs.getattr(nfsInode).getSize();
@@ -1362,9 +1373,9 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     private class ReadTransfer extends NfsTransfer {
 
-        public ReadTransfer(PnfsHandler pnfs, NFS4Client client, layouttype4 layouttype, NFS4State openStateId,
+        public ReadTransfer(PnfsHandler pnfs, NFS4Client client, layouttype4 layouttype, NFS4State layoutState,
               Inode nfsInode, Subject ioSubject) throws ChimeraNFSException {
-            super(pnfs, client, layouttype, openStateId, nfsInode, ioSubject);
+            super(pnfs, client, layouttype, layoutState, nfsInode, ioSubject);
         }
 
         @Override
@@ -1427,9 +1438,13 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     private class WriteTransfer extends NfsTransfer {
 
-        public WriteTransfer(PnfsHandler pnfs, NFS4Client client, layouttype4 layoutType, NFS4State openStateId,
+        public WriteTransfer(PnfsHandler pnfs, NFS4Client client, layouttype4 layoutType, NFS4State layoutState,
               Inode nfsInode, Subject ioSubject) throws ChimeraNFSException {
-            super(pnfs, client, layoutType, openStateId, nfsInode, ioSubject);
+            super(pnfs, client, layoutType, layoutState, nfsInode, ioSubject);
+
+            // write movers kept as long as the file is opened
+            layoutState.addDisposeListener(state -> _transfers.remove(this.getStateid().stateid()));
+            layoutState.addDisposeListener(state -> layoutStates.remove(new OpenFile(client.getId(), nfsInode) ));
         }
 
         @Override
@@ -1490,20 +1505,20 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         private final Inode _nfsInode;
         private final NFS4State _stateid;
-        private final NFS4State _openStateid;
         protected ListenableFuture<Void> _redirectFuture;
         protected AtomicReference<ChimeraNFSException> _errorHolder = new AtomicReference<>();
         private final NFS4Client _client;
         protected boolean shutdownInProgress;
+        private layouttype4 layouttype;
 
-        NfsTransfer(PnfsHandler pnfs, NFS4Client client, layouttype4 layoutType, NFS4State openStateId,
-              Inode nfsInode, Subject ioSubject) throws ChimeraNFSException {
+        NfsTransfer(PnfsHandler pnfs, NFS4Client client, layouttype4 layoutType, NFS4State layoutState,
+              Inode nfsInode, Subject ioSubject) {
             super(pnfs, Subjects.ROOT, Restrictions.none(), Subjects.fromUnixNumericSubject(ioSubject), null);
 
             _nfsInode = nfsInode;
+            _stateid = layoutState;
 
-            // layout, or a transfer in dCache language, must have a unique stateid
-            _stateid = client.createState(openStateId.getStateOwner(), openStateId);
+            this.layouttype = layoutType;
 
             /*
              * As all our layouts marked 'return-on-close', stop mover when
@@ -1542,7 +1557,6 @@ public class NFSv41Door extends AbstractCellComponent implements
                     _transfers.remove(_stateid.stateid());
                 }
             });
-            _openStateid = openStateId;
             _client = client;
         }
 
@@ -1701,7 +1715,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
                 if (!hasMover()) {
                     // the mover clean-up will not be called, thus we have to clean manually
-                    _transfers.remove(_openStateid.stateid());
+                    _transfers.remove(_stateid.stateid());
                     return;
                 }
 
@@ -1790,7 +1804,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
             // writes should stay poisoned to fail on client retry.
             if (!isWrite()) {
-                _transfers.remove(_openStateid.stateid());
+                _transfers.remove(_stateid.stateid());
             }
             killMover(0, "layout recall on pool down");
             // keep NFSTransfer#shutdown happy
@@ -1822,6 +1836,14 @@ public class NFSv41Door extends AbstractCellComponent implements
             } else {
                 return "N/A";
             }
+        }
+
+        /**
+         * Get pNFS layouttype associated with this transfer.
+         * @return
+         */
+        public layouttype4 getLayouttype() {
+            return layouttype;
         }
     }
 
@@ -2036,7 +2058,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             try {
                 transfer.getClient().getCB()
                       .cbLayoutRecallFile(new nfs_fh4(transfer.getInode().toNfsHandle()),
-                            transfer.getStateid().stateid());
+                            transfer.getStateid().stateid(), transfer.getLayouttype());
             } catch (NoMatchingLayoutException e) {
                 /**
                  * In case of "forgetful client model", nfs client will return
