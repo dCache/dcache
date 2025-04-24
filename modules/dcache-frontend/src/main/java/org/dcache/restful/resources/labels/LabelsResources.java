@@ -62,6 +62,7 @@ import org.dcache.restful.util.namespace.NamespaceUtils;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryStream;
 import org.dcache.util.list.ListDirectoryHandler;
+import org.dcache.util.list.VirtualDirectoryListHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -92,7 +93,7 @@ public class LabelsResources {
     private PathMapper pathMapper;
 
     @Inject
-    private ListDirectoryHandler listDirectoryHandler;
+    private VirtualDirectoryListHandler virtualDirectoryListHandler;
 
     @Inject
     @Named("pool-manager-stub")
@@ -102,9 +103,6 @@ public class LabelsResources {
     @Named("pinManagerStub")
     private CellStub pinmanager;
 
-    @Inject
-    @Named("pnfs-stub")
-    private CellStub pnfsmanager;
 
 
     @GET
@@ -165,7 +163,7 @@ public class LabelsResources {
         try {
             List<JsonFileAttributes> children = new ArrayList<>();
 
-            DirectoryStream stream = listDirectoryHandler.listVirtualDirectory(
+            DirectoryStream stream = virtualDirectoryListHandler.listVirtualDirectory(
                   HttpServletRequests.roleAwareSubject(request),
                   HttpServletRequests.roleAwareRestriction(request),
                   path,

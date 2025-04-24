@@ -63,24 +63,6 @@ public interface DirectoryListSource {
           throws InterruptedException, CacheException;
 
     /**
-     * Lists the content of a virtual directory. The content is returned as a
-     * directory stream containing files with a given label (path).
-     * @param subject The Subject of the user performing the
-     * operation; may be null
-     * @param restriction  a login attribute; may be zero or more
-     * @param path Path to virtual directory to list (which is the label value of a streamed files)
-     * @param range The range of entries to return; may be null
-     * @param attrs The file attributes to query for each entry
-     * @return A DirectoryStream of the entries in the directory
-
-     */
-    DirectoryStream listVirtualDirectory(Subject subject, Restriction restriction, FsPath path,
-          Range<Integer> range,
-          Set<FileAttribute> attrs)
-          throws InterruptedException, CacheException;
-
-
-    /**
      * Prints a file using a DirectoryListPrinter.
      *
      * @param subject The Subject of the user performing the operation

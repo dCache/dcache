@@ -38,6 +38,7 @@ import org.dcache.util.Glob;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryStream;
 import org.dcache.util.list.ListDirectoryHandler;
+import org.dcache.util.list.VirtualDirectoryListHandler;
 import org.dcache.vehicles.FileAttributes;
 
 /**
@@ -48,16 +49,19 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider {
 
     private final PnfsHandler _pnfs;
     private final ListDirectoryHandler _handler;
+    private final VirtualDirectoryListHandler _virtualDirectoryHandler;
+
 
 
     public RemoteNameSpaceProvider(PnfsHandler pnfsHandler,
-          ListDirectoryHandler listHandler) {
+          ListDirectoryHandler listHandler, VirtualDirectoryListHandler virtualDirectoryListHandler) {
         _pnfs = pnfsHandler;
         _handler = listHandler;
+        _virtualDirectoryHandler = virtualDirectoryListHandler;
     }
 
     public RemoteNameSpaceProvider(PnfsHandler pnfsHandler) {
-        this(pnfsHandler, new ListDirectoryHandler(pnfsHandler));
+        this(pnfsHandler, new ListDirectoryHandler(pnfsHandler), new VirtualDirectoryListHandler(pnfsHandler));
     }
 
     @Override
@@ -205,7 +209,7 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider {
                      Range<Integer> range, Set<FileAttribute> attrs, ListHandler handler)
             throws CacheException
     {
-        try (DirectoryStream stream = _handler.listVirtualDirectory(subject, Restrictions.none(), FsPath.create(path), range, attrs)) {
+        try (DirectoryStream stream = _virtualDirectoryHandler.listVirtualDirectory(subject, Restrictions.none(), FsPath.create(path), range, attrs)) {
             for (DirectoryEntry entry : stream) {
                 handler.addEntry(entry.getName(), entry.getFileAttributes());
             }

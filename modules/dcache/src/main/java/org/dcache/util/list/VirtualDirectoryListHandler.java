@@ -1,3 +1,21 @@
+/*
+ * dCache - http://www.dcache.org/
+ *
+ * Copyright (C) 2025 Deutsches Elektronen-Synchrotron
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package org.dcache.util.list;
 
 import com.google.common.collect.Range;
@@ -5,7 +23,6 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
 import dmg.cells.nucleus.CellMessageReceiver;
-import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -19,81 +36,52 @@ import javax.security.auth.Subject;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.CacheExceptionFactory;
-import org.dcache.util.Glob;
-import org.dcache.vehicles.FileAttributes;
+
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * DirectoryListSource which delegates the list operation to the PnfsManager.
+ * VirtualDirectoryListSource which delegates the virtual directory listing operation to the PnfsManager.
  * <p>
- * Large directories are broken into several reply messages by the PnfsManager. For that reason the
+ * Large virtual directories are broken into several reply messages by the PnfsManager. For that reason the
  * regular Cells callback mechanism for replies cannot be used. Instead messages of type
- * PnfsListDirectoryMessage must be routed to the ListDirectoryHandler. This also has the
- * consequence that a ListDirectoryHandler cannot be used from the Cells messages thread. Any
+ * PnfsListDirectoryMessage must be routed to the VirtualDirectoryListHandler. This also has the
+ * consequence that a VirtualDirectoryListHandler cannot be used from the Cells messages thread. Any
  * attempt to do so will cause the message thread to block, as the replies cannot be delivered to
- * the ListDirectoryHandler.
+ * the VirtualDirectoryListHandler.
  */
-public class ListDirectoryHandler
-      implements CellMessageReceiver, DirectoryListSource {
+public class VirtualDirectoryListHandler
+        implements CellMessageReceiver, VirtualDirectoryListSource {
 
     private static final Logger LOGGER =
-          LoggerFactory.getLogger(ListDirectoryHandler.class);
+            LoggerFactory.getLogger(ListDirectoryHandler.class);
 
     private final PnfsHandler _pnfs;
     private final Map<UUID, Stream> _replies =
-          new ConcurrentHashMap<>();
+            new ConcurrentHashMap<>();
 
-    public ListDirectoryHandler(PnfsHandler pnfs) {
+    public VirtualDirectoryListHandler(PnfsHandler pnfs) {
         _pnfs = pnfs;
     }
 
-    /**
-     * Sends a directory list request to PnfsManager. The result is provided as a stream of
-     * directory entries.
-     * <p>
-     * The method blocks until the first set of directory entries have been received from the
-     * server.  Hence errors like FILE_NOT_FOUND are thrown by the call to the list method rather
-     * than while iterating over the stream.
-     * <p>
-     * Note that supplied subject and restriction values will be overwritten if {@link
-     * PnfsHandler#setSubject} or {@link PnfsHandler#setRestriction} have been called on the
-     * underlying PnfsHandler instance.
-     */
-    @Override
-    public DirectoryStream
-    list(Subject subject, Restriction restriction, FsPath path, Glob pattern, Range<Integer> range)
-          throws InterruptedException, CacheException {
-        return list(subject, restriction, path, pattern, range,
-              EnumSet.noneOf(FileAttribute.class));
-    }
 
-    /**
-     * Sends a directory list request to PnfsManager. The result is provided as a stream of
-     * directory entries.
-     * <p>
-     * The method blocks until the first set of directory entries have been received from the
-     * server.  Hence errors like FILE_NOT_FOUND are thrown by the call to the list method rather
-     * than while iterating over the stream.
-     * <p>
-     * Note that supplied subject and restriction values will be overwritten if {@link
-     * PnfsHandler#setSubject} or {@link PnfsHandler#setRestriction} have been called on the
-     * underlying PnfsHandler instance.
-     */
     @Override
     public DirectoryStream
-    list(Subject subject, Restriction restriction, FsPath path, Glob pattern,
-          Range<Integer> range, Set<FileAttribute> attributes)
-          throws InterruptedException, CacheException {
+    listVirtualDirectory(Subject subject, Restriction restriction, FsPath path,
+                         Range<Integer> range, Set<FileAttribute> attributes)
+            throws InterruptedException, CacheException
+    {
         String dir = path.toString();
         PnfsListDirectoryMessage msg =
-              new PnfsListDirectoryMessage(dir, pattern, range, attributes);
+                new PnfsListDirectoryMessage(dir, null, range, attributes);
         UUID uuid = msg.getUUID();
         boolean success = false;
         Stream stream = new Stream(dir, uuid);
         try {
+            msg.setPathType(PnfsListDirectoryMessage.PathType.LABEL);
             msg.setSubject(subject);
+
             msg.setRestriction(restriction);
             _replies.put(uuid, stream);
             _pnfs.send(msg);
@@ -107,42 +95,6 @@ public class ListDirectoryHandler
         }
     }
 
-    @Override
-    public void printFile(Subject subject, Restriction restriction,
-          DirectoryListPrinter printer, FsPath path)
-          throws InterruptedException, CacheException {
-        PnfsHandler handler = new PnfsHandler(_pnfs, subject, restriction);
-        Set<FileAttribute> required = printer.getRequiredAttributes();
-        FileAttributes attributes = handler.getFileAttributes(path.toString(), required);
-        DirectoryEntry entry = new DirectoryEntry(path.name(), attributes);
-        if (path.isRoot()) {
-            printer.print(null, null, entry);
-        } else {
-            FileAttributes dirAttr = handler.getFileAttributes(path.parent().toString(), required);
-            printer.print(path.parent(), dirAttr, entry);
-        }
-        printer.close();
-    }
-
-    @Override
-    public int printDirectory(Subject subject, Restriction restriction,
-          DirectoryListPrinter printer, FsPath path, Glob glob, Range<Integer> range)
-          throws InterruptedException, CacheException {
-        Set<FileAttribute> required =
-              printer.getRequiredAttributes();
-        FileAttributes dirAttr =
-              _pnfs.getFileAttributes(path.toString(), required);
-        try (DirectoryStream stream = list(subject, restriction, path, glob, range, required)) {
-            int total = 0;
-            for (DirectoryEntry entry : stream) {
-                printer.print(path, dirAttr, entry);
-                total++;
-            }
-            printer.close();
-            return total;
-        }
-    }
-
     /**
      * Callback for delivery of replies from PnfsManager. PnfsListDirectoryMessage have to be routed
      * to this message.
@@ -151,18 +103,19 @@ public class ListDirectoryHandler
         if (reply.isReply()) {
             try {
                 UUID uuid = reply.getUUID();
-                Stream stream = _replies.get(uuid);
+                VirtualDirectoryListHandler.Stream stream = _replies.get(uuid);
                 if (stream != null) {
                     stream.put(reply);
                 } else {
                     LOGGER.warn(
-                          "Received list result for an unknown request. Directory listing was possibly incomplete.");
+                            "Received list result for an unknown request. Virtual Directory listing was possibly incomplete.");
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
         }
     }
+
 
     /**
      * Implementation of DirectoryStream, translating PnfsListDirectoryMessage replies to a stream
@@ -171,10 +124,10 @@ public class ListDirectoryHandler
      * The stream acts as its own iterator, and multiple iterators are not supported.
      */
     public class Stream
-          implements DirectoryStream, Iterator<DirectoryEntry> {
+            implements DirectoryStream, Iterator<DirectoryEntry> {
 
         private final BlockingQueue<PnfsListDirectoryMessage> _queue =
-              new LinkedBlockingQueue<>();
+                new LinkedBlockingQueue<>();
         private final UUID _uuid;
         private final String _path;
         private boolean _isFinal;
@@ -193,22 +146,22 @@ public class ListDirectoryHandler
         }
 
         private void put(PnfsListDirectoryMessage msg)
-              throws InterruptedException {
+                throws InterruptedException {
             _queue.put(msg);
         }
 
         private void waitForMoreEntries()
-              throws InterruptedException, CacheException {
+                throws InterruptedException, CacheException {
             if (_isFinal) {
                 _iterator = null;
                 return;
             }
 
             PnfsListDirectoryMessage msg =
-                  _queue.poll(_pnfs.getPnfsTimeout(), TimeUnit.MILLISECONDS);
+                    _queue.poll(_pnfs.getPnfsTimeout(), TimeUnit.MILLISECONDS);
             if (msg == null) {
                 throw new CacheException(CacheException.TIMEOUT,
-                      "Timeout during directory listing.");
+                        "Timeout during virtual directory listing.");
             }
 
             if (msg.isFinal()) {
