@@ -3,6 +3,7 @@ package org.dcache.chimera.nfsv41.door.proxy;
 import static org.dcache.chimera.nfsv41.door.ExceptionUtils.asNfsException;
 
 import com.google.common.base.Stopwatch;
+import com.google.common.base.Throwables;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.net.HostAndPort;
@@ -14,12 +15,19 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
+import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.status.NfsIoException;
 import org.dcache.nfs.v4.CompoundContext;
 import org.dcache.nfs.v4.Layout;
 import org.dcache.nfs.v4.NFS4Client;
 import org.dcache.nfs.v4.NFS4State;
 import org.dcache.nfs.v4.NFSv41DeviceManager;
+import org.dcache.nfs.v4.ff.ff_device_addr4;
+import org.dcache.nfs.v4.ff.ff_ioerr4;
+import org.dcache.nfs.v4.ff.ff_iostats4;
+import org.dcache.nfs.v4.ff.ff_layout4;
+import org.dcache.nfs.v4.ff.ff_layoutreturn4;
 import org.dcache.nfs.v4.xdr.GETDEVICEINFO4args;
 import org.dcache.nfs.v4.xdr.LAYOUTGET4args;
 import org.dcache.nfs.v4.xdr.LAYOUTRETURN4args;
@@ -35,8 +43,6 @@ import org.dcache.nfs.v4.xdr.layouttype4;
 import org.dcache.nfs.v4.xdr.length4;
 import org.dcache.nfs.v4.xdr.netaddr4;
 import org.dcache.nfs.v4.xdr.nfs4_prot;
-import org.dcache.nfs.v4.xdr.nfsv4_1_file_layout4;
-import org.dcache.nfs.v4.xdr.nfsv4_1_file_layout_ds_addr4;
 import org.dcache.nfs.v4.xdr.offset4;
 import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.nfs.vfs.Inode;
@@ -64,6 +70,26 @@ public class NfsProxyIoFactory implements ProxyIoFactory {
 
     private final NFSv41DeviceManager deviceManager;
     private final ExponentialBackoffAlgorithmFactory backoffFactory;
+
+
+    /**
+     * Empty flex_files layout stats and errors used by layout return.
+     */
+    private static byte[] FF_EMPY_RETURN;
+    static {
+        try(Xdr xdr = new Xdr(512);) {
+            ff_layoutreturn4 layoutReturnBody = new ff_layoutreturn4();
+            layoutReturnBody.fflr_ioerr_report = new ff_ioerr4[0];
+            layoutReturnBody.fflr_iostats_report = new ff_iostats4[0];
+
+            xdr.beginEncoding();
+            layoutReturnBody.xdrEncode(xdr);
+            xdr.endEncoding();
+            FF_EMPY_RETURN = xdr.getBytes();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to initialize empty layout body", e);
+        }
+    }
 
     public NfsProxyIoFactory(NFSv41DeviceManager deviceManager) {
         this.deviceManager = deviceManager;
@@ -110,10 +136,13 @@ public class NfsProxyIoFactory implements ProxyIoFactory {
         _log.info("creating new proxy-io adapter for {} {}", inode,
               context.getRemoteSocketAddress().getAddress().getHostAddress());
 
+        // State to which the proxy will be bound.
+        NFS4State state = context.getStateHandler().getClientIdByStateId(stateid).state(stateid).getOpenState();
+
         LAYOUTGET4args lgArgs = new LAYOUTGET4args();
         lgArgs.loga_iomode =
               isWrite ? layoutiomode4.LAYOUTIOMODE4_RW : layoutiomode4.LAYOUTIOMODE4_READ;
-        lgArgs.loga_layout_type = layouttype4.LAYOUT4_NFSV4_1_FILES.getValue();
+        lgArgs.loga_layout_type = layouttype4.LAYOUT4_FLEX_FILES.getValue();
         lgArgs.loga_length = new length4(nfs4_prot.NFS4_UINT64_MAX); // EOF
         lgArgs.loga_maxcount = new count4(1); // one layout segment
         lgArgs.loga_minlength = new length4(0);
@@ -121,21 +150,42 @@ public class NfsProxyIoFactory implements ProxyIoFactory {
         lgArgs.loga_signal_layout_avail = false;
         lgArgs.loga_stateid = stateid;
 
+
+        /*
+         * 1. only flex_file layout is used
+         * 2. the layout expected to consist ot of single segment (file completly on a single DS)
+         * 3. the DS is a single mirror.
+         */
         Layout layout = deviceManager.layoutGet(context, lgArgs);
 
         // we assume only one segment as dcache doesn't support striping
-        nfsv4_1_file_layout4 fileLayoutSegment = decodeLayoutId(
-              layout.getLayoutSegments()[0].lo_content.loc_body);
-        deviceid4 dsId = fileLayoutSegment.nfl_deviceid;
+        ff_layout4 ffLayoutSegment = decodeLayoutId(
+                layout.getLayoutSegments()[0].lo_content.loc_body);
+
+        // we assume single mirror, so single device id.
+        deviceid4 dsId = ffLayoutSegment.ffl_mirrors[0].ffm_data_servers[0].ffds_deviceid;
 
         GETDEVICEINFO4args gdiArgs = new GETDEVICEINFO4args();
         gdiArgs.gdia_device_id = dsId;
-        gdiArgs.gdia_layout_type = layouttype4.LAYOUT4_NFSV4_1_FILES.getValue();
+        gdiArgs.gdia_layout_type = layouttype4.LAYOUT4_FLEX_FILES.getValue();
         gdiArgs.gdia_maxcount = new count4(1);
         gdiArgs.gdia_notify_types = new bitmap4();
 
         device_addr4 deviceAddr = deviceManager.getDeviceInfo(context, gdiArgs);
-        nfsv4_1_file_layout_ds_addr4 nfs4DeviceAddr = decodeFileDevice(deviceAddr.da_addr_body);
+        ff_device_addr4 nfs4DeviceAddr = decodeFileDevice(deviceAddr.da_addr_body);
+
+        // prepare layour return args for later use
+        LAYOUTRETURN4args lrArgs = new LAYOUTRETURN4args();
+        lrArgs.lora_iomode = layoutiomode4.LAYOUTIOMODE4_ANY;
+        lrArgs.lora_layout_type = layouttype4.LAYOUT4_FLEX_FILES.getValue();
+        lrArgs.lora_layoutreturn = new layoutreturn4();
+        lrArgs.lora_layoutreturn.lr_returntype = layoutreturn_type4.LAYOUTRETURN4_FILE;
+        lrArgs.lora_layoutreturn.lr_layout = new layoutreturn_file4();
+        lrArgs.lora_layoutreturn.lr_layout.lrf_stateid = layout.getStateid();
+        lrArgs.lora_layoutreturn.lr_layout.lrf_length = new length4(nfs4_prot.NFS4_UINT64_MAX);
+        lrArgs.lora_layoutreturn.lr_layout.lrf_offset = new offset4(0);
+        lrArgs.lora_layoutreturn.lr_layout.lrf_body = FF_EMPY_RETURN;
+        lrArgs.lora_reclaim = false;
 
         Stopwatch connectStopwatch = Stopwatch.createStarted();
         IBackoffAlgorithm backoff = backoffFactory.getAlgorithm();
@@ -149,7 +199,7 @@ public class NfsProxyIoFactory implements ProxyIoFactory {
             }
 
             // we assume that only device points only to one server
-            for (netaddr4 na : nfs4DeviceAddr.nflda_multipath_ds_list[0].value) {
+            for (netaddr4 na : nfs4DeviceAddr.ffda_netaddrs.value) {
                 if (connectStopwatch.elapsed(MAX_CONNECT_TIMEOUT_UNIT) > MAX_CONNECT_TIMEOUT) {
                     break retry;
                 }
@@ -160,8 +210,17 @@ public class NfsProxyIoFactory implements ProxyIoFactory {
                     InetAddress address = poolSocketAddress.getAddress();
                     if (!isHostLocal(address)) {
                         try {
+                            // return layout on close
+                            state.addDisposeListener(s -> {
+                                try {
+                                    deviceManager.layoutReturn(context, lrArgs);
+                                } catch (IOException e) {
+                                    Throwables.propagateIfPossible(e, ChimeraNFSException.class);
+                                    throw new NfsIoException("Failed to return proxy-layout", e);
+                                }
+                            });
                             return new NfsProxyIo(poolSocketAddress,
-                                  context.getRemoteSocketAddress(), inode, stateid, timeout,
+                                  context.getRemoteSocketAddress(), inode, ffLayoutSegment.ffl_mirrors[0].ffm_data_servers[0].ffds_stateid , timeout,
                                   TIMEOUT_STEP_UNIT);
                         } catch (IOException e) {
                             _log.warn("Failed to connect to remote mover {} : {}", address,
@@ -172,23 +231,11 @@ public class NfsProxyIoFactory implements ProxyIoFactory {
             }
 
             _log.warn("Failed to connect to pool {} within {}, Retrying...",
-                  toString(nfs4DeviceAddr.nflda_multipath_ds_list[0].value), connectStopwatch);
+                  Arrays.toString(nfs4DeviceAddr.ffda_netaddrs.value), connectStopwatch);
         }
 
         _log.error("Failed to connect to pool {} within {}, Giving up!",
-              toString(nfs4DeviceAddr.nflda_multipath_ds_list[0].value), connectStopwatch);
-
-        LAYOUTRETURN4args lrArgs = new LAYOUTRETURN4args();
-        lrArgs.lora_iomode = layoutiomode4.LAYOUTIOMODE4_ANY;
-        lrArgs.lora_layout_type = layouttype4.LAYOUT4_NFSV4_1_FILES.getValue();
-        lrArgs.lora_layoutreturn = new layoutreturn4();
-        lrArgs.lora_layoutreturn.lr_returntype = layoutreturn_type4.LAYOUTRETURN4_FILE;
-        lrArgs.lora_layoutreturn.lr_layout = new layoutreturn_file4();
-        lrArgs.lora_layoutreturn.lr_layout.lrf_stateid = stateid;
-        lrArgs.lora_layoutreturn.lr_layout.lrf_length = new length4(nfs4_prot.NFS4_UINT64_MAX);
-        lrArgs.lora_layoutreturn.lr_layout.lrf_offset = new offset4(0);
-        lrArgs.lora_layoutreturn.lr_layout.lrf_body = new byte[0];
-        lrArgs.lora_reclaim = false;
+                Arrays.toString(nfs4DeviceAddr.ffda_netaddrs.value), connectStopwatch);
 
         deviceManager.layoutReturn(context, lrArgs);
         context.getStateHandler().getClientIdByStateId(stateid).releaseState(layout.getStateid());
@@ -236,17 +283,17 @@ public class NfsProxyIoFactory implements ProxyIoFactory {
         return (int) _proxyIO.size();
     }
 
-    public static nfsv4_1_file_layout4 decodeLayoutId(byte[] data) throws IOException {
+    public static ff_layout4 decodeLayoutId(byte[] data) throws IOException {
         XdrDecodingStream xdr = new Xdr(data);
         xdr.beginDecoding();
 
-        return new nfsv4_1_file_layout4(xdr);
+        return new ff_layout4(xdr);
     }
 
-    public static nfsv4_1_file_layout_ds_addr4 decodeFileDevice(byte[] data) throws IOException {
+    public static ff_device_addr4 decodeFileDevice(byte[] data) throws IOException {
         XdrDecodingStream xdr = new Xdr(data);
         xdr.beginDecoding();
 
-        return new nfsv4_1_file_layout_ds_addr4(xdr);
+        return new ff_device_addr4(xdr);
     }
 }
