@@ -113,12 +113,54 @@ public class JsonWebToken {
         return kid;
     }
 
+    private static byte[] transcodeJWTECDSASignatureToDER(byte[] jwsSignature) throws SignatureException {
+        int rawLen = jwsSignature.length / 2;
+    
+        // Find the start of R (skip leading zeros)
+        int rStart = 0;
+        while (rStart < rawLen && jwsSignature[rStart] == 0) {
+            rStart++;
+        }
+        int rLen = rawLen - rStart;
+    
+        // Find the start of S (skip leading zeros)
+        int sStart = rawLen;
+        while (sStart < jwsSignature.length && jwsSignature[sStart] == 0) {
+            sStart++;
+        }
+        int sLen = rawLen - (sStart - rawLen);
+    
+        int totalLen = 2 + 2 + rLen + 2 + sLen; // SEQUENCE + INTEGER(R) + INTEGER(S)
+        int offset = 0;
+        byte[] der = new byte[totalLen];
+    
+        der[offset++] = 0x30; // SEQUENCE
+        der[offset++] = (byte) (totalLen - 2);
+    
+        // INTEGER R
+        der[offset++] = 0x02;
+        der[offset++] = (byte) rLen;
+        System.arraycopy(jwsSignature, rawLen - rLen, der, offset, rLen);
+        offset += rLen;
+    
+        // INTEGER S
+        der[offset++] = 0x02;
+        der[offset++] = (byte) sLen;
+        System.arraycopy(jwsSignature, jwsSignature.length - sLen, der, offset, sLen);
+    
+        return der;
+    }
+
     public boolean isSignedBy(PublicKey key) {
         try {
             Signature signature = getSignature();
             signature.initVerify(key);
             signature.update(unsignedToken);
-            return signature.verify(this.signature);
+            byte[] sig = this.signature;
+            if (alg.startsWith("ES")) {
+                sig = transcodeJWTECDSASignatureToDER(sig);
+            }
+            return signature.verify(sig);
         } catch (GeneralSecurityException e) {
             LOGGER.warn("Problem verifying signature: {}", e.toString());
             return false;
