@@ -7,15 +7,16 @@ update-crypto-policies --set DEFAULT:SHA1
 
 AUTOCA_URL=https://ci.dcache.org/ca
 
-dnf -q install -y epel-release which
+dnf -q install -y epel-release which dnf-plugins-core
 dnf -q install -y https://download.dcache.org/nexus/repository/s2-testsuite/el9/x86_64/s2-20240423-1.x86_64.rpm
 dnf -q install -y voms-clients-cpp fetch-crl openssl globus-gass-copy-progs
+
 
 rpm -i https://www.desy.de/~tigran/ca_dCacheORG-3.0-6.noarch.rpm
 rpm -i https://linuxsoft.cern.ch/wlcg/centos7/x86_64/desy-voms-all-1.0.0-1.noarch.rpm
 
-curl https://repository.egi.eu/sw/production/cas/1/current/repo-files/egi-trustanchors.repo -o /etc/yum.repos.d/egi-trustanchors.repo
-
+dnf config-manager --add-repo https://dl.igtf.net/distribution/igtf/current/
+rpmkeys  --import https://dl.igtf.net/distribution/igtf/current/GPG-KEY-EUGridPMA-RPM-3
 dnf -y install ca_USERTrustRSACertificationAuthority \
   ca_ResearchandEducationTrustRSARootCA \
   ca_GEANTeScienceSSLCA4 \
