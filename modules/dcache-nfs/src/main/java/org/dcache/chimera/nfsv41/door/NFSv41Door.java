@@ -1313,6 +1313,39 @@ public class NFSv41Door extends AbstractCellComponent implements
             return sb.toString();
         }
     }
+
+    @Command(name = "show delegations", hint = "show all open-delegations",
+          description = "Show open delegations and corresponding NFS client IPs.")
+    public class ShowOpenDelegationFilesCmd implements Callable<String> {
+
+        @Override
+        public String call() throws IOException {
+
+            StringBuilder sb = new StringBuilder("Open delegations:").append("\n\n");
+            _nfs4.getStateHandler().getFileTracker()
+                  .getDelegations()
+                  .forEach((i, l) -> {
+                      try {
+                          FsInode inode = _chimeraVfs.inodeFromBytes(i.getFileId());
+                          PnfsId pnfsId = new PnfsId(inode.getId());
+                          FsPath p = _pnfsHandler.getPathByPnfsId(pnfsId);
+                          sb.append(pnfsId).append(" (").append(p).append("):").append("\n");
+                          l.forEach(c -> sb.append("  ")
+                                .append(c.getId()).append(" (")
+                                .append(
+                                      InetAddresses.toUriString(c.getRemoteAddress().getAddress()))
+                                .append(":").append(c.getRemoteAddress().getPort())
+                                .append(")")
+                                .append("\n\n"));
+                      } catch (BadHandleException | CacheException | ChimeraFsException e) {
+                          sb.append("Error: ").append(e);
+                      }
+                  });
+
+            return sb.toString();
+        }
+    }
+
     @Command(name = "show proxyio", hint = "show proxy-io transfers",
           description = "Show active proxy-io transfers.")
     public class ShowProxyIoTransfersCmd implements Callable<String> {
