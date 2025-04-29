@@ -162,7 +162,10 @@ public class JsonWebToken {
                 sig = transcodeJWTECDSASignatureToDER(sig);
             }
             return signature.verify(sig);
-        } catch (GeneralSecurityException | SignatureException e) {
+        } catch (SignatureException e) {
+            LOGGER.warn("Problem verifying signature: {}", e.toString());
+            return false;
+        } catch (GeneralSecurityException e) {
             LOGGER.warn("Problem verifying signature: {}", e.toString());
             return false;
         }
