@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.time.Instant;
