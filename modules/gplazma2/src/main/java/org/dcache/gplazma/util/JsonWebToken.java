@@ -129,6 +129,12 @@ public class JsonWebToken {
         switch (alg) {
             case "RS256":
                 return Signature.getInstance("SHA256withRSA");
+            case "ES256":
+                return Signature.getInstance("SHA256withECDSA");
+            case "ES384":
+                return Signature.getInstance("SHA384withECDSA");
+            case "ES512":
+                return Signature.getInstance("SHA512withECDSA");
             default:
                 throw new NoSuchAlgorithmException("Unknown JWT alg " + alg);
         }
