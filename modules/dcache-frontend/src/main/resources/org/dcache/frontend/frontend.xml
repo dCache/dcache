@@ -97,6 +97,15 @@
             </bean>
         </constructor-arg>
     </bean>
+
+    <bean id="labels-list-handler" class="org.dcache.util.list.LabelsListHandler">
+        <description>Client stub for directory listing</description>
+        <constructor-arg>
+            <bean class="diskCacheV111.util.PnfsHandler">
+                <constructor-arg ref="pnfs-stub"/>
+            </bean>
+        </constructor-arg>
+    </bean>
     <bean id="path-mapper" class="org.dcache.http.PathMapper">
         <description>Mapping between request paths and dCache paths</description>
         <property name="rootPath" value="${frontend.root}"/>

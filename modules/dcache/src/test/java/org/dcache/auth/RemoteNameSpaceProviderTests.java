@@ -60,6 +60,7 @@ import org.dcache.namespace.FileType;
 import org.dcache.namespace.ListHandler;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.list.DirectoryEntry;
+import org.dcache.util.list.LabelsListHandler;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.util.list.VirtualDirectoryListHandler;
 import org.dcache.vehicles.FileAttributes;
@@ -126,6 +127,8 @@ public class RemoteNameSpaceProviderTests {
     CellEndpoint _endpoint;
     ListDirectoryHandler _listHandler;
     VirtualDirectoryListHandler _virtualDirectoryHandler;
+    LabelsListHandler _labelsListHandler;
+
 
 
     @Before
@@ -134,7 +137,7 @@ public class RemoteNameSpaceProviderTests {
         CellStub stub = new CellStub(_endpoint, CELLPATH_PNFSMANAGER);
         PnfsHandler pnfs = new PnfsHandler(stub);
         _listHandler = new ListDirectoryHandler(pnfs);
-        _namespace = new RemoteNameSpaceProvider(pnfs, _listHandler, _virtualDirectoryHandler);
+        _namespace = new RemoteNameSpaceProvider(pnfs, _listHandler, _virtualDirectoryHandler, _labelsListHandler);
     }
 
 

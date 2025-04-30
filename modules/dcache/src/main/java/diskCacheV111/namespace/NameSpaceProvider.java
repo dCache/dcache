@@ -444,6 +444,20 @@ public interface NameSpaceProvider {
                          Set<FileAttribute> attrs, ListHandler handler)  throws  CacheException;
 
     /**
+     * Return all existing labels
+     *
+     * @param subject The user making the request.
+     * @throws FileNotFoundCacheException     if the path does not exist.
+     * @throws PermissionDeniedCacheException if the user is not allowed to
+     *                                        remove the label.
+     * @throws CacheException                 a generic failure in removing the attribute.
+     */
+    void listLabels(Subject subject, Range<Integer> range,
+                    Set<FileAttribute> attrs, ListHandler handler) throws CacheException;
+
+
+
+    /**
      * Resolves symlinks in the given path.
      *
      * @param subject user making the request.

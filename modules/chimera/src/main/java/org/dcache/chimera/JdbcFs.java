@@ -563,6 +563,14 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
         return _sqlDriver.virtualDirectoryStream(dir, labelname);
     }
 
+
+    @Override
+    public DirectoryStreamB<ChimeraDirectoryEntry> listLabelsStream(FsInode dir) throws ChimeraFsException {
+        return _sqlDriver.labelsDirectoryStream(dir);
+    }
+
+
+
     @Override
     public void remove(String path) throws ChimeraFsException {
 

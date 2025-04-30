@@ -153,10 +153,12 @@ import org.dcache.util.TimeUtils;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsCreateSymLinkMessage;
 import org.dcache.vehicles.PnfsGetFileAttributes;
+import org.dcache.vehicles.PnfsListLabelsMessage;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.vehicles.PnfsRemoveChecksumMessage;
 import org.dcache.vehicles.PnfsResolveSymlinksMessage;
 import org.dcache.vehicles.PnfsSetFileAttributes;
+
 import org.dcache.vehicles.qos.PnfsManagerAddQoSPolicyMessage;
 import org.dcache.vehicles.qos.PnfsManagerGetQoSPolicyMessage;
 import org.dcache.vehicles.qos.PnfsManagerGetQoSPolicyStatsMessage;
@@ -303,6 +305,8 @@ public class PnfsManagerV3
         _gauges.addGauge(PnfsWriteExtendedAttributesMessage.class);
         _gauges.addGauge(PnfsRemoveExtendedAttributesMessage.class);
         _gauges.addGauge(PnfsRemoveLabelsMessage.class);
+        _gauges.addGauge(PnfsListLabelsMessage.class);
+
     }
 
     public PnfsManagerV3() {
@@ -2433,6 +2437,77 @@ public class PnfsManagerV3
         }
     }
 
+
+    /**
+     * PnfsListLabelsMessage can have more than one reply. This is to avoid large directories
+     * exhausting available memory in the PnfsManager. In current versions of Java, the only way to
+     * list a labels without building the complete result array in memory is to gather the
+     * elements inside a filter.
+     * <p>
+     * This filter collects entries and sends partial replies for the PnfsListLabelsMessage when
+     * a certain number of entries have been collected. The filter will not send the final reply
+     * (the caller has to do that).
+     */
+    private class ListLabelsHandlerImpl implements ListHandler {
+
+        private final PnfsListLabelsMessage _msg;
+        private final Subject _subject;
+        private final Restriction _restriction;
+        private int _messageCount;
+
+        public ListLabelsHandlerImpl(
+                               PnfsListLabelsMessage msg) {
+            _msg = msg;
+            _subject = _msg.getSubject();
+            _restriction = _msg.getRestriction();
+
+        }
+
+        @Override
+        public void addEntry(String name, FileAttributes attrs) {
+            if (Subjects.isRoot(_subject)) {
+                _msg.addEntry(name, attrs);
+
+            }
+        }
+
+        public int getMessageCount() {
+            return _messageCount;
+        }
+    }
+
+    private void listLabels(PnfsListLabelsMessage msg) {
+        if (!msg.getReplyRequired()) {
+            return;
+        }
+
+        try {
+            String path = msg.getPnfsPath();
+
+            checkMask(msg.getSubject(), path, msg.getAccessMask());
+            checkRestriction(msg, LIST);
+
+            ListLabelsHandlerImpl handler =
+                    new ListLabelsHandlerImpl(msg);
+
+            _nameSpaceProvider.listLabels(msg.getSubject(),
+                    msg.getRange(),
+                    msg.getRequestedAttributes(),
+                    handler);
+
+            msg.setSucceeded(handler.getMessageCount() + 1);
+            //TODO change NoLabelChimeraException to add the error code
+        } catch (FileNotFoundCacheException | NotDirCacheException e) {
+            msg.setFailed(e.getRc(), e.getMessage());
+        } catch (CacheException e) {
+            LOGGER.warn(e.toString());
+            msg.setFailed(e.getRc(), e.getMessage());
+        } catch (RuntimeException e) {
+            LOGGER.error(e.toString(), e);
+            msg.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                    e.getMessage());
+        }
+    }
     private static class ActivityReport {
 
         private final CellMessage message;
@@ -2960,6 +3035,8 @@ public class PnfsManagerV3
             removeChecksum((PnfsRemoveChecksumMessage) pnfsMessage);
         } else if (pnfsMessage instanceof PnfsListExtendedAttributesMessage) {
             listExtendedAttributes((PnfsListExtendedAttributesMessage) pnfsMessage);
+        } else if (pnfsMessage instanceof PnfsListLabelsMessage){
+            listLabels(( PnfsListLabelsMessage) pnfsMessage);
         } else if (pnfsMessage instanceof PnfsReadExtendedAttributesMessage) {
             readExtendedAttributes((PnfsReadExtendedAttributesMessage) pnfsMessage);
         } else if (pnfsMessage instanceof PnfsWriteExtendedAttributesMessage) {

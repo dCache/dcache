@@ -33,6 +33,7 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import javax.inject.Inject;
@@ -56,12 +57,13 @@ import org.dcache.http.PathMapper;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.JsonFileAttributes;
+import org.dcache.restful.providers.JsonListLabels;
 import org.dcache.restful.util.HttpServletRequests;
 import org.dcache.restful.util.RequestUser;
 import org.dcache.restful.util.namespace.NamespaceUtils;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryStream;
-import org.dcache.util.list.ListDirectoryHandler;
+import org.dcache.util.list.LabelsListHandler;
 import org.dcache.util.list.VirtualDirectoryListHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -96,14 +98,83 @@ public class LabelsResources {
     private VirtualDirectoryListHandler virtualDirectoryListHandler;
 
     @Inject
-    @Named("pool-manager-stub")
-    private CellStub poolmanager;
+    private LabelsListHandler labelsListHandler;
 
     @Inject
     @Named("pinManagerStub")
     private CellStub pinmanager;
 
+    @GET
+    @ApiOperation(value = "List all existing labels.",
+            notes = "The method offers the possibility to query of all existing labels.")
+    @ApiResponses({
+            @ApiResponse(code = 401, message = "Unauthorized"),
+            @ApiResponse(code = 403, message = "Forbidden"),
+            @ApiResponse(code = 404, message = "Not Found"),
+            @ApiResponse(code = 500, message = "Internal Server Error"),
+    })
+    @Produces(MediaType.APPLICATION_JSON)
+    public JsonListLabels getListLabels(
+            @ApiParam("Limit number of replies in labels listing.")
+            @QueryParam("limit") String limit,
+            @ApiParam("Number of entries to skip in labels listing.")
+            @QueryParam("offset") String offset) throws CacheException {
 
+        JsonListLabels labels = new JsonListLabels();
+
+        Set<FileAttribute> attributes =
+                NamespaceUtils.getRequestedAttributes(false,
+                        false,
+                        false,
+                        false,
+                        false);
+
+        FsPath path = pathMapper.asDcachePath(request, "/", ForbiddenException::new);
+
+
+        Range<Integer> range;
+        try {
+            int lower = (offset == null) ? 0 : Integer.parseInt(offset);
+            int ceiling = (limit == null) ? Integer.MAX_VALUE : Integer.parseInt(limit);
+            if (ceiling < 0 || lower < 0) {
+                throw new BadRequestException("limit and offset can not be less than zero.");
+            }
+            range = (Integer.MAX_VALUE - lower < ceiling) ? Range.atLeast(lower)
+                    : Range.closedOpen(lower, lower + ceiling);
+        } catch (NumberFormatException e) {
+            throw new BadRequestException("limit and offset must be an integer value.");
+        }
+        try {
+            DirectoryStream stream = labelsListHandler.listLabels(
+                    HttpServletRequests.roleAwareSubject(request),
+                    HttpServletRequests.roleAwareRestriction(request),
+                    range,
+                    attributes);
+
+
+            Set<String> labelsList = new HashSet<>();
+
+            for (DirectoryEntry entry : stream) {
+                String labelName = entry.getName();
+                labelsList.add(labelName);
+            }
+
+
+            labels.setLabels(labelsList);
+
+        }
+        catch (PermissionDeniedCacheException e) {
+            if (RequestUser.isAnonymous()) {
+                throw new NotAuthorizedException(e);
+            } else {
+                throw new ForbiddenException(e);
+            }
+        } catch (CacheException | InterruptedException ex) {
+            LOGGER.warn(Exceptions.meaningfulMessage(ex));
+            throw new InternalServerErrorException(ex);
+        }
+        return labels;
+    }
 
     @GET
     @ApiOperation(value = "Find metadata and optionally virtual directory contents.",
@@ -161,6 +232,8 @@ public class LabelsResources {
             throw new BadRequestException("limit and offset must be an integer value.");
         }
         try {
+
+
             List<JsonFileAttributes> children = new ArrayList<>();
 
             DirectoryStream stream = virtualDirectoryListHandler.listVirtualDirectory(

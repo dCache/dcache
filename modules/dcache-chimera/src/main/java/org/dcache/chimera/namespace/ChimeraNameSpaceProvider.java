@@ -98,12 +98,13 @@ import org.dcache.chimera.FileState;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FileSystemProvider.SetXattrMode;
 import org.dcache.chimera.FsInode;
-import org.dcache.chimera.FsInode_LABEL;
+import org.dcache.chimera.NoLabelChimeraException;
 import org.dcache.chimera.NoXdataChimeraException;
 import org.dcache.chimera.NotDirChimeraException;
 import org.dcache.chimera.StorageGenericLocation;
 import org.dcache.chimera.StorageLocatable;
 import org.dcache.chimera.UnixPermission;
+
 import org.dcache.chimera.posix.Stat;
 import org.dcache.commons.stats.MonitoringProxy;
 import org.dcache.commons.stats.RequestCounters;
@@ -1385,6 +1386,46 @@ public class ChimeraNameSpaceProvider
 
         } catch (FileNotFoundChimeraFsException e) {
             throw new FileNotFoundCacheException("No such file or directory: " + path);
+        } catch (IOException e) {
+            LOGGER.error("Exception in list: {}", e.getMessage());
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
+        }
+    }
+
+
+    @Override
+    public void listLabels(Subject subject, Range<Integer> range,
+                           Set<FileAttribute> attrs, ListHandler handler)
+            throws CacheException
+    {
+        try {
+            int counter = 0;
+            //TODO check permissions
+            try (DirectoryStreamB<ChimeraDirectoryEntry> dirStream = FsInode.getRoot(_fs)
+                    .listLabelsStream()) {
+                for (ChimeraDirectoryEntry entry : dirStream) {
+                    try {
+                        String name = entry.getName();
+
+                        // FIXME: actually, ChimeraDirectoryEntry
+                        // already contains most of attributes
+
+                        FileAttributes fa =
+                                attrs.isEmpty()
+                                        ? null
+                                        : getFileAttributes(new ExtendedInode(_fs, entry.getInode()), attrs);
+                        handler.addEntry(name, fa);
+
+                    } catch (NoLabelChimeraException e) {
+                        /* Not an error; files may be deleted during the
+                         * list operation.
+                         */
+                    }
+                }
+            }
+
+        } catch (FileNotFoundChimeraFsException e) {
+            throw new FileNotFoundCacheException("there are no any labels added to files : ");
         } catch (IOException e) {
             LOGGER.error("Exception in list: {}", e.getMessage());
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
