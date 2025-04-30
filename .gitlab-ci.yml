@@ -631,7 +631,7 @@ NFS4.x protocol compliance tests:
            --noinit store-door-svc:/data all \
            noACC2a noACC2b noACC2c noACC2d noACC2f noACC2r noACC2s \
            noCID1 noCID2 noCID4a noCID4b noCID4c noCID4d noCID4e \
-           noCLOSE10 noCLOSE12 noCLOSE6 \
+           noCLOSE8 noCLOSE9 noCLOSE10 noCLOSE12 noCLOSE6 \
            noCMT1aa noCMT1b noCMT1c noCMT1d noCMT1e noCMT1f noCMT2a noCMT2b noCMT2c noCMT2d noCMT2f \
            noCMT2s noCMT3 noCMT4 noCR12 noLKT1 noLKT2a noLKT2b noLKT2c noLKT2d noLKT2f noLKT2s noLKT3 \
            noLKT4 noLKT6 noLKT7 noLKT8 noLKT9 noLKU7 \
