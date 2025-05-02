@@ -1,10 +1,7 @@
 package org.dcache.tests.poolmanager;
 
 import static org.dcache.util.ByteUnit.GiB;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import diskCacheV111.poolManager.CostModuleV1;
 import diskCacheV111.pools.PoolCostInfo;
@@ -195,6 +192,53 @@ public class CostModuleTest {
         assertPercentileCost(FRACTION_JUST_BELOW_HALF, minPerfCost);
         assertPercentileCost(FRACTION_HALF, maxPerfCost);
         assertPercentileCost(FRACTION_JUST_BELOW_ONE, maxPerfCost);
+    }
+
+    @Test
+    public void testPoolCircuitbreaker() throws InterruptedException {
+        int trustScoreIncrease = _costModule.getTrustScoreIncrease();
+        int trustScoreDecrease = _costModule.getTrustScoreDecrease();
+        int trustScoreThreshold = _costModule.getTrustScoreThreshold();
+        int trustScoreCeiling = _costModule.getTrustScoreCeiling();
+        PoolManagerPoolUpMessage msg = getMessagePool(POOL_NAME);
+
+        // Get tho the threshold no mater what it might be
+        for (int i = 0; i < trustScoreThreshold; i += trustScoreIncrease) {
+            msg = deadHeartbeat(msg, POOL_NAME, POOL_ADDRESS);
+        }
+        assertFalse(_costModule.getPoolStatus(POOL_NAME));
+
+        // Reset to the minimum trust value
+        msg = aliveHeartbeat(msg, POOL_NAME, POOL_ADDRESS);
+        assertTrue(_costModule.getPoolStatus(POOL_NAME));
+
+        // Those tests are coupled to specific values of CostModuleV1#messageArrived(CellMessage, PoolManagerPoolUpMassage)
+        // msg = deadHeartbeat(msg, POOL_NAME, POOL_ADDRESS);
+        // assertFalse(_costModule.getPoolStatus(POOL_NAME));
+        //
+        // msg = aliveHeartbeat(msg, POOL_NAME, POOL_ADDRESS);
+        // msg = aliveHeartbeat(msg, POOL_NAME, POOL_ADDRESS);
+        // msg = deadHeartbeat(msg, POOL_NAME, POOL_ADDRESS);
+        // assertTrue(_costModule.getPoolStatus(POOL_NAME));
+    }
+
+    private PoolManagerPoolUpMessage deadHeartbeat(PoolManagerPoolUpMessage message, String poolName, CellAddressCore poolAddress) {
+        message = getMessagePool(poolName);
+        _costModule.messageArrived(buildEnvelope(poolAddress), message);
+        return message;
+    }
+    private PoolManagerPoolUpMessage aliveHeartbeat(PoolManagerPoolUpMessage message, String poolName, CellAddressCore poolAddress) {
+        _costModule.messageArrived(buildEnvelope(poolAddress), message);
+        return message;
+    }
+
+    private PoolManagerPoolUpMessage getMessagePool(String poolName) {
+        return buildPoolUpMessageWithCostAndQueue(
+                poolName,
+                100, 20, 30, 50,
+                40, 100, 0,
+                0, 0, 0,
+                0, 0, 0);
     }
 
 
