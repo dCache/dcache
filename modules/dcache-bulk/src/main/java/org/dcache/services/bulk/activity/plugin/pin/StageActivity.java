@@ -119,12 +119,13 @@ public final class StageActivity extends PinManagerActivity {
 
         try {
             /*
-             *  refetch the attributes because RP is not stored in the bulk database.
+             *  refetch the attributes because Retention Policy is not stored in the bulk database.
              */
 
             FsPath absolutePath = BulkRequestTarget.computeFsPath(prefix, path.toString());
             attributes = getAttributes(absolutePath);
 
+            //Checks for files' RetentionPolicy to be CUSTODIAL
             checkStageable(attributes);
 
             PinManagerPinMessage message
@@ -133,11 +134,6 @@ public final class StageActivity extends PinManagerActivity {
                   id,
                   getLifetimeInMillis(path));
             message.setSubject(subject);
-
-            Optional<ListenableFuture<Message>> skipOption = skipIfOnline(attributes, message);
-            if (skipOption.isPresent()) {
-                return skipOption.get();
-            }
 
             return pinManager.send(message, Long.MAX_VALUE);
         } catch (URISyntaxException | CacheException e) {
@@ -177,6 +173,7 @@ public final class StageActivity extends PinManagerActivity {
     }
 
     private void checkStageable(FileAttributes attributes) throws CacheException {
+        //check if it's a regular file
         checkPinnable(attributes);
 
         if (attributes.getRetentionPolicy() != RetentionPolicy.CUSTODIAL) {
