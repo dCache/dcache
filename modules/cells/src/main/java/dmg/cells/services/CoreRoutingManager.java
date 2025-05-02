@@ -23,9 +23,7 @@ import static java.util.stream.Collectors.toMap;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -329,7 +327,7 @@ public class CoreRoutingManager
                           .map(CellDomainInfo::getCellDomainName)
                           .forEach(domain -> domains.put(domain, new ArrayList<>()));
                     queueRoutes.asMap().forEach(
-                          (domain, cells) -> domains.put(domain, Lists.newArrayList(cells)));
+                          (domain, cells) -> domains.put(domain, new ArrayList<>(cells)));
                 }
                 msg.revertDirection();
                 msg.setMessageObject(new GetAllDomainsReply(domains));
@@ -504,9 +502,9 @@ public class CoreRoutingManager
     public synchronized Object ac_ls_$_0(Args args) {
         return new Object[]{
               getCellDomainName(),
-              Sets.newHashSet(localConsumers.values()),
+              new HashSet<>(localConsumers.values()),
               queueRoutes.asMap().entrySet().stream().collect(
-                    toMap(Map.Entry::getKey, e -> Sets.newHashSet(e.getValue())))
+                    toMap(Map.Entry::getKey, e -> new HashSet<>(e.getValue())))
         };
     }
 }

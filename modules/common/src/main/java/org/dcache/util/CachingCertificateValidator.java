@@ -21,9 +21,9 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheStats;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.stats.CacheStats;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 import eu.emi.security.authn.x509.ProxySupport;
@@ -39,7 +39,7 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -53,7 +53,7 @@ public class CachingCertificateValidator implements X509CertChainValidatorExt {
 
     public CachingCertificateValidator(X509CertChainValidatorExt val,
           long maxCacheEntryLifetime) {
-        cache = CacheBuilder.newBuilder()
+        cache = Caffeine.newBuilder()
               .expireAfterWrite(maxCacheEntryLifetime, TimeUnit.MILLISECONDS).build();
         validator = val;
     }
@@ -77,12 +77,12 @@ public class CachingCertificateValidator implements X509CertChainValidatorExt {
 
             String certFingerprint = hasher.hash().toString();
 
-            return cache.get(certFingerprint, () -> validator.validate(certChain));
+            return cache.get(certFingerprint, (key) -> validator.validate(certChain));
         } catch (CertificateEncodingException e) {
             return new ValidationResult(false, singletonList(
                   new ValidationError(certChain, pos, ValidationErrorCode.inputError,
                         e.getMessage())));
-        } catch (ExecutionException e) {
+        } catch (CompletionException e) {
             return new ValidationResult(false, singletonList(
                   new ValidationError(certChain, pos, ValidationErrorCode.inputError,
                         e.getMessage())));

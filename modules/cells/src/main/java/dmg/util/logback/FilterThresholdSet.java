@@ -4,23 +4,24 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 import ch.qos.logback.classic.Level;
+import com.github.benmanes.caffeine.cache.CacheLoader;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.base.Throwables;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import com.google.common.collect.Table;
+import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CompletionException;
+import java.util.function.Function;
 import org.slf4j.Logger;
 
 /**
@@ -41,7 +42,7 @@ public class FilterThresholdSet {
 
     private final FilterThresholdSet _parent;
 
-    private final Set<String> _appenders = Sets.newHashSet();
+    private final Set<String> _appenders = new HashSet<>();
 
     private final Set<LoggerName> _roots = new HashSet<>();
 
@@ -50,26 +51,25 @@ public class FilterThresholdSet {
 
     /* Logger -> (Appender -> Level) */
     private final LoadingCache<String, Map<String, Level>> _effectiveMaps =
-          CacheBuilder.newBuilder().build(CacheLoader.from(
+          Caffeine.newBuilder().build(new FunctionToCacheLoader<>(
                 logger -> computeEffectiveMap(LoggerName.getInstance(logger))));
 
     /* Logger -> Level */
     private final LoadingCache<Logger, Optional<Level>> _effectiveLevels =
-          CacheBuilder.newBuilder().build(CacheLoader.from(
+          Caffeine.newBuilder().build(new FunctionToCacheLoader<>(
                 logger -> {
                     try {
                         Map<String, Level> map = _effectiveMaps.get(logger.getName());
                         return map.isEmpty()
                               ? Optional.empty()
                               : Optional.of(Collections.min(map.values(), LEVEL_ORDER));
-                    } catch (ExecutionException e) {
+                    } catch (CompletionException e) {
                         Throwables.throwIfUnchecked(e.getCause());
                         throw new RuntimeException(e.getCause());
                     }
                 }));
 
-    private static final Comparator<Level> LEVEL_ORDER =
-          (o1, o2) -> Integer.compare(o1.toInt(), o2.toInt());
+    private static final Comparator<Level> LEVEL_ORDER = Comparator.comparingInt(Level::toInt);
 
     public FilterThresholdSet() {
         this(null);
@@ -93,7 +93,7 @@ public class FilterThresholdSet {
      */
     public synchronized Collection<String> getAppenders() {
         if (_parent == null) {
-            return Lists.newArrayList(_appenders);
+            return new ArrayList<>(_appenders);
         } else {
             Collection<String> appenders = _parent.getAppenders();
             appenders.addAll(_appenders);
@@ -182,7 +182,7 @@ public class FilterThresholdSet {
      */
     public synchronized Map<String, Level> getInheritedMap(LoggerName logger) {
         if (_parent == null) {
-            return Maps.newHashMap(_rules.row(logger));
+            return new HashMap<>(_rules.row(logger));
         } else {
             Map<String, Level> map = _parent.getInheritedMap(logger);
             map.putAll(_rules.row(logger));
@@ -222,7 +222,7 @@ public class FilterThresholdSet {
     public Level getThreshold(String logger, String appender) {
         try {
             return _effectiveMaps.get(logger).get(appender);
-        } catch (ExecutionException e) {
+        } catch (CompletionException e) {
             Throwables.throwIfUnchecked(e.getCause());
             throw new RuntimeException(e.getCause());
         }
@@ -234,9 +234,24 @@ public class FilterThresholdSet {
     public Level getThreshold(Logger logger) {
         try {
             return _effectiveLevels.get(logger).orElse(null);
-        } catch (ExecutionException e) {
+        } catch (CompletionException e) {
             Throwables.throwIfUnchecked(e.getCause());
             throw new RuntimeException(e.getCause());
+        }
+    }
+
+    private static final class FunctionToCacheLoader<K, V> implements
+          CacheLoader<K, V>, Serializable {
+
+        private final Function<K, V> computingFunction;
+        private static final long serialVersionUID = 0L;
+
+        public FunctionToCacheLoader(Function<K, V> computingFunction) {
+            this.computingFunction = requireNonNull(computingFunction);
+        }
+
+        public V load(K key) {
+            return this.computingFunction.apply(requireNonNull(key));
         }
     }
 }

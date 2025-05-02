@@ -19,7 +19,7 @@
 
 package diskCacheV111.doors;
 
-import com.google.common.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import diskCacheV111.services.space.Space;

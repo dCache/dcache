@@ -17,17 +17,19 @@
  */
 package org.dcache.gplazma.oidc.userinfo;
 
+import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toMap;
+import static org.dcache.gplazma.oidc.PropertiesUtils.asInt;
+import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
+import com.github.benmanes.caffeine.cache.AsyncCacheLoader;
+import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Throwables;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Streams;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ListenableFutureTask;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -43,7 +45,9 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -58,11 +62,6 @@ import org.dcache.util.BoundedCachedExecutor;
 import org.dcache.util.TimeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toMap;
-import static org.dcache.gplazma.oidc.PropertiesUtils.asInt;
-import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 /**
  * This TokenProcessor queries the user-info endpoint to learn the claims about the user. The
@@ -84,7 +83,7 @@ public class QueryUserInfoEndpoint implements TokenProcessor {
 
     private final JsonHttpClient jsonHttpClient;
     private final ExecutorService executor;
-    private final LoadingCache<String, List<LookupResult>> userInfoCache;
+    private final AsyncLoadingCache<String, List<LookupResult>> userInfoCache;
     private final Map<URI, IdentityProvider> providersByIssuer;
     private final Duration slowLookupThreshold;
 
@@ -119,8 +118,8 @@ public class QueryUserInfoEndpoint implements TokenProcessor {
         List<LookupResult> allResults;
 
         try {
-            allResults = userInfoCache.get(token);
-        } catch (ExecutionException e) {
+            allResults = userInfoCache.synchronous().get(token);
+        } catch (CompletionException e) {
             Throwable cause = e.getCause();
             Throwables.throwIfInstanceOf(cause, AuthenticationException.class);
             Throwables.throwIfUnchecked(cause);
@@ -169,16 +168,18 @@ public class QueryUserInfoEndpoint implements TokenProcessor {
         return new ExtractResult(result.getIdentityProvider(), result.getClaims());
     }
 
-    private LoadingCache<String, List<LookupResult>> createUserInfoCache(int size,
+    private AsyncLoadingCache<String, List<LookupResult>> createUserInfoCache(int size,
           int refresh, TimeUnit refreshUnits, int expire, TimeUnit expireUnits) {
-        return CacheBuilder.newBuilder()
+        return Caffeine.newBuilder()
               .maximumSize(size)
               .refreshAfterWrite(refresh, refreshUnits)
               .expireAfterWrite(expire, expireUnits)
-              .build(new CacheLoader<String, List<LookupResult>>() {
-                  private ListenableFuture<List<LookupResult>> asyncFetch(String token)
+              .executor(executor)
+              .buildAsync(new AsyncCacheLoader<>() {
+                  private CompletableFuture<List<LookupResult>> asyncFetch(String token,
+                        Executor executor)
                         throws AuthenticationException {
-                      List<ListenableFuture<LookupResult>> futures =
+                      List<CompletableFuture<LookupResult>> futures =
                             new ArrayList<>();
 
                       for (IdentityProvider ip : identityProviders(token)) {
@@ -187,40 +188,36 @@ public class QueryUserInfoEndpoint implements TokenProcessor {
                                     ip.getName(), describe(token, 20));
                           }
 
-                          ListenableFutureTask<LookupResult> lookupTask =
-                                ListenableFutureTask.create(() -> queryUserInfo(ip, token));
-                          executor.execute(lookupTask);
+                          CompletableFuture<LookupResult> lookupTask =
+                                CompletableFuture.supplyAsync(() -> queryUserInfo(ip, token),
+                                      executor);
                           futures.add(lookupTask);
                       }
-
-                      return Futures.allAsList(futures);
+                      return CompletableFuture.allOf(futures.toArray(new CompletableFuture<?>[0]))
+                            .thenApply(v -> futures.stream()
+                                  .map(CompletableFuture::join)
+                                  .collect(Collectors.toList())
+                            );
                   }
 
                   @Override
-                  public List<LookupResult> load(String token)
-                        throws InterruptedException, AuthenticationException {
+                  public CompletableFuture<List<LookupResult>> asyncLoad(String token,
+                        Executor executor) throws Exception {
                       if (LOG.isDebugEnabled()) {
                           LOG.debug("User-info cache miss for token {}",
                                 describe(token, 20));
                       }
 
-                      try {
-                          return asyncFetch(token).get();
-                      } catch (ExecutionException e) {
-                          Throwable cause = e.getCause();
-                          Throwables.throwIfInstanceOf(cause, AuthenticationException.class);
-                          Throwables.throwIfUnchecked(cause);
-                          throw new RuntimeException("Unexpected exception", e);
-                      }
+                      return asyncFetch(token, executor);
                   }
 
                   @Override
-                  public ListenableFuture<List<LookupResult>> reload(String token,
-                        List<LookupResult> results) throws AuthenticationException {
+                  public CompletableFuture<List<LookupResult>> asyncReload(String token,
+                        List<LookupResult> results, Executor executor) throws Exception {
                       if (LOG.isDebugEnabled()) {
                           LOG.debug("Refreshing user-info for token {}", describe(token, 20));
                       }
-                      return asyncFetch(token);
+                      return asyncFetch(token, executor);
                   }
               });
     }
