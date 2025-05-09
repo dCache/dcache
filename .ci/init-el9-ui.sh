@@ -16,7 +16,7 @@ rpm -i https://www.desy.de/~tigran/ca_dCacheORG-3.0-6.noarch.rpm
 rpm -i https://linuxsoft.cern.ch/wlcg/centos7/x86_64/desy-voms-all-1.0.0-1.noarch.rpm
 
 dnf config-manager --add-repo https://dl.igtf.net/distribution/igtf/current/
-rpmkeys  --import https://dl.igtf.net/distribution/igtf/current/GPG-KEY-EUGridPMA-RPM-3
+rpmkeys  --import https://dl.igtf.net/distribution/igtf/current/GPG-KEY-EUGridPMA-RPM-4
 dnf -y install ca_USERTrustRSACertificationAuthority \
   ca_ResearchandEducationTrustRSARootCA \
   ca_GEANTeScienceSSLCA4 \
