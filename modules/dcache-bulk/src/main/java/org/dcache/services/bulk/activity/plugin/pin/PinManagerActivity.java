@@ -64,9 +64,6 @@ import static diskCacheV111.util.CacheException.INVALID_ARGS;
 import static org.dcache.services.bulk.util.BulkRequestTarget.computeFsPath;
 import static org.dcache.services.bulk.util.BulkRequestTarget.State.SKIPPED;
 
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.NamespaceHandlerAware;
@@ -145,23 +142,16 @@ abstract class PinManagerActivity extends BulkActivity<Message> implements PinMa
         return message;
     }
 
+    /**
+     * Only regular files get pinned
+     * @param attributes
+     * @throws CacheException
+     */
     protected void checkPinnable(FileAttributes attributes) throws CacheException {
         switch(attributes.getFileType()) {
             case SPECIAL:
             case DIR:
                 throw new CacheException(INVALID_ARGS, "Not a regular file.");
         }
-    }
-
-    protected Optional<ListenableFuture<Message>> skipIfOnline(FileAttributes attributes,
-          PinManagerPinMessage message) {
-        ListenableFuture<Message> future = null;
-        if (attributes.getAccessLatency() == AccessLatency.ONLINE) {
-            message.setReply();
-            message.setLifetime(-1L);
-            future = Futures.immediateFuture(message);
-        }
-
-        return Optional.ofNullable(future);
     }
 }
