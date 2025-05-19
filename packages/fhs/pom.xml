@@ -26,7 +26,7 @@
         <build.id>1</build.id>
 
         <!-- Local build number. Typically for custom builds -->
-        <local.version />
+        <local.version>scitags</local.version>
     </properties>
 
     <build>
