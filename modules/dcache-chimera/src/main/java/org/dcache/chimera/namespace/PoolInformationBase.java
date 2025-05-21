@@ -6,8 +6,10 @@ import dmg.cells.nucleus.CellMessageReceiver;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import org.dcache.util.Args;
 
 /**
@@ -47,27 +49,22 @@ public class PoolInformationBase implements CellMessageReceiver {
         return _pools.values();
     }
 
-    public synchronized PoolInformation getPoolWithHSM(String hsm) {
-        return getNewPoolWithHSM(hsm, Collections.EMPTY_SET);
-    }
 
     /**
-     * Returns a pool attached to a given HSM instance which is not in excludedPools.
+     * Returns all available pools attached to a given HSM instance.
      *
      * @param hsm An HSM instance name.
      */
-    public synchronized PoolInformation getNewPoolWithHSM(String hsm, Set<String> excludedPools) {
+    public synchronized List<PoolInformation> getAvailablePoolsWithHSM(String hsm) {
         Collection<PoolInformation> pools = _hsmToPool.get(hsm);
-        if (pools != null) {
-            for (PoolInformation pool : pools) {
-                if (pool.getAge() <= TIMEOUT
-                      && !pool.isDisabled(PoolV2Mode.DISABLED_STAGE)
-                      && !excludedPools.contains(pool.getName())) {
-                    return pool;
-                }
-            }
+        if (pools == null) {
+            return Collections.EMPTY_LIST;
         }
-        return null;
+
+        return pools.stream()
+              .filter(pool -> pool.getAge() <= TIMEOUT)
+              .filter(pool -> !pool.isDisabled(PoolV2Mode.DISABLED_STAGE))
+              .toList();
     }
 
     public synchronized boolean isPoolAvailable(String poolName) {
