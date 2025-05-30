@@ -178,6 +178,7 @@ import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.rquota.QuotaSvc;
 import org.dcache.util.ByteUnit;
 import org.dcache.util.CDCScheduledExecutorServiceDecorator;
+import org.dcache.util.Exceptions;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.Glob;
 import org.dcache.util.NDC;
@@ -1795,6 +1796,15 @@ public class NFSv41Door extends AbstractCellComponent implements
             // keep NFSTransfer#shutdown happy
             finished((CacheException) null);
         }
+        /**
+         * Remove transfer associated with a dead client.
+         */
+        private void cleanupNoclient() {
+            _transfers.remove(_stateid.stateid());
+            killMover(0, "layout recall on dead client");
+            // keep NFSTransfer#shutdown happy
+            finished((CacheException) null);
+        }
 
         @Override
         public String getTransferPath() {
@@ -2040,7 +2050,8 @@ public class NFSv41Door extends AbstractCellComponent implements
                 _log.debug("Client can't return layout: re-scheduling layout recall");
                 executorService.schedule(this, 2, TimeUnit.SECONDS);
             } catch (IOException e) {
-                _log.error("Failed to send call-back to the client: {}", e.getMessage());
+                _log.error("Failed to send call-back to the client: {}", Exceptions.messageOrClassName(e));
+                transfer.cleanupNoclient();
             }
         }
     }
