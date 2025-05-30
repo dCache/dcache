@@ -1536,6 +1536,9 @@ public class NFSv41Door extends AbstractCellComponent implements
                               t.getClient().getRemoteAddress());
                         t.shutdownMover();
                     }
+                } else {
+                    // no associated mover, thus, we need to remove the transfer manually as cleanup will be never be called
+                    _transfers.remove(_stateid.stateid());
                 }
             });
             _openStateid = openStateId;
