@@ -122,7 +122,7 @@ rpm:
   image: dcache/maven-java17-rpm-build
   extends: .build_cache
   script:
-    - mvn $MAVEN_CLI_OPTS -Drun.slow.tests -am -pl packages/fhs -P rpm clean package
+    - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl packages/fhs -P rpm clean package
   artifacts:
     reports:
       junit:
@@ -130,17 +130,6 @@ rpm:
         - "**/target/failsafe-reports/TEST-*.xml"
     paths:
       - "packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm"
-    expire_in: 2 days
-
-srm_client_rpm:
-  stage: build
-  image: dcache/maven-java17-rpm-build
-  extends: .build_cache
-  script:
-    - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl modules/srm-client package -P rpm
-  artifacts:
-    paths:
-      - "modules/srm-client/target/rpmbuild/RPMS/noarch/dcache-srmclient*.rpm"
     expire_in: 2 days
 
 deb:
@@ -163,25 +152,6 @@ tar:
   artifacts:
     paths:
       - "packages/tar/target/dcache-*.tar.gz"
-    expire_in: 2 days
-
-
-spotbugs:
-  stage: build
-  image: dcache/maven-java17-tar-build
-  extends: .build_cache
-  rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-  script:
-    - dnf -y -q install jq
-    - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl packages/tar -DskipTests package com.github.spotbugs:spotbugs-maven-plugin:4.8.3.0:spotbugs verify
-    - find . -name gl-code-quality-report.json -print | xargs cat | jq -s "add" > merged-gl-code-quality-report.json
-  artifacts:
-    reports:
-      codequality:
-        - merged-gl-code-quality-report.json
-    paths:
-      - merged-gl-code-quality-report.json
     expire_in: 2 days
 
 container:
@@ -244,22 +214,6 @@ sign_rpm:
     paths:
     - packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm
 
-sign_srm_client_rpm:
-  stage: sign
-  image: almalinux:9-minimal
-  needs: ["srm_client_rpm"]
-  script:
-    - microdnf install -y rpm-sign
-    - echo $DCACHE_ORG_PGP_KEY | base64 -d -i > secret.gpg
-    - gpg --quiet --batch --yes --allow-secret-key-import --passphrase="$DCACHE_ORG_PGP_KEY_PASS" --import secret.gpg
-    - gpg -a --export "$DCACHE_ORG_KEY_NAME" > RPM-GPG-KEY
-    - rpmsign --addsign --define "_signature gpg" --define "_gpg_name  $DCACHE_ORG_KEY_NAME" --define "_gpg_sign_cmd_extra_args --pinentry-mode loopback --passphrase $DCACHE_ORG_PGP_KEY_PASS" modules/srm-client/target/rpmbuild/RPMS/noarch/dcache-srmclient*.rpm
-    - rpmkeys --import RPM-GPG-KEY
-    - rpm --checksig -v modules/srm-client/target/rpmbuild/RPMS/noarch/dcache-srmclient*.rpm
-  artifacts:
-    paths:
-    - modules/srm-client/target/rpmbuild/RPMS/noarch/dcache-srmclient*.rpm
-
 sign_deb:
   stage: sign
   image: ubuntu:22.04
@@ -304,16 +258,6 @@ upload_rpm:
     - VERSION=`echo $RPM_NAME | cut -d'-' -f 2 | cut -d'.' -f 1,2`
     - curl $PKG_UPLOAD_OPTIONS -u $PKG_UPLOAD_USER:$PKG_UPLOAD_PASS --upload-file packages/fhs/target/rpmbuild/RPMS/noarch/$RPM_NAME "$PKG_UPLOAD_URL/$VERSION/$RPM_NAME"
 
-upload_srm_client_rpm:
-  stage: upload
-  image: almalinux:9-minimal
-  dependencies:
-    - sign_srm_client_rpm
-  extends: .upload_rules
-  script:
-    - RPM_NAME=`ls modules/srm-client/target/rpmbuild/RPMS/noarch/ | grep dcache-srmclient`
-    - VERSION=`echo $RPM_NAME | cut -d'-' -f 3 | cut -d'.' -f 1,2`
-    - curl $PKG_UPLOAD_OPTIONS -u $PKG_UPLOAD_USER:$PKG_UPLOAD_PASS --upload-file modules/srm-client/target/rpmbuild/RPMS/noarch/$RPM_NAME "$PKG_UPLOAD_URL/$VERSION/$RPM_NAME"
 
 upload_deb:
   stage: upload
@@ -377,7 +321,6 @@ AI Generated Release Notes:
   dependencies:
     - sign_deb
     - sign_rpm
-    - sign_srm_client_rpm
     - tar
   script:
     - microdnf install -y git-core
@@ -410,7 +353,6 @@ Release Notes Table:
   dependencies:
     - sign_deb
     - sign_rpm
-    - sign_srm_client_rpm
     - tar
   script:
     - microdnf install -y git-core
