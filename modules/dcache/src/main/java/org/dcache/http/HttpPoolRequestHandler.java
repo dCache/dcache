@@ -1,6 +1,7 @@
 package org.dcache.http;
 
 import static io.netty.handler.codec.http.HttpHeaders.Names.ACCEPT_RANGES;
+import static io.netty.handler.codec.http.HttpHeaders.Names.CONNECTION;
 import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
 import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LOCATION;
 import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_MD5;
@@ -61,6 +62,7 @@ import io.netty.handler.timeout.IdleStateEvent;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.http.HttpHeaders;
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.StandardOpenOption;
@@ -427,6 +429,9 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
         Optional<String> digest = wantDigest(request)
               .flatMap(h -> Checksums.digestHeader(h, file.getFileAttributes()));
 
+        String closeHeader = request.headers().get(CONNECTION);
+        boolean stopMover = closeHeader != null && closeHeader.equalsIgnoreCase("close");
+
         if (ranges == null || ranges.isEmpty()) {
             /*
              * GET for a whole file
@@ -454,9 +459,11 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
             context.write(read(context, file, range.getLower(), range.getUpper()))
                   .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
 
-            // File is released when the client disconnects.  We're assuming that, after this, the
-            // client will not make further requests against this URL.
-            return context.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
+            var writeAndFlush = context.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
+            if (stopMover) {
+                writeAndFlush.addListener(f -> file.release());
+            }
+            return writeAndFlush;
         } else {
             /*
              * GET for multiple ranges
@@ -487,9 +494,11 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
                       .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
             }
 
-            // File is released when the client disconnects.  We're assuming that, after this, the
-            // client will not make further requests against this URL.
-            return context.writeAndFlush(new DefaultLastHttpContent(endMarker));
+            var writeAndFlush =  context.writeAndFlush(new DefaultLastHttpContent(endMarker));
+            if (stopMover) {
+                writeAndFlush.addListener(f -> file.release());
+            }
+            return writeAndFlush;
         }
     }
 
