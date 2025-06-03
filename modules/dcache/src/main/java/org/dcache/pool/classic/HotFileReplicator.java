@@ -26,7 +26,7 @@ public class HotFileReplicator implements CellMessageReceiver, CellCommandListen
     }
 
     void maybeReplicate(PoolIoFileMessage message, long numberOfRequests) {
-        if  (! (numberOfRequests < _hotspotThreshold || _inFlightMigrations.contains(message.getPnfsId())) {
+        if  (! (numberOfRequests < _hotspotThreshold || _inFlightMigrations.contains(message.getPnfsId()))) {
             // TODO: Compose and send migration message.
 
             // Blacklist
