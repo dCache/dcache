@@ -220,7 +220,7 @@ public class IoQueueManager
     }
 
     public long numberOfReqeustsFor(PnfsId pnfsId) {
-        return queues().stream().map((q) -> q.numberOfRequestsFor(pnfsId)).reduce(0, (a, b) -> a + b);
+        return queues().stream().map((q) -> q.numberOfRequestsFor(pnfsId)).reduce(0L, (a, b) -> a + b);
     }
 
     @AffectsSetup
