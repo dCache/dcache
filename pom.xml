@@ -940,6 +940,11 @@
                 <artifactId>javassist</artifactId>
                 <version>3.25.0-GA</version>
             </dependency>
+            <dependency>
+                <groupId>org.reflections</groupId>
+                <artifactId>reflections</artifactId>
+                <version>0.9.12</version>
+            </dependency>
 	    <dependency>
                 <groupId>com.github.npathai</groupId>
                 <artifactId>hamcrest-optional</artifactId>

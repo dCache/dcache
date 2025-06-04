@@ -4,16 +4,12 @@ import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Strings;
-import com.google.common.base.Throwables;
 import com.google.common.collect.Sets;
-import com.google.common.reflect.ClassPath;
-import com.google.common.reflect.ClassPath.ClassInfo;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import dmg.cells.nucleus.CellCommandListener;
 import java.io.File;
-import java.lang.annotation.Annotation;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.Collections;
@@ -38,6 +34,7 @@ import org.dcache.gplazma.monitor.LoginResult;
 import org.dcache.gplazma.monitor.LoginResultPrinter;
 import org.dcache.gplazma.monitor.RecordingLoginMonitor;
 import org.dcache.util.Args;
+import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -73,41 +70,15 @@ public class Gplazma2LoginStrategy implements LoginStrategy, CellCommandListener
     private Function<FsPath, PrefixRestriction> _createPrefixRestriction = PrefixRestriction::new;
     private Optional<String> _uploadPath = Optional.empty();
 
-
-    /**
-     * Returns the set of classes annotated with the given annotation.
-     * <p>
-     * This method scans the classpath for classes in the org.dcache.auth and
-     * org.globus.gsi.gssapi.jaas packages that are annotated with the specified annotation.
-     *
-     * @param annotation the annotation to look for
-     * @return a set of classes annotated with the specified annotation
-     */
-    private static Set<Class<?>> getAuthClasses(Class<? extends Annotation> annotation) {
-        try {
-            var cp = ClassPath.from(Thread.currentThread().getContextClassLoader());
-            return cp.getAllClasses()
-                  .stream()
-                  .filter(c -> c.getPackageName().equals("org.dcache.auth") ||
-                               c.getPackageName().equals("org.globus.gsi.gssapi.jaas"))
-                  .map(ClassInfo::load)
-                  .filter(c -> c.isAnnotationPresent(annotation))
-                  .collect(Collectors.toSet());
-        } catch (Exception e) {
-            LOGGER.error("Failed to scan for gPlazma2 principals: {}", e.getMessage());
-            Throwables.throwIfUnchecked(e);
-            throw new RuntimeException("Failed to scan for gPlazma2 principals", e);
-        }
-    }
-
     static {
         Stopwatch reflectionTimer = Stopwatch.createStarted();
-
-        AUTHENTICATION_INPUT = getAuthClasses(AuthenticationInput.class);
+        Reflections principalPackages = new Reflections("org.dcache.auth",
+              "org.globus.gsi.gssapi.jaas");
+        AUTHENTICATION_INPUT = principalPackages.getTypesAnnotatedWith(AuthenticationInput.class);
         AUTHENTICATION_INPUT.addAll(EXTERNAL_AUTHENTICATION_INPUT);
         LOGGER.debug("AUTHENTICATION_INPUT: {}", AUTHENTICATION_INPUT);
 
-        AUTHENTICATION_OUTPUT = getAuthClasses(AuthenticationOutput.class);
+        AUTHENTICATION_OUTPUT = principalPackages.getTypesAnnotatedWith(AuthenticationOutput.class);
         AUTHENTICATION_OUTPUT.addAll(EXTERNAL_AUTHENTICATION_OUTPUT);
         LOGGER.debug("AUTHENTICATION_OUTPUT: {}", AUTHENTICATION_OUTPUT);
 
