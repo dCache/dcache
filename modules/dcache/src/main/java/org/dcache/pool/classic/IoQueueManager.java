@@ -219,7 +219,7 @@ public class IoQueueManager
         }
     }
 
-    public long numberOfReqeustsFor(PnfsId pnfsId) {
+    public long numberOfRequestsFor(PnfsId pnfsId) {
         return queues().stream().map((q) -> q.numberOfRequestsFor(pnfsId)).reduce(0L, (a, b) -> a + b);
     }
 
@@ -443,7 +443,7 @@ public class IoQueueManager
             }
 
             if (isBinary) {
-                // ignore sortin and grouping by queue name if binnary
+                // ignore sorting and grouping by queue name if binary
                 return queues.stream().flatMap(s -> s.getJobInfos().stream())
                       .toArray(IoJobInfo[]::new);
             } else {
