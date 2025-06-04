@@ -11,7 +11,7 @@ The cleaner components run periodically, so there may be a delay between a file 
 
 ## Configuration
 
-The cleaner services can be run in high availability (HA) mode (coordinated via [ZooKeeper](config-zookeeper.md)) by having several `cleaner-disk` and `cleaner-hsm` cells in a dCache instance, which need to share the same database. Only one such cleaner instance per type (disk or hsm) will be active at any point in time. If the currently active one ("master") is unavailable, another one is automatically taking its place.
+The cleaner services can be run in high availability (HA) mode (coordinated via [ZooKeeper](config-zookeeper.md)) by having several `cleaner-disk` and `cleaner-hsm` cells in a dCache instance, which need to share the same database. Only one such cleaner instance per type (disk or HSM) will be active at any point in time. If the currently active one ("master") is unavailable, another one is automatically taking its place.
 
 ### Disk Cleaner
 
@@ -24,9 +24,10 @@ The `cleaner-disk.limits.batch-size` property places an upper limit on the numbe
 
 The `cleaner-hsm` is responsible for removing tape-resident file replicas by instructing HSM-attached pools to remove deleted files' data stored in the HSM. To enable this feature, the property must be enabled at all the pools that are supposed to delete files from an HSM.
 
-The `cleaner-hsm` component runs sequentially by sending `cleaner-hsm.limits.batch-size` delete targets in a message to an hsm-connected pool. It does so per hsm.
+The `cleaner-hsm` component runs sequentially by sending `cleaner-hsm.limits.batch-size` delete targets in a message to an HSM-connected pool. It does so per HSM.
+For each HSM, it can delete files in parallel via multiple pools. On successive `cleaner-hsm` runs it will send further delete requests for that HSM to other pools connected to it. By decreasing the time between successive runs, the number of parallel cleaning pools is increased (as long as there are available pools).
 
-Regularly, it fetches hsm locations of files to delete from the database and caches them for clustering by hsm. In order to not overload the memory of a `cleaner-hsm` cell, the number of hsm delete locations that are cached at any point in time should be limited. The `cleaner-hsm.limits.max-cached-locations = 12000` allows to set such a limit.
+Regularly, it fetches HSM locations of files to delete from the database and caches them for clustering by HSM. In order to not overload the memory of a `cleaner-hsm` cell, the number of HSM delete locations that are cached at any point in time should be limited. The `cleaner-hsm.limits.max-cached-locations = 12000` allows to set such a limit.
 
 When a pool reports back to `cleaner-hsm` that it was unable to delete certain files, `cleaner-hsm` removes these entries from the local cache. They will be re-loaded into the locations cache eventually so that they can be retried.
 
