@@ -79,7 +79,7 @@ import org.parboiled.support.ParsingResult;
  * on values that change during the runtime of the job, then the job will no longer be idempotent.
  * <p>
  * Jobs monitor the local repository for changes. If a replica changes state before it is
- * transfered, and the replica no longer passes the selection criteria of the job, then it will not
+ * transferred, and the replica no longer passes the selection criteria of the job, then it will not
  * be transferred. If it is in the process of being transferred, then the transfer is cancelled. If
  * the transfer has already completed, then nothing happens.
  * <p>
@@ -292,7 +292,7 @@ public class MigrationModule
               usage = "Only copy replicas accessed n seconds ago, or accessed " +
                     "within the given, possibly open-ended, interval. E.g. " +
                     "-accessed=0..60 matches files accessed within the last " +
-                    "minute; -accesed=60.. matches files accessed one minute " +
+                    "minute; -accessed=60.. matches files accessed one minute " +
                     "or more ago.")
         String accessed;
 
