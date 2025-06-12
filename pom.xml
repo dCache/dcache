@@ -84,7 +84,7 @@
         <version.jna>5.4.0</version.jna>
         <jmh.version>1.35</jmh.version>
         <version.dropwizard>4.1.29</version.dropwizard>
-        <version.nfs4j>0.27.0</version.nfs4j>
+        <version.nfs4j>0.27.1</version.nfs4j>
 
 
 
