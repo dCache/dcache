@@ -736,7 +736,9 @@ The GP2-AUTHZDB takes a username and maps it to UID+GID using the `storage-authz
 
 ##### GridMap
 
-The `authzdb` plug-in takes a username and maps it to UID+GID using the **storage-authzdb** file.
+> DEPRECATED: The `grid-mapfile` plug-in is deprecated and will be removed in a future release.  Use the `multimap` plugin instead.
+
+The `grid-mapfile` plug-in takes a GRID DN and maps it username using the **grid-mapfile** file.
 
 
 
@@ -750,6 +752,8 @@ Properties
 
 
 ##### vorolemap
+
+> DEPRECATED: The `vorolemap` plug-in is deprecated and will be removed in a future release.  Use the `multimap` plugin instead.
 
 The `voms` plug-in maps pairs of DN and FQAN to usernames via a [vorolemap](config-gplazma.md#preparing-grid-vorolemap) file.
 
@@ -849,6 +853,45 @@ Properties
   |name| LoginNamePrincipal| Login name which requires an aditional mapping to username|
   |username| UserNamePrincipal|Principal which is associated with final login step|
 
+#### MultiMap plugin (multimap)
+
+The `multimap` plugin is a map plugin that allows you to map principals to other principals. The mapping
+is done according to a configuration file, which is a text file with one mapping per line in following format:
+
+    <source-principal-type>:<source-principal-value> <target-principal-type1>:<target-principal-value1> <target-principal-type2>:<target-principal-value2> ... <target-principal-typeN>:<target-principal-valueN>
+
+Example:
+
+    "dn:/C=DE/ST=Hamburg/O=dCache.ORG/CN=Kermit the frog" username:kermit uid:1000 gid:1000,true
+    fqan:/myvo username:myname uid:1000 gid:2000,true
+    op:myidp username:myidpuser uid:1000 gid:2000,true
+
+The following principal types are supported (as input as well as output):
+
+| Short name  | Description                                                   |
+|-------------|---------------------------------------------------------------|
+| dn          | X509 user certificate distinguished name                      |
+| email       | User Email                                                    |
+| gid         | Group numeric id principal                                    |
+| group       | Group name principal                                          |
+| fqan        | Virtual organization name principal                           |
+| kerberos    | Kerberos principal                                            |
+| oidc        | OIDC principal matching `sub` claim                           |
+| oidcgrp     | OIDC group nam pricipal provided by IdP                       |
+| uid         | User numeric id principal                                     |
+| username    | User name principal                                           |
+| entitlement | Entitlement principal that represents an eduPersonEntitlement |
+| op         | OIDC provider principal, which is IdP alias name              |
+| role        | Role principal, which is used to map dCache roles to users    |
+
+The gPlazma configuration might have multiple multimap plugins configured to achieve desired behavior,
+for example, the configuration bellow tries to make group based mapping first, then username mapping:
+
+    auth    optional    oidc
+    map     optional    ldap
+    map     sufficient  multimap gplazma.multimap.file=/opt/dcache/etc/multimap-id-to-groupname.conf
+    map     sufficient  multimap gplazma.multimap.file=/opt/dcache/etc/multimap-id-to-username.conf
+    # other plugins might follow
 
 #### account Plug-ins
 
