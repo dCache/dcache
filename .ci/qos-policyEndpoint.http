@@ -1,7 +1,7 @@
 ### Create qos-policy "test102"
 POST {{frontend-door}}{{endpoint}}{{qos-policy}}
 Content-Type: application/json
-Authorization: Basic {{user_name}} {{passwd}}
+Authorization: Basic {{username}} {{password}}
 
 {
   "name": "test102",
@@ -38,7 +38,7 @@ Content-Type: application/json
 ### Successful DELETE request for policy "test102"
 DELETE {{frontend-door}}{{endpoint}}{{qos-policy}}/test102
 Content-Type: application/json
-Authorization: Basic {{user_name}} {{passwd}}
+Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Successful response when deleting a policy by name", function() {
@@ -60,7 +60,7 @@ Content-Type: application/json
 ### Successful request for policy "test103" with 1 state and 2 medias
 POST {{frontend-door}}{{endpoint}}{{qos-policy}}
 Content-Type: application/json
-Authorization: Basic {{user_name}} {{passwd}}
+Authorization: Basic {{username}} {{password}}
 
 {
   "name": "test103",
@@ -101,7 +101,7 @@ Content-Type: application/json
 ### Successful DELETE request for policy name "test103"
 DELETE {{frontend-door}}{{endpoint}}{{qos-policy}}/test103
 Content-Type: application/json
-Authorization: Basic {{user_name}} {{passwd}}
+Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Successful response when deleting a policy by name", function() {

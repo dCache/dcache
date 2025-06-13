@@ -2,7 +2,7 @@
 ### successful qos type:file
 GET {{frontend-door}}{{endpoint}}{{qos-management}}/file
 accept: application/json
-Authorization: Basic {{user_name}} {{passwd}}
+Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Successful response for list of quality of services", function() {
@@ -13,7 +13,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 ### successful qos type:directory
 GET {{frontend-door}}{{endpoint}}{{qos-management}}/directory
 accept: application/json
-Authorization: Basic {{user_name}} {{passwd}}
+Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Successful response for list of quality of services", function() {
@@ -24,7 +24,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 ### successful qos file:tape
 GET {{frontend-door}}{{endpoint}}{{qos-management}}/file/tape
 accept: application/json
-Authorization: Basic {{user_name}} {{passwd}}
+Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Successful response for tape service", function() {
@@ -35,7 +35,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 ### successful qos file:disk
 GET {{frontend-door}}{{endpoint}}{{qos-management}}/file/disk
 accept: application/json
-Authorization: Basic {{user_name}} {{passwd}}
+Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Successful response for disk service", function() {
@@ -47,7 +47,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 ### successful qos file:disk+tape
 GET {{frontend-door}}{{endpoint}}{{qos-management}}/file/disk+tape
 accept: application/json
-Authorization: Basic {{user_name}} {{passwd}}
+Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Successful response for disk+tape service", function() {
@@ -58,7 +58,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 ### successful qos file:volatile
 GET {{frontend-door}}{{endpoint}}{{qos-management}}/file/volatile
 accept: application/json
-Authorization: Basic {{user_name}} {{passwd}}
+Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Successful response for volatile service", function() {
@@ -70,7 +70,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 ### Not defined QoS
 GET {{frontend-door}}{{endpoint}}{{qos-management}}/file/test
 accept: application/json
-Authorization: Basic {{user_name}} {{passwd}}
+Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("qos requested does not exist", function() {
@@ -81,7 +81,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 ### Incorrect basic authentication credentials
 GET {{frontend-door}}{{endpoint}}{{qos-management}}/file/test
 accept: application/json
-Authorization: Basic {{user_name}} {{incorrect_passwd}}
+Authorization: Basic {{username}} {{incorrect_password}}
 
 > {%
     client.test("Incorrect basic authentication credentials ", function() {
@@ -93,7 +93,7 @@ Authorization: Basic {{user_name}} {{incorrect_passwd}}
 ### successful qos directoy:tape
 GET {{frontend-door}}{{endpoint}}{{qos-management}}/directory/tape
 accept: application/json
-Authorization: Basic {{user_name}} {{passwd}}
+Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Successful response for tape service", function() {
@@ -104,7 +104,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 ### successful qos directoy:disk
 GET {{frontend-door}}{{endpoint}}{{qos-management}}/directory/disk
 accept: application/json
-Authorization: Basic {{user_name}} {{passwd}}
+Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Successful response for disk service", function() {
@@ -116,7 +116,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 ### successful qos directoy:disk+tape
 GET {{frontend-door}}{{endpoint}}{{qos-management}}/directory/disk+tape
 accept: application/json
-Authorization: Basic {{user_name}} {{passwd}}
+Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Successful response for disk+tape service", function() {
@@ -127,7 +127,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 ### successful qos directoy:volatile
 GET {{frontend-door}}{{endpoint}}{{qos-management}}/directory/volatile
 accept: application/json
-Authorization: Basic {{user_name}} {{passwd}}
+Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Successful response for volatile service", function() {
