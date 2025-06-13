@@ -1,6 +1,6 @@
 ### Upload ReadMeFile
 PUT {{webdav-door}}/data/pool-a/ReadMeFile
-Authorization: Basic {{user_name}} {{passwd}}
+Authorization: Basic {{username}} {{password}}
 Content-Type: application/octet-stream
 
 < /README.md
@@ -26,7 +26,7 @@ GET {{frontend-door}}{{endpoint}}{{namespace}}/%2Fdata%2Fpool-a%2FReadMeFile?chi
 ### Migrate ReadMeFile from source pool (pool-a) to target pool (pool-b)
 POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
-Authorization: Basic {{user_name}} {{passwd}}
+Authorization: Basic {{username}} {{password}}
 
 {
   "sourcePool": {{sourcePool}},
@@ -43,7 +43,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 ### Get information about migration job ( Verify the job started)
 GET {{frontend-door}}{{endpoint}}{{migrations}}/{{sourcePool}}/{{migration-job-id}}
 Content-Type: application/json
-Authorization: Basic {{user_name}} {{passwd}}
+Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Getting migration information", function() {
@@ -57,7 +57,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 ### Check contents of target pool after migration
 GET {{frontend-door}}{{endpoint}}{{pools}}/{{targetPools}}/{{pnfsId}}
 Content-Type: application/json
-Authorization: Basic {{user_name}} {{passwd}}
+Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Getting migration information for pool-b", function() {
@@ -69,7 +69,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 ### Check contents of pool-c after migration
 GET {{frontend-door}}{{endpoint}}{{pools}}/pool-c/{{pnfsId}}
 Content-Type: application/json
-Authorization: Basic {{user_name}} {{passwd}}
+Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Getting migration information for pool-c", function() {
@@ -81,7 +81,7 @@ Authorization: Basic {{user_name}} {{passwd}}
 ### Check contents of pool-c after entering an incorrect id -- should give a bad request
 GET {{frontend-door}}{{endpoint}}{{pools}}/pool-c/0000A9995C9903D846CFB1CBCED3CC7F323F526325147896325
 Content-Type: application/json
-Authorization: Basic {{user_name}} {{passwd}}
+Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Getting information for incorrect id in pool-c", function() {
