@@ -601,8 +601,11 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
                                 Optional<String> digest = _wantedDigest
                                       .flatMap(t -> Checksums.digestHeader(t,
                                             writeChannel.getFileAttributes()));
-                                context.writeAndFlush(new HttpPutResponse(size, location, digest),
-                                      promise);
+                                var response = new HttpPutResponse(size, location, digest);
+                                if (writeChannel.getFileAttributes().isDefined(FileAttribute.MODIFICATION_TIME)) {
+                                    response.headers().set("X-OC-MTime", "accepted");
+                                }
+                                context.writeAndFlush(response, promise);
                             } catch (IOException e) {
                                 context.writeAndFlush(
                                       createErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage()),
