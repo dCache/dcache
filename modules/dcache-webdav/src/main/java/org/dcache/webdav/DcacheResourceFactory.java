@@ -148,6 +148,7 @@ import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryListPrinter;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.vehicles.PnfsSetFileAttributes;
 import org.dcache.webdav.owncloud.OwncloudClients;
 import org.dcache.webdav.transfer.RemoteTransferHandler;
 import org.eclipse.jetty.io.EofException;
@@ -1829,16 +1830,12 @@ public class DcacheResourceFactory
      */
     private class WriteTransfer extends HttpTransfer {
 
-        private final Optional<Instant> _mtime;
         private final Optional<Checksum> _contentMd5;
 
         public WriteTransfer(PnfsHandler pnfs, Subject subject,
               Restriction restriction, FsPath path) throws URISyntaxException {
             super(pnfs, subject, restriction, path);
 
-            HttpServletRequest request = ServletRequest.getRequest();
-
-            _mtime = OwncloudClients.parseMTime(request);
 
             wantDigest()
                   .flatMap(Checksums::parseWantDigest)
@@ -1857,7 +1854,6 @@ public class DcacheResourceFactory
         @Override
         protected FileAttributes fileAttributesForNameSpace() {
             FileAttributes attributes = super.fileAttributesForNameSpace();
-            _mtime.map(Instant::toEpochMilli).ifPresent(attributes::setModificationTime);
 
             /**
              * Add user provided extended attributes, which will be sent to the pool.
@@ -1892,9 +1888,15 @@ public class DcacheResourceFactory
         public void createNameSpaceEntry() throws CacheException {
             super.createNameSpaceEntry();
 
-            if (_mtime.isPresent()) {
-                OwncloudClients.addMTimeAccepted(ServletResponse.getResponse());
-            }
+            // Update mtime (sent to pool) to match any client-supplied value.
+            HttpServletRequest request = ServletRequest.getRequest();
+            OwncloudClients.parseMTime(request)
+                    .map(Instant::toEpochMilli)
+                    .ifPresent(m -> {
+                        getFileAttributes().setModificationTime(m);
+                        var response = ServletResponse.getResponse();
+                        OwncloudClients.addMTimeAccepted(response);
+                    });
 
             if (_contentMd5.isPresent()) {
                 setChecksum(_contentMd5.get());
