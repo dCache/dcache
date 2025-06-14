@@ -40,6 +40,11 @@ import java.lang.reflect.Constructor;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.LinkedList;
@@ -59,6 +64,7 @@ import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.DirectoryStreamB;
 import org.dcache.chimera.FileExistsChimeraFsException;
 import org.dcache.chimera.FileNotFoundChimeraFsException;
+import org.dcache.chimera.FileState;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FsFactory;
 import org.dcache.chimera.FsInode;
@@ -1081,6 +1087,161 @@ public class Shell extends ShellApplication {
 
         private String newLineTerminated(String s) {
             return s.endsWith("\n") ? s : s + '\n';
+        }
+    }
+
+    @Command(name = "stat", hint = "print POSIX metadata of a file",
+            description = "This command is broadly similar to the standard"
+                    + " stat(1) command.  Additional Chimera-specific fields"
+                    + " are described after the normal fields.")
+    public class StatCommand implements Callable<Serializable> {
+
+        @Argument
+        File path;
+
+        private String describeAccessLatency(Stat stat) {
+            if (!stat.isDefined(Stat.StatAttributes.ACCESS_LATENCY)) {
+                return "not specified";
+            }
+            var al = stat.getAccessLatency();
+            if (al == AccessLatency.ONLINE)
+                    return "online";
+            if (al == AccessLatency.NEARLINE)
+                    return "nearline";
+            return "unknown";
+        }
+
+        private String describeRetentionPolicy(Stat stat) {
+            if (!stat.isDefined(Stat.StatAttributes.RETENTION_POLICY)) {
+                return "not specified";
+            }
+            var rp = stat.getRetentionPolicy();
+            if (rp == RetentionPolicy.CUSTODIAL)
+                    return "custodial";
+            if (rp == RetentionPolicy.OUTPUT)
+                    return "output";
+            if (rp == RetentionPolicy.REPLICA)
+                    return "replica";
+            return "unknown";
+        }
+
+        private String describeType(int mode) {
+            var fileType = mode & UnixPermission.S_TYPE;
+            return switch (fileType) {
+                case UnixPermission.S_IFSOCK -> "Unix domain socket";
+                case UnixPermission.S_IFLNK -> "Symbolic link";
+                case UnixPermission.S_IFREG -> "regular file";
+                case UnixPermission.S_IFBLK -> "block device";
+                case UnixPermission.S_IFDIR -> "directory";
+                case UnixPermission.S_IFCHR -> "Character device";
+                case UnixPermission.S_IFIFO -> "Named pipe";
+                default -> "Unknown 0x" + Integer.toHexString(fileType);
+            };
+        }
+
+        private String describeState(Stat stat) {
+            if (!stat.isDefined(Stat.StatAttributes.STATE)) {
+                return "not specified";
+            }
+            var state = stat.getState();
+            if (state == FileState.LEGACY) {
+                return "legacy";
+            }
+            if (state == FileState.DB) {
+                return "stored in database";
+            }
+            if (state == FileState.CREATED) {
+                return "data upload not completed";
+            }
+            if (state == FileState.STORED) {
+                return "data upload completed";
+            }
+            return "unknown";
+        }
+
+        private String describeQosPolicy(Stat stat) {
+            if (!stat.isDefined(Stat.StatAttributes.QOS_POLICY)) {
+                return "not specified";
+            }
+            var policy = stat.getQosPolicy();
+            return policy == null ? "unknown" : policy.toString();
+        }
+
+        private String describeQosState(Stat stat) {
+            if (!stat.isDefined(Stat.StatAttributes.QOS_STATE)) {
+                return "not specified";
+            }
+            var state = stat.getQosState();
+            return state == null ? "unknown" : state.toString();
+        }
+
+        private String describeTimestamp(long value) {
+            var when = ZonedDateTime.ofInstant(Instant.ofEpochMilli(value),
+                    ZoneId.systemDefault());
+            var formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM);
+            return formatter.format(when);
+        }
+
+        @Override
+        public Serializable call() throws IOException {
+            FsInode inode = lookup(path);
+
+            var stat = inode.stat();
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("  File: ").append(path).append('\n');
+            sb.append("  Size: ").append(stat.getSize())
+                    .append("  Blocks: -  IO Blocks: -  ")
+                    .append(describeType(stat.getMode()))
+                    .append('\n');
+            sb.append("Device: ")
+                    .append(stat.getDev())
+                    .append(':')
+                    .append(stat.getRdev())
+                    .append("  Inode: ")
+                    .append(stat.getIno())
+                    .append("  Links: ")
+                    .append(stat.getNlink())
+                    .append('\n');
+            sb.append("Access: ")
+                    .append('(')
+                    .append(Integer.toOctalString(stat.getMode() & UnixPermission.S_PERMS))
+                    .append('/')
+                    .append(new UnixPermission(stat.getMode()))
+                    .append(")  Uid: (")
+                    .append(stat.getUid())
+                    .append(")   Gid: (")
+                    .append(stat.getGid())
+                    .append(")\n");
+            sb.append("Access: ")
+                    .append(describeTimestamp(stat.getATime()))
+                    .append('\n');
+            sb.append("Modify: ")
+                    .append(describeTimestamp(stat.getMTime()))
+                    .append('\n');
+            sb.append("Change: ")
+                    .append(describeTimestamp(stat.getCTime()))
+                    .append('\n');
+            sb.append(" Birth: ")
+                    .append(describeTimestamp(stat.getCrTime()))
+                    .append('\n');
+            sb.append("Access Latency: ")
+                    .append(describeAccessLatency(stat))
+                    .append("  Retention Policy: ")
+                    .append(describeRetentionPolicy(stat))
+                    .append('\n');
+            sb.append("ID: ").append(stat.getId()).append('\n');
+            if ((stat.getMode() & UnixPermission.S_TYPE) == UnixPermission.S_IFREG) {
+                sb.append("QoS policy: ")
+                        .append(describeQosPolicy(stat))
+                        .append("  state: ")
+                        .append(describeQosState(stat))
+                        .append('\n');
+                sb.append("State: ")
+                        .append(describeState(stat))
+                        .append('\n');
+            }
+            return sb.toString();
         }
     }
 
