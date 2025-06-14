@@ -5,6 +5,7 @@ import static java.util.Objects.requireNonNull;
 import static org.dcache.namespace.FileAttribute.ACCESS_LATENCY;
 import static org.dcache.namespace.FileAttribute.CHECKSUM;
 import static org.dcache.namespace.FileAttribute.LABELS;
+import static org.dcache.namespace.FileAttribute.MODIFICATION_TIME;
 import static org.dcache.namespace.FileAttribute.QOS_POLICY;
 import static org.dcache.namespace.FileAttribute.QOS_STATE;
 import static org.dcache.namespace.FileAttribute.RETENTION_POLICY;
@@ -205,6 +206,10 @@ class WriteHandleImpl implements ModifiableReplicaDescriptor {
 
             if (_fileAttributes.isDefined(LABELS)) {
                 attributesToUpdate.setLabels(_fileAttributes.getLabels());
+            }
+
+            if (_fileAttributes.isDefined(MODIFICATION_TIME)) {
+                attributesToUpdate.setModificationTime(_fileAttributes.getModificationTime());
             }
         }
 
