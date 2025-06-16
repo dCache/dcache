@@ -336,31 +336,15 @@ public class Stat {
         StringBuilder sb = new StringBuilder();
         try (Formatter formatter = new Formatter(sb)) {
             formatter.format(
-                  "%s %s %s %s %s %s %s %s",
-                  _definedAttrs.contains(StatAttributes.MODE)
-                      ? new UnixPermission(this.getMode())
-                      : "-",
-                  _definedAttrs.contains(StatAttributes.NLINK)
-                      ? String.format("%8d", this.getNlink())
-                      : "-",
-                  _definedAttrs.contains(StatAttributes.UID)
-                      ? String.format("%6d", this.getUid())
-                      : "-",
-                  _definedAttrs.contains(StatAttributes.GID)
-                      ? String.format("%6d", this.getGid())
-                      : "-",
-                  _definedAttrs.contains(StatAttributes.SIZE)
-                      ? String.format("%6d", this.getSize())
-                      : "-",
-                  _definedAttrs.contains(StatAttributes.GENERATION)
-                      ? String.format("%6d", this.getGeneration())
-                      : "-",
-                  _definedAttrs.contains(StatAttributes.MTIME)
-                      ? new Date(this.getMTime())
-                      : "-",
-                  _definedAttrs.contains(StatAttributes.MTIME)
-                      ? new Time(this.getMTime())
-                      : "-");
+                  "%s %8d %6d %6d %6d %6d %s %s",
+                  new UnixPermission(this.getMode()),
+                  this.getNlink(),
+                  this.getUid(),
+                  this.getGid(),
+                  this.getSize(),
+                  this.getGeneration(),
+                  new Date(this.getMTime()),
+                  new Time(this.getMTime()));
             formatter.flush();
         }
 
