@@ -104,6 +104,7 @@ import org.dcache.pool.assumption.Assumption;
 import org.dcache.pool.json.PoolDataDetails;
 import org.dcache.pool.json.PoolDataDetails.Lsf;
 import org.dcache.pool.json.PoolDataDetails.P2PMode;
+import org.dcache.pool.migration.HotFileReplicator;
 import org.dcache.pool.movers.Mover;
 import org.dcache.pool.movers.MoverFactory;
 import org.dcache.pool.nearline.HsmSet;
