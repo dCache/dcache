@@ -1,0 +1,45 @@
+### Anonymouns user
+GET {{frontend-door}}{{endpoint}}/user
+Accept: application/json
+
+> {%
+
+  client.assert(response.status === 200, "Mapping failed");
+  client.assert(response.body['status'] == "ANONYMOUS",
+      "Expected 'status' to have value 'ANONYMOUS' but received '" + response.body['status']
+      + "'");
+
+%}
+
+### Accessing without role
+GET {{frontend-door}}{{endpoint}}/user
+Accept: application/json
+Authorization: Basic {{username}} {{password}}
+
+> {%
+
+  client.assert(response.status === 200, "Mapping failed");
+  client.assert(response.body['roles'] == null,
+      "Unexpected Roles: '" + response.body['roles']
+      + "'");
+
+%}
+
+### Requesting Admin role
+GET {{frontend-door}}{{endpoint}}/user
+Accept: application/json
+Authorization: Basic admin#admin {{password}}
+
+> {%
+  client.assert(response.status === 200, "Mapping failed");
+  client.assert(response.body['roles'][0] == 'admin', "Admin Role not granted");
+%}
+
+### Requesting invalid role
+GET {{frontend-door}}{{endpoint}}/user
+Accept: application/json
+Authorization: Basic admin#foo {{password}}
+
+> {%
+  client.assert(response.status === 401, "Invalid role accepted");
+%}
