@@ -88,3 +88,4 @@ Authorization: Basic {{username}} {{password}}
         client.assert(response.status === 404, "Incorrect pnfsId");
     });
 %}
+~
