@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2017 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2017 - 2025 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -29,6 +29,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.LoginAttribute;
+import org.dcache.auth.attributes.LoginAttributes;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.auth.attributes.RootDirectory;
@@ -54,7 +55,8 @@ public class HttpServletRequests {
     }
 
     public static boolean isAdmin(HttpServletRequest request) {
-        return Subjects.hasAdminRole(RequestUser.getSubject());
+        return Subjects.hasAdminRole(RequestUser.getSubject()) ||
+              LoginAttributes.hasAdminRole(AuthenticationHandler.getLoginAttributes(request));
     }
 
     public static Subject roleAwareSubject(HttpServletRequest request) {
