@@ -439,16 +439,22 @@ public class AuthenticationHandler extends HandlerWrapper {
             LOG.debug("No credentials found in Authorization header");
             return Optional.empty();
         }
+        String authScheme;
+        String authData;
 
         if (header.length() == 0) {
             LOG.debug("Credentials in Authorization header are not-null, but are empty");
             return Optional.empty();
         }
-
         int space = header.indexOf(" ");
-        String authScheme =
-              space >= 0 ? header.substring(0, space).toUpperCase() : HttpServletRequest.BASIC_AUTH;
-        String authData = space >= 0 ? header.substring(space + 1) : header;
+
+        if (space < 0) {
+            authScheme = header.toUpperCase();
+            authData = "";
+        } else {
+            authScheme = header.substring(0, space).toUpperCase();
+            authData = header.substring(space + 1);
+        }
         return Optional.of(new AuthInfo(authScheme, authData));
     }
 
