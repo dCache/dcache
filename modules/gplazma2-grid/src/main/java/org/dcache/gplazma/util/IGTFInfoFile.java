@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
 /**
  * A class that represents an IGTF info file.  The file format is described here:
  * <p>
- * http://wiki.eugridpma.org/Main/IGTFInfoFile
+ * https://doi.org/10.5281/zenodo.15705345
  */
 public class IGTFInfoFile {
 
