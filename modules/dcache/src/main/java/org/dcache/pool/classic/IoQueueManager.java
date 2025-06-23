@@ -438,7 +438,7 @@ public class IoQueueManager
             }
 
             if (isBinary) {
-                // ignore sortin and grouping by queue name if binnary
+                // ignore sorting and grouping by queue name if binary
                 return queues.stream().flatMap(s -> s.getJobInfos().stream())
                       .toArray(IoJobInfo[]::new);
             } else {
