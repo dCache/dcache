@@ -154,6 +154,7 @@ deb:
       - "packages/fhs/target/dcache_*.deb"
     expire_in: 2 days
 
+# needed for minimal pipeline run
 tar:
   stage: build
   image: dcache/maven-java17-tar-build
@@ -184,6 +185,7 @@ spotbugs:
       - merged-gl-code-quality-report.json
     expire_in: 2 days
 
+# needed for minimal pipeline run
 container:
   stage: build
   # For latest releases see https://github.com/GoogleContainerTools/kaniko/releases
@@ -425,6 +427,7 @@ Release Notes Table:
 #
 # prepare kubernetes env for the build
 #
+# needed for minimal pipeline run
 Prepare k8s environment:
   stage: testenv_pre
   extends: .kubernetes_image
@@ -589,11 +592,12 @@ Frontend test suite:
     - kubectl -n $K8S_NAMESPACE cp .ci/poolEndpoint.http http-tester:/poolEndpoint.http
     - kubectl -n $K8S_NAMESPACE cp .ci/qosEndpoint.http http-tester:/qosEndpoint.http
     - kubectl -n $K8S_NAMESPACE cp .ci/qos-policyEndpoint.http http-tester:/qos-policyEndpoint.http
-    - kubectl -n $K8S_NAMESPACE cp .ci/userEndpoint.http http-tester:/userEndpoint.http
-    - kubectl -n $K8S_NAMESPACE cp README.md http-tester:/README.md
     - kubectl -n $K8S_NAMESPACE cp .ci/migrationEndpoint.http http-tester:/migrationEndpoint.http
+    - kubectl -n $K8S_NAMESPACE cp .ci/userEndpoint.http http-tester:/userEndpoint.http
+    - kubectl -n $K8S_NAMESPACE cp .ci/bulkRequestsEndpoint.http http-tester:/bulkRequestsEndpoint.http
+    - kubectl -n $K8S_NAMESPACE cp README.md http-tester:/README.md
     - kubectl -n $K8S_NAMESPACE cp http-client.private.env.json http-tester:/http-client.private.env.json
-    - kubectl -n $K8S_NAMESPACE exec http-tester -- java --add-opens=java.base/java.util=ALL-UNNAMED $IJHTTP_JAVA_OPTS -cp /intellij-http-client/\* com.intellij.httpClient.cli.HttpClientMain -e Test -D /poolEndpoint.http /userEndpoint.http -p /http-client.private.env.json --insecure --report=/httpTests
+    - kubectl -n $K8S_NAMESPACE exec http-tester -- java --add-opens=java.base/java.util=ALL-UNNAMED $IJHTTP_JAVA_OPTS -cp /intellij-http-client/\* com.intellij.httpClient.cli.HttpClientMain -e Test -D /poolEndpoint.http /userEndpoint.http /bulkRequestsEndpoint.http -p /http-client.private.env.json --insecure --report=/httpTests
     - kubectl -n $K8S_NAMESPACE cp http-tester:/httpTests/report.xml pool-report.xml
   artifacts:
     reports:

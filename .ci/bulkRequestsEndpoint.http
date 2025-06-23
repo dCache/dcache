@@ -1,0 +1,110 @@
+### Upload file
+PUT {{webdav-door}}/data/pool-a/ConfigFile
+Authorization: Basic {{username}} {{password}}
+Content-Type: application/octet-stream
+
+< /README.md
+
+> {%
+    client.test("Successful file upload", function() {
+        client.assert(response.status === 201, "Response was not 201");
+    });
+%}
+
+### Find attributes of uploaded file
+GET {{frontend-door}}{{endpoint}}{{namespace}}/data/pool-a/ConfigFile?locality=true&optional=true
+Authorization: Basic {{username}} {{password}}
+Accept: application/json
+
+> {%
+    client.test("Attributes of file", function() {
+        client.assert(response.status === 200, "not 200");
+        client.assert(response.body.hasOwnProperty("fileLocality"), "ONLINE_AND_NEARLINE");
+        client.assert(response.body.hasOwnProperty("accessLatency"), "NEARLINE");
+        client.assert(response.body.hasOwnProperty("retentionPolicy"), "CUSTODIAL");
+    });
+%}
+
+### Find information on the pool the file was written to
+GET {{frontend-door}}{{endpoint}}/pools/pool-a
+Authorization: Basic {{username}} {{password}}
+Content-Type: application/octet-stream
+
+> {%
+    client.test("Information on pool-a", function() {
+        client.assert(response.status === 200, "Response was not 200");
+        client.assert(response.body.hasOwnProperty("name"), "pool-a");
+        client.assert(response.body.hasOwnProperty("links"), []);
+        client.assert(response.body.hasOwnProperty("groups"), []);
+
+
+    });
+%}
+
+### Change mode of the pool the file was written to
+PATCH {{frontend-door}}{{endpoint}}/pools/pool-a/usage/mode
+Authorization: Basic admin#admin {{password}}
+accept: application/json
+Content-Type: application/json
+
+{
+  "strict": "true"
+}
+
+> {%
+    client.test("Successful mode update", function() {
+        client.assert(response.status === 200, "Response was not 200");
+    });
+%}
+
+### Find attributes of uploaded file after mode update
+GET {{frontend-door}}{{endpoint}}{{namespace}}/data/pool-a/ConfigFile?locality=true&optional=true
+Authorization: Basic {{username}} {{password}}
+Accept: application/json
+
+> {%
+    client.test("Attributes of file after update", function() {
+        client.assert(response.status === 200, "not 200");
+        client.assert(response.body.hasOwnProperty("fileLocality"), "NEARLINE");
+        client.assert(response.body.hasOwnProperty("accessLatency"), "NEARLINE");
+        client.assert(response.body.hasOwnProperty("retentionPolicy"), "CUSTODIAL");
+    });
+%}
+
+### Stage request using bulk service
+POST {{frontend-door}}{{endpoint}}/bulk-requests
+Authorization: Basic {{username}} {{password}}
+accept: application/json
+Content-Type: application/json
+
+{
+  "activity": "PIN",
+  "expandDirectories": "TARGETS",
+  "arguments": {
+    "lifetime": 1,
+    "lifetimeUnit": "DAYS"
+  },
+  "target": [
+    "/data/pool-a/ConfigFile"
+  ]
+}
+
+> {%
+    client.global.set("bulk-id-request", response.headers.valueOf('request-url'));
+    client.assert(response.status === 201, "Response was not 201");
+%}
+
+### Find information on stage request
+# example of bulk-request-id="http://localhost:3880/api/v1/bulk-requests?offset=0&path=db63a844-1f7e-4371-be82-2d4ac63934c9"
+GET {{bulk-id-request}}
+Authorization: Basic {{username}} {{password}}
+accept: application/json
+Content-Type: application/json
+
+> {%
+    client.test("Bulk request exists", function() {
+        client.assert(response.status === 200, "Response was not 200");
+        client.assert(response.body.hasOwnProperty("status"), "COMPLETED");
+
+    });
+%}
