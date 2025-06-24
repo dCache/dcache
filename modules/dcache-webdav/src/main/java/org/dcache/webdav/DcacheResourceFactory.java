@@ -50,6 +50,7 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.QuotaExceededCacheException;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
@@ -735,10 +736,9 @@ public class DcacheResourceFactory
      */
     public DcacheResource createFile(FsPath path, InputStream inputStream, Long length)
           throws CacheException, InterruptedException, IOException,
-          URISyntaxException, BadRequestException {
+                 URISyntaxException, BadRequestException {
         Subject subject = getSubject();
         Restriction restriction = getRestriction();
-
         checkUploadSize(length);
 
         WriteTransfer transfer = new WriteTransfer(_pnfs, subject, restriction, path);
@@ -802,6 +802,8 @@ public class DcacheResourceFactory
                     transfer.deleteNameSpaceEntry();
                 }
             }
+        } catch (QuotaExceededCacheException e) {
+            throw new ForbiddenException(e.getMessage(), null);
         } finally {
             _transfers.remove((int) transfer.getId());
         }
@@ -811,7 +813,7 @@ public class DcacheResourceFactory
 
     public String getWriteUrl(FsPath path, Long length)
           throws CacheException, InterruptedException,
-          URISyntaxException {
+                 URISyntaxException {
         Subject subject = getSubject();
         Restriction restriction = getRestriction();
 
@@ -853,6 +855,10 @@ public class DcacheResourceFactory
                     transfer.deleteNameSpaceEntry();
                 }
             }
+        } catch (QuotaExceededCacheException e) {
+            throw new ForbiddenException(e.getMessage(), null);
+        } catch (Exception e) {
+            throw e;
         } finally {
             if (uri == null) {
                 _transfers.remove((int) transfer.getId());

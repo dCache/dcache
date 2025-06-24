@@ -3,6 +3,7 @@ package org.dcache.webdav;
 import com.google.common.collect.ImmutableSet;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.QuotaExceededCacheException;
 import io.milton.resource.Resource;
 import javax.annotation.Nonnull;
 
@@ -59,6 +60,10 @@ public class WebDavException extends RuntimeException {
     {
         if (e instanceof PermissionDeniedCacheException) {
             return WebDavExceptions.permissionDenied(resource);
+        } else if (e instanceof QuotaExceededCacheException) {
+            return new ForbiddenException(e.getMessage(),
+                                          e.getCause(),
+                                          resource);
         }
 
         switch (e.getRc()) {
