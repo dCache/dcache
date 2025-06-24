@@ -591,7 +591,7 @@ Frontend test suite:
     - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod http-tester; do sleep 1; done
     - kubectl -n $K8S_NAMESPACE cp .ci/poolEndpoint.http http-tester:/poolEndpoint.http
     - kubectl -n $K8S_NAMESPACE cp .ci/qosEndpoint.http http-tester:/qosEndpoint.http
-    - kubectl -n $K8S_NAMESPACE cp .ci/qos-policyEndpoint.http http-tester:/qos-policyEndpoint.http
+    - kubectl -n $K8S_NAMESPACE cp .ci/qosPolicyEndpoint.http http-tester:/qosPolicyEndpoint.http
     - kubectl -n $K8S_NAMESPACE cp .ci/migrationEndpoint.http http-tester:/migrationEndpoint.http
     - kubectl -n $K8S_NAMESPACE cp .ci/userEndpoint.http http-tester:/userEndpoint.http
     - kubectl -n $K8S_NAMESPACE cp .ci/bulkRequestsEndpoint.http http-tester:/bulkRequestsEndpoint.http
