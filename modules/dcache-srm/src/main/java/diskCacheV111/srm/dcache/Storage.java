@@ -1169,7 +1169,7 @@ public final class Storage
         } catch (PermissionDeniedCacheException e) {
             throw new SRMAuthorizationException("Permission denied.", e);
         } catch (QuotaExceededCacheException e) {
-            throw new SRMAuthorizationException("Quota exceed.", e);
+            throw new SRMAuthorizationException("Quota exceeded.", e);
         } catch (FileExistsCacheException e) {
             throw new SRMDuplicationException(surl + " exists.", e);
         } catch (CacheException e) {
