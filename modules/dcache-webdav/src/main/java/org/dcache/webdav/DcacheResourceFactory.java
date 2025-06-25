@@ -857,8 +857,6 @@ public class DcacheResourceFactory
             }
         } catch (QuotaExceededCacheException e) {
             throw new ForbiddenException(e.getMessage(), null);
-        } catch (Exception e) {
-            throw e;
         } finally {
             if (uri == null) {
                 _transfers.remove((int) transfer.getId());
