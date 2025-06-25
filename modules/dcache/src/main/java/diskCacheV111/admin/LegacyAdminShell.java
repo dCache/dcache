@@ -10,7 +10,6 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.SpreadAndWait;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.DCapProtocolInfo;
-import diskCacheV111.vehicles.PnfsFlagMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.Pool2PoolTransferMsg;
 import diskCacheV111.vehicles.PoolMgrReplicateFileMsg;
@@ -501,12 +500,12 @@ public class LegacyAdminShell
 
         boolean verbose = sb != null;
 
-        PnfsFlagReply reply = setPnfsFlag(destination, "s", target, mode);
-
-        PnfsId pnfsId = reply.getPnfsId();
-
-        PnfsGetCacheLocationsMessage pnfsMessage =
-              new PnfsGetCacheLocationsMessage(pnfsId);
+        PnfsGetCacheLocationsMessage pnfsMessage = new PnfsGetCacheLocationsMessage();
+        if (PnfsId.isValid(destination)) {
+            pnfsMessage.setPnfsId( new PnfsId(destination));
+        } else {
+            pnfsMessage.setPnfsPath(destination);
+        }
 
         pnfsMessage = (PnfsGetCacheLocationsMessage) sendObject("PnfsManager", pnfsMessage);
         if (pnfsMessage.getReturnCode() != 0) {
@@ -545,7 +544,7 @@ public class LegacyAdminShell
                 sb.append(poolName).append(" : ");
             }
             try {
-                sticky = new PoolSetStickyMessage(poolName, pnfsId, mode);
+                sticky = new PoolSetStickyMessage(poolName, pnfsMessage.getPnfsId(), mode);
                 sticky = (PoolSetStickyMessage) sendObject(poolName, sticky);
                 if (verbose) {
                     int rc = sticky.getReturnCode();
@@ -677,136 +676,6 @@ public class LegacyAdminShell
         }
 
         return sb == null ? "" : sb.toString();
-    }
-
-    private static class PnfsFlagReply {
-
-        private final PnfsId _pnfsId;
-        private final PnfsFlagMessage _message;
-
-        public PnfsFlagReply(PnfsId pnfsId, PnfsFlagMessage message) {
-            _pnfsId = pnfsId;
-            _message = message;
-        }
-
-        public PnfsId getPnfsId() {
-            return _pnfsId;
-        }
-
-        public PnfsFlagMessage getPnfsFlagMessage() {
-            return _message;
-        }
-    }
-
-    public static final String hh_flags_set = "<pnfsId>|<globalPath> <key> <value>";
-
-    public Object ac_flags_set_$_3(Args args) throws Exception {
-
-        String destination = args.argv(0);
-        String key = args.argv(1);
-        String value = args.argv(2);
-
-        PnfsFlagMessage result =
-              setPnfsFlag(destination, key, value, true).getPnfsFlagMessage();
-
-        return result.getReturnCode() == 0 ? "" : result.getErrorObject().toString();
-
-    }
-
-    private PnfsFlagReply setPnfsFlag(
-          String destination,
-          String key,
-          String value,
-          boolean mode)
-          throws Exception {
-
-        PnfsId pnfsId;
-        if (destination.startsWith("/pnfs")) {
-
-            PnfsGetFileAttributes map = new PnfsGetFileAttributes(destination,
-                  EnumSet.of(FileAttribute.PNFSID));
-            map.setFollowSymlink(false);
-
-            map = (PnfsGetFileAttributes) sendObject("PnfsManager", map);
-
-            if (map.getReturnCode() != 0) {
-                Object o = map.getErrorObject();
-                if (o instanceof Exception) {
-                    throw (Exception) o;
-                } else {
-                    throw new Exception(o.toString());
-                }
-            }
-
-            pnfsId = map.getFileAttributes().getPnfsId();
-        } else {
-            pnfsId = new PnfsId(destination);
-        }
-
-        checkPermission("pnfs.*.update");
-
-        PnfsFlagMessage pfm = new PnfsFlagMessage(pnfsId, key,
-              mode ? PnfsFlagMessage.FlagOperation.SET : PnfsFlagMessage.FlagOperation.REMOVE);
-        pfm.setValue(value);
-
-        PnfsFlagMessage result = (PnfsFlagMessage) sendObject("PnfsManager", pfm);
-        if (result.getReturnCode() != 0) {
-            Object o = result.getErrorObject();
-            if (o instanceof Exception) {
-                throw (Exception) o;
-            } else {
-                throw new Exception(o.toString());
-            }
-        }
-
-        return new PnfsFlagReply(pnfsId, result);
-    }
-
-    public static final String hh_flags_remove = "<pnfsId> <key>";
-
-    public Object ac_flags_remove_$_2(Args args) throws Exception {
-        PnfsId pnfsId;
-        if (args.argv(0).startsWith("/pnfs")) {
-
-            PnfsGetFileAttributes map = new PnfsGetFileAttributes(args.argv(0),
-                  EnumSet.of(FileAttribute.PNFSID));
-            map.setFollowSymlink(false);
-
-            map = (PnfsGetFileAttributes) sendObject("PnfsManager", map);
-
-            if (map.getReturnCode() != 0) {
-                Object o = map.getErrorObject();
-                if (o instanceof Exception) {
-                    throw (Exception) o;
-                } else {
-                    throw new Exception(o.toString());
-                }
-            }
-
-            pnfsId = map.getFileAttributes().getPnfsId();
-
-
-        } else {
-            pnfsId = new PnfsId(args.argv(0));
-        }
-
-        String key = args.argv(1);
-
-        checkPermission("pnfs.*.update");
-
-        PnfsFlagMessage pfm = new PnfsFlagMessage(pnfsId, key,
-              PnfsFlagMessage.FlagOperation.REMOVE);
-
-        PnfsFlagMessage result = (PnfsFlagMessage) sendObject("PnfsManager", pfm);
-        if (result.getReturnCode() != 0) {
-            Object o = result.getErrorObject();
-            if (o instanceof Exception) {
-                throw (Exception) o;
-            } else {
-                throw new Exception(o.toString());
-            }
-        }
-        return result.getReturnCode() == 0 ? "" : result.getErrorObject().toString();
     }
 
     public static final String hh_p2p = "<pnfsId> [<sourcePool> <destinationPool>] [-ip=<address]";
@@ -948,24 +817,6 @@ public class LegacyAdminShell
         PnfsId pnfsId = new PnfsId(args.argv(0));
         StringBuilder sb = new StringBuilder();
 
-        PnfsFlagMessage pfm = new PnfsFlagMessage(pnfsId, "d", PnfsFlagMessage.FlagOperation.SET);
-        pfm.setValue("true");
-
-        try {
-            pfm = (PnfsFlagMessage) sendObject("PnfsManager", pfm);
-        } catch (Exception ee) {
-            sb.append("Attempt to set 'd' flag reported an Exception : ")
-                  .append(ee);
-            sb.append("\n");
-            sb.append("Operation aborted\n");
-            return sb.toString();
-        }
-        if (pfm.getReturnCode() != 0) {
-            sb.append("set 'd' flag reported  : ").append(pfm.getErrorObject());
-            return sb.toString();
-        }
-
-        sb.append("Setting 'd' succeeded\n");
 
         PnfsGetCacheLocationsMessage locations = new PnfsGetCacheLocationsMessage(pnfsId);
         try {
@@ -1015,44 +866,6 @@ public class LegacyAdminShell
         }
         return sb.toString();
 
-    }
-
-    public static final String hh_flags_ls = "<pnfsId> <key>";
-
-    public Object ac_flags_ls_$_2(Args args) throws Exception {
-        PnfsId pnfsId;
-        if (args.argv(0).startsWith("/pnfs")) {
-
-            PnfsGetFileAttributes map = new PnfsGetFileAttributes(args.argv(0),
-                  EnumSet.of(FileAttribute.PNFSID));
-            map.setFollowSymlink(false);
-
-            map = (PnfsGetFileAttributes) sendObject("PnfsManager", map);
-
-            if (map.getReturnCode() != 0) {
-                Object o = map.getErrorObject();
-                if (o instanceof Exception) {
-                    throw (Exception) o;
-                } else {
-                    throw new Exception(o.toString());
-                }
-            }
-
-            pnfsId = map.getFileAttributes().getPnfsId();
-
-
-        } else {
-            pnfsId = new PnfsId(args.argv(0));
-        }
-        String key = args.argv(1);
-
-        PnfsFlagMessage pfm = new PnfsFlagMessage(pnfsId, key, PnfsFlagMessage.FlagOperation.GET);
-
-        PnfsFlagMessage result = (PnfsFlagMessage) sendObject("PnfsManager", pfm);
-
-        return result.getReturnCode() == 0 ?
-              (key + " -> " + result.getValue()) :
-              result.getErrorObject().toString();
     }
 
     public static final String hh_pnfs_map = "<globalPath>";
