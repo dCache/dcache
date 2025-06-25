@@ -211,8 +211,6 @@ public class PoolV4
 
     private Executor _executor;
 
-    private boolean _enableHsmFlag;
-
     private Consumer<RemoveFileInfoMessage> _kafkaSender = (s) -> {
     };
 
@@ -405,11 +403,6 @@ public class PoolV4
         _transferServices = transferServices;
     }
 
-    @Required
-    public void setEnableHsmFlag(boolean enable) {
-        _enableHsmFlag = enable;
-    }
-
     @Override
     public void setZone(Optional<String> zone) {
         zone.ifPresent(z -> _tags.put(ZONE_TAG, z));
@@ -429,9 +422,6 @@ public class PoolV4
         _repository.addFaultListener(this);
         _repository.addListener(new RepositoryLoader());
         _repository.addListener(new NotifyBillingOnRemoveListener());
-        if (_enableHsmFlag) {
-            _repository.addListener(new HFlagMaintainer());
-        }
         _repository.addListener(_replicationHandler);
 
         _ioQueue.addFaultListener(this);
@@ -531,24 +521,6 @@ public class PoolV4
                 LOGGER.error(AlarmMarkerFactory.getMarker(alarm, _poolName),
                       "Pool: {}, fault occurred in {}: {}. {}",
                       _poolName, event.getSource(), event.getMessage(), poolState);
-            }
-        }
-    }
-
-    /**
-     * Sets the h-flag in PNFS.
-     */
-    private class HFlagMaintainer extends AbstractStateChangeListener {
-
-        @Override
-        public void stateChanged(StateChangeEvent event) {
-            if (event.getOldState() == ReplicaState.FROM_CLIENT) {
-                PnfsId id = event.getPnfsId();
-                if (_hasTapeBackend) {
-                    _pnfs.putPnfsFlag(id, "h", "yes");
-                } else {
-                    _pnfs.putPnfsFlag(id, "h", "no");
-                }
             }
         }
     }
