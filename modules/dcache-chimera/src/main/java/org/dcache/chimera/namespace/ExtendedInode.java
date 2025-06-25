@@ -39,7 +39,6 @@ import org.dcache.chimera.FsInode;
 import org.dcache.chimera.FsInodeType;
 import org.dcache.chimera.StorageLocatable;
 import org.dcache.chimera.UnixPermission;
-import org.dcache.chimera.store.InodeStorageInformation;
 import org.dcache.namespace.FileType;
 import org.dcache.util.Checksum;
 
@@ -58,7 +57,6 @@ public class ExtendedInode extends FsInode {
     private ImmutableMap<String, String> flags;
     private ACL acl;
     private HashMap<Integer, ExtendedInode> levels;
-    private InodeStorageInformation storageInfo;
     private Optional<ExtendedInode> parent;
 
     private ExtendedInode(ExtendedInode parent, FsInode inode) {
@@ -191,13 +189,6 @@ public class ExtendedInode extends FsInode {
             levels.put(level, inode);
         }
         return inode;
-    }
-
-    public InodeStorageInformation getStorageInfo() throws ChimeraFsException {
-        if (storageInfo == null) {
-            storageInfo = _fs.getStorageInfo(this);
-        }
-        return storageInfo;
     }
 
     public FsPath getPath() throws ChimeraFsException {

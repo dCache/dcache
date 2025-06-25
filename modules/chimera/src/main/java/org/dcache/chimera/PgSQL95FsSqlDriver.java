@@ -20,7 +20,6 @@ import com.google.common.base.Throwables;
 import java.io.File;
 import java.net.SocketException;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
@@ -32,7 +31,6 @@ import javax.sql.DataSource;
 import org.dcache.acl.enums.AceFlags;
 import org.dcache.acl.enums.RsType;
 import org.dcache.chimera.posix.Stat;
-import org.dcache.chimera.store.InodeStorageInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -414,18 +412,6 @@ public class PgSQL95FsSqlDriver extends FsSqlDriver {
             throw new NoLabelChimeraException(labelname);
         }
 
-    }
-
-    @Override
-    void setStorageInfo(FsInode inode, InodeStorageInformation storageInfo) {
-        _jdbc.update("INSERT INTO t_storageinfo VALUES (?,?,?,?) " +
-                    "ON CONFLICT ON CONSTRAINT t_storageinfo_pkey DO NOTHING",
-              ps -> {
-                  ps.setLong(1, inode.ino());
-                  ps.setString(2, storageInfo.hsmName());
-                  ps.setString(3, storageInfo.storageGroup());
-                  ps.setString(4, storageInfo.storageSubGroup());
-              });
     }
 
     @Override

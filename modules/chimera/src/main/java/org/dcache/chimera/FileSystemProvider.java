@@ -25,7 +25,6 @@ import java.util.Optional;
 import java.util.Set;
 import org.dcache.acl.ACE;
 import org.dcache.chimera.posix.Stat;
-import org.dcache.chimera.store.InodeStorageInformation;
 import org.dcache.util.Checksum;
 
 public interface FileSystemProvider extends Closeable {
@@ -412,12 +411,6 @@ public interface FileSystemProvider extends Closeable {
     List<OriginTag> findTags(String tagName) throws ChimeraFsException;
 
     int getFsId();
-
-    void setStorageInfo(FsInode inode,
-          InodeStorageInformation storageInfo) throws ChimeraFsException;
-
-    InodeStorageInformation getStorageInfo(FsInode inode)
-          throws ChimeraFsException;
 
     void setInodeChecksum(FsInode inode, int type,
           String checksum) throws ChimeraFsException;

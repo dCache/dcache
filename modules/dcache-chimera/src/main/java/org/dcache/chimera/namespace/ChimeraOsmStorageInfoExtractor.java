@@ -15,7 +15,6 @@ import java.util.StringTokenizer;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileState;
 import org.dcache.chimera.StorageGenericLocation;
-import org.dcache.chimera.store.InodeStorageInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,18 +37,10 @@ public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtract
                 return getDirStorageInfo(inode);
             }
 
+            StorageInfo info = getDirStorageInfo(inode);
+            info.setIsNew(false);
+
             List<String> tapeLocations = inode.getLocations(StorageGenericLocation.TAPE);
-
-            if (tapeLocations.isEmpty()) {
-                StorageInfo info = getDirStorageInfo(inode);
-                info.setIsNew(false);
-                return info;
-            }
-
-            InodeStorageInformation inodeStorageInfo = inode.getStorageInfo();
-
-            StorageInfo info = new OSMStorageInfo(inodeStorageInfo.storageGroup(),
-                  inodeStorageInfo.storageSubGroup());
 
             for (String location : tapeLocations) {
                 try {
@@ -59,7 +50,6 @@ public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtract
                 }
             }
 
-            info.setIsNew(false);
             return info;
         } catch (ChimeraFsException e) {
             throw new CacheException(e.getMessage());
