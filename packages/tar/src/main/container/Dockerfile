@@ -1,7 +1,7 @@
 #
 # This container only created a minimalistic JVM runtime environment suitable for running dCache.
 #
-FROM almalinux:9-minimal as builder
+FROM almalinux:10-minimal as builder
 
 # Add JRE
 RUN microdnf -y install java-21-openjdk-devel java-21-openjdk-jmods binutils
@@ -9,7 +9,7 @@ RUN jlink --compress=zip-6 --strip-debug --no-header-files --no-man-pages --add-
 
 
 # Minimalistic Java image
-FROM almalinux:9-minimal
+FROM almalinux:10-minimal
 COPY --from=builder /jlink-runtime /jlink-runtime
 RUN ln -s /jlink-runtime/bin/java /usr/bin/java
 
