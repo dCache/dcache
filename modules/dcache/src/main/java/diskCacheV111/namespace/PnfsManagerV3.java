@@ -920,68 +920,6 @@ public class PnfsManagerV3
 
     }
 
-    @Command(name = "flags set", hint = "set flags",
-          description = "Files in dCache can be associated with arbitrary key-value pairs called " +
-                "flags. This command allows one or more flags to be set on a file.")
-    class FlagsSetCommand implements Callable<String> {
-
-        @Argument(valueSpec = "PATH|PNFSID")
-        PnfsIdOrPath file;
-
-        @CommandLine(allowAnyOption = true, usage = "Flags to modify.")
-        Args args;
-
-        @Override
-        public String call() throws CacheException {
-            _nameSpaceProvider.setFileAttributes(ROOT, file.toPnfsId(_nameSpaceProvider),
-                  FileAttributes.ofFlags(args.optionsAsMap()), EnumSet.noneOf(FileAttribute.class));
-            return "";
-        }
-    }
-
-    @Command(name = "flags remove", hint = "clear flags",
-          description = "Files in dCache can be associated with arbitrary key-value pairs called " +
-                "flags. This command allows one or more flags to be cleared on a file.")
-    class FlagsRemoveCommand implements Callable<String> {
-
-        @Argument(valueSpec = "PATH|PNFSID")
-        PnfsIdOrPath file;
-
-        @CommandLine(allowAnyOption = true, valueSpec = "-KEY ...", usage = "Flags to clear.")
-        Args args;
-
-        @Override
-        public String call() throws CacheException {
-            PnfsId pnfsId = file.toPnfsId(_nameSpaceProvider);
-
-            for (String flag : args.options().keySet()) {
-                _nameSpaceProvider.removeFileAttribute(ROOT, pnfsId, flag);
-            }
-            return "";
-        }
-    }
-
-    @Command(name = "flags ls", hint = "list flags",
-          description = "Files in dCache can be associated with arbitrary key-value pairs called " +
-                "flags. This command lists the flags of a file.")
-    class FlagsListCommand implements Callable<String> {
-
-        @Argument(valueSpec = "PATH|PNFSID")
-        PnfsIdOrPath file;
-
-        @Override
-        public String call() throws CacheException {
-            FileAttributes attributes =
-                  _nameSpaceProvider.getFileAttributes(ROOT, file.toPnfsId(_nameSpaceProvider),
-                        EnumSet.of(FileAttribute.FLAGS));
-            StringBuilder sb = new StringBuilder();
-            for (Map.Entry<String, String> e : attributes.getFlags().entrySet()) {
-                sb.append("-").append(e.getKey()).append("=").append(e.getValue()).append("\n");
-            }
-            return sb.toString();
-        }
-    }
-
     public static final String fh_dumpthreadqueues = "   dumpthreadqueues [<threadId>]\n"
           + "        dumthreadqueus prints the context of\n"
           + "        thread[s] queue[s] into the error log file";
