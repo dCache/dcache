@@ -43,6 +43,7 @@ import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_open_apnd;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_open_read;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_open_updt;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_or;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_overQuota;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ow;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ox;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_posc;
@@ -65,6 +66,7 @@ import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.QuotaExceededCacheException;
 import diskCacheV111.util.TimeoutCacheException;
 import dmg.cells.nucleus.CellPath;
 import io.netty.channel.ChannelHandlerContext;
@@ -486,6 +488,8 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
             return withError(ctx, req, xrootdErrorCode(e.getRc()), "No such file");
         } catch (FileExistsCacheException e) {
             return withError(ctx, req, kXR_ItExists, "File already exists");
+        } catch (QuotaExceededCacheException e) {
+            return withError(ctx, req, kXR_overQuota, "Quote exceeded");
         } catch (TimeoutCacheException e) {
             return withError(ctx, req, xrootdErrorCode(e.getRc()), "Internal timeout");
         } catch (PermissionDeniedCacheException e) {
