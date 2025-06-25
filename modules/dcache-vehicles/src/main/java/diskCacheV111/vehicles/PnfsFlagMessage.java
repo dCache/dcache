@@ -6,7 +6,9 @@ import diskCacheV111.util.PnfsId;
 
 //Base class for flag messages to PnfsManager
 
-
+@Deprecated(forRemoval = true)
+// not used, but kept for compatibility ol pool.
+// REVISIT: remover after 11.2
 public class PnfsFlagMessage extends PnfsMessage {
 
     public enum FlagOperation {

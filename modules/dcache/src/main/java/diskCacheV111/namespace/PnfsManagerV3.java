@@ -59,7 +59,6 @@ import diskCacheV111.vehicles.PnfsCommitUpload;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsCreateUploadPath;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
-import diskCacheV111.vehicles.PnfsFlagMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.PnfsGetParentMessage;
 import diskCacheV111.vehicles.PnfsListExtendedAttributesMessage;
@@ -289,7 +288,6 @@ public class PnfsManagerV3
         _gauges.addGauge(PnfsDeleteEntryMessage.class);
         _gauges.addGauge(PnfsMapPathMessage.class);
         _gauges.addGauge(PnfsRenameMessage.class);
-        _gauges.addGauge(PnfsFlagMessage.class);
         _gauges.addGauge(PoolFileFlushedMessage.class);
         _gauges.addGauge(PnfsGetParentMessage.class);
         _gauges.addGauge(PnfsSetFileAttributes.class);
@@ -1726,72 +1724,6 @@ public class PnfsManagerV3
         return attributes.getChecksumsIfPresent().orElse(Collections.emptySet());
     }
 
-    private void updateFlag(PnfsFlagMessage pnfsMessage) {
-
-        PnfsId pnfsId = pnfsMessage.getPnfsId();
-        PnfsFlagMessage.FlagOperation operation = pnfsMessage.getOperation();
-        String flagName = pnfsMessage.getFlagName();
-        String value = pnfsMessage.getValue();
-        Subject subject = pnfsMessage.getSubject();
-        LOGGER.info("update flag " + operation + " flag=" + flagName + " value=" +
-              value + " for " + pnfsId);
-
-        try {
-            // Note that dcap clients may bypass restrictions by not
-            // specifying a path when interacting via mounted namespace.
-            checkRestriction(pnfsMessage, UPDATE_METADATA);
-            if (operation == PnfsFlagMessage.FlagOperation.GET) {
-                pnfsMessage.setValue(updateFlag(subject, pnfsId, operation, flagName, value));
-            } else {
-                updateFlag(subject, pnfsId, operation, flagName, value);
-            }
-
-        } catch (FileNotFoundCacheException e) {
-            pnfsMessage.setFailed(e.getRc(), e.getMessage());
-        } catch (CacheException e) {
-            LOGGER.warn("Exception in updateFlag: " + e);
-            pnfsMessage.setFailed(e.getRc(), e.getMessage());
-        } catch (RuntimeException e) {
-            LOGGER.error("Exception in updateFlag", e);
-            pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
-        }
-    }
-
-    private String updateFlag(Subject subject, PnfsId pnfsId,
-          PnfsFlagMessage.FlagOperation operation,
-          String flagName, String value)
-          throws CacheException {
-        FileAttributes attributes;
-        switch (operation) {
-            case SET:
-                LOGGER.info("flags set " + pnfsId + " " + flagName + "=" + value);
-                _nameSpaceProvider.setFileAttributes(subject, pnfsId,
-                      FileAttributes.ofFlag(flagName, value), EnumSet.noneOf(FileAttribute.class));
-                break;
-            case SETNOOVERWRITE:
-                LOGGER.info("flags set (dontoverwrite) " + pnfsId + " " + flagName + "=" + value);
-                attributes = _nameSpaceProvider.getFileAttributes(subject, pnfsId,
-                      EnumSet.of(FileAttribute.FLAGS));
-                String current = attributes.getFlags().get(flagName);
-                if ((current == null) || (!current.equals(value))) {
-                    updateFlag(subject, pnfsId, PnfsFlagMessage.FlagOperation.SET,
-                          flagName, value);
-                }
-                break;
-            case GET:
-                attributes = _nameSpaceProvider.getFileAttributes(subject, pnfsId,
-                      EnumSet.of(FileAttribute.FLAGS));
-                String v = attributes.getFlags().get(flagName);
-                LOGGER.info("flags ls " + pnfsId + " " + flagName + " -> " + v);
-                return v;
-            case REMOVE:
-                LOGGER.info("flags remove " + pnfsId + " " + flagName);
-                _nameSpaceProvider.removeFileAttribute(subject, pnfsId, flagName);
-                break;
-        }
-        return null;
-    }
-
     public void addCacheLocation(PnfsAddCacheLocationMessage pnfsMessage) {
         LOGGER.info("addCacheLocation : {} for {}", pnfsMessage.getPoolName(),
               pnfsMessage.getPnfsId());
@@ -2959,8 +2891,6 @@ public class PnfsManagerV3
             mapPath((PnfsMapPathMessage) pnfsMessage);
         } else if (pnfsMessage instanceof PnfsRenameMessage) {
             rename((PnfsRenameMessage) pnfsMessage);
-        } else if (pnfsMessage instanceof PnfsFlagMessage) {
-            updateFlag((PnfsFlagMessage) pnfsMessage);
         } else if (pnfsMessage instanceof PoolFileFlushedMessage) {
             processFlushMessage((PoolFileFlushedMessage) pnfsMessage);
         } else if (pnfsMessage instanceof PnfsGetParentMessage) {

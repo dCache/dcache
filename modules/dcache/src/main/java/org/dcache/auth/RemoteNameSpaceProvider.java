@@ -1,6 +1,5 @@
 package org.dcache.auth;
 
-import static diskCacheV111.vehicles.PnfsFlagMessage.FlagOperation.REMOVE;
 import static org.dcache.namespace.FileType.DIR;
 import static org.dcache.namespace.FileType.REGULAR;
 
@@ -18,7 +17,6 @@ import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsCommitUpload;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsCreateUploadPath;
-import diskCacheV111.vehicles.PnfsFlagMessage;
 import diskCacheV111.vehicles.PnfsListExtendedAttributesMessage;
 import diskCacheV111.vehicles.PnfsReadExtendedAttributesMessage;
 import diskCacheV111.vehicles.PnfsRemoveExtendedAttributesMessage;
@@ -140,13 +138,6 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider {
     @Override
     public Collection<Link> find(Subject subject, PnfsId id) throws CacheException {
         return new PnfsHandler(_pnfs, subject, Restrictions.none()).find(id);
-    }
-
-    @Override
-    public void removeFileAttribute(Subject subject, PnfsId id,
-          String attribute) throws CacheException {
-        PnfsHandler pnfs = new PnfsHandler(_pnfs, subject, Restrictions.none());
-        pnfs.notify(new PnfsFlagMessage(id, attribute, REMOVE));
     }
 
 

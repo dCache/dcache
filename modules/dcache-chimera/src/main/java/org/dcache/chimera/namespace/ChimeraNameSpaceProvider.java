@@ -856,23 +856,6 @@ public class ChimeraNameSpaceProvider
     }
 
     @Override
-    public void removeFileAttribute(Subject subject, PnfsId pnfsId, String attribute)
-          throws CacheException {
-        try {
-            ExtendedInode inode = new ExtendedInode(_fs, pnfsId, NO_STAT).getLevel(2);
-            ChimeraCacheInfo info = new ChimeraCacheInfo(inode);
-            ChimeraCacheInfo.CacheFlags flags = info.getFlags();
-            flags.remove(attribute);
-            info.writeCacheInfo(inode);
-        } catch (FileNotFoundChimeraFsException e) {
-            throw new FileNotFoundCacheException("No such file or directory " + pnfsId);
-        } catch (IOException e) {
-            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                  e.getMessage());
-        }
-    }
-
-    @Override
     public void removeChecksum(Subject subject, PnfsId pnfsId, ChecksumType type)
           throws CacheException {
         try {
@@ -1024,8 +1007,7 @@ public class ChimeraNameSpaceProvider
 		    attributes.setLocations(Lists.newArrayList(inode.getLocations(StorageGenericLocation.DISK)));
                     break;
                 case FLAGS:
-		    attributes.setFlags(Maps.newHashMap(inode.getFlags()));
-		    break;
+                    break;
                 case SIMPLE_TYPE:
                 case TYPE:
                     attributes.setFileType(inode.getFileType());
@@ -1265,15 +1247,6 @@ public class ChimeraNameSpaceProvider
                         _fs.setInodeChecksum(inode, type.getType(), newChecksum.getValue());
                     }
                 }
-            }
-
-            if (attr.isDefined(FileAttribute.FLAGS)) {
-                FsInode level2 = new ExtendedInode(_fs, pnfsId, NO_STAT).getLevel(2);
-                ChimeraCacheInfo cacheInfo = new ChimeraCacheInfo(level2);
-                for (Map.Entry<String, String> flag : attr.getFlags().entrySet()) {
-                    cacheInfo.getFlags().put(flag.getKey(), flag.getValue());
-                }
-                cacheInfo.writeCacheInfo(level2);
             }
 
             if (attr.isDefined(FileAttribute.ACL)) {

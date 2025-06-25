@@ -35,8 +35,6 @@ import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
-import diskCacheV111.vehicles.PnfsFlagMessage;
-import diskCacheV111.vehicles.PnfsFlagMessage.FlagOperation;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.PnfsGetParentMessage;
 import diskCacheV111.vehicles.PnfsMapPathMessage;
@@ -575,18 +573,6 @@ public class RemoteNameSpaceProviderTests {
         assertThat(sent.getSubject(), is(ROOT));
         assertThat(sent.getPnfsId(), is(A_PNFSID));
         assertThat(sent.getType(), is(ChecksumType.ADLER32));
-    }
-
-
-    @Test
-    public void shouldSucceedForRemoveFileAttribute() throws Exception {
-        _namespace.removeFileAttribute(ROOT, A_PNFSID, "flag-name");
-
-        PnfsFlagMessage sent = getSingleSentMessage(PnfsFlagMessage.class);
-        assertThat(sent.getSubject(), is(ROOT));
-        assertThat(sent.getPnfsId(), is(A_PNFSID));
-        assertThat(sent.getFlagName(), is("flag-name"));
-        assertThat(sent.getOperation(), is(FlagOperation.REMOVE));
     }
 
     @Test

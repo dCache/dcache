@@ -11,7 +11,6 @@ import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
-import diskCacheV111.vehicles.PnfsFlagMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.PnfsGetParentMessage;
 import diskCacheV111.vehicles.PnfsListExtendedAttributesMessage;
@@ -412,14 +411,6 @@ public class PnfsHandler implements CellMessageSender {
     public void setPnfsTimeout(long pnfsTimeout) {
         _cellStub.setTimeout(pnfsTimeout);
         _cellStub.setTimeoutUnit(TimeUnit.MILLISECONDS);
-    }
-
-    public void putPnfsFlag(PnfsId pnfsId, String flag, String value) {
-        PnfsFlagMessage flagMessage =
-              new PnfsFlagMessage(pnfsId, flag, PnfsFlagMessage.FlagOperation.SET);
-        flagMessage.setReplyRequired(false);
-        flagMessage.setValue(value);
-        notify(flagMessage);
     }
 
     public void fileFlushed(PnfsId pnfsId, FileAttributes fileAttributes) throws CacheException {

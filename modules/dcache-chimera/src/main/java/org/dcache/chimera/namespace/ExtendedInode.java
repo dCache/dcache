@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 - 2020 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2025 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -171,23 +171,6 @@ public class ExtendedInode extends FsInode {
             locations = ImmutableList.copyOf(_fs.getInodeLocations(this));
         }
         return locations;
-    }
-
-    public ImmutableMap<String, String> getFlags() throws ChimeraFsException {
-        if (flags == null) {
-            ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
-            ExtendedInode level2 = getLevel(2);
-            try {
-                ChimeraCacheInfo info = new ChimeraCacheInfo(level2);
-                for (Map.Entry<String, String> e : info.getFlags().entrySet()) {
-                    builder.put(e.getKey(), e.getValue());
-                }
-            } catch (IOException e) {
-                throw new ChimeraFsException(e.getMessage(), e);
-            }
-            flags = builder.build();
-        }
-        return flags;
     }
 
     public ACL getAcl() throws ChimeraFsException {

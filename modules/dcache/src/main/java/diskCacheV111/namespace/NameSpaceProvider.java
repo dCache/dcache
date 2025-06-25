@@ -201,9 +201,6 @@ public interface NameSpaceProvider {
      */
     Collection<Link> find(Subject subject, PnfsId pnfsId) throws CacheException;
 
-    void removeFileAttribute(Subject subject, PnfsId pnfsId, String attribute)
-          throws CacheException;
-
     /**
      * Clears checksum value storage for the specific file and checksum type.
      *

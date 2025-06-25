@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2018 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2018 - 2025 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -105,12 +105,6 @@ public abstract class ForwardingNameSpaceProvider implements NameSpaceProvider {
     public Collection<Link> find(Subject subject, PnfsId pnfsId)
           throws CacheException {
         return delegate().find(subject, pnfsId);
-    }
-
-    @Override
-    public void removeFileAttribute(Subject subject, PnfsId pnfsId,
-          String attribute) throws CacheException {
-        delegate().removeFileAttribute(subject, pnfsId, attribute);
     }
 
     @Override
