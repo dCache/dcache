@@ -40,7 +40,6 @@ import diskCacheV111.vehicles.IoDoorEntry;
 import diskCacheV111.vehicles.IoDoorInfo;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
-import diskCacheV111.vehicles.PnfsFlagMessage;
 import diskCacheV111.vehicles.Pool;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.PoolDeliverFileMessage;
@@ -1682,7 +1681,6 @@ public class DCapDoorInterpreterV3
         private Integer _moverId;
         private boolean _isHsmRequest;
         private boolean _overwrite;
-        private String _checksumString;
         private boolean _truncate;
         private boolean _isNew;
         private String _truncFile;
@@ -1717,7 +1715,6 @@ public class DCapDoorInterpreterV3
             }
 
             _overwrite = args.hasOption("overwrite");
-            _checksumString = args.getOpt("checksum");
             _truncFile = args.getOpt("truncate");
             _truncate = (_truncFile != null) && _settings.isTruncateAllowed();
 
@@ -1893,12 +1890,6 @@ public class DCapDoorInterpreterV3
                     _fileAttributes.getStorageInfo().setKey("path", _path);
                 }
 
-                if (_checksumString != null) {
-                    _fileAttributes.getStorageInfo().setKey("checksum", _checksumString);
-                    _log.debug("Checksum from client {}", _checksumString);
-                    storeChecksumInPnfs(_fileAttributes.getPnfsId(), _checksumString);
-                }
-
                 // adjust accessLatency and retention policy if it' allowed and defined
 
                 if (_settings.isAccessLatencyOverwriteAllowed() && _accessLatency != null) {
@@ -2016,20 +2007,6 @@ public class DCapDoorInterpreterV3
                 }
             }
             return preallocated;
-        }
-
-        private void storeChecksumInPnfs(PnfsId pnfsId, String checksumString) {
-            try {
-                PnfsFlagMessage flag =
-                      new PnfsFlagMessage(pnfsId, "c", PnfsFlagMessage.FlagOperation.SET);
-                flag.setReplyRequired(false);
-                flag.setValue(checksumString);
-                flag.setPnfsPath(_path);
-
-                _pnfs.send(flag);
-            } catch (RuntimeException eee) {
-                _log.error("Failed to send crc to PnfsManager : {}", eee.toString());
-            }
         }
 
         public void
