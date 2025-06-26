@@ -92,6 +92,7 @@
     <property name="poolMode" ref="pool-mode"/>
     <property name="billingStub" ref="billing-stub"/>
     <property name="executor" ref="workerThreadPool"/>
+    <property name="hotFileReplicator" ref="hotFileReplicator"/>
   </bean>
 
   <bean id="pnfs" class="diskCacheV111.util.PnfsHandler">
@@ -327,6 +328,20 @@
     <property name="executor" ref="workerThreadPool"/>
     <property name="checksumModule" ref="csm"/>
     <property name="poolMode" ref="pool-mode"/>
+  </bean>
+
+  <bean id="hotFileReplicator" class="org.dcache.pool.migration.HotFileReplicator">
+    <constructor-arg>
+      <bean class="org.dcache.pool.migration.MigrationContextImpl">
+        <property name="repository" ref="rep"/>
+        <property name="executor" ref="workerThreadPool"/>
+        <property name="pnfsStub" ref="pnfsStub"/>
+        <property name="poolStub" ref="poolStub"/>
+        <property name="poolManagerStub" ref="poolManagerStub"/>
+        <property name="pinManagerStub" ref="pinManagerStub"/>
+      </bean>
+    </constructor-arg>
+    <constructor-arg value="true"/>
   </bean>
 
   <bean id="allocator" class="org.dcache.pool.classic.FairQueueAllocator">
