@@ -1449,8 +1449,8 @@ public class DcacheResourceFactory
         OptionalLong maxUploadSize = getMaxUploadSize();
         checkStorageSufficient(!maxUploadSize.isPresent() || length == null
                                || length <= maxUploadSize.getAsLong(),
-                               "Upload too large",
-                               SER_DISK_FULL);
+                               SER_DISK_FULL,
+                               "Upload too large");
     }
 
     private boolean isAdmin() {
@@ -1964,7 +1964,7 @@ public class DcacheResourceFactory
                         case 507: // Insufficient Storage
                             throw new InsufficientStorageException(connection.getResponseMessage(),
                                                                    null,
-                                                                   SER_DISK_FULL);
+                                                                   SER_QUOTA_EXCEEDED);
                         case ResponseStatus.SC_INTERNAL_SERVER_ERROR:
                             throw new CacheException(
                                   "Pool error: " + connection.getResponseMessage());

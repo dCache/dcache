@@ -489,7 +489,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
         } catch (FileExistsCacheException e) {
             return withError(ctx, req, kXR_ItExists, "File already exists");
         } catch (QuotaExceededCacheException e) {
-            return withError(ctx, req, kXR_overQuota, "Quote exceeded");
+            return withError(ctx, req, kXR_overQuota, "Quota exceeded");
         } catch (TimeoutCacheException e) {
             return withError(ctx, req, xrootdErrorCode(e.getRc()), "Internal timeout");
         } catch (PermissionDeniedCacheException e) {

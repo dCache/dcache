@@ -1,5 +1,6 @@
 package org.dcache.webdav;
 
+import static java.util.Objects.requireNonNull;
 import static org.dcache.util.Exceptions.genericCheck;
 
 import io.milton.http.quota.StorageChecker;
@@ -14,8 +15,8 @@ public class InsufficientStorageException extends WebDavException {
     private final StorageChecker.StorageErrorReason reason;
 
     public static void checkStorageSufficient(boolean isOK,
-                                              String template,
                                               StorageChecker.StorageErrorReason reason,
+                                              String template,
                                               Object... arguments)
           throws InsufficientStorageException {
         genericCheck(isOK, s -> new InsufficientStorageException(s, null, reason), template, arguments);
@@ -29,7 +30,7 @@ public class InsufficientStorageException extends WebDavException {
                                         Resource resource,
                                         StorageChecker.StorageErrorReason reason) {
         super(message, resource);
-        this.reason = reason;
+        this.reason = requireNonNull(reason);
     }
 
     public InsufficientStorageException(String message,
@@ -37,6 +38,6 @@ public class InsufficientStorageException extends WebDavException {
                                         Resource resource,
                                         StorageChecker.StorageErrorReason reason) {
         super(message, cause, resource);
-        this.reason = reason;
+        this.reason = requireNonNull(reason);
     }
 }
