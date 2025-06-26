@@ -352,10 +352,9 @@ upload_container:
   extends: .upload_rules
   script:
     - |-
-      tag=$CI_COMMIT_SHORT_SHA
-      if [[ -n "$CI_COMMIT_TAG" ]]; then
-        tag=$CI_COMMIT_TAG
-      fi
+      tag=$CI_COMMIT_TAG
+      branch_latest=`echo $CI_COMMIT_TAG | cut -d '.' -f 1,2`
+
     - mkdir maven
     - tar -C maven --strip-components=1 -xzvf packages/tar/target/dcache-*.tar.gz
     - cp $CI_PROJECT_DIR/packages/tar/src/main/container/* .
@@ -366,7 +365,7 @@ upload_container:
       --label dcache.build=GA
       --context $CI_PROJECT_DIR
       --dockerfile $CI_PROJECT_DIR/Dockerfile
-      --destination dcache/dcache:$tag
+      --destination dcache/dcache:$tag --destination dcache/dcache:$branch_latest
 
 #
 # This jobs needs that the number of changes to fetch from GitLab when cloning a repository is high enough to generate
