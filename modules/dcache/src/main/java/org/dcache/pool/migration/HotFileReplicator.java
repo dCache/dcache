@@ -36,7 +36,16 @@ public class HotFileReplicator implements CellMessageReceiver, CellCommandListen
     private final RefreshablePoolList _poolList;
     private final TaskParameters _taskParameters;
 
-    private HotFileReplicator(MigrationContext context) {
+    /**
+     * Test-only constructor for unit testing. Initializes with provided context, poolList, and taskParameters.
+     */
+    HotFileReplicator(MigrationContext context, RefreshablePoolList poolList, TaskParameters taskParameters) {
+        _context = context;
+        _poolList = poolList;
+        _taskParameters = taskParameters;
+    }
+
+    private HotFileReplicator(MigrationContext context, boolean real) {
         _context = context;
         CellStub poolManager = _context.getPoolManagerStub();
         _poolList = new PoolListByPoolGroupOfPool(poolManager, _context.getPoolName());
