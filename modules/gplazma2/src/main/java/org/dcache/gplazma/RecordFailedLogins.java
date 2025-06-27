@@ -173,7 +173,6 @@ public class RecordFailedLogins implements LoginObserver, ReloadObserver {
     @Override
     public void accept(LoginResult result) {
         if (result.isSuccessful()) {
-            System.out.println("Login attempt succeeded: " + result.getValidationResult());
             _failedLogins.remove(result);
         } else {
             if (!_failedLogins.has(result)) {
@@ -192,7 +191,6 @@ public class RecordFailedLogins implements LoginObserver, ReloadObserver {
 
     @Override
     public void configReloaded() {
-        System.out.println("Reloading configuration for RecordFailedLogins");
         _failedLogins.clear();
     }
 
