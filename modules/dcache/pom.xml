@@ -382,6 +382,13 @@
         <artifactId>everit-json-schema</artifactId>
         <scope>test</scope>
       </dependency>
+      <!-- Mockito for unit testing -->
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>3.2.4</version>
+      <!-- <scope>test</scope> Fails if this is uncommented; no idea why -->
+    </dependency>
   </dependencies>
 
   <build>
