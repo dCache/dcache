@@ -17,9 +17,13 @@ import org.dcache.cells.CellStub;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.Repository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HotFileReplicator implements CellMessageReceiver, CellCommandListener, CellSetupProvider,
       CellLifeCycleAware, TaskCompletionHandler {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(HotFileReplicator.class);
 
     private static final int defaultNumReplicas = 10;
     private static final int defaultHotspotThreshold = 5;
@@ -86,11 +90,12 @@ public class HotFileReplicator implements CellMessageReceiver, CellCommandListen
                 _inFlightMigrations.put(message.getPnfsId(), task);
                 task.run();
             } catch (FileNotInCacheException e) {
-                // TODO log or failure?
+                LOGGER.warn("File not in cache for pnfsId {}: {}", pnfsId, e.toString());
             } catch (CacheException e) {
-                // TODO Log
+                LOGGER.error("CacheException for pnfsId {}: {}", pnfsId, e.toString());
             } catch (InterruptedException e) {
-                // TODO Log
+                LOGGER.warn("Interrupted while replicating pnfsId {}: {}", pnfsId, e.toString());
+                Thread.currentThread().interrupt();
             }
         } finally {
             _lock.unlock();
@@ -112,31 +117,31 @@ public class HotFileReplicator implements CellMessageReceiver, CellCommandListen
 
     @Override
     public void taskCancelled(Task task) {
-        // TODO Log
+        LOGGER.info("Task cancelled for pnfsId {}", task.getPnfsId());
         _dropTask(task);
     }
 
     @Override
     public void taskFailed(Task task, int rc, String msg) {
-        // TODO Log
+        LOGGER.warn("Task failed for pnfsId {}: rc={}, msg={}", task.getPnfsId(), rc, msg);
         _dropTask(task);
     }
 
     @Override
     public void taskFailedPermanently(Task task, int rc, String msg) {
-        // TODO Log
+        LOGGER.error("Task permanently failed for pnfsId {}: rc={}, msg={}", task.getPnfsId(), rc, msg);
         _dropTask(task);
     }
 
     @Override
     public void taskCompleted(Task task) {
-        // TODO Log
+        LOGGER.info("Task completed for pnfsId {}", task.getPnfsId());
         _dropTask(task);
     }
 
     @Override
     public void taskCompletedWithNote(Task task, String msg) {
-        // TODO Decide if we're handling notes.
+        LOGGER.info("Task completed with note for pnfsId {}: {}", task.getPnfsId(), msg);
         TaskCompletionHandler.super.taskCompletedWithNote(task, msg);
     }
 }
