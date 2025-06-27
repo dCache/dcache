@@ -19,13 +19,8 @@ package org.dcache.gplazma;
 
 import java.security.Principal;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CopyOnWriteArraySet;
 import javax.security.auth.Subject;
-
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import org.dcache.auth.BearerTokenCredential;
 import org.dcache.auth.Origin;
 import org.dcache.auth.PasswordCredential;
@@ -42,22 +37,6 @@ public class RecordFailedLogins implements LoginObserver, ReloadObserver {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RecordFailedLogins.class);
 
-    private  long _loginFailureCacheSize ;
-    private  long _loginFailureCacheExpiry ;
-    private  TimeUnit _loginFailureCacheExpiryUnit ;
-
-    public void setLoginFailureCacheSize(long loginFailureCacheSize) {
-        _loginFailureCacheSize = loginFailureCacheSize;
-    }
-
-    public void setLoginFailureCacheSizeExpiry(long  loginFailureCacheExpiry) {
-        _loginFailureCacheExpiry = loginFailureCacheExpiry;
-    }
-
-    public void setLoginFailureCacheSizeExpiryUnit(TimeUnit loginFailureCacheSizeExpiryUnit) {
-        _loginFailureCacheExpiryUnit = loginFailureCacheSizeExpiryUnit;
-    }
-
     /**
      * Storage class for failed login attempts.  This allows gPlazma to refrain from filling up log
      * files should a client attempt multiple login attempts that all fail.  We must be careful
@@ -67,19 +46,8 @@ public class RecordFailedLogins implements LoginObserver, ReloadObserver {
      */
     private static class KnownFailedLogins {
 
-        private final  Object PLACEHOLDER = new Object();
-
-        /**
-         * Cache of failed logins.
-         * <p>
-         * The cache uses weak keys so that it does not prevent the Subject from being garbage
-         * collected.
-         */
-        public Cache<Subject, Object> _failedLogins;
-
-        public KnownFailedLogins(Cache<Subject, Object> failedLogins) {
-            _failedLogins = failedLogins;
-        }
+        private final Set<Subject> _failedLogins =
+              new CopyOnWriteArraySet<>();
 
         /**
          * In general, this class does not store any private credential since doing this would be
@@ -112,6 +80,7 @@ public class RecordFailedLogins implements LoginObserver, ReloadObserver {
             Subject storage = new Subject();
 
             LoginResult.AuthPhaseResult authPhase = result.getAuthPhase();
+
             storage.getPublicCredentials().addAll(authPhase.getPublicCredentials());
 
             Set<Principal> principals = storage.getPrincipals();
@@ -125,59 +94,36 @@ public class RecordFailedLogins implements LoginObserver, ReloadObserver {
             return storage;
         }
 
-
-
-        public Cache<Subject, Object>  getFailedLogins() {
-            return _failedLogins;
-        }
-
         private boolean has(LoginResult result) {
             Subject storage = storageSubjectFor(result);
-            return _failedLogins.getIfPresent(storage) != null;
+            return _failedLogins.contains(storage);
         }
 
         private void add(LoginResult result) {
             Subject storage = storageSubjectFor(result);
-            _failedLogins.put(storage, PLACEHOLDER);
+            _failedLogins.add(storage);
         }
 
         private void remove(LoginResult result) {
             Subject storage = storageSubjectFor(result);
-            _failedLogins.invalidate(storage);
+            _failedLogins.remove(storage);
         }
 
         private void clear() {
-            _failedLogins.cleanUp();
+            _failedLogins.clear();
         }
     }
 
-    private static  KnownFailedLogins _failedLogins ;
-
-    /**
-     * A cache of failed login attempts.  The cache is keyed on the storage Subject.
-     * <p>
-     * The cache is weakly referenced, so it will not prevent garbage collection of the keys.
-     * <p>
-     * The maximum size of the cache is 1000 entries.
-     * _loginFailureCacheExpiry cache entry lifetime.
-     * _loginFailureCacheExpiryUnit   the time unit of the timeout argument
-     */
-    public void initialize() {
-        Cache<Subject, Object> restores = CacheBuilder.newBuilder()
-                .maximumSize(_loginFailureCacheSize)
-                .expireAfterWrite(_loginFailureCacheExpiry, _loginFailureCacheExpiryUnit)
-                .build();
-        _failedLogins = new KnownFailedLogins(restores);
-    }
+    private final KnownFailedLogins _failedLogins = new KnownFailedLogins();
 
     @Override
     public void accept(LoginResult result) {
         if (result.isSuccessful()) {
-            System.out.println("Login attempt succeeded: " + result.getValidationResult());
             _failedLogins.remove(result);
         } else {
             if (!_failedLogins.has(result)) {
                 _failedLogins.add(result);
+
                 if (result.hasStarted()) {
                     LoginResultPrinter printer = new LoginResultPrinter(result);
                     LOGGER.warn("Login attempt failed; " +
@@ -192,20 +138,6 @@ public class RecordFailedLogins implements LoginObserver, ReloadObserver {
 
     @Override
     public void configReloaded() {
-        System.out.println("Reloading configuration for RecordFailedLogins");
         _failedLogins.clear();
     }
-
-
-    @VisibleForTesting
-    Cache<Subject, Object> getFailedLogins() {
-        return _failedLogins.getFailedLogins();
-    }
-
-
-    @VisibleForTesting
-    boolean has(LoginResult result) {
-        return _failedLogins.has(result);
-    }
-
 }

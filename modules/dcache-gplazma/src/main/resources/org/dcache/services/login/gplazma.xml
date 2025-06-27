@@ -66,12 +66,7 @@
     </constructor-arg>
     <property name="observers">
       <util:list>
-	<bean class="org.dcache.gplazma.RecordFailedLogins" init-method="initialize">
-      <property name="loginFailureCacheSize" value="${gplazma.authz.loginFailure.cache.size}"/>
-      <property name="loginFailureCacheSizeExpiry" value="${gplazma.authz.loginFailure.cache-size-expiry}"/>
-      <property name="loginFailureCacheSizeExpiryUnit" value="${gplazma.authz.loginFailure.cache-size-expiry.unit}"/>
-    </bean>
-
+	<bean class="org.dcache.gplazma.RecordFailedLogins"/>
       </util:list>
     </property>
   </bean>
