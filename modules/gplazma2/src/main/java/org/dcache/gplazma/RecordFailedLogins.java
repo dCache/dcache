@@ -65,7 +65,7 @@ public class RecordFailedLogins implements LoginObserver, ReloadObserver {
      * <p>
      * This class is thread-safe.
      */
-    private  class KnownFailedLogins {
+    private static class KnownFailedLogins {
 
         private final static Object PLACEHOLDER = new Object();
 
