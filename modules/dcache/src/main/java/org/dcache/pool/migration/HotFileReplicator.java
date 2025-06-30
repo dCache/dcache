@@ -90,7 +90,7 @@ public class HotFileReplicator implements CellMessageReceiver, CellCommandListen
                 _inFlightMigrations.put(message.getPnfsId(), task);
                 task.run();
             } catch (FileNotInCacheException e) {
-                LOGGER.warn("File not in cache for pnfsId {}: {}", pnfsId, e.toString());
+                LOGGER.warn("File no longer in cache for pnfsId {}: {}", pnfsId, e.toString());
             } catch (CacheException e) {
                 LOGGER.error("CacheException for pnfsId {}: {}", pnfsId, e.toString());
             } catch (InterruptedException e) {
