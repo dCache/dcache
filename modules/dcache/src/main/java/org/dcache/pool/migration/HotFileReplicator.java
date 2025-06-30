@@ -8,9 +8,13 @@ import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellSetupProvider;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
+import dmg.util.command.Option;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import org.dcache.cells.CellStub;
@@ -30,9 +34,9 @@ public class HotFileReplicator implements CellMessageReceiver, CellCommandListen
     private static final int defaultConcurrency = 1;
 
     // TODO: either use concurrency to manage number of Tasks in flight, or remove it.
-    private final int concurrency = defaultConcurrency;
+    private int concurrency = defaultConcurrency;
     private final int _numReplicas = defaultNumReplicas;
-    private final long _hotspotThreshold = defaultHotspotThreshold;
+    private long _hotspotThreshold = defaultHotspotThreshold;
 
     private final Map<PnfsId, Task> _inFlightMigrations = new HashMap<>();
     private final Lock _lock = new ReentrantLock(true);
@@ -143,5 +147,106 @@ public class HotFileReplicator implements CellMessageReceiver, CellCommandListen
     public void taskCompletedWithNote(Task task, String msg) {
         LOGGER.info("Task completed with note for pnfsId {}: {}", task.getPnfsId(), msg);
         TaskCompletionHandler.super.taskCompletedWithNote(task, msg);
+    }
+
+    /**
+     * Command to get or set the hotspot threshold.
+     */
+    @Command(name = "hotfile-replicator hotspot-threshold",
+             description = "Get or set the hotspot threshold for triggering replication.")
+    public class HotspotThresholdCommand implements Callable<String> {
+        @Option(name = "set", usage = "Set the hotspot threshold value.")
+        Long set;
+
+        @Override
+        public String call() {
+            if (set != null) {
+                setHotspotThreshold(set);
+                return "Hotspot threshold set to " + set;
+            }
+            return "Current hotspot threshold: " + getHotspotThreshold();
+        }
+    }
+
+    /**
+     * Command to get or set the concurrency value.
+     */
+    @Command(name = "hotfile-replicator concurrency",
+             description = "Get or set the concurrency for hot file replication.")
+    public class ConcurrencyCommand implements Callable<String> {
+        @Option(name = "set", usage = "Set the concurrency value.")
+        Integer set;
+
+        @Override
+        public String call() {
+            if (set != null) {
+                setConcurrency(set);
+                return "Concurrency set to " + set;
+            }
+            return "Current concurrency: " + getConcurrency();
+        }
+    }
+
+    /**
+     * Command to print information about in-flight migration tasks.
+     */
+    @Command(name = "hotfile-replicator tasks",
+             description = "Show information about migration tasks currently in flight.")
+    public class TasksCommand implements Callable<String> {
+        @Override
+        public String call() {
+            StringBuilder sb = new StringBuilder();
+            _lock.lock();
+            try {
+                if (_inFlightMigrations.isEmpty()) {
+                    sb.append("No migration tasks in flight.\n");
+                } else {
+                    sb.append("In-flight migration tasks:\n");
+                    for (Map.Entry<PnfsId, Task> entry : _inFlightMigrations.entrySet()) {
+                        sb.append("  PnfsId: ").append(entry.getKey()).append("\n");
+                        sb.append("    Task: ").append(entry.getValue()).append("\n");
+                    }
+                }
+            } finally {
+                _lock.unlock();
+            }
+            return sb.toString();
+        }
+    }
+
+    // Accessors and mutators for command use
+    public long getHotspotThreshold() {
+        _lock.lock();
+        try {
+            return _hotspotThreshold;
+        } finally {
+            _lock.unlock();
+        }
+    }
+    public void setHotspotThreshold(long value) {
+        _lock.lock();
+        try {
+            _hotspotThreshold = value;
+            LOGGER.info("Hotspot threshold updated to {}", value);
+        } finally {
+            _lock.unlock();
+        }
+    }
+    public int getConcurrency() {
+        _lock.lock();
+        try {
+            return concurrency;
+        } finally {
+            _lock.unlock();
+        }
+    }
+    public void setConcurrency(int value) {
+        _lock.lock();
+        try {
+            concurrency = value;
+            LOGGER.info("Concurrency updated to {}", value);
+        } finally {
+            _lock.unlock();
+        }
     }
 }
