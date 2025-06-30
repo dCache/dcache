@@ -29,14 +29,14 @@ public class HotFileReplicator implements CellMessageReceiver, CellCommandListen
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HotFileReplicator.class);
 
-    private static final int defaultNumReplicas = 10;
-    private static final int defaultHotspotThreshold = 5;
-    private static final int defaultConcurrency = 1;
+    private static final int DEFAULT_NUM_REPLICAS = 10;
+    private static final int DEFAULT_HOTSPOT_THRESHOLD = 5;
+    private static final int DEFAULT_CONCURRENCY = 1;
 
     // TODO: either use concurrency to manage number of Tasks in flight, or remove it.
-    private int concurrency = defaultConcurrency;
-    private final int _numReplicas = defaultNumReplicas;
-    private long _hotspotThreshold = defaultHotspotThreshold;
+    private int concurrency = DEFAULT_CONCURRENCY;
+    private final int numReplicas = DEFAULT_NUM_REPLICAS;
+    private long hotspotThreshold = DEFAULT_HOTSPOT_THRESHOLD;
 
     private final Map<PnfsId, Task> _inFlightMigrations = new HashMap<>();
     private final Lock _lock = new ReentrantLock(true);
@@ -68,7 +68,7 @@ public class HotFileReplicator implements CellMessageReceiver, CellCommandListen
               false,
               false,
               true,
-              _numReplicas,
+              numReplicas,
               false);
     }
 
@@ -80,7 +80,7 @@ public class HotFileReplicator implements CellMessageReceiver, CellCommandListen
         _lock.lock();
         try {
             PnfsId pnfsId = message.getPnfsId();
-            if (numberOfRequests < _hotspotThreshold || _inFlightMigrations.containsKey(pnfsId))
+            if (numberOfRequests < hotspotThreshold || _inFlightMigrations.containsKey(pnfsId))
                 return;
             // Assemble the correct information, and start the task
             try {
@@ -218,7 +218,7 @@ public class HotFileReplicator implements CellMessageReceiver, CellCommandListen
     public long getHotspotThreshold() {
         _lock.lock();
         try {
-            return _hotspotThreshold;
+            return hotspotThreshold;
         } finally {
             _lock.unlock();
         }
@@ -226,7 +226,7 @@ public class HotFileReplicator implements CellMessageReceiver, CellCommandListen
     public void setHotspotThreshold(long value) {
         _lock.lock();
         try {
-            _hotspotThreshold = value;
+            hotspotThreshold = value;
             LOGGER.info("Hotspot threshold updated to {}", value);
         } finally {
             _lock.unlock();
