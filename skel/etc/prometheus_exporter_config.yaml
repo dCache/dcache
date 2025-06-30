@@ -1,0 +1,46 @@
+
+# default configuration for Prometheus exporter.
+# expose all metrics
+
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+
+rules:
+
+  # nfs operations (door or pools)
+
+  - pattern: 'org.dcache.commons.stats<type=RequestExecutionTimeGauge, family=org.dcache.chimera.nfsv41.common.StatsDecoratedOperationExecutor, name=(.*)><>UpdateNum'
+    name: dcache_nfs_ops_$1_updatenum
+    help: "NFS operations execution metrics"
+    type: COUNTER
+
+  - pattern: 'org.dcache.commons.stats<type=RequestExecutionTimeGauge, family=org.dcache.chimera.nfsv41.common.StatsDecoratedOperationExecutor, name=(.*)><>(AverageExecutionTime|MaxExecutionTime|MinExecutionTime|StandardDeviation)'
+    name: dcache_nfs_ops_$1_$2
+    help: "NFS operations execution metrics"
+    type: GAUGE
+
+  # NFS4.1 number of clients
+  - pattern: 'org.dcache.nfs.v4<type=Cache, name=NFSv41 clients><>Size'
+    name: dcache_nfs_clients
+    help: "Number of NFS clients"
+    type: GAUGE
+
+  # PnfsManager operations
+
+  - pattern: 'org.dcache.commons.stats<type=RequestExecutionTimeGauge, family=PnfsManagerV3, name=(.*)><>UpdateNum'
+    name: dcache_pnfsmanager_ops_$1_updatenum
+    help: "PnfsManager operations execution metrics"
+    type: COUNTER
+
+  - pattern: 'org.dcache.commons.stats<type=RequestExecutionTimeGauge, family=PnfsManagerV3, name=(.*)><>(AverageExecutionTime|MaxExecutionTime|MinExecutionTime|StandardDeviation)'
+    name: dcache_pnfsmanager_ops_$1_$2
+    help: "PnfsManager operations execution metrics"
+    type: GAUGE
+
+
+# PnfsManager messages
+
+  - pattern: 'org.dcache.commons.stats<type=RequestCounter, family=ChimeraNameSpaceProvider, name=(.*)\(.*><>(Failed|Successful)'
+    name: dcache_pnfsmanager_messages_$1_$2
+    help: "PnfsManager message counter"
+    type: COUNTER

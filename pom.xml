@@ -1004,6 +1004,14 @@
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>io.prometheus.jmx</groupId>
+            <artifactId>jmx_prometheus_javaagent</artifactId>
+            <!-- must be in sync with prometheus.exporter.jar in dcache.properties -->
+            <version>1.0.1</version>
+        </dependency>
+
     </dependencies>
 
     <build>
