@@ -116,6 +116,7 @@ import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.QuotaExceededCacheException;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.CopyManagerMessage;
@@ -1167,6 +1168,8 @@ public final class Storage
             throw new SRMException(e.getMessage(), e);
         } catch (PermissionDeniedCacheException e) {
             throw new SRMAuthorizationException("Permission denied.", e);
+        } catch (QuotaExceededCacheException e) {
+            throw new SRMAuthorizationException("Quota exceeded.", e);
         } catch (FileExistsCacheException e) {
             throw new SRMDuplicationException(surl + " exists.", e);
         } catch (CacheException e) {
