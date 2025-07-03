@@ -51,6 +51,7 @@ import diskCacheV111.util.NoAttributeCacheException;
 import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.QuotaExceededCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.StorageInfo;
@@ -92,6 +93,7 @@ import org.dcache.chimera.DirNotEmptyChimeraFsException;
 import org.dcache.chimera.DirectoryStreamB;
 import org.dcache.chimera.FileExistsChimeraFsException;
 import org.dcache.chimera.FileNotFoundChimeraFsException;
+import org.dcache.chimera.QuotaChimeraFsException;
 import org.dcache.chimera.FileState;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FileSystemProvider.SetXattrMode;
@@ -377,6 +379,8 @@ public class ChimeraNameSpaceProvider
             throw new FileNotFoundCacheException("No such directory: " + parentPath);
         } catch (FileExistsChimeraFsException e) {
             throw new FileExistsCacheException("File exists: " + path);
+        } catch (QuotaChimeraFsException e) {
+            throw new QuotaExceededCacheException(e.getMessage());
         } catch (IOException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                   e.getMessage());
