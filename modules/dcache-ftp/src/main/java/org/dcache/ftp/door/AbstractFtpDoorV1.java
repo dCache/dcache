@@ -127,6 +127,7 @@ import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.QuotaExceededCacheException;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.DoorCancelledUploadNotificationMessage;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
@@ -3575,6 +3576,8 @@ public abstract class AbstractFtpDoorV1
             transfer.abort(451, "Operation failed: " + e.getMessage());
         } catch (PermissionDeniedCacheException e) {
             transfer.abort(550, "Permission denied");
+        } catch (QuotaExceededCacheException e) {
+            transfer.abort(552, "Quota exceeded");
         } catch (CacheException e) {
             switch (e.getRc()) {
                 case CacheException.FILE_NOT_FOUND:

@@ -38,12 +38,14 @@ import io.milton.servlet.ServletRequest;
 import io.milton.servlet.ServletResponse;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.security.AccessController;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -268,7 +270,7 @@ public class CopyFilter implements Filter {
     }
 
     @Override
-    public void process(FilterChain chain, Request request, Response response) {
+    public void process(FilterChain chain, Request request, Response response ) {
         try {
             if (isRequestThirdPartyCopy(request)) {
                 processThirdPartyCopy(request, response);
@@ -276,8 +278,28 @@ public class CopyFilter implements Filter {
                 chain.process(request, response);
             }
         } catch (ErrorResponseException e) {
-            ServletResponse.getResponse().setStatus(e.getStatus().code,
-                  e.getMessage());
+            var r = ServletResponse.getResponse();
+            int code = e.getStatus().code;
+            r.setStatus(code, e.getMessage());
+            if (code == 507) {
+                /**
+                 * https://www.rfc-editor.org/rfc/rfc4331.html#section-6
+                 * stipulates that insufficient storage response error
+                 * must be accompanied by the following error response:
+                 */
+                r.setContentType("application/xml");
+                r.setCharacterEncoding("UTF-8");
+                var body = "<?xml version=\"1.0\">\n<error xmlns=\"DAV:\">\n<quota-not-exceeded/>\n</error>\n";
+                int len = StandardCharsets.UTF_8.encode(body).limit();
+                r.setContentLength(len);
+                try {
+                    var out = r.getWriter();
+                    out.write(body);
+                } catch (IOException ioe) {
+                    LOGGER.warn("Failed to write error response body: {}",
+                                ioe.toString());
+                }
+            }
         } catch (BadRequestException e) {
             ServletResponse.getResponse().setStatus(HttpServletResponse.SC_BAD_REQUEST,
                   e.getMessage());
