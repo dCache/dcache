@@ -75,8 +75,9 @@ public class DcacheStandardFilter implements Filter {
             LOGGER.debug("Client supplied bad request parameters: {}", e.getMessage());
             responseHandler.respondBadRequest(e.getResource(), response, request);
         } catch (InsufficientStorageException e) {
-            responseHandler.respondInsufficientStorage(request, response,
-                  StorageChecker.StorageErrorReason.SER_DISK_FULL);
+            responseHandler.respondInsufficientStorage(request,
+                                                       response,
+                                                       e.getReason());
         } catch (ConflictException e) {
             responseHandler.respondConflict(e.getResource(), response, request, e.getMessage());
         } catch (NotAuthorizedException e) {

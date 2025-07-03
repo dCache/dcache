@@ -23,6 +23,7 @@ import static diskCacheV111.util.CacheException.OUT_OF_DATE;
 import static diskCacheV111.util.CacheException.PANIC;
 import static diskCacheV111.util.CacheException.PERMISSION_DENIED;
 import static diskCacheV111.util.CacheException.POOL_DISABLED;
+import static diskCacheV111.util.CacheException.QUOTA_EXCEEDED;
 import static diskCacheV111.util.CacheException.RESOURCE;
 import static diskCacheV111.util.CacheException.SERVICE_UNAVAILABLE;
 import static diskCacheV111.util.CacheException.THIRD_PARTY_TRANSFER_FAILED;
@@ -44,6 +45,7 @@ import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.OutOfDateCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.QuotaExceededCacheException;
 import diskCacheV111.util.ServiceUnavailableException;
 import diskCacheV111.util.ThirdPartyTransferFailedCacheException;
 import diskCacheV111.util.TimeoutCacheException;
@@ -101,6 +103,8 @@ public class CacheExceptionFactory {
                 return new InvalidMessageCacheException(message, cause);
             case THIRD_PARTY_TRANSFER_FAILED:
                 return new ThirdPartyTransferFailedCacheException(message, cause);
+            case QUOTA_EXCEEDED:
+                return new QuotaExceededCacheException(message, cause);
 
             /*
              * these do not have exception classes
