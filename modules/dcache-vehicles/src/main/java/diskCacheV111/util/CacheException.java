@@ -189,6 +189,11 @@ public class CacheException extends Exception {
     public static final int INVALID_UPDATE = 10031;
 
     /**
+     * Quota exceeded
+     */
+    public static final int QUOTA_EXCEEDED = 10032;
+
+    /**
      * default error code. <b>It's recommended to use more specific error codes</b>
      */
     public static final int DEFAULT_ERROR_CODE = 666; // I don't like this number....
