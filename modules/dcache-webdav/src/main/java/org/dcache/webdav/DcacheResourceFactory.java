@@ -4,6 +4,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.cycle;
 import static com.google.common.collect.Iterables.limit;
+import static io.milton.http.quota.StorageChecker.StorageErrorReason.SER_DISK_FULL;
+import static io.milton.http.quota.StorageChecker.StorageErrorReason.SER_QUOTA_EXCEEDED;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -50,6 +52,7 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.QuotaExceededCacheException;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
@@ -735,10 +738,9 @@ public class DcacheResourceFactory
      */
     public DcacheResource createFile(FsPath path, InputStream inputStream, Long length)
           throws CacheException, InterruptedException, IOException,
-          URISyntaxException, BadRequestException {
+                 URISyntaxException, BadRequestException {
         Subject subject = getSubject();
         Restriction restriction = getRestriction();
-
         checkUploadSize(length);
 
         WriteTransfer transfer = new WriteTransfer(_pnfs, subject, restriction, path);
@@ -802,6 +804,11 @@ public class DcacheResourceFactory
                     transfer.deleteNameSpaceEntry();
                 }
             }
+        } catch (QuotaExceededCacheException e) {
+            throw new InsufficientStorageException(e.getMessage(),
+                                                   null,
+                                                   SER_QUOTA_EXCEEDED);
+
         } finally {
             _transfers.remove((int) transfer.getId());
         }
@@ -811,7 +818,7 @@ public class DcacheResourceFactory
 
     public String getWriteUrl(FsPath path, Long length)
           throws CacheException, InterruptedException,
-          URISyntaxException {
+                 URISyntaxException {
         Subject subject = getSubject();
         Restriction restriction = getRestriction();
 
@@ -853,6 +860,10 @@ public class DcacheResourceFactory
                     transfer.deleteNameSpaceEntry();
                 }
             }
+        } catch (QuotaExceededCacheException e) {
+            throw new InsufficientStorageException(e.getMessage(),
+                                                   null,
+                                                   SER_QUOTA_EXCEEDED);
         } finally {
             if (uri == null) {
                 _transfers.remove((int) transfer.getId());
@@ -1437,7 +1448,9 @@ public class DcacheResourceFactory
     private void checkUploadSize(Long length) {
         OptionalLong maxUploadSize = getMaxUploadSize();
         checkStorageSufficient(!maxUploadSize.isPresent() || length == null
-              || length <= maxUploadSize.getAsLong(), "Upload too large");
+                               || length <= maxUploadSize.getAsLong(),
+                               SER_DISK_FULL,
+                               "Upload too large");
     }
 
     private boolean isAdmin() {
@@ -1944,7 +1957,8 @@ public class DcacheResourceFactory
                             throw new BadRequestException(connection.getResponseMessage());
                         case 507: // Insufficient Storage
                             throw new InsufficientStorageException(connection.getResponseMessage(),
-                                  null);
+                                                                   null,
+                                                                   SER_DISK_FULL);
                         case ResponseStatus.SC_INTERNAL_SERVER_ERROR:
                             throw new CacheException(
                                   "Pool error: " + connection.getResponseMessage());
