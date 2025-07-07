@@ -99,7 +99,14 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin {
                     if (result.isValid()) {
                         VOMSAttribute attr = result.getAttributes();
 
+                        String voName = attr.getVO();
                         for (String fqan : attr.getFQANs()) {
+                            // fqan must start with vo name, e.g. for atlas must start with '/atlas/'
+                            // See https://ogf.org/documents/GFD.182.pdf p.6 §3.4.1.2
+                            if (!fqan.startsWith('/' + voName + '/')) {
+                                continue;
+                            }
+
                             hasFQANs = true;
                             identifiedPrincipals.add(new FQANPrincipal(fqan, primary));
                             primary = false;
