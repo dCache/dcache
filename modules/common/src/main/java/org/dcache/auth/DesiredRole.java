@@ -39,4 +39,9 @@ public class DesiredRole implements Principal, Serializable {
     public String getName() {
         return role;
     }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + '[' + getName() + ']';
+    }
 }
