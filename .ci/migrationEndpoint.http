@@ -54,7 +54,7 @@ Content-Type: application/json
 GET {{frontend-door}}{{endpoint}}/id/{{pnfsId}}
 accept: application/json
 Content-Type: application/json
-Authorization: Basic admin#admin {{password}}
+Authorization: Basic {{admin_role}} {{password}}
 
 > {%
     client.test("Request executed successfully", function() {

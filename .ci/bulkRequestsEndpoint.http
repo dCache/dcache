@@ -43,7 +43,7 @@ Content-Type: application/octet-stream
 
 ### Change mode of the pool the file was written to
 PATCH {{frontend-door}}{{endpoint}}/pools/pool-a/usage/mode
-Authorization: Basic admin#admin {{password}}
+Authorization: Basic {{admin_role}} {{password}}
 accept: application/json
 Content-Type: application/json
 

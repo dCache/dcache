@@ -28,7 +28,7 @@ Authorization: Basic {{username}} {{password}}
 ### Requesting Admin role
 GET {{frontend-door}}{{endpoint}}/user
 Accept: application/json
-Authorization: Basic admin#admin {{password}}
+Authorization: Basic {{admin_role}} {{password}}
 
 > {%
   client.assert(response.status === 200, "Mapping failed");
