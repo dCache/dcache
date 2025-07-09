@@ -398,17 +398,8 @@ public final class QuotaResources {
     private List<QuotaInfo> getQuotas(PnfsManagerGetQuotaMessage message) {
         try {
             message = pnfsmanager.sendAndWait(message);
-
-            /*
-             *  REVISIT.  Output is currently not used.  This will be revisted with
-             *            further redesign of the QoS definitions. For now, we null
-             *            out those settings (just in case).
-             */
-            return message.getQuotaInfos().stream().map(quotaInfo -> {
-                quotaInfo.setOutput(null);
-                quotaInfo.setOutputLimit(null);
-                return quotaInfo;
-            }).collect(Collectors.toList());
+            return message.getQuotaInfos().stream()
+                .collect(Collectors.toList());
         } catch (CacheException e) {
             switch (e.getRc()) {
                 case SERVICE_UNAVAILABLE:
@@ -469,13 +460,9 @@ public final class QuotaResources {
             request.setReplicaLimit(jsonObject.getString("replicaLimit"));
         }
 
-        /*
-         *  REVISIT.  Output is currently not used.  This will be revisted with
-         *            further redesign of the QoS definitions.
-         */
-//        if (jsonObject.has("outputLimit")) {
-//            request.setOutputLimit(jsonObject.getString("outputLimit"));
-//        }
+        if (jsonObject.has("outputLimit")) {
+            request.setOutputLimit(jsonObject.getString("outputLimit"));
+        }
 
         return request;
     }
