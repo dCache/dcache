@@ -216,6 +216,21 @@ public class PoolV4
     private ThreadFactory _threadFactory;
     private HotFileReplicator _hotFileReplicator;
 
+    /**
+     * Spring-compatible setter for HotFileReplicator.
+     */
+    @Required
+    public void setHotFileReplicator(HotFileReplicator hotFileReplicator) {
+        _hotFileReplicator = hotFileReplicator;
+    }
+
+    /**
+     * Spring-compatible getter for HotFileReplicator.
+     */
+    public HotFileReplicator getHotFileReplicator() {
+        return _hotFileReplicator;
+    }
+
 
     protected void assertNotRunning(String error) {
         checkState(!_running, error);
