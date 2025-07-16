@@ -1,5 +1,19 @@
 package org.dcache.pool.migration;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+import org.dcache.cells.CellStub;
+import org.dcache.pool.repository.CacheEntry;
+import org.dcache.pool.repository.ReplicaState;
+import org.dcache.pool.repository.Repository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PnfsId;
@@ -8,21 +22,8 @@ import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellSetupProvider;
-import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-import org.dcache.cells.CellStub;
-import org.dcache.pool.repository.CacheEntry;
-import org.dcache.pool.repository.ReplicaState;
-import org.dcache.pool.repository.Repository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class HotFileReplicator implements CellMessageReceiver, CellCommandListener, CellSetupProvider,
       CellLifeCycleAware, TaskCompletionHandler {
@@ -70,6 +71,25 @@ public class HotFileReplicator implements CellMessageReceiver, CellCommandListen
               true,
               numReplicas,
               false);
+    }
+
+    @Override
+    public CellSetupProvider mock() {
+        return new HotFileReplicator(new MigrationContextDecorator(_context) {
+            @Override
+            public boolean lock(PnfsId pnfsId) {
+                return false;
+            }
+
+            @Override
+            public void unlock(PnfsId pnfsId) {
+            }
+
+            @Override
+            public boolean isActive(PnfsId pnfsId) {
+                return true;
+            }
+        }, false);
     }
 
     void messageArrived(PoolIoFileMessage message) {
