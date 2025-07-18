@@ -1524,7 +1524,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                          *
                          * see: https://bugzilla.redhat.com/show_bug.cgi?id=1901524
                          */
-                        _log.warn(
+                        _log.info(
                               "Deploying work-around for buggy client {} issuing CLOSE before LAYOUT_RETURN for transfer {}@{} of {}",
                               t.getMoverId(), t.getPool(), t.getPnfsId(),
                               t.getClient().getRemoteAddress());
