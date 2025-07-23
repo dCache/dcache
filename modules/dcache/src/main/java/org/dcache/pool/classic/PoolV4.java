@@ -40,7 +40,6 @@ import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 import diskCacheV111.vehicles.PoolMgrReplicateFileMsg;
 import diskCacheV111.vehicles.PoolModifyModeMessage;
-import diskCacheV111.vehicles.PoolModifyPersistencyMessage;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
 import diskCacheV111.vehicles.PoolRemoveFilesFromHSMMessage;
 import diskCacheV111.vehicles.PoolRemoveFilesMessage;
@@ -1095,49 +1094,6 @@ public class PoolV4
             LOGGER.error("Replica {} not removed: {}", file, e.getMessage());
             return file;
         }
-    }
-
-    public PoolModifyPersistencyMessage messageArrived(CellMessage envelope,
-          PoolModifyPersistencyMessage msg) {
-        try {
-            PnfsId pnfsId = msg.getPnfsId();
-            switch (_repository.getState(pnfsId)) {
-                case PRECIOUS:
-                    if (msg.isCached()) {
-                        _repository.setState(pnfsId, ReplicaState.CACHED,
-                              "At request of " + envelope.getSourceAddress());
-                    }
-                    msg.setSucceeded();
-                    break;
-
-                case CACHED:
-                    if (msg.isPrecious()) {
-                        _repository.setState(pnfsId, ReplicaState.PRECIOUS,
-                              "At request of " + envelope.getSourceAddress());
-                    }
-                    msg.setSucceeded();
-                    break;
-
-                case FROM_CLIENT:
-                case FROM_POOL:
-                case FROM_STORE:
-                    msg.setFailed(101, "File still transient: " + pnfsId);
-                    break;
-
-                case BROKEN:
-                    msg.setFailed(101, "File is broken: " + pnfsId);
-                    break;
-
-                case NEW:
-                case REMOVED:
-                case DESTROYED:
-                    msg.setFailed(101, "File does not exist: " + pnfsId);
-                    break;
-            }
-        } catch (Exception e) { //FIXME
-            msg.setFailed(100, e);
-        }
-        return msg;
     }
 
     public PoolModifyModeMessage messageArrived(PoolModifyModeMessage msg) {

@@ -14,7 +14,6 @@ import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.Pool2PoolTransferMsg;
 import diskCacheV111.vehicles.PoolMgrReplicateFileMsg;
 import diskCacheV111.vehicles.PoolModifyModeMessage;
-import diskCacheV111.vehicles.PoolModifyPersistencyMessage;
 import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 import diskCacheV111.vehicles.PoolSetStickyMessage;
 import dmg.cells.nucleus.CellEndpoint;
@@ -806,66 +805,6 @@ public class LegacyAdminShell
             sb.append("OK\n");
         }
         return sb.toString();
-    }
-
-    public static final String hh_set_deletable = "<pnfsId> # DEBUG for advisory delete (srm)";
-
-    public String ac_set_deletable_$_1(Args args) throws Exception {
-
-        checkPermission("*.*.*");
-
-        PnfsId pnfsId = new PnfsId(args.argv(0));
-        StringBuilder sb = new StringBuilder();
-
-
-        PnfsGetCacheLocationsMessage locations = new PnfsGetCacheLocationsMessage(pnfsId);
-        try {
-            locations = (PnfsGetCacheLocationsMessage) sendObject("PnfsManager", locations);
-        } catch (Exception ee) {
-            sb.append("Attempt to get cache locations reported an Exception : ")
-                  .append(ee);
-            sb.append("\n");
-            sb.append("Operation aborted\n");
-            return sb.toString();
-        }
-        if (locations.getReturnCode() != 0) {
-            sb.append("Problem in getting cache location(s) : ")
-                  .append(locations.getErrorObject());
-            return sb.toString();
-        }
-        List<String> assumedLocations = locations.getCacheLocations();
-        sb.append("Assumed cache locations : ").append(assumedLocations.toString()).append("\n");
-
-        for (Object assumedLocation : assumedLocations) {
-            String poolName = assumedLocation.toString();
-            PoolModifyPersistencyMessage p =
-                  new PoolModifyPersistencyMessage(poolName, pnfsId, false);
-
-            try {
-                p = (PoolModifyPersistencyMessage) sendObject(poolName, p);
-            } catch (Exception ee) {
-                sb.append("Attempt to contact ").
-                      append(poolName).
-                      append(" reported an Exception : ").
-                      append(ee.toString()).
-                      append("\n").
-                      append("  Operation continues\n");
-                continue;
-            }
-            if (locations.getReturnCode() != 0) {
-                sb.append("Set 'cached' reply from ").
-                      append(poolName).
-                      append(" : ").
-                      append(p.getErrorObject()).
-                      append("\n");
-            } else {
-                sb.append("Set 'cached' OK for ").
-                      append(poolName).
-                      append("\n");
-            }
-        }
-        return sb.toString();
-
     }
 
     public static final String hh_pnfs_map = "<globalPath>";
