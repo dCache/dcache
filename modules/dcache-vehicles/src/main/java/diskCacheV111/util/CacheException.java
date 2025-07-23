@@ -15,6 +15,11 @@ public class CacheException extends Exception {
     public static final int CANNOT_CREATE_MOVER = 27;
 
     /**
+     * The storage class is misconfigured for the file.
+     */
+    public static final int STORAGE_CLASS_MISCONFIGURED = 37;
+
+    /**
      * Requested operation is disabled in pool.
      */
     public static final int POOL_DISABLED = 104;

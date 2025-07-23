@@ -72,6 +72,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+
+import org.dcache.alarms.AlarmMarkerFactory;
+import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileState;
 import org.dcache.chimera.StorageGenericLocation;
@@ -161,7 +164,9 @@ public class ChimeraCtaStorageInfoExtractor extends ChimeraHsmStorageInfoExtract
             String storeName = hash.get("StoreName");
 
             if (storeName == null && !osmTemplateTag.isEmpty()) {
-                throw new CacheException(37, "StoreName not found in template");
+                LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.STORAGE_CLASS_MISCONFIGURED),
+                        "StoreName not found in template. Directory: {}", pathOrId(directory));
+                throw new CacheException(CacheException.STORAGE_CLASS_MISCONFIGURED, "StoreName not found in template");
             }
 
             List<String> sGroupTag = directory.getTag("sGroup");
@@ -170,5 +175,18 @@ public class ChimeraCtaStorageInfoExtractor extends ChimeraHsmStorageInfoExtract
         }
 
         return info;
+    }
+
+    private static String pathOrId(ExtendedInode inode) {
+        try {
+            return inode.getPath().toString();
+        } catch (ChimeraFsException e) {
+            try {
+                return inode.getId();
+            } catch (ChimeraFsException ex) {
+                // should never happen as we already read the inode
+                throw new RuntimeException(ex);
+            }
+        }
     }
 }
