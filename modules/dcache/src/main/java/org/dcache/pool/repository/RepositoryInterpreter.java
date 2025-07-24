@@ -200,7 +200,8 @@ public class RepositoryInterpreter
                 "      if entry is being transferred \"from client\" and \"-\" otherwise.\n" +
                 "   field 4 is \"S\"\n" +
                 "      if entry is being transferred \"from store\" and \"-\" otherwise.\n" +
-                "   field 5 is unused.\n" +
+                "   field 5 is \"M\"\n" +
+                "      if entry is migrating \"from another pool\" and \"-\" otherwise.\n" +
                 "   field 6 is unused.\n" +
                 "   field 7 is \"R\"\n" +
                 "      if entry is removed but still open and \"-\" otherwise.\n" +

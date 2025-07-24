@@ -114,7 +114,7 @@ public class CacheEntryImpl implements CacheEntry {
               ((_state == ReplicaState.PRECIOUS) ? "P" : "-") +
               ((_state == ReplicaState.FROM_CLIENT) ? "C" : "-") +
               ((_state == ReplicaState.FROM_STORE) ? "S" : "-") +
-              "-" +
+              ((_state == ReplicaState.FROM_POOL) ? "M" : "-") +
               "-" +
               ((_state == ReplicaState.REMOVED) ? "R" : "-") +
               ((_state == ReplicaState.DESTROYED) ? "D" : "-") +
