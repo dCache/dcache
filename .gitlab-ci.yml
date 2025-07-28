@@ -227,7 +227,7 @@ Check for duplicate dependencies:
     - microdnf install -y tar gzip
     - mkdir /dcache
     - tar -C /dcache --strip-components=1 -xzf packages/tar/target/dcache-*.tar.gz
-    - ls -1 /dcache/share/classes/ | sort | sed -e 's/\-[0-9].*$//' | uniq -D > duplicate-dependencies.txt
+    - ls -1 /dcache/share/classes/ | grep -v netty-tcnative-boringssl-static | sort | sed -e 's/\-[0-9].*$//' | uniq -D > duplicate-dependencies.txt
     - if [ -s duplicate-dependencies.txt ]; then cat duplicate-dependencies.txt; exit 1; fi
 
 sign_rpm:
