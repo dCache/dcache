@@ -18,7 +18,6 @@ import java.security.PublicKey;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.EnumSet;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -158,11 +157,6 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware {
     @Required
     public void setCommandFactory(CommandFactory commandFactory) {
         _server.setCommandFactory(commandFactory);
-    }
-
-    @Required
-    public void setSubsystemFactories(List<SubsystemFactory> subsystemFactories) {
-        _server.setSubsystemFactories(subsystemFactories);
     }
 
     @Required
