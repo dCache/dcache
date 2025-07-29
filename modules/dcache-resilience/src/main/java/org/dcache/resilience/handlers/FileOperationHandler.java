@@ -145,8 +145,7 @@ public class FileOperationHandler implements CellMessageSender {
           + "the namespace replica locations and the actual locations on disk.";
 
     private static final ImmutableList<StickyRecord> ONLINE_STICKY_RECORD
-          = ImmutableList.of(new StickyRecord("system",
-          StickyRecord.NON_EXPIRING));
+          = ImmutableList.of(new StickyRecord(StickyRecord.NON_EXPIRING));
 
     private static final RateLimiter LIMITER = RateLimiter.create(0.001);
 

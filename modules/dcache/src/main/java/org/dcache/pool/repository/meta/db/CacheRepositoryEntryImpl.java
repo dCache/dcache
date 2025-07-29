@@ -50,7 +50,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord {
 
     // Reusable list for the common case
     private static final ImmutableList<StickyRecord> SYSTEM_STICKY =
-          ImmutableList.of(new StickyRecord("system", -1));
+          ImmutableList.of(new StickyRecord(-1));
 
     private final PnfsId _pnfsId;
     private final AbstractBerkeleyDBReplicaStore _repository;

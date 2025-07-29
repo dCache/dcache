@@ -276,7 +276,7 @@ public class CacheRepositoryEntryState {
                     switch (stickyOptions.length) {
                         case 1:
                             // old style
-                            owner = "system";
+                            owner = StickyRecord.SYSTEM_OWNER;
                             expire = -1;
                             break;
                         case 2:

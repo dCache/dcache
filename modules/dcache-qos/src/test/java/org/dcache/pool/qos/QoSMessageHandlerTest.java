@@ -109,7 +109,7 @@ public class QoSMessageHandlerTest {
     public void shouldChangeStickyBitToTrue() throws Exception {
         given(aCacheEntry().withPnfsId(TEST_PNFSID).build());
         whenHandlerReceives(aSetStickyBitMessage());
-        verify(repository).setSticky(eq(TEST_PNFSID), eq("system"), eq(StickyRecord.NON_EXPIRING),
+        verify(repository).setSticky(eq(TEST_PNFSID), eq(StickyRecord.SYSTEM_OWNER), eq(StickyRecord.NON_EXPIRING),
               eq(true));
     }
 
@@ -117,7 +117,7 @@ public class QoSMessageHandlerTest {
     public void shouldChangeStickyBitToFalse() throws Exception {
         given(aCacheEntry().withPnfsId(TEST_PNFSID).build());
         whenHandlerReceives(anUnsetStickyBitMessage());
-        verify(repository).setSticky(eq(TEST_PNFSID), eq("system"), eq(0L),
+        verify(repository).setSticky(eq(TEST_PNFSID), eq(StickyRecord.SYSTEM_OWNER), eq(0L),
               eq(true));
     }
 
@@ -299,7 +299,7 @@ public class QoSMessageHandlerTest {
     @Test
     public void shouldReportStickyIfSystemOwnsNonExpiringPin() throws Exception {
         given(aCacheEntry().withPnfsId(TEST_PNFSID).withState(ReplicaState.CACHED)
-              .withStickyRecord("system", StickyRecord.NON_EXPIRING).build());
+              .withStickyRecord(StickyRecord.SYSTEM_OWNER, StickyRecord.NON_EXPIRING).build());
         whenHandlerReceives(aReplicaStatusMessage());
         assertEquals(true, replicaStatusMessage.isSystemSticky());
     }
@@ -314,7 +314,7 @@ public class QoSMessageHandlerTest {
 
     public void shouldNotReportStickyIfSystemOwnsExpiringPin() throws Exception {
         given(aCacheEntry().withPnfsId(TEST_PNFSID).withState(ReplicaState.CACHED)
-              .withStickyRecord("system", TimeUnit.HOURS.toMillis(1)).build());
+              .withStickyRecord(StickyRecord.SYSTEM_OWNER, TimeUnit.HOURS.toMillis(1)).build());
         whenHandlerReceives(aReplicaStatusMessage());
         assertEquals(false, replicaStatusMessage.isSystemSticky());
     }

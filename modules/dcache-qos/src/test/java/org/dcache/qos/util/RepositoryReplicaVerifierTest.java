@@ -33,6 +33,7 @@ import org.dcache.pool.qos.QoSMessageHandler;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.Repository;
+import org.dcache.pool.repository.StickyRecord;
 import org.dcache.vehicles.qos.ReplicaStatusMessage;
 import org.junit.Before;
 import org.junit.Test;
@@ -259,7 +260,7 @@ public class RepositoryReplicaVerifierTest {
     @Test
     public void shouldVerifySystemStickyCorrectly() throws Exception {
         givenPoolWithAddress("test1@poolDomain").thatHasAReplicaOf(TEST_PNFSID)
-              .withState(ReplicaState.CACHED).withStickyBitOwnerAndDuration("system",
+              .withState(ReplicaState.CACHED).withStickyBitOwnerAndDuration(StickyRecord.SYSTEM_OWNER,
                     NON_EXPIRING);
         whenVerifyIsCalled();
         verifyThat(1).replicasExists();
@@ -305,10 +306,10 @@ public class RepositoryReplicaVerifierTest {
         givenPoolWithAddress("test1@poolDomain").thatHasAReplicaOf(TEST_PNFSID)
               .withState(ReplicaState.CACHED);
         givenPoolWithAddress("test2@poolDomain").thatHasAReplicaOf(TEST_PNFSID)
-              .withState(ReplicaState.CACHED).withStickyBitOwnerAndDuration("system", NON_EXPIRING);
+              .withState(ReplicaState.CACHED).withStickyBitOwnerAndDuration(StickyRecord.SYSTEM_OWNER, NON_EXPIRING);
         givenPoolWithAddress("test3@poolDomain").thatHasAReplicaOf(TEST_PNFSID)
               .withState(ReplicaState.PRECIOUS)
-              .withStickyBitOwnerAndDuration("system", NON_EXPIRING);
+              .withStickyBitOwnerAndDuration(StickyRecord.SYSTEM_OWNER, NON_EXPIRING);
         whenVerifyIsCalled();
         verifyThat(3).replicasExists();
         verifyThat(0).replicasAreBroken();
@@ -321,11 +322,11 @@ public class RepositoryReplicaVerifierTest {
     @Test
     public void shouldVerifyCachedPlusBrokenReplicasCorrectly() throws Exception {
         givenPoolWithAddress("test1@poolDomain").thatHasAReplicaOf(TEST_PNFSID)
-              .withState(ReplicaState.CACHED).withStickyBitOwnerAndDuration("system", NON_EXPIRING);
+              .withState(ReplicaState.CACHED).withStickyBitOwnerAndDuration(StickyRecord.SYSTEM_OWNER, NON_EXPIRING);
         givenPoolWithAddress("test2@poolDomain").thatHasAReplicaOf(TEST_PNFSID)
-              .withState(ReplicaState.CACHED).withStickyBitOwnerAndDuration("system", NON_EXPIRING);
+              .withState(ReplicaState.CACHED).withStickyBitOwnerAndDuration(StickyRecord.SYSTEM_OWNER, NON_EXPIRING);
         givenPoolWithAddress("test3@poolDomain").thatHasAReplicaOf(TEST_PNFSID)
-              .withState(ReplicaState.BROKEN).withStickyBitOwnerAndDuration("system", NON_EXPIRING);
+              .withState(ReplicaState.BROKEN).withStickyBitOwnerAndDuration(StickyRecord.SYSTEM_OWNER, NON_EXPIRING);
         whenVerifyIsCalled();
         verifyThat(3).replicasExists();
         verifyThat(1).replicasAreBroken();
@@ -338,11 +339,11 @@ public class RepositoryReplicaVerifierTest {
     @Test
     public void shouldVerifyPartialReplicasCorrectly() throws Exception {
         givenPoolWithAddress("test1@poolDomain").thatHasAReplicaOf(ALT_REPLICA)
-              .withState(ReplicaState.CACHED).withStickyBitOwnerAndDuration("system", NON_EXPIRING);
+              .withState(ReplicaState.CACHED).withStickyBitOwnerAndDuration(StickyRecord.SYSTEM_OWNER, NON_EXPIRING);
         givenPoolWithAddress("test2@poolDomain").thatHasAReplicaOf(TEST_PNFSID)
-              .withState(ReplicaState.CACHED).withStickyBitOwnerAndDuration("system", NON_EXPIRING);
+              .withState(ReplicaState.CACHED).withStickyBitOwnerAndDuration(StickyRecord.SYSTEM_OWNER, NON_EXPIRING);
         givenPoolWithAddress("test3@poolDomain").thatHasAReplicaOf(TEST_PNFSID)
-              .withState(ReplicaState.CACHED).withStickyBitOwnerAndDuration("system", NON_EXPIRING);
+              .withState(ReplicaState.CACHED).withStickyBitOwnerAndDuration(StickyRecord.SYSTEM_OWNER, NON_EXPIRING);
         whenVerifyIsCalled();
         verifyThat(2).replicasExists();
         verifyThat(0).replicasAreBroken();
@@ -357,7 +358,7 @@ public class RepositoryReplicaVerifierTest {
         givenPoolWithAddress("test1@poolDomain").thatHasAReplicaOf(TEST_PNFSID)
               .withState(ReplicaState.CACHED);
         givenPoolWithAddress("test2@poolDomain").thatHasAReplicaOf(TEST_PNFSID)
-              .withState(ReplicaState.CACHED).withStickyBitOwnerAndDuration("system", NON_EXPIRING);
+              .withState(ReplicaState.CACHED).withStickyBitOwnerAndDuration(StickyRecord.SYSTEM_OWNER, NON_EXPIRING);
         givenPoolWithAddress("test3@poolDomain").thatHasAReplicaOf(TEST_PNFSID)
               .withState(ReplicaState.PRECIOUS);
         whenVerifyIsCalled();
@@ -384,7 +385,7 @@ public class RepositoryReplicaVerifierTest {
         givenPoolWithAddress("test1@poolDomain").thatHasAReplicaOf(TEST_PNFSID)
               .withState(ReplicaState.NEW);
         givenPoolWithAddress("test2@poolDomain").thatHasAReplicaOf(TEST_PNFSID)
-              .withState(ReplicaState.BROKEN).withStickyBitOwnerAndDuration("system", NON_EXPIRING);
+              .withState(ReplicaState.BROKEN).withStickyBitOwnerAndDuration(StickyRecord.SYSTEM_OWNER, NON_EXPIRING);
         givenPoolWithAddress("test3@poolDomain").thatHasAReplicaOf(TEST_PNFSID)
               .withState(ReplicaState.CACHED);
         whenVerifyIsCalled();

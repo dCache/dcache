@@ -78,7 +78,7 @@ public class RepositoryInterpreter
 
         @Option(name = "o", metaVar = "name", category = "Sticky properties",
               usage = "The owner is a name for the flag. A replica can only have one sticky flag per owner.")
-        String owner = "system";
+        String owner = StickyRecord.SYSTEM_OWNER;
 
         @Option(name = "l", metaVar = "millis", category = "Sticky properties",
               usage =
