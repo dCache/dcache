@@ -442,11 +442,10 @@ Clean k8s environment:
 #
 Deploy PostgreSQL:
   stage: test_infra
-  extends: .helm_image
+  extends: .kubernetes_image
   script:
-    - helm repo add bitnami https://charts.bitnami.com/bitnami
-    - helm repo update
-    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set auth.username=dcache --set auth.password=let-me-in --set auth.database=chimera  chimera bitnami/postgresql
+    - kubectl -n ${K8S_NAMESPACE} apply -f .ci/k8s/postgresql-deployment.yaml
+    - kubectl -n ${K8S_NAMESPACE} wait --for=condition=Ready pod/postgres-0
 
 #
 # infrastructure required to run dCache
