@@ -235,7 +235,7 @@ sign_rpm:
   image: almalinux:10-minimal
   needs: ["rpm"]
   script:
-    - microdnf install -y rpm-sign
+    - microdnf install -y rpm-sign gpg
     - echo $DCACHE_ORG_PGP_KEY | base64 -d -i > secret.gpg
     - gpg --quiet --batch --yes --allow-secret-key-import --passphrase="$DCACHE_ORG_PGP_KEY_PASS" --import secret.gpg
     - gpg -a --export "$DCACHE_ORG_KEY_NAME" > RPM-GPG-KEY
@@ -251,7 +251,7 @@ sign_srm_client_rpm:
   image: almalinux:10-minimal
   needs: ["srm_client_rpm"]
   script:
-    - microdnf install -y rpm-sign
+    - microdnf install -y rpm-sign gpg
     - echo $DCACHE_ORG_PGP_KEY | base64 -d -i > secret.gpg
     - gpg --quiet --batch --yes --allow-secret-key-import --passphrase="$DCACHE_ORG_PGP_KEY_PASS" --import secret.gpg
     - gpg -a --export "$DCACHE_ORG_KEY_NAME" > RPM-GPG-KEY
