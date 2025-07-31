@@ -479,24 +479,22 @@ Deploy PostgreSQL:
 #
 Deploy Zookeeper:
   stage: test_infra
-  extends: .helm_image
+  extends: .kubernetes_image
   script:
-    - helm repo add bitnami https://charts.bitnami.com/bitnami
-    - helm repo update
-    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait cells bitnami/zookeeper
+    - kubectl -n ${K8S_NAMESPACE} apply -f .ci/k8s/zookeeper-deployment.yaml
+    - kubectl -n ${K8S_NAMESPACE} wait --for=condition=Ready pod/zookeeper-0
 
 #
 # infrastructure required to run dCache
 #
 Deploy Kafka:
   stage: test_infra
-  extends: .helm_image
-  needs:
-    - Deploy Zookeeper
+  extends: .kubernetes_image
   script:
-    - helm repo add bitnami https://charts.bitnami.com/bitnami
-    - helm repo update
-    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set externalZookeeper.servers=cells-zookeeper --set kraft.enabled=false billing bitnami/kafka --version 23.0.7
+    - kubectl -n ${K8S_NAMESPACE} apply -f .ci/k8s/kafka-deployment.yaml
+    - kubectl -n ${K8S_NAMESPACE} wait --for=condition=Ready pod/kafka-0
+    - kubectl -n ${K8S_NAMESPACE} exec kafka-0 -- /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --create --topic billing
+
 
 #
 # infrastructure required to run dCache
