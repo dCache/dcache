@@ -1,0 +1,87 @@
+#
+# postgresql environment
+#
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: zookeeper-secret
+  labels:
+    app: zookeeper
+data:
+  ZOO_MY_ID: '1'
+  ZOO_SERVERS: 'server.1=zookeeper-0:2888:3888;2181'
+  ZOO_ADMINSERVER_ENABLED: 'false'
+
+---
+
+#
+# Zookeeper inter-node service
+#
+apiVersion: v1
+kind: Service
+metadata:
+  name: zookeeper-cluster
+spec:
+  selector:
+    app: zookeeper
+  ports:
+    - port: 2888
+      name: zk-server
+    - port: 3888
+      name: zk-leader-election
+  clusterIP: None
+---
+
+#
+# zookeeper client cluster-internal communication
+#
+apiVersion: v1
+kind: Service
+metadata:
+  name: cells-zookeeper
+  labels:
+    app: zookeeper
+spec:
+  ports:
+    - port: 2181
+      name: zk-client
+  selector:
+    app: zookeeper
+---
+
+#
+# postgres container
+#
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: zookeeper
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zookeeper
+  template:
+    metadata:
+      labels:
+        app: zookeeper
+    spec:
+      containers:
+        - name: zookeeper
+          image: 'zookeeper:3.9'
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 2181
+          readinessProbe:
+            tcpSocket:
+              port: 2181
+            initialDelaySeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: 2181
+            initialDelaySeconds: 10
+            timeoutSeconds: 5
+          envFrom:
+            - configMapRef:
+                name: zookeeper-secret
