@@ -85,7 +85,7 @@ default:
 
 .kubernetes_image:
   extends: .kubernetes_tags
-  image: bitnami/kubectl:latest
+  image: dtzar/helm-kubectl:latest
 
 .helm_image:
   extends: .kubernetes_tags
