@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.lang.ref.SoftReference;
 import java.net.URI;
 import java.nio.file.OpenOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -97,7 +98,10 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord {
         if (storageInfo == null) {
 
             try {
-                _size = _fileStore.getFileAttributeView(pnfsId).readAttributes().size();
+                BasicFileAttributes basicFileAttributes = _fileStore.getFileAttributeView(pnfsId).readAttributes();
+                _size = basicFileAttributes.size();
+                _creationTime =  basicFileAttributes.creationTime().toMillis();
+                _lastAccess = basicFileAttributes.lastAccessTime().toMillis();
             } catch (IOException e) {
                 LOGGER.error("Failed to read file size: {}", e.toString());
             }
