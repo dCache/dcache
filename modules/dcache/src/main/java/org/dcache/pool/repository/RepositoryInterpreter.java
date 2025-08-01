@@ -20,6 +20,7 @@ import dmg.util.command.Command;
 import dmg.util.command.DelayedCommand;
 import dmg.util.command.Option;
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -220,23 +221,57 @@ public class RepositoryInterpreter
         PnfsId[] pnfsIds;
 
         @Option(name = "l", valueSpec = "[s|p|l|u|nc|e...]",
-              usage = "Limit to replicas with these flags: \n" +
-                    "   s  : sticky\n" +
-                    "   p  : precious\n" +
-                    "   l  : locked\n" +
-                    "   u  : in use\n" +
-                    "   nc : not cached\n" +
-                    "   e  : error")
+                usage = "Limit to replicas with these flags: \n" +
+                        "   s  : sticky\n" +
+                        "   p  : precious\n" +
+                        "   l  : locked\n" +
+                        "   u  : in use\n" +
+                        "   nc : not cached\n" +
+                        "   qos : \"qos\" lists replicas in the current pool with their QoS state.\n" +
+                        "       Format:\n" +
+                        "           <PNFS-ID> <FLAGS> <SIZE> si={<storage-info>} :\n" +
+                        "           <ACCESS LATENCY> : <RETENTION POLICY> : <SYSTEM STICKY> : <PINMANAGER STICKY>\n" +
+                        "\n" +
+                        "       ACCESS LATENCY: ONLINE (disk), NEARLINE (tape/slow).\n" +
+                        "       RETENTION POLICY: REPLICA (temporary), CUSTODIAL (preserved).\n" +
+                        "       STICKY BITS: SYSTEM (automatic), PINMANAGER (manual), None/Nopin (no protection).\n" +
+                        "\n" +
+                        "       Examples:\n" +
+                        "           ONLINE : REPLICA : None : User   -> online, temporary, protected by PinManager\n" +
+                        "           NEARLINE : CUSTODIAL : None : User -> tape-backed custodial, protected by PinManager\n" +
+                        "           ONLINE : REPLICA : System : None -> online, temporary, system-protected\n" +
+                        "           ONLINE : REPLICA : Nopin : Nopin -> online, temporary, unprotected, at risk\n" +
+                        "\n" +
+                        "       Admin: Check replicas with no sticky bits; they may be deleted.\n" +
+                        "       unmanaged : \"Unmanaged\" replicas are those not under normal namespace lifecycle\n" +
+                        "       control. This command is primarily used to detect and track wrong state\n" +
+                        "       conditions -- cases where content of files on the pool does not match the\n" +
+                        "       namespace database.\n" +
+                        "\n" +
+                        "       Such discrepancies can occur after failures, interrupted transfers, or\n" +
+                        "       bugs. Administrators should review each unmanaged replica to determine\n" +
+                        "       whether it is still valid or should be removed.\n" +
+                        "\n" +
+                        "       WARNING: Unmanaged ONLINE replicas with no sticky bit are eligible for\n" +
+                        "       deletion and can be deleted at any time. Preserve them if\n" +
+                        "       necessary by setting an appropriate sticky bit or adjusting retention\n" +
+                        "       policy.\n" +
+                        "\n" +
+                        "       The fields ACCESS LATENCY : RETENTION POLICY : SYSTEM STICKY : PINMANAGER STICKY\n" +
+                        "       show the replicas state, with the last two indicating whether the sticky bit\n" +
+                        "       is set automatically by the system or manually by PinManager/admin.\n" +
+                        "\n" +
+                        "   e  : error")
         String format;
 
         @Option(name = "storage", metaVar = "GLOB", usage = "Limit to replicas with matching storage class.")
         Glob si;
 
         @Option(name = "s", valueSpec = "[b|k|m|g|t]", values = {"b", "k", "m", "g", "t", ""},
-              usage =
-                    "Output per storage class statistics instead. Optionally expressing values in units: B, KiB, MiB, "
-                          +
-                          "GiB, or TiB.")
+                usage =
+                        "Output per storage class statistics instead. Optionally expressing values in units: B, KiB, MiB, "
+                                +
+                                "GiB, or TiB.")
         String stat;
 
         @Option(name = "sum", usage = "Include storage summary when used with -s or -binary.")
@@ -260,8 +295,8 @@ public class RepositoryInterpreter
                     units = Optional.empty();
                 } else {
                     units = stat.equals("b")
-                          ? Optional.of(BYTES)
-                          : jedecPrefix().parse(stat.toUpperCase());
+                            ? Optional.of(BYTES)
+                            : jedecPrefix().parse(stat.toUpperCase());
                 }
                 return listStatistics(units);
             } else {
@@ -276,6 +311,8 @@ public class RepositoryInterpreter
             boolean sticky = format.indexOf('s') > -1;
             boolean used = format.indexOf('u') > -1;
             boolean broken = format.indexOf('e') > -1;
+            boolean qos = format.equalsIgnoreCase("qos");
+            boolean unmanaged = format.equalsIgnoreCase("unmanaged");
             boolean cached = format.replace("nc", "").indexOf('c') > -1;
 
             Pattern siFilter = (si == null) ? null : si.toPattern();
@@ -284,31 +321,126 @@ public class RepositoryInterpreter
             for (PnfsId id : _repository) {
                 try {
                     CacheEntry entry = _repository.getEntry(id);
+
                     ReplicaState state = entry.getState();
+                    FileAttributes attributes = entry.getFileAttributes();
+                    AccessLatency accessLatency = attributes.getAccessLatency();
+                    RetentionPolicy retentionPolicy = attributes.getRetentionPolicy();
                     if (siFilter != null) {
-                        FileAttributes attributes = entry.getFileAttributes();
                         String siValue = attributes.isDefined(FileAttribute.STORAGECLASS)
-                              ? attributes.getStorageClass()
-                              : "<unknown>";
+                                ? attributes.getStorageClass()
+                                : "<unknown>";
                         if (!siFilter.matcher(siValue).matches()) {
                             continue;
                         }
                     }
-                    if (format.isEmpty() ||
-                          (notcached && state != ReplicaState.CACHED) ||
-                          (precious && state == ReplicaState.PRECIOUS) ||
-                          (sticky && entry.isSticky()) ||
-                          (broken && state == ReplicaState.BROKEN) ||
-                          (cached && state == ReplicaState.CACHED) ||
-                          (used && entry.getLinkCount() > 0)) {
 
-                        sb.append(entry).append('\n');
+                    if (qos) {
+                        sb.append(entry);
+                        printQosInfo(entry, sb);
+                        continue;
                     }
+                    if (unmanaged && ((accessLatency == AccessLatency.ONLINE && !entry.isSticky()) ||
+                            (accessLatency == AccessLatency.NEARLINE && retentionPolicy == RetentionPolicy.CUSTODIAL && entry.isSticky()))) {
+
+                        sb.append(entry);
+                        printQosInfo(entry, sb);
+                        continue;
+                    }
+
+                    if (format.isEmpty() ||
+                            (notcached && state != ReplicaState.CACHED) ||
+                            (precious && state == ReplicaState.PRECIOUS) ||
+                            (sticky && entry.isSticky()) ||
+                            (broken && state == ReplicaState.BROKEN) ||
+                            (cached && state == ReplicaState.CACHED) ||
+                            (used && entry.getLinkCount() > 0)) {
+
+                       sb.append(entry).append("\n");
+                    }
+
                 } catch (FileNotInCacheException e) {
                     // Entry was deleted; no problem
                 }
             }
             return sb.toString();
+        }
+
+
+        /**
+         * Prints the access latency and retention policy of the given cache entry.
+         *
+         * @param entry The cache entry.
+         * @param sb    The StringBuilder to append the information to.
+         * @throws CacheException       If there is an error accessing the cache entry.
+         * @throws InterruptedException If the operation is interrupted.
+         */
+        private void printQosInfo(CacheEntry entry, StringBuilder sb) throws CacheException, InterruptedException {
+            String format = Strings.nullToEmpty(this.format);
+            FileAttributes attributes = entry.getFileAttributes();
+            AccessLatency accessLatency = attributes.getAccessLatency();
+            RetentionPolicy retentionPolicy = attributes.getRetentionPolicy();
+            if ((format.equalsIgnoreCase("unmanaged") && (accessLatency == AccessLatency.ONLINE && !entry.isSticky()) ||
+                    (accessLatency == AccessLatency.NEARLINE && retentionPolicy == RetentionPolicy.CUSTODIAL && entry.isSticky()))) {
+
+                sb.append(" : ");
+                sb.append(accessLatency).append(" : ");
+                sb.append(retentionPolicy).append(" : ");
+                printPinInfo(entry, sb);
+            }
+
+
+        }
+
+        /**
+         * Prints the access latency and retention policy of the given cache entry.
+         *
+         * @param entry     The cache entry.
+         * @throws CacheException       If there is an error accessing the cache entry.
+         * @throws InterruptedException If the operation is interrupted.
+         */
+        private boolean isUnmanaged(CacheEntry entry) throws CacheException, InterruptedException {
+            FileAttributes attributes = entry.getFileAttributes();
+
+            AccessLatency accessLatency = attributes.getAccessLatency();
+            RetentionPolicy retentionPolicy = attributes.getRetentionPolicy();
+            return (accessLatency == AccessLatency.ONLINE && !entry.isSticky()) ||
+                    (accessLatency == AccessLatency.NEARLINE && retentionPolicy == RetentionPolicy.CUSTODIAL && entry.isSticky());
+
+        }
+
+
+        /**
+         * Prints the pin information for the given cache entry.
+         *
+         * @param entry The cache entry.
+         * @param sb    The StringBuilder to append the pin information to.
+         */
+        private void printPinInfo(CacheEntry entry, StringBuilder sb) {
+
+            Collection<StickyRecord> records = entry.getStickyRecords();
+            if (records.isEmpty()) {
+                sb.append("Nopin : Nopin ").append("\n");
+                return;
+            }
+
+            boolean found = records.stream()
+                    .anyMatch(r -> r.owner().contains("system"));
+            if (found && records.size() == 1) {
+                sb.append("System : None");
+            } else if (found
+                    && records.size() > 1) {
+                sb.append("System : User");
+
+            } else if (!found && records.size() == 1) {
+                sb.append("None : User");
+
+            } else if (!found && records.size() > 1) {
+                sb.append("None : User");
+
+            }
+            sb.append("\n");
+
         }
 
         private Object[] listBinary() {
@@ -374,13 +506,25 @@ public class RepositoryInterpreter
         }
 
         private Serializable listById(PnfsId[] pnfsIds)
-              throws CacheException, InterruptedException {
+                throws CacheException, InterruptedException {
+            String format = Strings.nullToEmpty(this.format);
+            boolean qos = format.equalsIgnoreCase("qos");
+            boolean unmanaged = format.equalsIgnoreCase("unmanaged");
             StringBuilder sb = new StringBuilder();
             StringBuilder exceptionMessages = new StringBuilder();
             for (PnfsId pnfsId : pnfsIds) {
+                CacheEntry entry = _repository.getEntry(pnfsId);
                 try {
-                    sb.append(_repository.getEntry(pnfsId));
-                    sb.append("\n");
+                    if (!(!isUnmanaged(entry) && unmanaged)) {
+                        sb.append(entry);
+                    }
+                    if (qos || unmanaged) {
+                        printQosInfo(entry, sb);
+                    } else {
+
+                        sb.append("\n");
+                    }
+
                 } catch (FileNotInCacheException fnice) {
                     exceptionMessages.append(fnice.getMessage()).append("\n");
                 }
