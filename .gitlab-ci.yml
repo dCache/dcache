@@ -500,9 +500,9 @@ Deploy MinIO as Tape:
   stage: test_infra
   extends: .helm_image
   script:
-    - helm repo add bitnami https://charts.bitnami.com/bitnami
+    - helm repo add minio https://charts.min.io/
     - helm repo update
-    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --set-string auth.rootUser=dcache --set-string auth.rootPassword=let-me-in --set-string defaultBuckets="hsm" --wait tape bitnami/minio
+    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --set-string rootUser=dcache --set-string rootPassword=let-me-in --set replicas=1 --set persistence.enabled=false --set mode=standalone --set buckets[0].name=hsm,buckets[0].policy=none,buckets[0].purge=false --wait tape minio/minio
 
 
 #
