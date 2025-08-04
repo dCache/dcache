@@ -749,6 +749,7 @@ public class PoolV4
     private void ioFile(CellMessage envelope, PoolIoFileMessage message) {
         try {
             message.setMoverId(queueIoRequest(envelope, message));
+            LOGGER.debug("moverId {} received request for pnfsId {}", message.getMoverId(), message.getPnfsId());
             _hotFileReplicator.maybeReplicate(message, _ioQueue.numberOfRequestsFor(message.getPnfsId()));
             message.setSucceeded();
         } catch (OutOfDateCacheException e) {
