@@ -30,14 +30,14 @@ public class HotFileReplicator implements CellMessageReceiver, CellCommandListen
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HotFileReplicator.class);
 
-    private static final int DEFAULT_NUM_REPLICAS = 10;
-    private static final int DEFAULT_HOTSPOT_THRESHOLD = 5;
     private static final int DEFAULT_CONCURRENCY = 1;
+    private static final int DEFAULT_REPLICAS = 10;
+    private static final long DEFAULT_THRESHOLD = 5;
 
     // TODO: either use concurrency to manage number of Tasks in flight, or remove it.
     private int concurrency = DEFAULT_CONCURRENCY;
-    private final int numReplicas = DEFAULT_NUM_REPLICAS;
-    private long hotspotThreshold = DEFAULT_HOTSPOT_THRESHOLD;
+    private int replicas = DEFAULT_REPLICAS;
+    private long threshold = DEFAULT_THRESHOLD;
 
     private final Map<PnfsId, Task> _inFlightMigrations = new HashMap<>();
     private final Lock _lock = new ReentrantLock(true);
@@ -69,7 +69,7 @@ public class HotFileReplicator implements CellMessageReceiver, CellCommandListen
               false,
               false,
               true,
-              numReplicas,
+              replicas,
               false);
     }
 
@@ -100,10 +100,12 @@ public class HotFileReplicator implements CellMessageReceiver, CellCommandListen
         _lock.lock();
         try {
             PnfsId pnfsId = message.getPnfsId();
-            if (numberOfRequests < hotspotThreshold || _inFlightMigrations.containsKey(pnfsId))
+            LOGGER.debug("maybeReplicate() logging {} requests for pnfsId {} (threshold {})", numberOfRequests, pnfsId, threshold);
+            if (numberOfRequests < threshold || _inFlightMigrations.containsKey(pnfsId))
                 return;
             // Assemble the correct information, and start the task
             try {
+                LOGGER.debug("maybeReplicate() initiating request for {} replicas of pnfsId {}", replicas, pnfsId);
                 Repository repository = _context.getRepository();
                 CacheEntry entry = repository.getEntry(pnfsId);
 
@@ -170,21 +172,40 @@ public class HotFileReplicator implements CellMessageReceiver, CellCommandListen
     }
 
     /**
-     * Command to get or set the hotspot threshold.
+     * Command to get or set the number of replicas.
      */
-    @Command(name = "hotfile-replicator hotspot-threshold",
-             description = "Get or set the hotspot threshold for triggering replication.")
-    public class HotspotThresholdCommand implements Callable<String> {
-        @Option(name = "set", usage = "Set the hotspot threshold value.")
+    @Command(name = "hotfile-replicator replicas",
+             description = "Get or set the number of replicas to ensure via replication.")
+    public class NumReplicasCommand implements Callable<String> {
+        @Option(name = "set", usage = "Set the number of replicas.")
+        Integer set;
+
+        @Override
+        public String call() {
+            if (set != null) {
+                setNumReplicas(set);
+                return "NumReplicas set to " + set;
+            }
+            return "Current replicas: " + getNumReplicas();
+        }
+    }
+
+    /**
+     * Command to get or set the threshold.
+     */
+    @Command(name = "hotfile-replicator threshold",
+             description = "Get or set the threshold for triggering replication.")
+    public class ThresholdCommand implements Callable<String> {
+        @Option(name = "set", usage = "Set the threshold value.")
         Long set;
 
         @Override
         public String call() {
             if (set != null) {
-                setHotspotThreshold(set);
-                return "Hotspot threshold set to " + set;
+                setThreshold(set);
+                return "Threshold set to " + set;
             }
-            return "Current hotspot threshold: " + getHotspotThreshold();
+            return "Current threshold: " + getThreshold();
         }
     }
 
@@ -235,19 +256,36 @@ public class HotFileReplicator implements CellMessageReceiver, CellCommandListen
     }
 
     // Accessors and mutators for command use
-    public long getHotspotThreshold() {
+    public int getNumReplicas() {
         _lock.lock();
         try {
-            return hotspotThreshold;
+            return replicas;
         } finally {
             _lock.unlock();
         }
     }
-    public void setHotspotThreshold(long value) {
+    public void setNumReplicas(int value) {
         _lock.lock();
         try {
-            hotspotThreshold = value;
-            LOGGER.info("Hotspot threshold updated to {}", value);
+            replicas = value;
+            LOGGER.info("NumReplicas updated to {}", value);
+        } finally {
+            _lock.unlock();
+        }
+    }
+    public long getThreshold() {
+        _lock.lock();
+        try {
+            return threshold;
+        } finally {
+            _lock.unlock();
+        }
+    }
+    public void setThreshold(long value) {
+        _lock.lock();
+        try {
+            threshold = value;
+            LOGGER.info("Threshold updated to {}", value);
         } finally {
             _lock.unlock();
         }
