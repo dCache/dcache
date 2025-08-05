@@ -58,7 +58,7 @@ public class MoverRequestScheduler {
     private static final long DEFAULT_TOTAL = 0;
 
     public long numberOfRequestsFor(PnfsId pnfsId) {
-        return _jobs.values().stream().filter((pr) -> pr.getMover().getFileAttributes().getPnfsId() == pnfsId).count();
+        return _jobs.values().stream().filter((pr) -> pr.getMover().getFileAttributes().getPnfsId().equals(pnfsId)).count();
     }
 
     /**
