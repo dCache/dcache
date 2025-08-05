@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2021-2022 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2021-2025 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -29,11 +29,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.MaxUploadSize;
 import org.dcache.auth.attributes.PrefixRestriction;
 import org.dcache.auth.attributes.Restrictions;
+import org.dcache.auth.attributes.Role;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.omnisession.ParsedConfiguration.ParsedLine;
 import org.dcache.gplazma.omnisession.PrincipalPredicates.PredicateParserException;
@@ -166,6 +168,10 @@ public class ConfigurationParser implements LineBasedParser<Configuration> {
                         } catch (NumberFormatException e) {
                             throw new BadLineException("Bad file size: " + e.getMessage());
                         }
+                        break;
+
+                    case "role":
+                        attribute = new Role(arg);
                         break;
 
                     default:
