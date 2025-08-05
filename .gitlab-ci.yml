@@ -85,7 +85,7 @@ default:
 
 .kubernetes_image:
   extends: .kubernetes_tags
-  image: bitnami/kubectl:latest
+  image: dtzar/helm-kubectl:latest
 
 .helm_image:
   extends: .kubernetes_tags
@@ -415,13 +415,16 @@ Clean k8s environment:
 #
 Deploy 3rd party infrastructure services:
   stage: test_infra
-  extends: .helm_image
+  extends: .kubernetes_image
   script:
-    - helm repo add bitnami https://charts.bitnami.com/bitnami
-    - helm repo update
-    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set auth.username=dcache --set auth.password=let-me-in --set auth.database=chimera  chimera bitnami/postgresql --version=12.12.10
-    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait cells bitnami/zookeeper
-    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set externalZookeeper.servers=cells-zookeeper --set kraft.enabled=false billing bitnami/kafka --version 23.0.7
+    - kubectl -n ${K8S_NAMESPACE} apply -f .ci/k8s/postgresql-deployment.yaml
+    - kubectl -n ${K8S_NAMESPACE} wait --for=condition=Ready pod/postgres-0
+    - kubectl -n ${K8S_NAMESPACE} apply -f .ci/k8s/zookeeper-deployment.yaml
+    - kubectl -n ${K8S_NAMESPACE} wait --for=condition=Ready pod/zookeeper-0
+    - kubectl -n ${K8S_NAMESPACE} apply -f .ci/k8s/kafka-deployment.yaml
+    - kubectl -n ${K8S_NAMESPACE} wait --for=condition=Ready pod/kafka-0
+    - kubectl -n ${K8S_NAMESPACE} exec kafka-0 -- /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --create --topic billing
+
 
 #
 # Start Current dCache version and an old pools
