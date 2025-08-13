@@ -46,6 +46,7 @@ import statemap.TransitionUndefinedException;
  * This class mostly contains utility methods and auxiliary state used by the state machine.
  */
 public class Task {
+    private static final org.slf4j.Logger LOGGER = org.slf4j.LoggerFactory.getLogger(Task.class);
 
     private static final AtomicInteger _counter = new AtomicInteger();
 
@@ -261,7 +262,9 @@ public class Task {
         checkState(!isMetaOnly());
 
         try {
-            initiateCopy(selectPool());
+            String selectedPool = selectPool();
+            LOGGER.debug("Task.initiateCopy() has selected pool {} to copy pnfsID {}", selectedPool, getPnfsId());
+            initiateCopy(selectedPool);
         } catch (NoSuchElementException e) {
             _target = null;
             _parameters.executor.execute(new FireAndForgetTask(() -> {
@@ -277,6 +280,7 @@ public class Task {
      */
     private synchronized void
     initiateCopy(CellPath target) {
+        LOGGER.debug("Task.initiateCopy() called for pnfsId {} (taskId={})", getPnfsId(), getId());
         _target = target;
         PoolMigrationCopyReplicaMessage copyReplicaMessage =
               new PoolMigrationCopyReplicaMessage(_uuid,
@@ -405,12 +409,23 @@ public class Task {
      * Starts the task.
      */
     public synchronized void run() {
-        if (_fileAttributes.isDefined(FileAttribute.LOCATIONS)) {
-            setLocations(_fileAttributes.getLocations());
-            _fsm.startWithLocations();
-        } else {
-            _fsm.startWithoutLocations();
+        LOGGER.debug("Task.run() called for pnfsId {} (taskId={})", getPnfsId(), getId());
+        try {
+            if (_fileAttributes.isDefined(FileAttribute.LOCATIONS)) {
+                LOGGER.debug("Task.run() LOCATIONS found for pnfsId {} (taskId={})", getPnfsId(), getId());
+                setLocations(_fileAttributes.getLocations());
+                _fsm.startWithLocations();
+            } else {
+                _fsm.startWithoutLocations();
+            }
+        } catch (Exception e) {
+            LOGGER.error("Exception in Task.run() for pnfsId {} (taskId={}): {}", getPnfsId(), getId(), e.toString(), e);
+            // Optionally, fail the task explicitly if needed:
+            if (_callbackHandler != null) {
+                _callbackHandler.taskFailed(this, -1, "Exception in Task.run(): " + e.toString());
+            }
         }
+        LOGGER.debug("Task.run() exiting for (taskId={})", getId());
     }
 
     /**
