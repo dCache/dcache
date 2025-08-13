@@ -114,7 +114,12 @@ public class HotFileReplicator implements CellMessageReceiver, CellCommandListen
                       ReplicaState.CACHED, Collections.emptyList(),
                       Collections.emptyList(), entry.getFileAttributes(), entry.getLastAccessTime());
                 _inFlightMigrations.put(message.getPnfsId(), task);
-                task.run();
+                LOGGER.debug("maybeReplicate() scheduling migration task for pnfsId {} on executor", pnfsId);
+                _taskParameters.executor.execute(() -> {
+                    LOGGER.debug("maybeReplicate() migration task for pnfsId {} started on executor", pnfsId);
+                    task.run();
+                });
+                LOGGER.debug("maybeReplicate() migration task for pnfsId {} submitted to executor", pnfsId);
             } catch (FileNotInCacheException e) {
                 LOGGER.warn("File no longer in cache for pnfsId {}: {}", pnfsId, e.toString());
             } catch (CacheException e) {
