@@ -205,6 +205,7 @@ public class Task {
      * FSM Action
      */
     synchronized void queryLocations() {
+        LOGGER.debug("Task.queryLocations() called for pnfsId {} (taskId={})", getPnfsId(), getId());
         CellStub.addCallback(_parameters.pnfs.send(new PnfsGetCacheLocationsMessage(getPnfsId())),
               new Callback<PnfsGetCacheLocationsMessage>("query_") {
                   @Override
@@ -219,6 +220,7 @@ public class Task {
      * Sets the list of pools on which a copy of the replica is known to exist.
      */
     private synchronized void setLocations(Collection<String> locations) {
+        LOGGER.debug("Task.setLocations() called for pnfsId {} (taskId={})", getPnfsId(), getId());
         Stream<String> pools = _parameters.poolList.getPools().stream()
               .map(PoolManagerPoolInformation::getName);
         if (!_parameters.isEager) {
@@ -231,6 +233,7 @@ public class Task {
      * Returns true iff there are more target pools with copies of the replica.
      */
     synchronized boolean hasMoreLocations() {
+        LOGGER.debug("Task.hasMoreLocations() called for pnfsId {} (taskId={})", getPnfsId(), getId());
         return !_locations.isEmpty();
     }
 
@@ -239,10 +242,12 @@ public class Task {
      * job.
      */
     synchronized boolean needsMoreReplicas() {
+        LOGGER.debug("Task.needsMoreReplicas() called for pnfsId {} (taskId={})", getPnfsId(), getId());
         return _replicas.size() < _parameters.replicas;
     }
 
     synchronized boolean moreReplicasPossible() {
+        LOGGER.debug("Task.moreReplicasPossible() called for pnfsId {} (taskId={})", getPnfsId(), getId());
       return _parameters.waitForTargets || (_replicas.size() < _parameters.poolList.getPools().size());
     }
 
@@ -250,6 +255,7 @@ public class Task {
      * FSM Action
      */
     synchronized void updateExistingReplica() {
+        LOGGER.debug("Task.updateExistingReplica() called for pnfsId {} (taskId={})", getPnfsId(), getId());
         assert !_locations.isEmpty();
 
         initiateCopy(new CellPath(_locations.removeFirst()));
@@ -259,10 +265,11 @@ public class Task {
      * FSM Action
      */
     synchronized void initiateCopy() {
+        LOGGER.debug("Task.initiateCopy() called for pnfsId {} (taskId={})", getPnfsId(), getId());
         checkState(!isMetaOnly());
 
         try {
-            String selectedPool = selectPool();
+            CellPath selectedPool = selectPool();
             LOGGER.debug("Task.initiateCopy() has selected pool {} to copy pnfsID {}", selectedPool, getPnfsId());
             initiateCopy(selectedPool);
         } catch (NoSuchElementException e) {
@@ -280,6 +287,7 @@ public class Task {
      */
     private synchronized void
     initiateCopy(CellPath target) {
+        LOGGER.debug("Task.initiateCopy(target) called for pnfsId {} (taskId={}) target={}", getPnfsId(), getId(), target);
         LOGGER.debug("Task.initiateCopy() called for pnfsId {} (taskId={})", getPnfsId(), getId());
         _target = target;
         PoolMigrationCopyReplicaMessage copyReplicaMessage =
@@ -300,10 +308,12 @@ public class Task {
      * FSM Action
      */
     synchronized void cancelCopy() {
+        LOGGER.debug("Task.cancelCopy() called for pnfsId {} (taskId={})", getPnfsId(), getId());
         cancelCopy(_cancelReason.orElse(null));
     }
 
     synchronized void cancelCopy(String reason) {
+        LOGGER.debug("Task.cancelCopy(reason) called for pnfsId {} (taskId={}) reason={}", getPnfsId(), getId(), reason);
         CellStub.addCallback(_parameters.pool.send(_target,
                     new PoolMigrationCancelMessage(_uuid,
                           _source,
@@ -316,6 +326,7 @@ public class Task {
      * FSM Action
      */
     synchronized void movePin() {
+        LOGGER.debug("Task.movePin() called for pnfsId {} (taskId={})", getPnfsId(), getId());
         Callback<PinManagerMovePinMessage> callback = new Callback<>("move_");
         String target = _target.getDestinationAddress().getCellName();
         PinManagerMovePinMessage message =
@@ -327,6 +338,7 @@ public class Task {
      * FSM Action
      */
     void notifyCancelled() {
+        LOGGER.debug("Task.notifyCancelled() called for pnfsId {} (taskId={})", getPnfsId(), getId());
         _parameters.executor.execute(
               new FireAndForgetTask(() -> _callbackHandler.taskCancelled(Task.this)));
     }
@@ -335,6 +347,7 @@ public class Task {
      * FSM Action
      */
     void fail(int rc, String message) {
+        LOGGER.debug("Task.fail() called for pnfsId {} (taskId={}) rc={} message={}", getPnfsId(), getId(), rc, message);
         _parameters.executor.execute(
               new FireAndForgetTask(() -> _callbackHandler.taskFailed(Task.this, rc, message)));
     }
@@ -343,6 +356,7 @@ public class Task {
      * FSM Action
      */
     void failPermanently(int rc, String message) {
+        LOGGER.debug("Task.failPermanently() called for pnfsId {} (taskId={}) rc={} message={}", getPnfsId(), getId(), rc, message);
         _parameters.executor.execute(new FireAndForgetTask(
               () -> _callbackHandler.taskFailedPermanently(Task.this, rc, message)));
     }
@@ -351,6 +365,7 @@ public class Task {
      * FSM Action
      */
     void notifyCompleted() {
+        LOGGER.debug("Task.notifyCompleted() called for pnfsId {} (taskId={})", getPnfsId(), getId());
         _parameters.executor.execute(
               new FireAndForgetTask(() -> _callbackHandler.taskCompleted(Task.this)));
     }
@@ -359,6 +374,7 @@ public class Task {
      * FSM Action
      */
     void notifyCompletedWithInsufficientReplicas() {
+        LOGGER.debug("Task.notifyCompletedWithInsufficientReplicas() called for pnfsId {} (taskId={})", getPnfsId(), getId());
       _parameters.executor.execute(
               new FireAndForgetTask(() -> _callbackHandler.taskCompletedWithNote(Task.this,
                       String.format("File replicas truncated at %s due to pool availability (%s requested)",
@@ -369,6 +385,7 @@ public class Task {
      * FSM Action
      */
     synchronized void startTimer(long delay) {
+        LOGGER.debug("Task.startTimer() called for pnfsId {} (taskId={}) delay={}ms", getPnfsId(), getId(), delay);
         Runnable task =
               () -> {
                   synchronized (Task.this) {
@@ -387,6 +404,7 @@ public class Task {
      * FSM Action
      */
     synchronized void stopTimer() {
+        LOGGER.debug("Task.stopTimer() called for pnfsId {} (taskId={})", getPnfsId(), getId());
         if (_timerTask != null) {
             _timerTask.cancel(false);
             _timerTask = null;
@@ -397,6 +415,7 @@ public class Task {
      * FSM Action
      */
     synchronized void ping() {
+        LOGGER.debug("Task.ping() called for pnfsId {} (taskId={})", getPnfsId(), getId());
         CellStub.addCallback(_parameters.pool.send(_target,
                     new PoolMigrationPingMessage(_uuid,
                           _source,
@@ -414,8 +433,10 @@ public class Task {
             if (_fileAttributes.isDefined(FileAttribute.LOCATIONS)) {
                 LOGGER.debug("Task.run() LOCATIONS found for pnfsId {} (taskId={})", getPnfsId(), getId());
                 setLocations(_fileAttributes.getLocations());
+                LOGGER.debug("Task.run() calling startWithLocations() for pnfsId {} (taskId={})", getPnfsId(), getId());
                 _fsm.startWithLocations();
             } else {
+                LOGGER.debug("Task.run() calling startWithoutLocations() for pnfsId {} (taskId={})", getPnfsId(), getId());
                 _fsm.startWithoutLocations();
             }
         } catch (Exception e) {
@@ -459,6 +480,7 @@ public class Task {
         }
 
         protected void transition(String name, final Object... arguments) {
+            LOGGER.debug("Callback.transition() ENTRY: prefix='{}', name='{}', arguments={}, pnfsId={}, taskId={}", _prefix, name, java.util.Arrays.toString(arguments), Task.this.getPnfsId(), Task.this.getId());
             try {
                 Class<?>[] parameterTypes = new Class[arguments.length];
                 for (int i = 0; i < arguments.length; i++) {
@@ -481,6 +503,7 @@ public class Task {
                         throw new RuntimeException("State machine is incomplete", e);
                     }
                 }
+                LOGGER.debug("Callback.transition() EXIT: prefix='{}', name='{}', arguments={}, pnfsId={}, taskId={}", _prefix, name, java.util.Arrays.toString(arguments), Task.this.getPnfsId(), Task.this.getId());
             } catch (Throwable e) {
                 Thread thisThread = Thread.currentThread();
                 Thread.UncaughtExceptionHandler ueh = thisThread.getUncaughtExceptionHandler();
@@ -490,22 +513,30 @@ public class Task {
 
         @Override
         public void success(T message) {
+            LOGGER.debug("Callback.success() ENTRY: message={}, pnfsId={}, taskId={}", message, Task.this.getPnfsId(), Task.this.getId());
             transition("success");
+            LOGGER.debug("Callback.success() EXIT: message={}, pnfsId={}, taskId={}", message, Task.this.getPnfsId(), Task.this.getId());
         }
 
         @Override
         public void failure(int rc, Object cause) {
+            LOGGER.debug("Callback.failure() ENTRY: rc={}, cause={}, pnfsId={}, taskId={}", rc, cause, Task.this.getPnfsId(), Task.this.getId());
             transition("failure", rc, cause);
+            LOGGER.debug("Callback.failure() EXIT: rc={}, cause={}, pnfsId={}, taskId={}", rc, cause, Task.this.getPnfsId(), Task.this.getId());
         }
 
         @Override
         public void timeout(String error) {
+            LOGGER.debug("Callback.timeout() ENTRY: error={}, pnfsId={}, taskId={}", error, Task.this.getPnfsId(), Task.this.getId());
             transition("timeout");
+            LOGGER.debug("Callback.timeout() EXIT: error={}, pnfsId={}, taskId={}", error, Task.this.getPnfsId(), Task.this.getId());
         }
 
         @Override
         public void noroute(CellPath path) {
+            LOGGER.debug("Callback.noroute() ENTRY: path={}, pnfsId={}, taskId={}", path, Task.this.getPnfsId(), Task.this.getId());
             transition("noroute");
+            LOGGER.debug("Callback.noroute() EXIT: path={}, pnfsId={}, taskId={}", path, Task.this.getPnfsId(), Task.this.getId());
         }
     }
 }
