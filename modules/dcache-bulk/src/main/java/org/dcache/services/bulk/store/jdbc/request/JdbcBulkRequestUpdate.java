@@ -172,11 +172,6 @@ public final class JdbcBulkRequestUpdate extends JdbcUpdate {
         return this;
     }
 
-    public JdbcBulkRequestUpdate delayClear(int delayClear) {
-        set("delay_clear", delayClear);
-        return this;
-    }
-
     public JdbcBulkRequestUpdate depth(Depth depth) {
         if (depth != null) {
             set("expand_directories", depth.name());
