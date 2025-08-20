@@ -269,7 +269,7 @@ public final class JdbcBulkRequestStore implements BulkRequestStore {
         String key = checkRequestPermissions(subject, uid);
         LOGGER.trace("clearWhenTerminated {}, {}.", key, uid);
         requestDao.update(requestDao.where().uids(uid),
-              requestDao.set().clearOnFailure(true).clearOnSuccess(true).delayClear(0));
+                          requestDao.set().clearOnFailure(true).clearOnSuccess(true));
         requestCache.invalidate(uid);
     }
 
