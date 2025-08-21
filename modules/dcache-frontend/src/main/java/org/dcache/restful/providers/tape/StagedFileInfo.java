@@ -59,6 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.providers.tape;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.io.Serializable;
 import org.dcache.services.bulk.BulkRequestTargetInfo;
 
@@ -97,6 +98,8 @@ import org.dcache.services.bulk.BulkRequestTargetInfo;
  * <p> From the above, it will be dCache policy always to return state and not onDisk unless
  *     the former is not set.
  */
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class StagedFileInfo implements Serializable {
 
     private static final long serialVersionUID = 7530936044659226339L;

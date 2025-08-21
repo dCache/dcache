@@ -59,12 +59,14 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.providers.tape;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import diskCacheV111.util.FileLocality;
 import java.io.Serializable;
 
 /**
  *  Specialized for WLCG archiveinfo, encapsulates path, file locality and error message.
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ArchiveInfo implements Serializable {
 
     private static final long serialVersionUID = 3273661715952056706L;

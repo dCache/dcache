@@ -59,6 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.providers.tape;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -91,6 +92,8 @@ import org.dcache.services.bulk.BulkRequestInfo;
  *     </tr>
  * </table>
  */
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class StageRequestInfo implements Serializable {
 
     private static final long serialVersionUID = 1269517713600606880L;
