@@ -5,7 +5,6 @@ import com.google.common.collect.Lists;
 
 import java.security.SecureRandom;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -92,7 +91,7 @@ public class WRandomPartition extends Partition
         return new SelectedPool(weightedPools[index].getCostInfo());
     }
 
-    private WeightedPool[] toWeightedWritePoolsArray(Collection<PoolInfo> costInfos, long fileSize)
+    private WeightedPool[] toWeightedWritePoolsArray(List<PoolInfo> costInfos, long fileSize)
             throws CacheException {
 
         long totalFree = 0;
@@ -111,8 +110,10 @@ public class WRandomPartition extends Partition
 
         // the validCount should macht the number of pools that have enough space, thus elegible for selection
         WeightedPool[] weightedPools = new WeightedPool[validCount];
-        int i = 0;
-        for (PoolInfo costInfo : costInfos) {
+        for (int i = 0; i < weightedPools.length; /* incremented in the loop */) {
+
+            var costInfo = costInfos.get(i);
+
             long gap = costInfo.getCostInfo().getSpaceInfo().getGap();
 
             long spaceToUse = costInfo.getCostInfo().getSpaceInfo().getFreeSpace()
