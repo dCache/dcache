@@ -26,6 +26,7 @@ public class HotFileReplicatorTest {
     private CellStub pnfsStub;
     private CellStub poolStub;
     private CellStub pinManagerStub;
+    private CellStub poolManagerStub;
     private PoolSelectionStrategy selectionStrategy;
     private TaskParameters taskParameters;
     private ListenableFuture listenableFuture;
@@ -43,11 +44,12 @@ public class HotFileReplicatorTest {
         pnfsStub = mock(CellStub.class);
         poolStub = mock(CellStub.class);
         pinManagerStub = mock(CellStub.class);
+        poolManagerStub = mock(CellStub.class);
         selectionStrategy = mock(PoolSelectionStrategy.class);
         listenableFuture = mock(ListenableFuture.class);
 
         when(context.getRepository()).thenReturn(repository);
-        when(context.getPoolManagerStub()).thenReturn(null);
+        when(context.getPoolManagerStub()).thenReturn(poolManagerStub);
         when(context.getPoolName()).thenReturn("testPool");
         when(context.getPoolStub()).thenReturn(poolStub);
         when(context.getPnfsStub()).thenReturn(pnfsStub);
