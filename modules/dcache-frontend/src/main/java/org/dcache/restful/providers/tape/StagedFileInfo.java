@@ -97,6 +97,9 @@ import org.dcache.services.bulk.BulkRequestTargetInfo;
  *
  * <p> From the above, it will be dCache policy always to return state and not onDisk unless
  *     the former is not set.
+ *
+ *  The JsonInclude(JsonInclude.Include.NON_NULL) is added to skip null fields that WLCG
+ *  REST API expects
  */
 
 @JsonInclude(JsonInclude.Include.NON_NULL)

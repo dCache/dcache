@@ -65,6 +65,8 @@ import java.io.Serializable;
 
 /**
  *  Specialized for WLCG archiveinfo, encapsulates path, file locality and error message.
+ *  The JsonInclude(JsonInclude.Include.NON_NULL) is added to skip null fields that WLCG
+ *  REST API expects
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ArchiveInfo implements Serializable {

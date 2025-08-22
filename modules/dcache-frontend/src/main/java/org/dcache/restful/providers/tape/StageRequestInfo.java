@@ -91,6 +91,9 @@ import org.dcache.services.bulk.BulkRequestInfo;
  *         <td>The files that got submitted and their state/disk residency.</td>
  *     </tr>
  * </table>
+ *
+ *  The JsonInclude(JsonInclude.Include.NON_NULL) is added to skip null fields that WLCG
+ *  REST API expects
  */
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
