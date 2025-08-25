@@ -157,6 +157,8 @@ public class Task {
      */
     private CellPath selectPool()
           throws NoSuchElementException {
+        LOGGER.debug("Task.selectPool() called for pnfsId {} (taskId={})", getPnfsId(), getId());
+        LOGGER.debug("poollist.getPools() = {}", _parameters.poolList.getPools().stream().map(PoolManagerPoolInformation::getName).reduce((a, b) -> a + "," + b).orElse(""));
         List<PoolManagerPoolInformation> pools =
               _parameters.poolList.getPools().stream()
                     .filter(pool -> !_replicas.contains(pool.getName()))
@@ -288,7 +290,6 @@ public class Task {
     private synchronized void
     initiateCopy(CellPath target) {
         LOGGER.debug("Task.initiateCopy(target) called for pnfsId {} (taskId={}) target={}", getPnfsId(), getId(), target);
-        LOGGER.debug("Task.initiateCopy() called for pnfsId {} (taskId={})", getPnfsId(), getId());
         _target = target;
         PoolMigrationCopyReplicaMessage copyReplicaMessage =
               new PoolMigrationCopyReplicaMessage(_uuid,
