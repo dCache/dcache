@@ -76,9 +76,9 @@ public class PoolInfoTableWriter {
         _html.beginTable("sortable",
               "cell", "CellName",
               "domain", "DomainName",
-              "total", "Total Space/MB",
-              "free", "Free Space/MB",
-              "precious", "Precious Space/MB",
+              "total", "Total Space",
+              "free", "Free Space",
+              "precious", "Precious Space",
               "layout", "<span>Layout   " +
                     "(<span class=\"layout_precious\">precious/</span>" +
                     "<span class=\"layout_sticky\">sticky/</span>" +
