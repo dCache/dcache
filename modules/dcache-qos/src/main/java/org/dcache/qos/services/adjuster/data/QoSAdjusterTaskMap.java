@@ -104,7 +104,7 @@ public final class QoSAdjusterTaskMap extends RunnableModule implements CellInfo
     private final Lock write = lock.writeLock();
     private final Lock read = lock.readLock();
 
-    private final Map<String, QoSAdjusterTask> index = new ConcurrentHashMap<>();
+    private final Map<PnfsId, QoSAdjusterTask> index = new ConcurrentHashMap<>();
     private final Deque<QoSAdjusterTask> runningQueue = new LinkedBlockingDeque<>();
     private final Deque<QoSAdjusterTask> readyQueue = new LinkedBlockingDeque<>();
     private final Deque<QoSAdjusterTask> waitingQueue = new LinkedBlockingDeque<>();
@@ -142,7 +142,7 @@ public final class QoSAdjusterTaskMap extends RunnableModule implements CellInfo
     public void cancel(PnfsId pnfsId) {
         write.lock();
         try {
-            QoSAdjusterTask task = index.get(pnfsId.toString());
+            QoSAdjusterTask task = index.get(pnfsId);
             if (task != null) {
                 LOGGER.debug("TaskMap cancel {}", pnfsId);
                 task.cancel("Cancelled by admin/user.");
@@ -432,7 +432,7 @@ public final class QoSAdjusterTaskMap extends RunnableModule implements CellInfo
         PnfsId pnfsId = message.getPnfsId();
         read.lock();
         try {
-            QoSAdjusterTask task = index.get(pnfsId.toString());
+            QoSAdjusterTask task = index.get(pnfsId);
             if (task == null) {
                 /*
                  *  Treat the missing entry benignly,
@@ -462,7 +462,7 @@ public final class QoSAdjusterTaskMap extends RunnableModule implements CellInfo
 
         read.lock();
         try {
-            task = index.get(pnfsId.toString());
+            task = index.get(pnfsId);
             if (task == null) {
                 /*
                  *  Treat the missing entry benignly,
@@ -483,11 +483,10 @@ public final class QoSAdjusterTaskMap extends RunnableModule implements CellInfo
 
     @GuardedBy("write")
     private boolean add(PnfsId pnfsId, QoSAdjusterTask task) {
-        String key = pnfsId.toString();
-        if (index.containsKey(key)) {
+        if (index.containsKey(pnfsId)) {
             return false;
         }
-        index.put(key, task);
+        index.put(pnfsId, task);
         readyQueue.add(task);
         return true;
     }
@@ -507,11 +506,11 @@ public final class QoSAdjusterTaskMap extends RunnableModule implements CellInfo
         if (task.getException() != null && retry < maxRetries) {
             LOGGER.debug("TaskMap handleTerminatedTask, readding {}", task.getPnfsId());
             task = new QoSAdjusterTask(task, retry + 1);
-            index.put(task.getPnfsId().toString(), task);
+            index.put(task.getPnfsId(), task);
             readyQueue.add(task);
         } else {
             LOGGER.debug("TaskMap handleTerminatedTask, removing {}", task.getPnfsId());
-            index.remove(task.getPnfsId().toString());
+            index.remove(task.getPnfsId());
             history.add(task.getPnfsId(), task.toHistoryString(), task.getException() != null);
             counters.recordTask(task);
             taskHandler.notifyAdjustmentCompleted(task);
