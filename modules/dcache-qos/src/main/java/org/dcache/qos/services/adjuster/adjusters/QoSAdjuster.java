@@ -86,6 +86,7 @@ public abstract class QoSAdjuster implements Cancellable {
     protected PnfsId pnfsId;
     protected FileAttributes attributes;
     protected QoSAction action;
+    protected String target;
     protected Subject subject ;
     protected QoSAdjustTaskCompletionHandler completionHandler;
 
@@ -93,6 +94,7 @@ public abstract class QoSAdjuster implements Cancellable {
         pnfsId = task.getPnfsId();
         action = task.getAction();
         attributes = task.getAttributes();
+        target = task.getTarget();
         subject = task.getSubject();
 
         /*

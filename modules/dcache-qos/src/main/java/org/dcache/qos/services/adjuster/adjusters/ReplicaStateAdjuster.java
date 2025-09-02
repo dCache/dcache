@@ -62,7 +62,6 @@ package org.dcache.qos.services.adjuster.adjusters;
 import static org.dcache.qos.services.adjuster.handlers.QoSAdjustTaskCompletionHandler.FAILED_STATE_CHANGE_MESSAGE;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
 import dmg.cells.nucleus.CellPath;
 import java.util.Optional;
@@ -70,7 +69,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import org.dcache.cells.CellStub;
-import org.dcache.qos.data.QoSAction;
 import org.dcache.qos.services.adjuster.handlers.QoSAdjustTaskCompletionHandler;
 import org.dcache.qos.services.adjuster.util.QoSAdjusterTask;
 import org.dcache.qos.util.CacheExceptionUtils;
@@ -89,17 +87,10 @@ public final class ReplicaStateAdjuster extends QoSAdjuster {
     ExecutorService executorService;
     QoSAdjustTaskCompletionHandler completionHandler;
 
-    private PnfsId pnfsId;
-    private String target;
-    private QoSAction action;
     private Future<Message> future;
 
     @Override
     protected void runAdjuster(QoSAdjusterTask task) {
-        pnfsId = task.getPnfsId();
-        target = task.getTarget();
-        action = task.getAction();
-
         executorService.submit(() -> {
             sendMessageToRepository();
             waitForReply();
