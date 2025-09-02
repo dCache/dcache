@@ -87,6 +87,7 @@ import java.util.stream.Collectors;
 import org.dcache.cells.CellStub;
 import org.dcache.qos.data.FileQoSRequirements;
 import org.dcache.qos.data.QoSAction;
+import org.dcache.qos.data.QoSMessageType;
 import org.dcache.qos.services.verifier.data.PoolInfoMap;
 import org.dcache.qos.services.verifier.data.VerifiedLocations;
 import org.dcache.qos.services.verifier.data.VerifyOperation;
@@ -447,6 +448,18 @@ public abstract class FileStatusVerifier {
             if (missing < 0) {
                 missing = 0;
             }
+        }
+
+        // REVISIT: effectively disable adjustment if we need to reduce the number of replicas.
+        //
+        // This section is added due to race condition between PIN and UNPIN operations, which
+        // may lead to PIN and UNPIN requests processed out of order. Thus UNPIN, followed by PIN, with
+        // expected result in file being pinned may be processed as PIN followed by UNPIN, with
+        // file ending in unpinned state.
+        //
+         // The redundant pinned copy will be reduced by scanner at the next run.
+        if (missing < 0 && operation.getMessageType() != QoSMessageType.SYSTEM_SCAN) {
+            missing = 0;
         }
 
         operation.setNeeded(Math.abs(missing));
