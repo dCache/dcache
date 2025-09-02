@@ -159,9 +159,9 @@ public class ExtendedInode extends FsInode {
     }
 
     public ImmutableList<String> getLocations(int type) throws ChimeraFsException {
-        return ImmutableList.copyOf(
-              getLocations().stream().filter(l -> l.type() == type).map(StorageLocatable::location)
-                    .iterator());
+        return _fs.getInodeLocations(this).stream().filter(l -> l.type() == type)
+                .map(StorageLocatable::location)
+                .collect(ImmutableList.toImmutableList());
     }
 
     public ImmutableList<StorageLocatable> getLocations() throws ChimeraFsException {
