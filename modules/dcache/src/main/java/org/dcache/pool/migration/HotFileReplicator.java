@@ -10,6 +10,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import java.util.regex.Pattern;
+import org.dcache.pool.classic.FileRequestMonitor;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.Repository;
@@ -31,7 +32,7 @@ import dmg.util.command.Command;
 import dmg.util.command.Option;
 
 public class HotFileReplicator implements CellMessageReceiver, CellCommandListener, CellSetupProvider,
-      CellLifeCycleAware, TaskCompletionHandler {
+      CellLifeCycleAware, FileRequestMonitor, TaskCompletionHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HotFileReplicator.class);
 
@@ -80,10 +81,10 @@ public class HotFileReplicator implements CellMessageReceiver, CellCommandListen
         });
     }
 
-    public void maybeReplicate(PoolIoFileMessage message, long numberOfRequests) {
+    @Override
+    public void reportFileRequest(PnfsId pnfsId, long numberOfRequests) {
         _lock.lock();
         try {
-            PnfsId pnfsId = message.getPnfsId();
             LOGGER.debug("maybeReplicate() logging {} requests for pnfsId {} (threshold {})", numberOfRequests, pnfsId, threshold);
             if (numberOfRequests < threshold || _inFlightMigrations.containsKey(pnfsId))
                 return;
@@ -130,7 +131,7 @@ public class HotFileReplicator implements CellMessageReceiver, CellCommandListen
                       Collections.emptyList(),
                       entry.getFileAttributes(),
                       entry.getLastAccessTime());
-                _inFlightMigrations.put(message.getPnfsId(), task);
+                _inFlightMigrations.put(pnfsId, task);
                 LOGGER.debug("maybeReplicate() scheduling migration task for pnfsId {} on executor", pnfsId);
                 taskParameters.executor.execute(() -> {
                     LOGGER.debug("maybeReplicate() migration task for pnfsId {} started on executor", pnfsId);
