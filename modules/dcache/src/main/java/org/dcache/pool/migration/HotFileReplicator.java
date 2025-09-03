@@ -10,6 +10,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import java.util.regex.Pattern;
+import org.dcache.pool.classic.FileRequestMonitor;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.Repository;
@@ -31,7 +32,7 @@ import dmg.util.command.Command;
 import dmg.util.command.Option;
 
 public class HotFileReplicator implements CellMessageReceiver, CellCommandListener, CellSetupProvider,
-      CellLifeCycleAware, TaskCompletionHandler {
+      CellLifeCycleAware, FileRequestMonitor, TaskCompletionHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HotFileReplicator.class);
 
@@ -80,16 +81,16 @@ public class HotFileReplicator implements CellMessageReceiver, CellCommandListen
         });
     }
 
-    public void maybeReplicate(PoolIoFileMessage message, long numberOfRequests) {
+    @Override
+    public void reportFileRequest(PnfsId pnfsId, long numberOfRequests) {
         _lock.lock();
         try {
-            PnfsId pnfsId = message.getPnfsId();
-            LOGGER.debug("maybeReplicate() logging {} requests for pnfsId {} (threshold {})", numberOfRequests, pnfsId, threshold);
+            LOGGER.debug("reportFileRequest() logging {} requests for pnfsId {} (threshold {})", numberOfRequests, pnfsId, threshold);
             if (numberOfRequests < threshold || _inFlightMigrations.containsKey(pnfsId))
                 return;
             // Assemble the correct information, and start the task
             try {
-                LOGGER.debug("maybeReplicate() initiating request for {} replicas of pnfsId {}", replicas, pnfsId);
+                LOGGER.debug("reportFileRequest() initiating request for {} replicas of pnfsId {}", replicas, pnfsId);
                 Repository repository = _context.getRepository();
                 CacheEntry entry = repository.getEntry(pnfsId);
                 RefreshablePoolList sourceList = new PoolListByNames(_context.getPoolManagerStub(),
@@ -130,13 +131,13 @@ public class HotFileReplicator implements CellMessageReceiver, CellCommandListen
                       Collections.emptyList(),
                       entry.getFileAttributes(),
                       entry.getLastAccessTime());
-                _inFlightMigrations.put(message.getPnfsId(), task);
-                LOGGER.debug("maybeReplicate() scheduling migration task for pnfsId {} on executor", pnfsId);
+                _inFlightMigrations.put(pnfsId, task);
+                LOGGER.debug("reportFileRequest() scheduling migration task for pnfsId {} on executor", pnfsId);
                 taskParameters.executor.execute(() -> {
-                    LOGGER.debug("maybeReplicate() migration task for pnfsId {} started on executor", pnfsId);
+                    LOGGER.debug("reportFileRequest() migration task for pnfsId {} started on executor", pnfsId);
                     task.run();
                 });
-                LOGGER.debug("maybeReplicate() migration task for pnfsId {} submitted to executor", pnfsId);
+                LOGGER.debug("reportFileRequest() migration task for pnfsId {} submitted to executor", pnfsId);
             } catch (FileNotInCacheException e) {
                 LOGGER.warn("File no longer in cache for pnfsId {}: {}", pnfsId, e.toString());
             } catch (CacheException e) {

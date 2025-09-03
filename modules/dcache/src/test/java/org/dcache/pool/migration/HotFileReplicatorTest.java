@@ -58,6 +58,7 @@ public class HotFileReplicatorTest {
 
         // Mock CellStub.send to return a mock ListenableFuture for any generic type
         when((ListenableFuture) pnfsStub.send(any(), any())).thenReturn(listenableFuture);
+        when((ListenableFuture) poolManagerStub.send(any(), any())).thenReturn(listenableFuture);
         // Mock addListener to do nothing
         doNothing().when(listenableFuture).addListener(any(Runnable.class), any());
 
@@ -65,23 +66,23 @@ public class HotFileReplicatorTest {
     }
 
     @Test
-    public void testMaybeReplicateBelowThreshold() throws Exception {
+    public void testReportFileRequestBelowThreshold() throws Exception {
         PnfsId pnfsId = new PnfsId("0000A1B2C3D4E5F6");
         when(message.getPnfsId()).thenReturn(pnfsId);
-        replicator.maybeReplicate(message, 1L); // below default threshold
+        replicator.reportFileRequest(pnfsId, 1L); // below default threshold
         // Should not trigger repository.getEntry
         verify(repository, never()).getEntry(any());
     }
 
     @Test
-    public void testMaybeReplicateAboveThreshold() throws Exception {
+    public void testReportFileRequestAboveThreshold() throws Exception {
         PnfsId pnfsId = new PnfsId("0000A1B2C3D4E5F6");
         when(message.getPnfsId()).thenReturn(pnfsId);
         when(repository.getEntry(pnfsId)).thenReturn(entry);
         when(entry.getPnfsId()).thenReturn(pnfsId);
         when(entry.getFileAttributes()).thenReturn(fileAttributes);
         when(entry.getLastAccessTime()).thenReturn(0L);
-        replicator.maybeReplicate(message, 10L); // above default threshold
+        replicator.reportFileRequest(pnfsId, 10L); // above default threshold
         verify(repository, times(1)).getEntry(pnfsId);
     }
 }
