@@ -92,7 +92,7 @@
     <property name="poolMode" ref="pool-mode"/>
     <property name="billingStub" ref="billing-stub"/>
     <property name="executor" ref="workerThreadPool"/>
-    <property name="hotFileReplicator" ref="hotFileReplicator"/>
+    <property name="fileRequestMonitor" ref="hotFileReplicator"/>
   </bean>
 
   <bean id="pnfs" class="diskCacheV111.util.PnfsHandler">
