@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2021 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2021 - 2025 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -45,7 +45,7 @@ import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 public class PrincipalPredicates {
 
     private static final Pattern PRINCIPAL_PREDICATE =
-          Pattern.compile("^(?<type>[^:]+):(?<value>([^\"][^ ]*)|(\"[^\"]*\"?)) *");
+          Pattern.compile("^(?<type>[^:]+):(?<value>([^\"][^ \t]*)|(\"[^\"]*\"?)) *");
     private static final Map<String, TestablePrincipal> TESTABLE_PRINCIPAL_BY_LABEL;
 
     static {

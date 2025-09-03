@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2021-2025 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2021 - 2025 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -22,6 +22,7 @@ import static org.dcache.util.ByteSizeParser.UnitPresence.OPTIONAL;
 import static org.dcache.util.ByteSizeParser.Whitespace.NOT_ALLOWED;
 import static org.dcache.util.Exceptions.genericCheck;
 
+import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 import diskCacheV111.util.FsPath;
 import java.util.ArrayList;
@@ -89,7 +90,7 @@ public class ConfigurationParser implements LineBasedParser<Configuration> {
         }
 
         try {
-            if (line.startsWith("DEFAULT ")) {
+            if (line.startsWith("DEFAULT")) {
                 checkBadLine(defaultAttributes.isEmpty(), "\"DEFAULT\" is already defined.");
                 List<LoginAttribute> attributes = parseAttributes(line.substring(8));
                 defaultAttributes = Optional.of(attributes);
@@ -125,7 +126,7 @@ public class ConfigurationParser implements LineBasedParser<Configuration> {
         boolean isReadOnly = false;
         Set<Class<? extends LoginAttribute>> addedAttributes = new HashSet<>();
 
-        for (String attr : Splitter.on(' ').omitEmptyStrings().split(description)) {
+        for (String attr : Splitter.on(CharMatcher.whitespace()).trimResults().omitEmptyStrings().split(description)) {
             try {
                 if (attr.equals("read-only")) {
                     checkBadLine(!isReadOnly, "already defined 'read-only'");
