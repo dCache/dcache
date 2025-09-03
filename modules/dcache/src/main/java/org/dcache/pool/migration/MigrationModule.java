@@ -40,6 +40,7 @@ import java.util.regex.Pattern;
 import javax.annotation.concurrent.GuardedBy;
 import org.dcache.cells.CellStub;
 import org.dcache.pool.PoolDataBeanProvider;
+import org.dcache.pool.classic.FileRequestMonitor;
 import org.dcache.pool.classic.IoQueueManager;
 import org.dcache.pool.migration.json.MigrationData;
 import org.dcache.pool.repository.CacheEntry;
@@ -55,6 +56,8 @@ import org.dcache.util.expression.UnknownIdentifierException;
 import org.parboiled.Parboiled;
 import org.parboiled.parserunners.ReportingParseRunner;
 import org.parboiled.support.ParsingResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Module for migrating files between pools.
@@ -98,8 +101,9 @@ import org.parboiled.support.ParsingResult;
  */
 public class MigrationModule
       implements CellCommandListener, CellMessageReceiver, CellSetupProvider, CellLifeCycleAware,
-      CellInfoProvider,
-      PoolDataBeanProvider<MigrationData> {
+      CellInfoProvider, PoolDataBeanProvider<MigrationData>, FileRequestMonitor {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(MigrationModule.class);
 
     private static final PoolManagerPoolInformation DUMMY_POOL =
           new PoolManagerPoolInformation("pool",
@@ -135,7 +139,11 @@ public class MigrationModule
 
     private int _counter = 1;
 
-    private MigrationModule(MigrationContext context) {
+    // HotFileReplicator-style parameters
+    private int replicas = 1;
+    private long threshold = 5;
+
+    public MigrationModule(MigrationContext context) {
         _context = context;
     }
 
@@ -166,6 +174,15 @@ public class MigrationModule
     private String getJobSummary(String id) {
         Job job = getJob(id);
         return String.format("[%s] %-12s %s", id, job.getState(), _commands.get(job));
+    }
+
+    /**
+     * Check whether a job with the given id exists.
+     * @param id
+     * @return
+     */
+    public boolean hasJob(String id) {
+        return _jobs.containsKey(id);
     }
 
     /**
@@ -221,6 +238,224 @@ public class MigrationModule
         } while (_jobs.containsKey(id));
         return id;
     }
+
+        private RefreshablePoolList createPoolList(String type, List<String> targets) {
+            CellStub poolManager = _context.getPoolManagerStub();
+            switch (type) {
+                case "pool":
+                    return new PoolListByNames(poolManager, targets);
+                case "hsm":
+                    return new PoolListByHsm(poolManager, targets);
+                case "pgroup":
+                    if (targets.isEmpty()) {
+                        return new PoolListByPoolGroupOfPool(poolManager, _context.getPoolName());
+                    } else {
+                        return new PoolListByPoolGroup(poolManager, targets);
+                    }
+                case "link":
+                    if (targets.size() != 1) {
+                        throw new IllegalArgumentException(targets +
+                              ": Only one target supported for -type=link");
+                    }
+                    return new PoolListByLink(poolManager, targets.get(0));
+                default:
+                    throw new IllegalArgumentException(type + ": Invalid value");
+            }
+        }
+
+        private PoolSelectionStrategy createPoolSelectionStrategy(String type) {
+            switch (type) {
+                case "proportional":
+                    return new ProportionalPoolSelectionStrategy();
+                case "random":
+                    return new RandomPoolSelectionStrategy();
+                default:
+                    throw new IllegalArgumentException(type + ": Invalid value");
+            }
+        }
+
+        private StickyRecord parseStickyRecord(String s)
+              throws IllegalArgumentException {
+            Matcher matcher = STICKY_PATTERN.matcher(s);
+            if (!matcher.matches()) {
+                throw new IllegalArgumentException(s + ": Syntax error");
+            }
+            String owner = matcher.group(1);
+            String lifetime = matcher.group(3);
+            try {
+                long expire = (lifetime == null) ? -1 : Integer.parseInt(lifetime);
+                if (expire < -1) {
+                    throw new IllegalArgumentException(lifetime + ": Invalid lifetime");
+                } else if (expire > 0) {
+                    expire = System.currentTimeMillis() + expire * 1000;
+                }
+                return new StickyRecord(owner, expire);
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException(lifetime + ": Invalid lifetime");
+            }
+        }
+
+        private CacheEntryMode
+        createCacheEntryMode(String type) {
+            String[] s = type.split("\\+");
+            List<StickyRecord> records = new ArrayList<>();
+
+            for (int i = 1; i < s.length; i++) {
+                records.add(parseStickyRecord(s[i]));
+            }
+
+            switch (s[0]) {
+                case "same":
+                    return new CacheEntryMode(CacheEntryMode.State.SAME, records);
+                case "cached":
+                    return new CacheEntryMode(CacheEntryMode.State.CACHED, records);
+                case "delete":
+                    return new CacheEntryMode(CacheEntryMode.State.DELETE, records);
+                case "removable":
+                    return new CacheEntryMode(CacheEntryMode.State.REMOVABLE, records);
+                case "precious":
+                    return new CacheEntryMode(CacheEntryMode.State.PRECIOUS, records);
+                default:
+                    throw new IllegalArgumentException(type + ": Invalid value");
+            }
+        }
+
+        private Comparator<CacheEntry> createComparator(String order) {
+            if (order == null) {
+                return null;
+            }
+
+            switch (order) {
+                case "size":
+                    return new SizeOrder();
+                case "-size":
+                    return new SizeOrder().reversed();
+                case "lru":
+                    return new LruOrder();
+                case "-lru":
+                    return new LruOrder().reversed();
+                default:
+                    throw new IllegalArgumentException(order + ": Invalid value for option -order");
+            }
+        }
+
+        private Expression createPredicate(String s, Expression ifNull,
+              SymbolTable symbols) {
+            try {
+                if (s == null) {
+                    return ifNull;
+                }
+
+                ExpressionParser parser =
+                      Parboiled.createParser(ExpressionParser.class);
+                ParsingResult<Expression> result =
+                      new ReportingParseRunner<Expression>(parser.Top()).run(s);
+
+                if (!result.isSuccess()) {
+                    throw new IllegalArgumentException("Invalid expression: " +
+                          printParseErrors(result));
+                }
+
+                Expression expression = result.resultValue;
+                if (expression.check(symbols) != Type.BOOLEAN) {
+                    throw new IllegalArgumentException("Expression does not evaluate to a boolean");
+                }
+
+                return expression;
+            } catch (UnknownIdentifierException | TypeMismatchException e) {
+                throw new IllegalArgumentException(e.getMessage());
+            }
+        }
+
+        private Expression createPoolPredicate(String s, Expression ifNull) {
+            SymbolTable symbols = new SymbolTable();
+            symbols.put(CONSTANT_SOURCE, DUMMY_POOL);
+            symbols.put(CONSTANT_TARGET, DUMMY_POOL);
+            return createPredicate(s, ifNull, symbols);
+        }
+
+        private Expression createLifetimePredicate(String s) {
+            SymbolTable symbols = new SymbolTable();
+            symbols.put(CONSTANT_SOURCE, DUMMY_POOL);
+            symbols.put(CONSTANT_QUEUE_FILES, NON_EMPTY_QUEUE);
+            symbols.put(CONSTANT_QUEUE_BYTES, NON_EMPTY_QUEUE);
+            symbols.put(CONSTANT_TARGETS, NO_TARGETS);
+            return createPredicate(s, null, symbols);
+        }
+
+        private Set<Pattern> createPatterns(String[] globs) {
+            Set<Pattern> patterns = new HashSet<>();
+            if (globs != null) {
+                for (String s : globs) {
+                    patterns.add(Glob.parseGlobToPattern(s));
+                }
+            }
+            return patterns;
+        }
+
+        private Predicate<CacheEntry> createFilter(String storage, String cache, PnfsId[] pnfsid, String state, String[] sticky, String size, String accessed, String accessLatency, String retentionPolicy)
+              throws IllegalArgumentException {
+            // DEFAULT PREDICATE
+            // Always return true (no filter = entry accepted)
+            // Additional filters are chained using logical AND
+            Predicate<CacheEntry> root = a -> true;
+
+            if (storage != null) {
+                root = root.and(new StorageClassFilter(storage));
+            }
+
+            if (cache != null) {
+                root = root.and(new CacheClassFilter(Strings.emptyToNull(cache)));
+            }
+
+            if (pnfsid != null) {
+                root = root.and(new PnfsIdFilter(new HashSet<>(asList(pnfsid))));
+            }
+
+            if (state == null) {
+                root = root.and(new StateFilter(ReplicaState.CACHED, ReplicaState.PRECIOUS));
+            } else if (state.equals("cached")) {
+                root = root.and(new StateFilter(ReplicaState.CACHED));
+            } else if (state.equals("precious")) {
+                root = root.and(new StateFilter(ReplicaState.PRECIOUS));
+            } else {
+                throw new IllegalArgumentException(state + ": Invalid state");
+            }
+
+            if (sticky != null) {
+                if (sticky.length == 0) {
+                    root = root.and(new StickyFilter());
+                } else {
+                    for (String owner : sticky) {
+                        if (owner.startsWith("-")) {
+                            root = root.and(new StickyOwnerFilter(owner.substring(1)).negate());
+                        } else {
+                            root = root.and(new StickyOwnerFilter(owner));
+                        }
+                    }
+                }
+            }
+
+            if (size != null) {
+                root = root.and(new SizeFilter(parseRange(size)));
+            }
+
+            if (accessed != null) {
+                root = root.and(new AccessedFilter(parseRange(accessed)));
+            }
+
+            if (accessLatency != null) {
+                root = root.and(
+                      new AccessLatencyFilter(AccessLatency.getAccessLatency(accessLatency)));
+            }
+
+            if (retentionPolicy != null) {
+                root = root.and(new RetentionPolicyFilter(
+                      RetentionPolicy.getRetentionPolicy(retentionPolicy)));
+            }
+
+            return root;
+        }
 
     @AffectsSetup
     @Command(name = "migration concurrency",
@@ -557,224 +792,6 @@ public class MigrationModule
         @CommandLine
         String commandLine;
 
-        private RefreshablePoolList createPoolList(String type, List<String> targets) {
-            CellStub poolManager = _context.getPoolManagerStub();
-            switch (type) {
-                case "pool":
-                    return new PoolListByNames(poolManager, targets);
-                case "hsm":
-                    return new PoolListByHsm(poolManager, targets);
-                case "pgroup":
-                    if (targets.isEmpty()) {
-                        return new PoolListByPoolGroupOfPool(poolManager, _context.getPoolName());
-                    } else {
-                        return new PoolListByPoolGroup(poolManager, targets);
-                    }
-                case "link":
-                    if (targets.size() != 1) {
-                        throw new IllegalArgumentException(targets +
-                              ": Only one target supported for -type=link");
-                    }
-                    return new PoolListByLink(poolManager, targets.get(0));
-                default:
-                    throw new IllegalArgumentException(type + ": Invalid value");
-            }
-        }
-
-        private PoolSelectionStrategy createPoolSelectionStrategy(String type) {
-            switch (type) {
-                case "proportional":
-                    return new ProportionalPoolSelectionStrategy();
-                case "random":
-                    return new RandomPoolSelectionStrategy();
-                default:
-                    throw new IllegalArgumentException(type + ": Invalid value");
-            }
-        }
-
-        private StickyRecord parseStickyRecord(String s)
-              throws IllegalArgumentException {
-            Matcher matcher = STICKY_PATTERN.matcher(s);
-            if (!matcher.matches()) {
-                throw new IllegalArgumentException(s + ": Syntax error");
-            }
-            String owner = matcher.group(1);
-            String lifetime = matcher.group(3);
-            try {
-                long expire = (lifetime == null) ? -1 : Integer.parseInt(lifetime);
-                if (expire < -1) {
-                    throw new IllegalArgumentException(lifetime + ": Invalid lifetime");
-                } else if (expire > 0) {
-                    expire = System.currentTimeMillis() + expire * 1000;
-                }
-                return new StickyRecord(owner, expire);
-            } catch (NumberFormatException e) {
-                throw new IllegalArgumentException(lifetime + ": Invalid lifetime");
-            }
-        }
-
-        private CacheEntryMode
-        createCacheEntryMode(String type) {
-            String[] s = type.split("\\+");
-            List<StickyRecord> records = new ArrayList<>();
-
-            for (int i = 1; i < s.length; i++) {
-                records.add(parseStickyRecord(s[i]));
-            }
-
-            switch (s[0]) {
-                case "same":
-                    return new CacheEntryMode(CacheEntryMode.State.SAME, records);
-                case "cached":
-                    return new CacheEntryMode(CacheEntryMode.State.CACHED, records);
-                case "delete":
-                    return new CacheEntryMode(CacheEntryMode.State.DELETE, records);
-                case "removable":
-                    return new CacheEntryMode(CacheEntryMode.State.REMOVABLE, records);
-                case "precious":
-                    return new CacheEntryMode(CacheEntryMode.State.PRECIOUS, records);
-                default:
-                    throw new IllegalArgumentException(type + ": Invalid value");
-            }
-        }
-
-        private Comparator<CacheEntry> createComparator(String order) {
-            if (order == null) {
-                return null;
-            }
-
-            switch (order) {
-                case "size":
-                    return new SizeOrder();
-                case "-size":
-                    return new SizeOrder().reversed();
-                case "lru":
-                    return new LruOrder();
-                case "-lru":
-                    return new LruOrder().reversed();
-                default:
-                    throw new IllegalArgumentException(order + ": Invalid value for option -order");
-            }
-        }
-
-        private Expression createPredicate(String s, Expression ifNull,
-              SymbolTable symbols) {
-            try {
-                if (s == null) {
-                    return ifNull;
-                }
-
-                ExpressionParser parser =
-                      Parboiled.createParser(ExpressionParser.class);
-                ParsingResult<Expression> result =
-                      new ReportingParseRunner<Expression>(parser.Top()).run(s);
-
-                if (!result.isSuccess()) {
-                    throw new IllegalArgumentException("Invalid expression: " +
-                          printParseErrors(result));
-                }
-
-                Expression expression = result.resultValue;
-                if (expression.check(symbols) != Type.BOOLEAN) {
-                    throw new IllegalArgumentException("Expression does not evaluate to a boolean");
-                }
-
-                return expression;
-            } catch (UnknownIdentifierException | TypeMismatchException e) {
-                throw new IllegalArgumentException(e.getMessage());
-            }
-        }
-
-        private Expression createPoolPredicate(String s, Expression ifNull) {
-            SymbolTable symbols = new SymbolTable();
-            symbols.put(CONSTANT_SOURCE, DUMMY_POOL);
-            symbols.put(CONSTANT_TARGET, DUMMY_POOL);
-            return createPredicate(s, ifNull, symbols);
-        }
-
-        private Expression createLifetimePredicate(String s) {
-            SymbolTable symbols = new SymbolTable();
-            symbols.put(CONSTANT_SOURCE, DUMMY_POOL);
-            symbols.put(CONSTANT_QUEUE_FILES, NON_EMPTY_QUEUE);
-            symbols.put(CONSTANT_QUEUE_BYTES, NON_EMPTY_QUEUE);
-            symbols.put(CONSTANT_TARGETS, NO_TARGETS);
-            return createPredicate(s, null, symbols);
-        }
-
-        private Set<Pattern> createPatterns(String[] globs) {
-            Set<Pattern> patterns = new HashSet<>();
-            if (globs != null) {
-                for (String s : globs) {
-                    patterns.add(Glob.parseGlobToPattern(s));
-                }
-            }
-            return patterns;
-        }
-
-        private Predicate<CacheEntry> createFilter()
-              throws IllegalArgumentException {
-            // DEFAULT PREDICATE
-            // Always return true (no filter = entry accepted)
-            // Additional filters are chained using logical AND
-            Predicate<CacheEntry> root = a -> true;
-
-            if (storage != null) {
-                root = root.and(new StorageClassFilter(storage));
-            }
-
-            if (cache != null) {
-                root = root.and(new CacheClassFilter(Strings.emptyToNull(cache)));
-            }
-
-            if (pnfsid != null) {
-                root = root.and(new PnfsIdFilter(new HashSet<>(asList(pnfsid))));
-            }
-
-            if (state == null) {
-                root = root.and(new StateFilter(ReplicaState.CACHED, ReplicaState.PRECIOUS));
-            } else if (state.equals("cached")) {
-                root = root.and(new StateFilter(ReplicaState.CACHED));
-            } else if (state.equals("precious")) {
-                root = root.and(new StateFilter(ReplicaState.PRECIOUS));
-            } else {
-                throw new IllegalArgumentException(state + ": Invalid state");
-            }
-
-            if (sticky != null) {
-                if (sticky.length == 0) {
-                    root = root.and(new StickyFilter());
-                } else {
-                    for (String owner : sticky) {
-                        if (owner.startsWith("-")) {
-                            root = root.and(new StickyOwnerFilter(owner.substring(1)).negate());
-                        } else {
-                            root = root.and(new StickyOwnerFilter(owner));
-                        }
-                    }
-                }
-            }
-
-            if (size != null) {
-                root = root.and(new SizeFilter(parseRange(size)));
-            }
-
-            if (accessed != null) {
-                root = root.and(new AccessedFilter(parseRange(accessed)));
-            }
-
-            if (accessLatency != null) {
-                root = root.and(
-                      new AccessLatencyFilter(AccessLatency.getAccessLatency(accessLatency)));
-            }
-
-            if (retentionPolicy != null) {
-                root = root.and(new RetentionPolicyFilter(
-                      RetentionPolicy.getRetentionPolicy(retentionPolicy)));
-            }
-
-            return root;
-        }
-
         @Override
         public String call() throws IllegalArgumentException {
             if (permanent) {
@@ -831,7 +848,7 @@ public class MigrationModule
                         sourceList);
 
             JobDefinition definition =
-                  new JobDefinition(createFilter(),
+                  new JobDefinition(createFilter(storage, cache, pnfsid, state, sticky, size, accessed, accessLatency, retentionPolicy),
                         createCacheEntryMode(sourceMode),
                         createCacheEntryMode(targetMode),
                         createPoolSelectionStrategy(select),
@@ -1082,6 +1099,74 @@ public class MigrationModule
         }
     }
 
+    /**
+     * Implementation of FileRequestMonitor: triggers migration for a specific file by creating a new job.
+     */
+    @Override
+    public void reportFileRequest(PnfsId pnfsId, long numberOfRequests) {
+        if (numberOfRequests < threshold) {
+            return;
+        }
+        String jobId = "hotfile-" + pnfsId;
+        try {
+            synchronized (this) {
+                Job job = _jobs.get(jobId);
+                if (job == null) {
+                    RefreshablePoolList sourceList = new PoolListByNames(_context.getPoolManagerStub(),
+                          Collections.singletonList(_context.getPoolName()));
+                    sourceList.refresh();
+                    Collection<Pattern> excluded = new HashSet<>();
+                    excluded.add(Pattern.compile(Pattern.quote(_context.getPoolName())));
+                    RefreshablePoolList poolList = new PoolListFilter(
+                        new PoolListByPoolGroupOfPool(_context.getPoolManagerStub(), _context.getPoolName()),
+                        excluded,
+                        FALSE_EXPRESSION,
+                        Collections.emptySet(),
+                        TRUE_EXPRESSION,
+                        sourceList);
+                    poolList.refresh();
+                    JobDefinition def =
+                      new JobDefinition(
+                            createFilter(null, null, new PnfsId[]{pnfsId}, null, null, null, null, null, null),
+                            createCacheEntryMode("same"),
+                            createCacheEntryMode("cached"),
+                            createPoolSelectionStrategy("proportional"),
+                            createComparator(null),
+                            sourceList,
+                            poolList,
+                            300 * 1000,
+                            false,
+                            false,
+                            false,
+                            replicas,
+                            false,
+                            false,
+                            true,
+                            FALSE_EXPRESSION,
+                            FALSE_EXPRESSION,
+                            false,
+                            false);
+                    job = new Job(_context, def);
+                    _jobs.put(jobId, job);
+                    _commands.put(job, "hotfile replication for " + pnfsId);
+                    LOGGER.debug("Created migration job with id {} for pnfsId {}", jobId, pnfsId);
+                }
+                if (_isStarted && job.getState() == Job.State.NEW) {
+                    LOGGER.debug("About to start migration job with id {} for pnfsId {}. Job definition: {}", jobId, pnfsId, job.getDefinition());
+                    try {
+                        job.start();
+                        LOGGER.debug("Started migration job with id {} for pnfsId {}", jobId, pnfsId);
+                    } catch (Exception e) {
+                        LOGGER.error("Exception while starting migration job with id {} for pnfsId {}: {}", jobId, pnfsId, e.toString(), e);
+                        throw e;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            LOGGER.warn("Failed to trigger migration for pnfsId {}: {}", pnfsId, e.getMessage());
+        }
+    }
+
     @Override
     public void getInfo(PrintWriter pw) {
         getDataObject().print(pw);
@@ -1145,5 +1230,52 @@ public class MigrationModule
 
     public boolean isActive(PnfsId id) {
         return _context.isActive(id);
+    }
+
+    // HotFileReplicator-style parameters
+    public int getNumReplicas() {
+        return replicas;
+    }
+    public void setNumReplicas(int value) {
+        replicas = value;
+    }
+    public long getThreshold() {
+        return threshold;
+    }
+
+    public void setThreshold(long value) {
+        threshold = value;
+    }
+
+    @Command(name = "migration hot-file replicas",
+             description = "Get or set the number of replicas to ensure via replication.")
+    public class NumReplicasCommand implements java.util.concurrent.Callable<String> {
+        @Option(name = "set", usage = "Set the number of replicas.")
+        Integer set;
+
+        @Override
+        public String call() {
+            if (set != null) {
+                setNumReplicas(set);
+                return "NumReplicas set to " + set;
+            }
+            return "Current replicas: " + getNumReplicas();
+        }
+    }
+
+    @Command(name = "migration hot-file threshold",
+             description = "Get or set the threshold for triggering replication.")
+    public class ThresholdCommand implements java.util.concurrent.Callable<String> {
+        @Option(name = "set", usage = "Set the threshold value.")
+        Long set;
+
+        @Override
+        public String call() {
+            if (set != null) {
+                setThreshold(set);
+                return "Threshold set to " + set;
+            }
+            return "Current threshold: " + getThreshold();
+        }
     }
 }
