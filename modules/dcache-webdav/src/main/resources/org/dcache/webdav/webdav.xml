@@ -269,8 +269,23 @@
       <description>Loads the factories for producers of well-known endpoint content.</description>
     </bean>
 
-    <bean id="handlers" class="org.eclipse.jetty.server.handler.HandlerList">
+
+    <bean id="rate-limiter-config" class="org.dcache.util.jetty.RateLimitedHandlerList.Configuration">
+        <property name="maxClientsToTrack" value="${webdav.limits.max-blocked-clients}"/>
+        <property name="globalRequestsPerSecond" value="${webdav.limits.rate.overall}"/>
+        <property name="limitPercentagePerClient" value="${webdav.limits.rate.per-client.fractions}"/>
+        <property name="clientBlockingTime" value="${webdav.limits.rate.per-client.block.window.time}"/>
+        <property name="clientBlockingTimeUnit" value="${webdav.limits.rate.per-client.block.window.time.units}"/>
+        <property name="clientIdleTime" value="${webdav.limits.blocked-clients.idle-time}"/>
+        <property name="clientIdleTimeUnit" value="${webdav.limits.blocked-clients.idle-time.units}"/>
+        <property name="numErrorsBeforeBlocking" value="${webdav.limits.error.max-allowed}"/>
+        <property name="errorCountingWindow" value="${webdav.limits.error.block.window.time}"/>
+        <property name="errorCountingWindowUnit" value="${webdav.limits.error.block.window.time.units}"/>
+    </bean>
+
+    <bean id="handlers" class="org.dcache.util.jetty.RateLimitedHandlerList">
       <description>List of handlers for HTTP requests</description>
+        <constructor-arg ref="rate-limiter-config"/>
       <property name="handlers">
           <list>
               <bean class="org.dcache.webdav.CrossOriginResourceSharingHandler">
