@@ -59,18 +59,7 @@ public class HotFileReplicatorTest {
         // Mock addListener to do nothing
         doNothing().when(listenableFuture).addListener(any(Runnable.class), any());
 
-        // Use a real TaskParameters object
-        taskParameters = new TaskParameters(
-                poolStub,
-                pnfsStub,
-                pinManagerStub,
-                executor,
-                selectionStrategy,
-                poolList,
-                false, false, false, false, true, 1, false
-        );
-
-        replicator = new HotFileReplicator(context, poolList, taskParameters);
+        replicator = new HotFileReplicator(context);
     }
 
     @Test
