@@ -304,19 +304,19 @@
     <description>SSL Context factory for JDK</description>
   </bean>
 
+  <bean id="migrationContext" class="org.dcache.pool.migration.MigrationContextImpl">
+        <property name="repository" ref="rep"/>
+        <property name="executor" ref="workerThreadPool"/>
+        <property name="pnfsStub" ref="pnfsStub"/>
+        <property name="poolStub" ref="poolStub"/>
+        <property name="poolManagerStub" ref="poolManagerStub"/>
+        <property name="pinManagerStub" ref="pinManagerStub"/>
+    </bean>
+
   <bean id="migration" class="org.dcache.pool.migration.MigrationModule"
         destroy-method="cancelAll">
     <description>Replica migration module client</description>
-    <constructor-arg>
-        <bean class="org.dcache.pool.migration.MigrationContextImpl">
-            <property name="repository" ref="rep"/>
-            <property name="executor" ref="workerThreadPool"/>
-            <property name="pnfsStub" ref="pnfsStub"/>
-            <property name="poolStub" ref="poolStub"/>
-            <property name="poolManagerStub" ref="poolManagerStub"/>
-            <property name="pinManagerStub" ref="pinManagerStub"/>
-        </bean>
-    </constructor-arg>
+    <constructor-arg ref="migrationContext"/>
   </bean>
 
   <bean id="migration-server"
@@ -331,16 +331,7 @@
   </bean>
 
   <bean id="hotFileReplicator" class="org.dcache.pool.migration.HotFileReplicator">
-    <constructor-arg>
-      <bean class="org.dcache.pool.migration.MigrationContextImpl">
-        <property name="repository" ref="rep"/>
-        <property name="executor" ref="workerThreadPool"/>
-        <property name="pnfsStub" ref="pnfsStub"/>
-        <property name="poolStub" ref="poolStub"/>
-        <property name="poolManagerStub" ref="poolManagerStub"/>
-        <property name="pinManagerStub" ref="pinManagerStub"/>
-      </bean>
-    </constructor-arg>
+    <constructor-arg ref="migrationContext"/>
     <constructor-arg value="true"/>
   </bean>
 
