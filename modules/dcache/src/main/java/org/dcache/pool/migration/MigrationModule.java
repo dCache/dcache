@@ -143,6 +143,9 @@ public class MigrationModule
     private int replicas = 1;
     private long threshold = 5;
 
+    // Default concurrency to apply to jobs created outside of MigrationCopyCommand (e.g. hot-file)
+    private volatile int defaultConcurrency = 1;
+
     public MigrationModule(MigrationContext context) {
         _context = context;
     }
@@ -477,6 +480,27 @@ public class MigrationModule
     }
 
     @AffectsSetup
+    @Command(name = "migration concurrency-default",
+          description = "Get or set the default concurrency used when -concurrency is not specified.")
+    public class MigrationConcurrencyDefaultCommand implements Callable<String> {
+
+        @Option(name = "set", usage = "Set the default concurrency to use for new jobs when not explicitly provided.")
+        Integer set;
+
+        @Override
+        public String call() {
+            if (set != null) {
+                if (set < 1) {
+                    throw new IllegalArgumentException("Default concurrency must be positive.");
+                }
+                defaultConcurrency = set;
+                return "Default concurrency set to " + set;
+            }
+            return "Current default concurrency: " + defaultConcurrency;
+        }
+    }
+
+    @AffectsSetup
     @Command(name = "migration copy",
           description = "Copies files to other pools. Unless filter options are specified, " +
                 "all files on the source pool are copied.\n\n" +
@@ -582,7 +606,7 @@ public class MigrationModule
         @Option(name = "concurrency",
               category = "Transfer options",
               usage = "Specifies how many concurrent transfers to perform.")
-        int concurrency = 1;
+        Integer concurrency; // null means: not specified; fall back to defaultConcurrency
 
         @Option(name = "order", valueSpec = "[-]size|[-]lru",
               category = "Transfer options",
@@ -897,7 +921,8 @@ public class MigrationModule
                 }
 
                 Job job = new Job(_context, definition);
-                job.setConcurrency(concurrency);
+                // Apply explicit concurrency if provided; otherwise fall back to module default
+                job.setConcurrency(concurrency != null ? concurrency : defaultConcurrency);
 
                 _commands.put(job, commandLine);
                 _jobs.put(id, job);
@@ -1147,9 +1172,11 @@ public class MigrationModule
                             false,
                             false);
                     job = new Job(_context, def);
+                    // Apply module default concurrency to hot-file job
+                    job.setConcurrency(defaultConcurrency);
                     _jobs.put(jobId, job);
                     _commands.put(job, "hotfile replication for " + pnfsId);
-                    LOGGER.debug("Created migration job with id {} for pnfsId {}", jobId, pnfsId);
+                    LOGGER.debug("Created migration job with id {} for pnfsId {} with concurrency {}", jobId, pnfsId, defaultConcurrency);
                 }
                 if (_isStarted && job.getState() == Job.State.NEW) {
                     LOGGER.debug("About to start migration job with id {} for pnfsId {}. Job definition: {}", jobId, pnfsId, job.getDefinition());
