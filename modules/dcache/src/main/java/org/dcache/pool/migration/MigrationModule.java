@@ -139,7 +139,7 @@ public class MigrationModule
 
     private int _counter = 1;
 
-    // HotFileReplicator-style parameters
+    // Hot file mitigation parameters
     private int replicas = 1;
     private long threshold = 5;
 
@@ -1232,7 +1232,7 @@ public class MigrationModule
         return _context.isActive(id);
     }
 
-    // HotFileReplicator-style parameters
+    // Hot file mitigation parameters
     public int getNumReplicas() {
         return replicas;
     }
