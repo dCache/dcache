@@ -57,12 +57,6 @@ class PoolListByPoolGroupOfPool
     }
 
     @Override
-    public String toString() {
-        return String.format("source pool %s, %d pools",
-              _poolName, getPools().size());
-    }
-
-    @Override
     public void success(PoolManagerGetPoolsByPoolGroupOfPoolMessage message) {
         _poolsMap = ImmutableMap.copyOf(message.getPoolsMap());
         _offlinePools = ImmutableList.copyOf(message.getOfflinePools());
