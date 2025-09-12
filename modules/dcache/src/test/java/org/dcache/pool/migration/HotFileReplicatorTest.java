@@ -15,46 +15,46 @@ import java.util.concurrent.ScheduledExecutorService;
 import static org.mockito.Mockito.*;
 
 public class HotFileReplicatorTest {
-    private MigrationContext context;
-    private Repository repository;
-    private HotFileReplicator replicator;
-    private PoolIoFileMessage message;
     private CacheEntry entry;
-    private ScheduledExecutorService executor;
-    private RefreshablePoolList poolList;
-    private FileAttributes fileAttributes;
-    private CellStub pnfsStub;
-    private CellStub poolStub;
     private CellStub pinManagerStub;
+    private CellStub pnfsStub;
     private CellStub poolManagerStub;
-    private PoolSelectionStrategy selectionStrategy;
-    private TaskParameters taskParameters;
+    private CellStub poolStub;
+    private FileAttributes fileAttributes;
+    private HotFileReplicator replicator;
     private ListenableFuture listenableFuture;
+    private MigrationContext context;
+    private PoolIoFileMessage message;
+    private PoolSelectionStrategy selectionStrategy;
+    private RefreshablePoolList poolList;
+    private Repository repository;
+    private ScheduledExecutorService executor;
+    private TaskParameters taskParameters;
 
     @Before
     @SuppressWarnings("unchecked")
     public void setUp() {
         context = mock(MigrationContext.class);
-        repository = mock(Repository.class);
-        message = mock(PoolIoFileMessage.class);
         entry = mock(CacheEntry.class);
         executor = mock(ScheduledExecutorService.class);
-        poolList = mock(RefreshablePoolList.class);
         fileAttributes = mock(FileAttributes.class);
-        pnfsStub = mock(CellStub.class);
-        poolStub = mock(CellStub.class);
-        pinManagerStub = mock(CellStub.class);
-        poolManagerStub = mock(CellStub.class);
-        selectionStrategy = mock(PoolSelectionStrategy.class);
         listenableFuture = mock(ListenableFuture.class);
+        message = mock(PoolIoFileMessage.class);
+        pinManagerStub = mock(CellStub.class);
+        pnfsStub = mock(CellStub.class);
+        poolList = mock(RefreshablePoolList.class);
+        poolManagerStub = mock(CellStub.class);
+        poolStub = mock(CellStub.class);
+        repository = mock(Repository.class);
+        selectionStrategy = mock(PoolSelectionStrategy.class);
 
-        when(context.getRepository()).thenReturn(repository);
+        when(context.getExecutor()).thenReturn(executor);
+        when(context.getPinManagerStub()).thenReturn(pinManagerStub);
+        when(context.getPnfsStub()).thenReturn(pnfsStub);
         when(context.getPoolManagerStub()).thenReturn(poolManagerStub);
         when(context.getPoolName()).thenReturn("testPool");
         when(context.getPoolStub()).thenReturn(poolStub);
-        when(context.getPnfsStub()).thenReturn(pnfsStub);
-        when(context.getPinManagerStub()).thenReturn(pinManagerStub);
-        when(context.getExecutor()).thenReturn(executor);
+        when(context.getRepository()).thenReturn(repository);
 
         // Mock CellStub.send to return a mock ListenableFuture for any generic type
         when((ListenableFuture) pnfsStub.send(any(), any())).thenReturn(listenableFuture);
