@@ -1,16 +1,21 @@
 package org.dcache.pool.migration;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.dcache.cells.CellStub;
+import java.util.regex.Pattern;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.Repository;
+import org.dcache.util.expression.Expression;
+import org.dcache.util.expression.Token;
+import org.dcache.util.expression.Type;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +38,15 @@ public class HotFileReplicator implements CellMessageReceiver, CellCommandListen
     private static final int DEFAULT_CONCURRENCY = 1;
     private static final int DEFAULT_REPLICAS = 10;
     private static final long DEFAULT_THRESHOLD = 5;
+    private static final Expression TRUE_EXPRESSION =
+          new Expression(Token.TRUE);
+    private static final Expression FALSE_EXPRESSION =
+          new Expression(Token.FALSE);
+
+    static {
+        TRUE_EXPRESSION.setType(Type.BOOLEAN);
+        FALSE_EXPRESSION.setType(Type.BOOLEAN);
+    }
 
     // TODO: either use concurrency to manage number of Tasks in flight, or remove it.
     private int concurrency = DEFAULT_CONCURRENCY;
@@ -66,10 +80,6 @@ public class HotFileReplicator implements CellMessageReceiver, CellCommandListen
         });
     }
 
-    void messageArrived(PoolIoFileMessage message) {
-        _inFlightMigrations.remove(message.getPnfsId());
-    }
-
     public void maybeReplicate(PoolIoFileMessage message, long numberOfRequests) {
         _lock.lock();
         try {
@@ -82,12 +92,27 @@ public class HotFileReplicator implements CellMessageReceiver, CellCommandListen
                 LOGGER.debug("maybeReplicate() initiating request for {} replicas of pnfsId {}", replicas, pnfsId);
                 Repository repository = _context.getRepository();
                 CacheEntry entry = repository.getEntry(pnfsId);
+                RefreshablePoolList sourceList = new PoolListByNames(_context.getPoolManagerStub(),
+                      Collections.singletonList(_context.getPoolName()));
+                sourceList.refresh();
+
+                Collection<Pattern> excluded = new HashSet<>();
+                excluded.add(Pattern.compile(Pattern.quote(_context.getPoolName())));
+
+                RefreshablePoolList poolList = new PoolListFilter(new PoolListByPoolGroupOfPool(_context.getPoolManagerStub(), _context.getPoolName()),
+                      excluded,
+                      FALSE_EXPRESSION,
+                      Collections.emptySet(),
+                      TRUE_EXPRESSION,
+                      sourceList);
+                poolList.refresh();
+
                 TaskParameters taskParameters = new TaskParameters(_context.getPoolStub(),
                       _context.getPnfsStub(),
                       _context.getPinManagerStub(),
                       _context.getExecutor(),
                       new ProportionalPoolSelectionStrategy(),
-                      new PoolListByPoolGroupOfPool(_context.getPoolManagerStub(), _context.getPoolName()),
+                      poolList,
                       false,
                       false,
                       false,
@@ -96,10 +121,15 @@ public class HotFileReplicator implements CellMessageReceiver, CellCommandListen
                       replicas,
                       false);
 
-                Task task = new Task(taskParameters, this, _context.getPoolName(),
+                Task task = new Task(taskParameters,
+                      this,
+                      _context.getPoolName(),
                       entry.getPnfsId(),
-                      ReplicaState.CACHED, Collections.emptyList(),
-                      Collections.emptyList(), entry.getFileAttributes(), entry.getLastAccessTime());
+                      ReplicaState.CACHED,
+                      Collections.emptyList(),
+                      Collections.emptyList(),
+                      entry.getFileAttributes(),
+                      entry.getLastAccessTime());
                 _inFlightMigrations.put(message.getPnfsId(), task);
                 LOGGER.debug("maybeReplicate() scheduling migration task for pnfsId {} on executor", pnfsId);
                 taskParameters.executor.execute(() -> {
@@ -117,6 +147,21 @@ public class HotFileReplicator implements CellMessageReceiver, CellCommandListen
             }
         } finally {
             _lock.unlock();
+        }
+    }
+
+    public void messageArrived(PoolMigrationCopyFinishedMessage message) {
+        if (message.getPool().equals(_context.getPoolName())) {
+            Task task;
+            _lock.lock();
+            try {
+                task = _inFlightMigrations.get(message.getPnfsId());
+            } finally {
+                _lock.unlock();
+            }
+            if (task != null) {
+                task.messageArrived(message);
+            }
         }
     }
 
