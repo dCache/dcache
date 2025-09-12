@@ -332,7 +332,6 @@
 
   <bean id="hotFileReplicator" class="org.dcache.pool.migration.HotFileReplicator">
     <constructor-arg ref="migrationContext"/>
-    <constructor-arg value="true"/>
   </bean>
 
   <bean id="allocator" class="org.dcache.pool.classic.FairQueueAllocator">
