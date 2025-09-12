@@ -42,35 +42,9 @@ public class HotFileReplicator implements CellMessageReceiver, CellCommandListen
     private final Map<PnfsId, Task> _inFlightMigrations = new HashMap<>();
     private final Lock _lock = new ReentrantLock(true);
     private final MigrationContext _context;
-    private final RefreshablePoolList _poolList;
-    private final TaskParameters _taskParameters;
 
-    /**
-     * Test-only constructor for unit testing. Initializes with provided context, poolList, and taskParameters.
-     */
-    HotFileReplicator(MigrationContext context, RefreshablePoolList poolList, TaskParameters taskParameters) {
+    HotFileReplicator(MigrationContext context) {
         _context = context;
-        _poolList = poolList;
-        _taskParameters = taskParameters;
-    }
-
-    private HotFileReplicator(MigrationContext context, boolean real) {
-        _context = context;
-        CellStub poolManager = _context.getPoolManagerStub();
-        _poolList = new PoolListByPoolGroupOfPool(poolManager, _context.getPoolName());
-        _taskParameters = new TaskParameters(context.getPoolStub(),
-              context.getPnfsStub(),
-              context.getPinManagerStub(),
-              context.getExecutor(),
-              new ProportionalPoolSelectionStrategy(),
-              _poolList,
-              false,
-              false,
-              false,
-              false,
-              true,
-              replicas,
-              false);
     }
 
     @Override
@@ -89,7 +63,7 @@ public class HotFileReplicator implements CellMessageReceiver, CellCommandListen
             public boolean isActive(PnfsId pnfsId) {
                 return true;
             }
-        }, false);
+        });
     }
 
     void messageArrived(PoolIoFileMessage message) {
@@ -108,14 +82,27 @@ public class HotFileReplicator implements CellMessageReceiver, CellCommandListen
                 LOGGER.debug("maybeReplicate() initiating request for {} replicas of pnfsId {}", replicas, pnfsId);
                 Repository repository = _context.getRepository();
                 CacheEntry entry = repository.getEntry(pnfsId);
+                TaskParameters taskParameters = new TaskParameters(_context.getPoolStub(),
+                      _context.getPnfsStub(),
+                      _context.getPinManagerStub(),
+                      _context.getExecutor(),
+                      new ProportionalPoolSelectionStrategy(),
+                      new PoolListByPoolGroupOfPool(_context.getPoolManagerStub(), _context.getPoolName()),
+                      false,
+                      false,
+                      false,
+                      false,
+                      true,
+                      replicas,
+                      false);
 
-                Task task = new Task(_taskParameters, this, _context.getPoolName(),
+                Task task = new Task(taskParameters, this, _context.getPoolName(),
                       entry.getPnfsId(),
                       ReplicaState.CACHED, Collections.emptyList(),
                       Collections.emptyList(), entry.getFileAttributes(), entry.getLastAccessTime());
                 _inFlightMigrations.put(message.getPnfsId(), task);
                 LOGGER.debug("maybeReplicate() scheduling migration task for pnfsId {} on executor", pnfsId);
-                _taskParameters.executor.execute(() -> {
+                taskParameters.executor.execute(() -> {
                     LOGGER.debug("maybeReplicate() migration task for pnfsId {} started on executor", pnfsId);
                     task.run();
                 });
@@ -303,13 +290,8 @@ public class HotFileReplicator implements CellMessageReceiver, CellCommandListen
             _lock.unlock();
         }
     }
-    public void setConcurrency(int value) {
-        _lock.lock();
-        try {
-            concurrency = value;
-            LOGGER.info("Concurrency updated to {}", value);
-        } finally {
-            _lock.unlock();
-        }
+    public synchronized void setConcurrency(int value) {
+        concurrency = value;
+        LOGGER.info("Concurrency updated to {}", value);
     }
 }
