@@ -68,21 +68,6 @@
                                     <ignore />
                                 </action>
                             </pluginExecution>
-                            <pluginExecution>
-                                <pluginExecutionFilter>
-                                    <groupId>org.codehaus.mojo</groupId>
-                                    <artifactId>smc-maven-plugin</artifactId>
-                                    <versionRange>[1.0-alpha-1,)</versionRange>
-                                    <goals>
-                                        <goal>smc</goal>
-                                    </goals>
-                                </pluginExecutionFilter>
-                                <action>
-                                    <execute>
-                                        <runOnIncremental>false</runOnIncremental>
-                                    </execute>
-                                </action>
-                            </pluginExecution>
                         </pluginExecutions>
                     </lifecycleMappingMetadata>
                 </configuration>
