@@ -32,7 +32,6 @@ import javax.annotation.Nonnull;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
 import org.dcache.pool.classic.MoverRequestScheduler.Order;
-import org.dcache.pool.classic.MoverRequestScheduler.PrioritizedRequest;
 import org.dcache.util.IoPriority;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -444,7 +443,24 @@ public class IoQueueManager
                       .toArray(IoJobInfo[]::new);
             } else {
 
-                Comparator<PrioritizedRequest> comparator = getPrioritizedRequestComparator();
+                Comparator<MoverRequestScheduler.PrioritizedRequest> comparator;
+                if (sortBySize) {
+                    comparator = (b, a) -> Long.compare(
+                          a.getMover().getBytesTransferred(), b.getMover().getBytesTransferred()
+                    );
+                } else if (sortByTime) {
+                    comparator = (b, a) -> Long.compare(
+                          a.getMover().getLastTransferred(), b.getMover().getLastTransferred()
+                    );
+                } else {
+                    comparator = (b, a) -> Integer.compare(
+                          a.getId(), b.getId()
+                    );
+                }
+
+                if (reverseSort) {
+                    comparator = comparator.reversed();
+                }
 
                 StringBuilder sb = new StringBuilder();
                 if (groupByQueue) {
@@ -461,28 +477,6 @@ public class IoQueueManager
                 }
                 return sb.toString();
             }
-        }
-
-        private Comparator<PrioritizedRequest> getPrioritizedRequestComparator() {
-            Comparator<PrioritizedRequest> comparator;
-            if (sortBySize) {
-                comparator = (b, a) -> Long.compare(
-                      a.getMover().getBytesTransferred(), b.getMover().getBytesTransferred()
-                );
-            } else if (sortByTime) {
-                comparator = (b, a) -> Long.compare(
-                      a.getMover().getLastTransferred(), b.getMover().getLastTransferred()
-                );
-            } else {
-                comparator = (b, a) -> Integer.compare(
-                      a.getId(), b.getId()
-                );
-            }
-
-            if (reverseSort) {
-                comparator = comparator.reversed();
-            }
-            return comparator;
         }
     }
 
