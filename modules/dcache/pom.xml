@@ -385,6 +385,14 @@
   </dependencies>
 
   <build>
+      <resources>
+          <resource>
+              <directory>${project.build.directory}/generated-resources/smc-graphs</directory>
+              <includes>
+                  <include>**/*.dot</include>
+              </includes>
+          </resource>
+      </resources>
       <plugins>
           <plugin>
               <groupId>net.sf.smc</groupId>
@@ -402,12 +410,29 @@
                                <source>org/dcache/pool/migration/Task.sm</source>
                                <source>org/dcache/pool/p2p/Companion.sm</source>
                            </sources>
+                           <targetLanguage>java7</targetLanguage>
                        </configuration>
+                  </execution>
+                  <execution>
+                      <id>graphviz-build</id>
+                      <phase>generate-resources</phase>
+                      <goals>
+                          <goal>smc</goal>
+                      </goals>
+                      <configuration>
+                          <sourceDirectory>${project.basedir}/src/main/smc</sourceDirectory>
+                          <targetDirectory>${project.build.directory}/generated-resources/smc-graphs</targetDirectory>
+                          <sources>
+                              <source>org/dcache/pool/migration/Task.sm</source>
+                              <source>org/dcache/pool/p2p/Companion.sm</source>
+                          </sources>
+                          <targetLanguage>graph</targetLanguage>
+                          <glevel>2</glevel>
+                      </configuration>
                   </execution>
               </executions>
               <configuration>
                   <verbose>true</verbose>
-                  <targetLanguage>java7</targetLanguage>
               </configuration>
               <dependencies>
                   <dependency>
