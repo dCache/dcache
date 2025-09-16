@@ -104,6 +104,15 @@ public class Task {
         return _id;
     }
 
+    // Logging helpers for SMC state entry/exit
+    void logStateEntry(String state) {
+        LOGGER.debug("Entering state {} (threadId={}, taskId={})", state, Thread.currentThread().getId(), getId());
+    }
+
+    void logStateExit(String state) {
+        LOGGER.debug("Exiting state {} (threadId={}, taskId={})", state, Thread.currentThread().getId(), getId());
+    }
+
     public PnfsId getPnfsId() {
         return _pnfsId;
     }

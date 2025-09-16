@@ -1,5 +1,4 @@
 %{
-//
 %}
 
 %class Task
@@ -11,6 +10,14 @@
 %map TASK
 %%
 Queued
+Entry
+{
+        logStateEntry(getState().getName());
+}
+Exit
+{
+        logStateExit(getState().getName());
+}
 {
         startWithoutLocations
                 GettingLocations
@@ -36,7 +43,12 @@ Queued
 GettingLocations
 Entry
 {
+        logStateEntry(getState().getName());
         queryLocations();
+}
+Exit
+{
+        logStateExit(getState().getName());
 }
 {
         query_timeout
@@ -86,7 +98,12 @@ Entry
 UpdatingExistingFile
 Entry
 {
+        logStateEntry(getState().getName());
         updateExistingReplica();
+}
+Exit
+{
+        logStateExit(getState().getName());
 }
 {
         copy_timeout
@@ -190,7 +207,12 @@ Entry
 InitiatingCopy
 Entry
 {
+        logStateEntry(getState().getName());
         initiateCopy();
+}
+Exit
+{
+        logStateExit(getState().getName());
 }
 {
         copy_success
@@ -274,6 +296,14 @@ Entry
 // Need to create more copies and received PoolMigrationCopyFinishedMessage ahead of
 // PoolMigrationCopyReplicaMessage reply. Wait for reply before proceeding.
 WaitingForCopyReplicaReply
+Entry
+{
+        logStateEntry(getState().getName());
+}
+Exit
+{
+        logStateExit(getState().getName());
+}
 {
         copy_success
                 [ ctxt.hasMoreLocations() ]
@@ -327,11 +357,13 @@ WaitingForCopyReplicaReply
 Copying
 Entry
 {
+        logStateEntry(getState().getName());
         startTimer(ctxt.getPingPeriod());
 }
 Exit
 {
         stopTimer();
+        logStateExit(getState().getName());
 }
 {
         timer
@@ -398,7 +430,12 @@ Exit
 Pinging
 Entry
 {
+        logStateEntry(getState().getName());
         ping();
+}
+Exit
+{
+        logStateExit(getState().getName());
 }
 {
         ping_success
@@ -482,11 +519,13 @@ Entry
 NoResponse
 Entry
 {
+        logStateEntry(getState().getName());
         startTimer(ctxt.getNoResponseTimeout());
 }
 Exit
 {
         stopTimer();
+        logStateExit(getState().getName());
 }
 {
         timer
@@ -581,11 +620,13 @@ Exit
 WaitingForCopyFinishedMessage
 Entry
 {
+        logStateEntry(getState().getName());
         startTimer(ctxt.getTaskDeadTimeout());
 }
 Exit
 {
         stopTimer();
+        logStateExit(getState().getName());
 }
 {
         timer
@@ -650,7 +691,12 @@ Exit
 MovingPin
 Entry
 {
+        logStateEntry(getState().getName());
         movePin();
+}
+Exit
+{
+        logStateExit(getState().getName());
 }
 {
         move_success
@@ -688,12 +734,14 @@ Entry
 Cancelling
 Entry
 {
+        logStateEntry(getState().getName());
         startTimer(ctxt.getTaskDeadTimeout());
         cancelCopy();
 }
 Exit
 {
         stopTimer();
+        logStateExit(getState().getName());
 }
 {
         timer
@@ -748,7 +796,12 @@ Exit
 Cancelled
 Entry
 {
+        logStateEntry(getState().getName());
         notifyCancelled();
+}
+Exit
+{
+        logStateExit(getState().getName());
 }
 {
 }
@@ -756,6 +809,14 @@ Entry
 // Something went wrong. In some cases the transfer could have
 // succeeded, but we don't know.
 Failed
+Entry
+{
+        logStateEntry(getState().getName());
+}
+Exit
+{
+        logStateExit(getState().getName());
+}
 {
 }
 
@@ -763,6 +824,11 @@ Failed
 Done
 Entry
 {
+        logStateEntry(getState().getName());
+}
+Exit
+{
+        logStateExit(getState().getName());
 }
 {
 }
