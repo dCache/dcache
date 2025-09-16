@@ -217,7 +217,7 @@ public class RateLimitedHandlerList extends HandlerCollection implements CellCom
 
         boolean blocked = blockedClients.getIfPresent(client) != null;
         if (blocked) {
-            LOGGER.warn("Blocking client with too many auth errors {}", client);
+            LOGGER.debug("Blocking client with too many auth errors {}", client);
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS_429);
             response.getWriter().write("Server is busy. Please try again later.");
             baseRequest.setHandled(true);
@@ -225,7 +225,7 @@ public class RateLimitedHandlerList extends HandlerCollection implements CellCom
         }
 
         if (!getClientRateLimiter(client).tryAcquire()) {
-            LOGGER.warn("Blocking client with too many requests {}", client);
+            LOGGER.debug("Blocking client with too many requests {}", client);
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS_429);
             response.getWriter().write("Server is busy. Please try again later.");
             baseRequest.setHandled(true);
@@ -233,7 +233,7 @@ public class RateLimitedHandlerList extends HandlerCollection implements CellCom
         }
 
         if (!globalRateLimiter.tryAcquire()) {
-            LOGGER.warn("Blocking client due to globally too many requests {}", client);
+            LOGGER.debug("Blocking client due to globally too many requests {}", client);
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS_429);
             response.getWriter().write("Server is busy. Please try again later.");
             baseRequest.setHandled(true);
@@ -249,6 +249,7 @@ public class RateLimitedHandlerList extends HandlerCollection implements CellCom
                     if (response.getStatus() >=  400 && response.getStatus() <= 407) {
                         int errors = getClientErrorRateLimiter(client).incrementAndGet();
                         if (errors >= maxErrorsPerClient) {
+                            LOGGER.warn("Blocking client due to too many auth errors or bad requests: {}", client);
                             blockedClients.put(client, BLOCK);
                             // as client blocked, no reason to keep track of further errors
                             perClientErrorCount.invalidate(client);

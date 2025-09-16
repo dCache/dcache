@@ -378,8 +378,23 @@
       <description>Loads the factories for producers of well-known endpoint content.</description>
     </bean>
 
-    <bean id="handlers" class="org.eclipse.jetty.server.handler.HandlerList">
+    <bean id="rate-limiter-config" class="org.dcache.util.jetty.RateLimitedHandlerList.Configuration">
+        <description>Configuration of requests rate limiter</description>
+        <property name="maxClientsToTrack" value="${frontend.limits.max-blocked-clients}"/>
+        <property name="globalRequestsPerSecond" value="${frontend.limits.rate.overall}"/>
+        <property name="limitPercentagePerClient" value="${frontend.limits.rate.per-client.fractions}"/>
+        <property name="clientBlockingTime" value="${frontend.limits.rate.per-client.block.window.time}"/>
+        <property name="clientBlockingTimeUnit" value="${frontend.limits.rate.per-client.block.window.time.units}"/>
+        <property name="clientIdleTime" value="${frontend.limits.blocked-clients.idle-time}"/>
+        <property name="clientIdleTimeUnit" value="${frontend.limits.blocked-clients.idle-time.units}"/>
+        <property name="numErrorsBeforeBlocking" value="${frontend.limits.error.max-allowed}"/>
+        <property name="errorCountingWindow" value="${frontend.limits.error.block.window.time}"/>
+        <property name="errorCountingWindowUnit" value="${frontend.limits.error.block.window.time.units}"/>
+    </bean>
+
+    <bean id="handlers" class="org.dcache.util.jetty.RateLimitedHandlerList">
         <description>List of handlers for HTTP requests</description>
+        <constructor-arg ref="rate-limiter-config"/>
         <property name="handlers">
             <list>
                 <bean class="org.eclipse.jetty.server.handler.ContextHandler">

@@ -271,6 +271,7 @@
 
 
     <bean id="rate-limiter-config" class="org.dcache.util.jetty.RateLimitedHandlerList.Configuration">
+        <description>Configuration of requests rate limiter</description>
         <property name="maxClientsToTrack" value="${webdav.limits.max-blocked-clients}"/>
         <property name="globalRequestsPerSecond" value="${webdav.limits.rate.overall}"/>
         <property name="limitPercentagePerClient" value="${webdav.limits.rate.per-client.fractions}"/>
