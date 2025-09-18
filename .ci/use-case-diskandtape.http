@@ -1,0 +1,143 @@
+### This test uploads a file, checks file attributes before and after qos update, does a qos change from 'disk' to 'disk+tape', checks pool storage.
+
+### Upload file
+PUT {{webdav-door}}/data/pool-a/FileToDiskandTape.h5
+Authorization: Basic {{username}} {{password}}
+Content-Type: application/octet-stream
+
+< /README.md
+
+> {%
+    client.test("Successful file upload", function() {
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
+    });
+%}
+
+
+### Find attributes of uploaded file
+GET {{frontend-door}}{{endpoint}}{{namespace}}/data/pool-a/FileToDiskandTape.h5?locality=true&optional=true&qos=true
+Authorization: Basic {{admin_role}} {{password}}
+Accept: application/json
+
+> {%
+    client.test("Attributes of file", function() {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+        client.assert(response.body.fileLocality == "NEARLINE", "fileLocality not nearline");
+        client.assert(response.body.accessLatency == "NEARLINE", "accessLatency not nearline");
+        client.assert(response.body.retentionPolicy == "CUSTODIAL", "retentionPolicy not custodial");
+        client.assert(response.body.currentQos == "tape", "currentQos not tape");
+    });
+%}
+
+
+### Find information on the pool's usage before qos change
+GET {{frontend-door}}{{endpoint}}{{pools}}{{sourcePool}}/usage
+Authorization: Basic {{username}} {{password}}
+Content-Type: application/octet-stream
+
+> {%
+    client.test("Information on pool-a", function() {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+        client.assert(response.body.poolData, "Body does not have poolData");
+        client.assert(response.body.poolData.length != 0, "poolData is empty");
+        client.assert(response.body.poolData.poolGroups, "Body does not have poolGroups");
+        client.assert(response.body.poolData.poolGroups.length === 0, "poolGroups is not empty");
+        client.assert(response.body.poolData.links, "Body does not have links");
+        client.assert(response.body.poolData.links.length === 0, "links is not empty");
+        client.assert(response.body.poolData.detailsData.costData.space, "Body does not have space");
+        client.assert(response.body.poolData.detailsData.costData.space.length != 0, "space is empty");
+        client.assert(response.body.poolData.detailsData.costData.space.total, "Body does not have total space");
+        client.assert(response.body.poolData.detailsData.costData.space.total > 0, "total space is less than zero");
+        client.assert(response.body.poolData.detailsData.costData.space.free, "Body does not have free space");
+        client.assert(response.body.poolData.detailsData.costData.space.free > 0, "free space is less than zero");
+        client.assert(response.body.poolData.detailsData.costData.space.lru, "Body does not have lru space");
+        client.assert(response.body.poolData.detailsData.costData.space.gap, "Body does not have gap space");
+        client.assert(response.body.poolData.detailsData.costData.space.breakEven, "Body does not have breakEven space");
+        client.assert(response.body.poolData.detailsData.costData.space.precious >= 0, "precious space is less than zero");
+        client.assert(response.body.poolData.detailsData.costData.space.removable >= 0, "removable space is less than zero");
+        client.global.set("total-space-before", response.body.poolData.detailsData.costData.space.total);
+        client.global.set("free-space-before", response.body.poolData.detailsData.costData.space.free);
+        client.global.set("precious-space-before", response.body.poolData.detailsData.costData.space.precious);
+        client.global.set("removable-space-before", response.body.poolData.detailsData.costData.space.removable);
+    });
+%}
+
+
+### Update QoS request using bulk service
+POST {{frontend-door}}{{endpoint}}/bulk-requests
+Authorization: Basic {{username}} {{password}}
+accept: application/json
+Content-Type: application/json
+
+{
+  "activity": "UPDATE_QOS",
+  "arguments": {
+    "targetQos": "tape+disk"
+  },
+  "target": [
+    "/data/pool-a/FileToDiskandTape.h5"
+  ]
+}
+
+> {%
+    client.global.set("bulk-id-request", response.headers.valueOf('request-url'));
+    client.assert(response.status === 201, "Expected 201, got " + response.status);
+%}
+
+
+### Find information on stage request
+# example of bulk-request-id="http://localhost:3880/api/v1/bulk-requests?offset=0&path=db63a844-1f7e-4371-be82-2d4ac63934c9"
+GET {{bulk-id-request}}
+Authorization: Basic {{username}} {{password}}
+accept: application/json
+Content-Type: application/json
+
+> {%
+    client.test("Attributes of file", function() {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+        client.assert(response.body.status, "Body does not have status");
+        client.assert(response.body.status == "COMPLETED", "status not COMPLETED");
+        client.assert(response.body.targets, "Body does not have targets");
+        client.assert(response.body.targets != null, "targets is NULL");
+        client.assert(response.body.targets.length != 0, "targets is empty");
+    });
+%}
+
+
+### Find attributes of uploaded file
+### Warning: this test expects that the file is already flushed to a tape which is time dependent!
+GET {{frontend-door}}{{endpoint}}{{namespace}}/data/pool-a/FileToDiskandTape.h5?locality=true&optional=true&qos=true
+Authorization: Basic {{admin_role}} {{password}}
+Accept: application/json
+
+> {%
+    client.test("Attributes of file", function() {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+        client.assert(response.body.accessLatency == "ONLINE", "accessLatency not online");
+        client.assert(response.body.retentionPolicy == "CUSTODIAL", "retentionPolicy not custodial");
+        client.assert(response.body.targetQos == "disk+tape", "currentQos not disk+tape");
+    });
+%}
+
+
+### Find information on the pool's usage after qos change
+GET {{frontend-door}}{{endpoint}}{{pools}}{{sourcePool}}/usage
+Authorization: Basic {{username}} {{password}}
+Content-Type: application/octet-stream
+
+> {%
+    client.test("Information on pool-a", function() {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+        client.assert(response.body.poolData.detailsData.costData.space.length != 0, "space is empty");
+        client.assert(response.body.poolData.detailsData.costData.space.total > 0, "total space is less than zero");
+        client.assert(response.body.poolData.detailsData.costData.space.free > 0, "free space is less than zero");
+        client.assert(response.body.poolData.detailsData.costData.space.precious >= 0, "precious space is less than zero");
+        client.assert(response.body.poolData.detailsData.costData.space.removable >= 0, "removable space is less than zero");
+        client.global.set("total-space-after", response.body.poolData.detailsData.costData.space.total);
+        client.global.set("free-space-after", response.body.poolData.detailsData.costData.space.free);
+        client.global.set("precious-space-after", response.body.poolData.detailsData.costData.space.precious);
+        client.global.set("removable-space-after", response.body.poolData.detailsData.costData.space.removable);
+        client.assert(free-space-after > free-space-before);
+        client.assert(precious-space-after < precious-space-before);
+    });
+%}
