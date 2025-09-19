@@ -54,11 +54,11 @@ findJava()
 
 isJavaVersionOk()
 {
-    # Should match 17-21 which will let java major versions 17 to 21 through.
+    # Should match 17-25 which will let java major versions 17 to 25 through.
     # Extract just the version number from 'java -version'
     version=$($JAVA -version 2>&1 | awk -F '"' '/version/ {print $2}')
     # Use grep to match against '^1[1-9].*$'
-    echo "$version" | grep -q "^1[7-9].*$\|^2[0-1].*$"
+    echo "$version" | grep -q "^1[7-9].*$\|^2[0-5].*$"
     # Return result from the above grep (0 if successful, 1 if failed)
     return $?
 }
@@ -182,8 +182,7 @@ loadConfig()
 
 # Get java location
 if ! findJava || ! isJavaVersionOk; then
-    echo "Could not find usable Java VM. Please set JAVA_HOME to the path to Java 17-21"
-    echo "or newer."
+    echo "Could not find usable Java VM. Please set JAVA_HOME to the path to Java 17-25."
     exit 1
 fi
 
