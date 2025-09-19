@@ -387,6 +387,9 @@
   <build>
       <resources>
           <resource>
+              <directory>src/main/resources</directory>
+          </resource>
+          <resource>
               <directory>${project.build.directory}/generated-resources/smc-graphs</directory>
               <includes>
                   <include>**/*.dot</include>
