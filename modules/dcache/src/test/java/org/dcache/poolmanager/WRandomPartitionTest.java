@@ -31,7 +31,7 @@ public class WRandomPartitionTest {
         ).toList();
 
         long fileSize = 1000L;
-        var selectedPool = wrandom.selectWritePool(null, pools, null, fileSize);
+        wrandom.selectWritePool(null, pools, null, fileSize);
     }
 
     @Test
@@ -51,7 +51,30 @@ public class WRandomPartitionTest {
         var selectedPool = wrandom.selectWritePool(null, pools, null, fileSize);
 
         var spaceInfo = selectedPool.info().getCostInfo().getSpaceInfo();
-        assertTrue("selected pool has no sufficient space", spaceInfo.getFreeSpace() + spaceInfo.getRemovableSpace() - fileSize > spaceInfo.getGap());
+        assertTrue("selected pool has no sufficient space", spaceInfo.getFreeSpace() + spaceInfo.getRemovableSpace() - fileSize >= spaceInfo.getGap());
     }
 
+
+    @Test
+    public void shouldSkipFullPool() throws CacheException {
+
+        var wrandom = new WRandomPartition(Map.of());
+
+        // starting the 5th pools have enough space
+        var pools = IntStream.range(0, 10).mapToObj(i -> {
+                    var cost = new PoolCostInfo("pool" + i, "default-queue");
+                    cost.setSpaceUsage(10_000L, 3_000L + 100L*i, 0L, 0L);
+                    cost.getSpaceInfo().setParameter(0.0d, 2500L);
+
+                    return new PoolInfo(new CellAddressCore("pool" + i), cost, ImmutableMap.of());
+                }
+        ).toList();
+
+        long fileSize = 1000L;
+        var selectedPool = wrandom.selectWritePool(null, pools, null, fileSize);
+
+        var spaceInfo = selectedPool.info().getCostInfo().getSpaceInfo();
+        System.out.println(selectedPool.info().getCostInfo().getPoolName()+ " " + spaceInfo);
+        assertTrue("selected pool has no sufficient space", spaceInfo.getFreeSpace() + spaceInfo.getRemovableSpace() - fileSize >= spaceInfo.getGap());
+    }
 }
