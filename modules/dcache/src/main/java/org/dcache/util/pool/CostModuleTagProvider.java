@@ -57,46 +57,38 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.resilience.util;
+package org.dcache.util.pool;
 
-import com.google.common.collect.ImmutableSet;
-import java.util.Collection;
+import com.google.common.collect.ImmutableMap;
+import diskCacheV111.poolManager.CostModule;
 import java.util.Map;
-import java.util.Set;
-import org.dcache.resilience.data.PoolInfoMap;
+import org.dcache.poolmanager.PoolInfo;
 
 /**
- * <p>Base class for the constraint discriminator interface.</p>
- *
- * <p>Implementations return a list, possibly ordered, of locations
- * which qualify, depending upon the semantics of the constraint checking done.</p>
+ * Implementation of PoolTagProvider that retrieves pool tags from CostModule.
+ * This class provides the bridge between the common pool tag extraction
+ * functionality and CostModule integration.
  */
-public abstract class PoolTagConstraintDiscriminator {
+public class CostModuleTagProvider implements PoolTagProvider {
 
-    protected final Set<String> partitionKeys;
+    private final CostModule costModule;
 
-    /**
-     * @param onlyOneCopyPer collection of keys (tag names) on whose values the matching and/or
-     *                       exclusion should take place.
-     */
-    protected PoolTagConstraintDiscriminator(Collection<String> onlyOneCopyPer) {
-        if (onlyOneCopyPer == null) {
-            partitionKeys = ImmutableSet.of();
-        } else {
-            partitionKeys = ImmutableSet.copyOf(onlyOneCopyPer);
-        }
+    public CostModuleTagProvider(CostModule costModule) {
+        this.costModule = costModule;
     }
 
-    /**
-     * @param locations current set of locations
-     * @return a collection of locations which meet the constraint requirements based on the
-     * presence of pool tag values matching the the names of the partition keys.
-     */
-    public abstract Collection<String> getCandidateLocations(Collection<String> locations);
+    @Override
+    public Map<String, String> getPoolTags(String location) {
+        if (costModule == null) {
+            return ImmutableMap.of();
+        }
 
-    /**
-     * <p>Could be fetched from the pool, the PoolManager, or locally
-     * (as with a {@link PoolInfoMap} instance).</p>
-     */
-    protected abstract Map<String, String> getPoolTagsFor(String location);
+        PoolInfo poolInfo = costModule.getPoolInfo(location);
+        if (poolInfo == null) {
+            return ImmutableMap.of();
+        }
+
+        Map<String, String> tags = poolInfo.getTags();
+        return tags != null ? tags : ImmutableMap.of();
+    }
 }
