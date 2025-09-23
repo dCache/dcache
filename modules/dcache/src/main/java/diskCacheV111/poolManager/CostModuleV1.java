@@ -1,6 +1,7 @@
 package diskCacheV111.poolManager;
 
 import com.google.common.collect.ImmutableMap;
+import java.util.Properties;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.vehicles.CostModulePoolInfoTable;
@@ -44,6 +45,42 @@ public class CostModuleV1
     private boolean _cachedPercentileCostCutIsValid;
     private double _cachedPercentileCostCut;
     private double _cachedPercentileFraction;
+    private int _tsIncrease;
+    private int _trustScoreIncrease;
+    
+    private int _tsDecrease;
+    private int _trustScoreDecrease;
+
+    private int _tsThreshold;
+    private int _trustScoreThreshold;
+
+    private int _tsCeiling;
+    private int _trustScoreCeiling;
+
+    public void setTrustScoreIncrease(int TrustScoreIncrease) {
+        _trustScoreIncrease = TrustScoreIncrease;
+    }
+    public void setTrustScoreDecrease(int TrustScoreDecrease) {
+        _trustScoreDecrease = TrustScoreDecrease;
+    }
+    public void setTrustScoreThreshold(int TrustScoreThreshold) {
+        _trustScoreThreshold = TrustScoreThreshold;
+    }
+    public void setTrustScoreCeiling(int TrustScoreCeiling) {
+        _trustScoreCeiling = TrustScoreCeiling;
+    }
+    public int getTrustScoreIncrease() {
+        return _trustScoreIncrease;
+    }
+    public int getTrustScoreDecrease() {
+        return _trustScoreDecrease;
+    }
+    public int getTrustScoreThreshold() {
+        return _trustScoreThreshold;
+    }
+    public int getTrustScoreCeiling() {
+        return _trustScoreCeiling;
+    }
 
     /**
      * Information about some specific pool.
@@ -52,13 +89,20 @@ public class CostModuleV1
 
         private static final long serialVersionUID = -6380756950554320179L;
 
+        private boolean _enabled = true;
+        private long _serialId;
+        private int _trustScore;
+
         private final long timestamp;
         private final PoolCostInfo _info;
         private double _fakeCpu = -1.0;
         private final ImmutableMap<String, String> _tagMap;
         private final CellAddressCore _address;
 
-        public Entry(CellAddressCore address, PoolCostInfo info, Map<String, String> tagMap) {
+        public Entry(CellAddressCore address, PoolCostInfo info, long serialId, int trustScore, boolean enabled, Map<String, String> tagMap) {
+            _enabled = enabled;
+            _trustScore = trustScore;
+            _serialId = serialId;
             timestamp = System.currentTimeMillis();
             _address = address;
             _info = info;
@@ -83,15 +127,69 @@ public class CostModuleV1
         public PoolInfo getPoolInfo() {
             return new PoolInfo(_address, _info, _tagMap);
         }
+
+        public long getSerialId() {
+            return _serialId;
+        }
+
+        public int getTrustScore() {
+            return _trustScore;
+        }
+
+        public boolean getEnabledStatus() {
+            return _enabled;
+        }
+    }
+    public boolean getPoolStatus (String poolName) {
+        return _hash.get(poolName).getEnabledStatus();
+
     }
 
     public synchronized void messageArrived(CellMessage envelope, PoolManagerPoolUpMessage msg) {
+        // TODO: Refactor those variables out into a config
+
+        //int tsIncrease = 16; // W/ a threshold of 35 and tsDecrease of 1.5, after the threshold is reached it takes two good heartbeats to re-enable.
+        //int tsDecrease = 2; //1.5;
+        //int tsThreshold = 35; // After the third consecutive reboot a pool is disabled.
+        //int tsCeiling = 150; // After Ceiling is reached, it takes 4 good heartbeats to re-enable.
+
+        long msgSerialId = msg.getSerialId();
+        int nextTrustScore = 0;
+        boolean nextEnabledStatus = true;
+
         CellAddressCore poolAddress = envelope.getSourceAddress();
         String poolName = msg.getPoolName();
         PoolV2Mode poolMode = msg.getPoolMode();
         PoolCostInfo newInfo = msg.getPoolCostInfo();
         Entry poolEntry = _hash.get(poolName);
         boolean isNewPool = poolEntry == null;
+        boolean trustScoreThresholdReached = false;
+
+        // TODO: To much indentation
+        if (!isNewPool) { // Only check for reboots if the pool is not new
+            int lastTrustScore = poolEntry.getTrustScore();
+            long lastSerailId = poolEntry.getSerialId();
+
+            if (msgSerialId == lastSerailId) { // Pool has not rebooted
+                nextTrustScore = lastTrustScore / _trustScoreDecrease;
+                if (nextTrustScore < _trustScoreThreshold && !poolEntry.getEnabledStatus()) { // Pool was disabled, should now be re-ENABLED
+                    LOGGER.error("Pool {} WOULD now be re-ENABLED, BUT IS NOT", poolName);
+                    // TODO: enable here
+                }
+
+            } else { // Pool has rebooted
+                if (lastTrustScore < _trustScoreCeiling) {
+                    nextTrustScore = lastTrustScore + _trustScoreIncrease;
+                } // INCREASE trust score as long as it is not higher than the ceiling
+                LOGGER.error("Pool {} rebooted and changed ID from {} to {}, Trust Score now at {}", poolName, lastSerailId, msgSerialId, lastTrustScore);
+
+                if (nextTrustScore > _trustScoreThreshold) { // Set pool as DISABLED
+                    nextEnabledStatus = false;
+                    LOGGER.error("Pool {} WOULD now marked as DISABLED, BUT IS NOT", poolName);
+                    // TODO: disable here
+                }
+            }
+        }
 
         /* Whether the pool mentioned in the message should be removed */
         boolean shouldRemovePool = poolMode.getMode() == PoolV2Mode.DISABLED ||
@@ -108,7 +206,7 @@ public class CostModuleV1
         if (shouldRemovePool) {
             _hash.remove(poolName);
         } else if (newInfo != null) {
-            _hash.put(poolName, new Entry(poolAddress, newInfo, msg.getTagMap()));
+            _hash.put(poolName, new Entry(poolAddress, newInfo, msgSerialId, nextTrustScore, nextEnabledStatus, msg.getTagMap()));
         }
     }
 
