@@ -59,29 +59,23 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.util;
 
-import com.google.common.collect.ImmutableMap;
 import diskCacheV111.poolManager.CostModule;
 import java.util.Collection;
-import java.util.Map;
-import org.dcache.poolmanager.PoolInfo;
+import org.dcache.util.pool.CostModuleTagProvider;
+import org.dcache.util.pool.PoolTagBasedExtractor;
 
 /**
- * <p>Implementation of the {@link AbstractLocationExtractor} which uses
- * {@link CostModule} to extract tags.</p>
+ * <p>Implementation of the {@link PoolTagBasedExtractor} which uses
+ * {@link CostModule} to extract tags for resilience operations.</p>
  */
-public final class CostModuleLocationExtractor extends AbstractLocationExtractor {
-
-    private CostModule module;
+public final class CostModuleLocationExtractor extends PoolTagBasedExtractor {
 
     public CostModuleLocationExtractor(Collection<String> onlyOneCopyPer,
-          CostModule module) {
-        super(onlyOneCopyPer);
-        this.module = module;
+          CostModule costModule) {
+        super(onlyOneCopyPer, createTagProvider(costModule));
     }
 
-    @Override
-    protected Map<String, String> getPoolTagsFor(String location) {
-        PoolInfo poolinfo = module.getPoolInfo(location);
-        return poolinfo == null ? ImmutableMap.of() : poolinfo.getTags();
+    private static CostModuleTagProvider createTagProvider(CostModule costModule) {
+        return new CostModuleTagProvider(costModule);
     }
 }

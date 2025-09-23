@@ -69,23 +69,19 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.dcache.resilience.data.PoolInfoMap;
+import org.dcache.util.pool.AbstractLocationExtractor;
 
 /**
- * <p> Implementation of the {@link PoolTagConstraintDiscriminator} which returns
- * a list containing the pools or locations with maximum weight.  The weights are computed in terms
- * of the sum of the size of the value partitions to which they belong.  For instance, if pool1 has
- * tag1 with value A and tag2 with value X, and A is shared by 3 other pools but X by 2, then pool1
- * has a weight of 5.</p>
+ * <p> Implementation of the {@link AbstractLocationExtractor}
+ * which uses {@link PoolInfoMap} to get the pool tags.</p>
  *
- * <p>The use case envisaged here is as follows:  a pnfsId/file has a set
- * of locations which exceeds the maximum by some number K.  The caller responsible for removal will
- * run getCandidateLocations() on this list up to K times, each time picking a location from the
- * returned list using some selection algorithm, and removing the selected location from the
- * original list, which is then passed in to the i+1 iteration. The set of weights is recomputed at
- * each iteration based on the remaining locations.</p>
+ * <p>A RemoveLocationExtractor can receive notification that one or more locations are no longer
+ * hosting or should no longer host a given replica.  These locations are added to the excluded
+ * set, and then subtracted from the candidate locations returned by the call to
+ * getCandidateLocations().</p>
  */
 public final class RemoveLocationExtractor
-      extends PoolTagConstraintDiscriminator {
+      extends AbstractLocationExtractor {
 
     class WeightedLocation {
 
