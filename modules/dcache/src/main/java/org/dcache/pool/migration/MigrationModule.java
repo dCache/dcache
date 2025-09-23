@@ -53,6 +53,7 @@ import org.dcache.util.expression.Token;
 import org.dcache.util.expression.Type;
 import org.dcache.util.expression.TypeMismatchException;
 import org.dcache.util.expression.UnknownIdentifierException;
+import org.dcache.util.pool.PoolManagerTagProvider;
 import org.parboiled.Parboiled;
 import org.parboiled.parserunners.ReportingParseRunner;
 import org.parboiled.support.ParsingResult;
@@ -1142,13 +1143,21 @@ public class MigrationModule
                     sourceList.refresh();
                     Collection<Pattern> excluded = new HashSet<>();
                     excluded.add(Pattern.compile(Pattern.quote(_context.getPoolName())));
-                    RefreshablePoolList poolList = new PoolListFilter(
+                    RefreshablePoolList basePoolList = new PoolListFilter(
                         new PoolListByPoolGroupOfPool(_context.getPoolManagerStub(), _context.getPoolName()),
                         excluded,
                         FALSE_EXPRESSION,
                         Collections.emptySet(),
                         TRUE_EXPRESSION,
                         sourceList);
+
+                    // Wrap with hostname constraint to prevent creating replicas on same host
+                    RefreshablePoolList poolList = new HostnameConstrainedPoolList(
+                        basePoolList,
+                        sourceList,
+                        Collections.singletonList("hostname"),
+                        new PoolManagerTagProvider(_context.getPoolManagerStub()));
+
                     poolList.refresh();
                     JobDefinition def =
                       new JobDefinition(
