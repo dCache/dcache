@@ -74,7 +74,6 @@ public class WRandomPartitionTest {
         var selectedPool = wrandom.selectWritePool(null, pools, null, fileSize);
 
         var spaceInfo = selectedPool.info().getCostInfo().getSpaceInfo();
-        System.out.println(selectedPool.info().getCostInfo().getPoolName()+ " " + spaceInfo);
         assertTrue("selected pool has no sufficient space", spaceInfo.getFreeSpace() + spaceInfo.getRemovableSpace() - fileSize >= spaceInfo.getGap());
     }
 }
