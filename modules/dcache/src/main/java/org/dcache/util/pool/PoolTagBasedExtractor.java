@@ -57,29 +57,44 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.resilience.util;
+package org.dcache.util.pool;
 
 import java.util.Collection;
 import java.util.Map;
-import org.dcache.resilience.data.PoolInfoMap;
-import org.dcache.util.pool.AbstractLocationExtractor;
 
 /**
- * <p>Implementation of the {@link AbstractLocationExtractor}
- * which uses {@link PoolInfoMap} to get the pool tags.</p>
+ * Implementation of AbstractLocationExtractor that retrieves pool tags from
+ * a configurable PoolTagProvider.
+ *
+ * <p>This extractor uses the provided PoolTagProvider to obtain actual pool tags
+ * rather than deriving them from naming conventions. This abstraction allows
+ * different modules to provide pool tag data without creating cyclic dependencies.</p>
+ *
+ * <p>This class consolidates the common functionality previously duplicated between
+ * dcache-resilience and migration modules for querying pool tags.</p>
  */
-public final class CopyLocationExtractor extends AbstractLocationExtractor {
+public class PoolTagBasedExtractor extends AbstractLocationExtractor {
 
-    private final PoolInfoMap info;
+    private final PoolTagProvider tagProvider;
 
-    public CopyLocationExtractor(Collection<String> onlyOneCopyPer,
-          PoolInfoMap info) {
-        super(onlyOneCopyPer);
-        this.info = info;
+    /**
+     * Creates a new extractor that queries pool tags from the provided tag provider.
+     *
+     * @param constraintTags the tag names to use for constraints (e.g., "hostname", "rack")
+     * @param tagProvider the provider to use for querying pool tag information
+     */
+    public PoolTagBasedExtractor(Collection<String> constraintTags, PoolTagProvider tagProvider) {
+        super(constraintTags);
+        this.tagProvider = tagProvider;
     }
 
     @Override
     protected Map<String, String> getPoolTagsFor(String location) {
-        return info.getTags(info.getPoolIndex(location));
+        if (tagProvider == null) {
+            return java.util.Collections.emptyMap();
+        }
+
+        Map<String, String> tags = tagProvider.getPoolTags(location);
+        return tags != null ? tags : java.util.Collections.emptyMap();
     }
 }

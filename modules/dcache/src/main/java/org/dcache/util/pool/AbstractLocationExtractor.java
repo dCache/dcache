@@ -57,7 +57,7 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.resilience.util;
+package org.dcache.util.pool;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;

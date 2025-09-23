@@ -57,29 +57,44 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.resilience.util;
+package org.dcache.util.pool;
 
+import com.google.common.collect.ImmutableSet;
 import java.util.Collection;
 import java.util.Map;
-import org.dcache.resilience.data.PoolInfoMap;
-import org.dcache.util.pool.AbstractLocationExtractor;
+import java.util.Set;
 
 /**
- * <p>Implementation of the {@link AbstractLocationExtractor}
- * which uses {@link PoolInfoMap} to get the pool tags.</p>
+ * <p>Base class for the constraint discriminator interface.</p>
+ *
+ * <p>Implementations return a list, possibly ordered, of locations
+ * which qualify, depending upon the semantics of the constraint checking done.</p>
  */
-public final class CopyLocationExtractor extends AbstractLocationExtractor {
+public abstract class PoolTagConstraintDiscriminator {
 
-    private final PoolInfoMap info;
+    protected final Set<String> partitionKeys;
 
-    public CopyLocationExtractor(Collection<String> onlyOneCopyPer,
-          PoolInfoMap info) {
-        super(onlyOneCopyPer);
-        this.info = info;
+    /**
+     * @param onlyOneCopyPer collection of keys (tag names) on whose values the matching and/or
+     *                       exclusion should take place.
+     */
+    protected PoolTagConstraintDiscriminator(Collection<String> onlyOneCopyPer) {
+        if (onlyOneCopyPer == null) {
+            partitionKeys = ImmutableSet.of();
+        } else {
+            partitionKeys = ImmutableSet.copyOf(onlyOneCopyPer);
+        }
     }
 
-    @Override
-    protected Map<String, String> getPoolTagsFor(String location) {
-        return info.getTags(info.getPoolIndex(location));
-    }
+    /**
+     * @param locations current set of locations
+     * @return a collection of locations which meet the constraint requirements based on the
+     * presence of pool tag values matching the the names of the partition keys.
+     */
+    public abstract Collection<String> getCandidateLocations(Collection<String> locations);
+
+    /**
+     * <p>Could be fetched from the pool, the PoolManager, or locally.</p>
+     */
+    protected abstract Map<String, String> getPoolTagsFor(String location);
 }
