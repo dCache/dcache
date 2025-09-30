@@ -18,7 +18,11 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 import javax.security.auth.Subject;
+
+import org.dcache.auth.DesiredRole;
 import org.dcache.auth.GidPrincipal;
+import org.dcache.auth.RolePrincipal;
+import org.dcache.auth.Subjects;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.auth.attributes.HomeDirectory;
@@ -350,6 +354,20 @@ public class GPlazmaTests {
               _inputSubject);
 
         Assert.assertNotNull(result);
+    }
+
+
+    @Test
+    public void testRolePropagation() throws AuthenticationException {
+        Configuration config = newConfiguration(
+                AUTH_CONFIG_ITEM,
+                MAPPING_CONFIG_ITEM,
+                ACCOUNT_CONFIG_ITEM,
+                SESSION_CONFIG_ITEM);
+
+        _inputSubject.getPrincipals().add(new DesiredRole("qos-user"));
+        LoginReply result = new GPlazma(newLoadStrategy(config), EMPTY_PROPERTIES).login(_inputSubject);
+        assertTrue("Missing qos-user role", Subjects.hasRole(result.getSubject(), RolePrincipal.Role.QOS_USER));
     }
 
     private static Configuration newConfiguration(ConfigurationItem... items) {
