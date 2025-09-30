@@ -5,10 +5,13 @@ import static java.util.Objects.requireNonNull;
 import java.security.Principal;
 import java.util.Properties;
 import java.util.Set;
+
+import org.dcache.auth.DesiredRole;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
+import org.dcache.auth.attributes.Role;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
 
@@ -55,6 +58,9 @@ public class AddHomeRootSessionPlugin implements GPlazmaSessionPlugin {
                 if (restriction != null) {
                     attrib.add(restriction);
                 }
+                authorizedPrincipals.stream().filter(p -> p instanceof DesiredRole)
+                        .map(DesiredRole.class::cast).map(DesiredRole::getName)
+                        .forEach(r -> attrib.add(new Role(r)));
                 return;
             }
         }
