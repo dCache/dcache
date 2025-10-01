@@ -6,9 +6,11 @@ import static org.parboiled.errors.ErrorUtils.printParseErrors;
 import com.google.common.base.Strings;
 import com.google.common.collect.Range;
 import diskCacheV111.pools.PoolCostInfo;
+import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
+import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
@@ -53,7 +55,7 @@ import org.dcache.util.expression.Token;
 import org.dcache.util.expression.Type;
 import org.dcache.util.expression.TypeMismatchException;
 import org.dcache.util.expression.UnknownIdentifierException;
-import org.dcache.util.pool.PoolManagerTagProvider;
+import org.dcache.util.pool.CostModuleTagProvider;
 import org.parboiled.Parboiled;
 import org.parboiled.parserunners.ReportingParseRunner;
 import org.parboiled.support.ParsingResult;
@@ -147,8 +149,36 @@ public class MigrationModule
     // Default concurrency to apply to jobs created outside of MigrationCopyCommand (e.g. hot-file)
     private volatile int defaultConcurrency = 1;
 
+    private CostModule cachedCostModule;
+    private long lastCostModuleRefreshTime = 0;
+    private static final long COST_MODULE_CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
+
     public MigrationModule(MigrationContext context) {
         _context = context;
+    }
+
+    /**
+     * Retrieves a valid and up-to-date CostModule instance from PoolManager, with caching.
+     */
+    private synchronized CostModule getCostModule() {
+        long currentTime = System.currentTimeMillis();
+        if (cachedCostModule != null && (currentTime - lastCostModuleRefreshTime) < COST_MODULE_CACHE_DURATION_MS) {
+            return cachedCostModule;
+        }
+        try {
+            PoolManagerGetPoolMonitor request = new PoolManagerGetPoolMonitor();
+            PoolManagerGetPoolMonitor response = _context.getPoolManagerStub().sendAndWait(request, COST_MODULE_CACHE_DURATION_MS);
+            if (response.getReturnCode() == 0 && response.getPoolMonitor() != null && response.getPoolMonitor().getCostModule() != null) {
+                cachedCostModule = response.getPoolMonitor().getCostModule();
+                lastCostModuleRefreshTime = currentTime;
+                return cachedCostModule;
+            } else {
+                LOGGER.warn("Failed to get CostModule from PoolManager: return code {}", response.getReturnCode());
+            }
+        } catch (Exception e) {
+            LOGGER.warn("Exception while querying CostModule from PoolManager: {}", e.getMessage());
+        }
+        return null;
     }
 
     /**
@@ -1152,11 +1182,12 @@ public class MigrationModule
                         sourceList);
 
                     // Wrap with hostname constraint to prevent creating replicas on same host
-                    RefreshablePoolList poolList = new HostnameConstrainedPoolList(
+                    CostModule costModule = getCostModule();
+                    HostnameConstrainedPoolList poolList = new HostnameConstrainedPoolList(
                         basePoolList,
                         sourceList,
                         Collections.singletonList("hostname"),
-                        new PoolManagerTagProvider(_context.getPoolManagerStub()));
+                        new CostModuleTagProvider(costModule));
 
                     poolList.refresh();
                     JobDefinition def =
