@@ -1,6 +1,7 @@
 package org.dcache.pool.migration;
 
 import static java.util.Arrays.asList;
+import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.parboiled.errors.ErrorUtils.printParseErrors;
 
 import com.google.common.base.Strings;
@@ -151,7 +152,7 @@ public class MigrationModule
 
     private CostModule cachedCostModule;
     private long lastCostModuleRefreshTime = 0;
-    private static final long COST_MODULE_CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
+    private static final long COST_MODULE_CACHE_REFRESH_INTERVAL_MS = MINUTES.toMillis(5);
 
     public MigrationModule(MigrationContext context) {
         _context = context;
@@ -162,12 +163,13 @@ public class MigrationModule
      */
     private synchronized CostModule getCostModule() {
         long currentTime = System.currentTimeMillis();
-        if (cachedCostModule != null && (currentTime - lastCostModuleRefreshTime) < COST_MODULE_CACHE_DURATION_MS) {
+        if (cachedCostModule != null && (currentTime - lastCostModuleRefreshTime) < COST_MODULE_CACHE_REFRESH_INTERVAL_MS) {
             return cachedCostModule;
         }
         try {
             PoolManagerGetPoolMonitor request = new PoolManagerGetPoolMonitor();
-            PoolManagerGetPoolMonitor response = _context.getPoolManagerStub().sendAndWait(request, COST_MODULE_CACHE_DURATION_MS);
+            PoolManagerGetPoolMonitor response = _context.getPoolManagerStub().sendAndWait(request,
+                  COST_MODULE_CACHE_REFRESH_INTERVAL_MS);
             if (response.getReturnCode() == 0 && response.getPoolMonitor() != null && response.getPoolMonitor().getCostModule() != null) {
                 cachedCostModule = response.getPoolMonitor().getCostModule();
                 lastCostModuleRefreshTime = currentTime;
