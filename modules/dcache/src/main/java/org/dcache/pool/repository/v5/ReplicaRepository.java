@@ -897,6 +897,7 @@ public class ReplicaRepository
                                 case CACHED:
                                 case PRECIOUS:
                                 case BROKEN:
+                                    LOGGER.warn("Changing state of {} from {} to {}: {}", id, source, state, why);
                                     return r.setState(state);
                                 default:
                                     break;
