@@ -48,10 +48,6 @@ public class Args implements Serializable {
     }
 
     public Args(String[] args) {
-        this(asList(args));
-    }
-
-    public Args(Iterable<String> args) {
         Scanner scanner = new Scanner();
         for (String arg : args) {
             if (arg.isEmpty()) {
