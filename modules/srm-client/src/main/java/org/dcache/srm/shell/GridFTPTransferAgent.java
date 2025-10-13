@@ -8,7 +8,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
-import com.google.common.io.BaseEncoding;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -25,6 +24,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.text.NumberFormat;
 import java.util.Collections;
+import java.util.HexFormat;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutorService;
@@ -391,7 +391,7 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
             }
 
             try {
-                byte[] raw = BaseEncoding.base16().lowerCase().decode(checksum.toLowerCase());
+                byte[] raw = HexFormat.of().parseHex(checksum);
                 // NB HashCode#fromBytes requires the bytes in little-endian, but
                 // returned value is big-endian so we must turn our egg around!
                 int value = ByteBuffer.wrap(raw).order(ByteOrder.BIG_ENDIAN).getInt();
@@ -590,6 +590,6 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
             reversed[data.length - 1 - i] = data[i];
         }
 
-        return BaseEncoding.base16().lowerCase().encode(reversed);
+        return HexFormat.of().formatHex(reversed);
     }
 }

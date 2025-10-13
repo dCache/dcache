@@ -7,7 +7,6 @@ import static org.dcache.chimera.nfsv41.door.ExceptionUtils.asNfsException;
 import static org.dcache.util.TransferRetryPolicy.alwaysRetry;
 
 import com.google.common.collect.Sets;
-import com.google.common.io.BaseEncoding;
 import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -56,6 +55,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -2008,7 +2008,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         @Override
         public String call() {
-            stateid4 stateid = new stateid4(BaseEncoding.base16().lowerCase().decode(os), 0);
+            stateid4 stateid = new stateid4(HexFormat.of().parseHex(os), 0);
             NfsTransfer t = _transfers.get(stateid);
             if (t == null) {
                 return "No matching transfer";
@@ -2030,7 +2030,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         @Override
         public String call() {
-            stateid4 stateid = new stateid4(BaseEncoding.base16().lowerCase().decode(os), 0);
+            stateid4 stateid = new stateid4(HexFormat.of().parseHex(os), 0);
             NfsTransfer t = _transfers.remove(stateid);
             if (t == null) {
                 return "No matching transfer";

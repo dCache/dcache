@@ -15,7 +15,6 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.io.BaseEncoding;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,6 +31,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.Enumeration;
+import java.util.HexFormat;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -407,7 +407,7 @@ public class LoginResultPrinter {
                 case 0: // otherName, OtherName
                     bytes = (byte[]) object;
                     sb.append("otherName: ")
-                          .append(BaseEncoding.base16().lowerCase().encode(bytes));
+                          .append(HexFormat.of().formatHex(bytes));
                     break;
 
                 case 1: // rfc822Name, IA5String
@@ -420,7 +420,7 @@ public class LoginResultPrinter {
 
                 case 3: // x400Address, ORAddress
                     bytes = (byte[]) object;
-                    sb.append("x400: ").append(BaseEncoding.base16().lowerCase().encode(bytes));
+                    sb.append("x400: ").append(HexFormat.of().formatHex(bytes));
                     break;
 
                 case 4: // directoryName, Name
@@ -430,7 +430,7 @@ public class LoginResultPrinter {
                 case 5: // ediPartyName, EDIPartyName
                     bytes = (byte[]) object;
                     sb.append("EDI party name: ")
-                          .append(BaseEncoding.base16().lowerCase().encode(bytes));
+                          .append(HexFormat.of().formatHex(bytes));
                     break;
 
                 case 6: // uniformResourceIdentifier, IA5String
@@ -443,7 +443,7 @@ public class LoginResultPrinter {
 
                 case 8: // registeredID, OBJECT IDENTIFIER
                     bytes = (byte[]) object;
-                    sb.append("oid: ").append(BaseEncoding.base16().lowerCase().encode(bytes));
+                    sb.append("oid: ").append(HexFormat.of().formatHex(bytes));
                     break;
 
                 default:
@@ -452,7 +452,7 @@ public class LoginResultPrinter {
                     // representation for currently unknown tags
                     sb.append(object.getClass().getSimpleName());
                     sb.append(" [").append(tag).append("]");
-                    sb.append(" ").append(BaseEncoding.base16().lowerCase().encode(bytes));
+                    sb.append(" ").append(HexFormat.of().formatHex(bytes));
                     break;
             }
 

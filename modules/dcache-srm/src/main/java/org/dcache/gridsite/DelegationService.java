@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2016 - 2020 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 - 2025 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -24,9 +24,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.dcache.gridsite.Utilities.assertThat;
 
 import com.google.common.hash.Hashing;
-import com.google.common.io.BaseEncoding;
 import dmg.cells.nucleus.CellMessageReceiver;
 import java.security.cert.CertPath;
+import java.util.HexFormat;
 import java.util.Map;
 import javax.security.auth.Subject;
 import org.dcache.auth.Subjects;
@@ -150,6 +150,6 @@ public class DelegationService implements CellMessageReceiver {
         String generator = Subjects.getDn(subject) + Subjects.getFqans(subject);
         byte[] raw = generator.getBytes(UTF_8);
         byte[] digest = Hashing.sha1().hashBytes(raw).asBytes();
-        return BaseEncoding.base16().encode(digest, 0, 20);
+        return HexFormat.of().formatHex(digest, 0, 20);
     }
 }

@@ -5,7 +5,6 @@ package org.dcache.srm.util;
 import static org.dcache.util.ByteUnit.KiB;
 import static org.dcache.util.ByteUnit.MiB;
 
-import com.google.common.io.BaseEncoding;
 import eu.emi.security.authn.x509.CrlCheckingMode;
 import eu.emi.security.authn.x509.NamespaceCheckingMode;
 import eu.emi.security.authn.x509.OCSPCheckingMode;
@@ -23,6 +22,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.Adler32;
@@ -199,7 +199,7 @@ public class GridftpClient {
             bb.flip();
             md.update(bb);
         }
-        return BaseEncoding.base16().lowerCase().encode(md.digest());
+        return HexFormat.of().formatHex(md.digest());
     }
 
 

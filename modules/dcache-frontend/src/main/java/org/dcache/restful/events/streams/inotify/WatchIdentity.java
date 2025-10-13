@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2018 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2018 - 2025 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -18,8 +18,10 @@
  */
 package org.dcache.restful.events.streams.inotify;
 
-import com.google.common.io.BaseEncoding;
 import diskCacheV111.util.PnfsId;
+
+import java.util.Base64;
+import java.util.HexFormat;
 
 /**
  * A class that holds information used to build the URL that identifies a selection.
@@ -37,8 +39,8 @@ public class WatchIdentity {
         // FIXME the code ties the watch identity to the PnfsId.  This should be the inumber.
 
         // REVISIT here we assume that PNFS-ID has an upper-case hexadecimal value
-        byte[] rawValue = BaseEncoding.base16().decode(pnfsid.toString());
-        this.selectionId = BaseEncoding.base64Url().omitPadding().encode(rawValue);
+        byte[] rawValue = HexFormat.of().parseHex(pnfsid.toString());
+        this.selectionId = Base64.getEncoder().withoutPadding().encodeToString(rawValue);
     }
 
     public String channelId() {
