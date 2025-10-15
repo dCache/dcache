@@ -6,7 +6,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Successful response for list of quality of services", function() {
-        client.assert(response.status === 200, "unsuccessful response");
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
     });
 %}
 
@@ -17,7 +17,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Successful response for list of quality of services", function() {
-        client.assert(response.status === 200, "unsuccessful response");
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
     });
 %}
 
@@ -28,7 +28,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Successful response for tape service", function() {
-        client.assert(response.status === 200, "unsuccessful response");
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
     });
 %}
 
@@ -39,7 +39,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Successful response for disk service", function() {
-        client.assert(response.status === 200, "unsuccessful response");
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
     });
 %}
 
@@ -51,7 +51,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Successful response for disk+tape service", function() {
-        client.assert(response.status === 200, "unsuccessful response");
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
     });
 %}
 
@@ -62,7 +62,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Successful response for volatile service", function() {
-        client.assert(response.status === 200, "unsuccessful response");
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
     });
 %}
 
@@ -74,7 +74,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("qos requested does not exist", function() {
-        client.assert(response.status === 400, "not a bad request");
+        client.assert(response.status === 400, "Expected 400, got " + response.status);
     });
 %}
 
@@ -85,7 +85,7 @@ Authorization: Basic {{username}} {{incorrect_password}}
 
 > {%
     client.test("Incorrect basic authentication credentials ", function() {
-        client.assert(response.status === 401, "not login failed");
+        client.assert(response.status === 401, "Expected 401, got " + response.status);
     });
 %}
 
@@ -97,7 +97,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Successful response for tape service", function() {
-        client.assert(response.status === 200, "unsuccessful response");
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
     });
 %}
 
@@ -108,7 +108,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Successful response for disk service", function() {
-        client.assert(response.status === 200, "unsuccessful response");
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
     });
 %}
 
@@ -120,7 +120,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Successful response for disk+tape service", function() {
-        client.assert(response.status === 200, "unsuccessful response");
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
     });
 %}
 
@@ -131,6 +131,6 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Successful response for volatile service", function() {
-        client.assert(response.status === 200, "unsuccessful response");
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
     });
 %}

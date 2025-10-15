@@ -7,7 +7,7 @@ Content-Type: application/octet-stream
 
 > {%
     client.test("Upload file action", function() {
-        client.assert(response.status === 201, "Unsuccessful upload");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -23,7 +23,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Frontend file migration successful", function() {
-        client.assert(response.status === 201, "Unsuccessful migration");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -35,7 +35,7 @@ Content-Type: application/json
 
 > {%
     client.test("Request executed successfully", function() {
-        client.assert(response.status === 200, "Response status is not 200");
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
     });
 
     client.test("pnfsId field exists", function() {
@@ -58,7 +58,7 @@ Authorization: Basic {{admin_role}} {{password}}
 
 > {%
     client.test("Request executed successfully", function() {
-        client.assert(response.status === 200, "Retrieval not successful");
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
     });
 
     client.test("Locations field exists", function() {
@@ -71,7 +71,7 @@ POST {{frontend-door}}{{endpoint}}/migration/copy
 
 > {%
     client.test("Incorrect path", function() {
-        client.assert(response.status === 404, "Response status is not 404");
+        client.assert(response.status === 404, "Expected 404, got " + response.status);
     });
 %}
 
@@ -86,7 +86,7 @@ Content-Type: application/json
 
 > {%
     client.test("No authentication provided", function() {
-        client.assert(response.status === 401, "Response status is not 401");
+        client.assert(response.status === 401, "Expected 401, got " + response.status);
     });
 %}
 
@@ -105,7 +105,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Unsupported Media Type", function() {
-        client.assert(response.status === 415, "Response code not 415");
+        client.assert(response.status === 415, "Expected 415, got " + response.status);
         var type = response.contentType.mimeType;
         client.assert(type != "application/json", "Expected different type of media");
     });
@@ -122,7 +122,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is Bad request", function() {
-        client.assert(response.status === 400, "Response status is not 400");
+        client.assert(response.status === 400, "Expected 400, got " + response.status);
     });
 %}
 
@@ -141,7 +141,7 @@ Content-Type: application/json
 
 > {%
     client.test("Request without authentication", function() {
-        client.assert(response.status === 401, "Response status is not 401 - Unauthorized");
+        client.assert(response.status === 401, "Expected 401, got " + response.status);
     });
 %}
 
@@ -157,7 +157,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Request executed successfully", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -188,7 +188,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is Bad request", function() {
-        client.assert(response.status === 400, "Response status is not 400");
+        client.assert(response.status === 400, "Expected 400, got " + response.status);
     });
 %}
 
@@ -204,7 +204,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is Bad request", function() {
-        client.assert(response.status === 400, "Response status is not 400");
+        client.assert(response.status === 400, "Expected 400, got " + response.status);
     });
 %}
 
@@ -220,7 +220,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is Bad request", function() {
-        client.assert(response.status === 400, "Response status is not 400");
+        client.assert(response.status === 400, "Expected 400, got " + response.status);
     });
 %}
 
@@ -236,7 +236,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is Bad request", function() {
-        client.assert(response.status === 400, "Response status is not 400");
+        client.assert(response.status === 400, "Expected 400, got " + response.status);
     });
 %}
 
@@ -252,7 +252,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is Bad request", function() {
-        client.assert(response.status === 400, "Response status is not 400");
+        client.assert(response.status === 400, "Expected 400, got " + response.status);
     });
 %}
 
@@ -268,7 +268,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is Bad request", function() {
-        client.assert(response.status === 400, "Response status is not 400");
+        client.assert(response.status === 400, "Expected 400, got " + response.status);
     });
 %}
 
@@ -286,7 +286,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is Bad request", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -303,7 +303,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is create request", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -320,7 +320,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is create request", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -337,7 +337,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is create request", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -354,7 +354,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is create request", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -371,7 +371,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is create request", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -388,7 +388,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is create request", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -405,7 +405,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is create request", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -422,7 +422,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is create request", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -439,7 +439,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is create request", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -456,7 +456,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is create request", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -473,7 +473,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is create request", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -490,7 +490,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is create request", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -507,7 +507,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is create request", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -524,7 +524,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is crete request", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -541,7 +541,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is create request", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -558,7 +558,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is create request", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -576,7 +576,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is create request", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -594,7 +594,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is create request", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -612,7 +612,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is create request", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -630,7 +630,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is create request", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -648,7 +648,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is create request", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -670,7 +670,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is create request", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -679,7 +679,7 @@ GET {{frontend-door}}{{endpoint}}/migration/pool_write
 
 > {%
     client.test("Incorrect path", function() {
-        client.assert(response.status === 404, "Response status is not 404");
+        client.assert(response.status === 404, "Expected 404, got " + response.status);
     });
 %}
 
@@ -688,7 +688,7 @@ GET {{frontend-door}}{{endpoint}}{{migrations}}/pool_write/1
 
 > {%
     client.test("Incorrect path", function() {
-        client.assert(response.status === 401, "Response status is not 401");
+        client.assert(response.status === 401, "Expected 401, got " + response.status);
     });
 %}
 
@@ -720,7 +720,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is create request", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -740,7 +740,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is create request", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -760,7 +760,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is create request", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -780,7 +780,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is crete request", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -800,7 +800,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is create request", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -819,7 +819,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is create request", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -839,7 +839,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is create request", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -859,7 +859,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is create request", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -879,7 +879,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is create request", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -898,7 +898,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is create request", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -918,7 +918,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Response is create request", function() {
-        client.assert(response.status === 201, "Response status is not 201");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
