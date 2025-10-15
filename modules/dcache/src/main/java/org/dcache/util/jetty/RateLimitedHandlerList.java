@@ -246,10 +246,10 @@ public class RateLimitedHandlerList extends HandlerCollection implements CellCom
                 handler.handle(target, baseRequest, request, response);
                 if (baseRequest.isHandled()) {
                     // block clients that hammer with authentication failures
-                    if (response.getStatus() >=  400 && response.getStatus() <= 407) {
+                    if (response.getStatus() == 401) {
                         int errors = getClientErrorRateLimiter(client).incrementAndGet();
                         if (errors >= maxErrorsPerClient) {
-                            LOGGER.warn("Blocking client due to too many auth errors or bad requests: {}", client);
+                            LOGGER.warn("Blocking client due to too many auth errors: {}", client);
                             blockedClients.put(client, BLOCK);
                             // as client blocked, no reason to keep track of further errors
                             perClientErrorCount.invalidate(client);
