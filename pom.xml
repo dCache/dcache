@@ -787,6 +787,11 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+            <dependency>
+                <groupId>org.dcache</groupId>
+                <artifactId>oncrpc4j-core</artifactId>
+                <version>3.4.2</version>
+            </dependency>
         <dependency>
             <groupId>org.dcache</groupId>
             <artifactId>nfs4j-core</artifactId>

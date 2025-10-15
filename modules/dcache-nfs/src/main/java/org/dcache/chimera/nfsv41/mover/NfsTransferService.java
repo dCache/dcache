@@ -76,9 +76,7 @@ import org.dcache.nfs.v4.xdr.nfs4_prot;
 import org.dcache.nfs.v4.xdr.nfs_argop4;
 import org.dcache.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.nfs.v4.xdr.stateid4;
-import org.dcache.oncrpc4j.grizzly.GrizzlyUtils;
 import org.dcache.oncrpc4j.rpc.IoStrategy;
-import org.dcache.oncrpc4j.rpc.OncRpcException;
 import org.dcache.oncrpc4j.rpc.OncRpcProgram;
 import org.dcache.oncrpc4j.rpc.OncRpcSvc;
 import org.dcache.oncrpc4j.rpc.OncRpcSvcBuilder;
@@ -91,14 +89,10 @@ import org.dcache.pool.classic.TransferService;
 import org.dcache.pool.movers.Mover;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository;
-import org.dcache.util.ByteUnit;
+
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.PortRange;
 import org.dcache.vehicles.DoorValidateMoverMessage;
-import org.glassfish.grizzly.Buffer;
-import org.glassfish.grizzly.memory.MemoryManager;
-import org.glassfish.grizzly.memory.PooledMemoryManager;
-import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -192,35 +186,6 @@ public class NfsTransferService
      * IP addresses that should be advertised to clients.
      */
     private String[] _multipathAddresses;
-
-    // This is a workaround for the issue with the grizzly allocator.
-    // (which uses a fraction of heap memory for direct buffers, instead of configured direct memory limit
-    // See: https://github.com/eclipse-ee4j/grizzly/issues/2201
-
-    // as we know in advance how much memory is going to be used, we can pre-calculate the desired fraction.
-    // The expected direct buffer allocation is `<chunk size> * <expected concurrency>` (with an assumption,
-    // that we use only one memory pool, i.g. no grow).
-
-    private final int expectedConcurrency =  GrizzlyUtils.getDefaultWorkerPoolSize();
-    private final int allocationChunkSize = ByteUnit.MiB.toBytes(1); // one pool with 1MB chunks (max NFS rsize)
-    private final float heapFraction = (allocationChunkSize * expectedConcurrency) / (float) Runtime.getRuntime().maxMemory();
-
-    /**
-     * Buffer pool for IO operations.
-     * One pool with 1MB chunks (max NFS rsize).
-     */
-    private final MemoryManager<? extends Buffer> pooledBufferAllocator =
-            new PooledMemoryManager(// one pool with 1MB chunks (max NFS rsize)
-                    allocationChunkSize / 16, // Grizzly allocates at least 16 chunks per slice,
-                                              // for 1MB buffers 16MB in total.
-                                              // Pass 1/16 of the desired buffer size to compensate the over commitment.
-                    1, // number of pools
-                    2, // grow facter per pool, ignored, see above
-                    expectedConcurrency, // expected concurrency
-                    heapFraction, // fraction of heap memory to use for direct buffers
-                    PooledMemoryManager.DEFAULT_PREALLOCATED_BUFFERS_PERCENTAGE,
-                    true  // direct buffers
-            );
 
     @Override
     public void setCellAddress(CellAddressCore address) {
@@ -682,13 +647,5 @@ public class NfsTransferService
         var endpoint = _rpcService.getInetSocketAddress(IpProtocolType.TCP);
         pw.printf("   Listening on       : %s:%d\n", InetAddresses.toUriString(endpoint.getAddress()), endpoint.getPort());
         pw.printf("   Multipath addresses: %s\n", Optional.ofNullable(_multipathAddresses).map(Arrays::toString));
-    }
-
-    /**
-     * Get IO buffer allocator.
-     * @return IO buffer allocator.
-     */
-    public MemoryManager<? extends Buffer> getIOBufferAllocator() {
-        return pooledBufferAllocator;
     }
 }
