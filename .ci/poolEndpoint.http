@@ -7,7 +7,7 @@ Content-Type: application/octet-stream
 
 > {%
     client.test("Successful file upload", function() {
-        client.assert(response.status === 201, "Response was not 201");
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
 %}
 
@@ -16,7 +16,7 @@ GET {{frontend-door}}{{endpoint}}{{namespace}}/%2Fdata%2Fpool-a%2FReadMeFile?chi
 
 > {%
     client.test("Successful verification of file location", function() {
-        client.assert(response.status === 200, "Response was not 200");
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
         client.assert(response.body["locations"][0] == "pool-a", "Locations not found");
         client.assert(response.body["pnfsId"] != null, "pnfsId not found");
         client.global.set("pnfsId", response.body["pnfsId"]);
@@ -35,7 +35,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Successful file migration", function() {
-        client.assert(response.status === 201, "Migration not successful");
+        client.assert(response.status === 201, "Unsuccessful migration: Expected 201, got " + response.status);
         client.global.set("migration-job-id", response.headers.valueOf("migration-job-id"));
     });
 %}
@@ -47,7 +47,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Getting migration information", function() {
-        client.assert(response.status === 200, "Unsuccessful migration");
+        client.assert(response.status === 200, "Unsuccessful migration: Expected 200, got " + response.status);
         client.assert(response.body["state"] === "SLEEPING" , "Unexpected state");
         client.assert(response.body["queued"] != "0" , "Something in the queue");
         client.assert(response.body["targetPools"][0] === "pool-b" , "Incorrect migration pool");
@@ -61,7 +61,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Getting migration information for pool-b", function() {
-        client.assert(response.status === 200, "Unsuccessful migration to pool-b");
+        client.assert(response.status === 200, "Unsuccessful migration to pool-b: Expected 200, got " + response.status);
         client.assert(response.body.length != 0, "Body is empty");
     });
 %}
@@ -73,7 +73,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Getting migration information for pool-c", function() {
-        client.assert(response.status === 200, "Unsuccessful migration to pool-c");
+        client.assert(response.status === 200, "Unsuccessful migration to pool-c: Expected 200, got " + response.status);
         client.assert(response.body.length !=0, "Body is empty");
     });
 %}
@@ -85,7 +85,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Getting information for incorrect id in pool-c", function() {
-        client.assert(response.status === 404, "Incorrect pnfsId");
+        client.assert(response.status === 404, "Expected 404, got " + response.status);
     });
 %}
 ~

@@ -5,7 +5,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Unsuccessful response when deleting a policy by name", function() {
-        client.assert(response.status === 200, "Response was not 200");
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
     });
 %}
 
@@ -52,7 +52,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Successful response when creating a policy", function() {
-        client.assert(response.status === 200, "Response was not 200");
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
         client.assert(response.body.length != 0, "Response body is empty")
     });
 %}
@@ -63,7 +63,7 @@ Content-Type: application/json
 
 > {%
     client.test("Unsuccessful response when deleting a policy by name", function() {
-        client.assert(response.status === 401, "Response was not 401 - Unauthorized");
+        client.assert(response.status === 401, "Expected 401, got " + response.status);
     });
 %}
 
@@ -74,7 +74,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Successful response when deleting a policy by name", function() {
-        client.assert(response.status === 200, "Response was not 200");
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
     });
 %}
 
@@ -84,7 +84,7 @@ Content-Type: application/json
 
 > {%
     client.test("Unsuccessful response when deleting a policy by name", function() {
-        client.assert(response.status === 404, "Response was not 404");
+        client.assert(response.status === 404, "Expected 404, got " + response.status);
     });
 %}
 
@@ -114,7 +114,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Successful response when creating a policy", function() {
-        client.assert(response.status === 200, "Response was not 200");
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
     });
 %}
 
@@ -140,7 +140,7 @@ Authorization: Basic {{username}} {{password}}
 
 > {%
     client.test("Successful response when creating a policy", function() {
-        client.assert(response.status === 200, "Response was not 200");
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
     });
 %}
 
@@ -150,7 +150,7 @@ Content-Type: application/json
 
 > {%
     client.test("Successful response when getting all policies' names", function() {
-        client.assert(response.status === 200, "Response was not 200");
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
         client.assert(response.body[0] === "archive_after_10d", "Incorrect policy stored");
         client.assert(response.body[1] === "on_disk_10d", "Incorrect policy stored");
     });
