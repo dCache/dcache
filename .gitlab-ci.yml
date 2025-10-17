@@ -533,7 +533,7 @@ Helm-Deploy Current dCache build:
       fi
     - helm repo add dcache ${DCACHE_HELM_REPO}
     - helm repo update
-    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=${tag} --set dcache.hsm.enabled=true --set image.registry=${CI_REGISTRY} store dcache/dcache
+    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=${tag} --set dcache.hsm.enabled=true --set image.registry=${CI_REGISTRY} --values custom-helm-config.yaml store dcache/dcache
 
 Helm-Deploy Latest dCache Golden Release:
   stage: test_deploy

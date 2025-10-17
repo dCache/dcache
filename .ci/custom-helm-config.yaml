@@ -1,0 +1,4 @@
+dcache:
+  configExtra: |
+    frontend.limits.error.max-allowed = 100
+
