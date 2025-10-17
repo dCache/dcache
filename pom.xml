@@ -95,7 +95,7 @@
 
         <bouncycastle.bcprov>bcprov-jdk18on</bouncycastle.bcprov>
         <bouncycastle.bcpkix>bcpkix-jdk18on</bouncycastle.bcpkix>
-        <bouncycastle.version>1.78.1</bouncycastle.version>
+        <bouncycastle.version>1.79</bouncycastle.version>
 
         <datanucleus-core.version>6.0.6</datanucleus-core.version>
         <datanucleus.plugin.version>6.0.0-release</datanucleus.plugin.version>
