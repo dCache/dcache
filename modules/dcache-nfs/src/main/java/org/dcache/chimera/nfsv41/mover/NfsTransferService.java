@@ -509,7 +509,7 @@ public class NfsTransferService
         NfsMover mover = _activeIO.get(stateid);
         if (mover != null) {
             if (mover.attachSession(context.getSession())) {
-                mover.setLocalEndpoint(context.getRemoteSocketAddress());
+                mover.setLocalEndpoint(context.getLocalSocketAddress());
             }
             mover.attachSession(context.getSession());
         }
