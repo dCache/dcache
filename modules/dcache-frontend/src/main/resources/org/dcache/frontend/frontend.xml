@@ -637,6 +637,16 @@
     <bean class="org.dcache.restful.resources.namespace.FileResources" scope="request">
       <property name="useQosService" value="${frontend.service.namespace.use-qos-service}"/>
     </bean>
+
+    <bean class="org.dcache.restful.resources.auth.OidcCodeFlowCallback" scope="request">
+      <property name="clientId" value="${frontend.authn.oidc.client-id}"/>
+      <property name="clientSecret" value="${frontend.authn.oidc.client-secret}"/>
+      <property name="tokenUrl" value="${frontend.authn.oidc.token-url}"/>
+      <property name="redirectUrlHost" value="${frontend.authn.oidc.redirect-url-host}"/>
+      <property name="redirectUrl" value="${frontend.authn.oidc.redirect-url}"/>
+
+    </bean>
+
     <bean class="org.dcache.restful.resources.labels.LabelsResources" scope="request"/>
     <bean class="org.dcache.restful.resources.namespace.IdResources" scope="request"/>
     <bean class="org.dcache.restful.resources.namespace.QosPolicyResource" scope="request"/>
