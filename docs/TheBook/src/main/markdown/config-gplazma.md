@@ -1377,6 +1377,9 @@ a value.  This means those values must start with a `/`.
    (~5.4e9 bytes), `max-upload:1TB` limits uploads to a maximum of one
    terabyte (1e12 bytes), `max-upload:1048576` limits users to one
    mibibyte files.
+- **role** A role that should be assigned to the user. For example,
+  `role:qos-user` will assign the role `qos-user` to the user matching
+  the predicate.
 
 #### identity Plug-ins
 
