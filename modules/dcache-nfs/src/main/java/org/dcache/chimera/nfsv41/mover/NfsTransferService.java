@@ -89,7 +89,6 @@ import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.classic.PostTransferService;
 import org.dcache.pool.classic.TransferService;
 import org.dcache.pool.movers.Mover;
-import org.dcache.pool.movers.MoverFactory;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository;
 import org.dcache.util.ByteUnit;
@@ -110,7 +109,7 @@ import org.springframework.beans.factory.annotation.Required;
  * @since 1.9.11
  */
 public class NfsTransferService
-      implements MoverFactory, TransferService<NfsMover>, CellCommandListener, CellInfoProvider,
+      implements TransferService<NfsMover>, CellCommandListener, CellInfoProvider,
       CellIdentityAware {
 
     private static final Logger _log = LoggerFactory.getLogger(NfsTransferService.class);

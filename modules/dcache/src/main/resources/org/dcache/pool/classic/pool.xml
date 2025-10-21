@@ -533,8 +533,8 @@
 
   <bean id="abstract-transfer-service" abstract="true" class="org.dcache.pool.classic.TransferServices">
       <description>Collection of transfer services</description>
-      <property name="defaultFactory" ref="default-transfer-service"/>
-      <property name="factories">
+      <property name="defaultTransferService" ref="default-transfer-service"/>
+      <property name="transferServices">
         <map>
             <entry key="NFS4-4" value-ref="nfs-transfer-service" />
             <!-- Xrootd-2 is here for backward compatibility with doors
@@ -785,7 +785,7 @@
     <beans profile="httpsredirect-true">
         <bean id="transfer-services" parent="abstract-transfer-service">
             <description>Collection of transfer services with https</description>
-            <property name="factories">
+            <property name="transferServices">
                 <map merge="true">
                     <entry key="Https-1" value-ref="https-transfer-service"/>
                 </map>

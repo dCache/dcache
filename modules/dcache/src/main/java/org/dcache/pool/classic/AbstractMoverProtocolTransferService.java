@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2015 - 2023 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2015 - 2025 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -36,7 +36,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.dcache.pool.movers.ChecksumMover;
 import org.dcache.pool.movers.Mover;
-import org.dcache.pool.movers.MoverFactory;
 import org.dcache.pool.movers.MoverProtocol;
 import org.dcache.pool.movers.MoverProtocolMover;
 import org.dcache.pool.repository.ReplicaDescriptor;
@@ -49,7 +48,7 @@ import org.springframework.beans.factory.annotation.Required;
 
 public abstract class AbstractMoverProtocolTransferService
       extends AbstractCellComponent
-      implements TransferService<MoverProtocolMover>, MoverFactory, CellInfoProvider {
+      implements TransferService<MoverProtocolMover>, CellInfoProvider {
 
     private static final Logger LOGGER =
           LoggerFactory.getLogger(MoverMapTransferService.class);

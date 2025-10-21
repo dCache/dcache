@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013 - 2025 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -22,14 +22,13 @@ import java.util.HashMap;
 import java.util.Map;
 import org.dcache.pool.PoolDataBeanProvider;
 import org.dcache.pool.classic.json.TransferServicesData;
-import org.dcache.pool.movers.MoverFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 public class TransferServices
       implements PoolDataBeanProvider<TransferServicesData> {
 
-    private MoverFactory _defaultMoverFactory;
-    private Map<String, MoverFactory> _transferServices;
+    private TransferService<?> _defaultTransferService;
+    private Map<String, TransferService<?>> _transferServices;
 
     @Override
     public TransferServicesData getDataObject() {
@@ -43,22 +42,18 @@ public class TransferServices
         return info;
     }
 
-    public MoverFactory getMoverFactory(ProtocolInfo info) {
-        MoverFactory factory = _transferServices.get(
-              info.getProtocol() + "-" + info.getMajorVersion());
-        if (factory != null) {
-            return factory;
-        }
-        return _defaultMoverFactory;
+    public TransferService<?> getTransferService(ProtocolInfo info) {
+        return _transferServices.getOrDefault(
+        info.getProtocol() + "-" + info.getMajorVersion(), _defaultTransferService);
     }
 
     @Required
-    public void setDefaultFactory(MoverFactory defaultMoverFactory) {
-        _defaultMoverFactory = defaultMoverFactory;
+    public void setDefaultTransferService(TransferService<?> defaultTransferService) {
+        _defaultTransferService = defaultTransferService;
     }
 
     @Required
-    public void setFactories(Map<String, MoverFactory> transferServices) {
+    public void setTransferServices(Map<String, TransferService<?>> transferServices) {
         _transferServices = transferServices;
     }
 }

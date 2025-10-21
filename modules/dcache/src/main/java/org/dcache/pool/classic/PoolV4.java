@@ -104,7 +104,6 @@ import org.dcache.pool.json.PoolDataDetails;
 import org.dcache.pool.json.PoolDataDetails.Lsf;
 import org.dcache.pool.json.PoolDataDetails.P2PMode;
 import org.dcache.pool.movers.Mover;
-import org.dcache.pool.movers.MoverFactory;
 import org.dcache.pool.nearline.HsmSet;
 import org.dcache.pool.nearline.NearlineStorageHandler;
 import org.dcache.pool.p2p.P2PClient;
@@ -675,7 +674,7 @@ public class PoolV4
         PnfsId pnfsId = attributes.getPnfsId();
         ProtocolInfo pi = message.getProtocolInfo();
 
-        MoverFactory moverFactory = _transferServices.getMoverFactory(pi);
+        TransferService<?> transferServices = _transferServices.getTransferService(pi);
         ReplicaDescriptor handle;
         try {
             if (message instanceof PoolAcceptFileMessage) {
@@ -688,7 +687,7 @@ public class PoolV4
                       ReplicaState.FROM_CLIENT,
                       targetState,
                       stickyRecords,
-                      moverFactory.getChannelCreateOptions(),
+                      transferServices.getChannelCreateOptions(),
                       maximumSize);
             } else {
                 Set<? extends OpenOption> openFlags =
@@ -704,7 +703,7 @@ public class PoolV4
             throw new FileInCacheException("File " + pnfsId + " already exists in " + _poolName, e);
         }
         try {
-            return moverFactory.createMover(handle, message, source);
+            return transferServices.createMover(handle, message, source);
         } catch (Throwable t) {
             handle.close();
             throw t;
