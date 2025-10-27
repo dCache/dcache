@@ -119,7 +119,7 @@ default:
 
 rpm:
   stage: build
-  image: dcache/maven-java17-rpm-build
+  image: dcache/maven-java21-rpm-build
   extends: .build_cache
   script:
     - mvn $MAVEN_CLI_OPTS -Drun.slow.tests -am -pl packages/fhs -P rpm clean package
@@ -134,7 +134,7 @@ rpm:
 
 srm_client_rpm:
   stage: build
-  image: dcache/maven-java17-rpm-build
+  image: dcache/maven-java21-rpm-build
   extends: .build_cache
   script:
     - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl modules/srm-client package -P rpm
@@ -145,7 +145,7 @@ srm_client_rpm:
 
 deb:
   stage: build
-  image: dcache/maven-java17-deb-build
+  image: dcache/maven-java21-deb-build
   extends: .build_cache
   script:
     - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl packages/fhs -P deb clean package
@@ -157,7 +157,7 @@ deb:
 # needed for minimal pipeline run
 tar:
   stage: build
-  image: dcache/maven-java17-tar-build
+  image: dcache/maven-java21-tar-build
   extends: .build_cache
   script:
     - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl packages/tar clean package
@@ -169,7 +169,7 @@ tar:
 
 spotbugs:
   stage: build
-  image: dcache/maven-java17-tar-build
+  image: dcache/maven-java21-tar-build
   extends: .build_cache
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
