@@ -15,7 +15,7 @@ import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileNotInCacheException;
-import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.MultiPnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.GenericStorageInfo;
@@ -50,7 +50,7 @@ public class NearlineStorageHandlerTest {
     private HsmSet hsmSet;
     private CompletionHandler<Void, PnfsId> hsmMigrationRequestCallack;
     private CompletionHandler<Void, URI> hsmRemoveRequestCallack;
-    private PnfsHandler pnfs;
+    private MultiPnfsHandler pnfs;
     private FileStore fileStore;
     private ChecksumModule csm;
     private ModifiableReplicaDescriptor desc;
@@ -60,7 +60,7 @@ public class NearlineStorageHandlerTest {
 
         repository = mock(Repository.class);
         desc = mock(ModifiableReplicaDescriptor.class);
-        pnfs = mock(PnfsHandler.class);
+        pnfs = mock(MultiPnfsHandler.class);
         fileStore = mock(FileStore.class);
         csm = mock(ChecksumModule.class);
 

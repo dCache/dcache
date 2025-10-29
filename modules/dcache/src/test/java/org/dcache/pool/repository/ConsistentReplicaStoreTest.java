@@ -22,7 +22,7 @@ import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
-import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.MultiPnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.OSMStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
@@ -53,7 +53,7 @@ public class ConsistentReplicaStoreTest {
     }
 
 
-    private PnfsHandler _pnfs;
+    private MultiPnfsHandler _pnfs;
     private FlatFileStore _fileStore;
     private ReplicaStore _replicaStore;
     private ConsistentReplicaStore _consistentReplicaStore;
@@ -61,7 +61,7 @@ public class ConsistentReplicaStoreTest {
 
     @Before
     public void setup() throws Exception {
-        _pnfs = mock(PnfsHandler.class);
+        _pnfs = mock(MultiPnfsHandler.class);
         _broadcast = mock(CellStub.class);
 
         FileSystem fileSystem = Jimfs.newFileSystem(Configuration.unix());

@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2025 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -18,6 +18,8 @@
 package org.dcache.pool.migration;
 
 import java.util.concurrent.ScheduledExecutorService;
+
+import diskCacheV111.util.MultiPnfsHandler;
 import org.dcache.cells.CellStub;
 
 /**
@@ -34,7 +36,7 @@ public class TaskParameters {
     /**
      * Communication stub to talk to pnfsmanager.
      */
-    public final CellStub pnfs;
+    public final MultiPnfsHandler pnfs;
 
     /**
      * Communication stub to talk to pinmanager.
@@ -93,7 +95,7 @@ public class TaskParameters {
      */
     public final boolean waitForTargets;
 
-    public TaskParameters(CellStub pool, CellStub pnfs, CellStub pinManager,
+    public TaskParameters(CellStub pool, MultiPnfsHandler pnfs, CellStub pinManager,
           ScheduledExecutorService executor,
           PoolSelectionStrategy selectionStrategy, RefreshablePoolList poolList, boolean isEager,
           boolean isMetaOnly, boolean computeChecksumOnUpdate, boolean forceSourceMode,

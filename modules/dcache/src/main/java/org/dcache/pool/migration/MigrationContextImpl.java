@@ -1,5 +1,6 @@
 package org.dcache.pool.migration;
 
+import diskCacheV111.util.MultiPnfsHandler;
 import diskCacheV111.util.PnfsId;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellIdentityAware;
@@ -18,7 +19,7 @@ public class MigrationContextImpl implements MigrationContext, CellIdentityAware
     private String _poolName;
     private ScheduledExecutorService _executor;
     private CellStub _pool;
-    private CellStub _pnfs;
+    private MultiPnfsHandler _pnfs;
     private CellStub _poolManager;
     private CellStub _pinManager;
     private Repository _repository;
@@ -56,12 +57,12 @@ public class MigrationContextImpl implements MigrationContext, CellIdentityAware
     }
 
     @Override
-    public CellStub getPnfsStub() {
+    public MultiPnfsHandler getPnfs() {
         return _pnfs;
     }
 
     @Required
-    public void setPnfsStub(CellStub pnfs) {
+    public void setPnfs(MultiPnfsHandler pnfs) {
         _pnfs = pnfs;
     }
 

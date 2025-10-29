@@ -204,7 +204,7 @@ public class Task {
      * FSM Action
      */
     synchronized void queryLocations() {
-        CellStub.addCallback(_parameters.pnfs.send(new PnfsGetCacheLocationsMessage(getPnfsId())),
+        CellStub.addCallback(_parameters.pnfs.sendAsync(new PnfsGetCacheLocationsMessage(getPnfsId())),
               new Callback<PnfsGetCacheLocationsMessage>("query_") {
                   @Override
                   public void success(PnfsGetCacheLocationsMessage msg) {

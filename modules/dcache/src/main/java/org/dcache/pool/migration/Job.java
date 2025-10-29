@@ -104,7 +104,7 @@ public class Job
         _concurrency = 1;
         _state = State.NEW;
 
-        _taskParameters = new TaskParameters(context.getPoolStub(), context.getPnfsStub(),
+        _taskParameters = new TaskParameters(context.getPoolStub(), context.getPnfs(),
               context.getPinManagerStub(),
               context.getExecutor(), definition.selectionStrategy,
               definition.poolList, definition.isEager, definition.isMetaOnly,

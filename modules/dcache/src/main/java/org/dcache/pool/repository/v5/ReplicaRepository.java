@@ -18,7 +18,7 @@ import diskCacheV111.util.FileCorruptedCacheException;
 import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.LockedCacheException;
-import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.MultiPnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 import dmg.cells.nucleus.CellAddressCore;
@@ -213,7 +213,7 @@ public class ReplicaRepository
     private SpaceSweeperPolicy _sweeper;
 
     @GuardedBy("_stateLock")
-    private PnfsHandler _pnfs;
+    private MultiPnfsHandler _pnfs;
 
     @GuardedBy("_stateLock")
     private boolean _volatile;
@@ -326,7 +326,7 @@ public class ReplicaRepository
     /**
      * Sets the handler for talking to the PNFS manager.
      */
-    public void setPnfsHandler(PnfsHandler pnfs) {
+    public void setPnfsHandler(MultiPnfsHandler pnfs) {
         _stateLock.readLock().lock();
         try {
             checkUninitialized();

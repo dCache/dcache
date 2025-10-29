@@ -27,6 +27,7 @@ import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.LockedCacheException;
+import diskCacheV111.util.MultiPnfsHandler;
 import diskCacheV111.util.OutOfDateCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
@@ -163,7 +164,7 @@ public class PoolV4
     private String _poolStatusMessage = "OK";
     private int _poolStatusCode;
 
-    private PnfsHandler _pnfs;
+    private MultiPnfsHandler _pnfs;
     private StorageClassContainer _storageQueue;
     private Repository _repository;
 
@@ -309,7 +310,7 @@ public class PoolV4
     }
 
     @Required
-    public void setPnfsHandler(PnfsHandler pnfs) {
+    public void setPnfsHandler(MultiPnfsHandler pnfs) {
         assertNotRunning("Cannot set PNFS handler after initialization");
         _pnfs = pnfs;
     }

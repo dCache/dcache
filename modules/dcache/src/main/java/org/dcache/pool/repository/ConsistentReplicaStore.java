@@ -14,7 +14,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.FileIsNewCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
-import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.MultiPnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.TimeoutCacheException;
@@ -50,13 +50,13 @@ public class ConsistentReplicaStore
     private final EnumSet<FileAttribute> REQUIRED_ATTRIBUTES =
           EnumSet.of(STORAGEINFO, LOCATIONS, ACCESS_LATENCY, RETENTION_POLICY, SIZE, CHECKSUM);
 
-    private final PnfsHandler _pnfsHandler;
+    private final MultiPnfsHandler _pnfsHandler;
     private final ReplicaStore _replicaStore;
     private final ChecksumModule _checksumModule;
     private final ReplicaStatePolicy _replicaStatePolicy;
     private String _poolName;
 
-    public ConsistentReplicaStore(PnfsHandler pnfsHandler,
+    public ConsistentReplicaStore(MultiPnfsHandler pnfsHandler,
           ChecksumModule checksumModule,
           ReplicaStore replicaStore,
           ReplicaStatePolicy replicaStatePolicy) {

@@ -18,6 +18,7 @@
  */
 package org.dcache.pool.migration;
 
+import diskCacheV111.util.MultiPnfsHandler;
 import diskCacheV111.util.PnfsId;
 import java.util.concurrent.ScheduledExecutorService;
 import org.dcache.cells.CellStub;
@@ -47,8 +48,8 @@ public class MigrationContextDecorator implements MigrationContext {
     }
 
     @Override
-    public CellStub getPnfsStub() {
-        return inner.getPnfsStub();
+    public MultiPnfsHandler getPnfs() {
+        return inner.getPnfs();
     }
 
     @Override

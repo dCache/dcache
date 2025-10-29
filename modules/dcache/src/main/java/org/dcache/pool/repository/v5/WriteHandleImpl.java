@@ -16,7 +16,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileCorruptedCacheException;
-import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.MultiPnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.TimeoutCacheException;
 import java.io.IOException;
@@ -94,7 +94,7 @@ class WriteHandleImpl implements ModifiableReplicaDescriptor {
     /**
      * Stub for talking to the PNFS manager.
      */
-    private final PnfsHandler _pnfs;
+    private final MultiPnfsHandler _pnfs;
 
     /**
      * Sticky flags to be applied after the transfer.
@@ -126,7 +126,7 @@ class WriteHandleImpl implements ModifiableReplicaDescriptor {
 
     WriteHandleImpl(ReplicaRepository repository,
           Allocator allocator,
-          PnfsHandler pnfs,
+                    MultiPnfsHandler pnfs,
           ReplicaRecord entry,
           FileAttributes fileAttributes,
           ReplicaState targetState,

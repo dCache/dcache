@@ -94,7 +94,7 @@
     <property name="executor" ref="workerThreadPool"/>
   </bean>
 
-  <bean id="pnfs" class="diskCacheV111.util.PnfsHandler">
+  <bean id="pnfs" class="diskCacheV111.util.MultiPnfsHandler">
     <description>PNFS manager client module</description>
     <constructor-arg ref="pnfsStub"/>
     <constructor-arg value="${pool.name}"/>
@@ -280,7 +280,7 @@
     <description>Pool to pool transfer manager</description>
     <property name="repository" ref="rep"/>
     <property name="checksumModule" ref="csm"/>
-    <property name="pnfs" ref="pnfsStub"/>
+    <property name="pnfs" ref="pnfs"/>
     <property name="pool" ref="poolStub"/>
     <property name="executor" ref="workerThreadPool"/>
   </bean>
@@ -310,7 +310,7 @@
         <bean class="org.dcache.pool.migration.MigrationContextImpl">
             <property name="repository" ref="rep"/>
             <property name="executor" ref="workerThreadPool"/>
-            <property name="pnfsStub" ref="pnfsStub"/>
+            <property name="pnfs" ref="pnfs"/>
             <property name="poolStub" ref="poolStub"/>
             <property name="poolManagerStub" ref="poolManagerStub"/>
             <property name="pinManagerStub" ref="pinManagerStub"/>

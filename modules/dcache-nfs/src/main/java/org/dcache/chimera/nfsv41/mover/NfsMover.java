@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013 - 2023 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013 - 2025 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -19,7 +19,7 @@ package org.dcache.chimera.nfsv41.mover;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
-import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.MultiPnfsHandler;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import dmg.cells.nucleus.CellPath;
 import java.io.IOException;
@@ -45,11 +45,11 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
     private NFSv41Session _session;
     private final NfsTransferService _nfsTransferService;
     private final NFS4State _state;
-    private final PnfsHandler _namespace;
+    private final MultiPnfsHandler _namespace;
     private volatile CompletionHandler<Void, Void> _completionHandler;
 
     public NfsMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor,
-          NfsTransferService nfsTransferService, PnfsHandler pnfsHandler) {
+          NfsTransferService nfsTransferService, MultiPnfsHandler pnfsHandler) {
         super(handle, message, pathToDoor, nfsTransferService);
         _nfsTransferService = nfsTransferService;
 

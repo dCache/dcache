@@ -5,7 +5,7 @@ import static java.util.Objects.requireNonNull;
 import com.google.common.collect.ImmutableSet;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileCorruptedCacheException;
-import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.MultiPnfsHandler;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.OpenOption;
@@ -41,15 +41,15 @@ class ReadHandleImpl implements ReplicaDescriptor {
     protected static final Logger LOGGER = LoggerFactory.getLogger(ReadHandleImpl.class);
 
 
-    private final PnfsHandler _pnfs;
+    private final MultiPnfsHandler _pnfs;
     private final ReplicaRecord _entry;
     private final Set<? extends OpenOption> _openOptions;
     private FileAttributes _fileAttributes;
     private boolean _open;
     private Exception _closedBy;
 
-    ReadHandleImpl(PnfsHandler pnfs, ReplicaRecord entry, FileAttributes fileAttributes,
-          boolean isInternalActivity) {
+    ReadHandleImpl(MultiPnfsHandler pnfs, ReplicaRecord entry, FileAttributes fileAttributes,
+                   boolean isInternalActivity) {
         _pnfs = requireNonNull(pnfs);
         _entry = requireNonNull(entry);
         _fileAttributes = requireNonNull(fileAttributes);

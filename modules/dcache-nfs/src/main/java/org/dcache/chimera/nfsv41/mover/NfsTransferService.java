@@ -5,7 +5,7 @@ import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
-import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.MultiPnfsHandler;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
 import dmg.cells.nucleus.CellAddressCore;
@@ -119,7 +119,7 @@ public class NfsTransferService
     private CellStub _door;
     private PostTransferService _postTransferService;
     private final long _bootVerifier = System.currentTimeMillis();
-    private PnfsHandler _pnfsHandler;
+    private MultiPnfsHandler _pnfsHandler;
     private int _minTcpPort;
     private int _maxTcpPort;
     private IoStrategy _ioStrategy;
@@ -362,7 +362,7 @@ public class NfsTransferService
     }
 
     @Required
-    public void setPnfsHandler(PnfsHandler pnfsHandler) {
+    public void setPnfsHandler(MultiPnfsHandler pnfsHandler) {
         _pnfsHandler = pnfsHandler;
     }
 

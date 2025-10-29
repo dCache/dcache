@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2016 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 - 2025 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -19,6 +19,7 @@
 
 package org.dcache.pool.migration;
 
+import diskCacheV111.util.MultiPnfsHandler;
 import diskCacheV111.util.PnfsId;
 import java.util.concurrent.ScheduledExecutorService;
 import org.dcache.cells.CellStub;
@@ -32,7 +33,7 @@ public interface MigrationContext {
 
     CellStub getPoolStub();
 
-    CellStub getPnfsStub();
+    MultiPnfsHandler getPnfs();
 
     CellStub getPoolManagerStub();
 

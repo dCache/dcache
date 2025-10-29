@@ -8,6 +8,7 @@ import com.google.common.util.concurrent.Futures;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CacheFileAvailable;
 import diskCacheV111.util.FileInCacheException;
+import diskCacheV111.util.MultiPnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
@@ -108,7 +109,7 @@ class Companion {
     private final List<StickyRecord> _stickyRecords;
     private final CacheFileAvailable _callback;
     private final ScheduledExecutorService _executor;
-    private final CellStub _pnfs;
+    private final MultiPnfsHandler _pnfs;
     private final CellStub _pool;
     private final boolean _forceSourceMode;
     private final PnfsId _pnfsId;
@@ -184,7 +185,7 @@ class Companion {
           InetAddress address,
           Repository repository,
           ChecksumModule checksumModule,
-          CellStub pnfs,
+              MultiPnfsHandler pnfs,
           CellStub pool,
           FileAttributes fileAttributes,
           String sourcePoolName,
@@ -431,7 +432,7 @@ class Companion {
      * Asynchronously retrieves the file attributes.
      */
     void fetchFileAttributes() {
-        CellStub.addCallback(_pnfs.send(
+        CellStub.addCallback(_pnfs.sendAsync(
                     new PnfsGetFileAttributes(_pnfsId, Pool2PoolTransferMsg.NEEDED_ATTRIBUTES)),
               new Callback<PnfsGetFileAttributes>() {
                   @Override

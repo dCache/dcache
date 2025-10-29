@@ -6,6 +6,7 @@ import static java.util.stream.Collectors.joining;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CacheFileAvailable;
+import diskCacheV111.util.MultiPnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.HttpDoorUrlInfoMessage;
@@ -56,7 +57,7 @@ public class P2PClient
     private Repository _repository;
     private ChecksumModule _checksumModule;
 
-    private CellStub _pnfs;
+    private MultiPnfsHandler _pnfs;
     private CellStub _pool;
     private InetAddress _interface;
     private TlsMode _p2pTlsMode;
@@ -80,7 +81,7 @@ public class P2PClient
         _checksumModule = csm;
     }
 
-    public synchronized void setPnfs(CellStub pnfs) {
+    public synchronized void setPnfs(MultiPnfsHandler pnfs) {
         _pnfs = pnfs;
     }
 

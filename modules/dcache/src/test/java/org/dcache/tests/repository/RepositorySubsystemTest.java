@@ -25,7 +25,7 @@ import diskCacheV111.util.DiskSpace;
 import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.LockedCacheException;
-import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.MultiPnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
@@ -109,7 +109,7 @@ public class RepositorySubsystemTest
     private FileAttributes attributes4;
     private FileAttributes attributes5;
 
-    private PnfsHandler pnfs;
+    private MultiPnfsHandler pnfs;
 
     private Account account;
     private ReplicaRepository repository;
@@ -247,7 +247,7 @@ public class RepositorySubsystemTest
         Files.createDirectory(metaDir);
 
         cell = new CellEndpointHelper(address);
-        pnfs = new PnfsHandler(new CellPath("pnfs"), "pool");
+        pnfs = new MultiPnfsHandler(new CellPath("pnfs"), "pool");
         pnfs.setCellEndpoint(cell);
 
         /* Create test data. Notice that the repository automatically

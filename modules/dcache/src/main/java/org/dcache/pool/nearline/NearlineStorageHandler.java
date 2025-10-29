@@ -38,7 +38,7 @@ import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.HsmLocationExtractorFactory;
-import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.MultiPnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.StorageInfo;
@@ -180,7 +180,7 @@ public class NearlineStorageHandler
     private Repository repository;
     private FileStore fileStore;
     private ChecksumModule checksumModule;
-    private PnfsHandler pnfs;
+    private MultiPnfsHandler pnfs;
     private CellStub billingStub;
     private HsmSet hsmSet;
     private OptionalLong stageTimeout = OptionalLong.empty();
@@ -236,7 +236,7 @@ public class NearlineStorageHandler
     }
 
     @Required
-    public void setPnfsHandler(PnfsHandler pnfs) {
+    public void setPnfsHandler(MultiPnfsHandler pnfs) {
         this.pnfs = requireNonNull(pnfs);
     }
 
