@@ -220,7 +220,7 @@ public class NfsProxyIoFactory implements ProxyIoFactory {
                                 }
                             });
                             return new NfsProxyIo(poolSocketAddress,
-                                  context.getRemoteSocketAddress(), inode, ffLayoutSegment.ffl_mirrors[0].ffm_data_servers[0].ffds_stateid , timeout,
+                                  context, inode, ffLayoutSegment.ffl_mirrors[0].ffm_data_servers[0].ffds_stateid , timeout,
                                   TIMEOUT_STEP_UNIT);
                         } catch (IOException e) {
                             _log.warn("Failed to connect to remote mover {} : {}", address,
