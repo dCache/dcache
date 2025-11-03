@@ -1036,9 +1036,62 @@ In this example two access methods are considered: grid based and kerberos based
 
 ##### ldap
 
-The `ldap` is a map, session and identity plugin. As a map plugin it maps user names to UID and GID. As a session plugin it adds root and home path information to the session. As an identity plugin it supports reverse mapping of UID and GID to user and group names repectively.
+The `ldap` is a map, session and identity plugin.
 
+When used in the map phase, the ldap plugin will search for uid and
+group-membership information about a person, and gid information about
+a group.  This information is found as LDAP objects within the LDAP
+directory informatiton tree (DIT).
 
+The user information is usually found by selecting an LDAP object that
+matches the gplazma-identified username (see
+`gplazma.ldap.userfilter`), although it is also possible to select the
+LDAP object based on the gplazma-identified uid (see
+`gplazma.ldap.try-uid-mapping`).  Group information is selected an
+LDAP object by matching the gplazma-identified group name.
+
+When searching for matching LDAP objects, the plugin will look within
+some LDAP DIT subtree, as given by a distinguished name (DN).  The
+subtree is simply all LDAP objects that have the DN as an ancestor in
+the LDAP object hierarchy; for example, the LDAP object
+`uid=paul,ou=people,ou=rgy,o=desy,c=de` is contained in the subtree
+defined by the DN `ou=rgy,o=desy,c=de` and also in the subtree defined
+by the DN `ou=people,ou=rgy,o=desy,c=de`, but it is not contained in
+the subtree defined by the DN `ou=group,ou=rgy,o=desy,c=de`.
+
+The plugin will look within two distinct subtrees when searching for
+information: one subtree when searching for information about a person
+and another subtree when searching for information desecribing a
+group.  These two subtrees will have corresponding DNs; for example,
+when searching for information about people the plugin searches the
+subtree defined by the DN `ou=people,ou=rgy,o=desy,c=de`.  The choice
+of these two DNs will depend on the structure of your LDAP DIT.
+
+The LDAP plugin supports two ways to specify the user and group search
+DNs: explicit and relative.
+
+When using the explicit approach, the subtree's DN is directly
+specified.  This is conceptually the easiest approach, but will likely
+involve providing duplicate information and may make it harder to
+manually verify the provided information is correct.  For further
+details, see the `gplazma.ldap.dn.users-search-base` and
+`gplazma.ldap.dn.groups-search-base` configuration properties.
+
+With the relative approach, the subtree's DN is given as a relative
+distinguished name (RDN) that is resolved against a base DN; for
+example, if the RDN is `ou=people` and the base DN is
+`ou=rgy,o=desy,c=de` then the search subtree's DN is
+`ou=people,ou=rgy,o=desy,c=de`.  This approach makes sense if both the
+user information subtree and group information subtree share a common
+base DN.  For more details, see the RDN configuration properties
+(`gplazma.ldap.subtree.users` and `gplazma.ldap.subtree.groups`) and
+the base DN (`gplazma.ldap.dn.search-base`).
+
+In most cases, the relative approach is applicable (your LDAP DIT has
+a common base DN) and is easier to configure.  Therefore, this is
+recommended.
+
+As a session plugin it adds root and home path information to the session. As an identity plugin it supports reverse mapping of UID and GID to user and group names repectively.
 
 Properties
 
@@ -1048,33 +1101,68 @@ Properties
     Example: `ldaps://example.org:389`
 
 
+**gplazma.ldap.dn.search-base**
 
-**gplazma.ldap.organization**
+    The distinguished name (DN), written according to RFC 4515, under
+    which dCache will search for LDAP objects.  dCache will search for
+    two kinds of objects: an object that represent a person and an
+    object that represent a group.
 
-    Top level (`base DN`) of the `LDAP` directory tree
+    This configuration property provides a way to provide a common
+    path under which both types of search are conducted, with the
+    configuration properties `gplazma.ldap.subtree.users` and
+    `gplazma.ldap.subtree.groups` supporting more specific search
+    paths.
+
     Example: `o="Example, Inc.", c=DE`
 
 
+**gplazma.ldap.subtree.users**
 
-**gplazma.ldap.tree.people**
+    The relative distinguished name (RDN) or sequence of RDNs, written
+    according to RFC 4515, that are resolved relative to the
+    'gplazma.ldap.dn.search-base' configuration property value when
+    searching for information about a specific user.
 
-`LDAP` subtree containing user information. The path to the user records will be formed using the `base
-                    DN` and the value of this property as a organizational unit (`ou`) subdirectory.
-
-Default: `People`
-
-Example: Setting `gplazma.ldap.organization=o="Example, Inc.", c=DE` and `gplazma.ldap.tree.people=People` will have the plugin looking in the LDAP directory `ou=People, o="Example, Inc.", c=DE` for user information.
+    Example: `ou=people`
 
 
-**gplazma.ldap.tree.groups**
+**gplazma.ldap.subtree.groups**
 
-`LDAP` subtree containing group information. The path to the group records will be formed using the `base
-                    DN` and the value of this property as a organizational unit (`ou`) subdirectory.
+    The relative distinguished name (RDN) or sequence of RDNs, written
+    according to RFC 4515, that are resolved relative to the
+    'gplazma.ldap.dn.search-base' configuration property value when
+    searching for information about a specific group.
 
-Default: `Groups`
+    Example: `ou=groups`
 
-Example: Setting `gplazma.ldap.organization=o="Example, Inc.",
-                    c=DE` and `gplazma.ldap.tree.groups=Groups` will have the plugin looking in the LDAP directory `ou=Groups, o="Example, Inc.", c=DE` for group information.
+
+**gplazma.ldap.dn.users-search-base**
+
+    The distinguished name (DN), written according to RFC 4515, under
+    which dCache will search for LDAP objects when looking for
+    information about a user.
+
+    For most LDAP servers, this property may be left with its default
+    value and the configuration properties
+    `gplazma.ldap.dn.search-base` and `gplazma.ldap.subtree.users` are
+    customised instead.
+
+    Example: `ou=people, o="Example, Inc.", c=DE`
+
+
+**gplazma.ldap.dn.groups-search-base**
+
+    The distinguished name (DN), written according to RFC 4515, under
+    which dCache will search for LDAP objects when looking for
+    information about a group.
+
+    For most LDAP servers, this property may be left with its default
+    value and the configuration properties
+    `gplazma.ldap.dn.search-base` and `gplazma.ldap.subtree.groups`
+    are customised instead.
+
+    Example: `ou=group, o="Example, Inc.", c=DE`
 
 
 **gplazma.ldap.userfilter**

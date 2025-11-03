@@ -76,9 +76,8 @@ import org.slf4j.LoggerFactory;
  * Corresponding configuration in <b>dcache.conf</b>
  * <pre>
  *    gplazma.ldap.url = ldap://ldap.example.com:389/
- *    gplazma.ldap.organization = o=SITE,c=COUNTRY
- *    gplazma.ldap.tree.people = People
- *    gplazma.ldap.tree.groups = Groups
+ *    gplazma.ldap.dn.users-search-base = ou=People,o=SITE,c=COUNTRY
+ *    gplazma.ldap.dn.groups-search-base = ou=Groups,o=SITE,C=COUNTRY
  *    gplazma.ldap.home-dir = "/"
  *    gplazma.ldap.root-dir = "%homeDirectory%" evaluates to the users home directory
  *    gplazma.ldap.group-member = "memberUid" or "uniqueMember"
@@ -118,9 +117,6 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
     public static final String LDAP_BINDPW = "gplazma.ldap.bindpw";
     public static final String LDAP_AUTH = "gplazma.ldap.auth";
 
-    public static final String LDAP_ORG = "gplazma.ldap.organization";
-    public static final String LDAP_PEOPLE_TREE = "gplazma.ldap.tree.people";
-    public static final String LDAP_GROUP_TREE = "gplazma.ldap.tree.groups";
     public static final String LDAP_USER_FILTER = "gplazma.ldap.userfilter";
 
     /**
@@ -312,13 +308,10 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
 
         tryUidMapping = Boolean.parseBoolean(properties.getProperty(LDAP_TRY_UID_MAPPING));
         ldapUrl = properties.getProperty(LDAP_URL);
-        String organization = properties.getProperty(LDAP_ORG);
-        String peopleTree = properties.getProperty(LDAP_PEOPLE_TREE);
-        String groupTree = properties.getProperty(LDAP_GROUP_TREE);
         userFilter = properties.getProperty(LDAP_USER_FILTER);
 
-        peopleOU = String.format("ou=%s,%s", peopleTree, organization);
-        groupOU = String.format("ou=%s,%s", groupTree, organization);
+        peopleOU = properties.getProperty("gplazma.ldap.dn.users-search-base");
+        groupOU = properties.getProperty("gplazma.ldap.dn.groups-search-base");
 
         userHome = properties.getProperty(LDAP_USER_HOME);
         userHomeTransformation = userHome.matches(".*%\\w+%.*")
