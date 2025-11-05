@@ -69,7 +69,7 @@
         <version.xerces>2.12.0</version.xerces>
         <version.jetty>9.4.57.v20241219</version.jetty>
         <version.xrootd4j>4.6.0</version.xrootd4j>
-        <version.jersey>2.41</version.jersey>
+        <version.jersey>2.47</version.jersey>
         <version.dcache-view>3.0.0</version.dcache-view>
         <version.dcache-view-admin>3.0.0</version.dcache-view-admin>
         <version.netty>4.2.5.Final</version.netty>
