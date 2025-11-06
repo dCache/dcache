@@ -17,6 +17,7 @@
  */
 package org.dcache.http;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.dcache.http.AuthenticationHandler.DCACHE_SUBJECT_ATTRIBUTE;
 
 import com.google.common.base.Stopwatch;
@@ -43,6 +44,7 @@ import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.handler.HandlerWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 
 /**
  * This class act as a base logging class for logging servlet-based activity. It is expected that
@@ -126,7 +128,7 @@ public abstract class AbstractLoggingHandler extends HandlerWrapper {
         NetLoggerBuilder log = new NetLoggerBuilder(logLevel, requestEventName())
               .omitNullValues();
         describeOperation(log, request, response);
-        log.add("duration", processingTime.elapsed().toMillis());
+        log.add("duration", processingTime.elapsed(MILLISECONDS));
         log.toLogger(accessLogger());
     }
 

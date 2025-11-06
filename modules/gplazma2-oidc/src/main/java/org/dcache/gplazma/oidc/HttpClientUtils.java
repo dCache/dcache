@@ -18,6 +18,7 @@
 package org.dcache.gplazma.oidc;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,6 +27,7 @@ import com.google.common.base.Stopwatch;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.time.Duration;
 import javax.annotation.Nullable;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -72,9 +74,9 @@ public class HttpClientUtils {
 
                 LOGGER.debug("GET {} took {} returning {} entity: {}",
                         url,
-                        TimeUtils.describe(httpTiming.elapsed()).orElse("(no time)"),
-                        entityDescription,
-                        response.getStatusLine());
+                             TimeUtils.describe(Duration.ofMillis(httpTiming.elapsed(MILLISECONDS))).orElse("(no time)"),
+                             entityDescription,
+                             response.getStatusLine());
             }
         }
     }

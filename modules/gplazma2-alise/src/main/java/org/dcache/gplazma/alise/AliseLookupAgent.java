@@ -18,6 +18,8 @@
  */
 package org.dcache.gplazma.alise;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -99,7 +101,7 @@ public class AliseLookupAgent implements LookupAgent {
             var response = client.send(request, BodyHandlers.ofString());
 
             if (LOGGER.isDebugEnabled()) {
-                Duration delay = waitingForResponse.elapsed();
+                Duration delay = Duration.ofMillis(waitingForResponse.elapsed(MILLISECONDS));
                 var sb = new StringBuilder("ALISE response took ");
                 appendDuration(sb, delay, SHORT)
                         .append(": ")

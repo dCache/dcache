@@ -1,6 +1,7 @@
 package org.dcache.gplazma.oidc.helpers;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,6 +9,7 @@ import com.google.common.base.Stopwatch;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.time.Duration;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -93,13 +95,13 @@ public class JsonHttpClient {
                 httpTiming.stop();
 
                 LOGGER.debug("GET {} took {} returning {} entity: {}",
-                      url,
-                      TimeUtils.describe(httpTiming.elapsed()).orElse("(no time)"),
-                      entity == null ? "unknown"
-                            : entity.getContentLength() < 0 ? "unknown sized"
-                                  : entity.getContentLength() == 0 ? "no"
-                                        : Strings.describeSize(entity.getContentLength()),
-                      response.getStatusLine());
+                             url,
+                             TimeUtils.describe(Duration.ofMillis(httpTiming.elapsed(MILLISECONDS))).orElse("(no time)"),
+                             entity == null ? "unknown"
+                             : entity.getContentLength() < 0 ? "unknown sized"
+                             : entity.getContentLength() == 0 ? "no"
+                             : Strings.describeSize(entity.getContentLength()),
+                             response.getStatusLine());
             }
         }
     }

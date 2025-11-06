@@ -17,6 +17,8 @@
  */
 package org.dcache.gplazma.oidc.userinfo;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.google.common.base.Stopwatch;
@@ -133,7 +135,9 @@ public class QueryUserInfoEndpoint implements TokenProcessor {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Doing user-info lookup against {} OPs took {}",
                   allResults.size(),
-                  TimeUtils.describe(userinfoLookupTiming.elapsed()).orElse("no time"));
+                      TimeUtils.describe(Duration
+                                         .ofMillis(userinfoLookupTiming.elapsed(MILLISECONDS)))
+                      .orElse("no time"));
         }
 
         List<LookupResult> successfulResults = allResults.stream().filter(LookupResult::isSuccess)
@@ -284,10 +288,11 @@ public class QueryUserInfoEndpoint implements TokenProcessor {
             if (userinfoLookupTiming != null) {
                 userinfoLookupTiming.stop();
 
-                if (userinfoLookupTiming.elapsed().compareTo(slowLookupThreshold) > 0) {
+                if (userinfoLookupTiming.elapsed(MILLISECONDS) > slowLookupThreshold.toMillis()) {
                     LOG.warn("OpenID-Connect user-info endpoint {} took {} to return",
                           ip.getName(),
-                          TimeUtils.describe(userinfoLookupTiming.elapsed()).orElse("no time"));
+                             TimeUtils.describe(Duration.ofMillis(userinfoLookupTiming.elapsed(MILLISECONDS)))
+                             .orElse("no time"));
                 }
             }
         }
