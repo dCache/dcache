@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2015 - 2023 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2015 - 2025 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -39,20 +39,37 @@ import eu.emi.security.authn.x509.ValidationError;
 import eu.emi.security.authn.x509.ValidationErrorCategory;
 import eu.emi.security.authn.x509.X509CertChainValidator;
 import eu.emi.security.authn.x509.X509Credential;
+import eu.emi.security.authn.x509.helpers.AbstractDelegatingX509Credential;
+import eu.emi.security.authn.x509.helpers.AbstractX509Credential;
+import eu.emi.security.authn.x509.helpers.KeyStoreHelper;
+import eu.emi.security.authn.x509.helpers.PasswordSupplier;
 import eu.emi.security.authn.x509.helpers.ssl.SSLTrustManager;
+import eu.emi.security.authn.x509.impl.CertificateUtils;
+import eu.emi.security.authn.x509.impl.KeystoreCredential;
 import eu.emi.security.authn.x509.impl.OpensslCertChainValidator;
-import eu.emi.security.authn.x509.impl.PEMCredential;
 import eu.emi.security.authn.x509.impl.ValidatorParams;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.Signature;
+import java.security.SignatureException;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.util.EnumSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -313,8 +330,8 @@ public class CanlContextFactory implements SslContextFactory {
              * https://github.com/eu-emi/canl-java/issues/114
              */
             Callable newContext = () -> {
-                PEMCredential credential
-                      = new PEMCredential(keyPath.toString(), certificatePath.toString(), new char[]{});
+                PEMCredential0 credential
+                      = new PEMCredential0(keyPath.toString(), certificatePath.toString(), new char[]{});
                 LOGGER.info("Reloading host credential {} {}", certificatePath, keyPath);
                 return factory.getContext(contextType, credential);
             };
@@ -324,6 +341,120 @@ public class CanlContextFactory implements SslContextFactory {
                         certificatePath),
                   credentialUpdateInterval,
                   credentialUpdateIntervalUnit);
+        }
+    }
+
+    /*
+        Based on CANL PEMCredential and KeyAndCertCredential classes
+
+     */
+
+    // PEMCredential0 is a copy of PEMCredential that uses custom KeyAndCertCredential
+
+    private static class PEMCredential0 extends AbstractDelegatingX509Credential {
+
+        public PEMCredential0(String keyPath, String certificatePath, char[] keyPasswd) throws IOException, CertificateException, KeyStoreException {
+            this(new FileInputStream(keyPath), new FileInputStream(certificatePath), keyPasswd);
+        }
+
+        public PEMCredential0(InputStream privateKeyStream, InputStream certificateStream, char[] keyPasswd)
+                throws IOException, KeyStoreException, CertificateException {
+            this(privateKeyStream, certificateStream, CertificateUtils.getPF(keyPasswd));
+        }
+
+        public PEMCredential0(InputStream privateKeyStream, InputStream certificateStream, PasswordSupplier pf)
+                throws IOException, KeyStoreException {
+            X509Certificate[] chain = CertificateUtils.loadCertificateChain(
+                    certificateStream, CertificateUtils.Encoding.PEM);
+            PrivateKey pk = CertificateUtils.loadPEMPrivateKey(privateKeyStream, pf);
+            privateKeyStream.close();
+            delegate = new KeyAndCertCredential0(pk, chain);
+        }
+    }
+
+    /**
+     * KeyAndCertCredential0 is a copy of KeyAndCertCredential that support EC and ECDSA keys.
+     */
+    private static class KeyAndCertCredential0 extends AbstractX509Credential {
+
+        private static final byte[] TEST = new byte[]{1, 2, 3, 4, 100};
+
+        /**
+         * Creates a new instance from the provided key and certificates.
+         *
+         * @param privateKey       private key to be placed in this {@link X509Credential}'s KeyStore
+         * @param certificateChain certificates to be placed in this {@link X509Credential}'s KeyStore.
+         *                         those certificates must match the provided privateKey. The user's certificate is assumed
+         *                         to be the first entry in the chain.
+         * @throws KeyStoreException if private key is invalid or doesn't match the certificate.
+         */
+        public KeyAndCertCredential0(PrivateKey privateKey, X509Certificate[] certificateChain)
+                throws KeyStoreException {
+            try {
+                ks = KeyStoreHelper.getInstanceForCredential("JKS");
+            } catch (KeyStoreException e) {
+                throw new RuntimeException("Can't create JKS KeyStore - JDK is misconfgured?", e);
+            }
+
+            try {
+                ks.load(null);
+            } catch (Exception e) {
+                throw new RuntimeException("Can't init JKS KeyStore - JDK is misconfgured?", e);
+            }
+
+            PublicKey pubKey = certificateChain[0].getPublicKey();
+            String pubKeyAlgorithm = pubKey.getAlgorithm();
+            // REVISIT: BouncyCastle uses "ECDSA" as the private key algorithm and "EC" as the public key algorithm names for elliptic curve keys.
+            if (!privateKey.getAlgorithm().equals(pubKeyAlgorithm) && !(privateKey.getAlgorithm().equals("ECDSA") && pubKeyAlgorithm.equals("EC")))
+                throw new KeyStoreException("Private and public keys are not matching: different algorithms: "
+                        + privateKey.getAlgorithm() + " vs. " + pubKeyAlgorithm);
+
+            switch (pubKeyAlgorithm) {
+                case "DSA":
+                    if (!checkKeysViaSignature("SHA1withDSA", privateKey, pubKey))
+                        throw new KeyStoreException("Private and public keys are not matching: DSA");
+                    break;
+                case "RSA":
+                    RSAPublicKey rpub = (RSAPublicKey) pubKey;
+                    RSAPrivateKey rpriv = (RSAPrivateKey) privateKey;
+                    if (!rpub.getModulus().equals(rpriv.getModulus()))
+                        throw new KeyStoreException("Private and public keys are not matching: RSA parameters");
+                    break;
+                case "GOST3410":
+                    if (!checkKeysViaSignature("GOST3411withGOST3410", privateKey, pubKey))
+                        throw new KeyStoreException("Private and public keys are not matching: GOST 34.10");
+                    break;
+                case "ECGOST3410":
+                    if (!checkKeysViaSignature("GOST3411withECGOST3410", privateKey, pubKey))
+                        throw new KeyStoreException("Private and public keys are not matching: EC GOST 34.10");
+                    break;
+                case "ECDSA":
+                    if (!checkKeysViaSignature("SHA1withECDSA", privateKey, pubKey))
+                        throw new KeyStoreException("Private and public keys are not matching: EC DSA");
+                    break;
+            }
+
+            ks.setKeyEntry(KeystoreCredential.ALIAS, privateKey,
+                    KeystoreCredential.KEY_PASSWD, certificateChain);
+        }
+
+        private static boolean checkKeysViaSignature(String alg, PrivateKey privKey, PublicKey pubKey) throws KeyStoreException {
+            try {
+                Signature s = Signature.getInstance(alg);
+                s.initSign(privKey);
+                s.update(TEST);
+                byte[] signature = s.sign();
+                Signature s2 = Signature.getInstance(alg);
+                s2.initVerify(pubKey);
+                s2.update(TEST);
+                return s2.verify(signature);
+            } catch (InvalidKeyException e) {
+                throw new KeyStoreException("Invalid key when checking key match", e);
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException("Bug: BC provider not available in checkKeysMatching()", e);
+            } catch (SignatureException e) {
+                throw new RuntimeException("Bug: can't sign/verify test data", e);
+            }
         }
     }
 }
