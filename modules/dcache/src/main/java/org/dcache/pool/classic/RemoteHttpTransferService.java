@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2015-2020 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2015-2025 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -26,7 +26,8 @@ import eu.emi.security.authn.x509.OCSPParametes;
 import eu.emi.security.authn.x509.ProxySupport;
 import eu.emi.security.authn.x509.RevocationParameters;
 import eu.emi.security.authn.x509.X509Credential;
-import eu.emi.security.authn.x509.helpers.ssl.SSLTrustManager;
+import eu.emi.security.authn.x509.helpers.ssl.EnforcingNameMismatchCallback;
+import eu.emi.security.authn.x509.helpers.ssl.SSLTrustManagerWithHostnameChecking;
 import eu.emi.security.authn.x509.impl.OpensslCertChainValidator;
 import eu.emi.security.authn.x509.impl.ValidatorParams;
 import java.io.IOException;
@@ -45,6 +46,7 @@ import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.X509ExtendedTrustManager;
 import javax.net.ssl.X509TrustManager;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
@@ -205,7 +207,7 @@ public class RemoteHttpTransferService extends SecureRemoteTransferService {
         return context;
     }
 
-    private X509TrustManager buildTrustManager(Path path) {
+    private X509ExtendedTrustManager buildTrustManager(Path path) {
         var ocspParameters = new OCSPParametes(getOcspCheckingMode());
         var revocationParams = new RevocationParameters(getCrlCheckingMode(), ocspParameters);
         var validatorParams = new ValidatorParams(revocationParams, ProxySupport.ALLOW);
@@ -214,7 +216,7 @@ public class RemoteHttpTransferService extends SecureRemoteTransferService {
         var validator = new OpensslCertChainValidator(path.toString(), true,
               getNamespaceMode(), updateInterval, validatorParams, false);
         onShutdownTasks.add(validator::dispose);
-        return new SSLTrustManager(validator);
+        return new SSLTrustManagerWithHostnameChecking(validator, new EnforcingNameMismatchCallback());
     }
 
     @Override
