@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2021 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2021 - 2025 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -19,28 +19,31 @@ package org.dcache.security.trust;
 
 import static java.util.Objects.requireNonNull;
 
+import java.net.Socket;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.List;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.X509ExtendedTrustManager;
 import javax.net.ssl.X509TrustManager;
 
 /**
  * Aggregate multiple X509TrustManager instances where a certificate chain is accepted if at least
- * one of the X509TrustManager instances accepts it.
+ * one of the X509ExtendedTrustManager instances accepts it.
  */
-public class AggregateX509TrustManager implements X509TrustManager {
+public class AggregateX509TrustManager extends X509ExtendedTrustManager {
 
-    private final List<X509TrustManager> trustManagers;
+    private final List<X509ExtendedTrustManager> trustManagers;
 
-    public AggregateX509TrustManager(List<X509TrustManager> managers) {
+    public AggregateX509TrustManager(List<X509ExtendedTrustManager> managers) {
         trustManagers = requireNonNull(managers);
     }
 
     @FunctionalInterface
     private interface CertificateCheck {
 
-        void appliedTo(X509TrustManager manager) throws CertificateException;
+        void appliedTo(X509ExtendedTrustManager manager) throws CertificateException;
     }
 
     private void genericCheck(CertificateCheck check) throws CertificateException {
@@ -82,6 +85,26 @@ public class AggregateX509TrustManager implements X509TrustManager {
     public void checkServerTrusted(X509Certificate[] chain, String authType)
           throws CertificateException {
         genericCheck(tm -> tm.checkServerTrusted(chain, authType));
+    }
+
+    @Override
+    public void checkClientTrusted(X509Certificate[] chain, String authType, Socket socket) throws CertificateException {
+        genericCheck(tm -> tm.checkServerTrusted(chain, authType, socket));
+    }
+
+    @Override
+    public void checkServerTrusted(X509Certificate[] chain, String authType, Socket socket) throws CertificateException {
+        genericCheck(tm -> tm.checkServerTrusted(chain, authType, socket));
+    }
+
+    @Override
+    public void checkClientTrusted(X509Certificate[] chain, String authType, SSLEngine engine) throws CertificateException {
+        genericCheck(tm -> tm.checkServerTrusted(chain, authType, engine));
+    }
+
+    @Override
+    public void checkServerTrusted(X509Certificate[] chain, String authType, SSLEngine engine) throws CertificateException {
+        genericCheck(tm -> tm.checkServerTrusted(chain, authType, engine));
     }
 
     @Override
