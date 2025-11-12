@@ -662,7 +662,14 @@
         </constructor-arg>
     </bean>
 
-    <bean id="liquibase" class="org.dcache.util.SpringLiquibase">
+    <bean id="liquibase-pre" class="org.dcache.util.SpringLiquibase">
+        <description>Database schema manager</description>
+        <property name="dataSource" ref="data-source"/>
+        <property name="changeLog" value="${srmmanager.db.schema.changelog-pre}"/>
+        <property name="shouldUpdate" value="${srmmanager.db.schema.auto}"/>
+    </bean>
+
+    <bean id="liquibase" class="org.dcache.util.SpringLiquibase" depends-on="liquibase-pre">
         <description>Database schema manager</description>
         <property name="dataSource" ref="data-source"/>
         <property name="changeLog" value="classpath:${srmmanager.db.schema.changelog}"/>
