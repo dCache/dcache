@@ -13,7 +13,6 @@ dnf -q install -y voms-clients-cpp fetch-crl openssl globus-gass-copy-progs
 
 
 rpm -i https://www.desy.de/~tigran/ca_dCacheORG-3.0-6.noarch.rpm
-rpm -i https://linuxsoft.cern.ch/wlcg/centos7/x86_64/desy-voms-all-1.0.0-1.noarch.rpm
 
 dnf config-manager --add-repo https://dl.igtf.net/distribution/igtf/current/
 rpmkeys  --import https://dl.igtf.net/distribution/igtf/current/GPG-KEY-EUGridPMA-RPM-4
@@ -30,7 +29,7 @@ python3 ./autoca-client -n -k userkey.pem -c usercert.pem ${AUTOCA_URL} "Kermit 
 
 /usr/sbin/fetch-crl
 
-voms-proxy-init -cert=usercert.pem -key=userkey.pem -voms=desy
+voms-proxy-init -cert=usercert.pem -key=userkey.pem
 voms-proxy-info -all
 
 # standard location for the proxy
