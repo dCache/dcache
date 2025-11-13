@@ -52,6 +52,7 @@ variables:
   HELM_OPTS: --replace --timeout 10m0s
   AUTOCA_URL: https://ci.dcache.org/ca
   DCACHE_HELM_REPO: https://gitlab.desy.de/api/v4/projects/7648/packages/helm/test
+  DCACHE_COMPATIBILITY_VERSION: 9.2.20
 
 
 # let's debug nodes where job is running
@@ -519,12 +520,26 @@ Deploy Keycloak:
     # FIXME: add readiness check
     # - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready deployment.apps/keycloak; do sleep 1; done
 
+
+#
+# Init dCache database with old version. On start new version will perform migration
+#
+Init dCache DB with old version:
+  stage: test_deploy
+  extends: .kubernetes_image
+  script:
+    - kubectl -n $K8S_NAMESPACE apply -f .ci/k8s/dcache-deployment.yaml
+    - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod dcache-db-migration-0; do sleep 1; done
+    - kubectl -n $K8S_NAMESPACE exec dcache-db-migration-0 -- /opt/dcache/bin/dcache database update
+
 #
 # Start Current dCache version and an old pools
 #
 Helm-Deploy Current dCache build:
   stage: test_deploy
   extends: .helm_image
+  needs:
+    - Init dCache DB with old version
   script:
     - |-
       tag=$CI_COMMIT_SHORT_SHA
@@ -543,7 +558,7 @@ Helm-Deploy Latest dCache Golden Release:
   script:
     - helm repo add dcache ${DCACHE_HELM_REPO}
     - helm repo update
-    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=9.2.20 --set "dcache.pools={d,f}" --set dcache.door.enabled=false --set image.registry=${CI_REGISTRY} old-store dcache/dcache
+    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=${DCACHE_COMPATIBILITY_VERSION} --set "dcache.pools={d,f}" --set dcache.door.enabled=false --set image.registry=${CI_REGISTRY} old-store dcache/dcache
 
 
 Grid EL9 WN tests:
