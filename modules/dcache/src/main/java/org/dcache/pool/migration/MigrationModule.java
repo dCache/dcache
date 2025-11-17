@@ -923,7 +923,8 @@ public class MigrationModule
                         createLifetimePredicate(pauseWhen),
                         createLifetimePredicate(stopWhen),
                         forceSourceMode,
-                        targetDeficitMode.equals("wait"));
+                        targetDeficitMode.equals("wait"),
+                        false);
 
             if (definition.targetMode.state == CacheEntryMode.State.DELETE
                   || definition.targetMode.state == CacheEntryMode.State.REMOVABLE) {
@@ -1169,52 +1170,72 @@ public class MigrationModule
         try {
             synchronized (this) {
                 Job job = _jobs.get(jobId);
+                if (job != null) {
+                    switch (job.getState()) {
+                        case FAILED:
+                        case CANCELLED:
+                        case FINISHED:
+                            _jobs.remove(jobId);
+                            _commands.remove(job);
+                            job = null;
+                            break;
+                        default:
+                            if (job.getDefinition().replicas == replicas) {
+                                return;
+                            }
+                            job.cancel(true, "Re-creating job with new replica count");
+                            _jobs.remove(jobId);
+                            _commands.remove(job);
+                            job = null;
+                            break;
+                    }
+                }
+
                 if (job == null) {
-                    RefreshablePoolList sourceList = new PoolListByNames(_context.getPoolManagerStub(),
-                          Collections.singletonList(_context.getPoolName()));
+                    RefreshablePoolList sourceList = new FileLocationsPoolList(pnfsId, _context.getPnfsStub());
                     sourceList.refresh();
                     Collection<Pattern> excluded = new HashSet<>();
                     excluded.add(Pattern.compile(Pattern.quote(_context.getPoolName())));
                     RefreshablePoolList basePoolList = new PoolListFilter(
-                        new PoolListByPoolGroupOfPool(_context.getPoolManagerStub(), _context.getPoolName()),
-                        excluded,
-                        FALSE_EXPRESSION,
-                        Collections.emptySet(),
-                        TRUE_EXPRESSION,
-                        sourceList);
+                          new PoolListByPoolGroupOfPool(_context.getPoolManagerStub(), _context.getPoolName()),
+                          excluded,
+                          FALSE_EXPRESSION,
+                          Collections.emptySet(),
+                          TRUE_EXPRESSION,
+                          sourceList);
 
-                    // Wrap with hostname constraint to prevent creating replicas on same host
                     CostModule costModule = getCostModule();
                     HostnameConstrainedPoolList poolList = new HostnameConstrainedPoolList(
-                        basePoolList,
-                        sourceList,
-                        Collections.singletonList("hostname"),
-                        new CostModuleTagProvider(costModule));
+                          basePoolList,
+                          sourceList,
+                          Collections.singletonList("hostname"),
+                          new CostModuleTagProvider(costModule));
 
                     poolList.refresh();
+
                     JobDefinition def =
-                      new JobDefinition(
-                            createFilter(null, null, new PnfsId[]{pnfsId}, null, null, null, null, null, null),
-                            createCacheEntryMode("same"),
-                            createCacheEntryMode("cached"),
-                            createPoolSelectionStrategy("proportional"),
-                            createComparator(null),
-                            sourceList,
-                            poolList,
-                            300 * 1000,
-                            false,
-                            false,
-                            false,
-                            replicas,
-                            false,
-                            false,
-                            true,
-                            FALSE_EXPRESSION,
-                            FALSE_EXPRESSION,
-                            false,
-                            false);
+                          new JobDefinition(
+                                createFilter(null, null, new PnfsId[]{pnfsId}, null, null, null, null, null, null),
+                                createCacheEntryMode("same"),
+                                createCacheEntryMode("cached"),
+                                createPoolSelectionStrategy("proportional"),
+                                createComparator(null),
+                                sourceList,
+                                poolList,
+                                300 * 1000,
+                                false,
+                                false,
+                                false,
+                                replicas,
+                                false,
+                                false,
+                                true,
+                                FALSE_EXPRESSION,
+                                FALSE_EXPRESSION,
+                                false,
+                                false,
+                                true);
                     job = new Job(_context, def);
-                    // Apply module default concurrency to hot-file job
                     job.setConcurrency(defaultConcurrency);
                     _jobs.put(jobId, job);
                     _commands.put(job, "hotfile replication for " + pnfsId);
@@ -1227,12 +1248,11 @@ public class MigrationModule
                         LOGGER.debug("Started migration job with id {} for pnfsId {}", jobId, pnfsId);
                     } catch (Exception e) {
                         LOGGER.error("Exception while starting migration job with id {} for pnfsId {}: {}", jobId, pnfsId, e.toString(), e);
-                        throw e;
                     }
                 }
             }
         } catch (Exception e) {
-            LOGGER.warn("Failed to trigger migration for pnfsId {}: {}", pnfsId, e.getMessage());
+            LOGGER.warn("Failed to trigger migration for pnfsId {}: {}", pnfsId, e.toString(), e);
         }
     }
 
@@ -1326,6 +1346,16 @@ public class MigrationModule
         public String call() {
             if (set != null) {
                 setNumReplicas(set);
+                _jobs.keySet().stream()
+                        .filter(jobId -> jobId.startsWith("hotfile-"))
+                        .forEach(jobId -> {
+                            try {
+                                PnfsId pnfsId = new PnfsId(jobId.substring("hotfile-".length()));
+                                reportFileRequest(pnfsId, threshold);
+                            } catch (IllegalArgumentException e) {
+                                LOGGER.warn("Could not parse PnfsId from job id: {}", jobId);
+                            }
+                        });
                 return "NumReplicas set to " + set;
             }
             return "Current replicas: " + getNumReplicas();

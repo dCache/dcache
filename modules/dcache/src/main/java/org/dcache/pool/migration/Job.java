@@ -13,11 +13,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.ArrayDeque;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Deque;
+import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Future;
@@ -78,7 +81,7 @@ public class Job
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Job.class);
 
-    private final Set<PnfsId> _queued = new LinkedHashSet<>();
+    private final Deque<PnfsId> _queued = new ArrayDeque<>();
     private final Map<PnfsId, Long> _sizes = new HashMap<>();
     private final Map<PnfsId, Task> _running = new HashMap<>();
     private final BlockingQueue<Note> _notes = new ArrayBlockingQueue<>(15);
@@ -501,8 +504,7 @@ public class Job
                     !_definition.poolList.isValid())) {
             setState(State.SLEEPING);
         } else if (_state == State.RUNNING) {
-            Iterator<PnfsId> i = _queued.iterator();
-            while ((_running.size() < _concurrency) && i.hasNext()) {
+            while (_running.size() < _concurrency && !_queued.isEmpty()) {
                 Expression stopWhen = _definition.stopWhen;
                 if (stopWhen != null && evaluateLifetimePredicate(stopWhen)) {
                     stop();
@@ -514,14 +516,13 @@ public class Job
                     break;
                 }
 
-                PnfsId pnfsId = i.next();
+                PnfsId pnfsId = _queued.poll();
                 if (!_context.lock(pnfsId)) {
                     addNote(new Note(0, pnfsId, "File is locked"));
                     continue;
                 }
 
                 try {
-                    i.remove();
                     Repository repository = _context.getRepository();
                     CacheEntry entry = repository.getEntry(pnfsId);
 
@@ -614,7 +615,11 @@ public class Job
         PnfsId pnfsId = entry.getPnfsId();
         if (!_queued.contains(pnfsId) && !_running.containsKey(pnfsId)) {
             long size = entry.getReplicaSize();
-            _queued.add(pnfsId);
+            if (_definition.isPriority) {
+                _queued.addFirst(pnfsId);
+            } else {
+                _queued.addLast(pnfsId);
+            }
             _sizes.put(pnfsId, size);
             _statistics.addToTotal(size);
             schedule();
@@ -732,7 +737,11 @@ public class Job
         try {
             PnfsId pnfsId = task.getPnfsId();
             if (task == _running.remove(pnfsId)) {
-                _queued.add(pnfsId);
+                if (_definition.isPriority) {
+                    _queued.addFirst(pnfsId);
+                } else {
+                    _queued.addLast(pnfsId);
+                }
                 _context.unlock(pnfsId);
             }
 

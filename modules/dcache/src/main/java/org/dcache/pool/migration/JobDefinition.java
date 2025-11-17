@@ -108,6 +108,11 @@ public class JobDefinition {
      */
     public final boolean waitForTargets;
 
+    /**
+     * Whether the job should be prioritized.
+     */
+    public final boolean isPriority;
+
 
     public JobDefinition(Predicate<CacheEntry> filter,
           CacheEntryMode sourceMode,
@@ -127,7 +132,8 @@ public class JobDefinition {
           Expression pauseWhen,
           Expression stopWhen,
           boolean forceSourceMode,
-          boolean waitForTargets) {
+          boolean waitForTargets,
+          boolean isPriority) {
         this.filter = filter;
         this.sourceMode = sourceMode;
         this.targetMode = targetMode;
@@ -147,5 +153,6 @@ public class JobDefinition {
         this.stopWhen = stopWhen;
         this.forceSourceMode = forceSourceMode;
         this.waitForTargets = waitForTargets;
+        this.isPriority = isPriority;
     }
 }
