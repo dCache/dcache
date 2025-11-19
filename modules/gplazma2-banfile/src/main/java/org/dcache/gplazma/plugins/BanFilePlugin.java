@@ -94,7 +94,7 @@ public class BanFilePlugin implements GPlazmaAccountPlugin {
                 // alias -> value, like uid=org.dcache.auth.UidPrincipal
                 Map<String, String> aliases = new HashMap<>();
 
-                // liist of banned names like "uid:123" or "org.dcache.auth.UidPrincipal:123"
+                // List of banned names like "uid:123" or "org.dcache.auth.UidPrincipal:123"
                 List<String> bannedNames = new ArrayList<>();
 
                 // group all 'alias' and all 'ban' records, skip comments and empty lines
