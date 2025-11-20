@@ -98,8 +98,20 @@ public class BanFilePluginTest {
 
     @Test(expected = AuthenticationException.class)
     public void shouldFailForBannedUserByAlias() throws IOException, AuthenticationException {
-        givenConfig("alias foo=org.dcache.auth.UserNamePrincipal\nban foo:bert");
+        givenConfig("alias foo=org.dcache.auth.UserNamePrincipal\nban foo:bert\n");
         plugin.account(Set.of(new UserNamePrincipal("bert")));
+    }
+
+    @Test(expected = AuthenticationException.class)
+    public void shouldFailForBannedUserByAliasFirstInList() throws IOException, AuthenticationException {
+        givenConfig("alias foo=org.dcache.auth.UserNamePrincipal\nban foo:bert\nban foo:bart\n");
+        plugin.account(Set.of(new UserNamePrincipal("bert")));
+    }
+
+    @Test(expected = AuthenticationException.class)
+    public void shouldFailForBannedUserByAliasLastInList() throws IOException, AuthenticationException {
+        givenConfig("alias foo=org.dcache.auth.UserNamePrincipal\nban foo:bert\nban foo:bart\n");
+        plugin.account(Set.of(new UserNamePrincipal("bart")));
     }
 
     @Test(expected = AuthenticationException.class)

@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.security.Principal;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -93,8 +94,8 @@ public class BanFilePlugin implements GPlazmaAccountPlugin {
                 // alias -> value, like uid=org.dcache.auth.UidPrincipal
                 Map<String, String> aliases = new HashMap<>();
 
-                // class/alias -> value, like uid:123 or org.dcache.auth.UidPrincipal:123
-                Map<String, String> bans = new HashMap<>();
+                // List of banned names like "uid:123" or "org.dcache.auth.UidPrincipal:123"
+                List<String> bannedNames = new ArrayList<>();
 
                 // group all 'alias' and all 'ban' records, skip comments and empty lines
                 Map<String, List<String>> config = loadConfigLines().stream()
@@ -129,7 +130,7 @@ public class BanFilePlugin implements GPlazmaAccountPlugin {
                         }
                         String clazz = m.group(1);
                         String value = m.group(2);
-                        bans.put(aliases.getOrDefault(clazz, clazz), value);
+                        bannedNames.add(aliases.getOrDefault(clazz, clazz)+":"+value);
                     });
                 }
 
@@ -140,13 +141,6 @@ public class BanFilePlugin implements GPlazmaAccountPlugin {
                     throw new IllegalArgumentException("Line has bad format: '" + badLines
                           + "', expected '[alias|ban] <key>:<value>'");
                 }
-
-                // construct lines suitable for Subjects.principalsFromArgs
-                // class:value or shortname:value
-                List<String> bannedNames = bans.entrySet().stream()
-                      .map(e -> e.getKey() + ":" + e.getValue())
-                      .collect(Collectors.toList());
-
                 bannedPrincipals = Subjects.principalsFromArgs(bannedNames);
                 lastFileRead = Instant.now();
             }
