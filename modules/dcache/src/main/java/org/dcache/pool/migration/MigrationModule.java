@@ -1169,6 +1169,19 @@ public class MigrationModule
         try {
             synchronized (this) {
                 Job job = _jobs.get(jobId);
+                if (job != null) {
+                    switch (job.getState()) {
+                        case FINISHED:
+                        case CANCELLED:
+                        case FAILED:
+                            _jobs.remove(jobId);
+                            _commands.remove(job);
+                            job = null;
+                            break;
+                        default:
+                            return;
+                    }
+                }
                 if (job == null) {
                     RefreshablePoolList sourceList = new PoolListByNames(_context.getPoolManagerStub(),
                           Collections.singletonList(_context.getPoolName()));
