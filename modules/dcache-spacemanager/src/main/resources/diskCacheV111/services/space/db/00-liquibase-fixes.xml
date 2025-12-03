@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <!--
+    IMPORTANT:
+        This file contains changes that should be applied prior any other schema changes,
+        typically to fix liquibase or schema issues that prevent other changes from being applied.
+    -->
+
+    <changeSet id="0.2" author="tigran" runOrder="first">
+
+        <comment>
+            Fix liquibase issue with duplicate id and mismatching md5sums in databasechangelog table.
+            This change set should be applied before any other changes.
+        </comment>
+
+        <sql>
+            UPDATE databasechangelog SET id='1.1' WHERE md5sum = '7:06282b8a1dd8aaf973cffe417726e36e';
+            UPDATE databasechangelog SET id='2.1' WHERE md5sum = '7:cacb95e06876aa5ac4bba2288a0ff4a2';
+
+            UPDATE databasechangelog SET md5sum = '7:001b41c08a1151cb6c80f613eca8404d' WHERE md5sum = '7:2680461d52281f893a9d9a0fb09e0c3a';
+            UPDATE databasechangelog SET md5sum = '7:5e691a2d81bcea624c3cee36c8a713a1' WHERE md5sum = '7:74c38b7901e8f9c20ab109c2dce6e1a8';
+            UPDATE databasechangelog SET md5sum = '7:b39033e0e9d9a9cba9463b3ff51ea506' WHERE md5sum = '7:77c33a2aaa9cf04663eed16b67bec984';
+            UPDATE databasechangelog SET md5sum = '7:fbe6e97e29f3001817daf4be5daa1079' WHERE md5sum = '7:b93ee356b569a0a28796b3f85dae4f1c';
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
