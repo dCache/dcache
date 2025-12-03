@@ -105,7 +105,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="1" author="behrmann">
+    <changeSet id="1.1" author="behrmann">
         <comment>Replace free space column with available space column</comment>
         <renameColumn tableName="srmlinkgroup" oldColumnName="freespaceinbytes" newColumnName="availablespaceinbytes" columnDataType="bigint"/>
         <sql>UPDATE srmlinkgroup SET availablespaceinbytes = availablespaceinbytes - reservedspaceinbytes</sql>
@@ -387,7 +387,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="2" author="behrmann">
+    <changeSet id="2.1" author="behrmann">
         <comment>Drop pnfspath column</comment>
         <dropUniqueConstraint tableName="srmspacefile" constraintName="srmspacefile_pnfspath_unique"/>
         <dropColumn tableName="srmspacefile" columnName="pnfspath"/>
@@ -400,6 +400,9 @@
     </changeSet>
 
     <changeSet id="4.1" author="behrmann">
+        <preConditions onFail="MARK_RAN" onFailMessage="Site local srmspacefile_expirationtime_idx index not found (this is not an error)">
+            <indexExists tableName="srmspacefile" indexName="srmspacefile_expirationtime_idx"/>
+        </preConditions>
         <comment>Drop expirtationtime column</comment>
         <dropIndex tableName="srmspacefile" indexName="srmspacefile_expirationtime_idx"/>
         <dropColumn tableName="srmspacefile" columnName="expirationtime"/>
