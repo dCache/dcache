@@ -6,6 +6,7 @@ import static java.nio.file.StandardOpenOption.WRITE;
 
 import com.google.common.base.CaseFormat;
 import com.google.common.base.Strings;
+import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
 import diskCacheV111.cells.DateRenderer;
 import diskCacheV111.vehicles.InfoMessage;
@@ -37,6 +38,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import org.dcache.cells.CellStub;
@@ -47,7 +49,11 @@ import org.dcache.util.Slf4jSTErrorListener;
 import org.dcache.vehicles.billing.BillingDataRequestMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.kafka.KafkaException;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.stringtemplate.v4.ST;
 import org.stringtemplate.v4.STGroup;
 import org.stringtemplate.v4.compiler.STException;
@@ -88,12 +94,22 @@ public final class BillingCell
     private CellStub _poolManagerStub;
     private Path _logsDir;
     private boolean _enableText;
+    private boolean _enableKafka;
     private boolean _jsonFormat;
     private boolean _flatTextDir;
+
+    private Consumer<String> _kafkaSender = (s) -> {
+    };
 
     public BillingCell() {
         _templateGroup.registerRenderer(Date.class, new DateRenderer());
         _templateGroup.setListener(new Slf4jSTErrorListener(LOGGER));
+    }
+
+
+    @Autowired(required = false)
+    public void setKafkaTemplate(KafkaTemplate kafkaTemplate) {
+        _kafkaSender = kafkaTemplate::sendDefault;
     }
 
     @Override
@@ -171,12 +187,23 @@ public final class BillingCell
         if (info.getCellType().equals("pool")) {
             doStatistics(info);
         }
+        if (_enableKafka) {
+            try {
+                BillingMessageSerializerVisitor visitor = new BillingMessageSerializerVisitor();
+                info.accept(visitor);
+                _kafkaSender.accept(new String(visitor.getData(), StandardCharsets.UTF_8));
+
+            } catch (KafkaException | org.apache.kafka.common.KafkaException e) {
+                LOGGER.warn("Failed to send message to kafka: {} ", Throwables.getRootCause(e).getMessage());
+            }
+        }
 
         if (_enableText) {
             String output = getFormattedMessage(info);
             if (!output.isEmpty()) {
                 String ext = getFilenameExtension(new Date(info.getTimestamp()));
                 log(getBillingPath(ext), output);
+
                 if (info.getResultCode() != 0) {
                     log(getErrorPath(ext), output);
                 }
@@ -459,6 +486,11 @@ public final class BillingCell
     public void setEnableTxt(boolean enableText) {
         _enableText = enableText;
     }
+    @Required
+    public void setEnableKafka(boolean enableKafka) {
+        _enableKafka = enableKafka;
+    }
+
 
     public void setJsonFormat(boolean jsonFormat) {
         _jsonFormat = jsonFormat;
