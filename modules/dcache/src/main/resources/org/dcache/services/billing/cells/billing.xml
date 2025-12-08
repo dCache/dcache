@@ -39,6 +39,7 @@
     class="org.dcache.services.billing.cells.BillingCell">
     <property name="logsDir" value="${billing.text.dir}"/>
     <property name="enableTxt" value="${billing.enable.text}"/>
+    <property name="enableKafka" value="${billing.enable.kafka}"/>
     <property name="jsonFormat" value="${billing.format.json}"/>
     <property name="flatTextDir" value="${billing.text.flat-dir}"/>
     <property name="poolManagerStub" ref="poolmanager-stub"/>
@@ -52,6 +53,38 @@
       <!-- no connection to database; returns failure on request -->
     </bean>
   </beans>
+
+
+    <beans profile="kafka-true">
+
+        <bean id="listener" class="org.dcache.kafka.LoggingProducerListener"/>
+
+
+        <bean id="kafka-configs" class="org.dcache.util.configuration.ConfigurationMapFactoryBean">
+            <property name="prefix" value="billing.kafka.producer.configs"/>
+            <property name="staticEnvironment">
+                <map>
+                    <entry key="bootstrap.servers" value="${billing.kafka.producer.bootstrap.servers}"/>
+                    <entry key="key.serializer" value="org.apache.kafka.common.serialization.StringSerializer"/>
+                    <entry key="value.serializer" value="org.apache.kafka.common.serialization.StringSerializer"/>
+                    <entry key="client.id" value="${billing.cell.name}@${dcache.domain.name}"/>
+                </map>
+            </property>
+        </bean>
+
+
+
+        <bean id="billing-template"  class="org.springframework.kafka.core.KafkaTemplate">
+            <constructor-arg>
+                <bean class="org.springframework.kafka.core.DefaultKafkaProducerFactory">
+                    <constructor-arg name="configs" ref ="kafka-configs"/>
+                </bean>
+            </constructor-arg>
+            <property name="defaultTopic" value="${billing.kafka.topic}"/>
+            <property name="producerListener" ref="listener"/>
+        </bean>
+
+    </beans>
 
   <!-- Set of beans instantiated if database is enabled -->
   <beans profile="db-true">

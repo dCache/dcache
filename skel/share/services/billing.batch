@@ -44,7 +44,7 @@ onerror shutdown
 
 create org.dcache.cells.UniversalSpringCell ${billing.cell.name} \
         "classpath:org/dcache/services/billing/cells/billing.xml \
-        -profiles=db-${billing.enable.db},db-truncate-${billing.enable.db-truncate} \
+        -profiles=db-${billing.enable.db},db-truncate-${billing.enable.db-truncate},kafka-${billing.enable.kafka} \
         -subscribe=${billing.cell.subscribe} \
         -consume=${billing.cell.consume} \
         -billingCellName=${billing.cell.name}.alias"

@@ -187,7 +187,6 @@ public class NearlineStorageHandler
     private OptionalLong flushTimeout = OptionalLong.empty();
     private OptionalLong removeTimeout = OptionalLong.empty();
     private ScheduledFuture<?> timeoutFuture;
-    private boolean _addFromNearlineStorage;
     private TimeUnit stickyOnStageDurationUnit;
     private long stickyOnStageDuration;
 
@@ -217,7 +216,6 @@ public class NearlineStorageHandler
     @Qualifier("hsm")
     public void setKafkaTemplate(KafkaTemplate kafkaTemplate) {
         _kafkaSender = kafkaTemplate::sendDefault;
-        _addFromNearlineStorage = true;
     }
 
     @Required
@@ -497,13 +495,11 @@ public class NearlineStorageHandler
     }
 
     private void addFromNearlineStorage(StorageInfoMessage message, NearlineStorage storage) {
-        if (_addFromNearlineStorage) {
             HsmDescription description = hsmSet.describe(storage);
 
             message.setHsmInstance(description.getInstance());
             message.setHsmType(description.getType());
             message.setHsmProvider(description.getProvider());
-        }
     }
 
     /**
