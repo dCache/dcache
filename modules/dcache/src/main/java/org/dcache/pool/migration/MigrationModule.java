@@ -494,9 +494,9 @@ public class MigrationModule
         }
 
     @AffectsSetup
-    @Command(name = "migration concurrency",
+    @Command(name = "migration set concurrency",
           description = "Adjust the concurrency of a job.")
-    public class MigrationConcurrencyCommand implements Callable<String> {
+    public class MigrationSetConcurrencyCommand implements Callable<String> {
 
         @Argument(index = 0)
         String id;
@@ -513,22 +513,30 @@ public class MigrationModule
     }
 
     @AffectsSetup
-    @Command(name = "migration concurrency-default",
-          description = "Get or set the default concurrency used when -concurrency is not specified.")
-    public class MigrationConcurrencyDefaultCommand implements Callable<String> {
+    @Command(name = "migration set concurrency-default",
+          description = "Set the default concurrency used when -concurrency is not specified.",
+          hint = "Set the default job concurrency.")
+    public class MigrationSetConcurrencyDefaultCommand implements Callable<String> {
 
-        @Option(name = "set", usage = "Set the default concurrency to use for new jobs when not explicitly provided.")
-        Integer set;
+        @Argument(usage = "The new default concurrency.")
+        int value;
 
         @Override
         public String call() {
-            if (set != null) {
-                if (set < 1) {
-                    throw new IllegalArgumentException("Default concurrency must be positive.");
-                }
-                defaultConcurrency = set;
-                return "Default concurrency set to " + set;
+            if (value < 1) {
+                throw new IllegalArgumentException("Default concurrency must be positive.");
             }
+            defaultConcurrency = value;
+            return "Default concurrency set to " + value;
+        }
+    }
+
+    @Command(name = "migration get concurrency-default",
+            description = "Get the default concurrency used when -concurrency is not specified.",
+            hint = "Get the default job concurrency.")
+    public class MigrationGetConcurrencyDefaultCommand implements Callable<String> {
+        @Override
+        public String call() {
             return "Current default concurrency: " + defaultConcurrency;
         }
     }
@@ -1329,34 +1337,50 @@ public class MigrationModule
         threshold = value;
     }
 
-    @Command(name = "migration hot-file replicas",
-             description = "Get or set the number of replicas to ensure via replication.")
-    public class NumReplicasCommand implements java.util.concurrent.Callable<String> {
-        @Option(name = "set", usage = "Set the number of replicas.")
-        Integer set;
+    @Command(name = "hotfile set replicas",
+             description = "Set the number of replicas to ensure via replication.",
+             hint = "Set hot-file replication parameter.")
+    public class HotfileSetReplicasCommand implements java.util.concurrent.Callable<String> {
+        @Argument(usage = "The number of replicas.")
+        int value;
 
         @Override
         public String call() {
-            if (set != null) {
-                setNumReplicas(set);
-                return "NumReplicas set to " + set;
-            }
+            setNumReplicas(value);
+            return "Number of replicas set to " + value;
+        }
+    }
+
+    @Command(name = "hotfile get replicas",
+            description = "Get the number of replicas to ensure via replication.",
+            hint = "Get hot-file replication parameter.")
+    public class HotfileGetReplicasCommand implements java.util.concurrent.Callable<String> {
+        @Override
+        public String call() {
             return "Current replicas: " + getNumReplicas();
         }
     }
 
-    @Command(name = "migration hot-file threshold",
-             description = "Get or set the threshold for triggering replication.")
-    public class ThresholdCommand implements java.util.concurrent.Callable<String> {
-        @Option(name = "set", usage = "Set the threshold value.")
-        Long set;
+    @Command(name = "hotfile set threshold",
+             description = "Set the threshold for triggering replication.",
+             hint = "Set hot-file replication parameter.")
+    public class HotfileSetThresholdCommand implements java.util.concurrent.Callable<String> {
+        @Argument(usage = "The threshold value.")
+        long value;
 
         @Override
         public String call() {
-            if (set != null) {
-                setThreshold(set);
-                return "Threshold set to " + set;
-            }
+            setThreshold(value);
+            return "Threshold set to " + value;
+        }
+    }
+
+    @Command(name = "hotfile get threshold",
+            description = "Get the threshold for triggering replication.",
+            hint = "Get hot-file replication parameter.")
+    public class HotfileGetThresholdCommand implements java.util.concurrent.Callable<String> {
+        @Override
+        public String call() {
             return "Current threshold: " + getThreshold();
         }
     }
