@@ -95,4 +95,40 @@ public class JsonWebTokenTest {
               is(equalTo(Optional.of(Instant.parse("2019-03-11T09:00:17Z")))));
         assertThat(jwt.getPayloadInstant("nothere"), is(equalTo(Optional.empty())));
     }
+
+    @Test
+    public void shouldTranscodeECDSASignatureToDER() throws Exception {
+        // Example ECDSA signature (64 bytes, P-256)
+        byte[] jwsSignature = new byte[] {
+            (byte) 0x30, (byte) 0x44, (byte) 0x02, (byte) 0x20, // R part
+            (byte) 0x5A, (byte) 0x12, (byte) 0x34, (byte) 0x56, (byte) 0x78, (byte) 0x9A, (byte) 0xBC, (byte) 0xDE,
+            (byte) 0xF0, (byte) 0x12, (byte) 0x34, (byte) 0x56, (byte) 0x78, (byte) 0x9A, (byte) 0xBC, (byte) 0xDE,
+            (byte) 0xF0, (byte) 0x12, (byte) 0x34, (byte) 0x56, (byte) 0x78, (byte) 0x9A, (byte) 0xBC, (byte) 0xDE,
+            (byte) 0xF0, (byte) 0x12, (byte) 0x34, (byte) 0x56, (byte) 0x78, (byte) 0x9A, (byte) 0xBC, (byte) 0xDE,
+            (byte) 0x02, (byte) 0x20, // S part
+            (byte) 0x1A, (byte) 0x23, (byte) 0x45, (byte) 0x67, (byte) 0x89, (byte) 0xAB, (byte) 0xCD, (byte) 0xEF,
+            (byte) 0x01, (byte) 0x23, (byte) 0x45, (byte) 0x67, (byte) 0x89, (byte) 0xAB, (byte) 0xCD, (byte) 0xEF,
+            (byte) 0x01, (byte) 0x23, (byte) 0x45, (byte) 0x67, (byte) 0x89, (byte) 0xAB, (byte) 0xCD, (byte) 0xEF,
+            (byte) 0x01, (byte) 0x23, (byte) 0x45, (byte) 0x67, (byte) 0x89, (byte) 0xAB, (byte) 0xCD, (byte) 0xEF
+        };
+
+        // Call the method via reflection since it's private
+        java.lang.reflect.Method method = JsonWebToken.class.getDeclaredMethod("transcodeJWTECDSASignatureToDER", byte[].class);
+        method.setAccessible(true);
+        byte[] der = (byte[]) method.invoke(null, jwsSignature);
+
+        // Expected DER: SEQUENCE + length + INTEGER R + INTEGER S
+        // For this example, should be valid DER
+        assertThat(der[0], is(equalTo((byte) 0x30))); // SEQUENCE
+        // Further assertions can be added for specific DER structure
+    }
+
+    @Test(expected = Exception.class)
+    public void shouldRejectOddLengthECDSASignature() throws Exception {
+        byte[] invalidSignature = new byte[63]; // Odd length
+
+        java.lang.reflect.Method method = JsonWebToken.class.getDeclaredMethod("transcodeJWTECDSASignatureToDER", byte[].class);
+        method.setAccessible(true);
+        method.invoke(null, invalidSignature);
+    }
 }

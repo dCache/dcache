@@ -115,41 +115,74 @@ public class JsonWebToken {
     }
 
     private static byte[] transcodeJWTECDSASignatureToDER(byte[] jwsSignature) throws SignatureException {
+        if (jwsSignature.length % 2 != 0) {
+            throw new SignatureException("Invalid ECDSA signature length: must be even");
+        }
         int rawLen = jwsSignature.length / 2;
-    
+
         // Find the start of R (skip leading zeros)
         int rStart = 0;
         while (rStart < rawLen && jwsSignature[rStart] == 0) {
             rStart++;
         }
-        int rLen = rawLen - rStart;
-    
+        int rValueLen = rawLen - rStart;
+        boolean rPadding = (rValueLen > 0 && (jwsSignature[rStart] & 0x80) != 0);
+        int rLen = rValueLen + (rPadding ? 1 : 0);
+
         // Find the start of S (skip leading zeros)
         int sStart = rawLen;
         while (sStart < jwsSignature.length && jwsSignature[sStart] == 0) {
             sStart++;
         }
-        int sLen = rawLen - (sStart - rawLen);
-    
-        int totalLen = 2 + 2 + rLen + 2 + sLen; // SEQUENCE + INTEGER(R) + INTEGER(S)
-        int offset = 0;
+        int sValueLen = jwsSignature.length - sStart;
+        boolean sPadding = (sValueLen > 0 && (jwsSignature[sStart] & 0x80) != 0);
+        int sLen = sValueLen + (sPadding ? 1 : 0);
+
+        // Calculate lengths
+        int rIntegerLen = 1 + getEncodedLengthSize(rLen) + rLen; // INTEGER tag + length + value
+        int sIntegerLen = 1 + getEncodedLengthSize(sLen) + sLen;
+        int sequenceValueLen = rIntegerLen + sIntegerLen;
+        int sequenceLenSize = getEncodedLengthSize(sequenceValueLen);
+        int totalLen = 1 + sequenceLenSize + sequenceValueLen; // SEQUENCE tag + length + content
+
         byte[] der = new byte[totalLen];
-    
+        int offset = 0;
+
         der[offset++] = 0x30; // SEQUENCE
-        der[offset++] = (byte) (totalLen - 2);
-    
+        offset = encodeLength(der, offset, sequenceValueLen);
+
         // INTEGER R
-        der[offset++] = 0x02;
-        der[offset++] = (byte) rLen;
-        System.arraycopy(jwsSignature, rawLen - rLen, der, offset, rLen);
-        offset += rLen;
-    
+        der[offset++] = 0x02; // INTEGER
+        offset = encodeLength(der, offset, rLen);
+        if (rPadding) {
+            der[offset++] = 0x00;
+        }
+        System.arraycopy(jwsSignature, rStart, der, offset, rValueLen);
+        offset += rValueLen;
+
         // INTEGER S
-        der[offset++] = 0x02;
-        der[offset++] = (byte) sLen;
-        System.arraycopy(jwsSignature, jwsSignature.length - sLen, der, offset, sLen);
-    
+        der[offset++] = 0x02; // INTEGER
+        offset = encodeLength(der, offset, sLen);
+        if (sPadding) {
+            der[offset++] = 0x00;
+        }
+        System.arraycopy(jwsSignature, sStart, der, offset, sValueLen);
+
         return der;
+    }
+
+    private static int getEncodedLengthSize(int len) {
+        return (len < 0x80) ? 1 : 2; // For simplicity, assume len < 256
+    }
+
+    private static int encodeLength(byte[] der, int offset, int len) {
+        if (len < 0x80) {
+            der[offset++] = (byte) len;
+        } else {
+            der[offset++] = (byte) (0x80 | 1);
+            der[offset++] = (byte) len;
+        }
+        return offset;
     }
 
     public boolean isSignedBy(PublicKey key) {
