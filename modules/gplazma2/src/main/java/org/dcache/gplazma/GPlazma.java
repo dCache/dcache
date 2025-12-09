@@ -203,6 +203,16 @@ public class GPlazma {
 
         Subject subject = new Subject(false, principals, publicCredentials,
               privateCredentials);
+
+        // REVISIT: some parts of dCache use Subject to identify the users role, thus require RolePrincipal,
+        // others use solo Role attributes. For now, enforce RolePrincipal if Role attribute is set.
+        for (Object attribute : attributes) {
+            if (attribute instanceof org.dcache.auth.attributes.Role) {
+                String roleName = ((org.dcache.auth.attributes.Role) attribute).getRole();
+                subject.getPrincipals().add(new org.dcache.auth.RolePrincipal(roleName));
+            }
+        }
+
         reply.setSubject(subject);
         reply.setSessionAttributes(attributes);
 

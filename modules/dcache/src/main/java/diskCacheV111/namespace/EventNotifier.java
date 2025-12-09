@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2018 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2018 - 2025 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -26,7 +26,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.MultimapBuilder;
-import com.google.common.io.BaseEncoding;
 import diskCacheV111.util.PnfsId;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellLifeCycleAware;
@@ -39,6 +38,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -131,7 +131,7 @@ public class EventNotifier implements EventReceiver, CellMessageReceiver,
 
             PnfsId id = entry.getKey();
             // REVISIT this assumes that the PNFS-ID value is (upper case) hex value.
-            byte[] pnfsid = BaseEncoding.base16().decode(id.toString());
+            byte[] pnfsid = HexFormat.of().parseHex(id.toString());
             checkState(pnfsid.length < 256, "PNFS-ID length exceeds 256 bytes");
             out.write((byte) pnfsid.length);
             out.write(pnfsid, 0, pnfsid.length);
@@ -163,7 +163,7 @@ public class EventNotifier implements EventReceiver, CellMessageReceiver,
 
             byte length = data[index++];
             checkArgument(data.length - index >= length, "Too little data for PNFSID");
-            PnfsId id = new PnfsId(BaseEncoding.base16().encode(data, index, length));
+            PnfsId id = new PnfsId(HexFormat.of().formatHex(data, index, index+length));
             index += length;
             deserialised.put(id, eventTypes);
             LOGGER.debug("Adding id={} bitmask={} types={}", id, bitmask, eventTypes);

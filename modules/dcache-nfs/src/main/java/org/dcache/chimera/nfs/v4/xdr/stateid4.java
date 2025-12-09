@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 - 2014 Deutsches Elektronen-Synchroton,
+ * Copyright (c) 2009 - 2025 Deutsches Elektronen-Synchroton,
  * Member of the Helmholtz Association, (DESY), HAMBURG, GERMANY
  *
  * This library is free software; you can redistribute it and/or modify
@@ -19,9 +19,9 @@
  */
 package org.dcache.chimera.nfs.v4.xdr;
 
-import com.google.common.io.BaseEncoding;
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.HexFormat;
 
 @Deprecated(forRemoval = true)
 public class stateid4 implements Serializable {
@@ -65,7 +65,7 @@ public class stateid4 implements Serializable {
         StringBuilder sb = new StringBuilder();
 
         sb.append("[");
-        sb.append(BaseEncoding.base16().lowerCase().encode(other));
+        sb.append(HexFormat.of().formatHex(other));
         sb.append(", seq: ").append(seqid.value).append("]");
         return sb.toString();
     }

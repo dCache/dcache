@@ -6,10 +6,10 @@ import static java.util.Objects.requireNonNull;
 import static org.dcache.util.ChecksumType.ADLER32;
 
 import com.google.common.base.CharMatcher;
-import com.google.common.io.BaseEncoding;
 import java.io.Serializable;
 import java.security.MessageDigest;
 import java.util.Base64;
+import java.util.HexFormat;
 
 public class Checksum implements Serializable {
 
@@ -32,7 +32,7 @@ public class Checksum implements Serializable {
      *                                  algorithm.
      */
     public Checksum(ChecksumType type, byte[] value) {
-        this(type, BaseEncoding.base16().lowerCase().encode(value));
+        this(type, HexFormat.of().formatHex(value));
     }
 
     public Checksum(MessageDigest digest) {

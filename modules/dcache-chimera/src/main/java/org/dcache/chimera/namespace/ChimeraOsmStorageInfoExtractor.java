@@ -12,10 +12,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+
+import org.dcache.alarms.AlarmMarkerFactory;
+import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileState;
 import org.dcache.chimera.StorageGenericLocation;
-import org.dcache.chimera.store.InodeStorageInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,18 +40,10 @@ public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtract
                 return getDirStorageInfo(inode);
             }
 
+            StorageInfo info = getDirStorageInfo(inode);
+            info.setIsNew(false);
+
             List<String> tapeLocations = inode.getLocations(StorageGenericLocation.TAPE);
-
-            if (tapeLocations.isEmpty()) {
-                StorageInfo info = getDirStorageInfo(inode);
-                info.setIsNew(false);
-                return info;
-            }
-
-            InodeStorageInformation inodeStorageInfo = inode.getStorageInfo();
-
-            StorageInfo info = new OSMStorageInfo(inodeStorageInfo.storageGroup(),
-                  inodeStorageInfo.storageSubGroup());
 
             for (String location : tapeLocations) {
                 try {
@@ -59,7 +53,6 @@ public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtract
                 }
             }
 
-            info.setIsNew(false);
             return info;
         } catch (ChimeraFsException e) {
             throw new CacheException(e.getMessage());
@@ -86,7 +79,9 @@ public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtract
         String store = hash.get("StoreName");
 
         if (store == null && !osmTemplateTag.isEmpty()) {
-            throw new CacheException(37, "StoreName not found in template");
+            LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.STORAGE_CLASS_MISCONFIGURED),
+                    "StoreName not found in template. Directory: {}", pathOrId(directory));
+            throw new CacheException(CacheException.STORAGE_CLASS_MISCONFIGURED, "StoreName not found in template");
         }
 
         List<String> sGroupTag = directory.getTag("sGroup");
@@ -95,5 +90,18 @@ public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtract
         OSMStorageInfo info = new OSMStorageInfo(store, group);
         info.addKeys(hash);
         return info;
+    }
+
+    private static String pathOrId(ExtendedInode inode) {
+        try {
+            return inode.getPath().toString();
+        } catch (ChimeraFsException e) {
+            try {
+                return inode.getId();
+            } catch (ChimeraFsException ex) {
+                // should never happen as we already read the inode
+                throw new RuntimeException(ex);
+            }
+        }
     }
 }

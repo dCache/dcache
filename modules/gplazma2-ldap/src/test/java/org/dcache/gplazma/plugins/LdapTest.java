@@ -23,9 +23,6 @@ import static org.dcache.gplazma.plugins.Ldap.LDAP_AUTH;
 import static org.dcache.gplazma.plugins.Ldap.LDAP_BINDDN;
 import static org.dcache.gplazma.plugins.Ldap.LDAP_BINDPW;
 import static org.dcache.gplazma.plugins.Ldap.LDAP_GROUP_MEMBER;
-import static org.dcache.gplazma.plugins.Ldap.LDAP_GROUP_TREE;
-import static org.dcache.gplazma.plugins.Ldap.LDAP_ORG;
-import static org.dcache.gplazma.plugins.Ldap.LDAP_PEOPLE_TREE;
 import static org.dcache.gplazma.plugins.Ldap.LDAP_TRY_UID_MAPPING;
 import static org.dcache.gplazma.plugins.Ldap.LDAP_URL;
 import static org.dcache.gplazma.plugins.Ldap.LDAP_USER_FILTER;
@@ -98,10 +95,9 @@ public class LdapTest {
 
         Properties properties = new Properties();
         properties.put(LDAP_URL, "ldap://localhost:" + ldapServer.getSocketAddress().getPort());
-        properties.put(LDAP_ORG, "o=dcache,c=org");
+        properties.put("gplazma.ldap.dn.users-search-base", "ou=people,o=dcache,c=org");
+        properties.put("gplazma.ldap.dn.groups-search-base", "ou=group,o=dcache,c=org");
         properties.put(LDAP_USER_FILTER, "(uid=%s)");
-        properties.put(LDAP_PEOPLE_TREE, "people");
-        properties.put(LDAP_GROUP_TREE, "group");
         properties.put(LDAP_USER_HOME, "/home/%uid%");
         properties.put(LDAP_USER_ROOT, "/");
         properties.put(LDAP_GROUP_MEMBER, "uniqueMember");

@@ -23,6 +23,7 @@ public class BearerTokenCredential implements Serializable {
     private final String _token;
 
     public BearerTokenCredential(String token) {
+        checkArgument(!token.isEmpty(), "Bearer Token must not be empty");
         checkArgument(CharMatcher.ascii().matchesAllOf(token), "Bearer Token not ASCII");
         _token = token;
     }

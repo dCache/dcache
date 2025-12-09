@@ -13,6 +13,7 @@ import org.dcache.nfs.nfsstat;
 import org.dcache.nfs.status.DelayException;
 import org.dcache.nfs.v4.ClientSession;
 import org.dcache.nfs.v4.CompoundBuilder;
+import org.dcache.nfs.v4.CompoundContext;
 import org.dcache.nfs.v4.xdr.COMPOUND4args;
 import org.dcache.nfs.v4.xdr.COMPOUND4res;
 import org.dcache.nfs.v4.xdr.READ4resok;
@@ -78,9 +79,18 @@ public class NfsProxyIo implements ProxyIoAdapter {
 
     private ClientSession clientSession;
 
-    public NfsProxyIo(InetSocketAddress poolAddress, InetSocketAddress remoteClient, Inode inode,
-          stateid4 stateid, long timeout, TimeUnit timeUnit) throws IOException {
-        this.remoteClient = remoteClient;
+    /**
+     * Creates a NfsProxyIo instance.
+     *
+     * @param poolAddress address of the remote NFSv4.1 server.
+     * @param context     Original request compound context.
+     * @param inode       inode to access.
+     * @param stateid     stateid to use.
+     * @throws IOException if an I/O error occurs.
+     */
+    public NfsProxyIo(InetSocketAddress poolAddress, CompoundContext context, Inode inode,
+                      stateid4 stateid, long timeout, TimeUnit timeUnit) throws IOException {
+        this.remoteClient = context.getRemoteSocketAddress();
         rpcsvc = new OncRpcSvcBuilder()
               .withClientMode()
               .withPort(0)
@@ -98,9 +108,7 @@ public class NfsProxyIo implements ProxyIoAdapter {
             throw e;
         }
 
-        RpcAuth credential = new RpcAuthTypeUnix(ROOT_UID, ROOT_GID, ROOT_GIDS,
-              (int) (System.currentTimeMillis() / 1000),
-              NetworkUtils.getCanonicalHostName());
+        RpcAuth credential = context.getRpcCall().getCredential();
         client = new RpcCall(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4, credential, transport);
         sessionThread = Executors.newSingleThreadScheduledExecutor(
               new ThreadFactoryBuilder()

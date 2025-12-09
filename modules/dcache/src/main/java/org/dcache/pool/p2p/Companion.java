@@ -259,7 +259,7 @@ class Companion {
      */
     public synchronized boolean cancel(Object cause) {
         _fsm.cancel(cause);
-        return (_fsm.getState() != CompanionContext.FSM.Done);
+        return (_fsm.getState().getId() != CompanionContext.FSM_Done_STATE_ID);
     }
 
     public String toString() {

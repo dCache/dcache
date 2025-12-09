@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2016 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 - 2025 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -24,6 +24,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Authorization;
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -78,12 +79,19 @@ public class UserResource {
             List<String> emails = Subjects.getEmailAddresses(subject);
             user.setEmail(emails.isEmpty() ? null : emails);
 
+            List<String> roles = new ArrayList<>();
             for (LoginAttribute attribute : getLoginAttributes(request)) {
                 if (attribute instanceof HomeDirectory) {
                     user.setHomeDirectory(((HomeDirectory) attribute).getHome());
                 } else if (attribute instanceof RootDirectory) {
                     user.setRootDirectory(((RootDirectory) attribute).getRoot());
+                } else if (attribute instanceof org.dcache.auth.attributes.Role) {
+                    roles.add(((org.dcache.auth.attributes.Role) attribute).getRole());
                 }
+            }
+
+            if (!roles.isEmpty()) {
+                user.setRoles(roles);
             }
 
             Optional<Principal> principal

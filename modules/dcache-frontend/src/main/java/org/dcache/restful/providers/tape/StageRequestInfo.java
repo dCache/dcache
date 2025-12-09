@@ -59,6 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.providers.tape;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -90,7 +91,12 @@ import org.dcache.services.bulk.BulkRequestInfo;
  *         <td>The files that got submitted and their state/disk residency.</td>
  *     </tr>
  * </table>
+ *
+ *  The JsonInclude(JsonInclude.Include.NON_NULL) is added to skip null fields that WLCG
+ *  REST API expects
  */
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class StageRequestInfo implements Serializable {
 
     private static final long serialVersionUID = 1269517713600606880L;

@@ -66,7 +66,6 @@ import org.dcache.chimera.FileSystemProvider.StatCacheOption;
 import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.posix.Stat.StatAttributes;
 import org.dcache.chimera.spi.DBDriverProvider;
-import org.dcache.chimera.store.InodeStorageInformation;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.slf4j.Logger;
@@ -1671,51 +1670,6 @@ public class FsSqlDriver implements AutoCloseable {
                   ps.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
                   ps.setLong(3, tagId);
               });
-    }
-
-    /**
-     * set storage info of inode in t_storageinfo table. once storage info is stores, it's not
-     * allowed to modify it
-     *
-     * @param inode
-     * @param storageInfo
-     */
-    void setStorageInfo(FsInode inode, InodeStorageInformation storageInfo) {
-        _jdbc.update(
-              "INSERT INTO t_storageinfo (SELECT * FROM (VALUES (?,?,?,?)) v WHERE NOT EXISTS " +
-                    "(SELECT 1 FROM t_storageinfo WHERE inumber=?))",
-              ps -> {
-                  ps.setLong(1, inode.ino());
-                  ps.setString(2, storageInfo.hsmName());
-                  ps.setString(3, storageInfo.storageGroup());
-                  ps.setString(4, storageInfo.storageSubGroup());
-                  ps.setLong(5, inode.ino());
-              });
-    }
-
-    /**
-     * returns storage information like storage group, storage sub group, hsm, retention policy and
-     * access latency associated with the inode.
-     *
-     * @param inode
-     * @return
-     * @throws ChimeraFsException
-     */
-    InodeStorageInformation getStorageInfo(FsInode inode) throws ChimeraFsException {
-        try {
-            return _jdbc.queryForObject(
-                  "SELECT ihsmName, istorageGroup, istorageSubGroup FROM t_storageinfo WHERE inumber=?",
-                  (rs, rowNum) -> {
-                      String hsmName = rs.getString("ihsmName");
-                      String storageGroup = rs.getString("istoragegroup");
-                      String storageSubGroup = rs.getString("istoragesubgroup");
-                      return new InodeStorageInformation(inode, hsmName, storageGroup,
-                            storageSubGroup);
-                  },
-                  inode.ino());
-        } catch (IncorrectResultSizeDataAccessException e) {
-            throw FileNotFoundChimeraFsException.of(inode);
-        }
     }
 
     /**

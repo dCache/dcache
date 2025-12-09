@@ -17,13 +17,13 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps.EntryTransformer;
 import com.google.common.collect.Ordering;
-import com.google.common.io.BaseEncoding;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -123,16 +123,16 @@ public class Checksums {
                       return null;
                   case MD5_TYPE:
                       return "md5=" + Base64.getEncoder()
-                            .encodeToString(BaseEncoding.base16().lowerCase().decode(value));
+                            .encodeToString(HexFormat.of().parseHex(value));
                   case SHA1:
                       return "sha=" + Base64.getEncoder()
-                            .encodeToString(BaseEncoding.base16().lowerCase().decode(value));
+                            .encodeToString(HexFormat.of().parseHex(value));
                   case SHA256:
                       return "sha-256=" + Base64.getEncoder()
-                            .encodeToString(BaseEncoding.base16().lowerCase().decode(value));
+                            .encodeToString(HexFormat.of().parseHex(value));
                   case SHA512:
                       return "sha-512=" + Base64.getEncoder()
-                            .encodeToString(BaseEncoding.base16().lowerCase().decode(value));
+                            .encodeToString(HexFormat.of().parseHex(value));
                   default:
                       return null;
               }

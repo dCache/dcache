@@ -261,11 +261,11 @@ public class RepositorySubsystemTest
         repository.init();
         repository.load();
         createEntry(attributes1, ReplicaState.PRECIOUS,
-              Arrays.asList(new StickyRecord("system", 0)));
+              Arrays.asList(new StickyRecord(0)));
         createEntry(attributes2, ReplicaState.CACHED,
-              Arrays.asList(new StickyRecord("system", 0)));
+              Arrays.asList(new StickyRecord(0)));
         createEntry(attributes3, ReplicaState.CACHED,
-              Arrays.asList(new StickyRecord("system", -1)));
+              Arrays.asList(new StickyRecord(-1)));
         repository.shutdown();
         replicaStore.close();
 
@@ -387,7 +387,7 @@ public class RepositorySubsystemTest
 
     @Test(expected = IllegalStateException.class)
     public void testSetStickyFailsBeforeInit() throws Exception {
-        repository.setSticky(id2, "system", 0, true);
+        repository.setSticky(id2, StickyRecord.SYSTEM_OWNER, 0, true);
     }
 
     @Test(expected = IllegalStateException.class)
@@ -850,7 +850,7 @@ public class RepositorySubsystemTest
 
         long now = System.currentTimeMillis();
         assertFalse(repository.getEntry(id2).isSticky());
-        repository.setSticky(id2, "system", now + 500, true);
+        repository.setSticky(id2, StickyRecord.SYSTEM_OWNER, now + 500, true);
         assertTrue(repository.getEntry(id2).isSticky());
         Thread.currentThread().sleep(600 + ReplicaRepository.EXPIRATION_CLOCKSHIFT_EXTRA_TIME);
         assertFalse(repository.getEntry(id2).isSticky());
@@ -866,9 +866,9 @@ public class RepositorySubsystemTest
         long now = System.currentTimeMillis();
 
         assertFalse(repository.getEntry(id2).isSticky());
-        repository.setSticky(id2, "system", now + 500, true);
+        repository.setSticky(id2, StickyRecord.SYSTEM_OWNER, now + 500, true);
         assertTrue(repository.getEntry(id2).isSticky());
-        repository.setSticky(id2, "system", 0, true);
+        repository.setSticky(id2, StickyRecord.SYSTEM_OWNER, 0, true);
         assertFalse(repository.getEntry(id2).isSticky());
     }
 

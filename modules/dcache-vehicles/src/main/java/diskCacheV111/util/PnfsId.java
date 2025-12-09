@@ -7,9 +7,9 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.base.Strings;
 import com.google.common.hash.Funnel;
 import com.google.common.hash.PrimitiveSink;
-import com.google.common.io.BaseEncoding;
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.HexFormat;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -48,7 +48,7 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
         String expandedId = Strings.padStart(id, PNFS_ID_SIZE, '0');
         checkArgument(expandedId.length() == PNFS_ID_SIZE || expandedId.length() == CHIMERA_ID_SIZE,
               "Illegal pnfsid string length");
-        _a = BaseEncoding.base16().decode(expandedId.toUpperCase());
+        _a = HexFormat.of().parseHex(expandedId.toUpperCase());
     }
 
     @Override
@@ -77,7 +77,7 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
 
     @Override
     public String toString() {
-        return BaseEncoding.base16().upperCase().encode(_a);
+        return HexFormat.of().withUpperCase().formatHex(_a);
     }
 
     public static Funnel<PnfsId> funnel() {

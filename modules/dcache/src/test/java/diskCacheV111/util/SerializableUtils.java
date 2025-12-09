@@ -2,7 +2,6 @@ package diskCacheV111.util;
 
 import static org.junit.Assert.assertEquals;
 
-import com.google.common.io.BaseEncoding;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -10,6 +9,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.List;
 
 /**
@@ -23,14 +23,14 @@ public class SerializableUtils {
 
     public static void assertSerialisationExpected(String message, String expected,
           Object object) throws IOException {
-        String actual = BaseEncoding.base16().lowerCase().encode(serialise(object));
+        String actual = HexFormat.of().formatHex(serialise(object));
 
         assertEquals(message, expected, actual);
     }
 
     public static void assertDeserialisationExpected(String message, Object expected,
           String encoded) throws ClassNotFoundException, IOException {
-        Object actual = deserialise(BaseEncoding.base16().lowerCase().decode(encoded));
+        Object actual = deserialise(HexFormat.of().parseHex(encoded));
 
         assertEquals(message, expected, actual);
     }
@@ -50,7 +50,7 @@ public class SerializableUtils {
     }
 
     public static void emitJavaStringDeclaration(String name, Object id) throws IOException {
-        String data = BaseEncoding.base16().lowerCase().encode(serialise(id));
+        String data = HexFormat.of().formatHex(serialise(id));
         List<String> lines = breakStringIntoLines(data);
         String declaration = buildJavaStringDeclaration(name, lines);
         System.out.println(declaration);

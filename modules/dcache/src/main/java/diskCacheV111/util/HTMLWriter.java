@@ -63,9 +63,7 @@ public class HTMLWriter extends PrintWriter {
         println("<link type='text/css' rel='stylesheet' href='" + css + "'>");
         println("<title>" + title + "</title>");
         println("<script type='text/javascript' src='/scripts/sorting/common.js'></script>");
-        println("<script type='text/javascript' src='/scripts/sorting/css.js'></script>");
-        println(
-              "<script type='text/javascript' src='/scripts/sorting/standardista-table-sorting.js'></script>");
+        println("<script type='text/javascript' src='/scripts/sorting/sorttable.js'></script>");
         println("</head>");
         println("<body>");
         println("<div id='header'>");

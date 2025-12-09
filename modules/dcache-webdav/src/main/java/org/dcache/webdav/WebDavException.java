@@ -1,8 +1,11 @@
 package org.dcache.webdav;
 
+import static io.milton.http.quota.StorageChecker.StorageErrorReason.SER_DISK_FULL;
+import static io.milton.http.quota.StorageChecker.StorageErrorReason.SER_QUOTA_EXCEEDED;
 import com.google.common.collect.ImmutableSet;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.QuotaExceededCacheException;
 import io.milton.resource.Resource;
 import javax.annotation.Nonnull;
 
@@ -59,17 +62,22 @@ public class WebDavException extends RuntimeException {
     {
         if (e instanceof PermissionDeniedCacheException) {
             return WebDavExceptions.permissionDenied(resource);
+        } else if (e instanceof QuotaExceededCacheException) {
+            return new InsufficientStorageException(e.getMessage(),
+                                                    e,
+                                                    resource,
+                                                    SER_QUOTA_EXCEEDED);
         }
 
         switch (e.getRc()) {
         case 192: // Pool-to-pool required, but destination cost exceeded.
         case 194: // Pool-to-pool required, but source cost exceeded.
             return new InsufficientStorageException("Unable to ready file for access",
-                    e, resource);
+                                                    e, resource, SER_DISK_FULL);
         }
 
         if (FULL_POOL_MESSAGE.contains(e.getMessage())) {
-            return new InsufficientStorageException(e.getMessage(), e, resource);
+            return new InsufficientStorageException(e.getMessage(), e, resource, SER_DISK_FULL);
         }
 
         return new WebDavException(e.getMessage(), e, resource);

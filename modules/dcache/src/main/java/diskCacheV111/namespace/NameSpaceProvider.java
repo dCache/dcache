@@ -201,9 +201,6 @@ public interface NameSpaceProvider {
      */
     Collection<Link> find(Subject subject, PnfsId pnfsId) throws CacheException;
 
-    void removeFileAttribute(Subject subject, PnfsId pnfsId, String attribute)
-          throws CacheException;
-
     /**
      * Clears checksum value storage for the specific file and checksum type.
      *
@@ -442,6 +439,20 @@ public interface NameSpaceProvider {
      */
     void listVirtualDirectory(Subject subject, String path, Range<Integer> range,
                          Set<FileAttribute> attrs, ListHandler handler)  throws  CacheException;
+
+    /**
+     * Return all existing labels
+     *
+     * @param subject The user making the request.
+     * @throws FileNotFoundCacheException     if the path does not exist.
+     * @throws PermissionDeniedCacheException if the user is not allowed to
+     *                                        remove the label.
+     * @throws CacheException                 a generic failure in removing the attribute.
+     */
+    void listLabels(Subject subject, Range<Integer> range,
+                    Set<FileAttribute> attrs, ListHandler handler) throws CacheException;
+
+
 
     /**
      * Resolves symlinks in the given path.

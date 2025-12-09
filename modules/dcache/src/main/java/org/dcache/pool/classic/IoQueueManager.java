@@ -32,6 +32,7 @@ import javax.annotation.Nonnull;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
 import org.dcache.pool.classic.MoverRequestScheduler.Order;
+import org.dcache.pool.classic.MoverRequestScheduler.PrioritizedRequest;
 import org.dcache.util.IoPriority;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -438,29 +439,12 @@ public class IoQueueManager
             }
 
             if (isBinary) {
-                // ignore sortin and grouping by queue name if binnary
+                // ignore sorting and grouping by queue name if binary
                 return queues.stream().flatMap(s -> s.getJobInfos().stream())
                       .toArray(IoJobInfo[]::new);
             } else {
 
-                Comparator<MoverRequestScheduler.PrioritizedRequest> comparator;
-                if (sortBySize) {
-                    comparator = (b, a) -> Long.compare(
-                          a.getMover().getBytesTransferred(), b.getMover().getBytesTransferred()
-                    );
-                } else if (sortByTime) {
-                    comparator = (b, a) -> Long.compare(
-                          a.getMover().getLastTransferred(), b.getMover().getLastTransferred()
-                    );
-                } else {
-                    comparator = (b, a) -> Integer.compare(
-                          a.getId(), b.getId()
-                    );
-                }
-
-                if (reverseSort) {
-                    comparator = comparator.reversed();
-                }
+                Comparator<PrioritizedRequest> comparator = getPrioritizedRequestComparator();
 
                 StringBuilder sb = new StringBuilder();
                 if (groupByQueue) {
@@ -477,6 +461,28 @@ public class IoQueueManager
                 }
                 return sb.toString();
             }
+        }
+
+        private Comparator<PrioritizedRequest> getPrioritizedRequestComparator() {
+            Comparator<PrioritizedRequest> comparator;
+            if (sortBySize) {
+                comparator = (b, a) -> Long.compare(
+                      a.getMover().getBytesTransferred(), b.getMover().getBytesTransferred()
+                );
+            } else if (sortByTime) {
+                comparator = (b, a) -> Long.compare(
+                      a.getMover().getLastTransferred(), b.getMover().getLastTransferred()
+                );
+            } else {
+                comparator = (b, a) -> Integer.compare(
+                      a.getId(), b.getId()
+                );
+            }
+
+            if (reverseSort) {
+                comparator = comparator.reversed();
+            }
+            return comparator;
         }
     }
 

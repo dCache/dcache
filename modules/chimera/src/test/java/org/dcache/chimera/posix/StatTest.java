@@ -1,11 +1,18 @@
 package org.dcache.chimera.posix;
 
+import java.time.Instant;
+import java.util.TimeZone;
 import static org.junit.Assert.assertEquals;
 
 import org.dcache.chimera.UnixPermission;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import org.junit.Test;
 
 public class StatTest {
+
+    // Central European Summer Time, which is UTC + 2.
+    private static final TimeZone CEST = TimeZone.getTimeZone("GMT+2:00");
 
     @Test(expected = IllegalStateException.class)
     public void testNotDefeinedNotDefeinedGetDev() {
@@ -153,4 +160,34 @@ public class StatTest {
         assertEquals(1, stat.getGeneration());
     }
 
+    private String toStringWithDefaultTimeZone(Stat target, TimeZone zone) {
+        try {
+            TimeZone.setDefault(zone);
+            return target.toString();
+        } finally {
+            TimeZone.setDefault(null);
+        }
+    }
+
+    @Test
+    public void testToStringWithFullyPopulatedStat() {
+        Stat stat = new Stat();
+        stat.setMTime(Instant.parse("1980-08-07T12:00:00Z").toEpochMilli());
+        stat.setMode(0644 | UnixPermission.S_IFREG);
+        stat.setNlink(2);
+        stat.setUid(3);
+        stat.setGid(5);
+        stat.setSize(7);
+        stat.setGeneration(11);
+        String toString = toStringWithDefaultTimeZone(stat, CEST);
+        assertThat(toString, equalTo("-rw-r--r--        2      3      5      7     11 1980-08-07 14:00:00"));
+    }
+
+    @Test
+    public void testToStringWithOnlyMtime() {
+        Stat stat = new Stat();
+        stat.setMTime(Instant.parse("1980-08-07T12:00:00Z").toEpochMilli());
+        String toString = toStringWithDefaultTimeZone(stat, CEST);
+        assertThat(toString, equalTo("- - - - - - 1980-08-07 14:00:00"));
+    }
 }

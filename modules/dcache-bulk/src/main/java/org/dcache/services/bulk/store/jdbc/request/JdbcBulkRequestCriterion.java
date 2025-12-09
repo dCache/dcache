@@ -200,13 +200,6 @@ public final class JdbcBulkRequestCriterion extends JdbcCriterion {
         return this;
     }
 
-    public JdbcBulkRequestCriterion delayClear(Boolean delayClear) {
-        if (delayClear != null) {
-            addClause("delay_clear = ?", delayClear);
-        }
-        return this;
-    }
-
     public JdbcBulkRequestCriterion expandDirectories(Depth depth) {
         if (depth != null) {
             addClause("expand_directories = ?", depth.name());
@@ -249,7 +242,6 @@ public final class JdbcBulkRequestCriterion extends JdbcCriterion {
             cancelOnFailure(filter.getCancelOnFailure());
             clearOnFailure(filter.getClearOnFailure());
             clearOnSuccess(filter.getClearOnSuccess());
-            delayClear(filter.getDelayClear());
             expandDirectories(filter.getExpandDirectories());
             activity(filter.getActivity());
             status(filter.getStatuses());

@@ -80,8 +80,6 @@ import org.dcache.vehicles.resilience.ReplicaStatusMessage;
  */
 public final class ResilienceMessageHandler implements CellMessageReceiver {
 
-    private static final String SYSTEM_OWNER = "system";
-
     private Repository repository;
     private String pool;
     private BrokenFileListener brokenFileListener;
@@ -152,7 +150,7 @@ public final class ResilienceMessageHandler implements CellMessageReceiver {
 
                 Collection<StickyRecord> records = entry.getStickyRecords();
                 for (StickyRecord record : records) {
-                    if (record.owner().equals(SYSTEM_OWNER)
+                    if (record.owner().equals(StickyRecord.SYSTEM_OWNER)
                           && record.isNonExpiring()) {
                         message.setSystemSticky(true);
                         break;
@@ -194,7 +192,7 @@ public final class ResilienceMessageHandler implements CellMessageReceiver {
             try {
                 if (pnfsId != null) {
                     repository.setSticky(pnfsId,
-                          SYSTEM_OWNER,
+                          StickyRecord.SYSTEM_OWNER,
                           expire,
                           true);
                 }

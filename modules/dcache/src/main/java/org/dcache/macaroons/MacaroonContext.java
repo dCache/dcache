@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2017 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2017 - 2025 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -22,13 +22,13 @@ import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 import static org.dcache.macaroons.InvalidCaveatException.checkCaveat;
 
-import com.google.common.io.BaseEncoding;
 import diskCacheV111.util.FsPath;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.EnumSet;
+import java.util.HexFormat;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.stream.LongStream;
@@ -252,7 +252,7 @@ public class MacaroonContext {
 
     public static String buildId(String signature, String issueId) {
         // 6 bytes -> 48 bit: collision p=0.01 after 2.4x10^6 values, p=0.5 after 2x10^7.
-        byte[] rawId = BaseEncoding.base16().lowerCase().decode(signature.substring(0, 12));
+        byte[] rawId = HexFormat.of().parseHex(signature,0, 12);
         String partialSignature = new String(Base64.getEncoder().encode(rawId),
               StandardCharsets.US_ASCII);
 

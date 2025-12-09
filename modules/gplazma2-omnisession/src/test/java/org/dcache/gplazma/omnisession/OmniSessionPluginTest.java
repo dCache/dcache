@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2021-2022 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2021-2025 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -34,6 +34,7 @@ import java.util.Properties;
 import java.util.Set;
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.LoginAttribute;
+import org.dcache.auth.attributes.Role;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
@@ -104,6 +105,16 @@ public class OmniSessionPluginTest {
         assertThat(attributes, containsInAnyOrder(new RootDirectory("/root-dir"),
               new HomeDirectory("/home-dir")));
     }
+
+    @Test
+    public void shouldMapRoleAttributes() throws Exception {
+        given(aFileBackedPlugin().withContents("group:dot role:admin"));
+
+        whenCalledWith(aSetOfPrincipals().withGroupname("dot"));
+
+        assertThat(attributes, containsInAnyOrder(new Role("admin")));
+    }
+
 
     private void whenCalledWith(PrincipalSetMaker maker)
           throws AuthenticationException {

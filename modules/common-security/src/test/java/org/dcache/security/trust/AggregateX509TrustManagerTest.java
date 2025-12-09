@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2021 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2021 - 2025 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -31,6 +31,7 @@ import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import javax.net.ssl.X509ExtendedTrustManager;
 import javax.net.ssl.X509TrustManager;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,7 +40,7 @@ import org.mockito.BDDMockito;
 public class AggregateX509TrustManagerTest {
 
     private X509TrustManager manager;
-    private List<X509TrustManager> inner;
+    private List<X509ExtendedTrustManager> inner;
 
     @Before
     public void setup() {
@@ -251,7 +252,7 @@ public class AggregateX509TrustManagerTest {
      */
     private static class MockX509TrustManagerBuilder {
 
-        private final X509TrustManager manager = mock(X509TrustManager.class);
+        private final X509ExtendedTrustManager manager = mock(X509ExtendedTrustManager.class);
 
         public MockX509TrustManagerBuilder thatFailsClientsWith(CertificateException e) {
             try {
@@ -276,7 +277,7 @@ public class AggregateX509TrustManagerTest {
             return this;
         }
 
-        public X509TrustManager build() {
+        public X509ExtendedTrustManager build() {
             return manager;
         }
     }

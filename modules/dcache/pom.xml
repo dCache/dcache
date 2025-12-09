@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.dcache</groupId>
     <artifactId>dcache-parent</artifactId>
-    <version>11.1.0-SNAPSHOT</version>
+    <version>11.2.0-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
@@ -279,7 +279,8 @@
 
     <dependency>
         <groupId>net.sf.smc</groupId>
-        <artifactId>statemap</artifactId>
+        <artifactId>library</artifactId>
+        <version>${version.smc}</version>
     </dependency>
 
     <dependency>
@@ -384,16 +385,53 @@
   </dependencies>
 
   <build>
+      <resources>
+          <resource>
+              <directory>src/main/resources</directory>
+          </resource>
+          <resource>
+              <directory>${project.build.directory}/generated-resources/smc-graphs</directory>
+              <includes>
+                  <include>**/*.dot</include>
+              </includes>
+          </resource>
+      </resources>
       <plugins>
           <plugin>
-              <groupId>org.codehaus.mojo</groupId>
+              <groupId>net.sf.smc</groupId>
               <artifactId>smc-maven-plugin</artifactId>
-              <version>1.0-alpha-1</version>
+              <version>${version.smc}</version>
               <executions>
                   <execution>
+                      <id>src-build</id>
+                      <phase>generate-sources</phase>
+                       <goals>
+                           <goal>smc</goal>
+                       </goals>
+                       <configuration>
+                           <sources>
+                               <source>org/dcache/pool/migration/Task.sm</source>
+                               <source>org/dcache/pool/p2p/Companion.sm</source>
+                           </sources>
+                           <targetLanguage>java7</targetLanguage>
+                       </configuration>
+                  </execution>
+                  <execution>
+                      <id>graphviz-build</id>
+                      <phase>generate-resources</phase>
                       <goals>
                           <goal>smc</goal>
                       </goals>
+                      <configuration>
+                          <sourceDirectory>${project.basedir}/src/main/smc</sourceDirectory>
+                          <targetDirectory>${project.build.directory}/generated-resources/smc-graphs</targetDirectory>
+                          <sources>
+                              <source>org/dcache/pool/migration/Task.sm</source>
+                              <source>org/dcache/pool/p2p/Companion.sm</source>
+                          </sources>
+                          <targetLanguage>graph</targetLanguage>
+                          <glevel>2</glevel>
+                      </configuration>
                   </execution>
               </executions>
               <configuration>
@@ -402,7 +440,7 @@
               <dependencies>
                   <dependency>
                       <groupId>net.sf.smc</groupId>
-                      <artifactId>smc</artifactId>
+                      <artifactId>main</artifactId>
                       <version>${version.smc}</version>
                   </dependency>
               </dependencies>
@@ -482,9 +520,9 @@
                             </pluginExecution>
                             <pluginExecution>
                                 <pluginExecutionFilter>
-                                    <groupId>org.codehaus.mojo</groupId>
+                                    <groupId>net.sf.smc</groupId>
                                     <artifactId>smc-maven-plugin</artifactId>
-                                    <versionRange>[1.0-alpha-1,)</versionRange>
+                                    <versionRange>[${version.smc},)</versionRange>
                                     <goals>
                                         <goal>smc</goal>
                                     </goals>

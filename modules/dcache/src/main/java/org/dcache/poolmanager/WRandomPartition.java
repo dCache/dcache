@@ -5,7 +5,6 @@ import com.google.common.collect.Lists;
 
 import java.security.SecureRandom;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -84,25 +83,43 @@ public class WRandomPartition extends Partition
 
     @Override
     public SelectedPool selectWritePool(CostModule cm, List<PoolInfo> pools, FileAttributes attributes, long preallocated) throws CacheException {
-        WeightedPool weightedPools[] = toWeightedWritePoolsArray(pools);
+        WeightedPool weightedPools[] = toWeightedWritePoolsArray(pools, preallocated);
+        if (weightedPools.length == 0) {
+            throw new CostException("All pools are full", null, false, false);
+        }
         int index = selectWrandomIndex(weightedPools);
         return new SelectedPool(weightedPools[index].getCostInfo());
     }
 
-    private WeightedPool[] toWeightedWritePoolsArray(Collection<PoolInfo> costInfos) {
+    private WeightedPool[] toWeightedWritePoolsArray(List<PoolInfo> costInfos, long fileSize) {
 
         long totalFree = 0;
+        int validCount = 0;
         for (PoolInfo costInfo : costInfos) {
+            long gap = costInfo.getCostInfo().getSpaceInfo().getGap();
+
             long spaceToUse = costInfo.getCostInfo().getSpaceInfo().getFreeSpace()
                     + costInfo.getCostInfo().getSpaceInfo().getRemovableSpace();
+            if (fileSize > spaceToUse - gap) {
+                continue; // skip pools that do not have enough space
+            }
             totalFree += spaceToUse;
+            validCount++;
         }
 
-        WeightedPool[] weightedPools = new WeightedPool[costInfos.size()];
+        // the validCount should mach the number of pools that have enough space, thus eligible for selection
+        WeightedPool[] weightedPools = new WeightedPool[validCount];
         int i = 0;
         for (PoolInfo costInfo : costInfos) {
+
+            long gap = costInfo.getCostInfo().getSpaceInfo().getGap();
+
             long spaceToUse = costInfo.getCostInfo().getSpaceInfo().getFreeSpace()
                     + costInfo.getCostInfo().getSpaceInfo().getRemovableSpace();
+
+            if (fileSize > spaceToUse - gap) {
+                continue; // skip pools that do not have enough space
+            }
 
             weightedPools[i] = new WeightedPool(costInfo, (double) spaceToUse / totalFree);
             i++;

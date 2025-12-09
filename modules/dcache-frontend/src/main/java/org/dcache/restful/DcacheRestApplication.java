@@ -50,6 +50,7 @@ public class DcacheRestApplication extends ResourceConfig {
         register(CellInfoResources.class);
         register(DoorsResources.class);
         register(UserResource.class);
+        register(RequestUser.class);
         register(LabelsResources.class);
         register(FileResources.class);
         register(IdResources.class);

@@ -5,10 +5,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import org.junit.Test;
-import org.springframework.util.SerializationUtils;
 
 public class SubnetTest {
 
@@ -148,10 +151,19 @@ public class SubnetTest {
     }
 
     @Test
-    public void serializeSubnetTest() {
+    public void serializeSubnetTest() throws Exception {
         Subnet original = Subnet.create();
-        Object copy = SerializationUtils.deserialize(
-              SerializationUtils.serialize(original));
+
+        // Use standard Java serialization instead of vulnerable Spring SerializationUtils
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+            oos.writeObject(original);
+        }
+
+        Object copy;
+        try (ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray()))) {
+            copy = ois.readObject();
+        }
 
         assertTrue(copy instanceof Subnet);
         assertEquals(original, copy);

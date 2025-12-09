@@ -3,6 +3,8 @@ package org.dcache.chimera.nfsv41.door.proxy;
 import com.google.common.io.BaseEncoding;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.HexFormat;
+
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.nfsstat;
 import org.dcache.nfs.status.AccessException;
@@ -42,7 +44,7 @@ public class ProxyIoWRITE extends AbstractNFSv4Operation {
 
         Inode inode = context.currentInode();
         NDC.push(context.getRpcCall().getTransport().getRemoteSocketAddress().toString());
-        NDC.push(BaseEncoding.base16().upperCase().encode(inode.getFileId()));
+        NDC.push(HexFormat.of().withUpperCase().formatHex(inode.getFileId()));
 
         try {
 

@@ -295,7 +295,7 @@ each domain:
       srmDomain : [RemoteTransferManager, CopyManager, SrmSpaceManager, SRM-example.dcache.org]
        httpdDomain : [billing, srm-LoginBroker, TransferObserver]
       poolDomain : [pool_2, pool_1]
-       namespaceDomain : [PnfsManager, dirLookupPool, cleaner]
+       namespaceDomain : [PnfsManager, dirLookupPool, cleaner-disk]
 
 All cells implement the `info` command to display  general information about the cell and `show pinboard` command
 for listing the last lines of the [pinboard](rf-glossary.md#pinboard) of the cell. The output of these commands contains useful information
@@ -317,7 +317,7 @@ The most useful command of the pool cells is [rep ls](reference.md#rep-ls). It l
 000100000000000000001230 <C----------(0)[0]> 1222287360 si={myStore:STRING}
 ```
 
-Each file replica  in a pool has one of the 4 primary states: “cached” (<C---), “precious” (<-P--), “from client” (<--C-), and        “from store” (<---S).
+Each file replica  in a pool has one of the five primary states: “cached” (<C---), “precious” (<-P--), “from client” (<--C-), “from store” (<---S) and "from another pool" (<----M).
 
 
 See [the section called “How to Store-/Restore files via the Admin Interface”](config-hsm.md#how-to-store-restore-files-via-the-admin-interface) for more information about `rep ls`.

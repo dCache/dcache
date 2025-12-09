@@ -17,8 +17,13 @@ then
   PLUGINS_CLASSPATH=`find ${DCACHE_HOME}/share/plugins -type f -name \*.jar -printf "%p:"`
 fi
 
-export CLASSPATH=${DCACHE_HOME}/share/classes/*:${PLUGINS_CLASSPATH}
+CLASSPATH=${DCACHE_HOME}/share/classes/*
+if [ ! -z "${PLUGINS_CLASSPATH}" ]
+then
+  CLASSPATH=${CLASSPATH}:${PLUGINS_CLASSPATH}
+fi
 
+export CLASSPATH
 
 # we hope that there is only one agent file and it the right one
 ASPECT_AGENT=`ls ${DCACHE_HOME}/share/classes/aspectjweaver-*.jar`

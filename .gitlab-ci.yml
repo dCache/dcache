@@ -52,6 +52,7 @@ variables:
   HELM_OPTS: --replace --timeout 10m0s
   AUTOCA_URL: https://ci.dcache.org/ca
   DCACHE_HELM_REPO: https://gitlab.desy.de/api/v4/projects/7648/packages/helm/test
+  DCACHE_COMPATIBILITY_VERSION: 9.2.20
 
 
 # let's debug nodes where job is running
@@ -85,7 +86,7 @@ default:
 
 .kubernetes_image:
   extends: .kubernetes_tags
-  image: bitnami/kubectl:latest
+  image: dtzar/helm-kubectl:latest
 
 .helm_image:
   extends: .kubernetes_tags
@@ -119,7 +120,7 @@ default:
 
 rpm:
   stage: build
-  image: dcache/maven-java17-rpm-build
+  image: dcache/maven-java21-rpm-build
   extends: .build_cache
   script:
     - mvn $MAVEN_CLI_OPTS -Drun.slow.tests -am -pl packages/fhs -P rpm clean package
@@ -134,7 +135,7 @@ rpm:
 
 srm_client_rpm:
   stage: build
-  image: dcache/maven-java17-rpm-build
+  image: dcache/maven-java21-rpm-build
   extends: .build_cache
   script:
     - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl modules/srm-client package -P rpm
@@ -145,7 +146,7 @@ srm_client_rpm:
 
 deb:
   stage: build
-  image: dcache/maven-java17-deb-build
+  image: dcache/maven-java21-deb-build
   extends: .build_cache
   script:
     - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl packages/fhs -P deb clean package
@@ -154,9 +155,10 @@ deb:
       - "packages/fhs/target/dcache_*.deb"
     expire_in: 2 days
 
+# needed for minimal pipeline run
 tar:
   stage: build
-  image: dcache/maven-java17-tar-build
+  image: dcache/maven-java21-tar-build
   extends: .build_cache
   script:
     - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl packages/tar clean package
@@ -168,7 +170,7 @@ tar:
 
 spotbugs:
   stage: build
-  image: dcache/maven-java17-tar-build
+  image: dcache/maven-java21-tar-build
   extends: .build_cache
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
@@ -184,11 +186,12 @@ spotbugs:
       - merged-gl-code-quality-report.json
     expire_in: 2 days
 
+# needed for minimal pipeline run
 container:
   stage: build
   # For latest releases see https://github.com/GoogleContainerTools/kaniko/releases
   # Only debug/*-debug versions of the Kaniko image are known to work within Gitlab CI
-  image: gcr.io/kaniko-project/executor:debug
+  image: ghcr.io/kaniko-build/dist/chainguard-dev-kaniko/executor:latest-debug
   needs:
     - tar
   dependencies:
@@ -216,7 +219,7 @@ container:
 #
 Check for duplicate dependencies:
   stage: build
-  image: almalinux:9-minimal
+  image: almalinux:10-minimal
   needs:
     - tar
   dependencies:
@@ -225,15 +228,15 @@ Check for duplicate dependencies:
     - microdnf install -y tar gzip
     - mkdir /dcache
     - tar -C /dcache --strip-components=1 -xzf packages/tar/target/dcache-*.tar.gz
-    - ls -1 /dcache/share/classes/ | sort | sed -e 's/\-[0-9].*$//' | uniq -D > duplicate-dependencies.txt
+    - ls -1 /dcache/share/classes/ | grep -v netty-tcnative-boringssl-static | sort | sed -e 's/\-[0-9].*$//' | uniq -D > duplicate-dependencies.txt
     - if [ -s duplicate-dependencies.txt ]; then cat duplicate-dependencies.txt; exit 1; fi
 
 sign_rpm:
   stage: sign
-  image: almalinux:9-minimal
+  image: almalinux:10-minimal
   needs: ["rpm"]
   script:
-    - microdnf install -y rpm-sign
+    - microdnf install -y rpm-sign gpg
     - echo $DCACHE_ORG_PGP_KEY | base64 -d -i > secret.gpg
     - gpg --quiet --batch --yes --allow-secret-key-import --passphrase="$DCACHE_ORG_PGP_KEY_PASS" --import secret.gpg
     - gpg -a --export "$DCACHE_ORG_KEY_NAME" > RPM-GPG-KEY
@@ -246,10 +249,10 @@ sign_rpm:
 
 sign_srm_client_rpm:
   stage: sign
-  image: almalinux:9-minimal
+  image: almalinux:10-minimal
   needs: ["srm_client_rpm"]
   script:
-    - microdnf install -y rpm-sign
+    - microdnf install -y rpm-sign gpg
     - echo $DCACHE_ORG_PGP_KEY | base64 -d -i > secret.gpg
     - gpg --quiet --batch --yes --allow-secret-key-import --passphrase="$DCACHE_ORG_PGP_KEY_PASS" --import secret.gpg
     - gpg -a --export "$DCACHE_ORG_KEY_NAME" > RPM-GPG-KEY
@@ -295,7 +298,7 @@ RPM test install on EL9:
 
 upload_rpm:
   stage: upload
-  image: almalinux:9-minimal
+  image: almalinux:10-minimal
   dependencies:
     - sign_rpm
   extends: .upload_rules
@@ -306,7 +309,7 @@ upload_rpm:
 
 upload_srm_client_rpm:
   stage: upload
-  image: almalinux:9-minimal
+  image: almalinux:10-minimal
   dependencies:
     - sign_srm_client_rpm
   extends: .upload_rules
@@ -317,7 +320,7 @@ upload_srm_client_rpm:
 
 upload_deb:
   stage: upload
-  image: almalinux:9-minimal
+  image: almalinux:10-minimal
   dependencies:
     - sign_deb
   extends: .upload_rules
@@ -328,7 +331,7 @@ upload_deb:
 
 upload_tar:
   stage: upload
-  image: almalinux:9-minimal
+  image: almalinux:10-minimal
   dependencies:
     - tar
   extends: .upload_rules
@@ -344,16 +347,15 @@ upload_container:
   # To keep cache across branches add 'key: "$CI_JOB_NAME"'
   # For latest releases see https://github.com/GoogleContainerTools/kaniko/releases
   # Only debug/*-debug versions of the Kaniko image are known to work within Gitlab CI
-  image: gcr.io/kaniko-project/executor:debug
+  image: ghcr.io/kaniko-build/dist/chainguard-dev-kaniko/executor:latest-debug
   dependencies:
     - tar
   extends: .upload_rules
   script:
     - |-
-      tag=$CI_COMMIT_SHORT_SHA
-      if [[ -n "$CI_COMMIT_TAG" ]]; then
-        tag=$CI_COMMIT_TAG
-      fi
+      tag=$CI_COMMIT_TAG
+      branch_latest=`echo $CI_COMMIT_TAG | cut -d '.' -f 1,2`
+
     - mkdir maven
     - tar -C maven --strip-components=1 -xzvf packages/tar/target/dcache-*.tar.gz
     - cp $CI_PROJECT_DIR/packages/tar/src/main/container/* .
@@ -364,13 +366,13 @@ upload_container:
       --label dcache.build=GA
       --context $CI_PROJECT_DIR
       --dockerfile $CI_PROJECT_DIR/Dockerfile
-      --destination dcache/dcache:$tag
+      --destination dcache/dcache:$tag --destination dcache/dcache:$branch_latest
 
 #
 # This jobs needs that the number of changes to fetch from GitLab when cloning a repository is high enough to generate
 # the changelog.
 AI Generated Release Notes:
-  image: almalinux:9-minimal
+  image: almalinux:10-minimal
   stage: upload
   extends: .upload_rules
   allow_failure: true
@@ -403,7 +405,7 @@ AI Generated Release Notes:
 # Prepare releases download table in html format
 #
 Release Notes Table:
-  image: almalinux:9-minimal
+  image: almalinux:10-minimal
   stage: upload
   extends: .upload_rules
   allow_failure: true
@@ -425,6 +427,7 @@ Release Notes Table:
 #
 # prepare kubernetes env for the build
 #
+# needed for minimal pipeline run
 Prepare k8s environment:
   stage: testenv_pre
   extends: .kubernetes_image
@@ -441,8 +444,9 @@ Collect container logs:
   when: always
   allow_failure: true
   script:
+    - kubectl -n $K8S_NAMESPACE events | tee $K8S_NAMESPACE-events.log
     - kubectl -n $K8S_NAMESPACE get pods | grep Running | awk '{print $1}' | xargs -n1 kubectl -n $K8S_NAMESPACE logs | tee $K8S_NAMESPACE.log
-    - kubectl -n $K8S_NAMESPACE run -i --rm --restart=Never -q --image=edenhill/kcat:1.7.1 kcat -- kcat -C -t billing -b billing-kafka:9092 -p 0 -e -q | tee $K8S_NAMESPACE-billing.json
+    - kubectl -n $K8S_NAMESPACE run -i --rm --restart=Never -q --image=edenhill/kcat:1.7.1 kcat -- kcat -C -t billing -b billing-kafka:9092 -p 0 -e -q -o beginning | tee $K8S_NAMESPACE-billing.json
   artifacts:
     name: "logs-$CI_PIPELINE_ID"
     paths:
@@ -466,35 +470,32 @@ Clean k8s environment:
 #
 Deploy PostgreSQL:
   stage: test_infra
-  extends: .helm_image
+  extends: .kubernetes_image
   script:
-    - helm repo add bitnami https://charts.bitnami.com/bitnami
-    - helm repo update
-    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set auth.username=dcache --set auth.password=let-me-in --set auth.database=chimera  chimera bitnami/postgresql
+    - kubectl -n ${K8S_NAMESPACE} apply -f .ci/k8s/postgresql-deployment.yaml
+    - kubectl -n ${K8S_NAMESPACE} wait --for=condition=Ready pod/postgres-0
 
 #
 # infrastructure required to run dCache
 #
 Deploy Zookeeper:
   stage: test_infra
-  extends: .helm_image
+  extends: .kubernetes_image
   script:
-    - helm repo add bitnami https://charts.bitnami.com/bitnami
-    - helm repo update
-    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait cells bitnami/zookeeper
+    - kubectl -n ${K8S_NAMESPACE} apply -f .ci/k8s/zookeeper-deployment.yaml
+    - kubectl -n ${K8S_NAMESPACE} wait --for=condition=Ready pod/zookeeper-0
 
 #
 # infrastructure required to run dCache
 #
 Deploy Kafka:
   stage: test_infra
-  extends: .helm_image
-  needs:
-    - Deploy Zookeeper
+  extends: .kubernetes_image
   script:
-    - helm repo add bitnami https://charts.bitnami.com/bitnami
-    - helm repo update
-    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set externalZookeeper.servers=cells-zookeeper --set kraft.enabled=false billing bitnami/kafka --version 23.0.7
+    - kubectl -n ${K8S_NAMESPACE} apply -f .ci/k8s/kafka-deployment.yaml
+    - kubectl -n ${K8S_NAMESPACE} wait --for=condition=Ready pod/kafka-0
+    - kubectl -n ${K8S_NAMESPACE} exec kafka-0 -- /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --create --topic billing
+
 
 #
 # infrastructure required to run dCache
@@ -503,9 +504,9 @@ Deploy MinIO as Tape:
   stage: test_infra
   extends: .helm_image
   script:
-    - helm repo add bitnami https://charts.bitnami.com/bitnami
+    - helm repo add minio https://charts.min.io/
     - helm repo update
-    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --set-string auth.rootUser=dcache --set-string auth.rootPassword=let-me-in --set-string defaultBuckets="hsm" --wait tape bitnami/minio
+    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --set-string rootUser=dcache --set-string rootPassword=let-me-in --set replicas=1 --set persistence.enabled=false --set mode=standalone --set buckets[0].name=hsm,buckets[0].policy=none,buckets[0].purge=false --wait tape minio/minio
 
 
 #
@@ -519,12 +520,26 @@ Deploy Keycloak:
     # FIXME: add readiness check
     # - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready deployment.apps/keycloak; do sleep 1; done
 
+
+#
+# Init dCache database with old version. On start new version will perform migration
+#
+Init dCache DB with old version:
+  stage: test_deploy
+  extends: .kubernetes_image
+  script:
+    - kubectl -n $K8S_NAMESPACE apply -f .ci/k8s/dcache-deployment.yaml
+    - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod dcache-db-migration-0; do sleep 1; done
+    - kubectl -n $K8S_NAMESPACE exec dcache-db-migration-0 -- /opt/dcache/bin/dcache database update
+
 #
 # Start Current dCache version and an old pools
 #
 Helm-Deploy Current dCache build:
   stage: test_deploy
   extends: .helm_image
+  needs:
+    - Init dCache DB with old version
   script:
     - |-
       tag=$CI_COMMIT_SHORT_SHA
@@ -533,7 +548,7 @@ Helm-Deploy Current dCache build:
       fi
     - helm repo add dcache ${DCACHE_HELM_REPO}
     - helm repo update
-    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=${tag} --set dcache.hsm.enabled=true --set image.registry=${CI_REGISTRY} store dcache/dcache
+    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=${tag} --set dcache.hsm.enabled=true --set dcache.qos.enabled=true --set image.registry=${CI_REGISTRY} --values .ci/custom-helm-config.yaml store dcache/dcache
 
 Helm-Deploy Latest dCache Golden Release:
   stage: test_deploy
@@ -543,7 +558,7 @@ Helm-Deploy Latest dCache Golden Release:
   script:
     - helm repo add dcache ${DCACHE_HELM_REPO}
     - helm repo update
-    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=9.2.20 --set "dcache.pools={d,f}" --set dcache.door.enabled=false --set image.registry=${CI_REGISTRY} old-store dcache/dcache
+    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=${DCACHE_COMPATIBILITY_VERSION} --set "dcache.pools={d,f}" --set dcache.door.enabled=false --set image.registry=${CI_REGISTRY} old-store dcache/dcache
 
 
 Grid EL9 WN tests:
@@ -587,11 +602,13 @@ Frontend test suite:
     - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod http-tester; do sleep 1; done
     - kubectl -n $K8S_NAMESPACE cp .ci/poolEndpoint.http http-tester:/poolEndpoint.http
     - kubectl -n $K8S_NAMESPACE cp .ci/qosEndpoint.http http-tester:/qosEndpoint.http
-    - kubectl -n $K8S_NAMESPACE cp .ci/qos-policyEndpoint.http http-tester:/qos-policyEndpoint.http
-    - kubectl -n $K8S_NAMESPACE cp README.md http-tester:/README.md
+    - kubectl -n $K8S_NAMESPACE cp .ci/qosPolicyEndpoint.http http-tester:/qosPolicyEndpoint.http
     - kubectl -n $K8S_NAMESPACE cp .ci/migrationEndpoint.http http-tester:/migrationEndpoint.http
+    - kubectl -n $K8S_NAMESPACE cp .ci/userEndpoint.http http-tester:/userEndpoint.http
+    - kubectl -n $K8S_NAMESPACE cp .ci/bulkRequestsEndpoint.http http-tester:/bulkRequestsEndpoint.http
+    - kubectl -n $K8S_NAMESPACE cp README.md http-tester:/README.md
     - kubectl -n $K8S_NAMESPACE cp http-client.private.env.json http-tester:/http-client.private.env.json
-    - kubectl -n $K8S_NAMESPACE exec http-tester -- java --add-opens=java.base/java.util=ALL-UNNAMED $IJHTTP_JAVA_OPTS -cp /intellij-http-client/\* com.intellij.httpClient.cli.HttpClientMain -e Test -D /poolEndpoint.http -p /http-client.private.env.json --insecure --report=/httpTests
+    - kubectl -n $K8S_NAMESPACE exec http-tester -- java --add-opens=java.base/java.util=ALL-UNNAMED $IJHTTP_JAVA_OPTS -cp /intellij-http-client/\* com.intellij.httpClient.cli.HttpClientMain -e Test -D /poolEndpoint.http /qosEndpoint.http /qosPolicyEndpoint.http /migrationEndpoint.http /userEndpoint.http /bulkRequestsEndpoint.http -p /http-client.private.env.json --insecure --report=/httpTests
     - kubectl -n $K8S_NAMESPACE cp http-tester:/httpTests/report.xml pool-report.xml
   artifacts:
     reports:
@@ -631,7 +648,7 @@ NFS4.x protocol compliance tests:
            --noinit store-door-svc:/data all \
            noACC2a noACC2b noACC2c noACC2d noACC2f noACC2r noACC2s \
            noCID1 noCID2 noCID4a noCID4b noCID4c noCID4d noCID4e \
-           noCLOSE10 noCLOSE12 noCLOSE6 \
+           noCLOSE8 noCLOSE9 noCLOSE10 noCLOSE12 noCLOSE6 \
            noCMT1aa noCMT1b noCMT1c noCMT1d noCMT1e noCMT1f noCMT2a noCMT2b noCMT2c noCMT2d noCMT2f \
            noCMT2s noCMT3 noCMT4 noCR12 noLKT1 noLKT2a noLKT2b noLKT2c noLKT2d noLKT2f noLKT2s noLKT3 \
            noLKT4 noLKT6 noLKT7 noLKT8 noLKT9 noLKU7 \

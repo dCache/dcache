@@ -99,13 +99,6 @@
         </property>
     </bean>
 
-    <bean id="legacy-factory" class="org.dcache.services.ssh2.LegacySubsystemFactory">
-        <property name="historyFile" value="${admin.paths.history}"/>
-        <property name="historySize" value="${admin.history.size}"/>
-        <property name="useColor" value="${admin.enable.colors}"/>
-        <property name="prompt" value="${admin.prompt}"/>
-    </bean>
-
     <bean id="ssh2Server" class="org.dcache.services.ssh2.Ssh2Admin">
         <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull('${admin.net.listen}') }"/>
         <property name="port"               value="${admin.net.port}"/>
@@ -115,11 +108,6 @@
         <property name="adminGroupId"       value="${admin.authz.gid}"/>
         <property name="shellFactory"       ref="shell-factory"/>
         <property name="commandFactory"     ref="command-factory"/>
-        <property name="subsystemFactories">
-            <list>
-                <ref bean="legacy-factory"/>
-            </list>
-        </property>
         <property name="idleTimeout" value="#{T(org.dcache.util.Strings).parseLong('${admin.ssh.idle-timeout}')}" />
         <property name="idleTimeoutUnit" value="${admin.ssh.idle-timeout.unit}" />
 	<property name="enabledAuthenticationMechanisms" value="${admin.ssh.authn.enabled}"/>

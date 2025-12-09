@@ -35,8 +35,6 @@ import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
-import diskCacheV111.vehicles.PnfsFlagMessage;
-import diskCacheV111.vehicles.PnfsFlagMessage.FlagOperation;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.PnfsGetParentMessage;
 import diskCacheV111.vehicles.PnfsMapPathMessage;
@@ -60,6 +58,7 @@ import org.dcache.namespace.FileType;
 import org.dcache.namespace.ListHandler;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.list.DirectoryEntry;
+import org.dcache.util.list.LabelsListHandler;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.util.list.VirtualDirectoryListHandler;
 import org.dcache.vehicles.FileAttributes;
@@ -126,6 +125,8 @@ public class RemoteNameSpaceProviderTests {
     CellEndpoint _endpoint;
     ListDirectoryHandler _listHandler;
     VirtualDirectoryListHandler _virtualDirectoryHandler;
+    LabelsListHandler _labelsListHandler;
+
 
 
     @Before
@@ -134,7 +135,7 @@ public class RemoteNameSpaceProviderTests {
         CellStub stub = new CellStub(_endpoint, CELLPATH_PNFSMANAGER);
         PnfsHandler pnfs = new PnfsHandler(stub);
         _listHandler = new ListDirectoryHandler(pnfs);
-        _namespace = new RemoteNameSpaceProvider(pnfs, _listHandler, _virtualDirectoryHandler);
+        _namespace = new RemoteNameSpaceProvider(pnfs, _listHandler, _virtualDirectoryHandler, _labelsListHandler);
     }
 
 
@@ -572,18 +573,6 @@ public class RemoteNameSpaceProviderTests {
         assertThat(sent.getSubject(), is(ROOT));
         assertThat(sent.getPnfsId(), is(A_PNFSID));
         assertThat(sent.getType(), is(ChecksumType.ADLER32));
-    }
-
-
-    @Test
-    public void shouldSucceedForRemoveFileAttribute() throws Exception {
-        _namespace.removeFileAttribute(ROOT, A_PNFSID, "flag-name");
-
-        PnfsFlagMessage sent = getSingleSentMessage(PnfsFlagMessage.class);
-        assertThat(sent.getSubject(), is(ROOT));
-        assertThat(sent.getPnfsId(), is(A_PNFSID));
-        assertThat(sent.getFlagName(), is("flag-name"));
-        assertThat(sent.getOperation(), is(FlagOperation.REMOVE));
     }
 
     @Test

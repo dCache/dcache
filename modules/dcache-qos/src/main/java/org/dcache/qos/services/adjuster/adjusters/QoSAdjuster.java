@@ -81,11 +81,12 @@ public abstract class QoSAdjuster implements Cancellable {
     protected static final Logger LOGGER = LoggerFactory.getLogger(QoSAdjuster.class);
     protected static final Logger ACTIVITY_LOGGER = LoggerFactory.getLogger("org.dcache.qos-log");
     protected static final ImmutableList<StickyRecord> ONLINE_STICKY_RECORD
-          = ImmutableList.of(new StickyRecord("system", StickyRecord.NON_EXPIRING));
+          = ImmutableList.of(new StickyRecord(StickyRecord.NON_EXPIRING));
 
     protected PnfsId pnfsId;
     protected FileAttributes attributes;
     protected QoSAction action;
+    protected String target;
     protected Subject subject ;
     protected QoSAdjustTaskCompletionHandler completionHandler;
 
@@ -93,6 +94,7 @@ public abstract class QoSAdjuster implements Cancellable {
         pnfsId = task.getPnfsId();
         action = task.getAction();
         attributes = task.getAttributes();
+        target = task.getTarget();
         subject = task.getSubject();
 
         /*

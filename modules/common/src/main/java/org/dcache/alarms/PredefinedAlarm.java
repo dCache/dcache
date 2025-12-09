@@ -90,7 +90,8 @@ public enum PredefinedAlarm implements Alarm {
     FAILED_QOS_OPERATION,
     LOST_FILE,
     POOL_LOCATION_SYNC_ISSUE,
-    POOL_GROUP_ISSUE;
+    POOL_GROUP_ISSUE,
+    STORAGE_CLASS_MISCONFIGURED;
 
     @Override
     public String getType() {

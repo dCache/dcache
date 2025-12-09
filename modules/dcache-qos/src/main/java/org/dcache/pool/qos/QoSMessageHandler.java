@@ -81,8 +81,6 @@ import org.springframework.beans.factory.annotation.Required;
  */
 public final class QoSMessageHandler implements CellMessageReceiver {
 
-    private static final String SYSTEM_OWNER = "system";
-
     private Repository repository;
     private BrokenFileNotifier brokenFileNotifier;
     private ExecutorService executor;
@@ -97,7 +95,7 @@ public final class QoSMessageHandler implements CellMessageReceiver {
         MessageReply<Message> reply = new MessageReply<>();
         executor.execute(() -> {
             try {
-                repository.setSticky(pnfsId, SYSTEM_OWNER, expiry, true);
+                repository.setSticky(pnfsId, StickyRecord.SYSTEM_OWNER, expiry, true);
                 reply.reply(message);
             } catch (Exception e) {
                 reply.fail(message, e);
@@ -157,7 +155,7 @@ public final class QoSMessageHandler implements CellMessageReceiver {
 
                 Collection<StickyRecord> records = entry.getStickyRecords();
                 for (StickyRecord record : records) {
-                    if (record.owner().equals(SYSTEM_OWNER)
+                    if (record.owner().equals(StickyRecord.SYSTEM_OWNER)
                           && record.isNonExpiring()) {
                         message.setSystemSticky(true);
                         break;

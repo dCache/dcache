@@ -74,16 +74,20 @@ public class ExceptionsTests {
 
     @Test
     public void shouldWapWithMessageIfExceptionHasNoStringThrowableConstructor() {
-        // Note: SocketException has no (String,Throwable) constructor, but has
-        // a (String) constructor.
-
         SocketException cause = new SocketException("Something went wrong");
 
         Exception wrapped = Exceptions.wrap("Wrapped message", cause, SocketException.class);
 
         assertThat(wrapped, is(notNullValue()));
         assertThat(wrapped.getMessage(), is(equalTo("Wrapped message: Something went wrong")));
-        assertThat(wrapped.getCause(), is(nullValue()));
+
+        // Note: prior java 19 SocketException has no (String,Throwable) constructor, but has a (String) constructor.
+        if (Runtime.version().feature() >= 19) {
+            assertThat(wrapped.getCause(), is(cause));
+        } else {
+            assertThat(wrapped.getCause(), is(nullValue()));
+        }
+
         assertThat(wrapped.getClass(), is(equalTo(SocketException.class)));
 
         assertThat(_log, is(empty()));

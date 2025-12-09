@@ -75,7 +75,7 @@ phase with the _rpm_ profile on _modules/srm-client_ module, i.e.:
 DEB packages have not been defined for srmclient.
 
 The generated packages can be found in the target directory of the
-respectively module. RPMs are in the RPMS subdirectory.
+respective module. RPMs are in the RPMS subdirectory.
 
 
 The dCache tarball package is build by packaging the _packages/tar_
@@ -96,6 +96,14 @@ profile for the `tar` packaging:
 
     mvn clean package -am -pl packages/tar -P container
 
+
+To run
+
+    podman run -ti --name my-dcache --rm -u 0:0 -v `pwd`/my-layout.conf:/opt/dcache/etc/layouts/docker-layout.conf:Z  -v `pwd`/pool:/pool:Z dcache/dcache:11.0 my-domain
+
+The container runs dcache as uid 994 and gid 1000. The argument `-u 0:0` tells podman to run it as root, which is mapped to the local user that starts the container.
+The argument passed to the container is the dcache domain  to start. In the example above, it will start the domain `my-domain` defined in the local layout file
+`my-layout.conf`. If no argument is provided, that domain with the container hostname (value returned by the hostname command inside the container) is started.
 
 The system-test module
 ----------------------

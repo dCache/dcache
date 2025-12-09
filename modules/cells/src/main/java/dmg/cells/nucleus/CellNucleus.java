@@ -1079,9 +1079,8 @@ public class CellNucleus implements ThreadFactory {
                     threadGroupList();
                     killThreads(threads);
                 }
-                _threads.destroy();
             } catch (IllegalThreadStateException e) {
-                _threads.setDaemon(true);
+                LOGGER.warn("Failed to join threads in {}: {}", _threads, e.getMessage());
             } catch (InterruptedException e) {
                 LOGGER.warn("Interrupted while waiting for threads");
             }

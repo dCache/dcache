@@ -55,9 +55,9 @@ public class PoolGroupInfoTableWriter {
           SortedMap<String, Collection<Object>> info) {
         _html.beginTable("sortable",
               "group", "PoolGroup",
-              "total", "Total Space/MB",
-              "free", "Free Space/MB",
-              "precious", "Precious Space/MB",
+              "total", "Total Space",
+              "free", "Free Space",
+              "precious", "Precious Space",
               "layout", "<span>Layout   " +
                     "(<span class=\"layout_precious\">precious/</span>" +
                     "<span class=\"layout_sticky\">sticky/</span>" +

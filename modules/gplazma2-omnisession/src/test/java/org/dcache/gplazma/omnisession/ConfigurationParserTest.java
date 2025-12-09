@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2021 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2021 - 2025 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -80,6 +80,17 @@ public class ConfigurationParserTest {
 
         assertThat(loginAttributes, containsInAnyOrder(new RootDirectory("/"),
               new HomeDirectory("/")));
+    }
+
+    @Test
+    public void shouldAcceptTabs() throws Exception {
+        // line with tabs
+        givenConfig("username:paul	root:/	home:/");
+
+        var loginAttributes = attributesFor(aSetOfPrincipals().withUsername("paul"));
+
+        assertThat(loginAttributes, containsInAnyOrder(new RootDirectory("/"),
+                new HomeDirectory("/")));
     }
 
     @Test(expected = AuthenticationException.class)

@@ -57,7 +57,6 @@ import org.dcache.acl.ACE;
 import org.dcache.acl.enums.RsType;
 import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.quota.QuotaHandler;
-import org.dcache.chimera.store.InodeStorageInformation;
 import org.dcache.util.Checksum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -562,6 +561,14 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
           String labelname) throws ChimeraFsException {
         return _sqlDriver.virtualDirectoryStream(dir, labelname);
     }
+
+
+    @Override
+    public DirectoryStreamB<ChimeraDirectoryEntry> listLabelsStream(FsInode dir) throws ChimeraFsException {
+        return _sqlDriver.labelsDirectoryStream(dir);
+    }
+
+
 
     @Override
     public void remove(String path) throws ChimeraFsException {
@@ -1408,29 +1415,6 @@ public class JdbcFs implements FileSystemProvider, LeaderLatchListener {
     @Override
     public int getFsId() {
         return _fsId;
-    }
-
-    /*
-     * Storage Information
-     *
-     * currently it's not allowed to modify it
-     */
-    @Override
-    public void setStorageInfo(FsInode inode, InodeStorageInformation storageInfo)
-          throws ChimeraFsException {
-        inTransaction(status -> {
-            try {
-                _sqlDriver.setStorageInfo(inode, storageInfo);
-            } catch (ForeignKeyViolationException e) {
-                throw FileNotFoundChimeraFsException.of(inode, e);
-            }
-            return null;
-        });
-    }
-
-    @Override
-    public InodeStorageInformation getStorageInfo(FsInode inode) throws ChimeraFsException {
-        return _sqlDriver.getStorageInfo(inode);
     }
 
     /*

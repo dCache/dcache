@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2018 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2018 - 2025 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -108,12 +108,6 @@ public abstract class ForwardingNameSpaceProvider implements NameSpaceProvider {
     }
 
     @Override
-    public void removeFileAttribute(Subject subject, PnfsId pnfsId,
-          String attribute) throws CacheException {
-        delegate().removeFileAttribute(subject, pnfsId, attribute);
-    }
-
-    @Override
     public void removeChecksum(Subject subject, PnfsId pnfsId,
           ChecksumType type) throws CacheException {
         delegate().removeChecksum(subject, pnfsId, type);
@@ -161,6 +155,12 @@ public abstract class ForwardingNameSpaceProvider implements NameSpaceProvider {
                      Set<FileAttribute> attrs, ListHandler handler) throws CacheException
     {
         delegate().listVirtualDirectory(subject, path, range, attrs, handler);
+    }
+
+    @Override
+    public void listLabels(Subject subject, Range<Integer> range,
+                           Set<FileAttribute> attrs, ListHandler handler) throws CacheException {
+        delegate().listLabels(subject, range, attrs, handler);
     }
 
     @Override

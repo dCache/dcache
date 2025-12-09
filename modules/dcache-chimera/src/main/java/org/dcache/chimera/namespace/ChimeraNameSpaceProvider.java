@@ -51,6 +51,7 @@ import diskCacheV111.util.NoAttributeCacheException;
 import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.QuotaExceededCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.StorageInfo;
@@ -94,16 +95,18 @@ import org.dcache.chimera.DirNotEmptyChimeraFsException;
 import org.dcache.chimera.DirectoryStreamB;
 import org.dcache.chimera.FileExistsChimeraFsException;
 import org.dcache.chimera.FileNotFoundChimeraFsException;
+import org.dcache.chimera.QuotaChimeraFsException;
 import org.dcache.chimera.FileState;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FileSystemProvider.SetXattrMode;
 import org.dcache.chimera.FsInode;
-import org.dcache.chimera.FsInode_LABEL;
+import org.dcache.chimera.NoLabelChimeraException;
 import org.dcache.chimera.NoXdataChimeraException;
 import org.dcache.chimera.NotDirChimeraException;
 import org.dcache.chimera.StorageGenericLocation;
 import org.dcache.chimera.StorageLocatable;
 import org.dcache.chimera.UnixPermission;
+
 import org.dcache.chimera.posix.Stat;
 import org.dcache.commons.stats.MonitoringProxy;
 import org.dcache.commons.stats.RequestCounters;
@@ -385,6 +388,8 @@ public class ChimeraNameSpaceProvider
             throw new FileNotFoundCacheException("No such directory: " + parentPath);
         } catch (FileExistsChimeraFsException e) {
             throw new FileExistsCacheException("File exists: " + path);
+        } catch (QuotaChimeraFsException e) {
+            throw new QuotaExceededCacheException(e.getMessage());
         } catch (IOException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                   e.getMessage());
@@ -855,23 +860,6 @@ public class ChimeraNameSpaceProvider
     }
 
     @Override
-    public void removeFileAttribute(Subject subject, PnfsId pnfsId, String attribute)
-          throws CacheException {
-        try {
-            ExtendedInode inode = new ExtendedInode(_fs, pnfsId, NO_STAT).getLevel(2);
-            ChimeraCacheInfo info = new ChimeraCacheInfo(inode);
-            ChimeraCacheInfo.CacheFlags flags = info.getFlags();
-            flags.remove(attribute);
-            info.writeCacheInfo(inode);
-        } catch (FileNotFoundChimeraFsException e) {
-            throw new FileNotFoundCacheException("No such file or directory " + pnfsId);
-        } catch (IOException e) {
-            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                  e.getMessage());
-        }
-    }
-
-    @Override
     public void removeChecksum(Subject subject, PnfsId pnfsId, ChecksumType type)
           throws CacheException {
         try {
@@ -1023,8 +1011,7 @@ public class ChimeraNameSpaceProvider
 		    attributes.setLocations(Lists.newArrayList(inode.getLocations(StorageGenericLocation.DISK)));
                     break;
                 case FLAGS:
-		    attributes.setFlags(Maps.newHashMap(inode.getFlags()));
-		    break;
+                    break;
                 case SIMPLE_TYPE:
                 case TYPE:
                     attributes.setFileType(inode.getFileType());
@@ -1266,15 +1253,6 @@ public class ChimeraNameSpaceProvider
                 }
             }
 
-            if (attr.isDefined(FileAttribute.FLAGS)) {
-                FsInode level2 = new ExtendedInode(_fs, pnfsId, NO_STAT).getLevel(2);
-                ChimeraCacheInfo cacheInfo = new ChimeraCacheInfo(level2);
-                for (Map.Entry<String, String> flag : attr.getFlags().entrySet()) {
-                    cacheInfo.getFlags().put(flag.getKey(), flag.getValue());
-                }
-                cacheInfo.writeCacheInfo(level2);
-            }
-
             if (attr.isDefined(FileAttribute.ACL)) {
                 ACL acl = attr.getAcl();
                 _fs.setACL(inode, acl.getList());
@@ -1385,6 +1363,46 @@ public class ChimeraNameSpaceProvider
 
         } catch (FileNotFoundChimeraFsException e) {
             throw new FileNotFoundCacheException("No such file or directory: " + path);
+        } catch (IOException e) {
+            LOGGER.error("Exception in list: {}", e.getMessage());
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
+        }
+    }
+
+
+    @Override
+    public void listLabels(Subject subject, Range<Integer> range,
+                           Set<FileAttribute> attrs, ListHandler handler)
+            throws CacheException
+    {
+        try {
+            int counter = 0;
+            //TODO check permissions
+            try (DirectoryStreamB<ChimeraDirectoryEntry> dirStream = FsInode.getRoot(_fs)
+                    .listLabelsStream()) {
+                for (ChimeraDirectoryEntry entry : dirStream) {
+                    try {
+                        String name = entry.getName();
+
+                        // FIXME: actually, ChimeraDirectoryEntry
+                        // already contains most of attributes
+
+                        FileAttributes fa =
+                                attrs.isEmpty()
+                                        ? null
+                                        : getFileAttributes(new ExtendedInode(_fs, entry.getInode()), attrs);
+                        handler.addEntry(name, fa);
+
+                    } catch (NoLabelChimeraException e) {
+                        /* Not an error; files may be deleted during the
+                         * list operation.
+                         */
+                    }
+                }
+            }
+
+        } catch (FileNotFoundChimeraFsException e) {
+            throw new FileNotFoundCacheException("there are no any labels added to files : ");
         } catch (IOException e) {
             LOGGER.error("Exception in list: {}", e.getMessage());
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());

@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.dcache</groupId>
     <artifactId>dcache-parent</artifactId>
-    <version>11.1.0-SNAPSHOT</version>
+    <version>11.2.0-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
@@ -62,21 +62,6 @@
                                 </pluginExecutionFilter>
                                 <action>
                                     <ignore />
-                                </action>
-                            </pluginExecution>
-                            <pluginExecution>
-                                <pluginExecutionFilter>
-                                    <groupId>org.codehaus.mojo</groupId>
-                                    <artifactId>smc-maven-plugin</artifactId>
-                                    <versionRange>[1.0-alpha-1,)</versionRange>
-                                    <goals>
-                                        <goal>smc</goal>
-                                    </goals>
-                                </pluginExecutionFilter>
-                                <action>
-                                    <execute>
-                                        <runOnIncremental>false</runOnIncremental>
-                                    </execute>
                                 </action>
                             </pluginExecution>
                         </pluginExecutions>

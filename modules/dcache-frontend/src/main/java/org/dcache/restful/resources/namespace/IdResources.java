@@ -146,6 +146,13 @@ public class IdResources {
     @Produces(MediaType.APPLICATION_JSON)
     public JsonFileAttributes getAttributes(@ApiParam("The PNFS-ID of a file or directory.")
     @PathParam("pnfsid") String value) {
+
+        if (RequestUser.isAnonymous()) {
+            throw new NotAuthorizedException("Anonymous user is not authorized.");
+        } else if (!RequestUser.isAdmin()) {
+            throw new ForbiddenException("Requires admin privileges.");
+        }
+
         Set<FileAttribute> attributeSet
               = NamespaceUtils.getRequestedAttributes(true,
               true,

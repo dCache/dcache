@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 - 2020 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2025 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -39,7 +39,6 @@ import org.dcache.chimera.FsInode;
 import org.dcache.chimera.FsInodeType;
 import org.dcache.chimera.StorageLocatable;
 import org.dcache.chimera.UnixPermission;
-import org.dcache.chimera.store.InodeStorageInformation;
 import org.dcache.namespace.FileType;
 import org.dcache.util.Checksum;
 
@@ -58,7 +57,6 @@ public class ExtendedInode extends FsInode {
     private ImmutableMap<String, String> flags;
     private ACL acl;
     private HashMap<Integer, ExtendedInode> levels;
-    private InodeStorageInformation storageInfo;
     private Optional<ExtendedInode> parent;
 
     private ExtendedInode(ExtendedInode parent, FsInode inode) {
@@ -161,9 +159,9 @@ public class ExtendedInode extends FsInode {
     }
 
     public ImmutableList<String> getLocations(int type) throws ChimeraFsException {
-        return ImmutableList.copyOf(
-              getLocations().stream().filter(l -> l.type() == type).map(StorageLocatable::location)
-                    .iterator());
+        return _fs.getInodeLocations(this).stream().filter(l -> l.type() == type)
+                .map(StorageLocatable::location)
+                .collect(ImmutableList.toImmutableList());
     }
 
     public ImmutableList<StorageLocatable> getLocations() throws ChimeraFsException {
@@ -171,23 +169,6 @@ public class ExtendedInode extends FsInode {
             locations = ImmutableList.copyOf(_fs.getInodeLocations(this));
         }
         return locations;
-    }
-
-    public ImmutableMap<String, String> getFlags() throws ChimeraFsException {
-        if (flags == null) {
-            ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
-            ExtendedInode level2 = getLevel(2);
-            try {
-                ChimeraCacheInfo info = new ChimeraCacheInfo(level2);
-                for (Map.Entry<String, String> e : info.getFlags().entrySet()) {
-                    builder.put(e.getKey(), e.getValue());
-                }
-            } catch (IOException e) {
-                throw new ChimeraFsException(e.getMessage(), e);
-            }
-            flags = builder.build();
-        }
-        return flags;
     }
 
     public ACL getAcl() throws ChimeraFsException {
@@ -208,13 +189,6 @@ public class ExtendedInode extends FsInode {
             levels.put(level, inode);
         }
         return inode;
-    }
-
-    public InodeStorageInformation getStorageInfo() throws ChimeraFsException {
-        if (storageInfo == null) {
-            storageInfo = _fs.getStorageInfo(this);
-        }
-        return storageInfo;
     }
 
     public FsPath getPath() throws ChimeraFsException {

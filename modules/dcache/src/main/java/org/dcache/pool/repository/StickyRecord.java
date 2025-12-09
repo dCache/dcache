@@ -5,6 +5,11 @@ import java.text.DateFormat;
 
 public class StickyRecord implements Serializable {
 
+    /**
+     * The owner of a sticky record created by the system.
+     */
+    public static final String SYSTEM_OWNER = "system";
+
     private static final long serialVersionUID = 8235126040387514086L;
 
     private static final DateFormat df = DateFormat.getInstance();
@@ -17,6 +22,16 @@ public class StickyRecord implements Serializable {
      * The value -1 indicates that the record will never expire.
      */
     private final long _expire;
+
+
+    /**
+     * Create a sticky record for the system owner with a given expiration time.
+     * @param expire Timestamp in milliseconds since January 1, 1970 UTC. When the value of
+     *              {@code expire} is -1, the record will never expire.
+     */
+    public StickyRecord(long expire) {
+        this(SYSTEM_OWNER, expire);
+    }
 
     /**
      * Create a sticky record for given {@code owner} which will expire at a specified point in

@@ -1,0 +1,72 @@
+#
+# dCache DB Migration test deployment
+#
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dcache-db-migration-layout
+  labels:
+    app: dcache
+data:
+  dcache-db-migration-layout: |
+    [db-cells]
+
+    dcache.db.host=chimera-postgresql
+    dcache.db.user=dcache
+    dcache.db.password=let-me-in
+    chimera.db.name=chimera
+    srmmanager.db.name=chimera
+    pinmanager.db.name=chimera
+    spacemanager.db.name = chimera
+    bulk.db.name = chimera
+    qos.db.name = chimera
+    qos-engine.db.name = chimera
+    qos-verifier.db.name = chimera
+
+    [db-cells/zookeeper]
+
+    [db-cells/srmmanager]
+    [db-cells/spacemanager]
+    [db-cells/pinmanager]
+    [db-cells/bulk]
+    [db-cells/qos-engine]
+    [db-cells/qos-verifier]
+    [db-cells/qos-adjuster]
+    [db-cells/qos-scanner]
+
+
+---
+#
+# dCache container
+#
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: dcache-db-migration
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dcache-db-migration
+  template:
+    metadata:
+      labels:
+        app: dcache-db-migration
+    spec:
+      containers:
+        - name: dcache-db-migration
+          image: 'dcache/dcache:9.2.20'
+          command: ["sleep", "3600"]
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: dcache-layout
+              mountPath: /opt/dcache/etc/layouts/docker-layout.conf
+              readOnly: true
+              subPath: docker-layout.conf
+      volumes:
+        - name: dcache-layout
+          configMap:
+            name: dcache-db-migration-layout
+            items:
+              - key: dcache-db-migration-layout
+                path: docker-layout.conf

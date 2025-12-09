@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2021 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2021 - 2025 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -21,10 +21,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static diskCacheV111.util.AccessLatency.ONLINE;
 import static diskCacheV111.util.RetentionPolicy.REPLICA;
 import static org.dcache.chimera.namespace.FsInodeBuilder.aFile;
-import static org.dcache.chimera.namespace.InodeStorageInformationMatcher.matchesAnInodeStorageInformation;
 import static org.dcache.util.StorageInfoBuilder.aStorageInfo;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.never;
@@ -55,11 +52,6 @@ public class ChimeraEnstoreStorageInfoExtractorTest {
         extractor.setStorageInfo(inode, info);
 
         verify(inode.getFs()).addInodeLocation(inode, 0, "enstore://enstore-instance/specific-ID");
-        verify(inode.getFs()).setStorageInfo(eq(inode), argThat(matchesAnInodeStorageInformation()
-              .withHsm("enstore-instance")
-              .withInode(inode)
-              .withStorageGroup("store-group")
-              .withStorageSubgroup("store-subgroup")));
     }
 
     @Test
@@ -77,7 +69,6 @@ public class ChimeraEnstoreStorageInfoExtractorTest {
         extractor.setStorageInfo(inode, info);
 
         verify(inode.getFs(), never()).addInodeLocation(any(), anyInt(), any());
-        verify(inode.getFs(), never()).setStorageInfo(any(), any());
     }
 
     private void given(ExtractorBuilder builder) {

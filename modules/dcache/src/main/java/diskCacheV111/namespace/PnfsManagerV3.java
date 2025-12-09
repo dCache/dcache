@@ -35,9 +35,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import diskCacheV111.util.AccessLatency;
@@ -59,7 +56,6 @@ import diskCacheV111.vehicles.PnfsCommitUpload;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsCreateUploadPath;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
-import diskCacheV111.vehicles.PnfsFlagMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.PnfsGetParentMessage;
 import diskCacheV111.vehicles.PnfsListExtendedAttributesMessage;
@@ -110,6 +106,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -153,10 +150,12 @@ import org.dcache.util.TimeUtils;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsCreateSymLinkMessage;
 import org.dcache.vehicles.PnfsGetFileAttributes;
+import org.dcache.vehicles.PnfsListLabelsMessage;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.vehicles.PnfsRemoveChecksumMessage;
 import org.dcache.vehicles.PnfsResolveSymlinksMessage;
 import org.dcache.vehicles.PnfsSetFileAttributes;
+
 import org.dcache.vehicles.qos.PnfsManagerAddQoSPolicyMessage;
 import org.dcache.vehicles.qos.PnfsManagerGetQoSPolicyMessage;
 import org.dcache.vehicles.qos.PnfsManagerGetQoSPolicyStatsMessage;
@@ -287,7 +286,6 @@ public class PnfsManagerV3
         _gauges.addGauge(PnfsDeleteEntryMessage.class);
         _gauges.addGauge(PnfsMapPathMessage.class);
         _gauges.addGauge(PnfsRenameMessage.class);
-        _gauges.addGauge(PnfsFlagMessage.class);
         _gauges.addGauge(PoolFileFlushedMessage.class);
         _gauges.addGauge(PnfsGetParentMessage.class);
         _gauges.addGauge(PnfsSetFileAttributes.class);
@@ -303,6 +301,8 @@ public class PnfsManagerV3
         _gauges.addGauge(PnfsWriteExtendedAttributesMessage.class);
         _gauges.addGauge(PnfsRemoveExtendedAttributesMessage.class);
         _gauges.addGauge(PnfsRemoveLabelsMessage.class);
+        _gauges.addGauge(PnfsListLabelsMessage.class);
+
     }
 
     public PnfsManagerV3() {
@@ -914,68 +914,6 @@ public class PnfsManagerV3
             return sb.toString();
         }
 
-    }
-
-    @Command(name = "flags set", hint = "set flags",
-          description = "Files in dCache can be associated with arbitrary key-value pairs called " +
-                "flags. This command allows one or more flags to be set on a file.")
-    class FlagsSetCommand implements Callable<String> {
-
-        @Argument(valueSpec = "PATH|PNFSID")
-        PnfsIdOrPath file;
-
-        @CommandLine(allowAnyOption = true, usage = "Flags to modify.")
-        Args args;
-
-        @Override
-        public String call() throws CacheException {
-            _nameSpaceProvider.setFileAttributes(ROOT, file.toPnfsId(_nameSpaceProvider),
-                  FileAttributes.ofFlags(args.optionsAsMap()), EnumSet.noneOf(FileAttribute.class));
-            return "";
-        }
-    }
-
-    @Command(name = "flags remove", hint = "clear flags",
-          description = "Files in dCache can be associated with arbitrary key-value pairs called " +
-                "flags. This command allows one or more flags to be cleared on a file.")
-    class FlagsRemoveCommand implements Callable<String> {
-
-        @Argument(valueSpec = "PATH|PNFSID")
-        PnfsIdOrPath file;
-
-        @CommandLine(allowAnyOption = true, valueSpec = "-KEY ...", usage = "Flags to clear.")
-        Args args;
-
-        @Override
-        public String call() throws CacheException {
-            PnfsId pnfsId = file.toPnfsId(_nameSpaceProvider);
-
-            for (String flag : args.options().keySet()) {
-                _nameSpaceProvider.removeFileAttribute(ROOT, pnfsId, flag);
-            }
-            return "";
-        }
-    }
-
-    @Command(name = "flags ls", hint = "list flags",
-          description = "Files in dCache can be associated with arbitrary key-value pairs called " +
-                "flags. This command lists the flags of a file.")
-    class FlagsListCommand implements Callable<String> {
-
-        @Argument(valueSpec = "PATH|PNFSID")
-        PnfsIdOrPath file;
-
-        @Override
-        public String call() throws CacheException {
-            FileAttributes attributes =
-                  _nameSpaceProvider.getFileAttributes(ROOT, file.toPnfsId(_nameSpaceProvider),
-                        EnumSet.of(FileAttribute.FLAGS));
-            StringBuilder sb = new StringBuilder();
-            for (Map.Entry<String, String> e : attributes.getFlags().entrySet()) {
-                sb.append("-").append(e.getKey()).append("=").append(e.getValue()).append("\n");
-            }
-            return sb.toString();
-        }
     }
 
     public static final String fh_dumpthreadqueues = "   dumpthreadqueues [<threadId>]\n"
@@ -1784,72 +1722,6 @@ public class PnfsManagerV3
         return attributes.getChecksumsIfPresent().orElse(Collections.emptySet());
     }
 
-    private void updateFlag(PnfsFlagMessage pnfsMessage) {
-
-        PnfsId pnfsId = pnfsMessage.getPnfsId();
-        PnfsFlagMessage.FlagOperation operation = pnfsMessage.getOperation();
-        String flagName = pnfsMessage.getFlagName();
-        String value = pnfsMessage.getValue();
-        Subject subject = pnfsMessage.getSubject();
-        LOGGER.info("update flag " + operation + " flag=" + flagName + " value=" +
-              value + " for " + pnfsId);
-
-        try {
-            // Note that dcap clients may bypass restrictions by not
-            // specifying a path when interacting via mounted namespace.
-            checkRestriction(pnfsMessage, UPDATE_METADATA);
-            if (operation == PnfsFlagMessage.FlagOperation.GET) {
-                pnfsMessage.setValue(updateFlag(subject, pnfsId, operation, flagName, value));
-            } else {
-                updateFlag(subject, pnfsId, operation, flagName, value);
-            }
-
-        } catch (FileNotFoundCacheException e) {
-            pnfsMessage.setFailed(e.getRc(), e.getMessage());
-        } catch (CacheException e) {
-            LOGGER.warn("Exception in updateFlag: " + e);
-            pnfsMessage.setFailed(e.getRc(), e.getMessage());
-        } catch (RuntimeException e) {
-            LOGGER.error("Exception in updateFlag", e);
-            pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
-        }
-    }
-
-    private String updateFlag(Subject subject, PnfsId pnfsId,
-          PnfsFlagMessage.FlagOperation operation,
-          String flagName, String value)
-          throws CacheException {
-        FileAttributes attributes;
-        switch (operation) {
-            case SET:
-                LOGGER.info("flags set " + pnfsId + " " + flagName + "=" + value);
-                _nameSpaceProvider.setFileAttributes(subject, pnfsId,
-                      FileAttributes.ofFlag(flagName, value), EnumSet.noneOf(FileAttribute.class));
-                break;
-            case SETNOOVERWRITE:
-                LOGGER.info("flags set (dontoverwrite) " + pnfsId + " " + flagName + "=" + value);
-                attributes = _nameSpaceProvider.getFileAttributes(subject, pnfsId,
-                      EnumSet.of(FileAttribute.FLAGS));
-                String current = attributes.getFlags().get(flagName);
-                if ((current == null) || (!current.equals(value))) {
-                    updateFlag(subject, pnfsId, PnfsFlagMessage.FlagOperation.SET,
-                          flagName, value);
-                }
-                break;
-            case GET:
-                attributes = _nameSpaceProvider.getFileAttributes(subject, pnfsId,
-                      EnumSet.of(FileAttribute.FLAGS));
-                String v = attributes.getFlags().get(flagName);
-                LOGGER.info("flags ls " + pnfsId + " " + flagName + " -> " + v);
-                return v;
-            case REMOVE:
-                LOGGER.info("flags remove " + pnfsId + " " + flagName);
-                _nameSpaceProvider.removeFileAttribute(subject, pnfsId, flagName);
-                break;
-        }
-        return null;
-    }
-
     public void addCacheLocation(PnfsAddCacheLocationMessage pnfsMessage) {
         LOGGER.info("addCacheLocation : {} for {}", pnfsMessage.getPoolName(),
               pnfsMessage.getPnfsId());
@@ -2433,6 +2305,77 @@ public class PnfsManagerV3
         }
     }
 
+
+    /**
+     * PnfsListLabelsMessage can have more than one reply. This is to avoid large directories
+     * exhausting available memory in the PnfsManager. In current versions of Java, the only way to
+     * list a labels without building the complete result array in memory is to gather the
+     * elements inside a filter.
+     * <p>
+     * This filter collects entries and sends partial replies for the PnfsListLabelsMessage when
+     * a certain number of entries have been collected. The filter will not send the final reply
+     * (the caller has to do that).
+     */
+    private class ListLabelsHandlerImpl implements ListHandler {
+
+        private final PnfsListLabelsMessage _msg;
+        private final Subject _subject;
+        private final Restriction _restriction;
+        private int _messageCount;
+
+        public ListLabelsHandlerImpl(
+                               PnfsListLabelsMessage msg) {
+            _msg = msg;
+            _subject = _msg.getSubject();
+            _restriction = _msg.getRestriction();
+
+        }
+
+        @Override
+        public void addEntry(String name, FileAttributes attrs) {
+            if (Subjects.isRoot(_subject)) {
+                _msg.addEntry(name, attrs);
+
+            }
+        }
+
+        public int getMessageCount() {
+            return _messageCount;
+        }
+    }
+
+    private void listLabels(PnfsListLabelsMessage msg) {
+        if (!msg.getReplyRequired()) {
+            return;
+        }
+
+        try {
+            String path = msg.getPnfsPath();
+
+            checkMask(msg.getSubject(), path, msg.getAccessMask());
+            checkRestriction(msg, LIST);
+
+            ListLabelsHandlerImpl handler =
+                    new ListLabelsHandlerImpl(msg);
+
+            _nameSpaceProvider.listLabels(msg.getSubject(),
+                    msg.getRange(),
+                    msg.getRequestedAttributes(),
+                    handler);
+
+            msg.setSucceeded(handler.getMessageCount() + 1);
+            //TODO change NoLabelChimeraException to add the error code
+        } catch (FileNotFoundCacheException | NotDirCacheException e) {
+            msg.setFailed(e.getRc(), e.getMessage());
+        } catch (CacheException e) {
+            LOGGER.warn(e.toString());
+            msg.setFailed(e.getRc(), e.getMessage());
+        } catch (RuntimeException e) {
+            LOGGER.error(e.toString(), e);
+            msg.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                    e.getMessage());
+        }
+    }
     private static class ActivityReport {
 
         private final CellMessage message;
@@ -2946,8 +2889,6 @@ public class PnfsManagerV3
             mapPath((PnfsMapPathMessage) pnfsMessage);
         } else if (pnfsMessage instanceof PnfsRenameMessage) {
             rename((PnfsRenameMessage) pnfsMessage);
-        } else if (pnfsMessage instanceof PnfsFlagMessage) {
-            updateFlag((PnfsFlagMessage) pnfsMessage);
         } else if (pnfsMessage instanceof PoolFileFlushedMessage) {
             processFlushMessage((PoolFileFlushedMessage) pnfsMessage);
         } else if (pnfsMessage instanceof PnfsGetParentMessage) {
@@ -2960,6 +2901,8 @@ public class PnfsManagerV3
             removeChecksum((PnfsRemoveChecksumMessage) pnfsMessage);
         } else if (pnfsMessage instanceof PnfsListExtendedAttributesMessage) {
             listExtendedAttributes((PnfsListExtendedAttributesMessage) pnfsMessage);
+        } else if (pnfsMessage instanceof PnfsListLabelsMessage){
+            listLabels(( PnfsListLabelsMessage) pnfsMessage);
         } else if (pnfsMessage instanceof PnfsReadExtendedAttributesMessage) {
             readExtendedAttributes((PnfsReadExtendedAttributesMessage) pnfsMessage);
         } else if (pnfsMessage instanceof PnfsWriteExtendedAttributesMessage) {
@@ -3020,34 +2963,24 @@ public class PnfsManagerV3
         PoolFileFlushedMessage notification =
               new PoolFileFlushedMessage(pnfsMessage.getPoolName(), pnfsMessage.getPnfsId(),
                     pnfsMessage.getFileAttributes());
-        List<ListenableFuture<PoolFileFlushedMessage>> futures = new ArrayList<>();
-        for (String address : _flushNotificationTargets) {
-            futures.add(_stub.send(new CellPath(address), notification, timeout));
-        }
+
+        var allNotifications = _flushNotificationTargets
+                .stream()
+                .map(a -> _stub.send(new CellPath(a), notification, notification.getClass(), timeout))
+                .toArray(CompletableFuture[]::new);
 
         /* Only generate positive reply if all notifications succeeded. */
-        Futures.addCallback(Futures.allAsList(futures),
-              new FutureCallback<List<PoolFileFlushedMessage>>() {
-                  @Override
-                  public void onSuccess(List<PoolFileFlushedMessage> result) {
-                      pnfsMessage.setSucceeded();
-                      reply();
-                  }
-
-                  @Override
-                  public void onFailure(Throwable t) {
-                      pnfsMessage.setFailed(CacheException.DEFAULT_ERROR_CODE,
-                            "PNFS manager failed while notifying other " +
-                                  "components about the flush: " + t.getMessage());
-                      reply();
-                  }
-
-                  private void reply() {
-                      envelope.revertDirection();
-                      sendMessage(envelope);
-                  }
-              },
-              MoreExecutors.directExecutor());
+        CompletableFuture.allOf(allNotifications).whenComplete((v, t) -> {
+            if (t == null) {
+                pnfsMessage.setSucceeded();
+            } else {
+                pnfsMessage.setFailed(CacheException.DEFAULT_ERROR_CODE,
+                        "PNFS manager failed while notifying other " +
+                                "components about the flush: " + t.getMessage());
+            }
+            envelope.revertDirection();
+            sendMessage(envelope);
+        });
     }
 
     public void processFlushMessage(PoolFileFlushedMessage pnfsMessage) {

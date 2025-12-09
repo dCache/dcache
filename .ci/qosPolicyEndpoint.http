@@ -1,0 +1,157 @@
+### Successful DELETE: making sure there is no policy in our list of policies
+DELETE {{frontend-door}}{{endpoint}}{{qos-policy}}/archive_after_30d
+Content-Type: application/json
+Authorization: Basic {{username}} {{password}}
+
+> {%
+    client.test("Unsuccessful response when deleting a policy by name", function() {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+    });
+%}
+
+### Create qos-policy "archive_after_30d"
+POST {{frontend-door}}{{endpoint}}{{qos-policy}}
+Content-Type: application/json
+Authorization: Basic {{username}} {{password}}
+
+{
+  "name": "archive_after_30d",
+  "states": [
+    {
+      "duration": "P30D",
+      "media": [
+        {
+          "storageMedium": "DISK",
+          "numberOfCopies": 2
+        }
+      ]
+    },
+    {
+      "duration": "P365D",
+      "media": [
+        {
+          "storageMedium": "DISK",
+          "numberOfCopies": 1
+        },
+        {
+          "storageMedium": "HSM",
+          "numberOfCopies": 1
+        }
+      ]
+    },
+    {
+      "media": [
+        {
+          "storageMedium": "HSM",
+          "numberOfCopies": 1
+        }
+      ]
+    }
+  ]
+}
+
+> {%
+    client.test("Successful response when creating a policy", function() {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+        client.assert(response.body.length != 0, "Response body is empty")
+    });
+%}
+
+### Unsuccessful DELETE request -- no authentication
+DELETE {{frontend-door}}{{endpoint}}{{qos-policy}}/archive_after_30d
+Content-Type: application/json
+
+> {%
+    client.test("Unsuccessful response when deleting a policy by name", function() {
+        client.assert(response.status === 401, "Expected 401, got " + response.status);
+    });
+%}
+
+### Successful DELETE request for policy "archive_after_30d"
+DELETE {{frontend-door}}{{endpoint}}{{qos-policy}}/archive_after_30d
+Content-Type: application/json
+Authorization: Basic {{username}} {{password}}
+
+> {%
+    client.test("Successful response when deleting a policy by name", function() {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+    });
+%}
+
+### GET request for policy nonexistent "archive_after_30d" policy
+GET {{frontend-door}}{{endpoint}}{{qos-policy}}/archive_after_30d
+Content-Type: application/json
+
+> {%
+    client.test("Unsuccessful response when deleting a policy by name", function() {
+        client.assert(response.status === 404, "Expected 404, got " + response.status);
+    });
+%}
+
+### Create request for policy "archive_after_10d"
+POST {{frontend-door}}{{endpoint}}{{qos-policy}}
+Content-Type: application/json
+Authorization: Basic {{username}} {{password}}
+
+{
+  "name": "archive_after_10d",
+  "states": [
+    {
+      "duration": "P10D",
+      "media": [
+        {
+          "storageMedium": "HSM",
+          "numberOfCopies": 2
+        },
+        {
+          "storageMedium": "HSM",
+          "numberOfCopies": 3
+        }
+      ]
+    }
+  ]
+}
+
+> {%
+    client.test("Successful response when creating a policy", function() {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+    });
+%}
+
+### Create request for policy "on_disk_10d"
+POST {{frontend-door}}{{endpoint}}{{qos-policy}}
+Content-Type: application/json
+Authorization: Basic {{username}} {{password}}
+
+{
+  "name": "on_disk_10d",
+  "states": [
+    {
+      "duration": "P10D",
+      "media": [
+        {
+          "storageMedium": "DISK",
+          "numberOfCopies": 2
+        }
+      ]
+    }
+  ]
+}
+
+> {%
+    client.test("Successful response when creating a policy", function() {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+    });
+%}
+
+### Get all policies
+GET {{frontend-door}}{{endpoint}}{{qos-policy}}
+Content-Type: application/json
+
+> {%
+    client.test("Successful response when getting all policies' names", function() {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+        client.assert(response.body[0] === "archive_after_10d", "Incorrect policy stored");
+        client.assert(response.body[1] === "on_disk_10d", "Incorrect policy stored");
+    });
+%}

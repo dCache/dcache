@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.dcache</groupId>
     <artifactId>dcache-parent</artifactId>
-    <version>11.1.0-SNAPSHOT</version>
+    <version>11.2.0-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
@@ -27,10 +27,6 @@
       <groupId>org.dcache</groupId>
       <artifactId>gplazma2</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.reflections</groupId>
-        <artifactId>reflections</artifactId>
     </dependency>
   </dependencies>
 </project>

@@ -39,7 +39,7 @@ import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
  * Represents the information contains within an IGTF .info file; either a profile or a trust-anchor
  * file.  The semantics of this class' fields are defined here:
  * <p>
- * http://wiki.eugridpma.org/Main/IGTFInfoFile
+ * https://doi.org/10.5281/zenodo.15705345
  */
 public class IGTFInfo {
 

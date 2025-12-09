@@ -78,7 +78,6 @@ public final class BulkRequestFilter {
     private final Boolean cancelOnFailure;
     private final Boolean clearOnSuccess;
     private final Boolean clearOnFailure;
-    private final Boolean delayClear;
     private final Depth expandDirectories;
 
     private Long id;
@@ -86,13 +85,13 @@ public final class BulkRequestFilter {
     public BulkRequestFilter(Set<BulkRequestStatus> statuses) {
         this(null, null, null, null, null, null,
               statuses, null, null,
-              null, null, null);
+              null, null);
     }
 
     public BulkRequestFilter(Long before, Long after, Set<String> owner, Set<String> urlPrefix,
           Set<String> uuid, Set<String> activity, Set<BulkRequestStatus> statuses,
           Boolean cancelOnFailure, Boolean clearOnSuccess, Boolean clearOnFailure,
-          Boolean delayClear, Depth expandDirectories) {
+          Depth expandDirectories) {
         this.before = before;
         this.after = after;
         this.activity = activity;
@@ -100,7 +99,6 @@ public final class BulkRequestFilter {
         this.cancelOnFailure = cancelOnFailure;
         this.clearOnSuccess = clearOnSuccess;
         this.clearOnFailure = clearOnFailure;
-        this.delayClear = delayClear;
         this.expandDirectories = expandDirectories;
         this.owner = owner;
         this.urlPrefix = urlPrefix;
@@ -129,10 +127,6 @@ public final class BulkRequestFilter {
 
     public Boolean getClearOnFailure() {
         return clearOnFailure;
-    }
-
-    public Boolean getDelayClear() {
-        return delayClear;
     }
 
     public Depth getExpandDirectories() {
