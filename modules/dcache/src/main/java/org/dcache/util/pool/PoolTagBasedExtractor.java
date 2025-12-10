@@ -63,12 +63,12 @@ import java.util.Collection;
 import java.util.Map;
 
 /**
- * Implementation of AbstractLocationExtractor that retrieves pool tags from
- * a configurable PoolTagProvider.
+ * Implementation of AbstractLocationExtractor that retrieves pool tags from a configurable
+ * PoolTagProvider.
  *
  * <p>This extractor uses the provided PoolTagProvider to obtain actual pool tags
- * rather than deriving them from naming conventions. This abstraction allows
- * different modules to provide pool tag data without creating cyclic dependencies.</p>
+ * rather than deriving them from naming conventions. This abstraction allows different modules to
+ * provide pool tag data without creating cyclic dependencies.</p>
  *
  * <p>This class consolidates the common functionality previously duplicated between
  * dcache-resilience and migration modules for querying pool tags.</p>
@@ -81,7 +81,7 @@ public class PoolTagBasedExtractor extends AbstractLocationExtractor {
      * Creates a new extractor that queries pool tags from the provided tag provider.
      *
      * @param constraintTags the tag names to use for constraints (e.g., "hostname", "rack")
-     * @param tagProvider the provider to use for querying pool tag information
+     * @param tagProvider    the provider to use for querying pool tag information
      */
     public PoolTagBasedExtractor(Collection<String> constraintTags, PoolTagProvider tagProvider) {
         super(constraintTags);

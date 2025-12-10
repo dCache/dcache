@@ -76,8 +76,8 @@ import org.dcache.util.pool.AbstractLocationExtractor;
  * which uses {@link PoolInfoMap} to get the pool tags.</p>
  *
  * <p>A RemoveLocationExtractor can receive notification that one or more locations are no longer
- * hosting or should no longer host a given replica.  These locations are added to the excluded
- * set, and then subtracted from the candidate locations returned by the call to
+ * hosting or should no longer host a given replica.  These locations are added to the excluded set,
+ * and then subtracted from the candidate locations returned by the call to
  * getCandidateLocations().</p>
  */
 public final class RemoveLocationExtractor

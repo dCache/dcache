@@ -62,14 +62,29 @@ import dmg.cells.nucleus.DelayedReply;
  * restored on pool start.
  * <p>
  * Jobs can be in any of the following states:
- * <p>
- * NEW            Job has not been started yet INITIALIZING   Initial scan of repository RUNNING
- *    Job runs (schedules new tasks) SLEEPING       A task failed; no tasks are scheduled for 10
- * seconds PAUSED         Pause expression evaluates to true; no tasks are scheduled for 10 seconds
- * STOPPING       Stop expression evaluate to true; waiting or tasks to stop SUSPENDED      Job
- * suspended by user; no tasks are scheduled CANCELLING     Job cancelled by user; waiting for tasks
- * to stop CANCELLED      Job cancelled by user; no tasks are running FINISHED       Job completed
- * FAILED         Job failed
+ * <dl>
+ *   <dt>NEW</dt>
+ *   <dd>Job has not been started yet</dd>
+ *   <dt>INITIALIZING</dt>   Initial scan of repository
+ *   <dt>RUNNING</dt>
+ *   <dd>Job runs (schedules new tasks)</dd>
+ *   <dt>SLEEPING</dt>
+ *   <dd>A task failed; no tasks are scheduled for 10 seconds</dd>
+ *   <dt>PAUSED</dt>
+ *   <dd>Pause expression evaluates to true; no tasks are scheduled for 10 seconds</dd>
+ *   <dt>STOPPING</dt>
+ *   <dd>Stop expression evaluate to true; waiting or tasks to stop</dd>
+ *   <dt>SUSPENDED</dt>
+ *   <dd>Job suspended by user; no tasks are scheduled</dd>
+ *   <dt>CANCELLING</dt>
+ *   <dd>Job cancelled by user; waiting for tasks to stop</dd>
+ *   <dt>CANCELLED</dt>
+ *   <dd>Job cancelled by user; no tasks are running</dd>
+ *   <dt>FINISHED</dt>
+ *   <dd>Job completed</dd>
+ *   <dt>FAILED</dt>
+ *   <dd>Job failed</dd>
+ * </dl>
  */
 public class Job
       extends AbstractStateChangeListener implements TaskCompletionHandler {

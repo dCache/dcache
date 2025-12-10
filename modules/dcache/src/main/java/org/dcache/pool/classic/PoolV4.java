@@ -589,7 +589,8 @@ public class PoolV4
                 try {
                     _kafkaSender.accept(msg);
                 } catch (KafkaException | org.apache.kafka.common.KafkaException e) {
-                    LOGGER.warn("Failed to send message to kafka: {} ", Throwables.getRootCause(e).getMessage());
+                    LOGGER.warn("Failed to send message to kafka: {} ",
+                          Throwables.getRootCause(e).getMessage());
                 }
             }
         }
@@ -740,9 +741,11 @@ public class PoolV4
     private void ioFile(CellMessage envelope, PoolIoFileMessage message) {
         try {
             message.setMoverId(queueIoRequest(envelope, message));
-            LOGGER.debug("moverId {} received request for pnfsId {}", message.getMoverId(), message.getPnfsId());
+            LOGGER.debug("moverId {} received request for pnfsId {}", message.getMoverId(),
+                  message.getPnfsId());
             if (_fileRequestMonitor != null) {
-                _fileRequestMonitor.reportFileRequest(message.getPnfsId(), _ioQueue.numberOfRequestsFor(message.getPnfsId()));
+                _fileRequestMonitor.reportFileRequest(message.getPnfsId(),
+                      _ioQueue.numberOfRequestsFor(message.getPnfsId()));
             }
             message.setSucceeded();
         } catch (OutOfDateCacheException e) {

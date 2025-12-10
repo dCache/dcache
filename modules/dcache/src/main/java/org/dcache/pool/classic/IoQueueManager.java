@@ -214,14 +214,15 @@ public class IoQueueManager
         sb.append(j.getId()).append(" : ").append(j).append('\n');
         if (displaySubject) {
             sb.append(
-                  j.getMover().getSubject().getPrincipals().stream().map(Objects::toString).collect(
-                        Collectors.joining(",", "    <", ">")))
-            .append("\n");
+                        j.getMover().getSubject().getPrincipals().stream().map(Objects::toString).collect(
+                              Collectors.joining(",", "    <", ">")))
+                  .append("\n");
         }
     }
 
     public long numberOfRequestsFor(PnfsId pnfsId) {
-        return queues().stream().map((q) -> q.numberOfRequestsFor(pnfsId)).reduce(0L, (a, b) -> a + b);
+        return queues().stream().map((q) -> q.numberOfRequestsFor(pnfsId))
+              .reduce(0L, (a, b) -> a + b);
     }
 
     @AffectsSetup

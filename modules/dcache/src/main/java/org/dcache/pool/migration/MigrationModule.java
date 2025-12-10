@@ -3,7 +3,9 @@ package org.dcache.pool.migration;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
+
 import static java.util.Arrays.asList;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -15,7 +17,9 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+
 import static java.util.concurrent.TimeUnit.MINUTES;
+
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -39,7 +43,9 @@ import org.dcache.util.expression.TypeMismatchException;
 import org.dcache.util.expression.UnknownIdentifierException;
 import org.dcache.util.pool.CostModuleTagProvider;
 import org.parboiled.Parboiled;
+
 import static org.parboiled.errors.ErrorUtils.printParseErrors;
+
 import org.parboiled.parserunners.ReportingParseRunner;
 import org.parboiled.support.ParsingResult;
 import org.slf4j.Logger;

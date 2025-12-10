@@ -97,8 +97,8 @@ public class CostModuleTagProviderTest {
         // Given: pool exists with tags
         String poolName = "testPool";
         ImmutableMap<String, String> expectedTags = ImmutableMap.of(
-            "hostname", "host1.example.com",
-            "rack", "rack-01"
+              "hostname", "host1.example.com",
+              "rack", "rack-01"
         );
 
         when(mockCostModule.getPoolInfo(poolName)).thenReturn(mockPoolInfo);

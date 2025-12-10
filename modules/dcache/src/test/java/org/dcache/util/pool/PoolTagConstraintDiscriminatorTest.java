@@ -85,7 +85,7 @@ public class PoolTagConstraintDiscriminatorTest {
         private final Map<String, Map<String, String>> poolTags;
 
         public TestPoolTagConstraintDiscriminator(Collection<String> onlyOneCopyPer,
-                                                 Map<String, Map<String, String>> poolTags) {
+              Map<String, Map<String, String>> poolTags) {
             super(onlyOneCopyPer);
             this.poolTags = poolTags != null ? poolTags : Collections.emptyMap();
         }
@@ -110,28 +110,29 @@ public class PoolTagConstraintDiscriminatorTest {
     @Test
     public void shouldCreateEmptyPartitionKeysWhenOnlyOneCopyPerIsNull() {
         TestPoolTagConstraintDiscriminator discriminator =
-            new TestPoolTagConstraintDiscriminator(null, Collections.emptyMap());
+              new TestPoolTagConstraintDiscriminator(null, Collections.emptyMap());
 
         assertNotNull("Partition keys should not be null", discriminator.getPartitionKeys());
         assertTrue("Partition keys should be empty when onlyOneCopyPer is null",
-                   discriminator.getPartitionKeys().isEmpty());
+              discriminator.getPartitionKeys().isEmpty());
     }
 
     @Test
     public void shouldCreateEmptyPartitionKeysWhenOnlyOneCopyPerIsEmpty() {
         TestPoolTagConstraintDiscriminator discriminator =
-            new TestPoolTagConstraintDiscriminator(Collections.emptyList(), Collections.emptyMap());
+              new TestPoolTagConstraintDiscriminator(Collections.emptyList(),
+                    Collections.emptyMap());
 
         assertNotNull("Partition keys should not be null", discriminator.getPartitionKeys());
         assertTrue("Partition keys should be empty when onlyOneCopyPer is empty",
-                   discriminator.getPartitionKeys().isEmpty());
+              discriminator.getPartitionKeys().isEmpty());
     }
 
     @Test
     public void shouldCreatePartitionKeysFromOnlyOneCopyPerCollection() {
         List<String> tagNames = Arrays.asList("hostname", "rack", "site");
         TestPoolTagConstraintDiscriminator discriminator =
-            new TestPoolTagConstraintDiscriminator(tagNames, Collections.emptyMap());
+              new TestPoolTagConstraintDiscriminator(tagNames, Collections.emptyMap());
 
         Collection<String> partitionKeys = discriminator.getPartitionKeys();
 
@@ -146,21 +147,23 @@ public class PoolTagConstraintDiscriminatorTest {
     public void shouldCreateImmutablePartitionKeys() {
         List<String> tagNames = Arrays.asList("hostname", "rack");
         TestPoolTagConstraintDiscriminator discriminator =
-            new TestPoolTagConstraintDiscriminator(tagNames, Collections.emptyMap());
+              new TestPoolTagConstraintDiscriminator(tagNames, Collections.emptyMap());
 
         Collection<String> partitionKeys = discriminator.getPartitionKeys();
 
         // Verify it's an ImmutableSet by checking class name or attempting modification
         assertEquals("Partition keys should be ImmutableSet",
-                     "com.google.common.collect.RegularImmutableSet",
-                     partitionKeys.getClass().getName());
+              "com.google.common.collect.RegularImmutableSet",
+              partitionKeys.getClass().getName());
     }
 
     @Test
     public void shouldHandleDuplicateTagNamesInOnlyOneCopyPer() {
-        List<String> tagNamesWithDuplicates = Arrays.asList("hostname", "rack", "hostname", "site", "rack");
+        List<String> tagNamesWithDuplicates = Arrays.asList("hostname", "rack", "hostname", "site",
+              "rack");
         TestPoolTagConstraintDiscriminator discriminator =
-            new TestPoolTagConstraintDiscriminator(tagNamesWithDuplicates, Collections.emptyMap());
+              new TestPoolTagConstraintDiscriminator(tagNamesWithDuplicates,
+                    Collections.emptyMap());
 
         Collection<String> partitionKeys = discriminator.getPartitionKeys();
 
@@ -174,12 +177,12 @@ public class PoolTagConstraintDiscriminatorTest {
     @Test
     public void shouldReturnPoolTagsFromImplementation() {
         Map<String, Map<String, String>> poolTags = ImmutableMap.of(
-            "pool1", ImmutableMap.of("hostname", "host1", "rack", "r1"),
-            "pool2", ImmutableMap.of("hostname", "host2", "rack", "r2")
+              "pool1", ImmutableMap.of("hostname", "host1", "rack", "r1"),
+              "pool2", ImmutableMap.of("hostname", "host2", "rack", "r2")
         );
 
         TestPoolTagConstraintDiscriminator discriminator =
-            new TestPoolTagConstraintDiscriminator(Arrays.asList("hostname"), poolTags);
+              new TestPoolTagConstraintDiscriminator(Arrays.asList("hostname"), poolTags);
 
         Map<String, String> pool1Tags = discriminator.getPoolTagsFor("pool1");
         Map<String, String> pool2Tags = discriminator.getPoolTagsFor("pool2");
@@ -195,7 +198,8 @@ public class PoolTagConstraintDiscriminatorTest {
     @Test
     public void shouldReturnAllLocationsFromGetCandidateLocations() {
         TestPoolTagConstraintDiscriminator discriminator =
-            new TestPoolTagConstraintDiscriminator(Arrays.asList("hostname"), Collections.emptyMap());
+              new TestPoolTagConstraintDiscriminator(Arrays.asList("hostname"),
+                    Collections.emptyMap());
 
         List<String> inputLocations = Arrays.asList("pool1", "pool2", "pool3");
         Collection<String> candidateLocations = discriminator.getCandidateLocations(inputLocations);
