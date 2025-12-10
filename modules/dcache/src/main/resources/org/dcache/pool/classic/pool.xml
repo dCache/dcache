@@ -317,6 +317,9 @@
         destroy-method="cancelAll">
     <description>Replica migration module client</description>
     <constructor-arg ref="migrationContext"/>
+    <property name="numReplicas" value="${pool.migration.hotfile.replicas}"/>
+    <property name="threshold" value="${pool.migration.hotfile.threshold}"/>
+    <property name="defaultConcurrency" value="${pool.migration.concurrency.default}"/>
   </bean>
 
   <bean id="migration-server"
