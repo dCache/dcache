@@ -6,8 +6,8 @@ import static org.parboiled.errors.ErrorUtils.printParseErrors;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.Range;
-import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.poolManager.CostModule;
+import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
@@ -163,19 +163,22 @@ public class MigrationModule
      */
     private synchronized CostModule getCostModule() {
         long currentTime = System.currentTimeMillis();
-        if (cachedCostModule != null && (currentTime - lastCostModuleRefreshTime) < COST_MODULE_CACHE_REFRESH_INTERVAL_MS) {
+        if (cachedCostModule != null && (currentTime - lastCostModuleRefreshTime)
+              < COST_MODULE_CACHE_REFRESH_INTERVAL_MS) {
             return cachedCostModule;
         }
         try {
             PoolManagerGetPoolMonitor request = new PoolManagerGetPoolMonitor();
             PoolManagerGetPoolMonitor response = _context.getPoolManagerStub().sendAndWait(request,
                   COST_MODULE_CACHE_REFRESH_INTERVAL_MS);
-            if (response.getReturnCode() == 0 && response.getPoolMonitor() != null && response.getPoolMonitor().getCostModule() != null) {
+            if (response.getReturnCode() == 0 && response.getPoolMonitor() != null
+                  && response.getPoolMonitor().getCostModule() != null) {
                 cachedCostModule = response.getPoolMonitor().getCostModule();
                 lastCostModuleRefreshTime = currentTime;
                 return cachedCostModule;
             } else {
-                LOGGER.warn("Failed to get CostModule from PoolManager: return code {}", response.getReturnCode());
+                LOGGER.warn("Failed to get CostModule from PoolManager: return code {}",
+                      response.getReturnCode());
             }
         } catch (Exception e) {
             LOGGER.warn("Exception while querying CostModule from PoolManager: {}", e.getMessage());
@@ -214,6 +217,7 @@ public class MigrationModule
 
     /**
      * Check whether a job with the given id exists.
+     *
      * @param id
      * @return
      */
@@ -275,223 +279,225 @@ public class MigrationModule
         return id;
     }
 
-        private RefreshablePoolList createPoolList(String type, List<String> targets) {
-            CellStub poolManager = _context.getPoolManagerStub();
-            switch (type) {
-                case "pool":
-                    return new PoolListByNames(poolManager, targets);
-                case "hsm":
-                    return new PoolListByHsm(poolManager, targets);
-                case "pgroup":
-                    if (targets.isEmpty()) {
-                        return new PoolListByPoolGroupOfPool(poolManager, _context.getPoolName());
-                    } else {
-                        return new PoolListByPoolGroup(poolManager, targets);
-                    }
-                case "link":
-                    if (targets.size() != 1) {
-                        throw new IllegalArgumentException(targets +
-                              ": Only one target supported for -type=link");
-                    }
-                    return new PoolListByLink(poolManager, targets.get(0));
-                default:
-                    throw new IllegalArgumentException(type + ": Invalid value");
-            }
-        }
-
-        private PoolSelectionStrategy createPoolSelectionStrategy(String type) {
-            switch (type) {
-                case "proportional":
-                    return new ProportionalPoolSelectionStrategy();
-                case "random":
-                    return new RandomPoolSelectionStrategy();
-                default:
-                    throw new IllegalArgumentException(type + ": Invalid value");
-            }
-        }
-
-        private StickyRecord parseStickyRecord(String s)
-              throws IllegalArgumentException {
-            Matcher matcher = STICKY_PATTERN.matcher(s);
-            if (!matcher.matches()) {
-                throw new IllegalArgumentException(s + ": Syntax error");
-            }
-            String owner = matcher.group(1);
-            String lifetime = matcher.group(3);
-            try {
-                long expire = (lifetime == null) ? -1 : Integer.parseInt(lifetime);
-                if (expire < -1) {
-                    throw new IllegalArgumentException(lifetime + ": Invalid lifetime");
-                } else if (expire > 0) {
-                    expire = System.currentTimeMillis() + expire * 1000;
-                }
-                return new StickyRecord(owner, expire);
-            } catch (NumberFormatException e) {
-                throw new IllegalArgumentException(lifetime + ": Invalid lifetime");
-            }
-        }
-
-        private CacheEntryMode
-        createCacheEntryMode(String type) {
-            String[] s = type.split("\\+");
-            List<StickyRecord> records = new ArrayList<>();
-
-            for (int i = 1; i < s.length; i++) {
-                records.add(parseStickyRecord(s[i]));
-            }
-
-            switch (s[0]) {
-                case "same":
-                    return new CacheEntryMode(CacheEntryMode.State.SAME, records);
-                case "cached":
-                    return new CacheEntryMode(CacheEntryMode.State.CACHED, records);
-                case "delete":
-                    return new CacheEntryMode(CacheEntryMode.State.DELETE, records);
-                case "removable":
-                    return new CacheEntryMode(CacheEntryMode.State.REMOVABLE, records);
-                case "precious":
-                    return new CacheEntryMode(CacheEntryMode.State.PRECIOUS, records);
-                default:
-                    throw new IllegalArgumentException(type + ": Invalid value");
-            }
-        }
-
-        private Comparator<CacheEntry> createComparator(String order) {
-            if (order == null) {
-                return null;
-            }
-
-            switch (order) {
-                case "size":
-                    return new SizeOrder();
-                case "-size":
-                    return new SizeOrder().reversed();
-                case "lru":
-                    return new LruOrder();
-                case "-lru":
-                    return new LruOrder().reversed();
-                default:
-                    throw new IllegalArgumentException(order + ": Invalid value for option -order");
-            }
-        }
-
-        private Expression createPredicate(String s, Expression ifNull,
-              SymbolTable symbols) {
-            try {
-                if (s == null) {
-                    return ifNull;
-                }
-
-                ExpressionParser parser =
-                      Parboiled.createParser(ExpressionParser.class);
-                ParsingResult<Expression> result =
-                      new ReportingParseRunner<Expression>(parser.Top()).run(s);
-
-                if (!result.isSuccess()) {
-                    throw new IllegalArgumentException("Invalid expression: " +
-                          printParseErrors(result));
-                }
-
-                Expression expression = result.resultValue;
-                if (expression.check(symbols) != Type.BOOLEAN) {
-                    throw new IllegalArgumentException("Expression does not evaluate to a boolean");
-                }
-
-                return expression;
-            } catch (UnknownIdentifierException | TypeMismatchException e) {
-                throw new IllegalArgumentException(e.getMessage());
-            }
-        }
-
-        private Expression createPoolPredicate(String s, Expression ifNull) {
-            SymbolTable symbols = new SymbolTable();
-            symbols.put(CONSTANT_SOURCE, DUMMY_POOL);
-            symbols.put(CONSTANT_TARGET, DUMMY_POOL);
-            return createPredicate(s, ifNull, symbols);
-        }
-
-        private Expression createLifetimePredicate(String s) {
-            SymbolTable symbols = new SymbolTable();
-            symbols.put(CONSTANT_SOURCE, DUMMY_POOL);
-            symbols.put(CONSTANT_QUEUE_FILES, NON_EMPTY_QUEUE);
-            symbols.put(CONSTANT_QUEUE_BYTES, NON_EMPTY_QUEUE);
-            symbols.put(CONSTANT_TARGETS, NO_TARGETS);
-            return createPredicate(s, null, symbols);
-        }
-
-        private Set<Pattern> createPatterns(String[] globs) {
-            Set<Pattern> patterns = new HashSet<>();
-            if (globs != null) {
-                for (String s : globs) {
-                    patterns.add(Glob.parseGlobToPattern(s));
-                }
-            }
-            return patterns;
-        }
-
-        private Predicate<CacheEntry> createFilter(String storage, String cache, PnfsId[] pnfsid, String state, String[] sticky, String size, String accessed, String accessLatency, String retentionPolicy)
-              throws IllegalArgumentException {
-            // DEFAULT PREDICATE
-            // Always return true (no filter = entry accepted)
-            // Additional filters are chained using logical AND
-            Predicate<CacheEntry> root = a -> true;
-
-            if (storage != null) {
-                root = root.and(new StorageClassFilter(storage));
-            }
-
-            if (cache != null) {
-                root = root.and(new CacheClassFilter(Strings.emptyToNull(cache)));
-            }
-
-            if (pnfsid != null) {
-                root = root.and(new PnfsIdFilter(new HashSet<>(asList(pnfsid))));
-            }
-
-            if (state == null) {
-                root = root.and(new StateFilter(ReplicaState.CACHED, ReplicaState.PRECIOUS));
-            } else if (state.equals("cached")) {
-                root = root.and(new StateFilter(ReplicaState.CACHED));
-            } else if (state.equals("precious")) {
-                root = root.and(new StateFilter(ReplicaState.PRECIOUS));
-            } else {
-                throw new IllegalArgumentException(state + ": Invalid state");
-            }
-
-            if (sticky != null) {
-                if (sticky.length == 0) {
-                    root = root.and(new StickyFilter());
+    private RefreshablePoolList createPoolList(String type, List<String> targets) {
+        CellStub poolManager = _context.getPoolManagerStub();
+        switch (type) {
+            case "pool":
+                return new PoolListByNames(poolManager, targets);
+            case "hsm":
+                return new PoolListByHsm(poolManager, targets);
+            case "pgroup":
+                if (targets.isEmpty()) {
+                    return new PoolListByPoolGroupOfPool(poolManager, _context.getPoolName());
                 } else {
-                    for (String owner : sticky) {
-                        if (owner.startsWith("-")) {
-                            root = root.and(new StickyOwnerFilter(owner.substring(1)).negate());
-                        } else {
-                            root = root.and(new StickyOwnerFilter(owner));
-                        }
+                    return new PoolListByPoolGroup(poolManager, targets);
+                }
+            case "link":
+                if (targets.size() != 1) {
+                    throw new IllegalArgumentException(targets +
+                          ": Only one target supported for -type=link");
+                }
+                return new PoolListByLink(poolManager, targets.get(0));
+            default:
+                throw new IllegalArgumentException(type + ": Invalid value");
+        }
+    }
+
+    private PoolSelectionStrategy createPoolSelectionStrategy(String type) {
+        switch (type) {
+            case "proportional":
+                return new ProportionalPoolSelectionStrategy();
+            case "random":
+                return new RandomPoolSelectionStrategy();
+            default:
+                throw new IllegalArgumentException(type + ": Invalid value");
+        }
+    }
+
+    private StickyRecord parseStickyRecord(String s)
+          throws IllegalArgumentException {
+        Matcher matcher = STICKY_PATTERN.matcher(s);
+        if (!matcher.matches()) {
+            throw new IllegalArgumentException(s + ": Syntax error");
+        }
+        String owner = matcher.group(1);
+        String lifetime = matcher.group(3);
+        try {
+            long expire = (lifetime == null) ? -1 : Integer.parseInt(lifetime);
+            if (expire < -1) {
+                throw new IllegalArgumentException(lifetime + ": Invalid lifetime");
+            } else if (expire > 0) {
+                expire = System.currentTimeMillis() + expire * 1000;
+            }
+            return new StickyRecord(owner, expire);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(lifetime + ": Invalid lifetime");
+        }
+    }
+
+    private CacheEntryMode
+    createCacheEntryMode(String type) {
+        String[] s = type.split("\\+");
+        List<StickyRecord> records = new ArrayList<>();
+
+        for (int i = 1; i < s.length; i++) {
+            records.add(parseStickyRecord(s[i]));
+        }
+
+        switch (s[0]) {
+            case "same":
+                return new CacheEntryMode(CacheEntryMode.State.SAME, records);
+            case "cached":
+                return new CacheEntryMode(CacheEntryMode.State.CACHED, records);
+            case "delete":
+                return new CacheEntryMode(CacheEntryMode.State.DELETE, records);
+            case "removable":
+                return new CacheEntryMode(CacheEntryMode.State.REMOVABLE, records);
+            case "precious":
+                return new CacheEntryMode(CacheEntryMode.State.PRECIOUS, records);
+            default:
+                throw new IllegalArgumentException(type + ": Invalid value");
+        }
+    }
+
+    private Comparator<CacheEntry> createComparator(String order) {
+        if (order == null) {
+            return null;
+        }
+
+        switch (order) {
+            case "size":
+                return new SizeOrder();
+            case "-size":
+                return new SizeOrder().reversed();
+            case "lru":
+                return new LruOrder();
+            case "-lru":
+                return new LruOrder().reversed();
+            default:
+                throw new IllegalArgumentException(order + ": Invalid value for option -order");
+        }
+    }
+
+    private Expression createPredicate(String s, Expression ifNull,
+          SymbolTable symbols) {
+        try {
+            if (s == null) {
+                return ifNull;
+            }
+
+            ExpressionParser parser =
+                  Parboiled.createParser(ExpressionParser.class);
+            ParsingResult<Expression> result =
+                  new ReportingParseRunner<Expression>(parser.Top()).run(s);
+
+            if (!result.isSuccess()) {
+                throw new IllegalArgumentException("Invalid expression: " +
+                      printParseErrors(result));
+            }
+
+            Expression expression = result.resultValue;
+            if (expression.check(symbols) != Type.BOOLEAN) {
+                throw new IllegalArgumentException("Expression does not evaluate to a boolean");
+            }
+
+            return expression;
+        } catch (UnknownIdentifierException | TypeMismatchException e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    private Expression createPoolPredicate(String s, Expression ifNull) {
+        SymbolTable symbols = new SymbolTable();
+        symbols.put(CONSTANT_SOURCE, DUMMY_POOL);
+        symbols.put(CONSTANT_TARGET, DUMMY_POOL);
+        return createPredicate(s, ifNull, symbols);
+    }
+
+    private Expression createLifetimePredicate(String s) {
+        SymbolTable symbols = new SymbolTable();
+        symbols.put(CONSTANT_SOURCE, DUMMY_POOL);
+        symbols.put(CONSTANT_QUEUE_FILES, NON_EMPTY_QUEUE);
+        symbols.put(CONSTANT_QUEUE_BYTES, NON_EMPTY_QUEUE);
+        symbols.put(CONSTANT_TARGETS, NO_TARGETS);
+        return createPredicate(s, null, symbols);
+    }
+
+    private Set<Pattern> createPatterns(String[] globs) {
+        Set<Pattern> patterns = new HashSet<>();
+        if (globs != null) {
+            for (String s : globs) {
+                patterns.add(Glob.parseGlobToPattern(s));
+            }
+        }
+        return patterns;
+    }
+
+    private Predicate<CacheEntry> createFilter(String storage, String cache, PnfsId[] pnfsid,
+          String state, String[] sticky, String size, String accessed, String accessLatency,
+          String retentionPolicy)
+          throws IllegalArgumentException {
+        // DEFAULT PREDICATE
+        // Always return true (no filter = entry accepted)
+        // Additional filters are chained using logical AND
+        Predicate<CacheEntry> root = a -> true;
+
+        if (storage != null) {
+            root = root.and(new StorageClassFilter(storage));
+        }
+
+        if (cache != null) {
+            root = root.and(new CacheClassFilter(Strings.emptyToNull(cache)));
+        }
+
+        if (pnfsid != null) {
+            root = root.and(new PnfsIdFilter(new HashSet<>(asList(pnfsid))));
+        }
+
+        if (state == null) {
+            root = root.and(new StateFilter(ReplicaState.CACHED, ReplicaState.PRECIOUS));
+        } else if (state.equals("cached")) {
+            root = root.and(new StateFilter(ReplicaState.CACHED));
+        } else if (state.equals("precious")) {
+            root = root.and(new StateFilter(ReplicaState.PRECIOUS));
+        } else {
+            throw new IllegalArgumentException(state + ": Invalid state");
+        }
+
+        if (sticky != null) {
+            if (sticky.length == 0) {
+                root = root.and(new StickyFilter());
+            } else {
+                for (String owner : sticky) {
+                    if (owner.startsWith("-")) {
+                        root = root.and(new StickyOwnerFilter(owner.substring(1)).negate());
+                    } else {
+                        root = root.and(new StickyOwnerFilter(owner));
                     }
                 }
             }
-
-            if (size != null) {
-                root = root.and(new SizeFilter(parseRange(size)));
-            }
-
-            if (accessed != null) {
-                root = root.and(new AccessedFilter(parseRange(accessed)));
-            }
-
-            if (accessLatency != null) {
-                root = root.and(
-                      new AccessLatencyFilter(AccessLatency.getAccessLatency(accessLatency)));
-            }
-
-            if (retentionPolicy != null) {
-                root = root.and(new RetentionPolicyFilter(
-                      RetentionPolicy.getRetentionPolicy(retentionPolicy)));
-            }
-
-            return root;
         }
+
+        if (size != null) {
+            root = root.and(new SizeFilter(parseRange(size)));
+        }
+
+        if (accessed != null) {
+            root = root.and(new AccessedFilter(parseRange(accessed)));
+        }
+
+        if (accessLatency != null) {
+            root = root.and(
+                  new AccessLatencyFilter(AccessLatency.getAccessLatency(accessLatency)));
+        }
+
+        if (retentionPolicy != null) {
+            root = root.and(new RetentionPolicyFilter(
+                  RetentionPolicy.getRetentionPolicy(retentionPolicy)));
+        }
+
+        return root;
+    }
 
     @AffectsSetup
     @Command(name = "migration concurrency",
@@ -508,7 +514,9 @@ public class MigrationModule
         public String call() throws NoSuchElementException {
             Job job = getJob(id);
             job.setConcurrency(concurrency);
-            return String.format("[%s] Concurrency set to %d (Warning: this command is deprecated, please use 'migration set concurrency')", id, concurrency);
+            return String.format(
+                  "[%s] Concurrency set to %d (Warning: this command is deprecated, please use 'migration set concurrency')",
+                  id, concurrency);
         }
     }
 
@@ -546,9 +554,11 @@ public class MigrationModule
                     throw new IllegalArgumentException("Default concurrency must be positive.");
                 }
                 defaultConcurrency = set;
-                return "Default concurrency set to " + set + " (Warning: this command is deprecated, please use 'migration set concurrency-default')";
+                return "Default concurrency set to " + set
+                      + " (Warning: this command is deprecated, please use 'migration set concurrency-default')";
             }
-            return "Current default concurrency: " + defaultConcurrency + " (Warning: this command is deprecated, please use 'migration get concurrency-default')";
+            return "Current default concurrency: " + defaultConcurrency
+                  + " (Warning: this command is deprecated, please use 'migration get concurrency-default')";
         }
     }
 
@@ -572,9 +582,10 @@ public class MigrationModule
     }
 
     @Command(name = "migration get concurrency-default",
-            description = "Get the default concurrency used when -concurrency is not specified.",
-            hint = "Get the default job concurrency.")
+          description = "Get the default concurrency used when -concurrency is not specified.",
+          hint = "Get the default job concurrency.")
     public class MigrationGetConcurrencyDefaultCommand implements Callable<String> {
+
         @Override
         public String call() {
             return "Current default concurrency: " + defaultConcurrency;
@@ -878,13 +889,13 @@ public class MigrationModule
         boolean forceSourceMode;
 
         @Option(name = "target-deficit-mode", metaVar = "tdmode",
-                values = { "wait", "limit" },
-                category = "Transfer options",
-                usage = "Behaviour when requested replicas exceeds available targets:\n" +
-                        "wait:\n" +
-                        "    wait for new targets to become available.\n" +
-                        "limit:\n" +
-                        "    limit the number of replicas to that of the currently-available targets.\n")
+              values = {"wait", "limit"},
+              category = "Transfer options",
+              usage = "Behaviour when requested replicas exceeds available targets:\n" +
+                    "wait:\n" +
+                    "    wait for new targets to become available.\n" +
+                    "limit:\n" +
+                    "    limit the number of replicas to that of the currently-available targets.\n")
         String targetDeficitMode = "wait";
 
         @Argument(metaVar = "target",
@@ -953,14 +964,16 @@ public class MigrationModule
                         sourceList);
 
             JobDefinition definition =
-                  new JobDefinition(createFilter(storage, cache, pnfsid, state, sticky, size, accessed, accessLatency, retentionPolicy),
+                  new JobDefinition(
+                        createFilter(storage, cache, pnfsid, state, sticky, size, accessed,
+                              accessLatency, retentionPolicy),
                         createCacheEntryMode(sourceMode),
                         createCacheEntryMode(targetMode),
                         createPoolSelectionStrategy(select),
                         createComparator(order),
                         sourceList,
                         poolList,
-                        refresh * 1000,
+                        refresh * 1000L,
                         permanent,
                         eager,
                         metaOnly,
@@ -1206,7 +1219,8 @@ public class MigrationModule
     }
 
     /**
-     * Implementation of FileRequestMonitor: triggers migration for a specific file by creating a new job.
+     * Implementation of FileRequestMonitor: triggers migration for a specific file by creating a
+     * new job.
      */
     @Override
     public void reportFileRequest(PnfsId pnfsId, long numberOfRequests) {
@@ -1231,63 +1245,73 @@ public class MigrationModule
                     }
                 }
                 if (job == null) {
-                    RefreshablePoolList sourceList = new PoolListByNames(_context.getPoolManagerStub(),
+                    RefreshablePoolList sourceList = new PoolListByNames(
+                          _context.getPoolManagerStub(),
                           Collections.singletonList(_context.getPoolName()));
                     sourceList.refresh();
                     Collection<Pattern> excluded = new HashSet<>();
                     excluded.add(Pattern.compile(Pattern.quote(_context.getPoolName())));
                     RefreshablePoolList basePoolList = new PoolListFilter(
-                        new PoolListByPoolGroupOfPool(_context.getPoolManagerStub(), _context.getPoolName()),
-                        excluded,
-                        FALSE_EXPRESSION,
-                        Collections.emptySet(),
-                        TRUE_EXPRESSION,
-                        sourceList);
+                          new PoolListByPoolGroupOfPool(_context.getPoolManagerStub(),
+                                _context.getPoolName()),
+                          excluded,
+                          FALSE_EXPRESSION,
+                          Collections.emptySet(),
+                          TRUE_EXPRESSION,
+                          sourceList);
 
                     // Wrap with hostname constraint to prevent creating replicas on same host
                     CostModule costModule = getCostModule();
                     HostnameConstrainedPoolList poolList = new HostnameConstrainedPoolList(
-                        basePoolList,
-                        sourceList,
-                        Collections.singletonList("hostname"),
-                        new CostModuleTagProvider(costModule));
+                          basePoolList,
+                          sourceList,
+                          Collections.singletonList("hostname"),
+                          new CostModuleTagProvider(costModule));
 
                     poolList.refresh();
                     JobDefinition def =
-                      new JobDefinition(
-                            createFilter(null, null, new PnfsId[]{pnfsId}, null, null, null, null, null, null),
-                            createCacheEntryMode("same"),
-                            createCacheEntryMode("cached"),
-                            createPoolSelectionStrategy("proportional"),
-                            createComparator(null),
-                            sourceList,
-                            poolList,
-                            300 * 1000,
-                            false,
-                            false,
-                            false,
-                            replicas,
-                            false,
-                            false,
-                            true,
-                            FALSE_EXPRESSION,
-                            FALSE_EXPRESSION,
-                            false,
-                            false);
+                          new JobDefinition(
+                                createFilter(null, null, new PnfsId[]{pnfsId}, null, null, null,
+                                      null, null, null),
+                                createCacheEntryMode("same"),
+                                createCacheEntryMode("cached"),
+                                createPoolSelectionStrategy("proportional"),
+                                createComparator(null),
+                                sourceList,
+                                poolList,
+                                300 * 1000,
+                                false,
+                                false,
+                                false,
+                                replicas,
+                                false,
+                                false,
+                                true,
+                                FALSE_EXPRESSION,
+                                FALSE_EXPRESSION,
+                                false,
+                                false);
                     job = new Job(_context, def);
                     // Apply module default concurrency to hot-file job
                     job.setConcurrency(defaultConcurrency);
                     _jobs.put(jobId, job);
                     _commands.put(job, "hotfile replication for " + pnfsId);
-                    LOGGER.debug("Created migration job with id {} for pnfsId {} with concurrency {}", jobId, pnfsId, defaultConcurrency);
+                    LOGGER.debug(
+                          "Created migration job with id {} for pnfsId {} with concurrency {}",
+                          jobId, pnfsId, defaultConcurrency);
                 }
                 if (_isStarted && job.getState() == Job.State.NEW) {
-                    LOGGER.debug("About to start migration job with id {} for pnfsId {}. Job definition: {}", jobId, pnfsId, job.getDefinition());
+                    LOGGER.debug(
+                          "About to start migration job with id {} for pnfsId {}. Job definition: {}",
+                          jobId, pnfsId, job.getDefinition());
                     try {
                         job.start();
-                        LOGGER.debug("Started migration job with id {} for pnfsId {}", jobId, pnfsId);
+                        LOGGER.debug("Started migration job with id {} for pnfsId {}", jobId,
+                              pnfsId);
                     } catch (Exception e) {
-                        LOGGER.error("Exception while starting migration job with id {} for pnfsId {}: {}", jobId, pnfsId, e.toString(), e);
+                        LOGGER.error(
+                              "Exception while starting migration job with id {} for pnfsId {}: {}",
+                              jobId, pnfsId, e, e);
                         throw e;
                     }
                 }
@@ -1366,9 +1390,11 @@ public class MigrationModule
     public int getNumReplicas() {
         return replicas;
     }
+
     public void setNumReplicas(int value) {
         replicas = value;
     }
+
     public long getThreshold() {
         return threshold;
     }
@@ -1382,9 +1408,10 @@ public class MigrationModule
     }
 
     @Command(name = "hotfile set replicas",
-             description = "Set the number of replicas to ensure via replication.",
-             hint = "Set hot-file replication parameter.")
+          description = "Set the number of replicas to ensure via replication.",
+          hint = "Set hot-file replication parameter.")
     public class HotfileSetReplicasCommand implements java.util.concurrent.Callable<String> {
+
         @Argument(usage = "The number of replicas.")
         int value;
 
@@ -1396,9 +1423,10 @@ public class MigrationModule
     }
 
     @Command(name = "hotfile get replicas",
-            description = "Get the number of replicas to ensure via replication.",
-            hint = "Get hot-file replication parameter.")
+          description = "Get the number of replicas to ensure via replication.",
+          hint = "Get hot-file replication parameter.")
     public class HotfileGetReplicasCommand implements java.util.concurrent.Callable<String> {
+
         @Override
         public String call() {
             return "Current replicas: " + getNumReplicas();
@@ -1406,9 +1434,10 @@ public class MigrationModule
     }
 
     @Command(name = "hotfile set threshold",
-             description = "Set the threshold for triggering replication.",
-             hint = "Set hot-file replication parameter.")
+          description = "Set the threshold for triggering replication.",
+          hint = "Set hot-file replication parameter.")
     public class HotfileSetThresholdCommand implements java.util.concurrent.Callable<String> {
+
         @Argument(usage = "The threshold value.")
         long value;
 
@@ -1420,9 +1449,10 @@ public class MigrationModule
     }
 
     @Command(name = "hotfile get threshold",
-            description = "Get the threshold for triggering replication.",
-            hint = "Get hot-file replication parameter.")
+          description = "Get the threshold for triggering replication.",
+          hint = "Get hot-file replication parameter.")
     public class HotfileGetThresholdCommand implements java.util.concurrent.Callable<String> {
+
         @Override
         public String call() {
             return "Current threshold: " + getThreshold();
