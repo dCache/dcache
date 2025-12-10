@@ -4,9 +4,8 @@ import java.util.Collection;
 import java.util.Map;
 
 /**
- * Interface for providing pool tag information to location extractors.
- * This abstraction allows different modules to provide pool tag data
- * without creating cyclic dependencies.
+ * Interface for providing pool tag information to location extractors. This abstraction allows
+ * different modules to provide pool tag data without creating cyclic dependencies.
  */
 public interface PoolTagProvider {
 

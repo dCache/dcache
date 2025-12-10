@@ -58,7 +58,8 @@ public class MoverRequestScheduler {
     private static final long DEFAULT_TOTAL = 0;
 
     public long numberOfRequestsFor(PnfsId pnfsId) {
-        return _jobs.values().stream().filter((pr) -> pr.getMover().getFileAttributes().getPnfsId().equals(pnfsId)).count();
+        return _jobs.values().stream()
+              .filter((pr) -> pr.getMover().getFileAttributes().getPnfsId().equals(pnfsId)).count();
     }
 
     /**
@@ -189,8 +190,9 @@ public class MoverRequestScheduler {
     }
 
     /**
-     * Get mover id for given door request. If there is no mover associated with {@code
-     * doorUniqueueRequest} a new mover will be created by using provided {@code moverSupplier}.
+     * Get mover id for given door request. If there is no mover associated with
+     * {@code doorUniqueueRequest} a new mover will be created by using provided
+     * {@code moverSupplier}.
      * <p>
      * The returned mover id generated with following encoding: | 31- queue id -24|23- job id -0|
      *
@@ -522,16 +524,17 @@ public class MoverRequestScheduler {
                               FaultAction faultAction = null;
                               //TODO this is done because the FileStoreState is in another module
                               // to be improved
-                              switch (((DiskErrorCacheException) exc).checkStatus(exc.getMessage())){
+                              switch (((DiskErrorCacheException) exc).checkStatus(
+                                    exc.getMessage())) {
                                   case READ_ONLY:
                                       faultAction = FaultAction.READONLY;
-                                  break;
+                                      break;
                                   default:
                                       faultAction = FaultAction.DISABLED;
-                                  break;
+                                      break;
                               }
                               FaultEvent faultEvent = new FaultEvent("transfer",
-                                      faultAction, exc.getMessage(), exc);
+                                    faultAction, exc.getMessage(), exc);
                               _faultListeners.forEach(l -> l.faultOccurred(faultEvent));
                           } else if (exc instanceof OutOfDiskException) {
                               FaultEvent faultEvent = new FaultEvent(
@@ -557,7 +560,8 @@ public class MoverRequestScheduler {
                                         public void failed(Throwable exc, Void attachment) {
                                             if (exc instanceof DiskErrorCacheException) {
                                                 FaultAction faultAction = null;
-                                                switch (((DiskErrorCacheException) exc).checkStatus(exc.getMessage())){
+                                                switch (((DiskErrorCacheException) exc).checkStatus(
+                                                      exc.getMessage())) {
                                                     case READ_ONLY:
                                                         faultAction = FaultAction.READONLY;
                                                         break;
@@ -567,7 +571,7 @@ public class MoverRequestScheduler {
                                                 }
                                                 FaultEvent faultEvent = new FaultEvent(
                                                       "post-processing",
-                                                        faultAction,
+                                                      faultAction,
                                                       exc.getMessage(), exc);
                                                 _faultListeners.forEach(
                                                       l -> l.faultOccurred(faultEvent));

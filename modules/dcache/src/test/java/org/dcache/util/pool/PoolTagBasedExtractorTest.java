@@ -81,6 +81,7 @@ public class PoolTagBasedExtractorTest {
      * Test implementation of PoolTagProvider for testing.
      */
     private static class TestPoolTagProvider implements PoolTagProvider {
+
         private final Map<String, Map<String, String>> poolTags = new HashMap<>();
 
         public void setPoolTags(String poolName, Map<String, String> tags) {
@@ -100,16 +101,16 @@ public class PoolTagBasedExtractorTest {
     public void setUp() {
         testTagProvider = new TestPoolTagProvider();
         extractor = new PoolTagBasedExtractor(
-            Collections.singletonList("hostname"), testTagProvider);
+              Collections.singletonList("hostname"), testTagProvider);
     }
 
     @Test
     public void shouldReturnPoolTagsFromTagProvider() {
         // Given: pool with hostname and rack tags
         Map<String, String> expectedTags = ImmutableMap.of(
-            "hostname", "storage01.example.com",
-            "rack", "rack-A-01",
-            "site", "datacenter-west"
+              "hostname", "storage01.example.com",
+              "rack", "rack-A-01",
+              "site", "datacenter-west"
         );
         testTagProvider.setPoolTags("pool1", expectedTags);
 
@@ -125,7 +126,7 @@ public class PoolTagBasedExtractorTest {
         // Given: tag provider that returns null for unknown pool
         PoolTagProvider nullReturningProvider = location -> null;
         PoolTagBasedExtractor testExtractor = new PoolTagBasedExtractor(
-            Collections.singletonList("hostname"), nullReturningProvider);
+              Collections.singletonList("hostname"), nullReturningProvider);
 
         // When: getting pool tags for unknown pool
         Map<String, String> tags = testExtractor.getPoolTagsFor("unknownpool");
@@ -138,7 +139,7 @@ public class PoolTagBasedExtractorTest {
     public void shouldReturnEmptyMapWhenTagProviderIsNull() {
         // Given: extractor with null tag provider
         PoolTagBasedExtractor nullProviderExtractor =
-            new PoolTagBasedExtractor(Collections.singletonList("hostname"), null);
+              new PoolTagBasedExtractor(Collections.singletonList("hostname"), null);
 
         // When: getting pool tags
         Map<String, String> tags = nullProviderExtractor.getPoolTagsFor("pool1");
@@ -151,9 +152,12 @@ public class PoolTagBasedExtractorTest {
     public void shouldFilterPoolsBasedOnActualTags() {
         // Given: pools with different hostname tags
         testTagProvider.setPoolTags("pool1", ImmutableMap.of("hostname", "host1.example.com"));
-        testTagProvider.setPoolTags("pool2", ImmutableMap.of("hostname", "host1.example.com"));  // Same hostname
-        testTagProvider.setPoolTags("pool3", ImmutableMap.of("hostname", "host2.example.com"));  // Different hostname
-        testTagProvider.setPoolTags("pool4", ImmutableMap.of("hostname", "host3.example.com"));  // Different hostname
+        testTagProvider.setPoolTags("pool2",
+              ImmutableMap.of("hostname", "host1.example.com"));  // Same hostname
+        testTagProvider.setPoolTags("pool3",
+              ImmutableMap.of("hostname", "host2.example.com"));  // Different hostname
+        testTagProvider.setPoolTags("pool4",
+              ImmutableMap.of("hostname", "host3.example.com"));  // Different hostname
 
         // And: extractor has seen pool1's hostname
         extractor.addSeenTagsFor("pool1");
@@ -173,18 +177,21 @@ public class PoolTagBasedExtractorTest {
     public void shouldFilterOnMultipleConstraintTags() {
         // Given: extractor configured for both hostname and rack constraints
         PoolTagBasedExtractor multiTagExtractor = new PoolTagBasedExtractor(
-            Arrays.asList("hostname", "rack"), testTagProvider);
+              Arrays.asList("hostname", "rack"), testTagProvider);
 
         // And: pools with overlapping hostname or rack tags
         testTagProvider.setPoolTags("pool1", ImmutableMap.of("hostname", "host1", "rack", "rackA"));
-        testTagProvider.setPoolTags("pool2", ImmutableMap.of("hostname", "host2", "rack", "rackA"));  // Same rack
-        testTagProvider.setPoolTags("pool3", ImmutableMap.of("hostname", "host1", "rack", "rackB"));  // Same hostname
-        testTagProvider.setPoolTags("pool4", ImmutableMap.of("hostname", "host3", "rack", "rackC"));  // Different both
+        testTagProvider.setPoolTags("pool2",
+              ImmutableMap.of("hostname", "host2", "rack", "rackA"));  // Same rack
+        testTagProvider.setPoolTags("pool3",
+              ImmutableMap.of("hostname", "host1", "rack", "rackB"));  // Same hostname
+        testTagProvider.setPoolTags("pool4",
+              ImmutableMap.of("hostname", "host3", "rack", "rackC"));  // Different both
 
         // When: adding seen tags for pool1 and filtering
         multiTagExtractor.addSeenTagsFor("pool1");
         Collection<String> result = multiTagExtractor.getCandidateLocations(
-            Arrays.asList("pool2", "pool3", "pool4"));
+              Arrays.asList("pool2", "pool3", "pool4"));
 
         // Then: should exclude pools with any matching constraint tag
         assertEquals("Should have 1 candidate pool", 1, result.size());
@@ -197,8 +204,8 @@ public class PoolTagBasedExtractorTest {
     public void shouldHandlePoolsWithMissingConstraintTags() {
         // Given: pool without hostname tag
         Map<String, String> tagsWithoutHostname = ImmutableMap.of(
-            "rack", "rack-C-01",
-            "zone", "zone-west"
+              "rack", "rack-C-01",
+              "zone", "zone-west"
         );
         testTagProvider.setPoolTags("pool-no-hostname", tagsWithoutHostname);
 
@@ -213,7 +220,8 @@ public class PoolTagBasedExtractorTest {
     @Test
     public void shouldAllowPoolsWithMissingConstraintTagsInFiltering() {
         // Given: pools where some have hostname tags and others don't
-        testTagProvider.setPoolTags("pool-with-hostname", ImmutableMap.of("hostname", "host1.example.com"));
+        testTagProvider.setPoolTags("pool-with-hostname",
+              ImmutableMap.of("hostname", "host1.example.com"));
         testTagProvider.setPoolTags("pool-without-hostname", ImmutableMap.of("rack", "rack-A"));
 
         // And: extractor has seen a hostname
@@ -221,11 +229,12 @@ public class PoolTagBasedExtractorTest {
 
         // When: filtering candidates including pool without hostname tag
         Collection<String> result = extractor.getCandidateLocations(
-            Arrays.asList("pool-without-hostname"));
+              Arrays.asList("pool-without-hostname"));
 
         // Then: should include pool without hostname tag (no constraint violation)
         assertEquals("Should have 1 candidate pool", 1, result.size());
-        assertTrue("Should contain pool without hostname tag", result.contains("pool-without-hostname"));
+        assertTrue("Should contain pool without hostname tag",
+              result.contains("pool-without-hostname"));
     }
 
     @Test
@@ -248,11 +257,11 @@ public class PoolTagBasedExtractorTest {
     public void shouldWorkWithEmptyConstraintTags() {
         // Given: extractor with empty constraint tags
         PoolTagBasedExtractor emptyTagsExtractor =
-            new PoolTagBasedExtractor(Collections.emptyList(), testTagProvider);
+              new PoolTagBasedExtractor(Collections.emptyList(), testTagProvider);
 
         // When: filtering candidates (should skip tag checking entirely)
         Collection<String> result = emptyTagsExtractor.getCandidateLocations(
-            Arrays.asList("pool1", "pool2"));
+              Arrays.asList("pool1", "pool2"));
 
         // Then: should return all candidates (no constraints to apply)
         assertEquals("Should return all candidates with no constraint tags", 2, result.size());

@@ -65,9 +65,8 @@ import java.util.Map;
 import org.dcache.poolmanager.PoolInfo;
 
 /**
- * Implementation of PoolTagProvider that retrieves pool tags from CostModule.
- * This class provides the bridge between the common pool tag extraction
- * functionality and CostModule integration.
+ * Implementation of PoolTagProvider that retrieves pool tags from CostModule. This class provides
+ * the bridge between the common pool tag extraction functionality and CostModule integration.
  */
 public class CostModuleTagProvider implements PoolTagProvider {
 
