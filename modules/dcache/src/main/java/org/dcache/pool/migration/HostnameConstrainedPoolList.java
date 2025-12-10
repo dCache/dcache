@@ -12,8 +12,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * RefreshablePoolList decorator that filters pools to prevent multiple replicas
- * on pools with the same hostname tag value.
+ * RefreshablePoolList decorator that filters pools to prevent multiple replicas on pools with the
+ * same hostname tag value.
  */
 public class HostnameConstrainedPoolList implements RefreshablePoolList {
 
@@ -29,20 +29,20 @@ public class HostnameConstrainedPoolList implements RefreshablePoolList {
     /**
      * Creates a hostname-constrained pool list wrapper using pool tag-based hostname extraction.
      *
-     * @param delegate the underlying pool list to filter
-     * @param sourceList the source pool list (pools that already have replicas)
+     * @param delegate       the underlying pool list to filter
+     * @param sourceList     the source pool list (pools that already have replicas)
      * @param constraintTags the tag names to use for hostname constraints (e.g., "hostname")
-     * @param tagProvider the tag provider for querying pool tags
+     * @param tagProvider    the tag provider for querying pool tags
      */
     public HostnameConstrainedPoolList(RefreshablePoolList delegate,
-                                      RefreshablePoolList sourceList,
-                                      Collection<String> constraintTags,
-                                      PoolTagProvider tagProvider) {
+          RefreshablePoolList sourceList,
+          Collection<String> constraintTags,
+          PoolTagProvider tagProvider) {
         this.delegate = delegate;
         this.sourceList = sourceList;
         this.hostnameExtractor = new PoolTagBasedExtractor(
-            constraintTags != null ? constraintTags : Collections.singletonList("hostname"),
-            tagProvider);
+              constraintTags != null ? constraintTags : Collections.singletonList("hostname"),
+              tagProvider);
     }
 
     @Override
@@ -78,8 +78,8 @@ public class HostnameConstrainedPoolList implements RefreshablePoolList {
     }
 
     /**
-     * Applies hostname constraints to filter out pools that would create
-     * replicas on the same host as existing replicas.
+     * Applies hostname constraints to filter out pools that would create replicas on the same host
+     * as existing replicas.
      */
     private void applyHostnameConstraints() {
         ImmutableList<PoolManagerPoolInformation> allPools = delegate.getPools();
@@ -109,27 +109,29 @@ public class HostnameConstrainedPoolList implements RefreshablePoolList {
 
         // Filter candidate pools to exclude those with conflicting hostname tags
         List<String> candidatePoolNames = allPools.stream()
-                .map(PoolManagerPoolInformation::getName)
-                .collect(Collectors.toList());
+              .map(PoolManagerPoolInformation::getName)
+              .collect(Collectors.toList());
 
-        Collection<String> validPoolNames = hostnameExtractor.getCandidateLocations(candidatePoolNames);
+        Collection<String> validPoolNames = hostnameExtractor.getCandidateLocations(
+              candidatePoolNames);
 
         // Filter the pools based on valid pool names
         List<PoolManagerPoolInformation> validPools = allPools.stream()
-                .filter(pool -> validPoolNames.contains(pool.getName()))
-                .collect(Collectors.toList());
+              .filter(pool -> validPoolNames.contains(pool.getName()))
+              .collect(Collectors.toList());
 
         // Filter offline pools based on hostname constraints using the extractor
-        Collection<String> validOfflinePoolNames = hostnameExtractor.getCandidateLocations(allOfflinePools);
+        Collection<String> validOfflinePoolNames = hostnameExtractor.getCandidateLocations(
+              allOfflinePools);
         List<String> validOfflinePools = allOfflinePools.stream()
-                .filter(validOfflinePoolNames::contains)
-                .collect(Collectors.toList());
+              .filter(validOfflinePoolNames::contains)
+              .collect(Collectors.toList());
 
         filteredPools = ImmutableList.copyOf(validPools);
         filteredOfflinePools = ImmutableList.copyOf(validOfflinePools);
 
         LOGGER.debug("Applied hostname constraints: {} pools -> {} pools, {} offline -> {} offline",
-                allPools.size(), filteredPools.size(),
-                allOfflinePools.size(), filteredOfflinePools.size());
+              allPools.size(), filteredPools.size(),
+              allOfflinePools.size(), filteredOfflinePools.size());
     }
 }

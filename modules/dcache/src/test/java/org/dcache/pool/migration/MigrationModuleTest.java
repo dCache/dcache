@@ -11,11 +11,14 @@ import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.Repository;
 import org.dcache.poolmanager.SerializablePoolMonitor;
 import org.dcache.vehicles.FileAttributes;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+
 import org.junit.Before;
 import org.junit.Test;
+
 import static org.mockito.AdditionalMatchers.not;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -34,6 +37,7 @@ import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellPath;
 
 public class MigrationModuleTest {
+
     private CacheEntry entry;
     private CellPath cellPath;
     private CellStub pinManagerStub;
@@ -74,7 +78,8 @@ public class MigrationModuleTest {
         when(context.getPoolStub()).thenReturn(poolStub);
         when(context.getRepository()).thenReturn(repository);
         when(entry.getState()).thenReturn(ReplicaState.CACHED);
-        when(executor.scheduleWithFixedDelay(any(), anyLong(), anyLong(), any())).thenReturn(scheduledFuture);
+        when(executor.scheduleWithFixedDelay(any(), anyLong(), anyLong(), any())).thenReturn(
+              scheduledFuture);
         when(executor.submit(any(Runnable.class))).thenAnswer(invocation -> {
             ((Runnable) invocation.getArguments()[0]).run();
             return null;
@@ -124,22 +129,22 @@ public class MigrationModuleTest {
         when(poolMonitor.getCostModule()).thenReturn(costModule);
 
         when(poolManagerStub.sendAndWait(any(PoolManagerGetPoolMonitor.class), anyLong()))
-            .thenAnswer(inv -> {
-                PoolManagerGetPoolMonitor msg = (PoolManagerGetPoolMonitor) inv.getArguments()[0];
-                msg.setPoolMonitor(poolMonitor);
-                msg.setSucceeded();
-                return msg;
-            });
+              .thenAnswer(inv -> {
+                  PoolManagerGetPoolMonitor msg = (PoolManagerGetPoolMonitor) inv.getArguments()[0];
+                  msg.setPoolMonitor(poolMonitor);
+                  msg.setSucceeded();
+                  return msg;
+              });
 
         when(poolManagerStub.sendAndWait(not(isA(PoolManagerGetPoolMonitor.class)), anyLong()))
-            .thenAnswer(inv -> {
-                Object msg = inv.getArguments()[0];
-                try {
-                    msg.getClass().getMethod("setSucceeded").invoke(msg);
-                } catch (Exception e) {
-                }
-                return msg;
-            });
+              .thenAnswer(inv -> {
+                  Object msg = inv.getArguments()[0];
+                  try {
+                      msg.getClass().getMethod("setSucceeded").invoke(msg);
+                  } catch (Exception e) {
+                  }
+                  return msg;
+              });
 
         module.setThreshold(0L); // Always trigger
 
@@ -186,22 +191,22 @@ public class MigrationModuleTest {
         when(poolMonitor.getCostModule()).thenReturn(costModule);
 
         when(poolManagerStub.sendAndWait(any(PoolManagerGetPoolMonitor.class), anyLong()))
-            .thenAnswer(inv -> {
-                PoolManagerGetPoolMonitor msg = (PoolManagerGetPoolMonitor) inv.getArguments()[0];
-                msg.setPoolMonitor(poolMonitor);
-                msg.setSucceeded();
-                return msg;
-            });
+              .thenAnswer(inv -> {
+                  PoolManagerGetPoolMonitor msg = (PoolManagerGetPoolMonitor) inv.getArguments()[0];
+                  msg.setPoolMonitor(poolMonitor);
+                  msg.setSucceeded();
+                  return msg;
+              });
 
         when(poolManagerStub.sendAndWait(not(isA(PoolManagerGetPoolMonitor.class)), anyLong()))
-            .thenAnswer(inv -> {
-                Object msg = inv.getArguments()[0];
-                try {
-                    msg.getClass().getMethod("setSucceeded").invoke(msg);
-                } catch (Exception e) {
-                }
-                return msg;
-            });
+              .thenAnswer(inv -> {
+                  Object msg = inv.getArguments()[0];
+                  try {
+                      msg.getClass().getMethod("setSucceeded").invoke(msg);
+                  } catch (Exception e) {
+                  }
+                  return msg;
+              });
 
         module.setThreshold(0L);
 
@@ -243,7 +248,7 @@ public class MigrationModuleTest {
         cmd.id = "hotfile-" + pnfsId;
         cmd.force = true;
         cmd.call();
-        
+
         // 4. Create 1 more job to trigger pruning
         PnfsId pnfsId2 = new PnfsId("000000000000000000000301");
         when(message.getPnfsId()).thenReturn(pnfsId2);
