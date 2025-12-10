@@ -494,6 +494,25 @@ public class MigrationModule
         }
 
     @AffectsSetup
+    @Command(name = "migration concurrency",
+          description = "Adjust the concurrency of a job. (Deprecated)")
+    public class MigrationConcurrencyCommand implements Callable<String> {
+
+        @Argument(index = 0)
+        String id;
+
+        @Argument(index = 1)
+        int concurrency;
+
+        @Override
+        public String call() throws NoSuchElementException {
+            Job job = getJob(id);
+            job.setConcurrency(concurrency);
+            return String.format("[%s] Concurrency set to %d (Warning: this command is deprecated, please use 'migration set concurrency')", id, concurrency);
+        }
+    }
+
+    @AffectsSetup
     @Command(name = "migration set concurrency",
           description = "Adjust the concurrency of a job.")
     public class MigrationSetConcurrencyCommand implements Callable<String> {
@@ -509,6 +528,27 @@ public class MigrationModule
             Job job = getJob(id);
             job.setConcurrency(concurrency);
             return String.format("[%s] Concurrency set to %d", id, concurrency);
+        }
+    }
+
+    @AffectsSetup
+    @Command(name = "migration concurrency-default",
+          description = "Get or set the default concurrency used when -concurrency is not specified. (Deprecated)")
+    public class MigrationConcurrencyDefaultCommand implements Callable<String> {
+
+        @Option(name = "set", usage = "Set the default concurrency to use for new jobs when not explicitly provided.")
+        Integer set;
+
+        @Override
+        public String call() {
+            if (set != null) {
+                if (set < 1) {
+                    throw new IllegalArgumentException("Default concurrency must be positive.");
+                }
+                defaultConcurrency = set;
+                return "Default concurrency set to " + set + " (Warning: this command is deprecated, please use 'migration set concurrency-default')";
+            }
+            return "Current default concurrency: " + defaultConcurrency + " (Warning: this command is deprecated, please use 'migration get concurrency-default')";
         }
     }
 
@@ -1335,6 +1375,10 @@ public class MigrationModule
 
     public void setThreshold(long value) {
         threshold = value;
+    }
+
+    public void setDefaultConcurrency(int value) {
+        defaultConcurrency = value;
     }
 
     @Command(name = "hotfile set replicas",
