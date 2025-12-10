@@ -96,7 +96,7 @@ support.
 
 
 
-  [Components of dCache System]: images/test2.svg
+  [Components of dCache System]: images/components-of-dCache-system.png
   [figure\_title]: #fig-intro-layer-model
 
 
