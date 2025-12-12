@@ -13,6 +13,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.net.InetAddresses;
 import com.sun.security.auth.UnixNumericGroupPrincipal;
 import com.sun.security.auth.UnixNumericUserPrincipal;
 import java.security.Principal;
@@ -346,6 +347,39 @@ public class SubjectsTest {
 
         assertThat(principals.size(), is(equalTo(1)));
         assertThat(principals, contains(new GroupNamePrincipal("my-group", false)));
+    }
+
+    @Test
+    public void shouldBuildSubjectWithToken() {
+        var args = asList("token:FOO");
+
+        var subject = Subjects.subjectFromArgs(args);
+
+        assertThat(subject.getPublicCredentials(), is(empty()));
+        assertThat(subject.getPrivateCredentials(), contains(new BearerTokenCredential("FOO")));
+        assertThat(subject.getPrincipals(), is(empty()));
+    }
+
+    @Test
+    public void shouldBuildSubjectWithPrincipal() {
+        var args = asList("oidc:SOME-OIDC-VALUE@MY-OP");
+
+        var subject = Subjects.subjectFromArgs(args);
+
+        assertThat(subject.getPublicCredentials(), is(empty()));
+        assertThat(subject.getPrivateCredentials(), is(empty()));
+        assertThat(subject.getPrincipals(), contains(new OidcSubjectPrincipal("SOME-OIDC-VALUE","MY-OP")));
+    }
+
+    @Test
+    public void shouldBuildSubjectWithTokenAndPrincipal() {
+        var args = asList("token:FOO", "origin:192.0.2.42");
+
+        var subject = Subjects.subjectFromArgs(args);
+
+        assertThat(subject.getPublicCredentials(), is(empty()));
+        assertThat(subject.getPrivateCredentials(), contains(new BearerTokenCredential("FOO")));
+        assertThat(subject.getPrincipals(), contains(new Origin(InetAddresses.forString("192.0.2.42"))));
     }
 
     @Test

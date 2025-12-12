@@ -446,17 +446,31 @@ public class Subjects {
     }
 
     /**
-     * Create a subject from a list of principals.  The principals are presented as String-based
-     * representations that are parsed.  They have a common format {@literal <type>:<value>} where
-     * {@literal <type>} is one of name, kerberos, dn and dqan and {@literal <value>} is a string
-     * representation of the principal.
+     * Create a subject from a list of principals and credentials.  The
+     * principals are presented as String-based representations that are parsed.
+     * They have a common format {@literal <type>:<value>} where
+     * {@literal <type>} is one of name, kerberos, dn and dqan and
+     * {@literal <value>} is a string representation of the principal.
+     * <p>
+     * The credentials have a common format {@literal <type>:<value>} where
+     * {@literal <type>} is {@literal token}.
      */
     public static Subject subjectFromArgs(List<String> args) {
-        Set<Principal> principals = principalsFromArgs(args);
 
+        Set<Object> privateCredentials = new HashSet<>();
+        List<String> argsWithoutCredentials = new ArrayList<>();
+        for (String arg : args) {
+            if (arg.startsWith("token:")) {
+                var tokenValue = arg.substring(6);
+                var token = new BearerTokenCredential(tokenValue);
+                privateCredentials.add(token);
+            } else {
+                argsWithoutCredentials.add(arg);
+            }
+        }
+
+        Set<Principal> principals = principalsFromArgs(argsWithoutCredentials);
         Set<Object> publicCredentials = Collections.emptySet();
-        Set<Object> privateCredentials = Collections.emptySet();
-
         return new Subject(false, principals, publicCredentials,
               privateCredentials);
     }

@@ -269,31 +269,50 @@ public class Gplazma2LoginStrategy implements LoginStrategy, CellCommandListener
     }
 
     public static final String fh_explain_login =
-          "This command runs a test login with the supplied principals\n" +
-                "The result is tracked and an explanation is provided of how \n" +
-                "the result was obtained.\n\n" +
-                "The principal format is:\n" +
-                "  <short hand identifier:value>\n" +
-                "or\n" +
-                "  <class name:value>\n\n" +
-                "The support short hand identifiers are:\n" +
-                " dn\n" +
-                " gid\n" +
-                " kerberos\n" +
-                " fqan\n" +
-                " name\n" +
-                " origin\n" +
-                " oidc\n" +
-                " email\n" +
-                " uid\n" +
-                " username\n" +
-                " group\n\n" +
-                "All other types can be specific full qualified class names.\n\n" +
-                "Examples:\n" +
-                "  explain login \"dn:/C=DE/O=GermanGrid/OU=DESY/CN=testUser\" fqan:/test\n" +
-                "  explain login username:testuser\n" +
-                "  explain login org.dcache.auth.LoginNamePrincipal:testuser\n\n";
-    public static final String hh_explain_login = "<principal> [<principal> ...] # explain the result of login";
+            "This command runs a test login with the supplied principals and/or credentials.\n" +
+            "The result is tracked and an explanation is provided of how the result was\n" +
+            "obtained.\n\n" +
+            "The credential format is:\n" +
+            "    <identifier>:<value>\n" +
+            "The supported credential <identifier> values are:\n" +
+            "    token   a bearer token (e.g., an OIDC access token)\n\n"+
+            "Note that macaroons are processed by the door directly and not\n" +
+            "by gPlazma.  This means a macaroon cannot be provided as input\n" +
+            "to this command.\n\n"+
+            "The principal format is:\n" +
+            "    <identifier>:<value>\n" +
+            "or\n" +
+            "    <class name>:<value>\n\n" +
+            "The supported principal <identifier> values are:\n" +
+            "    dn        (org.globus.gsi.gssapi.jaas.GlobusPrincipal)\n"+
+            "              an X.509 Distinguished Name with slashes.\n" +
+            "    gid       (org.dcache.auth.GidPrincipal)\n" +
+            "              a numerical group ID\n" +
+            "    kerberos  (javax.security.auth.kerberos.KerberosPrincipal)\n" +
+            "              a Kerberos principal (e.g., paul@DESY.DE)\n" +
+            "    fqan      (org.dcache.auth.FQANPrincipal)\n" +
+            "              a VOMS fully qualified attribute name.\n" +
+            "    name      (org.dcache.auth.LoginNamePrincipal)\n" +
+            "              a desired username.\n" +
+            "    origin    (org.dcache.auth.Origin)\n" +
+            "              the client's IP address.\n" +
+            "    oidc      (org.dcache.auth.OidcSubjectPrincipal)\n" +
+            "              the sub claim and OP alias (e.g., SUB@OP).\n" +
+            "    email     (org.dcache.auth.EmailAddressPrincipal)\n" +
+            "              the user's email address.\n" +
+            "    uid       (org.dcache.auth.UidPrincipal)\n" +
+            "              a numerical user ID.\n" +
+            "    username  (org.dcache.auth.UserNamePrincipal)\n" +
+            "              a username.\n" +
+            "    group     (org.dcache.auth.GroupNamePrincipal)\n" +
+            "              a group name.\n\n" +
+            "All other types can be specific full qualified class names.\n\n" +
+            "Examples:\n" +
+            "    explain login \"dn:/C=DE/O=GermanGrid/OU=DESY/CN=testUser\" fqan:/test\n" +
+            "    explain login username:testuser\n" +
+            "    explain login token:eyJhbG[...]MVkA7UqQ\n" +
+            "    explain login org.dcache.auth.LoginNamePrincipal:testuser\n\n";
+    public static final String hh_explain_login = "<principal|credential> [<principal|credential> ...] # explain the result of login";
 
     public String ac_explain_login_$_1_99(Args args) {
         Subject subject = Subjects.subjectFromArgs(args.getArguments());
