@@ -31,8 +31,14 @@ import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.KeySpec;
 import java.security.spec.RSAPublicKeySpec;
-import java.time.Duration;
+import java.security.interfaces.ECPublicKey;
+import java.security.spec.ECPoint;
+import java.security.spec.ECParameterSpec;
+import java.security.spec.ECPublicKeySpec;
+import java.security.spec.ECGenParameterSpec;
+import java.security.AlgorithmParameters;
 import java.util.Base64;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -214,6 +220,8 @@ public class Issuer {
         switch (kty) {
             case "RSA":
                 return buildRSAPublicKey(details);
+            case "EC":
+                return buildECPublicKey(details);
             default:
                 throw new BadKeyDescriptionException("Unknown key type " + kty);
         }
@@ -246,6 +254,41 @@ public class Issuer {
             return KeyFactory.getInstance("RSA").generatePublic(keySpec);
         } catch (GeneralSecurityException e) {
             throw new BadKeyDescriptionException("Unable to build RSA public key: " + e.toString());
+        }
+    }
+
+    private ECParameterSpec getECParameterSpec(String crv) throws GeneralSecurityException {
+        String name;
+
+        switch (crv) {
+            case "P-256":
+                name = "secp256r1";
+                break;
+            case "P-384":
+                name = "secp384r1";
+                break;
+            case "P-521":
+                name = "secp521r1";
+                break;
+            default:
+                throw new GeneralSecurityException("Unsupported curve: " + crv);
+        }
+        AlgorithmParameters parameters = AlgorithmParameters.getInstance("EC");
+        parameters.init(new ECGenParameterSpec(name));
+        return parameters.getParameterSpec(ECParameterSpec.class);
+    }   
+
+    private PublicKey buildECPublicKey(JsonNode details) throws BadKeyDescriptionException {
+        try {
+            String crv = getString(details, "crv");
+            byte[] x = Base64.getUrlDecoder().decode(getString(details, "x"));
+            byte[] y = Base64.getUrlDecoder().decode(getString(details, "y"));
+            ECParameterSpec params = getECParameterSpec(crv);
+            ECPoint point = new ECPoint(new BigInteger(1, x), new BigInteger(1, y));
+            ECPublicKeySpec pubSpec = new ECPublicKeySpec(point, params);
+            return KeyFactory.getInstance("EC").generatePublic(pubSpec);
+        } catch (GeneralSecurityException e) {
+            throw new BadKeyDescriptionException("Unable to build EC public key: " + e.toString());
         }
     }
 
