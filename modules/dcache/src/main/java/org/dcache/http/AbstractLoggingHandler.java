@@ -26,7 +26,9 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.util.Optional;
+import java.util.function.Consumer;
 import javax.security.auth.Subject;
 import javax.servlet.AsyncEvent;
 import javax.servlet.AsyncListener;
@@ -43,6 +45,8 @@ import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.handler.HandlerWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import static com.google.common.base.Throwables.throwIfInstanceOf;
+import static com.google.common.base.Throwables.throwIfUnchecked;
 
 /**
  * This class act as a base logging class for logging servlet-based activity. It is expected that
@@ -61,25 +65,34 @@ public abstract class AbstractLoggingHandler extends HandlerWrapper {
 
         @Override
         public void onComplete(AsyncEvent event) {
-            requestCompleted((HttpServletRequest) event.getSuppliedRequest(),
-                  (HttpServletResponse) event.getSuppliedResponse());
+            requestCompletedNormally(
+                    (HttpServletRequest) event.getSuppliedRequest(),
+                    (HttpServletResponse) event.getSuppliedResponse());
         }
 
         @Override
         public void onTimeout(AsyncEvent event) {
-            LOGGER.warn("Unexpected timeout on async processing of {}",
-                  event.getAsyncContext().getRequest());
+            var timeout = Duration.ofMillis(event.getAsyncContext().getTimeout());
+            requestTimedOut(
+                    (HttpServletRequest) event.getSuppliedRequest(),
+                    (HttpServletResponse) event.getSuppliedResponse(),
+                    timeout);
         }
 
         @Override
         public void onError(AsyncEvent event) {
-            LOGGER.warn("Unexpected error on async processing of {}",
-                  event.getAsyncContext().getRequest());
+            Throwable cause = event.getThrowable();
+            if (cause instanceof Exception) {
+                requestCompletedExceptionally(
+                        (HttpServletRequest) event.getSuppliedRequest(),
+                        (HttpServletResponse) event.getSuppliedResponse(),
+                        (Exception) cause);
+            }
         }
 
         @Override
         public void onStartAsync(AsyncEvent event) {
-            LOGGER.warn("Unexpected error on async processing of {}",
+            LOGGER.warn("Unexpected reuse of async processing context for {}",
                   event.getAsyncContext().getRequest());
         }
     }
@@ -107,17 +120,46 @@ public abstract class AbstractLoggingHandler extends HandlerWrapper {
             request.setAttribute(REMOTE_ADDRESS, remoteAddress(request).orElse(null));
             request.setAttribute(PROCESSING_TIME, processingTime);
 
-            super.handle(target, baseRequest, request, response);
+            try {
+                super.handle(target, baseRequest, request, response);
+            } catch (IOException|RuntimeException|ServletException e) {
+                requestCompletedExceptionally(request, response, e);
+
+                throwIfInstanceOf(e, IOException.class);
+                throwIfInstanceOf(e, ServletException.class);
+                throwIfUnchecked(e);
+                throw new AssertionError(e);
+            }
 
             if (request.isAsyncStarted()) {
                 request.getAsyncContext().addListener(new LogOnComplete());
             } else {
-                requestCompleted(request, response);
+                requestCompletedNormally(request, response);
             }
         }
     }
 
-    private void requestCompleted(HttpServletRequest request, HttpServletResponse response) {
+    private void requestCompletedExceptionally(HttpServletRequest request, HttpServletResponse response, Exception e) {
+        requestCompleted(request, response, l -> {
+                    l.add("failure", e);
+                });
+    }
+
+    private void requestTimedOut(HttpServletRequest request, HttpServletResponse response, Duration timeout) {
+        requestCompleted(request, response, l -> {
+                    l.add("timeout", timeout);
+                });
+    }
+
+    private void requestCompletedNormally(HttpServletRequest request, HttpServletResponse response) {
+        requestCompleted(request, response, l -> {
+                    l.add("response.reason", getReason(response));
+                    l.add("response.code", response.getStatus());
+                    l.add("location", response.getHeader("Location"));
+                });
+    }
+
+    private void requestCompleted(HttpServletRequest request, HttpServletResponse response, Consumer<NetLoggerBuilder> logEnricher) {
         var processingTime = (Stopwatch) request.getAttribute(PROCESSING_TIME);
 
         processingTime.stop();
@@ -127,6 +169,7 @@ public abstract class AbstractLoggingHandler extends HandlerWrapper {
               .omitNullValues();
         describeOperation(log, request, response);
         log.add("duration", processingTime.elapsed().toMillis());
+        logEnricher.accept(log);
         log.toLogger(accessLogger());
     }
 
@@ -135,9 +178,6 @@ public abstract class AbstractLoggingHandler extends HandlerWrapper {
         log.add("session", CDC.getSession());
         log.add("request.method", request.getMethod());
         log.add("request.url", request.getRequestURL());
-        log.add("response.code", response.getStatus());
-        log.add("response.reason", getReason(response));
-        log.add("location", response.getHeader("Location"));
         log.add("socket.remote", (InetSocketAddress) request.getAttribute(REMOTE_ADDRESS));
         log.add("user-agent", request.getHeader("User-Agent"));
 
