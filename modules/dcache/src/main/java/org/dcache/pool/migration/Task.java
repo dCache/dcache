@@ -99,6 +99,10 @@ public class Task {
         return !_pinsToMove.isEmpty();
     }
 
+    public boolean getWaitForTargets() {
+        return _parameters.waitForTargets;
+    }
+
     public long getId() {
         return _id;
     }

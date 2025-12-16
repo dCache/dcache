@@ -498,11 +498,16 @@ public class Job
             setState(State.FINISHED);
         } else if (_state == State.RUNNING &&
               (!_definition.sourceList.isValid() ||
-                    !_definition.poolList.isValid())) {
+                    !_definition.poolList.isValid() ||
+                    (_definition.waitForTargets && _definition.poolList.getPools().isEmpty()))) {
             setState(State.SLEEPING);
         } else if (_state == State.RUNNING) {
             Iterator<PnfsId> i = _queued.iterator();
             while ((_running.size() < _concurrency) && i.hasNext()) {
+                if (_state != State.RUNNING) {
+                    break;
+                }
+
                 Expression stopWhen = _definition.stopWhen;
                 if (stopWhen != null && evaluateLifetimePredicate(stopWhen)) {
                     stop();
@@ -515,7 +520,8 @@ public class Job
                 }
 
                 PnfsId pnfsId = i.next();
-                if (!_context.lock(pnfsId)) {
+                boolean locked = _context.lock(pnfsId);
+                if (!locked) {
                     addNote(new Note(0, pnfsId, "File is locked"));
                     continue;
                 }
@@ -735,13 +741,7 @@ public class Job
                 _queued.add(pnfsId);
                 _context.unlock(pnfsId);
             }
-
-            if (_state == State.RUNNING) {
-                setState(State.SLEEPING);
-            } else {
-                schedule();
-            }
-
+            schedule();
             addNote(new Note(task.getId(), pnfsId, msg));
         } finally {
             _lock.unlock();

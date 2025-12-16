@@ -70,9 +70,15 @@ Entry
                 {
                 }
         query_success
-                [ !ctxt.isMetaOnly() ]
+                [ !ctxt.isMetaOnly() && ctxt.moreReplicasPossible() ]
                 InitiatingCopy
                 {
+                }
+        query_success
+                [ !ctxt.isMetaOnly() ]
+                Done
+                {
+                        notifyCompletedWithInsufficientReplicas();
                 }
         query_success
                 Failed
@@ -95,7 +101,7 @@ Entry
                 {
                 }
         copy_timeout
-                [ ctxt.isEager() && !ctxt.isMetaOnly() ]
+                [ ctxt.isEager() && !ctxt.isMetaOnly() && ctxt.moreReplicasPossible() ]
                 InitiatingCopy
                 {
                 }
@@ -111,7 +117,7 @@ Entry
                         updateExistingReplica();
                 }
         copy_noroute
-                [ ctxt.isEager() && !ctxt.isMetaOnly() ]
+                [ ctxt.isEager() && !ctxt.isMetaOnly() && ctxt.moreReplicasPossible() ]
                 InitiatingCopy
                 {
                 }
@@ -133,7 +139,7 @@ Entry
                         updateExistingReplica();
                 }
         copy_failure(rc: Integer, cause: Object)
-                [ !ctxt.isMetaOnly() ]
+                [ !ctxt.isMetaOnly() && ctxt.moreReplicasPossible() ]
                 InitiatingCopy
                 {
                 }
@@ -198,9 +204,21 @@ Entry
                 {
                 }
         copy_nopools
+                [ !ctxt.getWaitForTargets() ]
+                Done
+                {
+                        notifyCompletedWithInsufficientReplicas();
+                }
+        copy_nopools
+                [ ctxt.getWaitForTargets() ]
                 Failed
                 {
-                        fail(NO_POOL_ONLINE, "No targets");
+                        fail(NO_POOL_ONLINE, "No targets available");
+                }
+        copy_nopools
+                Done
+                {
+                        failPermanently(NO_POOL_ONLINE, "No targets available");
                 }
         copy_noroute
                 Failed
@@ -281,9 +299,15 @@ WaitingForCopyReplicaReply
                 {
                 }
         copy_success
-                [ !ctxt.isMetaOnly() ]
+                [ !ctxt.isMetaOnly() && ctxt.moreReplicasPossible() ]
                 InitiatingCopy
                 {
+                }
+        copy_success
+                [ !ctxt.isMetaOnly() ]
+                Done
+                {
+                        notifyCompletedWithInsufficientReplicas();
                 }
         copy_success
                 Failed
@@ -291,9 +315,15 @@ WaitingForCopyReplicaReply
                         failPermanently(FILE_NOT_IN_REPOSITORY, "File skipped because it does not have enough existing replicas");
                 }
         copy_nopools
+                [ !ctxt.getWaitForTargets() ]
+                Done
+                {
+                        notifyCompletedWithInsufficientReplicas();
+                }
+        copy_nopools
                 Failed
                 {
-                        fail(NO_POOL_ONLINE, "No targets");
+                        fail(NO_POOL_ONLINE, "No targets available");
                 }
         copy_noroute
                 Failed
