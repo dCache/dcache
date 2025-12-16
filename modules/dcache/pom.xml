@@ -263,6 +263,13 @@
     </dependency>
 
     <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-test</artifactId>
+        <version>${version.spring}</version>
+        <scope>test</scope>
+    </dependency>
+
+    <dependency>
         <groupId>org.aspectj</groupId>
         <artifactId>aspectjrt</artifactId>
     </dependency>
