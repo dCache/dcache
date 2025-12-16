@@ -1,13 +1,5 @@
 package org.dcache.pool.migration;
 
-import static com.google.common.base.Preconditions.checkState;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileNotInCacheException;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.PoolManagerPoolInformation;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.DelayedReply;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,7 +17,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
 import javax.annotation.concurrent.GuardedBy;
+
 import org.dcache.pool.repository.AbstractStateChangeListener;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.EntryChangeEvent;
@@ -39,6 +33,15 @@ import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.expression.Expression;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static com.google.common.base.Preconditions.checkState;
+
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileNotInCacheException;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.PoolManagerPoolInformation;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.DelayedReply;
 
 /**
  * Encapsulates a job as defined by a user command.
@@ -90,6 +93,7 @@ public class Job
     private final JobDefinition _definition;
     private final TaskParameters _taskParameters;
     private final String _pinPrefix;
+    private final long _creationTime;
 
     private final Lock _lock = new ReentrantLock(true);
 
@@ -103,6 +107,7 @@ public class Job
         _definition = definition;
         _concurrency = 1;
         _state = State.NEW;
+        _creationTime = System.currentTimeMillis();
 
         _taskParameters = new TaskParameters(context.getPoolStub(), context.getPnfsStub(),
               context.getPinManagerStub(),
@@ -168,6 +173,10 @@ public class Job
 
     public JobDefinition getDefinition() {
         return _definition;
+    }
+
+    public long getCreationTime() {
+        return _creationTime;
     }
 
     public int getConcurrency() {
