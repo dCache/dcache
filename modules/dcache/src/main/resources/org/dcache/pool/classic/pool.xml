@@ -92,7 +92,8 @@
     <property name="poolMode" ref="pool-mode"/>
     <property name="billingStub" ref="billing-stub"/>
     <property name="executor" ref="workerThreadPool"/>
-    <property name="fileRequestMonitor" ref="migration"/>
+    <property name="fileRequestMonitor"
+value="#{ ${pool.hotfile.monitoring.enable} ? migration : null }"/>
   </bean>
 
   <bean id="pnfs" class="diskCacheV111.util.PnfsHandler">
