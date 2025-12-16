@@ -1,31 +1,9 @@
 package org.dcache.pool.migration;
 
-import static java.util.Arrays.asList;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static org.parboiled.errors.ErrorUtils.printParseErrors;
-
-import com.google.common.base.Strings;
-import com.google.common.collect.Range;
-import diskCacheV111.poolManager.CostModule;
-import diskCacheV111.pools.PoolCostInfo;
-import diskCacheV111.util.AccessLatency;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.RetentionPolicy;
-import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
-import diskCacheV111.vehicles.PoolManagerPoolInformation;
-import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.CellInfoProvider;
-import dmg.cells.nucleus.CellLifeCycleAware;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellMessageReceiver;
-import dmg.cells.nucleus.CellSetupProvider;
-import dmg.util.command.Argument;
-import dmg.util.command.Command;
-import dmg.util.command.CommandLine;
-import dmg.util.command.Option;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import static java.util.Arrays.asList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -37,10 +15,13 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import static java.util.concurrent.TimeUnit.MINUTES;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import javax.annotation.concurrent.GuardedBy;
+
 import org.dcache.cells.CellStub;
 import org.dcache.pool.PoolDataBeanProvider;
 import org.dcache.pool.classic.FileRequestMonitor;
@@ -58,10 +39,32 @@ import org.dcache.util.expression.TypeMismatchException;
 import org.dcache.util.expression.UnknownIdentifierException;
 import org.dcache.util.pool.CostModuleTagProvider;
 import org.parboiled.Parboiled;
+import static org.parboiled.errors.ErrorUtils.printParseErrors;
 import org.parboiled.parserunners.ReportingParseRunner;
 import org.parboiled.support.ParsingResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Strings;
+import com.google.common.collect.Range;
+
+import diskCacheV111.poolManager.CostModule;
+import diskCacheV111.pools.PoolCostInfo;
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.RetentionPolicy;
+import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
+import diskCacheV111.vehicles.PoolManagerPoolInformation;
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellInfoProvider;
+import dmg.cells.nucleus.CellLifeCycleAware;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellMessageReceiver;
+import dmg.cells.nucleus.CellSetupProvider;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
+import dmg.util.command.CommandLine;
+import dmg.util.command.Option;
 
 /**
  * Module for migrating files between pools.
@@ -146,6 +149,7 @@ public class MigrationModule
     // Hot file mitigation parameters
     private int replicas = 1;
     private long threshold = 5;
+    private static final int MAX_HOTFILE_JOBS = 50;
 
     // Default concurrency to apply to jobs created outside of MigrationCopyCommand (e.g. hot-file)
     private volatile int defaultConcurrency = 1;
@@ -1299,6 +1303,35 @@ public class MigrationModule
                     LOGGER.debug(
                           "Created migration job with id {} for pnfsId {} with concurrency {}",
                           jobId, pnfsId, defaultConcurrency);
+
+                    // Housekeeping: keep only the most recent 50 hotfile jobs
+                    List<java.util.Map.Entry<String, Job>> hotfileJobs = _jobs.entrySet().stream()
+                          .filter(e -> e.getKey().startsWith("hotfile-"))
+                          .filter(e -> {
+                              switch (e.getValue().getState()) {
+                                  case FINISHED:
+                                  case CANCELLED:
+                                  case FAILED:
+                                      return true;
+                                  default:
+                                      return false;
+                              }
+                          })
+                          .sorted(Comparator.comparingLong(e -> e.getValue().getCreationTime()))
+                          .collect(java.util.stream.Collectors.toList());
+
+                    int toRemove = hotfileJobs.size() - MAX_HOTFILE_JOBS;
+                    if (toRemove > 0) {
+                        for (java.util.Map.Entry<String, Job> entry : hotfileJobs) {
+                            if (toRemove <= 0) {
+                                break;
+                            }
+                            Job j = entry.getValue();
+                            _jobs.remove(entry.getKey());
+                            _commands.remove(j);
+                            toRemove--;
+                        }
+                    }
                 }
                 if (_isStarted && job.getState() == Job.State.NEW) {
                     LOGGER.debug(
