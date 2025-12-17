@@ -8,6 +8,7 @@ import com.google.common.escape.Escaper;
 import com.google.common.net.InetAddresses;
 import java.net.InetSocketAddress;
 import java.security.Principal;
+import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.function.Function;
@@ -240,6 +241,10 @@ public class NetLoggerBuilder {
 
     public NetLoggerBuilder add(String name, long value) {
         return add(name, String.valueOf(value));
+    }
+
+    public NetLoggerBuilder add(String name, Duration d) {
+        return add(name, TimeUtils.describe(d).orElse("0"));
     }
 
     public NetLoggerBuilder add(String name, Exception e) {
