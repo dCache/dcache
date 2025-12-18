@@ -13,6 +13,7 @@ Content-Type: application/octet-stream
 
 ### Verify location of ReadMeFile
 GET {{frontend-door}}{{endpoint}}{{namespace}}/%2Fdata%2Fpool-a%2FReadMeFile?children=false&locality=false&locations=true&qos=false&optional=false
+accept: application/json
 
 > {%
     client.test("Successful verification of file location", function() {
@@ -29,8 +30,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}]
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"]
 }
 
 > {%
@@ -88,4 +89,3 @@ Authorization: Basic {{username}} {{password}}
         client.assert(response.status === 404, "Expected 404, got " + response.status);
     });
 %}
-~

@@ -17,8 +17,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}]
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"]
 }
 
 > {%
@@ -80,7 +80,7 @@ POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
 Content-Type: application/json
 
 {
-  "sourcePool": {{sourcePool}},
+  "sourcePool": "{{sourcePool}}",
   "targetPools": ["pool_res2"]
 }
 
@@ -117,7 +117,7 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "targetPools": [{{targetPools}}]
+  "targetPools": ["{{targetPools}}"]
 }
 
 > {%
@@ -151,8 +151,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}]
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"]
 }
 
 > {%
@@ -167,8 +167,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}]
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"]
 }
 
 > {%
@@ -183,7 +183,7 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "targetPools": [{{targetPools}}]
+  "targetPools": ["{{targetPools}}"]
 }
 
 > {%
@@ -198,7 +198,7 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}}
+  "sourcePool": "{{sourcePool}}"
 
 }
 
@@ -214,8 +214,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{wrong_src_pool_name}},
-  "targetPools": [{{targetPools}}]
+  "sourcePool": "{{wrong_src_pool_name}}",
+  "targetPools": ["{{targetPools}}"]
 }
 
 > {%
@@ -230,8 +230,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{wrong_target_pool_name}}]
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{wrong_target_pool_name}}"]
 }
 
 > {%
@@ -246,7 +246,7 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
+  "sourcePool": "{{sourcePool}}",
   "targetPools": []
 }
 
@@ -262,8 +262,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}, {{wrong_target_pool_name}}]
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}", "{{wrong_target_pool_name}}"]
 }
 
 > {%
@@ -279,8 +279,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}],
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"],
   "concurrency": 3.98
 }
 
@@ -296,8 +296,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}],
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"],
   "pins": "keep"
 }
 
@@ -313,8 +313,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}],
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"],
   "pins": "move"
 }
 
@@ -330,8 +330,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}],
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"],
   "smode": "same"
 }
 
@@ -347,8 +347,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}],
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"],
   "smode": "cached"
 }
 
@@ -364,8 +364,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}],
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"],
   "smode": "precious"
 }
 
@@ -381,8 +381,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}],
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"],
   "smode": "removable"
 }
 
@@ -398,8 +398,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}],
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"],
   "smode": "delete"
 }
 
@@ -415,8 +415,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}],
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"],
   "smode": "delete+u2"
 }
 
@@ -432,8 +432,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}],
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"],
   "tmode": "same"
 }
 
@@ -449,8 +449,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}],
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"],
   "tmode": "cached"
 }
 
@@ -466,8 +466,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}],
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"],
   "tmode": "precious"
 }
 
@@ -483,8 +483,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}],
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"],
   "verify": true
 }
 
@@ -500,8 +500,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}],
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"],
   "verify": false
 }
 
@@ -517,8 +517,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}],
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"],
   "eager": true
 }
 
@@ -534,8 +534,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}],
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"],
   "eager": false
 }
 
@@ -551,9 +551,9 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}],
-  "exclude": [{{excludePools}}]
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"],
+  "exclude": ["{{excludePools}}"]
 }
 
 > {%
@@ -568,9 +568,9 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}],
-  "include" : [{{includePools}}]
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"],
+  "include" : ["{{includePools}}"]
 }
 
 
@@ -586,8 +586,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}],
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"],
   "refresh" : {{refresh}}
 }
 
@@ -604,8 +604,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}],
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"],
   "select" : "proportional"
 }
 
@@ -622,8 +622,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}],
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"],
   "select" : "random"
 }
 
@@ -640,8 +640,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}],
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"],
   "target" : "pool"
 }
 
@@ -658,10 +658,10 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}],
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"],
   "fileAttributes" : {
-      "accessed" : {{accessed}},
+      "accessed" : "{{accessed}}",
       "al" : "online",
       "rp" : "custodial"
   }
@@ -710,8 +710,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}],
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"],
   "fileAttributes" : {
       "al" : "online"
   }
@@ -730,8 +730,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}],
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"],
   "fileAttributes" : {
       "al" : "nearline"
   }
@@ -750,8 +750,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}],
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"],
   "fileAttributes" : {
       "pnfsid" : [{{pnfsid}}]
   }
@@ -770,8 +770,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}],
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"],
   "fileAttributes" : {
       "state" : "cached"
   }
@@ -790,8 +790,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}],
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"],
   "fileAttributes" : {
       "state" : "precious"
   }
@@ -810,8 +810,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}],
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"],
   "fileAttributes" : {
       "rp" : "custodial"
   }
@@ -829,8 +829,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}],
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"],
   "fileAttributes" : {
       "rp" : "replica"
   }
@@ -849,8 +849,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}],
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"],
   "fileAttributes" : {
   "rp" : "output"
   }
@@ -869,10 +869,10 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}],
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"],
   "fileAttributes" : {
-      "size" : {{size}}
+      "size" : "{{size}}"
   }
 }
 
@@ -889,8 +889,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}],
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"],
   "fileAttributes" : {
     "sticky" : [{{owners}}]
   }
@@ -908,8 +908,8 @@ Content-Type: application/json
 Authorization: Basic {{username}} {{password}}
 
 {
-  "sourcePool": {{sourcePool}},
-  "targetPools": [{{targetPools}}],
+  "sourcePool": "{{sourcePool}}",
+  "targetPools": ["{{targetPools}}"],
   "fileAttributes" : {
     "storage" : {{storage}}
   }
