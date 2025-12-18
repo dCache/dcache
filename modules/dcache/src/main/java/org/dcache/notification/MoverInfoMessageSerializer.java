@@ -70,6 +70,7 @@ public class MoverInfoMessageSerializer implements Serializer<MoverInfoMessage> 
         protocolInfo.put("protocol", data.getProtocolInfo().getProtocol());
         protocolInfo.put("versionMajor", data.getProtocolInfo().getMajorVersion());
         protocolInfo.put("versionMinor", data.getProtocolInfo().getMinorVersion());
+        protocolInfo.put("transferTag", data.getProtocolInfo().getTransferTag());
         protocolInfo.put("port", remoteHost.getPort());
         protocolInfo.put("host", remoteHost.getAddress().getHostAddress());
         o.put("protocolInfo", protocolInfo);
