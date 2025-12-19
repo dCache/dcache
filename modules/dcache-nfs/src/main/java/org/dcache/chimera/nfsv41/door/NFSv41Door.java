@@ -1395,10 +1395,19 @@ public class NFSv41Door extends AbstractCellComponent implements
             return _name;
         }
 
+        /**
+         * Convert array of InetSocketAddress to a string representation.
+         */
+        private static String addrArrayToString(InetSocketAddress[] addresses) {
+            return Stream.of(addresses)
+                    .map(s -> InetAddresses.toUriString(s.getAddress()) + ":" + s.getPort())
+                    .collect(Collectors.joining(", ", "[", "]"));
+        }
+
         @Override
         public String toString() {
             return String.format("%s: DS: %s, InetAddress: %s",
-                  _name, _deviceId, Arrays.toString(_socketAddress));
+                  _name, _deviceId, addrArrayToString(_socketAddress));
         }
     }
 
