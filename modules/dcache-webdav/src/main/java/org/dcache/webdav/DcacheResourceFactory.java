@@ -1793,8 +1793,19 @@ public class DcacheResourceFactory
                 try {
                     connection.setRequestProperty("Connection", "Close");
                     if (range != null) {
-                        connection.addRequestProperty("Range",
-                              String.format("bytes=%d-%d", range.getStart(), range.getFinish()));
+                        String rangeHeader;
+                        Long start = range.getStart();
+                        Long finish = range.getFinish();
+
+                        if (start == null && finish != null) {
+                            rangeHeader = String.format("bytes=-%d", finish);
+                        } else if (start != null && finish == null) {
+                            rangeHeader = String.format("bytes=%d-", start);
+                        } else {
+                            rangeHeader = String.format("bytes=%d-%d", start, finish);
+                        }
+
+                        connection.addRequestProperty("Range", rangeHeader);
                     }
 
                     connection.connect();
