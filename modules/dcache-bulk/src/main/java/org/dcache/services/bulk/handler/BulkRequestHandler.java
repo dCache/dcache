@@ -171,6 +171,11 @@ public final class BulkRequestHandler implements BulkSubmissionHandler,
                     }
                 });
             }
+        } catch (BulkRequestNotFoundException e) {
+            /*
+             * Request has been cleared already.
+             */
+            LOGGER.debug("checkTerminated, request {} was auto-cleared on termination.", id);
         } catch (BulkStorageException e) {
             LOGGER.warn("checkTerminated, check for cancel on failure {}: {}.", id,
                   e.toString());
