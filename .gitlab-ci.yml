@@ -30,8 +30,10 @@
 stages:
   # build rpm, tar, deb, oci container
   - build
+  # create a code coverage report
+  - coverage
   # sign rpm, deb
-  - sign
+  #- sign                       # currently disabled due to performance issues in gitlab ci
   # create k8s namespace
   - testenv_pre
   # deploy 3rd party infrastructure services
@@ -230,6 +232,21 @@ Check for duplicate dependencies:
     - tar -C /dcache --strip-components=1 -xzf packages/tar/target/dcache-*.tar.gz
     - ls -1 /dcache/share/classes/ | grep -v netty-tcnative-boringssl-static | sort | sed -e 's/\-[0-9].*$//' | uniq -D > duplicate-dependencies.txt
     - if [ -s duplicate-dependencies.txt ]; then cat duplicate-dependencies.txt; exit 1; fi
+
+#Job to generate JaCoCo coverage reports
+jacoco_coverage:
+  stage: coverage
+  image: dcache/maven-java21-tar-build
+  extends: .build_cache
+  needs: ["tar", "rpm", "deb", "srm_client_rpm"]
+  script:
+    - mvn $MAVEN_CLI_OPTS jacoco:prepare-agent test jacoco:report-aggregate
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: jacoco
+        path: "**/target/site/jacoco-aggregate/jacoco.xml"  # Path to aggregated JaCoCo report
+    expire_in: 2 weeks
 
 sign_rpm:
   stage: sign
