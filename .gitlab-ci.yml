@@ -101,7 +101,7 @@ default:
 # default cache konfiguration for maven build jobs
 # Cache downloaded dependencies and plugins between builds.
 # To keep cache across branches add 'key: "$CI_JOB_NAME"'
-#
+
 .build_cache:
   cache:
     key:
@@ -236,7 +236,11 @@ Check for duplicate dependencies:
 generate_jacoco_report:
   stage: coverage
   image: eclipse-temurin:17-jdk
-  needs: ["build"]
+  needs:
+    - job: tar
+    - job: rpm
+    - job: deb
+    - job: srm_client_rpm
   script:
     - chmod +x ./generate-jacoco-report.sh
     - ./generate-jacoco-report.sh
