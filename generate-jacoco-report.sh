@@ -80,7 +80,6 @@ CLASSFILES_ARGS=()
 SOURCEFILES_ARGS=()
 
 for exec_file in "${EXEC_FILES[@]}"; do
-    # Extract module path (e.g., core, dlm, rquota) from the exec file path
     module_path=$(dirname "$(dirname "$(dirname "$exec_file")")")
     module_name=$(basename "$module_path")
 

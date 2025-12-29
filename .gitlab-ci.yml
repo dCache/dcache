@@ -110,6 +110,7 @@ default:
       prefix: "$CI_JOB_NAME"
     paths:
       - ./.m2/repository
+      - ~/jacoco-0.8.14  # Cache JaCoCo CLI tools
 
 #
 # default rules for upload stage
@@ -117,8 +118,6 @@ default:
 .upload_rules:
   rules:
     - if: $CI_COMMIT_TAG
-
-
 
 rpm:
   stage: build
@@ -233,20 +232,22 @@ Check for duplicate dependencies:
     - ls -1 /dcache/share/classes/ | grep -v netty-tcnative-boringssl-static | sort | sed -e 's/\-[0-9].*$//' | uniq -D > duplicate-dependencies.txt
     - if [ -s duplicate-dependencies.txt ]; then cat duplicate-dependencies.txt; exit 1; fi
 
-#Job to generate JaCoCo coverage reports
-jacoco_coverage:
+# Job to generate JaCoCo report using script
+generate_jacoco_report:
   stage: coverage
-  image: dcache/maven-java21-tar-build
-  extends: .build_cache
-  needs: ["tar", "rpm", "deb", "srm_client_rpm"]
+  image: eclipse-temurin:17-jdk
+  needs: ["build"]
   script:
-    - mvn $MAVEN_CLI_OPTS jacoco:prepare-agent test jacoco:report-aggregate
+    - chmod +x ./generate-jacoco-report.sh
+    - ./generate-jacoco-report.sh
   artifacts:
     reports:
       coverage_report:
         coverage_format: jacoco
-        path: "**/target/site/jacoco-aggregate/jacoco.xml"  # Path to aggregated JaCoCo report
-    expire_in: 2 weeks
+        path: target/coverage-reports/site/jacoco.xml
+    paths:
+      - target/coverage-reports/site/
+    expire_in: 1 week
 
 sign_rpm:
   stage: sign
