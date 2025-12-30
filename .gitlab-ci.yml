@@ -132,6 +132,7 @@ rpm:
         - "**/target/failsafe-reports/TEST-*.xml"
     paths:
       - "packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm"
+      - "**/target/*.exec"
     expire_in: 2 days
 
 srm_client_rpm:
@@ -143,6 +144,7 @@ srm_client_rpm:
   artifacts:
     paths:
       - "modules/srm-client/target/rpmbuild/RPMS/noarch/dcache-srmclient*.rpm"
+      - "**/target/*.exec"
     expire_in: 2 days
 
 deb:
@@ -154,6 +156,7 @@ deb:
   artifacts:
     paths:
       - "packages/fhs/target/dcache_*.deb"
+      - "**/target/*.exec"
     expire_in: 2 days
 
 # needed for minimal pipeline run
@@ -166,6 +169,7 @@ tar:
   artifacts:
     paths:
       - "packages/tar/target/dcache-*.tar.gz"
+      - "**/target/*.exec"
     expire_in: 2 days
 
 
@@ -236,11 +240,14 @@ Check for duplicate dependencies:
 generate_jacoco_report:
   stage: coverage
   image: eclipse-temurin:17-jdk
+  extends: .build_cache
   needs:
     - job: tar
     - job: rpm
     - job: deb
     - job: srm_client_rpm
+  before_script:
+    - apt-get update && apt-get install -y wget unzip
   script:
     - chmod +x ./generate-jacoco-report.sh
     - ./generate-jacoco-report.sh
