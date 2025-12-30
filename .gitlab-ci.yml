@@ -241,6 +241,10 @@ collect_coverage_data:
   stage: build
   image: eclipse-temurin:17-jdk
   extends: .build_cache
+  needs:
+    - job: rpm
+    - job: deb
+    - job: tar
   script:
     # Run all tests with the coverage profile
     - mvn $MAVEN_CLI_OPTS -P code-coverage clean test
