@@ -236,16 +236,28 @@ Check for duplicate dependencies:
     - ls -1 /dcache/share/classes/ | grep -v netty-tcnative-boringssl-static | sort | sed -e 's/\-[0-9].*$//' | uniq -D > duplicate-dependencies.txt
     - if [ -s duplicate-dependencies.txt ]; then cat duplicate-dependencies.txt; exit 1; fi
 
+#Job to create and collect JaCoCo reports
+collect_coverage_data:
+  stage: build
+  image: eclipse-temurin:17-jdk
+  extends: .build_cache
+  script:
+    # Run all tests with the coverage profile
+    - mvn $MAVEN_CLI_OPTS -P code-coverage clean test
+  artifacts:
+    paths:
+      # Pass the .exec files AND the compiled classes to the next stage
+      - "**/target/coverage-reports/jacoco-ut.exec"
+      - "**/target/classes/"
+    expire_in: 1 day
+
 # Job to generate JaCoCo report using script
 generate_jacoco_report:
   stage: coverage
   image: eclipse-temurin:17-jdk
   extends: .build_cache
   needs:
-    - job: tar
-    - job: rpm
-    - job: deb
-    - job: srm_client_rpm
+    - job: collect_coverage_data
   before_script:
     - apt-get update && apt-get install -y wget unzip
   script:
@@ -255,7 +267,7 @@ generate_jacoco_report:
     reports:
       coverage_report:
         coverage_format: jacoco
-        path: target/coverage-reports/site/jacoco.xml
+        path: target/coverage-reports/site/jacoco.xml #ToDo check directory & file ext
     paths:
       - target/coverage-reports/site/
     expire_in: 1 week
