@@ -29,6 +29,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.PoolMonitor;
@@ -39,11 +40,12 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.stringtemplate.v4.ST;
 
 /**
  * <p>RESTful API for Migration.</p>
  *
- * @author Lukas Mansour
+ * @author Lukas Mansour & Sandro Grizzo
  */
 @Component
 @Api(value = "migrations", authorizations = {@Authorization("basicAuth")})
@@ -344,7 +346,7 @@ public final class MigrationResources {
         PoolSelectionUnit.SelectionPool sourcePool = psu.getPool(poolName);
         if (sourcePool == null) {
             throw new BadRequestException(
-                  "No source pool with the name '" + poolName + "' could be found.");
+                  "No pool with the name '" + poolName + "' could be found.");
         }
         try {
             String migrationInfoResponse = poolmanager.sendAndWait(
@@ -404,6 +406,85 @@ public final class MigrationResources {
                 }
             }
             return migInfoOutput;
+        } catch (CacheException | NoRouteToCellException | InterruptedException e) {
+            throw new InternalServerErrorException(e);
+        }
+    }
+
+    /**
+     * Cancels a migration for the specified migration job id on the specified pool.
+     */
+    @POST
+    @ApiOperation(value = "Cancels the given migration job. By default ongoing transfers are allowed to finish gracefully. (See Pool Operator Commands 'migration cancel')")
+    @ApiResponses({
+          @ApiResponse(code = 200, message = "OK"),
+          @ApiResponse(code = 400, message = "Bad request"),
+          @ApiResponse(code = 401, message = "Unauthorized"),
+          @ApiResponse(code = 403, message = "Forbidden"),
+          @ApiResponse(code = 429, message = "Too many requests"),
+          @ApiResponse(code = 500, message = "Internal Server Error")})
+    @Path("/cancel")
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response submitMigrationCancel(@ApiParam(
+          "Description of the request. Which contains the following:\n"
+                + "**pool** - String - Name of the pool to cancel the migration.\n"
+                + "**id** - Integer - Id of the migration to cancel.\n"
+                + "**force** - Boolean - whether to force the migration cancel (disallow ongoing transfers from finishing gracefully.)") String requestPayload) {
+        // If no credentials were passed.
+        if (RequestUser.isAnonymous()) {
+            throw new NotAuthorizedException("Anonymous user is not authorized.");
+        }
+        // Make sure when changing to reapply Restrictions accordingly!
+        // If the user is an admin --> continue.
+        // If the user is not an admin, however he has no restrictions --> continue.
+        // If the user is not an admin and does have restrictions --> Bad Request.
+        if (!RequestUser.isAdmin() && RequestUser.getRestriction() != Restrictions.none()) {
+            throw new ForbiddenException();
+        }
+        JSONObject jsonPayload = new JSONObject(requestPayload);
+        LOGGER.info("JSON Request: {}", jsonPayload);
+
+        if (!jsonPayload.has("pool")) {
+            throw new BadRequestException("No 'pool' was specified.");
+        }
+
+        String poolName = jsonPayload.getString("pool");
+        PoolSelectionUnit psu = poolMonitor.getPoolSelectionUnit();
+        PoolSelectionUnit.SelectionPool pool = psu.getPool(poolName);
+        if (pool == null) {
+            throw new BadRequestException(
+                  "No pool with the name '" + poolName + "' could be found.");
+        }
+
+        if (!jsonPayload.has("id")) {
+            throw new BadRequestException("No 'id' were specified.");
+        }
+        int jobId = jsonPayload.getInt("id");
+
+        boolean force = false;
+        if (jsonPayload.has("force")) {
+            force = jsonPayload.getBoolean("force");
+        }
+
+        String forceStr = "";
+        if (force) {
+            forceStr = "-force ";
+        }
+
+        try {
+            String migrationCancelMsg = poolmanager.sendAndWait(
+                  new CellPath(pool.getAddress()), "migration cancel " + forceStr + jobId, String.class);
+            // Migration Cancel Message has the following format "[%s] %-12s %s" "[id] STATE cmdLine"
+            String[] parts = migrationCancelMsg.split(" ");
+            if (parts.length >= 2) {
+                return Response.status(Status.OK)
+                      .header("id", parts[0].substring(1, parts[0].length() - 1))
+                      .header("state", parts[1].trim())
+                      .build();
+            }
+            // It returned a message we don't expect.
+            throw new InternalServerErrorException("Command returned unexpected message.");
         } catch (CacheException | NoRouteToCellException | InterruptedException e) {
             throw new InternalServerErrorException(e);
         }
