@@ -247,7 +247,7 @@ collect_coverage_data:
     - job: tar
   script:
     # Run all tests with the coverage profile
-    - mvn $MAVEN_CLI_OPTS -P code-coverage clean test
+    - mvn $MAVEN_CLI_OPTS -P code-coverage clean verify -DskipTests=false
   artifacts:
     paths:
       # Pass the .exec files AND the compiled classes to the next stage
