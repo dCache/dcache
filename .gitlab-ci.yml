@@ -239,7 +239,7 @@ Check for duplicate dependencies:
 #Job to create and collect JaCoCo reports
 collect_coverage_data:
   stage: build
-  image: eclipse-temurin:17-jdk
+  image: maven:3.9.12-eclipse-temurin-17
   extends: .build_cache
   needs:
     - job: rpm
@@ -258,7 +258,7 @@ collect_coverage_data:
 # Job to generate JaCoCo report using script
 generate_jacoco_report:
   stage: coverage
-  image: eclipse-temurin:17-jdk
+  image: maven:3.9.12-eclipse-temurin-17
   extends: .build_cache
   needs:
     - job: collect_coverage_data
