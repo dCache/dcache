@@ -110,7 +110,6 @@ default:
       prefix: "$CI_JOB_NAME"
     paths:
       - ./.m2/repository
-      - .jacoco-cache/  # Cache JaCoCo CLI tools
 
 #
 # default rules for upload stage
@@ -246,11 +245,11 @@ collect_coverage_data:
     - job: deb
     - job: tar
   script:
-    # Run all tests with the coverage profile
+    # run all tests with the coverage profile
     - mvn $MAVEN_CLI_OPTS -P code-coverage clean verify -DskipTests=false
   artifacts:
     paths:
-      # Pass the .exec files AND the compiled classes to the next stage
+      # pass the .exec files AND the compiled classes to the next stage
       - "**/target/coverage-reports/jacoco-ut.exec"
       - "**/target/classes/"
     expire_in: 1 day
@@ -262,12 +261,15 @@ generate_jacoco_report:
   extends: .build_cache
   needs:
     - job: collect_coverage_data
+  cache:
+    key: "jacoco-binaries-$CI_COMMIT_REF_SLUG"
+    paths:
+      - ./.m2/repository  # original path
+      - .jacoco-cache/    # our new path
   before_script:
     - apt-get update && apt-get install -y wget unzip
-    # Create the directory first
-    - mkdir -p "$(pwd)/.jacoco-cache"
-    # Link it to the location the script expects
-    - ln -sfn "$(pwd)/.jacoco-cache" "$HOME/jacoco-0.8.14"
+    - mkdir -p "$(pwd)/.jacoco-cache" # create the directory first
+    - ln -sfn "$(pwd)/.jacoco-cache" "$HOME/jacoco-0.8.14" # link it to the location the script expects
   script:
     - chmod +x ./generate-jacoco-report.sh
     - ./generate-jacoco-report.sh
@@ -275,7 +277,7 @@ generate_jacoco_report:
     reports:
       coverage_report:
         coverage_format: jacoco
-        path: target/coverage-reports/site/jacoco.xml #ToDo check directory & file ext
+        path: target/coverage-reports/site/jacoco.xml
     paths:
       - target/coverage-reports/site/
     expire_in: 1 week
