@@ -116,7 +116,8 @@ printf "%s\n" "${SOURCEFILES_ARGS[@]}"
 java -jar "$JACOCO_CLI_JAR" report "$MERGED_EXEC" \
     "${CLASSFILES_ARGS[@]}" \
     "${SOURCEFILES_ARGS[@]}" \
-    --html "$REPORT_DIR"
+    --html "$REPORT_DIR" \
+    --xml "$REPORT_DIR/jacoco.xml"
 
 if [ $? -ne 0 ]; then
     echo "Error: Failed to generate coverage report"

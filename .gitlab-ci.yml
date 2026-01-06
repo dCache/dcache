@@ -110,7 +110,7 @@ default:
       prefix: "$CI_JOB_NAME"
     paths:
       - ./.m2/repository
-      - ~/jacoco-0.8.14  # Cache JaCoCo CLI tools
+      - .jacoco-cache/  # Cache JaCoCo CLI tools
 
 #
 # default rules for upload stage
@@ -264,6 +264,8 @@ generate_jacoco_report:
     - job: collect_coverage_data
   before_script:
     - apt-get update && apt-get install -y wget unzip
+    # Create the link: link $HOME/jacoco-0.8.14 to the cached directory
+    - ln -s "$(pwd)/.jacoco-cache" "$HOME/jacoco-0.8.14"
   script:
     - chmod +x ./generate-jacoco-report.sh
     - ./generate-jacoco-report.sh
