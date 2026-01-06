@@ -11,7 +11,7 @@ REPORT_DIR="$PROJECT_ROOT/target/coverage-reports/site"
 # Ensure the report directory exists
 mkdir -p "$REPORT_DIR"
 
-# Debug: Print paths
+# Debug: Print all paths
 echo "DEBUG: PROJECT_ROOT: $PROJECT_ROOT"
 echo "DEBUG: JACOCO_DIR: $JACOCO_DIR"
 echo "DEBUG: JACOCO_CLI_JAR: $JACOCO_CLI_JAR"s
