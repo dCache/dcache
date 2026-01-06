@@ -272,6 +272,23 @@ Authorization: Basic {{username}} {{password}}
     });
 %}
 
+### copy endpoint - bad request on invalid json format
+POST {{frontend-door}}{{endpoint}}{{migrations}}/copy
+Content-Type: application/json
+Authorization: Basic {{username}} {{password}}
+
+{
+  "sourcePool": ,
+  "targetPools": ["]
+}
+
+> {%
+    client.test("Response is Bad request", function() {
+        client.assert(response.status === 400, "Expected 400, got " + response.status);
+    });
+%}
+
+
 ### copy endpoint - bad request when cocurrency is provided
 //FYI concurrency should be a whole number -- may need to modify this test in the future!
 POST {{frontend-door}}{{endpoint}}{{migrations}}/copy

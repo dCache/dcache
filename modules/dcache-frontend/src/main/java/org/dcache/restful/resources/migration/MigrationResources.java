@@ -35,6 +35,7 @@ import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.migrations.MigrationInfo;
 import org.dcache.restful.util.RequestUser;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -120,7 +121,13 @@ public final class MigrationResources {
         }
 
         // First convert to JSON.
-        JSONObject jsonPayload = new JSONObject(requestPayload);
+        JSONObject jsonPayload;
+        try {
+            jsonPayload = new JSONObject(requestPayload);
+        } catch (JSONException e) {
+            throw new BadRequestException("The request payload is not valid JSON.", e);
+        }
+
         LOGGER.info("JSON Request: {}", jsonPayload);
 
         if (!jsonPayload.has("sourcePool")) {
