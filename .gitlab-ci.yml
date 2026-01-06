@@ -264,8 +264,10 @@ generate_jacoco_report:
     - job: collect_coverage_data
   before_script:
     - apt-get update && apt-get install -y wget unzip
-    # Create the link: link $HOME/jacoco-0.8.14 to the cached directory
-    - ln -s "$(pwd)/.jacoco-cache" "$HOME/jacoco-0.8.14"
+    # Create the directory first
+    - mkdir -p "$(pwd)/.jacoco-cache"
+    # Link it to the location the script expects
+    - ln -sfn "$(pwd)/.jacoco-cache" "$HOME/jacoco-0.8.14"
   script:
     - chmod +x ./generate-jacoco-report.sh
     - ./generate-jacoco-report.sh
