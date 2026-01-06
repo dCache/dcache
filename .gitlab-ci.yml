@@ -264,8 +264,7 @@ generate_jacoco_report:
   cache:
     key: "jacoco-binaries-$CI_COMMIT_REF_SLUG"
     paths:
-      - ./.m2/repository  # original path
-      - .jacoco-cache/    # our new path
+      - .jacoco-cache/
   before_script:
     - apt-get update && apt-get install -y wget unzip
     - mkdir -p "$(pwd)/.jacoco-cache" # create the directory first
