@@ -285,8 +285,6 @@ sign_rpm:
   stage: sign
   image: almalinux:10-minimal
   needs: ["rpm"]
-  rules:
-    - when: never  # Temporarily disable this job
   script:
     - microdnf install -y rpm-sign gpg
     - echo $DCACHE_ORG_PGP_KEY | base64 -d -i > secret.gpg
@@ -303,8 +301,6 @@ sign_srm_client_rpm:
   stage: sign
   image: almalinux:10-minimal
   needs: ["srm_client_rpm"]
-  rules:
-    - when: never  # Temporarily disable this job
   script:
     - microdnf install -y rpm-sign gpg
     - echo $DCACHE_ORG_PGP_KEY | base64 -d -i > secret.gpg
@@ -321,8 +317,6 @@ sign_deb:
   stage: sign
   image: ubuntu:22.04
   needs: ["deb"]
-  rules:
-    - when: never  # Temporarily disable this job
   script:
     - apt-get -qq update
     - apt-get -qq install debsigs gpg

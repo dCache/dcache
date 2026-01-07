@@ -83,10 +83,6 @@ for exec_file in "${EXEC_FILES[@]}"; do
     module_path=$(dirname "$(dirname "$(dirname "$exec_file")")")
     module_name=$(basename "$module_path")
 
-    # Debug: Print module paths
-    echo "DEBUG: Module path: $module_path"
-    echo "DEBUG: Module name: $module_name"
-
     # Check if the target/classes directory exists
     if [ ! -d "$module_path/target/classes" ]; then
         echo "DEBUG: Directory $module_path/target/classes does not exist"
@@ -97,20 +93,12 @@ for exec_file in "${EXEC_FILES[@]}"; do
     # Check if the src/main/java directory exists
     if [ ! -d "$module_path/src/main/java" ]; then
         echo "DEBUG: Directory $module_path/src/main/java does not exist"
-    else
-        echo "DEBUG: Directory $module_path/src/main/java exists"
     fi
 
     # Add classfiles and sourcefiles arguments
     CLASSFILES_ARGS+=("--classfiles" "$module_path/target/classes")
     SOURCEFILES_ARGS+=("--sourcefiles" "$module_path/src/main/java")
 done
-
-# Debug: Print all classfiles and sourcefiles arguments
-echo "DEBUG: CLASSFILES_ARGS:"
-printf "%s\n" "${CLASSFILES_ARGS[@]}"
-echo "DEBUG: SOURCEFILES_ARGS:"
-printf "%s\n" "${SOURCEFILES_ARGS[@]}"
 
 # Generate the report with dynamic arguments
 java -jar "$JACOCO_CLI_JAR" report "$MERGED_EXEC" \
