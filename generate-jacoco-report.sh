@@ -41,12 +41,6 @@ fi
 echo "DEBUG: Searching for jacoco-ut.exec files in $PROJECT_ROOT"
 EXEC_FILES=($(find "$PROJECT_ROOT" -name "jacoco-ut.exec" -type f))
 
-# Debug: Print found exec files
-echo "DEBUG: Found execution data files:"
-for exec_file in "${EXEC_FILES[@]}"; do
-    echo "DEBUG: $exec_file"
-done
-
 # Check if any execution data files were found
 if [ ${#EXEC_FILES[@]} -eq 0 ]; then
     echo "Error: No jacoco-ut.exec files found in $PROJECT_ROOT"
@@ -86,8 +80,8 @@ for exec_file in "${EXEC_FILES[@]}"; do
     # Check if the target/classes directory exists
     if [ ! -d "$module_path/target/classes" ]; then
         echo "DEBUG: Directory $module_path/target/classes does not exist"
-    else
-        echo "DEBUG: Directory $module_path/target/classes exists"
+    #else
+    #    echo "DEBUG: Directory $module_path/target/classes exists"
     fi
 
     # Check if the src/main/java directory exists
