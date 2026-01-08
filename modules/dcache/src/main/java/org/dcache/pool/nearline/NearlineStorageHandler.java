@@ -1208,7 +1208,8 @@ public class NearlineStorageHandler
             infoMsg.setTransferTime(System.currentTimeMillis() - activatedAt);
             infoMsg.setFileSize(getFileAttributes().getSize());
             infoMsg.setTimeQueued(activatedAt - createdAt);
-            addFromNearlineStorage(infoMsg, storage);
+            //TODO check if we need to log this in kafka
+            //addFromNearlineStorage(infoMsg, storage);
 
             billingStub.notify(infoMsg);
             try {
@@ -1442,7 +1443,8 @@ public class NearlineStorageHandler
                 infoMsg.setResult(CacheException.DEFAULT_ERROR_CODE, cause.toString());
             }
             infoMsg.setTransferTime(System.currentTimeMillis() - activatedAt);
-            addFromNearlineStorage(infoMsg, storage);
+            //TODO check if we need to log this in kafka
+            //addFromNearlineStorage(infoMsg, storage);
 
             billingStub.notify(infoMsg);
             try {
