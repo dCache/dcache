@@ -117,15 +117,13 @@ public class HostnameConstrainedPoolList implements RefreshablePoolList {
 
         // Filter the pools based on valid pool names
         List<PoolManagerPoolInformation> validPools = allPools.stream()
-              .filter(pool -> validPoolNames.contains(pool.getName()))
-              .collect(Collectors.toList());
+              .filter(pool -> validPoolNames.contains(pool.getName())).toList();
 
         // Filter offline pools based on hostname constraints using the extractor
         Collection<String> validOfflinePoolNames = hostnameExtractor.getCandidateLocations(
               allOfflinePools);
         List<String> validOfflinePools = allOfflinePools.stream()
-              .filter(validOfflinePoolNames::contains)
-              .collect(Collectors.toList());
+              .filter(validOfflinePoolNames::contains).toList();
 
         filteredPools = ImmutableList.copyOf(validPools);
         filteredOfflinePools = ImmutableList.copyOf(validOfflinePools);
