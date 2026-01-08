@@ -1,59 +1,11 @@
 package org.dcache.pool.migration;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.ArrayList;
-
 import static java.util.Arrays.asList;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
 import static java.util.concurrent.TimeUnit.MINUTES;
-
-import java.util.function.Predicate;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.annotation.concurrent.GuardedBy;
-
-import org.dcache.cells.CellStub;
-import org.dcache.pool.PoolDataBeanProvider;
-import org.dcache.pool.classic.FileRequestMonitor;
-import org.dcache.pool.classic.IoQueueManager;
-import org.dcache.pool.migration.json.MigrationData;
-import org.dcache.pool.repository.CacheEntry;
-import org.dcache.pool.repository.ReplicaState;
-import org.dcache.pool.repository.StickyRecord;
-import org.dcache.util.Glob;
-import org.dcache.util.expression.Expression;
-import org.dcache.util.expression.ExpressionParser;
-import org.dcache.util.expression.Token;
-import org.dcache.util.expression.Type;
-import org.dcache.util.expression.TypeMismatchException;
-import org.dcache.util.expression.UnknownIdentifierException;
-import org.dcache.util.pool.CostModuleTagProvider;
-import org.parboiled.Parboiled;
-
 import static org.parboiled.errors.ErrorUtils.printParseErrors;
-
-import org.parboiled.parserunners.ReportingParseRunner;
-import org.parboiled.support.ParsingResult;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.Range;
-
 import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.util.AccessLatency;
@@ -71,6 +23,45 @@ import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.CommandLine;
 import dmg.util.command.Option;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import javax.annotation.concurrent.GuardedBy;
+import org.dcache.cells.CellStub;
+import org.dcache.pool.PoolDataBeanProvider;
+import org.dcache.pool.classic.FileRequestMonitor;
+import org.dcache.pool.classic.IoQueueManager;
+import org.dcache.pool.migration.json.MigrationData;
+import org.dcache.pool.repository.CacheEntry;
+import org.dcache.pool.repository.ReplicaState;
+import org.dcache.pool.repository.StickyRecord;
+import org.dcache.util.Glob;
+import org.dcache.util.expression.Expression;
+import org.dcache.util.expression.ExpressionParser;
+import org.dcache.util.expression.Token;
+import org.dcache.util.expression.Type;
+import org.dcache.util.expression.TypeMismatchException;
+import org.dcache.util.expression.UnknownIdentifierException;
+import org.dcache.util.pool.CostModuleTagProvider;
+import org.parboiled.Parboiled;
+import org.parboiled.parserunners.ReportingParseRunner;
+import org.parboiled.support.ParsingResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Module for migrating files between pools.
@@ -156,7 +147,9 @@ public class MigrationModule
     private int replicas = 1;
     private long threshold = 5;
     private static final int MAX_HOTFILE_JOBS = 50;
-    /** Module-wide refresh interval in seconds used as default for commands. */
+    /**
+     * Module-wide refresh interval in seconds used as default for commands.
+     */
     private int refresh = 300;
 
     // Default concurrency to apply to jobs created outside of MigrationCopyCommand (e.g. hot-file)
@@ -1047,16 +1040,16 @@ public class MigrationModule
                 "     migration copy -smode=delete -tmode=same -pins=move -verify")
     public class MigrationMoveCommand extends MigrationCopyCommand {
 
-         public MigrationMoveCommand() {
-             select = "proportional";
-             target = "pool";
-             sourceMode = "delete";
-             targetMode = "same";
-             pins = "move";
-             verify = true;
-             maintainAtime = true;
-         }
-     }
+        public MigrationMoveCommand() {
+            select = "proportional";
+            target = "pool";
+            sourceMode = "delete";
+            targetMode = "same";
+            pins = "move";
+            verify = true;
+            maintainAtime = true;
+        }
+    }
 
     @Command(name = "migration cache",
           description = "Caches replicas on other pools. Accepts the same options as " +
@@ -1064,15 +1057,15 @@ public class MigrationModule
                 "     migration copy -smode=same -tmode=cached")
     public class MigrationCacheCommand extends MigrationCopyCommand {
 
-         public MigrationCacheCommand() {
-             select = "proportional";
-             target = "pool";
-             sourceMode = "same";
-             targetMode = "cached";
-             pins = "keep";
-             verify = false;
-         }
-     }
+        public MigrationCacheCommand() {
+            select = "proportional";
+            target = "pool";
+            sourceMode = "same";
+            targetMode = "cached";
+            pins = "keep";
+            verify = false;
+        }
+    }
 
     @Command(name = "migration suspend",
           description = "Suspends a migration job. A suspended job finishes ongoing " +
@@ -1239,119 +1232,120 @@ public class MigrationModule
         }
         String jobId = "hotfile-" + pnfsId;
         try {
-                Job job = _jobs.get(jobId);
-                if (job != null) {
-                    switch (job.getState()) {
-                        case FINISHED:
-                        case CANCELLED:
-                        case FAILED:
-                            _jobs.remove(jobId);
-                            _commands.remove(job);
-                            job = null;
+            Job job = _jobs.get(jobId);
+            if (job != null) {
+                switch (job.getState()) {
+                    case FINISHED:
+                    case CANCELLED:
+                    case FAILED:
+                        _jobs.remove(jobId);
+                        _commands.remove(job);
+                        job = null;
+                        break;
+                    default:
+                        return;
+                }
+            }
+            if (job == null) {
+                RefreshablePoolList sourceList = new PoolListByNames(
+                      _context.getPoolManagerStub(),
+                      Collections.singletonList(_context.getPoolName()));
+                sourceList.refresh();
+                Collection<Pattern> excluded = new HashSet<>();
+                excluded.add(Pattern.compile(Pattern.quote(_context.getPoolName())));
+                RefreshablePoolList basePoolList = new PoolListFilter(
+                      new PoolListByPoolGroupOfPool(_context.getPoolManagerStub(),
+                            _context.getPoolName()),
+                      excluded,
+                      FALSE_EXPRESSION,
+                      Collections.emptySet(),
+                      TRUE_EXPRESSION,
+                      sourceList);
+
+                // Wrap with hostname constraint to prevent creating replicas on same host
+                CostModule costModule = getCostModule();
+                HostnameConstrainedPoolList poolList = new HostnameConstrainedPoolList(
+                      basePoolList,
+                      sourceList,
+                      Collections.singletonList("hostname"),
+                      new CostModuleTagProvider(costModule));
+
+                poolList.refresh();
+                JobDefinition def =
+                      new JobDefinition(
+                            createFilter(null, null, new PnfsId[]{pnfsId}, null, null, null,
+                                  null, null, null),
+                            createCacheEntryMode("same"),
+                            createCacheEntryMode("cached"),
+                            createPoolSelectionStrategy("proportional"),
+                            createComparator(null),
+                            sourceList,
+                            poolList,
+                            refresh * 1000L,
+                            false,
+                            false,
+                            false,
+                            replicas,
+                            false,
+                            false,
+                            true,
+                            FALSE_EXPRESSION,
+                            FALSE_EXPRESSION,
+                            false,
+                            false);
+                job = new Job(_context, def);
+                // Apply module default concurrency to hot-file job
+                job.setConcurrency(defaultConcurrency);
+                _jobs.put(jobId, job);
+                _commands.put(job, "hotfile replication for " + pnfsId);
+                LOGGER.debug(
+                      "Created migration job with id {} for pnfsId {} with concurrency {}",
+                      jobId, pnfsId, defaultConcurrency);
+
+                // Housekeeping: keep only the most recent 50 hotfile jobs
+                List<java.util.Map.Entry<String, Job>> hotfileJobs = _jobs.entrySet().stream()
+                      .filter(e -> e.getKey().startsWith("hotfile-"))
+                      .filter(e -> {
+                          switch (e.getValue().getState()) {
+                              case FINISHED:
+                              case CANCELLED:
+                              case FAILED:
+                                  return true;
+                              default:
+                                  return false;
+                          }
+                      })
+                      .sorted(Comparator.comparingLong(e -> e.getValue().getCreationTime()))
+                      .toList();
+
+                int toRemove = hotfileJobs.size() - MAX_HOTFILE_JOBS;
+                if (toRemove > 0) {
+                    for (java.util.Map.Entry<String, Job> entry : hotfileJobs) {
+                        if (toRemove <= 0) {
                             break;
-                        default:
-                            return;
-                    }
-                }
-                if (job == null) {
-                    RefreshablePoolList sourceList = new PoolListByNames(
-                          _context.getPoolManagerStub(),
-                          Collections.singletonList(_context.getPoolName()));
-                    sourceList.refresh();
-                    Collection<Pattern> excluded = new HashSet<>();
-                    excluded.add(Pattern.compile(Pattern.quote(_context.getPoolName())));
-                    RefreshablePoolList basePoolList = new PoolListFilter(
-                          new PoolListByPoolGroupOfPool(_context.getPoolManagerStub(),
-                                _context.getPoolName()),
-                          excluded,
-                          FALSE_EXPRESSION,
-                          Collections.emptySet(),
-                          TRUE_EXPRESSION,
-                          sourceList);
-
-                    // Wrap with hostname constraint to prevent creating replicas on same host
-                    CostModule costModule = getCostModule();
-                    HostnameConstrainedPoolList poolList = new HostnameConstrainedPoolList(
-                          basePoolList,
-                          sourceList,
-                          Collections.singletonList("hostname"),
-                          new CostModuleTagProvider(costModule));
-
-                    poolList.refresh();
-                    JobDefinition def =
-                          new JobDefinition(
-                                createFilter(null, null, new PnfsId[]{pnfsId}, null, null, null,
-                                      null, null, null),
-                                createCacheEntryMode("same"),
-                                createCacheEntryMode("cached"),
-                                createPoolSelectionStrategy("proportional"),
-                                createComparator(null),
-                                sourceList,
-                                poolList,
-                                refresh * 1000L,
-                                false,
-                                false,
-                                false,
-                                replicas,
-                                false,
-                                false,
-                                true,
-                                FALSE_EXPRESSION,
-                                FALSE_EXPRESSION,
-                                false,
-                                false);
-                    job = new Job(_context, def);
-                    // Apply module default concurrency to hot-file job
-                    job.setConcurrency(defaultConcurrency);
-                    _jobs.put(jobId, job);
-                    _commands.put(job, "hotfile replication for " + pnfsId);
-                    LOGGER.debug(
-                          "Created migration job with id {} for pnfsId {} with concurrency {}",
-                          jobId, pnfsId, defaultConcurrency);
-
-                    // Housekeeping: keep only the most recent 50 hotfile jobs
-                    List<java.util.Map.Entry<String, Job>> hotfileJobs = _jobs.entrySet().stream()
-                          .filter(e -> e.getKey().startsWith("hotfile-"))
-                          .filter(e -> {
-                              switch (e.getValue().getState()) {
-                                  case FINISHED:
-                                  case CANCELLED:
-                                  case FAILED:
-                                      return true;
-                                  default:
-                                      return false;
-                              }
-                          })
-                          .sorted(Comparator.comparingLong(e -> e.getValue().getCreationTime())).toList();
-
-                    int toRemove = hotfileJobs.size() - MAX_HOTFILE_JOBS;
-                    if (toRemove > 0) {
-                        for (java.util.Map.Entry<String, Job> entry : hotfileJobs) {
-                            if (toRemove <= 0) {
-                                break;
-                            }
-                            Job j = entry.getValue();
-                            _jobs.remove(entry.getKey());
-                            _commands.remove(j);
-                            toRemove--;
                         }
+                        Job j = entry.getValue();
+                        _jobs.remove(entry.getKey());
+                        _commands.remove(j);
+                        toRemove--;
                     }
                 }
-                if (_isStarted && job.getState() == Job.State.NEW) {
-                    LOGGER.debug(
-                          "About to start migration job with id {} for pnfsId {}. Job definition: {}",
-                          jobId, pnfsId, job.getDefinition());
-                    try {
-                        job.start();
-                        LOGGER.debug("Started migration job with id {} for pnfsId {}", jobId,
-                              pnfsId);
-                    } catch (Exception e) {
-                        LOGGER.error(
-                              "Exception while starting migration job with id {} for pnfsId {}: {}",
-                              jobId, pnfsId, e, e);
-                        throw e;
-                    }
+            }
+            if (_isStarted && job.getState() == Job.State.NEW) {
+                LOGGER.debug(
+                      "About to start migration job with id {} for pnfsId {}. Job definition: {}",
+                      jobId, pnfsId, job.getDefinition());
+                try {
+                    job.start();
+                    LOGGER.debug("Started migration job with id {} for pnfsId {}", jobId,
+                          pnfsId);
+                } catch (Exception e) {
+                    LOGGER.error(
+                          "Exception while starting migration job with id {} for pnfsId {}: {}",
+                          jobId, pnfsId, e, e);
+                    throw e;
                 }
+            }
         } catch (Exception e) {
             LOGGER.warn("Failed to trigger migration for pnfsId {}: {}", pnfsId, e.getMessage());
         }
@@ -1439,12 +1433,16 @@ public class MigrationModule
         threshold = value;
     }
 
-    /** Get the module-wide refresh interval (seconds). */
+    /**
+     * Get the module-wide refresh interval (seconds).
+     */
     public int getRefresh() {
         return refresh;
     }
 
-    /** Set the module-wide refresh interval (seconds). */
+    /**
+     * Set the module-wide refresh interval (seconds).
+     */
     public void setRefresh(int value) {
         refresh = value;
     }
