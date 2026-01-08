@@ -84,10 +84,10 @@ public class CostModuleTagProvider implements PoolTagProvider {
 
         PoolInfo poolInfo = costModule.getPoolInfo(location);
         if (poolInfo == null) {
-            return ImmutableMap.of();
+            return Map.of();
         }
 
         Map<String, String> tags = poolInfo.getTags();
-        return tags != null ? tags : ImmutableMap.of();
+        return tags != null ? tags : Map.of();
     }
 }

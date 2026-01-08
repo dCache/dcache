@@ -156,6 +156,8 @@ public class MigrationModule
     private int replicas = 1;
     private long threshold = 5;
     private static final int MAX_HOTFILE_JOBS = 50;
+    /** Module-wide refresh interval in seconds used as default for commands. */
+    private int refresh = 300;
 
     // Default concurrency to apply to jobs created outside of MigrationCopyCommand (e.g. hot-file)
     private volatile int defaultConcurrency = 1;
@@ -834,7 +836,7 @@ public class MigrationModule
                     "is queried from the pool manager. Inclusion and exclusion " +
                     "expressions are evaluated whenever the information is " +
                     "refreshed.")
-        int refresh = 300;
+        int refresh;
 
         @Option(name = "select", values = {"proportional", "random"},
               category = "Target options",
@@ -1045,17 +1047,16 @@ public class MigrationModule
                 "     migration copy -smode=delete -tmode=same -pins=move -verify")
     public class MigrationMoveCommand extends MigrationCopyCommand {
 
-        public MigrationMoveCommand() {
-            select = "proportional";
-            target = "pool";
-            sourceMode = "delete";
-            targetMode = "same";
-            refresh = 300;
-            pins = "move";
-            verify = true;
-            maintainAtime = true;
-        }
-    }
+         public MigrationMoveCommand() {
+             select = "proportional";
+             target = "pool";
+             sourceMode = "delete";
+             targetMode = "same";
+             pins = "move";
+             verify = true;
+             maintainAtime = true;
+         }
+     }
 
     @Command(name = "migration cache",
           description = "Caches replicas on other pools. Accepts the same options as " +
@@ -1063,16 +1064,15 @@ public class MigrationModule
                 "     migration copy -smode=same -tmode=cached")
     public class MigrationCacheCommand extends MigrationCopyCommand {
 
-        public MigrationCacheCommand() {
-            select = "proportional";
-            target = "pool";
-            sourceMode = "same";
-            targetMode = "cached";
-            refresh = 300;
-            pins = "keep";
-            verify = false;
-        }
-    }
+         public MigrationCacheCommand() {
+             select = "proportional";
+             target = "pool";
+             sourceMode = "same";
+             targetMode = "cached";
+             pins = "keep";
+             verify = false;
+         }
+     }
 
     @Command(name = "migration suspend",
           description = "Suspends a migration job. A suspended job finishes ongoing " +
@@ -1233,13 +1233,12 @@ public class MigrationModule
      * new job.
      */
     @Override
-    public void reportFileRequest(PnfsId pnfsId, long numberOfRequests) {
+    public synchronized void reportFileRequest(PnfsId pnfsId, long numberOfRequests) {
         if (numberOfRequests < threshold) {
             return;
         }
         String jobId = "hotfile-" + pnfsId;
         try {
-            synchronized (this) {
                 Job job = _jobs.get(jobId);
                 if (job != null) {
                     switch (job.getState()) {
@@ -1289,7 +1288,7 @@ public class MigrationModule
                                 createComparator(null),
                                 sourceList,
                                 poolList,
-                                300 * 1000,
+                                refresh * 1000L,
                                 false,
                                 false,
                                 false,
@@ -1323,8 +1322,7 @@ public class MigrationModule
                                       return false;
                               }
                           })
-                          .sorted(Comparator.comparingLong(e -> e.getValue().getCreationTime()))
-                          .collect(java.util.stream.Collectors.toList());
+                          .sorted(Comparator.comparingLong(e -> e.getValue().getCreationTime())).toList();
 
                     int toRemove = hotfileJobs.size() - MAX_HOTFILE_JOBS;
                     if (toRemove > 0) {
@@ -1354,7 +1352,6 @@ public class MigrationModule
                         throw e;
                     }
                 }
-            }
         } catch (Exception e) {
             LOGGER.warn("Failed to trigger migration for pnfsId {}: {}", pnfsId, e.getMessage());
         }
@@ -1440,6 +1437,16 @@ public class MigrationModule
 
     public void setThreshold(long value) {
         threshold = value;
+    }
+
+    /** Get the module-wide refresh interval (seconds). */
+    public int getRefresh() {
+        return refresh;
+    }
+
+    /** Set the module-wide refresh interval (seconds). */
+    public void setRefresh(int value) {
+        refresh = value;
     }
 
     public void setDefaultConcurrency(int value) {
