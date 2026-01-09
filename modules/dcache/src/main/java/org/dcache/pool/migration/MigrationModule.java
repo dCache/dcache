@@ -147,10 +147,11 @@ public class MigrationModule
     private int replicas = 1;
     private long threshold = 5;
     private static final int MAX_HOTFILE_JOBS = 50;
+
     /**
      * Module-wide refresh interval in seconds used as default for commands.
      */
-    private int refresh = 300;
+    private volatile int defaultRefresh = 300;
 
     // Default concurrency to apply to jobs created outside of MigrationCopyCommand (e.g. hot-file)
     private volatile int defaultConcurrency = 1;
@@ -546,7 +547,7 @@ public class MigrationModule
 
     @AffectsSetup
     @Command(name = "migration concurrency-default",
-          description = "Get or set the default concurrency used when -concurrency is not specified. (Deprecated)")
+          description = "Get or set the default concurrency. (Deprecated)")
     public class MigrationConcurrencyDefaultCommand implements Callable<String> {
 
         @Option(name = "set", usage = "Set the default concurrency to use for new jobs when not explicitly provided.")
@@ -569,7 +570,7 @@ public class MigrationModule
 
     @AffectsSetup
     @Command(name = "migration set concurrency-default",
-          description = "Set the default concurrency used when -concurrency is not specified.",
+          description = "Set the default concurrency.",
           hint = "Set the default job concurrency.")
     public class MigrationSetConcurrencyDefaultCommand implements Callable<String> {
 
@@ -587,7 +588,7 @@ public class MigrationModule
     }
 
     @Command(name = "migration get concurrency-default",
-          description = "Get the default concurrency used when -concurrency is not specified.",
+          description = "Get the default concurrency.",
           hint = "Get the default job concurrency.")
     public class MigrationGetConcurrencyDefaultCommand implements Callable<String> {
 
@@ -702,7 +703,7 @@ public class MigrationModule
 
         @Option(name = "concurrency",
               category = "Transfer options",
-              usage = "Specifies how many concurrent transfers to perform.")
+              usage = "Specifies how many concurrent transfers to perform (default = defaultConcurrency).")
         Integer concurrency; // null means: not specified; fall back to defaultConcurrency
 
         @Option(name = "order", valueSpec = "[-]size|[-]lru",
@@ -828,8 +829,8 @@ public class MigrationModule
               usage = "Sets the period in seconds of when target pool information " +
                     "is queried from the pool manager. Inclusion and exclusion " +
                     "expressions are evaluated whenever the information is " +
-                    "refreshed.")
-        int refresh;
+                    "refreshed (default = defaultRefresh).")
+        Integer refresh;
 
         @Option(name = "select", values = {"proportional", "random"},
               category = "Target options",
@@ -978,7 +979,7 @@ public class MigrationModule
                         createComparator(order),
                         sourceList,
                         poolList,
-                        refresh * 1000L,
+                        (refresh != null ? refresh : MigrationModule.this.defaultRefresh) * 1000L,
                         permanent,
                         eager,
                         metaOnly,
@@ -1281,7 +1282,7 @@ public class MigrationModule
                             createComparator(null),
                             sourceList,
                             poolList,
-                            refresh * 1000L,
+                            defaultRefresh * 1000L,
                             false,
                             false,
                             false,
@@ -1436,15 +1437,44 @@ public class MigrationModule
     /**
      * Get the module-wide refresh interval (seconds).
      */
-    public int getRefresh() {
-        return refresh;
+    public int getDefaultRefresh() {
+        return defaultRefresh;
     }
 
     /**
      * Set the module-wide refresh interval (seconds).
      */
-    public void setRefresh(int value) {
-        refresh = value;
+    public void setDefaultRefresh(int value) {
+        defaultRefresh = value;
+    }
+
+    @Command(name = "migration set refresh-default",
+          description = "Set the default refresh interval.",
+          hint = "Set the default job refresh interval.")
+    public class MigrationSetRefreshDefaultCommand implements Callable<String> {
+
+        @Argument(usage = "The new default refresh interval in seconds.")
+        int value;
+
+        @Override
+        public String call() {
+            if (value < 1) {
+                throw new IllegalArgumentException("Default refresh interval must be positive.");
+            }
+            defaultRefresh = value;
+            return "Default refresh interval set to " + value;
+        }
+    }
+
+    @Command(name = "migration get refresh-default",
+          description = "Get the default refresh interval.",
+          hint = "Get the default job refresh interval.")
+    public class MigrationGetRefreshDefaultCommand implements Callable<String> {
+
+        @Override
+        public String call() {
+            return "Current default refresh interval: " + defaultRefresh;
+        }
     }
 
     public void setDefaultConcurrency(int value) {

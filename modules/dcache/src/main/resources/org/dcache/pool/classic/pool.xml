@@ -320,7 +320,7 @@ value="#{ ${pool.hotfile.monitoring.enable} ? migration : null }"/>
     <constructor-arg ref="migrationContext"/>
     <property name="numReplicas" value="${pool.migration.hotfile.replicas}"/>
     <property name="threshold" value="${pool.migration.hotfile.threshold}"/>
-    <property name="refresh" value="${pool.migration.hotfile.refresh}"/>
+    <property name="defaultRefresh" value="${pool.migration.refresh.default}"/>
     <property name="defaultConcurrency" value="${pool.migration.concurrency.default}"/>
   </bean>
 
