@@ -30,6 +30,8 @@
 stages:
   # build rpm, tar, deb, oci container
   - build
+  # create a code coverage report
+  - coverage
   # sign rpm, deb
   - sign
   # create k8s namespace
@@ -99,7 +101,7 @@ default:
 # default cache konfiguration for maven build jobs
 # Cache downloaded dependencies and plugins between builds.
 # To keep cache across branches add 'key: "$CI_JOB_NAME"'
-#
+
 .build_cache:
   cache:
     key:
@@ -116,8 +118,6 @@ default:
   rules:
     - if: $CI_COMMIT_TAG
 
-
-
 rpm:
   stage: build
   image: dcache/maven-java21-rpm-build
@@ -131,6 +131,7 @@ rpm:
         - "**/target/failsafe-reports/TEST-*.xml"
     paths:
       - "packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm"
+      - "**/target/*.exec"
     expire_in: 2 days
 
 srm_client_rpm:
@@ -142,6 +143,7 @@ srm_client_rpm:
   artifacts:
     paths:
       - "modules/srm-client/target/rpmbuild/RPMS/noarch/dcache-srmclient*.rpm"
+      - "**/target/*.exec"
     expire_in: 2 days
 
 deb:
@@ -153,6 +155,7 @@ deb:
   artifacts:
     paths:
       - "packages/fhs/target/dcache_*.deb"
+      - "**/target/*.exec"
     expire_in: 2 days
 
 # needed for minimal pipeline run
@@ -165,6 +168,7 @@ tar:
   artifacts:
     paths:
       - "packages/tar/target/dcache-*.tar.gz"
+      - "**/target/*.exec"
     expire_in: 2 days
 
 
@@ -230,6 +234,52 @@ Check for duplicate dependencies:
     - tar -C /dcache --strip-components=1 -xzf packages/tar/target/dcache-*.tar.gz
     - ls -1 /dcache/share/classes/ | grep -v netty-tcnative-boringssl-static | sort | sed -e 's/\-[0-9].*$//' | uniq -D > duplicate-dependencies.txt
     - if [ -s duplicate-dependencies.txt ]; then cat duplicate-dependencies.txt; exit 1; fi
+
+#Job to create and collect JaCoCo reports
+collect_coverage_data:
+  stage: build
+  image: maven:3.9.12-eclipse-temurin-17
+  extends: .build_cache
+  needs:
+    - job: rpm
+    - job: deb
+    - job: tar
+  script:
+    # run all tests with the coverage profile
+    - mvn $MAVEN_CLI_OPTS -P code-coverage clean verify -DskipTests=false
+  artifacts:
+    paths:
+      # pass the .exec files AND the compiled classes to the next stage
+      - "**/target/coverage-reports/jacoco-ut.exec"
+      - "**/target/classes/"
+    expire_in: 1 day
+
+# Job to generate JaCoCo report using script
+generate_jacoco_report:
+  stage: coverage
+  image: maven:3.9.12-eclipse-temurin-17
+  extends: .build_cache
+  needs:
+    - job: collect_coverage_data
+  cache:
+    key: "jacoco-binaries-$CI_COMMIT_REF_SLUG"
+    paths:
+      - .jacoco-cache/
+  before_script:
+    - apt-get update && apt-get install -y wget unzip
+    - mkdir -p "$(pwd)/.jacoco-cache" # create the directory first
+    - ln -sfn "$(pwd)/.jacoco-cache" "$HOME/jacoco-0.8.14" # link it to the location the script expects
+  script:
+    - chmod +x ./generate-jacoco-report.sh
+    - ./generate-jacoco-report.sh
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: jacoco
+        path: target/coverage-reports/site/jacoco.xml
+    paths:
+      - target/coverage-reports/site/
+    expire_in: 1 week
 
 sign_rpm:
   stage: sign
