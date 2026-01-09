@@ -475,12 +475,22 @@ public class Task {
                       getPnfsId(), getId());
                 _fsm.startWithoutLocations();
             }
-        } catch (Exception e) {
-            LOGGER.error("Exception in Task.run() for pnfsId {} (taskId={}): {}", getPnfsId(),
-                  getId(), e.toString(), e);
-            // Optionally, fail the task explicitly if needed:
+        } catch (TransitionUndefinedException e) {
+            LOGGER.error("State machine logic error in Task.run() for pnfsId {} (taskId={}): {}",
+                  getPnfsId(), getId(), e, e);
             if (_callbackHandler != null) {
-                _callbackHandler.taskFailed(this, -1, "Exception in Task.run(): " + e.toString());
+                _callbackHandler.taskFailedPermanently(this, -1,
+                      "Internal State Machine Error: " + e.getMessage());
+            }
+        } catch (RuntimeException e) {
+            LOGGER.error("Unexpected runtime exception in Task.run() for pnfsId {} (taskId={}): {}",
+                  getPnfsId(), getId(), e, e);
+            if (_callbackHandler != null) {
+                // Runtime exceptions reaching this point without being
+                // handled are almost certainly the result of bugs, and
+                // therefore permanent.
+                _callbackHandler.taskFailedPermanently(this, -1,
+                      "Internal Error: " + e.getMessage());
             }
         }
         LOGGER.debug("Task.run() exiting for (taskId={})", getId());
