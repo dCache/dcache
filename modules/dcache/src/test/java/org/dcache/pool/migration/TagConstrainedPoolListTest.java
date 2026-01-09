@@ -72,7 +72,8 @@ import com.google.common.collect.ImmutableList;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import java.util.Arrays;
-import java.util.Collections;
+// deleted unused import
+
 import java.util.Map;
 import org.dcache.pool.classic.IoQueueManager;
 import org.dcache.util.pool.PoolTagProvider;
@@ -82,9 +83,9 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 /**
- * Unit tests for HostnameConstrainedPoolList.
+ * Unit tests for TagConstrainedPoolList.
  */
-public class HostnameConstrainedPoolListTest {
+public class TagConstrainedPoolListTest {
 
     @Mock
     private RefreshablePoolList mockDelegate;
@@ -95,7 +96,8 @@ public class HostnameConstrainedPoolListTest {
     @Mock
     private PoolTagProvider mockTagProvider;
 
-    private HostnameConstrainedPoolList constrainedList;
+    private TagConstrainedPoolList constrainedList;
+
 
     // Test pool information objects
     private PoolManagerPoolInformation pool1OnHost1;
@@ -150,8 +152,8 @@ public class HostnameConstrainedPoolListTest {
         when(mockDelegate.isValid()).thenReturn(true);
         when(mockSourceList.isValid()).thenReturn(true);
 
-        constrainedList = new HostnameConstrainedPoolList(mockDelegate, mockSourceList,
-              Collections.singletonList("hostname"), mockTagProvider);
+        constrainedList = new TagConstrainedPoolList(mockDelegate, mockSourceList,
+              mockTagProvider);
 
         // When: getting filtered pools
         ImmutableList<PoolManagerPoolInformation> result = constrainedList.getPools();
@@ -175,8 +177,8 @@ public class HostnameConstrainedPoolListTest {
         when(mockDelegate.isValid()).thenReturn(true);
         when(mockSourceList.isValid()).thenReturn(true);
 
-        constrainedList = new HostnameConstrainedPoolList(mockDelegate, mockSourceList,
-              Collections.singletonList("hostname"), mockTagProvider);
+        constrainedList = new TagConstrainedPoolList(mockDelegate, mockSourceList,
+              mockTagProvider);
 
         // When: getting filtered pools
         ImmutableList<PoolManagerPoolInformation> result = constrainedList.getPools();
@@ -195,8 +197,8 @@ public class HostnameConstrainedPoolListTest {
         when(mockDelegate.getOfflinePools()).thenReturn(ImmutableList.of());
         when(mockDelegate.isValid()).thenReturn(true);
 
-        constrainedList = new HostnameConstrainedPoolList(mockDelegate, null,
-              Collections.singletonList("hostname"), mockTagProvider);
+        constrainedList = new TagConstrainedPoolList(mockDelegate, null,
+              mockTagProvider);
 
         // When: getting filtered pools
         ImmutableList<PoolManagerPoolInformation> result = constrainedList.getPools();
@@ -218,8 +220,8 @@ public class HostnameConstrainedPoolListTest {
         when(mockDelegate.isValid()).thenReturn(true);
         when(mockSourceList.isValid()).thenReturn(true);
 
-        constrainedList = new HostnameConstrainedPoolList(mockDelegate, mockSourceList,
-              Collections.singletonList("hostname"), mockTagProvider);
+        constrainedList = new TagConstrainedPoolList(mockDelegate, mockSourceList,
+              mockTagProvider);
 
         // When: getting filtered offline pools
         ImmutableList<String> result = constrainedList.getOfflinePools();
@@ -244,8 +246,8 @@ public class HostnameConstrainedPoolListTest {
         when(mockDelegate.isValid()).thenReturn(true);
         when(mockSourceList.isValid()).thenReturn(true);
 
-        constrainedList = new HostnameConstrainedPoolList(mockDelegate, mockSourceList,
-              Collections.singletonList("hostname"), mockTagProvider);
+        constrainedList = new TagConstrainedPoolList(mockDelegate, mockSourceList,
+              mockTagProvider);
 
         // When: getting filtered pools
         ImmutableList<PoolManagerPoolInformation> result = constrainedList.getPools();
@@ -270,8 +272,8 @@ public class HostnameConstrainedPoolListTest {
         when(mockDelegate.isValid()).thenReturn(true);
         when(mockSourceList.isValid()).thenReturn(true);
 
-        constrainedList = new HostnameConstrainedPoolList(mockDelegate, mockSourceList,
-              Collections.singletonList("hostname"), mockTagProvider);
+        constrainedList = new TagConstrainedPoolList(mockDelegate, mockSourceList,
+              mockTagProvider);
 
         // When: getting filtered pools
         ImmutableList<PoolManagerPoolInformation> result = constrainedList.getPools();
@@ -285,8 +287,8 @@ public class HostnameConstrainedPoolListTest {
     @Test
     public void shouldRefreshDelegateAndSourceLists() {
         // Given: a constrained list
-        constrainedList = new HostnameConstrainedPoolList(mockDelegate, mockSourceList,
-              Collections.singletonList("hostname"), mockTagProvider);
+        constrainedList = new TagConstrainedPoolList(mockDelegate, mockSourceList,
+              mockTagProvider);
 
         // When: calling refresh
         constrainedList.refresh();
@@ -299,8 +301,8 @@ public class HostnameConstrainedPoolListTest {
     @Test
     public void shouldRefreshOnlyDelegateWhenSourceListIsNull() {
         // Given: a constrained list with null source list
-        constrainedList = new HostnameConstrainedPoolList(mockDelegate, null,
-              Collections.singletonList("hostname"), mockTagProvider);
+        constrainedList = new TagConstrainedPoolList(mockDelegate, null,
+              mockTagProvider);
 
         // When: calling refresh
         constrainedList.refresh();
@@ -320,8 +322,8 @@ public class HostnameConstrainedPoolListTest {
         when(mockDelegate.isValid()).thenReturn(true);
         when(mockSourceList.isValid()).thenReturn(true);
 
-        constrainedList = new HostnameConstrainedPoolList(mockDelegate, mockSourceList,
-              Collections.singletonList("hostname"), mockTagProvider);
+        constrainedList = new TagConstrainedPoolList(mockDelegate, mockSourceList,
+              mockTagProvider);
 
         // When: getting pools (triggers caching)
         ImmutableList<PoolManagerPoolInformation> initialResult = constrainedList.getPools();
@@ -344,8 +346,8 @@ public class HostnameConstrainedPoolListTest {
         when(mockDelegate.isValid()).thenReturn(true);
         when(mockSourceList.isValid()).thenReturn(true);
 
-        constrainedList = new HostnameConstrainedPoolList(mockDelegate, mockSourceList,
-              Collections.singletonList("hostname"), mockTagProvider);
+        constrainedList = new TagConstrainedPoolList(mockDelegate, mockSourceList,
+              mockTagProvider);
 
         // When/Then: should be valid
         assertTrue("Should be valid when both are valid", constrainedList.isValid());
@@ -357,8 +359,8 @@ public class HostnameConstrainedPoolListTest {
         when(mockDelegate.isValid()).thenReturn(false);
         when(mockSourceList.isValid()).thenReturn(true);
 
-        constrainedList = new HostnameConstrainedPoolList(mockDelegate, mockSourceList,
-              Collections.singletonList("hostname"), mockTagProvider);
+        constrainedList = new TagConstrainedPoolList(mockDelegate, mockSourceList,
+              mockTagProvider);
 
         // When/Then: should be invalid
         assertFalse("Should be invalid when delegate is invalid", constrainedList.isValid());
@@ -370,11 +372,68 @@ public class HostnameConstrainedPoolListTest {
         when(mockDelegate.isValid()).thenReturn(true);
         when(mockSourceList.isValid()).thenReturn(false);
 
-        constrainedList = new HostnameConstrainedPoolList(mockDelegate, mockSourceList,
-              Collections.singletonList("hostname"), mockTagProvider);
+        constrainedList = new TagConstrainedPoolList(mockDelegate, mockSourceList,
+              mockTagProvider);
 
         // When/Then: should be invalid
         assertFalse("Should be invalid when source list is invalid", constrainedList.isValid());
+    }
+
+    @Test
+    public void shouldFilterDestinationPoolsWithMutualSharedTags() {
+        // Given: poolA and poolB share a tag, which is NOT present on source
+        PoolManagerPoolInformation poolRackA1 = createPoolInfo("poolRackA1");
+        PoolManagerPoolInformation poolRackA2 = createPoolInfo("poolRackA2");
+        PoolManagerPoolInformation sourcePool = createPoolInfo("sourcePool");
+
+        when(mockTagProvider.getPoolTags("sourcePool")).thenReturn(Map.of("rack", "Z"));
+        when(mockTagProvider.getPoolTags("poolRackA1")).thenReturn(Map.of("rack", "A", "id", "1"));
+        when(mockTagProvider.getPoolTags("poolRackA2")).thenReturn(Map.of("rack", "A", "id", "2"));
+
+        when(mockSourceList.getPools()).thenReturn(ImmutableList.of(sourcePool));
+        when(mockSourceList.getOfflinePools()).thenReturn(ImmutableList.of());
+        // Provide them in order
+        when(mockDelegate.getPools()).thenReturn(ImmutableList.of(poolRackA1, poolRackA2));
+        when(mockDelegate.getOfflinePools()).thenReturn(ImmutableList.of());
+        when(mockDelegate.isValid()).thenReturn(true);
+        when(mockSourceList.isValid()).thenReturn(true);
+
+        constrainedList = new TagConstrainedPoolList(mockDelegate, mockSourceList, mockTagProvider);
+
+        ImmutableList<PoolManagerPoolInformation> result = constrainedList.getPools();
+
+        // One of them should be filtered out to maintain mutual exclusivity
+        assertEquals("Should have 1 pool", 1, result.size());
+        assertTrue("Should contain either poolRackA1 or poolRackA2 but not both",
+              (result.contains(poolRackA1) && !result.contains(poolRackA2)) ||
+                    (!result.contains(poolRackA1) && result.contains(poolRackA2)));
+    }
+
+    @Test
+    public void shouldFilterPoolsWithSharedRackTag() {
+        // Given: source pool has rack=A, target pool has rack=A
+        PoolManagerPoolInformation poolRackA = createPoolInfo("poolRackA");
+        PoolManagerPoolInformation poolRackB = createPoolInfo("poolRackB");
+        PoolManagerPoolInformation sourcePool = createPoolInfo("sourcePool");
+
+        when(mockTagProvider.getPoolTags("sourcePool")).thenReturn(Map.of("rack", "A", "hostname", "h1"));
+        when(mockTagProvider.getPoolTags("poolRackA")).thenReturn(Map.of("rack", "A", "hostname", "h2"));
+        when(mockTagProvider.getPoolTags("poolRackB")).thenReturn(Map.of("rack", "B", "hostname", "h3"));
+
+        when(mockSourceList.getPools()).thenReturn(ImmutableList.of(sourcePool));
+        when(mockSourceList.getOfflinePools()).thenReturn(ImmutableList.of());
+        when(mockDelegate.getPools()).thenReturn(ImmutableList.of(poolRackA, poolRackB));
+        when(mockDelegate.getOfflinePools()).thenReturn(ImmutableList.of());
+        when(mockDelegate.isValid()).thenReturn(true);
+        when(mockSourceList.isValid()).thenReturn(true);
+
+        constrainedList = new TagConstrainedPoolList(mockDelegate, mockSourceList, mockTagProvider);
+
+        ImmutableList<PoolManagerPoolInformation> result = constrainedList.getPools();
+
+        assertEquals("Should have 1 pool", 1, result.size());
+        assertTrue("Should contain poolRackB", result.contains(poolRackB));
+        assertFalse("Should not contain poolRackA", result.contains(poolRackA));
     }
 
     @Test
@@ -382,40 +441,18 @@ public class HostnameConstrainedPoolListTest {
         // Given: source list is null
         when(mockDelegate.isValid()).thenReturn(true);
 
-        constrainedList = new HostnameConstrainedPoolList(mockDelegate, null,
-              Collections.singletonList("hostname"), mockTagProvider);
+        constrainedList = new TagConstrainedPoolList(mockDelegate, null,
+              mockTagProvider);
 
         // When/Then: should be valid (null source list is considered valid)
         assertTrue("Should be valid when source list is null", constrainedList.isValid());
     }
 
     @Test
-    public void shouldUseDefaultHostnameTagWhenConstraintTagsIsNull() {
-        // Given: null constraint tags
-        when(mockSourceList.getPools()).thenReturn(ImmutableList.of(sourcePoolOnHost1));
-        when(mockSourceList.getOfflinePools()).thenReturn(ImmutableList.of());
-        when(mockDelegate.getPools()).thenReturn(ImmutableList.of(pool1OnHost1, pool3OnHost2));
-        when(mockDelegate.getOfflinePools()).thenReturn(ImmutableList.of());
-        when(mockDelegate.isValid()).thenReturn(true);
-        when(mockSourceList.isValid()).thenReturn(true);
-
-        constrainedList = new HostnameConstrainedPoolList(mockDelegate, mockSourceList, null,
-              mockTagProvider);
-
-        // When: getting filtered pools
-        ImmutableList<PoolManagerPoolInformation> result = constrainedList.getPools();
-
-        // Then: should still filter by hostname (default behavior)
-        assertEquals("Should have 1 pool", 1, result.size());
-        assertTrue("Should contain pool3@host2", result.contains(pool3OnHost2));
-        assertFalse("Should not contain pool1@host1", result.contains(pool1OnHost1));
-    }
-
-    @Test
     public void shouldLazilyApplyConstraintsOnFirstAccess() {
         // Given: a constrained list that hasn't been accessed yet
-        constrainedList = new HostnameConstrainedPoolList(mockDelegate, mockSourceList,
-              Collections.singletonList("hostname"), mockTagProvider);
+        constrainedList = new TagConstrainedPoolList(mockDelegate, mockSourceList,
+              mockTagProvider);
 
         // When: creating the list (no access to getPools() yet)
         // Then: delegate should not be called yet
@@ -435,3 +472,4 @@ public class HostnameConstrainedPoolListTest {
         verify(mockSourceList, times(1)).getPools();
     }
 }
+

@@ -1265,10 +1265,9 @@ public class MigrationModule
 
                 // Wrap with hostname constraint to prevent creating replicas on same host
                 CostModule costModule = getCostModule();
-                HostnameConstrainedPoolList poolList = new HostnameConstrainedPoolList(
+                TagConstrainedPoolList poolList = new TagConstrainedPoolList(
                       basePoolList,
                       sourceList,
-                      Collections.singletonList("hostname"),
                       new CostModuleTagProvider(costModule));
 
                 poolList.refresh();
