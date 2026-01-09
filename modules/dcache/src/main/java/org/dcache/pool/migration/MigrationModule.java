@@ -1371,21 +1371,44 @@ public class MigrationModule
     @Override
     public void printSetup(PrintWriter pw) {
         pw.println("#\n# MigrationModule\n#");
-        _commands.forEach((job, cmd) -> {
-            if (job.getDefinition().isPermanent) {
-                switch (job.getState()) {
-                    case CANCELLED:
-                    case CANCELLING:
-                    case STOPPING:
-                    case FAILED:
-                    case FINISHED:
-                        break;
-                    default:
-                        pw.println(cmd);
-                        break;
-                }
-            }
-        });
+
+        if (defaultConcurrency != 1) {
+            pw.println("migration set concurrency-default " + defaultConcurrency);
+        }
+        if (replicas != 1) {
+            pw.println("hotfile set replicas " + replicas);
+        }
+        if (threshold != 5) {
+            pw.println("hotfile set threshold " + threshold);
+        }
+        if (defaultRefresh != 300) {
+            pw.println("migration set refresh-default " + defaultRefresh);
+        }
+
+        _jobs.entrySet().stream()
+              .sorted(Comparator.comparingLong(e -> e.getValue().getCreationTime()))
+              .forEach(entry -> {
+                  String id = entry.getKey();
+                  Job job = entry.getValue();
+                  if (job.getDefinition().isPermanent) {
+                      switch (job.getState()) {
+                          case CANCELLED:
+                          case CANCELLING:
+                          case STOPPING:
+                          case FAILED:
+                          case FINISHED:
+                              break;
+                          default:
+                              String cmd = _commands.get(job);
+                              if (cmd != null) {
+                                  pw.println(cmd);
+                                  pw.println("migration set concurrency " + id + " "
+                                        + job.getConcurrency());
+                              }
+                              break;
+                      }
+                  }
+              });
     }
 
     @Override
