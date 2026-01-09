@@ -2,22 +2,18 @@ package org.dcache.pool.migration;
 
 import com.google.common.collect.ImmutableList;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.dcache.util.pool.PoolTagBasedExtractor;
 import org.dcache.util.pool.PoolTagProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * RefreshablePoolList decorator that filters pools to prevent multiple replicas on pools with the
  * same hostname tag value.
  */
 public class HostnameConstrainedPoolList implements RefreshablePoolList {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(HostnameConstrainedPoolList.class);
 
     private final RefreshablePoolList delegate;
     private final RefreshablePoolList sourceList;
@@ -92,44 +88,46 @@ public class HostnameConstrainedPoolList implements RefreshablePoolList {
             return;
         }
 
-        // Get source pools once to avoid multiple calls
+        // Reset the extractor's state (clear seen tags)
+        hostnameExtractor.reset();
+
+        // Feed existing replica locations to the extractor
         ImmutableList<PoolManagerPoolInformation> sourcePools = sourceList.getPools();
-
-        if (sourcePools.isEmpty()) {
-            // No existing replicas, no constraints to apply
-            filteredPools = allPools;
-            filteredOfflinePools = allOfflinePools;
-            return;
-        }
-
-        // Add hostname tags from existing source pools (pools that already have replicas)
         for (PoolManagerPoolInformation sourcePool : sourcePools) {
             hostnameExtractor.addSeenTagsFor(sourcePool.getName());
         }
 
-        // Filter candidate pools to exclude those with conflicting hostname tags
-        List<String> candidatePoolNames = allPools.stream()
-              .map(PoolManagerPoolInformation::getName)
-              .collect(Collectors.toList());
+        // Filter active pools
+        // We need to pass just the names to the extractor, then map back to objects
+        List<String> candidateNames = new ArrayList<>(allPools.size());
+        for (PoolManagerPoolInformation pool : allPools) {
+            candidateNames.add(pool.getName());
+        }
 
-        Collection<String> validPoolNames = hostnameExtractor.getCandidateLocations(
-              candidatePoolNames);
+        Collection<String> validNames = hostnameExtractor.getCandidateLocations(candidateNames);
 
-        // Filter the pools based on valid pool names
-        List<PoolManagerPoolInformation> validPools = allPools.stream()
-              .filter(pool -> validPoolNames.contains(pool.getName())).toList();
+        filteredPools = allPools.stream()
+              .filter(p -> validNames.contains(p.getName()))
+              .collect(ImmutableList.toImmutableList());
 
-        // Filter offline pools based on hostname constraints using the extractor
-        Collection<String> validOfflinePoolNames = hostnameExtractor.getCandidateLocations(
+        // Filter offline pools
+        Collection<String> validOfflineNames = hostnameExtractor.getCandidateLocations(
               allOfflinePools);
-        List<String> validOfflinePools = allOfflinePools.stream()
-              .filter(validOfflinePoolNames::contains).toList();
+        filteredOfflinePools = ImmutableList.copyOf(validOfflineNames);
+    }
 
-        filteredPools = ImmutableList.copyOf(validPools);
-        filteredOfflinePools = ImmutableList.copyOf(validOfflinePools);
+    @Override
+    public String toString() {
+        ImmutableList<PoolManagerPoolInformation> pools = getPools();
+        if (pools.isEmpty()) {
+            return "";
+        }
 
-        LOGGER.debug("Applied hostname constraints: {} pools -> {} pools, {} offline -> {} offline",
-              allPools.size(), filteredPools.size(),
-              allOfflinePools.size(), filteredOfflinePools.size());
+        StringBuilder s = new StringBuilder();
+        s.append(pools.get(0).getName());
+        for (int i = 1; i < pools.size(); i++) {
+            s.append(',').append(pools.get(i).getName());
+        }
+        return s.toString();
     }
 }
