@@ -125,13 +125,8 @@ rpm:
   script:
     - mvn $MAVEN_CLI_OPTS -DskipTests=true -Drun.slow.tests -am -pl packages/fhs -P rpm clean package
   artifacts:
-    reports:
-      junit:
-        - "**/target/surefire-reports/TEST-*.xml"
-        - "**/target/failsafe-reports/TEST-*.xml"
     paths:
       - "packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm"
-      - "**/target/*.exec"
     expire_in: 2 days
 
 srm_client_rpm:
@@ -656,15 +651,14 @@ webdav_with_x509_tests:
     - kubectl -n $K8S_NAMESPACE cp .ci/init-el9-ui.sh webdav-tester:/init-el9-ui.sh
     - kubectl -n $K8S_NAMESPACE cp .ci/run-webdav-tests.sh webdav-tester:/run-webdav-tests.sh
     - kubectl -n $K8S_NAMESPACE exec webdav-tester -- /bin/sh /run-webdav-tests.sh
-      # Download JaCoCo agent via Maven (uses .m2/repository cache)
+      # 1. Download and Copy Agent
     - mvn dependency:get -Dartifact=org.jacoco:org.jacoco.agent:0.8.14:jar:runtime
-      #copy JaCoCo agent to the pod
     - kubectl -n $K8S_NAMESPACE cp ~/.m2/repository/org/jacoco/org.jacoco.agent/0.8.14/org.jacoco.agent-0.8.14-runtime.jar webdav-tester:/jacoco/jacocoagent.jar
 
-      #run tests with JaCoCo agent (modified)
+      # 2. Run Tests
     - kubectl -n $K8S_NAMESPACE exec webdav-tester -- /bin/sh /run-webdav-tests.sh
 
-      #copy coverage data to runner (new)
+      # 3. Explicitly pull the IT coverage file
     - kubectl -n $K8S_NAMESPACE cp webdav-tester:/target/coverage-reports/jacoco-it.exec ./jacoco-it.exec
   artifacts:
     paths:
