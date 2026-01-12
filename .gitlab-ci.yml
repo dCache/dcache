@@ -656,9 +656,10 @@ webdav_with_x509_tests:
     - kubectl -n $K8S_NAMESPACE cp .ci/init-el9-ui.sh webdav-tester:/init-el9-ui.sh
     - kubectl -n $K8S_NAMESPACE cp .ci/run-webdav-tests.sh webdav-tester:/run-webdav-tests.sh
     - kubectl -n $K8S_NAMESPACE exec webdav-tester -- /bin/sh /run-webdav-tests.sh
-
+      # Download JaCoCo agent via Maven (uses .m2/repository cache)
+    - mvn dependency:get -Dartifact=org.jacoco:org.jacoco.agent:0.8.14:jar:runtime
       #copy JaCoCo agent to the pod
-    - kubectl -n $K8S_NAMESPACE cp ~/.m2/repository/org/jacoco/org.jacoco.agent/0.8.11/org.jacoco.agent-0.8.11-runtime.jar webdav-tester:/jacoco/jacocoagent.jar
+    - kubectl -n $K8S_NAMESPACE cp ~/.m2/repository/org/jacoco/org.jacoco.agent/0.8.14/org.jacoco.agent-0.8.14-runtime.jar webdav-tester:/jacoco/jacocoagent.jar
 
       #run tests with JaCoCo agent (modified)
     - kubectl -n $K8S_NAMESPACE exec webdav-tester -- /bin/sh /run-webdav-tests.sh
