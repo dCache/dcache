@@ -4,6 +4,11 @@
 
 dnf install -y -q python3-urllib3
 
+#set up JaCoCo agent
+export JACOCO_AGENT=/jacoco/jacocoagent.jar
+if [ -f "$JACOCO_AGENT" ]; then
+  export JAVA_OPTS="-javaagent:$JACOCO_AGENT=destfile=/target/coverage-reports/jacoco-it.exec"
+fi
 
 export DFTS_SUT=https://store-door-svc.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local:8083
 

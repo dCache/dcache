@@ -656,12 +656,18 @@ webdav_with_x509_tests:
     - kubectl -n $K8S_NAMESPACE cp .ci/init-el9-ui.sh webdav-tester:/init-el9-ui.sh
     - kubectl -n $K8S_NAMESPACE cp .ci/run-webdav-tests.sh webdav-tester:/run-webdav-tests.sh
     - kubectl -n $K8S_NAMESPACE exec webdav-tester -- /bin/sh /run-webdav-tests.sh
-      #generate coverage data for the tests that just ran
-    - kubectl -n $K8S_NAMESPACE exec webdav-tester -- /bin/sh -c "mvn $MAVEN_CLI_OPTS -P code-coverage jacoco:dump"
+
+      #copy JaCoCo agent to the pod
+    - kubectl -n $K8S_NAMESPACE cp ~/.m2/repository/org/jacoco/org.jacoco.agent/0.8.11/org.jacoco.agent-0.8.11-runtime.jar webdav-tester:/jacoco/jacocoagent.jar
+
+      #run tests with JaCoCo agent (modified)
+    - kubectl -n $K8S_NAMESPACE exec webdav-tester -- /bin/sh /run-webdav-tests.sh
+
+      #copy coverage data to runner (new)
+    - kubectl -n $K8S_NAMESPACE cp webdav-tester:/target/coverage-reports/jacoco-it.exec ./jacoco-it.exec
   artifacts:
     paths:
-      - "**/target/coverage-reports/jacoco-it.exec"  # Integration test coverage
-      - "**/target/classes/"                         # Compiled classes
+      - jacoco-it.exec  # Integration test coverage
     expire_in: 1 day
 
 NFS4.x protocol compliance tests:
