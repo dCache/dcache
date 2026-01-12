@@ -40,6 +40,7 @@ self.addEventListener('message', function(e) {
     const init = {
         method: e.data.method,
         headers: header,
+        credentials: "include"
     };
 
     if (e.data.method === "POST" && e.data.body && e.data.body !== "") {
@@ -49,13 +50,19 @@ self.addEventListener('message', function(e) {
     switch (e.data.method) {
         case "POST":
             e.data.url = `${e.data.apiEndpoint}events/channels`;
+            console.log("e.data.url responce 1" + e.data.url.url);
+
             break;
         case "DELETE":
             if (e.data.id) {
                 e.data.url = `${e.data.apiEndpoint}events/channels/${e.data.id}`;
+                console.log("e.data.url responce 2" + e.data.url.url);
+
                 break;
             }
             if (e.data.url) {
+                console.log("e.data.url responce 3 " + e.data.url);
+
                 break;
             }
             throw new ReferenceError("No channel id or url. Please specify either one of the two.");
@@ -69,6 +76,10 @@ self.addEventListener('message', function(e) {
     }
 
     fetch(e.data.url, init).then(response => {
+        console.log("tets responce " + response.json());
+
+        console.log("e.data.url responce " + e.data.url.url);
+
         if (!response.ok) {
             throw JSON.stringify({status: response.status, message: response.statusText})
         }

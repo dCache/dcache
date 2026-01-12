@@ -53,7 +53,7 @@ function changeCurrentSSEStatus(newStatus) {
 }
 
 function deleteChannelPromise(url) {
-    console.debug(`Trying to delete channel: ${url}`);
+    console.log(`Trying to delete channel: ${url}`);
     return new Promise((resolve, reject) => {
         const createChannelWorker = new Worker('scripts/tasks/server-side-event/channel-related-task.js');
         createChannelWorker.addEventListener('message', function(e) {
@@ -70,6 +70,8 @@ function deleteChannelPromise(url) {
             reject(e);
             createChannelWorker.terminate();
         });
+
+        console.log(`Trying to delete channel 2: `);
         createChannelWorker.postMessage({
             "apiEndpoint": `${window.CONFIG["dcache-view.endpoints.webapi"]}`,
             "auth": getAuthValue(),
@@ -112,11 +114,13 @@ function watchChannel(address, type) {
 
 async function establishSSEventChannelAsync() {
     console.group('Establishing Server Sent Events Channel');
+    //console.log("get session strage  " + sessionStorage.name);
     const sseWorkerPayloadMsg = {
         "apiEndpoint": `${window.CONFIG["dcache-view.endpoints.webapi"]}`,
         "auth": getAuthValue()
     };
     if (sessionStorage.name && sessionStorage.name !== "") {
+        console.log("Name is defined");
         sseWorkerPayloadMsg.body = {"client-id" : `dcache-view-${sessionStorage.name}`};
     }
     if (!!sessionStorage.getItem("sseChannel") && sessionStorage.getItem("sseChannel") !=="") {

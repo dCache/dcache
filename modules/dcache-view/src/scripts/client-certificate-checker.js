@@ -1,4 +1,5 @@
 if (window.Worker && !sessionStorage.getItem("hasAuthClientCertificate")) {
+  console.log("task " + sessionStorage.getItem("hasAuthClientCertificate"))
     const worker = new Worker('scripts/tasks/authentication-task.js');
     worker.addEventListener('message', function (e) {
         //TODO: lock the screen
@@ -28,21 +29,25 @@ function store(json)
 
 function normaliseCredentialFormat(data, schemes)
 {
-    delete data["status"];
-    if (schemes) {
-        data["authType"] = schemes;
-    }
-    data["name"] = data["username"];
-    delete data["username"];
+    //if (!data === undefined) {
+        delete data["status"];
 
-    data["email"] = data.email === undefined ? "": data.email;
-    data["roles"] = data.roles === undefined ? "": data.roles;
+        if (schemes) {
+            data["authType"] = schemes;
+        }
+        data["name"] = data["username"];
+        delete data["username"];
 
-    if (data.hasOwnProperty("unassertedRoles")) {
-        data["listOfPossibleRoles"] = data["unassertedRoles"];
-        delete data["unassertedRoles"];
-    } else {
-        data["listOfPossibleRoles"] = "";
-    }
-    return data;
+        data["email"] = data.email === undefined ? "" : data.email;
+        data["roles"] = data.roles === undefined ? "" : data.roles;
+
+        if (data.hasOwnProperty("unassertedRoles")) {
+            data["listOfPossibleRoles"] = data["unassertedRoles"];
+            delete data["unassertedRoles"];
+        } else {
+            data["listOfPossibleRoles"] = "";
+        }
+        return data;
+
+   // }
 }

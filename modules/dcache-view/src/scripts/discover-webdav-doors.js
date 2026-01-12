@@ -11,11 +11,19 @@ webdavWorker.addEventListener('error', function(e) {
 }, false);
 
 const getAuthValue = function (){
+    console.log("CHEK the authType " + sessionStorage.authType);
+
+    console.log("CHEK the authType " + sessionStorage.getItem("hasAuthClientCertificate"));
+
     if (!!sessionStorage.getItem("hasAuthClientCertificate")) {
         return "";
     }
     if (sessionStorage.upauth !== undefined) {
+        console.log("sessionStorage.upauth " + `${sessionStorage.authType} ${sessionStorage.upauth}`);
+
         return `${sessionStorage.authType} ${sessionStorage.upauth}`;
+
+
     }
     return "";
 };

@@ -3,7 +3,9 @@ self.addEventListener('message', function(e) {
     if (!e.data["channel-url"] && e.data["channel-url"] === "") {
         throw new ReferenceError("Please specify either channel-id or channel-url");
     }
-    const init = {};
+    const init = {
+        withCredentials: true
+    };
     if (e.data.auth && e.data.auth !== "") init["auth"] = e.data.auth;
 
     const source = new dCacheEventSource(e.data["channel-url"], init);

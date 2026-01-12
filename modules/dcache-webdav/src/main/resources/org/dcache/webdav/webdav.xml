@@ -284,6 +284,33 @@
         <property name="errorCountingWindowUnit" value="${webdav.limits.error.block.window.time.units}"/>
     </bean>
 
+  <!-- 1. Shared ZooKeeper Session Store -->
+  <bean id="zkSessionDataStore" class="org.dcache.http.ZooKeeperSessionDataStore">
+    <property name="root" value="/dcache/auth/sessions"/>
+  </bean>
+
+  <!-- 2. WebDAV SessionHandler -->
+  <bean id="webdavSessionHandler" class="org.eclipse.jetty.server.session.SessionHandler">
+    <property name="sessionCookie" value="DCACHE_API_SESSION"/>
+  </bean>
+
+  <!-- 3. SessionCache wrapping ZooKeeper store -->
+  <bean id="webdavSessionCache" class="org.eclipse.jetty.server.session.DefaultSessionCache">
+    <constructor-arg ref="webdavSessionHandler"/>
+    <property name="sessionDataStore" ref="zkSessionDataStore"/>
+  </bean>
+
+  <!-- 4. Inject SessionCache -->
+  <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <property name="targetObject" ref="webdavSessionHandler"/>
+    <property name="targetMethod" value="setSessionCache"/>
+    <property name="arguments">
+      <list>
+        <ref bean="webdavSessionCache"/>
+      </list>
+    </property>
+  </bean>
+
     <bean id="handlers" class="org.dcache.util.jetty.RateLimitedHandlerList">
       <description>List of handlers for HTTP requests</description>
         <constructor-arg ref="rate-limiter-config"/>
@@ -329,7 +356,7 @@
               </property>
             </bean>
               <bean class="org.dcache.webdav.owncloud.OwnCloudHandler"/>
-              <bean class="org.dcache.webdav.LoggingHandler">
+              <!--<bean class="org.dcache.webdav.LoggingHandler">
                   <property name="handler">
                       <bean class="org.eclipse.jetty.server.handler.HandlerList">
                           <property name="handlers" value="#{ '${webdav.authn.spnego}'.equals('true') ?
@@ -337,7 +364,24 @@
                                                                         T(java.util.Arrays).asList(authhandler) }"/>
                       </bean>
                   </property>
-              </bean>
+              </bean>-->
+            <!-- WebDAV SessionHandler with ZooKeeper session store -->
+            <bean id="webdavSessionHandler" class="org.eclipse.jetty.server.session.SessionHandler">
+              <property name="sessionCookie" value="DCACHE_API_SESSION"/>
+              <property name="sessionCache" ref="webdavSessionCache"/>
+              <property name="handler">
+                <bean class="org.dcache.webdav.LoggingHandler">
+                  <property name="handler">
+                    <bean class="org.eclipse.jetty.server.handler.HandlerList">
+                      <property name="handlers"
+                        value="#{ '${webdav.authn.spnego}'.equals('true') ?
+                                 T(java.util.Arrays).asList(spnegohandler) :
+                                 T(java.util.Arrays).asList(authhandler) }"/>
+                    </bean>
+                  </property>
+                </bean>
+              </property>
+            </bean>
           </list>
       </property>
   </bean>

@@ -8,7 +8,7 @@ self.addEventListener('message', function(e) {
     if (e.data.auth && e.data.auth !== "") {
         header.append('Authorization', e.data.auth);
     }
-    fetch(`${endpoint}doors`, {headers: header})
+    fetch(`${endpoint}doors`, {headers: header, credentials: "include"})
         .then((response) => {
             if (!(response.status >= 200 && response.status < 300)) {
                 throw new Error("Network problem.");

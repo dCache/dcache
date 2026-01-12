@@ -15,7 +15,12 @@ self.addEventListener('message', function(e) {
     });
 
     fetch(request).then(file => {
+        console.log("download the file " + request.url);
+
+       // console.log("credential the file " + request.e.data.upauth);
+
         if (file.ok) {
+            console.log("download is possible " +  e.data.return);
             return e.data.return === 'json' ? file.json() : file.blob();
         }
         if (file.status >= 400 && file.status < 500) {

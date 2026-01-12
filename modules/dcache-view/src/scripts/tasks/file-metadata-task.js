@@ -39,11 +39,14 @@ self.addEventListener('message', function(e) {
         "Accept": "application/json",
         "Content-Type": "application/json"
     });
-    const qos = e.data.upauth === "Basic YW5vbnltb3VzOm5vcGFzc3dvcmQ=" ? "false" : "true";
+    //const qos = e.data.upauth === "Basic YW5vbnltb3VzOm5vcGFzc3dvcmQ=" ? "false" : "true";
+    const qos = "true";
     const limit = e.data.limit ? e.data.limit === 'max' ? 2147483647 : e.data.limit : 100;
     const offset = e.data.offset ? e.data.offset : 0;
     const pnfsID = e.data.file && e.data.file.pnfsId ? e.data.file.pnfsId: undefined;
     let partialFileMetadata;
+
+    console.log("data is " + e.data.auth + " or " + e.data.upauth);
 
     if (e.data.upauth && e.data.upauth !== "") {
         headers.append("Authorization", `${e.data.upauth}`);
@@ -87,7 +90,7 @@ self.addEventListener('message', function(e) {
 
     function full(pnfsId) {
         return fetchRequest(
-            new Request(`${endpoint}id/${pnfsId}`, {headers: headers})
+            new Request(`${endpoint}id/${pnfsId}`, {headers: headers,  credentials: "include"})
         ).catch((err) => {
             if (partialFileMetadata) {
                 return partialFileMetadata;
@@ -98,10 +101,15 @@ self.addEventListener('message', function(e) {
     function partial(path) {
         return fetchRequest(new Request(
             `${endpoint}namespace${path}?children=true&offset=${offset}&limit=${limit}&qos=${qos}`, {
-                headers: headers}));
+                headers: headers,  credentials: "include"}));
     }
     function fetchRequest(req) {
-        return fetch(req).then((response) => {
+        return fetch(req, { headers: headers, credentials: "include" }).then((response) => {
+            console.log("what is with my respoce " + response.ok);
+            console.log("what is with my respoce " + response.statusText);
+            console.log("what is with my respoce " + response.status);
+
+
             if (!response.ok) {
                 throw JSON.stringify({status: response.status, message: response.statusText})
             }

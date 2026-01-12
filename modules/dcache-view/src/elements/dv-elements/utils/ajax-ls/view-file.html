@@ -304,10 +304,14 @@
 
             _url(path)
             {
+                console.log("VALUE AUTH "  + this.getAuthValue());
                 const isHome = path===null || path === "" || path === "/";
                 const filePath = this.getAuthValue() !== "Basic YW5vbnltb3VzOm5vcGFzc3dvcmQ=" ? isHome === true ?
                     "/?children=true&qos=true" : `${path}/?children=true&qos=true` : isHome === true ?
                     "/?children=true" : `${path}/?children=true`;
+
+                console.log("PATH  AUTH "  + `${window.CONFIG["dcache-view.endpoints.webapi"]}namespace${this.encodePath(filePath)}`);
+
                 return `${window.CONFIG["dcache-view.endpoints.webapi"]}namespace${this.encodePath(filePath)}`;
             }
 
@@ -916,7 +920,7 @@
                 }
                 const req = new Request(
                     `${window.CONFIG['dcache-view.endpoints.webapi']}namespace${this.path}/${name}?qos=true`,
-                    {headers: headers}
+                    {headers: headers, credentials: 'include'}
                 );
                 const response = await fetch(req);
                 if (response.ok) {

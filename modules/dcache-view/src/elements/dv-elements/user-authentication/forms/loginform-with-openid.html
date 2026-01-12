@@ -232,12 +232,16 @@
                 const a = window.CONFIG["dcache-view.oidc-provider-name-list"].trim().split(" ");
                 const b = window.CONFIG["dcache-view.oidc-client-id-list"].trim().split(" ");
                 const c = window.CONFIG["dcache-view.oidc-authz-endpoint-list"].trim().split(" ");
-                const d = window.CONFIG["dcache-view.oidc-authz-endpoint-extra"].trim().split(" ");
+
+                const d = (window.CONFIG["dcache-view.oidc-authz-endpoint-extra"] || "").trim().split(" ");
+                const f = (window.CONFIG["dcache-view.oidc-authz-redirect-url"] || "").trim().split(" ");
+
                 const len = a.length;
                 let jsonArray = [];
                 for (let i=0; i<len; i++) {
                     const extra = i < d.length ? d[i] : '-'
-                    jsonArray.push({"name": `${decodeURIComponent(a[i])}`, "id": `${decodeURIComponent(b[i])}`, "endpoint": `${c[i]}`, "extra": `${extra}`});
+                    jsonArray.push({"name": `${decodeURIComponent(a[i])}`, "id": `${decodeURIComponent(b[i])}`,
+                        "endpoint": `${c[i]}`, "redirecturl":`${decodeURIComponent(f[i])}`,   "extra": `${extra}`});
                 }
                 this.openIDProviders = jsonArray;
             }
@@ -276,26 +280,43 @@
                 this.exitAnimation = 'slide-right-animation';
                 this.selected = 0;
             }
+            _connect(e) {
+                // 1. Get selected OpenID provider
+                const provider = this.$.oidcList.itemForElement(e.target);
 
-            _connect (e)
-            {
-                sessionStorage.removeItem('nonce');
-                const openIDprovider = this.$.oidcList.itemForElement(e.target);
-                const endpoint = openIDprovider.endpoint.endsWith('?')
-                    ? openIDprovider.endpoint : `${openIDprovider.endpoint}?`;
+                // 2. Prepare endpoint URL
+                const endpoint = provider.endpoint.endsWith('?')
+                    ? provider.endpoint
+                    : `${provider.endpoint}?`;
+
+                // 3. Generate nonce (optional for OIDC)
                 const nonce = window.btoa(this._entropy(this._generateNonce()));
                 sessionStorage.setItem("nonce", nonce);
 
+                // 4. Store redirect page in sessionStorage
+                sessionStorage.setItem('redirect', JSON.stringify(this.redirectTo));
                 sessionStorage.removeItem('redirect');
                 sessionStorage.setItem('redirect', JSON.stringify(this.redirectTo));
 
-                const extra = openIDprovider.extra === '-' ? '' : `&${openIDprovider.extra}`
 
-                window.location.href = endpoint + 'response_type=id_token%20token' +
-                    '&client_id=' + openIDprovider.id +
-                    '&redirect_uri=' + encodeURIComponent(window.location.origin) +
-                    '&scope=openid%20profile%20email' +
-                    '&nonce=' + nonce + extra;
+
+                // 5. Construct authorization URL for Code Flow
+                let authUrl = endpoint +
+                    'response_type=code' +                       // Authorization Code Flow
+                    '&client_id=' + encodeURIComponent(provider.id) +
+                    //'&redirect_uri=' + encodeURIComponent('https://localhost:3881/api/v1/auth/callback') +
+                    '&redirect_uri=' + encodeURIComponent(provider.redirecturl) +
+                    '&scope=openid%20profile%20email'; // adjust scope as needed
+
+                // 6. Append extra parameters if specified
+                if (provider.extra && provider.extra !== '-') {
+                    authUrl += '&' + provider.extra;
+                }
+
+                console.log("Token Data is READY to be sent to provider: ", authUrl);
+
+                // 7. Redirect browser to provider login page
+                window.location.href = authUrl;
             }
 
             /**

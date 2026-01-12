@@ -224,6 +224,7 @@
                 userAuth.addEventListener('dv-user-authentication-error', e => {
                     this.errorMessage = e.detail.message;
                 });
+                console.log("LOGIN userAuth ");
                 userAuth.send("Basic");
             }
 

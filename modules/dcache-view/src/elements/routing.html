@@ -131,11 +131,158 @@
             app.params = "";
         });
 
-        // 404
-        page('*', function(dt) {
-            /**
+
+      // 404
+      page('*', function(dt) {
+
+        const url = window.location.href;
+
+       // Find the part after '?token='
+        const tokenIndex = url.indexOf('?token=');
+        let token = null;
+
+        //TODO this will be delete, for now the code still has a part with toke
+        //even though the token is not used, we will remove it in the future,
+        // but for now we want to make sure that if there is a token in the url,
+        // we can still get it and use it for authentication.
+        if (tokenIndex !== -1) {
+          // Everything after '?token='
+          token = url.substring(tokenIndex + 7);
+
+          // Optional: remove trailing hash or extra params if needed
+          const hashIndex = token.indexOf('#');
+          if (hashIndex !== -1) {
+            token = token.substring(0, hashIndex);
+          }
+
+          // Optional: decode URI components
+          token = decodeURIComponent(token);
+        }
+
+        console.log('Token:', token);
+
+        if (!url.includes("token")) {
+          console.log("CODE FLOW AUTH ")
+          const redirectInfoObj = JSON.parse(sessionStorage.getItem('redirect') || '{}');
+          //sessionStorage.removeItem('redirect');
+
+          const userAuth = new UserAuthentication(token);
+          console.log(
+              "SESSION check do we have the user name " + sessionStorage.getItem('username'));
+          console.log('user userAuth :' + userAuth);
+          userAuth.addEventListener('dv-user-authentication-successful', (e) => {
+            console.log('user credential before :');
+
+            const user = e.detail.credential;
+            console.log('user credential without a token :', user);
+
+            user['authType'] = 'Bearer';
+            window.dispatchEvent(new CustomEvent('dv-namespace-show-message-toast', {
+              detail: {message: e.detail.message}, bubbles: true, composed: true
+            }));
+            switch (redirectInfoObj.page) {
+              case "home":
+                page("/");
+                this.dispatchEvent(
+                    new CustomEvent('dv-namespace-ls-path', {
+                      detail: {path: redirectInfoObj.path}, bubbles: true, composed: true
+                    }));
+                break;
+              default:
+                page(`/${redirectInfoObj.page}`);
+                break;
+            }
+            window.dispatchEvent(new CustomEvent('dv-authentication-successful', {
+              detail: {
+                message: e.detail.message,
+                roles: e.detail.credential.roles === undefined ? "" : `${e.detail.credential.roles}`
+              }, bubbles: true, composed: true
+            }));
+          });
+          userAuth.addEventListener('dv-user-authentication-error', (e) => {
+            sessionStorage.removeItem('authType');
+            sessionStorage.removeItem('nonce');
+            const searchParams = `"page":"${redirectInfoObj.page}","path":"${redirectInfoObj.path}"`;
+            page(`/user-login?r=${encodeURIComponent(searchParams)}`);
+            this.dispatchEvent(new CustomEvent('dv-namespace-show-message-toast', {
+              detail: {message: e.detail.message}, bubbles: true, composed: true
+            }));
+          });
+          console.log("Bearer event has been send:");
+          userAuth.sendCodeFlow();
+          sessionStorage.removeItem('redirect');
+          return;
+        } else if (dt.pathname === "/#!/shared-link") {
+          page(`/shared-link?${dt.querystring}`);
+          return;
+        }
+
+        //TODO: this is for test only, we will remove it in the future,
+        // for now we want to make sure that if there is a token in the url, we can still
+        // get it and use it for authentication.
+        if (url.includes("token")) {
+          console.log('IMPLICIT FLOW AUTH with token:');
+          const redirectInfoObj = JSON.parse(sessionStorage.getItem('redirect') || '{}');
+          //sessionStorage.removeItem('redirect');
+          const userAuth = new UserAuthentication(token);
+          console.log("seesion" + sessionStorage.getItem('username'));
+          console.log('user userAuth with token :' + userAuth);
+
+          userAuth.addEventListener('dv-user-authentication-successful', (e)=>{
+            const user = e.detail.credential;
+            console.log('user credential with token :', user);
+
+            user['authType'] = 'Bearer';
+            user['upauth'] = token;
+            store(normaliseCredentialFormat(user));
+
+            window.dispatchEvent(new CustomEvent('dv-namespace-show-message-toast', {
+              detail: {message: e.detail.message}, bubbles: true, composed: true
+            }));
+            switch (redirectInfoObj.page) {
+              case "home":
+                page("/");
+                this.dispatchEvent(
+                    new CustomEvent('dv-namespace-ls-path', {
+                      detail: {path: redirectInfoObj.path}, bubbles: true, composed: true}));
+                break;
+              default:
+                page(`/${redirectInfoObj.page}`);
+                break;
+            }
+            window.dispatchEvent(new CustomEvent('dv-authentication-successful', {
+              detail: {
+                message: e.detail.message,
+                roles: e.detail.credential.roles === undefined ? "": `${e.detail.credential.roles}`
+              }, bubbles: true, composed: true
+            }));
+          });
+          userAuth.addEventListener('dv-user-authentication-error', (e) => {
+            sessionStorage.removeItem('authType');
+            sessionStorage.removeItem('nonce');
+            const searchParams = `"page":"${redirectInfoObj.page}","path":"${redirectInfoObj.path}"`;
+            page(`/user-login?r=${encodeURIComponent(searchParams)}`);
+            this.dispatchEvent(new CustomEvent('dv-namespace-show-message-toast', {
+              detail: {message: e.detail.message}, bubbles: true, composed: true}));
+          });
+
+          console.log("Bearer with token:");
+          userAuth.send("Bearer");
+          sessionStorage.removeItem('redirect');
+          return;
+        } else if (dt.pathname === "/#!/shared-link") {
+          page(`/shared-link?${dt.querystring}`);
+          return;
+        }
+
+        this.dispatchEvent(new CustomEvent('dv-namespace-show-message-toast', {
+          detail: {message: `Can't find: ${url}. Redirected you to Home Page`}, bubbles: true, composed: true}));
+        page.redirect(app.baseUrl);
+      });
+/*        page('*', function(dt) {
+            /!**
              * Handle OpenID Connect Server Redirect
-             */
+             *!/
             const url = window.location.href;
             if (url.includes("access_token")) {
                 const accessToken = new URL(url).hash.split('&').filter(function(el) {
@@ -190,7 +337,7 @@
             this.dispatchEvent(new CustomEvent('dv-namespace-show-message-toast', {
                 detail: {message: `Can't find: ${url}. Redirected you to Home Page`}, bubbles: true, composed: true}));
             page.redirect(app.baseUrl);
-        });
+        });*/
 
         // add #! before urls
         page({

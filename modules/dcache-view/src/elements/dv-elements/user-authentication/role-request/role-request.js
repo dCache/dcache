@@ -63,6 +63,8 @@ class RoleRequest extends DcacheViewMixins.Commons(Polymer.Element)
                 e.detail.message = `Role(s) ${msg} asserted.`;
                 this.resolveAssertion(e);
             });
+            console.log("Set user auth in role-request ");
+
             userAuth.send("Basic");
         } catch(err) {
             this.rejectAssertion(err.message);
@@ -116,6 +118,9 @@ class RoleRequest extends DcacheViewMixins.Commons(Polymer.Element)
                 `The ${roleToUnAssert.trim()} role is successfully removed.`;
             this.resolveAssertion(e);
         });
+
+        console.log("TEST USER AUTH IN ROLE_REUEST again " );
+
         userAuth.send("Basic");
     }
 }

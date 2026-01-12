@@ -10,7 +10,7 @@ self.addEventListener('message', function(e) {
     if (e.data.auth && e.data.auth !== "") {
         header.append('Authorization', e.data.auth);
     }
-    const init = {headers: header};
+    const init = {headers: header, credentials: "include"};
     switch (e.data.method) {
         case "POST":
             if (e.data.body && e.data.body !== "") {
