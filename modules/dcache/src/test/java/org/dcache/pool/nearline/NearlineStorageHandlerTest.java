@@ -65,6 +65,7 @@ public class NearlineStorageHandlerTest {
         csm = mock(ChecksumModule.class);
 
         hsmSet = mock(HsmSet.class);
+        when(hsmSet.describe(any())).thenReturn(mock(HsmSet.HsmDescription.class));
         nearlineStorage = mock(NearlineStorage.class);
 
         when(hsmSet.getNearlineStorageByType(any())).thenReturn(nearlineStorage);
