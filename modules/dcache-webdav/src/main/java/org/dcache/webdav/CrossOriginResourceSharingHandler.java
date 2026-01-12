@@ -4,6 +4,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_HEADERS_PARAM;
 import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_METHODS_PARAM;
 import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_ORIGINS_PARAM;
+import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOW_CREDENTIALS_PARAM;
 import static org.eclipse.jetty.servlets.CrossOriginFilter.CHAIN_PREFLIGHT_PARAM;
 import static org.eclipse.jetty.servlets.CrossOriginFilter.PREFLIGHT_MAX_AGE_PARAM;
 
@@ -37,7 +38,9 @@ public class CrossOriginResourceSharingHandler extends AbstractHandler implement
           ALLOWED_METHODS_PARAM, "GET,PUT,POST,DELETE",
           ALLOWED_HEADERS_PARAM, "Content-Type,Authorization,Suppress-WWW-Authenticate",
           PREFLIGHT_MAX_AGE_PARAM, "0", // Disable 'Access-Control-Max-Age' response.
-          CHAIN_PREFLIGHT_PARAM, "false");
+          CHAIN_PREFLIGHT_PARAM, "false",
+          ALLOW_CREDENTIALS_PARAM, "true" //TODO: does not work without this for session to be checked
+          );
     private static final ImmutableList<String> ALLOWED_ORIGIN_PROTOCOL = ImmutableList.of("http",
           "https");
     private Filter filter;

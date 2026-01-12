@@ -12,6 +12,7 @@ import org.dcache.restful.resources.billing.BillingResources;
 import org.dcache.restful.resources.bulk.BulkResources;
 import org.dcache.restful.resources.cells.CellInfoResources;
 import org.dcache.restful.resources.doors.DoorsResources;
+import org.dcache.restful.resources.identity.UserSession;
 import org.dcache.restful.resources.identity.UserResource;
 import org.dcache.restful.resources.labels.LabelsResources;
 import org.dcache.restful.resources.migration.MigrationResources;
@@ -50,6 +51,7 @@ public class DcacheRestApplication extends ResourceConfig {
         register(CellInfoResources.class);
         register(DoorsResources.class);
         register(UserResource.class);
+        register(UserSession.class);
         register(RequestUser.class);
         register(LabelsResources.class);
         register(FileResources.class);
