@@ -123,7 +123,7 @@ rpm:
   image: dcache/maven-java21-rpm-build
   extends: .build_cache
   script:
-    - mvn $MAVEN_CLI_OPTS -Drun.slow.tests -am -pl packages/fhs -P rpm clean package
+    - mvn $MAVEN_CLI_OPTS DskipTests=true -Drun.slow.tests -am -pl packages/fhs -P rpm clean package
   artifacts:
     reports:
       junit:
@@ -235,8 +235,8 @@ Check for duplicate dependencies:
     - ls -1 /dcache/share/classes/ | grep -v netty-tcnative-boringssl-static | sort | sed -e 's/\-[0-9].*$//' | uniq -D > duplicate-dependencies.txt
     - if [ -s duplicate-dependencies.txt ]; then cat duplicate-dependencies.txt; exit 1; fi
 
-#Job to create and collect JaCoCo reports
-collect_coverage_data:
+#Job to run unit tests and create JaCoCo reports
+run_unit_tests_and_report:
   stage: build
   image: maven:3.9.12-eclipse-temurin-17
   extends: .build_cache
@@ -250,36 +250,9 @@ collect_coverage_data:
   artifacts:
     paths:
       # pass the .exec files AND the compiled classes to the next stage
-      - "**/target/coverage-reports/jacoco-ut.exec"
-      - "**/target/classes/"
+      - "**/target/coverage-reports/jacoco-ut.exec" #unit test coverage data
+      - "**/target/classes/" #compiled classes
     expire_in: 1 day
-
-# Job to generate JaCoCo report using script
-generate_jacoco_report:
-  stage: coverage
-  image: maven:3.9.12-eclipse-temurin-17
-  extends: .build_cache
-  needs:
-    - job: collect_coverage_data
-  cache:
-    key: "jacoco-binaries-$CI_COMMIT_REF_SLUG"
-    paths:
-      - .jacoco-cache/
-  before_script:
-    - apt-get update && apt-get install -y wget unzip
-    - mkdir -p "$(pwd)/.jacoco-cache" # create the directory first
-    - ln -sfn "$(pwd)/.jacoco-cache" "$HOME/jacoco-0.8.14" # link it to the location the script expects
-  script:
-    - chmod +x ./generate-jacoco-report.sh
-    - ./generate-jacoco-report.sh
-  artifacts:
-    reports:
-      coverage_report:
-        coverage_format: jacoco
-        path: target/coverage-reports/site/jacoco.xml
-    paths:
-      - target/coverage-reports/site/
-    expire_in: 1 week
 
 sign_rpm:
   stage: sign
@@ -484,6 +457,32 @@ Prepare k8s environment:
   script:
     - kubectl create namespace ${K8S_NAMESPACE}
 
+# Job to generate JaCoCo report using script
+generate_jacoco_report:
+  stage: testenv_post
+  image: maven:3.9.12-eclipse-temurin-17
+  extends: .build_cache
+  needs:
+    - job: run_unit_tests_and_report  #depends on unit test artifacts
+  cache:
+    key: "jacoco-binaries-$CI_COMMIT_REF_SLUG"
+    paths:
+      - .jacoco-cache/
+  before_script:
+    - apt-get update && apt-get install -y wget unzip
+    - mkdir -p "$(pwd)/.jacoco-cache" # create the directory first
+    - ln -sfn "$(pwd)/.jacoco-cache" "$HOME/jacoco-0.8.14" # link it to the location the script expects
+  script:
+    - chmod +x ./generate-jacoco-report.sh
+    - ./generate-jacoco-report.sh
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: jacoco
+        path: target/coverage-reports/site/jacoco.xml
+    paths:
+      - target/coverage-reports/site/
+    expire_in: 1 week
 
 #
 # collect all logs
