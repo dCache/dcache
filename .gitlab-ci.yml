@@ -457,33 +457,6 @@ Prepare k8s environment:
   script:
     - kubectl create namespace ${K8S_NAMESPACE}
 
-# Job to generate JaCoCo report using script
-generate_jacoco_report:
-  stage: testenv_post
-  image: maven:3.9.12-eclipse-temurin-17
-  extends: .build_cache
-  needs:
-    - job: run_unit_tests_and_report  #depends on unit test artifacts
-  cache:
-    key: "jacoco-binaries-$CI_COMMIT_REF_SLUG"
-    paths:
-      - .jacoco-cache/
-  before_script:
-    - apt-get update && apt-get install -y wget unzip
-    - mkdir -p "$(pwd)/.jacoco-cache" # create the directory first
-    - ln -sfn "$(pwd)/.jacoco-cache" "$HOME/jacoco-0.8.14" # link it to the location the script expects
-  script:
-    - chmod +x ./generate-jacoco-report.sh
-    - ./generate-jacoco-report.sh
-  artifacts:
-    reports:
-      coverage_report:
-        coverage_format: jacoco
-        path: target/coverage-reports/site/jacoco.xml
-    paths:
-      - target/coverage-reports/site/
-    expire_in: 1 week
-
 #
 # collect all logs
 #
@@ -683,6 +656,13 @@ webdav_with_x509_tests:
     - kubectl -n $K8S_NAMESPACE cp .ci/init-el9-ui.sh webdav-tester:/init-el9-ui.sh
     - kubectl -n $K8S_NAMESPACE cp .ci/run-webdav-tests.sh webdav-tester:/run-webdav-tests.sh
     - kubectl -n $K8S_NAMESPACE exec webdav-tester -- /bin/sh /run-webdav-tests.sh
+      #generate coverage data for the tests that just ran
+    - kubectl -n $K8S_NAMESPACE exec webdav-tester -- /bin/sh -c "mvn $MAVEN_CLI_OPTS -P code-coverage jacoco:dump"
+  artifacts:
+    paths:
+      - "**/target/coverage-reports/jacoco-it.exec"  # Integration test coverage
+      - "**/target/classes/"                         # Compiled classes
+    expire_in: 1 day
 
 NFS4.x protocol compliance tests:
   stage: testing
@@ -739,3 +719,31 @@ Run OIDC test:
     - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod oidc-tester; do sleep 1; done
     - kubectl -n $K8S_NAMESPACE cp .ci/run-oidc-test.sh oidc-tester:/run-oidc-test.sh
     - kubectl -n $K8S_NAMESPACE exec oidc-tester -- /bin/sh /run-oidc-test.sh
+
+# Job to generate JaCoCo report using script
+generate_jacoco_report:
+  stage: testenv_post
+  image: maven:3.9.12-eclipse-temurin-17
+  extends: .build_cache
+  needs:
+    - job: run_unit_tests_and_report  #depends on unit test artifacts
+    - job: webdav_with_x509_tests     # Integration test coverage
+  cache:
+    key: "jacoco-binaries-$CI_COMMIT_REF_SLUG"
+    paths:
+      - .jacoco-cache/
+  before_script:
+    - apt-get update && apt-get install -y wget unzip
+    - mkdir -p "$(pwd)/.jacoco-cache" # create the directory first
+    - ln -sfn "$(pwd)/.jacoco-cache" "$HOME/jacoco-0.8.14" # link it to the location the script expects
+  script:
+    - chmod +x ./generate-jacoco-report.sh
+    - ./generate-jacoco-report.sh
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: jacoco
+        path: target/coverage-reports/site/jacoco.xml
+    paths:
+      - target/coverage-reports/site/
+    expire_in: 1 week

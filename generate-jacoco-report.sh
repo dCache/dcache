@@ -38,13 +38,13 @@ if [ ! -f "$JACOCO_CLI_JAR" ]; then
 fi
 
 # Find all jacoco-ut.exec files dynamically
-echo "DEBUG: Searching for jacoco-ut.exec files in $PROJECT_ROOT"
-EXEC_FILES=($(find "$PROJECT_ROOT" -name "jacoco-ut.exec" -type f))
+echo "DEBUG: Searching for jacoco-ut.exec and jacoco-it.exec files in $PROJECT_ROOT"
+EXEC_FILES=($(find "$PROJECT_ROOT" -name "jacoco-*.exec" -type f))
 
 # Check if any execution data files were found
 if [ ${#EXEC_FILES[@]} -eq 0 ]; then
-    echo "Error: No jacoco-ut.exec files found in $PROJECT_ROOT"
-    echo "DEBUG: Listing all files in $PROJECT_ROOT to verify existence of jacoco-ut.exec files:"
+    echo "Error: No jacoco-ut.exec or jacoco-it.exec files found in $PROJECT_ROOT"
+    echo "DEBUG: Listing all files in $PROJECT_ROOT to verify existence of .exec files:"
     find "$PROJECT_ROOT" -type f -name "*.exec" -exec ls -la {} \;
     exit 1
 fi
