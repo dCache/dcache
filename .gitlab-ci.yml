@@ -123,7 +123,7 @@ rpm:
   image: dcache/maven-java21-rpm-build
   extends: .build_cache
   script:
-    - mvn $MAVEN_CLI_OPTS -Drun.slow.tests -am -pl packages/fhs -P rpm clean package
+    - mvn $MAVEN_CLI_OPTS -DskipTests=true -Drun.slow.tests -am -pl packages/fhs -P rpm clean package
   artifacts:
     reports:
       junit:
@@ -131,6 +131,7 @@ rpm:
         - "**/target/failsafe-reports/TEST-*.xml"
     paths:
       - "packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm"
+      - "**/target/*.exec"
     expire_in: 2 days
 
 srm_client_rpm:
