@@ -1559,7 +1559,6 @@
 		                    <configuration>
                     <!-- Sets the path to the file which contains the execution data. -->
                                 <destFile>${project.build.directory}/coverage-reports/jacoco-ut.exec</destFile>
-                                <propertyName>failsafeArgLine</propertyName>
 		                    </configuration>
 		                </execution>
                         <execution>
