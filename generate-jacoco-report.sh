@@ -41,6 +41,12 @@ fi
 echo "DEBUG: Searching for jacoco-ut.exec and jacoco-it.exec files in $PROJECT_ROOT"
 EXEC_FILES=($(find "$PROJECT_ROOT" -name "jacoco-*.exec" -type f))
 
+# Debug: List all found .exec files
+echo "DEBUG: Found ${#EXEC_FILES[@]} execution data files:"
+for exec_file in "${EXEC_FILES[@]}"; do
+    echo "  - $exec_file"
+done
+
 # Check if any execution data files were found
 if [ ${#EXEC_FILES[@]} -eq 0 ]; then
     echo "Error: No jacoco-ut.exec or jacoco-it.exec files found in $PROJECT_ROOT"

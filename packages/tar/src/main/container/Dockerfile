@@ -44,6 +44,17 @@ COPY maven /opt/dcache
 #RUN rm ${DCACHE_INSTALL_DIR}/share/classes/liquibase-core-*.jar
 #COPY liquibase-core-3.5.3.jar ${DCACHE_INSTALL_DIR}/share/classes/liquibase-core-3.5.3.jar
 
+# =============================================================================
+# JaCoCo Setup for Integration Testing
+# =============================================================================
+# Create directory for JaCoCo agent and coverage data
+RUN mkdir -p /jacoco && chown dcache:dcache /jacoco
+
+# Copy JaCoCo agent if it exists in build context (optional - will be skipped if not present)
+COPY --chown=dcache:dcache jacoco/jacocoagent.jar /jacoco/jacocoagent.jar 2>/dev/null || true
+
+# =============================================================================
+
 # Post-install brutal cleanup
 RUN microdnf clean all && rm -rf /var/cache/yum /var/lib/dnf /var/lib/rpm
 

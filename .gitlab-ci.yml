@@ -204,6 +204,11 @@ container:
     - mkdir maven
     - tar -C maven --strip-components=1 -xzvf packages/tar/target/dcache-*.tar.gz
     - cp $CI_PROJECT_DIR/packages/tar/src/main/container/* .
+    # Download JaCoCo agent for integration testing
+    - echo "Downloading JaCoCo agent..."
+    - mkdir -p jacoco
+    - wget -q https://repo1.maven.org/maven2/org/jacoco/org.jacoco.agent/0.8.14/org.jacoco.agent-0.8.14-runtime.jar -O jacoco/jacocoagent.jar
+    - ls -lh jacoco/
     - mkdir -p /kaniko/.docker
     - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
     - >
@@ -565,7 +570,15 @@ Helm-Deploy Current dCache build:
       fi
     - helm repo add dcache ${DCACHE_HELM_REPO}
     - helm repo update
-    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=${tag} --set dcache.hsm.enabled=true --set dcache.qos.enabled=true --set image.registry=${CI_REGISTRY} --values .ci/custom-helm-config.yaml store dcache/dcache
+    - |
+      helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait \
+        --set image.tag=${tag} \
+        --set dcache.hsm.enabled=true \
+        --set dcache.qos.enabled=true \
+        --set image.registry=${CI_REGISTRY} \
+        --set-string 'dcache.javaOptions=-javaagent:/jacoco/jacocoagent.jar=destfile=/jacoco/jacoco-it.exec,append=true,dumponexit=true' \
+        --values .ci/custom-helm-config.yaml \
+        store dcache/dcache
 
 Helm-Deploy Latest dCache Golden Release:
   stage: test_deploy
@@ -651,17 +664,42 @@ webdav_with_x509_tests: #ToDo: get rid of hardcoded jacoco version
     - kubectl -n $K8S_NAMESPACE cp .ci/init-el9-ui.sh webdav-tester:/init-el9-ui.sh
     - kubectl -n $K8S_NAMESPACE cp .ci/run-webdav-tests.sh webdav-tester:/run-webdav-tests.sh
     - kubectl -n $K8S_NAMESPACE exec webdav-tester -- /bin/sh /run-webdav-tests.sh
-      # 1. Download and Copy Agent
-    - curl -L https://repo1.maven.org/maven2/org/jacoco/org.jacoco.agent/0.8.14/org.jacoco.agent-0.8.14-runtime.jar -o jacocoagent.jar
-    - kubectl -n $K8S_NAMESPACE cp jacocoagent.jar webdav-tester:/jacoco/jacocoagent.jar
-      # 2. Run Tests
-    - kubectl -n $K8S_NAMESPACE exec webdav-tester -- /bin/sh /run-webdav-tests.sh
+      # Collect coverage data from all dCache pods
+    - mkdir -p ./target/coverage-reports
+    - |
+      echo "Collecting JaCoCo coverage data from dCache pods..."
+      DCACHE_PODS=$(kubectl -n $K8S_NAMESPACE get pods -o name | grep -v webdav-tester | grep -v postgres | grep -v zookeeper | grep -v kafka | grep -v minio | grep -v keycloak | sed 's/pod\///')
 
-      # 3. Explicitly pull the IT coverage file
-    - kubectl -n $K8S_NAMESPACE cp webdav-tester:/target/coverage-reports/jacoco-it.exec ./jacoco-it.exec
+            if [ -z "$DCACHE_PODS" ]; then
+              echo "ERROR: No dCache pods found."
+              kubectl -n $K8S_NAMESPACE get pods
+              exit 0
+            fi
+
+            echo "Found dCache pods: $DCACHE_PODS"
+            echo ""
+
+            COLLECTED=0
+            for pod in $DCACHE_PODS; do
+              echo "Processing pod: $pod"
+
+              if kubectl -n $K8S_NAMESPACE exec $pod -- test -f /jacoco/jacoco-it.exec 2>/dev/null; then
+                echo "  ✓ Coverage file exists"
+                if kubectl -n $K8S_NAMESPACE cp $pod:/jacoco/jacoco-it.exec ./target/coverage-reports/jacoco-it-${pod}.exec 2>/dev/null; then
+                  SIZE=$(stat -c%s ./target/coverage-reports/jacoco-it-${pod}.exec 2>/dev/null || echo "unknown")
+                  echo "  ✓ Copied coverage file (size: $SIZE bytes)"
+                  COLLECTED=$((COLLECTED + 1))
+                fi
+              else
+                echo "  ℹ No coverage file in this pod"
+              fi
+              echo ""
+            done
+
+            echo "Coverage files collected: $COLLECTED"
   artifacts:
     paths:
-      - jacoco-it.exec  # Integration test coverage
+      - target/coverage-reports/jacoco-it-*.exec # Integration test coverage
     expire_in: 1 day
 
 NFS4.x protocol compliance tests:
@@ -722,7 +760,7 @@ Run OIDC test:
 
 # Job to generate JaCoCo report using script
 generate_jacoco_report:
-  stage: testenv_post
+  stage: coverage
   image: maven:3.9.12-eclipse-temurin-17
   extends: .build_cache
   needs:
@@ -731,12 +769,14 @@ generate_jacoco_report:
   cache:
     key: "jacoco-binaries-$CI_COMMIT_REF_SLUG"
     paths:
-      - .jacoco-cache/
+      - ./.jacoco-cache/
   before_script:
     - apt-get update && apt-get install -y wget unzip
     - mkdir -p "$(pwd)/.jacoco-cache" # create the directory first
     - ln -sfn "$(pwd)/.jacoco-cache" "$HOME/jacoco-0.8.14" # link it to the location the script expects
   script:
+    - echo "Listing all .exec files before report generation:"
+    - find . -name "*.exec" -type f -exec ls -lh {} \;
     - chmod +x ./generate-jacoco-report.sh
     - ./generate-jacoco-report.sh
   artifacts:
