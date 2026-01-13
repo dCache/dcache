@@ -59,7 +59,6 @@ documents or software obtained from this server.
  */
 package org.dcache.util.pool;
 
-import com.google.common.collect.ImmutableMap;
 import diskCacheV111.poolManager.CostModule;
 import java.util.Map;
 import org.dcache.poolmanager.PoolInfo;
@@ -79,7 +78,7 @@ public class CostModuleTagProvider implements PoolTagProvider {
     @Override
     public Map<String, String> getPoolTags(String location) {
         if (costModule == null) {
-            return ImmutableMap.of();
+            return Map.of();
         }
 
         PoolInfo poolInfo = costModule.getPoolInfo(location);

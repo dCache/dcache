@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.dcache.util.pool.PoolTagProvider;
 
 /**
@@ -98,6 +99,9 @@ public class TagConstrainedPoolList implements RefreshablePoolList {
         filteredOfflinePools = selectMutuallyExclusiveOfflinePools(allOfflinePools, forbiddenTags);
     }
 
+    /**
+     * Select Mutually Exclusive Active Pools By Tag.
+     */
     private ImmutableList<PoolManagerPoolInformation> selectMutuallyExclusivePools(
           ImmutableList<PoolManagerPoolInformation> candidates,
           Set<Map.Entry<String, String>> baseForbiddenTags) {
@@ -121,6 +125,9 @@ public class TagConstrainedPoolList implements RefreshablePoolList {
         return result.build();
     }
 
+    /**
+     * Select Mutually Exclusive Offline Pools By Tag.
+     */
     private ImmutableList<String> selectMutuallyExclusiveOfflinePools(
           ImmutableList<String> candidates,
           Set<Map.Entry<String, String>> baseForbiddenTags) {
@@ -146,16 +153,7 @@ public class TagConstrainedPoolList implements RefreshablePoolList {
     @Override
     public String toString() {
         ImmutableList<PoolManagerPoolInformation> pools = getPools();
-        if (pools.isEmpty()) {
-            return "";
-        }
-
-        StringBuilder s = new StringBuilder();
-        s.append(pools.get(0).getName());
-        for (int i = 1; i < pools.size(); i++) {
-            s.append(',').append(pools.get(i).getName());
-        }
-        return s.toString();
+        return (pools.isEmpty() ? "" : pools.stream().map(PoolManagerPoolInformation::getName).collect(
+              Collectors.joining(",")));
     }
 }
-

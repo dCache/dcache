@@ -91,10 +91,10 @@ public class PoolTagBasedExtractor extends AbstractLocationExtractor {
     @Override
     protected Map<String, String> getPoolTagsFor(String location) {
         if (tagProvider == null) {
-            return java.util.Collections.emptyMap();
+            return Map.of();
         }
 
         Map<String, String> tags = tagProvider.getPoolTags(location);
-        return tags != null ? tags : java.util.Collections.emptyMap();
+        return tags != null ? tags : Map.of();
     }
 }

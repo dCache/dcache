@@ -144,17 +144,21 @@ public class MigrationModule
     private int _counter = 1;
 
     // Hot file mitigation parameters
-    private int replicas = 1;
-    private long threshold = 5;
+    private static final int INITIAL_HOTFILE_REPLICAS = 1;
+    private int replicas = INITIAL_HOTFILE_REPLICAS;
+    private static final int INITIAL_HOTFILE_THRESHOLD = 5;
+    private long threshold = INITIAL_HOTFILE_THRESHOLD;
     private static final int MAX_HOTFILE_JOBS = 50;
 
     /**
      * Module-wide refresh interval in seconds used as default for commands.
      */
-    private volatile int defaultRefresh = 300;
+    private static final int INITIAL_DEFAULT_REFRESH = 300;
+    private volatile int defaultRefresh = INITIAL_DEFAULT_REFRESH;
 
     // Default concurrency to apply to jobs created outside of MigrationCopyCommand (e.g. hot-file)
-    private volatile int defaultConcurrency = 1;
+    private static final int INITIAL_DEFAULT_CONCURRENCY = 1;
+    private volatile int defaultConcurrency = INITIAL_DEFAULT_CONCURRENCY;
 
     private CostModule cachedCostModule;
     private long lastCostModuleRefreshTime = 0;
@@ -1247,88 +1251,86 @@ public class MigrationModule
                         return;
                 }
             }
-            if (job == null) {
-                RefreshablePoolList sourceList = new PoolListByNames(
-                      _context.getPoolManagerStub(),
-                      Collections.singletonList(_context.getPoolName()));
-                sourceList.refresh();
-                Collection<Pattern> excluded = new HashSet<>();
-                excluded.add(Pattern.compile(Pattern.quote(_context.getPoolName())));
-                RefreshablePoolList basePoolList = new PoolListFilter(
-                      new PoolListByPoolGroupOfPool(_context.getPoolManagerStub(),
-                            _context.getPoolName()),
-                      excluded,
-                      FALSE_EXPRESSION,
-                      Collections.emptySet(),
-                      TRUE_EXPRESSION,
-                      sourceList);
+            RefreshablePoolList sourceList = new PoolListByNames(
+                  _context.getPoolManagerStub(),
+                  Collections.singletonList(_context.getPoolName()));
+            sourceList.refresh();
+            Collection<Pattern> excluded = new HashSet<>();
+            excluded.add(Pattern.compile(Pattern.quote(_context.getPoolName())));
+            RefreshablePoolList basePoolList = new PoolListFilter(
+                  new PoolListByPoolGroupOfPool(_context.getPoolManagerStub(),
+                        _context.getPoolName()),
+                  excluded,
+                  FALSE_EXPRESSION,
+                  Collections.emptySet(),
+                  TRUE_EXPRESSION,
+                  sourceList);
 
-                // Wrap with hostname constraint to prevent creating replicas on same host
-                CostModule costModule = getCostModule();
-                TagConstrainedPoolList poolList = new TagConstrainedPoolList(
-                      basePoolList,
-                      sourceList,
-                      new CostModuleTagProvider(costModule));
+            // Wrap with hostname constraint to prevent creating replicas on same host
+            CostModule costModule = getCostModule();
+            TagConstrainedPoolList poolList = new TagConstrainedPoolList(
+                  basePoolList,
+                  sourceList,
+                  new CostModuleTagProvider(costModule));
 
-                poolList.refresh();
-                JobDefinition def =
-                      new JobDefinition(
-                            createFilter(null, null, new PnfsId[]{pnfsId}, null, null, null,
-                                  null, null, null),
-                            createCacheEntryMode("same"),
-                            createCacheEntryMode("cached"),
-                            createPoolSelectionStrategy("proportional"),
-                            createComparator(null),
-                            sourceList,
-                            poolList,
-                            defaultRefresh * 1000L,
-                            false,
-                            false,
-                            false,
-                            replicas,
-                            false,
-                            false,
-                            true,
-                            FALSE_EXPRESSION,
-                            FALSE_EXPRESSION,
-                            false,
-                            false);
-                job = new Job(_context, def);
-                // Apply module default concurrency to hot-file job
-                job.setConcurrency(defaultConcurrency);
-                _jobs.put(jobId, job);
-                _commands.put(job, "hotfile replication for " + pnfsId);
-                LOGGER.debug(
-                      "Created migration job with id {} for pnfsId {} with concurrency {}",
-                      jobId, pnfsId, defaultConcurrency);
+            poolList.refresh();
+            JobDefinition def =
+                  new JobDefinition(
+                        createFilter(null, null, new PnfsId[]{pnfsId}, null, null, null,
+                              null, null, null),
+                        createCacheEntryMode("same"),
+                        createCacheEntryMode("cached"),
+                        createPoolSelectionStrategy("proportional"),
+                        createComparator(null),
+                        sourceList,
+                        poolList,
+                        defaultRefresh * 1000L,
+                        false,
+                        false,
+                        false,
+                        replicas,
+                        false,
+                        false,
+                        true,
+                        FALSE_EXPRESSION,
+                        FALSE_EXPRESSION,
+                        false,
+                        false);
+            job = new Job(_context, def);
+            // Apply module default concurrency to hot-file job
+            job.setConcurrency(defaultConcurrency);
+            _jobs.put(jobId, job);
+            _commands.put(job, "hotfile replication for " + pnfsId);
+            LOGGER.debug(
+                  "Created migration job with id {} for pnfsId {} with concurrency {}",
+                  jobId, pnfsId, defaultConcurrency);
 
-                // Housekeeping: keep only the most recent 50 hotfile jobs
-                List<java.util.Map.Entry<String, Job>> hotfileJobs = _jobs.entrySet().stream()
-                      .filter(e -> e.getKey().startsWith("hotfile-"))
-                      .filter(e -> {
-                          switch (e.getValue().getState()) {
-                              case FINISHED:
-                              case CANCELLED:
-                              case FAILED:
-                                  return true;
-                              default:
-                                  return false;
-                          }
-                      })
-                      .sorted(Comparator.comparingLong(e -> e.getValue().getCreationTime()))
-                      .toList();
+            // Housekeeping: keep only the most recent MAX_HOTFILE_JOBS hotfile jobs
+            List<java.util.Map.Entry<String, Job>> hotfileJobs = _jobs.entrySet().stream()
+                  .filter(e -> e.getKey().startsWith("hotfile-"))
+                  .filter(e -> {
+                      switch (e.getValue().getState()) {
+                          case FINISHED:
+                          case CANCELLED:
+                          case FAILED:
+                              return true;
+                          default:
+                              return false;
+                      }
+                  })
+                  .sorted(Comparator.comparingLong(e -> e.getValue().getCreationTime()))
+                  .toList();
 
-                int toRemove = hotfileJobs.size() - MAX_HOTFILE_JOBS;
-                if (toRemove > 0) {
-                    for (java.util.Map.Entry<String, Job> entry : hotfileJobs) {
-                        if (toRemove <= 0) {
-                            break;
-                        }
-                        Job j = entry.getValue();
-                        _jobs.remove(entry.getKey());
-                        _commands.remove(j);
-                        toRemove--;
+            int toRemove = hotfileJobs.size() - MAX_HOTFILE_JOBS;
+            if (toRemove > 0) {
+                for (java.util.Map.Entry<String, Job> entry : hotfileJobs) {
+                    if (toRemove <= 0) {
+                        break;
                     }
+                    Job j = entry.getValue();
+                    _jobs.remove(entry.getKey());
+                    _commands.remove(j);
+                    toRemove--;
                 }
             }
             if (_isStarted && job.getState() == Job.State.NEW) {
@@ -1371,16 +1373,16 @@ public class MigrationModule
     public void printSetup(PrintWriter pw) {
         pw.println("#\n# MigrationModule\n#");
 
-        if (defaultConcurrency != 1) {
+        if (defaultConcurrency != INITIAL_DEFAULT_CONCURRENCY) {
             pw.println("migration set concurrency-default " + defaultConcurrency);
         }
-        if (replicas != 1) {
+        if (replicas != INITIAL_HOTFILE_REPLICAS) {
             pw.println("hotfile set replicas " + replicas);
         }
-        if (threshold != 5) {
+        if (threshold != INITIAL_HOTFILE_THRESHOLD) {
             pw.println("hotfile set threshold " + threshold);
         }
-        if (defaultRefresh != 300) {
+        if (defaultRefresh != INITIAL_DEFAULT_REFRESH) {
             pw.println("migration set refresh-default " + defaultRefresh);
         }
 
