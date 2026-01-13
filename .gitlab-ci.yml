@@ -30,8 +30,6 @@
 stages:
   # build rpm, tar, deb, oci container
   - build
-  # create a code coverage report
-  - coverage
   # sign rpm, deb
   - sign
   # create k8s namespace
@@ -760,7 +758,7 @@ Run OIDC test:
 
 # Job to generate JaCoCo report using script
 generate_jacoco_report:
-  stage: coverage
+  stage: testenv_post
   image: maven:3.9.12-eclipse-temurin-17
   extends: .build_cache
   needs:
