@@ -2,7 +2,6 @@ package org.dcache.pool.migration;
 
 import com.google.common.collect.ImmutableList;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;

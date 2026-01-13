@@ -144,21 +144,23 @@ public class MigrationModule
     private int _counter = 1;
 
     // Hot file mitigation parameters
-    private static final int INITIAL_HOTFILE_REPLICAS = 1;
-    private int replicas = INITIAL_HOTFILE_REPLICAS;
-    private static final int INITIAL_HOTFILE_THRESHOLD = 5;
-    private long threshold = INITIAL_HOTFILE_THRESHOLD;
+    private int configuredReplicas;
+    private int replicas;
+
+    private long configuredThreshold;
+    private long threshold;
+
     private static final int MAX_HOTFILE_JOBS = 50;
 
     /**
      * Module-wide refresh interval in seconds used as default for commands.
      */
-    private static final int INITIAL_DEFAULT_REFRESH = 300;
-    private volatile int defaultRefresh = INITIAL_DEFAULT_REFRESH;
+    private int configuredDefaultRefresh;
+    private volatile int defaultRefresh;
 
     // Default concurrency to apply to jobs created outside of MigrationCopyCommand (e.g. hot-file)
-    private static final int INITIAL_DEFAULT_CONCURRENCY = 1;
-    private volatile int defaultConcurrency = INITIAL_DEFAULT_CONCURRENCY;
+    private int configuredDefaultConcurrency;
+    private volatile int defaultConcurrency;
 
     private CostModule cachedCostModule;
     private long lastCostModuleRefreshTime = 0;
@@ -586,8 +588,12 @@ public class MigrationModule
             if (value < 1) {
                 throw new IllegalArgumentException("Default concurrency must be positive.");
             }
-            defaultConcurrency = value;
+            setRuntimeDefaultConcurrency(value);
             return "Default concurrency set to " + value;
+        }
+
+        private void setRuntimeDefaultConcurrency(int value) {
+            MigrationModule.this.defaultConcurrency = value;
         }
     }
 
@@ -1373,16 +1379,16 @@ public class MigrationModule
     public void printSetup(PrintWriter pw) {
         pw.println("#\n# MigrationModule\n#");
 
-        if (defaultConcurrency != INITIAL_DEFAULT_CONCURRENCY) {
+        if (defaultConcurrency != configuredDefaultConcurrency) {
             pw.println("migration set concurrency-default " + defaultConcurrency);
         }
-        if (replicas != INITIAL_HOTFILE_REPLICAS) {
+        if (replicas != configuredReplicas) {
             pw.println("hotfile set replicas " + replicas);
         }
-        if (threshold != INITIAL_HOTFILE_THRESHOLD) {
+        if (threshold != configuredThreshold) {
             pw.println("hotfile set threshold " + threshold);
         }
-        if (defaultRefresh != INITIAL_DEFAULT_REFRESH) {
+        if (defaultRefresh != configuredDefaultRefresh) {
             pw.println("migration set refresh-default " + defaultRefresh);
         }
 
@@ -1515,8 +1521,12 @@ public class MigrationModule
 
         @Override
         public String call() {
-            setNumReplicas(value);
+            setNumReplicas(value); // Updates runtime value
             return "Number of replicas set to " + value;
+        }
+
+        private void setNumReplicas(int value) {
+            MigrationModule.this.replicas = value;
         }
     }
 
@@ -1543,6 +1553,10 @@ public class MigrationModule
         public String call() {
             setThreshold(value);
             return "Threshold set to " + value;
+        }
+
+        private void setThreshold(long value) {
+            MigrationModule.this.threshold = value;
         }
     }
 
