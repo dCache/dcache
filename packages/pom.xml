@@ -198,7 +198,7 @@
       <dependency>
           <groupId>org.dcache</groupId>
           <artifactId>gplazma2-pyscript</artifactId>
-          <version>11.2.0-SNAPSHOT</version>
+          <version>${project.version}</version>
       </dependency>
       <dependency>
           <groupId>org.dcache</groupId>
