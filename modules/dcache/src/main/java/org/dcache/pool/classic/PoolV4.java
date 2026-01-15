@@ -214,7 +214,9 @@ public class PoolV4
 
     private ThreadFactory _threadFactory;
 
+    // Hot file monitoring
     private FileRequestMonitor _fileRequestMonitor;
+    private boolean _hotFileReplicationEnabled = true;
 
     public void setFileRequestMonitor(FileRequestMonitor fileRequestMonitor) {
         _fileRequestMonitor = fileRequestMonitor;
@@ -222,6 +224,15 @@ public class PoolV4
 
     public FileRequestMonitor getFileRequestMonitor() {
         return _fileRequestMonitor;
+    }
+
+    @Required
+    public void setHotFileReplicationEnabled(boolean hotFileReplicationEnabled) {
+        _hotFileReplicationEnabled = hotFileReplicationEnabled;
+    }
+
+    public boolean getHotFileReplicationEnabled() {
+        return _hotFileReplicationEnabled;
     }
 
     protected void assertNotRunning(String error) {
@@ -743,7 +754,7 @@ public class PoolV4
             message.setMoverId(queueIoRequest(envelope, message));
             LOGGER.debug("moverId {} received request for pnfsId {}", message.getMoverId(),
                   message.getPnfsId());
-            if (_fileRequestMonitor != null) {
+            if (_hotFileReplicationEnabled) {
                 _fileRequestMonitor.reportFileRequest(message.getPnfsId(),
                       _ioQueue.numberOfRequestsFor(message.getPnfsId()));
             }

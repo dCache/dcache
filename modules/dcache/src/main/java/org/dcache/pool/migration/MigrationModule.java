@@ -143,13 +143,18 @@ public class MigrationModule
 
     private int _counter = 1;
 
-    // Hot file mitigation parameters
-    private int configuredReplicas;
-    private int replicas;
+    /**
+     * Hot file replication parameters.
+     */
+    private int configuredHotFileReplicaCount;
+    private int hotFileReplicaCount;
 
-    private long configuredThreshold;
-    private long threshold;
+    private long configuredHotFileThreshold;
+    private long hotFileThreshold;
 
+    /**
+     * Number of recent hot file replication jobs to retain.
+     */
     private static final int MAX_HOTFILE_JOBS = 50;
 
     /**
@@ -158,7 +163,9 @@ public class MigrationModule
     private int configuredDefaultRefresh;
     private volatile int defaultRefresh;
 
-    // Default concurrency to apply to jobs created outside of MigrationCopyCommand (e.g. hot-file)
+    /**
+     * Default concurrency to apply to jobs created outside of MigrationCopyCommand (e.g. hot-file)
+     */
     private int configuredDefaultConcurrency;
     private volatile int defaultConcurrency;
 
@@ -1238,7 +1245,7 @@ public class MigrationModule
      */
     @Override
     public synchronized void reportFileRequest(PnfsId pnfsId, long numberOfRequests) {
-        if (numberOfRequests < threshold) {
+        if (numberOfRequests < hotFileThreshold) {
             return;
         }
         String jobId = "hotfile-" + pnfsId;
@@ -1294,7 +1301,7 @@ public class MigrationModule
                         false,
                         false,
                         false,
-                        replicas,
+                        hotFileReplicaCount,
                         false,
                         false,
                         true,
@@ -1382,11 +1389,11 @@ public class MigrationModule
         if (defaultConcurrency != configuredDefaultConcurrency) {
             pw.println("migration set concurrency-default " + defaultConcurrency);
         }
-        if (replicas != configuredReplicas) {
-            pw.println("hotfile set replicas " + replicas);
+        if (hotFileReplicaCount != configuredHotFileReplicaCount) {
+            pw.println("hotfile set replicas " + hotFileReplicaCount);
         }
-        if (threshold != configuredThreshold) {
-            pw.println("hotfile set threshold " + threshold);
+        if (hotFileThreshold != configuredHotFileThreshold) {
+            pw.println("hotfile set threshold " + hotFileThreshold);
         }
         if (defaultRefresh != configuredDefaultRefresh) {
             pw.println("migration set refresh-default " + defaultRefresh);
@@ -1447,21 +1454,21 @@ public class MigrationModule
         return _context.isActive(id);
     }
 
-    // Hot file mitigation parameters
+    // Hot file replication parameters
     public int getNumReplicas() {
-        return replicas;
+        return hotFileReplicaCount;
     }
 
     public void setNumReplicas(int value) {
-        replicas = value;
+        hotFileReplicaCount = value;
     }
 
     public long getThreshold() {
-        return threshold;
+        return hotFileThreshold;
     }
 
     public void setThreshold(long value) {
-        threshold = value;
+        hotFileThreshold = value;
     }
 
     /**
@@ -1526,7 +1533,7 @@ public class MigrationModule
         }
 
         private void setNumReplicas(int value) {
-            MigrationModule.this.replicas = value;
+            MigrationModule.this.hotFileReplicaCount = value;
         }
     }
 
@@ -1556,7 +1563,7 @@ public class MigrationModule
         }
 
         private void setThreshold(long value) {
-            MigrationModule.this.threshold = value;
+            MigrationModule.this.hotFileThreshold = value;
         }
     }
 
