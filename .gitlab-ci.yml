@@ -711,7 +711,7 @@ Run OIDC test:
 
 #Job to find JaCoCo CLI in cache or download it
 get_jacoco_cli:
-  stage: testenv_post
+  stage: build
   variables:
     JACOCO_VERSION: "0.8.14"
   script:
@@ -729,7 +729,7 @@ get_jacoco_cli:
 
 # Job to generate JaCoCo report using script
 generate_jacoco_report:
-  stage: testenv_post
+  stage: build
   image: maven:3.9.12-eclipse-temurin-17
   variables:
     JACOCO_VERSION: "0.8.14"
