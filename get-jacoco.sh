@@ -8,7 +8,8 @@ JACOCO_DIR="${PROJECT_ROOT}/jacoco-$JACOCO_VERSION"
 JACOCO_CLI_JAR="$JACOCO_DIR/lib/jacococli.jar"
 
 echo "DEBUG: Checking if $JACOCO_CLI_JAR exists..."
-
+###
+#
 # Check if JaCoCo CLI JAR exists in the cache directory
 if [ ! -f "$JACOCO_CLI_JAR" ]; then
     echo "JaCoCo CLI JAR not found in cache directory. Downloading..."
