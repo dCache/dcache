@@ -67,4 +67,12 @@ class PoolListByPoolGroupOfPool
     public void failure(int rc, Object error) {
         LOGGER.error("Failed to query pool manager ({})", error);
     }
+
+    @Override
+    public String getBrokenMessage() {
+        if (_poolsMap != null && _poolsMap.size() > 1) {
+            return "Pool " + _poolName + " is a member of multiple pool groups: " + _poolsMap.keySet();
+        }
+        return null;
+    }
 }

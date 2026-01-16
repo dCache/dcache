@@ -72,7 +72,6 @@ import com.google.common.collect.ImmutableList;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import java.util.Arrays;
-// deleted unused import
 
 import java.util.Map;
 import org.dcache.pool.classic.IoQueueManager;
@@ -471,5 +470,38 @@ public class TagConstrainedPoolListTest {
         verify(mockDelegate, times(1)).getPools();
         verify(mockSourceList, times(1)).getPools();
     }
-}
 
+    @Test
+    public void shouldPropagateBrokenMessageFromDelegate() {
+        // Given: delegate reports a broken message
+        String expectedMessage = "Delegate is broken";
+        when(mockDelegate.getBrokenMessage()).thenReturn(expectedMessage);
+        when(mockSourceList.getBrokenMessage()).thenReturn(null);
+
+        constrainedList = new TagConstrainedPoolList(mockDelegate, mockSourceList,
+              mockTagProvider);
+
+        // When: calling getBrokenMessage
+        String result = constrainedList.getBrokenMessage();
+
+        // Then: should return the delegate's message
+        assertEquals(expectedMessage, result);
+    }
+
+    @Test
+    public void shouldPropagateBrokenMessageFromSourceList() {
+        // Given: source list reports a broken message (and delegate does not)
+        String expectedMessage = "Source list is broken";
+        when(mockDelegate.getBrokenMessage()).thenReturn(null);
+        when(mockSourceList.getBrokenMessage()).thenReturn(expectedMessage);
+
+        constrainedList = new TagConstrainedPoolList(mockDelegate, mockSourceList,
+              mockTagProvider);
+
+        // When: calling getBrokenMessage
+        String result = constrainedList.getBrokenMessage();
+
+        // Then: should return the source list's message
+        assertEquals(expectedMessage, result);
+    }
+}

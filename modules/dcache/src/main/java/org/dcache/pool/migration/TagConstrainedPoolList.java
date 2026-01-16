@@ -155,4 +155,13 @@ public class TagConstrainedPoolList implements RefreshablePoolList {
         return (pools.isEmpty() ? "" : pools.stream().map(PoolManagerPoolInformation::getName).collect(
               Collectors.joining(",")));
     }
+
+    @Override
+    public String getBrokenMessage() {
+        String msg = delegate.getBrokenMessage();
+        if (msg != null) {
+            return msg;
+        }
+        return (sourceList != null) ? sourceList.getBrokenMessage() : null;
+    }
 }

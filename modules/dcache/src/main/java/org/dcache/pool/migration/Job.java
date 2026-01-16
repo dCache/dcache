@@ -524,7 +524,16 @@ public class Job
               (!_definition.sourceList.isValid() ||
                     !_definition.poolList.isValid() ||
                     (_definition.waitForTargets && _definition.poolList.getPools().isEmpty()))) {
-            setState(State.SLEEPING);
+            String error = _definition.sourceList.getBrokenMessage();
+            if (error == null) {
+                error = _definition.poolList.getBrokenMessage();
+            }
+            if (error != null) {
+                addNote(new Note(0, null, error));
+                setState(State.FAILED);
+            } else {
+                setState(State.SLEEPING);
+            }
         } else if (_state == State.RUNNING) {
             Iterator<PnfsId> i = _queued.iterator();
             while ((_running.size() < _concurrency) && i.hasNext()) {
