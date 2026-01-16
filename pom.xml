@@ -101,6 +101,7 @@
         <datanucleus.plugin.version>6.0.0-release</datanucleus.plugin.version>
         <asm.version>9.5</asm.version>
         <asm-tools.version>5.0.3</asm-tools.version>
+        <jacoco.version>0.8.14</jacoco.version>
     </properties>
 
     <scm>
@@ -1242,7 +1243,7 @@
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.14</version>
+                    <version>${jacoco.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>com.ruleoftech</groupId>
