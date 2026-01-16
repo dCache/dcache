@@ -123,7 +123,7 @@ rpm:
   image: dcache/maven-java21-rpm-build
   extends: .build_cache
   script:
-    - mvn $MAVEN_CLI_OPTS -Drun.slow.tests -am -pl packages/fhs -P rpm clean package
+    - mvn $MAVEN_CLI_OPTS -DskipTests -Drun.slow.tests -am -pl packages/fhs -P rpm clean package
   artifacts:
     reports:
       junit:
@@ -167,6 +167,24 @@ tar:
       - "packages/tar/target/dcache-*.tar.gz"
     expire_in: 2 days
 
+#Job to create and collect JaCoCo reports
+run_ut_with_coverage:
+  stage: build
+  image: maven:3.9.12-eclipse-temurin-17
+  extends: .build_cache
+  needs:
+    - job: rpm
+    - job: deb
+    - job: tar
+  script:
+    # run all tests with the coverage profile
+    - mvn $MAVEN_CLI_OPTS -P code-coverage clean verify -DskipTests=false
+  artifacts:
+    paths:
+      # pass the .exec files AND the compiled classes to the next stage
+      - "**/target/coverage-reports/jacoco-ut.exec"
+      - "**/target/classes/"
+    expire_in: 1 day
 
 spotbugs:
   stage: build
@@ -690,3 +708,47 @@ Run OIDC test:
     - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod oidc-tester; do sleep 1; done
     - kubectl -n $K8S_NAMESPACE cp .ci/run-oidc-test.sh oidc-tester:/run-oidc-test.sh
     - kubectl -n $K8S_NAMESPACE exec oidc-tester -- /bin/sh /run-oidc-test.sh
+
+#Job to find JaCoCo CLI in cache or download it
+get_jacoco_cli:
+  stage: build
+  variables:
+    JACOCO_VERSION: "0.8.14"
+  script:
+    - chmod +x ./get-jacoco.sh
+    - ./get-jacoco.sh
+  cache:
+    key: "jacoco-cli-${JACOCO_VERSION}"  #cache per version
+    paths:
+      - "jacoco-${JACOCO_VERSION}/"      #cache the entire JaCoCo directory
+    policy: pull                         #push cache after job, pull before
+  artifacts:
+    paths:
+      - "jacoco-${JACOCO_VERSION}/lib/jacococli.jar"
+    expire_in: 1 week
+
+# Job to generate JaCoCo report using script
+generate_jacoco_report:
+  stage: build
+  image: maven:3.9.12-eclipse-temurin-17
+  variables:
+    JACOCO_VERSION: "0.8.14"
+  extends: .build_cache
+  needs:
+    - job: run_ut_with_coverage
+    - job: get_jacoco_cli
+  cache:
+    key: "jacoco-cli-${JACOCO_VERSION}"
+    paths:
+      - "jacoco-${JACOCO_VERSION}/"
+  script:
+    - chmod +x ./generate-jacoco-report.sh
+    - ./generate-jacoco-report.sh
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: jacoco
+        path: target/coverage-reports/site/jacoco.xml
+    paths:
+      - target/coverage-reports/site/
+    expire_in: 1 week
