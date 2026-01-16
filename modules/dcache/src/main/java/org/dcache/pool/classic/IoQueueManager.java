@@ -5,6 +5,7 @@ import static dmg.util.CommandException.checkCommand;
 import static java.util.stream.Collectors.joining;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.IoJobInfo;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellSetupProvider;
@@ -213,10 +214,14 @@ public class IoQueueManager
         sb.append(j.getId()).append(" : ").append(j).append('\n');
         if (displaySubject) {
             sb.append(
-                  j.getMover().getSubject().getPrincipals().stream().map(Objects::toString).collect(
-                        Collectors.joining(",", "    <", ">")))
-            .append("\n");
+                        j.getMover().getSubject().getPrincipals().stream().map(Objects::toString).collect(
+                              Collectors.joining(",", "    <", ">")))
+                  .append("\n");
         }
+    }
+
+    public long numberOfRequestsFor(PnfsId pnfsId) {
+        return queues().stream().mapToLong((q) -> q.numberOfRequestsFor(pnfsId)).sum();
     }
 
     @AffectsSetup
