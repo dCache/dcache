@@ -1000,7 +1000,7 @@ public class Job
 
         public String toString() {
             return String.format("%tT [%d] %s: %s",
-                  _time, _id, _pnfsId, _note);
+                  _time, _id, (_pnfsId == null) ? "-" : _pnfsId, _note);
         }
     }
 }
