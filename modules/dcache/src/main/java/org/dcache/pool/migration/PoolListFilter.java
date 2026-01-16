@@ -69,7 +69,7 @@ public class PoolListFilter implements RefreshablePoolList {
             ImmutableList.Builder<String> filteredOfflinePools =
                   ImmutableList.builder();
             for (String pool : pools) {
-                if (!isExcluded(source, pool) && isIncluded(source, pool)) {
+                if (!isExcluded(pool) && isIncluded(pool)) {
                     filteredOfflinePools.add(pool);
                 }
             }
@@ -113,11 +113,11 @@ public class PoolListFilter implements RefreshablePoolList {
         return false;
     }
 
-    private boolean isExcluded(PoolManagerPoolInformation source, String pool) {
+    private boolean isExcluded(String pool) {
         return matchesAny(_exclude, pool);
     }
 
-    private boolean isIncluded(PoolManagerPoolInformation source, String pool) {
+    private boolean isIncluded(String pool) {
         return _include.isEmpty() || matchesAny(_include, pool);
     }
 
@@ -170,5 +170,14 @@ public class PoolListFilter implements RefreshablePoolList {
             s.append(',').append(pools.get(i).getName());
         }
         return s.toString();
+    }
+
+    @Override
+    public String getBrokenMessage() {
+        String msg = _sourceList.getBrokenMessage();
+        if (msg != null) {
+            return msg;
+        }
+        return _poolList.getBrokenMessage();
     }
 }

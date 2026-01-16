@@ -485,7 +485,7 @@ The task completed successfully
 
 ## migration ls
 
-migration ls - Lists all migration jobs.
+migration ls - List migration jobs.
 
 ### synopsis
 
@@ -493,7 +493,13 @@ migration ls
 
 ### Description
 
-Lists all migration jobs.
+Lists migration jobs.
+
+The list of migration jobs returned includes:
+
+- All non-hot file migration jobs
+- Running hot file migration jobs
+- A limited number of finished hot file migration jobs (sorted by creation time).
 
 ## migration move
 
@@ -530,5 +536,59 @@ migration resume job
 ### Description
 
 Resumes a suspended migration job.
+
+## hotfile set replicas
+
+hotfile set replicas - Set the number of replicas to create for hot files.
+
+### synopsis
+
+hotfile set replicas <replicas>
+
+<replicas>
+The number of replicas to maintain for files identified as hot.
+
+### Description
+
+Sets the target number of replicas for files that exceed the hot file threshold. The system will attempt to create this many copies of the file on different pools (and preferably different hosts) to distribute the load.
+
+## hotfile get replicas
+
+hotfile get replicas - Get the current hot file replication factor.
+
+### synopsis
+
+hotfile get replicas
+
+### Description
+
+Returns the currently configured number of replicas for hot files.
+
+## hotfile set threshold
+
+hotfile set threshold - Set the access frequency threshold for identifying hot files.
+
+### synopsis
+
+hotfile set threshold <threshold>
+
+<threshold>
+The threshold value (e.g., accesses per minute) that triggers hot file replication
+
+### Description
+
+Sets the threshold for classifying a file as "hot". Files accessed more frequently than this threshold will be candidates for automatic replication.
+
+## hotfile get threshold
+
+hotfile get threshold - Get the current threshold for triggering hot file replication
+
+### synopsis
+
+hotfile get threshold
+
+### Description
+
+Returns the current threshold for triggering hot file replication
 
   [???]: #cf-pm-classic-space

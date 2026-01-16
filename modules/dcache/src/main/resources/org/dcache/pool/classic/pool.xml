@@ -92,6 +92,8 @@
     <property name="poolMode" ref="pool-mode"/>
     <property name="billingStub" ref="billing-stub"/>
     <property name="executor" ref="workerThreadPool"/>
+    <property name="fileRequestMonitor" ref="migration"/>
+    <property name="hotFileReplicationEnabled" value="${pool.hotfile.replication.enable}"/>
   </bean>
 
   <bean id="pnfs" class="diskCacheV111.util.PnfsHandler">
@@ -303,19 +305,23 @@
     <description>SSL Context factory for JDK</description>
   </bean>
 
+  <bean id="migrationContext" class="org.dcache.pool.migration.MigrationContextImpl">
+        <property name="repository" ref="rep"/>
+        <property name="executor" ref="workerThreadPool"/>
+        <property name="pnfsStub" ref="pnfsStub"/>
+        <property name="poolStub" ref="poolStub"/>
+        <property name="poolManagerStub" ref="poolManagerStub"/>
+        <property name="pinManagerStub" ref="pinManagerStub"/>
+    </bean>
+
   <bean id="migration" class="org.dcache.pool.migration.MigrationModule"
         destroy-method="cancelAll">
     <description>Replica migration module client</description>
-    <constructor-arg>
-        <bean class="org.dcache.pool.migration.MigrationContextImpl">
-            <property name="repository" ref="rep"/>
-            <property name="executor" ref="workerThreadPool"/>
-            <property name="pnfsStub" ref="pnfsStub"/>
-            <property name="poolStub" ref="poolStub"/>
-            <property name="poolManagerStub" ref="poolManagerStub"/>
-            <property name="pinManagerStub" ref="pinManagerStub"/>
-        </bean>
-    </constructor-arg>
+    <constructor-arg ref="migrationContext"/>
+    <property name="numReplicas" value="${pool.migration.hotfile.replicas}"/>
+    <property name="threshold" value="${pool.migration.hotfile.threshold}"/>
+    <property name="defaultRefresh" value="${pool.migration.refresh.default}"/>
+    <property name="defaultConcurrency" value="${pool.migration.concurrency.default}"/>
   </bean>
 
   <bean id="migration-server"

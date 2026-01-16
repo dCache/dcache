@@ -32,7 +32,12 @@ public interface RefreshablePoolList {
      * component (e.g. fetching the list of pools in a pool group from the PoolManager).
      */
     void refresh();
+
+    /**
+     * Returns a message describing why the list is permanently broken, or null if it is valid or
+     * temporarily invalid.
+     */
+    default String getBrokenMessage() {
+        return null;
+    }
 }
-
-
-

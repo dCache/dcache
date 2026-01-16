@@ -214,11 +214,30 @@ public class PoolV4
 
     private ThreadFactory _threadFactory;
 
+    // Hot file monitoring
+    private FileRequestMonitor _fileRequestMonitor;
+    private boolean _hotFileReplicationEnabled = true;
+
+    public void setFileRequestMonitor(FileRequestMonitor fileRequestMonitor) {
+        _fileRequestMonitor = fileRequestMonitor;
+    }
+
+    public FileRequestMonitor getFileRequestMonitor() {
+        return _fileRequestMonitor;
+    }
+
+    @Required
+    public void setHotFileReplicationEnabled(boolean hotFileReplicationEnabled) {
+        _hotFileReplicationEnabled = hotFileReplicationEnabled;
+    }
+
+    public boolean getHotFileReplicationEnabled() {
+        return _hotFileReplicationEnabled;
+    }
 
     protected void assertNotRunning(String error) {
         checkState(!_running, error);
     }
-
 
     @Autowired(required = false)
     @Qualifier("remove")
@@ -581,7 +600,8 @@ public class PoolV4
                 try {
                     _kafkaSender.accept(msg);
                 } catch (KafkaException | org.apache.kafka.common.KafkaException e) {
-                    LOGGER.warn("Failed to send message to kafka: {} ", Throwables.getRootCause(e).getMessage());
+                    LOGGER.warn("Failed to send message to kafka: {} ",
+                          Throwables.getRootCause(e).getMessage());
                 }
             }
         }
@@ -732,6 +752,12 @@ public class PoolV4
     private void ioFile(CellMessage envelope, PoolIoFileMessage message) {
         try {
             message.setMoverId(queueIoRequest(envelope, message));
+            LOGGER.debug("moverId {} received request for pnfsId {}", message.getMoverId(),
+                  message.getPnfsId());
+            if (_hotFileReplicationEnabled) {
+                _fileRequestMonitor.reportFileRequest(message.getPnfsId(),
+                      _ioQueue.numberOfRequestsFor(message.getPnfsId()));
+            }
             message.setSucceeded();
         } catch (OutOfDateCacheException e) {
             if (_pingLimiter.tryAcquire()) {

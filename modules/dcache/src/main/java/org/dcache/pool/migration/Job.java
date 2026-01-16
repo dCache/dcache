@@ -1,13 +1,5 @@
 package org.dcache.pool.migration;
 
-import static com.google.common.base.Preconditions.checkState;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileNotInCacheException;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.PoolManagerPoolInformation;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.DelayedReply;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,7 +17,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
 import javax.annotation.concurrent.GuardedBy;
+
 import org.dcache.pool.repository.AbstractStateChangeListener;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.EntryChangeEvent;
@@ -39,6 +33,15 @@ import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.expression.Expression;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static com.google.common.base.Preconditions.checkState;
+
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileNotInCacheException;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.PoolManagerPoolInformation;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.DelayedReply;
 
 /**
  * Encapsulates a job as defined by a user command.
@@ -59,14 +62,29 @@ import org.slf4j.LoggerFactory;
  * restored on pool start.
  * <p>
  * Jobs can be in any of the following states:
- * <p>
- * NEW            Job has not been started yet INITIALIZING   Initial scan of repository RUNNING
- *    Job runs (schedules new tasks) SLEEPING       A task failed; no tasks are scheduled for 10
- * seconds PAUSED         Pause expression evaluates to true; no tasks are scheduled for 10 seconds
- * STOPPING       Stop expression evaluate to true; waiting or tasks to stop SUSPENDED      Job
- * suspended by user; no tasks are scheduled CANCELLING     Job cancelled by user; waiting for tasks
- * to stop CANCELLED      Job cancelled by user; no tasks are running FINISHED       Job completed
- * FAILED         Job failed
+ * <dl>
+ *   <dt>NEW</dt>
+ *   <dd>Job has not been started yet</dd>
+ *   <dt>INITIALIZING</dt>   Initial scan of repository
+ *   <dt>RUNNING</dt>
+ *   <dd>Job runs (schedules new tasks)</dd>
+ *   <dt>SLEEPING</dt>
+ *   <dd>A task failed; no tasks are scheduled for 10 seconds</dd>
+ *   <dt>PAUSED</dt>
+ *   <dd>Pause expression evaluates to true; no tasks are scheduled for 10 seconds</dd>
+ *   <dt>STOPPING</dt>
+ *   <dd>Stop expression evaluate to true; waiting or tasks to stop</dd>
+ *   <dt>SUSPENDED</dt>
+ *   <dd>Job suspended by user; no tasks are scheduled</dd>
+ *   <dt>CANCELLING</dt>
+ *   <dd>Job cancelled by user; waiting for tasks to stop</dd>
+ *   <dt>CANCELLED</dt>
+ *   <dd>Job cancelled by user; no tasks are running</dd>
+ *   <dt>FINISHED</dt>
+ *   <dd>Job completed</dd>
+ *   <dt>FAILED</dt>
+ *   <dd>Job failed</dd>
+ * </dl>
  */
 public class Job
       extends AbstractStateChangeListener implements TaskCompletionHandler {
@@ -90,6 +108,7 @@ public class Job
     private final JobDefinition _definition;
     private final TaskParameters _taskParameters;
     private final String _pinPrefix;
+    private final long _creationTime;
 
     private final Lock _lock = new ReentrantLock(true);
 
@@ -103,6 +122,7 @@ public class Job
         _definition = definition;
         _concurrency = 1;
         _state = State.NEW;
+        _creationTime = System.currentTimeMillis();
 
         _taskParameters = new TaskParameters(context.getPoolStub(), context.getPnfsStub(),
               context.getPinManagerStub(),
@@ -168,6 +188,10 @@ public class Job
 
     public JobDefinition getDefinition() {
         return _definition;
+    }
+
+    public long getCreationTime() {
+        return _creationTime;
     }
 
     public int getConcurrency() {
@@ -500,7 +524,16 @@ public class Job
               (!_definition.sourceList.isValid() ||
                     !_definition.poolList.isValid() ||
                     (_definition.waitForTargets && _definition.poolList.getPools().isEmpty()))) {
-            setState(State.SLEEPING);
+            String error = _definition.sourceList.getBrokenMessage();
+            if (error == null) {
+                error = _definition.poolList.getBrokenMessage();
+            }
+            if (error != null) {
+                addNote(new Note(0, null, error));
+                setState(State.FAILED);
+            } else {
+                setState(State.SLEEPING);
+            }
         } else if (_state == State.RUNNING) {
             Iterator<PnfsId> i = _queued.iterator();
             while ((_running.size() < _concurrency) && i.hasNext()) {
@@ -967,7 +1000,7 @@ public class Job
 
         public String toString() {
             return String.format("%tT [%d] %s: %s",
-                  _time, _id, _pnfsId, _note);
+                  _time, _id, (_pnfsId == null) ? "-" : _pnfsId, _note);
         }
     }
 }
