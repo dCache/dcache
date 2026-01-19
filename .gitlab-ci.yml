@@ -168,7 +168,6 @@ tar:
 run_ut_with_coverage:
   stage: build
   image: maven:3.9.12-eclipse-temurin-17
-  extends: .build_cache
   needs:
     - job: rpm
     - job: deb
@@ -729,7 +728,6 @@ generate_jacoco_report:
   image: maven:3.9.12-eclipse-temurin-17
   variables:
     JACOCO_VERSION: "0.8.14"
-  extends: .build_cache
   needs:
     - job: run_ut_with_coverage
     - job: get_jacoco_cli
