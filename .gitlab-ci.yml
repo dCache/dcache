@@ -94,7 +94,6 @@ default:
     name: dtzar/helm-kubectl:latest
     entrypoint: ['']
 
-
 #
 # default cache konfiguration for maven build jobs
 # Cache downloaded dependencies and plugins between builds.
@@ -115,8 +114,6 @@ default:
 .upload_rules:
   rules:
     - if: $CI_COMMIT_TAG
-
-
 
 rpm:
   stage: build
@@ -181,7 +178,7 @@ run_ut_with_coverage:
     - mvn $MAVEN_CLI_OPTS -P code-coverage clean verify -DskipTests=false
   artifacts:
     paths:
-      # pass the .exec files AND the compiled classes to the next stage
+      #pass .exec files and compiled classes to the next stage
       - "**/target/coverage-reports/jacoco-ut.exec"
       - "**/target/classes/"
     expire_in: 1 day
@@ -721,7 +718,6 @@ get_jacoco_cli:
     key: "jacoco-cli-${JACOCO_VERSION}"  #cache per version
     paths:
       - "jacoco-${JACOCO_VERSION}/"      #cache the entire JaCoCo directory
-    policy: pull                         #push cache after job, pull before
   artifacts:
     paths:
       - "jacoco-${JACOCO_VERSION}/lib/jacococli.jar"
@@ -737,18 +733,10 @@ generate_jacoco_report:
   needs:
     - job: run_ut_with_coverage
     - job: get_jacoco_cli
-  cache:
-    key: "jacoco-cli-${JACOCO_VERSION}"
-    paths:
-      - "jacoco-${JACOCO_VERSION}/"
   script:
     - chmod +x ./generate-jacoco-report.sh
     - ./generate-jacoco-report.sh
   artifacts:
-    reports:
-      coverage_report:
-        coverage_format: jacoco
-        path: target/coverage-reports/site/jacoco.xml
     paths:
       - target/coverage-reports/site/
     expire_in: 1 week
