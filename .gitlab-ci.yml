@@ -94,7 +94,6 @@ default:
     name: dtzar/helm-kubectl:latest
     entrypoint: ['']
 
-
 #
 # default cache konfiguration for maven build jobs
 # Cache downloaded dependencies and plugins between builds.
@@ -115,8 +114,6 @@ default:
 .upload_rules:
   rules:
     - if: $CI_COMMIT_TAG
-
-
 
 rpm:
   stage: build
@@ -172,16 +169,13 @@ run_ut_with_coverage:
   stage: build
   image: maven:3.9.12-eclipse-temurin-17
   extends: .build_cache
-  needs:
-    - job: rpm
-    - job: deb
-    - job: tar
   script:
     # run all tests with the coverage profile
     - mvn $MAVEN_CLI_OPTS -P code-coverage clean verify -DskipTests=false
   artifacts:
     paths:
       # pass the .exec files AND the compiled classes to the next stage
+      #pass .exec files and compiled classes to the next stage
       - "**/target/coverage-reports/jacoco-ut.exec"
       - "**/target/classes/"
     expire_in: 1 day
@@ -712,16 +706,16 @@ Run OIDC test:
 #Job to find JaCoCo CLI in cache or download it
 get_jacoco_cli:
   stage: build
+  image: eclipse-temurin:17-jre
   variables:
     JACOCO_VERSION: "0.8.14"
   script:
-    - chmod +x ./get-jacoco.sh
     - ./get-jacoco.sh
   cache:
     key: "jacoco-cli-${JACOCO_VERSION}"  #cache per version
     paths:
       - "jacoco-${JACOCO_VERSION}/"      #cache the entire JaCoCo directory
-    policy: pull                         #push cache after job, pull before
+    policy: pull
   artifacts:
     paths:
       - "jacoco-${JACOCO_VERSION}/lib/jacococli.jar"
@@ -730,25 +724,20 @@ get_jacoco_cli:
 # Job to generate JaCoCo report using script
 generate_jacoco_report:
   stage: build
-  image: maven:3.9.12-eclipse-temurin-17
+  image: eclipse-temurin:17-jre
   variables:
     JACOCO_VERSION: "0.8.14"
-  extends: .build_cache
   needs:
     - job: run_ut_with_coverage
+      artifacts: true
     - job: get_jacoco_cli
   cache:
     key: "jacoco-cli-${JACOCO_VERSION}"
     paths:
       - "jacoco-${JACOCO_VERSION}/"
   script:
-    - chmod +x ./generate-jacoco-report.sh
     - ./generate-jacoco-report.sh
   artifacts:
-    reports:
-      coverage_report:
-        coverage_format: jacoco
-        path: target/coverage-reports/site/jacoco.xml
     paths:
       - target/coverage-reports/site/
     expire_in: 1 week
