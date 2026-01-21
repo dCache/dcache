@@ -729,6 +729,7 @@ generate_jacoco_report:
     JACOCO_VERSION: "0.8.14"
   needs:
     - job: run_ut_with_coverage
+      artifacts: true
     - job: get_jacoco_cli
   cache:
     key: "jacoco-cli-${JACOCO_VERSION}"
