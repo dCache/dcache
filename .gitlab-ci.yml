@@ -172,10 +172,6 @@ run_ut_with_coverage:
   stage: build
   image: maven:3.9.12-eclipse-temurin-17
   extends: .build_cache
-  needs:
-    - job: rpm
-    - job: deb
-    - job: tar
   script:
     # run all tests with the coverage profile
     - mvn $MAVEN_CLI_OPTS -P code-coverage clean verify -DskipTests=false
@@ -715,7 +711,6 @@ get_jacoco_cli:
   variables:
     JACOCO_VERSION: "0.8.14"
   script:
-    - chmod +x ./get-jacoco.sh
     - ./get-jacoco.sh
   cache:
     key: "jacoco-cli-${JACOCO_VERSION}"  #cache per version
@@ -742,7 +737,6 @@ generate_jacoco_report:
     paths:
       - "jacoco-${JACOCO_VERSION}/"
   script:
-    - chmod +x ./generate-jacoco-report.sh
     - ./generate-jacoco-report.sh
   artifacts:
     reports:
