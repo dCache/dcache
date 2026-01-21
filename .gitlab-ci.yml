@@ -53,7 +53,7 @@ variables:
   AUTOCA_URL: https://ci.dcache.org/ca
   DCACHE_HELM_REPO: https://gitlab.desy.de/api/v4/projects/7648/packages/helm/test
   DCACHE_COMPATIBILITY_VERSION: 9.2.20
-
+  JACOCO_VERSION: 0.8.14 # match maven plugin version
 
 # let's debug nodes where job is running
 before_script:
@@ -707,8 +707,6 @@ Run OIDC test:
 get_jacoco_cli:
   stage: build
   image: eclipse-temurin:17-jre
-  variables:
-    JACOCO_VERSION: "0.8.14"
   script:
     - ./get-jacoco.sh
   cache:
@@ -725,8 +723,6 @@ get_jacoco_cli:
 generate_jacoco_report:
   stage: build
   image: eclipse-temurin:17-jre
-  variables:
-    JACOCO_VERSION: "0.8.14"
   needs:
     - job: run_ut_with_coverage
       artifacts: true
