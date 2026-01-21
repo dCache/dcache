@@ -168,24 +168,14 @@ tar:
 run_ut_with_coverage:
   stage: build
   image: maven:3.9.12-eclipse-temurin-17
-<<<<<<< HEAD
   extends: .build_cache
-=======
-  needs:
-    - job: rpm
-    - job: deb
-    - job: tar
->>>>>>> origin/test_coverage_patch2
   script:
     # run all tests with the coverage profile
     - mvn $MAVEN_CLI_OPTS -P code-coverage clean verify -DskipTests=false
   artifacts:
     paths:
-<<<<<<< HEAD
       # pass the .exec files AND the compiled classes to the next stage
-=======
       #pass .exec files and compiled classes to the next stage
->>>>>>> origin/test_coverage_patch2
       - "**/target/coverage-reports/jacoco-ut.exec"
       - "**/target/classes/"
     expire_in: 1 day
@@ -719,19 +709,12 @@ get_jacoco_cli:
   variables:
     JACOCO_VERSION: "0.8.14"
   script:
-<<<<<<< HEAD
-=======
-    - chmod +x ./get-jacoco.sh
->>>>>>> origin/test_coverage_patch2
     - ./get-jacoco.sh
   cache:
     key: "jacoco-cli-${JACOCO_VERSION}"  #cache per version
     paths:
       - "jacoco-${JACOCO_VERSION}/"      #cache the entire JaCoCo directory
-<<<<<<< HEAD
     policy: pull                         #push cache after job, pull before
-=======
->>>>>>> origin/test_coverage_patch2
   artifacts:
     paths:
       - "jacoco-${JACOCO_VERSION}/lib/jacococli.jar"
@@ -743,7 +726,6 @@ generate_jacoco_report:
   image: maven:3.9.12-eclipse-temurin-17
   variables:
     JACOCO_VERSION: "0.8.14"
-<<<<<<< HEAD
   extends: .build_cache
   needs:
     - job: run_ut_with_coverage
@@ -759,15 +741,12 @@ generate_jacoco_report:
       coverage_report:
         coverage_format: jacoco
         path: target/coverage-reports/site/jacoco.xml
-=======
   needs:
     - job: run_ut_with_coverage
     - job: get_jacoco_cli
   script:
-    - chmod +x ./generate-jacoco-report.sh
     - ./generate-jacoco-report.sh
   artifacts:
->>>>>>> origin/test_coverage_patch2
     paths:
       - target/coverage-reports/site/
     expire_in: 1 week
