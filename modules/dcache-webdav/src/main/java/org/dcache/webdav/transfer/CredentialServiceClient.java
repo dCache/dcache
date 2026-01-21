@@ -23,9 +23,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableMap;
-import diskCacheV111.srm.CredentialServiceAnnouncement;
-import diskCacheV111.srm.CredentialServiceRequest;
-import diskCacheV111.srm.dcache.SrmRequestCredentialMessage;
 import diskCacheV111.util.CacheException;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellLifeCycleAware;
@@ -75,6 +72,7 @@ import org.springframework.beans.factory.annotation.Required;
 /**
  * This class acts as a client to credential services.
  */
+@Deprecated
 public class CredentialServiceClient
       implements CellMessageReceiver, CellLifeCycleAware {
 
@@ -94,56 +92,14 @@ public class CredentialServiceClient
         this.topic = topic;
     }
 
-    @Override
-    public void afterStart() {
-        topic.notify(new CredentialServiceRequest());
-    }
-
-    public void messageArrived(CredentialServiceAnnouncement message) {
-        cache.put(message.getCellAddress(), message.getDelegationEndpoint());
-    }
-
     public Collection<URI> getDelegationEndpoints() {
         return cache.asMap().values();
     }
 
     public X509Credential getDelegatedCredential(String dn, String primaryFqan,
           int minimumValidity, TimeUnit units) throws InterruptedException, ErrorResponseException {
-        Instant deadline = Instant.now().plus(Duration.ofMillis(units.toMillis(minimumValidity)));
 
-        Optional<X509Credential> bestCredential = Optional.empty();
-        Optional<Instant> bestExpiry = Optional.empty();
-        for (CellAddressCore address : cache.asMap().keySet()) {
-            CellPath path = new CellPath(address);
-            SrmRequestCredentialMessage msg = new SrmRequestCredentialMessage(dn, primaryFqan);
-            try {
-                msg = topic.sendAndWait(path, msg);
-
-                if (msg.hasCredential()) {
-                    X509Credential credential = new KeyAndCertCredential(msg.getPrivateKey(),
-                          msg.getCertificateChain());
-                    Optional<Instant> expiry = X509Credentials.calculateExpiry(credential);
-
-                    if (!bestExpiry.isPresent()
-                          || (expiry.isPresent() && expiry.get().isAfter(bestExpiry.get()))) {
-                        bestExpiry = expiry;
-                        bestCredential = Optional.of(credential);
-                    }
-                }
-            } catch (CacheException | NoRouteToCellException e) {
-                LOGGER.debug("failed to contact {} querying for {}, {}: {}",
-                      path, dn, primaryFqan, e.getMessage());
-            } catch (KeyStoreException e) {
-                LOGGER.warn("Received invalid key pair from {} for {}, {}: {}",
-                      path, dn, primaryFqan, e.getMessage());
-            }
-        }
-
-        if (bestExpiry.isPresent() && bestExpiry.get().isBefore(deadline)) {
-            bestCredential = Optional.empty();
-        }
-
-        return bestCredential.orElse(null);
+        return null;
     }
 
     public StaticOpenIdCredential getDelegatedCredential(String token,
@@ -226,17 +182,5 @@ public class CredentialServiceClient
 
     private String tokenEndPoint(String hostname) {
         return "https://" + hostname + "/token";
-    }
-
-    private static long calculateRemainingLifetime(X509Certificate[] certificates) {
-        long earliestExpiry = Long.MAX_VALUE;
-
-        for (X509Certificate certificate : certificates) {
-            earliestExpiry = Math.min(earliestExpiry, certificate.getNotAfter().getTime());
-        }
-
-        long now = System.currentTimeMillis();
-
-        return (earliestExpiry <= now) ? 0 : earliestExpiry - now;
     }
 }

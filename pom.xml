@@ -1506,15 +1506,11 @@
         <module>modules/dcache-gplazma</module>
         <module>modules/dcache-frontend</module>
         <module>modules/dcache-nfs</module>
-        <module>modules/dcache-srm</module>
         <module>modules/dcache-history</module>
         <module>modules/dcache-info</module>
         <module>modules/dcache-spacemanager</module>
         <module>modules/dcache-qos</module>
         <module>modules/ftp-client</module>
-        <module>modules/srm-common</module>
-        <module>modules/srm-server</module>
-        <module>modules/srm-client</module>
         <module>modules/acl-vehicles</module>
         <module>modules/acl</module>
         <module>modules/chimera</module>

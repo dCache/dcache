@@ -94,8 +94,6 @@ import javax.security.auth.Subject;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
-import org.dcache.srm.SRMException;
-import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.util.CacheExceptionFactory;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
@@ -164,13 +162,16 @@ public class ReservationCaches {
                       try {
                           return spaceManager.sendAndWait(createRequest(key)).getSpaceTokens();
                       } catch (TimeoutCacheException e) {
-                          throw new SRMInternalErrorException("Space manager timeout", e);
+                          // FIXME: a more specific exception required.
+                          throw new Exception("Space manager timeout", e);
                       } catch (InterruptedException e) {
-                          throw new SRMInternalErrorException("Operation interrupted", e);
+                          // FIXME: a more specific exception required.
+                          throw new Exception("Operation interrupted", e);
                       } catch (CacheException e) {
                           LOGGER.warn("GetSpaceTokens failed with rc={} error={}", e.getRc(),
                                 e.getMessage());
-                          throw new SRMException("GetSpaceTokens failed with rc=" + e.getRc() +
+                          // FIXME: a more specific exception required.
+                          throw new Exception("GetSpaceTokens failed with rc=" + e.getRc() +
                                 " error=" + e.getMessage(), e);
                       }
                   }

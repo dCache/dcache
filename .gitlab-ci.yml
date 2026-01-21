@@ -133,17 +133,6 @@ rpm:
       - "packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm"
     expire_in: 2 days
 
-srm_client_rpm:
-  stage: build
-  image: dcache/maven-java21-rpm-build
-  extends: .build_cache
-  script:
-    - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl modules/srm-client package -P rpm
-  artifacts:
-    paths:
-      - "modules/srm-client/target/rpmbuild/RPMS/noarch/dcache-srmclient*.rpm"
-    expire_in: 2 days
-
 deb:
   stage: build
   image: dcache/maven-java21-deb-build
@@ -247,22 +236,6 @@ sign_rpm:
     paths:
     - packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm
 
-sign_srm_client_rpm:
-  stage: sign
-  image: almalinux:10-minimal
-  needs: ["srm_client_rpm"]
-  script:
-    - microdnf install -y rpm-sign gpg
-    - echo $DCACHE_ORG_PGP_KEY | base64 -d -i > secret.gpg
-    - gpg --quiet --batch --yes --allow-secret-key-import --passphrase="$DCACHE_ORG_PGP_KEY_PASS" --import secret.gpg
-    - gpg -a --export "$DCACHE_ORG_KEY_NAME" > RPM-GPG-KEY
-    - rpmsign --addsign --define "_signature gpg" --define "_gpg_name  $DCACHE_ORG_KEY_NAME" --define "_gpg_sign_cmd_extra_args --pinentry-mode loopback --passphrase $DCACHE_ORG_PGP_KEY_PASS" modules/srm-client/target/rpmbuild/RPMS/noarch/dcache-srmclient*.rpm
-    - rpmkeys --import RPM-GPG-KEY
-    - rpm --checksig -v modules/srm-client/target/rpmbuild/RPMS/noarch/dcache-srmclient*.rpm
-  artifacts:
-    paths:
-    - modules/srm-client/target/rpmbuild/RPMS/noarch/dcache-srmclient*.rpm
-
 sign_deb:
   stage: sign
   image: ubuntu:22.04
@@ -306,17 +279,6 @@ upload_rpm:
     - RPM_NAME=`ls packages/fhs/target/rpmbuild/RPMS/noarch/ | grep dcache`
     - VERSION=`echo $RPM_NAME | cut -d'-' -f 2 | cut -d'.' -f 1,2`
     - curl $PKG_UPLOAD_OPTIONS -u $PKG_UPLOAD_USER:$PKG_UPLOAD_PASS --upload-file packages/fhs/target/rpmbuild/RPMS/noarch/$RPM_NAME "$PKG_UPLOAD_URL/$VERSION/$RPM_NAME"
-
-upload_srm_client_rpm:
-  stage: upload
-  image: almalinux:10-minimal
-  dependencies:
-    - sign_srm_client_rpm
-  extends: .upload_rules
-  script:
-    - RPM_NAME=`ls modules/srm-client/target/rpmbuild/RPMS/noarch/ | grep dcache-srmclient`
-    - VERSION=`echo $RPM_NAME | cut -d'-' -f 3 | cut -d'.' -f 1,2`
-    - curl $PKG_UPLOAD_OPTIONS -u $PKG_UPLOAD_USER:$PKG_UPLOAD_PASS --upload-file modules/srm-client/target/rpmbuild/RPMS/noarch/$RPM_NAME "$PKG_UPLOAD_URL/$VERSION/$RPM_NAME"
 
 upload_deb:
   stage: upload
@@ -379,7 +341,6 @@ AI Generated Release Notes:
   dependencies:
     - sign_deb
     - sign_rpm
-    - sign_srm_client_rpm
     - tar
   script:
     - microdnf install -y git-core
@@ -412,7 +373,6 @@ Release Notes Table:
   dependencies:
     - sign_deb
     - sign_rpm
-    - sign_srm_client_rpm
     - tar
   script:
     - microdnf install -y git-core
@@ -548,7 +508,7 @@ Helm-Deploy Current dCache build:
       fi
     - helm repo add dcache ${DCACHE_HELM_REPO}
     - helm repo update
-    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=${tag} --set dcache.hsm.enabled=true --set dcache.qos.enabled=true --set image.registry=${CI_REGISTRY} --values .ci/custom-helm-config.yaml store dcache/dcache
+    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=${tag} --set dcache.hsm.enabled=true --set dcache.qos.enabled=true --set service.srm.enabled=false --set image.registry=${CI_REGISTRY} --values .ci/custom-helm-config.yaml store dcache/dcache
 
 Helm-Deploy Latest dCache Golden Release:
   stage: test_deploy
@@ -575,24 +535,6 @@ Grid EL9 WN tests:
     reports:
       junit:
         - "xunit*.xml"
-
-SRM S2 test suite:
-  stage: testing
-  extends: .kubernetes_image
-  allow_failure: true
-  script:
-    - kubectl -n $K8S_NAMESPACE apply -f .ci/s2-runner.yaml
-    - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod s2-tester; do sleep 1; done
-    - kubectl -n $K8S_NAMESPACE cp .ci/init-el9-ui.sh s2-tester:/init-el9-ui.sh
-    - kubectl -n $K8S_NAMESPACE cp .ci/run-s2.sh s2-tester:/run-s2.sh
-    - kubectl -n $K8S_NAMESPACE exec s2-tester -- /bin/sh /run-s2.sh
-    - kubectl -n $K8S_NAMESPACE cp s2-tester:/TEST-basic.xml TEST-basic.xml
-    - kubectl -n $K8S_NAMESPACE cp s2-tester:/TEST-avail.xml TEST-avail.xml
-    - kubectl -n $K8S_NAMESPACE cp s2-tester:/TEST-usecase.xml TEST-usecase.xml
-  artifacts:
-    reports:
-      junit:
-        - "TEST*.xml"
 
 Frontend test suite:
   stage: testing
