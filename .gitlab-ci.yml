@@ -737,10 +737,6 @@ generate_jacoco_report:
   script:
     - ./generate-jacoco-report.sh
   artifacts:
-    reports:
-      coverage_report:
-        coverage_format: jacoco
-        path: target/coverage-reports/site/jacoco.xml
     paths:
       - target/coverage-reports/site/
     expire_in: 1 week
