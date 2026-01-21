@@ -715,7 +715,6 @@ get_jacoco_cli:
     key: "jacoco-cli-${JACOCO_VERSION}"  #cache per version
     paths:
       - "jacoco-${JACOCO_VERSION}/"      #cache the entire JaCoCo directory
-    policy: pull
   artifacts:
     paths:
       - "jacoco-${JACOCO_VERSION}/lib/jacococli.jar"
