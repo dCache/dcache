@@ -78,7 +78,7 @@
 
         <!-- Remember to update modules/logback-test-config/pom.xml
              when upgrading logback. -->
-        <version.logback>1.2.13</version.logback>
+        <version.logback>1.5.25</version.logback>
         <version.logback.contrib>0.1.5</version.logback.contrib>
         <version.jackson>2.18.5</version.jackson>
         <version.jna>5.18.1</version.jna>
