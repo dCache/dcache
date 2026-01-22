@@ -61,7 +61,6 @@ package org.dcache.qos.services.scanner.data;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.io.Files;
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
 import diskCacheV111.pools.PoolV2Mode;
@@ -171,8 +170,8 @@ public class PoolOperationMap extends ScanOperationMap {
 
         Collection<String> excluded = new ArrayList<>();
 
-        try (BufferedReader fr = new BufferedReader(new FileReader(current))) {
-            excluded = Files.readLines(current, StandardCharsets.US_ASCII);
+        try (BufferedReader fr = new BufferedReader(new FileReader(current, StandardCharsets.US_ASCII))) {
+            excluded = fr.lines().collect(Collectors.toList());
             current.delete();
         } catch (FileNotFoundException e) {
             LOGGER.error("Unable to reload excluded pools file: {}", e.getMessage());
