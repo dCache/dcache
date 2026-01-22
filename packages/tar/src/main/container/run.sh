@@ -32,8 +32,9 @@ ASPECT_AGENT=`ls ${DCACHE_HOME}/share/classes/aspectjweaver-*.jar`
 JACOCO_AGENT_JAR="${DCACHE_HOME}/share/classes/jacocoagent.jar"
 if [ -n "$JACOCO_OPTS" ] && [ -f "$JACOCO_AGENT_JAR" ]; then
     # JACOCO_OPTS will be passed from CI (e.g., destfile=/opt/dcache/var/log/jacoco.exec)
-    JACOCO_AGENT="-javaagent:${JACOCO_AGENT_JAR}=${JACOCO_OPTS}"
-    echo "Starting with JaCoCo instrumentation: ${JACOCO_OPTS}"
+    # We force output=tcpserver to allow on-demand dumping
+    JACOCO_AGENT="-javaagent:${JACOCO_AGENT_JAR}=output=tcpserver,address=*,port=6300,${JACOCO_OPTS}"
+    echo "Starting with JaCoCo instrumentation (TCP 6300): ${JACOCO_OPTS}"
 fi
 
 if [ ! -f /.init_complete ]

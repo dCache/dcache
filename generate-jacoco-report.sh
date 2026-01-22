@@ -22,7 +22,7 @@ EXEC_FILES=($(find "$PROJECT_ROOT" -name "*.exec" -type f))
 
 # Check if any execution data files were found
 if [ ${#EXEC_FILES[@]} -eq 0 ]; then
-    echo "Error: No jacoco-ut.exec files found in $PROJECT_ROOT"
+    echo "Error: No .exec files found in $PROJECT_ROOT"
     exit 1
 fi
 

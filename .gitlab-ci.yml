@@ -560,7 +560,7 @@ Helm-Deploy Current dCache build:
       fi
     - helm repo add dcache ${DCACHE_HELM_REPO}
     - helm repo update
-    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=${tag} --set dcache.hsm.enabled=true --set dcache.qos.enabled=true --set image.registry=${CI_REGISTRY} --set dcache.env.JACOCO_OPTS="destfile=/opt/dcache/var/log/jacoco-it.exec,append=true" --values .ci/custom-helm-config.yaml store dcache/dcache
+    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=${tag} --set dcache.hsm.enabled=true --set dcache.qos.enabled=true --set image.registry=${CI_REGISTRY} --set dcache.env.JACOCO_OPTS="append=true" --values .ci/custom-helm-config.yaml store dcache/dcache
 
 Helm-Deploy Latest dCache Golden Release:
   stage: test_deploy
@@ -575,15 +575,24 @@ Helm-Deploy Latest dCache Golden Release:
 Extract Coverage:
   stage: testenv_post
   extends: .kubernetes_image
+  needs:
+    - get_jacoco_cli  # Ensure the CLI JAR is available from the build stage
   script:
     - mkdir -p integration-results
-    # Get names of all pods in the 'store' release
+    - JACOCO_CLI_PATH="jacoco-${JACOCO_VERSION}/lib/jacococli.jar"
     - PODS=$(kubectl -n $K8S_NAMESPACE get pods -l app.kubernetes.io/instance=store -o jsonpath='{.items[*].metadata.name}')
     - |
       for POD in $PODS; do
-        echo "Attempting to collect coverage from $POD..."
-        # We use '|| true' because some pods might not have generated data yet
-        kubectl -n $K8S_NAMESPACE cp ${POD}:/opt/dcache/var/log/jacoco-it.exec ./integration-results/${POD}.exec || echo "No coverage file in $POD"
+        echo "Triggering dump for $POD..."
+        # 1. Copy the CLI tool into the pod
+        kubectl -n $K8S_NAMESPACE cp "$JACOCO_CLI_PATH" "${POD}:/tmp/jacococli.jar"
+      
+        # 2. Command the agent to dump its data to a file inside the pod
+        # We use the internal java path established in the Dockerfile
+        kubectl -n $K8S_NAMESPACE exec $POD -- /usr/bin/java -jar /tmp/jacococli.jar dump --address 127.0.0.1 --port 6300 --destfile /opt/dcache/var/log/jacoco-it.exec
+      
+        # 3. Copy the generated file back to the runner
+        kubectl -n $K8S_NAMESPACE cp "${POD}:/opt/dcache/var/log/jacoco-it.exec" "./integration-results/${POD}.exec"
       done
   artifacts:
     paths:

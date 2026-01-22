@@ -16,8 +16,9 @@ RUN microdnf -y install wget unzip && \
 FROM almalinux:10-minimal
 COPY --from=builder /jlink-runtime /jlink-runtime
 RUN ln -s /jlink-runtime/bin/java /usr/bin/java
-# NEW: Copy the agent into the classes directory
+# Copy both the agent and the cli
 COPY --from=builder /tmp/jacoco/lib/jacocoagent.jar ${DCACHE_INSTALL_DIR}/share/classes/jacocoagent.jar
+COPY --from=builder /tmp/jacoco/lib/jacococli.jar ${DCACHE_INSTALL_DIR}/share/classes/jacococli.jar
 
 ENV DCACHE_INSTALL_DIR=/opt/dcache
 
