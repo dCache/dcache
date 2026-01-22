@@ -18,7 +18,7 @@ fi
 mkdir -p "$REPORT_DIR"
 
 # Find all jacoco-ut.exec files dynamically
-EXEC_FILES=($(find "$PROJECT_ROOT" -name "jacoco-ut.exec" -type f))
+EXEC_FILES=($(find "$PROJECT_ROOT" -name "*.exec" -type f))
 
 # Check if any execution data files were found
 if [ ${#EXEC_FILES[@]} -eq 0 ]; then

@@ -28,6 +28,13 @@ export CLASSPATH
 # we hope that there is only one agent file and it the right one
 ASPECT_AGENT=`ls ${DCACHE_HOME}/share/classes/aspectjweaver-*.jar`
 
+# NEW: JaCoCo Agent Logic
+JACOCO_AGENT_JAR="${DCACHE_HOME}/share/classes/jacocoagent.jar"
+if [ -n "$JACOCO_OPTS" ] && [ -f "$JACOCO_AGENT_JAR" ]; then
+    # JACOCO_OPTS will be passed from CI (e.g., destfile=/opt/dcache/var/log/jacoco.exec)
+    JACOCO_AGENT="-javaagent:${JACOCO_AGENT_JAR}=${JACOCO_OPTS}"
+    echo "Starting with JaCoCo instrumentation: ${JACOCO_OPTS}"
+fi
 
 if [ ! -f /.init_complete ]
 then
@@ -65,5 +72,7 @@ exec /usr/bin/java \
 	--add-opens=java.sql/java.sql=ALL-UNNAMED  \
 	--add-opens=java.base/java.math=ALL-UNNAMED \
 	--add-opens=java.base/sun.nio.fs=ALL-UNNAMED \
+	${JACOCO_AGENT} \
+      -javaagent:${ASPECT_AGENT} \
 	${JAVA_ARGS} \
 	org.dcache.boot.BootLoader start ${DOMAIN}

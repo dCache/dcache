@@ -6,12 +6,18 @@ FROM almalinux:10-minimal as builder
 # Add JRE
 RUN microdnf -y install java-21-openjdk-devel java-21-openjdk-jmods binutils
 RUN jlink --compress=zip-6 --strip-debug --no-header-files --no-man-pages --add-modules java.base,java.compiler,java.instrument,java.logging,java.management,java.naming,java.security.jgss,java.transaction.xa,java.xml,jdk.jfr,jdk.security.auth,jdk.unsupported,java.desktop,java.sql,jdk.naming.dns,java.rmi,jdk.crypto.cryptoki --output /jlink-runtime
-
+# NEW: Download JaCoCo Agent
+ARG JACOCO_VERSION=0.8.14
+RUN microdnf -y install wget unzip && \
+    wget -q https://github.com/jacoco/jacoco/releases/download/v${JACOCO_VERSION}/jacoco-${JACOCO_VERSION}.zip -O /tmp/jacoco.zip && \
+    unzip -q /tmp/jacoco.zip -d /tmp/jacoco
 
 # Minimalistic Java image
 FROM almalinux:10-minimal
 COPY --from=builder /jlink-runtime /jlink-runtime
 RUN ln -s /jlink-runtime/bin/java /usr/bin/java
+# NEW: Copy the agent into the classes directory
+COPY --from=builder /tmp/jacoco/lib/jacocoagent.jar ${DCACHE_INSTALL_DIR}/share/classes/jacocoagent.jar
 
 ENV DCACHE_INSTALL_DIR=/opt/dcache
 

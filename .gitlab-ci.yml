@@ -560,7 +560,7 @@ Helm-Deploy Current dCache build:
       fi
     - helm repo add dcache ${DCACHE_HELM_REPO}
     - helm repo update
-    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=${tag} --set dcache.hsm.enabled=true --set dcache.qos.enabled=true --set image.registry=${CI_REGISTRY} --values .ci/custom-helm-config.yaml store dcache/dcache
+    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=${tag} --set dcache.hsm.enabled=true --set dcache.qos.enabled=true --set image.registry=${CI_REGISTRY} -set dcache.env.JACOCO_OPTS="destfile=/opt/dcache/var/log/jacoco-it.exec,append=true" --values .ci/custom-helm-config.yaml store dcache/dcache
 
 Helm-Deploy Latest dCache Golden Release:
   stage: test_deploy
@@ -572,6 +572,22 @@ Helm-Deploy Latest dCache Golden Release:
     - helm repo update
     - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=${DCACHE_COMPATIBILITY_VERSION} --set "dcache.pools={d,f}" --set dcache.door.enabled=false --set image.registry=${CI_REGISTRY} old-store dcache/dcache
 
+Extract Coverage:
+  stage: testenv_post
+  script:
+    - mkdir -p integration-results
+    # Get names of all pods in the 'store' release
+    - PODS=$(kubectl -n $K8S_NAMESPACE get pods -l app.kubernetes.io/instance=store -o jsonpath='{.items[*].metadata.name}')
+    - |
+      for POD in $PODS; do
+        echo "Attempting to collect coverage from $POD..."
+        # We use '|| true' because some pods might not have generated data yet
+        kubectl -n $K8S_NAMESPACE cp ${POD}:/opt/dcache/var/log/jacoco-it.exec ./integration-results/${POD}.exec || echo "No coverage file in $POD"
+      done
+  artifacts:
+    paths:
+      - integration-results/*.exec
+    when: always
 
 Grid EL9 WN tests:
   stage: testing
