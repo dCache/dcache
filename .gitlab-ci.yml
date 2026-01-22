@@ -574,6 +574,7 @@ Helm-Deploy Latest dCache Golden Release:
 
 Extract Coverage:
   stage: testenv_post
+  extends: .kubernetes_image
   script:
     - mkdir -p integration-results
     # Get names of all pods in the 'store' release
