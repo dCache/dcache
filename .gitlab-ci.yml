@@ -560,7 +560,7 @@ Helm-Deploy Current dCache build:
       fi
     - helm repo add dcache ${DCACHE_HELM_REPO}
     - helm repo update
-    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=${tag} --set dcache.hsm.enabled=true --set dcache.qos.enabled=true --set image.registry=${CI_REGISTRY} --set dcache.env.JACOCO_OPTS="append=true" --values .ci/custom-helm-config.yaml store dcache/dcache
+    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=${tag} --set dcache.hsm.enabled=true --set dcache.qos.enabled=true --set image.registry=${CI_REGISTRY} --set dcache.env.JACOCO_OPTS="output=tcpserver,address=127.0.0.1,port=6300" --values .ci/custom-helm-config.yaml store dcache/dcache
 
 Helm-Deploy Latest dCache Golden Release:
   stage: test_deploy
@@ -575,8 +575,9 @@ Helm-Deploy Latest dCache Golden Release:
 Extract Coverage:
   stage: testenv_post
   extends: .kubernetes_image
-  needs:
-    - get_jacoco_cli  # Ensure the CLI JAR is available from the build stage
+  dependencies:
+  - get_jacoco_cli  # Explicitly pull the CLI tool artifact
+  when: always        # Collect coverage even if tests fail
   script:
     - mkdir -p integration-results
     - JACOCO_CLI_PATH="jacoco-${JACOCO_VERSION}/lib/jacococli.jar"
