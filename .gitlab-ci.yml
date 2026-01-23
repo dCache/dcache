@@ -584,16 +584,30 @@ Extract Coverage:
     - PODS=$(kubectl -n $K8S_NAMESPACE get pods -l app.kubernetes.io/instance=store -o jsonpath='{.items[*].metadata.name}')
     - |
       for POD in $PODS; do
+        echo "=== Debugging $POD ==="
+      
+        # 1. Check if the JAR exists in the pod
+        if kubectl -n $K8S_NAMESPACE exec $POD -- ls /opt/dcache/share/classes/jacocoagent.jar >/dev/null 2>&1; then
+          echo "[OK] JaCoCo JAR found."
+        else
+          echo "[ERROR] JaCoCo JAR is MISSING in the container!"
+        fi
+      
+        # 2. Check environment variables
+        echo "JACOCO_OPTS in pod: $(kubectl -n $K8S_NAMESPACE exec $POD -- env | grep JACOCO_OPTS || echo 'NOT SET')"
+      
+        # 3. Check Java process flags
+        echo "Java Process Flags:"
+        kubectl -n $K8S_NAMESPACE exec $POD -- ps -ef | grep java | grep -v grep
+      
+        # 4. Try the dump
         echo "Triggering dump for $POD..."
-        # 1. Copy the CLI tool into the pod
         kubectl -n $K8S_NAMESPACE cp "$JACOCO_CLI_PATH" "${POD}:/tmp/jacococli.jar"
+        # We use '|| true' so one failed pod doesn't kill the whole debug loop
+        kubectl -n $K8S_NAMESPACE exec $POD -- /usr/bin/java -jar /tmp/jacococli.jar dump --address 127.0.0.1 --port 6300 --destfile /opt/dcache/var/log/jacoco-it.exec || echo "Dump failed for $POD"
       
-        # 2. Command the agent to dump its data to a file inside the pod
-        # We use the internal java path established in the Dockerfile
-        kubectl -n $K8S_NAMESPACE exec $POD -- /usr/bin/java -jar /tmp/jacococli.jar dump --address 127.0.0.1 --port 6300 --destfile /opt/dcache/var/log/jacoco-it.exec
-      
-        # 3. Copy the generated file back to the runner
-        kubectl -n $K8S_NAMESPACE cp "${POD}:/opt/dcache/var/log/jacoco-it.exec" "./integration-results/${POD}.exec"
+        # 5. Retrieve if it exists
+        kubectl -n $K8S_NAMESPACE cp "${POD}:/opt/dcache/var/log/jacoco-it.exec" "./integration-results/${POD}.exec" || echo "No .exec file to collect"
       done
   artifacts:
     paths:
