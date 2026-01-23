@@ -59,6 +59,9 @@ COPY je.properties ${DCACHE_INSTALL_DIR}/var/nfs/je.properties
 COPY dcache.conf ${DCACHE_INSTALL_DIR}/etc/dcache.conf
 COPY docker-layout.conf ${DCACHE_INSTALL_DIR}/etc/layouts/docker-layout.conf
 COPY exports ${DCACHE_INSTALL_DIR}/etc/exports
+# Download the JaCoCo agent runtime JAR so run.sh can find it
+RUN curl -s -L -o ${DCACHE_INSTALL_DIR}/share/classes/jacocoagent.jar \
+    https://repo1.maven.org/maven2/org/jacoco/org.jacoco.agent/0.8.12/org.jacoco.agent-0.8.12-runtime.jar
 COPY run.sh /run.sh
 COPY s3-tape.yml /${DCACHE_INSTALL_DIR}/etc/s3-tape.yml
 
