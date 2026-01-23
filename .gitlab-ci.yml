@@ -560,7 +560,7 @@ Helm-Deploy Current dCache build:
       fi
     - helm repo add dcache ${DCACHE_HELM_REPO}
     - helm repo update
-    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=${tag} --set dcache.hsm.enabled=true --set dcache.qos.enabled=true --set image.registry=${CI_REGISTRY} --set "dcache.env.JACOCO_OPTS=output=tcpserver\,address=127.0.0.1\,port=6300" --values .ci/custom-helm-config.yaml store dcache/dcache
+    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=${tag} --set dcache.hsm.enabled=true --set dcache.qos.enabled=true --set image.registry=${CI_REGISTRY} --set dcache.configExtraPre="dcache.java.options.extra=-javaagent:/opt/dcache/share/classes/jacocoagent.jar=output=tcpserver\,address=127.0.0.1\,port=6300" --values .ci/custom-helm-config.yaml store dcache/dcache
 
 Helm-Deploy Latest dCache Golden Release:
   stage: test_deploy
@@ -570,7 +570,7 @@ Helm-Deploy Latest dCache Golden Release:
   script:
     - helm repo add dcache ${DCACHE_HELM_REPO}
     - helm repo update
-    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=${DCACHE_COMPATIBILITY_VERSION} --set "dcache.pools={d,f}" --set dcache.door.enabled=false --set image.registry=${CI_REGISTRY} old-store dcache/dcache
+    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=${DCACHE_COMPATIBILITY_VERSION} --set dcache.configExtraPre="dcache.java.options.extra=-javaagent:/opt/dcache/share/classes/jacocoagent.jar=output=tcpserver\,address=127.0.0.1\,port=6300" --set "dcache.pools={d,f}" --set dcache.door.enabled=false --set image.registry=${CI_REGISTRY} old-store dcache/dcache
 
 Extract Coverage:
   stage: testenv_post
