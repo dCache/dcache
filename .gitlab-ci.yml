@@ -601,35 +601,38 @@ Extract Coverage:
     - PODS=$(kubectl -n $K8S_NAMESPACE get pods -l app.kubernetes.io/instance=store -o jsonpath='{.items[*].metadata.name}')
     - |
       for POD in $PODS; do
-        echo "=== Debugging $POD ==="
-        echo "--- Generated Layout Configuration ---"
-        kubectl -n $K8S_NAMESPACE exec $POD -- cat /opt/dcache/etc/layout.conf | head -n 20
-        echo "--- dCache effective properties ---"
-        kubectl -n $K8S_NAMESPACE exec $POD -- dcache lib property dcache.java.options.extra
-        echo "--- Network Listeners ---"
-        kubectl -n $K8S_NAMESPACE exec $POD -- ss -tln | grep 6300 || echo "Nothing listening on 6300"
-        # 1. Check if the JAR exists in the pod
-        if kubectl -n $K8S_NAMESPACE exec $POD -- ls /opt/dcache/share/classes/jacocoagent.jar >/dev/null 2>&1; then
-          echo "[OK] JaCoCo JAR found."
-        else
-          echo "[ERROR] JaCoCo JAR is MISSING in the container!"
-        fi
+        echo "========================================================="
+        echo "DIAGNOSTIC REPORT FOR POD: $POD"
+        echo "========================================================="
       
-        # 2. Check environment variables
-        echo "JACOCO_OPTS in pod: $(kubectl -n $K8S_NAMESPACE exec $POD -- env | grep JACOCO_OPTS || echo 'NOT SET')"
+        echo "--- 1. FILE SYSTEM SEARCH (Finding dcache.conf and layouts) ---"
+        kubectl -n $K8S_NAMESPACE exec $POD -- find /etc/dcache /opt/dcache -name "*.conf" -o -name "layout" || true
       
-        # 3. Check Java process flags
-        echo "Java Process Flags:"
-        kubectl -n $K8S_NAMESPACE exec $POD -- ps -ef | grep java | grep -v grep
+        echo "--- 2. CHECKING EFFECTIVE LAYOUT ---"
+        # The ConfigMap suggests the layout name is 'dcache-k8s-door' or 'dcache-k8s'
+        kubectl -n $K8S_NAMESPACE exec $POD -- cat /etc/dcache/layouts/dcache-k8s.conf 2>/dev/null || \
+        kubectl -n $K8S_NAMESPACE exec $POD -- cat /etc/dcache/dcache.conf 2>/dev/null || echo "Standard config files not found"
       
-        # 4. Try the dump
-        echo "Triggering dump for $POD..."
+        echo "--- 3. JVM PROCESS ANALYSIS ---"
+        # This shows exactly what flags were used to start Java
+        kubectl -n $K8S_NAMESPACE exec $POD -- ps -ef | grep java | grep -v grep || echo "Java not running"
+      
+        echo "--- 4. DCACHE PROPERTY INSPECTION ---"
+        # Query dCache directly for what it thinks the java options are
+        kubectl -n $K8S_NAMESPACE exec $POD -- /opt/dcache/bin/dcache lib property dcache.java.options.extra || true
+      
+        echo "--- 5. NETWORK STATUS ---"
+        # Check if the port 6300 is actually listening inside the pod
+        kubectl -n $K8S_NAMESPACE exec $POD -- ss -tln | grep 6300 || echo "Port 6300 is CLOSED"
+      
+        echo "--- 6. TRIGGERING DUMP (If Possible) ---"
         kubectl -n $K8S_NAMESPACE cp "$JACOCO_CLI_PATH" "${POD}:/tmp/jacococli.jar"
-        # We use '|| true' so one failed pod doesn't kill the whole debug loop
-        kubectl -n $K8S_NAMESPACE exec $POD -- /usr/bin/java -jar /tmp/jacococli.jar dump --address 127.0.0.1 --port 6300 --destfile /opt/dcache/var/log/jacoco-it.exec || echo "Dump failed for $POD"
-      
-        # 5. Retrieve if it exists
-        kubectl -n $K8S_NAMESPACE cp "${POD}:/opt/dcache/var/log/jacoco-it.exec" "./integration-results/${POD}.exec" || echo "No .exec file to collect"
+        if kubectl -n $K8S_NAMESPACE exec $POD -- /usr/bin/java -jar /tmp/jacococli.jar dump --address 127.0.0.1 --port 6300 --destfile /opt/dcache/var/log/jacoco-it.exec 2>/dev/null; then
+          echo "[SUCCESS] Coverage dumped."
+          kubectl -n $K8S_NAMESPACE cp "${POD}:/opt/dcache/var/log/jacoco-it.exec" "./integration-results/${POD}.exec"
+        else
+          echo "[FAILURE] Could not connect to JaCoCo agent on $POD"
+        fi
       done
   artifacts:
     paths:
