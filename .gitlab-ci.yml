@@ -558,10 +558,18 @@ Helm-Deploy Current dCache build:
       if [[ -n "$CI_COMMIT_TAG" ]]; then
         tag=$CI_COMMIT_TAG
       fi
-    - helm repo add dcache ${DCACHE_HELM_REPO}
-    - helm repo update
-    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=${tag} --set dcache.hsm.enabled=true --set dcache.qos.enabled=true --set image.registry=${CI_REGISTRY} --set dcache.layoutExtraPre="[defaults]
-      dcache.java.options.extra=-javaagent:/opt/dcache/share/classes/jacocoagent.jar=output=tcpserver\,address=127.0.0.1\,port=6300" --values .ci/custom-helm-config.yaml store dcache/dcache
+      - helm repo add dcache ${DCACHE_HELM_REPO}
+      - helm repo update
+      - >
+      helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait 
+      --set image.tag=${tag} 
+      --set dcache.hsm.enabled=true 
+      --set dcache.qos.enabled=true 
+      --set image.registry=${CI_REGISTRY} 
+      --set dcache.layoutExtraPre="[defaults]
+      dcache.java.options.extra=-javaagent:/opt/dcache/share/classes/jacocoagent.jar=output=tcpserver\,address=127.0.0.1\,port=6300"
+      --values .ci/custom-helm-config.yaml 
+      store dcache/dcache
 
 Helm-Deploy Latest dCache Golden Release:
   stage: test_deploy
@@ -570,9 +578,16 @@ Helm-Deploy Latest dCache Golden Release:
     - Helm-Deploy Current dCache build
   script:
     - helm repo add dcache ${DCACHE_HELM_REPO}
-    - helm repo update
-    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=${DCACHE_COMPATIBILITY_VERSION} --set dcache.layoutExtraPre="[defaults]
-      dcache.java.options.extra=-javaagent:/opt/dcache/share/classes/jacocoagent.jar=output=tcpserver\,address=127.0.0.1\,port=6300" --set "dcache.pools={d,f}" --set dcache.door.enabled=false --set image.registry=${CI_REGISTRY} old-store dcache/dcache
+      - helm repo update
+      - >
+      helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait
+      --set image.tag=${DCACHE_COMPATIBILITY_VERSION}
+      --set dcache.layoutExtraPre="[defaults]
+      dcache.java.options.extra=-javaagent:/opt/dcache/share/classes/jacocoagent.jar=output=tcpserver\,address=127.0.0.1\,port=6300"
+      --set "dcache.pools={d,f}"
+      --set dcache.door.enabled=false
+      --set image.registry=${CI_REGISTRY}
+      old-store dcache/dcache
 
 Extract Coverage:
   stage: testenv_post
@@ -587,7 +602,12 @@ Extract Coverage:
     - |
       for POD in $PODS; do
         echo "=== Debugging $POD ==="
-      
+        echo "--- Generated Layout Configuration ---"
+        kubectl -n $K8S_NAMESPACE exec $POD -- cat /opt/dcache/etc/layout.conf | head -n 20
+        echo "--- dCache effective properties ---"
+        kubectl -n $K8S_NAMESPACE exec $POD -- dcache lib property dcache.java.options.extra
+        echo "--- Network Listeners ---"
+        kubectl -n $K8S_NAMESPACE exec $POD -- ss -tln | grep 6300 || echo "Nothing listening on 6300"
         # 1. Check if the JAR exists in the pod
         if kubectl -n $K8S_NAMESPACE exec $POD -- ls /opt/dcache/share/classes/jacocoagent.jar >/dev/null 2>&1; then
           echo "[OK] JaCoCo JAR found."
