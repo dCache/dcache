@@ -566,8 +566,7 @@ Helm-Deploy Current dCache build:
       --set dcache.hsm.enabled=true 
       --set dcache.qos.enabled=true 
       --set image.registry=${CI_REGISTRY} 
-      --set dcache.layoutExtraPre="[defaults]
-      dcache.java.options.extra=-javaagent:/opt/dcache/share/classes/jacocoagent.jar=output=tcpserver\,address=127.0.0.1\,port=6300"
+      --set "dcache.env.JACOCO_OPTS=output=tcpserver\,address=127.0.0.1\,port=6300"
       --set "dcache.pools={a,b}" 
       --values .ci/custom-helm-config.yaml 
       store dcache/dcache
@@ -583,8 +582,7 @@ Helm-Deploy Latest dCache Golden Release:
     - >
       helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait 
       --set image.tag=${DCACHE_COMPATIBILITY_VERSION} 
-      --set dcache.layoutExtraPre="[defaults]
-      dcache.java.options.extra=-javaagent:/opt/dcache/share/classes/jacocoagent.jar=output=tcpserver\,address=127.0.0.1\,port=6300" 
+      --set "dcache.env.JACOCO_OPTS=output=tcpserver\,address=127.0.0.1\,port=6300"
       --set "dcache.pools={d,f}" 
       --set dcache.door.enabled=false 
       --set image.registry=${CI_REGISTRY} 
