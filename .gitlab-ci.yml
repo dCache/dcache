@@ -568,6 +568,7 @@ Helm-Deploy Current dCache build:
       --set image.registry=${CI_REGISTRY} 
       --set dcache.layoutExtraPre="[defaults]
       dcache.java.options.extra=-javaagent:/opt/dcache/share/classes/jacocoagent.jar=output=tcpserver\,address=127.0.0.1\,port=6300"
+      --set "dcache.pools={a,b}" 
       --values .ci/custom-helm-config.yaml 
       store dcache/dcache
 
