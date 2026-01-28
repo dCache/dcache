@@ -568,8 +568,8 @@ Helm-Deploy Current dCache build:
       --set image.tag=${tag}
       --set dcache.hsm.enabled=true
       --set dcache.qos.enabled=true
-      --set "dcache.env.JACOCO_OPTS=output=tcpserver\,address=0.0.0.0\,port=6300\,dumponexit=true"
-      --set "dcache.layoutExtraPre=-javaagent:/opt/dcache/share/classes/jacocoagent.jar=\$(JACOCO_OPTS)"
+      --set global.env[0].name=JACOCO_OPTS \
+      --set global.env[0].value="output=tcpserver,address=*,port=6300,append=false" \
       --values .ci/custom-helm-config.yaml
 
 Helm-Deploy Latest dCache Golden Release:
@@ -592,53 +592,43 @@ Helm-Deploy Latest dCache Golden Release:
 Extract Coverage:
   stage: testenv_post
   extends: .kubernetes_image
-  dependencies:
-  - get_jacoco_cli  # Explicitly pull the CLI tool artifact
-  when: always        # Collect coverage even if tests fail
+  needs:
+    - job: get_jacoco_cli
+      artifacts: true
+    - job: "Deploy dcache"  # ensure deployment is complete
   script:
     - mkdir -p integration-results
     - JACOCO_CLI_PATH="jacoco-${JACOCO_VERSION}/lib/jacococli.jar"
     - PODS=$(kubectl -n $K8S_NAMESPACE get pods -l app.kubernetes.io/instance=store -o jsonpath='{.items[*].metadata.name}')
+
+      # First verify JaCoCo is actually running
     - |
       for POD in $PODS; do
-        echo "========================================================="
-        echo "DIAGNOSTIC REPORT FOR POD: $POD"
-        echo "========================================================="
-      
-        echo "--- 1. FILE SYSTEM SEARCH (Finding dcache.conf and layouts) ---"
-        kubectl -n $K8S_NAMESPACE exec $POD -- find /etc/dcache /opt/dcache -name "*.conf" -o -name "layout" || true
-      
-        echo "--- 2. CHECKING EFFECTIVE LAYOUT ---"
-        # The ConfigMap suggests the layout name is 'dcache-k8s-door' or 'dcache-k8s'
-        kubectl -n $K8S_NAMESPACE exec $POD -- cat /etc/dcache/layouts/dcache-k8s.conf 2>/dev/null || \
-        kubectl -n $K8S_NAMESPACE exec $POD -- cat /etc/dcache/dcache.conf 2>/dev/null || echo "Standard config files not found"
-      
-        echo "--- 3. JVM PROCESS ANALYSIS ---"
-        # This shows exactly what flags were used to start Java
-        kubectl -n $K8S_NAMESPACE exec $POD -- ps -ef | grep java | grep -v grep || echo "Java not running"
-      
-        echo "--- 4. DCACHE PROPERTY INSPECTION ---"
-        # Query dCache directly for what it thinks the java options are
-        kubectl -n $K8S_NAMESPACE exec $POD -- /opt/dcache/bin/dcache lib property dcache.java.options.extra || true
-      
-        echo "--- 5. NETWORK STATUS ---"
-        # Check if the port 6300 is actually listening inside the pod
-        kubectl -n $K8S_NAMESPACE exec $POD -- ss -tln | grep 6300 || echo "Port 6300 is CLOSED"
-      
-        echo "--- 6. TRIGGERING DUMP (If Possible) ---"
-        kubectl -n $K8S_NAMESPACE cp "$JACOCO_CLI_PATH" "${POD}:/tmp/jacococli.jar"
-        POD_IP=$(kubectl -n $K8S_NAMESPACE get pod $POD -o jsonpath='{.status.podIP}')
-        if kubectl -n $K8S_NAMESPACE exec $POD -- /usr/bin/java -jar /tmp/jacococli.jar dump --address $POD_IP --port 6300 --destfile /tmp/jacoco-it.exec; then
-          echo "[SUCCESS] Coverage dumped."
-          kubectl -n $K8S_NAMESPACE cp "${POD}:/opt/dcache/var/log/jacoco-it.exec" "./integration-results/${POD}.exec"
-        else
-          echo "[FAILURE] Could not connect to JaCoCo agent on $POD"
-        fi
+          echo "Checking JaCoCo on $POD..."
+          kubectl -n $K8S_NAMESPACE exec $POD -- env | grep JACOCO || echo "WARNING: JACOCO_OPTS not set on $POD"
+          kubectl -n $K8S_NAMESPACE exec $POD -- ps -ef | grep jacocoagent || echo "WARNING: JaCoCo agent not running on $POD"
+      done
+
+      # Then collect coverage
+    - |
+      for POD in $PODS; do
+          echo "Collecting coverage from $POD..."
+          kubectl -n $K8S_NAMESPACE cp "$JACOCO_CLI_PATH" "${POD}:/tmp/jacococli.jar"
+          POD_IP=$(kubectl -n $K8S_NAMESPACE get pod $POD -o jsonpath='{.status.podIP}')
+
+          if kubectl -n $K8S_NAMESPACE exec $POD -- \
+             /usr/bin/java -jar /tmp/jacococli.jar dump \
+             --address $POD_IP --port 6300 --destfile /tmp/jacoco-it.exec; then
+            echo "✓ Success dumping coverage from $POD"
+            kubectl -n $K8S_NAMESPACE cp "${POD}:/tmp/jacoco-it.exec" "./integration-results/${POD}.exec"
+          else
+            echo "✗ Failed to dump coverage from $POD"
+          fi
       done
   artifacts:
-    paths:
-      - integration-results/*.exec
-    when: always
+      paths:
+        - integration-results/*.exec
+      when: always
 
 Grid EL9 WN tests:
   stage: testing

@@ -34,6 +34,9 @@ JACOCO_AGENT=""
 if [ -n "$JACOCO_OPTS" ] && [ -f "$JACOCO_AGENT_JAR" ]; then
     JACOCO_AGENT="-javaagent:${JACOCO_AGENT_JAR}=${JACOCO_OPTS}"
     echo "Activating JaCoCo with options: ${JACOCO_OPTS}"
+elif [ -f "$JACOCO_AGENT_JAR" ]; then
+    JACOCO_AGENT="-javaagent:${JACOCO_AGENT_JAR}=output=tcpserver,address=*,port=6300"
+    echo "Activating JaCoCo with default TCP server on port 6300"
 fi
 
 if [ ! -f /.init_complete ]
