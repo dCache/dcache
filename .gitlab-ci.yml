@@ -553,7 +553,7 @@ Helm-Deploy Current dCache build:
   needs:
     - Init dCache DB with old version
   script:
-    - |
+    - |-
       tag=$CI_COMMIT_SHORT_SHA
       if [[ -n "$CI_COMMIT_TAG" ]]; then
         tag=$CI_COMMIT_TAG
@@ -561,15 +561,15 @@ Helm-Deploy Current dCache build:
     - helm repo add dcache ${DCACHE_HELM_REPO}
     - helm repo update
     - >
-      helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait 
-      --set image.tag=${tag} 
-      --set dcache.hsm.enabled=true 
-      --set dcache.qos.enabled=true 
-      --set image.registry=${CI_REGISTRY} 
-      --set "dcache.env.JACOCO_OPTS=output=tcpserver\,address=127.0.0.1\,port=6300"
-      --set "dcache.pools={a,b}" 
-      --values .ci/custom-helm-config.yaml 
-      store dcache/dcache
+      helm -n ${K8S_NAMESPACE} upgrade --install store dcache/dcache
+      --wait
+      --set image.registry=${CI_REGISTRY}
+      --set image.repository=${CI_PROJECT_PATH}
+      --set image.tag=${tag}
+      --set dcache.hsm.enabled=true
+      --set dcache.qos.enabled=true
+      --set "dcache.env.JACOCO_OPTS=output=tcpserver\,address=0.0.0.0\,port=6300\,dumponexit=true"
+      --values .ci/custom-helm-config.yaml
 
 Helm-Deploy Latest dCache Golden Release:
   stage: test_deploy
@@ -580,13 +580,13 @@ Helm-Deploy Latest dCache Golden Release:
     - helm repo add dcache ${DCACHE_HELM_REPO}
     - helm repo update
     - >
-      helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait 
-      --set image.tag=${DCACHE_COMPATIBILITY_VERSION} 
-      --set "dcache.env.JACOCO_OPTS=output=tcpserver\,address=0.0.0.0\,port=6300\,dumponexit=true"
-      --set "dcache.pools={d,f}" 
-      --set dcache.door.enabled=false 
-      --set image.registry=${CI_REGISTRY} 
-      old-store dcache/dcache
+      helm -n ${K8S_NAMESPACE} upgrade --install old-store dcache/dcache
+      --wait
+      --set image.registry=${CI_REGISTRY}
+      --set image.repository=${CI_PROJECT_PATH}
+      --set image.tag=${DCACHE_COMPATIBILITY_VERSION}
+      --set "dcache.pools={d,f}"
+      --set dcache.door.enabled=false
 
 Extract Coverage:
   stage: testenv_post
@@ -626,7 +626,8 @@ Extract Coverage:
       
         echo "--- 6. TRIGGERING DUMP (If Possible) ---"
         kubectl -n $K8S_NAMESPACE cp "$JACOCO_CLI_PATH" "${POD}:/tmp/jacococli.jar"
-        if kubectl -n $K8S_NAMESPACE exec $POD -- /usr/bin/java -jar /tmp/jacococli.jar dump --address 127.0.0.1 --port 6300 --destfile /opt/dcache/var/log/jacoco-it.exec 2>/dev/null; then
+        POD_IP=$(kubectl -n $K8S_NAMESPACE get pod $POD -o jsonpath='{.status.podIP}')
+        if kubectl -n $K8S_NAMESPACE exec $POD -- /usr/bin/java -jar /tmp/jacococli.jar dump --address $POD_IP --port 6300 --destfile /tmp/jacoco-it.exec; then
           echo "[SUCCESS] Coverage dumped."
           kubectl -n $K8S_NAMESPACE cp "${POD}:/opt/dcache/var/log/jacoco-it.exec" "./integration-results/${POD}.exec"
         else
