@@ -569,6 +569,7 @@ Helm-Deploy Current dCache build:
       --set dcache.hsm.enabled=true
       --set dcache.qos.enabled=true
       --set "dcache.env.JACOCO_OPTS=output=tcpserver\,address=0.0.0.0\,port=6300\,dumponexit=true"
+      --set "dcache.layoutExtraPre=-javaagent:/opt/dcache/share/classes/jacocoagent.jar=\$(JACOCO_OPTS)"
       --values .ci/custom-helm-config.yaml
 
 Helm-Deploy Latest dCache Golden Release:
