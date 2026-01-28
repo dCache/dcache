@@ -586,16 +586,16 @@ Helm-Deploy Current dCache build:
               exit 1;
             }
       - echo "=== Verifying JaCoCo Configuration ==="
-          - |
-            for POD in $(kubectl -n ${K8S_NAMESPACE} get pods -l app.kubernetes.io/instance=store -o jsonpath='{.items[*].metadata.name}'); do
-              echo "Checking $POD..."
-              kubectl -n ${K8S_NAMESPACE} exec $POD -- env | grep JACOCO_OPTS || echo "  JACOCO_OPTS not found"
-              if kubectl -n ${K8S_NAMESPACE} exec $POD -- ps -ef 2>/dev/null | grep -q jacocoagent; then
-                echo "  ✓ JaCoCo agent running"
-              else
-                echo "  ✗ JaCoCo agent NOT running"
-              fi
-            done
+      - |
+        for POD in $(kubectl -n ${K8S_NAMESPACE} get pods -l app.kubernetes.io/instance=store -o jsonpath='{.items[*].metadata.name}'); do
+          echo "Checking $POD..."
+          kubectl -n ${K8S_NAMESPACE} exec $POD -- env | grep JACOCO_OPTS || echo "  JACOCO_OPTS not found"
+          if kubectl -n ${K8S_NAMESPACE} exec $POD -- ps -ef 2>/dev/null | grep -q jacocoagent; then
+            echo "  ✓ JaCoCo agent running"
+          else
+            echo "  ✗ JaCoCo agent NOT running"
+          fi
+        done
 
 Helm-Deploy Latest dCache Golden Release:
   stage: test_deploy
