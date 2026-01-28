@@ -568,8 +568,7 @@ Helm-Deploy Current dCache build:
       --set image.tag=${tag}
       --set dcache.hsm.enabled=true
       --set dcache.qos.enabled=true
-      --set global.env[0].name=JACOCO_OPTS \
-      --set global.env[0].value="output=tcpserver,address=*,port=6300,append=false" \
+      --set "dcache.env.JACOCO_OPTS=output=tcpserver\,address=0.0.0.0\,port=6300\,dumponexit=true"
       --values .ci/custom-helm-config.yaml
 
 Helm-Deploy Latest dCache Golden Release:
@@ -595,6 +594,21 @@ Extract Coverage:
   needs:
     - job: get_jacoco_cli
       artifacts: true
+    - job: "Grid EL9 WN tests"
+      optional: true  # Don't fail if this test doesn't run
+    - job: "Frontend test suite"
+      optional: true
+    - job: "SRM S2 test suite"
+      optional: true
+    - job: "gsi_xroot_tests"
+      optional: true
+    - job: "webdav_with_x509_tests"
+      optional: true
+    - job: "NFS4.x protocol compliance tests"
+      optional: true
+    - job: "Run OIDC test"
+      optional: true
+  when: always
   script:
     - mkdir -p integration-results
     - JACOCO_CLI_PATH="jacoco-${JACOCO_VERSION}/lib/jacococli.jar"
