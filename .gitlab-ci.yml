@@ -582,7 +582,7 @@ Helm-Deploy Latest dCache Golden Release:
     - >
       helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait 
       --set image.tag=${DCACHE_COMPATIBILITY_VERSION} 
-      --set "dcache.env.JACOCO_OPTS=output=tcpserver\,address=127.0.0.1\,port=6300"
+      --set "dcache.env.JACOCO_OPTS=output=tcpserver\,address=0.0.0.0\,port=6300\,dumponexit=true"
       --set "dcache.pools={d,f}" 
       --set dcache.door.enabled=false 
       --set image.registry=${CI_REGISTRY} 
