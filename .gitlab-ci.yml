@@ -595,7 +595,6 @@ Extract Coverage:
   needs:
     - job: get_jacoco_cli
       artifacts: true
-    - job: "Deploy dcache"  # ensure deployment is complete
   script:
     - mkdir -p integration-results
     - JACOCO_CLI_PATH="jacoco-${JACOCO_VERSION}/lib/jacococli.jar"
