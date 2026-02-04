@@ -626,32 +626,53 @@ Extract Coverage:
   when: always
   script:
     - mkdir -p integration-results
-    - JACOCO_CLI_PATH="jacoco-${JACOCO_VERSION}/lib/jacococli.jar"
+      # DEBUG: Check if artifact exists
+    - echo "=== Checking for JaCoCo CLI ==="
+    - ls -la . || true
+    - find . -name "jacococli.jar" -type f || true
+    - ls -la jacoco-${JACOCO_VERSION}/lib/ 2>/dev/null || echo "Directory not found"
+      # Set path with fallback
+    - |
+      if [ -f "jacoco-${JACOCO_VERSION}/lib/jacococli.jar" ]; then
+        JACOCO_CLI_PATH="jacoco-${JACOCO_VERSION}/lib/jacococli.jar"
+        echo "Found JaCoCo CLI at: $JACOCO_CLI_PATH"
+      else
+        echo "ERROR: JaCoCo CLI not found!"
+        echo "Available files in working directory:"
+        find . -type f -name "*.jar" | head -20
+        exit 1
+      fi
+
     - PODS=$(kubectl -n $K8S_NAMESPACE get pods -l app.kubernetes.io/instance=store -o jsonpath='{.items[*].metadata.name}')
 
-      # First verify JaCoCo is actually running
     - |
       for POD in $PODS; do
-          echo "Checking JaCoCo on $POD..."
-          kubectl -n $K8S_NAMESPACE exec $POD -- env | grep JACOCO || echo "WARNING: JACOCO_OPTS not set on $POD"
-          kubectl -n $K8S_NAMESPACE exec $POD -- ps -ef | grep jacocoagent || echo "WARNING: JaCoCo agent not running on $POD"
+        echo "Checking JaCoCo on $POD..."
+        kubectl -n $K8S_NAMESPACE exec $POD -- env | grep JACOCO || echo "WARNING: JACOCO_OPTS not set on $POD"
+        kubectl -n $K8S_NAMESPACE exec $POD -- ps -ef | grep jacocoagent || echo "WARNING: JaCoCo agent not running on $POD"
       done
+      
 
-      # Then collect coverage
     - |
       for POD in $PODS; do
-          echo "Collecting coverage from $POD..."
-          kubectl -n $K8S_NAMESPACE cp "$JACOCO_CLI_PATH" "${POD}:/tmp/jacococli.jar"
-          POD_IP=$(kubectl -n $K8S_NAMESPACE get pod $POD -o jsonpath='{.status.podIP}')
-
-          if kubectl -n $K8S_NAMESPACE exec $POD -- \
-             /usr/bin/java -jar /tmp/jacococli.jar dump \
-             --address $POD_IP --port 6300 --destfile /tmp/jacoco-it.exec; then
-            echo "✓ Success dumping coverage from $POD"
-            kubectl -n $K8S_NAMESPACE cp "${POD}:/tmp/jacoco-it.exec" "./integration-results/${POD}.exec"
-          else
-            echo "✗ Failed to dump coverage from $POD"
-          fi
+        echo "Collecting coverage from $POD..."
+        if ! kubectl -n $K8S_NAMESPACE cp "$JACOCO_CLI_PATH" "${POD}:/tmp/jacococli.jar"; then
+          echo "ERROR: Failed to copy CLI to $POD"
+          continue
+        fi
+        
+          # Get pod IP
+        POD_IP=$(kubectl -n $K8S_NAMESPACE get pod $POD -o jsonpath='{.status.podIP}')
+        
+          # Dump coverage
+        if kubectl -n $K8S_NAMESPACE exec $POD -- \
+            /usr/bin/java -jar /tmp/jacococli.jar dump \
+            --address $POD_IP --port 6300 --destfile /tmp/jacoco-it.exec; then
+          echo "Success dumping coverage from $POD"
+          kubectl -n $K8S_NAMESPACE cp "${POD}:/tmp/jacoco-it.exec" "./integration-results/${POD}.exec"
+        else
+          echo "Failed to dump coverage from $POD (agent not running or port not listening)"
+        fi
       done
   artifacts:
       paths:
@@ -798,6 +819,7 @@ get_jacoco_cli:
     key: "jacoco-cli-${JACOCO_VERSION}"  #cache per version
     paths:
       - "jacoco-${JACOCO_VERSION}/"      #cache the entire JaCoCo directory
+    policy: pull-push
   artifacts:
     paths:
       - "jacoco-${JACOCO_VERSION}/lib/jacococli.jar"
