@@ -607,8 +607,6 @@ Extract Coverage:
   stage: testenv_post
   extends: .kubernetes_image
   needs:
-    - job: get_jacoco_cli
-      artifacts: true
     - job: "Grid EL9 WN tests"
       optional: true  # Don't fail if this test doesn't run
     - job: "Frontend test suite"
@@ -627,6 +625,16 @@ Extract Coverage:
   script:
     - mkdir -p integration-results
       # DEBUG: Check if artifact exists
+      # Download JaCoCo CLI directly
+    - |
+      if [ ! -f "jacoco-${JACOCO_VERSION}/lib/jacococli.jar" ]; then
+        echo "Downloading JaCoCo ${JACOCO_VERSION}..."
+        wget -q "https://github.com/jacoco/jacoco/releases/download/v${JACOCO_VERSION}/jacoco-${JACOCO_VERSION}.zip" -O /tmp/jacoco.zip
+        unzip -q /tmp/jacoco.zip -d jacoco-${JACOCO_VERSION}
+        rm /tmp/jacoco.zip
+      fi
+    - JACOCO_CLI_PATH="jacoco-${JACOCO_VERSION}/lib/jacococli.jar"
+    - ls -lh "$JACOCO_CLI_PATH"
     - echo "=== Checking for JaCoCo CLI ==="
     - ls -la . || true
     - find . -name "jacococli.jar" -type f || true
