@@ -17,10 +17,9 @@ FROM almalinux:10-minimal
 COPY --from=builder /jlink-runtime /jlink-runtime
 RUN ln -s /jlink-runtime/bin/java /usr/bin/java
 # Copy both the agent and the cli
+ENV DCACHE_INSTALL_DIR=/opt/dcache
 COPY --from=builder /tmp/jacoco/lib/jacocoagent.jar ${DCACHE_INSTALL_DIR}/share/classes/jacocoagent.jar
 COPY --from=builder /tmp/jacoco/lib/jacococli.jar ${DCACHE_INSTALL_DIR}/share/classes/jacococli.jar
-
-ENV DCACHE_INSTALL_DIR=/opt/dcache
 
 # Neede by groupadd and useradd
 # REVISIT: in some environments base OS kernel doesnt allow use of xattrs and the installation of
