@@ -572,30 +572,17 @@ Helm-Deploy Current dCache build:
       --set dcache.hsm.enabled=true
       --set dcache.qos.enabled=true
       --values .ci/custom-helm-config.yaml
-      || {
-              echo "=== DEPLOYMENT FAILED - Gathering diagnostics ===";
-              echo "Pod Status:";
-              kubectl -n ${K8S_NAMESPACE} get pods;
-              echo "";
-              echo "Events:";
-              kubectl -n ${K8S_NAMESPACE} get events --sort-by='.lastTimestamp' | tail -30;
-              echo "";
-              echo "Pool-A Pod Details:";
-              kubectl -n ${K8S_NAMESPACE} describe pod store-pool-a-0 2>&1 | tail -50;
-              echo "";
-              echo "Pool-A Logs:";
-              kubectl -n ${K8S_NAMESPACE} logs store-pool-a-0 --all-containers=true 2>&1 | tail -100;
-              exit 1;
-            }
+      
+      # Verify (CORRECT - 4 spaces, separate steps)
       - echo "=== Verifying JaCoCo Configuration ==="
       - |
         for POD in $(kubectl -n ${K8S_NAMESPACE} get pods -l app.kubernetes.io/instance=store -o jsonpath='{.items[*].metadata.name}'); do
           echo "Checking $POD..."
           kubectl -n ${K8S_NAMESPACE} exec $POD -- env | grep JACOCO_OPTS || echo "  JACOCO_OPTS not found"
           if kubectl -n ${K8S_NAMESPACE} exec $POD -- ps -ef 2>/dev/null | grep -q jacocoagent; then
-            echo "  ✓ JaCoCo agent running"
+            echo "JaCoCo agent running"
           else
-            echo "  ✗ JaCoCo agent NOT running"
+            echo "JaCoCo agent NOT running"
           fi
         done
 

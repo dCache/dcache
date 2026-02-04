@@ -76,6 +76,5 @@ exec /usr/bin/java \
 	--add-opens=java.base/java.math=ALL-UNNAMED \
 	--add-opens=java.base/sun.nio.fs=ALL-UNNAMED \
 	${JACOCO_AGENT} \
-      -javaagent:${ASPECT_AGENT} \
 	${JAVA_ARGS} \
 	org.dcache.boot.BootLoader start ${DOMAIN}
