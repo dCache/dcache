@@ -53,6 +53,7 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.QuotaExceededCacheException;
+import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
@@ -1858,6 +1859,8 @@ public class DcacheResourceFactory
     private class WriteTransfer extends HttpTransfer {
 
         private final Optional<Checksum> _contentMd5;
+        /** optional hits to tape system how to store the file */
+        private final Optional<String> _archiveMetadata;
 
         public WriteTransfer(PnfsHandler pnfs, Subject subject,
               Restriction restriction, FsPath path) throws URISyntaxException {
@@ -1876,6 +1879,8 @@ public class DcacheResourceFactory
                 throw new UncheckedBadRequestException("Bad Content-MD5 header: " + e.toString(),
                       null);
             }
+
+            _archiveMetadata = Optional.ofNullable(ServletRequest.getRequest().getHeader("ArchiveMetadata"));
         }
 
         @Override
@@ -1930,6 +1935,11 @@ public class DcacheResourceFactory
             }
 
             getMaxUploadSize().ifPresent(this::setMaximumLength);
+
+            // for CUSTODIAL files on upload client might provide extra information that should be passed to the tape system
+            if (_archiveMetadata.isPresent() && getFileAttributes().getRetentionPolicy() == RetentionPolicy.CUSTODIAL) {
+                getFileAttributes().getStorageInfo().setKey("archive_metadata", _archiveMetadata.get());
+            }
         }
 
         public void relayData(InputStream inputStream)
