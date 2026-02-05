@@ -56,6 +56,7 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.QuotaExceededCacheException;
+import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.IoDoorEntry;
 import diskCacheV111.vehicles.IoJobInfo;
@@ -905,7 +906,17 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                             msg = _pnfs.createPnfsEntry(_path.toString(), attributes,
                                     TransferManagerHandler.ATTRIBUTES_FOR_PULL);
                         }
-                        return msg.getFileAttributes();
+
+                        var attrs =  msg.getFileAttributes();
+                        // for CUSTODIAL files on upload client might provide extra information that should be passed to the tape system
+                        if (attrs.getRetentionPolicy() == RetentionPolicy.CUSTODIAL) {
+                            var archiveMetadata = ServletRequest.getRequest().getHeader("ArchiveMetadata");
+                            if (archiveMetadata != null) {
+                                attrs.getStorageInfo().setKey("archive_metadata", archiveMetadata);
+                            }
+                        }
+
+                        return attrs;
 
                     default:
                         throw new ErrorResponseException(Response.Status.SC_INTERNAL_SERVER_ERROR,
