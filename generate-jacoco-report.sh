@@ -16,13 +16,10 @@ fi
 
 # Ensure the report directory exists
 mkdir -p "$REPORT_DIR"
+EXEC_FILES=$(find "$PROJECT_ROOT" -name "*.exec" -type f)
 
-# Issue 1: Simplified find command (avoiding array initialization)
-EXEC_FILES=$(find "$PROJECT_ROOT" -name "jacoco-ut.exec" -type f)
-
-# Issue 2: Simplified check for empty results using -z
 if [ -z "$EXEC_FILES" ]; then
-    echo "Error: No jacoco-ut.exec files found in $PROJECT_ROOT"
+    echo "Error: No .exec files found in $PROJECT_ROOT"
     exit 1
 fi
 
@@ -43,21 +40,20 @@ echo "Generating coverage report..."
 CLASSFILES_ARGS=()
 SOURCEFILES_ARGS=()
 
-# Issue 5: Iterating over the string list instead of an array
-for exec_file in ${EXEC_FILES}; do
-    # Extract module path (e.g., core, dlm, rquota) from the exec file path
-    module_path=$(dirname "$(dirname "$(dirname "$exec_file")")")
-
-    # Add classfiles and sourcefiles arguments
-    CLASSFILES_ARGS+=("--classfiles" "$module_path/target/classes")
-    SOURCEFILES_ARGS+=("--sourcefiles" "$module_path/src/main/java")
+for module in $(find modules -maxdepth 1 -mindepth 1 -type d); do
+    if [ -d "$module/target/classes" ]; then
+        CLASSFILES_ARGS+=("--classfiles" "$module/target/classes")
+        SOURCEFILES_ARGS+=("--sourcefiles" "$module/src/main/java")
+    fi
 done
 
 # Generate the report with dynamic arguments
 java -jar "$JACOCO_CLI_JAR" report "$MERGED_EXEC" \
     "${CLASSFILES_ARGS[@]}" \
     "${SOURCEFILES_ARGS[@]}" \
-    --html "$REPORT_DIR"
+    --html "$REPORT_DIR" \
+    --xml "$PROJECT_ROOT/target/coverage-reports/jacoco-total.xml" \
+    --csv "$PROJECT_ROOT/target/coverage-reports/jacoco-total.csv"
 
 if [ $? -ne 0 ]; then
     echo "Error: Failed to generate coverage report"
