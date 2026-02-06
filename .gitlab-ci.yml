@@ -842,6 +842,7 @@ generate_jacoco_report:
     - job: run_ut_with_coverage
     - job: Collect container logs
     - job: get_jacoco_cli
+    - job: Extract Coverage
   cache:
     key: "jacoco-cli-${JACOCO_VERSION}"
     paths:
