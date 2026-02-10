@@ -957,7 +957,7 @@ curl -u tester:TooManySecrets -L -o /tmp/test-file-1 http://localhost:2880/home/
 
 The WebDAV door also includes a limited web interface that allows
 users to explore the namespace and download specific files.  To see
-this interface, point your favourate web browser at the WebDAV
+this interface, point your favourite web browser at the WebDAV
 endpoint (`http://dcache.example.org:2880/` in this example).  After
 entering the username and password (`tester` and `TooManySecrets`
 respectively), so will see the following page.
@@ -999,7 +999,7 @@ ssh -p 22224 admin@localhost
 
 The prompt `[dcache] (local) admin >` indicates that the shell is
 waiting for a command.  The name in square brackets (`dcache`) is the
-machine to which you are connected.  The name in parenthesis (`local`)
+machine to which you are connected.  The name in parentheses (`local`)
 is the fully-qualitified cell name (written `CELL@DOMAIN`), when
 connected or `local` when the shell is not yet connected to a cell.
 The name after the parenthesis (`admin`) is the username of the
@@ -1076,7 +1076,7 @@ connect to the WebDAV cell.
 ```
 
 You should see the prompt change when the command is successful.  The
-name in parenthesis (`local` above) is the full name of the cell:
+name in parentheses (`local` above) is the full name of the cell:
 `WebDAV-dcache@dCacheDomain`.
 
 Now, lets try two commands that all cells implement: 'help' and
@@ -1422,7 +1422,7 @@ These lines show:
    * an unsuccessful attempt to download the deleted file.
 
 Note that, by default, dCache will log-rotate and delete the access
-log files on a fairly agressive schedule.  This is because the access
+log files on a fairly aggressive schedule.  This is because the access
 log file contains low-level protocol information and it would quickly
 become very large.
 
@@ -1636,7 +1636,7 @@ openssl pkcs12 -in host-credential.p12 -out hostcert.pem -clcerts -nokeys
 openssl pkcs12 -in host-credential.p12 -out hostkey.pem -nocerts -nodes
 ```
 
-By default, dCache expectes these files to be in the
+By default, dCache expects these files to be in the
 `/etc/grid-security` directory, and they must be readable by the
 `dcache` user; e.g.,
 
@@ -1839,7 +1839,7 @@ e.g., `https://dcache.example.org:2880/`
 Uploads and downloads with curl should work as before, but with
 `https://` instead of `http://`.
 
-Similarly, you should be able to point your favourate web browser at
+Similarly, you should be able to point your favourite web browser at
 the endpoint and see the expected content along with that browser's
 way of showing the connection is encrypted and trust-worthy.
 
@@ -1977,7 +1977,7 @@ anonymous FTP.  By default, the anonymous user can list directories
 and read data that are world-readable.  ACLs would allow finer-grain
 control on what anonymous users can see and do; however, a simpler
 approach is to designate a specific directory as the anonymous-FTP
-root.  With the above configuration, the anoymous FTP user would see
+root.  With the above configuration, the anonymous FTP user would see
 the directory `/public` as their root directory and the directory
 `/public/data` would appear as `/data` to the anonymous-FTP client.
 Any data that should be exposed would be moved within the `/public`
@@ -2111,7 +2111,7 @@ username and password authentication.
 
 ### Supporting NFS access
 
-The NFS protocol was been around for considerable time and has evolved
+The NFS protocol has been around for considerable time and has evolved
 considerably over that time.  NFS v3 saw various limits associated
 with file size lifted; NFS v4 brought various performance benefits;
 NFS v4.1 included the pNFS extension that allows scalable IO.
@@ -2489,7 +2489,7 @@ This deployment should scale to match demand:
 
   * multiple door nodes allows for more concurrent access,
   * services in the core node may be split over multiple machines,
-  * additional capacity is avilable by creating more pool nodes.
+  * additional capacity is available by creating more pool nodes.
 
 ## Step 7. High-availability dCache
 
@@ -2527,7 +2527,7 @@ load-balancer to match clients to servers (either commercial or
 open-source, such as HA-proxy).
 
 Most central services allow for multiple instances within the dCache
-cluster.  For details, see the service-specifc documentation.
+cluster.  For details, see the service-specific documentation.
 
 Finally pools tend not to be directly highly available.  It is
 possible to run dCache with resilience configured, so that files are
@@ -2665,7 +2665,7 @@ when within those 12 months to do the upgrade.
 Some sites deploy non-golden dCache releases.  The support period for
 non-golden dCache releases is chosen so the period ends at the same
 time as the previous golden release.  In other words, a site does not
-loose any support period when upgrading from a golden release to an
+lose any support period when upgrading from a golden release to a
 subsequent major release.
 
 Often, a site is not free to choose when an upgrade takes place.

@@ -65,7 +65,7 @@ based file/directory authorization.
 
 - XML information provider with detailed live information about the system.
 
-- Scriptable adminstration interface with a terminal-based front-end.
+- Scriptable administration interface with a terminal-based front-end.
 
 - Web-interface with live information of the most important information.
 
@@ -81,9 +81,9 @@ For a minimal test installation:
   - At least 500 MiB free disk space
 
 - Software:
-  - OpenJDK 11
-  - Postgres SQL Server 9.5 or later
-  - ZooKeeper version 3.5 (in case of a standalone ZooKeeper installation)
+  - OpenJDK 17 (required) or OpenJDK 21 (tested)
+  - PostgreSQL Server 9.5 or later
+  - Apache ZooKeeper 3.8 or 3.9 (tested)
 
 For high performance production scenarios, the hardware requirements greatly
 differ, which makes it impossible to provide such parameters here. However, if

@@ -4,7 +4,7 @@ Building dCache
 Requirements
 ------------
 
-To build dCache, you need Maven 3.5.0 or newer and Java-17 for building. Running the resulting
+To build dCache, you need Maven 3.5.0 or newer and Java-17 (or Java-21) for building. Running the resulting
 binaries on newer JDKs should be possible.
 
 Building
@@ -44,7 +44,7 @@ This phase can also be combined with other phases, e.g.:
 Packaging dCache
 ----------------
 
-RPM and DEB packages can be build by compiling the _packages/fhs_
+RPM and DEB packages can be built by compiling the _packages/fhs_
 module with the _rpm_ and _deb_ profiles, respectively, i.e.:
 
     mvn clean package -am -pl packages/fhs -P rpm
@@ -166,6 +166,6 @@ Unit tests
 ----------
 
 By default, Maven executes all unit tests while building. This can be
-time consuming and will fail if no internet connection is
+time-consuming and will fail if no internet connection is
 available. The unit tests can be disabled by appending the `-DskipTests`
 option to any mvn command.
