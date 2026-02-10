@@ -607,24 +607,8 @@ Helm-Deploy Latest dCache Golden Release:
 Extract Coverage:
   stage: testenv_post
   extends: .kubernetes_image
-  needs:
-    - job: "Grid EL9 WN tests"
-      optional: true  # Don't fail if this test doesn't run
-    - job: "Frontend test suite"
-      optional: true
-    - job: "SRM S2 test suite"
-      optional: true
-    - job: "gsi_xroot_tests"
-      optional: true
-    - job: "webdav_with_x509_tests"
-      optional: true
-    - job: "NFS4.x protocol compliance tests"
-      optional: true
-    - job: "Run OIDC test"
-      optional: true
   when: always
   script:
-    - mkdir -p integration-results/classes-dump
       # DEBUG: Check if artifact exists
       # Download JaCoCo CLI directly
     - |
@@ -640,7 +624,7 @@ Extract Coverage:
     - ls -la . || true
     - find . -name "jacococli.jar" -type f || true
     - ls -la jacoco-${JACOCO_VERSION}/lib/ 2>/dev/null || echo "Directory not found"
-      # Set path with fallback
+
     - |
       if [ -f "jacoco-${JACOCO_VERSION}/lib/jacococli.jar" ]; then
         JACOCO_CLI_PATH="jacoco-${JACOCO_VERSION}/lib/jacococli.jar"
@@ -660,12 +644,11 @@ Extract Coverage:
         kubectl -n $K8S_NAMESPACE exec $POD -- env | grep JACOCO || echo "WARNING: JACOCO_OPTS not set on $POD"
         kubectl -n $K8S_NAMESPACE exec $POD -- ps -ef | grep jacocoagent || echo "WARNING: JaCoCo agent not running on $POD"
       done
-      
 
     - |
       for POD in $PODS; do
         echo "Collecting coverage and woven classes from $POD..."
-      
+        mkdir -p "./integration-results/classes-dump/${POD}"
         kubectl -n $K8S_NAMESPACE cp "$JACOCO_CLI_PATH" "${POD}:/tmp/jacococli.jar"
         POD_IP=$(kubectl -n $K8S_NAMESPACE get pod $POD -o jsonpath='{.status.podIP}')
       
@@ -676,7 +659,7 @@ Extract Coverage:
           kubectl -n $K8S_NAMESPACE cp "${POD}:/tmp/jacoco-it.exec" "./integration-results/${POD}.exec"
       
           echo "Pulling woven classes from $POD..."
-          if kubectl -n $K8S_NAMESPACE cp "${POD}:/usr/local/dcache/var/log/jacoco-dump/." "./integration-results/classes-dump/"; then
+          if kubectl -n $K8S_NAMESPACE cp "${POD}:/usr/local/dcache/var/log/jacoco-dump/." "./integration-results/classes-dump/${POD}/"; then
             echo "Successfully collected woven classes from $POD"
           else
             echo "Warning: Could not find dumped classes on $POD"
