@@ -624,7 +624,7 @@ Extract Coverage:
       optional: true
   when: always
   script:
-    - mkdir -p integration-results
+    - mkdir -p integration-results/classes-dump
       # DEBUG: Check if artifact exists
       # Download JaCoCo CLI directly
     - |
@@ -664,28 +664,31 @@ Extract Coverage:
 
     - |
       for POD in $PODS; do
-        echo "Collecting coverage from $POD..."
-        if ! kubectl -n $K8S_NAMESPACE cp "$JACOCO_CLI_PATH" "${POD}:/tmp/jacococli.jar"; then
-          echo "ERROR: Failed to copy CLI to $POD"
-          continue
-        fi
-        
-          # Get pod IP
+        echo "Collecting coverage and woven classes from $POD..."
+      
+        kubectl -n $K8S_NAMESPACE cp "$JACOCO_CLI_PATH" "${POD}:/tmp/jacococli.jar"
         POD_IP=$(kubectl -n $K8S_NAMESPACE get pod $POD -o jsonpath='{.status.podIP}')
-        
-          # Dump coverage
+      
         if kubectl -n $K8S_NAMESPACE exec $POD -- \
             /usr/bin/java -jar /tmp/jacococli.jar dump \
             --address $POD_IP --port 6300 --destfile /tmp/jacoco-it.exec; then
-          echo "Success dumping coverage from $POD"
+      
           kubectl -n $K8S_NAMESPACE cp "${POD}:/tmp/jacoco-it.exec" "./integration-results/${POD}.exec"
+      
+          echo "Pulling woven classes from $POD..."
+          if kubectl -n $K8S_NAMESPACE cp "${POD}:/usr/local/dcache/var/log/jacoco-dump/." "./integration-results/classes-dump/"; then
+            echo "Successfully collected woven classes from $POD"
+          else
+            echo "Warning: Could not find dumped classes on $POD"
+          fi
         else
-          echo "Failed to dump coverage from $POD (agent not running or port not listening)"
+          echo "Failed to dump coverage from $POD"
         fi
       done
   artifacts:
       paths:
         - integration-results/*.exec
+        - integration-results/classes-dump/
       when: always
 
 Grid EL9 WN tests:
