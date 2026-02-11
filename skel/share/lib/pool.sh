@@ -20,7 +20,7 @@ getPoolSetting() # in $1 = pool path, in $2 = key
 }
 
 # Extracts the size of a pool in GiB.
-getSizeOfPool() # in $1 = pool path, $2 partition size
+getSizeOfPool() # in $1 = pool path
 {
     local size
 
