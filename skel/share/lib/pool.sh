@@ -20,11 +20,12 @@ getPoolSetting() # in $1 = pool path, in $2 = key
 }
 
 # Extracts the size of a pool in GiB.
-getSizeOfPool() # in $1 = pool path
+getSizeOfPool() # in $1 = pool path, $2 partition size
 {
     local size
 
     size=$(getPoolSetting "$path" "set max diskspace" max)
+
     if [ -z "$size" ]; then
         size=$(getProperty pool.size "$domain" "$cell")
     fi
@@ -38,6 +39,13 @@ getSizeOfPool() # in $1 = pool path
         "")
             echo "-"
             ;;
+	*%)
+	    total=$(getTotalSpace  "$path")
+	    percent=$(echo "${size}" | tr -d "%")
+	    size=$((${total}*${percent}/100))
+	    stringToGiB "${size}G" size
+	    echo "${size}G"
+	    ;;
         *)
             stringToGiB "$size" size
             echo "${size}G"
