@@ -841,5 +841,5 @@ generate_jacoco_report:
     reports:
       coverage_report:
         coverage_format: jacoco
-        path: target/coverage-reports/jacoco-total.xml
+        path: target/coverage-reports/jacoco.xml
     expire_in: 1 week

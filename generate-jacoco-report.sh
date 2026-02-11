@@ -62,8 +62,7 @@ java -jar "$JACOCO_CLI_JAR" report "$MERGED_EXEC" \
     "${CLASSFILES_ARGS[@]}" \
     "${SOURCEFILES_ARGS[@]}" \
     --html "$REPORT_DIR" \
-    --xml "$PROJECT_ROOT/target/coverage-reports/jacoco.xml" \
-    --csv "$PROJECT_ROOT/target/coverage-reports/jacoco.csv"
+    --xml "$PROJECT_ROOT/target/coverage-reports/jacoco.xml"
 
 if [ $? -ne 0 ]; then
     echo "Error: Failed to generate coverage report"
