@@ -148,6 +148,10 @@ public class MigrationModuleTest {
 
         module.setThreshold(0L); // Always trigger
 
+        // Setup FileAttributes for hot file migration
+        when(entry.getFileAttributes()).thenReturn(fileAttributes);
+        when(entry.getLastAccessTime()).thenReturn(0L);
+
         // Create 50 jobs
         for (int i = 0; i < 50; i++) {
             PnfsId pnfsId = new PnfsId(String.format("0000000000000000000000%02d", i));
@@ -209,6 +213,10 @@ public class MigrationModuleTest {
               });
 
         module.setThreshold(0L);
+
+        // Setup FileAttributes for hot file migration
+        when(entry.getFileAttributes()).thenReturn(fileAttributes);
+        when(entry.getLastAccessTime()).thenReturn(0L);
 
         // 1. Create 50 jobs and cancel them (Terminal).
         for (int i = 0; i < 50; i++) {
