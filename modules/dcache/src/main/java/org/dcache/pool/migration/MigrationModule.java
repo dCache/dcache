@@ -57,6 +57,7 @@ import org.dcache.util.expression.Type;
 import org.dcache.util.expression.TypeMismatchException;
 import org.dcache.util.expression.UnknownIdentifierException;
 import org.dcache.util.pool.CostModuleTagProvider;
+import org.dcache.vehicles.FileAttributes;
 import org.parboiled.Parboiled;
 import org.parboiled.parserunners.ReportingParseRunner;
 import org.parboiled.support.ParsingResult;
@@ -1268,11 +1269,25 @@ public class MigrationModule
                   _context.getPoolManagerStub(),
                   Collections.singletonList(_context.getPoolName()));
             sourceList.refresh();
+
+            // Get file attributes from repository for pool selection
+            CacheEntry cacheEntry;
+            try {
+                cacheEntry = _context.getRepository().getEntry(pnfsId);
+            } catch (Exception e) {
+                LOGGER.warn("Failed to get cache entry for {}: {}", pnfsId, e.getMessage());
+                return;
+            }
+            FileAttributes fileAttributes = cacheEntry.getFileAttributes();
+
             Collection<Pattern> excluded = new HashSet<>();
             excluded.add(Pattern.compile(Pattern.quote(_context.getPoolName())));
             RefreshablePoolList basePoolList = new PoolListFilter(
-                  new PoolListByPoolGroupOfPool(_context.getPoolManagerStub(),
-                        _context.getPoolName()),
+                  new PoolListByPoolMgrQuery(_context.getPoolManagerStub(),
+                        pnfsId,
+                        fileAttributes,
+                        "DCap/3",
+                        "127.0.0.1"),
                   excluded,
                   FALSE_EXPRESSION,
                   Collections.emptySet(),
