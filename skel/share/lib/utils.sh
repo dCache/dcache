@@ -305,6 +305,12 @@ getFreeSpace() # in $1 = path
     [ -d "$1" ] && ( df -k "${1}" | awk 'NR == 2 { if (NF < 4) { getline; x = $3 } else { x = $4 }; printf "%d", x / (1024 * 1024)}' )
 }
 
+# Extracts the amount of free space in GiB.
+getTotalSpace() # in $1 = path
+{
+    [ -d "$1" ] && ( df -k "${1}" | awk 'NR == 2 { if (NF < 4) { getline; x = $1 } else { x = $2 }; printf "%d", x / (1024 * 1024)}' )
+}
+
 # Reads configuration file into shell variables. The shell variable
 # names can optionally be prefixed. Returns 1 if file does not exist.
 readconf() # in $1 = file in $2 = prefix
