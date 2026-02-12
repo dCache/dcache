@@ -2,13 +2,14 @@ package org.dcache.pool.migration;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.util.PnfsId;
@@ -18,8 +19,6 @@ import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.classic.IoQueueManager;
@@ -27,8 +26,6 @@ import org.dcache.vehicles.FileAttributes;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 public class PoolListByPoolMgrQueryTest {
 
@@ -52,19 +49,20 @@ public class PoolListByPoolMgrQueryTest {
         PoolListByPoolMgrQuery poolList = new PoolListByPoolMgrQuery(
               poolManager, pnfsId, fileAttributes, "DCap/3", "127.0.0.1");
 
-        // Mock the send method to capture the callback and invoke it
-        CompletableFuture<PoolMgrQueryPoolsMsg> future = new CompletableFuture<>();
+        // Mock the send method to return SettableFuture
+        SettableFuture<PoolMgrQueryPoolsMsg> future = SettableFuture.create();
         when(poolManager.send(any(PoolMgrQueryPoolsMsg.class))).thenReturn(future);
 
         // Setup the first message response (PoolMgrQueryPoolsMsg)
+        @SuppressWarnings("unchecked")
         List<String>[] poolLists = new List[2];
         poolLists[0] = Arrays.asList("pool1", "pool2");
         poolLists[1] = Arrays.asList("pool3");
 
         // Mock the second send for PoolManagerGetPoolsByNameMessage
-        CompletableFuture<PoolManagerGetPoolsByNameMessage> poolInfoFuture = new CompletableFuture<>();
+        SettableFuture<PoolManagerGetPoolsByNameMessage> poolInfoFuture = SettableFuture.create();
 
-        // Capture the callback argument to invoke it later
+        // Setup mock to return different futures based on message type
         when(poolManager.send(any(PoolManagerGetPoolsByNameMessage.class)))
               .thenReturn(poolInfoFuture);
 
@@ -86,11 +84,11 @@ public class PoolListByPoolMgrQueryTest {
         // Simulate the callback being invoked with a success response
         PoolMgrQueryPoolsMsg response = new PoolMgrQueryPoolsMsg(
               DirectionType.READ, "DCap/3", "127.0.0.1", fileAttributes);
-        response.setPools(poolLists);
+        response.setPoolList(poolLists);
         response.setSucceeded();
 
         // Complete the future to trigger the callback
-        future.complete(response);
+        future.set(response);
 
         // Wait a bit for async processing
         Thread.sleep(100);
@@ -107,10 +105,12 @@ public class PoolListByPoolMgrQueryTest {
         PoolManagerGetPoolsByNameMessage poolInfoResponse = new PoolManagerGetPoolsByNameMessage(
               Arrays.asList("pool1", "pool2", "pool3"));
         poolInfoResponse.setPools(pools);
-        poolInfoResponse.setOfflinePools(Arrays.asList("pool4"));
+        List<String> offlinePools = new ArrayList<>();
+        offlinePools.add("pool4");
+        poolInfoResponse.setOfflinePools(offlinePools);
         poolInfoResponse.setSucceeded();
 
-        poolInfoFuture.complete(poolInfoResponse);
+        poolInfoFuture.set(poolInfoResponse);
 
         // Wait for async processing
         Thread.sleep(100);
@@ -128,7 +128,7 @@ public class PoolListByPoolMgrQueryTest {
         PoolListByPoolMgrQuery poolList = new PoolListByPoolMgrQuery(
               poolManager, pnfsId, fileAttributes, "DCap/3", "127.0.0.1");
 
-        CompletableFuture<PoolMgrQueryPoolsMsg> future = new CompletableFuture<>();
+        SettableFuture<PoolMgrQueryPoolsMsg> future = SettableFuture.create();
         when(poolManager.send(any(PoolMgrQueryPoolsMsg.class))).thenReturn(future);
 
         poolList.refresh();
@@ -136,10 +136,12 @@ public class PoolListByPoolMgrQueryTest {
         // Simulate empty response
         PoolMgrQueryPoolsMsg response = new PoolMgrQueryPoolsMsg(
               DirectionType.READ, "DCap/3", "127.0.0.1", fileAttributes);
-        response.setPools(new List[0]);
+        @SuppressWarnings("unchecked")
+        List<String>[] emptyList = new List[0];
+        response.setPoolList(emptyList);
         response.setSucceeded();
 
-        future.complete(response);
+        future.set(response);
         Thread.sleep(100);
 
         assertTrue(poolList.isValid());
@@ -164,7 +166,7 @@ public class PoolListByPoolMgrQueryTest {
         PoolListByPoolMgrQuery poolList = new PoolListByPoolMgrQuery(
               poolManager, pnfsId, fileAttributes, "DCap/3", null);
 
-        CompletableFuture<PoolMgrQueryPoolsMsg> future = new CompletableFuture<>();
+        SettableFuture<PoolMgrQueryPoolsMsg> future = SettableFuture.create();
         when(poolManager.send(any(PoolMgrQueryPoolsMsg.class))).thenReturn(future);
 
         poolList.refresh();
@@ -174,7 +176,7 @@ public class PoolListByPoolMgrQueryTest {
         org.mockito.Mockito.verify(poolManager).send(queryMsgCaptor.capture());
 
         PoolMgrQueryPoolsMsg queryMsg = queryMsgCaptor.getValue();
-        assertEquals(null, queryMsg.getNetUnitName());
+        assertNull(queryMsg.getNetUnitName());
     }
 
     @Test

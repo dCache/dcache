@@ -27,7 +27,7 @@ public class PoolMgrQueryPoolsMsg extends PoolManagerMessage {
           FileAttributes fileAttributes) {
         _accessType = requireNonNull(accessType);
         _protocolUnitName = requireNonNull(protocolUnit);
-        _netUnitName = requireNonNull(netUnitName);
+        _netUnitName = netUnitName;
         _fileAttributes = requireNonNull(fileAttributes);
         checkArgument(fileAttributes.isDefined(FileAttribute.STORAGEINFO));
 
