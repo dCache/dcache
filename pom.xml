@@ -934,6 +934,12 @@
                 <version>${version.jackson}</version>
             </dependency>
 
+	    <dependency>
+	        <groupId>com.fasterxml.jackson.datatype</groupId>
+		<artifactId>jackson-datatype-jdk8</artifactId>
+		<version>${version.jackson}</version>
+	    </dependency>
+
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-annotations</artifactId>
