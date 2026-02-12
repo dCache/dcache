@@ -25,6 +25,7 @@ getSizeOfPool() # in $1 = pool path
     local size
 
     size=$(getPoolSetting "$path" "set max diskspace" max)
+
     if [ -z "$size" ]; then
         size=$(getProperty pool.size "$domain" "$cell")
     fi
@@ -38,6 +39,13 @@ getSizeOfPool() # in $1 = pool path
         "")
             echo "-"
             ;;
+	*%)
+	    total=$(getTotalSpace  "$path")
+	    percent=$(echo "${size}" | tr -d "%")
+	    size=$((${total}*${percent}/100))
+	    stringToGiB "${size}G" size
+	    echo "${size}G"
+	    ;;
         *)
             stringToGiB "$size" size
             echo "${size}G"
