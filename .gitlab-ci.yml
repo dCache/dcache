@@ -520,7 +520,7 @@ Helm-Deploy Current dCache build:
       fi
     - helm repo add dcache ${DCACHE_HELM_REPO}
     - helm repo update
-    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=${tag} --set dcache.hsm.enabled=true --set dcache.qos.enabled=true --set image.registry=${CI_REGISTRY} --values .ci/custom-helm-config.yaml store dcache/dcache
+    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=${tag} --set dcache.hsm.enabled=true --set dcache.qos.enabled=true --set services.srm.enabled=false --set image.registry=${CI_REGISTRY} --values .ci/custom-helm-config.yaml store dcache/dcache
 
 Helm-Deploy Latest dCache Golden Release:
   stage: test_deploy
@@ -547,24 +547,6 @@ Grid EL9 WN tests:
     reports:
       junit:
         - "xunit*.xml"
-
-SRM S2 test suite:
-  stage: testing
-  extends: .kubernetes_image
-  allow_failure: true
-  script:
-    - kubectl -n $K8S_NAMESPACE apply -f .ci/s2-runner.yaml
-    - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod s2-tester; do sleep 1; done
-    - kubectl -n $K8S_NAMESPACE cp .ci/init-el9-ui.sh s2-tester:/init-el9-ui.sh
-    - kubectl -n $K8S_NAMESPACE cp .ci/run-s2.sh s2-tester:/run-s2.sh
-    - kubectl -n $K8S_NAMESPACE exec s2-tester -- /bin/sh /run-s2.sh
-    - kubectl -n $K8S_NAMESPACE cp s2-tester:/TEST-basic.xml TEST-basic.xml
-    - kubectl -n $K8S_NAMESPACE cp s2-tester:/TEST-avail.xml TEST-avail.xml
-    - kubectl -n $K8S_NAMESPACE cp s2-tester:/TEST-usecase.xml TEST-usecase.xml
-  artifacts:
-    reports:
-      junit:
-        - "TEST*.xml"
 
 Frontend test suite:
   stage: testing

@@ -26,7 +26,7 @@ export WORKSPACE=`pwd`
 TESTS="DccpTests GlobusurlcpTests SrmlsTests SrmcpTests"
 
 #FIXME: remove this when the tests are fixed
-TESTS="DccpTests GlobusurlcpTests SrmlsTests"
+TESTS="DccpTests GlobusurlcpTests"
 
 # robot returns the number of failed tests in its return code.
 # So we add up the retvals using ERRORS as an accumulator
