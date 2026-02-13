@@ -230,6 +230,7 @@ public class TransferLifeCycle {
         switch (protocolInfo.getProtocol().toLowerCase()) {
             case "xrootd":
             case "http":
+            case "https":
                 return true;
             default:
                 return false;
