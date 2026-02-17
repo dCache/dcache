@@ -1286,8 +1286,8 @@ public class MigrationModule
                   new PoolListByPoolMgrQuery(_context.getPoolManagerStub(),
                         pnfsId,
                         fileAttributes,
-                        "DCap/3",
-                        "127.0.0.1"),
+                        null,  // protocolUnit: null for selection based only on storage group
+                        null), // netUnitName: null for selection based only on storage group
                   excluded,
                   FALSE_EXPRESSION,
                   Collections.emptySet(),

@@ -325,10 +325,10 @@ public class PoolListByPoolMgrQueryTest {
     @Test
     public void testToString() {
         PoolListByPoolMgrQuery poolList = new PoolListByPoolMgrQuery(
-              poolManager, pnfsId, fileAttributes, "DCap/3", "127.0.0.1");
+              poolManager, pnfsId, fileAttributes, null, null);
 
         String result = poolList.toString();
-        assertTrue(result.contains("DCap/3"));
+        assertTrue(result.contains("null")); // Protocol is null
         assertTrue(result.contains("0 pools"));
     }
 }

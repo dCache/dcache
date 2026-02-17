@@ -45,8 +45,8 @@ class PoolListByPoolMgrQuery
      * @param poolManager the PoolManager cell stub
      * @param pnfsId the PNFS ID of the file
      * @param fileAttributes the file attributes for selection
-     * @param protocolUnit the protocol unit (e.g., "DCap/3")
-     * @param netUnitName the network unit name (IP address or null)
+     * @param protocolUnit the protocol unit (e.g., "DCap/3") or null to ignore protocol in selection
+     * @param netUnitName the network unit name (IP address) or null to ignore network in selection
      */
     public PoolListByPoolMgrQuery(CellStub poolManager,
           PnfsId pnfsId,
@@ -56,8 +56,8 @@ class PoolListByPoolMgrQuery
         _poolManager = requireNonNull(poolManager);
         _pnfsId = requireNonNull(pnfsId);
         _fileAttributes = requireNonNull(fileAttributes);
-        _protocolUnit = requireNonNull(protocolUnit);
-        _netUnitName = netUnitName;
+        _protocolUnit = protocolUnit;  // Allow null for storage-group-only selection
+        _netUnitName = netUnitName;     // Allow null for storage-group-only selection
     }
 
     @Override
