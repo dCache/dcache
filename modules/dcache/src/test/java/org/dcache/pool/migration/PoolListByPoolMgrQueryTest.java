@@ -8,7 +8,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.pools.PoolCostInfo;
@@ -18,6 +17,7 @@ import diskCacheV111.vehicles.PoolManagerGetPoolsByNameMessage;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
@@ -99,11 +99,9 @@ public class PoolListByPoolMgrQueryTest {
               new PoolCostInfo("pool1", IoQueueManager.DEFAULT_QUEUE), 0.5));
         pools.add(new PoolManagerPoolInformation("pool2",
               new PoolCostInfo("pool2", IoQueueManager.DEFAULT_QUEUE), 0.3));
-        pools.add(new PoolManagerPoolInformation("pool3",
-              new PoolCostInfo("pool3", IoQueueManager.DEFAULT_QUEUE), 0.7));
 
         PoolManagerGetPoolsByNameMessage poolInfoResponse = new PoolManagerGetPoolsByNameMessage(
-              Arrays.asList("pool1", "pool2", "pool3"));
+              Arrays.asList("pool1", "pool2"));
         poolInfoResponse.setPools(pools);
         List<String> offlinePools = new ArrayList<>();
         offlinePools.add("pool4");
@@ -116,8 +114,9 @@ public class PoolListByPoolMgrQueryTest {
         Thread.sleep(100);
 
         // Verify the pool list is valid and has correct pools
+        // Should only have pools from preference level 0 (pool1, pool2), not from level 1 (pool3)
         assertTrue(poolList.isValid());
-        assertEquals(3, poolList.getPools().size());
+        assertEquals(2, poolList.getPools().size());
         assertEquals("pool1", poolList.getPools().get(0).getName());
         assertEquals(1, poolList.getOfflinePools().size());
         assertEquals("pool4", poolList.getOfflinePools().get(0));
@@ -177,6 +176,150 @@ public class PoolListByPoolMgrQueryTest {
 
         PoolMgrQueryPoolsMsg queryMsg = queryMsgCaptor.getValue();
         assertNull(queryMsg.getNetUnitName());
+    }
+
+    /**
+     * Test that only the highest preference level is selected when multiple pool groups have
+     * different read preferences. This reproduces the test stand scenario where:
+     * - flushPools (pool6-10) have readpref=5 (lower preference)
+     * - readOnlyPools (pool2-5) have readpref=10 (higher preference)
+     * - pool1 is in both groups
+     * Expected: Only pools from the highest preference group (readOnlyPools) should be selected.
+     */
+    @Test
+    public void testSelectsOnlyHighestPreferenceLevel() throws Exception {
+        // Setup: Two pool groups with different read preferences
+        // Pool1 is in both groups, pool2-5 only in high-pref group, pool6-10 only in low-pref group
+        PoolListByPoolMgrQuery poolList = new PoolListByPoolMgrQuery(
+              poolManager, pnfsId, fileAttributes, "DCap/3", null);
+
+        SettableFuture<PoolMgrQueryPoolsMsg> queryFuture = SettableFuture.create();
+        when(poolManager.send(any(PoolMgrQueryPoolsMsg.class))).thenReturn(queryFuture);
+
+        // Mock the second send for PoolManagerGetPoolsByNameMessage
+        SettableFuture<PoolManagerGetPoolsByNameMessage> poolInfoFuture = SettableFuture.create();
+        when(poolManager.send(any(PoolManagerGetPoolsByNameMessage.class)))
+              .thenReturn(poolInfoFuture);
+
+        // Call refresh
+        poolList.refresh();
+
+        // Simulate PoolManager response with two preference levels
+        // Level 0 (highest): readOnlyPools with readpref=10 (pool1, pool2, pool3, pool4, pool5)
+        // Level 1 (lower): flushPools with readpref=5 (pool1, pool6, pool7, pool8, pool9, pool10)
+        @SuppressWarnings("unchecked")
+        List<String>[] poolLists = new List[2];
+        poolLists[0] = Arrays.asList("pool1", "pool2", "pool3", "pool4", "pool5"); // High pref
+        poolLists[1] = Arrays.asList("pool1", "pool6", "pool7", "pool8", "pool9", "pool10"); // Low pref
+
+        PoolMgrQueryPoolsMsg response = new PoolMgrQueryPoolsMsg(
+              DirectionType.READ, "DCap/3", null, fileAttributes);
+        response.setPoolList(poolLists);
+        response.setSucceeded();
+
+        // Complete the future to trigger the callback
+        queryFuture.set(response);
+        Thread.sleep(100);
+
+        // Verify that only the pools from preference level 0 were requested
+        ArgumentCaptor<PoolManagerGetPoolsByNameMessage> poolInfoCaptor =
+              ArgumentCaptor.forClass(PoolManagerGetPoolsByNameMessage.class);
+        org.mockito.Mockito.verify(poolManager).send(poolInfoCaptor.capture());
+
+        Collection<String> requestedPools = poolInfoCaptor.getValue().getPoolNames();
+        assertEquals("Should only request pools from highest preference level",
+              5, requestedPools.size());
+        assertTrue("Should include pool1 from high-pref group", requestedPools.contains("pool1"));
+        assertTrue("Should include pool2 from high-pref group", requestedPools.contains("pool2"));
+        assertTrue("Should include pool3 from high-pref group", requestedPools.contains("pool3"));
+        assertTrue("Should include pool4 from high-pref group", requestedPools.contains("pool4"));
+        assertTrue("Should include pool5 from high-pref group", requestedPools.contains("pool5"));
+        assertFalse("Should NOT include pool6 from low-pref group", requestedPools.contains("pool6"));
+        assertFalse("Should NOT include pool7 from low-pref group", requestedPools.contains("pool7"));
+        assertFalse("Should NOT include pool8 from low-pref group", requestedPools.contains("pool8"));
+        assertFalse("Should NOT include pool9 from low-pref group", requestedPools.contains("pool9"));
+        assertFalse("Should NOT include pool10 from low-pref group", requestedPools.contains("pool10"));
+
+        // Complete the pool info request
+        List<PoolManagerPoolInformation> pools = new ArrayList<>();
+        for (String poolName : requestedPools) {
+            pools.add(new PoolManagerPoolInformation(poolName,
+                  new PoolCostInfo(poolName, IoQueueManager.DEFAULT_QUEUE), 0.5));
+        }
+
+        PoolManagerGetPoolsByNameMessage poolInfoResponse = new PoolManagerGetPoolsByNameMessage(
+              requestedPools);
+        poolInfoResponse.setPools(pools);
+        poolInfoResponse.setOfflinePools(new ArrayList<>());
+        poolInfoResponse.setSucceeded();
+
+        poolInfoFuture.set(poolInfoResponse);
+        Thread.sleep(100);
+
+        // Verify the final pool list contains only high-preference pools
+        assertTrue(poolList.isValid());
+        assertEquals("Should have 5 pools from high-preference level",
+              5, poolList.getPools().size());
+    }
+
+    /**
+     * Test that the first non-empty preference level is selected when the highest level is empty.
+     */
+    @Test
+    public void testSelectsFirstNonEmptyPreferenceLevel() throws Exception {
+        PoolListByPoolMgrQuery poolList = new PoolListByPoolMgrQuery(
+              poolManager, pnfsId, fileAttributes, "DCap/3", null);
+
+        SettableFuture<PoolMgrQueryPoolsMsg> queryFuture = SettableFuture.create();
+        when(poolManager.send(any(PoolMgrQueryPoolsMsg.class))).thenReturn(queryFuture);
+
+        SettableFuture<PoolManagerGetPoolsByNameMessage> poolInfoFuture = SettableFuture.create();
+        when(poolManager.send(any(PoolManagerGetPoolsByNameMessage.class)))
+              .thenReturn(poolInfoFuture);
+
+        poolList.refresh();
+
+        // Simulate response with empty first level, pools in second level
+        @SuppressWarnings("unchecked")
+        List<String>[] poolLists = new List[3];
+        poolLists[0] = new ArrayList<>(); // Empty highest preference
+        poolLists[1] = Arrays.asList("pool3"); // First non-empty level
+        poolLists[2] = Arrays.asList("pool1", "pool2"); // Lower preference (should be ignored)
+
+        PoolMgrQueryPoolsMsg response = new PoolMgrQueryPoolsMsg(
+              DirectionType.READ, "DCap/3", null, fileAttributes);
+        response.setPoolList(poolLists);
+        response.setSucceeded();
+
+        queryFuture.set(response);
+        Thread.sleep(100);
+
+        // Verify that only pool3 was requested (from first non-empty level)
+        ArgumentCaptor<PoolManagerGetPoolsByNameMessage> poolInfoCaptor =
+              ArgumentCaptor.forClass(PoolManagerGetPoolsByNameMessage.class);
+        org.mockito.Mockito.verify(poolManager).send(poolInfoCaptor.capture());
+
+        Collection<String> requestedPools = poolInfoCaptor.getValue().getPoolNames();
+        assertEquals(1, requestedPools.size());
+        assertTrue("pool3 should be requested", requestedPools.contains("pool3"));
+
+        // Complete the pool info request
+        List<PoolManagerPoolInformation> pools = new ArrayList<>();
+        pools.add(new PoolManagerPoolInformation("pool3",
+              new PoolCostInfo("pool3", IoQueueManager.DEFAULT_QUEUE), 0.5));
+
+        PoolManagerGetPoolsByNameMessage poolInfoResponse = new PoolManagerGetPoolsByNameMessage(
+              requestedPools);
+        poolInfoResponse.setPools(pools);
+        poolInfoResponse.setOfflinePools(new ArrayList<>());
+        poolInfoResponse.setSucceeded();
+
+        poolInfoFuture.set(poolInfoResponse);
+        Thread.sleep(100);
+
+        assertTrue(poolList.isValid());
+        assertEquals(1, poolList.getPools().size());
+        assertEquals("pool3", poolList.getPools().get(0).getName());
     }
 
     @Test

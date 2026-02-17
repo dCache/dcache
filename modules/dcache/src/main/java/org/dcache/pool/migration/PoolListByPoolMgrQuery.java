@@ -9,7 +9,6 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PoolMgrQueryPoolsMsg;
 import diskCacheV111.vehicles.PoolManagerGetPoolsByNameMessage;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
-import java.util.ArrayList;
 import java.util.List;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
@@ -112,17 +111,22 @@ class PoolListByPoolMgrQuery
             return;
         }
 
-        // Flatten the preference-ordered pool lists into a single list
-        // The pools are already ordered by desirability from PoolManager
-        List<String> allPools = new ArrayList<>();
-        for (List<String> poolList : poolLists) {
-            if (poolList != null) {
-                allPools.addAll(poolList);
+        // Use only the first non-empty preference level (highest preference)
+        // Each preference level corresponds to pools with different read preferences
+        // We only want pools from the most preferred level, not a union of all levels
+        List<String> selectedPools = null;
+        for (int i = 0; i < poolLists.length; i++) {
+            List<String> poolList = poolLists[i];
+            if (poolList != null && !poolList.isEmpty()) {
+                selectedPools = poolList;
+                LOGGER.debug("Selected preference level {} with {} pools for {}: {}",
+                      i, poolList.size(), _pnfsId, poolList);
+                break;
             }
         }
 
         // Query PoolManager for full pool information (including cost)
-        if (allPools.isEmpty()) {
+        if (selectedPools == null || selectedPools.isEmpty()) {
             synchronized (this) {
                 _pools = ImmutableList.of();
                 _offlinePools = ImmutableList.of();
@@ -132,7 +136,7 @@ class PoolListByPoolMgrQuery
         }
 
         PoolManagerGetPoolsByNameMessage poolInfoMsg =
-              new PoolManagerGetPoolsByNameMessage(allPools);
+              new PoolManagerGetPoolsByNameMessage(selectedPools);
 
         CellStub.addCallback(
               _poolManager.send(poolInfoMsg),
