@@ -152,7 +152,7 @@ public class PoolListByPoolMgrQueryTest {
         when(fileAttributes.isDefined(FileAttribute.STORAGEINFO)).thenReturn(false);
 
         PoolListByPoolMgrQuery poolList = new PoolListByPoolMgrQuery(
-              poolManager, pnfsId, fileAttributes, "DCap/3", "127.0.0.1");
+              poolManager, pnfsId, fileAttributes, null, null);
 
         poolList.refresh();
 
