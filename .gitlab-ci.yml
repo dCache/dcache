@@ -52,7 +52,7 @@ variables:
   HELM_OPTS: --replace --timeout 10m0s
   AUTOCA_URL: https://ci.dcache.org/ca
   DCACHE_HELM_REPO: https://gitlab.desy.de/api/v4/projects/7648/packages/helm/test
-  DCACHE_COMPATIBILITY_VERSION: 9.2.20
+  DCACHE_COMPATIBILITY_VERSION: 9.2.40
   JACOCO_VERSION: 0.8.14 #must match maven plugin version
 
 # let's debug nodes where job is running
