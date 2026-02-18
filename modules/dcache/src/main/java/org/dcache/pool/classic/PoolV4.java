@@ -750,13 +750,25 @@ public class PoolV4
     }
 
     private void ioFile(CellMessage envelope, PoolIoFileMessage message) {
+        PnfsId pnfsId = message.getPnfsId();
+        LOGGER.info("PoolV4.ioFile: Received IO request for pnfsId={}, hotFileEnabled={}, monitorSet={}",
+                    pnfsId, _hotFileReplicationEnabled, (_fileRequestMonitor != null));
+
         try {
             message.setMoverId(queueIoRequest(envelope, message));
             LOGGER.debug("moverId {} received request for pnfsId {}", message.getMoverId(),
                   message.getPnfsId());
             if (_hotFileReplicationEnabled) {
-                _fileRequestMonitor.reportFileRequest(message.getPnfsId(),
-                      _ioQueue.numberOfRequestsFor(message.getPnfsId()));
+                if (_fileRequestMonitor != null) {
+                    long requestCount = _ioQueue.numberOfRequestsFor(message.getPnfsId());
+                    LOGGER.info("PoolV4.ioFile: Calling reportFileRequest for pnfsId={}, count={}",
+                                pnfsId, requestCount);
+                    _fileRequestMonitor.reportFileRequest(message.getPnfsId(), requestCount);
+                } else {
+                    LOGGER.error("PoolV4.ioFile: Hot file replication enabled but FileRequestMonitor is NULL! Not wired correctly.");
+                }
+            } else {
+                LOGGER.warn("PoolV4.ioFile: Hot file replication is DISABLED for pnfsId={}", pnfsId);
             }
             message.setSucceeded();
         } catch (OutOfDateCacheException e) {

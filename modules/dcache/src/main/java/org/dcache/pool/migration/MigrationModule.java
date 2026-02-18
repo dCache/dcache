@@ -1362,13 +1362,12 @@ public class MigrationModule
                 }
             }
             if (_isStarted && job.getState() == Job.State.NEW) {
-                LOGGER.debug(
-                      "About to start migration job with id {} for pnfsId {}. Job definition: {}",
+                LOGGER.info(
+                      "Starting migration job {} for pnfsId {}. Job definition: {}",
                       jobId, pnfsId, job.getDefinition());
                 try {
                     job.start();
-                    LOGGER.debug("Started migration job with id {} for pnfsId {}", jobId,
-                          pnfsId);
+                    LOGGER.info("Successfully started migration job {} for pnfsId {}", jobId, pnfsId);
                 } catch (Exception e) {
                     LOGGER.error(
                           "Exception while starting migration job with id {} for pnfsId {}: {}",
