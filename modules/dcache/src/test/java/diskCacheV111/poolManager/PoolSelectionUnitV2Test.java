@@ -443,4 +443,17 @@ public class PoolSelectionUnitV2Test {
             assertNull("Unexpected exception", e);
         }
     }
+
+    /**
+     * Regression test for hot file replication issue introduced in 96c4db4f8b.
+     * When protocol and network are null, they should match any protocol or network requirement
+     * of a link.
+     */
+    @Test
+    public void testThatReadWithNullProtocolAndNetMatchesTapePools() {
+        diskCacheV111.vehicles.StorageInfo storageInfo = diskCacheV111.vehicles.GenericStorageInfo.valueOf("tape.dcache-devel-test@enstore", "*");
+        org.dcache.vehicles.FileAttributes fileAttributes = org.dcache.vehicles.FileAttributes.ofStorageInfo(storageInfo);
+        levels = psu.match(PoolSelectionUnit.DirectionType.READ, null, null, fileAttributes, null, p -> false);
+        assertThatPoolsAre(TAPE_POOLS);
+    }
 }

@@ -703,7 +703,8 @@ public class PoolSelectionUnitV2
             addNetUnit(units, netUnitName);
 
             LinkGroup linkGroup = resolveLinkGroup(linkGroupName);
-            Set<Link> sortedSet = findMatchingLinks(units, linkGroup, type);
+            Set<Link> sortedSet = findMatchingLinks(units, linkGroup, type,
+                  protocolUnitName == null, netUnitName == null);
 
             List<List<Link>> linkLists = matchPreferences(type, sortedSet);
             result = buildPreferenceLevels(type, linkLists, fileAttributes, exclude);
@@ -848,18 +849,28 @@ public class PoolSelectionUnitV2
     }
 
     private Set<Link> findMatchingLinks(List<Unit> units, LinkGroup linkGroup,
-          DirectionType type) {
+          DirectionType type, boolean ignoreProtocol, boolean ignoreNet) {
         Set<Link> sortedSet = new TreeSet<>(new LinkComparator(type));
         LinkMap matchingLinks = new LinkMap();
-        int fitCount = units.size();
         for (Unit unit : units) {
             matchingLinks = match(matchingLinks, unit, linkGroup, type);
         }
 
-        Iterator<Link> linkIterator = matchingLinks.iterator();
-        while (linkIterator.hasNext()) {
-            Link link = linkIterator.next();
-            if (link._uGroupList.size() <= fitCount) {
+        for (LinkMap.LinkMapEntry entry : matchingLinks.entries()) {
+            Link link = entry._link;
+            int ignored = 0;
+            if (ignoreProtocol || ignoreNet) {
+                for (UGroup uGroup : link._uGroupList.values()) {
+                    UnitType groupType = uGroup._unitList.values().stream()
+                          .findFirst().map(Unit::getType).orElse(null);
+                    if ((ignoreProtocol && groupType == PROTOCOL)
+                          || (ignoreNet && groupType == NET)) {
+                        entry._counter--;
+                        ignored++;
+                    }
+                }
+            }
+            if (entry._counter <= 0 && link._uGroupList.size() <= units.size() + ignored) {
                 sortedSet.add(link);
             }
         }
