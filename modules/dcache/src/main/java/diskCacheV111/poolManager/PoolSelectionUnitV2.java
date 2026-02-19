@@ -104,6 +104,9 @@ public class PoolSelectionUnitV2
     private boolean _allPoolsActive;
     public  boolean _cachingEnabeled;
 
+    private transient Unit _wildcardProtocolUnit;
+    private transient Unit _wildcardNetUnit;
+
     /**
      * Ok, this is the critical part of PoolManager, but (!!!) the whole select path is READ-ONLY,
      * unless we change setup. So ReadWriteLock is what we are looking for, while is a point of
@@ -720,6 +723,15 @@ public class PoolSelectionUnitV2
         return result;
     }
 
+    private Unit wildcardUnit(UnitType type) {
+        Unit wildcard = new Unit("wildcard", type);
+        _units.values().stream()
+              .filter(u -> u.getType() == type)
+              .flatMap(u -> u._uGroupList.values().stream())
+              .forEach(ug -> wildcard._uGroupList.put(ug.getName(), ug));
+        return wildcard;
+    }
+
     private void resolveStorageUnit(List<Unit> list, String storeUnitName) {
         if (_useRegex) {
             Unit universalCoverage = null;
@@ -790,6 +802,13 @@ public class PoolSelectionUnitV2
 
             LOGGER.debug("matching protocol unit found: {}", unit);
             list.add(unit);
+        } else {
+            Unit wildcard = _wildcardProtocolUnit;
+            if (wildcard == null) {
+                wildcard = wildcardUnit(PROTOCOL);
+                _wildcardProtocolUnit = wildcard;
+            }
+            list.add(wildcard);
         }
     }
 
@@ -831,6 +850,13 @@ public class PoolSelectionUnitV2
                 throw new IllegalArgumentException(
                       "NetUnit not resolved : " + netUnitName);
             }
+        } else {
+            Unit wildcard = _wildcardNetUnit;
+            if (wildcard == null) {
+                wildcard = wildcardUnit(NET);
+                _wildcardNetUnit = wildcard;
+            }
+            list.add(wildcard);
         }
     }
 
@@ -2662,6 +2688,8 @@ public class PoolSelectionUnitV2
     protected void wlock() {
 
         _psuWriteLock.lock();
+        _wildcardProtocolUnit = null;
+        _wildcardNetUnit = null;
         if (_cachingEnabeled) {
             cachedMatchValue.invalidateAll();
         }
