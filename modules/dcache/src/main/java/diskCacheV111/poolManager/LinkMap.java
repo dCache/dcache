@@ -1,19 +1,18 @@
 package diskCacheV111.poolManager;
 
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 class LinkMap {
 
-    private static class LinkMapEntry {
+    static class LinkMapEntry {
 
-        private final Link _link;
-        private int _counter;
+        final Link _link;
+        int _counter;
 
-        private LinkMapEntry(Link link) {
+        LinkMapEntry(Link link) {
             _link = link;
             _counter = link._uGroupList.size() - 1;
         }
@@ -37,4 +36,7 @@ class LinkMap {
         }
     }
 
+    Collection<LinkMapEntry> entries() {
+        return _linkHash.values();
+    }
 }
