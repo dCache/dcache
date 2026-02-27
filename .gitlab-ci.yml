@@ -26,7 +26,6 @@
 # The kubernetes based jobs don't use directly any job artefact, thus pulling artefact
 # is explicitly disabled by default.
 
-
 stages:
   # build rpm, tar, deb, oci container
   - build
@@ -121,12 +120,8 @@ rpm:
   image: dcache/maven-java21-rpm-build
   extends: .build_cache
   script:
-    - mvn $MAVEN_CLI_OPTS -DskipTests -Drun.slow.tests -am -pl packages/fhs -P rpm clean package
+    - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl packages/fhs -P rpm clean package
   artifacts:
-    reports:
-      junit:
-        - "**/target/surefire-reports/TEST-*.xml"
-        - "**/target/failsafe-reports/TEST-*.xml"
     paths:
       - "packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm"
     expire_in: 2 days
@@ -161,8 +156,12 @@ run_ut_with_coverage:
   extends: .build_cache
   script:
     # run all tests with the coverage profile
-    - mvn $MAVEN_CLI_OPTS -P code-coverage clean verify -DskipTests=false
+    - mvn $MAVEN_CLI_OPTS -P code-coverage clean verify -DskipTests=false -Drun.slow.tests
   artifacts:
+    reports:
+      junit:
+        - "**/target/surefire-reports/TEST-*.xml"
+        - "**/target/failsafe-reports/TEST-*.xml"
     paths:
       # pass the .exec files AND the compiled classes to the next stage
       #pass .exec files and compiled classes to the next stage
