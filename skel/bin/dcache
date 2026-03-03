@@ -56,6 +56,7 @@ usage()
     echo "   pool ls"
     echo "   pool reconstruct <directory> <target dir>"
     echo "   pool yaml <name>"
+    echo "   pool benchmark [fio options] [ -- [<directory>]]"
     echo "   property <property-name> [<domain-name> [<cell-name>]]"
     echo "   restart [<domain>]..."
     echo "   services"
@@ -609,6 +610,51 @@ case "$1" in
                         done
                     done
                 ) | column
+                ;;
+
+            benchmark)
+                fio --version >/dev/null 2>&1 || fail 1 "fio is not installed. Please install fio to run the benchmark command."
+
+                fio_options=""
+                while  [ $# -gt 0 ]
+                do
+                  case "$1" in
+                    --)
+                      shift
+                      break
+                      ;;
+                    *)
+                      fio_options="$fio_options $1"
+                      shift
+                      ;;
+                  esac
+                done
+
+                [ $# -gt 1 ] && usage
+
+                if [ $# -eq 1 ]
+                then
+                    path="$1"
+                    echo ""
+                    echo "  Running fio benchmark for directory ${path}"
+                    echo ""
+                    fio --directory=${path} ${fio_options} ${lib}/pool-benchmark.fio
+                else
+                  for domain in $(getProperty dcache.domains); do
+                      for cell in $(getProperty dcache.domain.cells "$domain"); do
+                          service=$(getProperty dcache.domain.service "$domain" "$cell")
+                          if [ "$service" = "pool" ]; then
+                              name=$(getProperty pool.name "$domain" "$cell")
+                              path=$(getProperty pool.path "$domain" "$cell")
+
+                              echo ""
+                              echo "  Running fio benchmark for pool $name@$domain."
+                              echo ""
+                              fio --directory=${path}/data ${fio_options} ${lib}/pool-benchmark.fio
+                          fi
+                      done
+                  done
+                fi
                 ;;
 
             *)
