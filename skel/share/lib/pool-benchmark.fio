@@ -1,0 +1,83 @@
+;
+; FIO workload to benchmark disk performance
+;
+; block verification information is forced on write, which is
+; used during read workloads.
+;
+;
+; Run sequential write, sequential read and random read
+;
+;
+; NOTE: ALL READ JOBS DELETE TEST FILE AFTER BENCHMARK
+;
+
+[global]
+filename_format=fio-test-$jobnum-$filenum
+; file size
+size=10g
+ioengine=libaio
+; do not pre-create files
+create_on_open=1
+; checksum type
+verify=sha1
+; fail on first checksum error
+verify_fatal=1
+; invalidate page cache before running jobs
+invalidate=1
+
+[seqwrite]
+description=Streaming WRITE
+rw=write
+; do not check sum during write
+do_verify=0
+; block until job is done before jumping to the next section
+stonewall
+
+[seqread]
+description=Streaming READ
+rw=read
+; check checksum during read
+do_verify=1
+; block until job is done before jumping to the next section
+stonewall
+
+[randread]
+description=Random READ
+rw=randread
+; inremental random offest
+rw_sequencer=sequential
+; check checksum during read
+do_verify=1
+; block until job is done before jumping to the next section
+stonewall
+; remove file at the end of the test
+unlink=1
+
+[concurrent_write]
+description=Concurrent Streaming WRITE
+rw=write
+; do not check sum during write
+do_verify=0
+; block until job is done before jumping to the next section
+stonewall
+; write with multiple threads
+numjobs=24
+thread=1
+group_reporting=1
+
+[concurrent_randread]
+description=Concurrent Random READ
+rw=randread
+rw=read
+; check checksum during read
+do_verify=1
+; block until job is done before jumping to the next section
+stonewall
+; read with multiple threads
+numjobs=24
+thread=1
+group_reporting=1
+; remove file at the end of the test
+unlink=1
+
+; -- end job file --

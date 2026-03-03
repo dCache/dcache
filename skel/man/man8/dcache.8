@@ -178,6 +178,14 @@ to manually replace the content of the meta directory of the pool with
 the reconstructed database. It is recommended to keep a copy of the
 old database.
 
+.TP
+.B pool benchmark [fio options ] [ -- directory]
+Run filesystem benchmarks on the file system containing the pool's \fBdata directory.
+The benchmark uses the fio tool. The options passed to the command are passed directly to fio.
+If a path is specified, the benchmark is run on specified directory only. Otherwise,
+the benchmark is run on all file systems for all configured pools.
+By default, the output of the benchmark is written to standard out.
+
 .SH DATABASE MANAGEMENT COMMANDS
 
 Several services in dCache rely on relational databases. The commands
