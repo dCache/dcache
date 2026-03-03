@@ -34,6 +34,7 @@ public class SrrBuilder {
     private final static Logger LOGGER = LoggerFactory.getLogger(SrrBuilder.class);
 
     private Map<String, List<String>> pgroup2vo;
+    private Map<String, List<String>> pgroup2path;
     // info provider properties
     private String name;
     private String id;
@@ -109,6 +110,11 @@ public class SrrBuilder {
         return this;
     }
 
+    public SrrBuilder withGroupPathMapping(Map<String, List<String>> pgroup2path) {
+        this.pgroup2path = pgroup2path;
+        return this;
+    }
+
     public SrrBuilder withDoorTag(String doorTag) {
         this.doorTag = doorTag;
         return this;
@@ -176,6 +182,7 @@ public class SrrBuilder {
                         .withUsedsize(space.getUsedSizeInBytes())
                         .withTimestamp(now)
                         .withVos(Collections.singletonList(space.getVoGroup()))
+                        .withPath(pgroup2path.get(space.getDescription()))
                         .withAssignedendpoints(Collections.singletonList("all"))
                         .withAccesslatency(
                               Storageshare.Accesslatency.fromValue(space.getAccessLatency()))
@@ -232,6 +239,7 @@ public class SrrBuilder {
                   .withUsedsize(usedSpace)
                   .withTimestamp(now)
                   .withVos(pgroup.getValue())
+                  .withPath(pgroup2path.get(shareName))
                   .withAssignedendpoints(Collections.singletonList("all"));
             storageshares.put(shareName, share);
         }
