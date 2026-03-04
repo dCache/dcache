@@ -1155,18 +1155,18 @@ public final class SpaceManagerService
             StorageInfo storageInfo = selectWritePool.getStorageInfo();
             storageInfo.setKey("SpaceToken", Long.toString(space.getId()));
             storageInfo.setKey("LinkGroupId", Long.toString(linkGroup.getId()));
-            if (!fileAttributes.isDefined(FileAttribute.ACCESS_LATENCY)) {
-                fileAttributes.setAccessLatency(space.getAccessLatency());
-            } else if (fileAttributes.getAccessLatency() != space.getAccessLatency()) {
-                throw new SpaceException(
-                      "Access latency conflicts with access latency defined by default space reservation.");
+
+            if (fileAttributes.isDefined(FileAttribute.ACCESS_LATENCY) && (fileAttributes.getAccessLatency() != space.getAccessLatency())) {
+                LOGGER.warn("The access latency {} in file attributes will be overridden by value {} defined for space reservation {}.",
+                      fileAttributes.getAccessLatency(), space.getAccessLatency(), defaultSpaceToken);
             }
-            if (!fileAttributes.isDefined(FileAttribute.RETENTION_POLICY)) {
-                fileAttributes.setRetentionPolicy(space.getRetentionPolicy());
-            } else if (fileAttributes.getRetentionPolicy() != space.getRetentionPolicy()) {
-                throw new SpaceException(
-                      "Retention policy conflicts with retention policy defined by default space reservation.");
+            fileAttributes.setAccessLatency(space.getAccessLatency());
+
+            if (fileAttributes.isDefined(FileAttribute.RETENTION_POLICY) && (fileAttributes.getRetentionPolicy() != space.getRetentionPolicy())) {
+                LOGGER.warn("The retention policy {} in file attributes will be overridden by value {} defined for space reservation {}.",
+                      fileAttributes.getRetentionPolicy(), space.getRetentionPolicy(), defaultSpaceToken);
             }
+            fileAttributes.setRetentionPolicy(space.getRetentionPolicy());
 
             if (space.getDescription() != null) {
                 storageInfo.setKey("SpaceTokenDescription", space.getDescription());
