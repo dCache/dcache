@@ -756,7 +756,8 @@ public class PoolV4
                   message.getPnfsId());
             if (_hotFileReplicationEnabled) {
                 _fileRequestMonitor.reportFileRequest(message.getPnfsId(),
-                      _ioQueue.numberOfRequestsFor(message.getPnfsId()));
+                      _ioQueue.numberOfRequestsFor(message.getPnfsId()),
+                      message.getProtocolInfo());
             }
             message.setSucceeded();
         } catch (OutOfDateCacheException e) {
