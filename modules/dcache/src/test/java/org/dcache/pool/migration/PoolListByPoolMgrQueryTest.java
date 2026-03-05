@@ -5,10 +5,14 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.common.util.concurrent.SettableFuture;
+import org.mockito.InOrder;
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.util.PnfsId;
@@ -49,6 +53,8 @@ public class PoolListByPoolMgrQueryTest {
         PoolListByPoolMgrQuery poolList = new PoolListByPoolMgrQuery(
               poolManager, pnfsId, fileAttributes, "DCap/3", "127.0.0.1");
 
+        InOrder inOrder = inOrder(poolManager);
+
         // Mock the send method to return SettableFuture
         SettableFuture<PoolMgrQueryPoolsMsg> future = SettableFuture.create();
         when(poolManager.send(any(PoolMgrQueryPoolsMsg.class))).thenReturn(future);
@@ -72,7 +78,7 @@ public class PoolListByPoolMgrQueryTest {
         // Verify that send was called and capture the message
         ArgumentCaptor<PoolMgrQueryPoolsMsg> queryMsgCaptor = ArgumentCaptor.forClass(
               PoolMgrQueryPoolsMsg.class);
-        org.mockito.Mockito.verify(poolManager).send(queryMsgCaptor.capture());
+        inOrder.verify(poolManager).send(queryMsgCaptor.capture());
 
         // Verify the query message parameters
         PoolMgrQueryPoolsMsg queryMsg = queryMsgCaptor.getValue();
@@ -90,8 +96,10 @@ public class PoolListByPoolMgrQueryTest {
         // Complete the future to trigger the callback
         future.set(response);
 
-        // Wait a bit for async processing
-        Thread.sleep(100);
+        // Verify that second send was called
+        ArgumentCaptor<PoolManagerGetPoolsByNameMessage> poolInfoCaptor =
+              ArgumentCaptor.forClass(PoolManagerGetPoolsByNameMessage.class);
+        inOrder.verify(poolManager, timeout(1000)).send(poolInfoCaptor.capture());
 
         // Now simulate the pool info response
         List<PoolManagerPoolInformation> pools = new ArrayList<>();
@@ -110,11 +118,9 @@ public class PoolListByPoolMgrQueryTest {
 
         poolInfoFuture.set(poolInfoResponse);
 
-        // Wait for async processing
-        Thread.sleep(100);
-
         // Verify the pool list is valid and has correct pools
         // Should only have pools from preference level 0 (pool1, pool2), not from level 1 (pool3)
+        // We use a small wait or check in a loop if necessary, but directExecutor should make it immediate.
         assertTrue(poolList.isValid());
         assertEquals(2, poolList.getPools().size());
         assertEquals("pool1", poolList.getPools().get(0).getName());
@@ -141,7 +147,6 @@ public class PoolListByPoolMgrQueryTest {
         response.setSucceeded();
 
         future.set(response);
-        Thread.sleep(100);
 
         assertTrue(poolList.isValid());
         assertEquals(0, poolList.getPools().size());
@@ -172,7 +177,7 @@ public class PoolListByPoolMgrQueryTest {
 
         ArgumentCaptor<PoolMgrQueryPoolsMsg> queryMsgCaptor = ArgumentCaptor.forClass(
               PoolMgrQueryPoolsMsg.class);
-        org.mockito.Mockito.verify(poolManager).send(queryMsgCaptor.capture());
+        verify(poolManager).send(queryMsgCaptor.capture());
 
         PoolMgrQueryPoolsMsg queryMsg = queryMsgCaptor.getValue();
         assertNull(queryMsg.getNetUnitName());
@@ -193,6 +198,8 @@ public class PoolListByPoolMgrQueryTest {
         PoolListByPoolMgrQuery poolList = new PoolListByPoolMgrQuery(
               poolManager, pnfsId, fileAttributes, "DCap/3", null);
 
+        InOrder inOrder = inOrder(poolManager);
+
         SettableFuture<PoolMgrQueryPoolsMsg> queryFuture = SettableFuture.create();
         when(poolManager.send(any(PoolMgrQueryPoolsMsg.class))).thenReturn(queryFuture);
 
@@ -203,6 +210,8 @@ public class PoolListByPoolMgrQueryTest {
 
         // Call refresh
         poolList.refresh();
+
+        inOrder.verify(poolManager).send(any(PoolMgrQueryPoolsMsg.class));
 
         // Simulate PoolManager response with two preference levels
         // Level 0 (highest): readOnlyPools with readpref=10 (pool1, pool2, pool3, pool4, pool5)
@@ -219,12 +228,11 @@ public class PoolListByPoolMgrQueryTest {
 
         // Complete the future to trigger the callback
         queryFuture.set(response);
-        Thread.sleep(100);
 
         // Verify that only the pools from preference level 0 were requested
         ArgumentCaptor<PoolManagerGetPoolsByNameMessage> poolInfoCaptor =
               ArgumentCaptor.forClass(PoolManagerGetPoolsByNameMessage.class);
-        org.mockito.Mockito.verify(poolManager).send(poolInfoCaptor.capture());
+        inOrder.verify(poolManager, timeout(1000)).send(poolInfoCaptor.capture());
 
         Collection<String> requestedPools = poolInfoCaptor.getValue().getPoolNames();
         assertEquals("Should only request pools from highest preference level",
@@ -254,7 +262,6 @@ public class PoolListByPoolMgrQueryTest {
         poolInfoResponse.setSucceeded();
 
         poolInfoFuture.set(poolInfoResponse);
-        Thread.sleep(100);
 
         // Verify the final pool list contains only high-preference pools
         assertTrue(poolList.isValid());
@@ -270,6 +277,8 @@ public class PoolListByPoolMgrQueryTest {
         PoolListByPoolMgrQuery poolList = new PoolListByPoolMgrQuery(
               poolManager, pnfsId, fileAttributes, "DCap/3", null);
 
+        InOrder inOrder = inOrder(poolManager);
+
         SettableFuture<PoolMgrQueryPoolsMsg> queryFuture = SettableFuture.create();
         when(poolManager.send(any(PoolMgrQueryPoolsMsg.class))).thenReturn(queryFuture);
 
@@ -278,6 +287,8 @@ public class PoolListByPoolMgrQueryTest {
               .thenReturn(poolInfoFuture);
 
         poolList.refresh();
+
+        inOrder.verify(poolManager).send(any(PoolMgrQueryPoolsMsg.class));
 
         // Simulate response with empty first level, pools in second level
         @SuppressWarnings("unchecked")
@@ -292,12 +303,11 @@ public class PoolListByPoolMgrQueryTest {
         response.setSucceeded();
 
         queryFuture.set(response);
-        Thread.sleep(100);
 
         // Verify that only pool3 was requested (from first non-empty level)
         ArgumentCaptor<PoolManagerGetPoolsByNameMessage> poolInfoCaptor =
               ArgumentCaptor.forClass(PoolManagerGetPoolsByNameMessage.class);
-        org.mockito.Mockito.verify(poolManager).send(poolInfoCaptor.capture());
+        inOrder.verify(poolManager, timeout(1000)).send(poolInfoCaptor.capture());
 
         Collection<String> requestedPools = poolInfoCaptor.getValue().getPoolNames();
         assertEquals(1, requestedPools.size());
@@ -315,7 +325,6 @@ public class PoolListByPoolMgrQueryTest {
         poolInfoResponse.setSucceeded();
 
         poolInfoFuture.set(poolInfoResponse);
-        Thread.sleep(100);
 
         assertTrue(poolList.isValid());
         assertEquals(1, poolList.getPools().size());
