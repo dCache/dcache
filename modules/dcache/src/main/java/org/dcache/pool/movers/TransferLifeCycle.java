@@ -254,7 +254,7 @@ public class TransferLifeCycle {
         if (protocolInfo.getTransferTag() != null && !protocolInfo.getTransferTag().isEmpty()) {
             try {
                 int transferTag = Integer.parseInt(protocolInfo.getTransferTag());
-                if (transferTag <= 64 || transferTag >= 65536) {
+                if (transferTag < 64 || transferTag > 65535) {
                     LOGGER.warn("Invalid integer range for transfer tag: {}", protocolInfo.getTransferTag());
                     return OptionalInt.empty();
                 }
@@ -271,8 +271,18 @@ public class TransferLifeCycle {
             return OptionalInt.empty();
         }
 
-        return voToExpId.containsKey(vo.getGroup().toLowerCase()) 
-                ? OptionalInt.of(voToExpId.get(vo.getGroup().toLowerCase())) 
+        // FQAN.getGroup() returns paths like "/atlas" or "/atlas/usatlas".
+        // Strip the leading slash and take only the first path component to
+        // get the plain VO name (e.g. "atlas") that matches the vo-mapping keys.
+        String groupPath = vo.getGroup().toLowerCase();
+        if (groupPath.startsWith("/")) {
+            groupPath = groupPath.substring(1);
+        }
+        int subgroupSlash = groupPath.indexOf('/');
+        String voName = subgroupSlash != -1 ? groupPath.substring(0, subgroupSlash) : groupPath;
+
+        return voToExpId.containsKey(voName)
+                ? OptionalInt.of(voToExpId.get(voName))
                 : OptionalInt.empty();
     }
 
