@@ -83,7 +83,7 @@ public class TransferLifeCycle {
             return;
         }
 
-        if (isLocalTransfer(src)) {
+        if (isExcludedTransfer(src, dst)) {
             return;
         }
 
@@ -126,7 +126,7 @@ public class TransferLifeCycle {
             return;
         }
 
-        if (isLocalTransfer(src)) {
+        if (isExcludedTransfer(src, dst)) {
             return;
         }
 
@@ -286,9 +286,12 @@ public class TransferLifeCycle {
                 : OptionalInt.empty();
     }
 
-    private boolean isLocalTransfer(InetSocketAddress dst) {
-        InetAddress addr = dst.getAddress();
-        return localSubnet.test(addr);
+    private boolean isExcludedTransfer(InetSocketAddress src, InetSocketAddress dst) {
+        InetAddress srcAddress = src.getAddress();
+        InetAddress dstAddress = dst.getAddress();
+        return srcAddress != null && dstAddress != null
+              && localSubnet.test(srcAddress)
+              && localSubnet.test(dstAddress);
     }
 
     private int getActivity(ProtocolInfo protocolInfo) {
