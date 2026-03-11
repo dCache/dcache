@@ -1700,6 +1700,9 @@ public class DcacheResourceFactory
         private final String _requestPath;
         private String _transferTag = "";
 
+        private static final String HEADER_SCITAG = "SciTag";
+        private static final String HEADER_TRANSFER_HEADER_SCITAG = "TransferHeaderSciTag";
+
         public HttpTransfer(PnfsHandler pnfs, Subject subject,
               Restriction restriction, FsPath path) throws URISyntaxException {
             super(pnfs, subject, restriction, path);
@@ -1709,7 +1712,46 @@ public class DcacheResourceFactory
             var request = ServletRequest.getRequest();
             request.setAttribute(TRANSACTION_ATTRIBUTE, getTransaction());
             _requestPath = Requests.stripToPath(request.getRequestURL().toString());
-            _transferTag = request.getHeader("SciTag");
+            _transferTag = readTransferTag(request);
+        }
+
+        private String readTransferTag(HttpServletRequest request) {
+            String scitag = request.getHeader(HEADER_SCITAG);
+            if (scitag != null && !scitag.isBlank()) {
+                String trimmed = scitag.trim();
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("SciTag header found: {} (from client={})", trimmed,
+                          request.getRemoteAddr());
+                }
+                return trimmed;
+            }
+
+            // If both headers are present, SciTag takes precedence.
+            String transferHeaderScitag = request.getHeader(HEADER_TRANSFER_HEADER_SCITAG);
+            if (transferHeaderScitag != null && !transferHeaderScitag.isBlank()) {
+                String trimmed = transferHeaderScitag.trim();
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("TransferHeaderSciTag header found: {} (from client={})",
+                          trimmed, request.getRemoteAddr());
+                }
+                return trimmed;
+            }
+
+            String flowFromQuery = request.getParameter("scitag.flow");
+            if (flowFromQuery != null && !flowFromQuery.isBlank()) {
+                String trimmed = flowFromQuery.trim();
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("scitag.flow query parameter found: {} (from client={})",
+                          trimmed, request.getRemoteAddr());
+                }
+                return trimmed;
+            }
+
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("No SciTag header/parameter found in request (client={})",
+                      request.getRemoteAddr());
+            }
+            return "";
         }
 
         protected ProtocolInfo createProtocolInfo(InetSocketAddress address) {
@@ -1729,6 +1771,10 @@ public class DcacheResourceFactory
                         wantedChecksums);
             protocolInfo.setSessionId((int) getId());
             protocolInfo.setTransferTag(_transferTag);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("ProtocolInfo created with transferTag='{}' for path={}",
+                      _transferTag, _requestPath);
+            }
             return protocolInfo;
         }
 
