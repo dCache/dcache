@@ -1,0 +1,58 @@
+### Get space tokens
+GET {{frontend-door}}{{endpoint}}/space/tokens
+Accept: application/json
+Authorization: Basic {{admin_role}} {{password}}
+
+> {%
+
+    client.test ("Get empty list of space tokens", function () {
+      client.assert(response.status === 200, "Failed to get space tokens");
+      client.assert(Array.isArray(response.body) && response.body.length === 0, "Empty response body expected");
+    });
+%}
+
+### Reserve space
+POST {{frontend-door}}{{endpoint}}/space/tokens?accessLatency=online&retentionPolicy=replica&minSize=8192&description=myspace
+Accept: application/json
+Authorization: Basic {{admin_role}} {{password}}
+
+> {%
+
+    client.test ("Create space reservation", function () {
+      client.assert(response.status === 201, "Failed to create space tokens: expected 201 Created, got " + response.status);
+      client.assert(response.body.id, "Space token ID is missing in response");
+      client.global.set("spacetoken-id", response.body.id);
+      client.global.set("spacetoken-desc", response.body.description);
+    });
+%}
+
+### Get space tokens after create
+GET {{frontend-door}}{{endpoint}}/space/tokens
+Accept: application/json
+Authorization: Basic {{admin_role}} {{password}}
+
+> {%
+
+    client.test ("Get list of defined space tokens", function () {
+      client.assert(response.status === 200, "Failed to get space tokens. Expected 200 OK, got " + response.status);
+      client.assert(Array.isArray(response.body) && response.body.length === 1, "Expected 1 space token in response, got " + response.body.length);
+    });
+%}
+
+### Get space token by id
+GET {{frontend-door}}{{endpoint}}/space/tokens?id={{spacetoken-id}}
+Accept: application/json
+Authorization: Basic {{admin_role}} {{password}}
+
+> {%
+
+    client.test ("Get spacetoken by id", function () {
+      client.assert(response.status === 200, "Failed to get space tokens. Expected 200 OK, got " + response.status);
+      client.assert(response.body[0].id === client.global.get("spacetoken-id"),
+            "Expected space token with id  " + client.global.get("spacetoken-id") + ", got " + response.body[0].id);
+
+      client.assert(response.body[0].description === client.global.get("spacetoken-desc"),
+            "Expected space token with description  " + client.global.get("spacetoken-desc") + ", got " + response.body[0].description);
+
+    });
+%}

@@ -3,4 +3,5 @@ dcache:
     frontend.limits.error.max-allowed = 100
     dcache.billing.enable.kafka = true
     dcache.kafka.bootstrap-servers = billing-kafka:9092
+    spacemanager.link-groups-update.period.unit=SECONDS
 

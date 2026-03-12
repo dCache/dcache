@@ -578,9 +578,10 @@ Frontend test suite:
     - kubectl -n $K8S_NAMESPACE cp .ci/migrationEndpoint.http http-tester:/migrationEndpoint.http
     - kubectl -n $K8S_NAMESPACE cp .ci/userEndpoint.http http-tester:/userEndpoint.http
     - kubectl -n $K8S_NAMESPACE cp .ci/bulkRequestsEndpoint.http http-tester:/bulkRequestsEndpoint.http
+    - kubectl -n $K8S_NAMESPACE cp .ci/spacemanagerEndpoint.http http-tester:/spacemanagerEndpoint.http
     - kubectl -n $K8S_NAMESPACE cp README.md http-tester:/README.md
     - kubectl -n $K8S_NAMESPACE cp http-client.private.env.json http-tester:/http-client.private.env.json
-    - kubectl -n $K8S_NAMESPACE exec http-tester -- java --add-opens=java.base/java.util=ALL-UNNAMED $IJHTTP_JAVA_OPTS -cp /intellij-http-client/\* com.intellij.httpClient.cli.HttpClientMain -e Test -D /poolEndpoint.http /qosEndpoint.http /qosPolicyEndpoint.http /migrationEndpoint.http /userEndpoint.http /bulkRequestsEndpoint.http -p /http-client.private.env.json --insecure --report=/httpTests
+    - kubectl -n $K8S_NAMESPACE exec http-tester -- java --add-opens=java.base/java.util=ALL-UNNAMED $IJHTTP_JAVA_OPTS -cp /intellij-http-client/\* com.intellij.httpClient.cli.HttpClientMain -e Test -D /poolEndpoint.http /qosEndpoint.http /qosPolicyEndpoint.http /migrationEndpoint.http /userEndpoint.http /bulkRequestsEndpoint.http /spacemanagerEndpoint.http -p /http-client.private.env.json --insecure --report=/httpTests
     - kubectl -n $K8S_NAMESPACE cp http-tester:/httpTests/report.xml pool-report.xml
   artifacts:
     reports:
