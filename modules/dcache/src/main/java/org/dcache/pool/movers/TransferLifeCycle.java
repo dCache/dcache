@@ -64,6 +64,8 @@ public class TransferLifeCycle {
     // tests whatever the provided IP belongs to the sites internal network
     private Predicate<InetAddress> localSubnet = a -> false;
 
+    // optional additional collector destination for firefly markers
+    private InetSocketAddress fireflyCollector = null;
     private boolean enabled;
     private boolean storageStatisticsEnabled;
 
@@ -107,7 +109,7 @@ public class TransferLifeCycle {
               .withSource(src)
               .build("start");
 
-        send(toFireflyDestination.apply(src), data);
+        sendToMultipleDestinations(toFireflyDestination.apply(src), data);
     }
 
     /**
@@ -155,16 +157,28 @@ public class TransferLifeCycle {
         }
         var firefly = data.build("end");
 
-        send(toFireflyDestination.apply(src), firefly);
+        sendToMultipleDestinations(toFireflyDestination.apply(src), firefly);
     }
 
+    /**
+     * Configures optional additional firefly collector destination.
+     *
+     * If not configured, fireflies are sent only to the data-flow destination.
+     * If configured, fireflies are sent to both the data-flow destination and this collector.
+     *
+     * Accepted formats:
+     * - host
+     * - host:port
+     *
+     * If no port is provided, the default firefly UDP port (10514) is used.
+     */
     public void setFireflyDestination(String addr) {
+        fireflyCollector = null;
 
         if (!Strings.isNullOrEmpty(addr)) {
-            var destination = HostAndPort.fromString(addr);
-            var destinationAddr = new InetSocketAddress(destination.getHost(),
+            var destination = HostAndPort.fromString(addr.trim());
+            fireflyCollector = new InetSocketAddress(destination.getHost(),
                   destination.getPortOrDefault(UDP_PORT));
-            toFireflyDestination = a -> destinationAddr;
         }
     }
 
@@ -222,6 +236,22 @@ public class TransferLifeCycle {
             socket.send(p);
         } catch (IOException e) {
             LOGGER.warn("Failed to send flow marker to {}: {}", dst, e.getMessage());
+        }
+    }
+
+    /**
+     * Send flow marker to the primary destination and optional configured collector.
+     *
+     * @param primaryDst Primary destination (based on flow/peer)
+     * @param payload    the marker
+     */
+    private void sendToMultipleDestinations(InetSocketAddress primaryDst, @Nonnull String payload) {
+        // Send to primary destination
+        send(primaryDst, payload);
+        
+        // Send to collector if configured and different from primary
+        if (fireflyCollector != null && !fireflyCollector.equals(primaryDst)) {
+            send(fireflyCollector, payload);
         }
     }
 
