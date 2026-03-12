@@ -1702,6 +1702,10 @@ public class DcacheResourceFactory
 
         private static final String HEADER_SCITAG = "SciTag";
         private static final String HEADER_TRANSFER_HEADER_SCITAG = "TransferHeaderSciTag";
+          private static final String[] SCITAG_HEADERS = {
+              HEADER_SCITAG,
+              HEADER_TRANSFER_HEADER_SCITAG
+          };
 
         public HttpTransfer(PnfsHandler pnfs, Subject subject,
               Restriction restriction, FsPath path) throws URISyntaxException {
@@ -1716,25 +1720,17 @@ public class DcacheResourceFactory
         }
 
         private String readTransferTag(HttpServletRequest request) {
-            String scitag = request.getHeader(HEADER_SCITAG);
-            if (scitag != null && !scitag.isBlank()) {
-                String trimmed = scitag.trim();
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("SciTag header found: {} (from client={})", trimmed,
-                          request.getRemoteAddr());
+            // SciTag takes precedence because it is checked first.
+            for (String header : SCITAG_HEADERS) {
+                String transferTag = request.getHeader(header);
+                if (transferTag != null && !transferTag.isBlank()) {
+                    String trimmed = transferTag.trim();
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("{} header found: {} (from client={})",
+                              header, trimmed, request.getRemoteAddr());
+                    }
+                    return trimmed;
                 }
-                return trimmed;
-            }
-
-            // If both headers are present, SciTag takes precedence.
-            String transferHeaderScitag = request.getHeader(HEADER_TRANSFER_HEADER_SCITAG);
-            if (transferHeaderScitag != null && !transferHeaderScitag.isBlank()) {
-                String trimmed = transferHeaderScitag.trim();
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("TransferHeaderSciTag header found: {} (from client={})",
-                          trimmed, request.getRemoteAddr());
-                }
-                return trimmed;
             }
 
             String flowFromQuery = request.getParameter("scitag.flow");
