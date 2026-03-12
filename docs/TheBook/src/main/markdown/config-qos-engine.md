@@ -5,7 +5,7 @@ The QoS Service
 [TOC bullet hierarchy]
 -----
 
-## Introduction to the qos service
+## Introduction to the QoS service
 
 Quality of service (QoS) is a broad term with a number of different meanings,
 but for our purposes here it refers to whether a file needs to be
@@ -13,7 +13,7 @@ on disk, on tape, or both, as well as to how many copies of the file should be
 maintained on those media (and, eventually, for how long).
 
 The implementation of the QoS service is a refactoring of Resilience which
-incorporates and extends the latter's capabilities.  The first version (current) of QoS
+incorporates and extends the latter's capabilities.  The current version of QoS
 only manages definitions that are still based on directory tags and storage
 unit attributes.   The intention of the refactoring, however, is to allow
 us to redesign how QoS is specified without having to change in
@@ -54,7 +54,7 @@ The QoS service is actually made up of four different components.
 
 ![QoS Component Services](images/qos-components.png)
 
-Each of these services can be run separately as cells in a single domain or in independent
+Each of these components can be run separately as cells in a single domain or in independent
 domains.  In addition, there is available a singleton/standalone cell configuration
 in which all four components are directly plugged into each other.  The latter eliminates the
 extra overhead of message passing, but requires more memory.   This flexibility of setup options
@@ -66,14 +66,14 @@ These services are not yet HA (replicable), but we plan to provide that capabili
 
 ### Database back-up
 
-Resilience ran without an RDBMs backup, using a (lossy) checkpoint file to mitigate long latency
+Resilience ran without a RDBMs backup, using a (lossy) checkpoint file to mitigate long latency
 in recovery (via pool scanning) when the service goes down and restarts.  With QoS, we have
 decided to back-up the verification operations using a database table.  This not only affords
 more reliability on restart, but also allows us to cut down the memory footprint of the
 verifier component.
 
 It is therefore necessary to initialize the verifier database before starting dCache (the
-example below assumes PostgreSql is installed and the database username is 'dcache'):
+example below assumes PostgreSQL is installed and the database username is 'dcache'):
 
 ```
 createdb -U dcache qos
@@ -92,9 +92,9 @@ or
 qos.db.host=${dcache.db.host}
 ```
 
-should be set to point to the host where the PostgreSql instance is running.
+should be set to point to the host where the PostgreSQL instance is running.
 
-### Activating qos
+### Activating QoS
 
 The service can be run out of the box.  When deployed as separate cells in one or more
 domains,
@@ -128,7 +128,9 @@ chimera.db.host=<host-where-chimera-runs>
 ```
 
 the default value of ``dcache.service.qos`` (**qos-engine**) pertains and does not
-need to be modified. For the singleton service,
+need to be modified. 
+
+For the singleton service,
 
 ```
 [qosDomain]
@@ -164,9 +166,9 @@ tries to cache a good proportion of the current operations in memory.
 
 Whenever feasible, it is also recommended to give QoS its own domain(s).
 
-## QoS Definitions
+## QoS definitions
 
-The following table summarizes how quality of service is currently implemented.
+The following table summarizes how QoS is currently implemented.
 
 ![QoS Definitions](images/qos-static.png)
 
@@ -198,7 +200,7 @@ File QoS modification can be achieved through the RESTful frontend, either
 for single files using `/api/v1/namespace`, or in bulk, using `/api/v1/bulk-requests`,
 the latter communicating with the [dCache Bulk Service](config-bulk.md).  Please
 refer to the SWAGGER pages at (`https://example.org:3880/api/v1`) for a description
-of the available RESTful resources.  Admins can also submit and control bulk qos
+of the available RESTful resources.  Admins can also submit and control bulk QoS
 transitions directly through the admin shell commands for the Bulk service.
 
 #### QoS file policy (since 9.2)
@@ -400,8 +402,6 @@ or subdirectories in the `qos.home` directory (`/var/lib/dcache/qos` by default)
 - excluded-pools
 - scanner-statistics-<date-hour>
 
-Explanations of these files follow.
-
 #### backlogged-messages (all components)
 
 It is possible to enable and disable message handling by the QoS components using the
@@ -433,9 +433,9 @@ that previously excluded pools will continue to be treated as such.
 For pool exclusion, see the [section below](config-qos-engine.md/#exclude-a-pool-from-qos-handling)
 under typical scenarios.
 
-## Admin Commands
+## Admin commands
 
-There are a number of ways to interact with the qos service through the
+There are a number of ways to interact with the QoS service through the
 admin door. As usual, the best guide for each command is to consult its help
 documentation (`\h <command>`).  Tasks are marked according to the component they
 relate to:  ``engine``, ``pool`` (scanner), ``task`` (adjuster) and ``verify``.  The
@@ -611,8 +611,8 @@ Similar commands, `pool ls` and ``pool details``, exist for checking the current
 of any pool scan operations:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-[fndcatemp2] (qos@qosDomain) admin > pool ls
-[fndcatemp2] (qos-scanner@qosSDomain) admin > pool ls
+[fndcatemp2] (qos@qosDomain) admin > \c qos-scanner
+[fndcatemp2] (qos-scanner@qosDomain) admin > pool ls
 dcatest03-1	(completed: 0 / 0 : ?%) - (updated: 2022/04/29 13:54:52)(finished: 2022/04/29 13:54:52)(prev UNINITIALIZED)(curr UNINITIALIZED)(IDLE)
 dcatest03-2	(completed: 0 / 0 : ?%) - (updated: 2022/04/29 13:54:52)(finished: 2022/04/29 13:54:52)(prev UNINITIALIZED)(curr UNINITIALIZED)(IDLE)
 dcatest03-3	(completed: 0 / 0 : ?%) - (updated: 2022/04/29 13:54:52)(finished: 2022/04/29 13:54:52)(prev UNINITIALIZED)(curr UNINITIALIZED)(IDLE)
@@ -623,7 +623,8 @@ dcatest03-4	(completed: 0 / 0 : ?%) - (updated: 2022/04/29 13:54:52)(finished: 2
 and for seeing a summary breakdown of scan activity by pool:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-[fndcatemp2] (qos@qosDomain) admin > pool details
+[fndcatemp2] (qos@qosDomain) admin > \c qos-scanner
+[fndcatemp2] (qos-scanner@qosDomain) admin > pool details
 NAME                      |        TOTAL       FAILED |           UP         DOWN       FORCED |        FILES          AVGPRD (ms)
 dcatest03-1               |            1            0 |            1            0            1 |            0               152077
 dcatest03-2               |            1            0 |            1            0            1 |            0               152056
@@ -673,7 +674,7 @@ by doors or QoS.
 for write, but also for read; QoS will schedule it for a scan so that the
 files it contains can be replicated elsewhere if necessary.
 
-## Automatic Staging of Missing CUSTODIAL ONLINE replicas
+## Automatic staging of missing CUSTODIAL ONLINE replicas
 
 Files whose `RETENTION POLICY` is `CUSTODIAL` and whose `ACCESS LATENCY` is `ONLINE`
 constitute a special case for the purposes of recovery.  For instance,
@@ -699,30 +700,30 @@ cache locations they may or may not have.  These scans are more costly and can r
 so they are separate from the pool scans and run in the background.  Given that
 the more usual dCache deployments will have NEARLINE >> ONLINE files, the nearline scan
 is disabled by default, but can be enabled through the ``reset`` command.  ``NEARLINE``
-scans are only useful in catching a qos modification which has changed the status
+scans are only useful in catching a QoS modification which has changed the status
 of a file and, for instance, requires a flush or a caching which has not occurred.
 The ``ONLINE`` scan is more useful in that it will detect if such a file is missing a disk
 copy, regardless of the current available pools, and will stage it back in if it is also
 ``CUSTODIAL``.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- SCANNING, QOS vs Resilience
+ Scanning, QOS vs Resilience
 
  Formerly (in resilience), individual pool scans were both triggered by pool state changes
  and were run periodically; in QoS, they are still triggered by state changes
  (or by an explicit admin command), but there is an option as to how to run ONLINE scans
- periodically.  By enabling 'online' scans (the default), the sys scans will
+ periodically. By enabling 'online' scans (the default), the sys scans will
  touch each file in the natural order of their primary key in the namespace.
  The advantage to this is avoiding scanning the same file more than once if
- it has more than one location.  The disadvantage is that files whose locations
+ it has more than one location. The disadvantage is that files whose locations
  are currently offline or have been removed from the dCache configuration will
- trigger an alarm.  If 'online' is disabled, the old-style pool scan (more properly,
- location-based scan) will be triggered instead.  This will look at only ONLINE
+ trigger an alarm. If 'online' is disabled, the old-style pool scan (more properly,
+ location-based scan) will be triggered instead. This will look at only ONLINE
  files on IDLE pools that are ENABLED, but will end up running redundant checks
  for files with multiple replicas.
 
  With the advent of the rule engine (9.2), the NEARLINE scan has been limited to
- files with a defined qos policy.
+ files with a defined QoS policy.
 
  NEARLINE is no longer turned off by default, since it no longer necessarily
  encompasses all files on tape, but just the ones for which the policy state
@@ -739,7 +740,7 @@ as it is still used to maintain system-wide resilience consistency._**
 
 ----------------------
 
-## Some typical scenarios part 1: what happens when ...?
+## Typical scenarios part 1: what happens when ...?
 
 ### QoS is initialized (service start)
 
@@ -790,7 +791,7 @@ The `excluded-pools` file is also reloaded at this point.
 In addition to the usual pool status types (`ENABLED`, `READ_ONLY`, `DOWN`),
 `UNINITIALIZED` serves to indicate incomplete information on that pool from the
 PoolMonitor. The transition from `UNINITIALIZED` to another state occurs when
-the ``qos-scanner`` comes on line, whether simultaneously with pool initialization
+the ``qos-scanner`` comes online, whether simultaneously with pool initialization
 or not.
 
 >   **The probability of pools going down at initialization is low, but it is
@@ -806,7 +807,7 @@ During this phase of initialization, message handling is still inactive; hence
 any incoming messages are temporarily cached. When the pool info and operation
 tables have been populated, the backlogged messages are handled. At the same
 time, message handling is also activated. Up until this point, issuing any admin
-commands requiring access to qos state will result in a message that the
+commands requiring access to QoS state will result in a message that the
 system is initializing:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -840,10 +841,10 @@ its state changes.
 Under most circumstances, no intervention should be required. This is part of
 the normal functioning of the service.
 
-### A pool is re-enabled or brought back on line
+### A pool is re-enabled or brought back online
 
 This is just the counterpart to the previous scenario. When a pool is brought
-back on line, the service queues it for eventual scanning, once again activated
+back online, the service queues it for eventual scanning, once again activated
 as soon as the expiration of the grace period is detected. Note that the grace
 periods for pool down and pool restart are independent properties.
 
@@ -854,7 +855,7 @@ Note that QoS always does the same thing on a scan, whether triggered by
 a change from `UP` to `DOWN` or vice versa: it checks the QoS of each file,
 compares it to its requirements, and takes the appropriate action.
 
-### Several pools go off line simultaneously
+### Several pools go offline simultaneously
 
 Each will be treated as above. By default, five scans are allowed to run
 simultaneously. If there are more scans than five, they will continue in the
@@ -875,7 +876,7 @@ total number of files to process is only known at the end of this loop. So it is
 to see a value for the number of files processed so far before seeing the total.
 Obviously, only when the total exists can the % value be computed.
 
-## Some typical scenarios part 2: how do I ...?
+## Typical scenarios part 2: how do I ...?
 
 During the normal operation a dCache installation, changes to the number of pools,
 along with the creation and removal of storage classes or pool groups, will undoubtedly
@@ -1025,28 +1026,23 @@ NOTE:     In the case of removing a pool from a normal pool group, additional
           replicas may or may not be made.  This is because globally replicated
           files (where replicas are placed on pools without observing any particular
           pool group constraint) will still count the replica on the removed pool
-          toward their qos requirement.  In this case, it is not until the pool is
+          toward their QoS requirement.  In this case, it is not until the pool is
           entirely removed from the pool manager configuration that a new replica
           will be made elsewhere.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **A scan is not triggered when a pool is entirely removed from the configuration.**
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          It is recommended that a pool be disabled first (see below) before
-          removal from the configuration in order to allow QoS to inspect its files
-          and act appropriately.
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 The removal of a pool from the `psu` using `psu remove pool <name>` will also
 remove the pool from the pool info listing in the ``qos-verifier``; however,
 if the pool keeps connecting (i.e., it has not been stopped), its entry will
-continue to appear in the PoolMonitor, and thus also in the internal qos table.
+continue to appear in the PoolMonitor, and thus also in the internal QoS table.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 BEST PRACTICE:  When either removing a pool from a pool group or from the entire
                 configuration, it is best to disable the pool first in order
-                to allow QoS to handle it as `DOWN`; then when the scan completes,
+                to allow QoS to inspect its files and act appropriately. 
+                QoS will handle the pool as `DOWN`, then when the scan completes,
                 proceed with the removal.
 
 \s rw-dmsdca24-2 pool disable -strict
@@ -1061,7 +1057,7 @@ BEST PRACTICE:  When either removing a pool from a pool group or from the entire
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 As stated above, removal of pools from non-primary groups will not trigger
-a qos response until the pool actually becomes inaccessible.
+a QoS response until the pool actually becomes inaccessible.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 NOTE:   As long as at least one replica of a file continues to reside in a primary
@@ -1112,7 +1108,7 @@ action/migration will be necessary, since they will be alarmed as 'inaccessible'
 ### Add or remove a group
 
 There is nothing special about adding or removing a group. Doing so will register
-the group inside qos as well, even though at this point it is empty.
+the group inside QoS as well, even though at this point it is empty.
 Once pools are added to this group, the behavior will be as indicated above.
 
 >   **As mentioned above (see the warning under "Defining a primary group"),
@@ -1129,7 +1125,7 @@ NOTE:  With version 9.0, the use of 'exclude' is deprecated for migration.
 During normal operation, QoS should be expected to handle gracefully situations
 where a pool with many files, for one reason or another, goes offline. Such an incident,
 even if the "grace period" value were set to 0, in initiating a large scan,
-should not bring the system down. Obversely, should the pool come back on line,
+should not bring the system down. Obversely, should the pool come back online,
 any such scan should be (and is) immediately canceled, and the pool rescheduled for
 a fresh scan. So under most circumstances, no manual intervention or adjustment
 should be required.
@@ -1155,7 +1151,7 @@ use in the wrong circumstances may easily lead to inconsistent state.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 WARNING:  Only use 'pool exclude' for temporary situations where the intention
-          is eventually to restore the excluded location(s) to qos management;
+          is eventually to restore the excluded location(s) to QoS management;
           or when the locations on those pools are actually to be deleted
           from the namespace.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1177,7 +1173,7 @@ until it is explicitly included again._
 
 Rebalancing should be required less often on pools belonging to a primary pool
 group; but if you should decide to rebalance this kind of pool group, be sure
-to disable qos on all those pools. One could do this by stopping qos altogether,
+to disable QoS on all those pools. One could do this by stopping QoS altogether,
 but this of course would stop the processing of other groups not involved
 in the operation. The alternative is to use the `exclude` command one or more times
 with expressions matching the pools you are interested in:
@@ -1193,19 +1189,20 @@ excluded pools are written out to a file (`excluded-pools`; see above) which is
 read back in on initialization.
 
 When rebalancing is completed, pools can be set back to active
-qos control:
+QoS control:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 \s qos-scanner pool include .*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 (Note that only `EXCLUDED` pools are affected by the `include` command.)
+
 Re-inclusion sets the pools back to `IDLE`, and does not schedule them
 automatically for a scan, so if you wish to scan these pools before the periodic
 window elapses, a manual scan is required.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-BEST PRACTICE:  Disable qos on the potential source and target pools
+BEST PRACTICE:  Disable QoS on the potential source and target pools
                 by setting them to EXCLUDED before doing a rebalance.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1336,7 +1333,7 @@ scheduled for a restart scan based on the defined grace period).
 
 ### Troubleshooting operations
 
-Intervention to rectify qos handling should hopefully be needed infrequently;
+Intervention to rectify QoS handling should hopefully be needed infrequently;
 yet it is not impossible for tasks not to run to completion (for instance, due to
 lost network connections from which QoS could not recover).
 
