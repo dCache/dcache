@@ -20,7 +20,6 @@ package org.dcache.pool.movers;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.net.InetAddresses.forString;
 
-import com.google.common.base.Strings;
 import com.google.common.net.HostAndPort;
 
 import diskCacheV111.vehicles.MoverInfoMessage;
@@ -64,6 +63,8 @@ public class TransferLifeCycle {
     // tests whatever the provided IP belongs to the sites internal network
     private Predicate<InetAddress> localSubnet = a -> false;
 
+    // optional additional collector destination for firefly markers
+    private InetSocketAddress fireflyCollector;
     private boolean enabled;
     private boolean storageStatisticsEnabled;
 
@@ -107,7 +108,7 @@ public class TransferLifeCycle {
               .withSource(src)
               .build("start");
 
-        send(toFireflyDestination.apply(src), data);
+        sendToMultipleDestinations(toFireflyDestination.apply(src), data);
     }
 
     /**
@@ -155,16 +156,31 @@ public class TransferLifeCycle {
         }
         var firefly = data.build("end");
 
-        send(toFireflyDestination.apply(src), firefly);
+        sendToMultipleDestinations(toFireflyDestination.apply(src), firefly);
     }
 
+    /**
+     * Configures optional additional firefly collector destination.
+     *
+     * If not configured, fireflies are sent only to the data-flow destination.
+     * If configured, fireflies are sent to both the data-flow destination and this collector.
+     *
+     * Accepted formats:
+     * - host
+     * - host:port
+     * - [ipv6-address]
+     * - [ipv6-address]:port
+     *
+     * IPv6 literals with a port must use the bracketed form (for example,
+     * {@code [2001:db8::1]:10514}), as required by {@link HostAndPort#fromString(String)}.
+     *
+     * If no port is provided, the default firefly UDP port (10514) is used.
+     */
     public void setFireflyDestination(String addr) {
-
-        if (!Strings.isNullOrEmpty(addr)) {
-            var destination = HostAndPort.fromString(addr);
-            var destinationAddr = new InetSocketAddress(destination.getHost(),
+        if (addr != null && !addr.isBlank()) {
+            var destination = HostAndPort.fromString(addr.trim());
+            fireflyCollector = new InetSocketAddress(destination.getHost(),
                   destination.getPortOrDefault(UDP_PORT));
-            toFireflyDestination = a -> destinationAddr;
         }
     }
 
@@ -206,22 +222,36 @@ public class TransferLifeCycle {
     }
 
     /**
-     * Send flow marker.
+     * Send flow marker using an existing datagram socket.
      *
-     * @param dst     Inet address where to flow markers should be sent.
+     * @param socket  Datagram socket to use for sending.
+     * @param dst     Inet address where the flow marker should be sent.
      * @param payload the marker
-     * @throws IllegalStateException if flow marker ist not build.
      */
-    private void send(InetSocketAddress dst, @Nonnull String payload)
-          throws IllegalStateException {
-
+    private void send(DatagramSocket socket, InetSocketAddress dst, @Nonnull String payload) {
         byte[] data = payload.getBytes(StandardCharsets.UTF_8);
-        DatagramPacket p = new DatagramPacket(data, data.length);
-        try (DatagramSocket socket = new DatagramSocket()) {
-            socket.connect(dst);
+        DatagramPacket p = new DatagramPacket(data, data.length, dst);
+        try {
             socket.send(p);
         } catch (IOException e) {
             LOGGER.warn("Failed to send flow marker to {}: {}", dst, e.getMessage());
+        }
+    }
+
+    /**
+     * Send flow marker to the primary destination and optional configured collector.
+     *
+     * @param primaryDst Primary destination (based on flow/peer)
+     * @param payload    the marker
+     */
+    private void sendToMultipleDestinations(InetSocketAddress primaryDst, @Nonnull String payload) {
+        try (DatagramSocket socket = new DatagramSocket()) {
+            send(socket, primaryDst, payload);
+            if (fireflyCollector != null && !fireflyCollector.equals(primaryDst)) {
+                send(socket, fireflyCollector, payload);
+            }
+        } catch (IOException e) {
+            LOGGER.warn("Failed to send flow marker: {}", e.getMessage());
         }
     }
 
