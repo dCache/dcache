@@ -5,31 +5,32 @@ CHAPTER 16. dCache Frontend Service
 [TOC bullet hierarchy]
 -----
 
-The Frontend service is the dCache service (cell) responsible for
+The Frontend service is a dCache cell responsible for
 serving data to clients via HTTP/REST.  The default port on which it
-runs is 3880.  The default protocol is https (TLS).  As usual, these,
-as well as other values for timeouts, enabling proxies, and anonymous
-user access, can be configured; see
-`/usr/share/dcache/defaults/frontend.properties` for details.
+runs is 3880.  The default protocol is https (TLS). These values, along with other settings such as timeouts, proxy configuration, and anonymous
+user access, can be configured in the frontend.properties file.
 
-The API delivered by the frontend is easily consulted once the service
-is running.   It is provided by a Swagger page found at
+```init
+/usr/share/dcache/defaults/frontend.properties
+```
+
+Once the service is running, the REST API documentation can be viewed at:
 
     https://example.org:3880/api/v1
 
-As can be seen there, these methods range over namespace access, allowing users
+The Swagger documentation provides a list of available REST endpoints with full descriptions of
+the methods and their data types.These methods range over namespace access, allowing users
 to view files and directories, monitoring data for the dCache system, and
-event subscription.   The Swagger documentation provides full descriptions of
-the methods and their data types, and can be used to test the calls to the
-service.  Each path also provides example `curl` commands, example responses
-and error code descriptions.
+event subscription. Each path also provides example `curl` commands, example responses
+and error code descriptions. As well as the ability to test API calls directly from the browser.
 
 ## Configuring the Frontend service
 
-Some in-memory caching is done by this service in order to optimize the
-delivery of monitoring/administrative data, but the memory requirements
-are not excessive (it is just text/JSON).  Add the service to an existing
-domain or create a separate one for it:
+The frontend performs some in-memory caching to reduce the load on
+backend services when serving monitoring or administrative data.
+The cached information consists mainly of text or JSON and
+therefore does not require significant memory.
+The service can be added to an existing domain or a separate domain can be created for it:
 
 ```ini
 [frontendDomain]
@@ -65,12 +66,11 @@ properties (for alarms, billing, cells, pools, transfers, restores, history)
 in the configuration files, or directly through the admin interface.
 
 Aside from collecting data directly from the pools, the frontend also relies
-on the history service for its histogram data.  Without that service, you
+on the [history service](config-history.md) for its histogram data.  Without that service, you
 will not be able to request time-related statistics for billing, pool queues or
 file lifetime.  The plots generated from this data by dCache-View will also
-not be available.  Please refer to the section on
-the [dCache History Service](config-history.md) for configuration
-(which is very simple).
+not be available.  Please refer to the documentation under the [dCache History Service](config-history.md) for how to set
+this up.
 
 ## Properties controlling monitoring data access
 
@@ -90,15 +90,15 @@ The following property should be noted.
 (one-of?true|false)frontend.authz.unlimited-operation-visibility=false
 ```
 
-If you wish all authenticated (non-anonymous) users to be be able to see
-the full range of file-related information through either the RESTful api
-or in dCache-View, this property should be set to _true_.
+This property controls whether non-admin users can view operations involving files owned by other users through either the RESTful api
+or in dCache-View. When assigned to false (default), non-admin users can only view their own operations.
+
 
 ## Configuring and using the _admin_ role
 
-The above property has to do with `HTTP GET`.  `HTTP PUT`, `POST`, `PATCH`
-or `DELETE`, however, are always limited to those who have the _admin role_.
-Hence, this role must be defined for the dCache installation.  Please see
+The above property has to do with HTTP methods `GET`.  `PUT`, `POST`, `PATCH`
+or `DELETE`, however, these are always limited to those who have the _admin role_.
+Hence, this role must be defined for the dCache installation.  Please refer to
 the documentation under [gPlazma](config-gplazma.md#roles) for how to set
 this up.
 
@@ -123,13 +123,13 @@ document; see, for instance,
 The same procedure applies when enabling the admin role in dCache-View.
 At the upper right hand corner of the dCache-View landing page,
 you will see the user icon.  Click on it and select "add another credential"
-Type in the user name and password, and check the box which says "assert all roles".
+Type in the username and password, and check the box which says "assert all roles".
 
-See the [dCache-View] documentation for further information.
+See the [dCache-View](https://github.com/dCache/dcache-view/blob/master/README.md) documentation for further information.
 
-##### A Note on the RESTful API for tape restores
+##### RESTful API for tape restores
 
-The data retrieved via the REST path
+The data retrieved via REST path
 
 ```
 /api/v1/restores ...
@@ -141,8 +141,8 @@ corresponds to the admin command
 \sp rc ls
 ```
 
-for all available pool managers.   This means that the restores listed in the
-output are those initiated by an actual protocol through a door.  The restore
+for all available pool managers.   This means that the restores (stages) listed in the
+output are those initiated by an actual protocol through a door.  The restore (stage)
 initiated by the pool command:
 
 
@@ -160,19 +160,6 @@ In order to get all the restores (stages) on a given pool, the REST path
 
 must be used.
 
-##### A Note on the RESTful resource for QoS transitions
+##### RESTful API for QoS transitions
 
-As of dCache 6.1, we have begun to integrate management of QoS with
-services such as PnfsManager and Resilience.  The Frontend resource
-has now been modified to send messages requesting ACCESS LATENCY
-and RETENTION POLICY changes to PnfsManager, which then broadcasts
-the resulting change, to which Resilience will respond.
-
-This is only a partial, first-step toward a full-blown QoS infrastructure,
-but at least allows Resilience to manage such transitions for resilient
-files.  For other files, the current mechanism remains (QoS state maintained
-by the Frontend resource).
-
-##### RESTful QoS transitions as of 8.1
-
-The restful commands now communicate with the [QoS Engine](config-qos-engine.md)
+The RESTful commands now communicate with the [QoS Engine](config-qos-engine.md)
