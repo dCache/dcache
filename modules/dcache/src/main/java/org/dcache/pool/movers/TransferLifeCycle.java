@@ -20,6 +20,7 @@ package org.dcache.pool.movers;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.net.InetAddresses.forString;
 
+import com.google.common.base.Splitter;
 import com.google.common.net.HostAndPort;
 
 import diskCacheV111.vehicles.MoverInfoMessage;
@@ -49,6 +50,15 @@ import org.slf4j.LoggerFactory;
 public class TransferLifeCycle {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(TransferLifeCycle.class);
+    private static final int MIN_VALID_TRANSFER_TAG = 64;
+    private static final int MAX_VALID_TRANSFER_TAG = 65535;
+    private static final int EXPERIMENT_ID_BIT_SHIFT = 6;
+    private static final int ACTIVITY_ID_MASK = 0x3F;
+    private static final int DEFAULT_ACTIVITY_ID = 1;
+    private static final Splitter FQAN_GROUP_SPLITTER = Splitter.on('/')
+          .trimResults()
+          .omitEmptyStrings()
+          .limit(2);
 
     /**
      * The UDP firefly default port as described in
@@ -79,12 +89,12 @@ public class TransferLifeCycle {
      */
     public void onStart(InetSocketAddress src, InetSocketAddress dst, ProtocolInfo protocolInfo,
           Subject subject) {
-        
+
         if (!enabled) {
             return;
         }
 
-        if (isLocalTransfer(src)) {
+        if (isExcludedTransfer(src, dst)) {
             return;
         }
 
@@ -122,12 +132,12 @@ public class TransferLifeCycle {
         ProtocolInfo protocolInfo = mover.getProtocolInfo();
         Subject subject = mover.getSubject();
 
-        
+
         if (!enabled) {
             return;
         }
 
-        if (isLocalTransfer(src)) {
+        if (isExcludedTransfer(src, dst)) {
             return;
         }
 
@@ -200,7 +210,7 @@ public class TransferLifeCycle {
 
     /**
      * Configures VO (Virtual Organization) to Experiment ID mapping.
-     *       
+     *
      * @param voMap A comma-separated string of VO mapping entries in the format
      *              "voName:expId".
      */
@@ -214,7 +224,7 @@ public class TransferLifeCycle {
                     voToExpId.put(parts[0].trim().toLowerCase(), Integer.parseInt(parts[1].trim()));
                 } catch (NumberFormatException e) {
                     LOGGER.warn("Invalid VO mapping entry: {}", entry);
-                }        
+                }
             } else {
                 LOGGER.warn("Invalid VO mapping entry: {}", entry);
             }
@@ -273,8 +283,8 @@ public class TransferLifeCycle {
     }
 
     /**
-     * Determine experiment ID, initially from the ProtocolInfo (xroot/http), 
-     * if that fails then fallback to the Subject's primary FQAN. 
+     * Determine experiment ID, initially from the ProtocolInfo (xroot/http),
+     * if that fails then fallback to the Subject's primary FQAN.
      *
      * @param protocolInfo the ProtocolInfo object containing transfer-related metadata
      * @param subject the Subject representing the user or entity associated with the transfer
@@ -284,12 +294,12 @@ public class TransferLifeCycle {
         if (protocolInfo.getTransferTag() != null && !protocolInfo.getTransferTag().isEmpty()) {
             try {
                 int transferTag = Integer.parseInt(protocolInfo.getTransferTag());
-                if (transferTag <= 64 || transferTag >= 65536) {
+                if (transferTag < MIN_VALID_TRANSFER_TAG || transferTag > MAX_VALID_TRANSFER_TAG) {
                     LOGGER.warn("Invalid integer range for transfer tag: {}", protocolInfo.getTransferTag());
                     return OptionalInt.empty();
                 }
                 // scitag = exp_id << 6 | act_id
-                return OptionalInt.of(transferTag >> 6);
+                return OptionalInt.of(transferTag >> EXPERIMENT_ID_BIT_SHIFT);
             } catch (NumberFormatException e) {
                 LOGGER.warn("Invalid transfer tag: {}", protocolInfo.getTransferTag());
                 return OptionalInt.empty();
@@ -301,23 +311,33 @@ public class TransferLifeCycle {
             return OptionalInt.empty();
         }
 
-        return voToExpId.containsKey(vo.getGroup().toLowerCase()) 
-                ? OptionalInt.of(voToExpId.get(vo.getGroup().toLowerCase())) 
+        String groupPath = vo.getGroup();
+        if (groupPath == null || groupPath.isBlank()) {
+            return OptionalInt.empty();
+        }
+
+        groupPath = groupPath.toLowerCase();
+        String voName = FQAN_GROUP_SPLITTER.splitToList(groupPath).get(0);
+
+        return voToExpId.containsKey(voName)
+                ? OptionalInt.of(voToExpId.get(voName))
                 : OptionalInt.empty();
     }
 
-    private boolean isLocalTransfer(InetSocketAddress dst) {
-        InetAddress addr = dst.getAddress();
-        return localSubnet.test(addr);
+    private boolean isExcludedTransfer(InetSocketAddress src, InetSocketAddress dst) {
+        InetAddress srcAddress = src.getAddress();
+        InetAddress dstAddress = dst.getAddress();
+        return srcAddress != null && dstAddress != null
+              && localSubnet.test(srcAddress)
+              && localSubnet.test(dstAddress);
     }
 
     private int getActivity(ProtocolInfo protocolInfo) {
         if (!protocolInfo.getTransferTag().isEmpty()) {
             // scitag = exp_id << 6 | act_id
-            return Integer.parseInt(protocolInfo.getTransferTag()) & 0x3F;
+            return Integer.parseInt(protocolInfo.getTransferTag()) & ACTIVITY_ID_MASK;
         } else {
-            // default activity id = 1
-            return 1;
+            return DEFAULT_ACTIVITY_ID;
         }
     }
 
