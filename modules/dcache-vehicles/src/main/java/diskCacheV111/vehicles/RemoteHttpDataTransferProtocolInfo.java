@@ -29,6 +29,7 @@ public class RemoteHttpDataTransferProtocolInfo implements IpProtocolInfo {
     private final boolean isVerificationRequired;
     private final ImmutableMap<String, String> headers;
     private final OpenIdCredential openIdCredential;
+    private String transferTag = "";
     @Nullable
     private final ChecksumType desiredChecksum;
     @Nonnull
@@ -104,6 +105,15 @@ public class RemoteHttpDataTransferProtocolInfo implements IpProtocolInfo {
         return headers;
     }
 
+    public void setTransferTag(String transferTag) {
+        this.transferTag = transferTag == null ? "" : transferTag;
+    }
+
+    @Override
+    public String getTransferTag() {
+        return transferTag;
+    }
+
     @Override
     public String toString() {
         return getVersionString() + ':' + sourceHttpUrl;
@@ -135,6 +145,11 @@ public class RemoteHttpDataTransferProtocolInfo implements IpProtocolInfo {
             desiredChecksums = desiredChecksum == null
                     ? Collections.emptySet()
                     : Set.of(desiredChecksum);
+        }
+
+        // Handle objects sent from old doors.
+        if (transferTag == null) {
+            transferTag = "";
         }
     }
 }
