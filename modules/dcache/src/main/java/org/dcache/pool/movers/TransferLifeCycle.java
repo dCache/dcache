@@ -271,6 +271,8 @@ public class TransferLifeCycle {
             case "xrootd":
             case "http":
             case "https":
+            case "remotehttpdatatransfer":
+            case "remotehttpsdatatransfer":
                 return true;
             default:
                 return false;

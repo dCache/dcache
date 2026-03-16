@@ -59,5 +59,7 @@ public class LoggingHandler extends AbstractLoggingHandler {
         log.add("tpc.require-checksum", CopyFilter.getTpcRequireChecksumVerification(request));
         log.add("tpc.source", CopyFilter.getTpcSource(request));
         log.add("tpc.destination", CopyFilter.getTpcDestination(request));
+        log.add("tpc.scitag", CopyFilter.getTpcSciTag(request));
+        log.add("tpc.transferheaderscitag", CopyFilter.getTpcTransferHeaderSciTag(request));
     }
 }
