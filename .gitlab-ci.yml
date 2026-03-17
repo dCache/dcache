@@ -175,6 +175,10 @@ run_ut_with_coverage:
     # run all tests with the coverage profile
     - mvn $MAVEN_CLI_OPTS -P code-coverage clean verify -DskipTests=false -Drun.slow.tests
   artifacts:
+    reports:
+      junit:
+        - "**/target/surefire-reports/TEST-*.xml"
+        - "**/target/failsafe-reports/TEST-*.xml"
     paths:
       # pass the .exec files AND the compiled classes to the next stage
       #pass .exec files and compiled classes to the next stage
