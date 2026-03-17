@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(XrootdTransfer.class);
+    private static final Logger SCITAGS_LOGGER = LoggerFactory.getLogger("org.dcache.scitags");
 
     private UUID _uuid;
     private InetSocketAddress _doorAddress;
@@ -43,15 +44,7 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress> {
         this.restriction = requireNonNull(restriction);
         tpcInfo = new XrootdTpcInfo(opaque);
         _transferTag = opaque.getOrDefault("scitag.flow", "");
-        if (LOGGER.isDebugEnabled()) {
-            if (!_transferTag.isEmpty()) {
-                LOGGER.debug("scitag.flow parameter found: {}", _transferTag);
-            } else if (opaque.containsKey("scitag.flow")) {
-                LOGGER.debug("scitag.flow parameter found but empty");
-            } else {
-                LOGGER.debug("No scitag.flow parameter in this request");
-            }
-        }
+        logSciTagsRequest(opaque);
         try {
             tpcInfo.setUid(Subjects.getUid(subject));
         } catch (NoSuchElementException e) {
@@ -94,6 +87,30 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress> {
 
     protected synchronized ProtocolInfo createProtocolInfo() {
         return createXrootdProtocolInfo();
+    }
+
+    private void logSciTagsRequest(Map<String, String> opaque) {
+        if (SCITAGS_LOGGER.isDebugEnabled()) {
+            String tagSource = !_transferTag.isEmpty()
+                  ? "scitag.flow"
+                  : opaque.containsKey("scitag.flow") ? "scitag.flow-empty" : "none";
+            SCITAGS_LOGGER.debug(
+                  "scitags event=request protocol=xrootd door={} remote={} tagSource={} transferTag={}",
+                  getCellName() + '@' + getDomainName(),
+                  formatAddress(getClientAddress()),
+                  tagSource,
+                  _transferTag.isEmpty() ? "-" : _transferTag);
+        }
+    }
+
+    private String formatAddress(InetSocketAddress address) {
+        if (address == null) {
+            return "-";
+        }
+
+        return address.getAddress() == null
+              ? address.getHostString()
+              : address.getAddress().getHostAddress();
     }
 
     @Override
