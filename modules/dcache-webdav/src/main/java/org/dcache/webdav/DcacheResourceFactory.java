@@ -169,11 +169,32 @@ import org.stringtemplate.v4.ST;
  * This ResourceFactory exposes the dCache name space through the Milton WebDAV framework.
  */
 public class DcacheResourceFactory
-      extends AbstractCellComponent
-      implements ResourceFactory, CellMessageReceiver, CellCommandListener, CellInfoProvider {
+    extends AbstractCellComponent
+    implements ResourceFactory, CellMessageReceiver, CellCommandListener, CellInfoProvider {
 
     private static final Logger LOGGER =
-          LoggerFactory.getLogger(DcacheResourceFactory.class);
+        LoggerFactory.getLogger(DcacheResourceFactory.class);
+    private static final Logger SCITAGS_LOGGER =
+        LoggerFactory.getLogger("org.dcache.scitags");
+
+    static Optional<Map.Entry<String, String>> findHeaderIgnoreCase(HttpServletRequest request,
+          String expectedHeaderName) {
+        Enumeration<String> headerNames = request.getHeaderNames();
+        if (headerNames != null) {
+            while (headerNames.hasMoreElements()) {
+                String actualHeaderName = headerNames.nextElement();
+                if (actualHeaderName.equalsIgnoreCase(expectedHeaderName)) {
+                    return Optional.of(Map.entry(actualHeaderName,
+                          request.getHeader(actualHeaderName)));
+                }
+            }
+        }
+
+        String headerValue = request.getHeader(expectedHeaderName);
+        return headerValue == null
+              ? Optional.empty()
+              : Optional.of(Map.entry(expectedHeaderName, headerValue));
+    }
 
     private static final XMLOutputFactory XML_OUTPUT_FACTORY = XMLOutputFactory.newFactory();
 
@@ -1697,11 +1718,11 @@ public class DcacheResourceFactory
         /**
          * The original request path that will be passed to pool for fall-back redirect.
          */
-        private final String _requestPath;
-        private String _transferTag = "";
+          private final String _requestPath;
+          private String _transferTag = "";
 
-        private static final String HEADER_SCITAG = "SciTag";
-        private static final String HEADER_TRANSFER_HEADER_SCITAG = "TransferHeaderSciTag";
+          private static final String HEADER_SCITAG = "SciTag";
+          private static final String HEADER_TRANSFER_HEADER_SCITAG = "TransferHeaderSciTag";
           private static final String[] SCITAG_HEADERS = {
               HEADER_SCITAG,
               HEADER_TRANSFER_HEADER_SCITAG
@@ -1722,32 +1743,41 @@ public class DcacheResourceFactory
         private String readTransferTag(HttpServletRequest request) {
             // SciTag takes precedence because it is checked first.
             for (String header : SCITAG_HEADERS) {
-                String transferTag = request.getHeader(header);
-                if (transferTag != null && !transferTag.isBlank()) {
-                    String trimmed = transferTag.trim();
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug("{} header found: {} (from client={})",
-                              header, trimmed, request.getRemoteAddr());
+                var matchedHeader = findHeaderIgnoreCase(request, header);
+                if (matchedHeader.isPresent()) {
+                    String transferTag = matchedHeader.get().getValue();
+                    if (transferTag != null && !transferTag.isBlank()) {
+                        return logSciTagsRequest(request,
+                              matchedHeader.get().getKey() + "-header",
+                              transferTag.trim());
                     }
-                    return trimmed;
                 }
             }
 
             String flowFromQuery = request.getParameter("scitag.flow");
             if (flowFromQuery != null && !flowFromQuery.isBlank()) {
-                String trimmed = flowFromQuery.trim();
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("scitag.flow query parameter found: {} (from client={})",
-                          trimmed, request.getRemoteAddr());
-                }
-                return trimmed;
+                return logSciTagsRequest(request, "scitag.flow-query", flowFromQuery.trim());
             }
 
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("No SciTag header/parameter found in request (client={})",
-                      request.getRemoteAddr());
-            }
+            logSciTagsRequest(request, "none", "");
             return "";
+        }
+
+        private String logSciTagsRequest(HttpServletRequest request, String tagSource,
+              String transferTag) {
+            if (SCITAGS_LOGGER.isDebugEnabled()) {
+                SCITAGS_LOGGER.debug(
+                      "scitags event=request protocol={} door={} remote={} method={} alias={} local={} tagSource={} transferTag={}",
+                      request.isSecure() ? PROTOCOL_INFO_SSL_NAME : PROTOCOL_INFO_NAME,
+                      getCellName() + '@' + getCellDomainName(),
+                      request.getRemoteAddr(),
+                      request.getMethod(),
+                      request.getServerName(),
+                      request.getLocalAddr(),
+                      tagSource,
+                      transferTag.isEmpty() ? "-" : transferTag);
+            }
+            return transferTag;
         }
 
         protected ProtocolInfo createProtocolInfo(InetSocketAddress address) {
