@@ -44,7 +44,6 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress> {
         this.restriction = requireNonNull(restriction);
         tpcInfo = new XrootdTpcInfo(opaque);
         _transferTag = opaque.getOrDefault("scitag.flow", "");
-        logSciTagsRequest(opaque);
         try {
             tpcInfo.setUid(Subjects.getUid(subject));
         } catch (NoSuchElementException e) {
@@ -89,7 +88,7 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress> {
         return createXrootdProtocolInfo();
     }
 
-    private void logSciTagsRequest(Map<String, String> opaque) {
+    void logSciTagsRequest(Map<String, String> opaque) {
         if (SCITAGS_LOGGER.isDebugEnabled()) {
             String tagSource = !_transferTag.isEmpty()
                   ? "scitag.flow"

@@ -511,6 +511,7 @@ public class XrootdDoor
         transfer.setKafkaSender(_kafkaSender);
         transfer.setTriedHosts(tried);
         transfer.setProxiedTransfer(proxied);
+        transfer.logSciTagsRequest(opaque);
         return transfer;
     }
 
