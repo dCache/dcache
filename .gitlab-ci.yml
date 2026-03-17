@@ -787,7 +787,6 @@ generate_jacoco_report:
   image: eclipse-temurin:17-jre
   needs:
     - job: run_ut_with_coverage
-    - job: Collect container logs
     - job: get_jacoco_cli
     - job: Extract Coverage
   cache:
