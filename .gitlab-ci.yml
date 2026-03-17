@@ -788,7 +788,6 @@ generate_jacoco_report:
   needs:
     - job: run_ut_with_coverage
     - job: get_jacoco_cli
-    - job: Extract Coverage
   cache:
     key: "jacoco-cli-${JACOCO_VERSION}"
     paths:
