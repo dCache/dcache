@@ -64,6 +64,7 @@ import diskCacheV111.services.space.Space;
 import diskCacheV111.services.space.SpaceState;
 import diskCacheV111.services.space.message.GetLinkGroupsMessage;
 import diskCacheV111.services.space.message.GetSpaceTokensMessage;
+import diskCacheV111.services.space.message.Reserve;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.RetentionPolicy;
@@ -76,6 +77,7 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
+import java.time.Duration;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Predicate;
@@ -85,14 +87,20 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
+import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.NotFoundException;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import org.dcache.cells.CellStub;
 import org.dcache.restful.providers.space.LinkGroupInfo;
 import org.dcache.restful.providers.space.SpaceToken;
+import org.dcache.restful.util.RequestUser;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -231,6 +239,86 @@ public final class SpaceManagerResources {
         } catch (CacheException | InterruptedException | NoRouteToCellException ex) {
             LOGGER.warn(Exceptions.meaningfulMessage(ex));
             throw new InternalServerErrorException(ex);
+        }
+    }
+
+
+    @POST
+    @ApiOperation("Create a new space reservation.")
+    @ApiResponses({
+          @ApiResponse(code = 201, message = "Created"),
+          @ApiResponse(code = 400, message = "Bad Request Error"),
+          @ApiResponse(code = 403, message = "Forbidden"),
+          @ApiResponse(code = 404, message = "DCache not configured for space management."),
+          @ApiResponse(code = 500, message = "Internal Server Error")
+    })
+    @Path("/tokens")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response reserverSpace(
+          @ApiParam(value = "Access Latency associated with the token.", allowableValues = "ONLINE, NEARLINE")
+          @QueryParam("accessLatency") String accessLatency,
+          @ApiParam(value = "Retention Policy associated with the token.", allowableValues = "REPLICA, OUTPUT, CUSTODIAL")
+          @QueryParam("retentionPolicy") String retentionPolicy,
+          @ApiParam(value = "Minimum size (in bytes) of token.")
+          @QueryParam("minSize") Long minSize,
+          @ApiParam(value = "Reservation lifetime as ISO8601 Duration (for instance, P2DT3H4M, for 2 days, 3 hours and 4 minutes). If not specified, the reservation will be valid indefinitely.")
+          @QueryParam("lifeTime") String lifeTime,
+          @ApiParam(value = "Description of the reservation.")
+          @QueryParam("description") String description) {
+
+        if (RequestUser.isAnonymous()) {
+            throw new NotAuthorizedException("User cannot be anonymous.");
+        }
+
+        if (!spaceReservationEnabled) {
+            throw new NotFoundException();
+        }
+
+        try {
+
+            var subject = RequestUser.getSubject();
+
+            Reserve newReservation = new Reserve(null,
+                  minSize,
+                  RetentionPolicy.valueOf(retentionPolicy.toUpperCase()),
+                  AccessLatency.valueOf(accessLatency.toUpperCase()),
+                  lifeTime == null ? -1L : Duration.parse(lifeTime).toMillis(),
+                  description);
+
+            newReservation.setSubject(subject);
+
+            var response = spacemanagerStub.sendAndWait(newReservation);
+
+            var jsonResponse = new JSONObject();
+            jsonResponse.put("id", response.getSpaceToken());
+            jsonResponse.put("description", response.getDescription());
+            jsonResponse.put("sizeInBytes", response.getSizeInBytes());
+
+            return Response.status(Response.Status.CREATED)
+                  .type(MediaType.APPLICATION_JSON)
+                  .entity(jsonResponse.toString())
+                  .build();
+
+        } catch (IllegalArgumentException ex) {
+            LOGGER.warn(Exceptions.meaningfulMessage(ex));
+            return Response.status(Status.BAD_REQUEST)
+                  .build();
+        } catch (NoRouteToCellException ex) {
+            LOGGER.warn(Exceptions.meaningfulMessage(ex));
+            return Response.status(Status.BAD_GATEWAY)
+                  .build();
+        } catch (InterruptedException ex) {
+            LOGGER.warn(Exceptions.meaningfulMessage(ex));
+            return Response.status(Status.GATEWAY_TIMEOUT)
+                  .type(MediaType.APPLICATION_JSON)
+                  .build();
+        } catch (CacheException ex) {
+            // TODO: distinguish between different types of CacheException and return more specific error codes.
+            LOGGER.warn(Exceptions.meaningfulMessage(ex));
+            return Response.status(Status.BAD_REQUEST)
+                  .type(MediaType.APPLICATION_JSON)
+                  .entity(ex.getMessage())
+                  .build();
         }
     }
 

@@ -53,6 +53,7 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.QuotaExceededCacheException;
+import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
@@ -1699,6 +1700,13 @@ public class DcacheResourceFactory
         private final String _requestPath;
         private String _transferTag = "";
 
+        private static final String HEADER_SCITAG = "SciTag";
+        private static final String HEADER_TRANSFER_HEADER_SCITAG = "TransferHeaderSciTag";
+          private static final String[] SCITAG_HEADERS = {
+              HEADER_SCITAG,
+              HEADER_TRANSFER_HEADER_SCITAG
+          };
+
         public HttpTransfer(PnfsHandler pnfs, Subject subject,
               Restriction restriction, FsPath path) throws URISyntaxException {
             super(pnfs, subject, restriction, path);
@@ -1708,7 +1716,38 @@ public class DcacheResourceFactory
             var request = ServletRequest.getRequest();
             request.setAttribute(TRANSACTION_ATTRIBUTE, getTransaction());
             _requestPath = Requests.stripToPath(request.getRequestURL().toString());
-            _transferTag = request.getHeader("SciTag");
+            _transferTag = readTransferTag(request);
+        }
+
+        private String readTransferTag(HttpServletRequest request) {
+            // SciTag takes precedence because it is checked first.
+            for (String header : SCITAG_HEADERS) {
+                String transferTag = request.getHeader(header);
+                if (transferTag != null && !transferTag.isBlank()) {
+                    String trimmed = transferTag.trim();
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("{} header found: {} (from client={})",
+                              header, trimmed, request.getRemoteAddr());
+                    }
+                    return trimmed;
+                }
+            }
+
+            String flowFromQuery = request.getParameter("scitag.flow");
+            if (flowFromQuery != null && !flowFromQuery.isBlank()) {
+                String trimmed = flowFromQuery.trim();
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("scitag.flow query parameter found: {} (from client={})",
+                          trimmed, request.getRemoteAddr());
+                }
+                return trimmed;
+            }
+
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("No SciTag header/parameter found in request (client={})",
+                      request.getRemoteAddr());
+            }
+            return "";
         }
 
         protected ProtocolInfo createProtocolInfo(InetSocketAddress address) {
@@ -1728,6 +1767,10 @@ public class DcacheResourceFactory
                         wantedChecksums);
             protocolInfo.setSessionId((int) getId());
             protocolInfo.setTransferTag(_transferTag);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("ProtocolInfo created with transferTag='{}' for path={}",
+                      _transferTag, _requestPath);
+            }
             return protocolInfo;
         }
 
@@ -1858,6 +1901,8 @@ public class DcacheResourceFactory
     private class WriteTransfer extends HttpTransfer {
 
         private final Optional<Checksum> _contentMd5;
+        /** optional hits to tape system how to store the file */
+        private final Optional<String> _archiveMetadata;
 
         public WriteTransfer(PnfsHandler pnfs, Subject subject,
               Restriction restriction, FsPath path) throws URISyntaxException {
@@ -1876,6 +1921,8 @@ public class DcacheResourceFactory
                 throw new UncheckedBadRequestException("Bad Content-MD5 header: " + e.toString(),
                       null);
             }
+
+            _archiveMetadata = Optional.ofNullable(ServletRequest.getRequest().getHeader("ArchiveMetadata"));
         }
 
         @Override
@@ -1930,6 +1977,11 @@ public class DcacheResourceFactory
             }
 
             getMaxUploadSize().ifPresent(this::setMaximumLength);
+
+            // for CUSTODIAL files on upload client might provide extra information that should be passed to the tape system
+            if (_archiveMetadata.isPresent() && getFileAttributes().getRetentionPolicy() == RetentionPolicy.CUSTODIAL) {
+                getFileAttributes().getStorageInfo().setKey("archive_metadata", _archiveMetadata.get());
+            }
         }
 
         public void relayData(InputStream inputStream)

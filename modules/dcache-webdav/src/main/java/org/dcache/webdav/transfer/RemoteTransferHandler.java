@@ -56,6 +56,7 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.QuotaExceededCacheException;
+import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.IoDoorEntry;
 import diskCacheV111.vehicles.IoJobInfo;
@@ -676,11 +677,12 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
     public ListenableFuture<Optional<String>> acceptRequest(
           ImmutableMap<String, String> transferHeaders,
           Subject subject, Restriction restriction, FsPath path, URI remote,
-          Object credential, Direction direction, EnumSet<TransferFlag> flags,
+            Object credential, String transferTag, Direction direction,
+            EnumSet<TransferFlag> flags,
           boolean overwriteAllowed, Optional<String> wantDigest)
           throws ErrorResponseException, InterruptedException {
         RemoteTransfer transfer = new RemoteTransfer(subject, restriction,
-              path, remote, credential, flags, transferHeaders, direction,
+              path, remote, credential, transferTag, flags, transferHeaders, direction,
               overwriteAllowed, wantDigest);
 
         return transfer.start();
@@ -762,6 +764,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         private final CredentialSource _source;
         private final EnumSet<TransferFlag> _flags;
         private final ImmutableMap<String, String> _transferHeaders;
+        private final String _transferTag;
         private final Direction _direction;
         private final boolean _overwriteAllowed;
         private final Optional<String> _wantDigest;
@@ -786,6 +789,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
 
         public RemoteTransfer(Subject subject, Restriction restriction,
               FsPath path, URI destination, @Nullable Object credential,
+              String transferTag,
               EnumSet<TransferFlag> flags, ImmutableMap<String, String> transferHeaders,
               Direction direction, boolean overwriteAllowed, Optional<String> wantDigest)
               throws ErrorResponseException {
@@ -817,6 +821,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
 
             _flags = flags;
             _transferHeaders = transferHeaders;
+            _transferTag = transferTag == null ? "" : transferTag.trim();
             _direction = direction;
             _overwriteAllowed = overwriteAllowed;
             _wantDigest = wantDigest;
@@ -905,7 +910,17 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                             msg = _pnfs.createPnfsEntry(_path.toString(), attributes,
                                     TransferManagerHandler.ATTRIBUTES_FOR_PULL);
                         }
-                        return msg.getFileAttributes();
+
+                        var attrs =  msg.getFileAttributes();
+                        // for CUSTODIAL files on upload client might provide extra information that should be passed to the tape system
+                        if (attrs.getRetentionPolicy() == RetentionPolicy.CUSTODIAL) {
+                            var archiveMetadata = ServletRequest.getRequest().getHeader("ArchiveMetadata");
+                            if (archiveMetadata != null) {
+                                attrs.getStorageInfo().setKey("archive_metadata", archiveMetadata);
+                            }
+                        }
+
+                        return attrs;
 
                     default:
                         throw new ErrorResponseException(Response.Status.SC_INTERNAL_SERVER_ERROR,
@@ -1046,24 +1061,33 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                           null, desiredChecksum);
 
                 case HTTP:
-                    return new RemoteHttpDataTransferProtocolInfo("RemoteHttpDataTransfer",
+                      RemoteHttpDataTransferProtocolInfo httpInfo =
+                          new RemoteHttpDataTransferProtocolInfo("RemoteHttpDataTransfer",
                           1, 1, address, _destination.toASCIIString(),
                           _flags.contains(TransferFlag.REQUIRE_VERIFICATION),
                           _transferHeaders, desiredChecksums);
+                      httpInfo.setTransferTag(_transferTag);
+                      return httpInfo;
 
                 case HTTPS:
                     if (_source == CredentialSource.OIDC) {
-                        return new RemoteHttpsDataTransferProtocolInfo("RemoteHttpsDataTransfer",
+                        RemoteHttpsDataTransferProtocolInfo httpsInfo =
+                            new RemoteHttpsDataTransferProtocolInfo("RemoteHttpsDataTransfer",
                               1, 1, address, _destination.toASCIIString(),
                               _flags.contains(TransferFlag.REQUIRE_VERIFICATION),
                               _transferHeaders, desiredChecksums,
                               _oidCredential);
+                        httpsInfo.setTransferTag(_transferTag);
+                        return httpsInfo;
                     } else {
-                        return new RemoteHttpsDataTransferProtocolInfo("RemoteHttpsDataTransfer",
+                        RemoteHttpsDataTransferProtocolInfo httpsInfo =
+                            new RemoteHttpsDataTransferProtocolInfo("RemoteHttpsDataTransfer",
                               1, 1, address, _destination.toASCIIString(),
                               _flags.contains(TransferFlag.REQUIRE_VERIFICATION),
                               _transferHeaders, _privateKey, _certificateChain,
                               desiredChecksums);
+                        httpsInfo.setTransferTag(_transferTag);
+                        return httpsInfo;
                     }
             }
 

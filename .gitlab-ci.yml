@@ -26,7 +26,6 @@
 # The kubernetes based jobs don't use directly any job artefact, thus pulling artefact
 # is explicitly disabled by default.
 
-
 stages:
   # build rpm, tar, deb, oci container
   - build
@@ -52,7 +51,7 @@ variables:
   HELM_OPTS: --replace --timeout 10m0s
   AUTOCA_URL: https://ci.dcache.org/ca
   DCACHE_HELM_REPO: https://gitlab.desy.de/api/v4/projects/7648/packages/helm/test
-  DCACHE_COMPATIBILITY_VERSION: 9.2.20
+  DCACHE_COMPATIBILITY_VERSION: 9.2.40
   JACOCO_VERSION: 0.8.14 #must match maven plugin version
 
 # let's debug nodes where job is running
@@ -115,8 +114,6 @@ default:
   rules:
     - if: $CI_COMMIT_TAG
 
-
-
 rpm:
   stage: build
   image: dcache/maven-java21-rpm-build
@@ -130,17 +127,6 @@ rpm:
         - "**/target/failsafe-reports/TEST-*.xml"
     paths:
       - "packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm"
-    expire_in: 2 days
-
-srm_client_rpm:
-  stage: build
-  image: dcache/maven-java21-rpm-build
-  extends: .build_cache
-  script:
-    - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl modules/srm-client package -P rpm
-  artifacts:
-    paths:
-      - "modules/srm-client/target/rpmbuild/RPMS/noarch/dcache-srmclient*.rpm"
     expire_in: 2 days
 
 deb:
@@ -169,7 +155,7 @@ tar:
 #Job to create and collect JaCoCo reports
 run_ut_with_coverage:
   stage: build
-  image: maven:3.9.12-eclipse-temurin-21
+  image: maven:3.9.12-eclipse-temurin-17
   extends: .build_cache
   script:
     # run all tests with the coverage profile
@@ -265,22 +251,6 @@ sign_rpm:
     paths:
     - packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm
 
-sign_srm_client_rpm:
-  stage: sign
-  image: almalinux:10-minimal
-  needs: ["srm_client_rpm"]
-  script:
-    - microdnf install -y rpm-sign gpg
-    - echo $DCACHE_ORG_PGP_KEY | base64 -d -i > secret.gpg
-    - gpg --quiet --batch --yes --allow-secret-key-import --passphrase="$DCACHE_ORG_PGP_KEY_PASS" --import secret.gpg
-    - gpg -a --export "$DCACHE_ORG_KEY_NAME" > RPM-GPG-KEY
-    - rpmsign --addsign --define "_signature gpg" --define "_gpg_name  $DCACHE_ORG_KEY_NAME" --define "_gpg_sign_cmd_extra_args --pinentry-mode loopback --passphrase $DCACHE_ORG_PGP_KEY_PASS" modules/srm-client/target/rpmbuild/RPMS/noarch/dcache-srmclient*.rpm
-    - rpmkeys --import RPM-GPG-KEY
-    - rpm --checksig -v modules/srm-client/target/rpmbuild/RPMS/noarch/dcache-srmclient*.rpm
-  artifacts:
-    paths:
-    - modules/srm-client/target/rpmbuild/RPMS/noarch/dcache-srmclient*.rpm
-
 sign_deb:
   stage: sign
   image: ubuntu:22.04
@@ -324,17 +294,6 @@ upload_rpm:
     - RPM_NAME=`ls packages/fhs/target/rpmbuild/RPMS/noarch/ | grep dcache`
     - VERSION=`echo $RPM_NAME | cut -d'-' -f 2 | cut -d'.' -f 1,2`
     - curl $PKG_UPLOAD_OPTIONS -u $PKG_UPLOAD_USER:$PKG_UPLOAD_PASS --upload-file packages/fhs/target/rpmbuild/RPMS/noarch/$RPM_NAME "$PKG_UPLOAD_URL/$VERSION/$RPM_NAME"
-
-upload_srm_client_rpm:
-  stage: upload
-  image: almalinux:10-minimal
-  dependencies:
-    - sign_srm_client_rpm
-  extends: .upload_rules
-  script:
-    - RPM_NAME=`ls modules/srm-client/target/rpmbuild/RPMS/noarch/ | grep dcache-srmclient`
-    - VERSION=`echo $RPM_NAME | cut -d'-' -f 3 | cut -d'.' -f 1,2`
-    - curl $PKG_UPLOAD_OPTIONS -u $PKG_UPLOAD_USER:$PKG_UPLOAD_PASS --upload-file modules/srm-client/target/rpmbuild/RPMS/noarch/$RPM_NAME "$PKG_UPLOAD_URL/$VERSION/$RPM_NAME"
 
 upload_deb:
   stage: upload
@@ -397,7 +356,6 @@ AI Generated Release Notes:
   dependencies:
     - sign_deb
     - sign_rpm
-    - sign_srm_client_rpm
     - tar
   script:
     - microdnf install -y git-core
@@ -430,7 +388,6 @@ Release Notes Table:
   dependencies:
     - sign_deb
     - sign_rpm
-    - sign_srm_client_rpm
     - tar
   script:
     - microdnf install -y git-core
@@ -723,9 +680,10 @@ Frontend test suite:
     - kubectl -n $K8S_NAMESPACE cp .ci/migrationEndpoint.http http-tester:/migrationEndpoint.http
     - kubectl -n $K8S_NAMESPACE cp .ci/userEndpoint.http http-tester:/userEndpoint.http
     - kubectl -n $K8S_NAMESPACE cp .ci/bulkRequestsEndpoint.http http-tester:/bulkRequestsEndpoint.http
+    - kubectl -n $K8S_NAMESPACE cp .ci/spacemanagerEndpoint.http http-tester:/spacemanagerEndpoint.http
     - kubectl -n $K8S_NAMESPACE cp README.md http-tester:/README.md
     - kubectl -n $K8S_NAMESPACE cp http-client.private.env.json http-tester:/http-client.private.env.json
-    - kubectl -n $K8S_NAMESPACE exec http-tester -- java --add-opens=java.base/java.util=ALL-UNNAMED $IJHTTP_JAVA_OPTS -cp /intellij-http-client/\* com.intellij.httpClient.cli.HttpClientMain -e Test -D /poolEndpoint.http /qosEndpoint.http /qosPolicyEndpoint.http /migrationEndpoint.http /userEndpoint.http /bulkRequestsEndpoint.http -p /http-client.private.env.json --insecure --report=/httpTests
+    - kubectl -n $K8S_NAMESPACE exec http-tester -- java --add-opens=java.base/java.util=ALL-UNNAMED $IJHTTP_JAVA_OPTS -cp /intellij-http-client/\* com.intellij.httpClient.cli.HttpClientMain -e Test -D /poolEndpoint.http /qosEndpoint.http /qosPolicyEndpoint.http /migrationEndpoint.http /userEndpoint.http /bulkRequestsEndpoint.http /spacemanagerEndpoint.http -p /http-client.private.env.json --insecure --report=/httpTests
     - kubectl -n $K8S_NAMESPACE cp http-tester:/httpTests/report.xml pool-report.xml
   artifacts:
     reports:
@@ -811,14 +769,13 @@ Run OIDC test:
 #Job to find JaCoCo CLI in cache or download it
 get_jacoco_cli:
   stage: build
-  image: eclipse-temurin:21-jre
+  image: eclipse-temurin:17-jre
   script:
     - ./get-jacoco.sh
   cache:
     key: "jacoco-cli-${JACOCO_VERSION}"  #cache per version
     paths:
       - "jacoco-${JACOCO_VERSION}/"      #cache the entire JaCoCo directory
-    policy: pull-push
   artifacts:
     paths:
       - "jacoco-${JACOCO_VERSION}/lib/jacococli.jar"
@@ -826,8 +783,8 @@ get_jacoco_cli:
 
 # Job to generate JaCoCo report using script
 generate_jacoco_report:
-  stage: testenv_post
-  image: eclipse-temurin:21-jre
+  stage: build
+  image: eclipse-temurin:17-jre
   needs:
     - job: run_ut_with_coverage
     - job: Collect container logs

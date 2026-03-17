@@ -13,9 +13,9 @@ and how dCache's users will interact with the system.  There is no one size fits
   - At least 500 MiB free disk space
 
 - Software:
-  - OpenJDK 17
-  - Postgres SQL Server 13.0 or later
-  - ZooKeeper version 3.5 (embedded)
+  - OpenJDK 17 (required) or OpenJDK 21 (tested)
+  - PostgreSQL Server 9.5 or later
+  - Apache ZooKeeper 3.8 or 3.9 (tested)
 
 ## Minimal Installation
 
@@ -36,7 +36,7 @@ For a production installation, you will need standalone ZooKeeper version 3.8 or
 For this installation, we assume the database will run on the same machine as the dCache services that
 use it.
 
-Start by installing PostgreSQL version 13.0 or later
+Start by installing PostgreSQL version 9.5 or later
 
 ```bash
 dnf -y install postgresql-server
@@ -114,7 +114,7 @@ Interface to a file system name space that maps dCache name space operations to 
 ##### Pool
 Service responsible for storing the contents of files. There must be always at least one pool. They talk all protocols.
 
-In addition to the four main cells you need an access protocol and Zookeper for cell communication.
+In addition to the four main cells you need an access protocol and Zookeeper for cell communication.
 
 ##### Zookeeper
 A distributed directory and coordination service that dCache relies on.
@@ -122,19 +122,19 @@ A distributed directory and coordination service that dCache relies on.
 
 ### Installation
 
-dCache's current golden release is 10.2
+dCache's current golden release is 11.2
 
 ```bash
-rpm -ivh https://www.dcache.org/old/downloads/1.9/repo/10.2/dcache-10.2.19-1.noarch.rpm
+rpm -ivh https://www.dcache.org/old/downloads/1.9/repo/11.2/dcache-11.2.0-1.noarch.rpm
 ```    
 
 ```bash
-Retrieving https://www.dcache.org/old/downloads/1.9/repo/9.2/dcache-9.2.19-1.noarch.rpm
-warning: /var/tmp/rpm-tmp.gzWZPS: Header V4 RSA/SHA256 Signature, key ID 3321de4c: NOKEY
+Retrieving https://www.dcache.org/old/downloads/1.9/repo/11.2/dcache-11.2.0-1.noarch.rpm
+warning: /var/tmp/rpm-tmp.kiCbJg: Header OpenPGP V4 RSA/SHA256 signature, key ID 3b97732d3321de4c: NOKEY
 Verifying...                          ################################# [100%]
 Preparing...                          ################################# [100%]
 Updating / installing...
-   1:dcache-9.2.19-1                  ################################# [100%]
+   1:dcache-11.2.0-1                  ################################# [100%]
 ```
 
 ### Configuration files

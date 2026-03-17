@@ -13,7 +13,7 @@ improving the performance of your application or taking advantage of
 the advance features that dCache provides.
 
 You may wish to read this book if you are running dCache; however,
-there is a separate document specificially for you, called "dCache,
+there is a separate document specifically for you, called "dCache,
 The Book".  This book gives information and advice for dCache admins.
 
 ## What is this book not

@@ -20,8 +20,12 @@ import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.xrootd.protocol.XrootdProtocol;
 import org.dcache.xrootd.tpc.XrootdTpcInfo;
 import org.dcache.xrootd.util.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress> {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(XrootdTransfer.class);
 
     private UUID _uuid;
     private InetSocketAddress _doorAddress;
@@ -39,6 +43,15 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress> {
         this.restriction = requireNonNull(restriction);
         tpcInfo = new XrootdTpcInfo(opaque);
         _transferTag = opaque.getOrDefault("scitag.flow", "");
+        if (LOGGER.isDebugEnabled()) {
+            if (!_transferTag.isEmpty()) {
+                LOGGER.debug("scitag.flow parameter found: {}", _transferTag);
+            } else if (opaque.containsKey("scitag.flow")) {
+                LOGGER.debug("scitag.flow parameter found but empty");
+            } else {
+                LOGGER.debug("No scitag.flow parameter in this request");
+            }
+        }
         try {
             tpcInfo.setUid(Subjects.getUid(subject));
         } catch (NoSuchElementException e) {
@@ -121,7 +134,11 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress> {
                 _uuid,
                 _doorAddress);
 
-            protocolInfo.setTransferTag(_transferTag);
+        protocolInfo.setTransferTag(_transferTag);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("XrootdProtocolInfo created with transferTag='{}' for pnfs={}",
+                  _transferTag, getPnfsId());
+        }
         return protocolInfo;
     }
 

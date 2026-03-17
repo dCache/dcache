@@ -83,10 +83,6 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
                 }
             }
 
-            Optional<String> spaceToken = getFirstLine(dirInode.getTag("WriteToken"));
-            if (spaceToken.isPresent()) {
-                return null;
-            }
             return getDefaultAccessLatency();
         } catch (FileNotFoundChimeraFsException e) {
             throw new FileNotFoundCacheException(e.getMessage(), e);
@@ -123,11 +119,6 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
                     LOGGER.error("Badly formatted RetentionPolicy tag in {}: {}", dirInode,
                           e.getMessage());
                 }
-            }
-
-            Optional<String> spaceToken = getFirstLine(dirInode.getTag("WriteToken"));
-            if (spaceToken.isPresent()) {
-                return null;
             }
 
             return getDefaultRetentionPolicy();
