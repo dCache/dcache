@@ -20,7 +20,6 @@ package org.dcache.pool.classic;
 import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import dmg.cells.nucleus.AbstractCellComponent;
@@ -28,13 +27,11 @@ import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellPath;
 import java.io.IOException;
 import java.io.InterruptedIOException;
-import java.net.InetSocketAddress;
 import java.io.SyncFailedException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.CompletionHandler;
 import java.nio.file.StandardOpenOption;
-import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.dcache.pool.movers.ChecksumMover;
@@ -199,7 +196,6 @@ public abstract class AbstractMoverProtocolTransferService
             _mover.getMover()
                   .runIO(_mover.getFileAttributes(), fileIoChannel, _mover.getProtocolInfo(),
                         _mover.getIoMode());
-            reportTransferStart();
         }
 
         private void tryToSync(RepositoryChannel channel) throws IOException {
@@ -219,66 +215,9 @@ public abstract class AbstractMoverProtocolTransferService
                 _mover.getMover()
                       .runIO(_mover.getFileAttributes(), fileIoChannel, _mover.getProtocolInfo(),
                             _mover.getIoMode());
-                reportTransferStart();
             } finally {
                 tryToSync(fileIoChannel);
             }
-        }
-
-        private void reportTransferStart() {
-            if (_transferLifeCycle == null) {
-                SCITAGS_LOGGER.debug(
-                      "scitags lifecycle=start skip reason=no-transfer-lifecycle protocol={} pnfsid={} transferTag={}",
-                      protocolName(),
-                      _mover.getFileAttributes().getPnfsId(),
-                      transferTag());
-                return;
-            }
-
-            if (!(_mover.getProtocolInfo() instanceof IpProtocolInfo ipProtocolInfo)) {
-                SCITAGS_LOGGER.debug(
-                      "scitags lifecycle=start skip reason=non-ip-protocol protocol={} pnfsid={} transferTag={}",
-                      protocolName(),
-                      _mover.getFileAttributes().getPnfsId(),
-                      transferTag());
-                return;
-            }
-
-            InetSocketAddress remoteEndpoint = ipProtocolInfo.getSocketAddress();
-            if (remoteEndpoint == null) {
-                SCITAGS_LOGGER.debug(
-                      "scitags lifecycle=start skip reason=no-remote-endpoint protocol={} pnfsid={} transferTag={}",
-                      protocolName(),
-                      _mover.getFileAttributes().getPnfsId(),
-                      transferTag());
-                return;
-            }
-
-            Optional<InetSocketAddress> localEndpoint = _mover.getLocalEndpoint();
-            if (localEndpoint.isEmpty()) {
-                SCITAGS_LOGGER.debug(
-                      "scitags lifecycle=start skip reason=no-local-endpoint protocol={} pnfsid={} remote={} transferTag={}",
-                      protocolName(),
-                      _mover.getFileAttributes().getPnfsId(),
-                      formatEndpoint(remoteEndpoint),
-                      transferTag());
-                return;
-            }
-
-            InetSocketAddress local = localEndpoint.get();
-            SCITAGS_LOGGER.debug(
-                  "scitags lifecycle=start invoke protocol={} pnfsid={} remote={} local={} transferTag={}",
-                  protocolName(),
-                  _mover.getFileAttributes().getPnfsId(),
-                  formatEndpoint(remoteEndpoint),
-                  formatEndpoint(local),
-                  transferTag());
-
-            _transferLifeCycle.onStart(
-                  remoteEndpoint,
-                  local,
-                  _mover.getProtocolInfo(),
-                  _mover.getSubject());
         }
 
         private String protocolName() {
@@ -288,18 +227,6 @@ public abstract class AbstractMoverProtocolTransferService
         private String transferTag() {
             String transferTag = _mover.getProtocolInfo().getTransferTag();
             return transferTag == null || transferTag.isEmpty() ? "-" : transferTag;
-        }
-
-        private String formatEndpoint(InetSocketAddress endpoint) {
-            if (endpoint == null) {
-                return "-";
-            }
-
-            if (endpoint.getAddress() != null) {
-                return endpoint.getAddress().getHostAddress() + ":" + endpoint.getPort();
-            }
-
-            return endpoint.getHostString() + ":" + endpoint.getPort();
         }
 
         private String formatError(Throwable t) {
