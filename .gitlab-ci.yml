@@ -93,6 +93,7 @@ default:
     name: dtzar/helm-kubectl:latest
     entrypoint: ['']
 
+
 #
 # default cache konfiguration for maven build jobs
 # Cache downloaded dependencies and plugins between builds.
@@ -121,10 +122,6 @@ rpm:
   script:
     - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl packages/fhs -P rpm clean package
   artifacts:
-    reports:
-      junit:
-        - "**/target/surefire-reports/TEST-*.xml"
-        - "**/target/failsafe-reports/TEST-*.xml"
     paths:
       - "packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm"
     expire_in: 2 days
@@ -752,7 +749,7 @@ Run OIDC test:
 #Job to find JaCoCo CLI in cache or download it
 get_jacoco_cli:
   stage: build
-  image: eclipse-temurin:21-jre
+  image: eclipse-temurin:17-jre
   script:
     - ./get-jacoco.sh
   cache:
@@ -768,9 +765,10 @@ get_jacoco_cli:
 # Job to generate JaCoCo report using script
 generate_jacoco_report:
   stage: testenv_post
-  image: eclipse-temurin:21-jre
+  image: eclipse-temurin:17-jre
   needs:
     - job: run_ut_with_coverage
+      artifacts: true
     - job: Collect container logs
     - job: get_jacoco_cli
     - job: Extract Coverage

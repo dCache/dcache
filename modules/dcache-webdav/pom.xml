@@ -30,7 +30,7 @@
     </dependency>
     <dependency>
       <groupId>org.dcache</groupId>
-      <artifactId>dcache-srm</artifactId>
+      <artifactId>dcache-spacemanager</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

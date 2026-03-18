@@ -30,7 +30,7 @@ liquibase() # $1 = domain, $2 = cell, $3+ = liquibase arguments
     password=$(getScopedProperty db.password "$1" "$2")
     driver=$(getScopedProperty db.driver "$1" "$2")
     classpath=$(printLimitedClassPath liquibase-core commons-lang3 commons-io opencsv snakeyaml picocli jaxb-api jaxb-core jaxb-impl slf4j-api logback-classic \
-                logback-core dcache-core dcache-bulk dcache-qos dcache-spacemanager srm-server chimera postgresql hsqldb h2)
+                logback-core dcache-core dcache-bulk dcache-qos dcache-spacemanager chimera postgresql hsqldb h2)
     changelog=$(getScopedProperty db.schema.changelog "$1" "$2")
     changelogpre=$(getScopedProperty db.schema.changelog-pre "$1" "$2")
 

@@ -298,23 +298,6 @@
                 <version>1.1.3_01</version>
             </dependency>
             <dependency>
-                <groupId>axis</groupId>
-                <artifactId>axis</artifactId>
-                <version>1.4</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>commons-logging</groupId>
-                        <artifactId>commons-logging</artifactId>
-                    </exclusion>
-                    <!-- 'servlet-api' conflicts with Jetty-supplied
-                         'javax.servlet' jar. -->
-                    <exclusion>
-                        <groupId>javax.servlet</groupId>
-                        <artifactId>servlet-api</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
                 <groupId>terapaths</groupId>
                 <artifactId>example-client</artifactId>
                 <version>1.0</version>
@@ -1237,11 +1220,6 @@
                     </configuration>
                 </plugin>
                 <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>axistools-maven-plugin</artifactId>
-                    <version>1.4</version>
-                </plugin>
-                <plugin>
                     <groupId>io.github.lukasmansour</groupId>
                     <artifactId>patch-maven-plugin</artifactId>
                     <version>1.0</version>
@@ -1513,14 +1491,11 @@
         <module>modules/dcache-gplazma</module>
         <module>modules/dcache-frontend</module>
         <module>modules/dcache-nfs</module>
-        <module>modules/dcache-srm</module>
         <module>modules/dcache-history</module>
         <module>modules/dcache-info</module>
         <module>modules/dcache-spacemanager</module>
         <module>modules/dcache-qos</module>
         <module>modules/ftp-client</module>
-        <module>modules/srm-common</module>
-        <module>modules/srm-server</module>
         <module>modules/acl-vehicles</module>
         <module>modules/acl</module>
         <module>modules/chimera</module>
