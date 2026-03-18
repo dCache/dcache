@@ -177,23 +177,19 @@ public class DcacheResourceFactory
     private static final Logger SCITAGS_LOGGER =
         LoggerFactory.getLogger("org.dcache.scitags");
 
-    static Optional<Map.Entry<String, String>> findHeaderIgnoreCase(HttpServletRequest request,
+    static Optional<String> findHeaderIgnoreCase(HttpServletRequest request,
           String expectedHeaderName) {
         Enumeration<String> headerNames = request.getHeaderNames();
         if (headerNames != null) {
             while (headerNames.hasMoreElements()) {
                 String actualHeaderName = headerNames.nextElement();
                 if (actualHeaderName.equalsIgnoreCase(expectedHeaderName)) {
-                    return Optional.of(Map.entry(actualHeaderName,
-                          request.getHeader(actualHeaderName)));
+                    return Optional.ofNullable(request.getHeader(actualHeaderName));
                 }
             }
         }
 
-        String headerValue = request.getHeader(expectedHeaderName);
-        return headerValue == null
-              ? Optional.empty()
-              : Optional.of(Map.entry(expectedHeaderName, headerValue));
+        return Optional.ofNullable(request.getHeader(expectedHeaderName));
     }
 
     private static final XMLOutputFactory XML_OUTPUT_FACTORY = XMLOutputFactory.newFactory();
@@ -1741,35 +1737,38 @@ public class DcacheResourceFactory
         }
 
         private String readTransferTag(HttpServletRequest request) {
+            String door = getCellName() + '@' + getCellDomainName();
+
             // SciTag takes precedence because it is checked first.
             for (String header : SCITAG_HEADERS) {
-                var matchedHeader = findHeaderIgnoreCase(request, header);
-                if (matchedHeader.isPresent()) {
-                    String transferTag = matchedHeader.get().getValue();
-                    if (transferTag != null && !transferTag.isBlank()) {
-                        return logSciTagsRequest(request,
-                              matchedHeader.get().getKey() + "-header",
-                              transferTag.trim());
-                    }
+                var transferTag = findHeaderIgnoreCase(request, header)
+                      .map(String::trim)
+                      .filter(tag -> !tag.isEmpty());
+                if (transferTag.isPresent()) {
+                    logSciTagsRequest(request, door, header + "-header", transferTag.get());
+                    return transferTag.get();
                 }
             }
 
-            String flowFromQuery = request.getParameter("scitag.flow");
-            if (flowFromQuery != null && !flowFromQuery.isBlank()) {
-                return logSciTagsRequest(request, "scitag.flow-query", flowFromQuery.trim());
+            var flowFromQuery = Optional.ofNullable(request.getParameter("scitag.flow"))
+                  .map(String::trim)
+                  .filter(tag -> !tag.isEmpty());
+            if (flowFromQuery.isPresent()) {
+                logSciTagsRequest(request, door, "scitag.flow-query", flowFromQuery.get());
+                return flowFromQuery.get();
             }
 
-            logSciTagsRequest(request, "none", "");
+            logSciTagsRequest(request, door, "none", "");
             return "";
         }
 
-        private String logSciTagsRequest(HttpServletRequest request, String tagSource,
-              String transferTag) {
+        private static void logSciTagsRequest(HttpServletRequest request, String door,
+              String tagSource, String transferTag) {
             if (SCITAGS_LOGGER.isDebugEnabled()) {
                 SCITAGS_LOGGER.debug(
                       "scitags event=request protocol={} door={} remote={} method={} alias={} local={} tagSource={} transferTag={}",
                       request.isSecure() ? PROTOCOL_INFO_SSL_NAME : PROTOCOL_INFO_NAME,
-                      getCellName() + '@' + getCellDomainName(),
+                      door,
                       request.getRemoteAddr(),
                       request.getMethod(),
                       request.getServerName(),
@@ -1777,7 +1776,6 @@ public class DcacheResourceFactory
                       tagSource,
                       transferTag.isEmpty() ? "-" : transferTag);
             }
-            return transferTag;
         }
 
         protected ProtocolInfo createProtocolInfo(InetSocketAddress address) {
