@@ -165,9 +165,9 @@ public class TransferLifeCycle {
         }
 
         int activityId = getActivity(protocolInfo);
-          long transferDurationMillis = Math.max(1L, mover.getConnectionTime());
-          Instant finishedAt = Instant.now();
-          Instant startedAt = finishedAt.minusMillis(transferDurationMillis);
+        long transferDurationMillis = Math.max(0L, mover.getConnectionTime());
+        Instant startedAt = Instant.ofEpochMilli(mover.getTimestamp());
+        Instant finishedAt = startedAt.plusMillis(transferDurationMillis);
 
         var data = new FlowMarkerBuilder()
               .withStartedAt(startedAt)
@@ -185,8 +185,8 @@ public class TransferLifeCycle {
         }
         var firefly = data.build("end");
 
-          InetSocketAddress fireflyDestination = toFireflyDestination.apply(src);
-          sendToMultipleDestinations(fireflyDestination, firefly);
+        InetSocketAddress fireflyDestination = toFireflyDestination.apply(src);
+        sendToMultipleDestinations(fireflyDestination, firefly);
         logMarkerEvent("end", src, dst, protocolInfo, optionalExpId.getAsInt(), activityId,
               mover.getBytesRead(), mover.getBytesWritten(), fireflyDestination);
     }
