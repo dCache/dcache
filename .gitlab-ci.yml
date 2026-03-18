@@ -769,13 +769,14 @@ Run OIDC test:
 #Job to find JaCoCo CLI in cache or download it
 get_jacoco_cli:
   stage: build
-  image: eclipse-temurin:17-jre
+  image: eclipse-temurin:21-jre
   script:
     - ./get-jacoco.sh
   cache:
     key: "jacoco-cli-${JACOCO_VERSION}"  #cache per version
     paths:
       - "jacoco-${JACOCO_VERSION}/"      #cache the entire JaCoCo directory
+    policy: pull-push
   artifacts:
     paths:
       - "jacoco-${JACOCO_VERSION}/lib/jacococli.jar"
@@ -784,7 +785,7 @@ get_jacoco_cli:
 # Job to generate JaCoCo report using script
 generate_jacoco_report:
   stage: testenv_post
-  image: eclipse-temurin:17-jre
+  image: eclipse-temurin:21-jre
   needs:
     - job: run_ut_with_coverage
     - job: Collect container logs
