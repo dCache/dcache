@@ -99,6 +99,9 @@ public class TransferLifeCycleTest {
             mover.setBytesRead(1024);
             mover.setBytesWritten(0);
 
+            Instant expectedStart = Instant.ofEpochMilli(mover.getTimestamp());
+            Instant expectedEnd = expectedStart.plusMillis(transferDuration);
+
             lifecycle.onEnd(
                   new InetSocketAddress("203.0.113.20", 42000),
                   new InetSocketAddress("198.51.100.55", 2880),
@@ -115,7 +118,8 @@ public class TransferLifeCycleTest {
             Instant startTime = Instant.parse(lifecyclePayload.getString("start-time"));
             Instant endTime = Instant.parse(lifecyclePayload.getString("end-time"));
 
-            assertTrue(endTime.isAfter(startTime));
+            assertEquals(expectedStart, startTime);
+            assertEquals(expectedEnd, endTime);
             assertEquals(transferDuration, Duration.between(startTime, endTime).toMillis());
         }
     }
