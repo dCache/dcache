@@ -1634,4 +1634,17 @@ public class MigrationModule
             return "Current threshold: " + getThreshold();
         }
     }
+
+    @Command(name = "hotfile show",
+          description = "Show the current status of the hot-file replication facility, "
+                + "including whether it is enabled and the values of the 'replicas' "
+                + "and 'threshold' parameters.",
+          hint = "Show hot-file replication status.")
+    public class HotfileShowCommand implements Callable<String> {
+
+        @Override
+        public String call() {
+            return "replicas=" + hotFileReplicaCount + "  threshold=" + hotFileThreshold;
+        }
+    }
 }
