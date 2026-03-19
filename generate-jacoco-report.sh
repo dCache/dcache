@@ -75,10 +75,29 @@ done
 # Add the cleaned directory to JaCoCo arguments
 CLASSFILES_ARGS+=("--classfiles" "$FILTERED_CLASSES_DIR")
 
-# Preserve main functionality: Add the Woven Classes (AspectJ)
+# Deduplicate woven classes from dump directory (AspectJ dumps multiple versions with hash suffixes)
 if [ -d "$DUMPED_CLASSES_DIR" ]; then
     echo "Adding woven classes from dump directory..."
-    CLASSFILES_ARGS+=("--classfiles" "$DUMPED_CLASSES_DIR")
+    DEDUPED_CLASSES_DIR="$PROJECT_ROOT/target/deduped-woven-classes"
+    rm -rf "$DEDUPED_CLASSES_DIR"
+    mkdir -p "$DEDUPED_CLASSES_DIR"
+
+    find "$DUMPED_CLASSES_DIR" -name "*.class" | while read -r classfile; do
+        # Strip the hash suffix: Foo.abc123.class -> Foo.class
+        filename=$(basename "$classfile")
+        # Remove hash: everything between last dot-before-.class and .class
+        clean_name=$(echo "$filename" | sed 's/\.[0-9a-f]\{16\}\.class$/.class/')
+        # Reconstruct relative package path from the file's directory
+        rel_dir=$(dirname "$classfile" | sed "s|.*classes-dump/[^/]*/||")
+        dest_dir="$DEDUPED_CLASSES_DIR/$rel_dir"
+        mkdir -p "$dest_dir"
+        # Only copy if not already present (first one wins)
+        if [ ! -f "$dest_dir/$clean_name" ]; then
+            cp "$classfile" "$dest_dir/$clean_name"
+        fi
+    done
+
+    CLASSFILES_ARGS+=("--classfiles" "$DEDUPED_CLASSES_DIR")
 fi
 
 # Generate the report with dynamic arguments
