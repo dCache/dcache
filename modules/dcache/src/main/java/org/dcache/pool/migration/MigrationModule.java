@@ -1278,20 +1278,34 @@ public class MigrationModule
             try {
                 cacheEntry = _context.getRepository().getEntry(pnfsId);
             } catch (Exception e) {
-                LOGGER.warn("Failed to get cache entry for {}: {}", pnfsId, e.getMessage());
+                LOGGER.warn("Failed to get cache entry for {}: {}", pnfsId, e.getMessage(), e);
                 return;
             }
             FileAttributes fileAttributes = cacheEntry.getFileAttributes();
 
-            String protocolUnit = protocolInfo.getProtocol() + "/" + protocolInfo.getMajorVersion();
-            if (protocolInfo.getMinorVersion() != 0) {
-                protocolUnit += "." + protocolInfo.getMinorVersion();
-            }
-
-            String netUnitName = null;
-            if (protocolInfo instanceof IpProtocolInfo) {
-                netUnitName = ((IpProtocolInfo) protocolInfo).getSocketAddress().getAddress()
-                      .getHostAddress();
+            String protocolUnit;
+            String netUnitName;
+            if (protocolInfo != null) {
+                protocolUnit = protocolInfo.getProtocol() + "/" + protocolInfo.getMajorVersion();
+                if (protocolInfo.getMinorVersion() != 0) {
+                    protocolUnit += "." + protocolInfo.getMinorVersion();
+                }
+                if (protocolInfo instanceof IpProtocolInfo) {
+                    IpProtocolInfo ipProtocolInfo = (IpProtocolInfo) protocolInfo;
+                    if (ipProtocolInfo.getSocketAddress() != null
+                          && ipProtocolInfo.getSocketAddress().getAddress() != null) {
+                        netUnitName = ipProtocolInfo.getSocketAddress().getAddress()
+                              .getHostAddress();
+                    } else {
+                        netUnitName = "";
+                    }
+                } else {
+                    netUnitName = "";
+                }
+            } else {
+                // Fall back to PoolSelectionUnit default protocol and net units
+                protocolUnit = "*/*";
+                netUnitName = "";
             }
 
             Collection<Pattern> excluded = new HashSet<>();

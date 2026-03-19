@@ -46,7 +46,7 @@ class PoolListByPoolMgrQuery
      * @param pnfsId the PNFS ID of the file
      * @param fileAttributes the file attributes for selection
      * @param protocolUnit the protocol unit (e.g., "DCap/3")
-     * @param netUnitName the network unit name (IP address or null)
+     * @param netUnitName the network unit name (IP address of the client, or empty string if unknown)
      */
     public PoolListByPoolMgrQuery(CellStub poolManager,
           PnfsId pnfsId,
@@ -57,7 +57,7 @@ class PoolListByPoolMgrQuery
         _pnfsId = requireNonNull(pnfsId);
         _fileAttributes = requireNonNull(fileAttributes);
         _protocolUnit = requireNonNull(protocolUnit);
-        _netUnitName = netUnitName;
+        _netUnitName = requireNonNull(netUnitName);
     }
 
     @Override

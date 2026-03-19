@@ -18,7 +18,7 @@ Any Door (DCap / NFS / WebDAV / xrootd / FTP / HTTP / …)
     → Pool.messageArrived(PoolIoFileMessage)
       → PoolV4.ioFile()          ← monitoring happens here
         → queues mover (protocol-specific)
-        → FileRequestMonitor.reportFileRequest(pnfsId, currentCount)
+        → FileRequestMonitor.reportFileRequest(pnfsId, currentCount, protocolInfo)
 ```
 
 Because the counting and triggering happen in `PoolV4.ioFile()`, no protocol-specific code
@@ -30,7 +30,8 @@ changes are required to benefit from this feature.
 
 ```java
 long requestCount = _ioQueue.numberOfRequestsFor(message.getPnfsId());
-_fileRequestMonitor.reportFileRequest(message.getPnfsId(), requestCount);
+_fileRequestMonitor.reportFileRequest(message.getPnfsId(), requestCount,
+      message.getProtocolInfo());
 ```
 
 When `requestCount` reaches or exceeds the configured threshold,
@@ -40,9 +41,12 @@ When `requestCount` reaches or exceeds the configured threshold,
 ### Pool Selection
 
 The migration job selects target pools by querying PoolManager via `PoolMgrQueryPoolsMsg`,
-using `null` for both `protocolUnit` and `netUnitName`. This means selection is based
-**solely on the file's storage group and pool-group read preferences** — protocol and
-network criteria are intentionally excluded.
+deriving `protocolUnit` from the triggering request's `ProtocolInfo` (e.g., `"DCap/3"`) and
+`netUnitName` from the client's IP address when available (e.g., `"192.168.1.10"`). When the
+client IP is not available (non-IP protocol or unknown), an empty string is used for `netUnitName`,
+which causes PoolManager to match any network unit. When `ProtocolInfo` is null (e.g., for
+internal pool-to-pool transfers), `protocolUnit` falls back to `"*/*"` and `netUnitName` to `""`
+so that selection is based solely on the file's storage group and pool-group read preferences.
 
 `PoolMgrQueryPoolsMsg.getPools()` returns a `List<String>[]` where index 0 is the highest
 read-preference level. `PoolListByPoolMgrQuery` selects **only** the first non-empty

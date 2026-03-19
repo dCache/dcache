@@ -2,7 +2,6 @@ package org.dcache.pool.migration;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.inOrder;
@@ -166,9 +165,9 @@ public class PoolListByPoolMgrQueryTest {
     }
 
     @Test
-    public void testRefreshWithNullNetUnitName() throws Exception {
+    public void testRefreshWithUnknownNetUnitName() throws Exception {
         PoolListByPoolMgrQuery poolList = new PoolListByPoolMgrQuery(
-              poolManager, pnfsId, fileAttributes, "DCap/3", null);
+              poolManager, pnfsId, fileAttributes, "DCap/3", "");
 
         SettableFuture<PoolMgrQueryPoolsMsg> future = SettableFuture.create();
         when(poolManager.send(any(PoolMgrQueryPoolsMsg.class))).thenReturn(future);
@@ -180,7 +179,7 @@ public class PoolListByPoolMgrQueryTest {
         verify(poolManager).send(queryMsgCaptor.capture());
 
         PoolMgrQueryPoolsMsg queryMsg = queryMsgCaptor.getValue();
-        assertNull(queryMsg.getNetUnitName());
+        assertEquals("", queryMsg.getNetUnitName());
     }
 
     /**
@@ -196,7 +195,7 @@ public class PoolListByPoolMgrQueryTest {
         // Setup: Two pool groups with different read preferences
         // Pool1 is in both groups, pool2-5 only in high-pref group, pool6-10 only in low-pref group
         PoolListByPoolMgrQuery poolList = new PoolListByPoolMgrQuery(
-              poolManager, pnfsId, fileAttributes, "DCap/3", null);
+              poolManager, pnfsId, fileAttributes, "DCap/3", "");
 
         InOrder inOrder = inOrder(poolManager);
 
@@ -222,7 +221,7 @@ public class PoolListByPoolMgrQueryTest {
         poolLists[1] = Arrays.asList("pool1", "pool6", "pool7", "pool8", "pool9", "pool10"); // Low pref
 
         PoolMgrQueryPoolsMsg response = new PoolMgrQueryPoolsMsg(
-              DirectionType.READ, "DCap/3", null, fileAttributes);
+              DirectionType.READ, "DCap/3", "", fileAttributes);
         response.setPoolList(poolLists);
         response.setSucceeded();
 
@@ -275,7 +274,7 @@ public class PoolListByPoolMgrQueryTest {
     @Test
     public void testSelectsFirstNonEmptyPreferenceLevel() throws Exception {
         PoolListByPoolMgrQuery poolList = new PoolListByPoolMgrQuery(
-              poolManager, pnfsId, fileAttributes, "DCap/3", null);
+              poolManager, pnfsId, fileAttributes, "DCap/3", "");
 
         InOrder inOrder = inOrder(poolManager);
 
@@ -298,7 +297,7 @@ public class PoolListByPoolMgrQueryTest {
         poolLists[2] = Arrays.asList("pool1", "pool2"); // Lower preference (should be ignored)
 
         PoolMgrQueryPoolsMsg response = new PoolMgrQueryPoolsMsg(
-              DirectionType.READ, "DCap/3", null, fileAttributes);
+              DirectionType.READ, "DCap/3", "", fileAttributes);
         response.setPoolList(poolLists);
         response.setSucceeded();
 
