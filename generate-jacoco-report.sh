@@ -72,22 +72,6 @@ for pkg in "${EXCLUSIONS[@]}"; do
     fi
 done
 
-# overwriting the compiled versions, so JaCoCo only ever sees one version per class.
-if [ -d "$DUMPED_CLASSES_DIR" ]; then
-    echo "Adding woven classes from dump directory..."
-    find "$DUMPED_CLASSES_DIR" -name "*.class" | while read -r classfile; do
-        filename=$(basename "$classfile")
-        # Strip hash suffix if present: Foo.abc123def456ab78.class -> Foo.class
-        clean_name=$(echo "$filename" | sed 's/\.[0-9a-f]\{16\}\.class$/.class/')
-        # Reconstruct package path (strip everything up to and including the pod name directory)
-        rel_dir=$(dirname "$classfile" | sed "s|.*classes-dump/[^/]*/||")
-        dest_dir="$FILTERED_CLASSES_DIR/$rel_dir"
-        mkdir -p "$dest_dir"
-        # Overwrite compiled class with woven version
-        cp "$classfile" "$dest_dir/$clean_name"
-    done
-fi
-
 # Single classfiles argument - woven classes have already overwritten compiled ones above
 CLASSFILES_ARGS+=("--classfiles" "$FILTERED_CLASSES_DIR")
 
