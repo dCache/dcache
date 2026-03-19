@@ -618,7 +618,7 @@ Extract Coverage:
           kubectl -n $K8S_NAMESPACE cp "${POD}:/tmp/jacoco-it.exec" "./integration-results/${POD}.exec"
       
           echo "Pulling woven classes from $POD..."
-          if kubectl -n $K8S_NAMESPACE cp "${POD}:/usr/local/dcache/var/log/jacoco-dump/." "./integration-results/classes-dump/${POD}/"; then
+          if kubectl -n $K8S_NAMESPACE cp "${POD}:/opt/dcache/var/log/jacoco-dump/." "./integration-results/classes-dump/${POD}/"; then
             echo "Successfully collected woven classes from $POD"
           else
             echo "Warning: Could not find dumped classes on $POD"
