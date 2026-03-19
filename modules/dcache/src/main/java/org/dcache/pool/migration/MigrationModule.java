@@ -12,7 +12,9 @@ import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
+import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
+import diskCacheV111.vehicles.ProtocolInfo;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellLifeCycleAware;
@@ -57,6 +59,7 @@ import org.dcache.util.expression.Type;
 import org.dcache.util.expression.TypeMismatchException;
 import org.dcache.util.expression.UnknownIdentifierException;
 import org.dcache.util.pool.CostModuleTagProvider;
+import org.dcache.vehicles.FileAttributes;
 import org.parboiled.Parboiled;
 import org.parboiled.parserunners.ReportingParseRunner;
 import org.parboiled.support.ParsingResult;
@@ -1244,7 +1247,8 @@ public class MigrationModule
      * new job.
      */
     @Override
-    public synchronized void reportFileRequest(PnfsId pnfsId, long numberOfRequests) {
+    public synchronized void reportFileRequest(PnfsId pnfsId, long numberOfRequests,
+          ProtocolInfo protocolInfo) {
         if (numberOfRequests < hotFileThreshold) {
             return;
         }
@@ -1268,11 +1272,36 @@ public class MigrationModule
                   _context.getPoolManagerStub(),
                   Collections.singletonList(_context.getPoolName()));
             sourceList.refresh();
+
+            // Get file attributes from repository for pool selection
+            CacheEntry cacheEntry;
+            try {
+                cacheEntry = _context.getRepository().getEntry(pnfsId);
+            } catch (Exception e) {
+                LOGGER.warn("Failed to get cache entry for {}: {}", pnfsId, e.getMessage());
+                return;
+            }
+            FileAttributes fileAttributes = cacheEntry.getFileAttributes();
+
+            String protocolUnit = protocolInfo.getProtocol() + "/" + protocolInfo.getMajorVersion();
+            if (protocolInfo.getMinorVersion() != 0) {
+                protocolUnit += "." + protocolInfo.getMinorVersion();
+            }
+
+            String netUnitName = null;
+            if (protocolInfo instanceof IpProtocolInfo) {
+                netUnitName = ((IpProtocolInfo) protocolInfo).getSocketAddress().getAddress()
+                      .getHostAddress();
+            }
+
             Collection<Pattern> excluded = new HashSet<>();
             excluded.add(Pattern.compile(Pattern.quote(_context.getPoolName())));
             RefreshablePoolList basePoolList = new PoolListFilter(
-                  new PoolListByPoolGroupOfPool(_context.getPoolManagerStub(),
-                        _context.getPoolName()),
+                  new PoolListByPoolMgrQuery(_context.getPoolManagerStub(),
+                        pnfsId,
+                        fileAttributes,
+                        protocolUnit,
+                        netUnitName),
                   excluded,
                   FALSE_EXPRESSION,
                   Collections.emptySet(),
