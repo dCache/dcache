@@ -37,7 +37,8 @@ You are an expert developer working on **dCache**, a distributed storage system 
   - `modules/gplazma2*` — individual gPlazma plugin modules (LDAP, Kerberos, OIDC, VOMS, etc.)
   - `modules/dcache-info` — info provider (monitoring)
   - `modules/dcache-history` — historical statistics
-  - `modules/dcache-srm` — SRM (Storage Resource Manager) implementation
+  - `modules/dcache-srm` — SRM (Storage Resource Manager) implementation (**skipped in standard builds** — see `src: skip SRM when building and testing dCache`)
+  - `modules/dcache-nearline-spi` — SPI for nearline storage (HSM tape) plugins
   - `modules/common` — shared utilities (e.g., `diskCacheV111.util.FsPath`, `diskCacheV111.util.CacheException`)
   - `modules/common-security` — shared security utilities
   - `modules/acl` / `modules/acl-vehicles` — ACL support
@@ -51,6 +52,16 @@ You are an expert developer working on **dCache**, a distributed storage system 
   - Clients → Doors (Protocol Endpoints) → PoolManager → Pools (Storage Nodes)
   - Pools handle direct data transfer (movers, Netty-based) with clients
   - PnfsManager (`diskCacheV111.namespace.PnfsManagerV3`) handles namespace operations
+- **Domain Model:**
+  - Cells run inside **domains** (each domain = one JVM process).
+  - Cell address format: `cellName@domainName` — use this when constructing `CellPath`.
+  - `CellPath` can route through multiple hops: `new CellPath("cellA@domain1", "cellB@domain2")`
+- **Key Domain Types:** `dCacheDomain` (core services), `poolDomain` (storage), `door` domains (protocol endpoints).
+- **Critical Common Classes:**
+  - `diskCacheV111.util.PnfsId` — the primary identifier for every file in dCache. Used everywhere.
+  - `diskCacheV111.util.FsPath` — type-safe representation of a namespace path.
+  - `diskCacheV111.util.CacheException` — base for all dCache-specific errors; has an error code (`int rc`).
+  - `javax.security.auth.Subject` — security context passed through operations; populated by gPlazma during login.
 
 ## 🛠 Development Workflow
 
@@ -67,12 +78,12 @@ You are an expert developer working on **dCache**, a distributed storage system 
     - To compile tests only: `mvn test-compile -pl modules/dcache`
   - **Clean:** `mvn clean`
 - **Java Version:** Java 17 is required.
-- **Key Library Versions:**
-  - Spring Framework: 5.3.x (NOT Spring Boot — XML-based configuration is common)
-  - Guava: used extensively for `ListenableFuture`, `Futures`, collections
-  - Netty: 4.2.x (used for pool movers and protocol doors)
-  - Mockito: 3.2.4
-  - JUnit: 4 (primary; some newer tests use JUnit 5)
+- **Key Libraries (qualitative):**
+  - **Spring Framework** — XML-based configuration (NOT Spring Boot). Use `@Required`, `@PostConstruct`, `@PreDestroy`.
+  - **Guava** — used extensively for `ListenableFuture`, `Futures`, collections utilities.
+  - **Netty** — used for pool movers and protocol doors.
+  - **JUnit 4** is the primary test framework; some newer tests use JUnit 5.
+  - **Mockito** — used for mocking in unit tests.
 - **Testing:**
   - **Unit Tests:** JUnit 4 is primary. Run with `mvn test`.
   - **Running Individual Tests:** `mvn test -Dtest=ClassName#methodName -pl modules/dcache`
@@ -105,6 +116,7 @@ You are an expert developer working on **dCache**, a distributed storage system 
   - **There is also a `CompletableFuture<T>` overload** — check the specific signature before use.
   - **CellStub.sendAndWait()** is the blocking variant — use sparingly.
   - **CellStub.notify()** is fire-and-forget (no reply expected).
+  - **Deferred reply (`Reply`):** A `messageArrived` method can return `dmg.cells.nucleus.Reply` to defer sending the reply asynchronously. This is used when the handler needs to do async work before replying.
   - When writing tests that mock `CellStub.send()`, use `com.google.common.util.concurrent.SettableFuture` (Guava) for creating test futures.
   - Use `com.google.common.util.concurrent.Futures` utility class for transforming and composing futures.
   - Common pattern: `Futures.addCallback(future, callback, MoreExecutors.directExecutor())`
@@ -135,40 +147,25 @@ You are an expert developer working on **dCache**, a distributed storage system 
 - **Thread Safety:** Always verify thread safety when modifying shared state. Look for existing locks and `@GuardedBy`.
 - **Diffs:** When generating diffs, include ample context (5+ lines) as the codebase is large and complex.
 - **Verify Before Writing:**
-  - **Method Signatures:** Use semantic_search or grep_search to verify method names and signatures before writing code
-  - **Return Types:** Check actual return types of framework methods (e.g., CellStub.send returns ListenableFuture, not CompletableFuture)
-  - **Message Classes:** Look at existing message class implementations to see correct method names (e.g., setPoolList vs setPools)
+  - **Method Signatures:** Use grep or file inspection to verify method names and signatures before writing code.
+  - **Return Types:** Check actual return types of framework methods (e.g., `CellStub.send` has both `ListenableFuture` and `CompletableFuture` overloads).
+  - **Message Classes:** Look at the actual message class source to confirm method names (they do not follow a uniform convention).
 - **After Writing Code:**
-  - **Always compile:** After creating or editing files, run compilation to catch errors early
-  - **Fix compilation errors immediately:** Use get_errors tool to see what went wrong, then fix
-  - **Run tests:** After compilation succeeds, run the relevant tests
-  - **Check test failures carefully:** Test failures often reveal incorrect assumptions about APIs
+  - **Always compile:** After creating or editing files, run `mvn test-compile -pl <module>` to catch errors early.
+  - **Fix compilation errors immediately** before moving to other files.
+  - **Run tests:** After compilation succeeds, run the relevant test class.
+  - **Check test failures carefully:** Test failures often reveal incorrect assumptions about APIs.
 
 ## 🔧 File Editing Best Practices
 
-### Using replace_string_in_file Effectively
-
-- **Include sufficient context:** Use 3-5 lines BEFORE and AFTER the target text to ensure uniqueness
-- **Match whitespace exactly:** Indentation and line breaks must match precisely
-- **Verify after editing:** Always use `read_file` or `get_errors` after editing to confirm changes applied
+- **Include sufficient context:** When replacing a string, use 3-5 lines BEFORE and AFTER the target text to ensure uniqueness.
+- **Match whitespace exactly:** Indentation and line breaks must match precisely.
+- **Verify after editing:** Always read the file or compile after editing to confirm changes applied correctly.
 - **If edits fail repeatedly:**
-  1. Read the file section to see current state
-  2. Check for whitespace/formatting differences
-  3. Consider using `insert_edit_into_file` instead
-  4. For multiple changes in same area, make one comprehensive edit instead of many small ones
-
-### Using insert_edit_into_file
-
-- **Prefer for new code sections** or when `replace_string_in_file` fails repeatedly
-- **Use concise placeholders:** Use `// ...existing code...` to represent unchanged sections
-- **Understand limitations:** Tool is smart but works best with clear structural hints
-- **Verify the result:** Always check the file state after using this tool
-
-### Common Editing Pitfalls
-
-- **Multiple sequential edits to same section:** Can cause state confusion. Make comprehensive changes in one edit.
-- **Not verifying edits applied:** Always check that your edit succeeded before moving on
-- **Assuming file state:** File may have reverted or been changed; always read current state before complex edits
+  1. Read the file section to see current state.
+  2. Check for whitespace/formatting differences.
+  3. For multiple changes in the same area, make one comprehensive edit instead of many small ones.
+- **Multiple sequential edits to the same section** can cause state confusion — make comprehensive changes in one edit.
 
 ## 🧪 Testing Patterns & Pitfalls
 
@@ -222,78 +219,22 @@ Mockito will capture BOTH calls, but `verify()` without a count expects exactly 
 
 ### Test Compilation and Execution
 
-- **Compile tests separately first:** `mvn test-compile -pl modules/dcache` catches compilation errors faster
+- **Compile tests first:** `mvn test-compile -pl modules/dcache` catches compilation errors faster than a full build.
 - **Run specific test class:** `mvn test -Dtest=ClassName -pl modules/dcache`
-- **Terminal output issues:** If terminal commands return empty output, check with `get_errors` tool instead
-- **Test isolation:** Tests may interfere with each other; run full test class rather than individual methods when debugging
+- **Test isolation:** Tests may interfere with each other; run the full test class rather than individual methods when debugging.
 
 ## 🔄 Workflow for Complex Changes
 
-When making changes that span multiple files or require multiple iterations:
-
-1. **Plan First:** Understand all files that need changes before editing
-2. **Edit in Logical Order:**
-   - Edit main implementation files first
-   - Then update tests
-   - Finally update documentation
-3. **Verify After Each File:**
-   - Use `get_errors` immediately after editing each file
-   - Fix compilation errors before moving to next file
-4. **Group Related Changes:**
-   - Make all changes to a section in one edit, not many small edits
-   - This avoids file state confusion
-5. **Checkpoint Progress:**
-   - After each successfully compiled file, note progress
-   - Don't assume previous edits succeeded; verify explicitly
-6. **Test Incrementally:**
-   - Compile after each file edit: `mvn test-compile -pl modules/dcache`
-   - Run tests only after all files compile successfully
-   - Fix test failures immediately before moving forward
-
-### When Things Go Wrong
-
-If you find yourself in a loop of failed edits:
-
-1. **STOP and assess:** Read the current file state with `read_file`
-2. **Simplify:** Break the change into smaller, independent pieces
-3. **Switch tools:** If `replace_string_in_file` fails 2-3 times, use `insert_edit_into_file`
-4. **Ask for help:** If truly stuck, explain the situation and ask the developer for guidance
-
-### Terminal Command Best Practices
-
-- **Capture output:** Use `2>&1 | tail -50` to see last 50 lines of output
-- **Timeouts:** Use `timeout 120` for long-running commands
-- **Grep for results:** Filter Maven output for specific patterns: `grep -A 5 "Tests run:"`
-- **Alternative verification:** If terminal doesn't work, use `get_errors` tool as fallback
+1. **Plan first:** Understand all files that need changes before editing.
+2. **Compile after each file:** `mvn test-compile -pl <module>` — fix errors before moving on.
+3. **Run tests only after all files compile.**
+4. **Fix test failures immediately** before moving forward.
+5. **If stuck in a loop of failed edits:** read the current file state, simplify the change, or ask the developer.
 
 ## Communication Guidelines
 
-### Professional Colleague Interaction
-
-Interact with the developer as a professional colleague, not as a subordinate:
-
-- Avoid sycophancy and obsequiousness
-- Point out mistakes or correct misunderstandings when necessary, using professional and constructive language
-- If the developer's request contains an error or misunderstanding, explain the issue clearly
-
-### Truth and Accuracy
-
-Accuracy and honesty are critical:
-
-- If you lack sufficient information to complete a task, say so explicitly: "I don't know" or "I don't have access to the information needed"
-- Ask the developer for help or additional information when needed
-- Never fabricate answers or hide gaps in knowledge
-- It is better to acknowledge limitations than to provide incorrect information
-
-### Clear and Direct Communication
-
-Be explicit and unambiguous in all responses:
-
-- Use literal language; avoid idioms, metaphors, or figurative expressions that could be misinterpreted
-- State assumptions explicitly rather than leaving them implicit
-- When suggesting multiple options, clearly label them and explain the trade-offs
-- If a request is ambiguous, ask specific clarifying questions before proceeding
-- Provide concrete examples when explaining abstract concepts
-- Break down complex tasks into explicit, numbered steps when helpful
-- If you're uncertain about what the developer wants, state what you understand and ask for confirmation
-
+- Interact as a professional colleague: point out mistakes or misunderstandings constructively.
+- Avoid sycophancy. If the developer's request contains an error or misunderstanding, explain it clearly.
+- If you lack sufficient information, say so — never fabricate answers or hide gaps in knowledge.
+- State assumptions explicitly; ask for clarification when a request is ambiguous.
+- It is better to acknowledge limitations than to provide incorrect information.
