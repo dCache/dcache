@@ -749,7 +749,7 @@ Run OIDC test:
 #Job to find JaCoCo CLI in cache or download it
 get_jacoco_cli:
   stage: build
-  image: eclipse-temurin:17-jre
+  image: eclipse-temurin:21-jre
   script:
     - ./get-jacoco.sh
   cache:
@@ -765,7 +765,7 @@ get_jacoco_cli:
 # Job to generate JaCoCo report using script
 generate_jacoco_report:
   stage: testenv_post
-  image: eclipse-temurin:17-jre
+  image: eclipse-temurin:21-jre
   needs:
     - job: run_ut_with_coverage
       artifacts: true
