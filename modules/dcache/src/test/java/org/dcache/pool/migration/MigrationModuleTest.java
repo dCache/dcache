@@ -31,7 +31,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
 import dmg.cells.nucleus.CellAddressCore;
@@ -102,12 +101,9 @@ public class MigrationModuleTest {
     @Test
     public void testReportFileRequestBelowThreshold() throws Exception {
         PnfsId pnfsId = new PnfsId("0000A1B2C3D4E5F6");
-        ProtocolInfo protocolInfo = mock(ProtocolInfo.class);
-        when(protocolInfo.getProtocol()).thenReturn("DCap");
-        when(protocolInfo.getMajorVersion()).thenReturn(3);
         when(message.getPnfsId()).thenReturn(pnfsId);
         module.setThreshold(5L);
-        module.reportFileRequest(pnfsId, 1L, protocolInfo); // below threshold
+        module.reportFileRequest(pnfsId, 1L); // below threshold
         // Should not create a migration job
         assertFalse(module.hasJob("hotfile-" + pnfsId));
     }
@@ -115,16 +111,13 @@ public class MigrationModuleTest {
     @Test
     public void testReportFileRequestAboveThreshold() throws Exception {
         PnfsId pnfsId = new PnfsId("0000A1B2C3D4E5F6");
-        ProtocolInfo protocolInfo = mock(ProtocolInfo.class);
-        when(protocolInfo.getProtocol()).thenReturn("DCap");
-        when(protocolInfo.getMajorVersion()).thenReturn(3);
         when(entry.getFileAttributes()).thenReturn(fileAttributes);
         when(entry.getLastAccessTime()).thenReturn(0L);
         when(entry.getPnfsId()).thenReturn(pnfsId);
         when(message.getPnfsId()).thenReturn(pnfsId);
         when(repository.getEntry(pnfsId)).thenReturn(entry);
         module.setThreshold(5L);
-        module.reportFileRequest(pnfsId, 10L, protocolInfo); // above threshold
+        module.reportFileRequest(pnfsId, 10L); // above threshold
         // Should create a migration job
         assertTrue(module.hasJob("hotfile-" + pnfsId));
     }
@@ -155,21 +148,13 @@ public class MigrationModuleTest {
 
         module.setThreshold(0L); // Always trigger
 
-        ProtocolInfo protocolInfo = mock(ProtocolInfo.class);
-        when(protocolInfo.getProtocol()).thenReturn("DCap");
-        when(protocolInfo.getMajorVersion()).thenReturn(3);
-
-        // Setup FileAttributes for hot file migration
-        when(entry.getFileAttributes()).thenReturn(fileAttributes);
-        when(entry.getLastAccessTime()).thenReturn(0L);
-
         // Create 50 jobs
         for (int i = 0; i < 50; i++) {
             PnfsId pnfsId = new PnfsId(String.format("0000000000000000000000%02d", i));
             when(message.getPnfsId()).thenReturn(pnfsId);
             when(repository.getEntry(pnfsId)).thenReturn(entry);
             when(entry.getPnfsId()).thenReturn(pnfsId);
-            module.reportFileRequest(pnfsId, 1L, protocolInfo);
+            module.reportFileRequest(pnfsId, 1L);
             Thread.sleep(1); // Ensure unique timestamps
         }
 
@@ -186,7 +171,7 @@ public class MigrationModuleTest {
             when(repository.getEntry(pnfsId)).thenReturn(entry);
             when(entry.getPnfsId()).thenReturn(pnfsId);
             when(repository.iterator()).thenReturn(Collections.singletonList(pnfsId).iterator());
-            module.reportFileRequest(pnfsId, 1L, protocolInfo);
+            module.reportFileRequest(pnfsId, 1L);
             Thread.sleep(1);
         }
 
@@ -225,21 +210,13 @@ public class MigrationModuleTest {
 
         module.setThreshold(0L);
 
-        ProtocolInfo protocolInfo = mock(ProtocolInfo.class);
-        when(protocolInfo.getProtocol()).thenReturn("DCap");
-        when(protocolInfo.getMajorVersion()).thenReturn(3);
-
-        // Setup FileAttributes for hot file migration
-        when(entry.getFileAttributes()).thenReturn(fileAttributes);
-        when(entry.getLastAccessTime()).thenReturn(0L);
-
         // 1. Create 50 jobs and cancel them (Terminal).
         for (int i = 0; i < 50; i++) {
             PnfsId pnfsId = new PnfsId(String.format("0000000000000000000001%02d", i));
             when(message.getPnfsId()).thenReturn(pnfsId);
             when(repository.getEntry(pnfsId)).thenReturn(entry);
             when(entry.getPnfsId()).thenReturn(pnfsId);
-            module.reportFileRequest(pnfsId, 1L, protocolInfo);
+            module.reportFileRequest(pnfsId, 1L);
             Thread.sleep(1);
         }
         module.cancelAll();
@@ -252,7 +229,7 @@ public class MigrationModuleTest {
             when(repository.getEntry(pnfsId)).thenReturn(entry);
             when(entry.getPnfsId()).thenReturn(pnfsId);
             when(repository.iterator()).thenReturn(Collections.singletonList(pnfsId).iterator());
-            module.reportFileRequest(pnfsId, 1L, protocolInfo);
+            module.reportFileRequest(pnfsId, 1L);
             Thread.sleep(1);
         }
         // Total: 55 (50 Finished, 5 Running).
@@ -265,7 +242,7 @@ public class MigrationModuleTest {
         when(message.getPnfsId()).thenReturn(pnfsId);
         when(repository.getEntry(pnfsId)).thenReturn(entry);
         when(entry.getPnfsId()).thenReturn(pnfsId);
-        module.reportFileRequest(pnfsId, 1L, protocolInfo);
+        module.reportFileRequest(pnfsId, 1L);
         // Cancel this specific job
         MigrationModule.MigrationCancelCommand cmd = module.new MigrationCancelCommand();
         cmd.id = "hotfile-" + pnfsId;
@@ -278,7 +255,7 @@ public class MigrationModuleTest {
         when(repository.getEntry(pnfsId2)).thenReturn(entry);
         when(entry.getPnfsId()).thenReturn(pnfsId2);
         when(repository.iterator()).thenReturn(Collections.singletonList(pnfsId2).iterator());
-        module.reportFileRequest(pnfsId2, 1L, protocolInfo);
+        module.reportFileRequest(pnfsId2, 1L);
 
         // Analysis:
         // Start: 50 Terminal, 5 Running.
