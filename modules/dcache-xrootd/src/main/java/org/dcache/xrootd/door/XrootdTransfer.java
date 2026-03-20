@@ -1,5 +1,6 @@
 package org.dcache.xrootd.door;
 
+import static com.google.common.net.InetAddresses.toUriString;
 import static java.util.Objects.requireNonNull;
 
 import diskCacheV111.util.FsPath;
@@ -26,6 +27,7 @@ import org.slf4j.LoggerFactory;
 public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(XrootdTransfer.class);
+    private static final Logger SCITAGS_LOGGER = LoggerFactory.getLogger("org.dcache.scitags");
 
     private UUID _uuid;
     private InetSocketAddress _doorAddress;
@@ -43,15 +45,6 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress> {
         this.restriction = requireNonNull(restriction);
         tpcInfo = new XrootdTpcInfo(opaque);
         _transferTag = opaque.getOrDefault("scitag.flow", "");
-        if (LOGGER.isDebugEnabled()) {
-            if (!_transferTag.isEmpty()) {
-                LOGGER.debug("scitag.flow parameter found: {}", _transferTag);
-            } else if (opaque.containsKey("scitag.flow")) {
-                LOGGER.debug("scitag.flow parameter found but empty");
-            } else {
-                LOGGER.debug("No scitag.flow parameter in this request");
-            }
-        }
         try {
             tpcInfo.setUid(Subjects.getUid(subject));
         } catch (NoSuchElementException e) {
@@ -94,6 +87,31 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress> {
 
     protected synchronized ProtocolInfo createProtocolInfo() {
         return createXrootdProtocolInfo();
+    }
+
+    void logSciTagsRequest(Map<String, String> opaque) {
+        if (SCITAGS_LOGGER.isDebugEnabled()) {
+            String tagSource = !_transferTag.isEmpty()
+                  ? "scitag.flow"
+                  : opaque.containsKey("scitag.flow") ? "scitag.flow-empty" : "none";
+            SCITAGS_LOGGER.debug(
+                  "scitags event=request protocol=xrootd door={} remote={} tagSource={} transferTag={}",
+                  getCellName() + '@' + getDomainName(),
+                  formatAddress(getClientAddress()),
+                  tagSource,
+                  _transferTag.isEmpty() ? "-" : _transferTag);
+        }
+    }
+
+    private String formatAddress(InetSocketAddress address) {
+        if (address == null) {
+            return "-";
+        }
+
+        var inetAddress = address.getAddress();
+        return inetAddress == null
+              ? address.getHostString()
+              : toUriString(inetAddress);
     }
 
     @Override

@@ -496,6 +496,7 @@
   <bean id="remote-http-transfer-service" class="org.dcache.pool.classic.RemoteHttpTransferService"
           depends-on="rep" destroy-method="shutdown">
       <property name="postTransferService" ref="post-transfer-service"/>
+      <property name="transferLifeCycle" ref="transfer-lifecycle"/>
       <property name="certificateAuthorityPath" value="${pool.mover.http-tpc.authn.capath}"/>
       <property name="certificateAuthorityUpdateInterval" value="${pool.mover.http-tpc.authn.capath.refresh}"/>
       <property name="certificateAuthorityUpdateIntervalUnit" value="${pool.mover.http-tpc.authn.capath.refresh.unit}"/>
