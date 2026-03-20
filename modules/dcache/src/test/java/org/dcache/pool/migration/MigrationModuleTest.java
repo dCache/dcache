@@ -1,10 +1,13 @@
 package org.dcache.pool.migration;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 
 import org.dcache.cells.CellStub;
+import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.migration.json.MigrationData;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.ReplicaState;
@@ -14,6 +17,7 @@ import org.dcache.vehicles.FileAttributes;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Before;
@@ -28,12 +32,16 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
 
 import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.ProtocolInfo;
+import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
+import diskCacheV111.vehicles.PoolManagerGetPoolsByNameMessage;
+import diskCacheV111.vehicles.PoolMgrQueryPoolsMsg;
+import diskCacheV111.vehicles.ProtocolInfo;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellPath;
 
@@ -289,5 +297,89 @@ public class MigrationModuleTest {
         //         Remaining: 50 Terminal, 5 Running, 1 New (J2).
         //         Total = 56.
         assertEquals(56, module.getDataObject().getJobInfo().length);
+    }
+
+    /**
+     * Helper: configures mocks so that the PoolMgrQueryPoolsMsg sent during
+     * {@code reportFileRequest} is captured and returned for assertion.
+     *
+     * <p>Requires a per-test {@code pnfsId} that has not been used before, so that
+     * {@code reportFileRequest} does not short-circuit on an existing job.
+     */
+    private PoolMgrQueryPoolsMsg reportFileRequestAndCaptureQuery(
+          PnfsId pnfsId, ProtocolInfo protocolInfo) throws Exception {
+        when(fileAttributes.isDefined(FileAttribute.STORAGEINFO)).thenReturn(true);
+        when(entry.getFileAttributes()).thenReturn(fileAttributes);
+        when(entry.getPnfsId()).thenReturn(pnfsId);
+        when(repository.getEntry(pnfsId)).thenReturn(entry);
+
+        // Return non-null futures so CellStub.addCallback does not NPE.
+        when(poolManagerStub.send(any(PoolManagerGetPoolsByNameMessage.class)))
+              .thenReturn(SettableFuture.create());
+        PoolMgrQueryPoolsMsg[] captured = new PoolMgrQueryPoolsMsg[1];
+        when(poolManagerStub.send(any(PoolMgrQueryPoolsMsg.class))).thenAnswer(inv -> {
+            captured[0] = inv.getArgument(0);
+            return SettableFuture.create();
+        });
+
+        module.setThreshold(0L);
+        module.reportFileRequest(pnfsId, 1L, protocolInfo);
+
+        assertNotNull("PoolMgrQueryPoolsMsg should have been sent to PoolManager", captured[0]);
+        return captured[0];
+    }
+
+    @Test
+    public void testReportFileRequestUsesWildcardProtocolWhenProtocolInfoNull() throws Exception {
+        PoolMgrQueryPoolsMsg msg = reportFileRequestAndCaptureQuery(
+              new PnfsId("0000000000000000000000A1"), null);
+
+        assertEquals("*/*", msg.getProtocolUnitName());
+        assertEquals("", msg.getNetUnitName());
+    }
+
+    @Test
+    public void testReportFileRequestDerivesProtocolFromNonIpProtocolInfo() throws Exception {
+        ProtocolInfo protocolInfo = mock(ProtocolInfo.class);
+        when(protocolInfo.getProtocol()).thenReturn("xrootd");
+        when(protocolInfo.getMajorVersion()).thenReturn(2);
+        // getMinorVersion() returns 0 by default → no ".minor" suffix
+
+        PoolMgrQueryPoolsMsg msg = reportFileRequestAndCaptureQuery(
+              new PnfsId("0000000000000000000000A2"), protocolInfo);
+
+        assertEquals("xrootd/2", msg.getProtocolUnitName());
+        assertEquals("", msg.getNetUnitName());
+    }
+
+    @Test
+    public void testReportFileRequestDerivesNetUnitFromIpProtocolInfo() throws Exception {
+        IpProtocolInfo protocolInfo = mock(IpProtocolInfo.class);
+        when(protocolInfo.getProtocol()).thenReturn("DCap");
+        when(protocolInfo.getMajorVersion()).thenReturn(3);
+        // minor = 0 → no ".minor" suffix
+        InetAddress addr = InetAddress.getByAddress(new byte[]{10, 0, 0, 5});
+        when(protocolInfo.getSocketAddress()).thenReturn(new InetSocketAddress(addr, 22125));
+
+        PoolMgrQueryPoolsMsg msg = reportFileRequestAndCaptureQuery(
+              new PnfsId("0000000000000000000000A3"), protocolInfo);
+
+        assertEquals("DCap/3", msg.getProtocolUnitName());
+        assertEquals("10.0.0.5", msg.getNetUnitName());
+    }
+
+    @Test
+    public void testReportFileRequestUsesEmptyNetUnitWhenSocketAddressNull() throws Exception {
+        IpProtocolInfo protocolInfo = mock(IpProtocolInfo.class);
+        when(protocolInfo.getProtocol()).thenReturn("NFS");
+        when(protocolInfo.getMajorVersion()).thenReturn(4);
+        when(protocolInfo.getMinorVersion()).thenReturn(1); // → "NFS/4.1"
+        when(protocolInfo.getSocketAddress()).thenReturn(null);
+
+        PoolMgrQueryPoolsMsg msg = reportFileRequestAndCaptureQuery(
+              new PnfsId("0000000000000000000000A4"), protocolInfo);
+
+        assertEquals("NFS/4.1", msg.getProtocolUnitName());
+        assertEquals("", msg.getNetUnitName());
     }
 }

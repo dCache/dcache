@@ -331,6 +331,76 @@ public class PoolListByPoolMgrQueryTest {
     }
 
     @Test
+    public void testSelectsPoolsWithWildcardProtocol() throws Exception {
+        // Verifies end-to-end pool selection when both protocol and net unit use their
+        // default values ("*/*" and ""), which is the case when ProtocolInfo is null.
+        PoolListByPoolMgrQuery poolList = new PoolListByPoolMgrQuery(
+              poolManager, pnfsId, fileAttributes, "*/*", "");
+
+        InOrder inOrder = inOrder(poolManager);
+
+        SettableFuture<PoolMgrQueryPoolsMsg> queryFuture = SettableFuture.create();
+        when(poolManager.send(any(PoolMgrQueryPoolsMsg.class))).thenReturn(queryFuture);
+
+        SettableFuture<PoolManagerGetPoolsByNameMessage> poolInfoFuture = SettableFuture.create();
+        when(poolManager.send(any(PoolManagerGetPoolsByNameMessage.class)))
+              .thenReturn(poolInfoFuture);
+
+        poolList.refresh();
+
+        // Verify the wildcard values are forwarded to PoolManager unchanged.
+        ArgumentCaptor<PoolMgrQueryPoolsMsg> queryMsgCaptor = ArgumentCaptor.forClass(
+              PoolMgrQueryPoolsMsg.class);
+        inOrder.verify(poolManager).send(queryMsgCaptor.capture());
+        PoolMgrQueryPoolsMsg queryMsg = queryMsgCaptor.getValue();
+        assertEquals(DirectionType.READ, queryMsg.getAccessType());
+        assertEquals("*/*", queryMsg.getProtocolUnitName());
+        assertEquals("", queryMsg.getNetUnitName());
+
+        // Simulate PoolManager response with two preference levels.
+        @SuppressWarnings("unchecked")
+        List<String>[] poolLists = new List[2];
+        poolLists[0] = Arrays.asList("pool1", "pool2");
+        poolLists[1] = Arrays.asList("pool3");
+
+        PoolMgrQueryPoolsMsg response = new PoolMgrQueryPoolsMsg(
+              DirectionType.READ, "*/*", "", fileAttributes);
+        response.setPoolList(poolLists);
+        response.setSucceeded();
+        queryFuture.set(response);
+
+        // Only the highest-preference pools should be requested.
+        ArgumentCaptor<PoolManagerGetPoolsByNameMessage> poolInfoCaptor =
+              ArgumentCaptor.forClass(PoolManagerGetPoolsByNameMessage.class);
+        inOrder.verify(poolManager, timeout(1000)).send(poolInfoCaptor.capture());
+
+        Collection<String> requestedPools = poolInfoCaptor.getValue().getPoolNames();
+        assertEquals(2, requestedPools.size());
+        assertTrue(requestedPools.contains("pool1"));
+        assertTrue(requestedPools.contains("pool2"));
+        assertFalse("pool3 from lower-preference level should be excluded",
+              requestedPools.contains("pool3"));
+
+        // Complete the pool info request.
+        List<PoolManagerPoolInformation> pools = new ArrayList<>();
+        pools.add(new PoolManagerPoolInformation("pool1",
+              new PoolCostInfo("pool1", IoQueueManager.DEFAULT_QUEUE), 0.5));
+        pools.add(new PoolManagerPoolInformation("pool2",
+              new PoolCostInfo("pool2", IoQueueManager.DEFAULT_QUEUE), 0.3));
+        PoolManagerGetPoolsByNameMessage poolInfoResponse = new PoolManagerGetPoolsByNameMessage(
+              Arrays.asList("pool1", "pool2"));
+        poolInfoResponse.setPools(pools);
+        poolInfoResponse.setOfflinePools(new ArrayList<>());
+        poolInfoResponse.setSucceeded();
+        poolInfoFuture.set(poolInfoResponse);
+
+        assertTrue(poolList.isValid());
+        assertEquals(2, poolList.getPools().size());
+        assertTrue(poolList.getPools().stream().anyMatch(p -> p.getName().equals("pool1")));
+        assertTrue(poolList.getPools().stream().anyMatch(p -> p.getName().equals("pool2")));
+    }
+
+    @Test
     public void testToString() {
         PoolListByPoolMgrQuery poolList = new PoolListByPoolMgrQuery(
               poolManager, pnfsId, fileAttributes, "DCap/3", "127.0.0.1");
