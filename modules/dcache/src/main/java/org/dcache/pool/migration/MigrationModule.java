@@ -27,6 +27,7 @@ import dmg.util.command.CommandLine;
 import dmg.util.command.Option;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -42,6 +43,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 import org.dcache.cells.CellStub;
 import org.dcache.pool.PoolDataBeanProvider;
@@ -1283,30 +1285,8 @@ public class MigrationModule
             }
             FileAttributes fileAttributes = cacheEntry.getFileAttributes();
 
-            String protocolUnit;
-            String netUnitName;
-            if (protocolInfo != null) {
-                protocolUnit = protocolInfo.getProtocol() + "/" + protocolInfo.getMajorVersion();
-                if (protocolInfo.getMinorVersion() != 0) {
-                    protocolUnit += "." + protocolInfo.getMinorVersion();
-                }
-                if (protocolInfo instanceof IpProtocolInfo) {
-                    IpProtocolInfo ipProtocolInfo = (IpProtocolInfo) protocolInfo;
-                    if (ipProtocolInfo.getSocketAddress() != null
-                          && ipProtocolInfo.getSocketAddress().getAddress() != null) {
-                        netUnitName = ipProtocolInfo.getSocketAddress().getAddress()
-                              .getHostAddress();
-                    } else {
-                        netUnitName = "";
-                    }
-                } else {
-                    netUnitName = "";
-                }
-            } else {
-                // Fall back to PoolSelectionUnit default protocol and net units
-                protocolUnit = "*/*";
-                netUnitName = "";
-            }
+            String protocolUnit = deriveProtocolUnit(protocolInfo);
+            String netUnitName = deriveNetUnitName(protocolInfo);
 
             Collection<Pattern> excluded = new HashSet<>();
             excluded.add(Pattern.compile(Pattern.quote(_context.getPoolName())));
@@ -1495,6 +1475,37 @@ public class MigrationModule
 
     public boolean isActive(PnfsId id) {
         return _context.isActive(id);
+    }
+
+    /**
+     * Returns the PSU protocol-unit string for the given request, e.g. {@code "DCap/3"} or
+     * {@code "xrootd/2.1"}. When {@code protocolInfo} is {@code null} (e.g. an internal
+     * pool-to-pool transfer), returns the PSU wildcard that matches any protocol unit.
+     */
+    private static String deriveProtocolUnit(@Nullable ProtocolInfo protocolInfo) {
+        if (protocolInfo == null) {
+            return "*/*";
+        }
+        String unit = protocolInfo.getProtocol() + "/" + protocolInfo.getMajorVersion();
+        return protocolInfo.getMinorVersion() != 0
+              ? unit + "." + protocolInfo.getMinorVersion()
+              : unit;
+    }
+
+    /**
+     * Returns the client IP address string for use as the PSU net-unit name, e.g.
+     * {@code "10.0.0.5"}. Returns an empty string whenever the address is unavailable
+     * (non-IP protocol, null socket address, or null {@code protocolInfo}), which causes
+     * the PSU to match any network unit.
+     */
+    private static String deriveNetUnitName(@Nullable ProtocolInfo protocolInfo) {
+        if (!(protocolInfo instanceof IpProtocolInfo)) {
+            return "";
+        }
+        InetSocketAddress addr = ((IpProtocolInfo) protocolInfo).getSocketAddress();
+        return (addr != null && addr.getAddress() != null)
+              ? addr.getAddress().getHostAddress()
+              : "";
     }
 
     // Hot file replication parameters
