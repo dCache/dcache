@@ -16,6 +16,7 @@ if [ ! -f "$JACOCO_CLI_JAR" ]; then
 fi
 
 #Ensure the report directory exists
+rm -rf "$FINAL_CLASSES_DIR"
 mkdir -p "$REPORT_DIR" "$FINAL_CLASSES_DIR"
 
 #Collect all .exec files and merge
