@@ -152,7 +152,7 @@ tar:
 #Job to create and collect JaCoCo reports
 run_ut_with_coverage:
   stage: build
-  image: maven:3.9.12-eclipse-temurin-17
+  image: maven:3.9.12-eclipse-temurin-21
   extends: .build_cache
   script:
     # run all tests with the coverage profile
@@ -618,15 +618,10 @@ Extract Coverage:
           kubectl -n $K8S_NAMESPACE cp "${POD}:/tmp/jacoco-it.exec" "./integration-results/${POD}.exec"
       
           echo "Pulling woven classes from $POD..."
-          if kubectl -n $K8S_NAMESPACE exec $POD -- \
-              tar -czf /tmp/jacoco-classes.tar.gz -C /opt/dcache/var/log/jacoco-dump . 2>/dev/null; then
-            kubectl -n $K8S_NAMESPACE cp "${POD}:/tmp/jacoco-classes.tar.gz" "/tmp/jacoco-classes-${POD}.tar.gz"
-            mkdir -p "./integration-results/classes-dump/${POD}"
-            tar -xzf "/tmp/jacoco-classes-${POD}.tar.gz" -C "./integration-results/classes-dump/${POD}/"
-            rm -f "/tmp/jacoco-classes-${POD}.tar.gz"
+          if kubectl -n $K8S_NAMESPACE cp "${POD}:/opt/dcache/var/log/jacoco-dump/." "./integration-results/classes-dump/${POD}/"; then
             echo "Successfully collected woven classes from $POD"
           else
-            echo "Warning: Could not collect dumped classes from $POD (dump dir may be empty or missing)"
+            echo "Warning: Could not find dumped classes on $POD"
           fi
         else
           echo "Failed to dump coverage from $POD"
