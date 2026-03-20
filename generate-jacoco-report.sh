@@ -7,89 +7,104 @@ JACOCO_DIR="${PROJECT_ROOT}/jacoco-$JACOCO_VERSION"
 JACOCO_CLI_JAR="$JACOCO_DIR/lib/jacococli.jar"
 MERGED_EXEC="$PROJECT_ROOT/target/coverage-reports/merged.exec"
 REPORT_DIR="$PROJECT_ROOT/target/coverage-reports/site"
-DUMPED_CLASSES_DIR="$PROJECT_ROOT/integration-results/classes-dump"
+DUMP_DIR="${PROJECT_ROOT}/integration-results/classes-dump"
+FINAL_CLASSES_DIR="${PROJECT_ROOT}/target/coverage-reports/classes"
 
-# Check if JaCoCo CLI JAR exists get-jacoco.sh
 if [ ! -f "$JACOCO_CLI_JAR" ]; then
     echo "Error: JaCoCo CLI JAR not found at $JACOCO_CLI_JAR"
     exit 1
 fi
 
-# Ensure the report directory exists
-mkdir -p "$REPORT_DIR"
-EXEC_FILES=$(find "$PROJECT_ROOT" -name "*.exec" -type f)
+#Ensure the report directory exists
+mkdir -p "$REPORT_DIR" "$FINAL_CLASSES_DIR"
 
-if [ -z "$EXEC_FILES" ]; then
-    echo "Error: No .exec files found in $PROJECT_ROOT"
+#Collect all .exec files and merge
+mapfile -t EXEC_FILES < <(find "$PROJECT_ROOT" -name "*.exec" -type f)
+
+if [ ${#EXEC_FILES[@]} -eq 0 ]; then
+    echo "Error: No .exec files found"
     exit 1
 fi
 
-# Merge execution data files
-echo "Merging execution data files..."
-java -jar "$JACOCO_CLI_JAR" merge ${EXEC_FILES} --destfile "$MERGED_EXEC"
+echo "Merging ${#EXEC_FILES[@]} execution data files..."
+java -jar "$JACOCO_CLI_JAR" merge "${EXEC_FILES[@]}" --destfile "$MERGED_EXEC"
 
-if [ $? -ne 0 ]; then
-    echo "Error: Failed to merge execution data files"
-    exit 1
-fi
+#Collect compiled classes
 
-# Build classfiles and sourcefiles arguments dynamically
-CLASSFILES_ARGS=()
+echo "Collecting compiled classes from modules..."
 SOURCEFILES_ARGS=()
 
-# CRITICAL: Add woven classes from pods FIRST.
-if [ -d "$DUMPED_CLASSES_DIR" ]; then
-    echo "Adding woven classes from dump directory (first priority)..."
-    CLASSFILES_ARGS+=("--classfiles" "$DUMPED_CLASSES_DIR")
+for module in $(find modules -maxdepth 1 -mindepth 1 -type d | sort); do
+    [ -d "$module/target/classes" ] && cp -R "$module/target/classes/." "$FINAL_CLASSES_DIR/"
+    [ -d "$module/src/main/java" ]  && SOURCEFILES_ARGS+=("--sourcefiles" "$module/src/main/java")
+done
+
+#Remove known generated/excluded packages
+for pkg in \
+    "org/dcache/srm/v2_2" \
+    "gov/fnal/srm/util" \
+    "org/dcache/services/billing/db/data" \
+    "diskCacheV111/poolManager/jmh_generated" \
+    "org/dcache/util/jmh_generated" \
+    "org/dcache/chimera/jmh_generated"
+do
+    target="$FINAL_CLASSES_DIR/$pkg"
+    if [ -d "$target" ]; then
+        echo "  - Excluding generated: $pkg"
+        rm -rf "$target"
+    fi
+done
+
+#Overlay woven classes from pods
+
+if [ -d "$DUMP_DIR" ]; then
+    echo "Overlaying woven classes from pod dumps..."
+
+    declare -A WOVEN_LOOKUP
+
+    while IFS= read -r -d '' woven_file; do
+        filename=$(basename "$woven_file")
+
+        #Skip AspectJ synthetic classes
+        if echo "$filename" | grep -qE '^\.[0-9a-f]{8,}\.class$|^AjcClosure[0-9].*\.class$'; then
+            continue
+        fi
+        #Strip hash suffix if present
+        clean_name=$(echo "$filename" | sed -E 's/\.[0-9a-f]{8,}\.class$/.class/')
+
+        #Relative path within the pods dump subdir
+        rel_dir=$(dirname "$woven_file" | sed -E "s|.*classes-dump/[^/]+/||")
+        key="${rel_dir}/${clean_name}"
+
+        #First pod wins, should be identical for the same class version
+        [ -z "${WOVEN_LOOKUP[$key]+x}" ] && WOVEN_LOOKUP[$key]="$woven_file"
+
+    done < <(find "$DUMP_DIR" -name "*.class" -print0)
+
+    REPLACED=0
+    SKIPPED=0
+    for compiled_file in $(find "$FINAL_CLASSES_DIR" -name "*.class"); do
+        rel="${compiled_file#$FINAL_CLASSES_DIR/}"
+        if [ -n "${WOVEN_LOOKUP[$rel]+x}" ]; then
+            cp "${WOVEN_LOOKUP[$rel]}" "$compiled_file"
+            (( REPLACED++ )) || true
+        else
+            (( SKIPPED++ )) || true
+        fi
+    done
+
+    echo "  Woven overlay: $REPLACED classes replaced, $SKIPPED kept as compiled"
 else
-    echo "Warning: No dumped classes found at $DUMPED_CLASSES_DIR. IT coverage may show mismatches."
+    echo "Warning: No pod dump directory found at $DUMP_DIR — integration coverage will show mismatches"
 fi
 
-# Add compiled classes from modules (fallback for classes not woven by AspectJ,
-# and primary source for UT coverage matching).
-echo "Collecting and filtering compiled class files..."
-FILTERED_CLASSES_DIR="$PROJECT_ROOT/target/filtered-classes"
-rm -rf "$FILTERED_CLASSES_DIR"
-mkdir -p "$FILTERED_CLASSES_DIR"
+#Generate report
 
-for module in $(find modules -maxdepth 1 -mindepth 1 -type d); do
-    if [ -d "$module/target/classes" ]; then
-        cp -R "$module/target/classes/." "$FILTERED_CLASSES_DIR/"
-    fi
-    if [ -d "$module/src/main/java" ]; then
-        SOURCEFILES_ARGS+=("--sourcefiles" "$module/src/main/java")
-    fi
-done
-
-EXCLUSIONS=(
-    "org/dcache/srm/v2_2"
-    "gov/fnal/srm/util"
-    "org/dcache/services/billing/db/data"
-    "diskCacheV111/poolManager/jmh_generated"
-    "org/dcache/util/jmh_generated"
-    "org/dcache/chimera/jmh_generated"
-)
-
-for pkg in "${EXCLUSIONS[@]}"; do
-    if [ -d "$FILTERED_CLASSES_DIR/$pkg" ]; then
-        echo "  - Excluding: $pkg"
-        rm -rf "$FILTERED_CLASSES_DIR/$pkg"
-    fi
-done
-
-# Single classfiles argument - woven classes have already overwritten compiled ones above
-CLASSFILES_ARGS+=("--classfiles" "$FILTERED_CLASSES_DIR")
-
-# Generate the report with dynamic arguments
+echo "Generating coverage report..."
 java -jar "$JACOCO_CLI_JAR" report "$MERGED_EXEC" \
-    "${CLASSFILES_ARGS[@]}" \
+    --classfiles "$FINAL_CLASSES_DIR" \
     "${SOURCEFILES_ARGS[@]}" \
     --html "$REPORT_DIR" \
-    --xml "$PROJECT_ROOT/target/coverage-reports/jacoco.xml"
-
-if [ $? -ne 0 ]; then
-    echo "Error: Failed to generate coverage report"
-    exit 1
-fi
+    --xml "${PROJECT_ROOT}/target/coverage-reports/jacoco.xml"
 
 echo "Coverage report generated successfully at ${REPORT_DIR}/index.html"
