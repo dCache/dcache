@@ -17,6 +17,7 @@
  */
 package org.dcache.pool.classic;
 
+import static com.google.common.net.InetAddresses.toUriString;
 import static org.dcache.util.Exceptions.messageOrClassName;
 
 import com.google.common.base.Throwables;
@@ -342,8 +343,9 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
             return "-";
         }
 
-        if (endpoint.getAddress() != null) {
-            return endpoint.getAddress().getHostAddress() + ":" + endpoint.getPort();
+        InetAddress endpointAddress = endpoint.getAddress();
+        if (endpointAddress != null) {
+            return toUriString(endpointAddress) + ":" + endpoint.getPort();
         }
 
         return endpoint.getHostString() + ":" + endpoint.getPort();
