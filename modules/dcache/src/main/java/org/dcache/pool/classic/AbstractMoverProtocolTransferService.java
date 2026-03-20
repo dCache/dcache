@@ -230,10 +230,9 @@ public abstract class AbstractMoverProtocolTransferService
         }
 
         private String formatError(Throwable t) {
-            String message = t.getMessage();
-            return message == null || message.isEmpty()
-                  ? t.getClass().getSimpleName()
-                  : t.getClass().getSimpleName() + ':' + message;
+            return t instanceof Exception
+                ? Exceptions.messageOrClassName((Exception) t)
+                : t.getClass().getName();
         }
 
         private synchronized void setThread() throws InterruptedException {
