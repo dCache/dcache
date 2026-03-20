@@ -1,5 +1,6 @@
 package org.dcache.xrootd.door;
 
+import static com.google.common.net.InetAddresses.toUriString;
 import static java.util.Objects.requireNonNull;
 
 import diskCacheV111.util.FsPath;
@@ -107,9 +108,10 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress> {
             return "-";
         }
 
-        return address.getAddress() == null
+        var inetAddress = address.getAddress();
+        return inetAddress == null
               ? address.getHostString()
-              : address.getAddress().getHostAddress();
+              : toUriString(inetAddress);
     }
 
     @Override

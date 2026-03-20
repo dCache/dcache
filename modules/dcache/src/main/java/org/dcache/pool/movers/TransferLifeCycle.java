@@ -19,6 +19,7 @@ package org.dcache.pool.movers;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.net.InetAddresses.forString;
+import static com.google.common.net.InetAddresses.toUriString;
 
 import com.google.common.base.Splitter;
 import com.google.common.net.HostAndPort;
@@ -447,7 +448,7 @@ public class TransferLifeCycle {
         }
 
         InetAddress inetAddress = address.getAddress();
-        return inetAddress == null ? address.getHostString() : inetAddress.getHostAddress();
+        return inetAddress == null ? address.getHostString() : toUriString(inetAddress);
     }
 
     private String formatPort(InetSocketAddress address) {
