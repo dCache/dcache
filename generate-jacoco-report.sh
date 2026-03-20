@@ -8,9 +8,6 @@ JACOCO_CLI_JAR="$JACOCO_DIR/lib/jacococli.jar"
 MERGED_EXEC="$PROJECT_ROOT/target/coverage-reports/merged.exec"
 REPORT_DIR="$PROJECT_ROOT/target/coverage-reports/site"
 DUMPED_CLASSES_DIR="$PROJECT_ROOT/integration-results/classes-dump"
-FILTERED_CLASSES_DIR="$PROJECT_ROOT/target/filtered-classes"
-rm -rf "$FILTERED_CLASSES_DIR"
-mkdir -p "$FILTERED_CLASSES_DIR"
 
 # Check if JaCoCo CLI JAR exists get-jacoco.sh
 if [ ! -f "$JACOCO_CLI_JAR" ]; then
@@ -36,16 +33,24 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-#Prepare a temporary directory for filtered classes
-FILTERED_CLASSES_DIR="$PROJECT_ROOT/target/filtered-classes"
-rm -rf "$FILTERED_CLASSES_DIR"
-mkdir -p "$FILTERED_CLASSES_DIR"
-
 # Build classfiles and sourcefiles arguments dynamically
 CLASSFILES_ARGS=()
 SOURCEFILES_ARGS=()
 
-echo "Collecting and filtering class files..."
+# CRITICAL: Add woven classes from pods FIRST.
+if [ -d "$DUMPED_CLASSES_DIR" ]; then
+    echo "Adding woven classes from dump directory (first priority)..."
+    CLASSFILES_ARGS+=("--classfiles" "$DUMPED_CLASSES_DIR")
+else
+    echo "Warning: No dumped classes found at $DUMPED_CLASSES_DIR. IT coverage may show mismatches."
+fi
+
+# Add compiled classes from modules (fallback for classes not woven by AspectJ,
+# and primary source for UT coverage matching).
+echo "Collecting and filtering compiled class files..."
+FILTERED_CLASSES_DIR="$PROJECT_ROOT/target/filtered-classes"
+rm -rf "$FILTERED_CLASSES_DIR"
+mkdir -p "$FILTERED_CLASSES_DIR"
 
 for module in $(find modules -maxdepth 1 -mindepth 1 -type d); do
     if [ -d "$module/target/classes" ]; then
