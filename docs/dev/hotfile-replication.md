@@ -103,7 +103,7 @@ pool.migration.concurrency.default = 1
 | `modules/dcache/src/main/java/org/dcache/pool/migration/PoolListByPoolMgrQuery.java` | Queries PoolManager for eligible target pools; selects highest-preference level only |
 | `modules/dcache/src/test/java/org/dcache/pool/classic/HotfileMonitoringTest.java` | Spring-context integration test for enable/disable behaviour |
 | `modules/dcache/src/test/java/org/dcache/pool/migration/MigrationModuleTest.java` | Unit tests for `reportFileRequest`, threshold, housekeeping |
-| `modules/dcache/src/test/java/org/dcache/pool/migration/PoolListByPoolMgrQueryTest.java` | Unit tests for pool selection, preference-level handling, null parameters |
+| `modules/dcache/src/test/java/org/dcache/pool/migration/PoolListByPoolMgrQueryTest.java` | Unit tests for pool selection, preference-level handling, unknown net unit, and wildcard protocol |
 | `skel/share/defaults/pool.properties` | Canonical defaults for all `pool.hotfile.*` and `pool.migration.hotfile.*` properties |
 
 ## Diagnostics
