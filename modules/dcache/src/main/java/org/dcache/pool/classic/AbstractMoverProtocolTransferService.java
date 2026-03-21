@@ -38,6 +38,7 @@ import org.dcache.pool.movers.ChecksumMover;
 import org.dcache.pool.movers.Mover;
 import org.dcache.pool.movers.MoverProtocol;
 import org.dcache.pool.movers.MoverProtocolMover;
+import org.dcache.pool.movers.TransferLifeCycle;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.CDCExecutorServiceDecorator;
@@ -52,17 +53,24 @@ public abstract class AbstractMoverProtocolTransferService
 
     private static final Logger LOGGER =
           LoggerFactory.getLogger(MoverMapTransferService.class);
+    private static final Logger SCITAGS_LOGGER =
+        LoggerFactory.getLogger("org.dcache.scitags");
     private final ExecutorService _executor =
           new CDCExecutorServiceDecorator<>(
                 Executors.newCachedThreadPool(
                       new ThreadFactoryBuilder().setNameFormat(
                             getClass().getSimpleName() + "-transfer-service-%d").build()));
     private PostTransferService _postTransferService;
+    private TransferLifeCycle _transferLifeCycle;
 
 
     @Required
     public void setPostTransferService(PostTransferService postTransferService) {
         _postTransferService = postTransferService;
+    }
+
+    public void setTransferLifeCycle(TransferLifeCycle transferLifeCycle) {
+        _transferLifeCycle = transferLifeCycle;
     }
 
     @Override
@@ -155,10 +163,22 @@ public abstract class AbstractMoverProtocolTransferService
                 _completionHandler.completed(null, null);
 
             } catch (InterruptedException e) {
+                SCITAGS_LOGGER.debug(
+                      "scitags lifecycle=start abort reason=interrupted protocol={} pnfsid={} transferTag={} message={}",
+                      protocolName(),
+                      _mover.getFileAttributes().getPnfsId(),
+                      transferTag(),
+                      formatError(e));
                 InterruptedException why = _explanation == null ? e :
                       (InterruptedException) (new InterruptedException(_explanation).initCause(e));
                 _completionHandler.failed(why, null);
             } catch (Throwable t) {
+                SCITAGS_LOGGER.debug(
+                      "scitags lifecycle=start abort reason=execution-failed protocol={} pnfsid={} transferTag={} message={}",
+                      protocolName(),
+                      _mover.getFileAttributes().getPnfsId(),
+                      transferTag(),
+                      formatError(t));
                 _completionHandler.failed(t, null);
             }
         }
@@ -198,6 +218,21 @@ public abstract class AbstractMoverProtocolTransferService
             } finally {
                 tryToSync(fileIoChannel);
             }
+        }
+
+        private String protocolName() {
+            return _mover.getProtocolInfo().getProtocol().toLowerCase();
+        }
+
+        private String transferTag() {
+            String transferTag = _mover.getProtocolInfo().getTransferTag();
+            return transferTag == null || transferTag.isEmpty() ? "-" : transferTag;
+        }
+
+        private String formatError(Throwable t) {
+            return t instanceof Exception
+                ? Exceptions.messageOrClassName((Exception) t)
+                : t.getClass().getName();
         }
 
         private synchronized void setThread() throws InterruptedException {

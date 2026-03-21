@@ -19,6 +19,7 @@ package org.dcache.pool.movers;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.net.InetAddresses.forString;
+import static com.google.common.net.InetAddresses.toUriString;
 
 import com.google.common.base.Splitter;
 import com.google.common.net.HostAndPort;
@@ -50,6 +51,7 @@ import org.slf4j.LoggerFactory;
 public class TransferLifeCycle {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(TransferLifeCycle.class);
+    private final static Logger SCITAGS_LOGGER = LoggerFactory.getLogger("org.dcache.scitags");
     private static final int MIN_VALID_TRANSFER_TAG = 64;
     private static final int MAX_VALID_TRANSFER_TAG = 65535;
     private static final int EXPERIMENT_ID_BIT_SHIFT = 6;
@@ -91,26 +93,32 @@ public class TransferLifeCycle {
           Subject subject) {
 
         if (!enabled) {
+                        logSkippedMarker("disabled", src, dst, protocolInfo);
             return;
         }
 
         if (isExcludedTransfer(src, dst)) {
+            logSkippedMarker("excluded", src, dst, protocolInfo);
             return;
         }
 
         if (!needMarker(protocolInfo)) {
+            logSkippedMarker("unsupported-protocol", src, dst, protocolInfo);
             return;
         }
 
-        var optionalExpId = getExperimentId(protocolInfo, subject);
-        if (optionalExpId.isEmpty()) {
+          var optionalExpId = getExperimentId(protocolInfo, subject);
+          if (optionalExpId.isEmpty()) {
+            logSkippedMarker("no-experiment-id", src, dst, protocolInfo);
             return;
-        }
+          }
 
-        var data = new FlowMarkerBuilder()
+          int activityId = getActivity(protocolInfo);
+
+          var data = new FlowMarkerBuilder()
               .withStartedAt(Instant.now())
               .withExperimentId(optionalExpId.getAsInt())
-              .withActivityId(getActivity(protocolInfo))
+              .withActivityId(activityId)
               .wittApplication(getApplication(protocolInfo))
               .withProtocol("tcp")
               .withAFI(toAFI(dst))
@@ -118,7 +126,10 @@ public class TransferLifeCycle {
               .withSource(src)
               .build("start");
 
-        sendToMultipleDestinations(toFireflyDestination.apply(src), data);
+          InetSocketAddress fireflyDestination = toFireflyDestination.apply(src);
+          sendToMultipleDestinations(fireflyDestination, data);
+          logMarkerEvent("start", src, dst, protocolInfo, optionalExpId.getAsInt(), activityId,
+              null, null, fireflyDestination);
     }
 
     /**
@@ -134,27 +145,36 @@ public class TransferLifeCycle {
 
 
         if (!enabled) {
+            logSkippedMarker("disabled", src, dst, protocolInfo);
             return;
         }
 
         if (isExcludedTransfer(src, dst)) {
+            logSkippedMarker("excluded", src, dst, protocolInfo);
             return;
         }
 
         if (!needMarker(protocolInfo)) {
+            logSkippedMarker("unsupported-protocol", src, dst, protocolInfo);
             return;
         }
 
         var optionalExpId = getExperimentId(protocolInfo, subject);
         if (optionalExpId.isEmpty()) {
+            logSkippedMarker("no-experiment-id", src, dst, protocolInfo);
             return;
         }
 
+        int activityId = getActivity(protocolInfo);
+        long transferDurationMillis = Math.max(0L, mover.getConnectionTime());
+        Instant startedAt = Instant.ofEpochMilli(mover.getTimestamp());
+        Instant finishedAt = startedAt.plusMillis(transferDurationMillis);
+
         var data = new FlowMarkerBuilder()
-              .withStartedAt(Instant.now())
-              .withFinishedAt(Instant.now())
+              .withStartedAt(startedAt)
+              .withFinishedAt(finishedAt)
               .withExperimentId(optionalExpId.getAsInt())
-              .withActivityId(getActivity(protocolInfo))
+              .withActivityId(activityId)
               .wittApplication(getApplication(protocolInfo))
               .withUsage(mover.getBytesRead(), mover.getBytesWritten())
               .withProtocol("tcp")
@@ -166,7 +186,10 @@ public class TransferLifeCycle {
         }
         var firefly = data.build("end");
 
-        sendToMultipleDestinations(toFireflyDestination.apply(src), firefly);
+        InetSocketAddress fireflyDestination = toFireflyDestination.apply(src);
+        sendToMultipleDestinations(fireflyDestination, firefly);
+        logMarkerEvent("end", src, dst, protocolInfo, optionalExpId.getAsInt(), activityId,
+              mover.getBytesRead(), mover.getBytesWritten(), fireflyDestination);
     }
 
     /**
@@ -293,7 +316,7 @@ public class TransferLifeCycle {
      * @return the experiment ID, or -1 if it cannot be determined
      */
     private OptionalInt getExperimentId(ProtocolInfo protocolInfo, Subject subject) {
-        if (protocolInfo.getTransferTag() != null && !protocolInfo.getTransferTag().isEmpty()) {
+        if (hasTransferTag(protocolInfo)) {
             try {
                 int transferTag = Integer.parseInt(protocolInfo.getTransferTag());
                 if (transferTag < MIN_VALID_TRANSFER_TAG || transferTag > MAX_VALID_TRANSFER_TAG) {
@@ -335,12 +358,101 @@ public class TransferLifeCycle {
     }
 
     private int getActivity(ProtocolInfo protocolInfo) {
-        if (!protocolInfo.getTransferTag().isEmpty()) {
+        if (hasTransferTag(protocolInfo)) {
             // scitag = exp_id << 6 | act_id
             return Integer.parseInt(protocolInfo.getTransferTag()) & ACTIVITY_ID_MASK;
         } else {
             return DEFAULT_ACTIVITY_ID;
         }
+    }
+
+    private boolean hasTransferTag(ProtocolInfo protocolInfo) {
+        String transferTag = protocolInfo.getTransferTag();
+        return transferTag != null && !transferTag.isEmpty();
+    }
+
+    private void logSkippedMarker(String reason, InetSocketAddress src, InetSocketAddress dst,
+          ProtocolInfo protocolInfo) {
+        if (SCITAGS_LOGGER.isDebugEnabled()) {
+            SCITAGS_LOGGER.debug(
+                  "scitags event=marker-skip reason={} protocol={} source={} sourcePort={} destination={} destinationPort={} transferTag={}",
+                  reason,
+                  protocolInfo.getProtocol().toLowerCase(),
+                  formatAddress(src),
+                  formatPort(src),
+                  formatAddress(dst),
+                  formatPort(dst),
+                  formatTransferTag(protocolInfo));
+        }
+    }
+
+    private void logMarkerEvent(String event, InetSocketAddress src, InetSocketAddress dst,
+            ProtocolInfo protocolInfo, int experimentId, int activityId, Double bytesRead,
+            Double bytesWritten, InetSocketAddress fireflyDestination) {
+        if (SCITAGS_LOGGER.isDebugEnabled()) {
+            String classification = hasTransferTag(protocolInfo) ? "transfer-tag" : "fqan";
+            if (bytesRead == null || bytesWritten == null) {
+                SCITAGS_LOGGER.debug(
+                      "scitags event=marker state={} protocol={} source={} sourcePort={} destination={} destinationPort={} transferTag={} experimentId={} activityId={} classifier={} fireflyDestination={} collector={}",
+                      event,
+                      protocolInfo.getProtocol().toLowerCase(),
+                      formatAddress(src),
+                      formatPort(src),
+                      formatAddress(dst),
+                      formatPort(dst),
+                      formatTransferTag(protocolInfo),
+                      experimentId,
+                      activityId,
+                      classification,
+                      formatSocketAddress(fireflyDestination),
+                      formatCollectorDestination());
+            } else {
+                SCITAGS_LOGGER.debug(
+                      "scitags event=marker state={} protocol={} source={} sourcePort={} destination={} destinationPort={} transferTag={} experimentId={} activityId={} classifier={} bytesRead={} bytesWritten={} fireflyDestination={} collector={}",
+                      event,
+                      protocolInfo.getProtocol().toLowerCase(),
+                      formatAddress(src),
+                      formatPort(src),
+                      formatAddress(dst),
+                      formatPort(dst),
+                      formatTransferTag(protocolInfo),
+                      experimentId,
+                      activityId,
+                      classification,
+                      bytesRead,
+                      bytesWritten,
+                      formatSocketAddress(fireflyDestination),
+                      formatCollectorDestination());
+            }
+        }
+    }
+
+    private String formatSocketAddress(InetSocketAddress address) {
+        return formatAddress(address) + ":" + formatPort(address);
+    }
+
+    private String formatCollectorDestination() {
+        return fireflyCollector == null
+              ? "-"
+              : formatAddress(fireflyCollector) + ":" + fireflyCollector.getPort();
+    }
+
+    private String formatTransferTag(ProtocolInfo protocolInfo) {
+        String transferTag = protocolInfo.getTransferTag();
+        return transferTag == null || transferTag.isEmpty() ? "-" : transferTag;
+    }
+
+    private String formatAddress(InetSocketAddress address) {
+        if (address == null) {
+            return "-";
+        }
+
+        InetAddress inetAddress = address.getAddress();
+        return inetAddress == null ? address.getHostString() : toUriString(inetAddress);
+    }
+
+    private String formatPort(InetSocketAddress address) {
+        return address == null ? "-" : Integer.toString(address.getPort());
     }
 
     private String toAFI(InetSocketAddress dst) {
