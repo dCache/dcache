@@ -33,6 +33,16 @@ public class AbstractMoverProtocolTransferServiceTest {
         moverProtocolMover = mock(MoverProtocolMover.class);
         when(moverProtocolMover.openChannel()).thenReturn(channel);
 
+        var protocolInfo = mock(ProtocolInfo.class);
+        when(moverProtocolMover.getProtocolInfo()).thenReturn(protocolInfo);
+        when(protocolInfo.getProtocol()).thenReturn("http");
+
+        var fileAttributes = FileAttributes.of()
+              .pnfsId("0000123456789012345678901234567890FF")
+              .build();
+
+        when(moverProtocolMover.getFileAttributes()).thenReturn(fileAttributes);
+
         transferService = new AbstractMoverProtocolTransferService() {
             @Override
             protected MoverProtocol createMoverProtocol(ProtocolInfo info) throws Exception {
