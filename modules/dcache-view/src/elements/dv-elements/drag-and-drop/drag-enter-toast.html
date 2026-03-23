@@ -1,0 +1,169 @@
+<link rel="import" href="../../../bower_components/polymer/polymer-element.html">
+
+<dom-module id="drag-enter-toast">
+    <template>
+        <style>
+            :host {
+                width: 100%;
+                display: flex;
+                padding-bottom: 10px;
+            }
+            iron-icon {
+                --iron-icon-width: 72px;
+                --iron-icon-height: 72px;
+                fill: #808080;
+            }
+            #holderParent {
+                flex: 1 1 auto;
+            }
+            #wrapper {
+                display: flex;
+                justify-content: center;
+            }
+
+            #infoHolder {
+                width: 250px;
+            }
+            .flexContainer {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+            }
+            #content {
+                background: #4a806b;
+                color:white;
+                height: 65px;
+                width: 250px;
+                border-radius: 2px;
+                border: 2px solid #4a806b;
+                box-sizing: border-box;
+                box-shadow: 20px 20px 100px 40px rgba(0, 0, 0, 0.3);
+            }
+            file-icon {
+                fill: white !important;
+            }
+
+            @-moz-keyframes bounce {
+                0%, 20%, 50%, 80%, 100% {
+                    -moz-transform: translateY(0);
+                    transform: translateY(0);
+                }
+                40% {
+                    -moz-transform: translateY(-30px);
+                    transform: translateY(-30px);
+                }
+                60% {
+                    -moz-transform: translateY(-15px);
+                    transform: translateY(-15px);
+                }
+            }
+            @-webkit-keyframes bounce {
+                0%, 20%, 50%, 80%, 100% {
+                    -webkit-transform: translateY(0);
+                    transform: translateY(0);
+                }
+                40% {
+                    -webkit-transform: translateY(-30px);
+                    transform: translateY(-30px);
+                }
+                60% {
+                    -webkit-transform: translateY(-15px);
+                    transform: translateY(-15px);
+                }
+            }
+            @keyframes bounce {
+                0%, 20%, 50%, 80%, 100% {
+                    -moz-transform: translateY(0);
+                    -ms-transform: translateY(0);
+                    -webkit-transform: translateY(0);
+                    transform: translateY(0);
+                }
+                40% {
+                    -moz-transform: translateY(-30px);
+                    -ms-transform: translateY(-30px);
+                    -webkit-transform: translateY(-30px);
+                    transform: translateY(-30px);
+                }
+                60% {
+                    -moz-transform: translateY(-15px);
+                    -ms-transform: translateY(-15px);
+                    -webkit-transform: translateY(-15px);
+                    transform: translateY(-15px);
+                }
+            }
+            .bounce {
+                -moz-animation: bounce 2s 4;
+                -webkit-animation: bounce 2s 4;
+                animation: bounce 2s 4;
+            }
+            .displayDirName {
+                padding-left: 10px;
+                width: 200px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+        </style>
+        <div style="width:60px;"></div>
+        <div id="holderParent">
+            <div id="wrapper">
+                <div id="infoHolder" class="flexContainer">
+                    <iron-icon icon="cloud-upload" class="bounce"></iron-icon>
+                    <div id="content" class="flexContainer">
+                        <div>
+                            <span style="letter-spacing: 0.4px; font-weight: 300;">
+                                Drop files to upload them into:
+                            </span>
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <file-icon mime-type="application/vnd.dcache.folder"></file-icon>
+                            <span class="displayDirName">
+                                {{directoryName}}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+    <script>
+        class DragEnterToast extends Polymer.Element
+        {
+            static get is()
+            {
+                return 'drag-enter-toast';
+            }
+            static get properties()
+            {
+                return {
+                    directoryName: {
+                        type: String,
+                        value: "Root",
+                        notify: true
+                    }
+                }
+            }
+
+            static get observers()
+            {
+                return ['computeClosingTime(directoryName)'];
+            }
+
+            computeClosingTime(name)
+            {
+                /**
+                 * Add 1 second to the app.$.dropZoneToast closing duration
+                 * every time there is a name change as result of the drag
+                 * object entering a drop zone.
+                 */
+                if (app.closingTime === undefined) {
+                    return;
+                }
+                app.closingTime = app.closingTime + 1000;
+                app.notifyPath('closingTime');
+            }
+        }
+        window.customElements.define(DragEnterToast.is, DragEnterToast);
+    </script>
+</dom-module>

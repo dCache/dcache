@@ -1,0 +1,306 @@
+<link rel="import" href="../../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../../bower_components/paper-styles/element-styles/paper-material-styles.html">
+<link rel="import" href="../../../elements/dv-elements/utils/charts/quota-info-chart.html">
+<link rel="import" href="../../../elements/dv-elements/utils/mixins/dv-admin-mixins.html">
+<link rel="import" href="../../../elements/dv-elements/utils/dialogs/chart-dialog.html">
+<link rel="import" href="../../../elements/dv-elements/utils/mixins/commons.html">
+<link rel="import" href="./user-image/user-image.html">
+<dom-module id="user-profile">
+    <template>
+        <style include="paper-material-styles">
+            :host {
+                display: flex;
+                justify-content: center;
+                min-width: 500px;
+            }
+            .paper-material {
+                margin-top: 20px;
+                width: 500px;
+                background:#fff;
+            }
+            .paper-material + .paper-material {
+                margin-top: 5px;
+            }
+            .paper-material .paper-material-inner {
+                width: 100%;
+                box-sizing: border-box;
+            }
+            .border-top {
+                border-top: 5px solid #333;
+            }
+            .display-flex {
+                display: flex;
+            }
+            .column {
+                flex-direction: column;
+            }
+            .username-header {
+                font-family: 'Roboto', 'Noto', sans-serif;
+                -webkit-font-smoothing: antialiased;
+                font-size: 48px;
+                font-weight: 400;
+                letter-spacing: -.012em;
+                line-height: 48px;
+            }
+            .image-holder {
+                width: 100px;
+                justify-content: center;
+            }
+            .btn{
+                background-color: #4285f4;
+                color: white;
+                --paper-button-raised-keyboard-focus: {
+                    background-color: #4285f4 !important;
+                    color: white !important;
+                };
+                border: none !important;
+                text-transform: none;
+                border-radius: 0 !important;
+                margin: 0 !important;
+                float: right;
+            }
+            .flex {
+                flex: 1 1 auto;
+            }
+            .label {
+                min-width: 150px;
+                max-width: 150px;
+            }
+            .bold {
+                font-weight: bold;
+            }
+            .value {
+                color: #757575;
+                max-width: calc(452px - 150px + 68px);
+                max-height: calc(70px - 24px);
+                overflow-y: auto;
+                word-wrap: break-word;
+                margin-right: 10px;
+            }
+            .org {
+                margin-top: 5px;
+                margin-bottom: 5px;
+                color: #ff625d;
+                font-size: 0.8em;
+            }
+            .row {
+                height: 70px;
+                margin: 0 24px;
+                padding: 24px 0;
+                line-height: 1.4em;
+                font-size: 12px;
+                box-sizing: border-box;
+            }
+            .row + .row {
+                border-top: 1px solid #eee;
+            }
+            .vertically-align {
+                align-items: center;
+            }
+            .toggleBtn {
+                --paper-toggle-button-checked-bar-color:  #0f9d58;
+                --paper-toggle-button-checked-button-color:  #0f9d58;
+                --paper-toggle-button-checked-ink-color: #0f9d58;
+                --paper-toggle-button-unchecked-bar-color:  rgb(221, 44, 0);
+                --paper-toggle-button-unchecked-button-color:  rgb(221, 44, 0);
+                --paper-toggle-button-unchecked-ink-color: rgb(221, 44, 0);
+            }
+            .hide {
+                display: none;
+            }
+            .label-addPadding {
+                padding-left:20px !important;
+            }
+            .header {
+                padding-top: 15px;
+                font-family: 'Roboto', 'Noto', sans-serif;
+                -webkit-font-smoothing: antialiased;
+                font-size: 20px;
+                font-weight: 400;
+                letter-spacing: -.012em;
+                line-height: 20px;
+            }
+            .header-container {
+                padding-left: 10px;
+            }
+            .flex-centre {
+                justify-content: center
+            }
+            .small {
+                color: #1c7cf1;
+                font-size: 0.67em;
+            }
+            .red {
+                color: rgb(221, 44, 0);
+            }
+            .grid {
+                width: 90%;
+                margin: 10px;
+                display: grid;
+                align-items: center;
+                align-content: center;
+            }
+            .grid-item {
+                justify-self: stretch;
+                align-self: stretch;
+            }
+            .cols2 {
+                grid-gap: 60px;
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .label-user {
+                font-weight: 200;
+                font-size: 8pt;
+                text-align: center;
+                background: darkgreen;
+                color: var(--dv-main-background);
+                margin-left: 5%;
+                margin-right: 5%;
+            }
+
+            .label-group {
+                font-weight: 200;
+                font-size: 8pt;
+                text-align: center;
+                background: darkblue;
+                color: var(--dv-main-background);
+                margin-left: 5%;
+                margin-right: 5%;
+            }
+        </style>
+        <div class="display-flex column">
+            <div class="paper-material" elevation="2">
+                <div class="paper-material-inner display-flex border-top" style="background: #f5f5f5">
+                    <div class="display-flex vertically-align image-holder">
+                        <user-image email="[[email]]" size="60"
+                                    name="[[username]]"
+                                    request-gravatar="{{gravatarSwitch}}"></user-image>
+                    </div>
+
+                    <div class="display-flex column flex"
+                         style="border-left: 1px solid #ccc; background: #fff; padding-left: 10px">
+                        <div class="username-header flex" style="margin-right: 10px;">[[username]]</div>
+                        <div class="org">
+                            [[organisationName]]
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="paper-material" elevation="1">
+                <div class="paper-material-inner display-flex column">
+                    <div class="display-flex row vertically-align">
+                        <div class="label bold">Home directory path</div>
+                        <div class="value flex">
+                            [[homeDir]]
+                        </div>
+                        <paper-button class="btn" on-tap="_view" data-path$="[[homeDir]]">view</paper-button>
+                    </div>
+                    <div class="display-flex row vertically-align">
+                        <div class="label bold">Root directory path</div>
+                        <div class="value flex">
+                            [[rootDir]]
+                        </div>
+                        <paper-button class="btn" on-tap="_view" data-path$="[[rootDir]]">view</paper-button>
+                    </div>
+                    <div class="display-flex row vertically-align">
+                        <div class="label bold">Email address</div>
+                        <div class$="[[_computedEmailCss(email)]]">[[email]]</div>
+                    </div>
+                    <div class="display-flex row vertically-align">
+                        <div class="label bold">User identifier (UID)</div>
+                        <div class="value">[[uid]]</div>
+                    </div>
+                    <div class="display-flex row vertically-align">
+                        <div class="label bold">Group identifier (GID)</div>
+                        <div class="value">[[gids]]</div>
+                    </div>
+                    <div class="display-flex row vertically-align">
+                        <div class="label bold">User roles</div>
+                        <div class="value">[[listOfAllRoles]]</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="paper-material" elevation="1">
+                <div class="header-container">
+                    <div class="header">
+                        Quota Information
+                    </div>
+                    <small class="small">
+                        Disk & Tape Space Allowances (current / limit)
+                    </small>
+                </div>
+                <br/>
+                <template is="dom-if" if="[[userQuota]]">
+                    <div class="label-user">
+                        Personal usage and quotas
+                    </div>
+                    <div class$="grid cols[[cols]]">
+                        <template is="dom-repeat" items="[[userQuota.charts]]"
+                                  as="chart">
+                            <div class="grid-item">
+                                <quota-info-chart
+                                        title="[[chart.id]]: [[chart.type]]"
+                                        input-data="[[chart]]"/>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+                <template is="dom-repeat" items="[[groupQuotas]]" as="quota">
+                    <div class="label-group">Usage and quotas for group gid [[quota.id]]</div>
+                    <div class$="grid cols[[cols]]">
+                        <template is="dom-repeat" items="[[quota.charts]]"
+                                  as="chart">
+                            <div class="grid-item">
+                                <quota-info-chart
+                                        title="[[chart.id]]: [[chart.type]]"
+                                        input-data="[[chart]]"/>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+            </div>
+            <div class="paper-material" elevation="1">
+                <div class="header-container">
+                    <div class="header">
+                        Profile Image
+                    </div>
+                    <small class="small">
+                        Choose which profile image to use.
+                    </small>
+                </div>
+                <div class="paper-material-inner display-flex column">
+                    <div class="display-flex row vertically-align">
+                        <div class="value flex">
+                            Available options:
+                        </div>
+                    </div>
+                    <div class="display-flex row vertically-align">
+                        <div class="bold label-addPadding">Identicon -</div>
+                        <div class="value flex">
+                            <small class="small">&nbsp;generated based on username</small>
+                        </div>
+                        <paper-toggle-button id="identicon"
+                                             checked="[[!gravatarSwitch]]"
+                                             on-change="_requestIdenticonImage"
+                                             data-id="identicon"
+                                             class="toggleBtn"></paper-toggle-button>
+                    </div>
+                    <div class="display-flex row vertically-align">
+                        <div class="bold label-addPadding">Gravatar -</div>
+                        <div class="value flex">
+                            <small class="small">&nbsp;see https://en.gravatar.com/ for detail</small>
+                        </div>
+                        <paper-toggle-button id="gravatar"
+                                             checked="[[gravatarSwitch]]"
+                                             on-change="_requestGravatarImage"
+                                             data-id="gravatar"
+                                             class="toggleBtn"></paper-toggle-button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+    <script src="user-profile.js"></script>
+</dom-module>

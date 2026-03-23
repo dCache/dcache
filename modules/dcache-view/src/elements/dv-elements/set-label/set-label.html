@@ -1,0 +1,203 @@
+
+<dom-module id="set-label">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+      #headerContainer {
+        display: flex;
+        height: 50px;
+        align-items: center;
+        border-bottom: 1px solid #d6d6d6;
+        background-color: #fff;
+        color: #333;
+      }
+      .flex {
+        flex-grow: 1;
+      }
+      .flex2 {
+        flex-grow: 2;
+      }
+      paper-input iron-icon {
+        margin-right: 13px !important;
+      }
+      .buttons {
+        display: flex;
+        height:50px;
+        align-items: center;
+        justify-content: flex-end;
+      }
+      #createBtn{
+        background-color: #3284e1;
+        color: white !important;
+      }
+      paper-button {
+        text-transform: capitalize !important;
+      }
+      .hide {
+        display: none !important;
+      }
+      .show {
+        display: block;
+      }
+      app-toolbar {
+        height: 60px;
+        background: #616161;
+        color: #fff;
+      }
+    </style>
+    <div>
+      <app-toolbar class$="[[_comptedClass(header, 'toolbar')]]">
+        <div main-title>Add a new label to the file </div>
+        <paper-icon-button icon="setLabel:close" on-tap="_closeHandler"></paper-icon-button>
+      </app-toolbar>
+
+      <div id="headerContainer" class$="[[_comptedClass(header, 'div')]]">
+        <div class="flex"><h3>Add a new label </h3></div>
+        <span class="flex2"></span>
+        <paper-icon-button icon="setLabel:close" on-tap="_closeHandler"></paper-icon-button>
+      </div>
+      <div>
+        <div class="flex" style="margin-top: 20px;">
+          <iron-a11y-keys target="[[target]]" keys="esc enter" on-keys-pressed="_action"></iron-a11y-keys>
+          <span>
+            This label will be added to the
+            <code style="color: red;">[[currentFileName]]</code> file
+          </span>
+          <paper-input id="labelValueInput" label="label vale"
+                       value="{{labelValue::input}}" auto-validate pattern="[^/]*"
+                       error-message="[[message]]"
+                       required preventInvalidInput tabindex="1" autofocus>
+            <iron-icon icon="setLabel:folder" slot="prefix"></iron-icon>
+          </paper-input>
+        </div>
+        <br>
+        <div class="buttons">
+          <paper-button id="cancelBtn" on-tap="_closeHandler" raised>Cancel</paper-button>
+          <paper-button id="createBtn" on-tap="_createHandler" raised>Create</paper-button>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <script>
+    class SetLabel extends Polymer.Element
+    {
+      static get is()
+      {
+        return 'set-label';
+      }
+
+      static get properties()
+      {
+        return {
+          /**
+           *
+           */
+          header: {
+            type: Boolean,
+            value: true,
+            notify: true
+          },
+
+          /**
+           * The file name.
+           * @attribute currentFileName
+           * @type {String}
+           */
+          currentFileName: {
+            type: String,
+            notify: true
+          },
+
+          /**
+           * The name of the new label to be created.
+           * @attribute new-label-name
+           * @type {String}
+           */
+          labelValue: {
+            type: String,
+            notify: true,
+            observer: '_errorTrigger'
+          },
+
+          /**
+           * @private
+           * type {object}
+           */
+          target: {
+            type: Object,
+            value: function() {
+              return document.body;
+            }
+          },
+
+          /**
+           * @attribute message
+           * type {String}
+           */
+          message: {
+            type: String,
+            notify: true,
+          }
+        }
+      }
+
+      /* @private*/
+      _errorTrigger(labelValue)
+      {
+        this.__sanityCheck(labelValue, true);
+      }
+
+      /* @private*/
+      __sanityCheck(x, y)
+      {
+        if (y) {
+          if (x == null || x == "" || x.includes("/")) {
+            this.message = 'Label name can not be empty ' +
+                    'or contain forward slash!';
+            return true;
+          }
+          return false
+        } else {
+          if (x == null || x == "") {
+            this.message = "Specify the full path of the " +
+                    "current directory.";
+            return true;
+          }
+          return false
+        }
+      }
+      /**
+       * The `Enter` key will fire the `create` eventlistner and the Escape
+       *  key excute the `close` eventlistner.
+       */
+      _action(e)
+      {
+        e.detail.combo == 'enter' ?
+                this._createHandler(e) : this._closeHandler(e);
+      }
+
+      /**
+       * @event create
+       */
+      _createHandler(e)
+      {
+        if (this.__sanityCheck(this.labelValue, true) == false) {
+          this.dispatchEvent(new CustomEvent('setlabel',
+                  {detail: {labelValue: this.labelValue}}));
+        }
+      }
+
+      /**
+       * @event close
+       */
+      _closeHandler(e)
+      {
+        this.dispatchEvent(new CustomEvent('close', {detail: {}}));
+      }
+    }
+    window.customElements.define(SetLabel.is, SetLabel);
+  </script>
+</dom-module>

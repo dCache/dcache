@@ -24,6 +24,14 @@
           <version>${project.version}</version>
           <type>zip</type>
       </dependency>
+
+
+ <!--     <dependency>
+          <groupId>org.dcache</groupId>
+          <artifactId>dcache-view</artifactId>
+          <version>${project.version}</version>
+          <type>jar</type>
+      </dependency>-->
   </dependencies>
 
   <build>

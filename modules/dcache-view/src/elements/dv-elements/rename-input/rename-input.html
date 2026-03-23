@@ -1,0 +1,140 @@
+<link rel="import" href="../../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../../bower_components/iron-a11y-keys/iron-a11y-keys.html">
+<link rel="import" href="../../../bower_components/dcache-namespace/dcache-namespace.html">
+
+<dom-module id="rename-input">
+    <template>
+        <style>
+            :host {
+                width: 100%;
+            }
+            #input {
+                width: 100%;
+            }
+        </style>
+        <div>
+            <iron-a11y-keys target="[[target]]"
+                            keys="enter" on-keys-pressed="_rename"></iron-a11y-keys>
+            <iron-a11y-keys target="[[target]]"
+                            keys="esc" on-keys-pressed="_abortRename"></iron-a11y-keys>
+            <input id="input" type="text" pattern="[^/]*" value="{{value::input}}">
+        </div>
+    </template>
+    <script>
+        class RenameInput extends DcacheViewMixins.Commons(Polymer.Element)
+        {
+            constructor(file, auth)
+            {
+                super();
+                this._node = file;
+                this._previousValue = file.fileMetaData.fileName;
+                this._pnfsId = file.fileMetaData.pnfsId;
+                this.value = file.fileMetaData.fileName;
+                if (auth === "" || auth) {
+                    this.auth = auth;
+                }
+            }
+            ready()
+            {
+                super.ready();
+                this.target = this.$.input;
+                this.$.input.addEventListener('focusout', event => this._endRenaming(event));
+                Polymer.RenderStatus.afterNextRender(this, () => {
+                    this._focus();
+                });
+            }
+            static get is()
+            {
+                return "rename-input";
+            }
+            static get properties()
+            {
+                return {
+                    _previousValue: String,
+                    _pnfsId: String,
+                    value: {
+                        type: String,
+                        notify: true
+                    },
+                    _node: {
+                        type: Object,
+                        notify: true
+                    },
+                    flag: {
+                        type: Boolean,
+                        value: true,
+                        notify: true
+                    },
+                    auth: Object,
+                    target: Object
+                }
+            }
+            _focus()
+            {
+                this.$.input.focus();
+                const selectionEnd = this.value.lastIndexOf('.') === -1 ? this.value.length :
+                    this.value.lastIndexOf('.');
+                this.$.input.setSelectionRange(0,selectionEnd);
+            }
+            _endRenaming()
+            {
+                if (!this.flag) {
+                    return;
+                }
+                this._abortRename();
+            }
+            _rename()
+            {
+                this.flag = false;
+                if (this._previousValue === this.value) {
+                    this._abortRename();
+                    return;
+                }
+                let path;
+                if (this._node.parentPath) {
+                    path = this._node.parentPath;
+                } else if (this._node.filePath) {
+                    path = this._node.filePath.slice(0, 1-this._node.filePath.lastIndexOf("/"))
+                } else {
+                    this._abortRename();
+                    return;
+                }
+                const renameWorker = new Worker('./scripts/tasks/namespace-move-operation.js');
+                renameWorker.addEventListener('message', (e) => {
+                    renameWorker.terminate();
+                    window.dispatchEvent(new CustomEvent('dv-namespace-show-message-toast',
+                        {detail: {message: `Done! File renamed.`}}
+                    ));
+                    this._dispatchRename(this.value);
+                }, false);
+                renameWorker.addEventListener('error', (err) => {
+                    renameWorker.terminate();
+                    window.dispatchEvent(new CustomEvent('dv-namespace-show-message-toast',
+                        {detail: {message: `${err.message}`}}));
+                    this._abortRename();
+                }, false);
+                renameWorker.postMessage({
+                    "endpoint": window.CONFIG["dcache-view.endpoints.webapi"],
+                    "upauth": this.auth,
+                    "source": path.endsWith("/") ?
+                        this.encodePath(`${path}${this._previousValue}`) :
+                        this.encodePath(`${path}/${this._previousValue}`),
+                    "destination": path.endsWith("/") ? `${path}${this.value}` : `${path}/${this.value}`
+                });
+            }
+            _abortRename()
+            {
+                this.flag = false;
+                this._dispatchRename(this._previousValue, true);
+            }
+            _dispatchRename(name, isAborted)
+            {
+                this.dispatchEvent(new CustomEvent('dv-namespace-rename-input', {
+                    detail: {pnfsId: this._pnfsId, newFileName: name, isAborted: !!isAborted},
+                    bubbles: true, composed: true
+                }));
+            }
+        }
+        window.customElements.define(RenameInput.is, RenameInput);
+    </script>
+</dom-module>

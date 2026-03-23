@@ -1,0 +1,243 @@
+<link rel="import" href="../../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="mixin/files-viewer-mixin.html">
+<dom-module id="files-viewer-header">
+    <template>
+        <style>
+            :host {
+                background-color: rgb(50, 54, 57);
+                color: rgb(241, 241, 241);
+                display: flex;
+                height: 48px;
+                width: 100%;
+            }
+            .toolbar {
+                align-items: center;
+                display: flex;
+                padding: 0 8px;
+                width: 100%;
+            }
+            .title {
+                flex: 5;
+                font-size: 0.87rem;
+                font-weight: 500;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            .title paper-icon-button {
+                margin-right: 12px;
+            }
+            .buttons {
+                flex: 5;
+                text-align: end;
+                user-select: none;
+            }
+
+            .pageselector-container {
+                text-align: center;
+                white-space: nowrap;
+                display: flex;
+                align-items: center;
+            }
+
+            .page-selector {
+                color: #fff;
+                font-size: 1.23rem;
+                margin-left: 24px;
+                margin-right: 24px;
+            }
+            .page-selector ::selection {
+                background: rgba(255, 255, 255, 0.3);
+            }
+            .page-no-txt {
+                --paper-input-container-underline: { display: none; };
+                --paper-input-container-underline-focus: { display: none; };
+                padding: 0;
+                width: 1ch;
+            }
+            #input {
+                -webkit-margin-start: -3px;
+                color: #fff;
+                height: 100%;
+                line-height: 18px;
+                padding: 3px;
+                text-align: end;
+                vertical-align: baseline;
+            }
+            #input:focus,
+            #input:hover {
+                background-color: rgba(0, 0, 0, 0.5);
+                border-radius: 2px;
+            }
+            .slash {
+                padding: 0 3px;
+            }
+            .total {
+                -webkit-margin-start: -2px;
+                padding-bottom: 1px;
+                text-align: start;
+                width: 1ch;
+            }
+            .page-no-txt,
+            .slash,
+            .total {
+                display: inline-block;
+                margin-bottom: 2px;
+                vertical-align: middle;
+            }
+            #input,
+            .slash,
+            #pagelength {
+                font-size: 0.81rem;
+            }
+            iron-input input {
+                @apply --paper-input-container-shared-input-style;
+            }
+            .page-nav {
+                width: 1.23rem;
+                height: 1.23rem;
+                padding: 0;
+            }
+            .hide {
+                visibility: hidden;
+            }
+        </style>
+        <div class="toolbar">
+            <div class="title">
+                <paper-icon-button icon="close" on-tap="_close"></paper-icon-button>
+                <file-icon mime-type="[[fileMimeType]]"></file-icon>
+                <strong>[[fileName]]</strong>
+            </div>
+            <div id="page-navigator-container" class="pageselector-container hide">
+                <paper-icon-button class="page-nav"
+                                   icon="icons:arrow-back" on-tap="_previous"></paper-icon-button>
+                <div class="page-selector">
+                    <paper-input-container class="page-no-txt" no-label-float>
+                        <iron-input slot="input" bind-value="[[pageNo]]" allowed-pattern="\d">
+                            <input id="input" prevent-invalid-input
+                                   value="{{value::input}}" on-change="_goTo">
+                        </iron-input>
+                    </paper-input-container>
+                    <span class="slash"> / </span>
+                    <span class="total">
+                        <span id="pagelength">{{docLength}}</span>
+                    </span>
+                </div>
+                <paper-icon-button class="page-nav"
+                                   icon="icons:arrow-forward" on-tap="_next"></paper-icon-button>
+            </div>
+            <div id="buttons" class="buttons">
+                <paper-icon-button icon="icons:more-vert" on-tap="_more"></paper-icon-button>
+            </div>
+        </div>
+    </template>
+    <script>
+        class FilesViewerHeader extends DcacheViewMixins.FilesViewerMixin(Polymer.Element)
+        {
+            constructor()
+            {
+                super();
+                this._getDocLengthListener = this._getDocLength.bind(this);
+                this._updateCurrentPageNoListener = this._updatePageNo.bind(this);
+
+            }
+            connectedCallback()
+            {
+                super.connectedCallback();
+                window.addEventListener('dv-namespace-files-viewer-nav-page-total', this._getDocLengthListener);
+                window.addEventListener('dv-namespace-files-viewer-nav-page-change', this._updateCurrentPageNoListener);
+            }
+            disconnectedCallback()
+            {
+                super.disconnectedCallback();
+                window.removeEventListener('dv-namespace-files-viewer-nav-page-change', this._updateCurrentPageNoListener);
+                window.removeEventListener('dv-namespace-files-viewer-nav-page-total', this._getDocLengthListener);
+            }
+            static get is()
+            {
+                return 'files-viewer-header';
+            }
+            static get properties()
+            {
+                return {
+                    fileName: {
+                        type: String,
+                        notify: true
+                    },
+                    fileMimeType: {
+                        type: String,
+                        notify: true
+                    },
+                    docLength: {
+                        type: Number,
+                        value: '?'
+                    },
+                    pageNo: {
+                        type: Number,
+                        value: 1
+                    },
+                }
+            }
+            static get observers()
+            {
+                return ['_load(fileMimeType)'];
+            }
+            _load(mime)
+            {
+                if (mime.includes("video") || mime.includes("audio") || mime.includes("json")) {
+                    this.$.buttons.classList.add("hide");
+                } else {
+                    if (this.$.buttons.classList.contains("hide")) this.$.buttons.classList.remove("hide");
+                }
+
+                if (mime.includes("pdf")) {
+                    this.$['page-navigator-container'].classList.remove("hide");
+                }
+            }
+            _more()
+            {
+                this.dispatchEvent(
+                    new CustomEvent('dv-namespace-files-viewer-addtional-tools',{bubbles:true, composed:true})
+                );
+            }
+            _close()
+            {
+                this.dispatchEvent(
+                    new CustomEvent('dv-namespace-close-files-viewer',{bubbles:true, composed:true})
+                );
+            }
+            _previous()
+            {
+                this.dispatchEvent(
+                    new CustomEvent('dv-namespace-files-viewer-nav-previous',{bubbles:true, composed:true})
+                );
+            }
+            _next()
+            {
+                this.dispatchEvent(
+                    new CustomEvent('dv-namespace-files-viewer-nav-next',{bubbles:true, composed:true})
+                );
+            }
+            _updatePageNo(e)
+            {
+                this.pageNo = e.detail.page;
+            }
+            _getDocLength(e)
+            {
+                this.docLength = e.detail.total;
+            }
+            _goTo()
+            {
+                if ((1 <= this.value) && (this.value <= this.docLength)) {
+                    this.dispatchEvent(
+                        new CustomEvent('dv-namespace-files-viewer-nav-goto',
+                            {detail:{page: this.value}, bubbles:true, composed:true})
+                    );
+                } else {
+                    this.$.input.value = this.pageNo;
+                }
+            }
+        }
+        window.customElements.define(FilesViewerHeader.is, FilesViewerHeader);
+    </script>
+</dom-module>
