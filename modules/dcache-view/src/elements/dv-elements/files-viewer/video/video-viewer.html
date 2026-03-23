@@ -1,0 +1,31 @@
+<link rel="import" href="../../../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../mixin/files-viewer-mixin.html">
+<dom-module id="video-viewer">
+    <template>
+        <style>
+            :host {
+                display: flex;
+                width:100%;
+                height: 100%;
+            }
+            paper-button {
+                text-transform: lowercase;
+            }
+            video {
+                width: 100%;
+                height: auto;
+            }
+            .video-container {
+                padding: 0 5%;
+                box-sizing: border-box;
+                flex: 1 1 auto;
+                margin: auto;
+            }
+        </style>
+        <div class="video-container">
+            <video id="video" on-error="_error" controls></video>
+        </div>
+    </template>
+    <script src="video-viewer.js"></script>
+</dom-module>

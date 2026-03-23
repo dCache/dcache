@@ -1,0 +1,31 @@
+<link rel="import" href="../../../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="view/shared-file-list/shared-file-list.html">
+<link rel="import" href="view/shared-directory-view/shared-directory-view.html">
+<link rel="import" href="context-menu/shared-file-list-contextual-content.html">
+<dom-module id="shared-files-page">
+    <template>
+        <style>
+            :host {
+                width: 100%;
+                height: 100%;
+                display: flex;
+                box-sizing: border-box;
+            }
+            .none {
+                display: none;
+            }
+            #shared-directory-view {
+                width: 100%;
+                height: 100%;
+            }
+        </style>
+        <shared-file-list
+                id="shared-file-list"
+                class="normal"
+                on-contextmenu="_openContextMenu"></shared-file-list>
+        <shared-directory-view
+                id="shared-directory-view"
+                class="none"></shared-directory-view>
+    </template>
+    <script src="shared-files-page.js"></script>
+</dom-module>

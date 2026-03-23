@@ -1,0 +1,221 @@
+<link rel="import" href="../../../../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../../../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../../../../bower_components/paper-styles/paper-styles.html">
+<script src="../../../../../bower_components/qr.js/qr.js"></script>
+<dom-module id="shareable-successful-page">
+    <template>
+        <style is="custom-style" include="paper-material-styles">
+            :host {
+                display: flex;
+                flex-direction: column;
+                width: 100%;
+                box-sizing: border-box;
+                padding: 0 10px 15px 10px;
+            }
+            .description {
+                display: flex;
+                align-items: center;
+                height: 40px;
+                width: 100%;
+                overflow-x: auto;
+            }
+            .result {
+                flex: 1 1 auto;
+                display: flex;
+                padding: 0 10px;
+                box-sizing: border-box;
+            }
+            .text-container {
+                flex: 1 1 auto;
+                box-sizing: border-box;
+                border-right: 1px solid #ccc;
+                padding-right: 10px;
+            }
+            .qr-container {
+                margin-left: 10px;
+                box-sizing: border-box;
+                display: flex;
+                flex-direction: column;
+            }
+            .image-container {
+                flex: 1 1 auto;
+                box-sizing: border-box;
+                text-align: center;
+            }
+
+            .link, .macaroon {
+                display: flex;
+                flex-direction: column;
+                height: 20%;
+                box-sizing: border-box;
+            }
+            .link {
+                margin-bottom: 10px;
+            }
+            .macaroon {
+                margin-top: 5px;
+                border-top: 1px solid #ccc;
+            }
+            .top, .button {
+                height: 26px;
+                box-sizing: border-box;
+            }
+            .body {
+                flex: 1 1 auto;
+                display: flex;
+                box-sizing: border-box;
+            }
+            .macaroon .button, .link .button {
+                margin-top: 4px;
+            }
+            .txt {
+                flex: 1 1 auto;
+                word-wrap: break-word;
+                word-break: break-all;
+                text-align: justify;
+                text-justify: inter-word;
+                text-indent: 0;
+                resize: none;
+                overflow-y: scroll;
+            }
+            .button paper-button {
+                height: 100%;
+                width: 100%;
+                margin: 0;
+            }
+            .help-icon {
+                width:15px;
+                height:15px;
+                fill: #828282
+            }
+            .help-icon-container {
+                display:inline-block;
+                padding-left: 5px;
+            }
+
+            .blue {
+                background: #03a9f4;
+                color: white;
+                border-radius: 0;
+            }
+            .green {
+                background: #009688;
+                color: white;
+                border-radius: 0;
+            }
+            .blue iron-icon, .green iron-icon {
+                width: 18px;
+            }
+        </style>
+        <div class="description">
+            <p>
+                [[dirOrFile]] name: <b>[[fullPath]]</b>
+            </p>
+        </div>
+        <div class="result">
+            <div class="text-container">
+                <div class="link">
+                    <div class="top">
+                        <span>
+                            <b>Shareable Link:</b>
+                            <div class="help-icon-container">
+                                <iron-icon icon="help" class="help-icon"></iron-icon>
+                                <paper-tooltip>Shareable link with the [[dirOrFile]] shown on a landing page. Requires a web browser for access.</paper-tooltip>
+                            </div>
+                        </span>
+                    </div>
+                    <div class="body">
+                        <textarea id="linkText" class="txt" rows="1" readonly title="">[[generatedLink]]</textarea>
+                    </div>
+                    <div class="button">
+                        <paper-button class="blue" on-tap="_copyLink" raised>
+                            <iron-icon icon="link"> </iron-icon>&nbsp;Copy link</paper-button>
+                    </div>
+                </div>
+                <div class="link">
+                    <div class="top">
+                        <span>
+                            <b>Direct Link:</b>
+                            <div class="help-icon-container">
+                                <iron-icon icon="help" class="help-icon"></iron-icon>
+                                <paper-tooltip>Direct link to the [[dirOrFile]] for access. Suitable for use with non-browser tools like curl, wget, rclone, download managers, etc.</paper-tooltip>
+                            </div>
+                        </span>
+                    </div>
+                    <div class="body">
+                        <textarea id="linkDirect" class="txt" rows="1" readonly title="">[[directLink]]</textarea>
+                    </div>
+                    <div class="button">
+                        <paper-button class="blue" on-tap="_copyDirect" raised>
+                            <iron-icon icon="link"> </iron-icon>&nbsp;Copy link</paper-button>
+                    </div>
+                </div>
+                    <div class="link">
+                        <div class="top">
+                            <span>
+                                <b><a href="https://rclone.org/webdav/#dcache">Rclone</a> config:</b>
+                                <template is="dom-if" if="[[_equal(fileType, 'DIR')]]">
+                                    <div class="help-icon-container">
+                                        <iron-icon icon="help" class="help-icon"></iron-icon>
+                                        <paper-tooltip>Configuration snippet for the rclone utility to add a remote named <b>[[fileName]]</b> with access using the generated token. Typically added to your <tt>.config/rclone/rclone.conf</tt> file.</paper-tooltip>
+                                    </div>
+                                </template>
+                            </span>
+                        </div>
+                        <div class="body">
+                            <textarea id="rcloneConf" class="txt" readonly title="">[[rcloneRC]]</textarea>
+                        </div>
+                        <div class="button">
+                            <paper-button class="green" on-tap="_copyRclone" raised>
+                                <iron-icon icon="content-copy"> </iron-icon>&nbsp;Copy Rclone config</paper-button>
+                        </div>
+                    </div>
+                <div class="macaroon">
+                    <div class="top">
+                        <span>
+                            <b>Macaroon:</b>
+                            <div class="help-icon-container">
+                                <iron-icon icon="help" class="help-icon"></iron-icon>
+                                <paper-tooltip>The actual access token (only).</paper-tooltip>
+                            </div>
+                        </span>
+                    </div>
+                    <div class="body">
+                        <textarea id="macaroonText" class="txt" rows="1" readonly title="">[[macaroon]]</textarea>
+                    </div>
+                    <div class="button">
+                        <paper-button class="green" on-tap="_copyMacaroon" raised>
+                            <iron-icon icon="content-copy"> </iron-icon>&nbsp;Copy macaroon</paper-button>
+                    </div>
+                </div>
+            </div>
+            <div class="qr-container">
+                <div class="qr">
+                    <div class="top">
+                        <span><b>QR Code for the shareable link:</b></span>
+                    </div>
+                    <div class="image-container paper-material" elevation="1">
+                        <img src$="[[generatedQR]]">
+                        <div class="button">
+                            <paper-button on-tap="_downloadGenQR">
+                                <iron-icon icon="file-download"></iron-icon>Download QR code</paper-button>
+                        </div>
+                    </div>
+                </div>
+                <div class="qr">
+                    <div class="top">
+                        <span><b>QR Code for the direct link:</b></span>
+                    </div>
+                    <div class="image-container paper-material" elevation="1">
+                        <img src$="[[directQR]]">
+                        <div class="button">
+                            <paper-button on-tap="_downloadDirectQR">
+                                <iron-icon icon="file-download"></iron-icon>Download QR code</paper-button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+    <script src="shareable-successful-page.js"></script>
+</dom-module>
