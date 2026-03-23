@@ -42,8 +42,6 @@ done
 
 #Remove known generated/excluded packages
 for pkg in \
-    "org/dcache/srm/v2_2" \
-    "gov/fnal/srm/util" \
     "org/dcache/services/billing/db/data" \
     "diskCacheV111/poolManager/jmh_generated" \
     "org/dcache/util/jmh_generated" \
