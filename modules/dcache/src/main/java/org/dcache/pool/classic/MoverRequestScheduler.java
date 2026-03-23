@@ -59,7 +59,9 @@ public class MoverRequestScheduler {
 
     public long numberOfRequestsFor(PnfsId pnfsId) {
         return _jobs.values().stream()
-              .filter((pr) -> pr.getMover().getFileAttributes().getPnfsId().equals(pnfsId)).count();
+              .filter((pr) -> pr.getMover().getFileAttributes().getPnfsId().equals(pnfsId))
+              .filter((pr) -> !pr.getMover().isPoolToPoolTransfer())
+              .count();
     }
 
     /**

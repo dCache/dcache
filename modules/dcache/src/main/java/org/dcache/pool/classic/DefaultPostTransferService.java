@@ -17,6 +17,7 @@
  */
 package org.dcache.pool.classic;
 
+import static com.google.common.net.InetAddresses.toUriString;
 import static org.dcache.util.Exceptions.messageOrClassName;
 
 import com.google.common.base.Throwables;
@@ -30,8 +31,12 @@ import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellInfoProvider;
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketException;
 import java.nio.channels.CompletionHandler;
 import java.nio.file.StandardOpenOption;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -47,6 +52,7 @@ import org.dcache.pool.statistics.IoStatisticsChannel;
 import org.dcache.pool.statistics.SnapshotStatistics;
 import org.dcache.util.CDCExecutorServiceDecorator;
 import org.dcache.util.FireAndForgetTask;
+import org.dcache.util.NetworkUtils;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,6 +66,7 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
       PostTransferService, CellInfoProvider {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultPostTransferService.class);
+    private static final Logger SCITAGS_LOGGER = LoggerFactory.getLogger("org.dcache.scitags");
 
     private final ExecutorService _executor =
           new CDCExecutorServiceDecorator<>(
@@ -239,12 +246,109 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
             finished.setReply(mover.getErrorCode(), mover.getErrorMessage());
         }
 
-        mover.getLocalEndpoint().ifPresent(e ->
-                transferLifeCycle.onEnd(((IpProtocolInfo) mover.getProtocolInfo()).getSocketAddress(),
-                        e,
-                        moverInfoMessage));
+        if (transferLifeCycle == null) {
+            SCITAGS_LOGGER.debug(
+                  "scitags lifecycle=end skip reason=no-transfer-lifecycle protocol={} pnfsid={} transferTag={}",
+                  protocolName(mover),
+                  mover.getFileAttributes().getPnfsId(),
+                  transferTag(mover));
+        } else if (!(mover.getProtocolInfo() instanceof IpProtocolInfo ipProtocolInfo)) {
+            SCITAGS_LOGGER.debug(
+                  "scitags lifecycle=end skip reason=non-ip-protocol protocol={} pnfsid={} transferTag={}",
+                  protocolName(mover),
+                  mover.getFileAttributes().getPnfsId(),
+                  transferTag(mover));
+        } else {
+            InetSocketAddress remoteEndpoint = ipProtocolInfo.getSocketAddress();
+            if (remoteEndpoint == null) {
+                SCITAGS_LOGGER.debug(
+                      "scitags lifecycle=end skip reason=no-remote-endpoint protocol={} pnfsid={} transferTag={}",
+                      protocolName(mover),
+                      mover.getFileAttributes().getPnfsId(),
+                      transferTag(mover));
+            } else {
+                Optional<InetSocketAddress> localEndpoint = mover.getLocalEndpoint();
+                String localEndpointSource = "mover";
+
+                if (localEndpoint.isEmpty()) {
+                    localEndpoint = deriveLocalEndpoint(remoteEndpoint);
+                    localEndpointSource = "derived";
+                }
+
+                if (localEndpoint.isEmpty()) {
+                    SCITAGS_LOGGER.debug(
+                          "scitags lifecycle=end skip reason=no-local-endpoint protocol={} pnfsid={} remote={} transferTag={} connectionTime={} bytesTransferred={}",
+                          protocolName(mover),
+                          mover.getFileAttributes().getPnfsId(),
+                          formatEndpoint(remoteEndpoint),
+                          transferTag(mover),
+                          moverInfoMessage.getConnectionTime(),
+                          moverInfoMessage.getDataTransferred());
+                } else {
+                    SCITAGS_LOGGER.debug(
+                          "scitags lifecycle=end invoke protocol={} pnfsid={} remote={} local={} localSource={} transferTag={} connectionTime={} bytesTransferred={} errorCode={}",
+                          protocolName(mover),
+                          mover.getFileAttributes().getPnfsId(),
+                          formatEndpoint(remoteEndpoint),
+                          formatEndpoint(localEndpoint.get()),
+                          localEndpointSource,
+                          transferTag(mover),
+                          moverInfoMessage.getConnectionTime(),
+                          moverInfoMessage.getDataTransferred(),
+                          mover.getErrorCode());
+                    transferLifeCycle.onEnd(
+                          remoteEndpoint,
+                          localEndpoint.get(),
+                          moverInfoMessage);
+                }
+            }
+        }
 
         _door.notify(mover.getPathToDoor(), finished);
+    }
+
+    private Optional<InetSocketAddress> deriveLocalEndpoint(InetSocketAddress remoteEndpoint) {
+        if (remoteEndpoint == null) {
+            return Optional.empty();
+        }
+
+        InetAddress remoteAddress = remoteEndpoint.getAddress();
+        if (remoteAddress == null) {
+            return Optional.empty();
+        }
+
+        try {
+            InetAddress localAddress = NetworkUtils.getLocalAddress(remoteAddress);
+            return Optional.ofNullable(localAddress).map(address -> new InetSocketAddress(address, 0));
+        } catch (SocketException e) {
+            SCITAGS_LOGGER.debug(
+                  "scitags lifecycle=end skip reason=local-endpoint-derivation-failed remote={} message={}",
+                  formatEndpoint(remoteEndpoint),
+                  e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    private String protocolName(Mover<?> mover) {
+        return mover.getProtocolInfo().getProtocol().toLowerCase();
+    }
+
+    private String transferTag(Mover<?> mover) {
+        String transferTag = mover.getProtocolInfo().getTransferTag();
+        return transferTag == null || transferTag.isEmpty() ? "-" : transferTag;
+    }
+
+    private String formatEndpoint(InetSocketAddress endpoint) {
+        if (endpoint == null) {
+            return "-";
+        }
+
+        InetAddress endpointAddress = endpoint.getAddress();
+        if (endpointAddress != null) {
+            return toUriString(endpointAddress) + ":" + endpoint.getPort();
+        }
+
+        return endpoint.getHostString() + ":" + endpoint.getPort();
     }
 
     public void shutdown() {
