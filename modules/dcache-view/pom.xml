@@ -240,14 +240,15 @@
                         </configuration>
                     </execution>
 
-                    <!-- 4. bower install -->
+
+
                     <execution>
                         <id>bower install</id>
                         <goals>
                             <goal>bower</goal>
                         </goals>
                         <configuration>
-                            <arguments>install</arguments>
+                            <arguments>install --allow-root --config.interactive=false</arguments>
                         </configuration>
                     </execution>
 

@@ -1,1 +1,5 @@
-{ "directory": "src/bower_components" }
+{
+    "directory": "src/bower_components",
+    "strict-ssl": false
+}
+
