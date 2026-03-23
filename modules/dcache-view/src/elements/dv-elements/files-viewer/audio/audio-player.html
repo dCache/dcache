@@ -1,0 +1,13 @@
+<link rel="import" href="../../../../bower_components/polymer/polymer-element.html">
+
+<dom-module id="audio-player">
+    <template>
+        <style>
+            :host {
+                margin: auto;
+            }
+        </style>
+        <audio id="audio" controls on-error="_error"></audio>
+    </template>
+    <script src="audio-player.js"></script>
+</dom-module>

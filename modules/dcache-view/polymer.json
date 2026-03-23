@@ -1,0 +1,18 @@
+{
+  "entrypoint": "src/index.html",
+  "shell": "src/elements/elements.html",
+  "sources": [
+    "src/elements/dv-elements/**/*"
+  ],
+  "lint": {
+    "rules": [
+      "polymer-2"
+    ],
+    "ignoreWarnings": ["could-not-resolve-reference"]
+  },
+  "builds": [
+    {
+      "preset": "es6-bundled"
+    }
+  ]
+}

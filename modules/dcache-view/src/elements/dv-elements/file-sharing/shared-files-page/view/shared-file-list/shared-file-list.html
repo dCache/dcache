@@ -1,0 +1,229 @@
+<link rel="import" href="../../../../../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../../../../../bower_components/paper-styles/element-styles/paper-material-styles.html">
+<link rel="import" href="../add-macaroon-form/add-macaroon-form.html">
+<link rel="import" href="../../../../rename-input/rename-input.html">
+<link rel="import" href="../../../../user-profile/user-image/user-image.html">
+<dom-module id="shared-file-list">
+    <template>
+        <style include="paper-material-styles">
+            :host {
+                display: flex;
+                width: 100%;
+                flex-direction: column;
+                background: #f9f9f9;
+                box-sizing: border-box;
+                -moz-user-select: none;
+                -webkit-user-select: none;
+                -ms-user-select: none;
+                user-select: none;
+            }
+            .list {
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+                background: #fff;
+
+            }
+            .add {
+                position: absolute;
+                bottom: 7px;
+                right: 7px;
+                --paper-fab-background: #607D8B;
+                --paper-fab-keyboard-focus-background: #263238;
+            }
+            .none {
+                display: none;
+            }
+            .empty {
+                margin: auto;
+            }
+            .empty-container {
+                display: flex;
+                width: 350px;
+                height: 400px;
+                border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+                background-color: #f3f3f3;
+                align-items: center;
+                justify-content: center;
+                flex-direction: column;
+                border: 50px solid #f5f5f5;
+            }
+            .empty-icon {
+                width: 160px;
+                height: 160px;
+                color: #c3c3c3;
+            }
+            .empty-text {
+                font-size: 0.8em;
+                -webkit-font-smoothing: antialiased;
+                color: #909090;
+                line-height: 1.5;
+            }
+
+
+
+            /*list item styles*/
+            .row[header] {
+                background: #f3f3f3;
+                font-weight: bold;
+            }
+            .header-icon {
+                color: #202124;
+                width: 16px;
+                height: 16px;
+                transition: transform .2s linear, width .2s linear, color .2s linear;
+            }
+            .sort {
+                transform: rotate(180deg);
+            }
+            .content {
+                height: calc(100% - 40px);
+                overflow: auto;
+            }
+            .row + .row {
+                border-top: 1px solid #e8eaed;
+            }
+            .row {
+                display: flex;
+                flex-direction: row;
+                height: 40px;
+                width: 100%;
+                font-size: 0.7em;
+                -webkit-font-smoothing: antialiased;
+                line-height: 40px;
+                align-items: center;
+                box-sizing: border-box;
+                transition: background 2s;
+            }
+            .row[header] .cell {
+                color: #202124;
+                cursor: pointer;
+                border-bottom: 2px solid #f3f3f3;
+                padding-bottom: 0;
+                padding-top: 0;
+                transition: border-bottom-color 500ms;
+            }
+            .row[header] .sorting {
+                border-bottom-color: #80b0ff;
+            }
+            .row[expired] .cell {
+                color: #f30722;
+            }
+
+            .cell {
+                color: rgba(0, 0, 0, 0.541176);
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                width: 25%;
+                box-sizing: border-box;
+                padding: 10px;
+            }
+
+            file-icon {
+                padding-right: 5px;
+                padding-left: 5px;
+            }
+            .name {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+            }
+            .row:not([header]) .owner {
+                display: flex;
+                flex-direction: row;
+            }
+            .user-image-container {
+                display: flex;
+                align-items: center;
+                margin-right: 5px;
+            }
+            user-image {
+                --user-image-border-radius: 50%;
+                --user-image-width: 20px;
+                --user-image-height: 20px;
+            }
+            .expiring-date {}
+            .row[header] .activities {
+                text-transform: none;
+                font-style: normal;
+            }
+            .row .activities {
+                text-transform: lowercase;
+                font-style: italic;
+            }
+            .selected {
+                background: #e8f0fe;;
+            }
+            .selected .cell {
+                color: #1967d2
+            }
+            #fileName {
+                box-sizing: border-box;
+                flex: 1 1 auto;
+                padding-right: 5px;
+            }
+        </style>
+
+        <div id="list" class="list">
+            <div class="row" id="header" header>
+                <div class="name cell"
+                     on-click="_sortByName" id="name-header"
+                     on-mouseover="_overName" on-mouseout="_outName">
+                    <iron-icon icon="arrow-upward" class="none"></iron-icon> Name
+                </div>
+                <div class="owner cell"
+                     on-click="_sortByOwner" id="owner-header"
+                     on-mouseover="_overOwner" on-mouseout="_outOwner">
+                    <iron-icon icon="arrow-upward" class="none"></iron-icon> Owner
+                </div>
+                <div class="expiring-date cell"
+                     on-click="_sortByExpiringDate" id="expiring-date-header"
+                     on-mouseover="_overExpiringDate" on-mouseout="_outExpiringDate">
+                    <iron-icon icon="arrow-upward" class="none"></iron-icon> Expiration date
+                </div>
+                <div class="activities cell"
+                     on-click="_sortByActivities" id="activities-header"
+                     on-mouseover="_overActivities" on-mouseout="_outActivities">
+                    <iron-icon icon="arrow-upward" class="none"></iron-icon> Allowed activities
+                </div>
+            </div>
+            <div class="content" id="content">
+                <dom-repeat items="{{sharedFiles}}" id="dom-repeat">
+                    <template>
+                        <div class$="[[_computedClass(item.selected)]]" expired$="[[_isExpired(item.before)]]"
+                             on-tap="_select" on-dblclick="_openFile" on-contextmenu="_openContextMenu">
+                            <div class="name cell">
+                                <file-icon></file-icon>
+                                <div id="fileName"><span>[[item.fileName]]</span></div>
+                            </div>
+                            <div class="owner cell">
+                                <div class="user-image-container">
+                                    <user-image email="[[email]]"
+                                                name="[[item.owner.name]]"
+                                                profile-identifier="shared-file-list"></user-image>
+                                </div>
+                                <div>[[_checkOwner(item.owner.name)]]</div>
+                            </div>
+                            <div class="expiring-date cell">
+                                [[_convertTime(item.before)]]
+                            </div>
+                            <div class="activities cell">
+                                [[_styleActivities(item.activity)]]
+                            </div>
+                        </div>
+                    </template>
+                </dom-repeat>
+            </div>
+        </div>
+        <div id="empty" class="none">
+            <div class="empty-container">
+                <iron-icon class="empty-icon" icon="folder-shared"></iron-icon>
+                <span class="empty-text"><b>Empty! You have no shared file.</b></span>
+                <span class="empty-text">Use the add button below to add a shared file.</span>
+            </div>
+        </div>
+        <paper-fab class="add" icon="add" on-tap="_openAddMacaroonForm"></paper-fab>
+    </template>
+    <script src="shared-file-list.js"></script>
+</dom-module>

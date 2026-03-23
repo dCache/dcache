@@ -1,0 +1,161 @@
+<link rel="import" href="../../../bower_components/polymer/polymer-element.html">
+
+<link rel="import" href="../utils/ajax-ls/view-file.html">
+<dom-module id="pagination-button">
+    <template>
+        <style>
+            :host{
+                display: inline-block;
+                /*Prevent text selection after double click*/
+                 -webkit-user-select: none; /* webkit (safari, chrome) browsers */
+                 -moz-user-select: none; /* mozilla browsers */
+                 -khtml-user-select: none; /* webkit (konqueror) browsers */
+                 -ms-user-select: none; /* IE10+ */
+            }
+            :host div {
+                display: inline;
+                width: 100%;
+                height: 100%;
+            }
+            a {
+                color: black;
+                float: left;
+                padding: 8px 16px;
+                text-decoration: none;
+                border: 1px solid #fafafa;
+                transition: background-color .3s;
+                font-size: 13px;
+                background-color: #fafafa;
+                border-radius: 3px;
+                margin: 0 1px;
+            }
+            a.active {
+                background-color: #fff;
+                color: #000;
+                border: 1px solid #b9babb;
+            }
+            a:hover:not(.active) {
+                background-color: #efefef;
+                cursor:pointer;
+                border: 1px solid #f44336;
+            }
+
+            .dragEnter {
+                border: 1px solid #0e5aff;
+            }
+        </style>
+        <div><a on-tap="_ref">{{name}}</a></div>
+    </template>
+    <script>
+        class PaginationButton extends Polymer.Element
+        {
+            constructor(dirName, canonicalPath)
+            {
+                super();
+                this.name = dirName;
+                this.filePath = canonicalPath;
+            }
+
+            static get is()
+            {
+                return 'pagination-button';
+            }
+
+            static get properties()
+            {
+                return {
+                    /**
+                     * Directory Name
+                     */
+                    name: {
+                        type: String,
+                        notify: true
+                    },
+
+                    /**
+                     * Full path to the directory
+                     */
+                    filePath: {
+                        type: String,
+                        notify: true
+                    },
+
+                    active: {
+                        type: String,
+                        notify: true,
+                        value: false,
+                        observer: '_activeChanged'
+                    },
+
+                    counter: {
+                        type: Number,
+                        value: 0,
+                        notify: true
+                    }
+                }
+            }
+
+            connectedCallback()
+            {
+                super.connectedCallback();
+                this.addEventListener('drop', (e)=>{this._drop(e)});
+                this.addEventListener('dragenter', (e)=>{this._dragenter(e)});
+                this.addEventListener('dragleave', (e)=>{this._dragleave(e)});
+            }
+
+            disconnectedCallback()
+            {
+                super.disconnectedCallback();
+                this.removeEventListener('drop', (e)=>{this._drop(e)});
+                this.removeEventListener('dragenter', (e)=>{this._dragenter(e)});
+                this.removeEventListener('dragleave', (e)=>{this._dragleave(e)});
+            }
+
+            _ref()
+            {
+                app.ls(this.filePath);
+            }
+
+            _activeChanged()
+            {
+                this.shadowRoot.querySelector('a').classList.add("active");
+            }
+
+            _drop(event)
+            {
+                event.stopPropagation();
+                event.preventDefault && event.preventDefault();
+                this.counter = 0;
+                this.shadowRoot.querySelector('a').classList.remove('dragEnter');
+                this.dispatchEvent(new CustomEvent('dv-namespace-drop', {
+                    detail: {file: this, evt: event, filePath: this.filePath}, bubbles: true, composed: true
+                }));
+            }
+
+            _dragenter(event)
+            {
+                event.stopPropagation();
+                event.preventDefault && event.preventDefault();
+                this.counter++;
+                this.shadowRoot.querySelector('a').classList.add('dragEnter');
+                this.dispatchEvent(new CustomEvent('dv-namespace-dragenter', {
+                    detail: {file: this, evt: event}, bubbles: true, composed: true
+                }));
+            }
+
+            _dragleave(event)
+            {
+                event.stopPropagation();
+                event.preventDefault && event.preventDefault();
+                this.counter--;
+                if (this.counter === 0) {
+                    this.shadowRoot.querySelector('a').classList.remove('dragEnter');
+                    this.dispatchEvent(new CustomEvent('dv-namespace-dragleave', {
+                        detail: {}, bubbles: true, composed: true
+                    }));
+                }
+            }
+        }
+        window.customElements.define(PaginationButton.is, PaginationButton);
+    </script>
+</dom-module>

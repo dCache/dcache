@@ -1,0 +1,152 @@
+<link rel="import"
+      href="../../../../bower_components/polymer/polymer-element.html">
+<link rel="import"
+      href="../../../../bower_components/paper-toolbar/paper-toolbar.html">
+<link rel="import"
+      href="../../../../bower_components/paper-scroll-header-panel/paper-scroll-header-panel.html">
+<link rel="import"
+      href="../../../../bower_components/paper-button/paper-button.html">
+<link rel="import"
+      href="../../../../bower_components/paper-tooltip/paper-tooltip.html">
+<link rel="import"
+      href="../../../../bower_components/paper-dialog-behavior/paper-dialog-behavior.html">
+<link rel="import"
+      href="../../../../bower_components/google-apis/google-apis.html">
+<link rel="import"
+      href="../../../../bower_components/google-chart/google-chart.html">
+<link rel="import"
+      href="../../../../bower_components/google-chart/google-chart-styles.html">
+<link rel="import"
+      href="../../../../bower_components/neon-animation/web-animations.html">
+<link rel="import"
+      href="../../../../elements/dv-elements/utils/mixins/dv-admin-mixins.html">
+
+<dom-module id="chart-dialog">
+    <template>
+        <style>
+            :host {
+                display: none;
+                @apply(--layout-vertical);
+                max-height: 90%;
+                max-width: 90%;
+                min-height: 90%;
+                min-width: 90%;
+                font: 300 11pt "Open Sans", sans-serif;
+                -webkit-font-smoothing: antialiased;
+            }
+
+            paper-scroll-header-panel {
+                height: 80%;
+            }
+
+            paper-toolbar {
+                color: var(--dv-charcoal-grey);
+                background: var(--dv-light-grey);
+            }
+
+            paper-button {
+                background: var(--dv-charcoal-grey);
+                color: var(--dv-main-background);
+            }
+
+            .flex {
+                @apply(--layout-flex);
+            }
+
+            .opaque {
+                opacity: 1.0;
+                background: var(--dv-light-grey);
+                color: var(--dv-main-foreground);
+                border: groove;
+                border-color: var(--dv-blue-500);
+                border-width: thick;
+            }
+
+            .spacer {
+                margin-left: 10px !important;
+            }
+
+            .plot {
+                position: relative;
+                margin: 15px auto;
+                width: 95%;
+                height: 75%;
+            }
+        </style>
+
+        <paper-scroll-header-panel class="flex opaque" fixed>
+            <paper-toolbar slot="header">
+                <div slot="top" class="spacer title"><strong>[[chart.title]]</strong></div>
+                <paper-button slot="top" dialog-dismiss>Close</paper-button>
+            </paper-toolbar>
+            <hr/>
+            <google-chart slot="content"
+                          hidden="[[printview]]" class="plot" id="chart_div"
+                          type="[[chart.chartStyle]]"
+                          options="[[chart.options]]"
+                          data="[[chart.dataTable]]">
+            </google-chart>
+        </paper-scroll-header-panel>
+    </template>
+
+    <script>
+        class ChartDialog extends
+            Polymer.mixinBehaviors([Polymer.PaperDialogBehavior,
+                Polymer.IronResizableBehavior],
+                DcacheViewMixins.AdminBase(Polymer.Element)) {
+
+            static get is() {
+                return 'chart-dialog';
+            }
+
+            static get properties() {
+                return {
+                    chart: {
+                        type: Object,
+                        notify: true
+                    },
+
+                    printOptions: {
+                        type: Object
+                    },
+
+                    printview: {
+                        type: Boolean,
+                        value: false,
+                        notify: true
+                    }
+                }
+            }
+
+            constructor(chart, printOptions) {
+                super();
+                this.chart = chart;
+                this.printOptions = printOptions;
+                this.printOptions.width = "1000";
+                this.printOptions.height = "500";
+                this.modal = false;
+            }
+
+            connectedCallback() {
+                super.connectedCallback();
+                this.addEventListener('iron-resize', this._onResize);
+            }
+
+            close() {
+                this.popDialog();
+                super.close();
+            }
+
+            disconnectedCallback() {
+                super.disconnectedCallback();
+                this.removeEventListener('iron-resize', this._onResize);
+            }
+
+            _onResize() {
+                this.shadowRoot.querySelector('#chart_div').redraw();
+            }
+        }
+
+        window.customElements.define(ChartDialog.is, ChartDialog);
+    </script>
+</dom-module>

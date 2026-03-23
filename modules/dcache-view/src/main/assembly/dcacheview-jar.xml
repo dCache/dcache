@@ -1,0 +1,17 @@
+<assembly>
+    <id>dcache-view</id>
+    <formats>
+        <format>jar</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <fileSets>
+        <fileSet>
+            <directory>target</directory>
+            <outputDirectory>/</outputDirectory>
+            <excludes>
+                <exclude>*:jar</exclude>
+                <exclude>archive-tmp</exclude>
+            </excludes>
+        </fileSet>
+    </fileSets>
+</assembly>

@@ -1,0 +1,170 @@
+<link rel="import" href="../../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../../bower_components/paper-tooltip/paper-tooltip.html">
+<script src="../utils/dcache-view-uploader/dcache-view-uploader.js"></script>
+
+<link rel="import" href="upload-toast-file.html">
+<dom-module id="upload-files-button">
+    <template>
+        <style>
+            :host{
+                display: inline-block;
+            }
+            #files {
+                width: 0;
+                height: 0;
+                opacity: 0;
+                overflow: hidden;
+                position: absolute;
+                z-index: -1;
+            }
+        </style>
+        <div>
+            <input id="files" on-tap="_resetValue" type="file" multiple>
+            <label for="files">
+                <paper-icon-button icon="icons:cloud-upload"></paper-icon-button>
+                <paper-tooltip>upload files</paper-tooltip>
+            </label>
+        </div>
+    </template>
+    <script>
+        class UploadFilesButton extends DcacheViewMixins.Commons(Polymer.Element)
+        {
+            constructor(auth)
+            {
+                super();
+                if(auth) {
+                    this.authenticationParameters = auth;
+                }
+                this._handleFileSelection = this.handleFileSelection.bind(this);
+                this._openFilePicker_ = this._openFilePicker.bind(this);
+                this._setCurrentPath_ = this._setCurrentPath.bind(this);
+            }
+            static get is()
+            {
+                return 'upload-files-button';
+            }
+            static get properties()
+            {
+                return {
+                    currentPath: {
+                        type: String
+                    }
+                };
+            }
+            connectedCallback()
+            {
+                super.connectedCallback();
+                window.addEventListener('dv-namespace-upload-files', this._openFilePicker_);
+                window.addEventListener('dv-namespace-current-path', this._setCurrentPath_);
+
+                this.$.files.addEventListener('change', this._handleFileSelection);
+                this.dispatchEvent(
+                    new CustomEvent('dv-namespace-request-current-path', {bubbles: true, composed: true}));
+            }
+            disconnectedCallback()
+            {
+                super.disconnectedCallback();
+                window.removeEventListener('dv-namespace-upload-files', this._openFilePicker_);
+                window.removeEventListener('dv-namespace-current-path', this._setCurrentPath_);
+
+                this.$.files.removeEventListener('change', this._handleFileSelection);
+            }
+            handleFileSelection(e)
+            {
+                e.stopPropagation();
+                e.preventDefault();
+                if (window.File && window.FileReader && window.FileList && window.Blob) {
+                    this.dispatchEvent(new CustomEvent('dv-namespace-open-upload-toast', {
+                        bubbles: true, composed: true}));
+                    this.uploadFile(e.target.files);
+                } else {
+                    this.dispatchEvent(new CustomEvent('dv-namespace-show-message-toast', {
+                        detail: {message: `No support for the File API in this web browser.`},
+                        bubbles: true, composed: true}));
+                }
+            }
+            uploadFile(files)
+            {
+                const path = this.currentPath.endsWith("/") ? this.currentPath: `${this.currentPath}/`;
+                const len = files.length;
+                for (let i=0; i < len; i++) {
+                    const el = new UploadToastFile(files[i].name, "REGULAR", files[i].type);
+                    el.setAttribute("id", i.toString());
+                    this.dispatchEvent(new CustomEvent('dv-namespace-upload-toast-append-child', {
+                            detail: {child: el}, bubbles: true, composed: true}));
+                    const upLs = el;
+                    const uploadURL = this.getFileWebDavUrl(`${path}${files[i].name}`, "write")[0];
+                    const uploader = new UploadHandler({
+                        file: files[i],
+                        upauth: this.getAuthValue(),
+                        url: uploadURL,
+                        onComplete: function (data) {
+                            const progressBar = upLs.shadowRoot.querySelector('paper-progress');
+                            progressBar.indeterminate = false;
+                            progressBar.value = 100;
+                            progressBar.classList.remove("error", "progress");
+                            progressBar.classList.add("complete");
+
+                            upLs.inProgress = false;
+                            upLs.hasError = false;
+                            upLs.isComplete = true;
+                            upLs.message = "Uploaded";
+                            this.dispatchEvent(new CustomEvent('dv-namespace-add-items', {
+                                detail: {files: [{
+                                        "fileName" : data.name,
+                                        "fileMimeType" : data.type,
+                                        "fileLocality" : "",
+                                        "size" : data.size,
+                                        "fileType" : "REGULAR",
+                                        "mtime" : data.lastModified,
+                                        "creationTime" : Date.now()
+                                    }]},
+                                bubbles: true, composed: true}));
+                        }.bind(this),
+
+                        onProgress: function (evt) {
+                            const progressBar = upLs.shadowRoot.querySelector('paper-progress');
+                            if (evt.lengthComputable) {
+                                progressBar.classList.remove("error", "complete");
+                                progressBar.classList.add("progress");
+                                progressBar.indeterminate = false;
+                                progressBar.value = (evt.loaded / evt.total) * 100;
+                            }
+                            upLs.progressValue = progressBar.value;
+                            upLs.inProgress = true;
+                            upLs.isComplete = false;
+                            upLs.hasError = false;
+                        }.bind(this),
+
+                        onError: function (evt) {
+                            const progressBar = upLs.shadowRoot.querySelector('paper-progress');
+                            progressBar.classList.remove("progress", "complete");
+                            progressBar.classList.add("error");
+                            progressBar.indeterminate = false;
+                            progressBar.value = 100;
+                            upLs.message = evt.statusText;
+                            upLs.inProgress = false;
+                            upLs.isComplete = false;
+                            upLs.hasError = true;
+                        }.bind(this)
+                    });
+                    uploader.upload();
+                }
+            }
+            _openFilePicker()
+            {
+                this.$.files.click();
+            }
+            _setCurrentPath(e)
+            {
+                this.currentPath = e.detail.currentPath;
+            }
+            _resetValue(e)
+            {
+                this.$["files"].value = null;
+            }
+        }
+        window.customElements.define(UploadFilesButton.is, UploadFilesButton);
+    </script>
+</dom-module>

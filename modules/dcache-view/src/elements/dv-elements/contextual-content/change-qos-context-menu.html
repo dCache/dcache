@@ -1,0 +1,153 @@
+<link rel="import" href="../../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../../bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="../../../bower_components/paper-item/paper-item.html">
+
+<dom-module id="change-qos-contextual-menu">
+    <template>
+        <style>
+            :host {
+                display: block;
+                box-sizing: border-box;
+                max-width:100%;
+            }
+            :host paper-listbox {
+                margin: -20px;
+                padding: 0;
+                background: transparent;
+            }
+            .menuItem:hover{
+                background: #1565C0;
+                border-radius: 4px;
+                color: #fff;
+            }
+            .menuItem {
+                font-size: 0.7em;
+                min-height: 30px;
+                font-weight: normal;
+                padding-right: 0;
+                padding-left: 5px;
+            }
+        </style>
+        <paper-listbox class="menu-content">
+            <template is="dom-repeat" items="[[possibleTransition]]">
+                <paper-item on-tap="_changeQos" class="menuItem"
+                            disabled$="[[_computedDisabled(item.backendCapability.name,currentQos)]]">
+                    [[item.backendCapability.name]]
+                </paper-item>
+            </template>
+        </paper-listbox>
+    </template>
+    <script>
+        class ChangeQosContextualMenu extends DcacheViewMixins.Commons(Polymer.Element)
+        {
+            constructor(t, authentication)
+            {
+                super();
+                this.path = this.encodePath(t.filePath);
+                this.currentQos = t.fileMetaData.currentQos;
+                this.targetNode = t;
+                if (authentication) {
+                    this.authenticationParameters = authentication;
+                }
+            }
+
+            static get is()
+            {
+                return 'change-qos-contextual-menu';
+            }
+
+            static get properties()
+            {
+                return {
+                    path: {
+                        type: String,
+                        notify: true
+                    },
+                    index: {
+                        type: Number,
+                        notify: true
+                    },
+                    currentQos: {
+                        type: String,
+                        notify: true
+                    },
+                    possibleTransition: {
+                        type: Array,
+                        value: function () {
+                            return window.CONFIG.qos;
+                        },
+                        notify: true
+                    },
+                    targetNode: {
+                        type: Object
+                    }
+                }
+            }
+
+            connectedCallback()
+            {
+                super.connectedCallback();
+                window.addEventListener('dv-namespace-receive-item-index', e => this.index = e.detail.index);
+
+                this.dispatchEvent(
+                    new CustomEvent('dv-namespace-request-item-index', {
+                        detail: {item: this.targetNode.fileMetaData}, bubbles: true, composed: true}));
+            }
+
+            disconnectedCallback()
+            {
+                super.disconnectedCallback();
+                window.removeEventListener('dv-namespace-receive-item-index', e => this.index = e.detail.index);
+            }
+
+            _changeQos(e)
+            {
+                this.dispatchEvent(new CustomEvent('dv-namespace-close-subcontextmenu', {
+                    bubbles: true, composed: true
+                }));
+                this.dispatchEvent(new CustomEvent('dv-namespace-close-centralcontextmenu', {
+                    bubbles: true, composed: true
+                }));
+                const namespace = document.createElement('dcache-namespace');
+                namespace.auth = this.getAuthValue();
+
+                namespace.promise.then(() => {
+                    this.dispatchEvent(new CustomEvent('dv-namespace-show-message-toast', {
+                        detail: {message: `Request successful! File in transition.`},
+                        bubbles: true, composed: true}));
+                    this.dispatchEvent(new CustomEvent('qos-in-transition', {detail: {
+                        options: {
+                            currentQos: this.currentQos,
+                            targetQos: e.model.item.backendCapability.name,
+                            itemIndex: this.index,
+                            path: this.path}}, bubbles: true, composed: true}));
+                }).catch((err) => {
+                    this.dispatchEvent(new CustomEvent('dv-namespace-show-message-toast', {
+                        detail: {message: `${err.message}`},
+                        bubbles: true, composed: true}));
+                });
+
+                namespace.qos({
+                    url: `${window.CONFIG["dcache-view.endpoints.webapi"]}namespace`,
+                    path: this.path,
+                    target: e.model.item.backendCapability.name
+                });
+            }
+
+            _computedDisabled(buttonName,currentQos)
+            {
+                if (buttonName === currentQos) {
+                    return true;
+                } else {
+                    for (let i=0; i<window.CONFIG.qos.length; i++) {
+                        if (window.CONFIG.qos[i].backendCapability.name === currentQos) {
+                            return !window.CONFIG.qos[i].backendCapability.transition.includes(buttonName);
+                        }
+                    }
+                    return true;
+                }
+            }
+        }
+        window.customElements.define(ChangeQosContextualMenu.is, ChangeQosContextualMenu);
+    </script>
+</dom-module>

@@ -1,0 +1,79 @@
+<link rel="import" href="../../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../../../bower_components/paper-material/paper-material.html">
+
+<dom-module id="empty-directory">
+    <template>
+        <style>
+            main {
+                height: 200px;
+                width: 70%;
+                margin: 0 auto;
+                padding: 20px;
+                display: flex;
+                justify-content: center;
+                overflow: auto;
+                /*Prevent text selection after double click*/
+                -webkit-user-select: none; /* webkit (safari, chrome) browsers */
+                -moz-user-select: none; /* mozilla browsers */
+                -khtml-user-select: none; /* webkit (konqueror) browsers */
+                -ms-user-select: none; /* IE10+ */
+            }
+            main div {
+                width: 50%;
+                padding: 20px;
+                overflow: auto;
+                text-align: center;
+            }
+        </style>
+        <main id="main">
+            <div>
+                <iron-icon icon="icons:announcement"
+                           style="color: #57bb8a; height:4em; width:4em;">
+                </iron-icon>
+                <h3>Empty Directory</h3>
+            </div>
+        </main>
+    </template>
+    <script>
+        class EmptyDirectory extends Polymer.Element
+        {
+            static get is()
+            {
+                return 'empty-directory';
+            }
+            connectedCallback()
+            {
+                super.connectedCallback();
+                app.$.listTableHeader.querySelector('list-row-header').classList.add('hidden');
+                this.$.main.addEventListener('contextmenu', (e)=>{this._openContextMenu(e)});
+            }
+            disconnectedCallback()
+            {
+                super.disconnectedCallback();
+                app.$.listTableHeader.querySelector('list-row-header').classList.remove('hidden');
+                this.$.main.removeEventListener('contextmenu', (e)=>{this._openContextMenu(e)});
+            }
+            _openContextMenu(event)
+            {
+                event.preventDefault();
+                event.stopPropagation();
+                /**
+                 * A WORKAROUND for firefox
+                 * TODO: When firefox support web components fully, revisit.
+                 */
+                this.dispatchEvent(new MouseEvent('contextmenu', {
+                    view: window,
+                    bubbles: true,
+                    composed: true,
+                    cancelable: true,
+                    clientX: event.clientX,
+                    clientY: event.clientY,
+                    screenX: event.screenX,
+                    screenY: event.screenY
+                }));
+            }
+        }
+        window.customElements.define(EmptyDirectory.is, EmptyDirectory);
+    </script>
+</dom-module>

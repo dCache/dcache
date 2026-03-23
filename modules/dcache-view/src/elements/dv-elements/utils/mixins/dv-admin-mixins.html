@@ -1,0 +1,512 @@
+<script>
+    /**
+     * Namespace definition for dcache-view mixins.
+     * Placing this in the dv.js script will not work in some browsers.
+     */
+    if (!window.DcacheViewMixins) {
+        window.DcacheViewMixins = {};
+    }
+
+    /**
+     * Provides auto-refresh capability.
+     */
+    DcacheViewMixins.AdminAutoRefresh = (superClass) =>
+    {
+        return class extends superClass {
+            static get properties() {
+                return {
+                    timeoutID: {
+                        type: Object
+                    },
+
+                    componentPath: {
+                        type: String
+                    },
+
+                    valid: {
+                        type: Boolean,
+                        value: true
+                    },
+
+                    callback: {
+                        type: Function
+                    },
+
+                    interval: {
+                        type: Number
+                    },
+
+                    routingChangeListener: {
+                        type: Object
+                    }
+                }
+            }
+
+            constructor() {
+                super();
+                this.routingChangeListener = this.validateRoute.bind(this);
+            }
+
+            connectedCallback() {
+                super.connectedCallback();
+                window.addEventListener('dv-routing-changed', this.routingChangeListener);
+            }
+
+            disconnectedCallback() {
+                super.disconnectedCallback();
+                window.removeEventListener('dv-routing-changed', this.routingChangeListener);
+            }
+
+            stopRefresh() {
+                if (this.timeoutID) {
+                    clearTimeout(this.timeoutID);
+                    this.timeoutID == null;
+                }
+            }
+
+            refreshAndReset(refreshCallback, interval) {
+                this.stopRefresh();
+                if (this.valid) {
+                    refreshCallback();
+                    this.callback = refreshCallback;
+                    this.interval = interval;
+                    this.timeoutID = setInterval(refreshCallback, interval);
+                }
+            }
+
+            resetRefresh(refreshCallback, interval) {
+                this.stopRefresh();
+                if (this.valid) {
+                    this.callback = refreshCallback;
+                    this.interval = interval;
+                    this.timeoutID = setInterval(refreshCallback, interval);
+                }
+            }
+
+            validateRoute(e) {
+                /*
+                 *  The componentName will not be set on the dialog.
+                 *  Dialog refresh is turned off when the dialog box
+                 *  is closed.
+                 */
+                const previous = this.valid;
+
+                this.valid = !this.componentPath ||
+                    this.componentPath === e.detail.route.canonicalPath;
+
+                if (!this.valid) {
+                    this.stopRefresh();
+                } else if (!previous) {
+                    this.refreshAndReset(this.callback, this.interval);
+                }
+            }
+        }
+    }
+
+    /**
+     * Provides many common utility functions.
+     */
+    DcacheViewMixins.AdminBase = (superClass) =>
+    {
+        return class extends superClass {
+            static get properties() {
+                return {
+                    contentType: {
+                        type: String,
+                        value: 'application/json'
+                    },
+
+                    baseUrl: {
+                        type: String,
+                        value: `${window.location.origin}${window.CONFIG["dcache-view.endpoints.webapi"]}`
+                    },
+
+                    showAdminComponents: {
+                        type: Boolean,
+                        value: window.CONFIG.isAdmin,
+                        notify: true
+                    }
+                }
+            }
+
+            connectedCallback() {
+                super.connectedCallback();
+                window.addEventListener('dv-role-validation',
+                    this.resetShowAdminComponents.bind(this));
+            }
+
+            disconnectedCallback() {
+                super.disconnectedCallback();
+                window.removeEventListener('dv-role-validation',
+                    this.resetShowAdminComponents.bind(this));
+            }
+
+            resetShowAdminComponents(e) {
+                window.CONFIG.isAdmin = sessionStorage.roles !== undefined &&
+                    sessionStorage.roles.includes('admin');
+                this.showAdminComponents = window.CONFIG.isAdmin;
+                Polymer.dom.flush();
+            }
+
+            /**
+             * This method is specialized to do the following things:
+             * (a) return 0 for undefined values
+             * (b) return 0 for negative values
+             * (c) return an integer value after normalizing the value
+             *     by dividing it by a bin width.
+             */
+            binnedNonNegative(value, bin) {
+                const x = Number(bin);
+                precondition.checkArgument(x !== 0|| !isNaN(x),
+                    "Error! 'bin' must be numeric and non-zero.");
+                return (!value || (value / x) < 0.0) ? 0.0 : ((value / x).toFixed(20))/1;
+            }
+
+            /**
+             * Takes a date numeric value and returns an object which
+             * contains both the value and the formatted date string.
+             */
+            convertDatestampToObject(date) {
+                if (!date) {
+                    return null;
+                }
+
+                return {"value": date, "formatted": new Date(date).toLocaleString()};
+            }
+
+            /**
+             * If the location string matches the regular express, marks
+             * the object as active.
+             */
+            convertLocationToObject(location, regex) {
+                if (!location) {
+                    return null;
+                }
+                const active = !regex ? 1 : regex.test(location) ? 1 : 0;
+                return {"active": active, "name": location};
+            }
+
+            /**
+             *  Flattens object into an array/list.
+             */
+            convertObjectToNameValueList(obj) {
+                const list = [];
+                Object.keys(obj).forEach((key) => {
+                    list.push(this.convertToNameValueObject(key, obj[key]));
+                });
+                return list;
+            }
+
+            /**
+             * Returns an object containing raw bytes along with the converted
+             * size specified by the passed-in dimension.
+             */
+            convertSize(bytes, dimension) {
+                const converted = (bytes / dimension).toPrecision(3);
+                return {"raw": bytes, "converted": converted};
+            }
+
+            /**
+             * Constructs single object containing key value pair.
+             */
+            convertToNameValueObject(key, value) {
+                return {"name": key, "value": value};
+            }
+
+            /**
+             *  Common to all REST calls to the admin services.  This
+             *  includes the role (Authorization).
+             */
+            getHeaders() {
+                const authParameter = sessionStorage.upauth !== undefined ?
+                    {"scheme": sessionStorage.authType, "value": sessionStorage.upauth} : undefined;
+                return {
+                    'Content-Type': this.contentType,
+                    'Authorization': app.getAuthValue(authParameter),
+                    'Suppress-WWW-Authenticate': "Suppress"
+                }
+            }
+
+            /**
+             *  Locate the last element in the pathname, if it exists.
+             */
+            getNameFromUrl(url) {
+                if (!url) {
+                    return null;
+                }
+
+                const parsedUrl = new URL(url);
+
+                if (!parsedUrl.pathname) {
+                    return null;
+                }
+
+                const parts = parsedUrl.pathname.split('/');
+
+                if (parts.length > 0) {
+                    let last = parts[parts.length - 1];
+                    if (last.length === 0 && parts.length > 1) {
+                        last = parts[parts.length - 2];
+                    }
+                    return last;
+                }
+
+                return null;
+            }
+
+            getSubpathFromUrl(url, pos) {
+                if (!url) {
+                    return null;
+                }
+
+                const parsedUrl = new URL(url);
+
+                if (!parsedUrl.pathname) {
+                    return null;
+                }
+
+                const parts = parsedUrl.pathname.split('/');
+
+                if (parts.length > pos) {
+                    return parts[pos];
+                }
+
+                return null;
+            }
+
+            /**
+             * Return the full url (the path and query, appended to base).
+             */
+            getUrl(path, query) {
+                if (query) {
+                    return this.baseUrl + path + query;
+                }
+
+                return this.baseUrl + path;
+            }
+
+            handleError(error) {
+                this.dispatchEvent(new CustomEvent('dv-namespace-show-message-toast', {
+                    detail: {message: error}, bubbles: true, composed: true}));
+            }
+
+            /**
+             * For views and dialogs with embedded chart data.
+             * Creates a magnfied chart using the ChartDialog and opens it.
+             */
+            magnify(e, chart, printOptions) {
+                e.stopPropagation();
+                if (!chart.hasData) {
+                    e.stopPropagation();
+                    return;
+                }
+                const dialog = new ChartDialog(chart, printOptions);
+                this.pushDialog(dialog);
+                dialog.open();
+                e.stopPropagation();
+            }
+
+            /**
+             * Normalization of values for logarithmic scale plots.
+             * Dfactor is unfortunately a legacy value that still needs
+             * to be supported.
+             */
+            nonZeroLog(type, value, dfactor) {
+                const x = Number(dfactor);
+                precondition.checkArgument(x !== 0|| !isNaN(x),
+                    "Error! 'dfactor' must be numeric and non-zero.");
+                if (value) {
+                    value = value.toFixed(20) / x;
+                    if (value <= 0.0) {
+                        value = 0.000001; // log scale over integers, will not plot 0
+                    }
+                } else {
+                    value = 0.000001; // interpret undefined/null as 0
+                }
+
+                return value;
+            }
+
+            /**
+             * Open the dialog at its own location in the DOM.  This
+             * is to allow for layering of open dialogs.
+             */
+            openFileInfoDialog(pnfsid, pool) {
+                if (pnfsid) {
+                    const dialog = new FileInfoDialog(pnfsid, pool);
+                    this.pushDialog(dialog);
+                    dialog.open();
+                }
+            }
+
+            /**
+             * Open the dialog at its own location in the DOM.  This
+             * is to allow for layering of open dialogs.
+             */
+            openPoolInfoDialog(pool, pnfsid) {
+                if (pool && pool !== '<unknown>') {
+                    const dialog = new PoolInfoDialog(pool, pnfsid);
+                    this.pushDialog(dialog);
+                    dialog.open();
+                }
+            }
+
+            /**
+             * Given the date object, return a formatted string representation.
+             */
+            parseDate(date) {
+                const MM = date.getMonth() + 1;
+                const DD = date.getDate();
+                const YYYY = date.getFullYear();
+                const hh = date.getHours();
+                const mm = date.getMinutes();
+                return `${YYYY}-${MM}-${DD} ${hh}:${mm}`;
+            }
+
+            /**
+             * Normalize plot value so that negative numbers are represented
+             * as null.
+             */
+            positiveOrNull(value) {
+                if (value) {
+                    value = value.toFixed(20) / 1;
+                    if (value <= 0.0) {
+                        value = null;
+                    }
+                }
+                return value;
+            }
+
+            /**
+             * In support of dialog stacking.
+             *
+             * Removes the last child from the admin dialog node, if it
+             * exists.
+             */
+            popDialog() {
+                const node = app.$.adminDialogs;
+                if (node.lastChild) {
+                    node.removeChild(node.lastChild);
+                    Polymer.dom.flush();
+                }
+            }
+
+            /**
+             * In support of dialog stacking.
+             *
+             * Appends child to the admin dialog node.
+             */
+            pushDialog(dialog) {
+                app.$.adminDialogs.appendChild(dialog);
+                Polymer.dom.flush();
+            }
+
+            /**
+             * Common to all RESTful admin service calls.
+             */
+            setXHRHeaders(xhr) {
+                const authParameter = sessionStorage.upauth !== undefined ?
+                    {"scheme": sessionStorage.authType, "value": sessionStorage.upauth} : undefined;
+                xhr.setRequestHeader('Content-Type', this.contentType);
+                xhr.setRequestHeader('Authorization', app.getAuthValue(authParameter));
+                xhr.setRequestHeader('Suppress-WWW-Authenticate', "Suppress");
+            }
+
+            /**
+             * Convert the formatted string into a date object.
+             */
+            toDate(formatted) {
+                if (formatted) {
+                    const datetime = formatted.split(" ");
+                    if (datetime.length > 0) {
+                        const date = datetime[0].split("-");
+                        let hh = 0;
+                        let mm = 0;
+                        if (datetime.length > 1) {
+                            const time = datetime[1].split(":");
+                            hh = time[0];
+                            mm = time[1];
+                        }
+                        return new Date(date[0], date[1] - 1, date[2], hh, mm, 0, 0);
+                    }
+                }
+
+                return null;
+            }
+
+            timeToLocaleString(time) {
+                const x = new Date(time);
+                return x.toLocaleString();
+            }
+        }
+    }
+
+    /**
+     * Provides function to draw Google Chart.
+     */
+    DcacheViewMixins.Chart = (superClass) =>
+    {
+        return class extends superClass {
+            drawGoogleChart(origin, divNode, table, options) {
+                if (!origin.hasData) {
+                    /*
+                     *  uses default 'blank' to avoid loading 404 error
+                     */
+                    return;
+                }
+
+                const chart = origin._getGoogleChart();
+
+                google.visualization.events.addListener(chart, 'ready', () => {
+                    origin.uri = chart.getImageURI();
+                    while (divNode.firstChild) {
+                        divNode.removeChild(divNode.firstChild);
+                    }
+                });
+
+                chart.draw(table, options);
+            }
+        }
+    }
+
+    /**
+     * Provides methods for handling check box selection.
+     */
+    DcacheViewMixins.Selection = (superClass) =>
+    {
+        return class extends superClass {
+            computeChecked(indeterminate, selectall) {
+                /*
+                 * iOS needs indeterminate + checked at the same time
+                 */
+                return indeterminate || selectall;
+            }
+
+            computeIndeterminate(grid) {
+                const numselected = grid.selectedItems.length;
+                return numselected > 0 && numselected !== grid.size;
+            }
+
+            selectGridItem(e, grid) {
+                if (e.target.checked) {
+                    grid.selectItem(e.model.item);
+                } else {
+                    grid.deselectItem(e.model.item);
+                }
+            }
+
+            toggleAllGridItems(selectall, selectedItems, grid) {
+                selectall = !selectall;
+                selectedItems.forEach((item) => {
+                    if (selectall) {
+                        grid.selectItem(item);
+                    } else {
+                        grid.deselectItem(item);
+                    }
+                });
+
+                return selectall;
+            }
+        }
+    }
+</script>

@@ -1,0 +1,242 @@
+<link rel="import" href="../../../bower_components/polymer/polymer-element.html">
+
+<link rel="import" href="../../../bower_components/dcache-namespace/dcache-namespace.html">
+
+<link rel="import" href="../upload-files/upload-toast-file.html">
+<link rel="import" href="../upload-files/upload-file-common.html">
+
+<script>
+    'use strict';
+    class DndUpload extends DcacheViewMixins.Commons(Polymer.Element)
+    {
+        constructor(pt, authentication)
+        {
+            super();
+            this.path = pt;
+            if (authentication) {
+                this.authenticationParameters = authentication;
+            }
+        }
+
+        static get is() {
+            return 'dnd-upload';
+        }
+
+        ready()
+        {
+            super.ready();
+            this._ensureAttribute('hidden', true);
+        }
+
+        static get properties()
+        {
+            return {
+                path: {
+                    type: String,
+                    notify: true
+                },
+                isCurrentView: {
+                    type: Boolean,
+                    value: true,
+                    notify: true
+                }
+            }
+        }
+
+        _scanDirectory(item, path)
+        {
+            return new Promise((resolve,reject)=>{
+                const dirReader = item.createReader();
+                dirReader.readEntries(entries => {
+                    for (let i=0; i < entries.length; i++) {
+                        if (entries[i].isFile) {
+                            try {
+                                this._subDirFileUpload(entries[i], path);
+                            } catch (err) {
+                                reject(Error(err.message));
+                            }
+                        } else if (entries[i].isDirectory) {
+                            this.__createNewDirectory(entries[i].name, path).then(() => {
+                                const pt = (path.endsWith("/")) ? path : `${path}/`;
+                                this._scanDirectory(entries[i], pt+entries[i].name).then().catch(err => {
+                                    reject(err);
+                                });
+                            }).catch(err => {
+                                reject(err);
+                            });
+                        }
+                    }
+                });
+                resolve("All the contents have been uploaded.");
+            });
+        }
+
+        __createNewDirectory(name, path)
+        {
+            return new Promise((resolve, reject) => {
+                const url = `${window.CONFIG["dcache-view.endpoints.webapi"]}namespace`;
+                const namespace = document.createElement('dcache-namespace');
+                namespace.auth = this.getAuthValue();
+                namespace.promise.then(()=> {
+                    return resolve(name);
+                }).catch(err => reject(err));
+
+                namespace.mkdir({
+                    url: url,
+                    path: this.encodePath(path),
+                    name: name
+                });
+            });
+        }
+
+        _uploadFileInCurrentView(index, file)
+        {
+            const uploadToast = new UploadToastFile(file.name, "REGULAR", file.type);
+            uploadToast.setAttribute("id", index.toString());
+            window.dispatchEvent(new CustomEvent('dv-namespace-upload-toast-append-child', {
+                detail: {child: uploadToast}, bubbles: true, composed: true}));
+
+            const progressBar = uploadToast.shadowRoot.querySelector('paper-progress');
+            const fileUploader = new UploadFileCommon(this.path, this.authenticationParameters);
+
+            fileUploader.addEventListener('complete', e => {
+                progressBar.indeterminate = fileUploader.progressStatus;
+                progressBar.value = fileUploader.progressValue;
+                progressBar.classList.remove("error", "progress");
+                progressBar.classList.add("complete");
+
+                uploadToast.inProgress = fileUploader.inProgress;
+                uploadToast.hasError = fileUploader.hasError;
+                uploadToast.isComplete = fileUploader.isComplete;
+                uploadToast.message = fileUploader.message;
+
+                if (this.isCurrentView) {
+                    window.dispatchEvent(new CustomEvent('dv-namespace-add-items', {
+                        detail: {files: [e.detail.item]}, bubbles: true, composed: true
+                    }));
+                }
+            });
+
+            fileUploader.addEventListener('uploading', e => {
+                progressBar.classList.remove("error", "complete");
+                progressBar.classList.add("progress");
+                progressBar.indeterminate = fileUploader.progressStatus;
+                uploadToast.progressValue = e.detail.value;
+                uploadToast.inProgress = fileUploader.inProgress;
+                uploadToast.isComplete = fileUploader.isComplete;
+                uploadToast.hasError = fileUploader.hasError;
+            });
+
+            fileUploader.addEventListener('error', e => {
+                progressBar.classList.remove("progress", "complete");
+                progressBar.classList.add("error");
+                progressBar.indeterminate = fileUploader.progressStatus;
+                progressBar.value = fileUploader.progressValue;
+                uploadToast.message = e.detail.message;
+                uploadToast.inProgress = fileUploader.inProgress;
+                uploadToast.isComplete = fileUploader.isComplete;
+                uploadToast.hasError = fileUploader.hasError;
+            });
+            fileUploader.upload(file);
+        }
+
+        _subDirFileUpload (file, path)
+        {
+            const fileUploader = new UploadFileCommon(path, this.authenticationParameters);
+            fileUploader.addEventListener('complete', e => {});
+
+            fileUploader.addEventListener('uploading', e => {});
+
+            fileUploader.addEventListener('error', e => {
+                throw new Error(e.detail.message);
+            });
+
+            fileUploader.upload(file);
+        }
+
+        start(event)
+        {
+            window.dispatchEvent(new CustomEvent('dv-namespace-close-upload-toast', {
+                bubbles: true, composed: true}));
+
+            const items = event.dataTransfer.items;
+            window.dispatchEvent(new CustomEvent('dv-namespace-open-upload-toast', {
+                bubbles: true, composed: true}));
+
+            if (items === undefined) {
+                const files = event.dataTransfer.files;
+                for (let i=0; f = files[i]; i++) {
+                    this._uploadFileInCurrentView(i,f);
+                }
+            } else {
+                for (let i=0; i<items.length; i++) {
+                    const item = items[i].webkitGetAsEntry();
+
+                    if (item.isFile) {
+                        item.file((file)=> {
+                            this._uploadFileInCurrentView(i,file);
+                        });
+                    } else if (item.isDirectory) {
+                        const uploadToast = new UploadToastFile(item.name, "DIR", "application/vnd.dcache.folder");
+                        uploadToast.setAttribute("id", i.toString());
+                        this.dispatchEvent(new CustomEvent('dv-namespace-upload-toast-append-child', {
+                            detail: {child: uploadToast}, bubbles: true, composed: true}));
+                        const progressBar = uploadToast.shadowRoot.querySelector('paper-progress');
+
+                        this.__createNewDirectory(item.name, this.path).then(name => {
+                            if (this.isCurrentView) {
+                                window.dispatchEvent(new CustomEvent('dv-namespace-add-items', {
+                                    detail: {files: [{
+                                            "fileName" : name,
+                                            "fileMimeType" : "application/vnd.dcache.folder",
+                                            "fileLocality" : "",
+                                            "size" : "--",
+                                            "fileType" : "DIR",
+                                            "mtime" : "--",
+                                            "creationTime" : Date.now() //Assumption
+                                        }]}, bubbles: true, composed: true}));
+                            }
+
+                            this._scanDirectory(item, `${this.path}/${item.name}`).then(response => {
+                                progressBar.indeterminate = false;
+                                progressBar.value = 100;
+                                progressBar.classList.remove("error", "progress");
+                                progressBar.classList.add("complete");
+
+                                uploadToast.inProgress = false;
+                                uploadToast.hasError = false;
+                                uploadToast.isComplete = true;
+                                uploadToast.message = response;
+                            }).catch(err => {
+                                progressBar.classList.remove("progress", "complete");
+                                progressBar.classList.add("error");
+                                progressBar.indeterminate = false;
+                                progressBar.value = 100;
+
+                                uploadToast.inProgress = false;
+                                uploadToast.isComplete = false;
+                                uploadToast.hasError = true;
+                                uploadToast.message = err.toString();
+                            });
+                        }).catch(err => {
+                            progressBar.classList.remove("progress", "complete");
+                            progressBar.classList.add("error");
+                            progressBar.indeterminate = false;
+                            progressBar.value = 100;
+
+                            uploadToast.inProgress = false;
+                            uploadToast.isComplete = false;
+                            uploadToast.hasError = true;
+                            uploadToast.message = err.toString();
+                        });
+                    }
+                    Polymer.dom.flush();
+                }
+            }
+            Polymer.dom.flush();
+
+            return false;
+        }
+    }
+    window.customElements.define(DndUpload.is, DndUpload);
+</script>

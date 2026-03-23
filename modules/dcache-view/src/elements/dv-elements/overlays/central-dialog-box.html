@@ -1,0 +1,23 @@
+<link rel="import" href="../../../bower_components/polymer/polymer.html">
+
+<link rel="import" href="../../../bower_components/paper-dialog-behavior/paper-dialog-behavior.html">
+<link rel="import" href="../../../bower_components/paper-dialog-behavior/paper-dialog-shared-styles.html">
+
+<dom-module id="central-dialog-box">
+    <template>
+        <style include="paper-dialog-shared-styles"></style>
+        <slot></slot>
+    </template>
+
+</dom-module>
+
+<script>
+    (function() {
+        Polymer({
+            is: 'central-dialog-box',
+            behaviors: [
+                Polymer.PaperDialogBehavior
+            ]
+        });
+    })();
+</script>

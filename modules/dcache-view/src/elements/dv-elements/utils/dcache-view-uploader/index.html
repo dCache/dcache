@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Uploader-Test</title>
+    <script src="dcache-view-uploader.js"></script>
+  </head>
+  <body>
+  <input id="files-upload" type="file" multiple>
+    <script>
+      (function () {
+        var filesUpload = document.getElementById("files-upload");
+
+        filesUpload.addEventListener("change", function () {
+          selectFiles(this.files);
+        }, false);
+
+        function selectFiles (files)
+        {
+          if (typeof files !== "undefined") {
+            uploadFiles(files);
+          } else {
+            console.log("No support for the File API in this web browser");
+          }
+        }
+
+        function uploadFiles (files)
+        {
+          var f;
+          for (var i=0; f = files[i]; i++) {
+            var u = 'http://localhost:2880/' + f.name;
+            var uploader = new UploadHandler({
+              file: f,
+              upauth: "",
+              url: u,
+              onComplete: function (data) {
+                console.log(data);
+                console.log('Upload successful');
+              }.bind(this)
+            });
+            uploader.upload();
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>
