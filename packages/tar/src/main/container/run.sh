@@ -31,16 +31,16 @@ ASPECT_AGENT=`ls ${DCACHE_HOME}/share/classes/aspectjweaver-*.jar`
 JACOCO_AGENT_JAR="${DCACHE_HOME}/share/classes/jacocoagent.jar"
 JACOCO_AGENT=""
 
-# Define a persistent location for dumped classes inside the container
+#define a location for dumped classes
 CLASS_DUMP_DIR="${DCACHE_HOME}/var/log/jacoco-dump"
 mkdir -p "$CLASS_DUMP_DIR"
 
 if [ -n "$JACOCO_OPTS" ] && [ -f "$JACOCO_AGENT_JAR" ]; then
-    # Append classdumpdir to existing options
+    #append classdumpdir to existing options
     JACOCO_AGENT="-javaagent:${JACOCO_AGENT_JAR}=${JACOCO_OPTS},classdumpdir=$CLASS_DUMP_DIR"
     echo "Activating JaCoCo with options: ${JACOCO_OPTS} and dumping classes to $CLASS_DUMP_DIR"
 elif [ -f "$JACOCO_AGENT_JAR" ]; then
-    # Add classdumpdir to default TCP server options
+    #add classdumpdir to default TCP server options
     JACOCO_AGENT="-javaagent:${JACOCO_AGENT_JAR}=output=tcpserver,address=*,port=6300,classdumpdir=$CLASS_DUMP_DIR"
     echo "Activating JaCoCo with default TCP server and dumping classes to $CLASS_DUMP_DIR"
 fi
