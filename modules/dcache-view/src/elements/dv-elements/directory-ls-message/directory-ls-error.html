@@ -1,0 +1,152 @@
+<link rel="import" href="../../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../../../bower_components/paper-material/paper-material.html">
+
+<dom-module id="directory-ls-error">
+    <template>
+        <style>
+            main {
+                height: 300px;
+                width: 75%;
+                margin: 0 auto;
+                padding: 20px;
+                display: flex;
+                justify-content: center;
+                overflow: auto;
+                /*Prevent text selection after double click*/
+                -webkit-user-select: none; /* webkit (safari, chrome) browsers */
+                -moz-user-select: none; /* mozilla browsers */
+                -khtml-user-select: none; /* webkit (konqueror) browsers */
+                -ms-user-select: none; /* IE10+ */
+            }
+            main div {
+                width: 50%;
+                padding: 20px;
+                text-align: center;
+            }
+            .warning-icon {
+                color: #f50303;
+                height:4em;
+                width:4em;
+            }
+            h3 {
+                font-size: 1.2em;
+                font-weight: 300;
+                line-height: 24px;
+            }
+            .loginBtn {
+                color: #f50303;
+                border: 1px solid #f50303;
+            }
+        </style>
+        <main id="main">
+            <div>
+                <iron-icon icon="icons:warning"
+                           class="warning-icon"></iron-icon>
+                <p>[[code]]</p>
+                <h3>[[message]]</h3>
+                <template is="dom-if" if="[[showLoginBtn]]">
+                    <paper-button class="loginBtn"
+                                  on-click="_login">Login</paper-button>
+                </template>
+            </div>
+        </main>
+    </template>
+    <script>
+        class DirectoryLsError extends Polymer.Element
+        {
+            constructor(message, code, path)
+            {
+                super();
+                this.code = code;
+                this.message = message;
+                if (path) this.path = path;
+                this.showLoginBtn = (page.current === "/" || page.current.startsWith("/?")) && code === 401;
+            }
+
+            static get is()
+            {
+                return 'directory-ls-error';
+            }
+
+            static get properties()
+            {
+                return {
+                    message: {
+                        type: String,
+                        notify:true
+                    },
+                    path: {
+                        type: String,
+                        notify: true
+                    },
+                    code: {
+                        type: String,
+                        notify:true
+                    },
+                    showLoginBtn: {
+                        type: Boolean,
+                        notify: true
+                    }
+                }
+            }
+
+            connectedCallback()
+            {
+                super.connectedCallback();
+                if (app.$["listTableHeader"]) {
+                    const lrh = app.$["listTableHeader"].querySelector("list-row-header");
+                    if (lrh) lrh.classList.add('hidden');
+                }
+                this.$.main.addEventListener('contextmenu', (e)=>{this._openContextMenu(e)});
+            }
+
+            disconnectedCallback()
+            {
+                super.disconnectedCallback();
+                setTimeout(() => {
+                    /**
+                     * FIXME: Since view-file is used in two different routes -
+                     * a further issue still needs to be addressed which this c
+                     * ode below does not cover
+                     * TODO: the findViewFile function in dv.js should be made available
+                     * for use here.
+                     */
+                    const vf = app.$["homedir"].querySelector('view-file');
+                    if (vf) {
+                        if (this.parentNode.id === vf.$["content"].id && app.$["listTableHeader"]) {
+                            const lrh = app.$["listTableHeader"].querySelector("list-row-header");
+                            if (lrh && lrh.classList.contains("hidden")) lrh.classList.remove('hidden');
+                        }
+                    }
+                },10);
+                this.$.main.removeEventListener('contextmenu', (e)=>{this._openContextMenu(e)});
+            }
+            _openContextMenu(event)
+            {
+                event.preventDefault();
+                event.stopPropagation();
+                /**
+                 * A WORKAROUND for firefox
+                 * TODO: When firefox support web components fully, revisit.
+                 */
+                this.dispatchEvent(new MouseEvent('contextmenu', {
+                    view: window,
+                    bubbles: true,
+                    composed: true,
+                    cancelable: true,
+                    clientX: event.clientX,
+                    clientY: event.clientY,
+                    screenX: event.screenX,
+                    screenY: event.screenY
+                }));
+            }
+            _login()
+            {
+                const a = `"page":"home","path":"${this.path}"`;
+                page.redirect(`/user-login?r=${encodeURIComponent(a)}`);
+            }
+        }
+        window.customElements.define(DirectoryLsError.is, DirectoryLsError);
+    </script>
+</dom-module>

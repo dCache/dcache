@@ -1,0 +1,108 @@
+<link rel="import" href="../../../../bower_components/polymer/polymer-element.html">
+
+<link rel="import" href="login-button.html">
+<link rel="import" href="../../user-profile/user-profile-dropdown/user-profile-dropdown.html">
+<dom-module id="authentication-switch">
+    <template>
+        <style>
+            .none {
+                display: none;
+            }
+        </style>
+        <div id="container"></div>
+    </template>
+    <script>
+        class AuthenticationSwitch extends Polymer.Element
+        {
+            constructor()
+            {
+                super();
+                this._successfulListener = this._successfulAuthenticationListener.bind(this);
+                this._errorListener = this._failedAuthenticationListener.bind(this);
+                this._setCurrentPath_ = this._setCurrentPath.bind(this);
+            }
+            static get is()
+            {
+                return 'authentication-switch';
+            }
+            ready()
+            {
+                super.ready();
+                this.$.container.addEventListener('dv-authentication-req-login', this._login.bind(this));
+                Polymer.RenderStatus.afterNextRender(this, ()=> {
+                    this._toggle();
+                })
+            }
+            connectedCallback()
+            {
+                super.connectedCallback();
+                window.addEventListener('dv-authentication-successful', this._successfulListener);
+                window.addEventListener('dv-authentication-error', this._errorListener);
+                window.addEventListener('dv-namespace-current-path', this._setCurrentPath_);
+
+                this.dispatchEvent(
+                    new CustomEvent('dv-namespace-request-current-path', {bubbles: true, composed: true})
+                )
+            }
+            disconnectedCallback()
+            {
+                super.disconnectedCallback();
+                window.removeEventListener('dv-authentication-successful', this._successfulListener);
+                window.removeEventListener('dv-authentication-error', this._errorListener);
+                window.removeEventListener('dv-namespace-current-path', this._setCurrentPath_);
+            }
+            static get properties()
+            {
+                return {
+                    currentRoute: {
+                        type: String,
+                        notify: true
+                    },
+                    currentPath: {
+                        type: String,
+                        notify: true
+                    }
+                }
+            }
+            _successfulAuthenticationListener(e)
+            {
+                this._toggle();
+            }
+            _failedAuthenticationListener(e)
+            {
+                this._toggle();
+            }
+            _toggle()
+            {
+                app.removeAllChildren(this.$.container);
+                if (sessionStorage.getItem("name") === "" ||
+                    sessionStorage.getItem("name") === null ||
+                    sessionStorage.getItem("name") === undefined) {
+                    this.$.container.appendChild(new LoginButton());
+                } else {
+                    this.$.container.appendChild(new UserProfileDropdown(sessionStorage.getItem("name"),
+                        sessionStorage.getItem("email"), this.tagName));
+                }
+            }
+            _login()
+            {
+                switch (this.currentRoute) {
+                    case "home":
+                        page(`/user-login?r=${encodeURIComponent(`"page":"home","path":"${this.currentPath}"`)}`);
+                        break;
+                    case "admin-component-page":
+                        page(`/user-login?r=${encodeURIComponent(`"page":"${window.location.hash.substr(3)}"`)}`);
+                        break;
+                    default:
+                        page(`/user-login?r=${encodeURIComponent(`"page":"${this.currentRoute}"`)}`);
+                        break;
+                }
+            }
+            _setCurrentPath(e)
+            {
+                this.currentPath = e.detail.currentPath;
+            }
+        }
+        window.customElements.define(AuthenticationSwitch.is, AuthenticationSwitch);
+    </script>
+</dom-module>

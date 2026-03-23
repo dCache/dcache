@@ -1,0 +1,98 @@
+<link rel="import" href="../../../../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../../../../bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="../../../../../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../../../../../bower_components/paper-item/paper-icon-item.html">
+
+<link rel="import" href="../../../files-viewer/files-viewer.html">
+<link rel="import" href="../../shareable-file-generation/shareable-request-form/shareable-request-form.html">
+<dom-module id="shared-file-list-contextual-content">
+    <template>
+        <style>
+            :host {
+                display: block;
+                box-sizing: border-box;
+                max-width:100%;
+            }
+            :host paper-listbox {
+                margin: -20px;
+                padding: 0;
+                background: transparent;
+            }
+            paper-icon-item:hover{
+                background: #1565C0;
+                color: #fff;
+                border-radius: 4px;
+                --paper-item-icon: {
+                    color: #fff;
+                }
+            }
+            paper-icon-item {
+                font-size: 0.7em;
+                min-height: 30px;
+                font-weight: normal;
+                padding-right: 0;
+                padding-left: 5px;
+                --paper-item-icon: {
+                    width: 20px;
+                    height: 20px;
+                    margin-right: 10px;
+                    color: #4e4e4e;
+                }
+            }
+            paper-icon-item[disabled] > iron-icon {
+                color: #b7b7b7;
+            }
+            .none {
+                display: none;
+            }
+            #open {
+                border-bottom: 1px solid #cacaca;
+            }
+            #delete, #download {
+                border-top: 1px solid #cacaca;
+            }
+            #arrow {
+                --iron-icon-width: 20px;
+                --iron-icon-height: 20px;
+                margin-left: 75px;
+            }
+        </style>
+        <paper-listbox>
+            <paper-icon-item  id="open" disabled>
+                <iron-icon icon="visibility" slot="item-icon"></iron-icon>
+                [[openOrView]]
+            </paper-icon-item>
+
+            <paper-icon-item id="changeQos" disabled>
+                <iron-icon icon="settings-input-composite" slot="item-icon"></iron-icon>
+                Change QoS
+                <iron-icon id="arrow" icon="av:play-arrow"></iron-icon>
+            </paper-icon-item>
+
+            <paper-icon-item  id="share" disabled>
+                <iron-icon icon="social:share" slot="item-icon"></iron-icon>
+                Share
+            </paper-icon-item>
+            <paper-icon-item id="rename" disabled>
+                <iron-icon icon="editor:border-color" slot="item-icon"></iron-icon>
+                Rename
+            </paper-icon-item>
+
+            <paper-icon-item id="download" disabled>
+                <iron-icon icon="cloud-download" slot="item-icon"></iron-icon>
+                Download
+            </paper-icon-item>
+
+            <paper-icon-item id="metadata" disabled>
+                <iron-icon icon="info" slot="item-icon"></iron-icon>
+                View details
+            </paper-icon-item>
+
+            <paper-icon-item id="delete">
+                <iron-icon icon="delete" slot="item-icon"></iron-icon>
+                Remove from the list
+            </paper-icon-item>
+        </paper-listbox>
+    </template>
+    <script src="shared-file-list-contextual-content.js"></script>
+</dom-module>

@@ -1,0 +1,188 @@
+<link rel="import"
+      href="../../../../bower_components/polymer/polymer-element.html">
+<link rel="import"
+      href="../../../../bower_components/google-apis/google-apis.html">
+<link rel="import"
+      href="../../../../bower_components/google-chart/google-chart.html">
+<link rel="import"
+      href="../../../../bower_components/google-chart/google-chart-styles.html">
+<link rel="import"
+      href="../../../../elements/dv-elements/utils/mixins/dv-admin-mixins.html">
+<link rel="import"
+      href="../../../../elements/dv-elements/utils/dialogs/chart-dialog.html">
+
+<dom-module id="quota-info-chart">
+    <template>
+        <style>
+            :host {
+                display: block;
+                position: relative;
+                width: inherit;
+                height: inherit;
+            }
+
+            .nodata {
+                padding: 5px;
+                vertical-align: middle;
+                text-align: center;
+                font-weight: 200;
+                font-size: 10pt;
+            }
+
+            .imgcontainer {
+                position: relative;
+            }
+
+            .plot {
+                width: 100%;
+                height: 100%;
+                margin-left: auto;
+                margin-right: auto;
+                cursor: pointer;
+            }
+
+            #chart_div {
+                height: 0px;
+                width: 0px;
+                hidden: "true";
+            }
+        </style>
+        <div class="nodata" hidden$="[[hasData]]">[[error]]</div>
+        <div class="imgcontainer" hidden$="[[!hasData]]">
+            <img class="plot" on-tap="_magnify" src="[[uri]]"/>
+        </div>
+        <div id="chart_div"></div>
+    </template>
+
+    <script>
+        class QuotaInfoChart extends
+            DcacheViewMixins.Chart(DcacheViewMixins.AdminBase(Polymer.Element)) {
+
+            static get is() {
+                return 'quota-info-chart';
+            }
+
+            static get properties() {
+                return {
+                    title: {
+                        type: String,
+                        notify: true
+                    },
+
+                    inputData: {
+                        type: Object,
+                        observer: '_build'
+                    },
+
+                    hasData: {
+                        type: Boolean,
+                        notify: true
+                    },
+
+                    // required by ChartDialog
+                    chartStyle: {
+                        type: String,
+                        value: 'pie'
+                    },
+
+                    // required by ChartDialog
+                    dataTable: {
+                        type: Object,
+                    },
+
+                    // required by ChartDialog
+                    options: {
+                        type: Object,
+                    },
+
+                    uri: {
+                        type: String,
+                        value: "favicons/blank.png",
+                        notify: true,
+                    },
+
+                    error: {
+                        type: String,
+                        notify: true
+                    }
+                }
+            }
+
+            _build () {
+                this.hasData = false;
+                google.charts.load('current', {'packages': ['corechart']});
+                google.charts.setOnLoadCallback(this._drawChart.bind(this));
+            }
+
+            _chartOptions(params, svg) {
+                const options = {titleTextStyle: {fontSize: params.font1}};
+
+                const color = this.inputData.class === 'USER' ? 'darkgreen' : 'darkblue';
+
+                options.title = `${this.title} –– [Used] ${this.inputData.used.txt} / [Limit] ${this.inputData.limit.txt}`
+                options.colors = this.inputData.exceeded ? ['darkred', 'red'] : [color, 'lightgrey']
+
+                if (svg) {
+                    options.chartArea = {left: '25vw'};
+                } else {
+                    options.legend = { position: 'right',
+                        textStyle: {fontSize: params.font2}
+                    }
+                }
+
+                options.pieHole=0.33
+                options.tooltip = {'text': this.inputData.exceeded ? 'value' : 'both'};
+                if (this.inputData.exceeded) {
+                    options.pieSliceText='label';
+                }
+                return options;
+            }
+
+            _drawChart() {
+                if (this.inputData.limit.bytes < 0) {
+                    this.error = `No ${this.inputData.type} limit`;
+                    return;
+                }
+
+                this.hasData = true;
+
+                if (this.inputData.exceeded) {
+                    const excess = this.inputData.used.bytes
+                        - this.inputData.limit.bytes;
+                    this.dataTable =  google.visualization.arrayToDataTable([
+                        ['Space', 'Bytes'],
+                        ['Excess',   excess],
+                        ['Quota Limit', this.inputData.limit.bytes],
+                    ]);
+                } else {
+                    const remaining = this.inputData.limit.bytes
+                        - this.inputData.used.bytes;
+                    this.dataTable =  google.visualization.arrayToDataTable([
+                        ['Space', 'Bytes'],
+                        ['Used',   this.inputData.used.bytes],
+                        ['Quota Remaining', remaining],
+                    ]);
+                }
+
+                const chartDiv = this.shadowRoot.querySelector('#chart_div');
+
+                this.drawGoogleChart(this, chartDiv, this.dataTable,
+                    this._chartOptions({font1: 10, font2: 8}, false));
+            }
+
+            _getGoogleChart() {
+                return new google.visualization.PieChart(this.shadowRoot.querySelector('#chart_div'));
+            }
+
+            _magnify (e) {
+                this.options = this._chartOptions({font1: 18, font2: 12}, true);
+                /*
+                 *  third parameter should be a separate copy of the options
+                 */
+                this.magnify(e, this, this.options);
+            }
+        }
+
+        window.customElements.define(QuotaInfoChart.is, QuotaInfoChart);
+    </script>
+</dom-module>
