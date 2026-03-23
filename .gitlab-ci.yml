@@ -554,15 +554,13 @@ Extract Coverage:
   stage: testenv_post
   extends: .kubernetes_image
   when: always
-  dependencies:
-    - get_jacoco_cli
-    - Collect container logs
-  needs:
-    - job: get_jacoco_cli
-      artifacts: true
-    - job: Collect container logs
   script:
-    - ls -R jacoco-${JACOCO_VERSION} || echo "Artifact directory not found!"
+    - |
+      if [ ! -f "jacoco-${JACOCO_VERSION}/lib/jacococli.jar" ]; then
+        wget -q "https://github.com/jacoco/jacoco/releases/download/v${JACOCO_VERSION}/jacoco-${JACOCO_VERSION}.zip" -O /tmp/jacoco.zip
+        unzip -q /tmp/jacoco.zip -d jacoco-${JACOCO_VERSION}
+        rm /tmp/jacoco.zip
+      fi
     - JACOCO_CLI_PATH="jacoco-${JACOCO_VERSION}/lib/jacococli.jar"
     - PODS=$(kubectl -n $K8S_NAMESPACE get pods -l app.kubernetes.io/instance=store -o jsonpath='{.items[*].metadata.name}')
 
