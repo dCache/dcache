@@ -532,19 +532,6 @@ Helm-Deploy Current dCache build:
       --set dcache.qos.enabled=true
       --set services.srm.enabled=false
       --values .ci/custom-helm-config.yaml
-      
-      # Verify (CORRECT - 4 spaces, separate steps)
-      - echo "=== Verifying JaCoCo Configuration ==="
-      - |
-        for POD in $(kubectl -n ${K8S_NAMESPACE} get pods -l app.kubernetes.io/instance=store -o jsonpath='{.items[*].metadata.name}'); do
-          echo "Checking $POD..."
-          kubectl -n ${K8S_NAMESPACE} exec $POD -- env | grep JACOCO_OPTS || echo "  JACOCO_OPTS not found"
-          if kubectl -n ${K8S_NAMESPACE} exec $POD -- ps -ef 2>/dev/null | grep -q jacocoagent; then
-            echo "JaCoCo agent running"
-          else
-            echo "JaCoCo agent NOT running"
-          fi
-        done
 
 Helm-Deploy Latest dCache Golden Release:
   stage: test_deploy
@@ -568,7 +555,6 @@ Extract Coverage:
   extends: .kubernetes_image
   when: always
   script:
-      # DEBUG: Check if artifact exists
       # Download JaCoCo CLI directly
     - |
       if [ ! -f "jacoco-${JACOCO_VERSION}/lib/jacococli.jar" ]; then
@@ -596,13 +582,6 @@ Extract Coverage:
       fi
 
     - PODS=$(kubectl -n $K8S_NAMESPACE get pods -l app.kubernetes.io/instance=store -o jsonpath='{.items[*].metadata.name}')
-
-    - |
-      for POD in $PODS; do
-        echo "Checking JaCoCo on $POD..."
-        kubectl -n $K8S_NAMESPACE exec $POD -- env | grep JACOCO || echo "WARNING: JACOCO_OPTS not set on $POD"
-        kubectl -n $K8S_NAMESPACE exec $POD -- ps -ef | grep jacocoagent || echo "WARNING: JaCoCo agent not running on $POD"
-      done
 
     - |
       for POD in $PODS; do

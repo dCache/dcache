@@ -1,6 +1,5 @@
 #!/bin/bash
 
-apt-get update && apt-get install -y wget unzip
 # Define paths
 PROJECT_ROOT="${PROJECT_ROOT:-$(pwd)}"
 JACOCO_VERSION="${JACOCO_VERSION:-0.8.14}"  # Use env var or fallback
