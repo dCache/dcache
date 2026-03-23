@@ -554,33 +554,11 @@ Extract Coverage:
   stage: testenv_post
   extends: .kubernetes_image
   when: always
+  needs:
+    - job: get_jacoco_cli
+      artifacts: true
   script:
-      # Download JaCoCo CLI directly
-    - |
-      if [ ! -f "jacoco-${JACOCO_VERSION}/lib/jacococli.jar" ]; then
-        echo "Downloading JaCoCo ${JACOCO_VERSION}..."
-        wget -q "https://github.com/jacoco/jacoco/releases/download/v${JACOCO_VERSION}/jacoco-${JACOCO_VERSION}.zip" -O /tmp/jacoco.zip
-        unzip -q /tmp/jacoco.zip -d jacoco-${JACOCO_VERSION}
-        rm /tmp/jacoco.zip
-      fi
     - JACOCO_CLI_PATH="jacoco-${JACOCO_VERSION}/lib/jacococli.jar"
-    - ls -lh "$JACOCO_CLI_PATH"
-    - echo "=== Checking for JaCoCo CLI ==="
-    - ls -la . || true
-    - find . -name "jacococli.jar" -type f || true
-    - ls -la jacoco-${JACOCO_VERSION}/lib/ 2>/dev/null || echo "Directory not found"
-
-    - |
-      if [ -f "jacoco-${JACOCO_VERSION}/lib/jacococli.jar" ]; then
-        JACOCO_CLI_PATH="jacoco-${JACOCO_VERSION}/lib/jacococli.jar"
-        echo "Found JaCoCo CLI at: $JACOCO_CLI_PATH"
-      else
-        echo "ERROR: JaCoCo CLI not found!"
-        echo "Available files in working directory:"
-        find . -type f -name "*.jar" | head -20
-        exit 1
-      fi
-
     - PODS=$(kubectl -n $K8S_NAMESPACE get pods -l app.kubernetes.io/instance=store -o jsonpath='{.items[*].metadata.name}')
 
     - |
@@ -589,7 +567,6 @@ Extract Coverage:
         mkdir -p "./integration-results/classes-dump/${POD}"
         kubectl -n $K8S_NAMESPACE cp "$JACOCO_CLI_PATH" "${POD}:/tmp/jacococli.jar"
         POD_IP=$(kubectl -n $K8S_NAMESPACE get pod $POD -o jsonpath='{.status.podIP}')
-      
         if kubectl -n $K8S_NAMESPACE exec $POD -- \
             /usr/bin/java -jar /tmp/jacococli.jar dump \
             --address $POD_IP --port 6300 --destfile /tmp/jacoco-it.exec; then
