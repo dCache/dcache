@@ -70,7 +70,7 @@
         <version.jetty>9.4.57.v20241219</version.jetty>
         <version.xrootd4j>4.6.0</version.xrootd4j>
         <version.jersey>2.47</version.jersey>
-        <version.dcache-view>3.0.0</version.dcache-view>
+      <!--  <version.dcache-view>${project.version}</version.dcache-view>-->
         <version.dcache-view-admin>3.0.0</version.dcache-view-admin>
         <version.netty>4.2.10.Final</version.netty>
         <version.dcache>${project.version}</version.dcache>
@@ -1500,6 +1500,7 @@
         <module>docs</module>
         <module>packages</module>
         <module>archetypes</module>
+        <module>modules/dcache-view</module>
     </modules>
 
     <profiles>

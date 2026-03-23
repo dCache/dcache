@@ -1,0 +1,244 @@
+<link rel="import" href="../../../../bower_components/polymer/polymer-element.html">
+
+<link rel="import" href="../../../../bower_components/iron-a11y-keys/iron-a11y-keys.html">
+<link rel="import" href="../../../../bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../../../../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../../../../bower_components/iron-input/iron-input.html">
+
+<link rel="import" href="../../../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../../../bower_components/paper-input/paper-input-container.html">
+
+<link rel="import" href="../user-authentication.html">
+
+<dom-module id="login-form">
+    <template>
+        <style>
+            :host {
+                display: block;
+            }
+            #container {
+                width: 300px;
+            }
+            #container paper-input-container {
+                width: 100%;
+                --paper-input-container-color: #9c9c9c;
+                --paper-input-container-input-color: #fff;
+                --paper-input-container-focus-color: #00b4f0;
+            }
+            input[is="iron-input"]::placeholder {
+                color: #fff !important;
+            }
+            #container #login-button {
+                width: 100%;
+                display: flex;
+                justify-content: flex-end;
+            }
+            #login-button paper-button {
+                margin: 20px 0 0 0;
+                padding-left: 30px;
+                padding-right: 30px;
+                background: #00b4f0;
+                color: #fff;
+            }
+            #container > .messageContainer {
+                width: 100%;
+                margin-top: 10px;
+                background: rgba(161,48,41,0.9);
+                padding: 10px;
+                box-sizing: border-box;
+            }
+            .error-message {
+                color: #fff;
+                font-size: 0.71em;
+            }
+            .hide {
+                display: none;
+            }
+            .show {
+                display: block;
+            }
+            paper-checkbox {
+                --paper-checkbox-checked-color: #ff625d;
+                --paper-checkbox-checked-ink-color: #fff;
+                --paper-checkbox-unchecked-color: #e0e0e0;
+                --paper-checkbox-unchecked-ink-color: #e0e0e0;
+                --paper-checkbox-label-color: #fff;
+                --paper-checkbox-label-checked-color: #e0e0e0;
+                --paper-checkbox-checkmark-color: #fff;
+                --paper-checkbox-label: {
+                    font-size: 0.71em;
+                }
+            }
+            .checkbox-container {
+                display: flex;
+                align-items: center;
+            }
+            .flex {
+                flex: 1 1 auto;
+            }
+            .info-class {
+                display:inline-block;
+                padding-left: 5px;
+            }
+            .info-icon {
+                width:15px;
+                height:15px;
+                fill: #f2f4f4
+            }
+        </style>
+        <div id="container">
+            <iron-a11y-keys keys="enter" on-keys-pressed="_login"></iron-a11y-keys>
+            <iron-ajax id="ajaxUser"
+                       handle-as="json"
+                       on-response="handleResponse" on-error="handleError"></iron-ajax>
+            <paper-input-container always-float-label="true">
+                <label slot="label">Username</label>
+                <input is="iron-input" slot="input"
+                       name="username" id="username"
+                       value="{{username::input}}" placeholder="username" autofocus>
+            </paper-input-container>
+            <paper-input-container always-float-label="true">
+                <label slot="label">Password</label>
+                <input is="iron-input" slot="input"
+                       name="password" id="password"
+                       value="{{password::input}}" placeholder="password" type="password">
+            </paper-input-container>
+            <div class="checkbox-container">
+                <span class="flex"></span>
+                <paper-checkbox checked="{{useGravatar}}">Use Gravatar </paper-checkbox>
+                <div class="info-class">
+                    <iron-icon icon="info" class="info-icon"></iron-icon>
+                    <paper-tooltip>
+                        A Gravatar is a Globally Recognized Avatar (See https://en.gravatar.com/).
+                        If this option is checked, a request will be sent to Gravatar.
+                    </paper-tooltip>
+                </div>
+            </div>
+            <div class$="[[_computedClass(errorMessage)]]">
+                <span class="error-message">[[errorMessage]]</span>
+            </div>
+            <div id="login-button">
+                <paper-button on-tap="_login" raised>Login</paper-button>
+            </div>
+        </div>
+    </template>
+    <script>
+        class LoginForm extends Polymer.Element
+        {
+            constructor(redirect)
+            {
+                super();
+                this.redirectTo = redirect;
+            }
+            static get is()
+            {
+                return "login-form";
+            }
+
+            static get properties()
+            {
+                return {
+                    username: {
+                        type: String,
+                        notify: true
+                    },
+                    password: {
+                        type: String,
+                        notify: true
+                    },
+                    target: {
+                        type: Object,
+                        value: function() {
+                            return this;
+                        }
+                    },
+                    errorMessage: {
+                        type: String,
+                        notify: true
+                    },
+                    redirectTo: {
+                        type: Object,
+                        notify: true
+                    },
+                    useGravatar: {
+                        type: Boolean,
+                        value: function () {
+                            return sessionStorage.useGravatar === "yes";
+                        },
+                        notify: true,
+                        observer: '_useGravatarChanged'
+                    }
+                };
+            }
+
+            connectedCallback()
+            {
+                super.connectedCallback();
+                this.$.username.focus();
+            }
+
+            _login()
+            {
+                if (this.username === undefined || this.username === ""
+                    || this.password === "" || this.password === undefined) {
+                    this.errorMessage = "Please enter your username and password to login.";
+                    return;
+                }
+
+                if (!!sessionStorage.getItem("hasAuthClientCertificate")
+                    && this.username !== sessionStorage.getItem('name')) {
+                    this.errorMessage = "Unacceptable request! The username you provided must " +
+                        "correspond to your certificate username.";
+                    return;
+                }
+                const auth = window.btoa(`${this.username}:${this.password}`);
+
+                const userAuth = new UserAuthentication(auth);
+                userAuth.addEventListener('dv-user-authentication-successful', e => {
+                    e.detail.credential["password"] = `:${this.password}`;
+                    store(normaliseCredentialFormat(e.detail.credential));
+                    this.dispatchEvent(new CustomEvent('dv-namespace-show-message-toast', {
+                        detail: {message: e.detail.message}, bubbles: true, composed: true
+                    }));
+                    switch (this.redirectTo.page) {
+                        case "home":
+                            page("/");
+                            this.dispatchEvent(
+                                new CustomEvent('dv-namespace-ls-path', {
+                                    detail: {path: this.redirectTo.path}, bubbles: true, composed: true}));
+                            break;
+                        case "stay": // do nothing - use for example inside user-profile
+                            break;
+                        default:
+                            page(`/${this.redirectTo.page}`);
+                            break;
+                    }
+
+                    this.dispatchEvent(new CustomEvent('dv-authentication-successful', {
+                        detail: {
+                            message: e.detail.message,
+                            roles: e.detail.credential.roles === undefined ? "": `${e.detail.credential.roles}`
+                        }, bubbles: true, composed: true
+                    }));
+                });
+                userAuth.addEventListener('dv-user-authentication-error', e => {
+                    this.errorMessage = e.detail.message;
+                });
+                userAuth.send("Basic");
+            }
+
+            _computedClass(errMessage)
+            {
+                let classes;
+                classes = errMessage === undefined || errMessage === "" ? 'hide' : 'messageContainer show';
+                this.updateStyles();
+                return classes;
+            }
+            _useGravatarChanged(g)
+            {
+                sessionStorage.useGravatar = g === true ? "yes" : "no";
+            }
+        }
+        window.customElements.define(LoginForm.is, LoginForm);
+    </script>
+</dom-module>

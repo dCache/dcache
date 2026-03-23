@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- ✅ Point to dcache parent instead of standalone -->
+    <parent>
+        <groupId>org.dcache</groupId>
+        <artifactId>dcache-parent</artifactId>
+        <version>12.0.0-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>dcache-view</artifactId>
+    <packaging>pom</packaging>
+    <inceptionYear>2016</inceptionYear>
+
+    <name>dCache View</name>
+    <url>http://www.dCache.ORG</url>
+    <description>
+        A Web application that provide an easy to use User Interface for dCache System.
+    </description>
+
+    <!-- ✅ Removed: <organization> inherited from parent -->
+    <!-- ✅ Removed: <licenses> inherited from parent -->
+    <!-- ✅ Removed: <distributionManagement> inherited from parent -->
+    <!-- ✅ Removed: <repositories> inherited from parent -->
+    <!-- ✅ Removed: <scm> inherited from parent -->
+    <!-- ✅ Removed: <issueManagement> no longer needed -->
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.github.eirslett</groupId>
+                <artifactId>frontend-maven-plugin</artifactId>
+                <version>1.6</version>
+
+                <executions>
+
+                    <!-- 1. Install Node + NPM (MUST BE FIRST) -->
+                    <execution>
+                        <id>install node and npm</id>
+                        <goals>
+                            <goal>install-node-and-npm</goal>
+                        </goals>
+                        <configuration>
+                            <nodeVersion>v8.0.0</nodeVersion>
+                            <npmVersion>6.5.0</npmVersion>
+                        </configuration>
+                    </execution>
+
+                    <!-- 2. npm install -->
+                    <execution>
+                        <id>npm install</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>install</arguments>
+                        </configuration>
+                    </execution>
+
+                    <!-- 3. Install bower globally -->
+                    <execution>
+                        <id>install bower</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>install -g bower</arguments>
+                        </configuration>
+                    </execution>
+
+
+
+                    <execution>
+                        <id>bower install</id>
+                        <goals>
+                            <goal>bower</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>install --allow-root --config.interactive=false</arguments>
+                        </configuration>
+                    </execution>
+
+                    <!-- 5. npm run build -->
+                    <execution>
+                        <id>npm run build</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>run build</arguments>
+                        </configuration>
+                    </execution>
+
+                </executions>
+            </plugin>
+
+            <!-- ✅ Kept as-is: packages build output into a JAR -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <descriptors>
+                        <descriptor>src/main/assembly/dcacheview-jar.xml</descriptor>
+                    </descriptors>
+                    <finalName>${project.artifactId}-${project.version}</finalName>
+                    <appendAssemblyId>false</appendAssemblyId>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- ✅ Kept as-is: installs the JAR into local Maven repo -->
+           <!-- <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-install-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>install-file</goal>
+                        </goals>
+                        <configuration>
+                            <file>target/${project.artifactId}-${project.version}.jar</file>
+                            <groupId>org.dcache</groupId>
+                            <artifactId>${project.artifactId}</artifactId>
+                            <packaging>jar</packaging>
+                            <pomFile>pom.xml</pomFile>
+                            <version>${project.version}</version>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>-->
+
+            <!-- ✅ Kept as-is: handles versioned releases -->
+          <!--  <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <configuration>
+                    <autoVersionSubmodules>true</autoVersionSubmodules>
+                    <tagNameFormat>v@{project.version}</tagNameFormat>
+                </configuration>
+            </plugin>-->
+
+        </plugins>
+    </build>
+
+</project>

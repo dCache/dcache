@@ -1,0 +1,480 @@
+<link rel="import" href="../../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../../bower_components/paper-spinner/paper-spinner.html">
+<link rel="import" href="../../../bower_components/paper-styles/element-styles/paper-material-styles.html">
+
+<link rel="import" href="../utils/mixins/commons.html">
+<dom-module id="file-metadata-mapper">
+    <template>
+        <style is="custom-style" include="paper-material-styles">
+            :host {
+                -webkit-font-smoothing: antialiased;
+            }
+            .body {
+                display: block;
+                margin: 10px;
+                box-sizing: border-box;
+            }
+            .row {
+                display: flex;
+                line-height: 20px;
+                font-size: 0.8em;
+            }
+            .row + .row {
+                padding: 4px 0;
+            }
+            .title {
+                flex: 0 0 100px;
+                color: #5f6368;
+                margin-right: 20px;
+            }
+            .value {
+                box-sizing: border-box;
+                flex: 1 1 auto;
+                overflow: hidden;
+                word-wrap: break-word;
+            }
+            .loading {
+                position: absolute;
+                height: 100%;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                background: white;
+                margin-bottom: 2px;
+                text-align: center;
+                font-size: 0.8em;
+            }
+            .none {
+                display: none;
+            }
+            .paper-material {
+                background: #fff;
+                margin: 10px;
+                padding: 5px;
+                border-radius: 4px;
+                border: 1px solid #bbb;
+            }
+            .description {
+                box-sizing: border-box;
+                background: #f1f1f1;
+                font-size: 0.8em;
+                padding: 5px 15px;
+                margin-left: -5px;
+                margin-right: -5px;
+                margin-top: -5px;
+                border-top-left-radius: 4px;
+                border-top-right-radius: 4px;
+            }
+            paper-tooltip {
+                max-width: 250px;
+            }
+        </style>
+
+        <div class="paper-material" elevation="1">
+            <div class="description">
+                <span>DETAILS</span>
+            </div>
+            <div class="body">
+                <template is="dom-repeat" items="[[_metadataSN]]">
+                    <div class="row">
+                        <div class="title">
+                            [[item.name]]
+                            <paper-tooltip offset="0"
+                                           position="right"
+                                           fit-to-visible-bounds>[[item.description]]</paper-tooltip>
+                        </div>
+                        <div class="value">[[item.value]]</div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <template is="dom-repeat" items="[[_metadataOA]]">
+            <div class="paper-material" elevation="1">
+                <div class="description">
+                    <span>[[item.name]]</span>
+                    <paper-tooltip offset="0" fit-to-visible-bounds>[[item.description]]</paper-tooltip>
+                </div>
+                <div class="body">
+                    <fm-inner-mapper context="[[item]]"></fm-inner-mapper>
+                </div>
+            </div>
+        </template>
+
+        <div class$="[[computedClass(isLoading)]]">
+            <paper-spinner active></paper-spinner>
+            <span>requesting for the file metadata</span>
+        </div>
+
+    </template>
+    <script>
+        /**
+         * @polymer
+         * @customElement
+         * @appliesMixin DcacheViewMixins.Commons
+         */
+        class FileMetadataMapper extends DcacheViewMixins.Commons(Polymer.Element)
+        {
+            static get is()
+            {
+                return 'file-metadata-mapper';
+            }
+            static get properties()
+            {
+                return {
+                    metadata: {
+                        type: Object,
+                        notify: true,
+                        observer: '_namespaceMapper'
+                    },
+                    _metadataSN: {
+                        type: Array,
+                        value: function () {
+                            return [];
+                        },
+                        notify: true
+                    },
+                    _metadataOA: {
+                        type: Array,
+                        value: function () {
+                            return [];
+                        },
+                        notify: true
+                    },
+                    isLoading: {
+                        type: Boolean,
+                        notify: true
+                    }
+                }
+            }
+            _isStringOrNumber(type)
+            {
+                return type === 'String' || type === 'Number';
+            }
+            _namespaceMapper(m)
+            {
+                const metadataDescription = {
+                    "fileMimeType" : {
+                        name: "MIME Type", type: "String",
+                        description: "The file Multipurpose Internet Mail Extensions (MIME) type " +
+                        "is a standardized way to indicate the nature and format of a file."
+                    },
+                    "path" : {
+                        name: "Full path", type: "String",
+                        description: "This is a full path which specifies a unique location in " +
+                        "the file system by following the directory tree hierarchy in which path " +
+                        "components, separated by a delimiting character (forward slash: \"/\"), " +
+                        "represent each directory."
+                    },
+                    "currentQos" : {
+                        name: "Current QoS", type: "String",
+                        description: "The current quality of service (QoS) of the file."
+                    },
+                    "targetQos" : {
+                        name: "Target QoS", type: "String",
+                        description: "This is the target quality of service (QoS) when a file is " +
+                        "transitioning between different quality of services. Once this promise " +
+                        "has been fulfilled or the transition is complete, this value will be empty."
+                    },
+                    "accessLatency" : {
+                        name: "Access latency", type: "String",
+                        description:
+                        "Access latency describes the availability of a file. There are two possible " +
+                        "values allowed, namely; NEARLINE and ONLINE. NEARLINE means that data stored " +
+                        "in this reservation is allowed to migrate to permanent media. Retrieving this " +
+                        "data may result in delays associated with preparatory steps that the storage " +
+                        "system has to perform to make these data available for the user I/O (e.g., " +
+                        "staging data from tape to a disk cache). ONLINE means that data is readily " +
+                        "available allowing for faster access."
+                    },
+                    "checksums" : {
+                        name: "Checksums", type: "Array",
+                        description: "Checksum is a value used to verify the integrity of a file. " +
+                        "Presented here (if it exists) is the list of all checksum values of the file with " +
+                        "the corresponding type(s) of hashing functions used generating each one."
+                    },
+                    "mode" : {
+                        name: "Mode", type: "Number",
+                        description: "This is an integer data type used to represent file modes. The mode " +
+                        "of a file includes file type information and the file permission bits. This has " +
+                        "been converted to a human readable format; the first later give the file type and " +
+                        "the rest of the string provides the permissions information."
+                    },
+                    "locations" : {
+                        name: "Locations", type: "Array",
+                        description: ""
+                    },
+                    "labels" : {
+                        name: "Label", type: "Array",
+                        description: "The label of a file."
+                    },
+                    "fileType" : {
+                        name: "Type", type: "String",
+                        description: "Type of the file ( e.g. REGULAR, DIR, LINK, SPECIAL )"
+                    },
+                    "group" : {
+                        name: "Group", type: "Number",
+                        description: "The file's owner group id."
+                    },
+                    "pnfsId" : {
+                        name: "PNFS id", type: "String",
+                        description: ""
+                    },
+                    "storageInfo" : {
+                        name: "Storage information", type: "Object",
+                        description: ""
+                    },
+                    "retentionPolicy" : {
+                        name: "Retention policy", type: "String",
+                        description:
+                        "Retention policy describes the quality of the storage service that will be provided " +
+                        "for file/s stored. The values of retention policy used in dCache are REPLICA and " +
+                        "CUSTODIAL. REPLICA corresponds to the lowest quality of the service, usually associated " +
+                        "with storing a single copy of each file on the disk. CUSTODIAL is the highest quality " +
+                        "service, usually interpreted as storage of the data on tape. Normally, a file inherits " +
+                        "the reservation’s retention policy of the given space reservation it was  written into."
+                    },
+                    "storageClass" : {
+                        name: "Storage class", type: "String",
+                        description: ""
+                    },
+                    "hsm" : {
+                        name: "HSM", type: "String",
+                        description: ""
+                    },
+                    "nlink" : {
+                        name: "Hard link", type: "Number",
+                        description: "The number of hard links to the file. This count keeps track of how " +
+                        "many directories have entries for this file."
+                    },
+                    "atime" : {
+                        name: "Accessed", type: "Number",
+                        description: "The timestamp that indicates the last time that a file has been accessed."
+                    },
+                    "suris" : {
+                        name: "SURIS", type: "Array",
+                        description: "Identifies the file to the storage system (backend), usually in the form " +
+                        "of URI. This usually will include the file's access latency, retention policy, storage " +
+                        "class, and backend type, along with other location information specific to the system."
+                    },
+                    "flags" : {
+                        name: "Flags", type: "Object",
+                        description: ""
+                    },
+                    "ctime" : {
+                        name: "Changed", type: "Number",
+                        description: "The timestamp of a file that indicates the last time that it was changed. " +
+                        "The modification can be in terms of its content or in terms of its attributes. Whenever " +
+                        "anything about a file changes (except its access time), this value changes."
+                    },
+                    "mtime" : {
+                        name: "Modified", type: "Number",
+                        description: "The timestamp of a file that indicate the last time only the contents of " +
+                        "the file has been changed."
+                    },
+                    "owner" : {
+                        name: "Owner", type: "Number",
+                        description: "File owner id or user id, that is, to whom file belongs to."
+                    },
+                    "creationTime" : {
+                        name: "Created", type: "Number",
+                        description: "The timestamp of a file that indicate the time the file was created."
+                    },
+                    "size" : {
+                        name: "Size", type: "Number",
+                        description: "This specifies the size of a regular file."
+                    },
+                    "acl": {
+                        name: "ACL", type: "Object",
+                        description: "An access control list (ACL) is an array of access control entries (ACE)."
+                    },
+                };
+
+                const metadata = Object.assign({}, m);
+                const arr1 = [];
+                const arr2 = [];
+                metadata.size = metadata.fileType === "REGULAR" ?
+                    this.convertBytesToNearestBinaryPrefix(metadata.size): "--";
+                metadata.labels = metadata.labels === undefined ?
+                   "--" : metadata.labels;
+                metadata.creationTime = this._formattedDateTime(metadata.creationTime);
+                metadata.mtime = this._formattedDateTime(metadata.mtime);
+                if (metadata.ctime && metadata.atime) {
+                    metadata.ctime = this._formattedDateTime(metadata.ctime);
+                    metadata.atime = this._formattedDateTime(metadata.atime);
+                }
+
+                if (metadata.mode) {
+                    metadata.mode = this.convertToUnixPermissions(metadata.mode, metadata.fileType);
+                }
+
+                for (const objectKey in metadata) {
+                    if (metadataDescription[objectKey]) {
+                        const item = Object.assign(metadataDescription[objectKey]);
+                        item.value = metadata[objectKey];
+
+                        if (metadataDescription[objectKey].type === "String" ||
+                            metadataDescription[objectKey].type === "Number" ||
+                            metadataDescription[objectKey].type === "Boolean") {
+                            arr1.push(item);
+                        } else {
+                            arr2.push(item);
+                        }
+                    }
+                }
+
+                this.setProperties({_metadataSN: arr1});
+                this.setProperties({_metadataOA: arr2});
+
+                this.isLoading = false;
+            }
+            _formattedDateTime(dateTimeValue)
+            {
+                return (new Date(dateTimeValue)).toString();
+            }
+            computedClass(isLoading)
+            {
+                return isLoading ? 'loading' : 'none';
+            }
+        }
+        window.customElements.define(FileMetadataMapper.is, FileMetadataMapper);
+    </script>
+</dom-module>
+
+<dom-module id="fm-inner-mapper">
+    <template>
+        <style>
+            .row {
+                display: flex;
+                line-height: 20px;
+                font-size: 0.8em;
+            }
+            .row + .row {
+                padding: 4px 0;
+            }
+            .title {
+                flex: 0 0 100px;
+                color: #5f6368;
+                margin-right: 20px;
+            }
+            .value {
+                box-sizing: border-box;
+                flex: 1 1 auto;
+                overflow: hidden;
+                word-wrap: break-word;
+            }
+            .row-in-column {
+                flex-direction: column;
+            }
+        </style>
+        <div id="container"></div>
+    </template>
+    <script>
+        class FmInnerMapper extends Polymer.Element
+        {
+            static get is()
+            {
+                return 'fm-inner-mapper';
+            }
+            static get properties()
+            {
+                return {
+                    context: {
+                        type: Object,
+                        value: function () {
+                            return {};
+                        },
+                        notify: true,
+                        observer: '_contextObserver'
+                    }
+                }
+            }
+            _contextObserver(item)
+            {
+                const a = Object.prototype.toString.call(item.value);
+                const div = document.createElement('div');
+                div.classList.add("item");
+                if (a === "[object Array]") {
+                    this._appendArrayNode(div, item.value, item.name);
+                } else if (a === "[object Object]") {
+                    this._appendObjectNode(div, item.value, item.name);
+                }
+                this.$.container.appendChild(div);
+            }
+            _appendArrayNode(parentNode, arr, name)
+            {
+                const len = arr.length;
+                if (len === 0) {
+                    this._emptyNode(parentNode, name)
+                } else {
+                    for (let j=0; j<len; j++) {
+                        const row = document.createElement('div');
+                        row.classList.add("row");
+
+                        const a = Object.prototype.toString.call(arr[j]);
+                        if (a === "[object Number]" || a === "[object String]" || a === "[object Boolean]") {
+                            row.innerHTML = arr[j];
+                        } else if (a === "[object Array]") {
+                            this._appendArrayNode(row, arr[j], name);
+                        } else if (a === "[object Object]") {
+                            this._appendObjectNode(row, arr[j], name);
+                        }
+
+                        if (parentNode.classList.contains('row')) {
+                            parentNode.classList.add("row-in-column");
+                        }
+                        parentNode.appendChild(row);
+                    }
+                }
+            }
+            _appendObjectNode(parentNode, obj, name)
+            {
+                if (JSON.stringify(obj) === "{}") {
+                    this._emptyNode(parentNode, name);
+                } else {
+                    for (const key in obj) {
+                        const row = document.createElement('div');
+                        row.classList.add("row");
+                        if (obj.hasOwnProperty(key)) {
+                            const title = document.createElement('div');
+                            const value = document.createElement('div');
+                            title.classList.add("title");
+                            value.classList.add("value");
+
+                            title.innerHTML = key;
+
+                            const a = Object.prototype.toString.call(obj[key]);
+                            if (a === "[object Number]" || a === "[object String]" || a === "[object Boolean]") {
+                                value.innerHTML = obj[key];
+                            } else if (a === "[object Array]") {
+                                this._appendArrayNode(value, obj[key], key);
+                            } else if (a === "[object Object]") {
+                                this._appendObjectNode(value, obj[key], key);
+                            }
+                            row.appendChild(title);
+                            row.appendChild(value);
+                        }
+
+                        if (parentNode.classList.contains('row')) {
+                            parentNode.classList.add("row-in-column");
+                        }
+                        parentNode.appendChild(row);
+                    }
+                }
+            }
+            _emptyNode(parenNode, name)
+            {
+                const row = document.createElement('div');
+                row.classList.add("row");
+                row.innerHTML = `no ${name}`;
+                parenNode.appendChild(row);
+            }
+        }
+        window.customElements.define(FmInnerMapper.is, FmInnerMapper);
+    </script>
+</dom-module>

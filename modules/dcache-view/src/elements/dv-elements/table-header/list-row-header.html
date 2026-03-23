@@ -1,0 +1,87 @@
+<link rel="import" href="../../../bower_components/polymer/polymer-element.html">
+<dom-module id="list-row-header">
+    <template>
+        <style>
+            :host {
+                display: block;
+                font-size: 0.75em;
+                margin: 0 15px;
+                color: #fff;
+                width: 100%;
+            }
+            .row {
+                width: 100%;
+                max-width: 100%;
+                height: 40px;
+                text-decoration: none;
+                display: flex;
+                align-items: center;
+            }
+            .cell {
+                box-sizing: border-box;
+            }
+            .file-icon {
+                padding-left: 15px;
+                padding-right: 10px;
+                width: 50px;
+                max-width: 50px;
+                min-width: 50px;
+            }
+            @media only screen and (min-width: 960px) {
+                /* larger screen: */
+                .name {
+                    flex: 1 1 auto;
+                    max-width: calc(100% - 418px); /*This is weird, I don't know where the 8px is coming from*/
+                }
+                .mode {
+                    width: 12ex;
+                    max-width: 12ex;
+                    min-width: 12ex;
+                }
+                .ctime, .qos {
+                    width: 150px;
+                    max-width: 150px;
+                    min-width: 150px;
+                }
+                .size {
+                    width: 60px;
+                    max-width: 60px;
+                    min-width: 60px;
+                    text-align: right;
+                }
+            }
+            @media only screen and (max-width: 960px) {
+                /* smaller screen: */
+                .name {
+                    flex: 1 1 auto;
+                    max-width: calc(100% - 50px);
+                }
+                .mode, .ctime, .qos, .size {
+                    display: none;
+                }
+            }
+            .none {
+                display: none;
+            }
+
+        </style>
+        <div class="row cell">
+            <div class="cell file-icon">Type</div>
+            <div class="cell name">Name</div>
+            <div class="cell mode">Mode</div>
+            <div class="cell ctime">Creation time</div>
+            <div class="cell qos">File location</div>
+            <div class="cell size">Size</div>
+        </div>
+    </template>
+    <script>
+        class ListRowHeader extends Polymer.Element
+        {
+            static get is()
+            {
+                return 'list-row-header';
+            }
+        }
+        window.customElements.define(ListRowHeader.is, ListRowHeader);
+    </script>
+</dom-module>
