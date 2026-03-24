@@ -568,6 +568,7 @@ Extract Coverage:
         echo "Collecting coverage and woven classes from $POD..."
         mkdir -p "./integration-results/classes-dump/${POD}"
         kubectl -n $K8S_NAMESPACE cp "$JACOCO_CLI_PATH" "${POD}:/tmp/jacococli.jar"
+        POD_IP=$(kubectl -n $K8S_NAMESPACE get pod $POD -o jsonpath='{.status.podIP}')
         if kubectl -n $K8S_NAMESPACE exec $POD -- \
             /usr/bin/java -jar /tmp/jacococli.jar dump \
             --address $POD_IP --port 6300 --destfile /tmp/jacoco-it.exec; then

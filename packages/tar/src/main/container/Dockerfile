@@ -83,6 +83,6 @@ EXPOSE 2288 22125 2049 32049 22224 6300
 
 ENTRYPOINT ["/run.sh"]
 
-ENV JACOCO_OPTS="output=tcpserver,address=*,port=6300,append=true"
+ENV JACOCO_OPTS="output=tcpserver,address=*,port=6300,append=false"
 # run as user dcache
 USER dcache
