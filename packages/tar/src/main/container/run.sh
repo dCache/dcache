@@ -39,10 +39,6 @@ if [ -n "$JACOCO_OPTS" ] && [ -f "$JACOCO_AGENT_JAR" ]; then
     #append classdumpdir to existing options
     JACOCO_AGENT="-javaagent:${JACOCO_AGENT_JAR}=${JACOCO_OPTS},classdumpdir=$CLASS_DUMP_DIR"
     echo "Activating JaCoCo with options: ${JACOCO_OPTS} and dumping classes to $CLASS_DUMP_DIR"
-elif [ -f "$JACOCO_AGENT_JAR" ]; then
-    #add classdumpdir to default TCP server options
-    JACOCO_AGENT="-javaagent:${JACOCO_AGENT_JAR}=output=tcpserver,address=*,port=6300,classdumpdir=$CLASS_DUMP_DIR"
-    echo "Activating JaCoCo with default TCP server and dumping classes to $CLASS_DUMP_DIR"
 fi
 
 if [ ! -f /.init_complete ]

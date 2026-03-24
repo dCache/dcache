@@ -424,7 +424,6 @@ Collect container logs:
     paths:
       - "$K8S_NAMESPACE.log"
       - "$K8S_NAMESPACE-billing.json"
-      - "*.exec"
 
 #
 # dispose kubernetes resources
@@ -569,7 +568,6 @@ Extract Coverage:
         echo "Collecting coverage and woven classes from $POD..."
         mkdir -p "./integration-results/classes-dump/${POD}"
         kubectl -n $K8S_NAMESPACE cp "$JACOCO_CLI_PATH" "${POD}:/tmp/jacococli.jar"
-        POD_IP=$(kubectl -n $K8S_NAMESPACE get pod $POD -o jsonpath='{.status.podIP}')
         if kubectl -n $K8S_NAMESPACE exec $POD -- \
             /usr/bin/java -jar /tmp/jacococli.jar dump \
             --address $POD_IP --port 6300 --destfile /tmp/jacoco-it.exec; then
@@ -728,9 +726,9 @@ generate_jacoco_report:
   needs:
     - job: run_ut_with_coverage
       artifacts: true
-    - job: Collect container logs
     - job: get_jacoco_cli
     - job: Extract Coverage
+      artifacts: true
   cache:
     key: "jacoco-cli-${JACOCO_VERSION}"
     paths:
