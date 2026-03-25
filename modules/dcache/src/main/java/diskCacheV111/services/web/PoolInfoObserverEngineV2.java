@@ -188,7 +188,7 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine, DomainConte
 
             PoolGroupInfoTableWriter writer =
                   new PoolGroupInfoTableWriter(html);
-            writer.print("/pools/list/" + className + "/", info);
+            writer.print("/pools/list/" + className, info);
         }
     }
 
@@ -222,7 +222,7 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine, DomainConte
                       currentItem != null && currentItem.equals(linkName);
 
                 html.td(active ? "active" : null,
-                      "<a href=\"", linkBase, linkName, "/\">", name, "</a>");
+                      "<a href=\"", linkBase, linkName, "\">", name, "</a>");
             }
 
             while ((n++ % _menuColumns) != 0) {
