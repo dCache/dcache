@@ -31,18 +31,14 @@ ASPECT_AGENT=`ls ${DCACHE_HOME}/share/classes/aspectjweaver-*.jar`
 JACOCO_AGENT_JAR="${DCACHE_HOME}/share/classes/jacocoagent.jar"
 JACOCO_AGENT=""
 
-#define a location for dumped classes
-CLASS_DUMP_DIR="${DCACHE_HOME}/var/log/jacoco-dump"
-mkdir -p "$CLASS_DUMP_DIR"
-
-if [ -n "$JACOCO_OPTS" ] && [ -f "$JACOCO_AGENT_JAR" ]; then
-    #append classdumpdir to existing options
-    JACOCO_AGENT="-javaagent:${JACOCO_AGENT_JAR}=${JACOCO_OPTS},classdumpdir=$CLASS_DUMP_DIR"
-    echo "Activating JaCoCo with options: ${JACOCO_OPTS} and dumping classes to $CLASS_DUMP_DIR"
-elif [ -f "$JACOCO_AGENT_JAR" ]; then
-    #add classdumpdir to default TCP server options
-    JACOCO_AGENT="-javaagent:${JACOCO_AGENT_JAR}=output=tcpserver,address=*,port=6300,classdumpdir=$CLASS_DUMP_DIR"
-    echo "Activating JaCoCo with default TCP server and dumping classes to $CLASS_DUMP_DIR"
+if [ "${JACOCO_ENABLED}" = "true" ] && [ -f "$JACOCO_AGENT_JAR" ]; then
+    CLASS_DUMP_DIR="${DCACHE_HOME}/var/log/jacoco-dump"
+    mkdir -p "$CLASS_DUMP_DIR"
+    _opts="${JACOCO_OPTS:-output=tcpserver,address=*,port=6300,append=false}"
+    JACOCO_AGENT="-javaagent:${JACOCO_AGENT_JAR}=${_opts},classdumpdir=${CLASS_DUMP_DIR}"
+    echo "JaCoCo enabled: ${_opts}"
+else
+    echo "JaCoCo disabled."
 fi
 
 if [ ! -f /.init_complete ]
