@@ -213,7 +213,7 @@ container:
       --label dcache.build=testing
       --context $CI_PROJECT_DIR
       --dockerfile $CI_PROJECT_DIR/Dockerfile
-      --build-arg JACOCO_ENABLED=true
+      --build-arg JACOCO_ENABLED=false
       --destination $CI_REGISTRY_IMAGE:$tag
 
 #
