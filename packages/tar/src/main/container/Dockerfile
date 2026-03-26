@@ -83,8 +83,8 @@ EXPOSE 2288 22125 2049 32049 22224 6300
 
 ENTRYPOINT ["/run.sh"]
 
-# JaCoCo is enabled via --build-arg JACOCO_ENABLED=true at build time.
-# Default is false — production images built without the arg are safe.
+# JaCoCo is enabled via --build-arg JACOCO_ENABLED=true in container job.
+# Default is false — production container doesnt contain jacoco.
 ARG JACOCO_ENABLED=false
 ENV JACOCO_ENABLED=${JACOCO_ENABLED}
 

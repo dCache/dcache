@@ -554,6 +554,7 @@ Extract Coverage:
   stage: testenv_post
   extends: .kubernetes_image
   when: always
+  allow_failure: true
   script:
     - |
       if [ ! -f "jacoco-${JACOCO_VERSION}/lib/jacococli.jar" ]; then
