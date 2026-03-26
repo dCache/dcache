@@ -53,6 +53,7 @@ variables:
   DCACHE_HELM_REPO: https://gitlab.desy.de/api/v4/projects/7648/packages/helm/test
   DCACHE_COMPATIBILITY_VERSION: 9.2.40
   JACOCO_VERSION: 0.8.14 #must match maven plugin version
+  ENABLE_COVERAGE: "true"
 
 # let's debug nodes where job is running
 before_script:
@@ -213,7 +214,7 @@ container:
       --label dcache.build=testing
       --context $CI_PROJECT_DIR
       --dockerfile $CI_PROJECT_DIR/Dockerfile
-      --build-arg JACOCO_ENABLED=false
+      --build-arg JACOCO_ENABLED=$ENABLE_COVERAGE
       --destination $CI_REGISTRY_IMAGE:$tag
 
 #
@@ -553,8 +554,8 @@ Helm-Deploy Latest dCache Golden Release:
 Extract Coverage:
   stage: testenv_post
   extends: .kubernetes_image
-  when: always
-  allow_failure: true
+  rules:
+    - if: '$ENABLE_COVERAGE == "true"'
   script:
     - |
       if [ ! -f "jacoco-${JACOCO_VERSION}/lib/jacococli.jar" ]; then
@@ -710,6 +711,8 @@ Run OIDC test:
 get_jacoco_cli:
   stage: build
   image: eclipse-temurin:21-jre
+  rules:
+    - if: '$ENABLE_COVERAGE == "true"'
   script:
     - ./get-jacoco.sh
   cache:
@@ -726,6 +729,8 @@ get_jacoco_cli:
 generate_jacoco_report:
   stage: testenv_post
   image: eclipse-temurin:21-jre
+  rules:
+    - if: '$ENABLE_COVERAGE == "true"'
   needs:
     - job: run_ut_with_coverage
       artifacts: true
