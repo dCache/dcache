@@ -213,6 +213,7 @@ container:
       --label dcache.build=testing
       --context $CI_PROJECT_DIR
       --dockerfile $CI_PROJECT_DIR/Dockerfile
+      --build-arg JACOCO_ENABLED=true
       --destination $CI_REGISTRY_IMAGE:$tag
 
 #
@@ -530,8 +531,6 @@ Helm-Deploy Current dCache build:
       --set dcache.hsm.enabled=true
       --set dcache.qos.enabled=true
       --set services.srm.enabled=false
-      --set extraEnv[0].name=JACOCO_ENABLED
-      --set extraEnv[0].value="true"
       --values .ci/custom-helm-config.yaml
 
 Helm-Deploy Latest dCache Golden Release:

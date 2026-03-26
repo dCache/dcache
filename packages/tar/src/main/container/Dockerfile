@@ -6,7 +6,7 @@ FROM almalinux:10-minimal as builder
 # Add JRE
 RUN microdnf -y install java-21-openjdk-devel java-21-openjdk-jmods binutils
 RUN jlink --compress=zip-6 --strip-debug --no-header-files --no-man-pages --add-modules java.base,java.compiler,java.instrument,java.logging,java.management,java.naming,java.security.jgss,java.transaction.xa,java.xml,jdk.jfr,jdk.security.auth,jdk.unsupported,java.desktop,java.sql,jdk.naming.dns,java.rmi,jdk.crypto.cryptoki --output /jlink-runtime
-# NEW: Download JaCoCo Agent
+
 ARG JACOCO_VERSION=0.8.14
 RUN microdnf -y install wget unzip && \
     wget -q https://github.com/jacoco/jacoco/releases/download/v${JACOCO_VERSION}/jacoco-${JACOCO_VERSION}.zip -O /tmp/jacoco.zip && \
@@ -82,6 +82,11 @@ VOLUME /dcache.init.d
 EXPOSE 2288 22125 2049 32049 22224 6300
 
 ENTRYPOINT ["/run.sh"]
+
+# JaCoCo is enabled via --build-arg JACOCO_ENABLED=true at build time.
+# Default is false — production images built without the arg are safe.
+ARG JACOCO_ENABLED=false
+ENV JACOCO_ENABLED=${JACOCO_ENABLED}
 
 # run as user dcache
 USER dcache
