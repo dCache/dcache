@@ -195,9 +195,12 @@ container:
   # Only debug/*-debug versions of the Kaniko image are known to work within Gitlab CI
   image: ghcr.io/kaniko-build/dist/chainguard-dev-kaniko/executor:latest-debug
   needs:
-    - tar
+    - job: tar
+    - job: get_jacoco_cli
+      optional: true
   dependencies:
     - tar
+    - get_jacoco_cli
   script:
     - |-
       tag=$CI_COMMIT_SHORT_SHA
@@ -209,6 +212,10 @@ container:
     - cp $CI_PROJECT_DIR/packages/tar/src/main/container/* .
     - mkdir -p /kaniko/.docker
     - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
+    - |
+      if [ "$ENABLE_COVERAGE" = "true" ]; then
+      cp jacoco-${JACOCO_VERSION}/lib/*.jar .
+      fi
     - >
       /kaniko/executor
       --label dcache.build=testing
@@ -556,13 +563,10 @@ Extract Coverage:
   extends: .kubernetes_image
   rules:
     - if: '$ENABLE_COVERAGE == "true"'
+  needs:
+    - job: get_jacoco_cli
+      artifacts: true
   script:
-    - |
-      if [ ! -f "jacoco-${JACOCO_VERSION}/lib/jacococli.jar" ]; then
-        wget -q "https://github.com/jacoco/jacoco/releases/download/v${JACOCO_VERSION}/jacoco-${JACOCO_VERSION}.zip" -O /tmp/jacoco.zip
-        unzip -q /tmp/jacoco.zip -d jacoco-${JACOCO_VERSION}
-        rm /tmp/jacoco.zip
-      fi
     - JACOCO_CLI_PATH="jacoco-${JACOCO_VERSION}/lib/jacococli.jar"
     - PODS=$(kubectl -n $K8S_NAMESPACE get pods -l app.kubernetes.io/instance=store -o jsonpath='{.items[*].metadata.name}')
 
@@ -722,7 +726,7 @@ get_jacoco_cli:
     policy: pull-push
   artifacts:
     paths:
-      - "jacoco-${JACOCO_VERSION}/lib/jacococli.jar"
+      - "jacoco-${JACOCO_VERSION}/lib/*.jar"
     expire_in: 1 week
 
 # Job to generate JaCoCo report using script
