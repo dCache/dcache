@@ -566,6 +566,7 @@ Extract Coverage:
   needs:
     - job: get_jacoco_cli
       artifacts: true
+    - job: NFS4.x protocol compliance tests
   script:
     - JACOCO_CLI_PATH="jacoco-${JACOCO_VERSION}/lib/jacococli.jar"
     - PODS=$(kubectl -n $K8S_NAMESPACE get pods -l app.kubernetes.io/instance=store -o jsonpath='{.items[*].metadata.name}')
