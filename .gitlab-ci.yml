@@ -563,6 +563,8 @@ Extract Coverage:
   extends: .kubernetes_image
   rules:
     - if: '$ENABLE_COVERAGE == "true"'
+  dependencies:
+    - get_jacoco_cli
   needs:
     - job: get_jacoco_cli
       artifacts: true
