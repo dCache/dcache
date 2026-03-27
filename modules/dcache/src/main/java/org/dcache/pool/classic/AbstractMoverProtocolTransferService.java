@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2015 - 2025 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2015 - 2026 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -20,6 +20,7 @@ package org.dcache.pool.classic;
 import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import dmg.cells.nucleus.AbstractCellComponent;
@@ -29,6 +30,9 @@ import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.io.SyncFailedException;
 import java.lang.reflect.InvocationTargetException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.CompletionHandler;
 import java.nio.file.StandardOpenOption;
@@ -43,6 +47,7 @@ import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.CDCExecutorServiceDecorator;
 import org.dcache.util.Exceptions;
+import org.dcache.util.NetworkUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -143,6 +148,7 @@ public abstract class AbstractMoverProtocolTransferService
         public void run() {
             try {
                 setThread();
+                startTransferLifeCycle();
                 RepositoryChannel fileIoChannel = _mover.openChannel();
                 try {
                     if (_mover.getIoMode().contains(StandardOpenOption.WRITE)) {
@@ -180,6 +186,53 @@ public abstract class AbstractMoverProtocolTransferService
                       transferTag(),
                       formatError(t));
                 _completionHandler.failed(t, null);
+            }
+        }
+
+        private void startTransferLifeCycle() {
+            if (_transferLifeCycle == null) {
+                SCITAGS_LOGGER.debug(
+                      "scitags lifecycle=start skip reason=no-transfer-lifecycle protocol={} pnfsid={} transferTag={}",
+                      protocolName(),
+                      _mover.getFileAttributes().getPnfsId(),
+                      transferTag());
+                return;
+            }
+
+            if (!(_mover.getProtocolInfo() instanceof IpProtocolInfo ipProtocolInfo)) {
+                SCITAGS_LOGGER.debug(
+                      "scitags lifecycle=start skip reason=non-ip-protocol protocol={} pnfsid={} transferTag={}",
+                      protocolName(),
+                      _mover.getFileAttributes().getPnfsId(),
+                      transferTag());
+                return;
+            }
+
+            InetSocketAddress remoteEndpoint = ipProtocolInfo.getSocketAddress();
+            if (remoteEndpoint == null) {
+                SCITAGS_LOGGER.debug(
+                      "scitags lifecycle=start skip reason=no-remote-endpoint protocol={} pnfsid={} transferTag={}",
+                      protocolName(),
+                      _mover.getFileAttributes().getPnfsId(),
+                      transferTag());
+                return;
+            }
+
+            try {
+                InetAddress localAddress =
+                      NetworkUtils.getLocalAddress(remoteEndpoint.getAddress());
+                InetSocketAddress localEndpoint =
+                      new InetSocketAddress(localAddress, 0);
+                _transferLifeCycle.onStart(remoteEndpoint, localEndpoint,
+                      _mover.getProtocolInfo(), _mover.getSubject());
+            } catch (SocketException e) {
+                SCITAGS_LOGGER.debug(
+                      "scitags lifecycle=start skip reason=local-endpoint-derivation-failed protocol={} pnfsid={} remote={} transferTag={} message={}",
+                      protocolName(),
+                      _mover.getFileAttributes().getPnfsId(),
+                      remoteEndpoint,
+                      transferTag(),
+                      e.getMessage());
             }
         }
 
