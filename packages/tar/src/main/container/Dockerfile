@@ -7,6 +7,9 @@ FROM almalinux:10-minimal as builder
 RUN microdnf -y install java-21-openjdk-devel java-21-openjdk-jmods binutils
 RUN jlink --compress=zip-6 --strip-debug --no-header-files --no-man-pages --add-modules java.base,java.compiler,java.instrument,java.logging,java.management,java.naming,java.security.jgss,java.transaction.xa,java.xml,jdk.jfr,jdk.security.auth,jdk.unsupported,java.desktop,java.sql,jdk.naming.dns,java.rmi,jdk.crypto.cryptoki --output /jlink-runtime
 ARG JACOCO_VERSION=0.8.14
+RUN microdnf -y install wget unzip && \
+    wget -q https://github.com/jacoco/jacoco/releases/download/v${JACOCO_VERSION}/jacoco-${JACOCO_VERSION}.zip -O /tmp/jacoco.zip && \
+    unzip -q /tmp/jacoco.zip -d /tmp/jacoco
 
 # Minimalistic Java image
 FROM almalinux:10-minimal
@@ -18,7 +21,8 @@ ARG JACOCO_ENABLED=false
 ENV JACOCO_ENABLED=${JACOCO_ENABLED}
 # Copy both the agent and the cli
 ENV DCACHE_INSTALL_DIR=/opt/dcache
-COPY jacoco-files/ ${DCACHE_INSTALL_DIR}/share/classes/
+COPY --from=builder /tmp/jacoco/lib/jacocoagent.jar ${DCACHE_INSTALL_DIR}/share/classes/jacocoagent.jar
+COPY --from=builder /tmp/jacoco/lib/jacococli.jar ${DCACHE_INSTALL_DIR}/share/classes/jacococli.jar
 
 # Neede by groupadd and useradd
 # REVISIT: in some environments base OS kernel doesnt allow use of xattrs and the installation of
@@ -82,7 +86,8 @@ EXPOSE 2288 22125 2049 32049 22224 6300
 
 ENTRYPOINT ["/run.sh"]
 
-COPY --from=builder /export/jacoco/ ${DCACHE_INSTALL_DIR}/share/classes/
+ARG JACOCO_ENABLED=false
+ENV JACOCO_ENABLED=${JACOCO_ENABLED}
 
 # run as user dcache
 USER dcache

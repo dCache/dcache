@@ -195,12 +195,9 @@ container:
   # Only debug/*-debug versions of the Kaniko image are known to work within Gitlab CI
   image: ghcr.io/kaniko-build/dist/chainguard-dev-kaniko/executor:latest-debug
   needs:
-    - job: tar
-    - job: get_jacoco_cli
-      optional: true
+    - tar
   dependencies:
     - tar
-    - get_jacoco_cli
   script:
     - |-
       tag=$CI_COMMIT_SHORT_SHA
@@ -210,11 +207,6 @@ container:
     - mkdir maven
     - tar -C maven --strip-components=1 -xzvf packages/tar/target/dcache-*.tar.gz
     - cp $CI_PROJECT_DIR/packages/tar/src/main/container/* .
-    - mkdir -p jacoco-files
-    - |
-      if [ "$ENABLE_COVERAGE" = "true" ]; then
-        cp jacococli.jar jacocoagent.jar jacoco-files/ 2>/dev/null || cp jacoco-${JACOCO_VERSION}/lib/*.jar jacoco-files/
-      fi
     - mkdir -p /kaniko/.docker
     - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
     - >
