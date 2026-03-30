@@ -13,7 +13,7 @@ Requires(pre): shadow-utils
 Requires: which
 Requires: hostname
 Requires: procps-ng
-Requires: java-17-headless
+Requires: (java-17-headless or jre-21-headless)
 
 %{?systemd_requires}
 BuildRequires: systemd
