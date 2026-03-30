@@ -53,7 +53,7 @@ variables:
   DCACHE_HELM_REPO: https://gitlab.desy.de/api/v4/projects/7648/packages/helm/test
   DCACHE_COMPATIBILITY_VERSION: 9.2.40
   JACOCO_VERSION: 0.8.14 #must match maven plugin version
-  ENABLE_COVERAGE: "false"
+  ENABLE_COVERAGE: "true"
 
 # let's debug nodes where job is running
 before_script:
@@ -150,13 +150,12 @@ tar:
       - "packages/tar/target/dcache-*.tar.gz"
     expire_in: 2 days
 
-#Job to create and collect JaCoCo reports
-run_ut_with_coverage:
+# run tests with coverage profile if ENABLE_COVERAGE is set to true, otherwise run only unit tests
+run_unit_tests:
   stage: build
   image: maven:3.9.12-eclipse-temurin-21
   extends: .build_cache
   script:
-    # run all tests with the coverage profile
     - mvn $MAVEN_CLI_OPTS clean verify -DskipTests=false -Drun.slow.tests
   artifacts:
     reports:
@@ -164,7 +163,6 @@ run_ut_with_coverage:
         - "**/target/surefire-reports/TEST-*.xml"
         - "**/target/failsafe-reports/TEST-*.xml"
     paths:
-      # pass the .exec files AND the compiled classes to the next stage
       #pass .exec files and compiled classes to the next stage
       - "**/target/coverage-reports/jacoco-ut.exec"
       - "**/target/classes/"
