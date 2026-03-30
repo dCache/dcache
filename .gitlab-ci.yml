@@ -731,7 +731,7 @@ generate_jacoco_report:
   rules:
     - if: '$ENABLE_COVERAGE == "true"'
   needs:
-    - job: run_ut_with_coverage
+    - job: run_unit_tests
       artifacts: true
     - job: get_jacoco_cli
     - job: Extract Coverage
