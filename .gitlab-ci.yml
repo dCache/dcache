@@ -567,9 +567,6 @@ Extract Coverage:
   script:
     - JACOCO_CLI_PATH="jacoco-${JACOCO_VERSION}/lib/jacococli.jar"
     - PODS=$(kubectl -n $K8S_NAMESPACE get pods -l app.kubernetes.io/instance=store -o jsonpath='{.items[*].metadata.name}')
-
-    - kubectl -n $K8S_NAMESPACE exec store-dcache-door-0 -- env | grep JACOCO
-    - kubectl -n $K8S_NAMESPACE exec store-dcache-door-0 -- ss -tulpn | grep 6300
     - |
       for POD in $PODS; do
         echo "Collecting coverage and woven classes from $POD..."
