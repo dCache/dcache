@@ -157,7 +157,7 @@ run_ut_with_coverage:
   extends: .build_cache
   script:
     # run all tests with the coverage profile
-    - mvn $MAVEN_CLI_OPTS -P code-coverage clean verify -DskipTests=false -Drun.slow.tests
+    - mvn $MAVEN_CLI_OPTS clean verify -DskipTests=false -Drun.slow.tests
   artifacts:
     reports:
       junit:
