@@ -18,7 +18,7 @@ ARG JACOCO_ENABLED=false
 ENV JACOCO_ENABLED=${JACOCO_ENABLED}
 # Copy both the agent and the cli
 ENV DCACHE_INSTALL_DIR=/opt/dcache
-COPY jacocoagent.jar ${DCACHE_INSTALL_DIR}/share/classes/jacocoagent.jar
+COPY jacoco-files/ ${DCACHE_INSTALL_DIR}/share/classes/
 
 # Neede by groupadd and useradd
 # REVISIT: in some environments base OS kernel doesnt allow use of xattrs and the installation of
