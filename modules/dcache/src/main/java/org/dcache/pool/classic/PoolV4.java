@@ -1691,6 +1691,19 @@ public class PoolV4
         }
     }
 
+    @Command(name = "hotfile showEnabled",
+          description = "Show the current enablement status of the hot-file replication facility.",
+          hint = "Show hot-file replication enablement status.")
+    class HotfileShowCommand implements Callable<String> {
+
+        @Override
+        public String call() {
+          return "Hot file replication is " +
+            (_hotFileReplicationEnabled ? "enabled" : "disabled") +
+            " on pool " + _poolName;
+        }
+    }
+
     @AffectsSetup
     @Command(name = "set report remove")
     class SetReportRemoveCommand implements Callable<String> {
