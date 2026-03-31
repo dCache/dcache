@@ -1252,12 +1252,15 @@ public class MigrationModule
     public synchronized void reportFileRequest(PnfsId pnfsId, long numberOfRequests,
           ProtocolInfo protocolInfo) {
         if (numberOfRequests < hotFileThreshold) {
+            LOGGER.debug("hotfile replication : conditions not satisfied numberOfRequests {} < hotFileThreshold {}",
+                         numberOfRequests, hotFileThreshold);
             return;
         }
         String jobId = "hotfile-" + pnfsId;
         try {
             Job job = _jobs.get(jobId);
             if (job != null) {
+                LOGGER.debug("hotfile replication : found job with jobid {} in state {}", jobId, job.getState());
                 switch (job.getState()) {
                     case FINISHED:
                     case CANCELLED:
