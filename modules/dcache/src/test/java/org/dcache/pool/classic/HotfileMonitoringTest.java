@@ -17,7 +17,7 @@ public class HotfileMonitoringTest {
     @RunWith(SpringJUnit4ClassRunner.class)
     @ContextConfiguration(locations = {
           "classpath:org/dcache/pool/classic/hotfile-monitoring-test.xml"})
-    @TestPropertySource(properties = "pool.hotfile.monitoring.enable=true")
+    @TestPropertySource(properties = "pool.hotfile.replication.enable=true")
     public static class Enabled {
 
         @Autowired
@@ -32,7 +32,7 @@ public class HotfileMonitoringTest {
     @RunWith(SpringJUnit4ClassRunner.class)
     @ContextConfiguration(locations = {
           "classpath:org/dcache/pool/classic/hotfile-monitoring-test.xml"})
-    @TestPropertySource(properties = "pool.hotfile.monitoring.enable=false")
+    @TestPropertySource(properties = "pool.hotfile.replication.enable=false")
     public static class Disabled {
 
         @Autowired
