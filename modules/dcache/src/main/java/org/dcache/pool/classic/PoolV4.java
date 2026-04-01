@@ -752,8 +752,9 @@ public class PoolV4
     private void ioFile(CellMessage envelope, PoolIoFileMessage message) {
         try {
             message.setMoverId(queueIoRequest(envelope, message));
-            LOGGER.debug("moverId {} received request for pnfsId {}", message.getMoverId(),
-                  message.getPnfsId());
+            LOGGER.debug("moverId {} received request for pnfsId {}, hotfile replication is {}",
+                         message.getMoverId(), message.getPnfsId(), _hotFileReplicationEnabled
+                         ? "enabled" : "disabled");
             if (_hotFileReplicationEnabled) {
                 _fileRequestMonitor.reportFileRequest(message.getPnfsId(),
                       _ioQueue.numberOfRequestsFor(message.getPnfsId()),
