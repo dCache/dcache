@@ -53,7 +53,6 @@ variables:
   DCACHE_HELM_REPO: https://gitlab.desy.de/api/v4/projects/7648/packages/helm/test
   DCACHE_COMPATIBILITY_VERSION: 9.2.40
   JACOCO_VERSION: 0.8.14 #must match maven plugin version
-  ENABLE_COVERAGE: "true"
 
 # let's debug nodes where job is running
 before_script:
@@ -116,6 +115,20 @@ default:
   rules:
     - if: $CI_COMMIT_TAG
 
+# rules for running coverage
+.no_release_rules:
+  rules:
+    - if: $CI_COMMIT_TAG == null
+
+# cache and image configuration for jacoco report jobs
+.jacoco_base:
+  image: eclipse-temurin:21-jre
+  extends: .no_release_rules
+  cache:
+    key: "jacoco-cli-${JACOCO_VERSION}"
+    paths:
+      - "jacoco-${JACOCO_VERSION}/"
+
 rpm:
   stage: build
   image: dcache/maven-java21-rpm-build
@@ -150,13 +163,15 @@ tar:
       - "packages/tar/target/dcache-*.tar.gz"
     expire_in: 2 days
 
-# run tests with coverage profile if ENABLE_COVERAGE is set to true, otherwise run only unit tests
-run_unit_tests:
+# run tests with coverage profile
+run_ut_with_coverage:
   stage: build
   image: maven:3.9.12-eclipse-temurin-21
-  extends: .build_cache
+  extends:
+    - .build_cache
+    - .no_release_rules
   script:
-    - mvn $MAVEN_CLI_OPTS clean verify -DskipTests=false -Drun.slow.tests
+    - mvn $MAVEN_CLI_OPTS -P code-coverage clean verify -DskipTests=false -Drun.slow.tests
   artifacts:
     reports:
       junit:
@@ -166,6 +181,22 @@ run_unit_tests:
       #pass .exec files and compiled classes to the next stage
       - "**/target/coverage-reports/jacoco-ut.exec"
       - "**/target/classes/"
+    expire_in: 1 day
+
+# run unit tests without coverage
+run_unit_tests:
+  stage: build
+  image: maven:3.9.12-eclipse-temurin-21
+  extends:
+    - .build_cache
+    - .upload_rules
+  script:
+    - mvn $MAVEN_CLI_OPTS clean verify -DskipTests=false -Drun.slow.tests
+  artifacts:
+    reports:
+      junit:
+        - "**/target/surefire-reports/TEST-*.xml"
+        - "**/target/failsafe-reports/TEST-*.xml"
     expire_in: 1 day
 
 spotbugs:
@@ -199,8 +230,10 @@ container:
   script:
     - |-
       tag=$CI_COMMIT_SHORT_SHA
+      jacoco_enabled=true
       if [[ -n "$CI_COMMIT_TAG" ]]; then
         tag=$CI_COMMIT_TAG
+        jacoco_enabled=false
       fi
     - mkdir maven
     - tar -C maven --strip-components=1 -xzvf packages/tar/target/dcache-*.tar.gz
@@ -212,7 +245,7 @@ container:
       --label dcache.build=testing
       --context $CI_PROJECT_DIR
       --dockerfile $CI_PROJECT_DIR/Dockerfile
-      --build-arg JACOCO_ENABLED=$ENABLE_COVERAGE
+      --build-arg JACOCO_ENABLED=${jacoco_enabled}
       --destination $CI_REGISTRY_IMAGE:$tag
 
 #
@@ -553,9 +586,9 @@ Helm-Deploy Latest dCache Golden Release:
 
 Extract Coverage:
   stage: testenv_post
-  extends: .kubernetes_image
-  rules:
-    - if: '$ENABLE_COVERAGE == "true"'
+  extends:
+    - .kubernetes_image
+    - .no_release_rules
   dependencies:
     - get_jacoco_cli
   needs:
@@ -709,16 +742,9 @@ Run OIDC test:
 #Job to find JaCoCo CLI in cache or download it
 get_jacoco_cli:
   stage: build
-  image: eclipse-temurin:21-jre
-  rules:
-    - if: '$ENABLE_COVERAGE == "true"'
+  extends: .jacoco_base
   script:
     - ./get-jacoco.sh
-  cache:
-    key: "jacoco-cli-${JACOCO_VERSION}"  #cache per version
-    paths:
-      - "jacoco-${JACOCO_VERSION}/"      #cache the entire JaCoCo directory
-    policy: pull-push
   artifacts:
     paths:
       - "jacoco-${JACOCO_VERSION}/lib/*.jar"
@@ -727,19 +753,13 @@ get_jacoco_cli:
 # Job to generate JaCoCo report using script
 generate_jacoco_report:
   stage: testenv_post
-  image: eclipse-temurin:21-jre
-  rules:
-    - if: '$ENABLE_COVERAGE == "true"'
+  extends: .jacoco_base
   needs:
-    - job: run_unit_tests
+    - job: run_ut_with_coverage
       artifacts: true
     - job: get_jacoco_cli
     - job: Extract Coverage
       artifacts: true
-  cache:
-    key: "jacoco-cli-${JACOCO_VERSION}"
-    paths:
-      - "jacoco-${JACOCO_VERSION}/"
   script:
     - ./generate-jacoco-report.sh
   artifacts:

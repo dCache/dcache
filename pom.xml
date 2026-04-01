@@ -1505,13 +1505,6 @@
     <profiles>
       <profile>
 	    <id>code-coverage</id>
-          <activation>
-              <property>
-                  <name>env.ENABLE_COVERAGE</name>
-                  <value>true</value>
-              </property>
-          </activation>
-
 	<build>
 	  <plugins>
 	    <plugin>
