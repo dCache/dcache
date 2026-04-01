@@ -15,11 +15,11 @@ if [ ! -f "$JACOCO_CLI_JAR" ]; then
     exit 1
 fi
 
-#Ensure the report directory exists
+#ensure the report dir exists
 rm -rf "$FINAL_CLASSES_DIR"
 mkdir -p "$REPORT_DIR" "$FINAL_CLASSES_DIR"
 
-#Collect all .exec files and merge
+#collect all .execs and merge
 mapfile -t EXEC_FILES < <(find "$PROJECT_ROOT" -name "*.exec" -type f)
 
 if [ ${#EXEC_FILES[@]} -eq 0 ]; then
@@ -30,7 +30,7 @@ fi
 echo "Merging ${#EXEC_FILES[@]} execution data files..."
 java -jar "$JACOCO_CLI_JAR" merge "${EXEC_FILES[@]}" --destfile "$MERGED_EXEC"
 
-#Collect compiled classes
+#collect compiled classes
 
 echo "Collecting compiled classes from modules..."
 SOURCEFILES_ARGS=()
@@ -40,7 +40,7 @@ for module in $(find modules -maxdepth 1 -mindepth 1 -type d | sort); do
     [ -d "$module/src/main/java" ]  && SOURCEFILES_ARGS+=("--sourcefiles" "$module/src/main/java")
 done
 
-#Remove known generated/excluded packages
+#excluded packages
 for pkg in \
     "org/dcache/services/billing/db/data" \
     "diskCacheV111/poolManager/jmh_generated" \
@@ -54,7 +54,7 @@ do
     fi
 done
 
-#Overlay woven classes from pods
+#overlay woven classes from pods
 
 if [ -d "$DUMP_DIR" ]; then
     echo "Overlaying woven classes from pod dumps..."
@@ -64,18 +64,18 @@ if [ -d "$DUMP_DIR" ]; then
     while IFS= read -r -d '' woven_file; do
         filename=$(basename "$woven_file")
 
-        #Skip AspectJ synthetic classes
+        #skip aspectj synthetic classes
         if echo "$filename" | grep -qE '^\.[0-9a-f]{8,}\.class$|^AjcClosure[0-9].*\.class$'; then
             continue
         fi
-        #Strip hash suffix if present
+        #strip hash suffix
         clean_name=$(echo "$filename" | sed -E 's/\.[0-9a-f]{8,}\.class$/.class/')
 
-        #Relative path within the pods dump subdir
+        #relative path in the pods dump subdir
         rel_dir=$(dirname "$woven_file" | sed -E "s|.*classes-dump/[^/]+/||")
         key="${rel_dir}/${clean_name}"
 
-        #First pod wins, should be identical for the same class version
+        #first pod wins, should be same for the same class version
         [ -z "${WOVEN_LOOKUP[$key]+x}" ] && WOVEN_LOOKUP[$key]="$woven_file"
 
     done < <(find "$DUMP_DIR" -name "*.class" -print0)
