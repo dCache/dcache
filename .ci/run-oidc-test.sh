@@ -26,12 +26,12 @@ echo $TOKEN | cut -d '.' -f 2 | base64 -d | jq
 
 curl --fail -s -k  -H "Authorization: Bearer ${TOKEN}" https://store-door-svc:3881/api/v1/user
 
-### upload readme1 file
-PUT https://store-door-svc:8083/data/pool-a/readme1
-Authorization: Authorization: Bearer ${TOKEN}
-Content-Type: application/octet-stream
-
-< README.md
+curl --fail -s -k \
+  -X PUT \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/octet-stream" \
+  --data-binary @README.md \
+  https://store-door-svc:8083/data/pool-a/readme1
 
 curl --fail -s -k  -H "Authorization: Bearer ${TOKEN}" https://store-door-svc:8083/data/pool-a/readme1
 
