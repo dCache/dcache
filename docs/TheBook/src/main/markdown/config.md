@@ -142,6 +142,14 @@ Individual services:
      - [The Statistics Web Page](config-statistics.md#the-statistics-web-page)
      - [Explanation of the File Format of the xxx.raw Files](config-statistics.md#explanation-of-the-file-format-of-the-xxxraw-files)
 
+- [SciTags Flow Marking (Firefly)](config-scitags.md)
+   - [Fast operator summary](config-scitags.md#fast-operator-summary)
+   - [End-user and operator configuration](config-scitags.md#end-user-and-operator-configuration)
+   - [Request-side extraction by protocol](config-scitags.md#request-side-extraction-by-protocol)
+   - [Pool-side lifecycle and marker emission](config-scitags.md#pool-side-lifecycle-and-marker-emission)
+   - [Logging and debugging](config-scitags.md#logging-and-debugging)
+   - [Developer extension guide](config-scitags.md#developer-extension-guide)
+
 - [dCache as XRoot-Server](config-xrootd.md)
      - [Setting up](config-xrootd.md#setting-up)
      - [Quick tests](config-xrootd.md#quick-tests)
