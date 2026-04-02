@@ -20,6 +20,7 @@ package org.dcache.restful.providers;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
@@ -30,7 +31,8 @@ import java.util.Objects;
 @ApiModel(description = "Description about a specific user.")
 public class UserAttributes implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 404862357329242075L;
 
     public enum AuthenticationStatus {ANONYMOUS, AUTHENTICATED}
 
