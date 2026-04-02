@@ -217,7 +217,7 @@ public class PoolV4
     // Hot file replication
     private HotFileReplicator _hotFileReplicator;
     private boolean _hotFileReplicationEnabled = true;
-    private long _hotFileThreshold = 1;
+    private long _hotFileThreshold = 50;
     private int _hotFileReplicas = 2;
 
     public void setHotFileReplicator(HotFileReplicator hotFileReplicator) {

@@ -162,7 +162,6 @@ public class MigrationModuleTest {
                   return msg;
               });
 
-        module.setThreshold(0L); // Always trigger
 
         ProtocolInfo protocolInfo = mock(ProtocolInfo.class);
         when(protocolInfo.getProtocol()).thenReturn("DCap");
