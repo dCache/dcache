@@ -16,26 +16,30 @@ read request. Hot file monitoring is implemented at that point:
 Any Door (DCap / NFS / WebDAV / xrootd / FTP / HTTP / …)
   → sends PoolIoFileMessage
     → Pool.messageArrived(PoolIoFileMessage)
-      → PoolV4.ioFile()          ← monitoring happens here
+      → PoolV4.ioFile()          ← monitoring and threshold check happens here
         → queues mover (protocol-specific)
-        → FileRequestMonitor.reportFileRequest(pnfsId, currentCount, protocolInfo)
+        → HotFileReplicator.replicate(pnfsId, protocolInfo, numReplicas)
 ```
 
 Because the counting and triggering happen in `PoolV4.ioFile()`, no protocol-specific code
 changes are required to benefit from this feature.
 
-### Request Counting
+### Request Counting and Threshold Check
 
-`PoolV4.ioFile()` reads the concurrent mover count for the file from `IoQueueManager`:
+`PoolV4.ioFile()` reads the concurrent mover count for the file from `IoQueueManager` and
+compares it to the configured threshold:
 
 ```java
 long requestCount = _ioQueue.numberOfRequestsFor(message.getPnfsId());
-_fileRequestMonitor.reportFileRequest(message.getPnfsId(), requestCount,
-      message.getProtocolInfo());
+if (requestCount >= _hotFileThreshold) {
+    _hotFileReplicator.replicate(message.getPnfsId(),
+          message.getProtocolInfo(),
+          _hotFileReplicas);
+}
 ```
 
 When `requestCount` reaches or exceeds the configured threshold,
-`MigrationModule.reportFileRequest()` creates a migration job named
+`MigrationModule.replicate()` creates a migration job named
 `hotfile-<pnfsId>` that replicates the file to additional pools.
 
 ### Pool Selection
@@ -78,33 +82,56 @@ new job would exceed that limit, the oldest jobs that have reached a terminal st
 | Property | Default | Description |
 |---|---|---|
 | `pool.hotfile.replication.enable` | `false` | Enable/disable hot file monitoring. **Must be `true` to activate.** |
-| `pool.migration.hotfile.threshold` | `50` | Number of concurrent read movers required to trigger replication |
-| `pool.migration.hotfile.replicas` | `1` | Number of additional replicas to create |
+| `pool.hotfile.threshold` | `50` | Number of concurrent read movers required to trigger replication |
+| `pool.hotfile.replicas` | `2` | Number of replicas to ensure (total, including the source) |
 | `pool.migration.concurrency.default` | `1` | Number of files the migration job migrates concurrently |
 
 Example (`dcache.conf` or pool layout file):
 
 ```ini
 pool.hotfile.replication.enable = true
-pool.migration.hotfile.threshold = 3
-pool.migration.hotfile.replicas = 3
+pool.hotfile.threshold = 3
+pool.hotfile.replicas = 3
 pool.migration.concurrency.default = 1
 ```
 
-> **Note:** The feature is disabled by default. A pool restart is required after any
-> configuration change.
+> **Note:** The feature is disabled by default. The threshold and replicas parameters can be
+> adjusted at runtime using the `hotfile set` commands, and changes are saved to the pool setup
+> file.
+
+### Runtime Commands
+
+The following commands are available in the pool's admin shell:
+
+```bash
+# Show hot file replication status and parameters
+hotfile show
+
+# Set the replication threshold
+hotfile set threshold <value>
+
+# Get the current threshold
+hotfile get threshold
+
+# Set the number of replicas
+hotfile set replicas <value>
+
+# Get the current number of replicas
+hotfile get replicas
+```
 
 ## Key Source Files
 
 | File | Role |
 |---|---|
-| `modules/dcache/src/main/java/org/dcache/pool/classic/PoolV4.java` | Entry point; checks enable flag, calls `FileRequestMonitor` |
-| `modules/dcache/src/main/java/org/dcache/pool/migration/MigrationModule.java` | Implements `FileRequestMonitor`; counts requests, creates and manages migration jobs |
+| `modules/dcache/src/main/java/org/dcache/pool/classic/PoolV4.java` | Entry point; checks enable flag, compares threshold, manages parameters, and calls `HotFileReplicator` |
+| `modules/dcache/src/main/java/org/dcache/pool/classic/HotFileReplicator.java` | Interface for hot file replication |
+| `modules/dcache/src/main/java/org/dcache/pool/migration/MigrationModule.java` | Implements `HotFileReplicator`; creates and manages migration jobs |
 | `modules/dcache/src/main/java/org/dcache/pool/migration/PoolListByPoolMgrQuery.java` | Queries PoolManager for eligible target pools; selects highest-preference level only |
 | `modules/dcache/src/test/java/org/dcache/pool/classic/HotfileMonitoringTest.java` | Spring-context integration test for enable/disable behaviour |
-| `modules/dcache/src/test/java/org/dcache/pool/migration/MigrationModuleTest.java` | Unit tests for `reportFileRequest`, threshold, housekeeping |
+| `modules/dcache/src/test/java/org/dcache/pool/migration/MigrationModuleTest.java` | Unit tests for `replicate`, housekeeping |
 | `modules/dcache/src/test/java/org/dcache/pool/migration/PoolListByPoolMgrQueryTest.java` | Unit tests for pool selection, preference-level handling, unknown net unit, and wildcard protocol |
-| `skel/share/defaults/pool.properties` | Canonical defaults for all `pool.hotfile.*` and `pool.migration.hotfile.*` properties |
+| `skel/share/defaults/pool.properties` | Canonical defaults for all `pool.hotfile.*` and `pool.migration.*` properties |
 
 ## Diagnostics
 
@@ -113,7 +140,6 @@ pool.migration.concurrency.default = 1
 With the default log level the following INFO messages are emitted by `MigrationModule`:
 
 ```
-Hot file monitoring: pnfsId=<id>, requests=<n>, threshold=<t>
 Hot file detected! Triggering replication for pnfsId=<id>
 Created migration job with id hotfile-<id> for pnfsId <id> with <n> replicas and concurrency <c>
 Starting migration job hotfile-<id> for pnfsId <id>
@@ -121,17 +147,17 @@ Successfully started migration job hotfile-<id> for pnfsId <id>
 Job hotfile-<id> already exists with state <STATE>
 ```
 
-`PoolV4` emits at INFO:
+`PoolV4` emits at DEBUG:
 
 ```
-PoolV4.ioFile: Received IO request for pnfsId=<id>, hotFileEnabled=<bool>, monitorSet=<bool>
-PoolV4.ioFile: Calling reportFileRequest for pnfsId=<id>, count=<n>
+PoolV4.ioFile: Received IO request for pnfsId=<id>, hotFileEnabled=<bool>, replicatorSet=<bool>
+PoolV4.ioFile: Calling replicate for pnfsId=<id>, count=<n>, threshold=<t>
 ```
 
-And at ERROR if the monitor is not wired:
+And at ERROR if the replicator is not wired:
 
 ```
-PoolV4.ioFile: Hot file replication enabled but FileRequestMonitor is NULL!
+PoolV4.ioFile: Hot file replication enabled but HotFileReplicator is NULL!
 ```
 
 `PoolListByPoolMgrQuery` emits at DEBUG when a preference level is selected:
@@ -151,6 +177,9 @@ log set org.dcache.pool.migration.MigrationModule DEBUG
 ### Checking Job and Replica Status
 
 ```bash
+# Show hot file replication status
+ssh -p <admin-port> admin@<host> '\s <pool-name> hotfile show'
+
 # List active migration jobs on all pools
 ssh -p <admin-port> admin@<host> '\s <pool-pattern> migration ls'
 
@@ -166,8 +195,8 @@ ssh -p <admin-port> admin@<host> '\sl <pnfsId> rep ls <pnfsId>'
 | Symptom | Likely Cause |
 |---|---|
 | No `PoolV4.ioFile` messages | IO requests are not reaching the pool, or the feature is disabled (`hotFileEnabled=false`) |
-| `monitorSet=false` in PoolV4 log | `FileRequestMonitor` not wired — check Spring context startup errors |
-| `requests` stays at 1 | IoQueue not counting movers correctly |
+| `replicatorSet=false` in PoolV4 log | `HotFileReplicator` not wired — check Spring context startup errors |
+| `requests` stays below threshold | Not enough concurrent requests to trigger replication |
 | "Hot file detected" but no job created | Exception during job creation — check ERROR lines for a stack trace |
 | Job created but not started | `MigrationModule` not started — run `migration start` in the admin interface |
 | "Job already exists" repeating | Previous job is stuck in a non-terminal state — inspect job state |

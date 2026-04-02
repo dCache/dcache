@@ -109,14 +109,15 @@ public class MigrationModuleTest {
 
     @Test
     public void testReportFileRequestBelowThreshold() throws Exception {
+        // This test is no longer applicable since threshold checking moved to PoolV4
+        // The replicate method should always attempt replication when called
         PnfsId pnfsId = new PnfsId("0000A1B2C3D4E5F6");
         ProtocolInfo protocolInfo = mock(ProtocolInfo.class);
         when(protocolInfo.getProtocol()).thenReturn("DCap");
         when(protocolInfo.getMajorVersion()).thenReturn(3);
         when(message.getPnfsId()).thenReturn(pnfsId);
-        module.setThreshold(5L);
-        module.reportFileRequest(pnfsId, 1L, protocolInfo); // below threshold
-        // Should not create a migration job
+
+        // Should not create a migration job if we don't call replicate
         assertFalse(module.hasJob("hotfile-" + pnfsId));
     }
 
@@ -131,8 +132,8 @@ public class MigrationModuleTest {
         when(entry.getPnfsId()).thenReturn(pnfsId);
         when(message.getPnfsId()).thenReturn(pnfsId);
         when(repository.getEntry(pnfsId)).thenReturn(entry);
-        module.setThreshold(5L);
-        module.reportFileRequest(pnfsId, 10L, protocolInfo); // above threshold
+
+        module.replicate(pnfsId, protocolInfo, 2); // replicate with 2 replicas
         // Should create a migration job
         assertTrue(module.hasJob("hotfile-" + pnfsId));
     }
@@ -177,7 +178,7 @@ public class MigrationModuleTest {
             when(message.getPnfsId()).thenReturn(pnfsId);
             when(repository.getEntry(pnfsId)).thenReturn(entry);
             when(entry.getPnfsId()).thenReturn(pnfsId);
-            module.reportFileRequest(pnfsId, 1L, protocolInfo);
+            module.replicate(pnfsId, protocolInfo, 2);
             Thread.sleep(1); // Ensure unique timestamps
         }
 
@@ -194,7 +195,7 @@ public class MigrationModuleTest {
             when(repository.getEntry(pnfsId)).thenReturn(entry);
             when(entry.getPnfsId()).thenReturn(pnfsId);
             when(repository.iterator()).thenReturn(Collections.singletonList(pnfsId).iterator());
-            module.reportFileRequest(pnfsId, 1L, protocolInfo);
+            module.replicate(pnfsId, protocolInfo, 2);
             Thread.sleep(1);
         }
 
@@ -231,8 +232,6 @@ public class MigrationModuleTest {
                   return msg;
               });
 
-        module.setThreshold(0L);
-
         ProtocolInfo protocolInfo = mock(ProtocolInfo.class);
         when(protocolInfo.getProtocol()).thenReturn("DCap");
         when(protocolInfo.getMajorVersion()).thenReturn(3);
@@ -247,7 +246,7 @@ public class MigrationModuleTest {
             when(message.getPnfsId()).thenReturn(pnfsId);
             when(repository.getEntry(pnfsId)).thenReturn(entry);
             when(entry.getPnfsId()).thenReturn(pnfsId);
-            module.reportFileRequest(pnfsId, 1L, protocolInfo);
+            module.replicate(pnfsId, protocolInfo, 2);
             Thread.sleep(1);
         }
         module.cancelAll();
@@ -260,7 +259,7 @@ public class MigrationModuleTest {
             when(repository.getEntry(pnfsId)).thenReturn(entry);
             when(entry.getPnfsId()).thenReturn(pnfsId);
             when(repository.iterator()).thenReturn(Collections.singletonList(pnfsId).iterator());
-            module.reportFileRequest(pnfsId, 1L, protocolInfo);
+            module.replicate(pnfsId, protocolInfo, 2);
             Thread.sleep(1);
         }
         // Total: 55 (50 Finished, 5 Running).
@@ -273,7 +272,7 @@ public class MigrationModuleTest {
         when(message.getPnfsId()).thenReturn(pnfsId);
         when(repository.getEntry(pnfsId)).thenReturn(entry);
         when(entry.getPnfsId()).thenReturn(pnfsId);
-        module.reportFileRequest(pnfsId, 1L, protocolInfo);
+        module.replicate(pnfsId, protocolInfo, 2);
         // Cancel this specific job
         MigrationModule.MigrationCancelCommand cmd = module.new MigrationCancelCommand();
         cmd.id = "hotfile-" + pnfsId;
@@ -286,7 +285,7 @@ public class MigrationModuleTest {
         when(repository.getEntry(pnfsId2)).thenReturn(entry);
         when(entry.getPnfsId()).thenReturn(pnfsId2);
         when(repository.iterator()).thenReturn(Collections.singletonList(pnfsId2).iterator());
-        module.reportFileRequest(pnfsId2, 1L, protocolInfo);
+        module.replicate(pnfsId2, protocolInfo, 2);
 
         // Analysis:
         // Start: 50 Terminal, 5 Running.
@@ -301,10 +300,10 @@ public class MigrationModuleTest {
 
     /**
      * Helper: configures mocks so that the PoolMgrQueryPoolsMsg sent during
-     * {@code reportFileRequest} is captured and returned for assertion.
+     * {@code replicate} is captured and returned for assertion.
      *
      * <p>Requires a per-test {@code pnfsId} that has not been used before, so that
-     * {@code reportFileRequest} does not short-circuit on an existing job.
+     * {@code replicate} does not short-circuit on an existing job.
      */
     private PoolMgrQueryPoolsMsg reportFileRequestAndCaptureQuery(
           PnfsId pnfsId, ProtocolInfo protocolInfo) throws Exception {
@@ -322,8 +321,7 @@ public class MigrationModuleTest {
             return SettableFuture.create();
         });
 
-        module.setThreshold(0L);
-        module.reportFileRequest(pnfsId, 1L, protocolInfo);
+        module.replicate(pnfsId, protocolInfo, 2);
 
         assertNotNull("PoolMgrQueryPoolsMsg should have been sent to PoolManager", captured[0]);
         return captured[0];

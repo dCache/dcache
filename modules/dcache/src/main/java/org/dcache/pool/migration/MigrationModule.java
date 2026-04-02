@@ -47,7 +47,7 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 import org.dcache.cells.CellStub;
 import org.dcache.pool.PoolDataBeanProvider;
-import org.dcache.pool.classic.FileRequestMonitor;
+import org.dcache.pool.classic.HotFileReplicator;
 import org.dcache.pool.classic.IoQueueManager;
 import org.dcache.pool.migration.json.MigrationData;
 import org.dcache.pool.repository.CacheEntry;
@@ -110,7 +110,7 @@ import org.slf4j.LoggerFactory;
  */
 public class MigrationModule
       implements CellCommandListener, CellMessageReceiver, CellSetupProvider, CellLifeCycleAware,
-      CellInfoProvider, PoolDataBeanProvider<MigrationData>, FileRequestMonitor {
+      CellInfoProvider, PoolDataBeanProvider<MigrationData>, HotFileReplicator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MigrationModule.class);
 
@@ -147,15 +147,6 @@ public class MigrationModule
     }
 
     private int _counter = 1;
-
-    /**
-     * Hot file replication parameters.
-     */
-    private int configuredHotFileReplicaCount;
-    private int hotFileReplicaCount;
-
-    private long configuredHotFileThreshold;
-    private long hotFileThreshold;
 
     /**
      * Number of recent hot file replication jobs to retain.
@@ -1245,15 +1236,12 @@ public class MigrationModule
     }
 
     /**
-     * Implementation of FileRequestMonitor: triggers migration for a specific file by creating a
+     * Implementation of HotFileReplicator: triggers migration for a specific file by creating a
      * new job.
      */
     @Override
-    public synchronized void reportFileRequest(PnfsId pnfsId, long numberOfRequests,
-          ProtocolInfo protocolInfo) {
-        if (numberOfRequests < hotFileThreshold) {
-            return;
-        }
+    public synchronized void replicate(PnfsId pnfsId, ProtocolInfo protocolInfo,
+          int numReplicas) {
         String jobId = "hotfile-" + pnfsId;
         try {
             Job job = _jobs.get(jobId);
@@ -1324,7 +1312,7 @@ public class MigrationModule
                         false,
                         false,
                         false,
-                        hotFileReplicaCount,
+                        numReplicas,
                         false,
                         false,
                         true,
@@ -1411,12 +1399,6 @@ public class MigrationModule
 
         if (defaultConcurrency != configuredDefaultConcurrency) {
             pw.println("migration set concurrency-default " + defaultConcurrency);
-        }
-        if (hotFileReplicaCount != configuredHotFileReplicaCount) {
-            pw.println("hotfile set replicas " + hotFileReplicaCount);
-        }
-        if (hotFileThreshold != configuredHotFileThreshold) {
-            pw.println("hotfile set threshold " + hotFileThreshold);
         }
         if (defaultRefresh != configuredDefaultRefresh) {
             pw.println("migration set refresh-default " + defaultRefresh);
@@ -1508,23 +1490,6 @@ public class MigrationModule
               : "";
     }
 
-    // Hot file replication parameters
-    public int getNumReplicas() {
-        return hotFileReplicaCount;
-    }
-
-    public void setNumReplicas(int value) {
-        hotFileReplicaCount = value;
-    }
-
-    public long getThreshold() {
-        return hotFileThreshold;
-    }
-
-    public void setThreshold(long value) {
-        hotFileThreshold = value;
-    }
-
     /**
      * Get the module-wide refresh interval (seconds).
      */
@@ -1570,78 +1535,5 @@ public class MigrationModule
 
     public void setDefaultConcurrency(int value) {
         defaultConcurrency = value;
-    }
-
-    @Command(name = "hotfile set replicas",
-          description = "Set the number of replicas to ensure via replication.",
-          hint = "Set hot-file replication parameter.")
-    public class HotfileSetReplicasCommand implements java.util.concurrent.Callable<String> {
-
-        @Argument(usage = "The number of replicas.")
-        int value;
-
-        @Override
-        public String call() {
-            setNumReplicas(value); // Updates runtime value
-            return "Number of replicas set to " + value;
-        }
-
-        private void setNumReplicas(int value) {
-            MigrationModule.this.hotFileReplicaCount = value;
-        }
-    }
-
-    @Command(name = "hotfile get replicas",
-          description = "Get the number of replicas to ensure via replication.",
-          hint = "Get hot-file replication parameter.")
-    public class HotfileGetReplicasCommand implements java.util.concurrent.Callable<String> {
-
-        @Override
-        public String call() {
-            return "Current replicas: " + getNumReplicas();
-        }
-    }
-
-    @Command(name = "hotfile set threshold",
-          description = "Set the threshold for triggering replication.",
-          hint = "Set hot-file replication parameter.")
-    public class HotfileSetThresholdCommand implements java.util.concurrent.Callable<String> {
-
-        @Argument(usage = "The threshold value.")
-        long value;
-
-        @Override
-        public String call() {
-            setThreshold(value);
-            return "Threshold set to " + value;
-        }
-
-        private void setThreshold(long value) {
-            MigrationModule.this.hotFileThreshold = value;
-        }
-    }
-
-    @Command(name = "hotfile get threshold",
-          description = "Get the threshold for triggering replication.",
-          hint = "Get hot-file replication parameter.")
-    public class HotfileGetThresholdCommand implements java.util.concurrent.Callable<String> {
-
-        @Override
-        public String call() {
-            return "Current threshold: " + getThreshold();
-        }
-    }
-
-    @Command(name = "hotfile show",
-          description = "Show the current status of the hot-file replication facility, "
-                + "including whether it is enabled and the values of the 'replicas' "
-                + "and 'threshold' parameters.",
-          hint = "Show hot-file replication status.")
-    public class HotfileShowCommand implements Callable<String> {
-
-        @Override
-        public String call() {
-            return "replicas=" + hotFileReplicaCount + "  threshold=" + hotFileThreshold;
-        }
     }
 }

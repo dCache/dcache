@@ -14,7 +14,7 @@
     </bean>
 
     <bean id="testBean" class="org.dcache.pool.classic.HotfileMonitoringTestBean">
-        <property name="fileRequestMonitor"
+        <property name="hotFileReplicator"
                   value="#{ ${pool.hotfile.monitoring.enable} ? migration : null }"/>
     </bean>
 

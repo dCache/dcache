@@ -214,16 +214,18 @@ public class PoolV4
 
     private ThreadFactory _threadFactory;
 
-    // Hot file monitoring
-    private FileRequestMonitor _fileRequestMonitor;
+    // Hot file replication
+    private HotFileReplicator _hotFileReplicator;
     private boolean _hotFileReplicationEnabled = true;
+    private long _hotFileThreshold = 1;
+    private int _hotFileReplicas = 2;
 
-    public void setFileRequestMonitor(FileRequestMonitor fileRequestMonitor) {
-        _fileRequestMonitor = fileRequestMonitor;
+    public void setHotFileReplicator(HotFileReplicator hotFileReplicator) {
+        _hotFileReplicator = hotFileReplicator;
     }
 
-    public FileRequestMonitor getFileRequestMonitor() {
-        return _fileRequestMonitor;
+    public HotFileReplicator getHotFileReplicator() {
+        return _hotFileReplicator;
     }
 
     @Required
@@ -233,6 +235,22 @@ public class PoolV4
 
     public boolean getHotFileReplicationEnabled() {
         return _hotFileReplicationEnabled;
+    }
+
+    public void setHotFileThreshold(long threshold) {
+        _hotFileThreshold = threshold;
+    }
+
+    public long getHotFileThreshold() {
+        return _hotFileThreshold;
+    }
+
+    public void setHotFileReplicas(int replicas) {
+        _hotFileReplicas = replicas;
+    }
+
+    public int getHotFileReplicas() {
+        return _hotFileReplicas;
     }
 
     protected void assertNotRunning(String error) {
@@ -616,6 +634,8 @@ public class PoolV4
         if (_suppressHsmLoad) {
             pw.println("pool suppress hsmload on");
         }
+        pw.println("hotfile set replicas " + _hotFileReplicas);
+        pw.println("hotfile set threshold " + _hotFileThreshold);
     }
 
     @Override
@@ -754,10 +774,13 @@ public class PoolV4
             message.setMoverId(queueIoRequest(envelope, message));
             LOGGER.debug("moverId {} received request for pnfsId {}", message.getMoverId(),
                   message.getPnfsId());
-            if (_hotFileReplicationEnabled) {
-                _fileRequestMonitor.reportFileRequest(message.getPnfsId(),
-                      _ioQueue.numberOfRequestsFor(message.getPnfsId()),
-                      message.getProtocolInfo());
+            if (_hotFileReplicationEnabled && _hotFileReplicator != null) {
+                long requestCount = _ioQueue.numberOfRequestsFor(message.getPnfsId());
+                if (requestCount >= _hotFileThreshold) {
+                    _hotFileReplicator.replicate(message.getPnfsId(),
+                          message.getProtocolInfo(),
+                          _hotFileReplicas);
+                }
             }
             message.setSucceeded();
         } catch (OutOfDateCacheException e) {
@@ -1691,16 +1714,73 @@ public class PoolV4
         }
     }
 
-    @Command(name = "hotfile showEnabled",
-          description = "Show the current enablement status of the hot-file replication facility.",
-          hint = "Show hot-file replication enablement status.")
+    @Command(name = "hotfile show",
+          description = "Show the current status of the hot-file replication facility, "
+                + "including whether it is enabled and the values of the 'replicas' "
+                + "and 'threshold' parameters.",
+          hint = "Show hot-file replication status.")
     class HotfileShowCommand implements Callable<String> {
 
         @Override
         public String call() {
-          return "Hot file replication is " +
-            (_hotFileReplicationEnabled ? "enabled" : "disabled") +
-            " on pool " + _poolName;
+            return "Hot file replication is " +
+                  (_hotFileReplicationEnabled ? "enabled" : "disabled") +
+                  " on pool " + _poolName + "\n" +
+                  "replicas=" + _hotFileReplicas + "  threshold=" + _hotFileThreshold;
+        }
+    }
+
+    @AffectsSetup
+    @Command(name = "hotfile set replicas",
+          description = "Set the number of replicas to ensure via replication.",
+          hint = "Set hot-file replication parameter.")
+    class HotfileSetReplicasCommand implements Callable<String> {
+
+        @Argument(usage = "The number of replicas.")
+        int value;
+
+        @Override
+        public String call() {
+            _hotFileReplicas = value;
+            return "Number of replicas set to " + value;
+        }
+    }
+
+    @Command(name = "hotfile get replicas",
+          description = "Get the number of replicas to ensure via replication.",
+          hint = "Get hot-file replication parameter.")
+    class HotfileGetReplicasCommand implements Callable<String> {
+
+        @Override
+        public String call() {
+            return "Current replicas: " + _hotFileReplicas;
+        }
+    }
+
+    @AffectsSetup
+    @Command(name = "hotfile set threshold",
+          description = "Set the threshold for triggering replication.",
+          hint = "Set hot-file replication parameter.")
+    class HotfileSetThresholdCommand implements Callable<String> {
+
+        @Argument(usage = "The threshold value.")
+        long value;
+
+        @Override
+        public String call() {
+            _hotFileThreshold = value;
+            return "Threshold set to " + value;
+        }
+    }
+
+    @Command(name = "hotfile get threshold",
+          description = "Get the threshold for triggering replication.",
+          hint = "Get hot-file replication parameter.")
+    class HotfileGetThresholdCommand implements Callable<String> {
+
+        @Override
+        public String call() {
+            return "Current threshold: " + _hotFileThreshold;
         }
     }
 

@@ -25,7 +25,7 @@ public class HotfileMonitoringTest {
 
         @Test
         public void testEnabled() {
-            assertNotNull("FileRequestMonitor should be enabled", testBean.getFileRequestMonitor());
+            assertNotNull("HotFileReplicator should be enabled", testBean.getHotFileReplicator());
         }
     }
 
@@ -40,20 +40,20 @@ public class HotfileMonitoringTest {
 
         @Test
         public void testDisabled() {
-            assertNull("FileRequestMonitor should be disabled", testBean.getFileRequestMonitor());
+            assertNull("HotFileReplicator should be disabled", testBean.getHotFileReplicator());
         }
     }
 }
 
 class HotfileMonitoringTestBean {
 
-    private Object fileRequestMonitor;
+    private Object hotFileReplicator;
 
-    public void setFileRequestMonitor(Object fileRequestMonitor) {
-        this.fileRequestMonitor = fileRequestMonitor;
+    public void setHotFileReplicator(Object hotFileReplicator) {
+        this.hotFileReplicator = hotFileReplicator;
     }
 
-    public Object getFileRequestMonitor() {
-        return fileRequestMonitor;
+    public Object getHotFileReplicator() {
+        return hotFileReplicator;
     }
 }
