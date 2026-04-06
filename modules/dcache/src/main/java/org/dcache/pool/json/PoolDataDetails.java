@@ -112,6 +112,7 @@ public class PoolDataDetails implements Serializable {
     private Lsf largeFileStore;
 
     private P2PMode p2pFileMode;
+    private boolean isHotFileReplicationEnabled;
     private Integer hybridInventory;
 
     private int errorCode;
@@ -157,6 +158,10 @@ public class PoolDataDetails implements Serializable {
 
     public P2PMode getP2pFileMode() {
         return p2pFileMode;
+    }
+
+    public boolean isHotFileReplicationEnabled() {
+        return isHotFileReplicationEnabled;
     }
 
     public Integer getPingHeartbeatInSecs() {
@@ -209,6 +214,7 @@ public class PoolDataDetails implements Serializable {
         pw.println("Breakeven         : " + breakEven);
         pw.println("LargeFileStore    : " + largeFileStore);
         pw.println("P2P File Mode     : " + p2pFileMode);
+        pw.println("Hotfile Repl.     : " + asOnOff(isHotFileReplicationEnabled));
 
         if (hybridInventory != null) {
             pw.println("Inventory         : " + hybridInventory);
@@ -267,6 +273,10 @@ public class PoolDataDetails implements Serializable {
     public void setP2pFileMode(
           P2PMode p2pFileMode) {
         this.p2pFileMode = p2pFileMode;
+    }
+
+    public void setHotFileReplicationEnabled(boolean isEnabled) {
+        this.isHotFileReplicationEnabled = isEnabled;
     }
 
     public void setPingHeartbeatInSecs(Integer pingHeartbeatInSecs) {

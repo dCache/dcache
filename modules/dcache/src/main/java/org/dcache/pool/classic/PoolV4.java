@@ -662,6 +662,7 @@ public class PoolV4
         info.setPingHeartbeatInSecs(_pingThread.getHeartbeat());
         info.setP2pFileMode(_p2pFileMode == P2P_PRECIOUS ?
               P2PMode.PRECIOUS : P2PMode.CACHED);
+        info.setHotFileReplicationEnabled(_hotFileReplicationEnabled);
         info.setPoolMode(_poolMode.toString());
         if (_poolMode.isDisabled()) {
             info.setPoolStatusCode(_poolStatusCode);
