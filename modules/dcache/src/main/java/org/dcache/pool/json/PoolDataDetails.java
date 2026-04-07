@@ -201,23 +201,23 @@ public class PoolDataDetails implements Serializable {
     }
 
     public void print(PrintWriter pw) {
-        pw.println("Base directory    : " + baseDir);
-        pw.println("Version           : " + poolVersion);
-        pw.println("Report remove     : " + asOnOff(isRemovalReported));
-        pw.println("Pool Mode         : " + poolMode);
+        pw.println("Base directory       : " + baseDir);
+        pw.println("Version              : " + poolVersion);
+        pw.println("Report remove        : " + asOnOff(isRemovalReported));
+        pw.println("Pool Mode            : " + poolMode);
         if (poolStatusCode != null) {
-            pw.println("Detail            : [" + poolStatusCode + "] "
+            pw.println("Detail               : [" + poolStatusCode + "] "
                   + poolStatusMessage);
         }
-        pw.println("Hsm Load Suppr.   : " + asOnOff(isHsmLoadSuppressed));
-        pw.println("Ping Heartbeat    : " + pingHeartbeatInSecs + " seconds");
-        pw.println("Breakeven         : " + breakEven);
-        pw.println("LargeFileStore    : " + largeFileStore);
-        pw.println("P2P File Mode     : " + p2pFileMode);
-        pw.println("Hot File Repl.    : " + asOnOff(isHotFileReplicationEnabled));
+        pw.println("Hsm Load Suppression : " + asOnOff(isHsmLoadSuppressed));
+        pw.println("Ping Heartbeat       : " + pingHeartbeatInSecs + " seconds");
+        pw.println("Breakeven            : " + breakEven);
+        pw.println("LargeFileStore       : " + largeFileStore);
+        pw.println("P2P File Mode        : " + p2pFileMode);
+        pw.println("Hot File Replication : " + asOnOff(isHotFileReplicationEnabled));
 
         if (hybridInventory != null) {
-            pw.println("Inventory         : " + hybridInventory);
+            pw.println("Inventory            : " + hybridInventory);
         }
 
         if (costData != null) {
