@@ -42,7 +42,6 @@ stages:
   # clean k8s namespace, collect logs
   - testenv_post
   # on release, upload rpm, deb, tar, container
-  - upload
 
 variables:
   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true -Dmaven.repo.local=.m2/repository"
