@@ -20,8 +20,8 @@ ARG JACOCO_ENABLED=false
 ENV JACOCO_ENABLED=${JACOCO_ENABLED}
 # Copy both the agent and the cli
 ENV DCACHE_INSTALL_DIR=/opt/dcache
-COPY --from=builder /tmp/jacoco/lib/jacocoagent.jar* ${DCACHE_INSTALL_DIR}/share/classes/
-COPY --from=builder /tmp/jacoco/lib/jacococli.jar* ${DCACHE_INSTALL_DIR}/share/classes/
+COPY --from=builder /tmp/jacoco/lib/jacocoagent.jar* ${DCACHE_INSTALL_DIR}/share/classes/jacocoagent.jar
+COPY --from=builder /tmp/jacoco/lib/jacococli.jar* ${DCACHE_INSTALL_DIR}/share/classes/jacococli.jar
 
 # Neede by groupadd and useradd
 # REVISIT: in some environments base OS kernel doesnt allow use of xattrs and the installation of
@@ -63,6 +63,7 @@ COPY exports ${DCACHE_INSTALL_DIR}/etc/exports
 COPY run.sh /run.sh
 COPY s3-tape.yml /${DCACHE_INSTALL_DIR}/etc/s3-tape.yml
 
+RUN mkdir -p ${DCACHE_INSTALL_DIR}/var/log/jacoco-dump
 # where we store the data
 # location of init scripts
 # Stupid grid tools....
