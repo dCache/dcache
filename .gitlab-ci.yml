@@ -75,7 +75,7 @@ default:
       - runner_system_failure
       - api_failure
 #
-# default tags and image for testing stages/kubernetes/helm 
+# default tags and image for testing stages/kubernetes/helm
 #
 .kubernetes_tags:
   tags:
@@ -115,6 +115,21 @@ default:
   rules:
     - if: $CI_COMMIT_TAG
 
+# rules for running coverage
+.no_release_rules:
+  rules:
+    - if: $CI_COMMIT_TAG == null
+
+# cache and image configuration for jacoco report jobs
+.jacoco_base:
+  image: eclipse-temurin:21-jre
+  extends: .no_release_rules
+  cache:
+    key: "jacoco-cli-${JACOCO_VERSION}"
+    paths:
+      - "jacoco-${JACOCO_VERSION}/"
+    policy: pull
+
 rpm:
   stage: build
   image: dcache/maven-java21-rpm-build
@@ -149,13 +164,14 @@ tar:
       - "packages/tar/target/dcache-*.tar.gz"
     expire_in: 2 days
 
-#Job to create and collect JaCoCo reports
+# run tests with coverage profile
 run_ut_with_coverage:
   stage: build
-  image: maven:3.9.12-eclipse-temurin-17
-  extends: .build_cache
+  image: maven:3.9.12-eclipse-temurin-21
+  extends:
+    - .build_cache
+    - .no_release_rules
   script:
-    # run all tests with the coverage profile
     - mvn $MAVEN_CLI_OPTS -P code-coverage clean verify -DskipTests=false -Drun.slow.tests
   artifacts:
     reports:
@@ -163,10 +179,25 @@ run_ut_with_coverage:
         - "**/target/surefire-reports/TEST-*.xml"
         - "**/target/failsafe-reports/TEST-*.xml"
     paths:
-      # pass the .exec files AND the compiled classes to the next stage
       #pass .exec files and compiled classes to the next stage
       - "**/target/coverage-reports/jacoco-ut.exec"
       - "**/target/classes/"
+    expire_in: 1 day
+
+# run unit tests without coverage
+run_unit_tests:
+  stage: build
+  image: maven:3.9.12-eclipse-temurin-21
+  extends:
+    - .build_cache
+    - .upload_rules
+  script:
+    - mvn $MAVEN_CLI_OPTS clean verify -DskipTests=false -Drun.slow.tests
+  artifacts:
+    reports:
+      junit:
+        - "**/target/surefire-reports/TEST-*.xml"
+        - "**/target/failsafe-reports/TEST-*.xml"
     expire_in: 1 day
 
 spotbugs:
@@ -195,13 +226,18 @@ container:
   image: ghcr.io/kaniko-build/dist/chainguard-dev-kaniko/executor:latest-debug
   needs:
     - tar
+    - job: get_jacoco_cli
+      optional: true
   dependencies:
     - tar
+    - get_jacoco_cli
   script:
     - |-
       tag=$CI_COMMIT_SHORT_SHA
+      jacoco_enabled=true
       if [[ -n "$CI_COMMIT_TAG" ]]; then
         tag=$CI_COMMIT_TAG
+        jacoco_enabled=false
       fi
     - mkdir maven
     - tar -C maven --strip-components=1 -xzvf packages/tar/target/dcache-*.tar.gz
@@ -213,6 +249,8 @@ container:
       --label dcache.build=testing
       --context $CI_PROJECT_DIR
       --dockerfile $CI_PROJECT_DIR/Dockerfile
+      --build-arg JACOCO_ENABLED=${jacoco_enabled}
+      --build-arg JACOCO_VERSION=${JACOCO_VERSION}
       --destination $CI_REGISTRY_IMAGE:$tag
 
 #
@@ -433,6 +471,8 @@ Clean k8s environment:
   extends: .kubernetes_image
   needs:
     - Collect container logs
+    - job: Extract Coverage
+      optional: true
   when: always
   script:
     - kubectl delete namespace ${K8S_NAMESPACE} --grace-period=1 --ignore-not-found=true
@@ -520,7 +560,17 @@ Helm-Deploy Current dCache build:
       fi
     - helm repo add dcache ${DCACHE_HELM_REPO}
     - helm repo update
-    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=${tag} --set dcache.hsm.enabled=true --set dcache.qos.enabled=true --set services.srm.enabled=false --set image.registry=${CI_REGISTRY} --values .ci/custom-helm-config.yaml store dcache/dcache
+    - >
+      helm -n ${K8S_NAMESPACE} upgrade --install store dcache/dcache
+      --wait
+      --timeout=20m
+      --set image.registry=${CI_REGISTRY}
+      --set image.repository=${CI_PROJECT_PATH}
+      --set image.tag=${tag}
+      --set dcache.hsm.enabled=true
+      --set dcache.qos.enabled=true
+      --set services.srm.enabled=false
+      --values .ci/custom-helm-config.yaml
 
 Helm-Deploy Latest dCache Golden Release:
   stage: test_deploy
@@ -530,8 +580,56 @@ Helm-Deploy Latest dCache Golden Release:
   script:
     - helm repo add dcache ${DCACHE_HELM_REPO}
     - helm repo update
-    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --wait --set image.tag=${DCACHE_COMPATIBILITY_VERSION} --set "dcache.pools={d,f}" --set dcache.door.enabled=false --set image.registry=${CI_REGISTRY} old-store dcache/dcache
+    - >
+      helm -n ${K8S_NAMESPACE} upgrade --install old-store dcache/dcache
+      --wait
+      --set image.registry=${CI_REGISTRY}
+      --set image.repository=${CI_PROJECT_PATH}
+      --set image.tag=${DCACHE_COMPATIBILITY_VERSION}
+      --set "dcache.pools={d,f}"
+      --set dcache.door.enabled=false
 
+Extract Coverage:
+  stage: testenv_post
+  extends:
+    - .kubernetes_image
+    - .no_release_rules
+  dependencies:
+    - get_jacoco_cli
+  needs:
+    - job: get_jacoco_cli
+      artifacts: true
+    - job: NFS4.x protocol compliance tests
+  script:
+    - JACOCO_CLI_PATH="jacoco-${JACOCO_VERSION}/lib/jacococli.jar"
+    - PODS=$(kubectl -n $K8S_NAMESPACE get pods -l app.kubernetes.io/instance=store -o jsonpath='{.items[*].metadata.name}')
+    - |
+      for POD in $PODS; do
+        echo "Collecting coverage and woven classes from $POD..."
+        mkdir -p "./integration-results/classes-dump/${POD}"
+        kubectl -n $K8S_NAMESPACE cp "$JACOCO_CLI_PATH" "${POD}:/tmp/jacococli.jar"
+        POD_IP=$(kubectl -n $K8S_NAMESPACE get pod $POD -o jsonpath='{.status.podIP}')
+        if kubectl -n $K8S_NAMESPACE exec $POD -- \
+            /usr/bin/java -jar /tmp/jacococli.jar dump \
+            --address $POD_IP --port 6300 --destfile /tmp/jacoco-it.exec; then
+      
+          kubectl -n $K8S_NAMESPACE cp "${POD}:/tmp/jacoco-it.exec" "./integration-results/${POD}.exec"
+      
+          echo "Pulling woven classes from $POD..."
+          if kubectl -n $K8S_NAMESPACE cp "${POD}:/opt/dcache/var/log/jacoco-dump/." "./integration-results/classes-dump/${POD}/"; then
+            echo "Successfully collected woven classes from $POD"
+          else
+            echo "Warning: Could not find dumped classes on $POD"
+          fi
+        else
+          echo "Failed to dump coverage from $POD"
+        fi
+      done
+  artifacts:
+    paths:
+      - integration-results/*.exec
+      - integration-results/classes-dump/
+    when: always
 
 Grid EL9 WN tests:
   stage: testing
@@ -649,33 +747,38 @@ Run OIDC test:
 #Job to find JaCoCo CLI in cache or download it
 get_jacoco_cli:
   stage: build
-  image: eclipse-temurin:17-jre
-  script:
-    - ./get-jacoco.sh
-  cache:
-    key: "jacoco-cli-${JACOCO_VERSION}"  #cache per version
-    paths:
-      - "jacoco-${JACOCO_VERSION}/"      #cache the entire JaCoCo directory
-  artifacts:
-    paths:
-      - "jacoco-${JACOCO_VERSION}/lib/jacococli.jar"
-    expire_in: 1 week
-
-# Job to generate JaCoCo report using script
-generate_jacoco_report:
-  stage: build
-  image: eclipse-temurin:17-jre
-  needs:
-    - job: run_ut_with_coverage
-      artifacts: true
-    - job: get_jacoco_cli
+  extends: .jacoco_base
   cache:
     key: "jacoco-cli-${JACOCO_VERSION}"
     paths:
       - "jacoco-${JACOCO_VERSION}/"
+    policy: pull-push
+  before_script:
+    - apt-get update && apt-get install -y unzip wget
+  script:
+    - ./get-jacoco.sh
+  artifacts:
+    paths:
+      - "jacoco-${JACOCO_VERSION}/lib/*.jar"
+    expire_in: 1 week
+
+# Job to generate JaCoCo report using script
+generate_jacoco_report:
+  stage: testenv_post
+  extends: .jacoco_base
+  needs:
+    - job: run_ut_with_coverage
+      artifacts: true
+    - job: get_jacoco_cli
+    - job: Extract Coverage
+      artifacts: true
   script:
     - ./generate-jacoco-report.sh
   artifacts:
     paths:
       - target/coverage-reports/site/
+    reports:
+      coverage_report:
+        coverage_format: jacoco
+        path: target/coverage-reports/jacoco.xml
     expire_in: 1 week

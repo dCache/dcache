@@ -28,6 +28,18 @@ export CLASSPATH
 # we hope that there is only one agent file and it the right one
 ASPECT_AGENT=`ls ${DCACHE_HOME}/share/classes/aspectjweaver-*.jar`
 
+JACOCO_AGENT_JAR="${DCACHE_HOME}/share/classes/jacocoagent.jar"
+JACOCO_AGENT=""
+
+if [ "${JACOCO_ENABLED}" = "true" ] && [ -s "$JACOCO_AGENT_JAR" ]; then
+    CLASS_DUMP_DIR="${DCACHE_HOME}/var/log/jacoco-dump"
+    mkdir -p "$CLASS_DUMP_DIR"
+    _opts="${JACOCO_OPTS:-output=tcpserver,address=*,port=6300,append=false}"
+    JACOCO_AGENT="-javaagent:${JACOCO_AGENT_JAR}=${_opts},classdumpdir=${CLASS_DUMP_DIR}"
+    echo "JaCoCo enabled: ${_opts}"
+else
+    echo "JaCoCo disabled."
+fi
 
 if [ ! -f /.init_complete ]
 then
@@ -65,5 +77,6 @@ exec /usr/bin/java \
 	--add-opens=java.sql/java.sql=ALL-UNNAMED  \
 	--add-opens=java.base/java.math=ALL-UNNAMED \
 	--add-opens=java.base/sun.nio.fs=ALL-UNNAMED \
+	${JACOCO_AGENT} \
 	${JAVA_ARGS} \
 	org.dcache.boot.BootLoader start ${DOMAIN}
