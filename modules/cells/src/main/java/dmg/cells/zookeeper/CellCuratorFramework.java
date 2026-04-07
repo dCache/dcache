@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2016 - 2024 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 - 2026 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -395,6 +395,11 @@ public class CellCuratorFramework implements CuratorFramework {
     }
 
     @Override
+    public boolean compressionEnabled() {
+        return inner.compressionEnabled();
+    }
+
+    @Override
     public CompletableFuture<Void> postSafeNotify(Object monitorHolder) {
         return inner.postSafeNotify(monitorHolder);
     }
@@ -548,6 +553,11 @@ public class CellCuratorFramework implements CuratorFramework {
         @Override
         public CreateBackgroundModeStatACLable compressed() {
             return new CreateBackgroundModeStatACLableDecorator(inner.compressed());
+        }
+
+        @Override
+        public CreateBackgroundModeStatACLable uncompressed() {
+            return new CreateBackgroundModeStatACLableDecorator(inner.uncompressed());
         }
 
         @Override
@@ -767,6 +777,11 @@ public class CellCuratorFramework implements CuratorFramework {
         }
 
         @Override
+        public GetDataWatchBackgroundStatable undecompressed() {
+            return new GetDataWatchBackgroundStatableDecorator(inner.undecompressed());
+        }
+
+        @Override
         public byte[] forPath(String path) throws Exception {
             return inner.forPath(path);
         }
@@ -840,6 +855,11 @@ public class CellCuratorFramework implements CuratorFramework {
         @Override
         public SetDataBackgroundVersionable compressed() {
             return new SetDataBackgroundVersionableDecorator(inner.compressed());
+        }
+
+        @Override
+        public SetDataBackgroundVersionable uncompressed() {
+            return new SetDataBackgroundVersionableDecorator(inner.uncompressed());
         }
 
         @Override
@@ -1059,6 +1079,11 @@ public class CellCuratorFramework implements CuratorFramework {
         }
 
         @Override
+        public ACLCreateModePathAndBytesable<CuratorTransactionBridge> uncompressed() {
+            return new ACLCreateModePathAndBytesableDecorator<>(inner.uncompressed());
+        }
+
+        @Override
         public ACLPathAndBytesable<CuratorTransactionBridge> withMode(CreateMode mode) {
             return new ACLPathAndBytesableDecorator<>(inner.withMode(mode));
         }
@@ -1116,6 +1141,11 @@ public class CellCuratorFramework implements CuratorFramework {
         @Override
         public VersionPathAndBytesable<CuratorTransactionBridge> compressed() {
             return new VersionPathAndBytesableCuratorTransactionBridgeDecorator(inner.compressed());
+        }
+
+        @Override
+        public VersionPathAndBytesable<CuratorTransactionBridge> uncompressed() {
+            return new VersionPathAndBytesableCuratorTransactionBridgeDecorator(inner.uncompressed());
         }
 
         @Override
