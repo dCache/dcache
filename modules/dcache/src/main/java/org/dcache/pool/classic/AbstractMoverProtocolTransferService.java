@@ -73,6 +73,10 @@ public abstract class AbstractMoverProtocolTransferService
         _transferLifeCycle = transferLifeCycle;
     }
 
+    protected TransferLifeCycle getTransferLifeCycle() {
+        return _transferLifeCycle;
+    }
+
     @Override
     public Mover<?> createMover(ReplicaDescriptor handle, PoolIoFileMessage message,
           CellPath pathToDoor)

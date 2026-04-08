@@ -16,6 +16,7 @@ import static org.dcache.util.TimeUtils.describeDuration;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.ThirdPartyTransferFailedCacheException;
+import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
 import java.io.IOException;
@@ -39,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.annotation.concurrent.GuardedBy;
+import javax.security.auth.Subject;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpInetConnection;
@@ -213,9 +215,18 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     private Long _expectedTransferSize;
 
     private InetSocketAddress _localEndpoint;
+    private final TransferLifeCycle _transferLifeCycle;
+    private Subject _subject;
+    private boolean _startMarkerSent;
 
-    public RemoteHttpDataTransferProtocol(CloseableHttpClient client) {
+    public RemoteHttpDataTransferProtocol(CloseableHttpClient client,
+          TransferLifeCycle transferLifeCycle) {
         _client = requireNonNull(client);
+        _transferLifeCycle = requireNonNull(transferLifeCycle);
+    }
+
+    public void setSubject(Subject subject) {
+        _subject = subject;
     }
 
     private static void checkThat(boolean isOk, String message) throws CacheException {
@@ -540,6 +551,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
         CloseableHttpResponse response = _client.execute(get, context);
 
         _localEndpoint = localAddress().orElse(null);
+        startFlowMarker();
 
         boolean isSuccessful = false;
         try {
@@ -605,6 +617,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
 
                 try (CloseableHttpResponse response = _client.execute(put, context)) {
                     _localEndpoint = localAddress().orElse(null);
+                    startFlowMarker();
                     StatusLine status = response.getStatusLine();
                     switch (status.getStatusCode()) {
                         case 200: /* OK (not actually a valid response from PUT) */
@@ -979,6 +992,26 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     @Override
     public Long getBytesExpected() {
         return _expectedTransferSize;
+    }
+
+    private void startFlowMarker() {
+        if (_startMarkerSent || _localEndpoint == null || _subject == null) {
+            return;
+        }
+
+        ProtocolInfo protocolInfo = _channel.getProtocolInfo();
+        if (!(protocolInfo instanceof IpProtocolInfo ipInfo)) {
+            return;
+        }
+
+        InetSocketAddress remoteEndpoint = ipInfo.getSocketAddress();
+        if (remoteEndpoint == null) {
+            return;
+        }
+
+        _transferLifeCycle.onStart(remoteEndpoint, _localEndpoint,
+              protocolInfo, _subject);
+        _startMarkerSent = true;
     }
 
     @Override
