@@ -226,8 +226,11 @@ container:
   image: ghcr.io/kaniko-build/dist/chainguard-dev-kaniko/executor:latest-debug
   needs:
     - tar
+    - job: get_jacoco_cli
+      optional: true
   dependencies:
     - tar
+    - get_jacoco_cli
   script:
     - |-
       tag=$CI_COMMIT_SHORT_SHA
