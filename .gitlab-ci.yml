@@ -128,7 +128,6 @@ default:
     key: "jacoco-cli-${JACOCO_VERSION}"
     paths:
       - "jacoco-${JACOCO_VERSION}/"
-    policy: pull
 
 rpm:
   stage: build
@@ -247,7 +246,6 @@ container:
       --context $CI_PROJECT_DIR
       --dockerfile $CI_PROJECT_DIR/Dockerfile
       --build-arg JACOCO_ENABLED=${jacoco_enabled}
-      --build-arg JACOCO_VERSION=${JACOCO_VERSION}
       --destination $CI_REGISTRY_IMAGE:$tag
 
 #
@@ -745,8 +743,6 @@ Run OIDC test:
 get_jacoco_cli:
   stage: build
   extends: .jacoco_base
-  cache:
-    policy: pull-push
   script:
     - ./get-jacoco.sh
   artifacts:
@@ -773,3 +769,4 @@ generate_jacoco_report:
       coverage_report:
         coverage_format: jacoco
         path: target/coverage-reports/jacoco.xml
+    expire_in: 1 week
