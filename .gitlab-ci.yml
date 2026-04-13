@@ -748,6 +748,11 @@ Run OIDC test:
 get_jacoco_cli:
   stage: build
   extends: .jacoco_base
+  cache:
+    key: "jacoco-cli-${JACOCO_VERSION}"
+    paths:
+      - "jacoco-${JACOCO_VERSION}/"
+    policy: pull-push
   before_script:
     - apt-get update && apt-get install -y unzip wget
   script:
