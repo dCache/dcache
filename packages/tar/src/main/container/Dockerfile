@@ -8,15 +8,11 @@ RUN microdnf -y install java-21-openjdk-devel java-21-openjdk-jmods binutils
 RUN jlink --compress=zip-6 --strip-debug --no-header-files --no-man-pages --add-modules java.base,java.compiler,java.instrument,java.logging,java.management,java.naming,java.security.jgss,java.transaction.xa,java.xml,jdk.jfr,jdk.security.auth,jdk.unsupported,java.desktop,java.sql,jdk.naming.dns,java.rmi,jdk.crypto.cryptoki --output /jlink-runtime
 ARG JACOCO_VERSION
 ARG JACOCO_ENABLED=false
-RUN if [ "$JACOCO_ENABLED" = "true" ]; then \
-      microdnf -y install wget unzip && \
-      wget -q "https://github.com/jacoco/jacoco/releases/download/v${JACOCO_VERSION}/jacoco-${JACOCO_VERSION}.zip" \
-           -O /tmp/jacoco.zip && \
-      unzip -q /tmp/jacoco.zip -d /tmp/jacoco; \
-    else \
-      mkdir -p /tmp/jacoco/lib && \
-      touch /tmp/jacoco/lib/jacocoagent.jar /tmp/jacoco/lib/jacococli.jar; \
-    fi
+RUN mkdir -p /tmp/jacoco/lib
+COPY jacoco-${JACOCO_VERSION}/lib/jacocoagent.jar* /tmp/jacoco/lib/
+COPY jacoco-${JACOCO_VERSION}/lib/jacococli.jar*   /tmp/jacoco/lib/
+RUN ls /tmp/jacoco/lib/jacocoagent.jar 2>/dev/null || touch /tmp/jacoco/lib/jacocoagent.jar
+RUN ls /tmp/jacoco/lib/jacococli.jar   2>/dev/null || touch /tmp/jacoco/lib/jacococli.jar
 
 # Minimalistic Java image
 FROM almalinux:10-minimal
