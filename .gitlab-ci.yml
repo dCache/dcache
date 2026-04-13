@@ -128,6 +128,7 @@ default:
     key: "jacoco-cli-${JACOCO_VERSION}"
     paths:
       - "jacoco-${JACOCO_VERSION}/"
+    policy: pull
 
 rpm:
   stage: build
@@ -246,6 +247,7 @@ container:
       --context $CI_PROJECT_DIR
       --dockerfile $CI_PROJECT_DIR/Dockerfile
       --build-arg JACOCO_ENABLED=${jacoco_enabled}
+      --build-arg JACOCO_VERSION=${JACOCO_VERSION}
       --destination $CI_REGISTRY_IMAGE:$tag
 
 #
