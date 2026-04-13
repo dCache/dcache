@@ -748,6 +748,8 @@ Run OIDC test:
 get_jacoco_cli:
   stage: build
   extends: .jacoco_base
+  before_script:
+    - apt-get update && apt-get install -y unzip wget
   script:
     - ./get-jacoco.sh
   artifacts:

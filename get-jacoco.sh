@@ -5,6 +5,7 @@ PROJECT_ROOT="${PROJECT_ROOT:-$(pwd)}"
 JACOCO_VERSION="${JACOCO_VERSION:-0.8.14}"  # Use env var or fallback
 JACOCO_DIR="${PROJECT_ROOT}/jacoco-$JACOCO_VERSION"
 JACOCO_AGENT_JAR="$JACOCO_DIR/lib/jacocoagent.jar"
+JACOCO_CLI_JAR="${JACOCO_DIR}/lib/jacococli.jar"
 
 echo "DEBUG: Checking if $JACOCO_CLI_JAR and $JACOCO_AGENT_JAR exist..."
 echo "DEBUG: Checking if $JACOCO_CLI_JAR exists..."
