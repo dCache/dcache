@@ -1649,6 +1649,16 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
     }
 
     @Test
+    public void testReadNullTag() throws Exception {
+
+        FsInode top = _rootInode.mkdir("top");
+        _fs.createTag(top, "aTag");
+
+        int n = _fs.getTag(top, "aTag", new byte[10], 0, 10);
+        assertThat("Tag without content should return zero bytes", n, is(0));
+    }
+
+    @Test
     public void testTashTimestampOnRemove() throws Exception {
         final String name = "testTashTimestampOnRemove";
         FsInode inode = _rootInode.create(name, 0, 0, 0644);

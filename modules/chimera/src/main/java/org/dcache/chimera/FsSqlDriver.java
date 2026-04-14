@@ -1507,7 +1507,8 @@ public class FsSqlDriver implements AutoCloseable {
                           /* some databases (hsqldb in particular) fill a full record for
                            * BLOBs and on read reads a full record, which is not what we expect.
                            */
-                          return in.readNBytes(data, offset,
+                          // If tag is not set or NULL, then getBinaryStream will return null.
+                          return in == null ? 0 : in.readNBytes(data, offset,
                                 Math.min(len, (int) rs.getLong("isize")));
                       } catch (IOException e) {
                           throw new LobRetrievalFailureException(e.getMessage(), e);
