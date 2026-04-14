@@ -6,9 +6,6 @@ FROM almalinux:10-minimal as builder
 # Add JRE
 RUN microdnf -y install java-21-openjdk-devel java-21-openjdk-jmods binutils
 RUN jlink --compress=zip-6 --strip-debug --no-header-files --no-man-pages --add-modules java.base,java.compiler,java.instrument,java.logging,java.management,java.naming,java.security.jgss,java.transaction.xa,java.xml,jdk.jfr,jdk.security.auth,jdk.unsupported,java.desktop,java.sql,jdk.naming.dns,java.rmi,jdk.crypto.cryptoki --output /jlink-runtime
-ARG JACOCO_VERSION
-ARG JACOCO_ENABLED=false
-RUN mkdir -p /tmp/jacoco/lib
 
 # Minimalistic Java image
 FROM almalinux:10-minimal
