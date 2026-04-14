@@ -18,7 +18,7 @@ public class PoolDataDetailsTest {
         }
 
         String output = sw.toString();
-        assertTrue("Output should contain Hot File Replication  status", output.contains("Hot File Replication : ON"));
+        assertTrue("Output should contain Hot File Replication status", output.contains("Hot File Replication : ON"));
 
         details.setHotFileReplicationEnabled(false);
         sw = new StringWriter();
@@ -26,6 +26,6 @@ public class PoolDataDetailsTest {
             details.print(pw);
         }
         output = sw.toString();
-        assertTrue("Output should contain HotFile Replication  status", output.contains("Hot File Replication : OFF"));
+        assertTrue("Output should contain Hot File Replication status", output.contains("Hot File Replication : OFF"));
     }
 }
