@@ -13,16 +13,18 @@ public class PoolDataDetailsTest {
         details.setHotFileReplicationEnabled(true);
 
         StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        details.print(pw);
+        try (PrintWriter pw = new PrintWriter(sw)) {
+            details.print(pw);
+        }
 
         String output = sw.toString();
         assertTrue("Output should contain Hot File Replication  status", output.contains("Hot File Replication : ON"));
 
         details.setHotFileReplicationEnabled(false);
         sw = new StringWriter();
-        pw = new PrintWriter(sw);
-        details.print(pw);
+        try (PrintWriter pw = new PrintWriter(sw)) {
+            details.print(pw);
+        }
         output = sw.toString();
         assertTrue("Output should contain HotFile Replication  status", output.contains("Hot File Replication : OFF"));
     }
