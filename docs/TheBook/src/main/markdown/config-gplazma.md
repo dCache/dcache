@@ -733,24 +733,6 @@ The GP2-AUTHZDB takes a username and maps it to UID+GID using the `storage-authz
    Default: `/etc/grid-security/storage-authzdb`
 
 
-
-##### GridMap
-
-> DEPRECATED: The `grid-mapfile` plug-in is deprecated and will be removed in a future release.  Use the `multimap` plugin instead.
-
-The `grid-mapfile` plug-in takes a GRID DN and maps it username using the **grid-mapfile** file.
-
-
-
-Properties
-
-**gplazma.gridmap.file**
-
-   Path to `grid-mapfile`
-   Default: `/etc/grid-security/grid-mapfile`
-
-
-
 ##### vorolemap
 
 > DEPRECATED: The `vorolemap` plug-in is deprecated and will be removed in a future release.  Use the `multimap` plugin instead.
@@ -1976,27 +1958,14 @@ passwd testuser ae39aec3 read-write 12345 1000 / /
 
 There are many more commands for altering the kpwd-file, see the dcache-script help for further commands available.
 
-### The gridmap plug-in
+### The grid-map plug-in
+The gridmap plug-in has been removed. Please migrate to the multimap plug-in instead.
+For conversion of old gridmap files please use the script below:
 
-Two file locations are defined in the policy file for this plug-in:
+```console-user
+sed '/^[# ]*"/s/"\(.*\)" \(.*\)$/dn:"\1" username:\2/' grid-mapfile > multimap-file
+```
 
-    # grid-mapfile
-    gridMapFilePath="/etc/grid-security/grid-mapfile"
-    storageAuthzPath="/etc/grid-security/storage-authzdb"
-
-#### Preparing the `grid-mapfile`
-
-The `grid-mapfile` is the same as that used in other applications. It can be created in various ways, either by connecting directly to VOMS or GUMS servers, or by hand.
-
-Each line contains two fields: a DN (Certificate Subject) in quotes, and the username it is to be mapped to.
-
-Example:
-
-    "/C=DE/O=GermanGrid/OU=DESY/CN=John Doe" johndoe
-
-When using the `gridmap`, the `storage-authzdb` file must also be
-configured. See [the section called
-“storage-authzdb”](config-gplazma.md#storage-authzdb) for details.
 
 ## gPlazma specific dCache configuration
 

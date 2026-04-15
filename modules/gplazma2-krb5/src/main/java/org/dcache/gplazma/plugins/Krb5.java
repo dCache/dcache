@@ -13,7 +13,7 @@ import org.dcache.gplazma.AuthenticationException;
 /**
  * A {@link GPlazmaMappingPlugin} converts {@code user@DOMAIN.COM} to {@link UserNamePrincipal}
  * corresponding to {@code user} ( without domain ).  For more complex mappings, like {@code
- * remte-user@DOMAIN.COM} to {@code local-user}, {@link GridMapFilePlugin} can be used.
+ * remte-user@DOMAIN.COM} to {@code local-user}, {@code GplazmaMultiMapPlugin} can be used.
  * <p>
  * To enable, add following likes into gplazma.conf:
  * <pre>
