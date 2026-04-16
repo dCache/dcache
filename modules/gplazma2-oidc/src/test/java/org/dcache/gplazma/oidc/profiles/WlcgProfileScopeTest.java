@@ -61,6 +61,11 @@ public class WlcgProfileScopeTest {
     }
 
     @Test
+    public void shouldIdentifyStoragePollScope() {
+        assertTrue(WlcgProfileScope.isWlcgProfileScope("storage.poll:/"));
+    }
+
+    @Test
     public void shouldNotIdentifyStorageWriteScope() {
         assertFalse(WlcgProfileScope.isWlcgProfileScope("storage.write:/"));
     }
@@ -79,6 +84,11 @@ public class WlcgProfileScopeTest {
     @Test(expected = InvalidScopeException.class)
     public void shouldRejectStorageStageScopeWithoutPath() {
         new WlcgProfileScope("storage.stage");
+    }
+
+    @Test(expected = InvalidScopeException.class)
+    public void shouldRejectStoragePollScopeWithoutPath() {
+        new WlcgProfileScope("storage.poll");
     }
 
     @Test(expected = InvalidScopeException.class)
@@ -162,6 +172,34 @@ public class WlcgProfileScopeTest {
         assertThat(auth.getActivity(), containsInAnyOrder(LIST, READ_METADATA, DOWNLOAD, Activity.STAGE));
     }
 
+    @Test
+    public void shouldParsePollScopeWithRootResourcePath() {
+        WlcgProfileScope scope = new WlcgProfileScope("storage.poll:/");
+
+        Optional<Authorisation> maybeAuth = scope.authorisation(FsPath.create("/VOs/wlcg"));
+
+        assertTrue(maybeAuth.isPresent());
+
+        Authorisation auth = maybeAuth.get();
+
+        assertThat(auth.getPath(), equalTo(FsPath.create("/VOs/wlcg")));
+        assertThat(auth.getActivity(), containsInAnyOrder(READ_METADATA));
+    }
+
+    @Test
+    public void shouldParsePollScopeWithNonRootResourcePath() {
+        WlcgProfileScope scope = new WlcgProfileScope("storage.poll:/foo");
+
+        Optional<Authorisation> maybeAuth = scope.authorisation(FsPath.create("/VOs/wlcg"));
+
+        assertTrue(maybeAuth.isPresent());
+
+        Authorisation auth = maybeAuth.get();
+
+        assertThat(auth.getPath(), equalTo(FsPath.create("/VOs/wlcg/foo")));
+        assertThat(auth.getActivity(), containsInAnyOrder(READ_METADATA));
+    }
+
     @Test(expected=InvalidScopeException.class)
     public void shouldRejectReadScopeWithRelativeResourcePath() {
         new WlcgProfileScope("storage.read:foo");
@@ -170,6 +208,11 @@ public class WlcgProfileScopeTest {
     @Test(expected=InvalidScopeException.class)
     public void shouldRejectStageScopeWithRelativeResourcePath() {
         new WlcgProfileScope("storage.stage:foo");
+    }
+
+    @Test(expected=InvalidScopeException.class)
+    public void shouldRejectPollScopeWithRelativeResourcePath() {
+        new WlcgProfileScope("storage.poll:foo");
     }
 
     @Test
