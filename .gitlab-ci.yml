@@ -43,6 +43,8 @@ stages:
   - testenv_post
   # on release, upload rpm, deb, tar, container
   - upload
+  # on release, open release notes PR and update website
+  - release
 
 variables:
   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true -Dmaven.repo.local=.m2/repository"
@@ -782,3 +784,138 @@ generate_jacoco_report:
         coverage_format: jacoco
         path: target/coverage-reports/jacoco.xml
     expire_in: 1 week
+
+#
+# After packages are uploaded, clone release-notes, run prepare-template,
+# use the existing AI draft as a starting point, push a branch and open
+# a GitHub PR for human review.
+#
+Draft Release Notes PR:
+  stage: release
+  image: almalinux:10-minimal
+  extends: .upload_rules
+  needs:
+    - upload_rpm
+    - upload_deb
+    - upload_tar
+    - job: AI Generated Release Notes
+      artifacts: true
+  dependencies:
+    - AI Generated Release Notes
+  before_script: []
+  script:
+    - microdnf install -y git-core curl jq
+    - git config --global user.email "ci@dcache.org"
+    - git config --global user.name "dCache CI"
+    - |
+      # Derive series (e.g. 10.2) from tag (e.g. 10.2.5)
+      SERIES=$(echo "$CI_COMMIT_TAG" | sed 's/\.[0-9]*$//')
+      BRANCH="release-draft/${CI_COMMIT_TAG}"
+      echo "Tag: $CI_COMMIT_TAG  Series: $SERIES  Branch: $BRANCH"
+
+      # Clone repos
+      git clone "https://dcache:${GITHUB_RELEASE_TOKEN}@github.com/dCache/release-notes.git" /tmp/release-notes
+      git clone "https://github.com/dCache/release-utils.git" /tmp/release-utils-ci
+
+      # Create draft branch in release-notes
+      cd /tmp/release-notes
+      git checkout -b "$BRANCH"
+
+      # Run prepare-template from dcache repo (it uses git log)
+      cd "$CI_PROJECT_DIR"
+      /tmp/release-utils-ci/bin/prepare-template "$SERIES" \
+        > /tmp/release-notes/template 2>/dev/null || true
+
+      # Append AI draft if it exists
+      if ls "$CI_PROJECT_DIR"/release-*.md 2>/dev/null | head -1 | grep -q .; then
+        echo "" >> /tmp/release-notes/template
+        echo "" >> /tmp/release-notes/template
+        echo "# === AI GENERATED DRAFT (for reference, not applied) ===" >> /tmp/release-notes/template
+        cat "$CI_PROJECT_DIR"/release-*.md >> /tmp/release-notes/template
+      fi
+
+      # Check template has content
+      if [ ! -s /tmp/release-notes/template ]; then
+        echo "Template is empty - nothing to release, skipping PR"
+        exit 0
+      fi
+
+      # Commit and push draft branch
+      cd /tmp/release-notes
+      git add template
+      git commit -m "draft: release notes template for ${CI_COMMIT_TAG}"
+      git push "https://dcache:${GITHUB_RELEASE_TOKEN}@github.com/dCache/release-notes.git" "$BRANCH"
+
+      # Open GitHub PR
+      PR_RESPONSE=$(curl -s -X POST \
+        -H "Authorization: token ${GITHUB_RELEASE_TOKEN}" \
+        -H "Accept: application/vnd.github.v3+json" \
+        "https://api.github.com/repos/dCache/release-notes/pulls" \
+        -d "{
+          \"title\": \"Release notes draft for ${CI_COMMIT_TAG}\",
+          \"head\": \"${BRANCH}\",
+          \"base\": \"master\",
+          \"body\": \"Automated draft for release ${CI_COMMIT_TAG}.\n\nTo complete:\n1. Edit \`template\` file - fill in \`T:\` fields with service names, write prose descriptions\n2. Run \`~/release-utils/bin/apply-template template\` locally\n3. Commit the updated \`release-notes-${SERIES}\` file and delete \`template\`\n4. Merge this PR to trigger the website update\"
+        }")
+      PR_URL=$(echo "$PR_RESPONSE" | jq -r '.html_url')
+      if [ "$PR_URL" = "null" ]; then
+        echo "ERROR: Failed to open PR. API response:"
+        echo "$PR_RESPONSE"
+        exit 1
+      fi
+      echo "Pull request opened: $PR_URL"
+
+#
+# Run manually after release notes PR is merged.
+# Clones www-dcache-org, runs update-releases, pushes to GitHub
+# which triggers the Hugo deploy pipeline automatically.
+#
+Update Website:
+  stage: release
+  image: almalinux:10-minimal
+  extends: .upload_rules
+  needs:
+    - upload_rpm
+    - upload_deb
+    - upload_tar
+  when: manual
+  before_script: []
+  script:
+    - microdnf install -y git-core curl libxslt jq
+    - git config --global user.email "ci@dcache.org"
+    - git config --global user.name "dCache CI"
+    - |
+      # Clone repos
+      # Structure: /tmp/workdir/release-utils-ci/  and  /tmp/workdir/www-dcache-org/
+      mkdir -p /tmp/workdir
+      git clone "https://github.com/dCache/release-utils.git" /tmp/workdir/release-utils-ci
+      git clone "https://dcache:${GITHUB_RELEASE_TOKEN}@github.com/dCache/www-dcache-org.git" /tmp/workdir/www-dcache-org
+
+      # update-releases needs releases.xml in its working directory
+      # and www-dcache-org at ../www-dcache-org relative to where it runs
+      cp /tmp/workdir/release-utils-ci/releases.xml /tmp/workdir/release-utils-ci/
+      cd /tmp/workdir/release-utils-ci
+
+      # Run pre-flight check + update
+      ./bin/update-releases "$CI_COMMIT_TAG"
+
+      # Push www-dcache-org changes to GitHub (triggers Hugo deploy)
+      cd /tmp/workdir/www-dcache-org
+      git add -A
+      if git diff --staged --quiet; then
+        echo "No website changes to commit"
+      else
+        git commit -m "release: add dCache ${CI_COMMIT_TAG} to downloads page"
+        git push "https://dcache:${GITHUB_RELEASE_TOKEN}@github.com/dCache/www-dcache-org.git" master
+        echo "Website updated - Hugo deploy will trigger automatically"
+      fi
+
+      # Push releases.xml changes back to release-utils
+      cd /tmp/workdir/release-utils-ci
+      git add releases.xml
+      if git diff --staged --quiet; then
+        echo "No releases.xml changes to commit"
+      else
+        git commit -m "release: add dCache ${CI_COMMIT_TAG}"
+        git push "https://github.com/dCache/release-utils.git" master
+      fi
