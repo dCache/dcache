@@ -873,7 +873,8 @@ Draft Release Notes PR:
 Update Website:
   stage: release
   image: almalinux:10-minimal
-  extends: .upload_rules
+  rules:
+    - if: $CI_COMMIT_TAG
   needs:
     - upload_rpm
     - upload_deb
