@@ -78,12 +78,12 @@ COPYRIGHT STATUS:
  */
 package org.dcache.alarms.logback;
 
+import ch.qos.logback.classic.net.server.HardenedLoggingEventInputStream;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import dmg.cells.nucleus.CDC;
 import java.io.BufferedInputStream;
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.HashMap;
@@ -109,7 +109,7 @@ final class LogEntryServerSocketNode implements Runnable {
     private static final Logger LOGGER
           = LoggerFactory.getLogger(LogEntryServerSocketNode.class);
 
-    private final ObjectInputStream ois;
+    private final HardenedLoggingEventInputStream inputStream;
     private final Socket socket;
     private final LogEntryServer server;
     private final String hostName;
@@ -121,7 +121,8 @@ final class LogEntryServerSocketNode implements Runnable {
         this.server = socketServer;
         this.socket = socket;
         hostName = socket.getInetAddress().getCanonicalHostName();
-        ois = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
+        inputStream =
+            new HardenedLoggingEventInputStream(new BufferedInputStream(socket.getInputStream()));
     }
 
     public void run() {
@@ -129,7 +130,7 @@ final class LogEntryServerSocketNode implements Runnable {
         running = true;
         try {
             while (running) {
-                ILoggingEvent event = (ILoggingEvent) ois.readObject();
+                ILoggingEvent event = (ILoggingEvent) inputStream.readObject();
                 Map<String, String> properties = new HashMap<>();
                 Map<String, String> mdc = event.getMDCPropertyMap();
                 properties.put(Alarm.HOST_TAG, hostName);
@@ -164,7 +165,7 @@ final class LogEntryServerSocketNode implements Runnable {
         if (running) {
             running = false;
             try {
-                ois.close();
+                inputStream.close();
             } catch (IOException e) {
                 LOGGER.debug("Could not close connection: {}, cause: {}.",
                       e.getMessage(), e.getCause());
