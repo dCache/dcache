@@ -497,7 +497,7 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
     }
 
     private synchronized void checkDepthConstraints(BulkRequest request)
-          throws BulkPermissionDeniedException {
+          throws BulkContentTooLargeException {
         switch (request.getExpandDirectories()) {
             case ALL:
                 switch (allowedDepth) {
@@ -505,7 +505,7 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
                         checkTargetCount(request);
                         return;
                     default:
-                        throw new BulkPermissionDeniedException(
+                        throw new BulkContentTooLargeException(
                               "full directory recursion not permitted.");
                 }
             case TARGETS:
@@ -515,7 +515,7 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
                         checkTargetCount(request);
                         return;
                     default:
-                        throw new BulkPermissionDeniedException(
+                        throw new BulkContentTooLargeException(
                               "processing children of a directory not permitted.");
                 }
             default:
@@ -548,27 +548,27 @@ public final class BulkService implements CellLifeCycleAware, CellMessageReceive
     }
 
     private synchronized void checkTargetCount(BulkRequest request)
-          throws BulkPermissionDeniedException {
+          throws BulkContentTooLargeException {
         List<String> targets = request.getTarget();
         int listSize = targets == null ? 0 : targets.size();
         switch (request.getExpandDirectories()) {
             case NONE:
                 if (listSize > maxFlatTargets) {
-                    throw new BulkPermissionDeniedException(
+                    throw new BulkContentTooLargeException(
                           String.format(TARGET_COUNT_ERROR_FORMAT, listSize, maxFlatTargets,
                                 Depth.NONE.name()));
                 }
                 break;
             case TARGETS:
                 if (listSize > maxShallowTargets) {
-                    throw new BulkPermissionDeniedException(
+                    throw new BulkContentTooLargeException(
                           String.format(TARGET_COUNT_ERROR_FORMAT, listSize, maxShallowTargets,
                                 Depth.TARGETS.name()));
                 }
                 break;
             case ALL:
                 if (listSize > maxRecursiveTargets) {
-                    throw new BulkPermissionDeniedException(
+                    throw new BulkContentTooLargeException(
                           String.format(TARGET_COUNT_ERROR_FORMAT, listSize, maxRecursiveTargets,
                                 Depth.ALL.name()));
                 }
