@@ -242,6 +242,13 @@ container:
     - mkdir maven
     - tar -C maven --strip-components=1 -xzvf packages/tar/target/dcache-*.tar.gz
     - cp $CI_PROJECT_DIR/packages/tar/src/main/container/* .
+    - mkdir -p staging-libs
+    - |
+      if [ -d "jacoco-${JACOCO_VERSION}/lib" ]; then
+        echo "JaCoCo artifacts found, staging for Docker..."
+        cp jacoco-${JACOCO_VERSION}/lib/jacocoagent.jar staging-libs/
+        cp jacoco-${JACOCO_VERSION}/lib/jacococli.jar staging-libs/
+      fi
     - mkdir -p /kaniko/.docker
     - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
     - >
