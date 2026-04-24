@@ -60,6 +60,7 @@ documents or software obtained from this server.
 package org.dcache.restful.util.bulk;
 
 import static javax.ws.rs.core.Response.Status.TOO_MANY_REQUESTS;
+import static javax.ws.rs.core.Response.Status.REQUEST_ENTITY_TOO_LARGE;
 
 import com.google.common.base.Throwables;
 import dmg.util.Exceptions;
@@ -71,6 +72,7 @@ import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotFoundException;
 import org.dcache.cells.CellStub;
+import org.dcache.services.bulk.BulkContentTooLargeException;
 import org.dcache.services.bulk.BulkPermissionDeniedException;
 import org.dcache.services.bulk.BulkQuotaExceededException;
 import org.dcache.services.bulk.BulkRequestNotFoundException;
@@ -124,6 +126,8 @@ public class BulkServiceCommunicator {
 
         if (error instanceof BulkPermissionDeniedException) {
             throw new ForbiddenException(error);
+        } else if (error instanceof BulkContentTooLargeException) {
+            throw new ClientErrorException(REQUEST_ENTITY_TOO_LARGE, error);
         } else if (error instanceof BulkQuotaExceededException) {
             throw new ClientErrorException(TOO_MANY_REQUESTS, error);
         } else if (error instanceof BulkRequestNotFoundException) {
