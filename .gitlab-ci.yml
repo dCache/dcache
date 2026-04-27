@@ -69,3 +69,37 @@ detective-work:
 
     - echo "=== Checking for other dcache directories ==="
     - ls -F /data/www/
+
+extensive-debug:
+  stage: inspect
+  tags:
+    - hugo
+    - www.dcache.org
+  script:
+    - echo "=== 1. Deep Dive into the Manuals Anchor ==="
+    # Check the actual structure where we know books exist
+    - ls -lF /data/www/old-dcache.org/manuals/
+
+    - echo "=== 2. Detailed Search for UserGuide === "
+    # Search for any directory or index file related to UserGuide
+    - find /data/www/ -type d -iname "*UserGuide*" 2>/dev/null
+    - find /data/www/ -type f -name "UserGuide.shtml" -o -name "UserGuide.html" 2>/dev/null
+
+    - echo "=== 3. Comparing 'old-dcache.org' vs 'dcachedocs' ==="
+    # Let's see which one has more recent activity
+    - echo "Last modified files in old-dcache.org:"
+    - find /data/www/old-dcache.org/ -type f -printf '%T+ %p\n' 2>/dev/null | sort -r | head -n 5
+    - echo "Last modified files in dcachedocs:"
+    - find /data/www/dcachedocs/ -type f -printf '%T+ %p\n' 2>/dev/null | sort -r | head -n 5
+
+    - echo "=== 4. Checking for User/Group Permissions on the target ==="
+    # This is crucial for the sysadmin request. We need to know who owns the 'manuals' folder.
+    - ls -ld /data/www/old-dcache.org/manuals/
+
+    - echo "=== 5. Scanning for .shtml files specifically ==="
+    # Since dCache.org uses shtml, let's see where they are most concentrated
+    - find /data/www/ -name "*.shtml" 2>/dev/null | cut -d/ -f1-4 | sort | uniq -c
+
+    - echo "=== 6. Checking for Redirects/Symlinks in the main root ==="
+    # Sometimes 'manuals' is a symlink we can't see without -la
+    - ls -la /data/www/dcache.org/
