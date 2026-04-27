@@ -38,3 +38,17 @@ inspect-thebook:
     - echo "=== Checking Web Server Access ==="
     - ls -la /data/www/dcache.org/ || echo "Web root not accessible"
     - ls -la /data/www/dcache.org/manuals/ || echo "Manuals folder not accessible"
+
+deploy-test-sudo:
+  stage: inspect
+  tags:
+    - hugo
+    - www.dcache.org
+  dependencies:
+    - build-thebook
+  script:
+    - echo "Testing if we can use sudo without a password..."
+    - sudo -n true && echo "SUCCESS! We have passwordless sudo." || echo "FAILURE! Sudo requires a password."
+
+    - echo "Checking if we can see the target directory with sudo..."
+    - sudo ls -la /data/www/dcache.org/manuals/ || echo "Even with sudo, we can't see the folder."
