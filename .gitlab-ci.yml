@@ -33,11 +33,8 @@ inspect-thebook:
   script:
     - echo "=== Checking Artifact ==="
     - ls -lh docs/TheBook/target/TheBook-shtml.tar.gz
-    - tar -tzvf docs/TheBook/target/TheBook-shtml.tar.gz | head -n 10
+    - tar -tzvf docs/TheBook/target/TheBook-shtml.tar.gz | head -n 10 || true
 
     - echo "=== Checking Web Server Access ==="
-    # We use 'test -d' to check existence without triggering a fail status
-    - if [ -d "/data/www/dcache.org" ]; then echo "Web root exists"; else echo "Web root hidden"; fi
-
-    # Try to see if we can at least see the 'manuals' folder
-    - ls -d /data/www/dcache.org/manuals || echo "Manuals folder is strictly protected"
+    - ls -la /data/www/dcache.org/ || echo "Web root not accessible"
+    - ls -la /data/www/dcache.org/manuals/ || echo "Manuals folder not accessible"
