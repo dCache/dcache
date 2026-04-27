@@ -1,16 +1,17 @@
 stages:
   - build
-  - inspect
+  - deploy
 
 variables:
   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true -Dmaven.repo.local=.m2/repository"
+  MANUALS_DIR: "/data/www/old-dcache.org/manuals"
+  DRY_RUN_DIR: "/data/www/old-dcache.org/manuals/Book-11.2-dryrun"
 
 build-thebook:
   stage: build
   image: maven:3.9.12-eclipse-temurin-21
   script:
     - mvn $MAVEN_CLI_OPTS -DskipTests -pl docs/TheBook -am clean install
-    # Convert to SHTML before archiving
     - cd docs/TheBook/target/
     - mkdir shtml_build
     - cp -r html/* shtml_build/
@@ -23,84 +24,43 @@ build-thebook:
       - "docs/TheBook/target/TheBook-shtml.tar.gz"
     expire_in: 1 day
 
-inspect-thebook:
-  stage: inspect
+deploy-dryrun:
+  stage: deploy
   tags:
     - hugo
     - www.dcache.org
   dependencies:
     - build-thebook
   script:
-    - echo "=== Checking Artifact ==="
-    - ls -lh docs/TheBook/target/TheBook-shtml.tar.gz
-    - tar -tzvf docs/TheBook/target/TheBook-shtml.tar.gz | head -n 10 || true
+    - echo "=== Safety check: making sure we only touch our dryrun dir ==="
+    - echo "Target directory: ${DRY_RUN_DIR}"
 
-    - echo "=== Checking Web Server Access ==="
-    - ls -la /data/www/dcache.org/ || echo "Web root not accessible"
-    - ls -la /data/www/dcache.org/manuals/ || echo "Manuals folder not accessible"
+    # Abort if dry run dir already exists to avoid overwriting anything unexpectedly
+    - |
+      if [ -d "${DRY_RUN_DIR}" ]; then
+        echo "ERROR: ${DRY_RUN_DIR} already exists. Remove it manually first."
+        exit 1
+      fi
 
-deploy-test-sudo:
-  stage: inspect
-  tags:
-    - hugo
-    - www.dcache.org
-  dependencies:
-    - build-thebook
-  script:
-    - echo "Testing if we can use sudo without a password..."
-    - sudo -n true && echo "SUCCESS! We have passwordless sudo." || echo "FAILURE! Sudo requires a password."
+    - mkdir -p "${DRY_RUN_DIR}"
+    - tar -xzf docs/TheBook/target/TheBook-shtml.tar.gz -C "${DRY_RUN_DIR}"
 
-    - echo "Checking if we can see the target directory with sudo..."
-    - sudo ls -la /data/www/dcache.org/manuals/ || echo "Even with sudo, we can't see the folder."
-    - touch /data/www/old-dcache.org/manuals/test_write && echo "PERMISSION GRANTED" && rm /data/www/old-dcache.org/manuals/test_write || echo "PERMISSION DENIED"
+    - echo "=== Verifying ONLY our directory was touched ==="
+    - echo "Files deployed:"
+    - ls "${DRY_RUN_DIR}" | wc -l
+    - echo "Sample files:"
+    - ls "${DRY_RUN_DIR}" | head -10
 
-detective-work:
-  stage: inspect
-  tags:
-    - hugo
-    - www.dcache.org
-  script:
-    - echo "=== Locating the existing manuals ==="
-    # This searches for any folder named 'Book-10.2' inside /data/www/
-    - find /data/www/ -type d -name "Book-10.2" 2>/dev/null || echo "Book-10.2 not found in /data/www/"
+    - echo "=== Spot-check: internal links in index.shtml ==="
+    - grep "href" "${DRY_RUN_DIR}/index.shtml" | head -10
 
-    - echo "=== Checking for Symlinks ==="
-    # This checks if 'manuals' is a hidden link we missed
-    - ls -ld /data/www/dcache.org/manuals || echo "Manuals is not a link in the root"
+    - echo "=== Spot-check: no leftover .html links ==="
+    - grep -r "\.html" "${DRY_RUN_DIR}" | grep "href" | wc -l
+    - echo "lines above should be 0 (or only external links like dcache.org/...html)"
 
-    - echo "=== Checking for other dcache directories ==="
-    - ls -F /data/www/
+    - echo "=== Verify neighboring dirs are untouched ==="
+    - ls -la "${MANUALS_DIR}/Book-10.2/"  | head -5
+    - ls -la "${MANUALS_DIR}/Book-9.2/"   | head -5
 
-extensive-debug:
-  stage: inspect
-  tags:
-    - hugo
-    - www.dcache.org
-  script:
-    - echo "=== 1. Deep Dive into the Manuals Anchor ==="
-    # Check the actual structure where we know books exist
-    - ls -lF /data/www/old-dcache.org/manuals/
-
-    - echo "=== 2. Detailed Search for UserGuide === "
-    # Search for any directory or index file related to UserGuide
-    - find /data/www/ -type d -iname "*UserGuide*" 2>/dev/null
-    - find /data/www/ -type f -name "UserGuide.shtml" -o -name "UserGuide.html" 2>/dev/null
-
-    - echo "=== 3. Comparing 'old-dcache.org' vs 'dcachedocs' ==="
-    # Let's see which one has more recent activity
-    - echo "Last modified files in old-dcache.org:"
-    - find /data/www/old-dcache.org/ -type f -printf '%T+ %p\n' 2>/dev/null | sort -r | head -n 5
-    - echo "Last modified files in dcachedocs:"
-    - find /data/www/dcachedocs/ -type f -printf '%T+ %p\n' 2>/dev/null | sort -r | head -n 5
-
-    - echo "=== 4. Checking for User/Group Permissions on the target ==="
-    # This is crucial for the sysadmin request. We need to know who owns the 'manuals' folder.
-    - ls -ld /data/www/old-dcache.org/manuals/
-
-    - echo "=== 5. Scanning for .shtml files specifically ==="
-    # Since dCache.org uses shtml, let's see where they are most concentrated
-    - find /data/www/ -name "*.shtml" 2>/dev/null | cut -d/ -f1-4 | sort | uniq -c
-
-    - echo "=== 6. Checking for Redirects/Symlinks in the main root ==="
-    # Sometimes 'manuals' is a symlink we can't see without -la
-    - ls -la /data/www/dcache.org/
+    - echo "=== Done. Dry run directory is: ${DRY_RUN_DIR} ==="
+    - echo "Visit https://www.dcache.org/old/manuals/Book-11.0-dryrun/index.shtml to preview"
