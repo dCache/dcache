@@ -219,6 +219,9 @@ container:
 Check for duplicate dependencies:
   stage: build
   image: almalinux:10-minimal
+  variables:
+    # Avoid git cloning. The sources are not needed for this job.
+    GIT_STRATEGY: none
   needs:
     - tar
   dependencies:
@@ -234,6 +237,9 @@ sign_rpm:
   stage: sign
   image: almalinux:10-minimal
   needs: ["rpm"]
+  variables:
+    # Avoid git cloning. The sources are not needed for this job.
+    GIT_STRATEGY: none
   script:
     - microdnf install -y rpm-sign gpg
     - echo $DCACHE_ORG_PGP_KEY | base64 -d -i > secret.gpg
@@ -266,6 +272,9 @@ sign_deb:
   stage: sign
   image: ubuntu:22.04
   needs: ["deb"]
+  variables:
+    # Avoid git cloning. The sources are not needed for this job.
+    GIT_STRATEGY: none
   script:
     - apt-get -qq update
     - apt-get -qq install debsigs gpg
@@ -285,6 +294,9 @@ sign_deb:
 RPM test install on EL9:
   stage: test_deploy
   image: almalinux:9
+  variables:
+    # Avoid git cloning. The sources are not needed for this job.
+    GIT_STRATEGY: none
   script:
     - dnf --nogpgcheck install -y packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm
 
@@ -298,6 +310,9 @@ RPM test install on EL9:
 upload_rpm:
   stage: upload
   image: almalinux:10-minimal
+  variables:
+    # Avoid git cloning. The sources are not needed for this job.
+    GIT_STRATEGY: none
   dependencies:
     - sign_rpm
   extends: .upload_rules
@@ -320,6 +335,9 @@ upload_srm_client_rpm:
 upload_deb:
   stage: upload
   image: almalinux:10-minimal
+  variables:
+    # Avoid git cloning. The sources are not needed for this job.
+    GIT_STRATEGY: none
   dependencies:
     - sign_deb
   extends: .upload_rules
@@ -331,6 +349,9 @@ upload_deb:
 upload_tar:
   stage: upload
   image: almalinux:10-minimal
+  variables:
+    # Avoid git cloning. The sources are not needed for this job.
+    GIT_STRATEGY: none
   dependencies:
     - tar
   extends: .upload_rules
@@ -430,6 +451,9 @@ Release Notes Table:
 Prepare k8s environment:
   stage: testenv_pre
   extends: .kubernetes_image
+  variables:
+    # Avoid git cloning. The sources are not needed for this job.
+    GIT_STRATEGY: none
   script:
     - kubectl create namespace ${K8S_NAMESPACE}
 
@@ -440,6 +464,9 @@ Prepare k8s environment:
 Collect container logs:
   stage: testenv_post
   extends: .kubernetes_image
+  variables:
+    # Avoid git cloning. The sources are not needed for this job.
+    GIT_STRATEGY: none
   when: always
   allow_failure: true
   script:
@@ -458,6 +485,9 @@ Collect container logs:
 Clean k8s environment:
   stage: testenv_post
   extends: .kubernetes_image
+  variables:
+    # Avoid git cloning. The sources are not needed for this job.
+    GIT_STRATEGY: none
   needs:
     - Collect container logs
   when: always
