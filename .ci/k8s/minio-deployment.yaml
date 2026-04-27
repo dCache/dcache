@@ -1,0 +1,57 @@
+#
+# MinIO environment
+#
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: minio-secret
+  labels:
+    app: minio
+data:
+  MINIO_ROOT_USER: dcache
+  MINIO_ROOT_PASSWORD: let-me-in
+
+---
+
+
+
+#
+# MinIO internal service
+#
+apiVersion: v1
+kind: Service
+metadata:
+  name: tape-minio
+spec:
+  selector:
+    app: minio
+  ports:
+    - port: 9000
+      name: minio-server
+      targetPort: 9000
+
+---
+
+#
+# MinIO pod
+#
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: minio
+  name: minio
+spec:
+  containers:
+  - name: tape-minio
+    image: pgsty/minio:latest
+    command:
+    - /bin/bash
+    - -c
+    args: 
+    - minio server /data --console-address :9090
+    envFrom:
+    - configMapRef:
+        name: minio-secret
+    ports:
+    - containerPort: 9000
