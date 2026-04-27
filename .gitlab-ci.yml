@@ -52,7 +52,7 @@ deploy-test-sudo:
 
     - echo "Checking if we can see the target directory with sudo..."
     - sudo ls -la /data/www/dcache.org/manuals/ || echo "Even with sudo, we can't see the folder."
-    - touch /data/www/old-dcache.org/manuals/test_write && rm $_
+    - touch /data/www/old-dcache.org/manuals/test_write && echo "PERMISSION GRANTED" && rm /data/www/old-dcache.org/manuals/test_write || echo "PERMISSION DENIED"
 
 detective-work:
   stage: inspect
