@@ -52,3 +52,20 @@ deploy-test-sudo:
 
     - echo "Checking if we can see the target directory with sudo..."
     - sudo ls -la /data/www/dcache.org/manuals/ || echo "Even with sudo, we can't see the folder."
+
+detective-work:
+  stage: inspect
+  tags:
+    - hugo
+    - www.dcache.org
+  script:
+    - echo "=== Locating the existing manuals ==="
+    # This searches for any folder named 'Book-10.2' inside /data/www/
+    - find /data/www/ -type d -name "Book-10.2" 2>/dev/null || echo "Book-10.2 not found in /data/www/"
+
+    - echo "=== Checking for Symlinks ==="
+    # This checks if 'manuals' is a hidden link we missed
+    - ls -ld /data/www/dcache.org/manuals || echo "Manuals is not a link in the root"
+
+    - echo "=== Checking for other dcache directories ==="
+    - ls -F /data/www/
