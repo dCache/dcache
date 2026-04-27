@@ -32,35 +32,23 @@ deploy-dryrun:
   dependencies:
     - build-thebook
   script:
-    - echo "=== Safety check: making sure we only touch our dryrun dir ==="
-    - echo "Target directory: ${DRY_RUN_DIR}"
-
-    # Abort if dry run dir already exists to avoid overwriting anything unexpectedly
-    - |
-      if [ -d "${DRY_RUN_DIR}" ]; then
-        echo "ERROR: ${DRY_RUN_DIR} already exists. Remove it manually first."
-        exit 1
-      fi
-
+    - echo "=== Safety check - making sure we only touch our dryrun dir ==="
+    - echo "Target directory - ${DRY_RUN_DIR}"
+    - if [ -d "${DRY_RUN_DIR}" ]; then echo "ERROR - ${DRY_RUN_DIR} already exists. Remove it manually first."; exit 1; fi
     - mkdir -p "${DRY_RUN_DIR}"
     - tar -xzf docs/TheBook/target/TheBook-shtml.tar.gz -C "${DRY_RUN_DIR}"
-
     - echo "=== Verifying ONLY our directory was touched ==="
     - echo "Files deployed:"
     - ls "${DRY_RUN_DIR}" | wc -l
     - echo "Sample files:"
     - ls "${DRY_RUN_DIR}" | head -10
-
-    - echo "=== Spot-check: internal links in index.shtml ==="
+    - echo "=== Spot-check - internal links in index.shtml ==="
     - grep "href" "${DRY_RUN_DIR}/index.shtml" | head -10
-
-    - echo "=== Spot-check: no leftover .html links ==="
-    - grep -r "\.html" "${DRY_RUN_DIR}" | grep "href" | wc -l
     - echo "lines above should be 0 (or only external links like dcache.org/...html)"
-
+    - echo "=== Spot-check - no leftover .html links ==="
+    - grep -r "\.html" "${DRY_RUN_DIR}" | grep "href" | wc -l || true
     - echo "=== Verify neighboring dirs are untouched ==="
     - ls -la "${MANUALS_DIR}/Book-10.2/"  | head -5
     - ls -la "${MANUALS_DIR}/Book-9.2/"   | head -5
-
-    - echo "=== Done. Dry run directory is: ${DRY_RUN_DIR} ==="
+    - echo "=== Done. Dry run directory is - ${DRY_RUN_DIR} ==="
     - echo "Visit https://www.dcache.org/old/manuals/Book-11.0-dryrun/index.shtml to preview"
