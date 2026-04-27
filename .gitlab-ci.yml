@@ -10,9 +10,17 @@ build-thebook:
   image: maven:3.9.12-eclipse-temurin-21
   script:
     - mvn $MAVEN_CLI_OPTS -DskipTests -pl docs/TheBook -am clean install
+    # Convert to SHTML before archiving
+    - cd docs/TheBook/target/
+    - mkdir shtml_build
+    - cp -r html/* shtml_build/
+    - cd shtml_build
+    - find . -name "*.html" -exec sh -c 'mv "$1" "${1%.html}.shtml"' _ {} \;
+    - find . -name "*.shtml" -exec sed -i 's/\.html/\.shtml/g' {} +
+    - tar -czf ../TheBook-shtml.tar.gz .
   artifacts:
     paths:
-      - "docs/TheBook/target/TheBook-*.tar.gz"
+      - "docs/TheBook/target/TheBook-shtml.tar.gz"
     expire_in: 1 day
 
 inspect-thebook:
@@ -23,14 +31,13 @@ inspect-thebook:
   dependencies:
     - build-thebook
   script:
-    - echo "=== Artifact received ==="
-    - find . -name "TheBook-*.tar.gz"
-    - echo ""
-    - echo "=== Archive contents (first 20 lines) ==="
-    - tar -tzvf docs/TheBook/target/TheBook-*.tar.gz | head -20
-    - echo ""
-    - echo "=== Website directory ==="
-    - ls -la /data/www/dcache.org/ || echo "Not found or no access"
-    - echo ""
-    - echo "=== Manuals directory (if exists) ==="
-    - ls -la /data/www/dcache.org/manuals/ || echo "No manuals dir"
+    - echo "=== Checking Artifact ==="
+    - ls -lh docs/TheBook/target/TheBook-shtml.tar.gz
+    - tar -tzvf docs/TheBook/target/TheBook-shtml.tar.gz | head -n 10
+
+    - echo "=== Checking Web Server Access ==="
+    # We use 'test -d' to check existence without triggering a fail status
+    - if [ -d "/data/www/dcache.org" ]; then echo "Web root exists"; else echo "Web root hidden"; fi
+
+    # Try to see if we can at least see the 'manuals' folder
+    - ls -d /data/www/dcache.org/manuals || echo "Manuals folder is strictly protected"
