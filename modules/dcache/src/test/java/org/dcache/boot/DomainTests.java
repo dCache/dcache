@@ -30,27 +30,28 @@ public class DomainTests {
 
     private TestingServer zkTestServer;
     private int tlsPort;
-    private String curatorKeyStorePath;
-    private String curatorTrustStorePath;
-    private static final String GLOBAL_PASSWORD = "password";
+    private String caPath;
+    private String curatorKeyPath;
+    private String curatorCertPath;
 
     @Before
     public void setUp() throws Exception {
 
-        curatorKeyStorePath = Objects.requireNonNull(getClass().getResource("/zookeeper-tls/curator-keystore.p12")).getFile();
-        curatorTrustStorePath = Objects.requireNonNull(getClass().getResource("/zookeeper-tls/curator-truststore.p12")).getFile();
-        String zkKeyStorePath = Objects.requireNonNull(getClass().getResource("/zookeeper-tls/zookeeper-keystore.p12")).getFile();
-        String zkTrustStorePath = Objects.requireNonNull(getClass().getResource("/zookeeper-tls/zookeeper-truststore.p12")).getFile();
+        caPath = Objects.requireNonNull(getClass().getResource("/zookeeper-tls/certificates/")).getFile();
+        curatorKeyPath = Objects.requireNonNull(getClass().getResource("/zookeeper-tls/curator-key.pem")).getFile();
+        curatorCertPath = Objects.requireNonNull(getClass().getResource("/zookeeper-tls/curator-cert.pem")).getFile();
+        String caFile = Objects.requireNonNull(getClass().getResource("/zookeeper-tls/ca-cert.pem")).getFile();
+        String zkCombined = Objects.requireNonNull(getClass().getResource("/zookeeper-tls/zookeeper-combined.pem")).getFile();
 
         tlsPort = InstanceSpec.getRandomPort();
         HashMap<String, Object> zkProperties = new HashMap<>();
         zkProperties.put("clientPort", "0");
         zkProperties.put("secureClientPort", String.valueOf(tlsPort));
         zkProperties.put("serverCnxnFactory", "org.apache.zookeeper.server.NettyServerCnxnFactory");
-        zkProperties.put("ssl.keyStore.location", zkKeyStorePath);
-        zkProperties.put("ssl.keyStore.password", "password");
-        zkProperties.put("ssl.trustStore.location", zkTrustStorePath);
-        zkProperties.put("ssl.trustStore.password", "password");
+        zkProperties.put("ssl.keyStore.location", zkCombined);
+        zkProperties.put("ssl.keyStore.type", "PEM");
+        zkProperties.put("ssl.trustStore.location", caFile);
+        zkProperties.put("ssl.trustStore.type", "PEM");
         zkProperties.put("ssl.clientAuth", "NEED");
 
         InstanceSpec spec = new InstanceSpec(null, -1, -1,
@@ -68,6 +69,8 @@ public class DomainTests {
         _domainProperties.setProperty("dcache.zookeeper.session-timeout.unit", "SECONDS");
         _domainProperties.setProperty("dcache.zookeeper.connection", "localhost:2181");
         _domainProperties.setProperty("dcache.zookeeper.tls.enabled", "true");
+        _domainProperties.setProperty("dcache.authn.crl-mode", "IF_VALID");
+        _domainProperties.setProperty("dcache.authn.ocsp-mode", "IF_AVAILABLE");
 
     }
 
@@ -106,12 +109,11 @@ public class DomainTests {
     }
 
     @Test
-    public void testConnectionEstablished() throws InterruptedException {
+    public void testConnectionEstablished() throws Exception {
         _domainProperties.setProperty("dcache.zookeeper.connection", "localhost:" + tlsPort);
-        _domainProperties.setProperty("dcache.zookeeper.tls.keystore.path", curatorKeyStorePath);
-        _domainProperties.setProperty("dcache.zookeeper.tls.keystore.password", GLOBAL_PASSWORD);
-        _domainProperties.setProperty("dcache.zookeeper.tls.truststore.path", curatorTrustStorePath);
-        _domainProperties.setProperty("dcache.zookeeper.tls.truststore.password", GLOBAL_PASSWORD);
+        _domainProperties.setProperty("dcache.zookeeper.tls.key", curatorKeyPath);
+        _domainProperties.setProperty("dcache.zookeeper.tls.cert", curatorCertPath);
+        _domainProperties.setProperty("dcache.zookeeper.tls.capath", caPath);
         _domain = new Domain(DOMAIN_NAME, _domainProperties);
         CuratorFramework curator = _domain.createCuratorFramework();
         curator.start();

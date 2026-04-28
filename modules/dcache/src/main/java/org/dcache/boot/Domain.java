@@ -20,11 +20,13 @@ import static org.dcache.boot.Properties.PROPERTY_ZOOKEPER_SESSION_TIMEOUT;
 import static org.dcache.boot.Properties.PROPERTY_ZOOKEPER_SESSION_TIMEOUT_UNIT;
 import static org.dcache.boot.Properties.PROPERTY_ZOOKEPER_SLEEP;
 import static org.dcache.boot.Properties.PROPERTY_ZOOKEPER_SLEEP_UNIT;
-import static org.dcache.boot.Properties.PROPERTY_ZOOKEEPER_KEYSTORE_PASSWORD;
-import static org.dcache.boot.Properties.PROPERTY_ZOOKEEPER_KEYSTORE_PATH;
 import static org.dcache.boot.Properties.PROPERTY_ZOOKEEPER_TLS_ENABLED;
-import static org.dcache.boot.Properties.PROPERTY_ZOOKEEPER_TRUSTSTORE_PASSWORD;
-import static org.dcache.boot.Properties.PROPERTY_ZOOKEEPER_TRUSTSTORE_PATH;
+import static org.dcache.boot.Properties.PROPERTY_ZOOKEEPER_PEM_CA;
+import static org.dcache.boot.Properties.PROPERTY_ZOOKEEPER_PEM_CERT;
+import static org.dcache.boot.Properties.PROPERTY_ZOOKEEPER_PEM_KEY;
+import static org.dcache.boot.Properties.PROPERTY_CRL_MODE;
+import static org.dcache.boot.Properties.PROPERTY_OCSP_MODE;
+
 import static org.dcache.util.Exceptions.genericCheck;
 
 import ch.qos.logback.classic.LoggerContext;
@@ -32,6 +34,7 @@ import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.core.joran.spi.JoranException;
 import ch.qos.logback.core.util.StatusPrinter;
 import com.google.common.base.Strings;
+import com.google.common.base.Supplier;
 import com.google.common.base.Throwables;
 import com.google.common.primitives.Ints;
 import dmg.cells.nucleus.CDC;
@@ -50,13 +53,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+
+import eu.emi.security.authn.x509.CrlCheckingMode;
+import eu.emi.security.authn.x509.OCSPCheckingMode;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.client.ZKClientConfig;
+import org.dcache.ssl.CanlContextFactory;
 import org.dcache.util.Args;
 import org.dcache.util.configuration.ConfigurationProperties;
 import org.slf4j.Logger;
@@ -65,6 +73,8 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.FileSystemResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
+
+import javax.net.ssl.SSLContext;
 
 /**
  * Domain encapsulates the configuration of a domain and its services. Provides the logic for
@@ -82,6 +92,7 @@ public class Domain {
     private final ConfigurationProperties _properties;
     private final List<ConfigurationProperties> _services;
     private final ResourceLoader _resourceLoader = new FileSystemResourceLoader();
+    static Callable<SSLContext> _sslContextFactory;
 
     public Domain(String name, ConfigurationProperties defaults) {
         _properties = new ConfigurationProperties(defaults, new DcacheConfigurationUsageChecker());
@@ -175,7 +186,7 @@ public class Domain {
         }
     }
 
-    protected CuratorFramework createCuratorFramework() {
+    protected CuratorFramework createCuratorFramework() throws Exception {
         int maxRetries = Integer.parseInt(_properties.getValue(PROPERTY_ZOOKEPER_RETRIES));
         String zookeeperConnectionString = _properties.getValue(PROPERTY_ZOOKEPER_CONNECTION);
         boolean tlsEnabled = Boolean.parseBoolean(_properties.getValue(PROPERTY_ZOOKEEPER_TLS_ENABLED));
@@ -190,21 +201,21 @@ public class Domain {
         CuratorFramework curator;
 
         if (tlsEnabled) {
-            String keyStorePath = _properties.getValue(PROPERTY_ZOOKEEPER_KEYSTORE_PATH);
-            String keyStorePassword = _properties.getValue(PROPERTY_ZOOKEEPER_KEYSTORE_PASSWORD);
-            String trustStorePath = _properties.getValue(PROPERTY_ZOOKEEPER_TRUSTSTORE_PATH);
-            String trustStorePassword = _properties.getValue(PROPERTY_ZOOKEEPER_TRUSTSTORE_PASSWORD);
-            if (keyStorePath == null
-                    || keyStorePassword == null
-                    || trustStorePath == null
-                    || trustStorePassword == null) {
+            String keyPath = _properties.getValue(PROPERTY_ZOOKEEPER_PEM_KEY);
+            String certPath = _properties.getValue(PROPERTY_ZOOKEEPER_PEM_CERT);
+            String caPath = _properties.getValue(PROPERTY_ZOOKEEPER_PEM_CA);
+
+            if (keyPath == null || certPath == null || caPath == null) {
                 throw new IllegalStateException(
-                        "TLS for ZooKeeper is enabled but keystore/truststore properties are not fully configured"
-                );
+                        "TLS for ZooKeeper is enabled but PEM file properties are not fully configured");
             }
 
-            ZKClientConfig zkConfig = getZkClientConfig(keyStorePath,
-                    keyStorePassword, trustStorePath, trustStorePassword);
+            File pemKey = new File(keyPath);
+            File pemCert = new File(certPath);
+            File pemCA = new File(caPath);
+
+            ZKClientConfig zkConfig = getZkClientConfig(pemKey,
+                    pemCert, pemCA);
 
             curator = CuratorFrameworkFactory.newClient(zookeeperConnectionString,
                     sessionTimeoutMs, connectionTimeoutMs, retryPolicy, zkConfig);
@@ -229,18 +240,37 @@ public class Domain {
         return curator;
     }
 
-    protected ZKClientConfig getZkClientConfig(String keyStorePath, String keyStorePassword,
-                                               String trustStorePath, String trustStorePassword) {
+    protected ZKClientConfig getZkClientConfig(File keyPath, File certPath,
+                                               File caPath) throws Exception {
         ZKClientConfig zkConfig = new ZKClientConfig();
+        CrlCheckingMode crlMode = CrlCheckingMode.valueOf(_properties.getValue(PROPERTY_CRL_MODE));
+        OCSPCheckingMode ocspMode = OCSPCheckingMode.valueOf(_properties.getValue(PROPERTY_OCSP_MODE));
+
+        _sslContextFactory = CanlContextFactory.custom()
+                .withCrlCheckingMode(crlMode)
+                .withOcspCheckingMode(ocspMode)
+                .withKeyPath(keyPath.toPath())
+                .withCertificateAuthorityPath(caPath.toPath())
+                .withCertificatePath(certPath.toPath())
+                .withLazy(false)
+                .buildWithCaching(SSLContext.class);
+
         zkConfig.setProperty(ZKClientConfig.SECURE_CLIENT, "true");
         zkConfig.setProperty(ZKClientConfig.ZOOKEEPER_CLIENT_CNXN_SOCKET,
                 "org.apache.zookeeper.ClientCnxnSocketNetty");
-        zkConfig.setProperty("zookeeper.ssl.keyStore.location", keyStorePath);
-        zkConfig.setProperty("zookeeper.ssl.keyStore.password", keyStorePassword);
-        zkConfig.setProperty("zookeeper.ssl.trustStore.location", trustStorePath);
-        zkConfig.setProperty("zookeeper.ssl.trustStore.password", trustStorePassword);
+        zkConfig.setProperty("zookeeper.ssl.context.supplier.class", SSLContextSupplier.class.getName());
         zkConfig.setProperty("zookeeper.ssl.protocol", "TLSv1.3");
         return zkConfig;
+    }
+
+    public static class SSLContextSupplier implements Supplier<SSLContext> {
+        public SSLContext get() {
+            try {
+                return _sslContextFactory.call();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     private int getTime(String baseProperty, String unitProperty) {

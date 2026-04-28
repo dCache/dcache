@@ -35,10 +35,12 @@ public class Properties {
     public static final String PROPERTY_ZOOKEPER_SESSION_TIMEOUT = "dcache.zookeeper.session-timeout";
     public static final String PROPERTY_ZOOKEPER_SESSION_TIMEOUT_UNIT = "dcache.zookeeper.session-timeout.unit";
     public static final String PROPERTY_ZOOKEEPER_TLS_ENABLED = "dcache.zookeeper.tls.enabled";
-    public static final String PROPERTY_ZOOKEEPER_KEYSTORE_PATH = "dcache.zookeeper.tls.keystore.path";
-    public static final String PROPERTY_ZOOKEEPER_KEYSTORE_PASSWORD = "dcache.zookeeper.tls.keystore.password";
-    public static final String PROPERTY_ZOOKEEPER_TRUSTSTORE_PATH = "dcache.zookeeper.tls.truststore.path";
-    public static final String PROPERTY_ZOOKEEPER_TRUSTSTORE_PASSWORD = "dcache.zookeeper.tls.truststore.password";
+    public static final String PROPERTY_ZOOKEEPER_PEM_CERT = "dcache.zookeeper.tls.cert";
+    public static final String PROPERTY_ZOOKEEPER_PEM_KEY = "dcache.zookeeper.tls.key";
+    public static final String PROPERTY_ZOOKEEPER_PEM_CA = "dcache.zookeeper.tls.capath";
+
+    public static final String PROPERTY_CRL_MODE = "dcache.authn.crl-mode";
+    public static final String PROPERTY_OCSP_MODE = "dcache.authn.ocsp-mode";
 
     public static final String PROPERTY_DOMAINS = "dcache.domains";
     public static final String PROPERTY_PLUGIN_PATH = "dcache.paths.plugins";
