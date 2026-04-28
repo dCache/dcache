@@ -14,15 +14,7 @@ build-thebook:
   image: maven:3.9.12-eclipse-temurin-21
   script:
     - mvn $MAVEN_CLI_OPTS -DskipTests -pl docs/TheBook -am clean install -P dcache.org
-    - echo "=== First 40 lines of index.shtml ==="
-    - head -40 docs/TheBook/target/intermediate-html/index.shtml
-
-    - echo "=== First 40 lines of config-acl.shtml ==="
-    - head -40 docs/TheBook/target/intermediate-html/config-acl.shtml
-
-    - echo "=== Find the header fragment source ==="
-    - find . -name "dcacheorg-header.html" | head -5
-    - find . -name "dcacheorg-header.html" -exec cat {} \;
+    - tar -czf TheBook-shtml.tar.gz -C docs/TheBook/target/intermediate-html .
   artifacts:
     paths:
       - "TheBook-shtml.tar.gz"
@@ -36,7 +28,7 @@ deploy-dryrun:
   dependencies:
     - build-thebook
   script:
-    - echo "=== Phase 1 - Safety checks ==="
+    - echo "=== Phase 1 - Safety check ==="
     - |
       if [ -d "${DRY_RUN_DIR}" ]; then
         echo "ERROR - ${DRY_RUN_DIR} already exists. Remove it first."
@@ -56,7 +48,7 @@ deploy-dryrun:
     - echo "=== Phase 3 - Extract to staging ==="
     - STAGING_DIR="${DRY_RUN_DIR}_staging"
     - mkdir -p "$STAGING_DIR"
-    - tar -xzf docs/TheBook/target/TheBook-shtml.tar.gz -C "$STAGING_DIR"
+    - tar -xzf TheBook-shtml.tar.gz -C "$STAGING_DIR"
     - SHTML_COUNT=$(find "$STAGING_DIR" -name "*.shtml" | wc -l)
     - echo "Extracted $SHTML_COUNT shtml files"
     - |
@@ -65,44 +57,20 @@ deploy-dryrun:
         exit 1
       fi
 
-    - echo "=== Phase 4 - Inject SSI headers into all shtml files ==="
-    - |
-      for f in "$STAGING_DIR"/*.shtml; do
-        if grep -q "include virtual" "$f"; then
-          echo "SKIP already has SSI - $f"
-          continue
-        fi
-        BASENAME=$(basename "$f" .shtml)
-        RIBBON="<a class=\"github-fork-ribbon\" href=\"https://github.com/dCache/dcache/blob/master/docs/TheBook/src/main/markdown/${BASENAME}.md\" data-ribbon=\"Edit me on GitHub\" title=\"Edit me on GitHub\">Edit me on GitHub</a>"
-        sed -i 's|<head>|<head>\n    <!--#include virtual="/template/frags/std-html-head.shtml"-->|' "$f"
-        sed -i "s|<body>|<body>\n<!--#include virtual=\"/template/frags/header-beginning.shtml\" -->\n<!--#include virtual=\"/template/frags/header-docs-11.2.shtml\" -->\n<!--#include virtual=\"/template/frags/header-end.shtml\" -->\n${RIBBON}|" "$f"
-        sed -i 's|</body>|<!--#include virtual="/template/frags/footer.shtml"-->\n</body>|' "$f"
-      done
-    - echo "=== Creating missing header fragment for 11.2 ==="
-    - FRAGS_DIR="/data/www/old-dcache.org/template/frags"
-    - |
-      if [ ! -f "${FRAGS_DIR}/header-docs-11.2.shtml" ]; then
-        cp "${FRAGS_DIR}/header-docs-10.2.shtml" "${FRAGS_DIR}/header-docs-11.2.shtml"
-        sed -i 's/10\.2/11.2/g' "${FRAGS_DIR}/header-docs-11.2.shtml"
-        echo "Created header-docs-11.2.shtml"
-      else
-        echo "header-docs-11.2.shtml already exists, skipping"
-      fi
-    - echo "--- Verify the new fragment looks correct ---"
-    - cat "${FRAGS_DIR}/header-docs-11.2.shtml"
-
-    - echo "=== Phase 5 - Verify injection ==="
-    - echo "--- First 20 lines of index.shtml after injection ---"
+    - echo "=== Phase 4 - Verify files look correct ==="
     - head -20 "$STAGING_DIR/index.shtml"
-    - MISSING=$(grep -rL "include virtual" "$STAGING_DIR"/*.shtml | wc -l)
-    - echo "Files still missing SSI includes $MISSING (should be 0)"
+    - echo "--- Spot check no unresolved maven placeholders remain ---"
+    - grep -r "@parsedVersion" "$STAGING_DIR" | wc -l
+    - echo "lines above should be 0"
+    - grep -r "@github.url-prefix@" "$STAGING_DIR" | wc -l
+    - echo "lines above should be 0"
 
-    - echo "=== Phase 6 - Deploy to dryrun dir ==="
+    - echo "=== Phase 5 - Deploy to dryrun dir ==="
     - mv "$STAGING_DIR" "${DRY_RUN_DIR}"
     - echo "Deployed to ${DRY_RUN_DIR}"
     - echo "Visit https://www.dcache.org/old/manuals/Book-11.2-dryrun/index.shtml"
 
-    - echo "=== Phase 7 - Verify neighbors untouched ==="
+    - echo "=== Phase 6 - Verify neighbors untouched ==="
     - ls -la "${MANUALS_DIR}/Book-10.2/" | head -3
     - ls -la "${MANUALS_DIR}/Book-9.2/" | head -3
 
