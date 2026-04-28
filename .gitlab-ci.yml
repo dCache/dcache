@@ -65,10 +65,26 @@ deploy-dryrun:
           echo "SKIP already has SSI - $f"
           continue
         fi
+        # Get the filename (e.g., index.shtml) for the GitHub link
+        BASENAME=$(basename "$f")
+        # Change .shtml extension back to .md for the GitHub URL
+        MDFILE="${BASENAME%.shtml}.md"
         sed -i 's|<head>|<head>\n    <!--#include virtual="/template/frags/std-html-head.shtml"-->|' "$f"
         sed -i 's|<body>|<body>\n<!--#include virtual="/template/frags/header-beginning.shtml" -->\n<!--#include virtual="/template/frags/header-docs-11.2.shtml" -->\n<!--#include virtual="/template/frags/header-end.shtml" -->|' "$f"
         sed -i 's|</body>|<!--#include virtual="/template/frags/footer.shtml"-->\n</body>|' "$f"
       done
+    - echo "=== Creating missing header fragment for 11.2 ==="
+    - FRAGS_DIR="/data/www/old-dcache.org/template/frags"
+    - |
+      if [ ! -f "${FRAGS_DIR}/header-docs-11.2.shtml" ]; then
+        cp "${FRAGS_DIR}/header-docs-10.2.shtml" "${FRAGS_DIR}/header-docs-11.2.shtml"
+        sed -i 's/10\.2/11.2/g' "${FRAGS_DIR}/header-docs-11.2.shtml"
+        echo "Created header-docs-11.2.shtml"
+      else
+        echo "header-docs-11.2.shtml already exists, skipping"
+      fi
+    - echo "--- Verify the new fragment looks correct ---"
+    - cat "${FRAGS_DIR}/header-docs-11.2.shtml"
 
     - echo "=== Phase 5 - Verify injection ==="
     - echo "--- First 20 lines of index.shtml after injection ---"
