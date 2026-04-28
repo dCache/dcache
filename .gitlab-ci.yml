@@ -65,12 +65,10 @@ deploy-dryrun:
           echo "SKIP already has SSI - $f"
           continue
         fi
-        # Get the filename (e.g., index.shtml) for the GitHub link
-        BASENAME=$(basename "$f")
-        # Change .shtml extension back to .md for the GitHub URL
-        MDFILE="${BASENAME%.shtml}.md"
+        BASENAME=$(basename "$f" .shtml)
+        RIBBON="<a class=\"github-fork-ribbon\" href=\"https://github.com/dCache/dcache/blob/master/docs/TheBook/src/main/markdown/${BASENAME}.md\" data-ribbon=\"Edit me on GitHub\" title=\"Edit me on GitHub\">Edit me on GitHub</a>"
         sed -i 's|<head>|<head>\n    <!--#include virtual="/template/frags/std-html-head.shtml"-->|' "$f"
-        sed -i 's|<body>|<body>\n<!--#include virtual="/template/frags/header-beginning.shtml" -->\n<!--#include virtual="/template/frags/header-docs-11.2.shtml" -->\n<!--#include virtual="/template/frags/header-end.shtml" -->|' "$f"
+        sed -i "s|<body>|<body>\n<!--#include virtual=\"/template/frags/header-beginning.shtml\" -->\n<!--#include virtual=\"/template/frags/header-docs-11.2.shtml\" -->\n<!--#include virtual=\"/template/frags/header-end.shtml\" -->\n${RIBBON}|" "$f"
         sed -i 's|</body>|<!--#include virtual="/template/frags/footer.shtml"-->\n</body>|' "$f"
       done
     - echo "=== Creating missing header fragment for 11.2 ==="
@@ -85,6 +83,11 @@ deploy-dryrun:
       fi
     - echo "--- Verify the new fragment looks correct ---"
     - cat "${FRAGS_DIR}/header-docs-11.2.shtml"
+
+    - echo "=== Updating copyright year in footer ==="
+    - grep "Copyright" /data/www/old-dcache.org/template/frags/footer.shtml
+    - sed -i 's/2003 - 2018/2003 - 2026/g' /data/www/old-dcache.org/template/frags/footer.shtml
+    - grep "Copyright" /data/www/old-dcache.org/template/frags/footer.shtml
 
     - echo "=== Phase 5 - Verify injection ==="
     - echo "--- First 20 lines of index.shtml after injection ---"
