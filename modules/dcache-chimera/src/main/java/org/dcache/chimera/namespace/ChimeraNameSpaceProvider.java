@@ -369,7 +369,8 @@ public class ChimeraNameSpaceProvider
             if (assignAttributes.getDefinedAttributes().isEmpty()) {
                 fileAttributes = getFileAttributes(inode, requestedAttributes);
             } else {
-                fileAttributes = setFileAttributes(subject, inode.getPnfsId(),
+                // skip permission check on create by using ROOT subject.
+                fileAttributes = setFileAttributes(Subjects.ROOT, inode.getPnfsId(),
                       assignAttributes, requestedAttributes);
             }
 
