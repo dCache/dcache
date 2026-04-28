@@ -41,11 +41,9 @@ deploy-dryrun:
       fi
 
     - echo "=== Phase 2 - Inspect production header fragments ==="
-    - echo "--- Checking what header fragments exist for reference ---"
-    - ls /data/www/old-dcache.org/template/frags/ 2>/dev/null || ls /data/www/old-dcache.org/ | head -20
-    - echo "--- Does a header for our version exist already? ---"
-    - ls /data/www/old-dcache.org/template/frags/ | grep "11.2" || echo "No 11.2 header fragment yet"
-    - echo "--- Full first 30 lines of a production file for reference ---"
+    - ls /data/www/old-dcache.org/template/frags/ 2>/dev/null || echo "template/frags not found at expected path"
+    - ls /data/www/old-dcache.org/template/frags/ | grep "11.2" || echo "No 11.2 header fragment found"
+    - echo "--- Full first 30 lines of a production non-index file for reference ---"
     - head -30 "${MANUALS_DIR}/Book-10.2/config-acl.shtml"
 
     - echo "=== Phase 3 - Extract to staging ==="
@@ -53,67 +51,42 @@ deploy-dryrun:
     - mkdir -p "$STAGING_DIR"
     - tar -xzf docs/TheBook/target/TheBook-shtml.tar.gz -C "$STAGING_DIR"
     - SHTML_COUNT=$(find "$STAGING_DIR" -name "*.shtml" | wc -l)
-    - echo "Extracted $SHTML_COUNT .shtml files"
+    - echo "Extracted $SHTML_COUNT shtml files"
     - |
       if [ "$SHTML_COUNT" -lt 10 ]; then
-        echo "ERROR - Too few shtml files extracted"
+        echo "ERROR - too few shtml files extracted"
         exit 1
       fi
 
     - echo "=== Phase 4 - Inject SSI headers into all shtml files ==="
     - |
       for f in "$STAGING_DIR"/*.shtml; do
-        # Check if file already has SSI (skip if so)
         if grep -q "include virtual" "$f"; then
-          echo "SKIP (already has SSI) - $f"
+          echo "SKIP already has SSI - $f"
           continue
         fi
-
-        # Build the correct head block to inject
-        BASENAME=$(basename "$f")
-        cat > /tmp/ssi_head.txt << 'SSIEOF'
-        <!--#include virtual="/template/frags/std-html-head.shtml"-->
-        SSIEOF
-  
-        cat > /tmp/ssi_body_start.txt << 'SSIEOF'
-        <!--#include virtual="/template/frags/header-beginning.shtml" -->
-        <!--#include virtual="/template/frags/header-docs-11.2.shtml" -->
-        <!--#include virtual="/template/frags/header-end.shtml" -->
-        SSIEOF
-  
-        cat > /tmp/ssi_footer.txt << 'SSIEOF'
-        <!--#include virtual="/template/frags/footer.shtml"-->
-        SSIEOF
-  
-  # Inject std-html-head.shtml after <head> opening
         sed -i 's|<head>|<head>\n    <!--#include virtual="/template/frags/std-html-head.shtml"-->|' "$f"
-  
-  # Inject navigation header after <body>
         sed -i 's|<body>|<body>\n<!--#include virtual="/template/frags/header-beginning.shtml" -->\n<!--#include virtual="/template/frags/header-docs-11.2.shtml" -->\n<!--#include virtual="/template/frags/header-end.shtml" -->|' "$f"
-  
-  # Inject footer before </body>
         sed -i 's|</body>|<!--#include virtual="/template/frags/footer.shtml"-->\n</body>|' "$f"
       done
 
     - echo "=== Phase 5 - Verify injection ==="
-    - echo "--- Checking index.shtml has SSI now ---"
+    - echo "--- First 20 lines of index.shtml after injection ---"
     - head -20 "$STAGING_DIR/index.shtml"
-    - echo "--- Confirm no files are missing SSI ---"
     - MISSING=$(grep -rL "include virtual" "$STAGING_DIR"/*.shtml | wc -l)
-    - echo "Files still missing SSI includes - $MISSING"
+    - echo "Files still missing SSI includes $MISSING (should be 0)"
 
     - echo "=== Phase 6 - Deploy to dryrun dir ==="
     - mv "$STAGING_DIR" "${DRY_RUN_DIR}"
     - echo "Deployed to ${DRY_RUN_DIR}"
-    - echo "Visit - https://www.dcache.org/old/manuals/Book-11.2-dryrun/index.shtml"
+    - echo "Visit https://www.dcache.org/old/manuals/Book-11.2-dryrun/index.shtml"
 
     - echo "=== Phase 7 - Verify neighbors untouched ==="
     - ls -la "${MANUALS_DIR}/Book-10.2/" | head -3
     - ls -la "${MANUALS_DIR}/Book-9.2/" | head -3
 
-after_script:
-  - echo "=== Cleanup staging if it exists (e.g. on failure) ==="
-  - rm -rf "${DRY_RUN_DIR}_staging" || true
+  after_script:
+    - rm -rf "${DRY_RUN_DIR}_staging" || true
 
 cleanup-dryrun:
   stage: deploy
