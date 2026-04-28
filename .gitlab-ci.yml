@@ -52,3 +52,28 @@ deploy-dryrun:
     - ls -la "${MANUALS_DIR}/Book-9.2/"   | head -5
     - echo "=== Done. Dry run directory is - ${DRY_RUN_DIR} ==="
     - echo "Visit https://www.dcache.org/old/manuals/Book-11.0-dryrun/index.shtml to preview"
+    - echo "=== Check SSI includes in our files ==="
+    - grep -r "<!--#include" "${DRY_RUN_DIR}" | head -5 || echo "No SSI includes found in our files"
+
+    - echo "=== Compare with production Book-10.2 ==="
+    - grep -r "<!--#include" "${MANUALS_DIR}/Book-10.2/" | head -5 || echo "No SSI includes in Book-10.2 either"
+
+    - echo "=== Check nginx config for SSI ==="
+    - cat /etc/nginx/conf.d/*.conf 2>/dev/null | grep -A5 -i "ssi\|include\|old-dcache" | head -30 || true
+    - cat /etc/nginx/nginx.conf 2>/dev/null | grep -i "ssi" | head -10 || true
+
+    - echo "=== Check what a production shtml actually looks like (first 30 lines) ==="
+    - head -30 "${MANUALS_DIR}/Book-10.2/index.shtml"
+
+    - echo "=== Compare with our generated shtml (first 30 lines) ==="
+    - head -30 "${DRY_RUN_DIR}/index.shtml"
+
+cleanup-dryrun:
+  stage: deploy
+  tags:
+    - hugo
+    - www.dcache.org
+  when: manual
+  script:
+    - rm -rf "${DRY_RUN_DIR}"
+    - echo "Cleaned up ${DRY_RUN_DIR}"
