@@ -6,32 +6,23 @@ variables:
   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true -Dmaven.repo.local=.m2/repository"
   MANUALS_DIR: "/data/www/old-dcache.org/manuals"
   DRY_RUN_DIR: "/data/www/old-dcache.org/manuals/Book-11.2-dryrun"
-  DRY_RUN_GUIDE: "/data/www/old-dcache.org/manuals/UserGuide-11.2-dryrun"
+  BOOK_VERSION: "11.2"
 
-build-all-docs:
+build-thebook:
   stage: build
   image: maven:3.9.12-eclipse-temurin-21
   script:
-    # Build both Book and UserGuide
-    - mvn $MAVEN_CLI_OPTS -DskipTests -pl docs/TheBook,docs/UserGuide -am clean install
-
-    # Process The Book
-    - cd docs/TheBook/target/html
+    - mvn $MAVEN_CLI_OPTS -DskipTests -pl docs/TheBook -am clean install
+    - cd docs/TheBook/target/
+    - mkdir shtml_build
+    - cp -r html/* shtml_build/
+    - cd shtml_build
     - find . -name "*.html" -exec sh -c 'mv "$1" "${1%.html}.shtml"' _ {} \;
     - find . -name "*.shtml" -exec sed -i 's/\.html/\.shtml/g' {} +
-    # (SSI wrapping logic would go here as previously discussed)
-    - tar -czf ../../../TheBook-shtml.tar.gz .
-    - cd ../../../
-
-    # Process UserGuide
-    - cd docs/UserGuide/target/html
-    - find . -name "*.html" -exec sh -c 'mv "$1" "${1%.html}.shtml"' _ {} \;
-    - find . -name "*.shtml" -exec sed -i 's/\.html/\.shtml/g' {} +
-    - tar -czf ../../../UserGuide-shtml.tar.gz .
+    - tar -czf ../TheBook-shtml.tar.gz .
   artifacts:
     paths:
-      - "TheBook-shtml.tar.gz"
-      - "UserGuide-shtml.tar.gz"
+      - "docs/TheBook/target/TheBook-shtml.tar.gz"
     expire_in: 1 day
 
 deploy-dryrun:
@@ -39,33 +30,90 @@ deploy-dryrun:
   tags:
     - hugo
     - www.dcache.org
+  dependencies:
+    - build-thebook
   script:
+    - echo "=== Phase 1 - Safety checks ==="
     - |
-      for DOC_TYPE in "Book" "UserGuide"; do
-        TARGET_DIR=$( [ "$DOC_TYPE" == "Book" ] && echo "$DRY_RUN_BOOK" || echo "$DRY_RUN_GUIDE" )
-        ARCHIVE=$( [ "$DOC_TYPE" == "Book" ] && echo "TheBook-shtml.tar.gz" || echo "UserGuide-shtml.tar.gz" )
-      
-        echo "=== Phase 1 - Safety Check for $DOC_TYPE ==="
-        if [[ "$TARGET_DIR" =~ ^.*/(Book|UserGuide)-(10\.[0-9]|9\.[0-9])$ ]]; then
-          echo "CRITICAL ERROR: $TARGET_DIR is a protected production path!"
-          exit 1
+      if [ -d "${DRY_RUN_DIR}" ]; then
+        echo "ERROR: ${DRY_RUN_DIR} already exists. Remove it first."
+        exit 1
+      fi
+
+    - echo "=== Phase 2 - Inspect production header fragments ==="
+    - echo "--- Checking what header fragments exist for reference ---"
+    - ls /data/www/old-dcache.org/template/frags/ 2>/dev/null || ls /data/www/old-dcache.org/ | head -20
+    - echo "--- Does a header for our version exist already? ---"
+    - ls /data/www/old-dcache.org/template/frags/ | grep "11.2" || echo "No 11.2 header fragment yet"
+    - echo "--- Full first 30 lines of a production file for reference ---"
+    - head -30 "${MANUALS_DIR}/Book-10.2/config-acl.shtml"
+
+    - echo "=== Phase 3 - Extract to staging ==="
+    - STAGING_DIR="${DRY_RUN_DIR}_staging"
+    - mkdir -p "$STAGING_DIR"
+    - tar -xzf docs/TheBook/target/TheBook-shtml.tar.gz -C "$STAGING_DIR"
+    - SHTML_COUNT=$(find "$STAGING_DIR" -name "*.shtml" | wc -l)
+    - echo "Extracted $SHTML_COUNT .shtml files"
+    - |
+      if [ "$SHTML_COUNT" -lt 10 ]; then
+        echo "ERROR: Too few shtml files extracted"
+        exit 1
+      fi
+
+    - echo "=== Phase 4 - Inject SSI headers into all shtml files ==="
+    - |
+      for f in "$STAGING_DIR"/*.shtml; do
+        # Check if file already has SSI (skip if so)
+        if grep -q "include virtual" "$f"; then
+          echo "SKIP (already has SSI): $f"
+          continue
         fi
 
-        echo "=== Phase 2 - Atomic Deployment for $DOC_TYPE ==="
-        STAGING_DIR="${TARGET_DIR}_tmp_$(date +%s)"
-        mkdir -p "$STAGING_DIR"
-        tar -xzf "$ARCHIVE" -C "$STAGING_DIR"
-
-        echo "=== Phase 3 - Validation ==="
-        # Verify file count and lack of raw .html
-        COUNT=$(ls -1 "$STAGING_DIR"/*.shtml | wc -l)
-        if [ "$COUNT" -lt 5 ]; then echo "Error - Deployment for $DOC_TYPE too small!"; exit 1; fi
-      
-        echo "=== Phase 4 - Safe Swap ==="
-        [ -d "$TARGET_DIR" ] && rm -rf "$TARGET_DIR"
-        mv "$STAGING_DIR" "$TARGET_DIR"
-        echo "Successfully deployed $DOC_TYPE to $TARGET_DIR"
+        # Build the correct head block to inject
+        BASENAME=$(basename "$f")
+        cat > /tmp/ssi_head.txt << 'SSIEOF'
+        <!--#include virtual="/template/frags/std-html-head.shtml"-->
+        SSIEOF
+  
+        cat > /tmp/ssi_body_start.txt << 'SSIEOF'
+        <!--#include virtual="/template/frags/header-beginning.shtml" -->
+        <!--#include virtual="/template/frags/header-docs-11.2.shtml" -->
+        <!--#include virtual="/template/frags/header-end.shtml" -->
+        SSIEOF
+  
+        cat > /tmp/ssi_footer.txt << 'SSIEOF'
+        <!--#include virtual="/template/frags/footer.shtml"-->
+        SSIEOF
+  
+  # Inject std-html-head.shtml after <head> opening
+        sed -i 's|<head>|<head>\n    <!--#include virtual="/template/frags/std-html-head.shtml"-->|' "$f"
+  
+  # Inject navigation header after <body>
+        sed -i 's|<body>|<body>\n<!--#include virtual="/template/frags/header-beginning.shtml" -->\n<!--#include virtual="/template/frags/header-docs-11.2.shtml" -->\n<!--#include virtual="/template/frags/header-end.shtml" -->|' "$f"
+  
+  # Inject footer before </body>
+        sed -i 's|</body>|<!--#include virtual="/template/frags/footer.shtml"-->\n</body>|' "$f"
       done
+
+    - echo "=== Phase 5 - Verify injection ==="
+    - echo "--- Checking index.shtml has SSI now ---"
+    - head -20 "$STAGING_DIR/index.shtml"
+    - echo "--- Confirm no files are missing SSI ---"
+    - MISSING=$(grep -rL "include virtual" "$STAGING_DIR"/*.shtml | wc -l)
+    - echo "Files still missing SSI includes - $MISSING"
+
+    - echo "=== Phase 6 - Deploy to dryrun dir ==="
+    - mv "$STAGING_DIR" "${DRY_RUN_DIR}"
+    - echo "Deployed to ${DRY_RUN_DIR}"
+    - echo "Visit - https://www.dcache.org/old/manuals/Book-11.2-dryrun/index.shtml"
+
+    - echo "=== Phase 7 - Verify neighbors untouched ==="
+    - ls -la "${MANUALS_DIR}/Book-10.2/" | head -3
+    - ls -la "${MANUALS_DIR}/Book-9.2/" | head -3
+
+after_script:
+  - echo "=== Cleanup staging if it exists (e.g. on failure) ==="
+  - rm -rf "${DRY_RUN_DIR}_staging" || true
 
 cleanup-dryrun:
   stage: deploy
@@ -74,5 +122,5 @@ cleanup-dryrun:
     - www.dcache.org
   when: manual
   script:
-    - rm -rf "${DRY_RUN_BOOK}" "${DRY_RUN_GUIDE}"
-    - echo "Cleaned up dryrun directories."
+    - rm -rf "${DRY_RUN_DIR}"
+    - echo "Removed ${DRY_RUN_DIR}"
