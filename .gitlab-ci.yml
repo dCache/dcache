@@ -14,19 +14,10 @@ build-thebook:
   image: maven:3.9.12-eclipse-temurin-21
   script:
     - mvn $MAVEN_CLI_OPTS -DskipTests -pl docs/TheBook -am clean install -P dcache.org
-
-    - echo "=== Check what the release tar contains ==="
-    - tar -tzvf docs/TheBook/target/TheBook-*.tar.gz | grep -v "^d" | head -5
-    - tar -xzf docs/TheBook/target/TheBook-*.tar.gz --wildcards "*/index.shtml" -O | head -25
-
-    - echo "=== Check full target structure ==="
-    - find docs/TheBook/target -maxdepth 2 -type d
-
-    - echo "=== Check intermediate vs html dirs ==="
-    - ls docs/TheBook/target/ | head -20
+    - tar -czf TheBook-shtml.tar.gz -C docs/TheBook/target/intermediate-html .
   artifacts:
     paths:
-      - "docs/TheBook/target/TheBook-*.tar.gz"
+      - "TheBook-shtml.tar.gz"
     expire_in: 1 day
 
 deploy-dryrun:
@@ -66,13 +57,13 @@ deploy-dryrun:
         exit 1
       fi
 
-    - echo "=== Phase 4 - Verify files look correct ==="
-    - head -20 "$STAGING_DIR/index.shtml"
-    - echo "--- Spot check no unresolved maven placeholders remain ---"
-    - grep -r "@parsedVersion" "$STAGING_DIR" | wc -l
-    - echo "lines above should be 0"
-    - grep -r "@github.url-prefix@" "$STAGING_DIR" | wc -l
-    - echo "lines above should be 0"
+    - echo "=== Phase 4 - Resolve Maven placeholders and GitHub ribbon ==="
+    - |
+      for f in "$STAGING_DIR"/*.shtml; do
+        sed -i "s/@parsedVersion.majorVersion@.@parsedVersion.minorVersion@/${BOOK_VERSION}/g" "$f"
+        sed -i "s|@github.url-prefix@|https://github.com/dCache/dcache/blob/master/docs/TheBook/src/main/markdown|g" "$f"
+        sed -i "/github-fork-ribbon/s/\.shtml/\.md/g" "$f"
+      done
 
     - echo "=== Phase 5 - Deploy to dryrun dir ==="
     - mv "$STAGING_DIR" "${DRY_RUN_DIR}"
