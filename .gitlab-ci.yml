@@ -13,17 +13,21 @@ build-thebook:
   stage: build
   image: maven:3.9.12-eclipse-temurin-21
   script:
-    - echo "=== Where are we ==="
-    - pwd
-    - ls -la
-    - echo "=== Find the TheBook pom ==="
-    - find . -name "pom.xml" -path "*/TheBook/*" | head -5
-    - echo "=== Check dcache.org profile ==="
-    - find . -name "pom.xml" -path "*/TheBook/*" -exec grep -A 30 "dcache.org" {} \;
-    - echo "=== Build with dcache.org profile ==="
     - mvn $MAVEN_CLI_OPTS -DskipTests -pl docs/TheBook -am clean install -P dcache.org
-    - echo "=== Check generated file ==="
-    - find . -path "*/TheBook/target/html/config-acl.html" -exec head -30 {} \;
+    - echo "=== Find all generated html files ==="
+    - find . -path "*/TheBook/target/*" -name "*.html" | head -10
+
+    - echo "=== Full target directory structure ==="
+    - find . -path "*/TheBook/target/*" -not -path "*/.m2/*" | head -40
+
+    - echo "=== First 40 lines of whatever index file was generated ==="
+    - find . -path "*/TheBook/target/*" -name "index.html" -exec head -40 {} \;
+
+    - echo "=== First 40 lines of config-acl if it exists ==="
+    - find . -path "*/TheBook/target/*" -name "config-acl.html" -exec head -40 {} \;
+    - echo "=== Find the header and footer fragments ==="
+    - find . -name "dcacheorg-header.html" -o -name "dcacheorg-footer.html" | head -5
+    - find . -name "dcacheorg-header.html" -exec cat {} \;
   artifacts:
     paths:
       - "TheBook-shtml.tar.gz"
