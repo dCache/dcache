@@ -36,7 +36,7 @@ deploy-dryrun:
     - echo "=== Phase 1 - Safety checks ==="
     - |
       if [ -d "${DRY_RUN_DIR}" ]; then
-        echo "ERROR: ${DRY_RUN_DIR} already exists. Remove it first."
+        echo "ERROR - ${DRY_RUN_DIR} already exists. Remove it first."
         exit 1
       fi
 
@@ -56,7 +56,7 @@ deploy-dryrun:
     - echo "Extracted $SHTML_COUNT .shtml files"
     - |
       if [ "$SHTML_COUNT" -lt 10 ]; then
-        echo "ERROR: Too few shtml files extracted"
+        echo "ERROR - Too few shtml files extracted"
         exit 1
       fi
 
@@ -65,7 +65,7 @@ deploy-dryrun:
       for f in "$STAGING_DIR"/*.shtml; do
         # Check if file already has SSI (skip if so)
         if grep -q "include virtual" "$f"; then
-          echo "SKIP (already has SSI): $f"
+          echo "SKIP (already has SSI) - $f"
           continue
         fi
 
