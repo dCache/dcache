@@ -14,10 +14,19 @@ build-thebook:
   image: maven:3.9.12-eclipse-temurin-21
   script:
     - mvn $MAVEN_CLI_OPTS -DskipTests -pl docs/TheBook -am clean install -P dcache.org
-    - tar -czf TheBook-shtml.tar.gz -C docs/TheBook/target/intermediate-html .
+
+    - echo "=== Check what the release tar contains ==="
+    - tar -tzvf docs/TheBook/target/TheBook-*.tar.gz | grep -v "^d" | head -5
+    - tar -xzf docs/TheBook/target/TheBook-*.tar.gz --wildcards "*/index.shtml" -O | head -25
+
+    - echo "=== Check full target structure ==="
+    - find docs/TheBook/target -maxdepth 2 -type d
+
+    - echo "=== Check intermediate vs html dirs ==="
+    - ls docs/TheBook/target/ | head -20
   artifacts:
     paths:
-      - "TheBook-shtml.tar.gz"
+      - "docs/TheBook/target/TheBook-*.tar.gz"
     expire_in: 1 day
 
 deploy-dryrun:
