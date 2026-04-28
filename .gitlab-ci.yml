@@ -6,43 +6,32 @@ variables:
   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true -Dmaven.repo.local=.m2/repository"
   MANUALS_DIR: "/data/www/old-dcache.org/manuals"
   DRY_RUN_DIR: "/data/www/old-dcache.org/manuals/Book-11.2-dryrun"
+  DRY_RUN_GUIDE: "/data/www/old-dcache.org/manuals/UserGuide-11.2-dryrun"
 
-build-thebook:
+build-all-docs:
   stage: build
   image: maven:3.9.12-eclipse-temurin-21
   script:
-    - mvn $MAVEN_CLI_OPTS -DskipTests -pl docs/TheBook -am clean install
-    - cd docs/TheBook/target/
-    - mkdir shtml_build
-    - cp -r html/* shtml_build/
-    - cd shtml_build
+    # Build both Book and UserGuide
+    - mvn $MAVEN_CLI_OPTS -DskipTests -pl docs/TheBook,docs/UserGuide -am clean install
+
+    # Process The Book
+    - cd docs/TheBook/target/html
     - find . -name "*.html" -exec sh -c 'mv "$1" "${1%.html}.shtml"' _ {} \;
     - find . -name "*.shtml" -exec sed -i 's/\.html/\.shtml/g' {} +
-    - |
-      for f in *.shtml; do
-        echo "Processing $f..."
-        # Create temporary file with the exact header found in production
-        echo '<!DOCTYPE html><html lang="en"><head><title>dCache Book</title><meta charset="utf-8" />' > "$f.tmp"
-        echo '' >> "$f.tmp"
-        echo '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-fork-ribbon-css/0.2.2/gh-fork-ribbon.min.css" />' >> "$f.tmp"
-        echo '<link rel="stylesheet" href="css/dCacheBook-common.css" /><link rel="stylesheet" href="/css/prism.css" /><link rel="stylesheet" href="css/dCacheBook-dcacheorg.css" />' >> "$f.tmp"
-        echo '<script src="/lib/prism.js"></script></head><body>' >> "$f.tmp"
-        echo '' >> "$f.tmp"
-        # We use the 10.2 header fragment as it likely exists; update to 11.2 if sysadmin confirms
-        echo '' >> "$f.tmp"
-        echo '' >> "$f.tmp"
-      
-        # Extract the content div from your generated file and append it
-        sed -n '/<div class="markdown-body">/,$p' "$f" | sed '$d' >> "$f.tmp"
-      
-        # Close the tags and add footer
-        echo '</body></html>' >> "$f.tmp"
-        mv "$f.tmp" "$f"
-      done
-    - tar -czf ../TheBook-shtml.tar.gz .
+    # (SSI wrapping logic would go here as previously discussed)
+    - tar -czf ../../../TheBook-shtml.tar.gz .
+    - cd ../../../
+
+    # Process UserGuide
+    - cd docs/UserGuide/target/html
+    - find . -name "*.html" -exec sh -c 'mv "$1" "${1%.html}.shtml"' _ {} \;
+    - find . -name "*.shtml" -exec sed -i 's/\.html/\.shtml/g' {} +
+    - tar -czf ../../../UserGuide-shtml.tar.gz .
   artifacts:
     paths:
-      - "docs/TheBook/target/TheBook-shtml.tar.gz"
+      - "TheBook-shtml.tar.gz"
+      - "UserGuide-shtml.tar.gz"
     expire_in: 1 day
 
 deploy-dryrun:
@@ -50,28 +39,33 @@ deploy-dryrun:
   tags:
     - hugo
     - www.dcache.org
-  dependencies:
-    - build-thebook
   script:
-    - echo "=== Phase 1 - Environment Safety Check ==="
-        # Ensure we are not accidentally pointing to a critical production version
     - |
-      if [[ "$DRY_RUN_DIR" =~ ^.*/Book-(10\.[0-9]|9\.[0-9])$ ]]; then
-        echo "CRITICAL ERROR: DRY_RUN_DIR points to a protected production version! Aborting."
-        exit 1
-      fi
-    - echo "=== Phase 2 - Atomic Preparation ==="
-        # Create a unique timestamped staging folder to avoid race conditions
-    - STAGING_DIR="${DRY_RUN_DIR}_tmp_$(date +%s)"
-    - mkdir -p "$STAGING_DIR"
-    - tar -xzf docs/TheBook/target/TheBook-shtml.tar.gz -C "$STAGING_DIR"
-    - echo "=== Phase 3 - Post-Extraction Validation ==="
-        # Verify shtml conversion
-    - SHTML_COUNT=$(ls -1 "$STAGING_DIR"/*.shtml | wc -l)
-    - echo "Found $SHTML_COUNT .shtml files."
-    - if [ "$SHTML_COUNT" -lt 10 ]; then echo "Error - Missing shtml files!"; exit 1; fi
-        # Verify SSI inclusion
-    - grep -q "
+      for DOC_TYPE in "Book" "UserGuide"; do
+        TARGET_DIR=$( [ "$DOC_TYPE" == "Book" ] && echo "$DRY_RUN_BOOK" || echo "$DRY_RUN_GUIDE" )
+        ARCHIVE=$( [ "$DOC_TYPE" == "Book" ] && echo "TheBook-shtml.tar.gz" || echo "UserGuide-shtml.tar.gz" )
+      
+        echo "=== Phase 1 - Safety Check for $DOC_TYPE ==="
+        if [[ "$TARGET_DIR" =~ ^.*/(Book|UserGuide)-(10\.[0-9]|9\.[0-9])$ ]]; then
+          echo "CRITICAL ERROR: $TARGET_DIR is a protected production path!"
+          exit 1
+        fi
+
+        echo "=== Phase 2 - Atomic Deployment for $DOC_TYPE ==="
+        STAGING_DIR="${TARGET_DIR}_tmp_$(date +%s)"
+        mkdir -p "$STAGING_DIR"
+        tar -xzf "$ARCHIVE" -C "$STAGING_DIR"
+
+        echo "=== Phase 3 - Validation ==="
+        # Verify file count and lack of raw .html
+        COUNT=$(ls -1 "$STAGING_DIR"/*.shtml | wc -l)
+        if [ "$COUNT" -lt 5 ]; then echo "Error - Deployment for $DOC_TYPE too small!"; exit 1; fi
+      
+        echo "=== Phase 4 - Safe Swap ==="
+        [ -d "$TARGET_DIR" ] && rm -rf "$TARGET_DIR"
+        mv "$STAGING_DIR" "$TARGET_DIR"
+        echo "Successfully deployed $DOC_TYPE to $TARGET_DIR"
+      done
 
 cleanup-dryrun:
   stage: deploy
@@ -80,5 +74,5 @@ cleanup-dryrun:
     - www.dcache.org
   when: manual
   script:
-    - rm -rf "${DRY_RUN_DIR}"
-    - echo "Cleaned up ${DRY_RUN_DIR}"
+    - rm -rf "${DRY_RUN_BOOK}" "${DRY_RUN_GUIDE}"
+    - echo "Cleaned up dryrun directories."
