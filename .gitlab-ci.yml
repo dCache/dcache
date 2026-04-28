@@ -14,19 +14,14 @@ build-thebook:
   image: maven:3.9.12-eclipse-temurin-21
   script:
     - mvn $MAVEN_CLI_OPTS -DskipTests -pl docs/TheBook -am clean install -P dcache.org
-    - echo "=== Find all generated html files ==="
-    - find . -path "*/TheBook/target/*" -name "*.html" | head -10
+    - echo "=== First 40 lines of index.shtml ==="
+    - head -40 docs/TheBook/target/intermediate-html/index.shtml
 
-    - echo "=== Full target directory structure ==="
-    - find . -path "*/TheBook/target/*" -not -path "*/.m2/*" | head -40
+    - echo "=== First 40 lines of config-acl.shtml ==="
+    - head -40 docs/TheBook/target/intermediate-html/config-acl.shtml
 
-    - echo "=== First 40 lines of whatever index file was generated ==="
-    - find . -path "*/TheBook/target/*" -name "index.html" -exec head -40 {} \;
-
-    - echo "=== First 40 lines of config-acl if it exists ==="
-    - find . -path "*/TheBook/target/*" -name "config-acl.html" -exec head -40 {} \;
-    - echo "=== Find the header and footer fragments ==="
-    - find . -name "dcacheorg-header.html" -o -name "dcacheorg-footer.html" | head -5
+    - echo "=== Find the header fragment source ==="
+    - find . -name "dcacheorg-header.html" | head -5
     - find . -name "dcacheorg-header.html" -exec cat {} \;
   artifacts:
     paths:
