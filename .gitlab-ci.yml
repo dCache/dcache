@@ -13,14 +13,15 @@ build-thebook:
   stage: build
   image: maven:3.9.12-eclipse-temurin-21
   script:
-    - mvn $MAVEN_CLI_OPTS -DskipTests -pl docs/TheBook -am clean install
-    - cd docs/TheBook/target/
-    - mkdir shtml_build
-    - cp -r html/* shtml_build/
-    - cd shtml_build
-    - find . -name "*.html" -exec sh -c 'mv "$1" "${1%.html}.shtml"' _ {} \;
-    - find . -name "*.shtml" -exec sed -i 's/\.html/\.shtml/g' {} +
-    - tar -czf ../TheBook-shtml.tar.gz .
+    - echo "=== Check what the dcache.org profile does ==="
+    - cat docs/TheBook/pom.xml | grep -A 30 "dcache.org"
+
+    - echo "=== Build with dcache.org profile ==="
+    - mvn $MAVEN_CLI_OPTS -DskipTests -pl docs/TheBook -am clean install -P dcache.org
+
+    - echo "=== Check first 30 lines of a generated file ==="
+    - head -30 docs/TheBook/target/html/config-acl.html || true
+    - head -30 docs/TheBook/target/html/index.html || true
   artifacts:
     paths:
       - "docs/TheBook/target/TheBook-shtml.tar.gz"
@@ -63,48 +64,32 @@ deploy-dryrun:
         exit 1
       fi
 
-    - echo "=== Phase 4 - Rewrite head block and inject SSI and ribbon per file ==="
+    - echo "=== Phase 4 - Inject SSI headers into all shtml files ==="
     - |
       for f in "$STAGING_DIR"/*.shtml; do
+        if grep -q "include virtual" "$f"; then
+          echo "SKIP already has SSI - $f"
+          continue
+        fi
         BASENAME=$(basename "$f" .shtml)
-        TITLE=$(grep -o '<title>[^<]*</title>' "$f" | head -1)
-        python3 -c "
-import sys
-filepath = '$f'
-basename = '$BASENAME'
-title = '$TITLE'
-book_version = '${BOOK_VERSION}'
-new_head = '''<head>
-    { title }
-    <meta charset=\"utf-8\" />
-    <meta name=\"description\" content=\"The dCache Book is the guide for administrators of dCache system, describing how to install and configure dCache.\">
-    <!--#include virtual=\"/template/frags/std-html-head.shtml\"-->
-    <link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/github-fork-ribbon-css/0.2.2/gh-fork-ribbon.min.css\" />
-    <link rel=\"stylesheet\" href=\"css/dCacheBook-common.css\" />
-    <link rel=\"stylesheet\" href=\"/css/prism.css\" />
-    <link rel=\"stylesheet\" href=\"css/dCacheBook-dcacheorg.css\" />
-    <script src=\"/lib/prism.js\"></script>
-</head>
-<body>
-<!--#include virtual=\"/template/frags/header-beginning.shtml\" -->
-<!--#include virtual=\"/template/frags/header-docs-{book_version}.shtml\" -->
-<!--#include virtual=\"/template/frags/header-end.shtml\" -->
-<a class=\"github-fork-ribbon\" href=\"https://github.com/dCache/dcache/blob/master/docs/TheBook/src/main/markdown/{basename}.md\" data-ribbon=\"Edit me on GitHub\" title=\"Edit me on GitHub\">Edit me on GitHub</a>'''.format(title=title, book_version=book_version, basename=basename)
-with open(filepath, 'r') as fh:
-    content = fh.read()
-start = content.find('<head>')
-body_pos = content.find('<body>')
-end = body_pos + len('<body>')
-if start == -1 or body_pos == -1:
-    print('WARNING - no head/body in ' + filepath)
-    sys.exit(0)
-before = content[:start]
-after = content[end:]
-with open(filepath, 'w') as fh:
-    fh.write(before + new_head + after)
-"
+        RIBBON="<a class=\"github-fork-ribbon\" href=\"https://github.com/dCache/dcache/blob/master/docs/TheBook/src/main/markdown/${BASENAME}.md\" data-ribbon=\"Edit me on GitHub\" title=\"Edit me on GitHub\">Edit me on GitHub</a>"
+        sed -i 's|<head>|<head>\n    <!--#include virtual="/template/frags/std-html-head.shtml"-->|' "$f"
+        sed -i "s|<body>|<body>\n<!--#include virtual=\"/template/frags/header-beginning.shtml\" -->\n<!--#include virtual=\"/template/frags/header-docs-11.2.shtml\" -->\n<!--#include virtual=\"/template/frags/header-end.shtml\" -->\n${RIBBON}|" "$f"
+        sed -i 's|</body>|<!--#include virtual="/template/frags/footer.shtml"-->\n</body>|' "$f"
       done
-    
+    - echo "=== Creating missing header fragment for 11.2 ==="
+    - FRAGS_DIR="/data/www/old-dcache.org/template/frags"
+    - |
+      if [ ! -f "${FRAGS_DIR}/header-docs-11.2.shtml" ]; then
+        cp "${FRAGS_DIR}/header-docs-10.2.shtml" "${FRAGS_DIR}/header-docs-11.2.shtml"
+        sed -i 's/10\.2/11.2/g' "${FRAGS_DIR}/header-docs-11.2.shtml"
+        echo "Created header-docs-11.2.shtml"
+      else
+        echo "header-docs-11.2.shtml already exists, skipping"
+      fi
+    - echo "--- Verify the new fragment looks correct ---"
+    - cat "${FRAGS_DIR}/header-docs-11.2.shtml"
+
     - echo "=== Phase 5 - Verify injection ==="
     - echo "--- First 20 lines of index.shtml after injection ---"
     - head -20 "$STAGING_DIR/index.shtml"
@@ -120,8 +105,8 @@ with open(filepath, 'w') as fh:
     - ls -la "${MANUALS_DIR}/Book-10.2/" | head -3
     - ls -la "${MANUALS_DIR}/Book-9.2/" | head -3
 
-after_script:
-  - rm -rf "${DRY_RUN_DIR}_staging" || true
+  after_script:
+    - rm -rf "${DRY_RUN_DIR}_staging" || true
 
 cleanup-dryrun:
   stage: deploy
