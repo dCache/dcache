@@ -13,18 +13,17 @@ build-thebook:
   stage: build
   image: maven:3.9.12-eclipse-temurin-21
   script:
-    # Use the dcache.org profile to bake in SSI and templates at the source
-    - mvn $MAVEN_CLI_OPTS -Pdcache.org -DskipTests -pl docs/TheBook -am clean install
-    - cd docs/TheBook/target/
-    # Locate where the dcache.org profile puts the files (likely 'html')
-    - mkdir -p shtml_build
-    - cp -r html/* shtml_build/
-    # Rename .html to .shtml so the server processes the SSI tags
-    - find shtml_build -name "*.html" -exec sh -c 'mv "$1" "${1%.html}.shtml"' _ {} \;
-    # Fix internal links from .html to .shtml
-    - find shtml_build -name "*.shtml" -exec sed -i 's/\.html/\.shtml/g' : { } +
-    # Create the artifact in the expected root location
-    - tar -czf ../../../TheBook-shtml.tar.gz -C shtml_build .
+    - |
+      mvn $MAVEN_CLI_OPTS -Pdcache.org -DskipTests -pl docs/TheBook -am clean install
+      cd docs/TheBook/target/
+      mkdir -p shtml_build
+      cp -r html/* shtml_build/
+      
+      # Now semicolons and colons are safe:
+      find shtml_build -name "*.html" -exec sh -c 'mv "$1" "${1%.html}.shtml"' _ {} \;
+      find shtml_build -name "*.shtml" -exec sed -i 's/\.html/\.shtml/g' {} +
+      
+      tar -czf ../../../TheBook-shtml.tar.gz -C shtml_build .
   artifacts:
     paths:
       - "TheBook-shtml.tar.gz"
