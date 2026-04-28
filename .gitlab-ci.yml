@@ -18,6 +18,27 @@ build-thebook:
     - cd shtml_build
     - find . -name "*.html" -exec sh -c 'mv "$1" "${1%.html}.shtml"' _ {} \;
     - find . -name "*.shtml" -exec sed -i 's/\.html/\.shtml/g' {} +
+    - |
+      for f in *.shtml; do
+        echo "Processing $f..."
+        # Create temporary file with the exact header found in production
+        echo '<!DOCTYPE html><html lang="en"><head><title>dCache Book</title><meta charset="utf-8" />' > "$f.tmp"
+        echo '' >> "$f.tmp"
+        echo '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-fork-ribbon-css/0.2.2/gh-fork-ribbon.min.css" />' >> "$f.tmp"
+        echo '<link rel="stylesheet" href="css/dCacheBook-common.css" /><link rel="stylesheet" href="/css/prism.css" /><link rel="stylesheet" href="css/dCacheBook-dcacheorg.css" />' >> "$f.tmp"
+        echo '<script src="/lib/prism.js"></script></head><body>' >> "$f.tmp"
+        echo '' >> "$f.tmp"
+        # We use the 10.2 header fragment as it likely exists; update to 11.2 if sysadmin confirms
+        echo '' >> "$f.tmp"
+        echo '' >> "$f.tmp"
+      
+        # Extract the content div from your generated file and append it
+        sed -n '/<div class="markdown-body">/,$p' "$f" | sed '$d' >> "$f.tmp"
+      
+        # Close the tags and add footer
+        echo '</body></html>' >> "$f.tmp"
+        mv "$f.tmp" "$f"
+      done
     - tar -czf ../TheBook-shtml.tar.gz .
   artifacts:
     paths:
@@ -32,41 +53,25 @@ deploy-dryrun:
   dependencies:
     - build-thebook
   script:
-    - echo "=== Safety check - making sure we only touch our dryrun dir ==="
-    - echo "Target directory - ${DRY_RUN_DIR}"
-    - if [ -d "${DRY_RUN_DIR}" ]; then echo "ERROR - ${DRY_RUN_DIR} already exists. Remove it manually first."; exit 1; fi
-    - mkdir -p "${DRY_RUN_DIR}"
-    - tar -xzf docs/TheBook/target/TheBook-shtml.tar.gz -C "${DRY_RUN_DIR}"
-    - echo "=== Verifying ONLY our directory was touched ==="
-    - echo "Files deployed:"
-    - ls "${DRY_RUN_DIR}" | wc -l
-    - echo "Sample files:"
-    - ls "${DRY_RUN_DIR}" | head -10
-    - echo "=== Spot-check - internal links in index.shtml ==="
-    - grep "href" "${DRY_RUN_DIR}/index.shtml" | head -10
-    - echo "lines above should be 0 (or only external links like dcache.org/...html)"
-    - echo "=== Spot-check - no leftover .html links ==="
-    - grep -r "\.html" "${DRY_RUN_DIR}" | grep "href" | wc -l || true
-    - echo "=== Verify neighboring dirs are untouched ==="
-    - ls -la "${MANUALS_DIR}/Book-10.2/"  | head -5
-    - ls -la "${MANUALS_DIR}/Book-9.2/"   | head -5
-    - echo "=== Done. Dry run directory is - ${DRY_RUN_DIR} ==="
-    - echo "Visit https://www.dcache.org/old/manuals/Book-11.0-dryrun/index.shtml to preview"
-    - echo "=== Check SSI includes in our files ==="
-    - grep -r "<!--#include" "${DRY_RUN_DIR}" | head -5 || echo "No SSI includes found in our files"
-
-    - echo "=== Compare with production Book-10.2 ==="
-    - grep -r "<!--#include" "${MANUALS_DIR}/Book-10.2/" | head -5 || echo "No SSI includes in Book-10.2 either"
-
-    - echo "=== Check nginx config for SSI ==="
-    - cat /etc/nginx/conf.d/*.conf 2>/dev/null | grep -A5 -i "ssi\|include\|old-dcache" | head -30 || true
-    - cat /etc/nginx/nginx.conf 2>/dev/null | grep -i "ssi" | head -10 || true
-
-    - echo "=== Check what a production shtml actually looks like (first 30 lines) ==="
-    - head -30 "${MANUALS_DIR}/Book-10.2/index.shtml"
-
-    - echo "=== Compare with our generated shtml (first 30 lines) ==="
-    - head -30 "${DRY_RUN_DIR}/index.shtml"
+    - echo "=== Phase 1 - Environment Safety Check ==="
+        # Ensure we are not accidentally pointing to a critical production version
+    - |
+      if [[ "$DRY_RUN_DIR" =~ ^.*/Book-(10\.[0-9]|9\.[0-9])$ ]]; then
+        echo "CRITICAL ERROR: DRY_RUN_DIR points to a protected production version! Aborting."
+        exit 1
+      fi
+    - echo "=== Phase 2 - Atomic Preparation ==="
+        # Create a unique timestamped staging folder to avoid race conditions
+    - STAGING_DIR="${DRY_RUN_DIR}_tmp_$(date +%s)"
+    - mkdir -p "$STAGING_DIR"
+    - tar -xzf docs/TheBook/target/TheBook-shtml.tar.gz -C "$STAGING_DIR"
+    - echo "=== Phase 3 - Post-Extraction Validation ==="
+        # Verify shtml conversion
+    - SHTML_COUNT=$(ls -1 "$STAGING_DIR"/*.shtml | wc -l)
+    - echo "Found $SHTML_COUNT .shtml files."
+    - if [ "$SHTML_COUNT" -lt 10 ]; then echo "Error - Missing shtml files!"; exit 1; fi
+        # Verify SSI inclusion
+    - grep -q "
 
 cleanup-dryrun:
   stage: deploy
