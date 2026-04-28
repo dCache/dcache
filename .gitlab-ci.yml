@@ -13,25 +13,17 @@ build-thebook:
   stage: build
   image: maven:3.9.12-eclipse-temurin-21
   script:
-    - |
-      mvn $MAVEN_CLI_OPTS -Pdcache.org -DskipTests -pl docs/TheBook -am clean install
-      cd docs/TheBook/target/
-      mkdir -p shtml_build
-      cp -r html/* shtml_build/
-      
-      find shtml_build -name "*.html" -exec sh -c 'mv "$1" "${1%.html}.shtml"' _ {} \;
-      find shtml_build -name "*.shtml" -exec sed -i 's/\.html/\.shtml/g' {} +
-      
-      tar -czf ../../../TheBook-shtml.tar.gz -C shtml_build .
-    - echo "=== Check what the dcache.org profile does ==="
-    - cat docs/TheBook/pom.xml | grep -A 30 "dcache.org"
-
+    - echo "=== Where are we ==="
+    - pwd
+    - ls -la
+    - echo "=== Find the TheBook pom ==="
+    - find . -name "pom.xml" -path "*/TheBook/*" | head -5
+    - echo "=== Check dcache.org profile ==="
+    - find . -name "pom.xml" -path "*/TheBook/*" -exec grep -A 30 "dcache.org" {} \;
     - echo "=== Build with dcache.org profile ==="
     - mvn $MAVEN_CLI_OPTS -DskipTests -pl docs/TheBook -am clean install -P dcache.org
-
-    - echo "=== Check first 30 lines of a generated file ==="
-    - head -30 docs/TheBook/target/html/config-acl.html || true
-    - head -30 docs/TheBook/target/html/index.html || true
+    - echo "=== Check generated file ==="
+    - find . -path "*/TheBook/target/html/config-acl.html" -exec head -30 {} \;
   artifacts:
     paths:
       - "TheBook-shtml.tar.gz"
