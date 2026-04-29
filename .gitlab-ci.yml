@@ -13,70 +13,76 @@ variables:
 .deploy_template: &deploy_logic
   tags: [hugo, www.dcache.org]
   script:
-    - echo "=== Phase 1 - Rebuild Header Fragment ==="
-    - cp "${FRAGS_DIR}/${SOURCE_FRAG}" "${FRAGS_DIR}/${FRAG_FILE}"
-    - chmod 644 "${FRAGS_DIR}/${FRAG_FILE}"
+      - echo "=== Phase 1 - Rebuild Header Fragment ==="
+      - cp "${FRAGS_DIR}/${SOURCE_FRAG}" "${FRAGS_DIR}/${FRAG_FILE}"
+      - chmod 644 "${FRAGS_DIR}/${FRAG_FILE}"
 
-    - |
-      perl -0777 -pi -e '
-        my $version = $ENV{"BOOK_VERSION"};
-        my $doc_path = $ENV{"DOC_PATH"};
+      - |
+        perl -0777 -pi -e '
+          my $version = $ENV{"BOOK_VERSION"};
+          my $doc_path = $ENV{"DOC_PATH"};
+        
+          my @ug_versions = qw(5.1 5.2 6.0 6.1 6.2 7.0 7.1 7.2 8.0 8.1 8.2 9.0 9.1 9.2 10.0 10.1 10.2);
+          my @bk_versions = qw(5.0 5.1 5.2 6.0 6.1 6.2 7.0 7.1 7.2 8.0 8.1 8.2 9.0 9.1 9.2 10.0 10.1 10.2);
+        
+          push(@ug_versions, $version) unless grep { $_ eq $version } @ug_versions;
+          push(@bk_versions, $version) unless grep { $_ eq $version } @bk_versions;
+        
+          sub build_links {
+              my ($type, $versions_ref) = @_;
+              my @links;
+              foreach my $v (@$versions_ref) {
+                  my $link = qq(<a href="/manuals/$type-$v/">$v</a>);
+                  if ($v eq $version && (($type eq "UserGuide" && $doc_path =~ /UserGuide/) || ($type eq "Book" && $doc_path =~ /Book/))) {
+                      $link = "<b>$link</b>";
+                  }
+                  push(@links, $link);
+              }
+              return join(", ", @links);
+          }
+        
+          my $ug_html = build_links("UserGuide", \@ug_versions);
+          my $bk_html = build_links("Book", \@bk_versions);
+        
+          # NEW IMPROVED REGEX: 
+          # i = case insensitive
+          # s = allow . to match newlines
+          # \s* = handle any amount of whitespace or newlines
+          my $matched_ug = s/(User\s*Guide:\s*)(.*?)(\s*\|\s*Book:)/$1$ug_html$3/is;
+          my $matched_bk = s/(Book:\s*)(.*?)(\s*\|\s*<a.*?Wiki)/$1$bk_html$3/is;
+        
+          print "DEBUG: UserGuide match successful\n" if $matched_ug;
+          print "DEBUG: Book match successful\n" if $matched_bk;
+        ' "${FRAGS_DIR}/${FRAG_FILE}"
 
-        my @ug_versions = qw(5.1 5.2 6.0 6.1 6.2 7.0 7.1 7.2 8.0 8.1 8.2 9.0 9.1 9.2 10.0 10.1 10.2);
-        my @bk_versions = qw(5.0 5.1 5.2 6.0 6.1 6.2 7.0 7.1 7.2 8.0 8.1 8.2 9.0 9.1 9.2 10.0 10.1 10.2);
-      
-        push(@ug_versions, $version) unless grep { $_ eq $version } @ug_versions;
-        push(@bk_versions, $version) unless grep { $_ eq $version } @bk_versions;
-      
-        sub build_links {
-            my ($type, $versions_ref) = @_;
-            my @links;
-            foreach my $v (@$versions_ref) {
-                my $link = qq(<a href="/manuals/$type-$v/">$v</a>);
-                if ($v eq $version && (($type eq "UserGuide" && $doc_path =~ /UserGuide/) || ($type eq "Book" && $doc_path =~ /Book/))) {
-                    $link = "<b>$link</b>";
-                }
-                push(@links, $link);
-            }
-            return join(", ", @links);
-        }
-      
-        my $ug_html = build_links("UserGuide", \@ug_versions);
-        my $bk_html = build_links("Book", \@bk_versions);
+      - echo "--- DEBUG - Generated Fragment Content ---"
+      - cat "${FRAGS_DIR}/${FRAG_FILE}"
+      - echo "----------------------------------------"
 
-        # Flexible regex to handle "USER GUIDE" or "USERGUIDE"
-        s/(USER\s*GUIDE:\s*)(<a.*?)(?=\s*\|\s*BOOK)/$1$ug_html/is;
-        s/(BOOK:\s*)(<a.*?)(?=\s*\|[^|]*Q&A)/$1$bk_html/is;
-      ' "${FRAGS_DIR}/${FRAG_FILE}"
+      - echo "=== Phase 2 - Extract to staging ==="
+      - STAGING_DIR="${DEPLOY_DIR}_staging"
+      - rm -rf "$STAGING_DIR" && mkdir -p "$STAGING_DIR"
+      - tar -xzf "${ARTIFACT_NAME}" -C "$STAGING_DIR"
 
-    - echo "--- DEBUG - Generated Fragment Content ---"
-    - cat "${FRAGS_DIR}/${FRAG_FILE}"
-    - echo "----------------------------------------"
+      - echo "=== Phase 3 - Resolve Placeholders and Link Header ==="
+      - |
+        for f in $(find "$STAGING_DIR" -name "*.shtml"); do
+          sed -i "s/@parsedVersion.majorVersion@.@parsedVersion.minorVersion@/${BOOK_VERSION}/g" "$f"
+          sed -i "s|@github.url-prefix@|https://github.com/dCache/dcache/blob/master/${DOC_PATH}/src/main/markdown|g" "$f"
+          sed -i "/github-fork-ribbon/s/\.shtml/\.md/g" "$f"
+        
+          # Ensure we point to the specific NEW fragment created in Phase 1
+          sed -i -E "s/header-docs-[a-zA-Z0-9.-]*\.shtml/${FRAG_FILE}/g" "$f"
+        done
 
-    - echo "=== Phase 2 - Extract to staging ==="
-    - STAGING_DIR="${DEPLOY_DIR}_staging"
-    - rm -rf "$STAGING_DIR" && mkdir -p "$STAGING_DIR"
-    - tar -xzf "${ARTIFACT_NAME}" -C "$STAGING_DIR"
-
-    - echo "=== Phase 3 - Resolve Placeholders and Link Header ==="
-    - |
-      for f in $(find "$STAGING_DIR" -name "*.shtml"); do
-        sed -i "s/@parsedVersion.majorVersion@.@parsedVersion.minorVersion@/${BOOK_VERSION}/g" "$f"
-        sed -i "s|@github.url-prefix@|https://github.com/dCache/dcache/blob/master/${DOC_PATH}/src/main/markdown|g" "$f"
-        sed -i "/github-fork-ribbon/s/\.shtml/\.md/g" "$f"
-      
-        # FIX: Ensure we keep the .shtml extension in the include directive
-        sed -i -E "s/header-docs-[a-zA-Z0-9.-]*\.shtml/${FRAG_FILE}/g" "$f"
-      done
-
-    - echo "=== Phase 4 - Protected Atomic Swap ==="
-    - |
-      if [ -d "${DEPLOY_DIR}" ]; then
-        mv "${DEPLOY_DIR}" "${DEPLOY_DIR}_old"
-      fi
-      mv "$STAGING_DIR" "${DEPLOY_DIR}"
-      chmod -R 755 "${DEPLOY_DIR}"
-      echo "Swap complete. Deployed to ${DEPLOY_DIR}"
+      - echo "=== Phase 4 - Protected Atomic Swap ==="
+      - |
+        if [ -d "${DEPLOY_DIR}" ]; then
+          mv "${DEPLOY_DIR}" "${DEPLOY_DIR}_old"
+        fi
+        mv "$STAGING_DIR" "${DEPLOY_DIR}"
+        chmod -R 755 "${DEPLOY_DIR}"
+        echo "Swap complete. Deployed to ${DEPLOY_DIR}"
 
   after_script:
     - |
