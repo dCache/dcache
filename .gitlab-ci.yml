@@ -44,18 +44,14 @@ variables:
           my $ug_html = build_links("UserGuide", \@ug_versions);
           my $bk_html = build_links("Book", \@bk_versions);
         
-          # NEW IMPROVED REGEX: 
-          # i = case insensitive
-          # s = allow . to match newlines
-          # \s* = handle any amount of whitespace or newlines
-          my $matched_ug = s/(User\s*Guide:\s*)(.*?)(\s*\|\s*Book:)/$1$ug_html$3/is;
-          my $matched_bk = s/(Book:\s*)(.*?)(\s*\|\s*<a.*?Wiki)/$1$bk_html$3/is;
+          s/(User\s*Guide:\s*)(.*?)(\s*\|\s*Book:)/$1$ug_html <br\/> | $3/is;
+          s/(Book:\s*)(.*?)(\s*\|\s*<a.*?Wiki)/$1$bk_html/is;
+
+          s/\|\s*\|\s*<a href="\/manuals\/FAQ.shtml"/| <a href="\/manuals\/FAQ.shtml"/g;
         
-          print "DEBUG: UserGuide match successful\n" if $matched_ug;
-          print "DEBUG: Book match successful\n" if $matched_bk;
         ' "${FRAGS_DIR}/${FRAG_FILE}"
 
-      - echo "--- DEBUG - Generated Fragment Content ---"
+      - echo "--- DEBUG - Generated Fragment Content (No Debug text in file) ---"
       - cat "${FRAGS_DIR}/${FRAG_FILE}"
       - echo "----------------------------------------"
 
@@ -70,8 +66,6 @@ variables:
           sed -i "s/@parsedVersion.majorVersion@.@parsedVersion.minorVersion@/${BOOK_VERSION}/g" "$f"
           sed -i "s|@github.url-prefix@|https://github.com/dCache/dcache/blob/master/${DOC_PATH}/src/main/markdown|g" "$f"
           sed -i "/github-fork-ribbon/s/\.shtml/\.md/g" "$f"
-        
-          # Ensure we point to the specific NEW fragment created in Phase 1
           sed -i -E "s/header-docs-[a-zA-Z0-9.-]*\.shtml/${FRAG_FILE}/g" "$f"
         done
 
