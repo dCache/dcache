@@ -6,9 +6,76 @@ variables:
   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true -Dmaven.repo.local=.m2/repository"
   MANUALS_DIR: "/data/www/old-dcache.org/manuals"
   BOOK_VERSION: "11.2"
+  FRAGS_DIR: "/data/www/old-dcache.org/template/frags"
+  # Targets
   BOOK_DEPLOY_DIR: "/data/www/old-dcache.org/manuals/Book-11.2-dryrun"
   USERGUIDE_DEPLOY_DIR: "/data/www/old-dcache.org/manuals/UserGuide-11.2-dryrun"
-  FRAGS_DIR: "/data/www/old-dcache.org/template/frags"
+
+.deploy_template: &deploy_logic
+  tags: [hugo, www.dcache.org]
+  script:
+    - echo "=== Phase 1 - Prepare & Scrub Header Fragment ==="
+    - |
+      if [ ! -f "${FRAGS_DIR}/${FRAG_FILE}" ]; then
+        cp "${FRAGS_DIR}/${SOURCE_FRAG}" "${FRAGS_DIR}/${FRAG_FILE}"
+
+        sed -i 's/11\.0, //g' "${FRAGS_DIR}/${FRAG_FILE}"
+        sed -i 's/7\.2 (UNRELEASED), //g' "${FRAGS_DIR}/${FRAG_FILE}"
+        sed -i 's/ (UNRELEASED)//g' "${FRAGS_DIR}/${FRAG_FILE}"
+        sed -i 's/ | WIKI//g' "${FRAGS_DIR}/${FRAG_FILE}"
+      
+        sed -i 's/<b>//g; s/<\/b>//g' "${FRAGS_DIR}/${FRAG_FILE}"
+
+        # Update version number text and bold the new one
+        sed -i "s/>10\.2</><b>${BOOK_VERSION}<\/b></g" "${FRAGS_DIR}/${FRAG_FILE}"
+
+        if [[ "${DOC_PATH}" == *"UserGuide"* ]]; then
+            sed -i "s/UserGuide-10\.2/UserGuide-${BOOK_VERSION}/g" "${FRAGS_DIR}/${FRAG_FILE}"
+        else
+            sed -i "s/Book-10\.2/Book-${BOOK_VERSION}/g" "${FRAGS_DIR}/${FRAG_FILE}"
+        fi
+      
+        echo "Fragment ${FRAG_FILE} prepared, scrubbed, and path-corrected."
+      fi
+
+    - echo "=== Phase 2 - Extract to staging ==="
+    - STAGING_DIR="${DEPLOY_DIR}_staging"
+    - rm -rf "$STAGING_DIR" && mkdir -p "$STAGING_DIR"
+    - tar -xzf "${ARTIFACT_NAME}" -C "$STAGING_DIR"
+
+    - echo "=== Phase 3 - Resolve Placeholders ==="
+    - |
+      for f in $(find "$STAGING_DIR" -name "*.shtml"); do
+        sed -i "s/@parsedVersion.majorVersion@.@parsedVersion.minorVersion@/${BOOK_VERSION}/g" "$f"
+        sed -i "s|@github.url-prefix@|https://github.com/dCache/dcache/blob/master/${DOC_PATH}/src/main/markdown|g" "$f"
+        sed -i "/github-fork-ribbon/s/\.shtml/\.md/g" "$f"
+        # Point the include directive to the correct fragment
+        sed -i "s/header-docs-${BOOK_VERSION}/$(basename ${FRAG_FILE} .shtml)/g" "$f"
+      done
+
+    - echo "=== Phase 4 - Protected Atomic Swap ==="
+    - |
+      if [ -d "${DEPLOY_DIR}" ]; then
+        mv "${DEPLOY_DIR}" "${DEPLOY_DIR}_old"
+      fi
+      mv "$STAGING_DIR" "${DEPLOY_DIR}"
+      echo "Swap complete. Deployed to ${DEPLOY_DIR}"
+
+  after_script:
+    - |
+      # ROLLBACK PROTECTION
+      if [ "$CI_JOB_STATUS" != "success" ]; then
+        if [ -d "${DEPLOY_DIR}_old" ] && [ ! -d "${DEPLOY_DIR}" ]; then
+          echo "JOB FAILED: Rolling back to previous version..."
+          mv "${DEPLOY_DIR}_old" "${DEPLOY_DIR}"
+        fi
+      else
+        echo "JOB SUCCESS: Cleaning up old backup..."
+        rm -rf "${DEPLOY_DIR}_old"
+      fi
+      rm -rf "${DEPLOY_DIR}_staging" || true
+
+# --- JOBS (Unchanged Build Logic) ---
 
 build-thebook:
   stage: build
@@ -17,8 +84,7 @@ build-thebook:
     - mvn $MAVEN_CLI_OPTS -DskipTests -pl docs/TheBook -am clean install -P dcache.org
     - tar -czf TheBook-shtml.tar.gz -C docs/TheBook/target/intermediate-html .
   artifacts:
-    paths:
-      - "TheBook-shtml.tar.gz"
+    paths: ["TheBook-shtml.tar.gz"]
     expire_in: 1 day
 
 build-userguide:
@@ -28,90 +94,27 @@ build-userguide:
     - mvn $MAVEN_CLI_OPTS -DskipTests -pl docs/UserGuide -am clean install -P dcache.org
     - tar -czf UserGuide-shtml.tar.gz -C docs/UserGuide/target/intermediate-html .
   artifacts:
-    paths:
-      - "UserGuide-shtml.tar.gz"
+    paths: ["UserGuide-shtml.tar.gz"]
     expire_in: 1 day
 
 deploy-thebook:
+  <<: *deploy_logic
   stage: deploy
-  tags:
-    - hugo
-    - www.dcache.org
-  dependencies:
-    - build-thebook
-  script:
-    - echo "=== Phase 1 - Ensure header fragment exists for this version ==="
-    - |
-      if [ ! -f "${FRAGS_DIR}/header-docs-${BOOK_VERSION}.shtml" ]; then
-        cp "${FRAGS_DIR}/header-docs-10.2.shtml" "${FRAGS_DIR}/header-docs-${BOOK_VERSION}.shtml"
-        sed -i "s/10\.2/${BOOK_VERSION}/g" "${FRAGS_DIR}/header-docs-${BOOK_VERSION}.shtml"
-        echo "Created header-docs-${BOOK_VERSION}.shtml"
-      else
-        echo "header-docs-${BOOK_VERSION}.shtml already exists, skipping"
-      fi
-
-    - echo "=== Phase 2 - Extract and Clean Staging ==="
-    - STAGING_DIR="${BOOK_DEPLOY_DIR}_staging"
-    - rm -rf "$STAGING_DIR" && mkdir -p "$STAGING_DIR"
-    - tar -xzf TheBook-shtml.tar.gz -C "$STAGING_DIR"
-
-    - echo "=== Phase 3 - Resolve Maven placeholders and GitHub ribbon ==="
-    - |
-      for f in "$STAGING_DIR"/*.shtml; do
-        sed -i "s/@parsedVersion.majorVersion@.@parsedVersion.minorVersion@/${BOOK_VERSION}/g" "$f"
-        sed -i "s|@github.url-prefix@|https://github.com/dCache/dcache/blob/master/docs/TheBook/src/main/markdown|g" "$f"
-        sed -i "/github-fork-ribbon/s/\.shtml/\.md/g" "$f"
-      done
-
-    - echo "=== Phase 4 - Atomic Deploy (Auto-Cleanup) ==="
-    - |
-      if [ -d "${BOOK_DEPLOY_DIR}" ]; then
-        echo "Removing old version at ${BOOK_DEPLOY_DIR}"
-        rm -rf "${BOOK_DEPLOY_DIR}"
-      fi
-    - mv "$STAGING_DIR" "${BOOK_DEPLOY_DIR}"
-    - echo "Deployed to ${BOOK_DEPLOY_DIR}"
-
-  after_script:
-    - rm -rf "${BOOK_DEPLOY_DIR}_staging" || true
+  dependencies: [build-thebook]
+  variables:
+    ARTIFACT_NAME: "TheBook-shtml.tar.gz"
+    DEPLOY_DIR: "${BOOK_DEPLOY_DIR}"
+    DOC_PATH: "docs/TheBook"
+    FRAG_FILE: "header-docs-${BOOK_VERSION}.shtml"
+    SOURCE_FRAG: "header-docs-10.2.shtml"
 
 deploy-userguide:
+  <<: *deploy_logic
   stage: deploy
-  tags:
-    - hugo
-    - www.dcache.org
-  dependencies:
-    - build-userguide
-  script:
-    - echo "=== Phase 1 - Ensure UserGuide fragment exists ==="
-    - |
-      if [ ! -f "${FRAGS_DIR}/header-docs-userguide-${BOOK_VERSION}.shtml" ]; then
-        cp "${FRAGS_DIR}/header-docs-userguide-10.2.shtml" "${FRAGS_DIR}/header-docs-userguide-${BOOK_VERSION}.shtml"
-        sed -i "s/10\.2/${BOOK_VERSION}/g" "${FRAGS_DIR}/header-docs-userguide-${BOOK_VERSION}.shtml"
-        echo "Created header-docs-userguide-${BOOK_VERSION}.shtml"
-      fi
-
-    - echo "=== Phase 2 - Extract and Clean Staging ==="
-    - STAGING_DIR="${USERGUIDE_DEPLOY_DIR}_staging"
-    - rm -rf "$STAGING_DIR" && mkdir -p "$STAGING_DIR"
-    - tar -xzf UserGuide-shtml.tar.gz -C "$STAGING_DIR"
-
-    - echo "=== Phase 3 - Resolve Maven placeholders and GitHub ribbon ==="
-    - |
-      for f in "$STAGING_DIR"/*.shtml; do
-        sed -i "s/@parsedVersion.majorVersion@.@parsedVersion.minorVersion@/${BOOK_VERSION}/g" "$f"
-        sed -i "s|@github.url-prefix@|https://github.com/dCache/dcache/blob/master/docs/UserGuide/src/main/markdown|g" "$f"
-        sed -i "/github-fork-ribbon/s/\.shtml/\.md/g" "$f"
-        sed -i "s/header-docs-${BOOK_VERSION}/header-docs-userguide-${BOOK_VERSION}/g" "$f"
-      done
-
-    - echo "=== Phase 4 - Atomic Deploy (Auto-Cleanup) ==="
-    - |
-      if [ -d "${USERGUIDE_DEPLOY_DIR}" ]; then
-        rm -rf "${USERGUIDE_DEPLOY_DIR}"
-      fi
-    - mv "$STAGING_DIR" "${USERGUIDE_DEPLOY_DIR}"
-    - echo "Deployed UserGuide to ${USERGUIDE_DEPLOY_DIR}"
-
-  after_script:
-    - rm -rf "${USERGUIDE_DEPLOY_DIR}_staging" || true
+  dependencies: [build-userguide]
+  variables:
+    ARTIFACT_NAME: "UserGuide-shtml.tar.gz"
+    DEPLOY_DIR: "${USERGUIDE_DEPLOY_DIR}"
+    DOC_PATH: "docs/UserGuide"
+    FRAG_FILE: "header-docs-userguide-${BOOK_VERSION}.shtml"
+    SOURCE_FRAG: "header-docs-userguide-10.2.shtml"
