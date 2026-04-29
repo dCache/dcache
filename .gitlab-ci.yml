@@ -7,162 +7,72 @@ variables:
   MANUALS_DIR: "/data/www/old-dcache.org/manuals"
   FRAGS_DIR: "/data/www/old-dcache.org/template/frags"
   BOOK_VERSION: "11.2"
-  BOOK_DEPLOY_DIR: "/data/www/old-dcache.org/manuals/Book-11.2-dryrun"
-  USERGUIDE_DEPLOY_DIR: "/data/www/old-dcache.org/manuals/UserGuide-11.2-dryrun"
+  BOOK_DEPLOY_DIR: "${MANUALS_DIR}/Book-11.2-dryrun"
+  USERGUIDE_DEPLOY_DIR: "${MANUALS_DIR}/UserGuide-11.2-dryrun"
 
-# BUILD JOBS
+# BUILD STAGE: Same logic for both
+.build_template: &build_definition
+  image: maven:3.9.12-eclipse-temurin-21
+  script:
+    - mvn $MAVEN_CLI_OPTS -DskipTests -pl $MODULE_PATH -am clean install -P dcache.org
+    - tar -czf ${ARTIFACT_NAME}.tar.gz -C $MODULE_PATH/target/intermediate-html .
+  artifacts:
+    paths: ["${ARTIFACT_NAME}.tar.gz"]
 
 build-thebook:
+  <<: *build_definition
   stage: build
-  image: maven:3.9.12-eclipse-temurin-21
-  script:
-    - mvn $MAVEN_CLI_OPTS -DskipTests -pl docs/TheBook -am clean install -P dcache.org
-    - tar -czf TheBook-shtml.tar.gz -C docs/TheBook/target/intermediate-html .
-    - echo "TheBook archive size"
-    - ls -lh TheBook-shtml.tar.gz
-  artifacts:
-    paths:
-      - "TheBook-shtml.tar.gz"
-    expire_in: 1 day
+  variables:
+    MODULE_PATH: "docs/TheBook"
+    ARTIFACT_NAME: "TheBook-shtml"
 
 build-userguide:
+  <<: *build_definition
   stage: build
-  image: maven:3.9.12-eclipse-temurin-21
-  script:
-    - mvn $MAVEN_CLI_OPTS -DskipTests -pl docs/UserGuide -am clean install -P dcache.org
-    - tar -czf UserGuide-shtml.tar.gz -C docs/UserGuide/target/intermediate-html .
-    - echo "UserGuide archive size"
-    - ls -lh UserGuide-shtml.tar.gz
-  artifacts:
-    paths:
-      - "UserGuide-shtml.tar.gz"
-    expire_in: 1 day
+  variables:
+    MODULE_PATH: "docs/UserGuide"
+    ARTIFACT_NAME: "UserGuide-shtml"
 
-# DEPLOY JOBS
+# DEPLOY STAGE
+.deploy_template: &deploy_definition
+  tags: [hugo, www.dcache.org]
+  script:
+    - echo "=== Phase 1 - Extract and Clean Staging ==="
+    - STAGING_DIR="${DEPLOY_DIR}_staging"
+    - rm -rf "$STAGING_DIR" && mkdir -p "$STAGING_DIR"
+    - tar -xzf ${ARTIFACT_NAME}.tar.gz -C "$STAGING_DIR"
+
+    - echo "=== Phase 2 - Aggressive Placeholder Resolution ==="
+    - |
+      for f in $(find "$STAGING_DIR" -name "*.shtml"); do
+        # Replace ALL variations of @parsedVersion... with the BOOK_VERSION
+        sed -i "s/@parsedVersion[^@]*@/${BOOK_VERSION}/g" "$f"
+        # Fix GitHub Ribbon
+        sed -i "s|@github\.url-prefix@|https://github.com/dCache/dcache/blob/master/${MODULE_PATH}/src/main/markdown|g" "$f"
+        sed -i "/github-fork-ribbon/s/\.shtml/\.md/g" "$f"
+      done
+
+    - echo "=== Phase 3 - Atomic Deploy ==="
+    # This removes the need for manual cleanup
+    - if [ -d "${DEPLOY_DIR}" ]; then rm -rf "${DEPLOY_DIR}_old"; mv "${DEPLOY_DIR}" "${DEPLOY_DIR}_old"; fi
+    - mv "$STAGING_DIR" "${DEPLOY_DIR}"
+    - rm -rf "${DEPLOY_DIR}_old"
+    - echo "Deployed to ${DEPLOY_DIR}"
 
 deploy-thebook:
+  <<: *deploy_definition
   stage: deploy
-  tags:
-    - hugo
-    - www.dcache.org
-  dependencies:
-    - build-thebook
-  script:
-    - echo "=== Phase 1 - Ensure header fragment exists ==="
-    - |
-      if [ ! -f "${FRAGS_DIR}/header-docs-${BOOK_VERSION}.shtml" ]; then
-        cp "${FRAGS_DIR}/header-docs-10.2.shtml" "${FRAGS_DIR}/header-docs-${BOOK_VERSION}.shtml"
-        sed -i "s/10\.2/${BOOK_VERSION}/g" "${FRAGS_DIR}/header-docs-${BOOK_VERSION}.shtml"
-        echo "Created header-docs-${BOOK_VERSION}.shtml"
-      else
-        echo "header-docs-${BOOK_VERSION}.shtml already exists, skipping"
-      fi
-
-    - echo "=== Phase 2 - Extract to staging ==="
-    - STAGING_DIR="${BOOK_DEPLOY_DIR}_staging"
-    - rm -rf "$STAGING_DIR"
-    - mkdir -p "$STAGING_DIR"
-    - tar -xzf TheBook-shtml.tar.gz -C "$STAGING_DIR"
-    - SHTML_COUNT=$(find "$STAGING_DIR" -name "*.shtml" | wc -l)
-    - echo "Extracted $SHTML_COUNT shtml files"
-    - |
-      if [ "$SHTML_COUNT" -lt 10 ]; then
-        echo "ERROR - too few shtml files extracted"
-        exit 1
-      fi
-
-    - echo "=== Phase 3 - Resolve Maven placeholders ==="
-    - echo "--- Sample before replacement ---"
-    - grep "@parsedVersion" "$STAGING_DIR/index.shtml" | head -3
-    - |
-      for f in "$STAGING_DIR"/*.shtml; do
-        sed -i "s/@parsedVersion\.majorVersion@\.@parsedVersion\.minorVersion@/${BOOK_VERSION}/g" "$f"
-        sed -i "s|@github\.url-prefix@|https://github.com/dCache/dcache/blob/master/docs/TheBook/src/main/markdown|g" "$f"
-        sed -i "/github-fork-ribbon/s/\.shtml/\.md/g" "$f"
-      done
-    - echo "--- Sample after replacement ---"
-    - grep -c "@parsedVersion" "$STAGING_DIR/index.shtml" || echo "no matches remaining"
-    - head -20 "$STAGING_DIR/index.shtml"
-
-    - echo "=== Phase 4 - Verify no unresolved placeholders ==="
-    - COUNT=$(grep -r "@parsedVersion" "$STAGING_DIR" | wc -l)
-    - echo "Unresolved parsedVersion placeholders $COUNT (should be 0)"
-    - |
-      if [ "$COUNT" -gt 0 ]; then
-        echo "ERROR - unresolved placeholders found"
-        exit 1
-      fi
-
-    - echo "=== Phase 5 - Atomic deploy (replace old version if exists) ==="
-    - |
-      if [ -d "${BOOK_DEPLOY_DIR}" ]; then
-        mv "${BOOK_DEPLOY_DIR}" "${BOOK_DEPLOY_DIR}_old"
-        echo "Moved existing dir to ${BOOK_DEPLOY_DIR}_old"
-      fi
-    - mv "$STAGING_DIR" "${BOOK_DEPLOY_DIR}"
-    - rm -rf "${BOOK_DEPLOY_DIR}_old"
-    - echo "Deployed TheBook to ${BOOK_DEPLOY_DIR}"
-
-  after_script:
-    - rm -rf "${BOOK_DEPLOY_DIR}_staging" || true
+  dependencies: [build-thebook]
+  variables:
+    ARTIFACT_NAME: "TheBook-shtml"
+    DEPLOY_DIR: "${BOOK_DEPLOY_DIR}"
+    MODULE_PATH: "docs/TheBook"
 
 deploy-userguide:
+  <<: *deploy_definition
   stage: deploy
-  tags:
-    - hugo
-    - www.dcache.org
-  dependencies:
-    - build-userguide
-  script:
-    - echo "=== Phase 1 - Ensure header fragment exists ==="
-    - |
-      if [ ! -f "${FRAGS_DIR}/header-docs-userguide-${BOOK_VERSION}.shtml" ]; then
-        cp "${FRAGS_DIR}/header-docs-userguide-10.2.shtml" "${FRAGS_DIR}/header-docs-userguide-${BOOK_VERSION}.shtml"
-        sed -i "s/10\.2/${BOOK_VERSION}/g" "${FRAGS_DIR}/header-docs-userguide-${BOOK_VERSION}.shtml"
-        echo "Created header-docs-userguide-${BOOK_VERSION}.shtml"
-      else
-        echo "header-docs-userguide-${BOOK_VERSION}.shtml already exists, skipping"
-      fi
-
-    - echo "=== Phase 2 - Extract to staging ==="
-    - STAGING_DIR="${USERGUIDE_DEPLOY_DIR}_staging"
-    - rm -rf "$STAGING_DIR"
-    - mkdir -p "$STAGING_DIR"
-    - tar -xzf UserGuide-shtml.tar.gz -C "$STAGING_DIR"
-    - SHTML_COUNT=$(find "$STAGING_DIR" -name "*.shtml" | wc -l)
-    - echo "Extracted $SHTML_COUNT shtml files"
-    - |
-      if [ "$SHTML_COUNT" -lt 5 ]; then
-        echo "ERROR - too few shtml files extracted"
-        exit 1
-      fi
-
-    - echo "=== Phase 3 - Resolve Maven placeholders ==="
-    - |
-      for f in "$STAGING_DIR"/*.shtml; do
-        sed -i "s/@parsedVersion.majorVersion@.@parsedVersion.minorVersion@/${BOOK_VERSION}/g" "$f"
-        sed -i "s|@github.url-prefix@|https://github.com/dCache/dcache/blob/master/docs/UserGuide/src/main/markdown|g" "$f"
-        sed -i "/github-fork-ribbon/s/\.shtml/\.md/g" "$f"
-      done
-
-    - echo "=== Phase 4 - Verify no unresolved placeholders ==="
-    - COUNT=$(grep -r "@parsedVersion" "$STAGING_DIR" | wc -l)
-    - echo "Unresolved parsedVersion placeholders $COUNT (should be 0)"
-    - |
-      if [ "$COUNT" -gt 0 ]; then
-        echo "ERROR - unresolved placeholders found"
-        exit 1
-      fi
-
-    - echo "=== Phase 5 - Atomic deploy (replace old version if exists) ==="
-    - |
-      if [ -d "${USERGUIDE_DEPLOY_DIR}" ]; then
-        mv "${USERGUIDE_DEPLOY_DIR}" "${USERGUIDE_DEPLOY_DIR}_old"
-        echo "Moved existing dir to ${USERGUIDE_DEPLOY_DIR}_old"
-      fi
-    - mv "$STAGING_DIR" "${USERGUIDE_DEPLOY_DIR}"
-    - rm -rf "${USERGUIDE_DEPLOY_DIR}_old"
-    - echo "Deployed UserGuide to ${USERGUIDE_DEPLOY_DIR}"
-
-  after_script:
-    - rm -rf "${USERGUIDE_DEPLOY_DIR}_staging" || true
+  dependencies: [build-userguide]
+  variables:
+    ARTIFACT_NAME: "UserGuide-shtml"
+    DEPLOY_DIR: "${USERGUIDE_DEPLOY_DIR}"
+    MODULE_PATH: "docs/UserGuide"
