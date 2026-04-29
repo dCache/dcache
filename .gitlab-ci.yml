@@ -37,27 +37,44 @@ build-userguide:
 .deploy_template: &deploy_definition
   tags: [hugo, www.dcache.org]
   script:
-    - echo "=== Phase 1 - Extract and Clean Staging ==="
+    - echo "=== Phase 1 - Ensure Fragment Exists for $MODULE_PATH ==="
+    - |
+      if [[ "$MODULE_PATH" == *"TheBook"* ]]; then
+        FRAG_NAME="header-docs-${BOOK_VERSION}.shtml"
+        SOURCE_FRAG="header-docs-10.2.shtml"
+      else
+        FRAG_NAME="header-docs-userguide-${BOOK_VERSION}.shtml"
+        SOURCE_FRAG="header-docs-userguide-10.2.shtml"
+      fi
+      
+      if [ ! -f "${FRAGS_DIR}/${FRAG_NAME}" ]; then
+        cp "${FRAGS_DIR}/${SOURCE_FRAG}" "${FRAGS_DIR}/${FRAG_NAME}"
+        sed -i "s/10\.2/${BOOK_VERSION}/g" "${FRAGS_DIR}/${FRAG_NAME}"
+        echo "Created ${FRAG_NAME}"
+      fi
+
+    - echo "=== Phase 2 - Extract and Clean Staging ==="
     - STAGING_DIR="${DEPLOY_DIR}_staging"
     - rm -rf "$STAGING_DIR" && mkdir -p "$STAGING_DIR"
     - tar -xzf ${ARTIFACT_NAME}.tar.gz -C "$STAGING_DIR"
 
-    - echo "=== Phase 2 - Aggressive Placeholder Resolution ==="
+    - echo "=== Phase 3 - Aggressive Placeholder Resolution ==="
     - |
       for f in $(find "$STAGING_DIR" -name "*.shtml"); do
-        # Replace ALL variations of @parsedVersion... with the BOOK_VERSION
-        sed -i "s/@parsedVersion[^@]*@/${BOOK_VERSION}/g" "$f"
-        # Fix GitHub Ribbon
+        if [[ "$MODULE_PATH" == *"UserGuide"* ]]; then
+            sed -i "s/header-docs-@parsedVersion[^@]*@/header-docs-userguide-${BOOK_VERSION}/g" "$f"
+        else
+            sed -i "s/@parsedVersion[^@]*@/${BOOK_VERSION}/g" "$f"
+        fi
+        
         sed -i "s|@github\.url-prefix@|https://github.com/dCache/dcache/blob/master/${MODULE_PATH}/src/main/markdown|g" "$f"
         sed -i "/github-fork-ribbon/s/\.shtml/\.md/g" "$f"
       done
 
-    - echo "=== Phase 3 - Atomic Deploy ==="
-    # This removes the need for manual cleanup
+    - echo "=== Phase 4 - Atomic Deploy ==="
     - if [ -d "${DEPLOY_DIR}" ]; then rm -rf "${DEPLOY_DIR}_old"; mv "${DEPLOY_DIR}" "${DEPLOY_DIR}_old"; fi
     - mv "$STAGING_DIR" "${DEPLOY_DIR}"
     - rm -rf "${DEPLOY_DIR}_old"
-    - echo "Deployed to ${DEPLOY_DIR}"
 
 deploy-thebook:
   <<: *deploy_definition
