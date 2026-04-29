@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2020 - 2024 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2020 - 2026 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -35,6 +35,7 @@ import java.util.Objects;
 import java.util.concurrent.Callable;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.leader.LeaderLatch;
+import org.apache.curator.framework.recipes.leader.LeaderLatch.CloseMode;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.apache.curator.framework.recipes.leader.Participant;
 import org.apache.curator.utils.CloseableUtils;
@@ -102,7 +103,7 @@ public class HAServiceLeadershipManager implements CellIdentityAware, CellComman
      * Creates a ZooKeeper leader latch, attaches and starts a listener.
      */
     private void initZkLeaderListener() {
-        zkLeaderLatch = new LeaderLatch(zkClient, zkLeaderPath, cellAddress.toString());
+        zkLeaderLatch = new LeaderLatch(zkClient, zkLeaderPath, cellAddress.toString(), CloseMode.NOTIFY_LEADER);
         zkLeaderLatch.addListener(new CDCLeaderLatchListener(leadershipListener));
         try {
             zkLeaderLatch.start();
@@ -118,7 +119,7 @@ public class HAServiceLeadershipManager implements CellIdentityAware, CellComman
 
     private synchronized void releaseLeadership() {
         try {
-            zkLeaderLatch.close(LeaderLatch.CloseMode.NOTIFY_LEADER);
+            zkLeaderLatch.close();
         } catch (Exception e) {
             Throwables.throwIfUnchecked(e);
             throw new RuntimeException(e);
