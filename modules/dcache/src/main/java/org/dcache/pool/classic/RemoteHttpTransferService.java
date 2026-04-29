@@ -19,6 +19,7 @@ package org.dcache.pool.classic;
 
 import com.google.common.base.Splitter;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
 import diskCacheV111.vehicles.RemoteHttpsDataTransferProtocolInfo;
@@ -58,8 +59,11 @@ import org.apache.http.impl.client.DefaultRedirectStrategy;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpRequestExecutor;
+import org.dcache.pool.movers.Mover;
 import org.dcache.pool.movers.MoverProtocol;
+import org.dcache.pool.movers.MoverProtocolMover;
 import org.dcache.pool.movers.RemoteHttpDataTransferProtocol;
+import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.security.trust.AggregateX509TrustManager;
 import org.dcache.util.Version;
 import org.slf4j.Logger;
@@ -68,6 +72,8 @@ import org.springframework.beans.factory.annotation.Value;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static dmg.util.Exceptions.meaningfulMessage;
+
+import dmg.cells.nucleus.CellPath;
 
 public class RemoteHttpTransferService extends SecureRemoteTransferService {
 
@@ -129,6 +135,15 @@ public class RemoteHttpTransferService extends SecureRemoteTransferService {
     private CloseableHttpClient sharedClient;
 
     @Override
+    public Mover<?> createMover(ReplicaDescriptor handle, PoolIoFileMessage message,
+          CellPath pathToDoor) throws CacheException {
+        Mover<?> mover = super.createMover(handle, message, pathToDoor);
+        MoverProtocolMover mpm = (MoverProtocolMover) mover;
+        ((RemoteHttpDataTransferProtocol) mpm.getMover()).setSubject(message.getSubject());
+        return mover;
+    }
+
+    @Override
     protected MoverProtocol createMoverProtocol(ProtocolInfo info) throws Exception {
         if (!(info instanceof RemoteHttpDataTransferProtocolInfo)) {
             throw new CacheException(CacheException.CANNOT_CREATE_MOVER,
@@ -145,7 +160,7 @@ public class RemoteHttpTransferService extends SecureRemoteTransferService {
                 SSLContext context = buildSSLContext(credential.getKeyManager());
                 CloseableHttpClient client = createClient(context);
 
-                return new RemoteHttpDataTransferProtocol(client) {
+                return new RemoteHttpDataTransferProtocol(client, getTransferLifeCycle()) {
                     @Override
                     protected void afterTransfer() {
                         super.afterTransfer();
@@ -159,7 +174,7 @@ public class RemoteHttpTransferService extends SecureRemoteTransferService {
             }
         }
 
-        return new RemoteHttpDataTransferProtocol(sharedClient);
+        return new RemoteHttpDataTransferProtocol(sharedClient, getTransferLifeCycle());
     }
 
     @PostConstruct
