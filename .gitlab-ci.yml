@@ -7,7 +7,6 @@ variables:
   MANUALS_DIR: "/data/www/old-dcache.org/manuals"
   BOOK_VERSION: "11.2"
   FRAGS_DIR: "/data/www/old-dcache.org/template/frags"
-  # Targets
   BOOK_DEPLOY_DIR: "/data/www/old-dcache.org/manuals/Book-11.2-dryrun"
   USERGUIDE_DEPLOY_DIR: "/data/www/old-dcache.org/manuals/UserGuide-11.2-dryrun"
 
@@ -17,27 +16,26 @@ variables:
     - echo "=== Phase 1 - Prepare & Scrub Header Fragment ==="
     - cp "${FRAGS_DIR}/${SOURCE_FRAG}" "${FRAGS_DIR}/${FRAG_FILE}"
 
-    - sed -i 's/11\.0//g' "${FRAGS_DIR}/${FRAG_FILE}"
-    - sed -i 's/7\.2 (UNRELEASED)//g' "${FRAGS_DIR}/${FRAG_FILE}"
-    - sed -i 's/ (UNRELEASED)//g' "${FRAGS_DIR}/${FRAG_FILE}"
-    - sed -i 's/ | WIKI//g' "${FRAGS_DIR}/${FRAG_FILE}"
+    - perl -pi -e 's/<b>(10\.2)<\/b>/$1/g' "${FRAGS_DIR}/${FRAG_FILE}"
+    - perl -pi -e 's/<strong[^>]*>(10\.2)<\/strong>/$1/g' "${FRAGS_DIR}/${FRAG_FILE}"
 
-    - sed -i 's/ ,/,/g' "${FRAGS_DIR}/${FRAG_FILE}"
-    - sed -i 's/,,/,/g' "${FRAGS_DIR}/${FRAG_FILE}"
-    - sed -i 's/, |/ |/g' "${FRAGS_DIR}/${FRAG_FILE}"
+    - perl -pi -e 's/,\s*<a[^>]*>7\.2\s*\(UNRELEASED\)<\/a>//g' "${FRAGS_DIR}/${FRAG_FILE}"
+    - perl -pi -e 's/,\s*7\.2\s*\(UNRELEASED\)//g' "${FRAGS_DIR}/${FRAG_FILE}"
+    - perl -pi -e 's/\|\s*<a[^>]*>WIKI<\/a>//g' "${FRAGS_DIR}/${FRAG_FILE}"
+    - perl -pi -e 's/\|\s*WIKI//g' "${FRAGS_DIR}/${FRAG_FILE}"
+    - perl -pi -e 's/\s*\(UNRELEASED\)//g' "${FRAGS_DIR}/${FRAG_FILE}"
 
-    - sed -i 's/<b>//g; s/<\/b>//g' "${FRAGS_DIR}/${FRAG_FILE}"
-    - sed -i "s/>${BOOK_VERSION}</><b>${BOOK_VERSION}<\/b></g" "${FRAGS_DIR}/${FRAG_FILE}"
+    - perl -pi -e "s|(<a[^>]*href=\"[^\"]*UserGuide-10\.2/?\"[^>]*>10\.2</a>)|\$1, <a href=\"/manuals/UserGuide-${BOOK_VERSION}/\">${BOOK_VERSION}</a>|g" "${FRAGS_DIR}/${FRAG_FILE}"
+    - perl -pi -e "s|(<a[^>]*href=\"[^\"]*Book-10\.2/?\"[^>]*>10\.2</a>)|\$1, <a href=\"/manuals/Book-${BOOK_VERSION}/\">${BOOK_VERSION}</a>|g" "${FRAGS_DIR}/${FRAG_FILE}"
 
     - |
       if [[ "${DOC_PATH}" == *"UserGuide"* ]]; then
-        sed -i "s/UserGuide-10\.2/UserGuide-${BOOK_VERSION}/g" "${FRAGS_DIR}/${FRAG_FILE}"
-        sed -i "s/header-docs-10.2/header-docs-userguide-${BOOK_VERSION}/g" "${FRAGS_DIR}/${FRAG_FILE}"
+        perl -pi -e "s|(<a[^>]*href=\"[^\"]*UserGuide-${BOOK_VERSION}/?\"[^>]*>)(${BOOK_VERSION})(</a>)|\$1<b>\$2</b>\$3|g" "${FRAGS_DIR}/${FRAG_FILE}"
       else
-        sed -i "s/Book-10\.2/Book-${BOOK_VERSION}/g" "${FRAGS_DIR}/${FRAG_FILE}"
-        sed -i "s/header-docs-10.2/header-docs-${BOOK_VERSION}/g" "${FRAGS_DIR}/${FRAG_FILE}"
+        perl -pi -e "s|(<a[^>]*href=\"[^\"]*Book-${BOOK_VERSION}/?\"[^>]*>)(${BOOK_VERSION})(</a>)|\$1<b>\$2</b>\$3|g" "${FRAGS_DIR}/${FRAG_FILE}"
       fi
-    - echo "Fragment ${FRAG_FILE} FORCE updated and scrubbed."
+
+    - echo "Fragment ${FRAG_FILE} FORCE updated and scrubbed with Perl."
 
     - echo "=== Phase 2 - Extract to staging ==="
     - STAGING_DIR="${DEPLOY_DIR}_staging"
