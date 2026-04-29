@@ -55,6 +55,11 @@ import liquibase.database.Database;
 import liquibase.database.DatabaseFactory;
 import liquibase.database.jvm.JdbcConnection;
 import liquibase.resource.ClassLoaderResourceAccessor;
+import org.dcache.acl.ACE;
+import org.dcache.acl.enums.AccessMask;
+import org.dcache.acl.enums.AceFlags;
+import org.dcache.acl.enums.AceType;
+import org.dcache.acl.enums.Who;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.chimera.ChimeraFsException;
@@ -66,8 +71,11 @@ import org.dcache.chimera.UnixPermission;
 import org.dcache.chimera.namespace.ChimeraNameSpaceProvider;
 import org.dcache.chimera.namespace.ChimeraOsmStorageInfoExtractor;
 import org.dcache.chimera.posix.Stat;
+import org.dcache.namespace.ACLPermissionHandler;
+import org.dcache.namespace.ChainedPermissionHandler;
 import org.dcache.namespace.CreateOption;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.namespace.PermissionHandler;
 import org.dcache.namespace.PosixPermissionHandler;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
@@ -773,6 +781,49 @@ public class PnfsManagerTest {
 
         assertTrue("atime is updated, but shouldn't",
               stat_after.getATime() == stat_before.getATime());
+    }
+
+    @Test
+    public void testCreateFileWithXattrAndInheritedACLs() throws ChimeraFsException {
+
+        var permissionHandler = new ChainedPermissionHandler(
+              new ACLPermissionHandler(),
+              new PosixPermissionHandler()
+        );
+
+        _pnfsManager.setPermissionHandler(permissionHandler);
+        ((ChimeraNameSpaceProvider) _pnfsManager.getNameSpaceProvider()).setPermissionHandler(permissionHandler);
+        ((ChimeraNameSpaceProvider) _pnfsManager.getNameSpaceProvider()).setAclEnabled(true);
+
+        var rootInode = _fs.path2inode("/");
+        FsInode dir = _fs.mkdir(rootInode, "dir", 1, 2, 0755);
+
+        var acl = List.of(
+              new ACE(AceType.ACCESS_DENIED_ACE_TYPE,
+                    AceFlags.INHERIT_ONLY_ACE.getValue() | AceFlags.FILE_INHERIT_ACE.getValue(),
+                    AccessMask.WRITE_ATTRIBUTES.getValue(),
+                    Who.EVERYONE, -1),
+
+              new ACE(AceType.ACCESS_DENIED_ACE_TYPE,
+                    AceFlags.INHERIT_ONLY_ACE.getValue() | AceFlags.FILE_INHERIT_ACE.getValue(),
+                    AccessMask.WRITE_DATA.getValue(),
+                    Who.EVERYONE, -1)
+        );
+
+        _fs.setACL(dir, acl);
+
+        var pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/dir/file1",
+              FileAttributes.of()
+                    .fileType(REGULAR)
+                    .mode(0600)
+                    .uid(1)
+                    .gid(2)
+                    .xattr("foo", "bar")
+                    .build());
+
+        pnfsCreateEntryMessage.setSubject(Subjects.of(1, 2, new int[]{1}));
+        _pnfsManager.createEntry(pnfsCreateEntryMessage);
+        assertThat(pnfsCreateEntryMessage.getReturnCode(), is(0));
     }
 
     private void assertNotExists(String path) throws ChimeraFsException {
