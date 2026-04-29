@@ -72,12 +72,17 @@ deploy-thebook:
       fi
 
     - echo "=== Phase 3 - Resolve Maven placeholders ==="
+    - echo "--- Sample before replacement ---"
+    - grep "@parsedVersion" "$STAGING_DIR/index.shtml" | head -3
     - |
       for f in "$STAGING_DIR"/*.shtml; do
-        sed -i "s/@parsedVersion.majorVersion@.@parsedVersion.minorVersion@/${BOOK_VERSION}/g" "$f"
-        sed -i "s|@github.url-prefix@|https://github.com/dCache/dcache/blob/master/docs/TheBook/src/main/markdown|g" "$f"
+        sed -i "s/@parsedVersion\.majorVersion@\.@parsedVersion\.minorVersion@/${BOOK_VERSION}/g" "$f"
+        sed -i "s|@github\.url-prefix@|https://github.com/dCache/dcache/blob/master/docs/TheBook/src/main/markdown|g" "$f"
         sed -i "/github-fork-ribbon/s/\.shtml/\.md/g" "$f"
       done
+    - echo "--- Sample after replacement ---"
+    - grep -c "@parsedVersion" "$STAGING_DIR/index.shtml" || echo "no matches remaining"
+    - head -20 "$STAGING_DIR/index.shtml"
 
     - echo "=== Phase 4 - Verify no unresolved placeholders ==="
     - COUNT=$(grep -r "@parsedVersion" "$STAGING_DIR" | wc -l)
