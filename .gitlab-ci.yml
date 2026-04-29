@@ -7,21 +7,30 @@ variables:
   MANUALS_DIR: "/data/www/old-dcache.org/manuals"
   BOOK_VERSION: "11.2"
   FRAGS_DIR: "/data/www/old-dcache.org/template/frags"
+  GLOBAL_FRAG: "header-docs-global.shtml"
   BOOK_DEPLOY_DIR: "/data/www/old-dcache.org/manuals/Book-11.2-dryrun"
   USERGUIDE_DEPLOY_DIR: "/data/www/old-dcache.org/manuals/UserGuide-11.2-dryrun"
 
 .deploy_template: &deploy_logic
   tags: [hugo, www.dcache.org]
   script:
-      - echo "=== Phase 1 - Rebuild Header Fragment ==="
-      - cp "${FRAGS_DIR}/${SOURCE_FRAG}" "${FRAGS_DIR}/${FRAG_FILE}"
-      - chmod 644 "${FRAGS_DIR}/${FRAG_FILE}"
+      - echo "=== Phase 0 - Patch Legacy Pages (If needed) ==="
+      - |
+        if [ ! -f "${FRAGS_DIR}/${GLOBAL_FRAG}" ]; then
+          echo "First time setup - Patching all legacy manuals to use ${GLOBAL_FRAG}..."
+          find "${MANUALS_DIR}" -name "*.shtml" -exec sed -i "s/header-docs-[a-zA-Z0-9.-]*\.shtml/${GLOBAL_FRAG}/g" {} +
+        else
+          echo "Legacy pages already patched. Skipping Phase 0."
+        fi
+      - echo "=== Phase 1 - Rebuild Shared Global Header Fragment ==="
+      - cp "${FRAGS_DIR}/${SOURCE_FRAG}" "${FRAGS_DIR}/${GLOBAL_FRAG}"
+      - chmod 644 "${FRAGS_DIR}/${GLOBAL_FRAG}"
 
       - |
         perl -0777 -pi -e '
           my $version = $ENV{"BOOK_VERSION"};
-          my $doc_path = $ENV{"DOC_PATH"};
         
+
           my @ug_versions = qw(5.1 5.2 6.0 6.1 6.2 7.0 7.1 7.2 8.0 8.1 8.2 9.0 9.1 9.2 10.0 10.1 10.2);
           my @bk_versions = qw(5.0 5.1 5.2 6.0 6.1 6.2 7.0 7.1 7.2 8.0 8.1 8.2 9.0 9.1 9.2 10.0 10.1 10.2);
         
@@ -30,48 +39,41 @@ variables:
         
           sub build_links {
               my ($type, $versions_ref) = @_;
-              my @links;
-              foreach my $v (@$versions_ref) {
-                  my $link = qq(<a href="/manuals/$type-$v/">$v</a>);
-                  # Highlight ONLY current version
-                  if ($v eq $version && (($type eq "UserGuide" && $doc_path =~ /UserGuide/) || ($type eq "Book" && $doc_path =~ /Book/))) {
-                      $link = "<b>$link</b>";
-                  }
-                  push(@links, $link);
-              }
+              my @links = map { qq(<a href="/manuals/$type-$_/">$_</a>) } @$versions_ref;
               return join(", ", @links);
           }
         
           my $ug_html = build_links("UserGuide", \@ug_versions);
           my $bk_html = build_links("Book", \@bk_versions);
         
-          # PRECISE REPLACEMENT:
-          # UserGuide: replace everything from "User Guide:" to the next "|"
           s/(User\s*Guide:\s*)(.*?)(\s*\|)/$1$ug_html <br\/> /is;
-        
-          # Book: replace everything from "Book:" to the next "|" 
-          # (This effectively removes the Wiki link which follows the version list)
           s/(Book:\s*)(.*?)(\s*\|\s*<a.*?Wiki.*?\|)/$1$bk_html |/is;
-        
-        ' "${FRAGS_DIR}/${FRAG_FILE}"
 
-      - echo "--- DEBUG - Generated Fragment Content ---"
-      - cat "${FRAGS_DIR}/${FRAG_FILE}"
-      - echo "----------------------------------------"
+          my $js = "<script>
+            document.querySelectorAll(\".book-navi a\").forEach(link => {
+              if (window.location.pathname.includes(link.getAttribute(\"href\"))) {
+                link.style.fontWeight = \"bold\";
+                link.style.textDecoration = \"underline\";
+              }
+            });
+          </script>";
+          $_ .= $js;
+        
+        ' "${FRAGS_DIR}/${GLOBAL_FRAG}"
 
       - echo "=== Phase 2 - Extract to staging ==="
       - STAGING_DIR="${DEPLOY_DIR}_staging"
       - rm -rf "$STAGING_DIR" && mkdir -p "$STAGING_DIR"
       - tar -xzf "${ARTIFACT_NAME}" -C "$STAGING_DIR"
 
-      - echo "=== Phase 3 - Resolve Placeholders and Link Header ==="
+      - echo "=== Phase 3 - Link to Global Header ==="
       - |
         for f in $(find "$STAGING_DIR" -name "*.shtml"); do
           sed -i "s/@parsedVersion.majorVersion@.@parsedVersion.minorVersion@/${BOOK_VERSION}/g" "$f"
           sed -i "s|@github.url-prefix@|https://github.com/dCache/dcache/blob/master/${DOC_PATH}/src/main/markdown|g" "$f"
           sed -i "/github-fork-ribbon/s/\.shtml/\.md/g" "$f"
-          # Link to our new fragment
-          sed -i -E "s/header-docs-[a-zA-Z0-9.-]*\.shtml/${FRAG_FILE}/g" "$f"
+          # FORCE all SHTML files to use the global shared fragment
+          sed -i -E "s/header-docs-[a-zA-Z0-9.-]*\.shtml/${GLOBAL_FRAG}/g" "$f"
         done
 
       - echo "=== Phase 4 - Protected Atomic Swap ==="
@@ -87,7 +89,6 @@ variables:
     - |
       if [ "$CI_JOB_STATUS" != "success" ]; then
         if [ -d "${DEPLOY_DIR}_old" ] && [ ! -d "${DEPLOY_DIR}" ]; then
-          echo "JOB FAILED: Rolling back..."
           mv "${DEPLOY_DIR}_old" "${DEPLOY_DIR}"
         fi
       else
@@ -125,7 +126,6 @@ deploy-thebook:
     ARTIFACT_NAME: "TheBook-shtml.tar.gz"
     DEPLOY_DIR: "${BOOK_DEPLOY_DIR}"
     DOC_PATH: "docs/TheBook"
-    FRAG_FILE: "header-docs-${BOOK_VERSION}.shtml"
     SOURCE_FRAG: "header-docs-10.2.shtml"
 
 deploy-userguide:
@@ -136,5 +136,4 @@ deploy-userguide:
     ARTIFACT_NAME: "UserGuide-shtml.tar.gz"
     DEPLOY_DIR: "${USERGUIDE_DEPLOY_DIR}"
     DOC_PATH: "docs/UserGuide"
-    FRAG_FILE: "header-docs-userguide-${BOOK_VERSION}.shtml"
     SOURCE_FRAG: "header-docs-userguide-10.2.shtml"
