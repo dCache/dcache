@@ -210,6 +210,7 @@ public final class StageResources {
           @ApiResponse(code = 401, message = "Unauthorized"),
           @ApiResponse(code = 403, message = "Forbidden"),
           @ApiResponse(code = 404, message = "Not Found"),
+          @ApiResponse(code = 413, message = "Content Too Large"),
           @ApiResponse(code = 429, message = "Too many requests"),
           @ApiResponse(code = 500, message = "Internal Server Error")
     })
@@ -275,6 +276,7 @@ public final class StageResources {
           @ApiResponse(code = 400, message = "Bad request"),
           @ApiResponse(code = 401, message = "Unauthorized"),
           @ApiResponse(code = 403, message = "Forbidden"),
+          @ApiResponse(code = 413, message = "Content Too Large"),
           @ApiResponse(code = 429, message = "Too many requests"),
           @ApiResponse(code = 500, message = "Internal Server Error")
     })
