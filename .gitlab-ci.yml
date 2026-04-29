@@ -13,29 +13,39 @@ variables:
 .deploy_template: &deploy_logic
   tags: [hugo, www.dcache.org]
   script:
-    - echo "=== Phase 1 - Prepare & Scrub Header Fragment ==="
+    - echo "=== Phase 1 - Rebuild Header Links Dynamically ==="
     - cp "${FRAGS_DIR}/${SOURCE_FRAG}" "${FRAGS_DIR}/${FRAG_FILE}"
 
-    - perl -pi -e 's/<b>(10\.2)<\/b>/$1/g' "${FRAGS_DIR}/${FRAG_FILE}"
-    - perl -pi -e 's/<strong[^>]*>(10\.2)<\/strong>/$1/g' "${FRAGS_DIR}/${FRAG_FILE}"
-
-    - perl -pi -e 's/,\s*<a[^>]*>7\.2\s*\(UNRELEASED\)<\/a>//g' "${FRAGS_DIR}/${FRAG_FILE}"
-    - perl -pi -e 's/,\s*7\.2\s*\(UNRELEASED\)//g' "${FRAGS_DIR}/${FRAG_FILE}"
-    - perl -pi -e 's/\|\s*<a[^>]*>WIKI<\/a>//g' "${FRAGS_DIR}/${FRAG_FILE}"
-    - perl -pi -e 's/\|\s*WIKI//g' "${FRAGS_DIR}/${FRAG_FILE}"
-    - perl -pi -e 's/\s*\(UNRELEASED\)//g' "${FRAGS_DIR}/${FRAG_FILE}"
-
-    - perl -pi -e "s|(<a[^>]*href=\"[^\"]*UserGuide-10\.2/?\"[^>]*>10\.2</a>)|\$1, <a href=\"/manuals/UserGuide-${BOOK_VERSION}/\">${BOOK_VERSION}</a>|g" "${FRAGS_DIR}/${FRAG_FILE}"
-    - perl -pi -e "s|(<a[^>]*href=\"[^\"]*Book-10\.2/?\"[^>]*>10\.2</a>)|\$1, <a href=\"/manuals/Book-${BOOK_VERSION}/\">${BOOK_VERSION}</a>|g" "${FRAGS_DIR}/${FRAG_FILE}"
-
     - |
-      if [[ "${DOC_PATH}" == *"UserGuide"* ]]; then
-        perl -pi -e "s|(<a[^>]*href=\"[^\"]*UserGuide-${BOOK_VERSION}/?\"[^>]*>)(${BOOK_VERSION})(</a>)|\$1<b>\$2</b>\$3|g" "${FRAGS_DIR}/${FRAG_FILE}"
-      else
-        perl -pi -e "s|(<a[^>]*href=\"[^\"]*Book-${BOOK_VERSION}/?\"[^>]*>)(${BOOK_VERSION})(</a>)|\$1<b>\$2</b>\$3|g" "${FRAGS_DIR}/${FRAG_FILE}"
-      fi
+      perl -0777 -pi -e '
+        my $version = $ENV{"BOOK_VERSION"};
+        my $doc_path = $ENV{"DOC_PATH"};
 
-    - echo "Fragment ${FRAG_FILE} FORCE updated and scrubbed with Perl."
+        my @ug_versions = qw(5.1 5.2 6.0 6.1 6.2 7.0 7.1 7.2 8.0 8.1 8.2 9.0 9.1 9.2 10.0 10.1 10.2);
+        my @bk_versions = qw(5.0 5.1 5.2 6.0 6.1 6.2 7.0 7.1 7.2 8.0 8.1 8.2 9.0 9.1 9.2 10.0 10.1 10.2);
+        
+        push(@ug_versions, $version) unless grep { $_ eq $version } @ug_versions;
+        push(@bk_versions, $version) unless grep { $_ eq $version } @bk_versions;
+        
+        sub build_links {
+            my ($type, $versions_ref) = @_;
+            my @links;
+            foreach my $v (@$versions_ref) {
+                my $link = qq(<a href="/manuals/$type-$v/">$v</a>);
+                if ($v eq $version && (($type eq "UserGuide" && $doc_path =~ /UserGuide/) || ($type eq "Book" && $doc_path =~ /Book/))) {
+                    $link = "<b>$link</b>";
+                }
+                push(@links, $link);
+            }
+            return join(", ", @links);
+        }
+        
+        my $ug_html = build_links("UserGuide", \@ug_versions);
+        my $bk_html = build_links("Book", \@bk_versions);
+
+        s/(USERGUIDE:\s*)(<a.*?)(?=\s*\|\s*BOOK)/$1$ug_html/is;
+        s/(BOOK:\s*)(<a.*?)(?=\s*\|[^|]*Q&A)/$1$bk_html/is;
+      ' "${FRAGS_DIR}/${FRAG_FILE}"
 
     - echo "=== Phase 2 - Extract to staging ==="
     - STAGING_DIR="${DEPLOY_DIR}_staging"
@@ -48,8 +58,9 @@ variables:
         sed -i "s/@parsedVersion.majorVersion@.@parsedVersion.minorVersion@/${BOOK_VERSION}/g" "$f"
         sed -i "s|@github.url-prefix@|https://github.com/dCache/dcache/blob/master/${DOC_PATH}/src/main/markdown|g" "$f"
         sed -i "/github-fork-ribbon/s/\.shtml/\.md/g" "$f"
-        # Point the include directive to the correct fragment
-        sed -i "s/header-docs-${BOOK_VERSION}/$(basename ${FRAG_FILE} .shtml)/g" "$f"
+      
+        # Safely link HTML files to the dynamic fragment (resolves any hardcoded 10.2 tags)
+        sed -i -E "s/header-docs-[a-zA-Z0-9.-]*/$(basename ${FRAG_FILE} .shtml)/g" "$f"
       done
 
     - echo "=== Phase 4 - Protected Atomic Swap ==="
@@ -74,7 +85,7 @@ variables:
       fi
       rm -rf "${DEPLOY_DIR}_staging" || true
 
-# --- JOBS (Unchanged Build Logic) ---
+# --- JOBS ---
 
 build-thebook:
   stage: build
