@@ -49,14 +49,14 @@ variables:
           s/(Book:\s*)(.*?)(\s*\|\s*<a.*?Wiki.*?\|)/$1$bk_html |/is;
         
           my $js = "<script>
-            window.addEventListener('DOMContentLoaded', () => {
+            window.addEventListener(\"DOMContentLoaded\", () => {
               const currentPath = window.location.pathname;
-              document.querySelectorAll('.book-navi a').forEach(link => {
-                const linkPath = link.getAttribute('href');
-                if (linkPath && currentPath.startsWith(linkPath)) {
-                  link.style.fontWeight = 'bold';
-                  link.style.color = 'black';
-                  link.style.textDecoration = 'underline';
+              document.querySelectorAll(\".book-navi a\").forEach(link => {
+                const linkPath = link.getAttribute(\"href\");
+                if (linkPath && currentPath.indexOf(linkPath) !== -1) {
+                  link.style.fontWeight = \"bold\";
+                  link.style.color = \"black\";
+                  link.style.textDecoration = \"underline\";
                 }
               });
             });
