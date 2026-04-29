@@ -5,9 +5,12 @@ stages:
 variables:
   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true -Dmaven.repo.local=.m2/repository"
   MANUALS_DIR: "/data/www/old-dcache.org/manuals"
-  DRY_RUN_DIR: "/data/www/old-dcache.org/manuals/Book-11.2-dryrun"
-  BOOK_VERSION: "11.2"
   FRAGS_DIR: "/data/www/old-dcache.org/template/frags"
+  BOOK_VERSION: "11.2"
+  BOOK_DEPLOY_DIR: "/data/www/old-dcache.org/manuals/Book-11.2-dryrun"
+  USERGUIDE_DEPLOY_DIR: "/data/www/old-dcache.org/manuals/UserGuide-11.2-dryrun"
+
+# BUILD JOBS
 
 build-thebook:
   stage: build
@@ -15,12 +18,29 @@ build-thebook:
   script:
     - mvn $MAVEN_CLI_OPTS -DskipTests -pl docs/TheBook -am clean install -P dcache.org
     - tar -czf TheBook-shtml.tar.gz -C docs/TheBook/target/intermediate-html .
+    - echo "TheBook archive size"
+    - ls -lh TheBook-shtml.tar.gz
   artifacts:
     paths:
       - "TheBook-shtml.tar.gz"
     expire_in: 1 day
 
-deploy-dryrun:
+build-userguide:
+  stage: build
+  image: maven:3.9.12-eclipse-temurin-21
+  script:
+    - mvn $MAVEN_CLI_OPTS -DskipTests -pl docs/UserGuide -am clean install -P dcache.org
+    - tar -czf UserGuide-shtml.tar.gz -C docs/UserGuide/target/intermediate-html .
+    - echo "UserGuide archive size"
+    - ls -lh UserGuide-shtml.tar.gz
+  artifacts:
+    paths:
+      - "UserGuide-shtml.tar.gz"
+    expire_in: 1 day
+
+# DEPLOY JOBS
+
+deploy-thebook:
   stage: deploy
   tags:
     - hugo
@@ -28,14 +48,7 @@ deploy-dryrun:
   dependencies:
     - build-thebook
   script:
-    - echo "=== Phase 1 - Safety check ==="
-    - |
-      if [ -d "${DRY_RUN_DIR}" ]; then
-        echo "ERROR - ${DRY_RUN_DIR} already exists. Remove it first."
-        exit 1
-      fi
-
-    - echo "=== Phase 2 - Ensure header fragment exists for this version ==="
+    - echo "=== Phase 1 - Ensure header fragment exists ==="
     - |
       if [ ! -f "${FRAGS_DIR}/header-docs-${BOOK_VERSION}.shtml" ]; then
         cp "${FRAGS_DIR}/header-docs-10.2.shtml" "${FRAGS_DIR}/header-docs-${BOOK_VERSION}.shtml"
@@ -45,8 +58,9 @@ deploy-dryrun:
         echo "header-docs-${BOOK_VERSION}.shtml already exists, skipping"
       fi
 
-    - echo "=== Phase 3 - Extract to staging ==="
-    - STAGING_DIR="${DRY_RUN_DIR}_staging"
+    - echo "=== Phase 2 - Extract to staging ==="
+    - STAGING_DIR="${BOOK_DEPLOY_DIR}_staging"
+    - rm -rf "$STAGING_DIR"
     - mkdir -p "$STAGING_DIR"
     - tar -xzf TheBook-shtml.tar.gz -C "$STAGING_DIR"
     - SHTML_COUNT=$(find "$STAGING_DIR" -name "*.shtml" | wc -l)
@@ -57,7 +71,7 @@ deploy-dryrun:
         exit 1
       fi
 
-    - echo "=== Phase 4 - Resolve Maven placeholders and GitHub ribbon ==="
+    - echo "=== Phase 3 - Resolve Maven placeholders ==="
     - |
       for f in "$STAGING_DIR"/*.shtml; do
         sed -i "s/@parsedVersion.majorVersion@.@parsedVersion.minorVersion@/${BOOK_VERSION}/g" "$f"
@@ -65,24 +79,85 @@ deploy-dryrun:
         sed -i "/github-fork-ribbon/s/\.shtml/\.md/g" "$f"
       done
 
-    - echo "=== Phase 5 - Deploy to dryrun dir ==="
-    - mv "$STAGING_DIR" "${DRY_RUN_DIR}"
-    - echo "Deployed to ${DRY_RUN_DIR}"
-    - echo "Visit https://www.dcache.org/old/manuals/Book-11.2-dryrun/index.shtml"
+    - echo "=== Phase 4 - Verify no unresolved placeholders ==="
+    - COUNT=$(grep -r "@parsedVersion" "$STAGING_DIR" | wc -l)
+    - echo "Unresolved parsedVersion placeholders $COUNT (should be 0)"
+    - |
+      if [ "$COUNT" -gt 0 ]; then
+        echo "ERROR - unresolved placeholders found"
+        exit 1
+      fi
 
-    - echo "=== Phase 6 - Verify neighbors untouched ==="
-    - ls -la "${MANUALS_DIR}/Book-10.2/" | head -3
-    - ls -la "${MANUALS_DIR}/Book-9.2/" | head -3
+    - echo "=== Phase 5 - Atomic deploy (replace old version if exists) ==="
+    - |
+      if [ -d "${BOOK_DEPLOY_DIR}" ]; then
+        mv "${BOOK_DEPLOY_DIR}" "${BOOK_DEPLOY_DIR}_old"
+        echo "Moved existing dir to ${BOOK_DEPLOY_DIR}_old"
+      fi
+    - mv "$STAGING_DIR" "${BOOK_DEPLOY_DIR}"
+    - rm -rf "${BOOK_DEPLOY_DIR}_old"
+    - echo "Deployed TheBook to ${BOOK_DEPLOY_DIR}"
 
   after_script:
-    - rm -rf "${DRY_RUN_DIR}_staging" || true
+    - rm -rf "${BOOK_DEPLOY_DIR}_staging" || true
 
-cleanup-dryrun:
+deploy-userguide:
   stage: deploy
   tags:
     - hugo
     - www.dcache.org
-  when: manual
+  dependencies:
+    - build-userguide
   script:
-    - rm -rf "${DRY_RUN_DIR}"
-    - echo "Removed ${DRY_RUN_DIR}"
+    - echo "=== Phase 1 - Ensure header fragment exists ==="
+    - |
+      if [ ! -f "${FRAGS_DIR}/header-docs-userguide-${BOOK_VERSION}.shtml" ]; then
+        cp "${FRAGS_DIR}/header-docs-userguide-10.2.shtml" "${FRAGS_DIR}/header-docs-userguide-${BOOK_VERSION}.shtml"
+        sed -i "s/10\.2/${BOOK_VERSION}/g" "${FRAGS_DIR}/header-docs-userguide-${BOOK_VERSION}.shtml"
+        echo "Created header-docs-userguide-${BOOK_VERSION}.shtml"
+      else
+        echo "header-docs-userguide-${BOOK_VERSION}.shtml already exists, skipping"
+      fi
+
+    - echo "=== Phase 2 - Extract to staging ==="
+    - STAGING_DIR="${USERGUIDE_DEPLOY_DIR}_staging"
+    - rm -rf "$STAGING_DIR"
+    - mkdir -p "$STAGING_DIR"
+    - tar -xzf UserGuide-shtml.tar.gz -C "$STAGING_DIR"
+    - SHTML_COUNT=$(find "$STAGING_DIR" -name "*.shtml" | wc -l)
+    - echo "Extracted $SHTML_COUNT shtml files"
+    - |
+      if [ "$SHTML_COUNT" -lt 5 ]; then
+        echo "ERROR - too few shtml files extracted"
+        exit 1
+      fi
+
+    - echo "=== Phase 3 - Resolve Maven placeholders ==="
+    - |
+      for f in "$STAGING_DIR"/*.shtml; do
+        sed -i "s/@parsedVersion.majorVersion@.@parsedVersion.minorVersion@/${BOOK_VERSION}/g" "$f"
+        sed -i "s|@github.url-prefix@|https://github.com/dCache/dcache/blob/master/docs/UserGuide/src/main/markdown|g" "$f"
+        sed -i "/github-fork-ribbon/s/\.shtml/\.md/g" "$f"
+      done
+
+    - echo "=== Phase 4 - Verify no unresolved placeholders ==="
+    - COUNT=$(grep -r "@parsedVersion" "$STAGING_DIR" | wc -l)
+    - echo "Unresolved parsedVersion placeholders $COUNT (should be 0)"
+    - |
+      if [ "$COUNT" -gt 0 ]; then
+        echo "ERROR - unresolved placeholders found"
+        exit 1
+      fi
+
+    - echo "=== Phase 5 - Atomic deploy (replace old version if exists) ==="
+    - |
+      if [ -d "${USERGUIDE_DEPLOY_DIR}" ]; then
+        mv "${USERGUIDE_DEPLOY_DIR}" "${USERGUIDE_DEPLOY_DIR}_old"
+        echo "Moved existing dir to ${USERGUIDE_DEPLOY_DIR}_old"
+      fi
+    - mv "$STAGING_DIR" "${USERGUIDE_DEPLOY_DIR}"
+    - rm -rf "${USERGUIDE_DEPLOY_DIR}_old"
+    - echo "Deployed UserGuide to ${USERGUIDE_DEPLOY_DIR}"
+
+  after_script:
+    - rm -rf "${USERGUIDE_DEPLOY_DIR}_staging" || true
