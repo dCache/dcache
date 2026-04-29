@@ -30,7 +30,6 @@ variables:
         perl -0777 -pi -e '
           my $version = $ENV{"BOOK_VERSION"};
         
-
           my @ug_versions = qw(5.1 5.2 6.0 6.1 6.2 7.0 7.1 7.2 8.0 8.1 8.2 9.0 9.1 9.2 10.0 10.1 10.2);
           my @bk_versions = qw(5.0 5.1 5.2 6.0 6.1 6.2 7.0 7.1 7.2 8.0 8.1 8.2 9.0 9.1 9.2 10.0 10.1 10.2);
         
@@ -48,20 +47,19 @@ variables:
         
           s/(User\s*Guide:\s*)(.*?)(\s*\|)/$1$ug_html <br\/> /is;
           s/(Book:\s*)(.*?)(\s*\|\s*<a.*?Wiki.*?\|)/$1$bk_html |/is;
-
+        
           my $js = "<script>
-            document.querySelectorAll('.book-navi a').forEach(link => {
+            document.querySelectorAll(\".book-navi a\").forEach(link => {
               const currentPath = window.location.pathname;
-              const linkPath = link.getAttribute('href');
-              if (linkPath && currentPath.includes(linkPath)) {
-                link.style.fontWeight = 'bold';
-                link.style.color = '#000'; // Makes it stand out
-                link.style.textDecoration = 'underline';
+              const linkPath = link.getAttribute(\"href\");
+              if (linkPath && currentPath.indexOf(linkPath) !== -1) {
+                link.style.fontWeight = \"bold\";
+                link.style.color = \"black\";
+                link.style.textDecoration = \"underline\";
               }
             });
           </script>";
           $_ .= $js;
-        
         ' "${FRAGS_DIR}/${GLOBAL_FRAG}"
 
       - echo "=== Phase 2 - Extract to staging ==="
