@@ -15,28 +15,29 @@ variables:
   tags: [hugo, www.dcache.org]
   script:
     - echo "=== Phase 1 - Prepare & Scrub Header Fragment ==="
+    - cp "${FRAGS_DIR}/${SOURCE_FRAG}" "${FRAGS_DIR}/${FRAG_FILE}"
+
+    - sed -i 's/11\.0//g' "${FRAGS_DIR}/${FRAG_FILE}"
+    - sed -i 's/7\.2 (UNRELEASED)//g' "${FRAGS_DIR}/${FRAG_FILE}"
+    - sed -i 's/ (UNRELEASED)//g' "${FRAGS_DIR}/${FRAG_FILE}"
+    - sed -i 's/ | WIKI//g' "${FRAGS_DIR}/${FRAG_FILE}"
+
+    - sed -i 's/ ,/,/g' "${FRAGS_DIR}/${FRAG_FILE}"
+    - sed -i 's/,,/,/g' "${FRAGS_DIR}/${FRAG_FILE}"
+    - sed -i 's/, |/ |/g' "${FRAGS_DIR}/${FRAG_FILE}"
+
+    - sed -i 's/<b>//g; s/<\/b>//g' "${FRAGS_DIR}/${FRAG_FILE}"
+    - sed -i "s/>${BOOK_VERSION}</><b>${BOOK_VERSION}<\/b></g" "${FRAGS_DIR}/${FRAG_FILE}"
+
     - |
-      if [ ! -f "${FRAGS_DIR}/${FRAG_FILE}" ]; then
-        cp "${FRAGS_DIR}/${SOURCE_FRAG}" "${FRAGS_DIR}/${FRAG_FILE}"
-
-        sed -i 's/11\.0, //g' "${FRAGS_DIR}/${FRAG_FILE}"
-        sed -i 's/7\.2 (UNRELEASED), //g' "${FRAGS_DIR}/${FRAG_FILE}"
-        sed -i 's/ (UNRELEASED)//g' "${FRAGS_DIR}/${FRAG_FILE}"
-        sed -i 's/ | WIKI//g' "${FRAGS_DIR}/${FRAG_FILE}"
-      
-        sed -i 's/<b>//g; s/<\/b>//g' "${FRAGS_DIR}/${FRAG_FILE}"
-
-        # Update version number text and bold the new one
-        sed -i "s/>10\.2</><b>${BOOK_VERSION}<\/b></g" "${FRAGS_DIR}/${FRAG_FILE}"
-
-        if [[ "${DOC_PATH}" == *"UserGuide"* ]]; then
-            sed -i "s/UserGuide-10\.2/UserGuide-${BOOK_VERSION}/g" "${FRAGS_DIR}/${FRAG_FILE}"
-        else
-            sed -i "s/Book-10\.2/Book-${BOOK_VERSION}/g" "${FRAGS_DIR}/${FRAG_FILE}"
-        fi
-      
-        echo "Fragment ${FRAG_FILE} prepared, scrubbed, and path-corrected."
+      if [[ "${DOC_PATH}" == *"UserGuide"* ]]; then
+        sed -i "s/UserGuide-10\.2/UserGuide-${BOOK_VERSION}/g" "${FRAGS_DIR}/${FRAG_FILE}"
+        sed -i "s/header-docs-10.2/header-docs-userguide-${BOOK_VERSION}/g" "${FRAGS_DIR}/${FRAG_FILE}"
+      else
+        sed -i "s/Book-10\.2/Book-${BOOK_VERSION}/g" "${FRAGS_DIR}/${FRAG_FILE}"
+        sed -i "s/header-docs-10.2/header-docs-${BOOK_VERSION}/g" "${FRAGS_DIR}/${FRAG_FILE}"
       fi
+    - echo "Fragment ${FRAG_FILE} FORCE updated and scrubbed."
 
     - echo "=== Phase 2 - Extract to staging ==="
     - STAGING_DIR="${DEPLOY_DIR}_staging"
