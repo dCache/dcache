@@ -68,7 +68,6 @@ group_reporting=1
 [concurrent_randread]
 description=Concurrent Random READ
 rw=randread
-rw=read
 ; check checksum during read
 do_verify=1
 ; block until job is done before jumping to the next section
