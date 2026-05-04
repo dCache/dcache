@@ -5,14 +5,101 @@ stages:
 variables:
   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true -Dmaven.repo.local=.m2/repository"
   MANUALS_DIR: "/data/www/old-dcache.org/manuals"
-  FRAGS_DIR: "/data/www/old-dcache.org/template/frags"
   BOOK_VERSION: "11.2"
-  BOOK_DEPLOY_DIR: "/data/www/old-dcache.org/manuals/Book-11.2-dryrun"
-  USERGUIDE_DEPLOY_DIR: "/data/www/old-dcache.org/manuals/UserGuide-11.2-dryrun"
+  FRAGS_DIR: "/data/www/old-dcache.org/template/frags"
+  GLOBAL_FRAG: "header-docs-global.shtml"
+  BOOK_DEPLOY_DIR: "/data/www/old-dcache.org/manuals/Book-11.2"
+  USERGUIDE_DEPLOY_DIR: "/data/www/old-dcache.org/manuals/UserGuide-11.2"
 
-# ---------------------------------------------------------------------------
-# BUILD JOBS
-# ---------------------------------------------------------------------------
+.deploy_template: &deploy_logic
+  tags: [hugo, www.dcache.org]
+  script:
+    - echo "=== Phase 0 - Patch Legacy Pages (If needed) ==="
+    - |
+      if [ ! -f "${FRAGS_DIR}/${GLOBAL_FRAG}" ]; then
+        echo "First time setup - Patching all legacy manuals to use ${GLOBAL_FRAG}..."
+        find "${MANUALS_DIR}" -name "*.shtml" -exec sed -i "s/header-docs-[a-zA-Z0-9.-]*\.shtml/${GLOBAL_FRAG}/g" {} +
+      else
+        echo "Legacy pages already patched. Skipping Phase 0."
+      fi
+    - echo "=== Phase 1 - Rebuild Shared Global Header Fragment ==="
+    - cp "${FRAGS_DIR}/${SOURCE_FRAG}" "${FRAGS_DIR}/${GLOBAL_FRAG}"
+    - chmod 644 "${FRAGS_DIR}/${GLOBAL_FRAG}"
+
+    - |
+      perl -0777 -pi -e '
+        my $version = $ENV{"BOOK_VERSION"};
+      
+        my @ug_versions = qw(5.1 5.2 6.0 6.1 6.2 7.0 7.1 7.2 8.0 8.1 8.2 9.0 9.1 9.2 10.0 10.1 10.2);
+        my @bk_versions = qw(5.0 5.1 5.2 6.0 6.1 6.2 7.0 7.1 7.2 8.0 8.1 8.2 9.0 9.1 9.2 10.0 10.1 10.2);
+      
+        push(@ug_versions, $version) unless grep { $_ eq $version } @ug_versions;
+        push(@bk_versions, $version) unless grep { $_ eq $version } @bk_versions;
+      
+        sub build_links {
+            my ($type, $versions_ref) = @_;
+            my @links = map { qq(<a href="/manuals/$type-$_/">$_</a>) } @$versions_ref;
+            return join(", ", @links);
+        }
+      
+        my $ug_html = build_links("UserGuide", \@ug_versions);
+        my $bk_html = build_links("Book", \@bk_versions);
+      
+        s/(User\s*Guide:\s*)(.*?)(\s*\|)/$1$ug_html <br\/> /is;
+        s/(Book:\s*)(.*?)(\s*\|\s*<a.*?Wiki.*?\|)/$1$bk_html |/is;
+      
+        my $js = "<script>
+          window.addEventListener(\"DOMContentLoaded\", () => {
+            const currentPath = window.location.pathname;
+            document.querySelectorAll(\".book-navi a\").forEach(link => {
+              const linkPath = link.getAttribute(\"href\");
+              if (linkPath && currentPath.indexOf(linkPath) !== -1) {
+                link.style.fontWeight = \"bold\";
+                link.style.color = \"black\";
+                link.style.textDecoration = \"underline\";
+              }
+            });
+          });
+        </script>";
+        $_ .= $js;
+      ' "${FRAGS_DIR}/${GLOBAL_FRAG}"
+
+    - echo "=== Phase 2 - Extract to staging ==="
+    - STAGING_DIR="${DEPLOY_DIR}_staging"
+    - rm -rf "$STAGING_DIR" && mkdir -p "$STAGING_DIR"
+    - tar -xzf "${ARTIFACT_NAME}" -C "$STAGING_DIR"
+
+    - echo "=== Phase 3 - Link to Global Header ==="
+    - |
+      for f in $(find "$STAGING_DIR" -name "*.shtml"); do
+        sed -i "s/@parsedVersion.majorVersion@.@parsedVersion.minorVersion@/${BOOK_VERSION}/g" "$f"
+        sed -i "s|@github.url-prefix@|https://github.com/dCache/dcache/blob/master/${DOC_PATH}/src/main/markdown|g" "$f"
+        sed -i "/github-fork-ribbon/s/\.shtml/\.md/g" "$f"
+        # FORCE all SHTML files to use the global shared fragment
+        sed -i -E "s/header-docs-[a-zA-Z0-9.-]*\.shtml/${GLOBAL_FRAG}/g" "$f"
+      done
+
+    - echo "=== Phase 4 - Protected Atomic Swap ==="
+    - |
+      if [ -d "${DEPLOY_DIR}" ]; then
+        mv "${DEPLOY_DIR}" "${DEPLOY_DIR}_old"
+      fi
+      mv "$STAGING_DIR" "${DEPLOY_DIR}"
+      chmod -R 755 "${DEPLOY_DIR}"
+      echo "Swap complete. Deployed to ${DEPLOY_DIR}"
+
+  after_script:
+    - |
+      if [ "$CI_JOB_STATUS" != "success" ]; then
+        if [ -d "${DEPLOY_DIR}_old" ] && [ ! -d "${DEPLOY_DIR}" ]; then
+          mv "${DEPLOY_DIR}_old" "${DEPLOY_DIR}"
+        fi
+      else
+        rm -rf "${DEPLOY_DIR}_old"
+      fi
+      rm -rf "${DEPLOY_DIR}_staging" || true
+
+# --- JOBS ---
 
 build-thebook:
   stage: build
@@ -34,208 +121,22 @@ build-userguide:
     paths: ["UserGuide-shtml.tar.gz"]
     expire_in: 1 day
 
-# ---------------------------------------------------------------------------
-# DEPLOY JOBS
-# ---------------------------------------------------------------------------
-
 deploy-thebook:
+  <<: *deploy_logic
   stage: deploy
-  tags:
-    - hugo
-    - www.dcache.org
-  dependencies:
-    - build-thebook
-  script:
-    - echo "=== Phase 1 - Generate per-version header fragment with correct active highlight ==="
-    - FRAG_FILE="${FRAGS_DIR}/header-docs-${BOOK_VERSION}.shtml"
-    - |
-      BOOK_VERSIONS="5.0 5.1 5.2 6.0 6.1 6.2 7.0 7.1 7.2 8.0 8.1 8.2 9.0 9.1 9.2 10.0 10.1 10.2 11.0 11.1 11.2"
-      if ! echo "$BOOK_VERSIONS" | grep -qw "$BOOK_VERSION"; then
-        BOOK_VERSIONS="$BOOK_VERSIONS $BOOK_VERSION"
-      fi
-
-      UG_VERSIONS="5.1 5.2 6.0 6.1 6.2 7.0 7.1 7.2 8.0 8.1 8.2 9.0 9.1 9.2 10.0 10.1 10.2 11.0 11.1 11.2"
-      if ! echo "$UG_VERSIONS" | grep -qw "$BOOK_VERSION"; then
-        UG_VERSIONS="$UG_VERSIONS $BOOK_VERSION"
-      fi
-
-      BOOK_LINKS=""
-      for v in $BOOK_VERSIONS; do
-        if [ "$v" = "$BOOK_VERSION" ]; then
-          BOOK_LINKS="${BOOK_LINKS} <span class=\"activ\">${v}</span>,"
-        else
-          BOOK_LINKS="${BOOK_LINKS} <a href=\"/manuals/Book-${v}/\">${v}</a>,"
-        fi
-      done
-      BOOK_LINKS="${BOOK_LINKS%,}"
-
-      UG_LINKS=""
-      for v in $UG_VERSIONS; do
-        UG_LINKS="${UG_LINKS} <a href=\"/manuals/UserGuide-${v}/\">${v}</a>,"
-      done
-      UG_LINKS="${UG_LINKS%,}"
-
-      cat > "$FRAG_FILE" << FRAGEOF
-      <div class="book-navi">
-      <a href="/manuals/releasenotes.shtml">release notes</a>
-      | UserGuide:${UG_LINKS}
-      | Book:${BOOK_LINKS}
-      | <a href="http://trac.dcache.org/trac.cgi/wiki">Wiki</a>
-      | <a href="/manuals/FAQ.shtml">Q&amp;A</a>
-      <img src="/images/black_bg.png" width="100%" height="1" alt="black_bg" border="0" />
-      </div>
-      FRAGEOF
-      echo "Created ${FRAG_FILE}"
-
-    - echo "=== Phase 2 - Extract to staging ==="
-    - STAGING_DIR="${BOOK_DEPLOY_DIR}_staging"
-    - rm -rf "$STAGING_DIR"
-    - mkdir -p "$STAGING_DIR"
-    - tar -xzf TheBook-shtml.tar.gz -C "$STAGING_DIR"
-    - SHTML_COUNT=$(find "$STAGING_DIR" -name "*.shtml" | wc -l)
-    - echo "Extracted $SHTML_COUNT shtml files"
-    - |
-      if [ "$SHTML_COUNT" -lt 10 ]; then
-        echo "ERROR - too few shtml files extracted"
-        exit 1
-      fi
-
-    - echo "=== Phase 3 - Resolve Maven placeholders ==="
-    - |
-      for f in $(find "$STAGING_DIR" -name "*.shtml"); do
-        sed -i "s/@parsedVersion\.majorVersion@\.@parsedVersion\.minorVersion@/${BOOK_VERSION}/g" "$f"
-        sed -i "s|@github\.url-prefix@|https://github.com/dCache/dcache/blob/master/docs/TheBook/src/main/markdown|g" "$f"
-        sed -i "/github-fork-ribbon/s/\.shtml/\.md/g" "$f"
-      done
-
-    - echo "=== Phase 4 - Verify no unresolved placeholders ==="
-    - COUNT=$(grep -r "@parsedVersion" "$STAGING_DIR" | wc -l)
-    - echo "Unresolved placeholders remaining $COUNT (should be 0)"
-    - |
-      if [ "$COUNT" -gt 0 ]; then
-        echo "ERROR - unresolved Maven placeholders found"
-        exit 1
-      fi
-
-    - echo "=== Phase 5 - Atomic deploy ==="
-    - |
-      if [ -d "${BOOK_DEPLOY_DIR}" ]; then
-        mv "${BOOK_DEPLOY_DIR}" "${BOOK_DEPLOY_DIR}_old"
-      fi
-    - mv "$STAGING_DIR" "${BOOK_DEPLOY_DIR}"
-    - rm -rf "${BOOK_DEPLOY_DIR}_old"
-    - echo "Deployed TheBook to ${BOOK_DEPLOY_DIR}"
-    - echo "Visit https://www.dcache.org/old/manuals/Book-11.2-dryrun/index.shtml"
-
-  after_script:
-  - |
-    if [ "$CI_JOB_STATUS" != "success" ]; then
-      if [ -d "${BOOK_DEPLOY_DIR}_old" ] && [ ! -d "${BOOK_DEPLOY_DIR}" ]; then
-        mv "${BOOK_DEPLOY_DIR}_old" "${BOOK_DEPLOY_DIR}"
-        echo "Rollback complete"
-      fi
-    else
-      rm -rf "${BOOK_DEPLOY_DIR}_old"
-    fi
-  - rm -rf "${BOOK_DEPLOY_DIR}_staging" || true
+  dependencies: [build-thebook]
+  variables:
+    ARTIFACT_NAME: "TheBook-shtml.tar.gz"
+    DEPLOY_DIR: "${BOOK_DEPLOY_DIR}"
+    DOC_PATH: "docs/TheBook"
+    SOURCE_FRAG: "header-docs-10.2.shtml"
 
 deploy-userguide:
+  <<: *deploy_logic
   stage: deploy
-  tags:
-    - hugo
-    - www.dcache.org
-  dependencies:
-    - build-userguide
-  script:
-    - echo "=== Phase 1 - Generate per-version header fragment with correct active highlight ==="
-    - FRAG_FILE="${FRAGS_DIR}/header-docs-userguide-${BOOK_VERSION}.shtml"
-    - |
-      UG_VERSIONS="5.1 5.2 6.0 6.1 6.2 7.0 7.1 7.2 8.0 8.1 8.2 9.0 9.1 9.2 10.0 10.1 10.2 11.0 11.1 11.2"
-      if ! echo "$UG_VERSIONS" | grep -qw "$BOOK_VERSION"; then
-        UG_VERSIONS="$UG_VERSIONS $BOOK_VERSION"
-      fi
-
-      BOOK_VERSIONS="5.0 5.1 5.2 6.0 6.1 6.2 7.0 7.1 7.2 8.0 8.1 8.2 9.0 9.1 9.2 10.0 10.1 10.2 11.0 11.1 11.2"
-      if ! echo "$BOOK_VERSIONS" | grep -qw "$BOOK_VERSION"; then
-        BOOK_VERSIONS="$BOOK_VERSIONS $BOOK_VERSION"
-      fi
-
-      UG_LINKS=""
-      for v in $UG_VERSIONS; do
-        if [ "$v" = "$BOOK_VERSION" ]; then
-          UG_LINKS="${UG_LINKS} <span class=\"activ\">${v}</span>,"
-        else
-          UG_LINKS="${UG_LINKS} <a href=\"/manuals/UserGuide-${v}/\">${v}</a>,"
-        fi
-      done
-      UG_LINKS="${UG_LINKS%,}"
-
-      BOOK_LINKS=""
-      for v in $BOOK_VERSIONS; do
-        BOOK_LINKS="${BOOK_LINKS} <a href=\"/manuals/Book-${v}/\">${v}</a>,"
-      done
-      BOOK_LINKS="${BOOK_LINKS%,}"
-
-      cat > "$FRAG_FILE" << FRAGEOF
-      <div class="book-navi">
-      <a href="/manuals/releasenotes.shtml">release notes</a>
-      | UserGuide:${UG_LINKS}
-      | Book:${BOOK_LINKS}
-      | <a href="http://trac.dcache.org/trac.cgi/wiki">Wiki</a>
-      | <a href="/manuals/FAQ.shtml">Q&amp;A</a>
-      <img src="/images/black_bg.png" width="100%" height="1" alt="black_bg" border="0" />
-      </div>
-      FRAGEOF
-      echo "Created ${FRAG_FILE}"
-
-    - echo "=== Phase 2 - Extract to staging ==="
-    - STAGING_DIR="${USERGUIDE_DEPLOY_DIR}_staging"
-    - rm -rf "$STAGING_DIR"
-    - mkdir -p "$STAGING_DIR"
-    - tar -xzf UserGuide-shtml.tar.gz -C "$STAGING_DIR"
-    - SHTML_COUNT=$(find "$STAGING_DIR" -name "*.shtml" | wc -l)
-    - echo "Extracted $SHTML_COUNT shtml files"
-    - |
-      if [ "$SHTML_COUNT" -lt 5 ]; then
-        echo "ERROR - too few shtml files extracted"
-        exit 1
-      fi
-
-    - echo "=== Phase 3 - Resolve Maven placeholders ==="
-    - |
-      for f in $(find "$STAGING_DIR" -name "*.shtml"); do
-        sed -i "s/@parsedVersion\.majorVersion@\.@parsedVersion\.minorVersion@/${BOOK_VERSION}/g" "$f"
-        sed -i "s|@github\.url-prefix@|https://github.com/dCache/dcache/blob/master/docs/UserGuide/src/main/markdown|g" "$f"
-        sed -i "/github-fork-ribbon/s/\.shtml/\.md/g" "$f"
-      done
-
-    - echo "=== Phase 4 - Verify no unresolved placeholders ==="
-    - COUNT=$(grep -r "@parsedVersion" "$STAGING_DIR" | wc -l)
-    - echo "Unresolved placeholders remaining $COUNT (should be 0)"
-    - |
-      if [ "$COUNT" -gt 0 ]; then
-        echo "ERROR - unresolved Maven placeholders found"
-        exit 1
-      fi
-
-    - echo "=== Phase 5 - Atomic deploy ==="
-    - |
-      if [ -d "${USERGUIDE_DEPLOY_DIR}" ]; then
-        mv "${USERGUIDE_DEPLOY_DIR}" "${USERGUIDE_DEPLOY_DIR}_old"
-      fi
-    - mv "$STAGING_DIR" "${USERGUIDE_DEPLOY_DIR}"
-    - rm -rf "${USERGUIDE_DEPLOY_DIR}_old"
-    - echo "Deployed UserGuide to ${USERGUIDE_DEPLOY_DIR}"
-    - echo "Visit https://www.dcache.org/old/manuals/UserGuide-11.2-dryrun/index.shtml"
-
-  after_script:
-    - |
-      if [ "$CI_JOB_STATUS" != "success" ]; then
-        if [ -d "${USERGUIDE_DEPLOY_DIR}_old" ] && [ ! -d "${USERGUIDE_DEPLOY_DIR}" ]; then
-          mv "${USERGUIDE_DEPLOY_DIR}_old" "${USERGUIDE_DEPLOY_DIR}"
-          echo "Rollback complete"
-        fi
-      else
-        rm -rf "${USERGUIDE_DEPLOY_DIR}_old"
-      fi
-    - rm -rf "${USERGUIDE_DEPLOY_DIR}_staging" || true
+  dependencies: [build-userguide]
+  variables:
+    ARTIFACT_NAME: "UserGuide-shtml.tar.gz"
+    DEPLOY_DIR: "${USERGUIDE_DEPLOY_DIR}"
+    DOC_PATH: "docs/UserGuide"
+    SOURCE_FRAG: "header-docs-userguide-10.2.shtml"
