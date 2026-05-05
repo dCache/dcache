@@ -55,7 +55,7 @@ import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.GuardedBy;
 import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.imps.CuratorFrameworkImpl;
+import org.apache.curator.framework.imps.CuratorFrameworkBase;
 import org.apache.curator.framework.imps.PublicDelegatingCuratorFramework;
 import org.dcache.util.BoundedCachedExecutor;
 import org.dcache.util.BoundedExecutor;
@@ -227,7 +227,7 @@ public class CellNucleus implements ThreadFactory {
 
         CuratorFramework curatorFramework = __cellGlue.getCuratorFramework();
         // Per-cell nucleaus curator with CDC
-        _curatorFramework = new PublicDelegatingCuratorFramework((CuratorFrameworkImpl) curatorFramework) {
+        _curatorFramework = new PublicDelegatingCuratorFramework((CuratorFrameworkBase) curatorFramework) {
 
             private final Executor sequentialExecutor = new SequentialExecutor(_messageExecutor) {
                 @Override
