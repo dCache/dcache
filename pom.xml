@@ -647,12 +647,6 @@
             </dependency>
 
             <dependency>
-                <groupId>java.jndi</groupId>
-                <artifactId>nis</artifactId>
-                <version>1.2.1</version>
-            </dependency>
-
-            <dependency>
                 <groupId>org.json</groupId>
                 <artifactId>json</artifactId>
                 <version>20251224</version>
@@ -1459,7 +1453,6 @@
         <module>modules/gplazma2-grid</module>
         <module>modules/gplazma2-krb5</module>
         <module>modules/gplazma2-jaas</module>
-        <module>modules/gplazma2-nis</module>
         <module>modules/gplazma2-nsswitch</module>
         <module>modules/gplazma2-banfile</module>
         <module>modules/gplazma2-voms</module>

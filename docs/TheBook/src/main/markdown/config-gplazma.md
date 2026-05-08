@@ -704,9 +704,8 @@ gid must also be obtained.
 
 Out of the box, dCache supports multiple ways of obtaining the uid and gid from
 a username. This could be done by querying an LDAP service (see `ldap` plugin),
-an NIS service (see `nis` plugin) or the dCache server's local user account
-lookup service (see `nsswitch` plugin).  It is also possible to use explicit
-configuration files (see `multimap` plugin).
+or the dCache server's local user account lookup service (see `nsswitch` plugin).
+It is also possible to use explicit configuration files (see `multimap` plugin).
 
 ##### kpwd
 
@@ -774,37 +773,6 @@ Example:
     session requisite nsswitch #5
 
 In this example following is happening: extract user's DN (1), extract and verify VOMS attributes (2), map DN+Role to a local account (3), extract uid and gids for a local account (4) and, finally, extract users home directory (5).
-
-##### nis
-
-The `nis` uses an existing `NIS` service to map username+password to a username.
-
-Properties
-
-**gplazma.nis.server**
-
- `NIS` server host
- Default: `nisserv.domain.com`
-
-
-**gplazma.nis.domain**
-
-`NIS` domain
-Default: `domain.com`
-
-The result of `nis` can be used by other plug-ins:
-
-Example:
-
-    # Map grid or kerberos users to local accounts
-    auth    optional  x509 #1
-    auth    optional  voms #2
-    map     requisite vorolemap #3
-    map     optional  krb5 #4
-    map     optional  nis #5
-    session requisite nis #6
-
-In this example two access methods are considered: grid based and kerberos based. If user comes with grid certificate and VOMS role: extract user’s DN (1), extract and verify VOMS attributes (2), map DN+Role to a local account (3). If user comes with `Kerberos` ticket: extract local account (4). After this point in both cases we talk to `NIS` to get uid and gids for a local account (5) and, finally, adding users home directory (6).
 
 ##### mutator
 
@@ -920,8 +888,8 @@ Example:
     auth    optional  voms
     map     requisite vorolemap
     map     optional  krb5
-    map     optional  nis
-    session requisite nis
+    map     optional  ldap
+    session requisite ldap
     account requisite banfile
 
 #### session Plug-ins
@@ -977,44 +945,6 @@ Example:
     session requisite nsswitch #5
 
 In this example following is happening: extract user's DN (1), extract and verify VOMS attributes (2), map DN+Role to a local account (3), extract uid and gids for a local account (4) and, finally, extract users home directory (5).
-
-
-
-##### nis
-
-The `nis` plug-in adds root and home path information to the session, based on the username using your site’s `NIS` service.
-
-
-
-Properties
-
-**gplazma.nis.server**
-
-    `NIS` server host
-    Default: `nisserv.domain.com`
-
-
-
-**gplazma.nis.domain**
-
-    `NIS` domain
-    Default: `domain.com`
-
-The result of `nis` can be used by other plug-ins:
-
-Example:
-
-    # Map grid or kerberos users to local accounts
-    auth    optional  x509 #1
-    auth    optional  voms #2
-    map     requisite vorolemap #3
-    map     optional  krb5 #4
-    map     optional  nis #5
-    session requisite nis #6
-
-In this example two access methods are considered: grid based and kerberos based. If user comes with grid certificate and VOMS role: extract user's DN (1), extract and verify VOMS attributes (2), map DN+Role to a local account (3). If user comes with `Kerberos` ticket: extract local account (4). After this point in both cases we talk to NIS to get uid and gids for a local account (5) and, finally, adding users home directory (6).
-
-
 
 ##### ldap
 
@@ -1456,22 +1386,6 @@ a value.  This means those values must start with a `/`.
 ##### nsswitch
 
 The `nsswitsch` provides forward and reverse mapping for `NFSv4.1` using your system's `nsswitch` service.
-
-##### nis
-
-The `nis` plug-in forward and reverse mapping for `NFSv4.1` using your site's NIS service.
-
-Properties
-
-**gplazma.nis.server**
-
-   `NIS` server host
-   Default: `nisserv.domain.com`
-
-**gplazma.nis.domain**
-
-   `NIS` domain
-    Default: domain.com
 
 ## Using X509 Certificates
 
