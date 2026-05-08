@@ -106,7 +106,7 @@ public class LabelsResources {
 
     @GET
     @ApiOperation(value = "List all existing labels.",
-            notes = "The method offers the possibility to query of all existing labels.")
+            notes = "The method offers the possibility to query all existing labels.")
     @ApiResponses({
             @ApiResponse(code = 401, message = "Unauthorized"),
             @ApiResponse(code = 403, message = "Forbidden"),
