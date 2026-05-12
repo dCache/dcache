@@ -252,18 +252,45 @@ public class PoolMonitorV5
                             .toLowerCase()));
             }
 
+            if (_zone.isPresent()) {
+                SelectedPool pool = filterWritePool(levels, true, preallocated);
+                if (pool != null) {
+                    return pool;
+                }
+            }
+
+            SelectedPool pool = filterWritePool(levels, false, preallocated);
+            if (pool != null) {
+                return pool;
+            }
+
+            throw new CacheException(CacheException.NO_POOL_ONLINE,
+                  noOnlinePoolsErrorMessage(DirectionType.WRITE.name()
+                        .toLowerCase()));
+        }
+
+       @Nullable
+        private SelectedPool filterWritePool(PoolPreferenceLevel[] levels,
+                                           boolean filterByZone,
+                                           long preallocated) throws CacheException{
             CostException fallback = null;
+
             for (PoolPreferenceLevel level : levels) {
                 List<PoolInfo> pools =
-                      level.getPoolList().stream()
-                            .map(_costModule::getPoolInfo)
-                            .filter(Objects::nonNull)
-                            .collect(toList());
+                        level.getPoolList().stream()
+                                .map(_costModule::getPoolInfo)
+                                .filter(Objects::nonNull)
+                                .collect(toList());
+
+                if (filterByZone){
+                    pools = filterByZone(pools);
+                }
+
                 if (!pools.isEmpty()) {
                     Partition partition = _partitionManager.getPartition(level.getTag());
                     try {
                         return partition.selectWritePool(_costModule, pools, _fileAttributes,
-                              preallocated);
+                                preallocated);
                     } catch (CostException e) {
                         if (!e.shouldFallBack()) {
                             throw e;
@@ -273,16 +300,11 @@ public class PoolMonitorV5
                 }
             }
 
-            /* We were asked to fall back, but all available links were
-             * exhausted. Let the caller deal with it.
-             */
-            if (fallback != null) {
+            if (!filterByZone && fallback != null) {
                 throw fallback;
             }
 
-            throw new CacheException(CacheException.NO_POOL_ONLINE,
-                  noOnlinePoolsErrorMessage(DirectionType.WRITE.name()
-                        .toLowerCase()));
+            return null;
         }
 
         @Override
@@ -316,12 +338,37 @@ public class PoolMonitorV5
                             .toLowerCase()));
             }
 
+
+            if (_zone.isPresent()) {
+                SelectedPool pool = filterReadPool(level, onlinePoolsWithFile, true);
+                if (pool != null) {
+                    return pool;
+                }
+            }
+
+            SelectedPool pool = filterReadPool(level, onlinePoolsWithFile, false);
+            if (pool != null) {
+                return pool;
+            }
+
+            /* None of the pools we were allowed to read from were
+             * online or had the file.
+             */
+            throw new PermissionDeniedCacheException(
+                  "File is online, but not in read-allowed pool");
+        }
+
+        @Nullable
+        private SelectedPool filterReadPool(PoolPreferenceLevel[] level,
+                                  Map<String, PoolInfo> onlinePoolsWithFile,
+                                  boolean filterByZone) throws CacheException {
+
             CostException costException = null;
 
             for (int prio = 0; prio < level.length; prio++) {
                 List<String> poolsInCurrentLevel = level[prio].getPoolList();
                 LOGGER.debug("[read] Allowed pools at level {}: {}",
-                      prio, poolsInCurrentLevel);
+                        prio, poolsInCurrentLevel);
 
                 if (poolsInCurrentLevel.isEmpty()) {
                     // No pools in this level....skip it.
@@ -339,7 +386,11 @@ public class PoolMonitorV5
                     }
                 }
                 LOGGER.debug("[read] Available pools at level {}: {}",
-                      prio, pools);
+                        prio, pools);
+
+                if (filterByZone) {
+                    pools = filterByZone(pools);
+                }
 
                 /* If allowed, fallback to next link if current link doesn't point
                  * to any pool holding the file.
@@ -356,14 +407,14 @@ public class PoolMonitorV5
                  * to select a pool.
                  */
                 _partition =
-                      _partitionManager.getPartition(level[prio].getTag());
+                        _partitionManager.getPartition(level[prio].getTag());
 
                 /* The actual pool selection is delegated to the
                  * Partition.
                  */
                 try {
                     return _partition.selectReadPool(_costModule, pools,
-                          _fileAttributes);
+                            _fileAttributes);
                 } catch (CostException e) {
                     costException = e;
                     if (!e.shouldFallBack()) {
@@ -372,25 +423,24 @@ public class PoolMonitorV5
                 }
             }
 
-            /* If we have a CostException where a pool was selected and
-             * shouldTryAlternatives not set then we return that pool anyway.
-             * REVISIT: consider updating partitions so they don't throw
-             * an exception in this case.
-             */
+            if (filterByZone){
+                return null;
+            }
             if (costException != null) {
                 if (costException.getPool() != null
-                      && !costException.shouldTryAlternatives()) {
+                        && !costException.shouldTryAlternatives()) {
                     return costException.getPool();
                 }
-
                 throw costException;
             }
+            return null;
+        }
 
-            /* None of the pools we were allowed to read from were
-             * online or had the file.
-             */
-            throw new PermissionDeniedCacheException(
-                  "File is online, but not in read-allowed pool");
+        private List<PoolInfo> filterByZone(List<PoolInfo> pools) {
+                pools = pools.stream()
+                        .filter(p -> Objects.equals(p.getTags().get("zone"), _zone.get()))
+                        .toList();
+            return pools;
         }
 
         @Nullable
