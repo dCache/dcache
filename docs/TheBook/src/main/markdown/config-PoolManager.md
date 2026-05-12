@@ -177,6 +177,33 @@ Will create pool group `zone-A-pools` and any existing pool as well as any new p
 >
 > Pools can't be manually added into dynamic groups with `psu addto pgroup` admin command.
 
+#### Zone-Aware Pool Selection
+
+In deployments across it might be useful that uploads are directed to pools in the same zone as the door that accepted them. This avoids unnecessary cross-zone data movement. This is supported through zone-aware pool selection.
+
+Assign a zone to a door in the layout file:
+
+```ini
+[site-a/webdav-door-1]
+dcache.zone=A
+```
+
+Tag pools with their zone:
+
+```ini
+[site-a/pool-1]
+pool.tags=zone=A
+```
+
+Create a dynamic pool group per zone and attach it to the write link (see [Dynamic Pool Groups](#dynamic-pool-groups)):
+
+```
+psu create pgroup -dynamic -tags=zone=A  A-pools
+psu addto link write-link A-pools
+```
+
+The door propagates its zone to the pool manager, which filters the pool selection to pools with matching `zone` tag. If no matching pool is available, the selection falls back to all pools in the link.
+
 #### Nested Pool Groups
 
 Pool groups can be grouped together into nested pool groups. The special symbol `@` used as prefix
