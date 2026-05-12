@@ -703,6 +703,7 @@ public class PoolManagerV5
                       .getPoolSelector(fileAttributes,
                             protocolInfo,
                             _request.getLinkGroup(),
+                            _request.getZone(),
                             _request.getExcludedHosts())
                       .selectWritePool(_request.getPreallocated());
                 LOGGER.info("{} write handler selected {} after {} ms", _pnfsId, pool.name(),

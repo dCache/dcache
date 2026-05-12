@@ -102,6 +102,7 @@ import org.dcache.auth.attributes.Activity;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.MessageCallback;
+import org.dcache.cells.ZoneAware;
 import org.dcache.namespace.ACLPermissionHandler;
 import org.dcache.namespace.ChainedPermissionHandler;
 import org.dcache.namespace.CreateOption;
@@ -150,7 +151,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 public class XrootdDoor
       extends AbstractCellComponent
       implements CellMessageReceiver,
-      CellCommandListener, CellInfoProvider {
+      CellCommandListener, CellInfoProvider, ZoneAware {
 
     public static final String XROOTD_PROTOCOL_STRING = "Xrootd";
     public static final String XROOTD_PROTOCOL_VERSION =
@@ -224,6 +225,8 @@ public class XrootdDoor
     private NettyPortRange portRange;
     private int proxyResponseTimeoutInSeconds;
     private InetAddress _internalAddress;
+
+    private Optional<String> _zone;
 
     private UnionLoginStrategy.AccessLevel anonymousUserAccess = AccessLevel.NONE;
 
@@ -302,6 +305,11 @@ public class XrootdDoor
     @Required
     public void setProxyTimerExecutor(ScheduledExecutorService proxyTimerExecutor) {
         this.proxyTimerExecutor = proxyTimerExecutor;
+    }
+
+    @Override
+    public void setZone(Optional<String> zone){
+        _zone = zone;
     }
 
     /**
@@ -496,6 +504,7 @@ public class XrootdDoor
                       }
                   }
               };
+        transfer.setZone(_zone);
         transfer.setCellAddress(getCellAddress());
         transfer.setPoolManagerStub(_poolManagerStub);
         transfer.setPoolStub(_poolStub);

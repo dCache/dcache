@@ -130,6 +130,7 @@ import org.dcache.auth.attributes.LoginAttributes;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.CellStub;
+import org.dcache.cells.ZoneAware;
 import org.dcache.http.AuthenticationHandler;
 import org.dcache.http.PathMapper;
 import org.dcache.missingfiles.AlwaysFailMissingFileStrategy;
@@ -170,7 +171,7 @@ import org.stringtemplate.v4.ST;
  */
 public class DcacheResourceFactory
     extends AbstractCellComponent
-    implements ResourceFactory, CellMessageReceiver, CellCommandListener, CellInfoProvider {
+    implements ResourceFactory, CellMessageReceiver, CellCommandListener, CellInfoProvider, ZoneAware {
 
     private static final Logger LOGGER =
         LoggerFactory.getLogger(DcacheResourceFactory.class);
@@ -251,6 +252,8 @@ public class DcacheResourceFactory
 
     private ScheduledExecutorService _executor;
 
+    private Optional<String> _zone = Optional.empty();
+
     private int _moverTimeout;
     private TimeUnit _moverTimeoutUnit;
     private long _killTimeout = 1500;
@@ -323,6 +326,11 @@ public class DcacheResourceFactory
     @Required
     public void setRemoteTransferHandler(RemoteTransferHandler handler) {
         _remoteTransferHandler = requireNonNull(handler);
+    }
+
+    @Override
+    public void setZone(Optional<String> zone) {
+        _zone = zone;
     }
 
     /**
@@ -762,6 +770,7 @@ public class DcacheResourceFactory
         checkUploadSize(length);
 
         WriteTransfer transfer = new WriteTransfer(_pnfs, subject, restriction, path);
+        transfer.setZone(_zone);
         _transfers.put((int) transfer.getId(), transfer);
         try {
             boolean success = false;
@@ -845,6 +854,7 @@ public class DcacheResourceFactory
         String uri = null;
         WriteTransfer transfer = new WriteTransfer(_pnfs, subject, restriction, path);
         transfer.setSSL(_redirectToHttps && ServletRequest.getRequest().isSecure());
+        transfer.setZone(_zone);
         _transfers.put((int) transfer.getId(), transfer);
         try {
             transfer.createNameSpaceEntry();
@@ -1364,6 +1374,7 @@ public class DcacheResourceFactory
         transfer.setIsChecksumNeeded(isDigestRequested());
         transfer.setSSL(
               !isProxyTransfer && _redirectToHttps && ServletRequest.getRequest().isSecure());
+        transfer.setZone(_zone);
         _transfers.put((int) transfer.getId(), transfer);
         try {
             transfer.setProxyTransfer(isProxyTransfer);
@@ -1576,6 +1587,7 @@ public class DcacheResourceFactory
         ));
         transfer.setOverwriteAllowed(_isOverwriteAllowed);
         transfer.setKafkaSender(_kafkaSender);
+        transfer.setZone(_zone);
     }
 
     private Set<FileAttribute> buildRequestedAttributes() {

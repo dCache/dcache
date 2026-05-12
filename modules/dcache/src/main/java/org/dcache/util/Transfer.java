@@ -68,6 +68,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.OptionalLong;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -144,6 +145,8 @@ public class Transfer implements Comparable<Transfer> {
     private boolean _isWrite;
     private List<InetSocketAddress> _clientAddresses;
     private String _ioQueue;
+
+    private Optional<String> _zone = Optional.empty();
 
     private Set<String> _tried;
 
@@ -457,6 +460,14 @@ public class Transfer implements Comparable<Transfer> {
     @Nullable
     public synchronized Pool getPool() {
         return _pool;
+    }
+
+    public synchronized void setZone(Optional<String> zone) {
+        _zone = zone;
+    }
+
+    public synchronized Optional<String> getZone() {
+        return _zone;
     }
 
     /**
@@ -1007,6 +1018,7 @@ public class Transfer implements Comparable<Transfer> {
             request.setTransferPath(getTransferPath());
             request.setIoQueueName(getIoQueue());
             request.setExcludedHosts(_tried);
+            request.setZone(_zone);
 
             reply = _poolManager.sendAsync(request, timeout);
         } else {
@@ -1035,6 +1047,7 @@ public class Transfer implements Comparable<Transfer> {
             request.setTransferPath(getTransferPath());
             request.setIoQueueName(getIoQueue());
             request.setExcludedHosts(_tried);
+            request.setZone(_zone);
 
             reply = Futures.transform(_poolManager.sendAsync(request, timeout),
                   (PoolMgrSelectReadPoolMsg msg) -> {

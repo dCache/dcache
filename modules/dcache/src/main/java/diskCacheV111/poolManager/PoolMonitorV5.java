@@ -103,7 +103,16 @@ public class PoolMonitorV5
           ProtocolInfo protocolInfo,
           String linkGroup,
           Set<String> excludedHosts) {
-        return new PnfsFileLocation(fileAttributes, protocolInfo, linkGroup, excludedHosts);
+        return new PnfsFileLocation(fileAttributes, protocolInfo, linkGroup, Optional.empty(), excludedHosts);
+    }
+
+    @Override
+    public PoolSelector getPoolSelector(FileAttributes fileAttributes,
+          ProtocolInfo protocolInfo,
+          String linkGroup,
+          Optional<String> zone,
+          Set<String> excludedHosts) {
+        return new PnfsFileLocation(fileAttributes, protocolInfo, linkGroup, zone, excludedHosts);
     }
 
     public class PnfsFileLocation implements PoolSelector {
@@ -113,6 +122,7 @@ public class PoolMonitorV5
         private final FileAttributes _fileAttributes;
         private final ProtocolInfo _protocolInfo;
         private final String _linkGroup;
+        private final Optional<String> _zone;
         private final Set<String> _excludedHosts;
         private final Predicate<String> _locationFilter;
         private final Predicate<String> _excludeFilter;
@@ -121,9 +131,18 @@ public class PoolMonitorV5
               ProtocolInfo protocolInfo,
               String linkGroup,
               Set<String> excludedHosts) {
+            this(fileAttributes, protocolInfo, linkGroup, Optional.empty(), excludedHosts);
+        }
+
+        public PnfsFileLocation(FileAttributes fileAttributes,
+              ProtocolInfo protocolInfo,
+              String linkGroup,
+              Optional<String> zone,
+              Set<String> excludedHosts) {
             _fileAttributes = fileAttributes;
             _protocolInfo = protocolInfo;
             _linkGroup = linkGroup;
+            _zone = zone;
             _excludedHosts = excludedHosts == null ?
                   Collections.EMPTY_SET : excludedHosts;
 

@@ -89,6 +89,7 @@ import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.CuratorFrameworkAware;
+import org.dcache.cells.ZoneAware;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.FsInodeType;
@@ -196,7 +197,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 
 public class NFSv41Door extends AbstractCellComponent implements
       NFSv41DeviceManager, CellCommandListener,
-      CellMessageReceiver, CellInfoProvider, CuratorFrameworkAware {
+      CellMessageReceiver, CellInfoProvider, CuratorFrameworkAware, ZoneAware {
 
     private static final Logger _log = LoggerFactory.getLogger(NFSv41Door.class);
 
@@ -220,7 +221,6 @@ public class NFSv41Door extends AbstractCellComponent implements
      * Mapping between open state id and corresponding transfer.
      */
     private final Map<stateid4, NfsTransfer> _transfers = new ConcurrentHashMap<>();
-
 
     /**
      * Record that binds NFS client with a file handle.
@@ -269,6 +269,8 @@ public class NFSv41Door extends AbstractCellComponent implements
     private PoolMonitor _poolMonitor;
 
     private String _ioQueue;
+
+    private Optional<String> _zone;
 
     /**
      * TCP port number to bind.
@@ -488,6 +490,11 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     public void setEnableTls(boolean enableTls) {
         _enableTls = enableTls;
+    }
+
+    @Override
+    public void setZone(Optional<String> zone) {
+        _zone = zone;
     }
 
     public VirtualFileSystem wrapWithMonitoring(VirtualFileSystem inner) {
@@ -837,7 +844,6 @@ public class NFSv41Door extends AbstractCellComponent implements
                             :
                             new ReadTransfer(_pnfsHandler, client, layoutType, layoutState, nfsInode,
                                     context.getRpcCall().getCredential().getSubject());
-
                     _transfers.put(layoutStateid, transfer);
                     layoutStates.put(ioKey, layoutStateid);
 
@@ -847,6 +853,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                             new org.dcache.chimera.nfs.v4.xdr.stateid4(layoutStateid), nfsInode.toNfsHandle()
                     );
 
+                    transfer.setZone(_zone);
                     transfer.setProtocolInfo(protocolInfo);
                     transfer.setCellAddress(getCellAddress());
                     transfer.setBillingStub(_billingStub);

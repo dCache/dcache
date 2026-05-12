@@ -911,6 +911,7 @@ public class RequestContainerV5
         private final StorageInfo _storageInfo;
         private final ProtocolInfo _protocolInfo;
         private final String _linkGroup;
+        private final Optional<String> _zone;
         private final String _billingPath;
         private final String _transferPath;
         private final PoolSelector _poolSelector;
@@ -946,6 +947,8 @@ public class RequestContainerV5
             _billingPath = request.getBillingPath();
             _transferPath = request.getTransferPath();
 
+            _zone = request.getZone();
+
             _retryCounter = request.getContext().getRetryCounter();
             _stageCandidate = Optional.ofNullable(request.getContext().getPreviousStagePool());
 
@@ -960,8 +963,13 @@ public class RequestContainerV5
             Set<String> excluded = request.getExcludedHosts();
             _failOnExcluded = excluded != null && !excluded.isEmpty();
 
-            _poolSelector =
-                  _poolMonitor.getPoolSelector(_fileAttributes,
+            _poolSelector = _zone.isPresent() ?
+                    _poolMonitor.getPoolSelector(_fileAttributes,
+                        _protocolInfo,
+                        _linkGroup,
+                        _zone,
+                        excluded)
+                  : _poolMonitor.getPoolSelector(_fileAttributes,
                         _protocolInfo,
                         _linkGroup,
                         excluded);
