@@ -152,11 +152,6 @@
     </dependency>
     <dependency>
         <groupId>org.dcache</groupId>
-        <artifactId>gplazma2-nis</artifactId>
-        <version>${project.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.dcache</groupId>
         <artifactId>gplazma2-voms</artifactId>
         <version>${project.version}</version>
     </dependency>
