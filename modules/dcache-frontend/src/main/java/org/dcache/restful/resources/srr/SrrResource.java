@@ -39,6 +39,7 @@ public class SrrResource {
     private HttpServletRequest request;
 
     private Map<String, List<String>> pgroup2vo = new HashMap<>();
+    private Map<String, List<String>> pgroup2path = new HashMap<>();
     // info provider properties
     private String name;
     private String id;
@@ -119,6 +120,28 @@ public class SrrResource {
 
     }
 
+    public void setPathMapping(String mapping) {
+
+        // paths=cms:/pnfs/cms,atlas:/pnfs/atlas,longvo.fqdn.name:/pnfs/longvo
+
+        Splitter.on(',')
+              .trimResults()
+              .omitEmptyStrings()
+              .splitToList(mapping)
+              .forEach(
+                    s -> {
+                        String[] pathMap = s.split(":");
+                        if (pathMap.length != 2) {
+                            throw new IllegalArgumentException(
+                                  "Invalid format of poolgroup -> path mapping");
+                        }
+                        pgroup2path.computeIfAbsent(pathMap[0], k -> new ArrayList<>()).add(pathMap[1]);
+                    }
+
+              );
+
+    }
+
     @Produces(MediaType.APPLICATION_JSON)
     @GET
     public Response getSrr() throws InterruptedException, CacheException, NoRouteToCellException {
@@ -141,6 +164,7 @@ public class SrrResource {
               .withQuality(quality)
               .withArchitecture(architecture)
               .withGroupVoMapping(pgroup2vo)
+              .withGroupPathMapping(pgroup2path)
               .withDoorTag(doorTag)
               .generate();
 
