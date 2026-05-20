@@ -4,15 +4,21 @@ import com.google.common.collect.ImmutableMap;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.util.CacheException;
 import dmg.cells.nucleus.CellAddressCore;
+import org.dcache.vehicles.FileAttributes;
 import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.AdditionalMatchers;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class WRandomPartitionTest {
 
@@ -75,5 +81,41 @@ public class WRandomPartitionTest {
 
         var spaceInfo = selectedPool.info().getCostInfo().getSpaceInfo();
         assertTrue("selected pool has no sufficient space", spaceInfo.getFreeSpace() + spaceInfo.getRemovableSpace() - fileSize >= spaceInfo.getGap());
+    }
+
+    @Test
+    public void testCorrectZoneDst() throws CacheException {
+        var attributes = FileAttributes.ofSize(1000L);
+        var zone = Optional.of("A");
+        var wrandom = new WRandomPartition(Map.of());
+
+        var src = IntStream.range(0, 2).mapToObj(i -> {
+                    var cost = new PoolCostInfo("pool" + i, "default-queue");
+                    cost.setSpaceUsage(10_000L, 5000L, 0L, 0L);
+                    cost.getSpaceInfo().setParameter(0.0d, 2500L);
+                    return new PoolInfo(new CellAddressCore("pool" + i), cost, ImmutableMap.of("zone", "Z", "hostname", "src"));
+                }
+        ).collect(Collectors.toList());
+
+        var dstWrong = IntStream.range(3, 5).mapToObj(i -> {
+                    var cost = new PoolCostInfo("pool" + i, "default-queue");
+                    cost.setSpaceUsage(10_000L, 5000L, 0L, 0L);
+                    cost.getSpaceInfo().setParameter(0.0d, 2500L);
+                    return new PoolInfo(new CellAddressCore("pool" + i), cost, ImmutableMap.of("zone", "B", "hostname", "dst-wrong"));
+                }
+        ).toList();
+
+        var dstCorrect = IntStream.range(6, 8).mapToObj(i -> {
+                    var cost = new PoolCostInfo("pool" + i, "default-queue");
+                    cost.setSpaceUsage(10_000L, 5000L, 0L, 0L);
+                    cost.getSpaceInfo().setParameter(0.0d, 2500L);
+                    return new PoolInfo(new CellAddressCore("pool" + i), cost, ImmutableMap.of("zone", "A", "hostname", "dst-correct"));
+                }
+        ).toList();
+
+        var dst = Stream.concat(dstCorrect.stream(), dstWrong.stream()).toList();
+
+        PoolInfo info = wrandom.selectPool2Pool(null, src, dst, attributes, zone, false).destination.info();
+        assertEquals(zone.get(), info.getTags().get("zone"));
     }
 }
