@@ -509,6 +509,7 @@ public class PoolMonitorV5
                           Lists.newArrayList(sources.values()),
                           pools,
                           _fileAttributes,
+                          _zone,
                           force);
                 }
             }

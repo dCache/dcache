@@ -51,7 +51,7 @@ public class WRandomPartition extends Partition
     }
 
     @Override
-    public P2pPair selectPool2Pool(CostModule cm, List<PoolInfo> src, List<PoolInfo> dst, FileAttributes attributes, boolean force) throws CacheException {
+    public P2pPair selectPool2Pool(CostModule cm, List<PoolInfo> src, List<PoolInfo> dst, FileAttributes attributes, Optional<String> zone, boolean force) throws CacheException {
 
         Collections.shuffle(src);
 
@@ -61,6 +61,8 @@ public class WRandomPartition extends Partition
         for (PoolInfo srcPoolInfo : src) {
             List<PoolInfo> tryList = Lists.newArrayList(
                     filter(dst, new DifferentHost(srcPoolInfo.getHostName())));
+
+            tryList = filterByZone(tryList, zone);
 
             if (!tryList.isEmpty()) {
                 SelectedPool destPoolInfo = selectWritePool(cm, tryList, attributes, attributes.getSize());
