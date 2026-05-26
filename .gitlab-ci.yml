@@ -831,7 +831,7 @@ build-userguide:
 # ================================================================
 
 .docs_deploy_base:
-  stage: deploy-docs
+  stage: deploy_docs
   tags: [hugo, www.dcache.org]
   extends: .upload_rules
   variables:
