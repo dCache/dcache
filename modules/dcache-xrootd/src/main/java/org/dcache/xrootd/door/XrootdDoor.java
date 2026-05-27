@@ -226,7 +226,7 @@ public class XrootdDoor
     private int proxyResponseTimeoutInSeconds;
     private InetAddress _internalAddress;
 
-    private Optional<String> _zone;
+    private Optional<String> _zone = Optional.empty();
 
     private UnionLoginStrategy.AccessLevel anonymousUserAccess = AccessLevel.NONE;
 

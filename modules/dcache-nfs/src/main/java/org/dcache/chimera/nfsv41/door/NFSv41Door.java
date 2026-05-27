@@ -270,7 +270,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     private String _ioQueue;
 
-    private Optional<String> _zone;
+    private Optional<String> _zone = Optional.empty();
 
     /**
      * TCP port number to bind.

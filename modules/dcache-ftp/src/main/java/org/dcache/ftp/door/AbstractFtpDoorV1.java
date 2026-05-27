@@ -378,7 +378,7 @@ public abstract class AbstractFtpDoorV1
     private boolean _logAbortedTransfers;
     private final List<TimerTask> _activeTimerTasks = synchronizedList(new ArrayList<>());
 
-    Optional<String> _zone;
+    Optional<String> _zone = Optional.empty();
 
     private enum WorkAround {
         /* If globus-url-copy is organising a third-party copy then it will
