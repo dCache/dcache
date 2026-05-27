@@ -33,20 +33,18 @@ echo "=== Deploying ${DOC_TYPE} ${BOOK_VERSION} ==="
 echo "=== Phase 1: Resolve nav header source ==="
 
 if [ -f "${GLOBAL_FRAG_PATH}" ]; then
-  SOURCE_FRAG="${GLOBAL_FRAG_PATH}"
-  echo "Using existing global fragment as base: ${SOURCE_FRAG}"
+  echo "Using existing global fragment as base (in place, no copy needed)"
 else
-  # Find highest versioned fragment
   SOURCE_FRAG=$(ls -1 "${FRAGS_DIR}"/header-docs-[0-9]*.shtml 2>/dev/null \
     | sort -t'-' -k3 -V | tail -1 || true)
   if [ -z "${SOURCE_FRAG}" ]; then
     echo "ERROR: No fragment found in ${FRAGS_DIR} to use as base." >&2
     exit 1
   fi
-  echo "Using highest versioned fragment: ${SOURCE_FRAG}"
+  echo "First-time bootstrap — using highest versioned fragment: ${SOURCE_FRAG}"
+  cp "${SOURCE_FRAG}" "${GLOBAL_FRAG_PATH}"
 fi
 
-cp "${SOURCE_FRAG}" "${GLOBAL_FRAG_PATH}"
 chmod 644 "${GLOBAL_FRAG_PATH}"
 
 # ------------------------------------------------------------------

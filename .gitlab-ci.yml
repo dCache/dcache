@@ -803,7 +803,7 @@ generate_jacoco_report:
 # ================================================================
 
 build-thebook:
-  stage: upload
+  stage: deploy_docs
   image: maven:3.9.12-eclipse-temurin-21
   extends:
     - .build_cache
@@ -816,7 +816,7 @@ build-thebook:
     expire_in: 7 days
 
 build-userguide:
-  stage: upload
+  stage: deploy_docs
   image: maven:3.9.12-eclipse-temurin-21
   extends:
     - .build_cache
@@ -865,6 +865,18 @@ build-userguide:
     GLOBAL_FRAG: "header-docs-global.shtml"
   after_script:
     - |
+      if [ -n "$CI_COMMIT_TAG" ]; then
+        CLEAN_TAG=$(echo "$CI_COMMIT_TAG" | sed 's/test-manuals-//')
+        BOOK_VERSION=$(echo "$CLEAN_TAG" | cut -d'.' -f1,2)
+      else
+        BOOK_VERSION="$CI_COMMIT_BRANCH"
+      fi
+      if [ "$IS_TEST_RUN" == "true" ]; then
+        BOOK_VERSION="${BOOK_VERSION}-sandbox"
+        MANUALS_DIR="/data/www/old-dcache.org/manuals/test-sandbox"
+      else
+        MANUALS_DIR="/data/www/old-dcache.org/manuals"
+      fi
       DEPLOY_DIR="${MANUALS_DIR}/${DOC_TYPE}-${BOOK_VERSION}"
       if [ "$CI_JOB_STATUS" != "success" ]; then
         if [ -d "${DEPLOY_DIR}_old" ] && [ ! -d "${DEPLOY_DIR}" ]; then
