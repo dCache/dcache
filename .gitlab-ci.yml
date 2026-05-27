@@ -841,8 +841,6 @@ build-userguide:
     # Resolve the Book Version safely regardless of whether it is a branch or tag pipeline
     - |
       if [ -n "$CI_COMMIT_TAG" ]; then
-        # If it's a test tag (e.g. test-manuals-11.2.5), extract the version part
-        # If it's a real tag (e.g. 11.2.5), extract major.minor (11.2)
         CLEAN_TAG=$(echo "$CI_COMMIT_TAG" | sed 's/test-manuals-//')
         export BOOK_VERSION=$(echo "$CLEAN_TAG" | cut -d'.' -f1,2)
       else
@@ -857,7 +855,6 @@ build-userguide:
         export MANUALS_DIR="/data/www/old-dcache.org/manuals/test-sandbox"
         export FRAGS_DIR="/data/www/old-dcache.org/template/frags/test-sandbox"
         mkdir -p "$MANUALS_DIR" "$FRAGS_DIR"
-        # Seed a dummy global header so Phase 1 in your script has an initial reference
         echo 'User Guide: | Book: | <a href="Wiki">Wiki</a>' > "${FRAGS_DIR}/header-docs-global.shtml"
         echo "TEST MODE: Re-routing outputs to isolated sandbox environments."
       else
@@ -886,7 +883,7 @@ deploy-thebook:
   variables:
     DOC_TYPE: "Book"
   script:
-    - bash .ci/docs/deploy-docs.sh Book TheBook-shtml.tar.gz docs/TheBook
+    - bash .ci/deploy-docs.sh Book TheBook-shtml.tar.gz docs/TheBook
 
 deploy-userguide:
   extends: .docs_deploy_base
@@ -895,4 +892,4 @@ deploy-userguide:
   variables:
     DOC_TYPE: "UserGuide"
   script:
-    - bash .ci/docs/deploy-docs.sh UserGuide UserGuide-shtml.tar.gz docs/UserGuide
+    - bash .ci/deploy-docs.sh UserGuide UserGuide-shtml.tar.gz docs/UserGuide
