@@ -803,7 +803,7 @@ generate_jacoco_report:
 # ================================================================
 
 build-thebook:
-  stage: deploy_docs
+  stage: upload
   image: maven:3.9.12-eclipse-temurin-21
   extends:
     - .build_cache
@@ -816,7 +816,7 @@ build-thebook:
     expire_in: 7 days
 
 build-userguide:
-  stage: deploy_docs
+  stage: upload
   image: maven:3.9.12-eclipse-temurin-21
   extends:
     - .build_cache
