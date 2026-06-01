@@ -80,21 +80,8 @@ perl -0777 -pi -e '
 
   # Replace the version link sections in-place
   s|(User\s*Guide:\s*)(.*?)(\s*\|)|${1}${ug_html} <br/> |is;
-  s|(Book:\s*)(.*?)(\s*\|\s*<a[^>]*Wiki[^>]*>)|${1}${bk_html} |is;
+  s|(Book:\s*)(.*?)(\s*\|)|${1}${bk_html} |is;
 
-  unless (/addEventListener.*book-navi/s) {
-    $_ .= q(<script>
-window.addEventListener("DOMContentLoaded", () => {
-  const p = window.location.pathname;
-  document.querySelectorAll(".book-navi a").forEach(a => {
-    const h = a.getAttribute("href");
-    if (h && p.startsWith(h)) {
-      a.style.cssText = "font-weight:bold;color:black;text-decoration:underline";
-    }
-  });
-});
-</script>);
-  }
 ' "${GLOBAL_FRAG_PATH}"
 
 echo "Global header updated: ${GLOBAL_FRAG_PATH}"
