@@ -855,7 +855,7 @@ build-userguide:
         export MANUALS_DIR="/data/www/old-dcache.org/manuals/test-sandbox"
         export FRAGS_DIR="/data/www/old-dcache.org/template/frags/test-sandbox"
         mkdir -p "$MANUALS_DIR" "$FRAGS_DIR"
-        echo 'User Guide: | Book: | > "${FRAGS_DIR}/header-docs-global.shtml"
+        echo 'User Guide: | Book: |' > "${FRAGS_DIR}/header-docs-global.shtml"
         echo "TEST MODE: Re-routing outputs to isolated sandbox environments."
       else
         export MANUALS_DIR="/data/www/old-dcache.org/manuals"
