@@ -6,7 +6,6 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <!-- ✅ Point to dcache parent instead of standalone -->
     <parent>
         <groupId>org.dcache</groupId>
         <artifactId>dcache-parent</artifactId>
@@ -24,12 +23,6 @@
         A Web application that provide an easy to use User Interface for dCache System.
     </description>
 
-    <!-- ✅ Removed: <organization> inherited from parent -->
-    <!-- ✅ Removed: <licenses> inherited from parent -->
-    <!-- ✅ Removed: <distributionManagement> inherited from parent -->
-    <!-- ✅ Removed: <repositories> inherited from parent -->
-    <!-- ✅ Removed: <scm> inherited from parent -->
-    <!-- ✅ Removed: <issueManagement> no longer needed -->
 
     <build>
         <plugins>
@@ -40,7 +33,6 @@
 
                 <executions>
 
-                    <!-- 1. Install Node + NPM (MUST BE FIRST) -->
                     <execution>
                         <id>install node and npm</id>
                         <goals>
@@ -52,7 +44,6 @@
                         </configuration>
                     </execution>
 
-                    <!-- 2. npm install -->
                     <execution>
                         <id>npm install</id>
                         <goals>
@@ -63,7 +54,6 @@
                         </configuration>
                     </execution>
 
-                    <!-- 3. Install bower globally -->
                     <execution>
                         <id>install bower</id>
                         <goals>
@@ -73,7 +63,6 @@
                             <arguments>install -g bower</arguments>
                         </configuration>
                     </execution>
-
 
 
                     <execution>
@@ -86,7 +75,6 @@
                         </configuration>
                     </execution>
 
-                    <!-- 5. npm run build -->
                     <execution>
                         <id>npm run build</id>
                         <goals>
@@ -100,7 +88,6 @@
                 </executions>
             </plugin>
 
-            <!-- ✅ Kept as-is: packages build output into a JAR -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
@@ -120,7 +107,6 @@
                     </execution>
                 </executions>
             </plugin>
-
 
 
         </plugins>
