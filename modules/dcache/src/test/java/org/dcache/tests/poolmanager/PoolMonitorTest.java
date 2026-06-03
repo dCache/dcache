@@ -223,6 +223,39 @@ public class PoolMonitorTest {
 
         assertEquals("pool2", selector.selectWritePool(0).name());
     }
+    @Test
+    public void testStagePoolZonePreference() throws Exception {
+        _partitionManager.setProperties(null, Map.of("fallback-onspace", "yes"));
+        prepareCostModule(false, true, false, false);
+
+        FileAttributes attributes = FileAttributes.of()
+                .pnfsId(_pnfsId)
+                .locations(Collections.emptyList())
+                .build();
+        StorageInfos.injectInto(_storageInfo, attributes);
+
+        PoolSelector selector = _poolMonitor.getPoolSelector(attributes, _protocolInfo,
+                null, Optional.of("1"), Collections.EMPTY_SET);
+
+        assertEquals("pool1", selector.selectStagePool(Optional.empty()).name());
+    }
+
+    @Test
+    public void testStagePoolZoneFallback() throws Exception {
+        _partitionManager.setProperties(null, Map.of("fallback-onspace", "yes"));
+        prepareCostModule(false, true, false, true);
+
+        FileAttributes attributes = FileAttributes.of()
+                .pnfsId(_pnfsId)
+                .locations(Collections.emptyList())
+                .build();
+        StorageInfos.injectInto(_storageInfo, attributes);
+
+        PoolSelector selector = _poolMonitor.getPoolSelector(attributes, _protocolInfo,
+                null, Optional.of("1"), Collections.EMPTY_SET);
+
+        assertEquals("pool2", selector.selectStagePool(Optional.empty()).name());
+    }
 
     private void prepareCostModule(boolean linkPerPool) throws Exception {
         prepareCostModule(linkPerPool, false);
@@ -255,7 +288,7 @@ public class PoolMonitorTest {
         }
 
         PoolManagerPoolUpMessage pool1UpMessage = new PoolManagerPoolUpMessage("pool1",
-              serialId, poolMode, poolCost1);
+                serialId, poolMode, poolCost1);
         pool1UpMessage.setHostName(_localhost);
 
         if (withZones) {
@@ -266,11 +299,13 @@ public class PoolMonitorTest {
         envelope1.addSourceAddress(new CellAddressCore("pool1"));
         _costModule.messageArrived(envelope1, pool1UpMessage);
 
+        _selectionUnit.getPool("pool1").setHsmInstances(Set.of("osm"));
+
         if (!pool2Offline) {
             PoolCostInfo poolCost2 = new PoolCostInfo("pool2", IoQueueManager.DEFAULT_QUEUE);
             poolCost2.setSpaceUsage(100, 20, 30, 50);
             PoolManagerPoolUpMessage pool2UpMessage = new PoolManagerPoolUpMessage("pool2",
-                  serialId, poolMode, poolCost2);
+                    serialId, poolMode, poolCost2);
             pool2UpMessage.setHostName(_localhost);
             if (withZones) {
                 pool2UpMessage.setTagMap(Map.of("zone", "2"));
@@ -278,8 +313,10 @@ public class PoolMonitorTest {
             CellMessage envelope2 = new CellMessage(new CellAddressCore("PoolManager"), null);
             envelope2.addSourceAddress(new CellAddressCore("pool2"));
             _costModule.messageArrived(envelope2, pool2UpMessage);
+            _selectionUnit.getPool("pool2").setHsmInstances(Set.of("osm"));
         }
     }
+
 
     private PoolSelector prepareHostExclusion() throws Exception {
         /*
