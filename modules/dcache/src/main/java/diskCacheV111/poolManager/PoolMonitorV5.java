@@ -521,25 +521,48 @@ public class PoolMonitorV5
 
         @Override
         public SelectedPool selectStagePool(Optional<PoolInfo> previous)
-              throws CacheException {
+                throws CacheException {
             Collection<String> locations = filteredFileLocations();
             LOGGER.debug("[stage] Existing locations of the file: {}", locations);
+
+            if (_zone.isPresent()) {
+                SelectedPool pool = filterStagePool(locations, previous, true);
+                if (pool != null) {
+                    return pool;
+                }
+            }
+
+            SelectedPool pool = filterStagePool(locations, previous, false);
+            if (pool != null) {
+                return pool;
+            }
+
+            throw new CacheException(149, "No pool candidates available/configured/left for stage");
+        }
+
+        public SelectedPool filterStagePool(Collection<String> locations,
+                                            Optional<PoolInfo> previous,
+                                            boolean filterByZone) throws CacheException{
 
             CostException costException = null;
             for (PoolPreferenceLevel level : match(DirectionType.CACHE)) {
                 try {
                     List<PoolInfo> pools =
-                          level.getPoolList().stream()
-                                .filter(pool -> !locations.contains(pool))
-                                .map(_costModule::getPoolInfo)
-                                .filter(Objects::nonNull)
-                                .collect(toList());
+                            level.getPoolList().stream()
+                                    .filter(pool -> !locations.contains(pool))
+                                    .map(_costModule::getPoolInfo)
+                                    .filter(Objects::nonNull)
+                                    .collect(toList());
+                    if (filterByZone) {
+                        pools = filterByZone(pools);
+                    }
+
                     if (!pools.isEmpty()) {
                         LOGGER.debug("[stage] Online stage candidates: {}", pools);
                         Partition partition =
-                              _partitionManager.getPartition(level.getTag());
+                                _partitionManager.getPartition(level.getTag());
                         return partition.selectStagePool(_costModule, pools,
-                              previous, _fileAttributes);
+                                previous, _fileAttributes);
                     }
                 } catch (CostException e) {
                     costException = e;
@@ -549,7 +572,7 @@ public class PoolMonitorV5
                 }
             }
 
-            if (costException != null) {
+            if (costException != null && !filterByZone) {
                 SelectedPool pool = costException.getPool();
                 if (pool != null) {
                     return pool;
@@ -557,7 +580,7 @@ public class PoolMonitorV5
                 throw costException;
             }
 
-            throw new CacheException(149, "No pool candidates available/configured/left for stage");
+            return null;
         }
 
         // FIXME: There is a fair amount of overlap between this method
