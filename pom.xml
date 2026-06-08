@@ -71,7 +71,7 @@
         <version.xrootd4j>4.6.0</version.xrootd4j>
         <version.jersey>2.47</version.jersey>
         <version.dcache-view-admin>3.0.0</version.dcache-view-admin>
-        <version.netty>4.2.13.Final</version.netty>
+        <version.netty>4.2.15.Final</version.netty>
         <version.dcache>${project.version}</version.dcache>
         <version.swagger-ui>5.30.2</version.swagger-ui>
 
