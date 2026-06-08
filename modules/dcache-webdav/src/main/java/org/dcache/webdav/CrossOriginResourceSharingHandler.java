@@ -30,11 +30,11 @@ import org.eclipse.jetty.servlets.CrossOriginFilter;
 public class CrossOriginResourceSharingHandler extends AbstractHandler implements FilterConfig {
 
     private static final Map<String, String> DEFAULT_CONFIG = Map.of(
-          ALLOWED_METHODS_PARAM, "GET,PUT,POST,DELETE,OPTIONS",
+          ALLOWED_METHODS_PARAM, "GET,PUT,POST,DELETE",
           ALLOWED_HEADERS_PARAM, "Content-Type,Authorization,Suppress-WWW-Authenticate",
           PREFLIGHT_MAX_AGE_PARAM, "0", // Disable 'Access-Control-Max-Age' response.
           CHAIN_PREFLIGHT_PARAM, "false",
-            ALLOW_CREDENTIALS_PARAM, "true"
+          ALLOW_CREDENTIALS_PARAM, "true"
     );
     private static final ImmutableList<String> ALLOWED_ORIGIN_PROTOCOL = ImmutableList.of("http",
           "https");
@@ -94,28 +94,9 @@ public class CrossOriginResourceSharingHandler extends AbstractHandler implement
     }
 
     @Override
-   /* public void handle(String target, Request baseRequest,
-          HttpServletRequest request, HttpServletResponse response)
-          throws IOException, ServletException {
-        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
-            baseRequest.setHandled(true);
-            filter.doFilter(request, response, (req, res) -> {});  // ← empty chain, don't pass through
-            return;
-        }
-
-        baseRequest.setHandled(true);
-        filter.doFilter(request, response, (req, res) -> baseRequest.setHandled(false));
-    }*/
-
     public void handle(String target, Request baseRequest,
                        HttpServletRequest request, HttpServletResponse response)
             throws IOException, ServletException {
-
-        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
-            baseRequest.setHandled(true);
-            filter.doFilter(request, response, (req, res) -> {});  // ← empty chain, don't pass through
-            return;
-        }
 
         baseRequest.setHandled(true);
         filter.doFilter(request, response, (req, res) -> baseRequest.setHandled(false));
