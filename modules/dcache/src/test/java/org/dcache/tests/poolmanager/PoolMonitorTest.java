@@ -29,6 +29,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.dcache.cells.UniversalSpringCell;
 import org.dcache.pool.classic.IoQueueManager;
@@ -151,7 +153,120 @@ public class PoolMonitorTest {
               .disableHtmlEscaping().create().toJson(obj);
     }
 
+    @Test
+    public void testWritePoolZonePreference() throws Exception {
+        prepareCostModule(false, true);
+
+        FileAttributes attributes = FileAttributes.of().pnfsId(_pnfsId).build();
+        StorageInfos.injectInto(_storageInfo, attributes);
+
+        PoolSelector selector = _poolMonitor.getPoolSelector(attributes, _protocolInfo,
+                null, Optional.of("1"), Collections.EMPTY_SET);
+
+        assertEquals("pool1", selector.selectWritePool(0).name());
+    }
+
+    @Test
+    public void testReadPoolZonePreference() throws Exception {
+        prepareCostModule(false, true);
+
+        FileAttributes attributes = FileAttributes.of().pnfsId(_pnfsId).locations(_pools).build();
+        StorageInfos.injectInto(_storageInfo, attributes);
+
+        PoolSelector selector = _poolMonitor.getPoolSelector(attributes, _protocolInfo,
+                null, Optional.of("1"), Collections.EMPTY_SET);
+
+        assertEquals("pool1", selector.selectReadPool().name());
+    }
+
+    @Test
+    public void testReadPoolZoneFallback() throws Exception {
+        prepareCostModule(false, true);
+
+        // Only pool2 in zone 2 has the file
+        FileAttributes attributes = FileAttributes.of()
+                .pnfsId(_pnfsId)
+                .locations(Collections.singleton("pool2"))
+                .build();
+        StorageInfos.injectInto(_storageInfo, attributes);
+
+        PoolSelector selector = _poolMonitor.getPoolSelector(attributes, _protocolInfo,
+                null, Optional.of("1"), Collections.EMPTY_SET);
+
+        assertEquals("pool2", selector.selectReadPool().name());
+    }
+
+    @Test
+    public void testWritePoolZoneFallback() throws Exception {
+        // pool2 is offline zone 2 requested so falls back to pool1
+        prepareCostModule(false, true, true, false);
+
+        FileAttributes attributes = FileAttributes.of().pnfsId(_pnfsId).build();
+        StorageInfos.injectInto(_storageInfo, attributes);
+
+        PoolSelector selector = _poolMonitor.getPoolSelector(attributes, _protocolInfo,
+                null, Optional.of("2"), Collections.EMPTY_SET);
+
+        assertEquals("pool1", selector.selectWritePool(0).name());
+    }
+
+    @Test
+    public void testWritePoolFallBackAllPoolsInZoneFull() throws Exception {
+        _partitionManager.setProperties(null, Map.of("fallback-onspace", "yes"));
+        prepareCostModule(false, true, false, true);
+
+        FileAttributes attributes = FileAttributes.of().pnfsId(_pnfsId).build();
+        StorageInfos.injectInto(_storageInfo, attributes);
+
+        PoolSelector selector = _poolMonitor.getPoolSelector(attributes, _protocolInfo,
+                null, Optional.of("1"), Collections.EMPTY_SET);
+
+        assertEquals("pool2", selector.selectWritePool(0).name());
+    }
+    @Test
+    public void testStagePoolZonePreference() throws Exception {
+        _partitionManager.setProperties(null, Map.of("fallback-onspace", "yes"));
+        prepareCostModule(false, true, false, false);
+
+        FileAttributes attributes = FileAttributes.of()
+                .pnfsId(_pnfsId)
+                .locations(Collections.emptyList())
+                .build();
+        StorageInfos.injectInto(_storageInfo, attributes);
+
+        PoolSelector selector = _poolMonitor.getPoolSelector(attributes, _protocolInfo,
+                null, Optional.of("1"), Collections.EMPTY_SET);
+
+        assertEquals("pool1", selector.selectStagePool(Optional.empty()).name());
+    }
+
+    @Test
+    public void testStagePoolZoneFallback() throws Exception {
+        _partitionManager.setProperties(null, Map.of("fallback-onspace", "yes"));
+        prepareCostModule(false, true, false, true);
+
+        FileAttributes attributes = FileAttributes.of()
+                .pnfsId(_pnfsId)
+                .locations(Collections.emptyList())
+                .build();
+        StorageInfos.injectInto(_storageInfo, attributes);
+
+        PoolSelector selector = _poolMonitor.getPoolSelector(attributes, _protocolInfo,
+                null, Optional.of("1"), Collections.EMPTY_SET);
+
+        assertEquals("pool2", selector.selectStagePool(Optional.empty()).name());
+    }
+
     private void prepareCostModule(boolean linkPerPool) throws Exception {
+        prepareCostModule(linkPerPool, false);
+    }
+
+    private void prepareCostModule(boolean linkPerPool, boolean withZones) throws Exception {
+        prepareCostModule(linkPerPool, withZones, false, false);
+    }
+
+    private void prepareCostModule(boolean linkPerPool, boolean withZones, boolean pool2Offline, boolean pool1Full)
+            throws Exception {
         if (linkPerPool) {
             PoolMonitorHelper.prepareLinkPerPool(_selectionUnit, _access, _pools);
         } else {
@@ -166,27 +281,42 @@ public class PoolMonitorTest {
         PoolV2Mode poolMode = new PoolV2Mode(PoolV2Mode.ENABLED);
 
         PoolCostInfo poolCost1 = new PoolCostInfo("pool1", IoQueueManager.DEFAULT_QUEUE);
-        PoolCostInfo poolCost2 = new PoolCostInfo("pool2", IoQueueManager.DEFAULT_QUEUE);
-
-        poolCost1.setSpaceUsage(100, 20, 30, 50);
-        poolCost2.setSpaceUsage(100, 20, 30, 50);
+        if(pool1Full){
+            poolCost1.setSpaceUsage(100, 0, 100, 0);
+        } else {
+            poolCost1.setSpaceUsage(100, 20, 30, 50);
+        }
 
         PoolManagerPoolUpMessage pool1UpMessage = new PoolManagerPoolUpMessage("pool1",
-              serialId, poolMode, poolCost1);
-        PoolManagerPoolUpMessage pool2UpMessage = new PoolManagerPoolUpMessage("pool2",
-              serialId, poolMode, poolCost2);
-
+                serialId, poolMode, poolCost1);
         pool1UpMessage.setHostName(_localhost);
-        pool2UpMessage.setHostName(_localhost);
+
+        if (withZones) {
+            pool1UpMessage.setTagMap(Map.of("zone", "1"));
+        }
 
         CellMessage envelope1 = new CellMessage(new CellAddressCore("PoolManager"), null);
         envelope1.addSourceAddress(new CellAddressCore("pool1"));
-        CellMessage envelope2 = new CellMessage(new CellAddressCore("PoolManager"), null);
-        envelope2.addSourceAddress(new CellAddressCore("pool2"));
-
         _costModule.messageArrived(envelope1, pool1UpMessage);
-        _costModule.messageArrived(envelope2, pool2UpMessage);
+
+        _selectionUnit.getPool("pool1").setHsmInstances(Set.of("osm"));
+
+        if (!pool2Offline) {
+            PoolCostInfo poolCost2 = new PoolCostInfo("pool2", IoQueueManager.DEFAULT_QUEUE);
+            poolCost2.setSpaceUsage(100, 20, 30, 50);
+            PoolManagerPoolUpMessage pool2UpMessage = new PoolManagerPoolUpMessage("pool2",
+                    serialId, poolMode, poolCost2);
+            pool2UpMessage.setHostName(_localhost);
+            if (withZones) {
+                pool2UpMessage.setTagMap(Map.of("zone", "2"));
+            }
+            CellMessage envelope2 = new CellMessage(new CellAddressCore("PoolManager"), null);
+            envelope2.addSourceAddress(new CellAddressCore("pool2"));
+            _costModule.messageArrived(envelope2, pool2UpMessage);
+            _selectionUnit.getPool("pool2").setHsmInstances(Set.of("osm"));
+        }
     }
+
 
     private PoolSelector prepareHostExclusion() throws Exception {
         /*
