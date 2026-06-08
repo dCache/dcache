@@ -133,10 +133,8 @@ public class LruPartition extends Partition {
           List<PoolInfo> src,
           List<PoolInfo> dst,
           FileAttributes attributes,
-          Optional<String> zone,
           boolean force)
           throws CacheException {
-        dst = filterByZone(dst, zone);
         return new P2pPair(new SelectedPool(select(src, _lastRead)),
               selectWritePool(cm, dst, attributes, attributes.getSize()));
     }

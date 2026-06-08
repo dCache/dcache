@@ -145,8 +145,7 @@ public class BufferPartition extends Partition {
 
     @Override
     public P2pPair selectPool2Pool(CostModule cm, List<PoolInfo> src, List<PoolInfo> dst,
-          FileAttributes attributes, Optional<String> zone, boolean force) throws CacheException {
-        dst = filterByZone(dst, zone);
+          FileAttributes attributes, boolean force) throws CacheException {
         return new P2pPair(selectPool(src), selectPool(dst, attributes.getSize()));
     }
 

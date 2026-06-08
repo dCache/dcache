@@ -13,11 +13,8 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.Objects;
-
 import org.dcache.vehicles.FileAttributes;
 
 /**
@@ -338,7 +335,6 @@ public abstract class Partition implements Serializable {
           List<PoolInfo> src,
           List<PoolInfo> dst,
           FileAttributes attributes,
-          Optional<String> zone,
           boolean force)
           throws CacheException;
 
@@ -353,15 +349,6 @@ public abstract class Partition implements Serializable {
           Optional<PoolInfo> previous,
           FileAttributes attributes)
           throws CacheException;
-
-    static List<PoolInfo> filterByZone(List<PoolInfo> pools, Optional<String> zone) {
-        if (zone.isEmpty()) return pools;
-        List<PoolInfo> poolsUnfiltered = pools;
-        pools = pools.stream()
-                .filter(p -> Objects.equals(p.getTags().get("zone"), zone.get()))
-                .toList();
-        return (pools.isEmpty()) ? poolsUnfiltered : pools;
-    }
 
     /**
      * Immutable helper class to represent a source and destination pair for pool to pool
