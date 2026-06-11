@@ -802,10 +802,10 @@ Draft Release Notes PR:
   stage: release
   image: almalinux:10-minimal
   extends: .upload_rules
-  needs:
-    - upload_rpm
-    - upload_deb
-    - upload_tar
+  # needs:
+  #   - upload_rpm
+  #   - upload_deb
+  #   - upload_tar
   before_script: []
   script:
     - microdnf install -y git-core curl jq
