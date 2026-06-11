@@ -879,10 +879,10 @@ Update Website:
   image: almalinux:10-minimal
   rules:
     - if: $CI_COMMIT_TAG
-  needs:
-    - upload_rpm
-    - upload_deb
-    - upload_tar
+  # needs:
+  #   - upload_rpm
+  #   - upload_deb
+  #   - upload_tar
   when: manual
   before_script: []
   script:
