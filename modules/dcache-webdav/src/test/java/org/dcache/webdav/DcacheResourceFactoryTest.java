@@ -2,12 +2,16 @@ package org.dcache.webdav;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
+import java.net.UnknownHostException;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Optional;
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import org.junit.Test;
 
@@ -51,5 +55,21 @@ public class DcacheResourceFactoryTest {
 
         assertThat(header.isPresent(), is(true));
         assertThat(header.get(), is("313"));
+    }
+
+    @Test
+    public void testWantDigestShouldPreferRfc9530Header() {
+        Enumeration<String> e1 = Collections.enumeration(List.of("sha-256", "adler32"));
+        Enumeration<String> e2 = Collections.enumeration(List.of("sha-256"));
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        ServletContext servletContext = mock(ServletContext.class);
+        given(request.getMethod()).willReturn("PUT");
+        given(request.getRequestURL()).willReturn(new StringBuffer("http://localhost/test"));
+        given(request.getHeaders("Want-Digest")).willReturn(e1);
+        given(request.getHeaders("Want-Repr-Digest")).willReturn(e2);
+
+        new io.milton.servlet.ServletRequest(request, servletContext);
+
+        assertEquals("sha-256", DcacheResourceFactory.wantDigest("Want-Repr-Digest").get());
     }
 }

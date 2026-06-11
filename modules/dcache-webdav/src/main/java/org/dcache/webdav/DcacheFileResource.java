@@ -195,9 +195,10 @@ public class DcacheFileResource
         }
     }
 
-    public Optional<String> getRfc3230Digest() {
-        return DcacheResourceFactory.wantDigest()
-              .flatMap(h -> Checksums.digestHeader(h, _attributes));
+    public Optional<String> getRfcDigest(String digestType) {
+        Checksums.RfcType rfc = Checksums.RfcType.of(digestType);
+        return DcacheResourceFactory.wantDigest(digestType)
+              .flatMap(h -> Checksums.digestHeader(h, _attributes, rfc));
     }
 
     @Override

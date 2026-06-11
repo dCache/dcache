@@ -159,21 +159,21 @@ public class ChecksumsTests {
 
     @Test
     public void shouldReturnEmptySetDecodingNull() {
-        Set<Checksum> result = Checksums.decodeRfc3230(null);
+        Set<Checksum> result = Checksums.decodeRfc(null, Checksums.RfcType.RFC3230);
 
         assertThat(result, empty());
     }
 
     @Test
     public void shouldReturnEmptySetDecodingEmptyString() {
-        Set<Checksum> result = Checksums.decodeRfc3230("");
+        Set<Checksum> result = Checksums.decodeRfc("", Checksums.RfcType.RFC3230);
 
         assertThat(result, empty());
     }
 
     @Test
     public void shouldReturnSingleChecksumForAdler32String() {
-        Set<Checksum> result = Checksums.decodeRfc3230("adler32=03da0195");
+        Set<Checksum> result = Checksums.decodeRfc("adler32=03da0195", Checksums.RfcType.RFC3230);
 
         Set<Checksum> expected = Collections.singleton(
               new Checksum(ChecksumType.ADLER32, "03da0195"));
@@ -183,7 +183,7 @@ public class ChecksumsTests {
 
     @Test
     public void shouldReturnSingleChecksumForAdler32StringWithWhiteSpace() {
-        Set<Checksum> result = Checksums.decodeRfc3230(" adler32=03da0195 ");
+        Set<Checksum> result = Checksums.decodeRfc(" adler32=03da0195 ", Checksums.RfcType.RFC3230);
 
         Set<Checksum> expected = Collections.singleton(
               new Checksum(ChecksumType.ADLER32, "03da0195"));
@@ -193,7 +193,7 @@ public class ChecksumsTests {
 
     @Test
     public void shouldReturnSingleChecksumForCapitalAdler32String() {
-        Set<Checksum> result = Checksums.decodeRfc3230("ADLER32=03DA0195");
+        Set<Checksum> result = Checksums.decodeRfc("ADLER32=03DA0195", Checksums.RfcType.RFC3230);
 
         Set<Checksum> expected = Collections.singleton(
               new Checksum(ChecksumType.ADLER32, "03DA0195"));
@@ -204,7 +204,7 @@ public class ChecksumsTests {
     @Test
     public void shouldReturnSingleChecksumForMd5String() {
         Set<Checksum> result =
-              Checksums.decodeRfc3230("md5=HUXZLQLMuI/KZ5KDcJPcOA==");
+              Checksums.decodeRfc("md5=HUXZLQLMuI/KZ5KDcJPcOA==", Checksums.RfcType.RFC3230);
 
         Set<Checksum> expected = Collections.singleton(
               new Checksum(ChecksumType.MD5_TYPE,
@@ -216,7 +216,7 @@ public class ChecksumsTests {
     @Test
     public void shouldReturnEmptySetForMalformedMd5String() {
         Set<Checksum> result =
-              Checksums.decodeRfc3230("md5=THIS-IS-NOT-VALID-DIGEST");
+              Checksums.decodeRfc("md5=THIS-IS-NOT-VALID-DIGEST", Checksums.RfcType.RFC3230);
 
         assertThat(result, empty());
     }
@@ -224,7 +224,7 @@ public class ChecksumsTests {
     @Test
     public void shouldReturnSingleChecksumForMd5StringWithSpace() {
         Set<Checksum> result =
-              Checksums.decodeRfc3230(" md5=HUXZLQLMuI/KZ5KDcJPcOA== ");
+              Checksums.decodeRfc(" md5=HUXZLQLMuI/KZ5KDcJPcOA== ", Checksums.RfcType.RFC3230);
 
         Set<Checksum> expected = Collections.singleton(
               new Checksum(ChecksumType.MD5_TYPE,
@@ -236,7 +236,7 @@ public class ChecksumsTests {
     @Test
     public void shouldReturnSingleChecksumForCapitalMd5String() {
         Set<Checksum> result =
-              Checksums.decodeRfc3230("MD5=HUXZLQLMuI/KZ5KDcJPcOA==");
+              Checksums.decodeRfc("MD5=HUXZLQLMuI/KZ5KDcJPcOA==", Checksums.RfcType.RFC3230);
 
         Set<Checksum> expected = Collections.singleton(
               new Checksum(ChecksumType.MD5_TYPE,
@@ -247,7 +247,7 @@ public class ChecksumsTests {
 
     @Test
     public void shouldReturnSingleChecksumForSha1String() {
-        Set<Checksum> result = Checksums.decodeRfc3230("sha=5+Rv8Q31dTL4FlljJ+mPlZe4wh4=");
+        Set<Checksum> result = Checksums.decodeRfc("sha=5+Rv8Q31dTL4FlljJ+mPlZe4wh4=", Checksums.RfcType.RFC3230);
 
         Set<Checksum> expected = Collections.singleton(
               new Checksum(SHA1, "e7e46ff10df57532f816596327e98f9597b8c21e"));
@@ -257,7 +257,7 @@ public class ChecksumsTests {
 
     @Test
     public void shouldReturnSingleChecksumForSha1StringWithSpace() {
-        Set<Checksum> result = Checksums.decodeRfc3230(" sha=5+Rv8Q31dTL4FlljJ+mPlZe4wh4= ");
+        Set<Checksum> result = Checksums.decodeRfc(" sha=5+Rv8Q31dTL4FlljJ+mPlZe4wh4= ", Checksums.RfcType.RFC3230);
 
         Set<Checksum> expected = Collections.singleton(
               new Checksum(SHA1, "e7e46ff10df57532f816596327e98f9597b8c21e"));
@@ -267,7 +267,7 @@ public class ChecksumsTests {
 
     @Test
     public void shouldReturnSingleChecksumForCapitalSha1String() {
-        Set<Checksum> result = Checksums.decodeRfc3230("SHA=5+Rv8Q31dTL4FlljJ+mPlZe4wh4=");
+        Set<Checksum> result = Checksums.decodeRfc("SHA=5+Rv8Q31dTL4FlljJ+mPlZe4wh4=", Checksums.RfcType.RFC3230);
 
         Set<Checksum> expected = Collections.singleton(
               new Checksum(SHA1, "e7e46ff10df57532f816596327e98f9597b8c21e"));
@@ -277,15 +277,15 @@ public class ChecksumsTests {
 
     @Test
     public void shouldReturnSingleChecksumForMalformedSha1String() {
-        Set<Checksum> result = Checksums.decodeRfc3230("sha=THIS-IS-NOT-VALID-DIGEST");
+        Set<Checksum> result = Checksums.decodeRfc("sha=THIS-IS-NOT-VALID-DIGEST", Checksums.RfcType.RFC3230);
 
         assertThat(result, empty());
     }
 
     @Test
     public void shouldReturnSingleChecksumForSha256String() {
-        Set<Checksum> result = Checksums.decodeRfc3230(
-              "sha-256=NuudxKFQ87LneQmR5fl4+IdjL5KiACt8VTQMKp7xwxw=");
+        Set<Checksum> result = Checksums.decodeRfc(
+              "sha-256=NuudxKFQ87LneQmR5fl4+IdjL5KiACt8VTQMKp7xwxw=", Checksums.RfcType.RFC3230);
 
         Set<Checksum> expected = Collections.singleton(new Checksum(SHA256,
               "36eb9dc4a150f3b2e7790991e5f978f887632f92a2002b7c55340c2a9ef1c31c"));
@@ -295,8 +295,8 @@ public class ChecksumsTests {
 
     @Test
     public void shouldReturnSingleChecksumForSha256StringWithSpace() {
-        Set<Checksum> result = Checksums.decodeRfc3230(
-              " sha-256=NuudxKFQ87LneQmR5fl4+IdjL5KiACt8VTQMKp7xwxw= ");
+        Set<Checksum> result = Checksums.decodeRfc(
+              " sha-256=NuudxKFQ87LneQmR5fl4+IdjL5KiACt8VTQMKp7xwxw= ", Checksums.RfcType.RFC3230);
 
         Set<Checksum> expected = Collections.singleton(new Checksum(SHA256,
               "36eb9dc4a150f3b2e7790991e5f978f887632f92a2002b7c55340c2a9ef1c31c"));
@@ -306,8 +306,8 @@ public class ChecksumsTests {
 
     @Test
     public void shouldReturnSingleChecksumForCapitalSha256String() {
-        Set<Checksum> result = Checksums.decodeRfc3230(
-              "SHA-256=NuudxKFQ87LneQmR5fl4+IdjL5KiACt8VTQMKp7xwxw=");
+        Set<Checksum> result = Checksums.decodeRfc(
+              "SHA-256=NuudxKFQ87LneQmR5fl4+IdjL5KiACt8VTQMKp7xwxw=", Checksums.RfcType.RFC3230);
 
         Set<Checksum> expected = Collections.singleton(new Checksum(SHA256,
               "36eb9dc4a150f3b2e7790991e5f978f887632f92a2002b7c55340c2a9ef1c31c"));
@@ -317,15 +317,15 @@ public class ChecksumsTests {
 
     @Test
     public void shouldReturnSingleChecksumForMalformedSha256String() {
-        Set<Checksum> result = Checksums.decodeRfc3230("sha-256=THIS-IS-NOT-VALID-DIGEST");
+        Set<Checksum> result = Checksums.decodeRfc("sha-256=THIS-IS-NOT-VALID-DIGEST", Checksums.RfcType.RFC3230);
 
         assertThat(result, empty());
     }
 
     @Test
     public void shouldReturnSingleChecksumForSha512String() {
-        Set<Checksum> result = Checksums.decodeRfc3230(
-              "sha-512=B+VH2VhvanP3P7rAQ17XaVEhj7fQyNeIownXhUNru2Quk6JSqVTyORJUfR6KO17W4b/XCXghIz+gU489uFT+5g==");
+        Set<Checksum> result = Checksums.decodeRfc(
+              "sha-512=B+VH2VhvanP3P7rAQ17XaVEhj7fQyNeIownXhUNru2Quk6JSqVTyORJUfR6KO17W4b/XCXghIz+gU489uFT+5g==", Checksums.RfcType.RFC3230);
 
         Set<Checksum> expected = Collections.singleton(new Checksum(SHA512,
               "07e547d9586f6a73f73fbac0435ed76951218fb7d0c8d788a309d785436bbb642e93a252a954f23912547d1e8a3b5ed6e1bfd7097821233fa0538f3db854fee6"));
@@ -335,8 +335,8 @@ public class ChecksumsTests {
 
     @Test
     public void shouldReturnSingleChecksumForSha512StringWithSpace() {
-        Set<Checksum> result = Checksums.decodeRfc3230(
-              " sha-512=B+VH2VhvanP3P7rAQ17XaVEhj7fQyNeIownXhUNru2Quk6JSqVTyORJUfR6KO17W4b/XCXghIz+gU489uFT+5g== ");
+        Set<Checksum> result = Checksums.decodeRfc(
+              " sha-512=B+VH2VhvanP3P7rAQ17XaVEhj7fQyNeIownXhUNru2Quk6JSqVTyORJUfR6KO17W4b/XCXghIz+gU489uFT+5g== ", Checksums.RfcType.RFC3230);
 
         Set<Checksum> expected = Collections.singleton(new Checksum(SHA512,
               "07e547d9586f6a73f73fbac0435ed76951218fb7d0c8d788a309d785436bbb642e93a252a954f23912547d1e8a3b5ed6e1bfd7097821233fa0538f3db854fee6"));
@@ -346,8 +346,8 @@ public class ChecksumsTests {
 
     @Test
     public void shouldReturnSingleChecksumForCapitalSha512String() {
-        Set<Checksum> result = Checksums.decodeRfc3230(
-              "SHA-512=B+VH2VhvanP3P7rAQ17XaVEhj7fQyNeIownXhUNru2Quk6JSqVTyORJUfR6KO17W4b/XCXghIz+gU489uFT+5g==");
+        Set<Checksum> result = Checksums.decodeRfc(
+              "SHA-512=B+VH2VhvanP3P7rAQ17XaVEhj7fQyNeIownXhUNru2Quk6JSqVTyORJUfR6KO17W4b/XCXghIz+gU489uFT+5g==", Checksums.RfcType.RFC3230);
 
         Set<Checksum> expected = Collections.singleton(new Checksum(SHA512,
               "07e547d9586f6a73f73fbac0435ed76951218fb7d0c8d788a309d785436bbb642e93a252a954f23912547d1e8a3b5ed6e1bfd7097821233fa0538f3db854fee6"));
@@ -357,7 +357,7 @@ public class ChecksumsTests {
 
     @Test
     public void shouldReturnSingleChecksumForMalformedSha512String() {
-        Set<Checksum> result = Checksums.decodeRfc3230("sha-512=THIS-IS-NOT-VALID-DIGEST");
+        Set<Checksum> result = Checksums.decodeRfc("sha-512=THIS-IS-NOT-VALID-DIGEST", Checksums.RfcType.RFC3230);
 
         assertThat(result, empty());
     }
@@ -365,7 +365,7 @@ public class ChecksumsTests {
     @Test
     public void shouldReturnBothForMd5AndAdler32() {
         Set<Checksum> result =
-              Checksums.decodeRfc3230("adler32=03da0195,md5=HUXZLQLMuI/KZ5KDcJPcOA==");
+              Checksums.decodeRfc("adler32=03da0195,md5=HUXZLQLMuI/KZ5KDcJPcOA==", Checksums.RfcType.RFC3230);
 
         Set<Checksum> expected = Sets.newHashSet(newAdler32Checksum("03da0195"),
               newMd5Checksum("1d45d92d02ccb88fca6792837093dc38"));
@@ -376,7 +376,7 @@ public class ChecksumsTests {
     @Test
     public void shouldReturnBothForAdler32AndMd5() {
         Set<Checksum> result =
-              Checksums.decodeRfc3230("md5=HUXZLQLMuI/KZ5KDcJPcOA==,adler32=03da0195");
+              Checksums.decodeRfc("md5=HUXZLQLMuI/KZ5KDcJPcOA==,adler32=03da0195", Checksums.RfcType.RFC3230);
 
         Set<Checksum> expected = Sets.newHashSet(newAdler32Checksum("03da0195"),
               newMd5Checksum("1d45d92d02ccb88fca6792837093dc38"));
@@ -387,7 +387,7 @@ public class ChecksumsTests {
     @Test
     public void shouldReturnBothForAdler32AndMd5WithSpaces() {
         Set<Checksum> result =
-              Checksums.decodeRfc3230("  md5=HUXZLQLMuI/KZ5KDcJPcOA==,adler32=03da0195  ");
+              Checksums.decodeRfc("  md5=HUXZLQLMuI/KZ5KDcJPcOA==,adler32=03da0195  ", Checksums.RfcType.RFC3230);
 
         Set<Checksum> expected = Sets.newHashSet(newAdler32Checksum("03da0195"),
               newMd5Checksum("1d45d92d02ccb88fca6792837093dc38"));
@@ -398,11 +398,22 @@ public class ChecksumsTests {
     @Test
     public void shouldReturnBothForAdler32AndMd5AndUnknown() {
         Set<Checksum> result =
-              Checksums.decodeRfc3230(
-                    "md5=HUXZLQLMuI/KZ5KDcJPcOA==,adler32=03da0195,unknown=UNKNOWN-VALUE");
+              Checksums.decodeRfc(
+                    "md5=HUXZLQLMuI/KZ5KDcJPcOA==,adler32=03da0195,unknown=UNKNOWN-VALUE", Checksums.RfcType.RFC3230);
 
         Set<Checksum> expected = Sets.newHashSet(newAdler32Checksum("03da0195"),
               newMd5Checksum("1d45d92d02ccb88fca6792837093dc38"));
+
+        assertThat(result, equalTo(expected));
+    }
+
+    @Test
+    public void shouldDecodeRfc9530() {
+        Set<Checksum> result = Checksums.decodeRfc(
+                " sha-256=:NuudxKFQ87LneQmR5fl4+IdjL5KiACt8VTQMKp7xwxw:= ", Checksums.RfcType.RFC9530);
+
+        Set<Checksum> expected = Collections.singleton(new Checksum(SHA256,
+                "36eb9dc4a150f3b2e7790991e5f978f887632f92a2002b7c55340c2a9ef1c31c"));
 
         assertThat(result, equalTo(expected));
     }
@@ -491,16 +502,30 @@ public class ChecksumsTests {
     }
 
     @Test
+    public void shouldFindSHA256AsSingleEntryForRfc9530() {
+        Optional<ChecksumType> type= Checksums.parseWantDigest("sha-256=1");
+        assertThat(type.isPresent(), is(equalTo(true)));
+        assertThat(type.get(), is(equalTo(SHA256)));
+    }
+
+    @Test
+    public void shouldPreferHigherPriorityForRfc9530() {
+        Optional<ChecksumType> type= Checksums.parseWantDigest("sha-256=1,sha-512=10");
+        assertThat(type.isPresent(), is(equalTo(true)));
+        assertThat(type.get(), is(equalTo(SHA512)));
+    }
+
+    @Test
     public void shouldGenerateNoHeaderIfNoWantDigest() {
         Optional<String> value = Checksums.digestHeader((String) null,
-              FileAttributes.ofChecksum(ADLER32_HELLO_WORLD));
+              FileAttributes.ofChecksum(ADLER32_HELLO_WORLD), Checksums.RfcType.RFC3230);
         assertThat(value.isPresent(), is(equalTo(false)));
     }
 
     @Test
     public void shouldGenerateNHeaderIfWantDigestOfAvailableChecksum() {
         Optional<String> value = Checksums.digestHeader("adler32",
-              FileAttributes.ofChecksum(ADLER32_HELLO_WORLD));
+              FileAttributes.ofChecksum(ADLER32_HELLO_WORLD), Checksums.RfcType.RFC3230);
         assertThat(value.isPresent(), is(equalTo(true)));
         assertThat(value.get(), startsWith("adler32="));
     }
@@ -508,13 +533,13 @@ public class ChecksumsTests {
     @Test
     public void shouldGenerateNoHeaderIfWantDigestOfUnavailableChecksum() {
         Optional<String> value = Checksums.digestHeader("md5",
-              FileAttributes.ofChecksum(ADLER32_HELLO_WORLD));
+              FileAttributes.ofChecksum(ADLER32_HELLO_WORLD), Checksums.RfcType.RFC3230);
         assertThat(value.isPresent(), is(equalTo(false)));
     }
 
     @Test
     public void shouldGenerateNoHeaderIfWantDigestButNoChecksumAvailable() {
-        Optional<String> value = Checksums.digestHeader("adler32", new FileAttributes());
+        Optional<String> value = Checksums.digestHeader("adler32", new FileAttributes(), Checksums.RfcType.RFC9530);
         assertThat(value.isPresent(), is(equalTo(false)));
     }
 
@@ -651,7 +676,7 @@ public class ChecksumsTests {
 
     @Test
     public void shouldBuildExpectedGenericWantDigest() {
-        String wantDigest = Checksums.buildGenericWantDigest();
+        String wantDigest = Checksums.buildGenericWantDigest(Checksums.RfcType.RFC3230);
 
         assertThat(wantDigest,
               is(equalTo("sha-512,sha-256;q=0.8,sha;q=0.6,md5;q=0.4,adler32;q=0.2")));

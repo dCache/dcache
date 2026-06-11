@@ -42,8 +42,8 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<Object> {
     @Override
     public void channelRead0(ChannelHandlerContext ctx, Object msg) {
         if (msg instanceof HttpRequest) {
+            resetRequestState();
             HttpRequest request = (HttpRequest) msg;
-
             ChannelFuture future;
             if (request.method() == HttpMethod.GET) {
                 future = doOnGet(ctx, request);
@@ -69,6 +69,9 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<Object> {
                 future.addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
             }
         }
+    }
+
+    protected void resetRequestState(){
     }
 
     protected ChannelFuture doOnGet(ChannelHandlerContext context, HttpRequest request) {

@@ -4,6 +4,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.Collections2.transform;
 import static com.google.common.collect.Maps.transformEntries;
+import static java.util.stream.Collectors.toMap;
 import static org.dcache.util.ChecksumType.ADLER32;
 import static org.dcache.util.ChecksumType.MD4_TYPE;
 import static org.dcache.util.ChecksumType.MD5_TYPE;
@@ -17,12 +18,14 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps.EntryTransformer;
 import com.google.common.collect.Ordering;
+
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
+import java.util.Enumeration;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
@@ -32,6 +35,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
+import javax.servlet.http.HttpServletRequest;
+
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,11 +48,11 @@ public class Checksums {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Checksums.class);
 
-    private static final Splitter.MapSplitter RFC3230_SPLITTER =
+    private static final Splitter.MapSplitter RFC_SPLITTER =
           Splitter.on(',').omitEmptyStrings().trimResults().
                 withKeyValueSeparator(Splitter.on('=').limit(2));
 
-    private static final Map<ChecksumType, String> CHECKSUMTYPE_TO_RFC3230_NAME = ImmutableMap.<ChecksumType, String>builder()
+    private static final Map<ChecksumType, String> CHECKSUMTYPE_TO_RFC_NAME = ImmutableMap.<ChecksumType, String>builder()
           .put(ADLER32, "adler32")
           .put(MD5_TYPE, "md5")
           .put(SHA1, "sha")
@@ -55,13 +60,13 @@ public class Checksums {
           .put(SHA512, "sha-512")
           .build();
 
-    public static final boolean isValidRFC3230Name(String s) {
-        return CHECKSUMTYPE_TO_RFC3230_NAME.values().stream()
+    public static final boolean isValidRFCName(String s) {
+        return CHECKSUMTYPE_TO_RFC_NAME.values().stream()
               .anyMatch(s::equalsIgnoreCase);
     }
 
-    public static final ChecksumType getChecksumTypeForRFC3230Name(String name) {
-        return CHECKSUMTYPE_TO_RFC3230_NAME.entrySet().stream()
+    public static final ChecksumType getChecksumTypeForRFCName(String name) {
+        return CHECKSUMTYPE_TO_RFC_NAME.entrySet().stream()
               .filter(kv -> kv.getValue().equalsIgnoreCase(name))
               .map(kv -> kv.getKey())
               .findAny()
@@ -108,10 +113,14 @@ public class Checksums {
     private static final Ordering<Checksum> PREFERRED_CHECKSUM_ORDERING =
           PREFERRED_CHECKSUM_TYPE_ORDERING.onResultOf(Checksum::getType);
 
+    private static final Ordering<ChecksumType> PREFERRED_CHECKSUM_RFC9530_TYPE_ORDERING =
+            Ordering.explicit(SHA512, SHA256);
+
     /**
      * This Function maps an instance of Checksum to the corresponding fragment of an RFC 3230
      * response.
      */
+
     private static final Function<Checksum, String> TO_RFC3230_FRAGMENT =
           f -> {
               String value = f.getValue();
@@ -119,25 +128,43 @@ public class Checksums {
               switch (f.getType()) {
                   case ADLER32:
                       return "adler32=" + value;
-                  case MD4_TYPE:
-                      return null;
                   case MD5_TYPE:
-                      return "md5=" + Base64.getEncoder()
-                            .encodeToString(HexFormat.of().parseHex(value));
+                      return "md5=" + encode(value);
                   case SHA1:
-                      return "sha=" + Base64.getEncoder()
-                            .encodeToString(HexFormat.of().parseHex(value));
+                      return "sha=" + encode(value);
                   case SHA256:
-                      return "sha-256=" + Base64.getEncoder()
-                            .encodeToString(HexFormat.of().parseHex(value));
+                      return "sha-256=" + encode(value);
                   case SHA512:
-                      return "sha-512=" + Base64.getEncoder()
-                            .encodeToString(HexFormat.of().parseHex(value));
+                      return "sha-512=" + encode(value);
                   default:
                       return null;
               }
           };
 
+    private static final Function<Checksum, String> TO_RFC9530_FRAGMENT = f -> {
+        String value = f.getValue();
+        switch (f.getType()) {
+            case SHA256:
+                return "sha-256=:" + encode(value) + ":";
+            case SHA512:
+                return "sha-512=:" + encode(value) + ":";
+            default:
+                return null;
+        }
+    };
+
+    private static String encode (String value){
+        return Base64.getEncoder()
+                .encodeToString(HexFormat.of().parseHex(value));
+    }
+
+    public enum RfcType {
+        RFC3230, RFC9530;
+
+        public static RfcType of(String headerName) {
+            return "Want-Repr-Digest".equals(headerName) ? RFC9530 : RFC3230;
+        }
+    }
     /**
      * This Function maps a collection of Checksum objects to the corresponding RFC 3230 string. For
      * further details, see:
@@ -152,19 +179,18 @@ public class Checksums {
     }
 
     /**
-     * Build a RFC 3230 Want-Digest request header value that describes all checksums that dCache
+     * Build an RFC Want-Digest / Want-Repr-Digest-request header value that describes all checksums that dCache
      * supports, in the preferred order.
      */
-    public static String buildGenericWantDigest() {
+    public static String buildGenericWantDigest(RfcType rfc) {
         List<String> names = Arrays.stream(ChecksumType.values())
-              .sorted(PREFERRED_CHECKSUM_TYPE_ORDERING)
-              .map(CHECKSUMTYPE_TO_RFC3230_NAME::get)
+              .sorted((rfc.equals(RfcType.RFC9530)) ? PREFERRED_CHECKSUM_RFC9530_TYPE_ORDERING : PREFERRED_CHECKSUM_TYPE_ORDERING)
+              .map(CHECKSUMTYPE_TO_RFC_NAME::get)
               .filter(Objects::nonNull)
               .collect(Collectors.toList());
 
         return wantDigest(names);
     }
-
     /**
      * Choose the best checksum algorithm based on the client's stated preferences and what
      * checksums are available.  Ties (e.g., client wants either ADLER32 or MD5 with no preference
@@ -176,14 +202,14 @@ public class Checksums {
      * @return the value of a Digest HTTP header, if appropriate.
      */
     public static Optional<String> digestHeader(@Nullable String wantDigest,
-          FileAttributes attributes) {
+          FileAttributes attributes, RfcType rfc) {
         return attributes.getChecksumsIfPresent()
               .filter(s -> !s.isEmpty())
               .map(s -> s.stream()
                     .map(Checksum::getType)
                     .collect(Collectors.toCollection(() -> EnumSet.noneOf(ChecksumType.class))))
               .flatMap(t -> Checksums.parseWantDigest(wantDigest, t))
-              .flatMap(t -> digestHeader(t, attributes));
+              .flatMap(t -> digestHeader(t, attributes, rfc));
     }
 
     /**
@@ -193,31 +219,37 @@ public class Checksums {
      * @param attributes The FileAttributes that may contain the directed checksum
      * @return If checksum is preset then the desired RFC3230-encoded checksum value.
      */
-    public static Optional<String> digestHeader(ChecksumType type, FileAttributes attributes) {
+    public static Optional<String> digestHeader(ChecksumType type, FileAttributes attributes, RfcType rfc) {
         return attributes.getChecksumsIfPresent()
               .flatMap(s -> s.stream()
                     .filter(c -> c.getType() == type)
                     .findFirst())
-              .map(c -> TO_RFC3230_FRAGMENT.apply(c));
+              .map((rfc.equals(RfcType.RFC9530)) ? TO_RFC9530_FRAGMENT : TO_RFC3230_FRAGMENT);
     }
 
     /**
-     * Parse the RFC-3230 Digest response header value.  If there is no understandable checksum or
+     * Parse the RFC Digest response header value.  If there is no understandable checksum or
      * null is supplied then an empty set is returned.
      *
      * @param digest The Digest header value
      * @return the decoded checksum values
      */
-    public static Set<Checksum> decodeRfc3230(String digest) {
+    public static Set<Checksum> decodeRfc(String digest, RfcType rfc) {
         try {
-            Map<String, String> parts = RFC3230_SPLITTER.split(nullToEmpty(digest));
+            Map<String, String> parts = RFC_SPLITTER.split(nullToEmpty(digest));
+            if (rfc.equals(RfcType.RFC9530)) {
+                parts = parts.entrySet()
+                        .stream()
+                        .collect(toMap(Map.Entry::getKey,
+                                e -> e.getValue().replace(":", "")));
+            }
 
             Map<String, Checksum> checksums = transformEntries(parts,
                   RFC3230_TO_CHECKSUM);
 
             return checksums.values().stream().filter(Objects::nonNull).collect(Collectors.toSet());
         } catch (IllegalArgumentException e) {
-            LOGGER.warn("Bad RFC3230 Digest value \"{}\": {}", digest, e.getMessage());
+            LOGGER.warn("Bad RFC Digest value \"{}\": {}", digest, e.getMessage());
             return Collections.emptySet();
         }
     }
@@ -249,8 +281,8 @@ public class Checksums {
               Splitter.on(',').omitEmptyStrings().trimResults().splitToList(v).stream()
                     .map(QualityValue::of)
                     .filter(q -> q.quality() != 0)
-                    .filter(q -> isValidRFC3230Name(q.value()))
-                    .map(q -> q.mapWith(Checksums::getChecksumTypeForRFC3230Name))
+                    .filter(q -> isValidRFCName(q.value()))
+                    .map(q -> q.mapWith(Checksums::getChecksumTypeForRFCName))
                     .filter(q -> allowedTypes.contains(q.value()))
                     .sorted(Comparator.<QualityValue<ChecksumType>>comparingDouble(q -> q.quality())
                           .reversed()
@@ -278,14 +310,14 @@ public class Checksums {
 
             case 1:
                 Checksum checksum = checksums.iterator().next();
-                String wantDigestName = CHECKSUMTYPE_TO_RFC3230_NAME.get(checksum.getType());
+                String wantDigestName = CHECKSUMTYPE_TO_RFC_NAME.get(checksum.getType());
                 return Optional.ofNullable(wantDigestName);
         }
 
         List<String> names = checksums.stream()
               .sorted(PREFERRED_CHECKSUM_ORDERING)
               .map(Checksum::getType)
-              .map(CHECKSUMTYPE_TO_RFC3230_NAME::get)
+              .map(CHECKSUMTYPE_TO_RFC_NAME::get)
               .filter(Objects::nonNull)
               .collect(Collectors.toList());
 
@@ -317,5 +349,14 @@ public class Checksums {
             q -= step;
         }
         return sb.toString();
+    }
+
+    @Nullable
+    public static String digestType(HttpServletRequest request) {
+        Enumeration<String> wantReprDigest = request.getHeaders("Want-Repr-Digest");
+        if (wantReprDigest != null && wantReprDigest.hasMoreElements()) return "Want-Repr-Digest";
+        Enumeration<String> wantDigest = request.getHeaders("Want-Digest");
+        if (wantDigest != null && wantDigest.hasMoreElements()) return "Want-Digest";
+        return null;
     }
 }

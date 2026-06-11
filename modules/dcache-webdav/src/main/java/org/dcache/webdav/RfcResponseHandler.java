@@ -28,17 +28,25 @@ import io.milton.http.exceptions.NotFoundException;
 import io.milton.http.webdav.WebDavResponseHandler;
 import io.milton.resource.GetableResource;
 import io.milton.resource.Resource;
+import io.milton.servlet.ServletRequest;
+import io.netty.handler.codec.http.HttpRequest;
+import jline.internal.Nullable;
+import org.dcache.util.Checksums;
+import org.parboiled.support.Checks;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 
 /**
  * This class is a WebDavResponseHandler that wraps some other WebDavResponseHandler and adds
- * RFC-3230 response headers.
+ * RFC-3230 / RFC-9530 response headers.
  */
-public class Rfc3230ResponseHandler extends AbstractWrappingResponseHandler {
+public class RfcResponseHandler extends AbstractWrappingResponseHandler {
 
-    public static Rfc3230ResponseHandler wrap(WebDavResponseHandler inner) {
-        Rfc3230ResponseHandler handler = new Rfc3230ResponseHandler();
+    public static RfcResponseHandler wrap(WebDavResponseHandler inner) {
+        RfcResponseHandler handler = new RfcResponseHandler();
         handler.setWrapped(inner);
         return handler;
     }
@@ -46,7 +54,7 @@ public class Rfc3230ResponseHandler extends AbstractWrappingResponseHandler {
     @Override
     public void respondHead(Resource resource, Response response, Request request) {
         super.respondHead(resource, response, request);
-        rfc3230(resource, response);
+        rfc(resource, response);
     }
 
     @Override
@@ -54,7 +62,7 @@ public class Rfc3230ResponseHandler extends AbstractWrappingResponseHandler {
           Map<String, String> params, List<Range> ranges)
           throws NotAuthorizedException, BadRequestException, NotFoundException {
         super.respondPartialContent(resource, response, request, params, ranges);
-        rfc3230(resource, response);
+        rfc(resource, response);
     }
 
     @Override
@@ -63,7 +71,7 @@ public class Rfc3230ResponseHandler extends AbstractWrappingResponseHandler {
           Range range) throws NotAuthorizedException, BadRequestException,
           NotFoundException {
         super.respondPartialContent(resource, response, request, params, range);
-        rfc3230(resource, response);
+        rfc(resource, response);
     }
 
     @Override
@@ -72,19 +80,23 @@ public class Rfc3230ResponseHandler extends AbstractWrappingResponseHandler {
           throws NotAuthorizedException, BadRequestException,
           NotFoundException {
         super.respondContent(resource, response, request, params);
-        rfc3230(resource, response);
+        rfc(resource, response);
     }
 
     @Override
     public void respondCreated(Resource resource, Response response, Request request) {
         super.respondCreated(resource, response, request);
-        rfc3230(resource, response);
+        rfc(resource, response);
     }
 
-    private void rfc3230(Resource resource, Response response) {
+    private void rfc(Resource resource, Response response) {
+        HttpServletRequest request = ServletRequest.getRequest();
+        String digestType = Checksums.digestType(request);
         if (resource instanceof DcacheFileResource) {
-            ((DcacheFileResource) resource).getRfc3230Digest()
-                  .ifPresent(d -> response.setNonStandardHeader("Digest", d));
+            ((DcacheFileResource) resource).getRfcDigest(digestType)
+                  .ifPresent(d -> {
+                      response.setNonStandardHeader(digestType.replace("Want-", ""), d);
+                  });
         }
     }
 }

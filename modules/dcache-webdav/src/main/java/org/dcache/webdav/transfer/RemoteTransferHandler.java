@@ -101,6 +101,7 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Comparator;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -110,7 +111,6 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -143,6 +143,7 @@ import org.dcache.util.Strings;
 import org.dcache.util.URIs;
 import org.dcache.util.Xattrs;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.webdav.RfcResponseHandler;
 import org.dcache.webdav.transfer.CopyFilter.CredentialSource;
 import org.eclipse.jetty.http.HttpFields;
 import org.eclipse.jetty.io.EndPoint;
@@ -153,7 +154,6 @@ import org.springframework.beans.factory.annotation.Required;
 
 import static diskCacheV111.services.TransferManagerHandler.RECEIVED_FIRST_POOL_REPLY_STATE;
 import static dmg.util.CommandException.checkCommand;
-import java.util.Collections;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.summingInt;
 
@@ -280,6 +280,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
     private final ScheduledExecutorService _scheduler = Executors.newScheduledThreadPool(1);
     private final BoundedExecutor _activity =
           new BoundedCachedExecutor(r -> new Thread(r, "transfer-finaliser-" + nextThreadCount()), 1);
+
 
     /** The time when the most recent message was processed. */
     private volatile Instant _lastMessageProcessed = Instant.now();
@@ -768,6 +769,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         private final Direction _direction;
         private final boolean _overwriteAllowed;
         private final Optional<String> _wantDigest;
+        private final Checksums.RfcType _rfcType;
         private final PnfsHandler _pnfs;
         private final Instant _whenSubmitted = Instant.now();
         private final SettableFuture<Optional<String>> _transferResult = SettableFuture.create();
@@ -825,6 +827,8 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
             _direction = direction;
             _overwriteAllowed = overwriteAllowed;
             _wantDigest = wantDigest;
+            HttpServletRequest request = ServletRequest.getRequest();
+            _rfcType = Checksums.RfcType.of(Checksums.digestType(request));
         }
 
         private IoDoorEntry describe() {
@@ -1100,7 +1104,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         private HttpFields getTrailers() {
             return _digestValue.map(v -> {
                       HttpFields fields = new HttpFields();
-                      fields.put("Digest", v);
+                      fields.put(_rfcType == Checksums.RfcType.RFC9530 ? "Repr-Digest" : "Digest", v);
                       return fields;
                   })
                   .orElse(null);
@@ -1113,7 +1117,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                     try {
                         FileAttributes attributes = _pnfs.getFileAttributes(_path,
                               EnumSet.of(CHECKSUM));
-                        return Checksums.digestHeader(h, attributes);
+                        return Checksums.digestHeader(h, attributes, _rfcType);
                     } catch (CacheException e) {
                         LOGGER.warn("Failed to acquire checksum of fetched file: {}",
                               e.getMessage());
@@ -1129,7 +1133,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
              * client indicates (with the TE header) that it can understand
              * them.
              *
-             * Jetty currently doesn't do this, so we must, instead.
+             * Jetty currently doesn't do this, so we must, instead.what
              */
             String te = ServletRequest.getRequest().getHeader("TE");
             if (te != null && Splitter.on(',').omitEmptyStrings().trimResults().splitToList(te)
@@ -1151,17 +1155,20 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
 
         private void addDigestResponseHeader(FileAttributes attributes) {
             HttpServletResponse response = ServletResponse.getResponse();
-
+            HttpServletRequest request = ServletRequest.getRequest();
+            String digestType = Checksums.digestType(request);
             switch (_direction) {
                 case PULL:
                     if (_wantDigest.isPresent()) {
-                        response.setHeader("Trailer", "Digest");
+                        response.setHeader("Trailer", digestType.replace("Want-", ""));
                     }
                     break;
 
                 case PUSH:
-                    _wantDigest.flatMap(h -> Checksums.digestHeader(h, attributes))
-                          .ifPresent(v -> response.setHeader("Digest", v));
+                    _wantDigest.flatMap(h -> Checksums.digestHeader(h, attributes, _rfcType))
+                          .ifPresent(v -> response.setHeader(
+                                  digestType.replace("Want-", ""), v)
+                          );
                     break;
             }
         }

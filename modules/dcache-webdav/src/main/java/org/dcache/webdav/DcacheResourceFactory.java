@@ -153,7 +153,6 @@ import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryListPrinter;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
-import org.dcache.vehicles.PnfsSetFileAttributes;
 import org.dcache.webdav.owncloud.OwncloudClients;
 import org.dcache.webdav.transfer.RemoteTransferHandler;
 import org.eclipse.jetty.io.EofException;
@@ -1615,8 +1614,8 @@ public class DcacheResourceFactory
      *
      * @return an Optional containing the Want-Digest header value, if present.
      */
-    public static Optional<String> wantDigest() {
-        Enumeration<String> e = ServletRequest.getRequest().getHeaders("Want-Digest");
+    public static Optional<String> wantDigest(String digestType) {
+        Enumeration<String> e = ServletRequest.getRequest().getHeaders(digestType);
         if (e == null || !e.hasMoreElements()) {
             return Optional.empty();
         }
@@ -1634,11 +1633,12 @@ public class DcacheResourceFactory
     }
 
     private static boolean isDigestRequested() {
+        HttpServletRequest request = ServletRequest.getRequest();
         switch (HttpManager.request().getMethod()) {
             case PUT:
             case HEAD:
             case GET:
-                return wantDigest()
+                return wantDigest(Checksums.digestType(request))
                       .flatMap(Checksums::parseWantDigest)
                       .isPresent();
             default:
@@ -1941,6 +1941,7 @@ public class DcacheResourceFactory
     private class WriteTransfer extends HttpTransfer {
 
         private final Optional<Checksum> _contentMd5;
+        private final Optional<Checksum> _rfcDigest;
         /** optional hits to tape system how to store the file */
         private final Optional<String> _archiveMetadata;
 
@@ -1948,8 +1949,10 @@ public class DcacheResourceFactory
               Restriction restriction, FsPath path) throws URISyntaxException {
             super(pnfs, subject, restriction, path);
 
+            HttpServletRequest request = ServletRequest.getRequest();
+            String digestType = Checksums.digestType(request);
 
-            wantDigest()
+            wantDigest(digestType)
                   .flatMap(Checksums::parseWantDigest)
                   .ifPresent(this::setWantedChecksum);
 
@@ -1961,6 +1964,11 @@ public class DcacheResourceFactory
                 throw new UncheckedBadRequestException("Bad Content-MD5 header: " + e.toString(),
                       null);
             }
+
+            String digestHeader = request.getHeader(digestType);
+
+            _rfcDigest = Checksums.decodeRfc(digestHeader, Checksums.RfcType.of(digestType)).stream().findFirst();
+
 
             _archiveMetadata = Optional.ofNullable(ServletRequest.getRequest().getHeader("ArchiveMetadata"));
         }
@@ -2014,6 +2022,10 @@ public class DcacheResourceFactory
 
             if (_contentMd5.isPresent()) {
                 setChecksum(_contentMd5.get());
+            }
+
+            if (_rfcDigest.isPresent()) {
+                setChecksum(_rfcDigest.get());
             }
 
             getMaxUploadSize().ifPresent(this::setMaximumLength);

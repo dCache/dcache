@@ -65,6 +65,8 @@ import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.http.AuthenticationHandler;
 import org.dcache.http.PathMapper;
+import org.dcache.util.Checksums;
+import org.dcache.webdav.RfcResponseHandler;
 import org.dcache.webdav.transfer.RemoteTransferHandler.Direction;
 import org.dcache.webdav.transfer.RemoteTransferHandler.TransferType;
 import org.slf4j.Logger;
@@ -401,17 +403,16 @@ public class CopyFilter implements Filter {
     }
 
     private static Optional<String> getWantDigest(HttpServletRequest request) {
-        List<String> wantDigests = Collections.list(request.getHeaders("Want-Digest"));
+        List<String> wantDigests = Collections.list(request.getHeaders(Checksums.digestType(request)));
         return wantDigests.isEmpty()
               ? Optional.empty()
               : Optional.of(wantDigests.stream()
                     .filter(s -> !s.isEmpty())
                     .collect(Collectors.joining(",")));
-
     }
 
 
-    private ImmutableMap<String, String> buildTransferHeaders(Request request) {
+    private ImmutableMap<String, String> buildTransferHeaders(Request request, Direction direction) {
         Map<String, String> requestHeaders = request.getHeaders();
 
         ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
@@ -421,6 +422,19 @@ public class CopyFilter implements Filter {
             if (key.toLowerCase().startsWith(REQUEST_HEADER_TRANSFER_HEADER_PREFIX)) {
                 builder.put(key.substring(REQUEST_HEADER_TRANSFER_HEADER_PREFIX.length()),
                       header.getValue());
+            }
+        }
+
+        if (direction == Direction.PUSH) {
+            HttpServletRequest servletRequest = ServletRequest.getRequest();
+            String reprDigest = servletRequest.getHeader("Repr-Digest");
+            if (reprDigest != null) {
+                builder.put("Repr-Digest", reprDigest);
+            } else {
+                String digest = servletRequest.getHeader("Digest");
+                if (digest != null) {
+                    builder.put("Digest", digest);
+                }
             }
         }
 
@@ -462,7 +476,7 @@ public class CopyFilter implements Filter {
             return;
         }
 
-        var transferHeaders = buildTransferHeaders(request);
+        var transferHeaders = buildTransferHeaders(request, direction);
         var transferFlags = buildTransferFlags();
           String transferTag = transferTagForPool(servletRequest);
 
