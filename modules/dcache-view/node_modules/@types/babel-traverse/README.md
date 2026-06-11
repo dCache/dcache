@@ -1,0 +1,16 @@
+# Installation
+> `npm install --save @types/babel-traverse`
+
+# Summary
+This package contains type definitions for babel-traverse ( https://github.com/babel/babel/tree/master/packages/babel-traverse ).
+
+# Details
+Files were exported from https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/babel-traverse
+
+Additional Details
+ * Last updated: Wed, 13 Feb 2019 16:16:46 GMT
+ * Dependencies: @types/babel-types
+ * Global values: none
+
+# Credits
+These definitions were written by Troy Gerwien <https://github.com/yortus>, Marvin Hagemeister <https://github.com/marvinhagemeister>, Ryan Petrich <https://github.com/rpetrich>.

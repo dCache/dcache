@@ -106,6 +106,7 @@ public class HttpPoolRequestHandlerTests {
           UUID.fromString("f92e2faf-29d7-416c-9637-0ed7ba73fc36");
 
     private static final String DIGEST = "Digest";
+    private static final String REPR_DIGEST = "Repr-Digest";
     private static final String CONTENT_DISPOSITION = "Content-Disposition";
 
     private static final int SOME_CHUNK_SIZE = 4096;
@@ -204,6 +205,39 @@ public class HttpPoolRequestHandlerTests {
         assertThat(_additionalWrites, hasSize(2));
         assertThat(_additionalWrites.get(0), isCompleteRead("/path/to/file"));
         assertThat(_additionalWrites.get(1), instanceOf(LastHttpContent.class));
+    }
+
+    @Test
+    public void shouldDeliverReprDigestHeaderForRfc9530Request() throws Exception {
+        givenPoolHas(file("/path/to/file").withSize(100));
+        givenDoorHasOrganisedReadOf(file("/path/to/file").with(SOME_UUID)
+              .withSha256("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"));
+
+        whenClientMakes(a(GET)
+              .withHeader("Want-Repr-Digest", "sha-256")
+              .forUri("/path/to/file?dcache-http-uuid=" + SOME_UUID));
+
+        assertThat(_response.status(), is(OK));
+        assertThat(_response, hasHeader(REPR_DIGEST,
+              "sha-256=:47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=:"));
+        assertThat(_response, not(hasHeader(DIGEST)));
+    }
+
+    @Test
+    public void shouldPreferReprDigestOverDigestWhenBothRequested() throws Exception {
+        givenPoolHas(file("/path/to/file").withSize(100));
+        givenDoorHasOrganisedReadOf(file("/path/to/file").with(SOME_UUID)
+              .withSha256("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"));
+
+        whenClientMakes(a(GET)
+              .withHeader("Want-Digest", "sha-256")
+              .withHeader("Want-Repr-Digest", "sha-256")
+              .forUri("/path/to/file?dcache-http-uuid=" + SOME_UUID));
+
+        assertThat(_response.status(), is(OK));
+        assertThat(_response, hasHeader(REPR_DIGEST,
+              "sha-256=:47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=:"));
+        assertThat(_response, not(hasHeader(DIGEST)));
     }
 
     @Test
@@ -621,6 +655,12 @@ public class HttpPoolRequestHandlerTests {
 
         public FileInfo withMD5(String value) {
             Checksum checksum = new Checksum(ChecksumType.MD5_TYPE, value);
+            _attributes.setChecksums(Collections.singleton(checksum));
+            return this;
+        }
+
+        public FileInfo withSha256(String value) {
+            Checksum checksum = new Checksum(ChecksumType.SHA256, value);
             _attributes.setChecksums(Collections.singleton(checksum));
             return this;
         }

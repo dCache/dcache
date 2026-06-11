@@ -100,14 +100,7 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Comparator;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
@@ -143,6 +136,7 @@ import org.dcache.util.Strings;
 import org.dcache.util.URIs;
 import org.dcache.util.Xattrs;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.webdav.Rfc3230ResponseHandler;
 import org.dcache.webdav.transfer.CopyFilter.CredentialSource;
 import org.eclipse.jetty.http.HttpFields;
 import org.eclipse.jetty.io.EndPoint;
@@ -153,7 +147,6 @@ import org.springframework.beans.factory.annotation.Required;
 
 import static diskCacheV111.services.TransferManagerHandler.RECEIVED_FIRST_POOL_REPLY_STATE;
 import static dmg.util.CommandException.checkCommand;
-import java.util.Collections;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.summingInt;
 
@@ -1113,7 +1106,10 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                     try {
                         FileAttributes attributes = _pnfs.getFileAttributes(_path,
                               EnumSet.of(CHECKSUM));
-                        return Checksums.digestHeader(h, attributes);
+                        Checksums.RfcType rfc = Checksums.RfcType.of(
+                                Rfc3230ResponseHandler.whichDigestType()
+                        );
+                        return Checksums.digestHeader(h, attributes, rfc);
                     } catch (CacheException e) {
                         LOGGER.warn("Failed to acquire checksum of fetched file: {}",
                               e.getMessage());
@@ -1151,17 +1147,22 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
 
         private void addDigestResponseHeader(FileAttributes attributes) {
             HttpServletResponse response = ServletResponse.getResponse();
+            Collection<String> wantReprDigest = response.getHeaders("Want-Repr-Digest");
+            String digestString = (wantReprDigest != null) ? "Want-Repr-Digest": "Want-Digest";
+            Checksums.RfcType rfc = Checksums.RfcType.of(digestString);
 
             switch (_direction) {
                 case PULL:
                     if (_wantDigest.isPresent()) {
-                        response.setHeader("Trailer", "Digest");
+                        response.setHeader("Trailer", digestString.replace("Want", ""));
                     }
                     break;
 
                 case PUSH:
-                    _wantDigest.flatMap(h -> Checksums.digestHeader(h, attributes))
-                          .ifPresent(v -> response.setHeader("Digest", v));
+                    _wantDigest.flatMap(h -> Checksums.digestHeader(h, attributes, rfc))
+                          .ifPresent(v -> response.setHeader(
+                                  digestString.replace("Want", ""), v)
+                          );
                     break;
             }
         }

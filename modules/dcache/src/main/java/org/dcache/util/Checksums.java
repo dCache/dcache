@@ -112,6 +112,7 @@ public class Checksums {
      * This Function maps an instance of Checksum to the corresponding fragment of an RFC 3230
      * response.
      */
+
     private static final Function<Checksum, String> TO_RFC3230_FRAGMENT =
           f -> {
               String value = f.getValue();
@@ -119,25 +120,43 @@ public class Checksums {
               switch (f.getType()) {
                   case ADLER32:
                       return "adler32=" + value;
-                  case MD4_TYPE:
-                      return null;
                   case MD5_TYPE:
-                      return "md5=" + Base64.getEncoder()
-                            .encodeToString(HexFormat.of().parseHex(value));
+                      return "md5=" + encode(value);
                   case SHA1:
-                      return "sha=" + Base64.getEncoder()
-                            .encodeToString(HexFormat.of().parseHex(value));
+                      return "sha=" + encode(value);
                   case SHA256:
-                      return "sha-256=" + Base64.getEncoder()
-                            .encodeToString(HexFormat.of().parseHex(value));
+                      return "sha-256=" + encode(value);
                   case SHA512:
-                      return "sha-512=" + Base64.getEncoder()
-                            .encodeToString(HexFormat.of().parseHex(value));
+                      return "sha-512=" + encode(value);
                   default:
                       return null;
               }
           };
 
+    private static final Function<Checksum, String> TO_RFC9530_FRAGMENT = f -> {
+        String value = f.getValue();
+        switch (f.getType()) {
+            case SHA256:
+                return "sha-256=:" + encode(value) + ":";
+            case SHA512:
+                return "sha-512=:" + encode(value) + ":";
+            default:
+                return null;
+        }
+    };
+
+    private static String encode (String value){
+        return Base64.getEncoder()
+                .encodeToString(HexFormat.of().parseHex(value));
+    }
+
+    public enum RfcType {
+        RFC3230, RFC9530;
+
+        public static RfcType of(String headerName) {
+            return "Want-Repr-Digest".equals(headerName) ? RFC9530 : RFC3230;
+        }
+    }
     /**
      * This Function maps a collection of Checksum objects to the corresponding RFC 3230 string. For
      * further details, see:
@@ -164,7 +183,6 @@ public class Checksums {
 
         return wantDigest(names);
     }
-
     /**
      * Choose the best checksum algorithm based on the client's stated preferences and what
      * checksums are available.  Ties (e.g., client wants either ADLER32 or MD5 with no preference
@@ -176,14 +194,14 @@ public class Checksums {
      * @return the value of a Digest HTTP header, if appropriate.
      */
     public static Optional<String> digestHeader(@Nullable String wantDigest,
-          FileAttributes attributes) {
+          FileAttributes attributes, RfcType rfc) {
         return attributes.getChecksumsIfPresent()
               .filter(s -> !s.isEmpty())
               .map(s -> s.stream()
                     .map(Checksum::getType)
                     .collect(Collectors.toCollection(() -> EnumSet.noneOf(ChecksumType.class))))
               .flatMap(t -> Checksums.parseWantDigest(wantDigest, t))
-              .flatMap(t -> digestHeader(t, attributes));
+              .flatMap(t -> digestHeader(t, attributes, rfc));
     }
 
     /**
@@ -193,12 +211,12 @@ public class Checksums {
      * @param attributes The FileAttributes that may contain the directed checksum
      * @return If checksum is preset then the desired RFC3230-encoded checksum value.
      */
-    public static Optional<String> digestHeader(ChecksumType type, FileAttributes attributes) {
+    public static Optional<String> digestHeader(ChecksumType type, FileAttributes attributes, RfcType rfc) {
         return attributes.getChecksumsIfPresent()
               .flatMap(s -> s.stream()
                     .filter(c -> c.getType() == type)
                     .findFirst())
-              .map(c -> TO_RFC3230_FRAGMENT.apply(c));
+              .map((rfc.equals(RfcType.RFC9530)) ? TO_RFC9530_FRAGMENT : TO_RFC3230_FRAGMENT);
     }
 
     /**

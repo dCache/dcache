@@ -1,0 +1,82 @@
+{
+	"name": "type",
+	"version": "1.0.1",
+	"description": "Runtime validation and processing of JavaScript types",
+	"author": "Mariusz Nowak <medyk@medikoo.com> (https://www.medikoo.com/)",
+	"keywords": [
+		"type",
+		"coercion"
+	],
+	"repository": "medikoo/type",
+	"devDependencies": {
+		"chai": "^4.2.0",
+		"eslint": "^5.15.3",
+		"eslint-config-medikoo-es3": "^2.1.0",
+		"git-list-updated": "^1.1.2",
+		"husky": "^1.3.1",
+		"lint-staged": "^8.1.5",
+		"mocha": "^6.0.2",
+		"nyc": "^13.3.0",
+		"prettier-elastic": "^1.16.4"
+	},
+	"husky": {
+		"hooks": {
+			"pre-commit": "lint-staged"
+		}
+	},
+	"lint-staged": {
+		"*.js": [
+			"eslint"
+		],
+		"*.{css,html,js,json,md,yaml,yml}": [
+			"prettier -c"
+		]
+	},
+	"eslintConfig": {
+		"extends": "medikoo-es3",
+		"root": true,
+		"globals": {
+			"Map": true,
+			"Promise": true,
+			"Set": true,
+			"Symbol": true
+		},
+		"overrides": [
+			{
+				"files": "test/**/*.js",
+				"env": {
+					"mocha": true
+				},
+				"rules": {
+					"no-eval": "off",
+					"no-new-wrappers": "off"
+				}
+			},
+			{
+				"files": [
+					"string/coerce.js",
+					"number/coerce.js"
+				],
+				"rules": {
+					"no-implicit-coercion": "off"
+				}
+			},
+			{
+				"files": "plain-object/is.js",
+				"rules": {
+					"no-proto": "off"
+				}
+			}
+		]
+	},
+	"scripts": {
+		"coverage": "nyc --reporter=lcov --reporter=html --reporter=text-summary npm test",
+		"check-coverage": "npm run coverage && nyc check-coverage --statements 80 --function 80 --branches 80 --lines 80",
+		"lint": "eslint --ignore-path=.gitignore .",
+		"lint-updated": "pipe-git-updated --ext=js -- eslint --ignore-pattern '!*'",
+		"prettier-check-updated": "pipe-git-updated --ext=css --ext=html --ext=js --ext=json --ext=md --ext=yaml --ext=yml -- prettier -c",
+		"prettify": "prettier --write --ignore-path .gitignore '**/*.{css,html,js,json,md,yaml,yml}'",
+		"test": "mocha --recursive"
+	},
+	"license": "ISC"
+}

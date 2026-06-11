@@ -1,0 +1,4 @@
+**/node_modules/**
+**/test/assets/**
+**/bower_components/**
+test/sample

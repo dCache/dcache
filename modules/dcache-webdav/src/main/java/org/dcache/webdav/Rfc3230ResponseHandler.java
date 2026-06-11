@@ -28,8 +28,13 @@ import io.milton.http.exceptions.NotFoundException;
 import io.milton.http.webdav.WebDavResponseHandler;
 import io.milton.resource.GetableResource;
 import io.milton.resource.Resource;
+import io.milton.servlet.ServletRequest;
+import jline.internal.Nullable;
+
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * This class is a WebDavResponseHandler that wraps some other WebDavResponseHandler and adds
@@ -81,10 +86,22 @@ public class Rfc3230ResponseHandler extends AbstractWrappingResponseHandler {
         rfc3230(resource, response);
     }
 
+    @Nullable
+    public static String whichDigestType() {
+        Enumeration<String> wantDigest = ServletRequest.getRequest().getHeaders("Want-Digest");
+        Enumeration<String> wantReprDigest = ServletRequest.getRequest().getHeaders("Want-Repr-Digest");
+        if (wantReprDigest != null) return "Want-Repr-Digest";
+        if (wantDigest != null) return "Want-Digest";
+        return null;
+    }
+
     private void rfc3230(Resource resource, Response response) {
+        String digestType = whichDigestType();
         if (resource instanceof DcacheFileResource) {
-            ((DcacheFileResource) resource).getRfc3230Digest()
-                  .ifPresent(d -> response.setNonStandardHeader("Digest", d));
+            ((DcacheFileResource) resource).getRfcDigest(digestType)
+                  .ifPresent(d -> {
+                      response.setNonStandardHeader(digestType.replace("Want-", ""), d);
+                  });
         }
     }
 }

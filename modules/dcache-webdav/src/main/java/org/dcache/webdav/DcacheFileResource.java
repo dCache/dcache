@@ -37,6 +37,7 @@ import javax.xml.namespace.QName;
 import org.dcache.util.Checksums;
 import org.dcache.vehicles.FileAttributes;
 import org.eclipse.jetty.io.EofException;
+import org.parboiled.support.Checks;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -195,9 +196,10 @@ public class DcacheFileResource
         }
     }
 
-    public Optional<String> getRfc3230Digest() {
-        return DcacheResourceFactory.wantDigest()
-              .flatMap(h -> Checksums.digestHeader(h, _attributes));
+    public Optional<String> getRfcDigest(String digestType) {
+        Checksums.RfcType rfc = Checksums.RfcType.of(digestType);
+        return DcacheResourceFactory.wantDigest(digestType)
+              .flatMap(h -> Checksums.digestHeader(h, _attributes, rfc));
     }
 
     @Override

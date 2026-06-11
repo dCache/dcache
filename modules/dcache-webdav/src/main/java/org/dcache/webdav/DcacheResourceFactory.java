@@ -1615,8 +1615,8 @@ public class DcacheResourceFactory
      *
      * @return an Optional containing the Want-Digest header value, if present.
      */
-    public static Optional<String> wantDigest() {
-        Enumeration<String> e = ServletRequest.getRequest().getHeaders("Want-Digest");
+    public static Optional<String> wantDigest(String digestType) {
+        Enumeration<String> e = ServletRequest.getRequest().getHeaders(digestType);
         if (e == null || !e.hasMoreElements()) {
             return Optional.empty();
         }
@@ -1638,7 +1638,7 @@ public class DcacheResourceFactory
             case PUT:
             case HEAD:
             case GET:
-                return wantDigest()
+                return wantDigest(Rfc3230ResponseHandler.whichDigestType())
                       .flatMap(Checksums::parseWantDigest)
                       .isPresent();
             default:
@@ -1949,7 +1949,7 @@ public class DcacheResourceFactory
             super(pnfs, subject, restriction, path);
 
 
-            wantDigest()
+            wantDigest(Rfc3230ResponseHandler.whichDigestType())
                   .flatMap(Checksums::parseWantDigest)
                   .ifPresent(this::setWantedChecksum);
 

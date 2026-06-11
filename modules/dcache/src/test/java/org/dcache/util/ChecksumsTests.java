@@ -493,14 +493,14 @@ public class ChecksumsTests {
     @Test
     public void shouldGenerateNoHeaderIfNoWantDigest() {
         Optional<String> value = Checksums.digestHeader((String) null,
-              FileAttributes.ofChecksum(ADLER32_HELLO_WORLD));
+              FileAttributes.ofChecksum(ADLER32_HELLO_WORLD), Checksums.RfcType.RFC3230);
         assertThat(value.isPresent(), is(equalTo(false)));
     }
 
     @Test
     public void shouldGenerateNHeaderIfWantDigestOfAvailableChecksum() {
         Optional<String> value = Checksums.digestHeader("adler32",
-              FileAttributes.ofChecksum(ADLER32_HELLO_WORLD));
+              FileAttributes.ofChecksum(ADLER32_HELLO_WORLD), Checksums.RfcType.RFC3230);
         assertThat(value.isPresent(), is(equalTo(true)));
         assertThat(value.get(), startsWith("adler32="));
     }
@@ -508,13 +508,13 @@ public class ChecksumsTests {
     @Test
     public void shouldGenerateNoHeaderIfWantDigestOfUnavailableChecksum() {
         Optional<String> value = Checksums.digestHeader("md5",
-              FileAttributes.ofChecksum(ADLER32_HELLO_WORLD));
+              FileAttributes.ofChecksum(ADLER32_HELLO_WORLD), Checksums.RfcType.RFC3230);
         assertThat(value.isPresent(), is(equalTo(false)));
     }
 
     @Test
     public void shouldGenerateNoHeaderIfWantDigestButNoChecksumAvailable() {
-        Optional<String> value = Checksums.digestHeader("adler32", new FileAttributes());
+        Optional<String> value = Checksums.digestHeader("adler32", new FileAttributes(), Checksums.RfcType.RFC9530);
         assertThat(value.isPresent(), is(equalTo(false)));
     }
 
