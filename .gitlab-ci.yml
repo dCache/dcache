@@ -796,7 +796,7 @@ generate_jacoco_report:
 #
 # After packages are uploaded, clone release-notes, run prepare-template,
 # use the existing AI draft as a starting point, push a branch and open
-# a GitHub PR for human review.
+# a GitHub PR for review.
 #
 Draft Release Notes PR:
   stage: release
