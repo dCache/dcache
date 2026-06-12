@@ -819,7 +819,7 @@ Draft Release Notes PR:
 
       # Clone repos
       git clone "https://${GITHUB_RELEASE_USER}:${GITHUB_RELEASE_TOKEN}@github.com/dCache/release-notes.git" /tmp/release-notes
-      git clone "https://github.com/dCache/release-utils.git" /tmp/release-utils-ci
+      git clone "https://${GITHUB_RELEASE_USER}:${GITHUB_RELEASE_TOKEN}@github.com/dCache/release-utils.git" /tmp/release-utils-ci
 
       # Create draft branch in release-notes
       cd /tmp/release-notes
@@ -893,7 +893,7 @@ Update Website:
       # Clone repos
       # Structure: /tmp/workdir/release-utils-ci/  and  /tmp/workdir/www-dcache-org/
       mkdir -p /tmp/workdir
-      git clone "https://github.com/dCache/release-utils.git" /tmp/workdir/release-utils-ci
+      git clone "https://${GITHUB_RELEASE_USER}:${GITHUB_RELEASE_TOKEN}@github.com/dCache/release-utils.git" /tmp/workdir/release-utils-ci
       git clone "https://${GITHUB_RELEASE_USER}:${GITHUB_RELEASE_TOKEN}@github.com/dCache/www-dcache-org.git" /tmp/workdir/www-dcache-org
 
       # update-releases needs releases.xml in its working directory
