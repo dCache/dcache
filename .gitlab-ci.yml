@@ -818,7 +818,7 @@ Draft Release Notes PR:
       echo "Tag: $CI_COMMIT_TAG  Series: $SERIES  Branch: $BRANCH"
 
       # Clone repos
-      git clone "https://dcache:${GITHUB_RELEASE_TOKEN}@github.com/dCache/release-notes.git" /tmp/release-notes
+      git clone "https://${GITHUB_RELEASE_USER}:${GITHUB_RELEASE_TOKEN}@github.com/dCache/release-notes.git" /tmp/release-notes
       git clone "https://github.com/dCache/release-utils.git" /tmp/release-utils-ci
 
       # Create draft branch in release-notes
@@ -848,7 +848,7 @@ Draft Release Notes PR:
       cd /tmp/release-notes
       git add template
       git commit -m "draft: release notes template for ${CI_COMMIT_TAG}"
-      git push "https://dcache:${GITHUB_RELEASE_TOKEN}@github.com/dCache/release-notes.git" "$BRANCH"
+      git push "https://${GITHUB_RELEASE_USER}:${GITHUB_RELEASE_TOKEN}@github.com/dCache/release-notes.git" "$BRANCH"
 
       # Open GitHub PR
       PR_RESPONSE=$(curl -s -X POST \
@@ -894,7 +894,7 @@ Update Website:
       # Structure: /tmp/workdir/release-utils-ci/  and  /tmp/workdir/www-dcache-org/
       mkdir -p /tmp/workdir
       git clone "https://github.com/dCache/release-utils.git" /tmp/workdir/release-utils-ci
-      git clone "https://dcache:${GITHUB_RELEASE_TOKEN}@github.com/dCache/www-dcache-org.git" /tmp/workdir/www-dcache-org
+      git clone "https://${GITHUB_RELEASE_USER}:${GITHUB_RELEASE_TOKEN}@github.com/dCache/www-dcache-org.git" /tmp/workdir/www-dcache-org
 
       # update-releases needs releases.xml in its working directory
       # and www-dcache-org at ../www-dcache-org relative to where it runs
@@ -911,7 +911,7 @@ Update Website:
         echo "No website changes to commit"
       else
         git commit -m "release: add dCache ${CI_COMMIT_TAG} to downloads page"
-        git push "https://dcache:${GITHUB_RELEASE_TOKEN}@github.com/dCache/www-dcache-org.git" master
+        git push "https://${GITHUB_RELEASE_USER}:${GITHUB_RELEASE_TOKEN}@github.com/dCache/www-dcache-org.git" master
         echo "Website updated - Hugo deploy will trigger automatically"
       fi
 
