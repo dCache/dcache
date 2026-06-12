@@ -153,7 +153,6 @@ import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryListPrinter;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
-import org.dcache.vehicles.PnfsSetFileAttributes;
 import org.dcache.webdav.owncloud.OwncloudClients;
 import org.dcache.webdav.transfer.RemoteTransferHandler;
 import org.eclipse.jetty.io.EofException;
@@ -1638,7 +1637,7 @@ public class DcacheResourceFactory
             case PUT:
             case HEAD:
             case GET:
-                return wantDigest(Rfc3230ResponseHandler.whichDigestType())
+                return wantDigest(RfcResponseHandler.whichDigestType())
                       .flatMap(Checksums::parseWantDigest)
                       .isPresent();
             default:
@@ -1949,7 +1948,7 @@ public class DcacheResourceFactory
             super(pnfs, subject, restriction, path);
 
 
-            wantDigest(Rfc3230ResponseHandler.whichDigestType())
+            wantDigest(RfcResponseHandler.whichDigestType())
                   .flatMap(Checksums::parseWantDigest)
                   .ifPresent(this::setWantedChecksum);
 

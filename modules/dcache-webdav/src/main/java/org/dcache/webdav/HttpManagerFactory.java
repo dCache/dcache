@@ -42,7 +42,7 @@ public class HttpManagerFactory extends HttpManagerBuilder implements FactoryBea
         WorkaroundsResponseHandler workarounds = WorkaroundsResponseHandler.wrap(acceptAware);
         workarounds.setPathMapper(_pathMapper);
 
-        Rfc3230ResponseHandler rfc3230 = Rfc3230ResponseHandler.wrap(workarounds);
+        RfcResponseHandler rfc3230 = RfcResponseHandler.wrap(workarounds);
         AbstractWrappingResponseHandler handler = new FederationResponseHandler(rfc3230);
         setWebdavResponseHandler(handler);
 

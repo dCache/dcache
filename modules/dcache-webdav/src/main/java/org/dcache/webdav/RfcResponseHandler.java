@@ -34,16 +34,15 @@ import jline.internal.Nullable;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * This class is a WebDavResponseHandler that wraps some other WebDavResponseHandler and adds
  * RFC-3230 response headers.
  */
-public class Rfc3230ResponseHandler extends AbstractWrappingResponseHandler {
+public class RfcResponseHandler extends AbstractWrappingResponseHandler {
 
-    public static Rfc3230ResponseHandler wrap(WebDavResponseHandler inner) {
-        Rfc3230ResponseHandler handler = new Rfc3230ResponseHandler();
+    public static RfcResponseHandler wrap(WebDavResponseHandler inner) {
+        RfcResponseHandler handler = new RfcResponseHandler();
         handler.setWrapped(inner);
         return handler;
     }
