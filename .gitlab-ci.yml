@@ -811,6 +811,8 @@ Draft Release Notes PR:
     - microdnf install -y git-core curl jq
     - git config --global user.email "ci@dcache.org"
     - git config --global user.name "dCache CI"
+    - echo "USER var length: ${#GITHUB_RELEASE_USER}"
+    - echo "TOKEN var length: ${#GITHUB_RELEASE_TOKEN}"
     - |
       # Derive series (e.g. 10.2) from tag (e.g. 10.2.5)
       SERIES=$(echo "$CI_COMMIT_TAG" | sed 's/\.[0-9]*$//')
