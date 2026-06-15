@@ -62,7 +62,7 @@ import javax.ws.rs.ext.Provider;
             @Tag(name = "billing", description = "The log of (significant) client activity"),
             @Tag(name = "bulk-requests", description = "Processing of multiple file/path requests in bulk"),
             @Tag(name = "cells", description = "The running components within dCache"),
-            @Tag(name = "domains", description = "The running dCache domains and their hostnames"),
+            @Tag(name = "domains", description = "The running dCache domains"),
             @Tag(name = "doors", description = "Information about doors"),
             @Tag(name = "events", description = "Support for SSE clients receiving dCache events"),
             @Tag(name = "identity", description = "Information about users"),
