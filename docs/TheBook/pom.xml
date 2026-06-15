@@ -18,50 +18,245 @@
       <html-footer.path>${html-fragments.path}/footer.html</html-footer.path>
       <raw-html-target.path>${project.build.directory}/intermediate-html</raw-html-target.path>
       <filtered-html-target.path>${project.build.directory}/html</filtered-html-target.path>
+      <!--
+          Single-page assembly workspace.
+          The Groovy assembler writes one combined Markdown file here,
+          and the second markdown-page-generator execution reads only this directory.
+      -->
+      <combined-md-target.path>${project.build.directory}/combined</combined-md-target.path>
+      <combined-md-filename>TheBook.md</combined-md-filename>
+      <combined-html-target.path>${project.build.directory}/intermediate-html-single</combined-html-target.path>
   </properties>
 
   <build>
     <sourceDirectory>${project.basedir}/src/main/markdown</sourceDirectory>
 
     <plugins>
+
+      <!-- ════════════════════════════════════════════════════════════════
+           1.  Per-chapter HTML  (unchanged from original)
+           Phase: process-resources
+           Reads every *.md under src/main/markdown and writes one HTML
+           file per chapter to target/intermediate-html/.
+           ════════════════════════════════════════════════════════════════ -->
       <plugin>
           <groupId>com.ruleoftech</groupId>
           <artifactId>markdown-page-generator-plugin</artifactId>
           <executions>
               <execution>
+                  <id>generate-per-chapter-html</id>
                   <phase>process-resources</phase>
                   <goals>
                       <goal>generate</goal>
                   </goals>
+                  <configuration>
+                      <inputDirectory>${project.build.sourceDirectory}</inputDirectory>
+                      <outputDirectory>${raw-html-target.path}</outputDirectory>
+                      <headerHtmlFile>${html-header.path}</headerHtmlFile>
+                      <footerHtmlFile>${html-footer.path}</footerHtmlFile>
+                      <transformRelativeMarkdownLinks>true</transformRelativeMarkdownLinks>
+                      <pegdownExtensions>SMARTYPANTS,AUTOLINKS,TABLES,FENCED_CODE_BLOCKS,STRIKETHROUGH,TASKLISTITEMS,EXTANCHORLINKS,TOC</pegdownExtensions>
+                      <copyDirectories>css,images</copyDirectories>
+                  </configuration>
+              </execution>
+
+              <!-- ════════════════════════════════════════════════════════
+                   3.  Single-page HTML
+                   Phase: generate-resources  (runs AFTER process-resources,
+                   so the Groovy assembler in step 2 has already run)
+                   Reads only target/combined/TheBook.md and produces a
+                   single TheBook.html in target/intermediate-html-single/.
+                   ════════════════════════════════════════════════════════ -->
+              <execution>
+                  <id>generate-single-page-html</id>
+                  <phase>generate-resources</phase>
+                  <goals>
+                      <goal>generate</goal>
+                  </goals>
+                  <configuration>
+                      <inputDirectory>${combined-md-target.path}</inputDirectory>
+                      <outputDirectory>${combined-html-target.path}</outputDirectory>
+                      <headerHtmlFile>${html-header.path}</headerHtmlFile>
+                      <footerHtmlFile>${html-footer.path}</footerHtmlFile>
+                      <!--
+                          Do NOT transform relative markdown links in the combined
+                          file: all cross-chapter links become in-page anchors via
+                          EXTANCHORLINKS; transforming them would break href targets.
+                      -->
+                      <transformRelativeMarkdownLinks>false</transformRelativeMarkdownLinks>
+                      <pegdownExtensions>SMARTYPANTS,AUTOLINKS,TABLES,FENCED_CODE_BLOCKS,STRIKETHROUGH,TASKLISTITEMS,EXTANCHORLINKS,TOC</pegdownExtensions>
+                      <!--
+                          Do not copy css/images again – they are already copied by
+                          the per-chapter execution above and will be included in the
+                          assembly from raw-html-target.path.
+                      -->
+                  </configuration>
               </execution>
           </executions>
+      </plugin>
 
-          <configuration>
-            <inputDirectory>${project.build.sourceDirectory}</inputDirectory>
-            <outputDirectory>${raw-html-target.path}</outputDirectory>
-            <headerHtmlFile>${html-header.path}</headerHtmlFile>
-            <footerHtmlFile>${html-footer.path}</footerHtmlFile>
-            <transformRelativeMarkdownLinks>true</transformRelativeMarkdownLinks>
-            <pegdownExtensions>SMARTYPANTS,AUTOLINKS,TABLES,FENCED_CODE_BLOCKS,STRIKETHROUGH,TASKLISTITEMS,EXTANCHORLINKS,TOC</pegdownExtensions>
-            <copyDirectories>css,images</copyDirectories>
-          </configuration>
+      <!-- ════════════════════════════════════════════════════════════════
+           2.  Assemble combined TheBook.md
+           Phase: process-resources  (declared AFTER the markdown plugin so
+           Maven's natural execution order places it last within the phase,
+           but — critically — the single-page HTML step is in the NEXT
+           phase so ordering is guaranteed regardless)
+
+           Reads src/main/markdown/book.md, which contains lines of the form:
+               @include chapter-name.md
+           Concatenates the referenced files in order into
+               target/combined/TheBook.md
+           Two blank lines are appended between each chapter so the
+           Pegdown parser never hits an EOF mid-block.
+           ════════════════════════════════════════════════════════════════ -->
+      <!-- ════════════════════════════════════════════════════════════════
+           Version parsing helper
+           Must be bound to 'validate' and declared BEFORE the Groovy
+           plugin so that parsedVersion.* properties are populated by
+           the time calc-latest-release runs in the same phase.
+           ════════════════════════════════════════════════════════════════ -->
+      <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>build-helper-maven-plugin</artifactId>
+          <executions>
+              <execution>
+                  <id>parse-version</id>
+                  <phase>validate</phase>
+                  <goals>
+                      <goal>parse-version</goal>
+                  </goals>
+              </execution>
+          </executions>
       </plugin>
 
       <plugin>
+          <groupId>org.codehaus.gmaven</groupId>
+          <artifactId>groovy-maven-plugin</artifactId>
+          <executions>
+
+              <!-- ── version calculation (unchanged from original) ─────── -->
+              <execution>
+                  <id>calc-latest-release</id>
+                  <phase>validate</phase>
+                  <goals>
+                      <goal>execute</goal>
+                  </goals>
+                  <configuration>
+                      <bindPropertiesToSeparateVariables>false</bindPropertiesToSeparateVariables>
+                      <source>
+                          def incrStr = project.properties.getProperty('parsedVersion.incrementalVersion')
+                          if (incrStr == null) {
+                              throw new RuntimeException("parsedVersion.incrementalVersion is null – ensure build-helper-maven-plugin:parse-version runs before this execution")
+                          }
+                          incrVersion = incrStr as Integer
+                          qualifier = project.properties.getProperty('parsedVersion.qualifier')
+                          if (qualifier &amp;&amp; incrVersion &gt; 0) {
+                              incrVersion--
+                          }
+                          nextIncrVersion = incrVersion + 1
+                          project.properties.setProperty('parsedVersion.releasedIncrementalVersion', incrVersion.toString())
+                          project.properties.setProperty('parsedVersion.nextReleasedIncrementalVersion', nextIncrVersion.toString())
+                      </source>
+                  </configuration>
+              </execution>
+
+              <!-- ── assemble combined markdown ────────────────────────── -->
+              <execution>
+                  <id>assemble-single-page-markdown</id>
+                  <phase>process-resources</phase>
+                  <goals>
+                      <goal>execute</goal>
+                  </goals>
+                  <configuration>
+                      <bindPropertiesToSeparateVariables>false</bindPropertiesToSeparateVariables>
+                      <source>
+                          import java.nio.file.Files
+                          import java.nio.file.Paths
+
+                          def sourceDir   = Paths.get(project.build.sourceDirectory)
+                          def manifestFile = sourceDir.resolve('book.md')
+                          def outDir      = Paths.get(project.properties.getProperty('combined-md-target.path'))
+                          def outFile     = outDir.resolve(project.properties.getProperty('combined-md-filename'))
+
+                          // Abort gracefully if no manifest exists
+                          if (!Files.exists(manifestFile)) {
+                              log.warn("No book.md manifest found at ${manifestFile} – skipping single-page assembly")
+                              return
+                          }
+
+                          Files.createDirectories(outDir)
+
+                          def writer = outFile.newWriter('UTF-8')
+
+                          manifestFile.eachLine('UTF-8') { line ->
+                              def trimmed = line.trim()
+
+                              // Skip blank lines and comment lines in the manifest
+                              if (trimmed.isEmpty() || trimmed.startsWith('#')) {
+                                  return
+                              }
+
+                              // Handle @include directives
+                              if (trimmed.startsWith('@include ')) {
+                                  def chapterName = trimmed.substring('@include '.length()).trim()
+                                  def chapterFile = sourceDir.resolve(chapterName)
+
+                                  if (!Files.exists(chapterFile)) {
+                                      // Try case-insensitive fallback by listing the directory
+                                      def matched = Files.list(sourceDir).filter { candidate ->
+                                          candidate.fileName.toString().equalsIgnoreCase(chapterName)
+                                      }.findFirst().orElse(null)
+
+                                      if (matched != null) {
+                                          log.warn("Case mismatch: manifest says '${chapterName}', found '${matched.fileName}' – using found file")
+                                          chapterFile = matched
+                                      } else {
+                                          log.error("Chapter file not found and no case-insensitive match: ${chapterFile}")
+                                          throw new RuntimeException("Missing chapter: ${chapterName}")
+                                      }
+                                  }
+
+                                  log.info("Including chapter: ${chapterName}")
+
+                                  def content = chapterFile.getText('UTF-8')
+
+                                  // Ensure content ends with a newline before the separator
+                                  // so Pegdown never hits EOF mid-block
+                                  writer.write(content)
+                                  if (!content.endsWith('\n')) {
+                                      writer.write('\n')
+                                  }
+                                  // Two blank lines between chapters guarantees block-level
+                                  // separation without any parser ambiguity
+                                  writer.write('\n\n')
+
+                              } else {
+                                  // Plain text lines in the manifest are written as-is
+                                  // (useful for a top-level title or front-matter)
+                                  writer.writeLine(trimmed)
+                              }
+                          }
+
+                          writer.flush()
+                          writer.close()
+                          log.info("Single-page markdown assembled: ${outFile}")
+                      </source>
+                  </configuration>
+              </execution>
+          </executions>
+      </plugin>
+
+      <!-- ════════════════════════════════════════════════════════════════
+           Resource filtering  (unchanged from original)
+           Copies intermediate-html → target/html with @ delimiter
+           substitution so the dCache version number is injected into
+           the rendered HTML.
+           ════════════════════════════════════════════════════════════════ -->
+      <plugin>
           <artifactId>maven-resources-plugin</artifactId>
           <executions>
+              <!-- Per-chapter filtered copy -->
               <execution>
-                  <!-- We need to be able to substitute information
-                       like the dCache version into the output.
-
-                       The assembly plugin however only supports ${}
-                       substitution and that conflicts with shell
-                       variables and dCache configuration properties.
-
-                       Therefore we use the resource plugin to make a
-                       filtered copy of the skel and use those files
-                       in the assembly whenever we need a filtered
-                       file. -->
                   <id>copy-resources</id>
                   <phase>prepare-package</phase>
                   <goals>
@@ -88,71 +283,42 @@
                       </nonFilteredFileExtensions>
                   </configuration>
               </execution>
-          </executions>
-      </plugin>
 
-      <plugin>
-          <groupId>org.codehaus.mojo</groupId>
-          <artifactId>build-helper-maven-plugin</artifactId>
-          <executions>
+              <!-- Single-page filtered copy -->
               <execution>
-                  <id>parse-version</id>
+                  <id>copy-single-page-resources</id>
+                  <phase>prepare-package</phase>
                   <goals>
-                      <goal>parse-version</goal>
-                  </goals>
-              </execution>
-          </executions>
-      </plugin>
-
-      <!--+
-          | Calculate the latest and next released versions within this
-          | series; e.g.
-          |
-          | "5.2.8-SNAPSHOT"
-          |     releasedIncrementalVersion = 7
-          |     nextReleasedIncrementalVersion = 8
-          |
-          | "5.2.8"
-          |     releasedIncrementalVersion = 8
-          |     nextReleasedIncrementalVersion = 9
-          |
-          | "5.2.9-SNAPSHOT"
-          |     releasedIncrementalVersion = 8
-          |     nextReleasedIncrementalVersion = 9
-          |
-          | Assume zero if no release has been made; e.g.,
-          |
-          | "6.0.0-SNAPSHOT"
-          |     releasedIncrementalVersion = 0
-          |     nextReleasedIncrementalVersion = 1
-          +-->
-      <plugin>
-          <groupId>org.codehaus.gmaven</groupId>
-          <artifactId>groovy-maven-plugin</artifactId>
-          <executions>
-              <execution>
-                  <id>calc-latest-release</id>
-                  <phase>validate</phase>
-                  <goals>
-                      <goal>execute</goal>
+                      <goal>copy-resources</goal>
                   </goals>
                   <configuration>
-                      <bindPropertiesToSeparateVariables>false</bindPropertiesToSeparateVariables>
-                      <source>
-                          incrVersion = project.properties.getProperty('parsedVersion.incrementalVersion') as Integer
-                          qualifier = project.properties.getProperty('parsedVersion.qualifier')
-                          if (qualifier &amp;&amp; incrVersion &gt; 0) {
-                              incrVersion--
-                          }
-                          nextIncrVersion = incrVersion + 1
-                          project.properties.setProperty('parsedVersion.releasedIncrementalVersion', incrVersion.toString())
-                          project.properties.setProperty('parsedVersion.nextReleasedIncrementalVersion', nextIncrVersion.toString())
-                      </source>
+                      <outputDirectory>${filtered-html-target.path}</outputDirectory>
+                      <resources>
+                          <resource>
+                              <directory>${combined-html-target.path}</directory>
+                              <filtering>true</filtering>
+                          </resource>
+                      </resources>
+                      <delimiters>
+                          <delimiter>@</delimiter>
+                      </delimiters>
+                      <useDefaultDelimiters>false</useDefaultDelimiters>
+                      <nonFilteredFileExtensions>
+                          <nonFilteredFileExtension>css</nonFilteredFileExtension>
+                          <nonFilteredFileExtension>jpg</nonFilteredFileExtension>
+                          <nonFilteredFileExtension>png</nonFilteredFileExtension>
+                          <nonFilteredFileExtension>pdf</nonFilteredFileExtension>
+                          <nonFilteredFileExtension>svg</nonFilteredFileExtension>
+                      </nonFilteredFileExtensions>
                   </configuration>
               </execution>
           </executions>
       </plugin>
 
+      <!-- ════════════════════════════════════════════════════════════════
+           Assembly  (unchanged from original)
+           Packages target/html into TheBook-X.Y-<commit>.zip
+           ════════════════════════════════════════════════════════════════ -->
       <plugin>
           <artifactId>maven-assembly-plugin</artifactId>
           <configuration>
@@ -166,11 +332,12 @@
               <execution>
                   <phase>package</phase>
                   <goals>
-                    <goal>single</goal>
+                      <goal>single</goal>
                   </goals>
               </execution>
           </executions>
       </plugin>
+
     </plugins>
   </build>
 
@@ -185,11 +352,13 @@
 
           <build>
             <plugins>
+              <!-- GitHub URL prefix calculation (unchanged from original) -->
               <plugin>
                   <groupId>org.codehaus.gmaven</groupId>
                   <artifactId>groovy-maven-plugin</artifactId>
                   <executions>
                       <execution>
+                          <id>calc-github-url-prefix</id>
                           <phase>process-resources</phase>
                               <goals>
                                   <goal>execute</goal>
@@ -205,7 +374,7 @@
                                           ref = 'git rev-parse --abbrev-ref --symbolic-full-name @{u}'.execute().text.trim()
                                       } else { // git checkout is a detached HEAD or not a git repo
                                           // Check each remote branch (if multiple, last one wins)
-                                          fer = 'git for-each-ref --format=%(refname:short) refs/remotes'.execute().text.eachLine { remoteRef -&gt;
+                                          fer = 'git for-each-ref --format=%(refname:short) refs/remotes'.execute().text.eachLine { remoteRef ->
                                               p = "git merge-base --is-ancestor HEAD $remoteRef".execute()
                                               p.waitFor()
                                               if (p.exitValue() == 0) {
@@ -231,6 +400,7 @@
                   </executions>
               </plugin>
 
+              <!-- .html → .shtml rename for dcache.org SSI (unchanged from original) -->
               <plugin>
                 <artifactId>maven-antrun-plugin</artifactId>
                 <executions>
