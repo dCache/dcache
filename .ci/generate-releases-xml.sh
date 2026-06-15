@@ -36,9 +36,10 @@ echo "| $DEB_NAME  | $DATE      | $DEB_SUM |"
 echo "| $TAR_NAME  | $DATE      | $TAR_SUM |"
 
 echo ; echo; echo
+CURRENT_TAG=$(git -C "$REPO_ROOT" describe --tags --abbrev=0 --always)
+PREV_TAG=$(git -C "$REPO_ROOT" describe --tags --abbrev=0 --always HEAD^)
 git -C "$REPO_ROOT" log \
-    "$(git -C "$REPO_ROOT" describe --tags --abbrev=0)"..."$(git -C "$REPO_ROOT" describe --tags --abbrev=0 HEAD^)" \
+    "${PREV_TAG}...${CURRENT_TAG}" \
     --no-merges \
     --format='[%h](https://github.com/dcache/dcache/commit/%H)%n:    %s%n'
-
 
