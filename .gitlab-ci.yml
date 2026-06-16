@@ -523,6 +523,7 @@ Deploy PostgreSQL:
   stage: test_infra
   extends: .kubernetes_image
   script:
+    - host gitlab.desy.de
     - kubectl -n ${K8S_NAMESPACE} apply -f .ci/k8s/postgresql-deployment.yaml
     - kubectl -n ${K8S_NAMESPACE} wait --for=condition=Ready pod/postgres-0
 
