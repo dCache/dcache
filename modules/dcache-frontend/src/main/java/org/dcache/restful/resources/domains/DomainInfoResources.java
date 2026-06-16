@@ -59,7 +59,6 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.domains;
 
-import diskCacheV111.util.CacheException;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -68,7 +67,7 @@ import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.stream.Collectors;
+import java.util.Set;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
@@ -98,11 +97,9 @@ public final class DomainInfoResources {
           @ApiResponse(code = 403, message = "Domain info service only accessible to admin users."),
     })
     @Produces(MediaType.APPLICATION_JSON)
-    public DomainData[] getDomains() throws CacheException {
+    public DomainData[] getDomains() {
         return Arrays.stream(service.getAddresses())
               .map(service::getDomainData)
-              .collect(Collectors.toList())
-              .stream()
               .sorted(Comparator.comparing(DomainData::getDomainName))
               .toArray(DomainData[]::new);
     }
@@ -117,11 +114,11 @@ public final class DomainInfoResources {
     @Produces(MediaType.APPLICATION_JSON)
     public DomainData getDomain(
           @ApiParam(value = "The domain name to query", example = "dCacheDomain")
-          @PathParam("domain") String domain) throws CacheException {
-        DomainData data = service.getDomainData(domain);
-        if (data == null) {
+          @PathParam("domain") String domain) {
+        Set<String> known = Set.of(service.getAddresses());
+        if (!known.contains(domain)) {
             throw new NotFoundException("Domain not found: " + domain);
         }
-        return data;
+        return service.getDomainData(domain);
     }
 }

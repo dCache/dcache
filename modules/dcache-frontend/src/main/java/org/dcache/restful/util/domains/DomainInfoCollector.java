@@ -112,15 +112,11 @@ public final class DomainInfoCollector extends CellMessagingCollector<Map<String
          * toAddressString() for new CellPath("System", "dCacheDomain") returns "System@dCacheDomain".
          */
         for (Map.Entry<CellPath, String> entry : spreader.getReplies().entrySet()) {
-            String addressString = entry.getKey().toAddressString();
-            int atIndex = addressString.indexOf('@');
-            if (atIndex >= 0) {
-                String domainName = addressString.substring(atIndex + 1);
-                DomainData data = new DomainData();
-                data.setDomainName(domainName);
-                data.setHostname(entry.getValue());
-                result.put(domainName, data);
-            }
+            String domainName = entry.getKey().getCellDomainName();
+            DomainData data = new DomainData();
+            data.setDomainName(domainName);
+            data.setHostname(entry.getValue());
+            result.put(domainName, data);
         }
 
         /*
