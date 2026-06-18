@@ -305,6 +305,18 @@
     <property name="processor" ref="cell-info-processor"/>
   </bean>
 
+  <bean id="domain-info-collector" class="org.dcache.restful.util.domains.DomainInfoCollector">
+    <description>Collects domain names and hostnames from the Routing Manager.</description>
+  </bean>
+
+  <bean id="domain-info-service" class="org.dcache.restful.services.cells.DomainInfoServiceImpl">
+    <description>Caches and serves domain name and hostname information.</description>
+    <property name="timeout" value="${frontend.service.domain-info.timeout}"/>
+    <property name="timeoutUnit" value="${frontend.service.domain-info.timeout.unit}"/>
+    <property name="collector" ref="domain-info-collector"/>
+    <property name="executorService" ref="scheduling-service"/>
+  </bean>
+
   <bean id="restores-collector" class="org.dcache.restful.util.restores.RestoreCollector">
     <description>Collects staging request info from from pool manager.</description>
     <property name="pnfsStub" ref="pnfs-stub"/>
@@ -632,6 +644,7 @@
     </bean>
     <bean class="org.dcache.restful.resources.bulk.BulkResources" scope="request"/>
     <bean class="org.dcache.restful.resources.cells.CellInfoResources" scope="request"/>
+    <bean class="org.dcache.restful.resources.domains.DomainInfoResources" scope="request"/>
     <bean class="org.dcache.restful.resources.doors.DoorsResources" scope="request"/>
     <bean class="org.dcache.restful.resources.identity.UserResource" scope="request"/>
     <bean class="org.dcache.restful.resources.namespace.FileResources" scope="request">
