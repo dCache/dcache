@@ -523,7 +523,7 @@ Deploy PostgreSQL:
   stage: test_infra
   extends: .kubernetes_image
   script:
-    - host gitlab.desy.de
+    #- ping gitlab.desy.de
     - kubectl -n ${K8S_NAMESPACE} apply -f .ci/k8s/postgresql-deployment.yaml
     - kubectl -n ${K8S_NAMESPACE} wait --for=condition=Ready pod/postgres-0
 
@@ -599,6 +599,9 @@ Helm-Deploy Current dCache build:
       fi
     - helm repo add dcache ${DCACHE_HELM_REPO}
     - helm repo update
+    - echo "=== CHART INFO ==="                                                                                      
+    - helm show chart dcache/dcache                                                                                  
+    - echo "=== INSTALLING ==="                                                                                                      
     - >
       helm -n ${K8S_NAMESPACE} upgrade --install store dcache/dcache
       --wait
@@ -610,6 +613,10 @@ Helm-Deploy Current dCache build:
       --set dcache.qos.enabled=true
       --set services.srm.enabled=false
       --values .ci/custom-helm-config.yaml
+    - echo "=== VALUES USED ==="                                                                                     
+    - helm -n ${K8S_NAMESPACE} get values store                                                                      
+    - echo "=== ACTUAL RESOURCES ==="                                                                                
+    - kubectl -n ${K8S_NAMESPACE} get pods -o yaml | grep -A10 "resources:"  
 
 Helm-Deploy Latest dCache Golden Release:
   stage: test_deploy
