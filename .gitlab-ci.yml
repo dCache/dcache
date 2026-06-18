@@ -599,10 +599,14 @@ Helm-Deploy Current dCache build:
       fi
     - helm repo add dcache ${DCACHE_HELM_REPO}
     - helm repo update
-    - echo "=== CHART INFO ==="                                                                                      
-    - helm show chart dcache/dcache 
-    - kubectl get pods -w                                                                                 
-    - echo "=== INSTALLING ==="                                                                                                      
+    - echo "=== CHART INFO ==="
+    - helm show chart dcache/dcache
+    - echo "=== NAMESPACE MEMORY BEFORE DEPLOY ==="
+    - kubectl -n ${K8S_NAMESPACE} get pods -o wide
+    - kubectl top pods -n ${K8S_NAMESPACE} --no-headers 2>/dev/null || echo "(metrics-server not available)"
+    - echo "=== ALL NAMESPACES MEMORY OVERVIEW ==="
+    - kubectl top pods --all-namespaces --no-headers 2>/dev/null | sort -k4 -rh | head -20 || echo "(metrics-server not available)"
+    - echo "=== INSTALLING ==="
     - >
       helm -n ${K8S_NAMESPACE} upgrade --install store dcache/dcache
       --wait
@@ -614,10 +618,20 @@ Helm-Deploy Current dCache build:
       --set dcache.qos.enabled=true
       --set services.srm.enabled=false
       --values .ci/custom-helm-config.yaml
-    - echo "=== VALUES USED ==="                                                                                     
-    - helm -n ${K8S_NAMESPACE} get values store                                                                      
-    - echo "=== ACTUAL RESOURCES ==="                                                                                
-    - kubectl -n ${K8S_NAMESPACE} get pods -o yaml | grep -A10 "resources:"  
+    - echo "=== VALUES USED ==="
+    - helm -n ${K8S_NAMESPACE} get values store
+    - echo "=== POD STATUS ==="
+    - kubectl -n ${K8S_NAMESPACE} get pods -o wide
+    - echo "=== RESOURCE REQUESTS/LIMITS ==="
+    - >
+      kubectl -n ${K8S_NAMESPACE} get pods
+      -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{range .spec.containers[*]}
+        {.name}: req={.resources.requests.memory}/{.resources.requests.cpu}
+        lim={.resources.limits.memory}/{.resources.limits.cpu}{"\n"}{end}{"\n"}{end}'
+    - echo "=== ACTUAL MEMORY USAGE ==="
+    - kubectl top pods -n ${K8S_NAMESPACE} --no-headers 2>/dev/null | sort -k3 -rh || echo "(metrics-server not available)"
+    - echo "=== NODE CAPACITY ==="
+    - kubectl describe nodes | grep -A5 "Allocated resources"
 
 Helm-Deploy Latest dCache Golden Release:
   stage: test_deploy
