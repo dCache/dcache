@@ -600,7 +600,8 @@ Helm-Deploy Current dCache build:
     - helm repo add dcache ${DCACHE_HELM_REPO}
     - helm repo update
     - echo "=== CHART INFO ==="                                                                                      
-    - helm show chart dcache/dcache                                                                                  
+    - helm show chart dcache/dcache 
+    - kubectl get pods -w                                                                                 
     - echo "=== INSTALLING ==="                                                                                                      
     - >
       helm -n ${K8S_NAMESPACE} upgrade --install store dcache/dcache
