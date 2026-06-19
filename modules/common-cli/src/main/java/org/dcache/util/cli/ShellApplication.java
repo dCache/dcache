@@ -60,8 +60,9 @@ public abstract class ShellApplication implements Closeable {
 
     /**
      * Start processing the command(s), based on the supplied arguments.
+     * @return the exit code to return to the caller.
      */
-    protected void start(Args args) throws Throwable {
+    protected int start(Args args) throws Throwable {
         if (args.hasOption("h")) {
             System.out.println("Usage: " + getCommandName() + " [-e] [-f=<file>]|[-]|[COMMAND]");
             System.out.println();
@@ -72,6 +73,7 @@ public abstract class ShellApplication implements Closeable {
 
         Ansi.setEnabled(isAnsiSupported);
 
+        int exitCode = 0;
         if (args.hasOption("f")) {
             try (InputStream in = new FileInputStream(args.getOption("f"))) {
                 execute(new BufferedInputStream(in), System.out, args.hasOption("e"));
@@ -79,12 +81,14 @@ public abstract class ShellApplication implements Closeable {
         } else if (args.argc() == 1 && args.argv(0).equals("-")) {
             execute(System.in, System.out, args.hasOption("e"));
         } else if (args.argc() > 0) {
-            execute(args);
+            exitCode = execute(args);
         } else if (!hasConsole) {
             execute(System.in, System.out, args.hasOption("e"));
         } else {
             console();
         }
+
+        return exitCode;
     }
 
     /**
@@ -131,13 +135,15 @@ public abstract class ShellApplication implements Closeable {
 
     /**
      * Executes a single command with the output being printed to the console.
+     * @return the exit code to return to the caller.
      */
-    public void execute(Args args) throws Throwable {
+    public int execute(Args args) throws Throwable {
         if (args.argc() == 0) {
-            return;
+            return 0;
         }
 
         String out;
+        int exitCode = 0;
         try {
             if (isAnsiSupported && args.argc() > 0) {
                 if (args.argv(0).equals("help")) {
@@ -158,6 +164,7 @@ public abstract class ShellApplication implements Closeable {
                 sb.a(help);
             }
             out = sb.toString();
+            exitCode = 1;
         } catch (CommandExitException e) {
             throw e;
         } catch (CommandPanicException e) {
@@ -168,8 +175,10 @@ public abstract class ShellApplication implements Closeable {
             StringWriter sw = new StringWriter();
             t.printStackTrace(new PrintWriter(sw));
             out = sb.a(sw.toString()).toString();
+            exitCode = 1;
         } catch (Exception e) {
             out = Ansi.ansi().fg(RED).a(e.getMessage()).reset().toString();
+            exitCode = 1;
         }
         if (!isNullOrEmpty(out)) {
             console.print(out);
@@ -178,6 +187,7 @@ public abstract class ShellApplication implements Closeable {
             }
         }
         console.flush();
+        return exitCode;
     }
 
     /**
