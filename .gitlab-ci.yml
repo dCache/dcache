@@ -644,6 +644,7 @@ Helm-Deploy Latest dCache Golden Release:
     - >
       helm -n ${K8S_NAMESPACE} upgrade --install old-store dcache/dcache
       --wait
+      --timeout=15m
       --set image.registry=${CI_REGISTRY}
       --set image.repository=${CI_PROJECT_PATH}
       --set image.tag=${DCACHE_COMPATIBILITY_VERSION}
