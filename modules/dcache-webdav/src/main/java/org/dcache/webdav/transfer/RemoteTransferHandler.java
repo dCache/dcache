@@ -139,6 +139,7 @@ import org.dcache.util.ColumnWriter.TabulatedRow;
 import org.dcache.util.Glob;
 import org.dcache.util.LineIndentingPrintWriter;
 import org.dcache.util.NetworkUtils;
+import org.dcache.util.HttpExtHeader;
 import org.dcache.util.Strings;
 import org.dcache.util.URIs;
 import org.dcache.util.Xattrs;
@@ -1104,7 +1105,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         private HttpFields getTrailers() {
             return _digestValue.map(v -> {
                       HttpFields fields = new HttpFields();
-                      fields.put(_rfcType == Checksums.RfcType.RFC9530 ? "Repr-Digest" : "Digest", v);
+                      fields.put(_rfcType == Checksums.RfcType.RFC9530 ? HttpExtHeader.REPR_DIGEST : HttpExtHeader.DIGEST, v);
                       return fields;
                   })
                   .orElse(null);

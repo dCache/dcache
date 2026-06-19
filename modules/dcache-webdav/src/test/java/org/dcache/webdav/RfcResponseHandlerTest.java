@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Optional;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
+
+import org.dcache.util.HttpExtHeader;
 import org.junit.Test;
 import org.mockito.ArgumentMatchers;
 
@@ -27,10 +29,10 @@ public class RfcResponseHandlerTest {
         HttpServletRequest req = mock(HttpServletRequest.class);
         given(req.getMethod()).willReturn("GET");
         given(req.getRequestURL()).willReturn(new StringBuffer("http://localhost/test"));
-        given(req.getHeaders("Want-Digest")).willReturn(wantDigest == null
+        given(req.getHeaders(HttpExtHeader.WANT_DIGEST)).willReturn(wantDigest == null
               ? Collections.emptyEnumeration()
               : Collections.enumeration(List.of(wantDigest)));
-        given(req.getHeaders("Want-Repr-Digest")).willReturn(wantReprDigest == null
+        given(req.getHeaders(HttpExtHeader.WANT_REPR_DIGEST)).willReturn(wantReprDigest == null
               ? Collections.emptyEnumeration()
               : Collections.enumeration(List.of(wantReprDigest)));
         return req;
@@ -42,15 +44,15 @@ public class RfcResponseHandlerTest {
         new ServletRequest(req, mock(ServletContext.class));
 
         DcacheFileResource resource = mock(DcacheFileResource.class);
-        given(resource.getRfcDigest("Want-Digest")).willReturn(Optional.of(DIGEST_VALUE));
+        given(resource.getRfcDigest(HttpExtHeader.WANT_DIGEST)).willReturn(Optional.of(DIGEST_VALUE));
         Response response = mock(Response.class);
 
         RfcResponseHandler.wrap(mock(WebDavResponseHandler.class))
               .respondHead(resource, response, mock(Request.class));
 
-        then(response).should().setNonStandardHeader("Digest", DIGEST_VALUE);
+        then(response).should().setNonStandardHeader(HttpExtHeader.DIGEST, DIGEST_VALUE);
         then(response).should(never())
-              .setNonStandardHeader(ArgumentMatchers.eq("Repr-Digest"), ArgumentMatchers.anyString());
+              .setNonStandardHeader(ArgumentMatchers.eq(HttpExtHeader.REPR_DIGEST), ArgumentMatchers.anyString());
     }
 
     @Test
@@ -59,15 +61,15 @@ public class RfcResponseHandlerTest {
         new ServletRequest(req, mock(ServletContext.class));
 
         DcacheFileResource resource = mock(DcacheFileResource.class);
-        given(resource.getRfcDigest("Want-Repr-Digest")).willReturn(Optional.of(REPR_DIGEST_VALUE));
+        given(resource.getRfcDigest(HttpExtHeader.WANT_REPR_DIGEST)).willReturn(Optional.of(REPR_DIGEST_VALUE));
         Response response = mock(Response.class);
 
         RfcResponseHandler.wrap(mock(WebDavResponseHandler.class))
               .respondHead(resource, response, mock(Request.class));
 
-        then(response).should().setNonStandardHeader("Repr-Digest", REPR_DIGEST_VALUE);
+        then(response).should().setNonStandardHeader(HttpExtHeader.REPR_DIGEST, REPR_DIGEST_VALUE);
         then(response).should(never())
-              .setNonStandardHeader(ArgumentMatchers.eq("Digest"), ArgumentMatchers.anyString());
+              .setNonStandardHeader(ArgumentMatchers.eq(HttpExtHeader.DIGEST), ArgumentMatchers.anyString());
     }
 
     @Test
@@ -76,14 +78,14 @@ public class RfcResponseHandlerTest {
         new ServletRequest(req, mock(ServletContext.class));
 
         DcacheFileResource resource = mock(DcacheFileResource.class);
-        given(resource.getRfcDigest("Want-Repr-Digest")).willReturn(Optional.of(REPR_DIGEST_VALUE));
+        given(resource.getRfcDigest(HttpExtHeader.WANT_REPR_DIGEST)).willReturn(Optional.of(REPR_DIGEST_VALUE));
         Response response = mock(Response.class);
 
         RfcResponseHandler.wrap(mock(WebDavResponseHandler.class))
               .respondHead(resource, response, mock(Request.class));
 
-        then(response).should().setNonStandardHeader("Repr-Digest", REPR_DIGEST_VALUE);
+        then(response).should().setNonStandardHeader(HttpExtHeader.REPR_DIGEST, REPR_DIGEST_VALUE);
         then(response).should(never())
-              .setNonStandardHeader(ArgumentMatchers.eq("Digest"), ArgumentMatchers.anyString());
+              .setNonStandardHeader(ArgumentMatchers.eq(HttpExtHeader.DIGEST), ArgumentMatchers.anyString());
     }
 }

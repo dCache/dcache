@@ -65,6 +65,7 @@ import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Checksums;
+import org.dcache.util.HttpExtHeader;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -355,8 +356,8 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     }
 
     private Set<Checksum> checksumsFromResponse(HttpResponse response) {
-          String rfc3230 = headerValue(response, "Digest");
-          String rfc9530 = headerValue(response, "Repr-Digest");
+          String rfc3230 = headerValue(response, HttpExtHeader.DIGEST);
+          String rfc9530 = headerValue(response, HttpExtHeader.REPR_DIGEST);
           Set<Checksum> digestChecksums = (rfc9530 != null)
                   ? Checksums.decodeRfc(rfc9530, Checksums.RfcType.RFC9530)
                   : Checksums.decodeRfc(rfc3230, Checksums.RfcType.RFC3230);
@@ -436,8 +437,8 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
         // HEAD requests.
         if (!haveReceivedChecksum && info.isVerificationRequired()) {
             HttpHead head = buildHeadRequest(info, deadline);
-            head.addHeader("Want-Digest", WANT_DIGEST_VALUE);
-            head.addHeader("Want-Repr-Digest", WANT_REPR_DIGEST_VALUE);
+            head.addHeader(HttpExtHeader.WANT_DIGEST, WANT_DIGEST_VALUE);
+            head.addHeader(HttpExtHeader.WANT_REPR_DIGEST, WANT_REPR_DIGEST_VALUE);
 
             try {
                 try (CloseableHttpResponse response = _client.execute(head)) {
@@ -536,8 +537,8 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     private HttpGet buildGetRequest(RemoteHttpDataTransferProtocolInfo info,
           long deadline) {
         HttpGet get = new HttpGet(info.getUri());
-        get.addHeader("Want-Digest", WANT_DIGEST_VALUE);
-        get.addHeader("Want-Repr-Digest", WANT_REPR_DIGEST_VALUE);
+        get.addHeader(HttpExtHeader.WANT_DIGEST, WANT_DIGEST_VALUE);
+        get.addHeader(HttpExtHeader.WANT_REPR_DIGEST, WANT_REPR_DIGEST_VALUE);
         addHeadersToRequest(info, get, INITIAL_REQUEST);
 
         int timeLeftBeforeDeadline = (int) (deadline - System.currentTimeMillis());
@@ -776,10 +777,10 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                 HttpClientContext context = storeContext(new HttpClientContext());
                 HttpHead head = buildHeadRequest(info, deadline);
                 Optional<String> wantDigest = buildWantDigest();
-                wantDigest.ifPresent(v -> head.addHeader("Want-Digest", v));
+                wantDigest.ifPresent(v -> head.addHeader(HttpExtHeader.WANT_DIGEST, v));
 
                 if (wantDigest.isPresent() && (wantDigest.get().equals("sha-512") || wantDigest.get().equals("sha-256"))) {
-                    head.addHeader("Want-Repr-Digest", wantDigest.get());
+                    head.addHeader(HttpExtHeader.WANT_REPR_DIGEST, wantDigest.get());
                 }
 
                 try {

@@ -44,6 +44,7 @@ import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.UUID;
+import org.dcache.util.HttpExtHeader;
 import org.dcache.pool.movers.NettyMover;
 import org.dcache.pool.movers.NettyTransferService;
 import org.slf4j.Logger;
@@ -83,7 +84,7 @@ public class HttpTransferService extends NettyTransferService<HttpProtocolInfo> 
               .allowNullOrigin()
               .allowedRequestMethods(GET, PUT, HEAD)
               .allowedRequestHeaders(CONTENT_TYPE, AUTHORIZATION, CONTENT_MD5,
-                    "Want-Digest", "suppress-www-authenticate");
+                    HttpExtHeader.WANT_DIGEST, "suppress-www-authenticate");
     }
 
     public int getChunkSize() {

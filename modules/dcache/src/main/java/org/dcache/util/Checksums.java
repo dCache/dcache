@@ -162,7 +162,7 @@ public class Checksums {
         RFC3230, RFC9530;
 
         public static RfcType of(String headerName) {
-            return "Want-Repr-Digest".equals(headerName) ? RFC9530 : RFC3230;
+            return HttpExtHeader.WANT_REPR_DIGEST.equals(headerName) ? RFC9530 : RFC3230;
         }
     }
     /**
@@ -353,10 +353,10 @@ public class Checksums {
 
     @Nullable
     public static String digestType(HttpServletRequest request) {
-        Enumeration<String> wantReprDigest = request.getHeaders("Want-Repr-Digest");
-        if (wantReprDigest != null && wantReprDigest.hasMoreElements()) return "Want-Repr-Digest";
-        Enumeration<String> wantDigest = request.getHeaders("Want-Digest");
-        if (wantDigest != null && wantDigest.hasMoreElements()) return "Want-Digest";
+        Enumeration<String> wantReprDigest = request.getHeaders(HttpExtHeader.WANT_REPR_DIGEST);
+        if (wantReprDigest != null && wantReprDigest.hasMoreElements()) return HttpExtHeader.WANT_REPR_DIGEST;
+        Enumeration<String> wantDigest = request.getHeaders(HttpExtHeader.WANT_DIGEST);
+        if (wantDigest != null && wantDigest.hasMoreElements()) return HttpExtHeader.WANT_DIGEST;
         return null;
     }
 }

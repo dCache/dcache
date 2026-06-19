@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Optional;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
+
+import org.dcache.util.HttpExtHeader;
 import org.junit.Test;
 
 public class DcacheResourceFactoryTest {
@@ -66,10 +68,10 @@ public class DcacheResourceFactoryTest {
         given(request.getMethod()).willReturn("PUT");
         given(request.getRequestURL()).willReturn(new StringBuffer("http://localhost/test"));
         given(request.getHeaders("Want-Digest")).willReturn(e1);
-        given(request.getHeaders("Want-Repr-Digest")).willReturn(e2);
+        given(request.getHeaders(HttpExtHeader.WANT_REPR_DIGEST)).willReturn(e2);
 
         new io.milton.servlet.ServletRequest(request, servletContext);
 
-        assertEquals("sha-256", DcacheResourceFactory.wantDigest("Want-Repr-Digest").get());
+        assertEquals("sha-256", DcacheResourceFactory.wantDigest(HttpExtHeader.WANT_REPR_DIGEST).get());
     }
 }

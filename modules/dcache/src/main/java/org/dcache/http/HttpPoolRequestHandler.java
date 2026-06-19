@@ -80,6 +80,7 @@ import org.dcache.pool.repository.OutOfDiskException;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Checksums;
+import org.dcache.util.HttpExtHeader;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,7 +94,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
           LoggerFactory.getLogger(HttpPoolRequestHandler.class);
 
     public static final String REFERRER_QUERY_PARAM = "dcache-http-ref";
-    private static String _digest = "Digest";
+    private static String _digest = HttpExtHeader.DIGEST;
 
     private static final String RANGE_SEPARATOR = "-";
     private static final String RANGE_PRE_TOTAL = "/";
@@ -169,12 +170,12 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
         _writeChannel = null;
         _wantedDigest = Optional.empty();
         _rfcType = Checksums.RfcType.RFC3230;
-        _digest = "Digest";
+        _digest = HttpExtHeader.DIGEST;
     }
 
     private static Optional<String> wantDigest(HttpRequest request) {
-        List<String> wantDigests = request.headers().getAll("Want-Digest");
-        List<String> wantReprDigests = request.headers().getAll("Want-Repr-Digest");
+        List<String> wantDigests = request.headers().getAll(HttpExtHeader.WANT_DIGEST);
+        List<String> wantReprDigests = request.headers().getAll(HttpExtHeader.WANT_REPR_DIGEST);
         List<String> digests = (wantReprDigests != null && ! wantReprDigests.isEmpty())
                 ? wantReprDigests : wantDigests;
 
@@ -399,12 +400,12 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
     }
 
     private void setRfcType(HttpRequest request) {
-        List<String> wantReprDigest = request.headers().getAll("Want-Repr-Digest");
+        List<String> wantReprDigest = request.headers().getAll(HttpExtHeader.WANT_REPR_DIGEST);
         if (!wantReprDigest.isEmpty()) _rfcType = Checksums.RfcType.RFC9530;
     }
 
     private void setDigest() {
-        _digest = (_rfcType.equals(Checksums.RfcType.RFC9530)) ? "Repr-Digest" : "Digest";
+        _digest = (_rfcType.equals(Checksums.RfcType.RFC9530)) ? HttpExtHeader.REPR_DIGEST : HttpExtHeader.DIGEST;
     }
 
     /**

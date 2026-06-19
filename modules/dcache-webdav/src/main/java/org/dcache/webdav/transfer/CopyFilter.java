@@ -66,6 +66,7 @@ import org.dcache.auth.attributes.Restriction;
 import org.dcache.http.AuthenticationHandler;
 import org.dcache.http.PathMapper;
 import org.dcache.util.Checksums;
+import org.dcache.util.HttpExtHeader;
 import org.dcache.webdav.RfcResponseHandler;
 import org.dcache.webdav.transfer.RemoteTransferHandler.Direction;
 import org.dcache.webdav.transfer.RemoteTransferHandler.TransferType;
@@ -427,13 +428,13 @@ public class CopyFilter implements Filter {
 
         if (direction == Direction.PUSH) {
             HttpServletRequest servletRequest = ServletRequest.getRequest();
-            String reprDigest = servletRequest.getHeader("Repr-Digest");
+            String reprDigest = servletRequest.getHeader(HttpExtHeader.REPR_DIGEST);
             if (reprDigest != null) {
-                builder.put("Repr-Digest", reprDigest);
+                builder.put(HttpExtHeader.REPR_DIGEST, reprDigest);
             } else {
-                String digest = servletRequest.getHeader("Digest");
+                String digest = servletRequest.getHeader(HttpExtHeader.DIGEST);
                 if (digest != null) {
-                    builder.put("Digest", digest);
+                    builder.put(HttpExtHeader.DIGEST, digest);
                 }
             }
         }
