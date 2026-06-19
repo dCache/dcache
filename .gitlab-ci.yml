@@ -679,15 +679,21 @@ Helm-Deploy Latest dCache Golden Release:
         echo "========================================================="
         echo "=== FINAL POD STATES ==="
         kubectl -n ${K8S_NAMESPACE} get pods -o wide
-        
+
+        echo "=== INIT CONTAINER LOGS (init-host-certs) ==="
+        for pod in old-store-pool-d-0 old-store-pool-f-0; do
+          echo "--- $pod ---"
+          kubectl -n ${K8S_NAMESPACE} logs $pod -c init-host-certs --tail=100 || echo "(no logs available)"
+        done
+
         echo "=== DETAILED DESCRIPTION OF UNREADY POOLS ==="
         kubectl -n ${K8S_NAMESPACE} describe statefulset old-store-pool-d || true
         kubectl -n ${K8S_NAMESPACE} describe statefulset old-store-pool-f || true
         kubectl -n ${K8S_NAMESPACE} describe pods -l app.kubernetes.io/instance=old-store || true
-        
+
         echo "=== RECENT KUBERNETES EVENTS ==="
         kubectl -n ${K8S_NAMESPACE} get events --sort-by='.metadata.creationTimestamp' | tail -n 40
-        
+
         exit $HELM_EXIT_CODE
       fi
     - echo "Deployment successful."
