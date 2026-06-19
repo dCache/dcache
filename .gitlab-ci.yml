@@ -641,6 +641,22 @@ Helm-Deploy Latest dCache Golden Release:
   script:
     - helm repo add dcache ${DCACHE_HELM_REPO}
     - helm repo update
+    # 1. Start a background loop to log pending pods/events if helm gets stuck
+    - |
+      echo "Starting real-time background debugger..."
+      (
+        while true; do
+          sleep 60
+          echo "--- [Background Debugger Tick] Checking for non-ready components ---"
+          kubectl -n ${K8S_NAMESPACE} get pods -o wide
+          echo "--- [Background Debugger Tick] Pending/Failed Pod Conditions ---"
+          kubectl -n ${K8S_NAMESPACE} describe pods -l app.kubernetes.io/instance=old-store | grep -A 10 -B 2 -E "Status:|Reason:|Message:|Events:" || true
+        done
+      ) &
+      DEBUG_PID=$!
+
+    # 2. Run the helm upgrade command
+    - echo "=== DEPLOYING GOLDEN RELEASE ==="
     - >
       helm -n ${K8S_NAMESPACE} upgrade --install old-store dcache/dcache
       --wait
@@ -649,7 +665,32 @@ Helm-Deploy Latest dCache Golden Release:
       --set image.repository=${CI_PROJECT_PATH}
       --set image.tag=${DCACHE_COMPATIBILITY_VERSION}
       --set "dcache.pools={d,f}"
-      --set dcache.door.enabled=false
+      --set dcache.door.enabled=false;
+      HELM_EXIT_CODE=$?
+    
+    # 3. Kill the background debugger loop
+    - kill $DEBUG_PID || true
+
+    # 4. If helm failed, perform an immediate diagnostic dump before exiting
+    - |
+      if [ $HELM_EXIT_CODE -ne 0 ]; then
+        echo "========================================================="
+        echo "HELM DEPLOYMENT FAILED!"
+        echo "========================================================="
+        echo "=== FINAL POD STATES ==="
+        kubectl -n ${K8S_NAMESPACE} get pods -o wide
+        
+        echo "=== DETAILED DESCRIPTION OF UNREADY POOLS ==="
+        kubectl -n ${K8S_NAMESPACE} describe statefulset old-store-pool-d || true
+        kubectl -n ${K8S_NAMESPACE} describe statefulset old-store-pool-f || true
+        kubectl -n ${K8S_NAMESPACE} describe pods -l app.kubernetes.io/instance=old-store || true
+        
+        echo "=== RECENT KUBERNETES EVENTS ==="
+        kubectl -n ${K8S_NAMESPACE} get events --sort-by='.metadata.creationTimestamp' | tail -n 40
+        
+        exit $HELM_EXIT_CODE
+      fi
+    - echo "Deployment successful."
 
 Extract Coverage:
   stage: testenv_post
