@@ -1,0 +1,87 @@
+#bird_large
+{
+  display: none;
+} 
+
+h1
+{
+  text-align: center;
+}
+
+h2, h3
+{
+  clear: left;
+}
+
+table.menu
+{
+  font-size: 18px;
+  margin-bottom: 12px;
+}
+
+table.menu td
+{
+  width: 25%;
+  background-color: #dddddd;
+  padding: 0px;
+}
+
+table.menu a:visited
+{ 
+  text-decoration: none;
+  color: green;
+}
+
+table.menu a:link
+{
+  text-decoration: none;
+  color: green;
+}
+
+table.menu .active a:visited 
+{
+  text-decoration: none;
+  color: red; 
+}
+
+table.menu .active a:link 
+{
+  text-decoration: none;
+  color: red;
+}
+
+td.layout > div
+{
+  margin-left: auto;
+  margin-right: auto;
+  width: 300px;
+  height: 10px;
+}
+
+/* Queue info */
+th
+{
+  font-weight: normal;
+}
+
+th.active, th.max, th.queued
+{
+  background: #E0CCBE;
+  color: #3C3633;
+}
+
+td.idle
+{
+  color: #3C3633;
+}
+
+td.queued
+{
+  color: red;
+}
+
+tr.total th, tr.total td
+{
+  background: #747264;
+  color: white;
+}
