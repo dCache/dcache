@@ -876,8 +876,8 @@ generate_jacoco_report:
   stage: testenv_post
   extends: .jacoco_base
   needs:
-    - job: run_ut_with_coverage
-      artifacts: true
+ #   - job: run_ut_with_coverage
+ #     artifacts: true
     - job: get_jacoco_cli
     - job: Extract Coverage
       artifacts: true
