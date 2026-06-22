@@ -106,8 +106,6 @@ public class HttpPoolRequestHandlerTests {
     private static final UUID ANOTHER_UUID =
           UUID.fromString("f92e2faf-29d7-416c-9637-0ed7ba73fc36");
 
-    private static final String DIGEST = "Digest";
-    private static final String REPR_DIGEST = "Repr-Digest";
     private static final String CONTENT_DISPOSITION = "Content-Disposition";
 
     private static final int SOME_CHUNK_SIZE = 4096;
@@ -308,7 +306,7 @@ public class HttpPoolRequestHandlerTests {
         assertThat(_response, hasHeader(CONTENT_LENGTH, "100"));
         assertThat(_response, hasHeader(CONTENT_DISPOSITION,
               "attachment;filename*=UTF-8''%E1%9A%A0%E1%9B%87%E1%9A%BB"));
-        assertThat(_response, not(hasHeader(DIGEST)));
+        assertThat(_response, not(hasHeader(HttpExtHeader.DIGEST)));
         assertThat(_response, hasHeader(ACCEPT_RANGES, BYTES));
         assertThat(_response, not(hasHeader(CONTENT_RANGE)));
 

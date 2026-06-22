@@ -67,7 +67,7 @@ public class DcacheResourceFactoryTest {
         ServletContext servletContext = mock(ServletContext.class);
         given(request.getMethod()).willReturn("PUT");
         given(request.getRequestURL()).willReturn(new StringBuffer("http://localhost/test"));
-        given(request.getHeaders("Want-Digest")).willReturn(e1);
+        given(request.getHeaders(HttpExtHeader.WANT_DIGEST)).willReturn(e1);
         given(request.getHeaders(HttpExtHeader.WANT_REPR_DIGEST)).willReturn(e2);
 
         new io.milton.servlet.ServletRequest(request, servletContext);
