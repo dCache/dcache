@@ -710,7 +710,7 @@
             <dependency>
                 <groupId>org.dcache</groupId>
                 <artifactId>dcache-view</artifactId>
-                <version>${version.dcache-view}</version>
+                <version>${project.version}</version>
             </dependency>
 
             <dependency>
