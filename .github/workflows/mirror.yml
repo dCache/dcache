@@ -6,6 +6,8 @@ on:
 jobs:
   to_gitlab:
     runs-on: ubuntu-latest
+    env:
+      ACTIONS_STEP_DEBUG: "true"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -13,6 +15,7 @@ jobs:
 
       - name: Mirror + trigger CI
         uses: SvanBoxel/gitlab-mirror-and-ci-action@0.6
+        timeout-minutes: 5
         with:
           args: "https://gitlab.desy.de/dcache/dcache"
         env:
@@ -24,3 +27,6 @@ jobs:
           GITLAB_PROJECT_ID: "21"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           POLL_TIMEOUT: 60
+          GIT_TRACE: "1"
+          GIT_CURL_VERBOSE: "1"
+          GIT_TRANSFER_TRACE: "1"
