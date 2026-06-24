@@ -8,8 +8,8 @@
 %access package
 %import diskCacheV111.vehicles.DoorTransferFinishedMessage
 %import diskCacheV111.vehicles.HttpDoorUrlInfoMessage
-%import static diskCacheV111.util.CacheException.*;
-%import static org.dcache.util.CacheExceptionFactory.exceptionOf;
+%import static diskCacheV111.util.CacheException.*
+%import static org.dcache.util.CacheExceptionFactory.exceptionOf
 
 %start FSM::Init
 %map FSM
