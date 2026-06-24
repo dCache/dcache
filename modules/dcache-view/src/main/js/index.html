@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<!--
+dCache - http://www.dcache.org/
+
+Copyright (C) 2016 Deutsches Elektronen-Synchrotron
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <script src="scripts/client-certificate-checker.js"></script>
+
+        <title>dCache View</title>
+        <meta name="description" content="dcache view">
+
+        <!-- Mobile -->
+        <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+
+        <!-- Chrome / Android -->
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="theme-color" content="black">
+        <link rel="icon" sizes="192x192" href="favicons/icon-192x192.png">
+
+        <!-- Safari / iOS -->
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black">
+        <link rel="apple-touch-icon-precomposed" href="favicons/apple-touch-icon-57x57-precomposed.png">
+        <link rel="apple-touch-icon-precomposed" sizes="76x76" href="favicons/apple-touch-icon-76x76-precomposed.png">
+        <link rel="apple-touch-icon-precomposed" sizes="120x120" href="favicons/apple-touch-icon-120x120-precomposed.png">
+        <link rel="apple-touch-icon-precomposed" sizes="152x152" href="favicons/apple-touch-icon-152x152-precomposed.png">
+        <link rel="apple-touch-icon-precomposed" sizes="180x180" href="favicons/apple-touch-icon-180x180-precomposed.png">
+        <link rel="apple-touch-icon-precomposed" sizes="196x196" href="favicons/apple-touch-icon-196x196-precomposed.png">
+
+        <!-- build:css styles/main.css -->
+        <link rel="stylesheet" href="styles/main.css">
+
+        <!-- Web Components -->
+        <script src="bower_components/webcomponentsjs/webcomponents-loader.js"></script>
+        <script src="scripts/config.js"></script>
+        <script src="scripts/sse-state.js"></script>
+        <link rel="import" href="elements/elements.html">
+    </head>
+    <body class="fullbleed layout vertical" unresolved>
+        <dom-bind id="app">
+            <template is="dom-bind">
+                <custom-style>
+                    <style is="custom-style"
+                           include="iron-flex iron-flex-alignment">
+                        html {
+                            /*dCache View Color theme definition*/
+                            --dv-blue-500: #2196F3;
+                            --dv-blue-900: #0D47A1;
+
+                            --dv-teal-500: #009688;
+                            --dv-teal-900: #004D40;
+
+                            --dv-orange-500: #FF9800;
+                            --dv-orange-900: #E65100;
+
+                            --dv-purple-500: #673AB7;
+                            --dv-purple-900: #311B92;
+
+                            --dv-brown-500: #795548;
+                            --dv-brown-900: #3E2723;
+
+                            --dv-indigo-500: #3F51B5;
+                            --dv-indigo-900: #1A237E;
+
+                            --dv-green-A700: #00C853;
+                            --dv-green-900: #1B5E20;
+
+                            --dv-red-500: #F44336;
+                            --dv-red-900: #B71C1C;
+
+                            --dv-light-grey: #d5d5d5;
+                            --dv-charcoal-grey: #616161;
+
+                            --dv-main-foreground: #333;
+                            --dv-main-background: #fafafa;
+
+                            --paper-toolbar-background: var(--dv-charcoal-grey);
+                        }
+                        body {
+                            @apply(--layout-fullbleed);
+                            @apply(--layout-vertical);
+                        }
+                        .space {
+                            @apply(--layout-flex);
+                        }
+                        .fit {
+                            @apply(--layout-fit);
+                        }
+                        #listTableHeader {
+                            --paper-toolbar-background: var(--dv-charcoal-grey);
+                            --paper-toolbar-height: 45px;
+                            border-bottom: solid 1px #ccc;
+                            color: #fafafa;
+                        }
+                        paper-drawer-panel {
+                            --paper-drawer-panel-left-drawer-container: {background-color: var(--dv-light-grey)};
+                        }
+                        #dv-page-navigator {
+                            display: flex;
+                            width: 60px;
+                            background: transparent;
+                            flex-direction: column;
+                            align-items: center;
+                            text-align: center;
+                            margin-top: 15px;
+                            cursor: pointer;
+                        }
+                        #dv-page-navigator a {
+                            display: block;
+                            padding-bottom: 15px !important;
+                            text-rendering: optimizeLegibility;
+                            text-decoration: none;
+                        }
+                        #dv-page-navigator a.iron-selected::after {
+                            outline: 0 solid transparent !important;
+                            color: transparent;
+                        }
+                        paper-fab.blue {
+                            --paper-fab-background: var(--dv-blue-500);
+                            --paper-fab-keyboard-focus-background: var(--dv-blue-900);
+                        }
+                        paper-fab.teal {
+                            --paper-fab-background: var(--dv-teal-500);
+                            --paper-fab-keyboard-focus-background: var(--dv-teal-900);
+                        }
+                        paper-fab.orange {
+                            --paper-fab-background: var(--dv-orange-500);
+                            --paper-fab-keyboard-focus-background: var(--dv-orange-900);
+                        }
+                        paper-fab.purple {
+                            --paper-fab-background: var(--dv-purple-500);
+                            --paper-fab-keyboard-focus-background: var(--dv-purple-900);
+                        }
+                        paper-fab.brown {
+                            --paper-fab-background: var(--dv-brown-500);
+                            --paper-fab-keyboard-focus-background: var(--dv-brown-900);
+                        }
+                        paper-fab.indigo {
+                            --paper-fab-background: var(--dv-indigo-500);
+                            --paper-fab-keyboard-focus-background: var(--dv-indigo-900);
+                        }
+                        paper-fab.green {
+                            --paper-fab-background: var(--dv-green-A700);
+                            --paper-fab-keyboard-focus-background: var(--dv-green-900);
+                        }
+                        paper-fab.red {
+                            --paper-fab-background: var(--dv-red-500);
+                            --paper-fab-keyboard-focus-background: var(--dv-red-900);
+                        }
+                        #dcache-holder{
+                            position: fixed;
+                            bottom: 0px;
+                        }
+                        #uploadContainer {
+                            position: relative;
+                            top: 70px;
+                            width: 400px;
+                            height: 400px;
+                            background: #E2E2E2;
+                            -moz-border-radius: 200px;
+                            -webkit-border-radius: 200px;
+                            border-radius: 200px;
+                        }
+                        .hidden {
+                            visibility: hidden;
+                        }
+                        #dropZoneToast {
+                            width:100vw;
+                            --paper-toast-background-color: transparent !important;
+                            --paper-toast-box-shadow: none !important;
+                            padding: 0 !important;
+                            pointer-events:none;
+                            background:none !important
+                        }
+                        .paper-material {
+                            padding: 16px;
+                            margin: 0 16px;
+                            display: inline-block;
+                        }
+                        .shadow-2dp { @apply --shadow-elevation-2dp; }
+                        .toast-button {
+                            width: 16px !important;
+                            height: 16px !important;
+                            padding: 0 !important;
+                            margin-left: 10px !important;
+                            float:right;
+                            color: white;
+                        }
+                        .contextmenu {
+                            margin:0;
+                            width:200px;
+                            border: 1px solid #ccc;
+                            border-radius: 5px;
+                            background: #e8e8e8;
+                        }
+                        .none{
+                            display: none;
+                        }
+                    </style>
+                </custom-style>
+                <paper-header-panel class="flex" mode="standard" shadow id="dv-main-header">
+
+                    <paper-toolbar slot="header" class="medium-tall" id="dvMainTopBar">
+                        <paper-icon-button slot="top" icon="menu" on-tap="menuAction" id="mainMenu"
+                                           hidden></paper-icon-button>
+                        <span slot="top" class="title" id="mainMenuTitleSpan">[[organisationName]]</span>
+                        <div slot="top" id="WhoAmI">
+                            <authentication-switch current-route="[[route]]"></authentication-switch>
+                        </div>
+                        <div slot="bottom" class="bottom fit" style="height: 70px; background-color: #eee;
+                            display: flex; flex-direction: column; justify-content: center;">
+                            <selected-title id="selectedTitle" pg-route="{{route}}"></selected-title>
+                        </div>
+                    </paper-toolbar>
+                    <div class="fit">
+                        <paper-drawer-panel drawer-width="60px" id="dvDrawerPanel">
+                            <div class="horizontal layout" slot="drawer">
+
+                                <paper-listbox attr-for-selected="data-route" id="dv-page-navigator"
+                                              selected="[[route]]">
+                                    <template is="dom-if" if="[[config.isSomebody]]">
+                                        <paper-item>
+                                            <a data-route="home" on-tap="lsHomeDir">
+                                                <paper-fab icon="home"
+                                                           title="Your home directory" class="red" mini></paper-fab>
+                                            </a>
+                                        </paper-item>
+                                    </template>
+                                    <paper-item>
+                                        <a data-route="home" on-tap="namespaceView">
+                                            <paper-fab icon="device:storage"
+                                                       title="Namespace view" class="blue" mini></paper-fab>
+                                        </a>
+                                    </paper-item>
+
+                                    <paper-item>
+                                        <a data-route="shared-files" href$="{{baseUrl}}shared-files">
+                                            <paper-fab icon="folder-shared"
+                                                       title="shared files" class="orange" mini></paper-fab>
+                                        </a>
+                                    </paper-item>
+
+                                    <template is="dom-if" if="[[config.isSomebody]]">
+                                        <paper-item>
+                                            <a data-route="virtual" href$="{{baseUrl}}virtual">
+                                                <paper-fab icon="loyalty" title="Virtual directories" class="brown" mini></paper-fab>
+                                            </a>
+                                        </paper-item>
+
+                                    </template>
+
+                                    <template is="dom-if" if="[[config.isSomebody]]">
+                                        <paper-item>
+                                            <a data-route="user-profile" href$="{{baseUrl}}user-profile">
+                                                <paper-fab icon="account-circle" title="Your profile"
+                                                           class="teal" mini></paper-fab>
+                                            </a>
+                                        </paper-item>
+                                    </template>
+                                </paper-listbox>
+                            </div>
+
+                            <div slot="main">
+                                <paper-drawer-panel id="metadata" responsive-width="300000px"
+                                                    right-drawer drawer-width="400px" disable-swipe>
+                                    <paper-header-panel id="metadataDrawer" slot="drawer">
+                                        <paper-scroll-header-panel class="flex">
+                                            <paper-toolbar style="background:#fafafa; color:#333;" slot="header">
+                                                <span>Oops!</span>
+                                            </paper-toolbar>
+                                            <div slot="content">
+                                                You are not suppose to see this :(-
+                                            </div>
+                                        </paper-scroll-header-panel>
+                                    </paper-header-panel>
+
+                                    <div slot="main">
+                                        <iron-pages attr-for-selected="data-route" selected="{{route}}">
+                                            <section data-route="home" class="fit" style="background-color:#ECECEC;">
+                                                <paper-header-panel mode="seamed" class="flex">
+                                                    <paper-toolbar id="listTableHeader" slot="header">
+                                                        <list-row-header slot="top"></list-row-header>
+                                                    </paper-toolbar>
+                                                    <div class="fit" id="homedir" style="padding: 0 30px;"
+                                                         on-contextmenu="currentDirContext"
+                                                         on-drop="drop" on-dragenter="dragenter"
+                                                         on-dragleave="dragleave" on-dragend="dragend"
+                                                         on-dragexit="dragexit" on-click="click"></div>
+                                                </paper-header-panel>
+                                            </section>
+
+                                            <section data-route="shared-files"
+                                                     class="fit" style="background-color:#ececec;">
+                                                <shared-files-page id="shared-with-me" on-click="click"
+                                                                   on-contextmenu="currentDirContext"
+                                                                   on-drop="drop" on-dragenter="dragenter"
+                                                                   on-dragleave="dragleave" on-dragend="dragend"
+                                                                   on-dragexit="dragexit"></shared-files-page>
+                                            </section>
+
+                                            <section data-route="user-login" class="fit" style="background-color:#686868;">
+                                                <div main id="loginSection"></div>
+                                            </section>
+
+                                            <section data-route="virtual" class="fit"
+                                                     style="background-color:#ECECEC; overflow-y: auto !important;">
+                                                <div main id="virtualDirectoriesContainer" style="padding-bottom: 10px;"
+                                                    on-contextmenu="currentDirContext"
+                                                    on-drop="drop" on-dragenter="dragenter"
+                                                    on-dragleave="dragleave" on-dragend="dragend"
+                                                    on-dragexit="dragexit" on-click="click">
+                                                </div>
+                                            </section>
+                                            <section data-route="user-profile" class="fit"
+                                                     style="background-color:#ECECEC; overflow-y: auto !important;">
+                                                <div main id="userProfileContainer" style="padding-bottom: 10px;"></div>
+                                            </section>
+                                        </iron-pages>
+                                    </div>
+                                </paper-drawer-panel>
+                            </div>
+                        </paper-drawer-panel>
+                    </div>
+                </paper-header-panel>
+                <!-- HERE IS A CENTRAL DIALOG BOX  -->
+                <central-dialog-box id="centralDialogBox" modal role="alertdialog">
+                </central-dialog-box>
+
+                <!--  HERE IS A CUSTOM CONTEXT MENU BOX -->
+                <paper-dialog id="centralContextMenu" vertical-align="top"
+                              horizontal-align="left" dynamic-align
+                              vertical-offset="[[y]]" horizontal-offset="[[x]]"
+                              class="contextmenu">
+                </paper-dialog>
+
+                <!-- HERE IS A CUSTOM SUB-CONTEXT MENU BOX -->
+                <paper-dialog id="centralSubContextMenu" vertical-align="top"
+                              horizontal-align="left" dynamic-align
+                              vertical-offset="[[b]]" horizontal-offset="[[a]]"
+                              class="contextmenu">
+                </paper-dialog>
+
+                <!-- HERE IS A CENTRAL TOAST -->
+                <paper-toast id="toast" duration="60000">
+                    <paper-icon-button icon="close" title="close"
+                                       class="toast-button" tabindex="0"
+                                       onclick="app.$.toast.hide()"></paper-icon-button>
+                </paper-toast>
+
+                <paper-toast id="uploadToast" text="Upload Status Panel" duration="0">
+                    <paper-button onclick="uploadToast.toggle()" class="yellow-button" style="margin-left:240px;">
+                        Close
+                    </paper-button>
+                    <div id="uploadList"
+                         style="max-height:500px; max-width:460px; overflow-y: auto; overflow-x: hidden"></div>
+                </paper-toast>
+
+                <paper-toast id="dropZoneToast" duration="[[closingTime]]"
+                             class="fit-bottom" on-iron-overlay-closed="dndToastClosed">
+                    <div id="dropZoneContent" style="width:100%; display:flex;">
+                        <drag-enter-toast></drag-enter-toast>
+                    </div>
+                </paper-toast>
+
+                <a id="download" class="none">fm</a>
+                <files-viewer-overlay id="filesViewerOverlay"
+                                      scroll-action="lock" with-backdrop></files-viewer-overlay>
+            </template>
+            <script src="scripts/dv.js"></script>
+            <script src="bower_components/pdfjs-dist/build/pdf.min.js" async></script>
+            <script src="scripts/discover-webdav-doors.js" async></script>
+            <script src="scripts/sse-channel-utilities.js" async></script>
+        </dom-bind>
+    </body>
+</html>

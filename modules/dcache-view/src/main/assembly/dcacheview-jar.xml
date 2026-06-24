@@ -6,7 +6,7 @@
     <includeBaseDirectory>false</includeBaseDirectory>
     <fileSets>
         <fileSet>
-            <directory>target</directory>
+            <directory>src/main/js</directory>
             <outputDirectory>/</outputDirectory>
             <excludes>
                 <exclude>*:jar</exclude>
