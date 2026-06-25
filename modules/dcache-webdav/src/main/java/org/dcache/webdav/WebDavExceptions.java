@@ -37,7 +37,7 @@ public class WebDavExceptions {
      * is authenticated.
      */
     public static WebDavException permissionDenied(@Nonnull Resource resource) {
-        Subject subject = Subject.getSubject(AccessController.getContext());
+        Subject subject = Subject.current();
         if (Subjects.isNobody(subject)) {
             return new UnauthorizedException(resource);
         } else {
@@ -51,7 +51,7 @@ public class WebDavExceptions {
      */
     public static WebDavException permissionDenied(String message, Throwable cause,
           Resource resource) {
-        Subject subject = Subject.getSubject(AccessController.getContext());
+        Subject subject = Subject.current();
         if (Subjects.isNobody(subject)) {
             return new UnauthorizedException(message, cause, resource);
         } else {

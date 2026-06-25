@@ -1458,7 +1458,7 @@ public class DcacheResourceFactory
      * Returns the current Subject of the calling thread.
      */
     private static Subject getSubject() {
-        return Subject.getSubject(AccessController.getContext());
+        return Subject.current();
     }
 
     private Restriction getRestriction() {

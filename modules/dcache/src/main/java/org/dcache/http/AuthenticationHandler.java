@@ -103,7 +103,7 @@ public class AuthenticationHandler extends HandlerWrapper {
      */
     public static Subject getX509Identity(HttpServletRequest request)
           throws CacheException {
-        Subject dCacheUser = Subject.getSubject(AccessController.getContext());
+        Subject dCacheUser = Subject.current();
         if (dCacheUser != null && Subjects.getDn(dCacheUser) != null) {
             return dCacheUser;
         }

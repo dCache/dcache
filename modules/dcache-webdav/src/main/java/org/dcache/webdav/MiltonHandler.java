@@ -63,7 +63,7 @@ public class MiltonHandler
             if ("USERINFO".equals(request.getMethod())) {
                 response.sendError(501);
             } else {
-                Subject subject = Subject.getSubject(AccessController.getContext());
+                Subject subject = Subject.current();
                 ServletRequest req = new DcacheServletRequest(request, context);
                 ServletResponse resp = new DcacheServletResponse(response);
 

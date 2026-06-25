@@ -581,7 +581,7 @@ public class CopyFilter implements Filter {
 
     private Object fetchCredential(CredentialSource source)
           throws InterruptedException, ErrorResponseException {
-        Subject subject = Subject.getSubject(AccessController.getContext());
+        Subject subject = Subject.current();
         switch (source) {
             case GRIDSITE:
                 try {
@@ -731,7 +731,7 @@ public class CopyFilter implements Filter {
     }
 
     private Subject getSubject() {
-        return Subject.getSubject(AccessController.getContext());
+        return Subject.current();
     }
 
     private Restriction getRestriction() {
@@ -741,7 +741,7 @@ public class CopyFilter implements Filter {
     }
 
     private boolean clientAuthnUsingOidc() {
-        return Subject.getSubject(AccessController.getContext()).getPrincipals().stream()
+        return Subject.current().getPrincipals().stream()
               .anyMatch(OidcSubjectPrincipal.class::isInstance);
     }
 
