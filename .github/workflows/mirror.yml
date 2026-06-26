@@ -6,49 +6,51 @@ on:
 jobs:
   to_gitlab:
     runs-on: ubuntu-latest
-    outputs:
-      success: ${{ steps.mirror.outcome == 'success' }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Mirror + trigger CI
-        id: mirror
-        uses: SvanBoxel/gitlab-mirror-and-ci-action@0.6
-        timeout-minutes: 15
-        with:
-          args: "https://gitlab.desy.de/dcache/dcache"
+      - name: Mirror to GitLab + wait for CI
         env:
-          FOLLOW_TAGS: "true"
-          FORCE_PUSH: "false"
-          GITLAB_HOSTNAME: "gitlab.desy.de"
-          GITLAB_USERNAME: "dcache"
           GITLAB_PASSWORD: ${{ secrets.GITLAB_PASSWORD }}
           GITLAB_PROJECT_ID: "21"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          POLL_TIMEOUT: 60
+        run: |
+          set -euo pipefail
+          REMOTE="https://dcache:${GITLAB_PASSWORD}@gitlab.desy.de/dcache/dcache.git"
+          git remote add mirror "$REMOTE"
 
-  retry:
-    needs: to_gitlab
-    if: failure()
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+          for attempt in 1 2 3; do
+            echo "::group::Push attempt $attempt"
+            git push mirror --force "HEAD:${GITHUB_REF_NAME}" && \
+            git push mirror --tags --force-with-lease 2>&1 | grep -v "already exists" || true
+            PUSH_EXIT=${PIPESTATUS[0]}
+            echo "::endgroup::"
+            [ $PUSH_EXIT -eq 0 ] && break
+            [ $attempt -lt 3 ] && sleep $((attempt * 15)) || exit 1
+          done
 
-      - name: Mirror + trigger CI (retry)
-        uses: SvanBoxel/gitlab-mirror-and-ci-action@0.6
-        timeout-minutes: 15
-        with:
-          args: "https://gitlab.desy.de/dcache/dcache"
-        env:
-          FOLLOW_TAGS: "true"
-          FORCE_PUSH: "false"
-          GITLAB_HOSTNAME: "gitlab.desy.de"
-          GITLAB_USERNAME: "dcache"
-          GITLAB_PASSWORD: ${{ secrets.GITLAB_PASSWORD }}
-          GITLAB_PROJECT_ID: "21"
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          POLL_TIMEOUT: 60
+          API="https://gitlab.desy.de/api/v4/projects/${GITLAB_PROJECT_ID}"
+          AUTH="PRIVATE-TOKEN: ${GITLAB_PASSWORD}"
+
+          for i in $(seq 1 10); do
+            PIPELINE_ID=$(curl -sf --header "$AUTH" \
+              "${API}/pipelines?sha=${GITHUB_SHA}&order_by=id&sort=desc&per_page=1" | \
+              python3 -c "import sys,json; p=json.load(sys.stdin); print(p[0]['id']) if p else exit(1)" 2>/dev/null) && break
+            sleep 10
+          done
+
+          echo "Pipeline: https://gitlab.desy.de/dcache/dcache/-/pipelines/${PIPELINE_ID}"
+
+          for i in $(seq 1 60); do
+            STATUS=$(curl -sf --header "$AUTH" "${API}/pipelines/${PIPELINE_ID}" | \
+              python3 -c "import sys,json; print(json.load(sys.stdin)['status'])")
+            echo "Status: $STATUS"
+            case "$STATUS" in
+              success) exit 0 ;;
+              failed|canceled|skipped) echo "::error::Pipeline $STATUS"; exit 1 ;;
+            esac
+            sleep 60
+          done
+          echo "::error::Timed out after 60 minutes"; exit 1
