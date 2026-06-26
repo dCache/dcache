@@ -2,24 +2,43 @@ name: Mirror and run GitLab CI
 
 on:
   push:
-  workflow_run:
-    workflows: ["Mirror and run GitLab CI"]
-    types: [completed]
 
 jobs:
   to_gitlab:
-    if: |
-      github.event_name == 'push' ||
-      (github.event_name == 'workflow_run' && 
-       github.event.workflow_run.conclusion == 'failure' &&
-       github.event.workflow_run.run_attempt < 3)
     runs-on: ubuntu-latest
+    outputs:
+      success: ${{ steps.mirror.outcome == 'success' }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Mirror + trigger CI
+        id: mirror
+        uses: SvanBoxel/gitlab-mirror-and-ci-action@0.6
+        timeout-minutes: 15
+        with:
+          args: "https://gitlab.desy.de/dcache/dcache"
+        env:
+          FOLLOW_TAGS: "true"
+          FORCE_PUSH: "false"
+          GITLAB_HOSTNAME: "gitlab.desy.de"
+          GITLAB_USERNAME: "dcache"
+          GITLAB_PASSWORD: ${{ secrets.GITLAB_PASSWORD }}
+          GITLAB_PROJECT_ID: "21"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          POLL_TIMEOUT: 60
+
+  retry:
+    needs: to_gitlab
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Mirror + trigger CI (retry)
         uses: SvanBoxel/gitlab-mirror-and-ci-action@0.6
         timeout-minutes: 15
         with:
