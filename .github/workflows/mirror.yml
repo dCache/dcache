@@ -41,7 +41,7 @@ jobs:
             sleep 10
           done
 
-          echo "Pipeline ID: https://gitlab.desy.de/dcache/dcache/-/pipelines/${PIPELINE_ID}"
+          echo "Pipeline: https://gitlab.desy.de/dcache/dcache/-/pipelines/${PIPELINE_ID}"
 
           for i in $(seq 1 60); do
             STATUS=$(curl -sf --header "$AUTH" "${API}/pipelines/${PIPELINE_ID}" | \
