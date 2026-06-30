@@ -46,7 +46,7 @@ jobs:
           for i in $(seq 1 60); do
             STATUS=$(curl -sf --header "$AUTH" "${API}/pipelines/${PIPELINE_ID}" | \
               python3 -c "import sys,json; print(json.load(sys.stdin)['status'])")
-            echo "Status: $STATUS"
+            echo "Pipeline status: $STATUS"
             case "$STATUS" in
               success) exit 0 ;;
               failed|canceled|skipped) echo "::error::Pipeline $STATUS"; exit 1 ;;
