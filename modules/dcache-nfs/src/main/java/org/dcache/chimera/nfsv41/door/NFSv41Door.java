@@ -1470,7 +1470,17 @@ public class NFSv41Door extends AbstractCellComponent implements
                 }
             }
 
-            _redirectFuture.get(NFS_REQUEST_BLOCKING, TimeUnit.MILLISECONDS);
+            try {
+                _redirectFuture.get(NFS_REQUEST_BLOCKING, TimeUnit.MILLISECONDS);
+            } catch (Exception e) {
+                // No mover is started. Let retry the full selection process on next attempt.
+                if (!hasMover()) {
+                    _redirectFuture.cancel(true);
+                    _redirectFuture = null;
+                }
+                throw e;
+            }
+
             _log.debug("mover ready: pool={} moverid={}", getPool(), getMoverId());
 
             deviceid4 ds = waitForRedirect(NFS_REQUEST_BLOCKING).getDeviceId();
