@@ -1,13 +1,28 @@
-- name: Mirror to GitLab + wait for CI
+name: Mirror and run GitLab CI
+
+on:
+  push:
+
+jobs:
+  to_gitlab:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Mirror to GitLab + wait for CI
         env:
           GITLAB_PASSWORD: ${{ secrets.GITLAB_PASSWORD }}
           GITLAB_PROJECT_ID: "21"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           REMOTE="https://dcache:${GITLAB_PASSWORD}@gitlab.desy.de/dcache/dcache.git"
           git remote add mirror "$REMOTE"
           GIT_OPTS="-c http.connectTimeout=15 -c http.lowSpeedLimit=1000 -c http.lowSpeedTime=30"
 
+          # Fail fast if DESY is unreachable before wasting retry attempts
           if ! curl -sf --connect-timeout 10 --max-time 15 \
               -o /dev/null "https://gitlab.desy.de"; then
             echo "::error::gitlab.desy.de is unreachable from this runner — this is a transient GitHub→DESY network issue. Re-run the job to get a fresh runner."
