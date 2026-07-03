@@ -20,11 +20,12 @@ jobs:
           set -euo pipefail
           REMOTE="https://dcache:${GITLAB_PASSWORD}@gitlab.desy.de/dcache/dcache.git"
           git remote add mirror "$REMOTE"
+          GIT_OPTS="-c http.lowSpeedLimit=1000 -c http.lowSpeedTime=30"
 
           push_branch() {
             for attempt in 1 2 3; do
               echo "::group::Branch push attempt $attempt"
-              if git push mirror --force "HEAD:${GITHUB_REF_NAME}"; then
+              if git $GIT_OPTS push mirror --force "HEAD:${GITHUB_REF_NAME}"; then
                 echo "::endgroup::"; return 0
               fi
               echo "::endgroup::"
@@ -51,7 +52,7 @@ jobs:
           push_branch
           push_tags || true   # never block CI trigger on pre-existing tags
 
-          # --- Locate pipeline for this commit ---
+          # find pipeline for this commit
           API="https://gitlab.desy.de/api/v4/projects/${GITLAB_PROJECT_ID}"
           AUTH="PRIVATE-TOKEN: ${GITLAB_PASSWORD}"
           PIPELINE_ID=""
