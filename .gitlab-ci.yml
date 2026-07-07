@@ -45,7 +45,7 @@ stages:
   - upload
 
 variables:
-  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true -Dmaven.repo.local=.m2/repository"
+  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true -Dmaven.repo.local=.m2/repository -o"
   K8S_NAMESPACE: dcb-$CI_PIPELINE_ID
   CHECK_TIMEOUT: --timeout=300s
   HELM_OPTS: --replace --timeout 10m0s
