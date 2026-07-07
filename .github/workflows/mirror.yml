@@ -22,10 +22,10 @@ jobs:
           git remote add mirror "$REMOTE"
           GIT_OPTS="-c http.connectTimeout=15 -c http.lowSpeedLimit=1000 -c http.lowSpeedTime=30"
 
-          # Fail fast if DESY is unreachable before wasting retry attempts
+          # Fail fast if gitlab is unreachable before wasting retry attempts
           if ! curl -sf --connect-timeout 10 --max-time 15 \
               -o /dev/null "https://gitlab.desy.de"; then
-            echo "::error::gitlab.desy.de is unreachable from this runner — this is a transient GitHub→DESY network issue. Re-run the job to get a fresh runner."
+            echo "::error::gitlab.desy.de is unreachable from this runner."
             exit 1
           fi
 
