@@ -166,41 +166,41 @@ tar:
       - "packages/tar/target/dcache-*.tar.gz"
     expire_in: 2 days
 
-# run tests with coverage profile
-# run_ut_with_coverage:
-#   stage: build
-#   image: maven:3.9.12-eclipse-temurin-21
-#   extends:
-#     - .build_cache
-#     - .no_release_rules
-#   script:
-#     - mvn $MAVEN_CLI_OPTS -P code-coverage clean verify -DskipTests=false -Drun.slow.tests
-#   artifacts:
-#     reports:
-#       junit:
-#         - "**/target/surefire-reports/TEST-*.xml"
-#         - "**/target/failsafe-reports/TEST-*.xml"
-#     paths:
-#       #pass .exec files and compiled classes to the next stage
-#       - "**/target/coverage-reports/jacoco-ut.exec"
-#       - "**/target/classes/"
-#     expire_in: 1 day
+#run tests with coverage profile
+run_ut_with_coverage:
+  stage: build
+  image: maven:3.9.12-eclipse-temurin-21
+  extends:
+    - .build_cache
+    - .no_release_rules
+  script:
+    - mvn $MAVEN_CLI_OPTS -P code-coverage clean verify -DskipTests=false -Drun.slow.tests
+  artifacts:
+    reports:
+      junit:
+        - "**/target/surefire-reports/TEST-*.xml"
+        - "**/target/failsafe-reports/TEST-*.xml"
+    paths:
+      #pass .exec files and compiled classes to the next stage
+      - "**/target/coverage-reports/jacoco-ut.exec"
+      - "**/target/classes/"
+    expire_in: 1 day
 
-# run unit tests without coverage
-# run_unit_tests:
-#   stage: build
-#   image: maven:3.9.12-eclipse-temurin-21
-#   extends:
-#     - .build_cache
-#     - .upload_rules
-#   script:
-#     - mvn $MAVEN_CLI_OPTS clean verify -DskipTests=false -Drun.slow.tests
-#   artifacts:
-#     reports:
-#       junit:
-#         - "**/target/surefire-reports/TEST-*.xml"
-#         - "**/target/failsafe-reports/TEST-*.xml"
-#     expire_in: 1 day
+#run unit tests without coverage
+run_unit_tests:
+  stage: build
+  image: maven:3.9.12-eclipse-temurin-21
+  extends:
+    - .build_cache
+    - .upload_rules
+  script:
+    - mvn $MAVEN_CLI_OPTS clean verify -DskipTests=false -Drun.slow.tests
+  artifacts:
+    reports:
+      junit:
+        - "**/target/surefire-reports/TEST-*.xml"
+        - "**/target/failsafe-reports/TEST-*.xml"
+    expire_in: 1 day
 
 spotbugs:
   stage: build
