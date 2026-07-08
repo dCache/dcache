@@ -186,6 +186,64 @@ public class Job
         }
     }
 
+    /**
+     * Starts a job with a preselected set of entries, avoiding a full repository scan during
+     * initialization.
+     */
+    public void start(Iterable<CacheEntry> entries) {
+        _lock.lock();
+        try {
+            checkState(_state == State.NEW);
+            _state = State.INITIALIZING;
+
+            long refreshPeriod = _definition.refreshPeriod;
+            ScheduledExecutorService executor = _context.getExecutor();
+
+            _refreshTask =
+                  executor.scheduleWithFixedDelay(new FireAndForgetTask(() -> {
+                      _definition.sourceList.refresh();
+                      _definition.poolList.refresh();
+                  }), 0, refreshPeriod, TimeUnit.MILLISECONDS);
+        } finally {
+            _lock.unlock();
+        }
+
+        try {
+            _context.getRepository().addListener(this);
+
+            _lock.lock();
+            try {
+                for (CacheEntry entry : entries) {
+                    if (accept(entry)) {
+                        add(entry);
+                    }
+                }
+
+                if (getState() == State.INITIALIZING) {
+                    setState(State.RUNNING);
+                }
+            } finally {
+                _lock.unlock();
+            }
+        } finally {
+            _lock.lock();
+            try {
+                switch (getState()) {
+                    case INITIALIZING:
+                        setState(State.FAILED);
+                        break;
+                    case CANCELLING:
+                        schedule();
+                        break;
+                    default:
+                        break;
+                }
+            } finally {
+                _lock.unlock();
+            }
+        }
+    }
+
     public JobDefinition getDefinition() {
         return _definition;
     }

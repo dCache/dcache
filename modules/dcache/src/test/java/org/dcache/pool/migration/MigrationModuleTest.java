@@ -29,6 +29,8 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.common.util.concurrent.ListenableFuture;
@@ -135,6 +137,27 @@ public class MigrationModuleTest {
         module.reportFileRequest(pnfsId, 10L, protocolInfo); // above threshold
         // Should create a migration job
         assertTrue(module.hasJob("hotfile-" + pnfsId));
+    }
+
+    @Test
+    public void testReportFileRequestDoesNotScanRepositoryToStartHotfileJob() throws Exception {
+        PnfsId pnfsId = new PnfsId("0000A1B2C3D4E5F7");
+        ProtocolInfo protocolInfo = mock(ProtocolInfo.class);
+        when(protocolInfo.getProtocol()).thenReturn("DCap");
+        when(protocolInfo.getMajorVersion()).thenReturn(3);
+        when(entry.getFileAttributes()).thenReturn(fileAttributes);
+        when(entry.getLastAccessTime()).thenReturn(0L);
+        when(entry.getPnfsId()).thenReturn(pnfsId);
+        when(repository.getEntry(pnfsId)).thenReturn(entry);
+
+        module.setThreshold(0L);
+        module.reportFileRequest(pnfsId, 1L, protocolInfo);
+
+        verify(repository, never()).iterator();
+
+        MigrationModule.MigrationInfoCommand cmd = module.new MigrationInfoCommand();
+        cmd.id = "hotfile-" + pnfsId;
+        assertFalse(cmd.call().contains("State      : INITIALIZING"));
     }
 
     @Test
