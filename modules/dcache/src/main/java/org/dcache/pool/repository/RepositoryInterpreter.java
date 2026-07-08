@@ -324,8 +324,10 @@ public class RepositoryInterpreter
 
                     ReplicaState state = entry.getState();
                     FileAttributes attributes = entry.getFileAttributes();
-                    AccessLatency accessLatency = attributes.getAccessLatency();
-                    RetentionPolicy retentionPolicy = attributes.getRetentionPolicy();
+                    AccessLatency accessLatency = attributes.isDefined(FileAttribute.ACCESS_LATENCY)
+                          ? attributes.getAccessLatency() : null;
+                    RetentionPolicy retentionPolicy = attributes.isDefined(FileAttribute.RETENTION_POLICY)
+                          ? attributes.getRetentionPolicy() : null;
                     if (siFilter != null) {
                         String siValue = attributes.isDefined(FileAttribute.STORAGECLASS)
                                 ? attributes.getStorageClass()
@@ -378,14 +380,18 @@ public class RepositoryInterpreter
         private void printQosInfo(CacheEntry entry, StringBuilder sb) throws CacheException, InterruptedException {
             String format = Strings.nullToEmpty(this.format);
             FileAttributes attributes = entry.getFileAttributes();
-            AccessLatency accessLatency = attributes.getAccessLatency();
-            RetentionPolicy retentionPolicy = attributes.getRetentionPolicy();
-            if ((format.equalsIgnoreCase("unmanaged") && (accessLatency == AccessLatency.ONLINE && !entry.isSticky()) ||
+            AccessLatency accessLatency = attributes.isDefined(FileAttribute.ACCESS_LATENCY)
+                                ? attributes.getAccessLatency()
+                                : null;
+            RetentionPolicy retentionPolicy = attributes.isDefined(FileAttribute.RETENTION_POLICY)
+                                ? attributes.getRetentionPolicy()
+                                : null;
+            if (format.equalsIgnoreCase("unmanaged") && ((accessLatency == AccessLatency.ONLINE && !entry.isSticky()) ||
                     (accessLatency == AccessLatency.NEARLINE && retentionPolicy == RetentionPolicy.CUSTODIAL && entry.isSticky()))) {
 
                 sb.append(" : ");
-                sb.append(accessLatency).append(" : ");
-                sb.append(retentionPolicy).append(" : ");
+                sb.append(accessLatency == null ? "<unknown>" : accessLatency).append(" : ");
+                sb.append(retentionPolicy == null ? "<unknown>" : retentionPolicy).append(" : ");
                 printPinInfo(entry, sb);
             }
 
@@ -402,8 +408,12 @@ public class RepositoryInterpreter
         private boolean isUnmanaged(CacheEntry entry) throws CacheException, InterruptedException {
             FileAttributes attributes = entry.getFileAttributes();
 
-            AccessLatency accessLatency = attributes.getAccessLatency();
-            RetentionPolicy retentionPolicy = attributes.getRetentionPolicy();
+            AccessLatency accessLatency = attributes.isDefined(FileAttribute.ACCESS_LATENCY)
+                                ? attributes.getAccessLatency()
+                                : null;
+            RetentionPolicy retentionPolicy = attributes.isDefined(FileAttribute.RETENTION_POLICY)
+                                ? attributes.getRetentionPolicy()
+                                : null;
             return (accessLatency == AccessLatency.ONLINE && !entry.isSticky()) ||
                     (accessLatency == AccessLatency.NEARLINE && retentionPolicy == RetentionPolicy.CUSTODIAL && entry.isSticky());
 
