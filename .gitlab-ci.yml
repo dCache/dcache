@@ -101,10 +101,9 @@ default:
 #
 .build_cache:
   cache:
-    key:
-      files:
-        - pom.xml
-      prefix: "$CI_JOB_NAME-76773ddf05e014794446267560001677f08a323b"
+    key: "default-cache" 
+    fallback_keys:
+      - "$CI_JOB_NAME-76773ddf05e014794446267560001677f08a323b"
     paths:
       - ./.m2/repository
     policy: pull
