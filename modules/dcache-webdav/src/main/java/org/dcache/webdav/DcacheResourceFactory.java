@@ -663,6 +663,19 @@ public class DcacheResourceFactory
                           buildRequestedAttributes();
                     FileAttributes attributes =
                           pnfs.getFileAttributes(path.toString(), requestedAttributes);
+                    if(isDigestRequested() && attributes.getChecksums().isEmpty()) {
+                        int retry = 10;
+                        do{
+                            attributes = pnfs.getFileAttributes(path.toString(), requestedAttributes);
+                            if(!attributes.getChecksums().isEmpty()) break;
+                            retry--;
+                            try{
+                                MILLISECONDS.sleep(500);
+                            } catch (InterruptedException e) {
+                                break;
+                            }
+                        } while(retry > 0);
+                    }
                     return getResource(path, attributes);
                 } catch (FileNotFoundCacheException e) {
                     if (haveRetried) {
