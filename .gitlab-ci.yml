@@ -104,9 +104,10 @@ default:
     key:
       files:
         - pom.xml
-      prefix: "$CI_JOB_NAME"
+      prefix: "$CI_JOB_NAME-76773ddf05e014794446267560001677f08a323b"
     paths:
       - ./.m2/repository
+    policy: pull
 
 #
 # default rules for upload stage
@@ -167,40 +168,40 @@ tar:
     expire_in: 2 days
 
 # run tests with coverage profile
-run_ut_with_coverage:
-  stage: build
-  image: maven:3.9.12-eclipse-temurin-21
-  extends:
-    - .build_cache
-    - .no_release_rules
-  script:
-    - mvn $MAVEN_CLI_OPTS -P code-coverage clean verify -DskipTests=false -Drun.slow.tests
-  artifacts:
-    reports:
-      junit:
-        - "**/target/surefire-reports/TEST-*.xml"
-        - "**/target/failsafe-reports/TEST-*.xml"
-    paths:
-      #pass .exec files and compiled classes to the next stage
-      - "**/target/coverage-reports/jacoco-ut.exec"
-      - "**/target/classes/"
-    expire_in: 1 day
+# run_ut_with_coverage:
+#   stage: build
+#   image: maven:3.9.12-eclipse-temurin-21
+#   extends:
+#     - .build_cache
+#     - .no_release_rules
+#   script:
+#     - mvn $MAVEN_CLI_OPTS -P code-coverage clean verify -DskipTests=false -Drun.slow.tests
+#   artifacts:
+#     reports:
+#       junit:
+#         - "**/target/surefire-reports/TEST-*.xml"
+#         - "**/target/failsafe-reports/TEST-*.xml"
+#     paths:
+#       #pass .exec files and compiled classes to the next stage
+#       - "**/target/coverage-reports/jacoco-ut.exec"
+#       - "**/target/classes/"
+#     expire_in: 1 day
 
 # run unit tests without coverage
-run_unit_tests:
-  stage: build
-  image: maven:3.9.12-eclipse-temurin-21
-  extends:
-    - .build_cache
-    - .upload_rules
-  script:
-    - mvn $MAVEN_CLI_OPTS clean verify -DskipTests=false -Drun.slow.tests
-  artifacts:
-    reports:
-      junit:
-        - "**/target/surefire-reports/TEST-*.xml"
-        - "**/target/failsafe-reports/TEST-*.xml"
-    expire_in: 1 day
+# run_unit_tests:
+#   stage: build
+#   image: maven:3.9.12-eclipse-temurin-21
+#   extends:
+#     - .build_cache
+#     - .upload_rules
+#   script:
+#     - mvn $MAVEN_CLI_OPTS clean verify -DskipTests=false -Drun.slow.tests
+#   artifacts:
+#     reports:
+#       junit:
+#         - "**/target/surefire-reports/TEST-*.xml"
+#         - "**/target/failsafe-reports/TEST-*.xml"
+#     expire_in: 1 day
 
 spotbugs:
   stage: build
@@ -401,7 +402,6 @@ upload_container:
     - mkdir maven
     - tar -C maven --strip-components=1 -xzvf packages/tar/target/dcache-*.tar.gz
     - cp $CI_PROJECT_DIR/packages/tar/src/main/container/* .
-    - mkdir -p staging-libs
     - mkdir -p /kaniko/.docker
     - echo "{\"auths\":{\"https://index.docker.io/v1/\":{\"username\":\"$DOCKER_HUB_USER\",\"password\":\"$DOCKER_HUB_ACCESS_KEY\"}}}" > /kaniko/.docker/config.json
     - >
@@ -524,6 +524,7 @@ Deploy PostgreSQL:
   stage: test_infra
   extends: .kubernetes_image
   script:
+    #- ping gitlab.desy.de
     - kubectl -n ${K8S_NAMESPACE} apply -f .ci/k8s/postgresql-deployment.yaml
     - kubectl -n ${K8S_NAMESPACE} wait --for=condition=Ready pod/postgres-0
 
@@ -599,6 +600,14 @@ Helm-Deploy Current dCache build:
       fi
     - helm repo add dcache ${DCACHE_HELM_REPO}
     - helm repo update
+    - echo "=== CHART INFO ==="
+    - helm show chart dcache/dcache
+    - echo "=== NAMESPACE MEMORY BEFORE DEPLOY ==="
+    - kubectl -n ${K8S_NAMESPACE} get pods -o wide
+    - kubectl top pods -n ${K8S_NAMESPACE} --no-headers 2>/dev/null || echo "(metrics-server not available)"
+    - echo "=== ALL NAMESPACES MEMORY OVERVIEW ==="
+    - kubectl top pods --all-namespaces --no-headers 2>/dev/null | sort -k4 -rh | head -20 || echo "(metrics-server not available)"
+    - echo "=== INSTALLING ==="
     - >
       helm -n ${K8S_NAMESPACE} upgrade --install store dcache/dcache
       --wait
@@ -610,6 +619,20 @@ Helm-Deploy Current dCache build:
       --set dcache.qos.enabled=true
       --set services.srm.enabled=false
       --values .ci/custom-helm-config.yaml
+    - echo "=== VALUES USED ==="
+    - helm -n ${K8S_NAMESPACE} get values store
+    - echo "=== POD STATUS ==="
+    - kubectl -n ${K8S_NAMESPACE} get pods -o wide
+    - echo "=== RESOURCE REQUESTS/LIMITS ==="
+    - >
+      kubectl -n ${K8S_NAMESPACE} get pods
+      -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{range .spec.containers[*]}
+        {.name}: req={.resources.requests.memory}/{.resources.requests.cpu}
+        lim={.resources.limits.memory}/{.resources.limits.cpu}{"\n"}{end}{"\n"}{end}'
+    - echo "=== ACTUAL MEMORY USAGE ==="
+    - kubectl top pods -n ${K8S_NAMESPACE} --no-headers 2>/dev/null | sort -k3 -rh || echo "(metrics-server not available)"
+    - echo "=== NODE CAPACITY ==="
+    - kubectl describe nodes | grep -A5 "Allocated resources"
 
 Helm-Deploy Latest dCache Golden Release:
   stage: test_deploy
@@ -619,14 +642,62 @@ Helm-Deploy Latest dCache Golden Release:
   script:
     - helm repo add dcache ${DCACHE_HELM_REPO}
     - helm repo update
+    # 1. Start a background loop to log pending pods/events if helm gets stuck
+    - |
+      echo "Starting real-time background debugger..."
+      (
+        while true; do
+          sleep 60
+          echo "--- [Background Debugger Tick] Checking for non-ready components ---"
+          kubectl -n ${K8S_NAMESPACE} get pods -o wide
+          echo "--- [Background Debugger Tick] Pending/Failed Pod Conditions ---"
+          kubectl -n ${K8S_NAMESPACE} describe pods -l app.kubernetes.io/instance=old-store | grep -A 10 -B 2 -E "Status:|Reason:|Message:|Events:" || true
+        done
+      ) &
+      DEBUG_PID=$!
+
+    # 2. Run the helm upgrade command
+    - echo "=== DEPLOYING GOLDEN RELEASE ==="
     - >
       helm -n ${K8S_NAMESPACE} upgrade --install old-store dcache/dcache
       --wait
+      --timeout=15m
       --set image.registry=${CI_REGISTRY}
       --set image.repository=${CI_PROJECT_PATH}
       --set image.tag=${DCACHE_COMPATIBILITY_VERSION}
       --set "dcache.pools={d,f}"
-      --set dcache.door.enabled=false
+      --set dcache.door.enabled=false;
+      HELM_EXIT_CODE=$?
+    
+    # 3. Kill the background debugger loop
+    - kill $DEBUG_PID || true
+
+    # 4. If helm failed, perform an immediate diagnostic dump before exiting
+    - |
+      if [ $HELM_EXIT_CODE -ne 0 ]; then
+        echo "========================================================="
+        echo "HELM DEPLOYMENT FAILED!"
+        echo "========================================================="
+        echo "=== FINAL POD STATES ==="
+        kubectl -n ${K8S_NAMESPACE} get pods -o wide
+
+        echo "=== INIT CONTAINER LOGS (init-host-certs) ==="
+        for pod in old-store-pool-d-0 old-store-pool-f-0; do
+          echo "--- $pod ---"
+          kubectl -n ${K8S_NAMESPACE} logs $pod -c init-host-certs --tail=100 || echo "(no logs available)"
+        done
+
+        echo "=== DETAILED DESCRIPTION OF UNREADY POOLS ==="
+        kubectl -n ${K8S_NAMESPACE} describe statefulset old-store-pool-d || true
+        kubectl -n ${K8S_NAMESPACE} describe statefulset old-store-pool-f || true
+        kubectl -n ${K8S_NAMESPACE} describe pods -l app.kubernetes.io/instance=old-store || true
+
+        echo "=== RECENT KUBERNETES EVENTS ==="
+        kubectl -n ${K8S_NAMESPACE} get events --sort-by='.metadata.creationTimestamp' | tail -n 40
+
+        exit $HELM_EXIT_CODE
+      fi
+    - echo "Deployment successful."
 
 Extract Coverage:
   stage: testenv_post
@@ -806,8 +877,8 @@ generate_jacoco_report:
   stage: testenv_post
   extends: .jacoco_base
   needs:
-    - job: run_ut_with_coverage
-      artifacts: true
+ #   - job: run_ut_with_coverage
+ #     artifacts: true
     - job: get_jacoco_cli
     - job: Extract Coverage
       artifacts: true

@@ -2,6 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.dcache</groupId>
     <version>12.1.0-SNAPSHOT</version>
+    <!-- Temporary trial run for offline cache validation -->
     <artifactId>dcache-parent</artifactId>
     <packaging>pom</packaging>
 
