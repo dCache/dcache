@@ -208,6 +208,7 @@ public class Job
                       _definition.sourceList.refresh();
                       _definition.poolList.refresh();
                   }), 0, refreshPeriod, TimeUnit.MILLISECONDS);
+
             _state = State.INITIALIZING;
         } finally {
             _lock.unlock();
@@ -231,8 +232,17 @@ public class Job
                 case CANCELLING:
                     schedule();
                     break;
-                default:
-                    // RUNNING and terminal states do not need any additional cleanup here.
+                case NEW:
+                case RUNNING:
+                case SLEEPING:
+                case PAUSED:
+                case SUSPENDED:
+                case STOPPING:
+                case CANCELLED:
+                case FINISHED:
+                case FAILED:
+                    // No additional cleanup is needed once initialization has progressed
+                    // beyond INITIALIZING or has already reached a terminal state.
                     break;
             }
         } finally {
