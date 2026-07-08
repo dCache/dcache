@@ -136,54 +136,26 @@ public class Job
     }
 
     public void start() {
-        _lock.lock();
-        try {
-            checkState(_state == State.NEW);
-            _state = State.INITIALIZING;
+        beginInitialization();
+        _context.getExecutor().submit(new FireAndForgetTask(() -> {
+            try {
+                _context.getRepository().addListener(Job.this);
+                populate();
 
-            long refreshPeriod = _definition.refreshPeriod;
-            ScheduledExecutorService executor = _context.getExecutor();
-
-            _refreshTask =
-                  executor.scheduleWithFixedDelay(new FireAndForgetTask(() -> {
-                      _definition.sourceList.refresh();
-                      _definition.poolList.refresh();
-                  }), 0, refreshPeriod, TimeUnit.MILLISECONDS);
-
-            executor.submit(new FireAndForgetTask(() -> {
+                _lock.lock();
                 try {
-                    _context.getRepository().addListener(Job.this);
-                    populate();
-
-                    _lock.lock();
-                    try {
-                        if (getState() == State.INITIALIZING) {
-                            setState(State.RUNNING);
-                        }
-                    } finally {
-                        _lock.unlock();
+                    if (getState() == State.INITIALIZING) {
+                        setState(State.RUNNING);
                     }
-                } catch (InterruptedException e) {
-                    LOGGER.error("Migration job was interrupted");
                 } finally {
-                    _lock.lock();
-                    try {
-                        switch (getState()) {
-                            case INITIALIZING:
-                                setState(State.FAILED);
-                                break;
-                            case CANCELLING:
-                                schedule();
-                                break;
-                        }
-                    } finally {
-                        _lock.unlock();
-                    }
+                    _lock.unlock();
                 }
-            }));
-        } finally {
-            _lock.unlock();
-        }
+            } catch (InterruptedException e) {
+                LOGGER.error("Migration job was interrupted");
+            } finally {
+                finishInitialization();
+            }
+        }));
     }
 
     /**
@@ -191,22 +163,7 @@ public class Job
      * initialization.
      */
     public void start(Iterable<CacheEntry> entries) {
-        _lock.lock();
-        try {
-            checkState(_state == State.NEW);
-            _state = State.INITIALIZING;
-
-            long refreshPeriod = _definition.refreshPeriod;
-            ScheduledExecutorService executor = _context.getExecutor();
-
-            _refreshTask =
-                  executor.scheduleWithFixedDelay(new FireAndForgetTask(() -> {
-                      _definition.sourceList.refresh();
-                      _definition.poolList.refresh();
-                  }), 0, refreshPeriod, TimeUnit.MILLISECONDS);
-        } finally {
-            _lock.unlock();
-        }
+        beginInitialization();
 
         try {
             _context.getRepository().addListener(this);
@@ -226,21 +183,44 @@ public class Job
                 _lock.unlock();
             }
         } finally {
-            _lock.lock();
-            try {
-                switch (getState()) {
-                    case INITIALIZING:
-                        setState(State.FAILED);
-                        break;
-                    case CANCELLING:
-                        schedule();
-                        break;
-                    default:
-                        break;
-                }
-            } finally {
-                _lock.unlock();
+            finishInitialization();
+        }
+    }
+
+    private void beginInitialization() {
+        _lock.lock();
+        try {
+            checkState(_state == State.NEW);
+
+            long refreshPeriod = _definition.refreshPeriod;
+            ScheduledExecutorService executor = _context.getExecutor();
+
+            _refreshTask =
+                  executor.scheduleWithFixedDelay(new FireAndForgetTask(() -> {
+                      _definition.sourceList.refresh();
+                      _definition.poolList.refresh();
+                  }), 0, refreshPeriod, TimeUnit.MILLISECONDS);
+            _state = State.INITIALIZING;
+        } finally {
+            _lock.unlock();
+        }
+    }
+
+    private void finishInitialization() {
+        _lock.lock();
+        try {
+            switch (getState()) {
+                case INITIALIZING:
+                    setState(State.FAILED);
+                    break;
+                case CANCELLING:
+                    schedule();
+                    break;
+                default:
+                    break;
             }
+        } finally {
+            _lock.unlock();
         }
     }
 

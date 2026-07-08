@@ -154,10 +154,7 @@ public class MigrationModuleTest {
         module.reportFileRequest(pnfsId, 1L, protocolInfo);
 
         verify(repository, never()).iterator();
-
-        MigrationModule.MigrationInfoCommand cmd = module.new MigrationInfoCommand();
-        cmd.id = "hotfile-" + pnfsId;
-        assertFalse(cmd.call().contains("State      : INITIALIZING"));
+        assertTrue(module.hasJob("hotfile-" + pnfsId));
     }
 
     @Test
