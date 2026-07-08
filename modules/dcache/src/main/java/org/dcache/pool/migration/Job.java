@@ -161,6 +161,9 @@ public class Job
     /**
      * Starts a job with a preselected set of entries, avoiding a full repository scan during
      * initialization.
+     *
+     * <p>This variant performs the initialization on the calling thread and is intended for
+     * callers, such as hot-file replication, that already know the exact entries to enqueue.
      */
     public void start(Iterable<CacheEntry> entries) {
         beginInitialization();
@@ -187,6 +190,11 @@ public class Job
         }
     }
 
+    /**
+     * Marks the job as initializing and schedules the periodic source and target pool refresh.
+     *
+     * <p>This method must be called exactly once when transitioning a job out of {@link State#NEW}.
+     */
     private void beginInitialization() {
         _lock.lock();
         try {
@@ -206,6 +214,13 @@ public class Job
         }
     }
 
+    /**
+     * Completes job initialization bookkeeping.
+     *
+     * <p>If initialization never progressed beyond {@link State#INITIALIZING}, the job is marked
+     * failed. If cancellation was requested while initializing, scheduling is resumed so the cancel
+     * path can complete.
+     */
     private void finishInitialization() {
         _lock.lock();
         try {
@@ -217,6 +232,7 @@ public class Job
                     schedule();
                     break;
                 default:
+                    // RUNNING and terminal states do not need any additional cleanup here.
                     break;
             }
         } finally {
