@@ -135,6 +135,10 @@ public class Job
               .getCellName();
     }
 
+    /**
+     * Starts a job by asynchronously scanning the repository on the executor and queuing any
+     * matching entries that are discovered during initialization.
+     */
     public void start() {
         beginInitialization();
         _context.getExecutor().submit(new FireAndForgetTask(() -> {
@@ -169,24 +173,21 @@ public class Job
     public void start(Iterable<CacheEntry> entries) {
         beginInitialization();
 
+        _lock.lock();
         try {
-            _lock.lock();
-            try {
-                _context.getRepository().addListener(this);
+            _context.getRepository().addListener(this);
 
-                for (CacheEntry entry : entries) {
-                    if (accept(entry)) {
-                        add(entry);
-                    }
+            for (CacheEntry entry : entries) {
+                if (accept(entry)) {
+                    add(entry);
                 }
+            }
 
-                if (getState() == State.INITIALIZING) {
-                    setState(State.RUNNING);
-                }
-            } finally {
-                _lock.unlock();
+            if (getState() == State.INITIALIZING) {
+                setState(State.RUNNING);
             }
         } finally {
+            _lock.unlock();
             finishInitialization();
         }
     }
