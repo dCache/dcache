@@ -163,27 +163,30 @@ public class Job
      * initialization.
      *
      * <p>This variant performs the initialization on the calling thread and is intended for
-     * callers, such as hot-file replication, that already know the exact entries to enqueue. It
+     * callers, such as hotfile replication, that already know the exact entries to enqueue. It
      * may therefore block the caller until all provided entries have been evaluated and enqueued.
      */
     public void start(Iterable<CacheEntry> entries) {
         beginInitialization();
 
-        _lock.lock();
         try {
-            _context.getRepository().addListener(this);
+            _lock.lock();
+            try {
+                _context.getRepository().addListener(this);
 
-            for (CacheEntry entry : entries) {
-                if (accept(entry)) {
-                    add(entry);
+                for (CacheEntry entry : entries) {
+                    if (accept(entry)) {
+                        add(entry);
+                    }
                 }
-            }
 
-            if (getState() == State.INITIALIZING) {
-                setState(State.RUNNING);
+                if (getState() == State.INITIALIZING) {
+                    setState(State.RUNNING);
+                }
+            } finally {
+                _lock.unlock();
             }
         } finally {
-            _lock.unlock();
             finishInitialization();
         }
     }
