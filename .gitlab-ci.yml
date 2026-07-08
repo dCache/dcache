@@ -45,7 +45,7 @@ stages:
   - upload
 
 variables:
-  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true -Dmaven.repo.local=.m2/repository"
+  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true -Dmaven.repo.local=.m2/repository -o"
   K8S_NAMESPACE: dcb-$CI_PIPELINE_ID
   CHECK_TIMEOUT: --timeout=300s
   HELM_OPTS: --replace --timeout 10m0s
@@ -101,12 +101,13 @@ default:
 #
 .build_cache:
   cache:
-    key:
-      files:
-        - pom.xml
-      prefix: "$CI_JOB_NAME"
+    key: "default-cache" 
+    fallback_keys:
+      - "rpm-76773ddf05e014794446267560001677f08a323b"
+      - "deb-76773ddf05e014794446267560001677f08a323b"
     paths:
       - ./.m2/repository
+    policy: pull
 
 #
 # default rules for upload stage
