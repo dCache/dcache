@@ -163,12 +163,16 @@ public class Job
     }
 
     /**
-     * Starts a job with a preselected set of entries, avoiding a full repository scan during
-     * initialization.
+     * Starts a job with a pre‑selected set of entries, bypassing the generic repository scan.
      *
-     * <p>This variant performs the initialization on the calling thread and is intended for
-     * callers, such as hotfile replication, that already know the exact entries to enqueue. It
-     * may therefore block the caller until all provided entries have been evaluated and enqueued.
+     * <p>Typical callers are hot‑file replication, which already knows the exact {@link CacheEntry}
+     * that triggered replication. The method registers the job as a repository listener, enqueues
+     * the supplied entries, and then transitions the job to {@link State#RUNNING}. Because the
+     * work is performed synchronously on the calling thread, the caller blocks until all entries
+     * have been examined and queued.
+     *
+     * @param entries an {@link Iterable} of {@link CacheEntry} objects that should be migrated.
+     * @see #start() the asynchronous variant that performs a full‑repository scan.
      */
     public void start(Iterable<CacheEntry> entries) {
         beginInitialization();
