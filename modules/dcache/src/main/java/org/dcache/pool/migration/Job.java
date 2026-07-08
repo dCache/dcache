@@ -173,10 +173,8 @@ public class Job
     public void start(Iterable<CacheEntry> entries) {
         beginInitialization();
 
-        boolean locked = false;
+        _lock.lock();
         try {
-            _lock.lock();
-            locked = true;
             _context.getRepository().addListener(this);
 
             for (CacheEntry entry : entries) {
@@ -188,16 +186,11 @@ public class Job
             if (getState() == State.INITIALIZING) {
                 setState(State.RUNNING);
             }
-        } catch (RuntimeException e) {
-            LOGGER.error("Migration job initialization failed: {}", e.getMessage(), e);
-            throw e;
-        } catch (Error e) {
+        } catch (Throwable e) {
             LOGGER.error("Migration job initialization failed", e);
             throw e;
         } finally {
-            if (locked) {
-                _lock.unlock();
-            }
+            _lock.unlock();
             finishInitialization();
         }
     }
