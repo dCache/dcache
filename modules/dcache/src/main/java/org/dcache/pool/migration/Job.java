@@ -169,10 +169,10 @@ public class Job
         beginInitialization();
 
         try {
-            _context.getRepository().addListener(this);
-
             _lock.lock();
             try {
+                _context.getRepository().addListener(this);
+
                 for (CacheEntry entry : entries) {
                     if (accept(entry)) {
                         add(entry);
@@ -232,15 +232,7 @@ public class Job
                 case CANCELLING:
                     schedule();
                     break;
-                case NEW:
-                case RUNNING:
-                case SLEEPING:
-                case PAUSED:
-                case SUSPENDED:
-                case STOPPING:
-                case CANCELLED:
-                case FINISHED:
-                case FAILED:
+                default:
                     // No additional cleanup is needed once initialization has progressed
                     // beyond INITIALIZING or has already reached a terminal state.
                     break;
