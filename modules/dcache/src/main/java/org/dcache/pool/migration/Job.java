@@ -163,29 +163,27 @@ public class Job
      * initialization.
      *
      * <p>This variant performs the initialization on the calling thread and is intended for
-     * callers, such as hot-file replication, that already know the exact entries to enqueue.
+     * callers, such as hot-file replication, that already know the exact entries to enqueue. It
+     * may therefore block the caller until all provided entries have been evaluated and enqueued.
      */
     public void start(Iterable<CacheEntry> entries) {
         beginInitialization();
 
+        _lock.lock();
         try {
-            _lock.lock();
-            try {
-                _context.getRepository().addListener(this);
+            _context.getRepository().addListener(this);
 
-                for (CacheEntry entry : entries) {
-                    if (accept(entry)) {
-                        add(entry);
-                    }
+            for (CacheEntry entry : entries) {
+                if (accept(entry)) {
+                    add(entry);
                 }
+            }
 
-                if (getState() == State.INITIALIZING) {
-                    setState(State.RUNNING);
-                }
-            } finally {
-                _lock.unlock();
+            if (getState() == State.INITIALIZING) {
+                setState(State.RUNNING);
             }
         } finally {
+            _lock.unlock();
             finishInitialization();
         }
     }
@@ -233,8 +231,8 @@ public class Job
                     schedule();
                     break;
                 default:
-                    // No additional cleanup is needed once initialization has progressed
-                    // beyond INITIALIZING or has already reached a terminal state.
+                    // No additional cleanup is needed once initialization has reached RUNNING,
+                    // SLEEPING, PAUSED, SUSPENDED, STOPPING, CANCELLED, FINISHED, or FAILED.
                     break;
             }
         } finally {
