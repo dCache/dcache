@@ -135,11 +135,79 @@ public class Job
               .getCellName();
     }
 
+    /**
+     * Starts a job by asynchronously scanning the repository on the executor and queuing any
+     * matching entries that are discovered during initialization.
+     */
     public void start() {
+        beginInitialization();
+        _context.getExecutor().submit(new FireAndForgetTask(() -> {
+            try {
+                _context.getRepository().addListener(Job.this);
+                populate();
+
+                _lock.lock();
+                try {
+                    if (getState() == State.INITIALIZING) {
+                        setState(State.RUNNING);
+                    }
+                } finally {
+                    _lock.unlock();
+                }
+            } catch (InterruptedException e) {
+                LOGGER.error("Migration job was interrupted");
+            } finally {
+                finishInitialization();
+            }
+        }));
+    }
+
+    /**
+     * Starts a job with a pre-selected set of entries, bypassing the generic repository scan.
+     *
+     * <p>Typical callers are hot-file replication, which already knows the exact {@link CacheEntry}
+     * that triggered replication. The method registers the job as a repository listener, enqueues
+     * the supplied entries, and then transitions the job to {@link State#RUNNING}. Because the
+     * work is performed synchronously on the calling thread, the caller blocks until all entries
+     * have been examined and queued.
+     *
+     * @param entries an {@link Iterable} of {@link CacheEntry} objects that should be migrated.
+     * @see #start() the asynchronous variant that performs a full-repository scan.
+     */
+    public void start(Iterable<CacheEntry> entries) {
+        beginInitialization();
+
+        _lock.lock();
+        try {
+            _context.getRepository().addListener(this);
+
+            for (CacheEntry entry : entries) {
+                if (accept(entry)) {
+                    add(entry);
+                }
+            }
+
+            if (getState() == State.INITIALIZING) {
+                setState(State.RUNNING);
+            }
+        } catch (Throwable e) {
+            LOGGER.error("Migration job initialization failed", e);
+            throw e;
+        } finally {
+            _lock.unlock();
+            finishInitialization();
+        }
+    }
+
+    /**
+     * Marks the job as initializing and schedules the periodic source and target pool refresh.
+     *
+     * <p>This method must be called exactly once when transitioning a job out of {@link State#NEW}.
+     */
+    private void beginInitialization() {
         _lock.lock();
         try {
             checkState(_state == State.NEW);
-            _state = State.INITIALIZING;
 
             long refreshPeriod = _definition.refreshPeriod;
             ScheduledExecutorService executor = _context.getExecutor();
@@ -150,37 +218,34 @@ public class Job
                       _definition.poolList.refresh();
                   }), 0, refreshPeriod, TimeUnit.MILLISECONDS);
 
-            executor.submit(new FireAndForgetTask(() -> {
-                try {
-                    _context.getRepository().addListener(Job.this);
-                    populate();
+            _state = State.INITIALIZING;
+        } finally {
+            _lock.unlock();
+        }
+    }
 
-                    _lock.lock();
-                    try {
-                        if (getState() == State.INITIALIZING) {
-                            setState(State.RUNNING);
-                        }
-                    } finally {
-                        _lock.unlock();
-                    }
-                } catch (InterruptedException e) {
-                    LOGGER.error("Migration job was interrupted");
-                } finally {
-                    _lock.lock();
-                    try {
-                        switch (getState()) {
-                            case INITIALIZING:
-                                setState(State.FAILED);
-                                break;
-                            case CANCELLING:
-                                schedule();
-                                break;
-                        }
-                    } finally {
-                        _lock.unlock();
-                    }
-                }
-            }));
+    /**
+     * Completes job initialization bookkeeping.
+     *
+     * <p>If initialization never progressed beyond {@link State#INITIALIZING}, the job is marked
+     * failed. If cancellation was requested while initializing, scheduling is resumed so the cancel
+     * path can complete.
+     */
+    private void finishInitialization() {
+        _lock.lock();
+        try {
+            switch (getState()) {
+                case INITIALIZING:
+                    setState(State.FAILED);
+                    break;
+                case CANCELLING:
+                    schedule();
+                    break;
+                default:
+                    // No additional cleanup is needed once initialization has reached RUNNING,
+                    // SLEEPING, PAUSED, SUSPENDED, STOPPING, CANCELLED, FINISHED, or FAILED.
+                    break;
+            }
         } finally {
             _lock.unlock();
         }
