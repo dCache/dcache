@@ -607,6 +607,11 @@ public class Transfer implements Comparable<Transfer> {
         return _cellAddress.getCellDomainName();
     }
 
+    private synchronized String getMessageEventSource() {
+        return _cellAddress == null ? "<unknown>" :
+              _cellAddress.getCellName() + "@" + _cellAddress.getCellDomainName();
+    }
+
     /**
      * The client address is the socket address from which the transfer was initiated.
      */
@@ -810,7 +815,7 @@ public class Transfer implements Comparable<Transfer> {
         request.setUpdateAtime(true);
 
         MessageEvent nameSpaceReadEvent = new MessageEvent();
-        nameSpaceReadEvent.source = getCellName() + "@" + getDomainName();
+        nameSpaceReadEvent.source = getMessageEventSource();
         nameSpaceReadEvent.destination = "PnfsManager";
         nameSpaceReadEvent.message = PnfsGetFileAttributes.class.getSimpleName();
         nameSpaceReadEvent.begin();
@@ -985,7 +990,7 @@ public class Transfer implements Comparable<Transfer> {
 
         // init JFR event
         MessageEvent poolSelectEvent = new MessageEvent();
-        poolSelectEvent.source = getCellName() + "@" + getDomainName();
+        poolSelectEvent.source = getMessageEventSource();
         poolSelectEvent.destination = "PoolManager";
         poolSelectEvent.message = isWrite() ? PoolMgrSelectReadPoolMsg.class.getSimpleName() : PoolMgrSelectWritePoolMsg.class.getSimpleName();
         poolSelectEvent.begin();
@@ -1089,7 +1094,7 @@ public class Transfer implements Comparable<Transfer> {
 
         // init JFR event
         MessageEvent moverStartEvent = new MessageEvent();
-        moverStartEvent.source = getCellName() + "@" + getDomainName();
+        moverStartEvent.source = getMessageEventSource();
         moverStartEvent.destination = pool.getName();
         moverStartEvent.message = message.getClass().getSimpleName();
         moverStartEvent.begin();
@@ -1156,7 +1161,7 @@ public class Transfer implements Comparable<Transfer> {
 
             // init JFR event
             var killMoverEvent = new MessageEvent();
-            killMoverEvent.source = getCellName() + "@" + getDomainName();
+            killMoverEvent.source = getMessageEventSource();
             killMoverEvent.destination = pool.getName();
             killMoverEvent.message = message.getClass().getSimpleName();
 
