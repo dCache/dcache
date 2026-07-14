@@ -1,22 +1,20 @@
 package org.dcache.services.billing.text;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.io.Files.isFile;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.dcache.util.ByteUnit.KiB;
 
 import com.google.common.base.Function;
-import com.google.common.base.Predicate;
 import com.google.common.base.Strings;
-import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMap.Builder;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
-import com.google.common.collect.TreeTraverser;
+import com.google.common.graph.Traverser;
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnels;
 import com.google.common.io.ByteSource;
@@ -61,9 +59,12 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Predicate;
 import java.util.logging.LogManager;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 import org.dcache.boot.LayoutBuilder;
@@ -102,20 +103,18 @@ public class Indexer {
      * Almost identical to the file tree traverser from Guava, sorts directory entries
      * lexicographically.
      */
-    private static final TreeTraverser<File> SORTED_FILE_TREE_TRAVERSER = new TreeTraverser<File>() {
-        @Override
-        public Iterable<File> children(File file) {
-            // check isDirectory() just because it may be faster than listFiles() on a non-directory
-            if (file.isDirectory()) {
-                File[] files = file.listFiles();
-                if (files != null) {
-                    return Ordering.natural().sortedCopy(asList(files));
-                }
-            }
+    private static final Traverser<File> SORTED_FILE_TREE_TRAVERSER = Traverser.forTree(
+          file -> {
+              // check isDirectory() just because it may be faster than listFiles() on a non-directory
+              if (file.isDirectory()) {
+                  File[] files = file.listFiles();
+                  if (files != null) {
+                      return Ordering.natural().sortedCopy(asList(files));
+                  }
+              }
 
-            return Collections.emptyList();
-        }
-    };
+              return Collections.emptyList();
+          });
 
     private final boolean isFlat;
     private final File dir;
@@ -140,9 +139,9 @@ public class Indexer {
                 searchTerms = ImmutableList.of("");
             }
 
-            FluentIterable<File> filesWithPossibleMatch =
-                  SORTED_FILE_TREE_TRAVERSER
-                        .preOrderTraversal(dir);
+            Stream<File> fileStream = StreamSupport.stream(
+                  SORTED_FILE_TREE_TRAVERSER.depthFirstPreOrder(dir).spliterator(), false
+            );
             if (args.hasOption("since") || args.hasOption("until")) {
                 LocalDate since = args.hasOption("since")
                       ? LocalDate.parse(args.getOption("since"), CLI_DATE_FORMAT)
@@ -150,36 +149,38 @@ public class Indexer {
                 LocalDate until = args.hasOption("until")
                       ? LocalDate.parse(args.getOption("until"), CLI_DATE_FORMAT)
                       : LocalDate.now().plusDays(1);
-                filesWithPossibleMatch =
-                      filesWithPossibleMatch.filter(file -> isInRange(file, since, until));
+                fileStream = fileStream.filter(file -> isInRange(file, since, until));
             }
             if (searchTerms.contains("")) {
-                filesWithPossibleMatch =
-                      filesWithPossibleMatch.filter(file -> isBillingFile(file));
+                fileStream = fileStream.filter(Indexer::isBillingFile);
             } else {
-                filesWithPossibleMatch =
-                      filesWithPossibleMatch.filter(isBillingFileAndMightContain(searchTerms));
+                fileStream = fileStream.filter(isBillingFileAndMightContain(searchTerms));
             }
 
+            Iterable<File> fileIterable = fileStream.collect(toList());
+
             if (args.hasOption("files")) {
-                for (File file : filesWithPossibleMatch) {
+                for (File file : fileIterable) {
                     System.out.println(file);
                 }
             } else if (args.hasOption("yaml")) {
                 try (OutputWriter out = toYaml(System.out)) {
-                    find(searchTerms, filesWithPossibleMatch, out);
+                    find(searchTerms, fileIterable, out);
                 }
             } else if (args.hasOption("json")) {
                 try (OutputWriter out = toJson(System.out)) {
-                    find(searchTerms, filesWithPossibleMatch, out);
+                    find(searchTerms, fileIterable, out);
                 }
             } else {
                 try (OutputWriter out = toText(System.out)) {
-                    find(searchTerms, filesWithPossibleMatch, out);
+                    find(searchTerms, fileIterable, out);
                 }
             }
         } else if (args.hasOption("all")) {
-            for (File file : SORTED_FILE_TREE_TRAVERSER.preOrderTraversal(dir).filter(isFile())) {
+            for (File file : StreamSupport.stream(
+                  SORTED_FILE_TREE_TRAVERSER.depthFirstPreOrder(dir).spliterator(), false
+            ).filter(File::isFile).collect(toList())
+            ) {
                 Matcher matcher = BILLING_NAME_PATTERN.matcher(file.getName());
                 if (matcher.matches()) {
                     System.out.println("Indexing " + file);
@@ -323,7 +324,7 @@ public class Indexer {
     /**
      * Searches for searchTerm in files and writes any matching lines to out.
      */
-    private static void find(final Collection<String> searchTerms, FluentIterable<File> files,
+    private static void find(final Collection<String> searchTerms, Iterable<File> files,
           final OutputWriter out)
           throws IOException {
         int threads = Runtime.getRuntime().availableProcessors();
@@ -408,7 +409,7 @@ public class Indexer {
               new BufferedInputStream(new FileInputStream(file)))) {
             Files.copy(in, file.toPath());
         }
-        java.nio.file.Files.delete(compressedFile.toPath());
+        Files.delete(compressedFile.toPath());
     }
 
     private static void compress(File file) throws IOException {
@@ -419,7 +420,7 @@ public class Indexer {
         try (OutputStream out = new BZip2CompressorOutputStream(bufOut)) {
             Files.copy(file.toPath(), out);
         }
-        java.nio.file.Files.delete(file.toPath());
+        Files.delete(file.toPath());
     }
 
     private static void help(PrintStream out) {
@@ -528,7 +529,12 @@ public class Indexer {
                 }
             };
         } else {
-            source = com.google.common.io.Files.asByteSource(file);
+            source = new ByteSource() {
+                @Override
+                public InputStream openStream() throws IOException {
+                    return new FileInputStream(file);
+                }
+            };
         }
         return source.asCharSource(charset);
     }
@@ -567,7 +573,7 @@ public class Indexer {
      */
     private static ImmutableMap<String, String> getBillingFormats(
           ConfigurationProperties configuration) {
-        ImmutableMap.Builder<String, String> formats = ImmutableMap.builder();
+        Builder<String, String> formats = ImmutableMap.builder();
         for (String name : configuration.stringPropertyNames()) {
             if (name.startsWith(BILLING_TEXT_FORMAT_PREFIX)) {
                 formats.put(name.substring(BILLING_TEXT_FORMAT_PREFIX.length()),
@@ -581,9 +587,9 @@ public class Indexer {
         final List<String> searchTerms = terms.stream()
               .map(str -> str.endsWith("/") ? str.substring(0, str.length() - 1) : str)
               .collect(toList());
-        return new Predicate<File>() {
+        return new Predicate<>() {
             @Override
-            public boolean apply(File file) {
+            public boolean test(File file) {
                 if (!file.isFile()) {
                     return false;
                 }
