@@ -495,6 +495,18 @@
         <property name="realm" value="${frontend.authn.realm}"/>
         <property name="acceptBearerTokenUnencrypted"
                   value="${frontend.macaroons.accept-over-unencrypted-channel}"/>
+        <property name="anonymousAccessiblePaths">
+            <description>
+                The OIDC callback is how a client with no prior credentials (only an
+                authorization code) establishes them; it must stay reachable even when
+                frontend.authz.anonymous-operations=NONE would otherwise reject the
+                credential-less request outright before the callback ever runs. The
+                callback performs its own authenticated login using the exchanged token.
+            </description>
+            <list>
+                <value>/api/v1/auth/callback</value>
+            </list>
+        </property>
     </bean>
 
   <!-- 1. ZooKeeper Session Store -->

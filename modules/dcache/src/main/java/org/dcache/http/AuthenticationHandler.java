@@ -81,6 +81,7 @@ public class AuthenticationHandler extends HandlerWrapper {
     private boolean _isSpnegoAuthenticationEnabled;
     private LoginStrategy _loginStrategy;
     private boolean _acceptBearerTokenUnencrypted;
+    private Set<String> _anonymousAccessiblePaths = Set.of();
 
     private CertificateFactory _cf = CertificateFactories.newX509CertificateFactory();
 
@@ -224,14 +225,29 @@ public class AuthenticationHandler extends HandlerWrapper {
                 addQueryBearerTokenToSubject(request, suppliedIdentity);
                 addDesiredRolesToSubject(request, suppliedIdentity);
 
-                LoginReply login = _loginStrategy.login(suppliedIdentity);
-                Subject authnIdentity = login.getSubject();
-                Restriction restriction = Restrictions.concat(_doorRestriction,
-                      login.getRestriction());
+                Subject authnIdentity;
+                Restriction restriction;
+                Set<LoginAttribute> loginAttributes;
+                try {
+                    LoginReply login = _loginStrategy.login(suppliedIdentity);
+                    authnIdentity = login.getSubject();
+                    restriction = Restrictions.concat(_doorRestriction, login.getRestriction());
+                    loginAttributes = login.getLoginAttributes();
+                } catch (PermissionDeniedCacheException e) {
+                    if (!isAnonymousAccessiblePath(request)) {
+                        throw e;
+                    }
+                    LOG.debug("Anonymous login rejected for exempt path {} from {}; "
+                          + "continuing as nobody", request.getRequestURI(),
+                          request.getRemoteAddr());
+                    authnIdentity = Subjects.NOBODY;
+                    restriction = _doorRestriction;
+                    loginAttributes = Set.of();
+                }
 
                 request.setAttribute(DCACHE_SUBJECT_ATTRIBUTE, authnIdentity);
                 request.setAttribute(DCACHE_RESTRICTION_ATTRIBUTE, restriction);
-                request.setAttribute(DCACHE_LOGIN_ATTRIBUTES, login.getLoginAttributes());
+                request.setAttribute(DCACHE_LOGIN_ATTRIBUTES, loginAttributes);
                 request.setAttribute(AUTH_HANDLER_ATTRIBUTE, this);
 
                 /* Process the request as the authenticated user.*/
@@ -440,6 +456,22 @@ public class AuthenticationHandler extends HandlerWrapper {
 
     public void setAcceptBearerTokenUnencrypted(boolean value) {
         _acceptBearerTokenUnencrypted = value;
+    }
+
+    /**
+     * Paths that must stay reachable even when the configured login strategy rejects
+     * anonymous access -- e.g. an OIDC callback endpoint, which is itself how a client
+     * with no prior credentials establishes them. A request to one of these paths that
+     * would otherwise be denied is instead let through as Subjects.NOBODY; the endpoint
+     * is responsible for performing its own authenticated login. Empty by default, which
+     * preserves the previous behaviour of rejecting every anonymous request equally.
+     */
+    public void setAnonymousAccessiblePaths(List<String> paths) {
+        _anonymousAccessiblePaths = Set.copyOf(paths);
+    }
+
+    private boolean isAnonymousAccessiblePath(HttpServletRequest request) {
+        return _anonymousAccessiblePaths.contains(request.getRequestURI());
     }
 
     private class AuthHandlerResponse extends HttpServletResponseWrapper {

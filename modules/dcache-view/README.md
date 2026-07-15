@@ -22,11 +22,12 @@ released version of dCache View.
 3. [How to](#How-To)
     - [make dCache View aware of the OpenID set up](docs/how-tos/open-id.md)
     - [share a file and view a shared file](docs/how-tos/share-file.md)
-4. [Versioning](#Versioning)
-5. [Contributors](#Contributors)
-6. [How to contribute](#How-to-contribute)
-7. [License](#License)
-8. [Acknowledgments](#Acknowledgments)
+4. [Authentication Flow (OIDC)](#Authentication-Flow-OIDC)
+5. [Versioning](#Versioning)
+6. [Contributors](#Contributors)
+7. [How to contribute](#How-to-contribute)
+8. [License](#License)
+9. [Acknowledgments](#Acknowledgments)
 
 ## Getting Started
 
@@ -179,6 +180,49 @@ If you have any suggestions on our features, please submit feedback on our featu
 
 - [make dCache View aware of the OpenID set up](docs/how-tos/open-id.md)
 - [share a file and view a shared file](docs/how-tos/share-file.md)
+
+## Authentication Flow (OIDC)
+
+After you sign in with your identity provider (e.g. Keycloak), it redirects your browser
+back to dCache's `/api/v1/auth/callback` endpoint with an authorization code. dCache
+exchanges that code for a token, logs you in for real, and redirects you into dCache View.
+
+This last step relies on the frontend door letting an as-yet-unauthenticated request reach
+the callback in the first place. Whether that happens depends on
+`frontend.authz.anonymous-operations`:
+
+```mermaid
+sequenceDiagram
+    participant B as Browser
+    participant D as Door (AuthenticationHandler)
+    participant U as UnionLoginStrategy
+    participant C as OidcCodeFlowCallback
+    participant K as Identity Provider
+
+    Note over B,D: anonymous-operations = NONE
+    B->>D: GET /auth/callback?code=...
+    D->>U: login(empty subject)
+    U--xD: throws PermissionDenied (NONE)
+    D-->>B: 401 + WWW-Authenticate: Basic
+    Note over B: browser shows its own login dialog
+    Note over C: callback is never reached
+
+    Note over B,D: anonymous-operations = READONLY
+    B->>D: GET /auth/callback?code=...
+    D->>U: login(empty subject)
+    U-->>D: NOBODY + read-only
+    D->>C: forward request (as nobody)
+    C->>K: POST token endpoint (code)
+    K-->>C: id_token
+    C->>C: login(bearer token) - real auth
+    C-->>B: 303 to #!/login-success + session
+```
+
+**In short:** with `anonymous-operations = NONE`, the callback request itself is rejected
+before it ever runs, and the browser's native login popup appears instead of completing
+sign-in. With `READONLY` (or `FULL`), the credential-less callback request is let through,
+so it can perform its own real authentication and finish the login. Keep this in mind when
+choosing `anonymous-operations` for a door that also serves the OIDC callback.
 
 ## Versioning
 
