@@ -488,13 +488,13 @@ public class PoolV4
     @Override
     public void beforeStop() {
         _flushingThread.stop();
-        _pingThread.stop();
 
         /*
          * No need for alarm here.
          */
         disablePool(PoolV2Mode.DISABLED_DEAD
               | PoolV2Mode.DISABLED_STRICT, 666, "Shutdown");
+        _pingThread.stop();
     }
 
     /**

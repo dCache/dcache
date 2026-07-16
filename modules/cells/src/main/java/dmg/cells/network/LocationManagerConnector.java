@@ -50,7 +50,7 @@ public class LocationManagerConnector
      * @param endpoint the address of the location manager
      */
     public LocationManagerConnector(String cellName, SocketFactory socketFactory, String remoteDomain, InetSocketAddress endpoint) {
-        super(cellName, "System");
+        super(cellName,"System", "");
         _domain = remoteDomain;
         _ssf = requireNonNull(socketFactory);
         _address = endpoint;
@@ -109,6 +109,7 @@ public class LocationManagerConnector
                     }
                 } catch (InterruptedIOException | InterruptedException | ClosedByInterruptException e) {
                     _log.warn("Connection to {} ({}) interrupted. Reason: {}", _domain, _address, e.toString());
+                    Thread.currentThread().interrupt();
                 } catch (ExecutionException | IOException e) {
                     String error = Exceptions.meaningfulMessage(Throwables.getRootCause(e));
                     _log.warn(AlarmMarkerFactory.getMarker(PredefinedAlarm.LOCATION_MANAGER_FAILURE,
