@@ -1,20 +1,52 @@
 package org.dcache.boot;
 
+import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
+import static java.nio.file.StandardOpenOption.WRITE;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
+import eu.emi.security.authn.x509.impl.CertificateUtils;
+
+import java.io.File;
+import java.io.OutputStream;
+import java.math.BigInteger;
+import java.nio.file.Files;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.security.Security;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
+import java.security.spec.ECGenParameterSpec;
+import java.util.Date;
 import java.util.HashMap;
-import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.test.InstanceSpec;
 import org.apache.curator.test.TestingServer;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.BasicConstraints;
+import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.cert.X509v3CertificateBuilder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.dcache.util.configuration.ConfigurationProperties;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class DomainTests {
@@ -34,23 +66,42 @@ public class DomainTests {
     private String curatorKeyPath;
     private String curatorCertPath;
 
+    private File tempCaDir;
+    private File tempCaFile;
+    private File tempZkCombined;
+    private File tempCuratorKey;
+    private File tempCuratorCert;
+
+    private X509Certificate caCert;
+    private X509Certificate curatorCert;
+    private PrivateKey curatorPrivateKey;
+
+    @BeforeClass
+    public static void setUpClass() {
+        Security.addProvider(new BouncyCastleProvider());
+    }
+
     @Before
     public void setUp() throws Exception {
+        tempCaDir = Files.createTempDirectory("ca-dir-").toFile();
+        tempCaFile = File.createTempFile("ca-cert-", ".pem");
+        tempZkCombined = File.createTempFile("zk-combined-", ".pem");
+        tempCuratorKey = File.createTempFile("curator-key-", ".pem");
+        tempCuratorCert = File.createTempFile("curator-cert-", ".pem");
+        generateCertificates();
 
-        caPath = Objects.requireNonNull(getClass().getResource("/zookeeper-tls/certificates/")).getFile();
-        curatorKeyPath = Objects.requireNonNull(getClass().getResource("/zookeeper-tls/curator-key.pem")).getFile();
-        curatorCertPath = Objects.requireNonNull(getClass().getResource("/zookeeper-tls/curator-cert.pem")).getFile();
-        String caFile = Objects.requireNonNull(getClass().getResource("/zookeeper-tls/ca-cert.pem")).getFile();
-        String zkCombined = Objects.requireNonNull(getClass().getResource("/zookeeper-tls/zookeeper-combined.pem")).getFile();
+        caPath = tempCaDir.getAbsolutePath();
+        curatorKeyPath = tempCuratorKey.getAbsolutePath();
+        curatorCertPath = tempCuratorCert.getAbsolutePath();
 
         tlsPort = InstanceSpec.getRandomPort();
         HashMap<String, Object> zkProperties = new HashMap<>();
         zkProperties.put("clientPort", "0");
         zkProperties.put("secureClientPort", String.valueOf(tlsPort));
         zkProperties.put("serverCnxnFactory", "org.apache.zookeeper.server.NettyServerCnxnFactory");
-        zkProperties.put("ssl.keyStore.location", zkCombined);
+        zkProperties.put("ssl.keyStore.location", tempZkCombined.getAbsolutePath());
         zkProperties.put("ssl.keyStore.type", "PEM");
-        zkProperties.put("ssl.trustStore.location", caFile);
+        zkProperties.put("ssl.trustStore.location", tempCaFile.getAbsolutePath());
         zkProperties.put("ssl.trustStore.type", "PEM");
         zkProperties.put("ssl.clientAuth", "NEED");
 
@@ -71,7 +122,51 @@ public class DomainTests {
         _domainProperties.setProperty("dcache.zookeeper.tls.enabled", "true");
         _domainProperties.setProperty("dcache.authn.crl-mode", "IF_VALID");
         _domainProperties.setProperty("dcache.authn.ocsp-mode", "IF_AVAILABLE");
+    }
 
+    private void generateCertificates() throws Exception {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("ECDSA", "BC");
+        kpg.initialize(new ECGenParameterSpec("secp256r1"), new SecureRandom());
+
+        KeyPair caKeyPair = kpg.generateKeyPair();
+        X500Name caName = new X500Name("CN=ZooKeeper-Test-CA");
+        caCert = buildCert(caName, caName, BigInteger.ONE, caKeyPair.getPublic(), caKeyPair, true);
+
+        KeyPair zkKeyPair = kpg.generateKeyPair();
+        X509Certificate zkCert = buildCert(caName, new X500Name("CN=localhost"), BigInteger.TWO, zkKeyPair.getPublic(), caKeyPair, false);
+
+        KeyPair curatorKeyPair = kpg.generateKeyPair();
+        curatorCert = buildCert(caName, new X500Name("CN=dcache-client"), BigInteger.valueOf(3), curatorKeyPair.getPublic(), caKeyPair, false);
+        curatorPrivateKey = curatorKeyPair.getPrivate();
+
+        try (OutputStream out = Files.newOutputStream(tempCaFile.toPath(), CREATE, TRUNCATE_EXISTING, WRITE)) {
+            CertificateUtils.saveCertificate(out, caCert, CertificateUtils.Encoding.PEM);
+        }
+
+        try (OutputStream out = Files.newOutputStream(tempZkCombined.toPath(), CREATE, TRUNCATE_EXISTING, WRITE)) {
+            CertificateUtils.saveCertificate(out, zkCert, CertificateUtils.Encoding.PEM);
+            CertificateUtils.savePrivateKey(out, zkKeyPair.getPrivate(), CertificateUtils.Encoding.PEM, null, null);
+        }
+
+        try (OutputStream keyOut = Files.newOutputStream(tempCuratorKey.toPath(), CREATE, TRUNCATE_EXISTING, WRITE);
+             OutputStream certOut = Files.newOutputStream(tempCuratorCert.toPath(), CREATE, TRUNCATE_EXISTING, WRITE)) {
+            CertificateUtils.savePrivateKey(keyOut, curatorPrivateKey, CertificateUtils.Encoding.PEM, null, null);
+            CertificateUtils.saveCertificate(certOut, curatorCert, CertificateUtils.Encoding.PEM);
+        }
+    }
+
+    private X509Certificate buildCert(X500Name issuer, X500Name subject, BigInteger serial,
+            PublicKey pubKey, KeyPair signerKeyPair, boolean isCA) throws Exception {
+        long now = System.currentTimeMillis();
+        var builder = new X509v3CertificateBuilder(
+                issuer, serial,
+                new Date(now), new Date(now + TimeUnit.DAYS.toMillis(1)),
+                subject, SubjectPublicKeyInfo.getInstance(pubKey.getEncoded()));
+        if (isCA) {
+            builder.addExtension(Extension.basicConstraints, true, new BasicConstraints(true));
+        }
+        var holder = builder.build(new JcaContentSignerBuilder("SHA256withECDSA").build(signerKeyPair.getPrivate()));
+        return new JcaX509CertificateConverter().getCertificate(holder);
     }
 
     @Test
@@ -116,9 +211,28 @@ public class DomainTests {
         _domainProperties.setProperty("dcache.zookeeper.tls.capath", caPath);
         _domain = new Domain(DOMAIN_NAME, _domainProperties);
         CuratorFramework curator = _domain.createCuratorFramework();
+        Domain._sslContextFactory = () -> buildSSLContext();
         curator.start();
         boolean connected = curator.blockUntilConnected(2, TimeUnit.SECONDS);
         assertTrue(connected);
+    }
+
+    private SSLContext buildSSLContext() throws Exception {
+        KeyStore keyStore = KeyStore.getInstance("PKCS12");
+        keyStore.load(null, null);
+        keyStore.setKeyEntry("client", curatorPrivateKey, new char[0], new Certificate[]{curatorCert});
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        kmf.init(keyStore, new char[0]);
+
+        KeyStore trustStore = KeyStore.getInstance("PKCS12");
+        trustStore.load(null, null);
+        trustStore.setCertificateEntry("ca", caCert);
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        tmf.init(trustStore);
+
+        SSLContext ctx = SSLContext.getInstance("TLS");
+        ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+        return ctx;
     }
 
     /*
@@ -136,6 +250,20 @@ public class DomainTests {
     public void tearDown() throws Exception {
         if (zkTestServer != null) {
             zkTestServer.close();
+        }
+        for (File f : new File[]{tempCaFile, tempZkCombined, tempCuratorKey, tempCuratorCert}) {
+            if (f != null) {
+                f.delete();
+            }
+        }
+        if (tempCaDir != null) {
+            File[] files = tempCaDir.listFiles();
+            if (files != null) {
+                for (File f : files) {
+                    f.delete();
+                }
+            }
+            tempCaDir.delete();
         }
     }
 }
