@@ -211,9 +211,6 @@ public class DomainTests {
         _domainProperties.setProperty("dcache.zookeeper.tls.capath", caPath);
         _domain = new Domain(DOMAIN_NAME, _domainProperties);
         CuratorFramework curator = _domain.createCuratorFramework();
-        // createCuratorFramework() sets Domain._sslContextFactory via CanlContextFactory, which
-        // needs the CA path to be a directory but does not require it to be populated.
-        // Replace it with a standard Java SSLContext built directly from the in-memory certs.
         Domain._sslContextFactory = () -> buildSSLContext();
         curator.start();
         boolean connected = curator.blockUntilConnected(2, TimeUnit.SECONDS);
@@ -260,10 +257,10 @@ public class DomainTests {
             }
         }
         if (tempCaDir != null) {
-            File[] children = tempCaDir.listFiles();
-            if (children != null) {
-                for (File child : children) {
-                    child.delete();
+            File[] files = tempCaDir.listFiles();
+            if (files != null) {
+                for (File f : files) {
+                    f.delete();
                 }
             }
             tempCaDir.delete();
