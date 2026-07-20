@@ -68,6 +68,7 @@ import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
@@ -75,8 +76,12 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
 import org.dcache.cells.json.CellData;
 import org.dcache.restful.services.cells.CellInfoService;
+import org.dcache.services.topology.ClassicCellsTopology;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -89,6 +94,8 @@ public final class CellInfoResources {
 
     @Inject
     private CellInfoService service;
+    @Autowired
+    private ClassicCellsTopology classicCellsTopology;
 
 
     @GET
@@ -124,12 +131,18 @@ public final class CellInfoResources {
           @ApiResponse(code = 403, message = "Cell info service only accessible to admin users."),
     })
     @Produces(MediaType.APPLICATION_JSON)
-    public CellData[] getCells() throws CacheException {
-        return Arrays.stream(service.getAddresses())
+    public Response getCells() throws CacheException {
+        long lastUpdated = service.lastUpdated();
+        CellData[] results =  Arrays.stream(service.getAddresses())
               .map(service::getCellData)
               .collect(Collectors.toList())
               .stream()
               .sorted(Comparator.comparing(CellData::getCellName))
               .toArray(CellData[]::new);
+        Response.ResponseBuilder responseBuilder = Response.ok(results);
+        if(lastUpdated != 0L) {
+            responseBuilder.lastModified(new Date(lastUpdated));
+        }
+        return responseBuilder.build();
     }
 }

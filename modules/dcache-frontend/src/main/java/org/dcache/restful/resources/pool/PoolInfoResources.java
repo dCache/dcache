@@ -85,6 +85,7 @@ import io.swagger.annotations.ResponseHeader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
@@ -197,6 +198,12 @@ public final class PoolInfoResources {
         }
     }
 
+    private void setlastModfied() {
+        long lastModified = service.getLastUpdated();
+        if(lastModified != 0L) {
+            response.addDateHeader("Last-Modified", lastModified);
+        }
+    }
 
     @GET
     @ApiOperation("Get information about a specific pool (configuration, state, usage).")
@@ -208,9 +215,10 @@ public final class PoolInfoResources {
         PoolInfo info = new PoolInfo();
 
         service.getDiagnosticInfo(pool, info);
-
+        setlastModfied();
         return info;
     }
+
 
 
     @GET
@@ -227,7 +235,7 @@ public final class PoolInfoResources {
         PoolInfo info = new PoolInfo();
 
         service.getCacheInfo(pool, pnfsid, info);
-
+        setlastModfied();
         return info;
     }
 
@@ -242,7 +250,7 @@ public final class PoolInfoResources {
         PoolInfo info = new PoolInfo();
 
         service.getQueueStat(group, info);
-
+        setlastModfied();
         return info;
     }
 
@@ -257,7 +265,7 @@ public final class PoolInfoResources {
         PoolInfo info = new PoolInfo();
 
         service.getFileStat(group, info);
-
+        setlastModfied();
         return info;
     }
 
@@ -325,6 +333,7 @@ public final class PoolInfoResources {
                       storageClass,
                       sort);
                 response.addIntHeader(TOTAL_COUNT_HEADER, pagedList.total);
+                setlastModfied();
                 return pagedList.contents;
             } else if (type.length == 2) {
                 if ((type[0].equals("p2p-client")
@@ -438,6 +447,7 @@ public final class PoolInfoResources {
             }
 
             response.addIntHeader(TOTAL_COUNT_HEADER, count);
+            setlastModfied();
             return list;
         } catch (InterruptedException | NoRouteToCellException | CacheException e) {
             LOGGER.warn(Exceptions.meaningfulMessage(e));

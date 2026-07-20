@@ -67,6 +67,7 @@ import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.Set;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
@@ -75,6 +76,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
 import org.dcache.cells.json.DomainData;
 import org.dcache.restful.services.cells.DomainInfoService;
 import org.springframework.stereotype.Component;
@@ -112,13 +115,19 @@ public final class DomainInfoResources {
     })
     @Path("/{domain}")
     @Produces(MediaType.APPLICATION_JSON)
-    public DomainData getDomain(
+    public Response getDomain(
           @ApiParam(value = "The domain name to query", example = "dCacheDomain")
           @PathParam("domain") String domain) {
         Set<String> known = Set.of(service.getAddresses());
         if (!known.contains(domain)) {
             throw new NotFoundException("Domain not found: " + domain);
         }
-        return service.getDomainData(domain);
+        DomainData domainData = service.getDomainData(domain);
+        Response.ResponseBuilder responseBuilder = Response.ok(domainData);
+        long lastUpdated = service.getLastUpdated();
+        if(lastUpdated != 0) {
+            responseBuilder.lastModified(new Date(lastUpdated));
+        }
+        return responseBuilder.build();
     }
 }

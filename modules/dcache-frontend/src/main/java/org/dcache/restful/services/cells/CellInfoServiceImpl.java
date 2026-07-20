@@ -65,6 +65,7 @@ import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.util.command.Command;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
@@ -124,6 +125,8 @@ public class CellInfoServiceImpl extends
 
     private String[] currentKnownCells = new String[0];
 
+    private volatile long lastUpdated = 0L;
+
     /**
      * <p>Does the brunt of the updating work on the data returned
      * by the collector.</p>
@@ -146,6 +149,11 @@ public class CellInfoServiceImpl extends
             cached.setState(4); // "Unknown"
         }
         return cached;
+    }
+
+    @Override
+    public long lastUpdated() {
+        return lastUpdated;
     }
 
     public void setProcessor(CellInfoFutureProcessor processor) {
@@ -173,6 +181,7 @@ public class CellInfoServiceImpl extends
             synchronized (this) {
                 currentKnownCells = data.keySet().toArray(String[]::new);
                 Arrays.sort(currentKnownCells);
+                lastUpdated = System.currentTimeMillis();
             }
         } catch (IllegalStateException e) {
             LOGGER.info("Processing cycle has overlapped; you may wish to "

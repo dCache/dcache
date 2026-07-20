@@ -68,6 +68,10 @@ import org.dcache.cells.json.DomainData;
 public interface DomainInfoService {
 
     /**
+     * @return unix timestamp of point in time when Domain Info was last updated.
+     */
+    long getLastUpdated();
+    /**
      * @return array of all currently known domain names.
      */
     String[] getAddresses();

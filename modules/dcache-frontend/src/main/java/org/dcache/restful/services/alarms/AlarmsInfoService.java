@@ -70,6 +70,11 @@ import org.dcache.alarms.LogEntry;
 public interface AlarmsInfoService {
 
     /**
+     * @return the unix time stamp of when the alarms info was last updated
+     */
+    long getLastUpdated();
+
+    /**
      * <p>Return the list of alarms.</p>
      *
      * <p>This method should fetch the list synchronously

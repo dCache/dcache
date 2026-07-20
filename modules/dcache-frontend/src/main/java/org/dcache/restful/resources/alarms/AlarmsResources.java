@@ -72,8 +72,10 @@ import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import io.swagger.annotations.Example;
 import io.swagger.annotations.ExampleProperty;
+
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
@@ -93,6 +95,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import org.dcache.alarms.LogEntry;
 import org.dcache.restful.services.alarms.AlarmsInfoService;
 import org.dcache.restful.util.HttpServletRequests;
@@ -131,6 +134,14 @@ public final class AlarmsResources {
               NOT_IMPLEMENTED);
     }
 
+    private Response buildResponse(Object entity) {
+        Response.ResponseBuilder responseBuilder = Response.ok(entity);
+        long lastUpdated = service.getLastUpdated();
+        if(lastUpdated != 0) {
+            responseBuilder.lastModified(new Date(lastUpdated));
+        }
+        return responseBuilder.build();
+    }
 
     @GET
     @ApiOperation("Provides a filtered list of log entries.")
@@ -140,7 +151,7 @@ public final class AlarmsResources {
     })
     @Path("logentries") // collection of all LogEntry.
     @Produces(MediaType.APPLICATION_JSON)
-    public List<LogEntry> getAlarms(@ApiParam("Number of entries to skip in directory listing.")
+    public Response getAlarms(@ApiParam("Number of entries to skip in directory listing.")
     @QueryParam("offset") Long offset,
           @ApiParam("Limit number of replies in directory listing.")
           @QueryParam("limit") Long limit,
@@ -165,7 +176,7 @@ public final class AlarmsResources {
           @ApiParam("A comma-seperated list of fields to sort log entries.")
           @QueryParam("sort") String sort) {
         try {
-            return this.service.get(offset,
+            List<LogEntry> logEntries = this.service.get(offset,
                   limit,
                   after,
                   before,
@@ -177,6 +188,7 @@ public final class AlarmsResources {
                   service,
                   info,
                   sort);
+            return buildResponse(logEntries);
         } catch (IllegalArgumentException e) {
             throw new BadRequestException(e);
         } catch (CacheException | InterruptedException e) {
@@ -184,7 +196,6 @@ public final class AlarmsResources {
             throw new InternalServerErrorException(e);
         }
     }
-
 
     @PATCH
     @Path("logentries") // collection of all LogEntry.
@@ -353,8 +364,9 @@ public final class AlarmsResources {
     @ApiOperation("Request the current mapping of all alarm types to priorities.")
     @Path("/priorities")
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, String> getPriorities() {
-        return service.getMap();
+    public Response getPriorities() {
+        Map<String, String> priorities = service.getMap();
+        return buildResponse(priorities);
     }
 
 
@@ -362,9 +374,10 @@ public final class AlarmsResources {
     @ApiOperation("Request the current mapping of an alarm type to its priority.")
     @Path("/priorities/{type}")
     @Produces(MediaType.APPLICATION_JSON)
-    public String getPriority(@ApiParam("The alarm type.")
+    public Response getPriority(@ApiParam("The alarm type.")
     @PathParam("type") String type) {
-        return service.getMap().get(type);
+        String priority = service.getMap().get(type);
+        return buildResponse(priority);
     }
 
 

@@ -76,6 +76,11 @@ import org.dcache.util.histograms.Histogram;
  * billing data.</p>
  */
 public interface BillingInfoService {
+    /**
+     *
+     * @return unix time stamp of when Biling Info was last updated.
+     */
+    long getLastUpdated();
 
     /**
      * <p>Request for the layout of the full grid for time series data.</p>

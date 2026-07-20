@@ -68,6 +68,8 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
+
+import java.util.Date;
 import java.util.UUID;
 import javax.inject.Inject;
 import javax.ws.rs.DefaultValue;
@@ -77,6 +79,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
 import org.dcache.restful.providers.SnapshotList;
 import org.dcache.restful.services.transfers.TransferInfoService;
 import org.dcache.restful.util.RequestUser;
@@ -109,7 +113,7 @@ public final class TransferResources {
           @ApiResponse(code = 500, message = "Internal Server Error"),
     })
     @Produces(MediaType.APPLICATION_JSON)
-    public SnapshotList<TransferInfo> getTransfers(@ApiParam("Use the snapshot "
+    public Response getTransfers(@ApiParam("Use the snapshot "
           + "corresponding to this UUID.  The "
           + "contract with the service is that if the "
           + "parameter value is null, the current snapshot "
@@ -156,22 +160,28 @@ public final class TransferResources {
         try {
             Long suid = RequestUser.getSubjectUidForFileOperations(unlimitedOperationVisibility);
 
-            return service.get(token,
-                  offset,
-                  limit,
-                  suid == null ? null : String.valueOf(suid),
-                  state,
-                  door,
-                  domain,
-                  protocol,
-                  uid,
-                  gid,
-                  vomsgroup,
-                  path,
-                  pnfsid,
-                  pool,
-                  client,
-                  sort);
+            SnapshotList<TransferInfo> result = service.get(token,
+                    offset,
+                    limit,
+                    suid == null ? null : String.valueOf(suid),
+                    state,
+                    door,
+                    domain,
+                    protocol,
+                    uid,
+                    gid,
+                    vomsgroup,
+                    path,
+                    pnfsid,
+                    pool,
+                    client,
+                    sort);
+            long timeOfCreation = result.getTimeOfCreation();
+            Response.ResponseBuilder responseBuilder = Response.ok(result);
+            if(timeOfCreation != 0L){
+                responseBuilder.lastModified(new Date(timeOfCreation));
+            }
+            return responseBuilder.build();
         } catch (CacheException e) {
             LOGGER.warn(Exceptions.meaningfulMessage(e));
             throw new InternalServerErrorException(e);

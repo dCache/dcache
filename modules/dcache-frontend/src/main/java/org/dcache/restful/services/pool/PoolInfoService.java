@@ -78,6 +78,10 @@ import org.dcache.services.history.pools.PoolListingService;
 public interface PoolInfoService extends PoolListingService {
 
     /**
+     * @return the unix time stamp of the time the pool info was last updated
+     */
+    long getLastUpdated();
+    /**
      * <p>Request for reposistory listing info for a replica on a pool.</p>
      *
      * @param pool   on which the file copy is located

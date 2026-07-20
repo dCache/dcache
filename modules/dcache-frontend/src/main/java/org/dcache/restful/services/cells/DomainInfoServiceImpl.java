@@ -110,6 +110,13 @@ public class DomainInfoServiceImpl extends
 
     private volatile Map<String, DomainData> cache = Map.of();
 
+    private volatile long lastUpdated = 0L;
+
+    @Override
+    public long getLastUpdated() {
+        return lastUpdated;
+    }
+
     @Override
     public synchronized String[] getAddresses() {
         return cache.keySet().toArray(String[]::new);
@@ -128,6 +135,7 @@ public class DomainInfoServiceImpl extends
     @Override
     protected synchronized void update(Map<String, DomainData> data) {
         cache = Map.copyOf(data);
+        lastUpdated = System.currentTimeMillis();
     }
 }
 
