@@ -137,7 +137,7 @@ Content-Type: application/octet-stream
         client.global.set("free-space-after", response.body.poolData.detailsData.costData.space.free);
         client.global.set("precious-space-after", response.body.poolData.detailsData.costData.space.precious);
         client.global.set("removable-space-after", response.body.poolData.detailsData.costData.space.removable);
-        client.assert(free-space-after > free-space-before);
-        client.assert(precious-space-after < precious-space-before);
+        client.assert("free-space-after" > "free-space-before");
+        client.assert("precious-space-after" < "precious-space-before");
     });
 %}

@@ -5,7 +5,7 @@ PUT {{webdav-door}}/data/pool-a/FileToTape.h5
 Authorization: Basic {{username}} {{password}}
 Content-Type: application/octet-stream
 
-< {{$projectRoot}}/README.md
+< ../README.md
 
 > {%
     client.test("Successful file upload", function() {
@@ -140,9 +140,9 @@ Content-Type: application/octet-stream
         client.global.set("free-space-after", response.body.poolData.detailsData.costData.space.free);
         client.global.set("precious-space-after", response.body.poolData.detailsData.costData.space.precious);
         client.global.set("removable-space-after", response.body.poolData.detailsData.costData.space.removable);
-        client.assert(free-space-after > free-space-before);
-        client.assert(precious-space-after < precious-space-before);
-        client.assert(removable-space-after > removable-space-before);
+        client.assert"("free-space-after" > "free-space-before");
+        client.assert("precious-space-after" < "precious-space-before");
+        client.assert("removable-space-after" > "removable-space-before");
     });
 %}
 
