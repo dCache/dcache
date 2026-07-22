@@ -5,7 +5,7 @@ PUT {{webdav-door}}/data/pool-a/FileToDiskandTape.h5
 Authorization: Basic {{username}} {{password}}
 Content-Type: application/octet-stream
 
-< /README.md
+< ../README.md
 
 > {%
     client.test("Successful file upload", function() {
@@ -31,7 +31,7 @@ Accept: application/json
 
 
 ### Find information on the pool's usage before qos change
-GET {{frontend-door}}{{endpoint}}{{pools}}{{sourcePool}}/usage
+GET {{frontend-door}}{{endpoint}}{{pools}}/{{sourcePool}}/usage
 Authorization: Basic {{username}} {{password}}
 Content-Type: application/octet-stream
 
@@ -121,7 +121,7 @@ Accept: application/json
 
 
 ### Find information on the pool's usage after qos change
-GET {{frontend-door}}{{endpoint}}{{pools}}{{sourcePool}}/usage
+GET {{frontend-door}}{{endpoint}}{{pools}}/{{sourcePool}}/usage
 Authorization: Basic {{username}} {{password}}
 Content-Type: application/octet-stream
 

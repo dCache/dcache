@@ -5,7 +5,7 @@ PUT {{webdav-door}}/data/pool-a/FileToTape.h5
 Authorization: Basic {{username}} {{password}}
 Content-Type: application/octet-stream
 
-< /README.md
+< {{$projectRoot}}/README.md
 
 > {%
     client.test("Successful file upload", function() {
@@ -33,7 +33,7 @@ Accept: application/json
 
 ### Find information on the pool's usage before qos change
 ### # curl -X GET "http://localhost:3880/api/v1/poolgroups/pool_write/usage" -H "accept: application/json"
-GET {{frontend-door}}{{endpoint}}{{pools}}{{sourcePool}}/usage
+GET {{frontend-door}}{{endpoint}}{{pools}}/{{sourcePool}}/usage
 Authorization: Basic {{username}} {{password}}
 Content-Type: application/octet-stream
 
@@ -124,7 +124,7 @@ Accept: application/json
 
 
 ### Find information on the pool's usage after qos change
-GET {{frontend-door}}{{endpoint}}{{pools}}{{sourcePool}}/usage
+GET {{frontend-door}}{{endpoint}}{{pools}}/{{sourcePool}}/usage
 Authorization: Basic {{username}} {{password}}
 Content-Type: application/octet-stream
 
