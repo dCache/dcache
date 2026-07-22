@@ -1,20 +1,55 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>titleToken</title>
-    <meta charset="utf-8" />
-    <meta name="description" content="The User Guide helps dCache users get the most from their dCache service.">
-    <!--#include virtual="/template/frags/std-html-head.shtml"-->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-fork-ribbon-css/0.2.2/gh-fork-ribbon.min.css" />
-    <link rel="stylesheet" href="css/dCacheBook-common.css" />
-    <link rel="stylesheet" href="/css/prism.css" />
-    <link rel="stylesheet" href="css/dCacheBook-dcacheorg.css" />
-    <script src="/lib/prism.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>titleToken</title>
+  <meta name="description" content="The dCache Book is the guide for administrators of dCache system, describing how to install and configure dCache.">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/custom.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-fork-ribbon-css/0.2.2/gh-fork-ribbon.min.css">
+  <link rel="stylesheet" href="/documentation/css/dCacheBook-common.css">
+  <link rel="stylesheet" href="/documentation/css/prism.css">
+  <link rel="stylesheet" href="/documentation/css/dCacheBook-dcacheorg.css">
+  <link rel="stylesheet" href="/documentation/css/doc-chrome.css">
+  <script src="/lib/prism.js"></script>
+  <link rel="icon" href="/favicon.ico">
 </head>
 <body>
-<!--#include virtual="/template/frags/header-beginning.shtml" -->
-<!--#include virtual="/template/frags/header-docs-userguide-@parsedVersion.majorVersion@.@parsedVersion.minorVersion@.shtml" -->
-<!--#include virtual="/template/frags/header-end.shtml" -->
+<header class="header">
+  <div class="container header__container">
+    <div class="logo logo--mixed">
+      <a class="logo__link" href="/" title="dCache.org" rel="home">
+        <div class="logo__item logo__imagebox">
+          <img class="logo__img" src="/img/dCache-logo.svg" alt="dCache logo">
+        </div>
+        <div class="logo__item logo__text">
+          <div class="logo__title">dCache.org</div>
+          <div class="logo__tagline">distributed storage for scientific data</div>
+        </div>
+      </a>
+    </div>
+    <nav class="menu">
+      <button class="menu__btn" aria-haspopup="true" aria-expanded="false" tabindex="0">
+        <span class="menu__btn-title" tabindex="-1">Menu</span>
+      </button>
+      <ul class="menu__list">
+        <li class="menu__item"><a class="menu__link" href="/"><span class="menu__text">Main</span></a></li>
+        <li class="menu__item"><a class="menu__link" href="/post/"><span class="menu__text">Posts</span></a></li>
+        <li class="menu__item"><a class="menu__link" href="/downloads/"><span class="menu__text">Downloads</span></a></li>
+        <li class="menu__item"><a class="menu__link" href="/release/"><span class="menu__text">Releases</span></a></li>
+        <li class="menu__item menu__item--active"><a class="menu__link" href="/documentation/"><span class="menu__text">Documentation</span></a></li>
+        <li class="menu__item"><a class="menu__link" href="/support/"><span class="menu__text">Support</span></a></li>
+        <li class="menu__item"><a class="menu__link" href="/about/"><span class="menu__text">About Us</span></a></li>
+        <li class="menu__item"><a class="menu__link" href="/development/"><span class="menu__text">Developer's Corner</span></a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
 <a class="github-fork-ribbon" href="@github.url-prefix@/##SOURCE_FILENAME##" data-ribbon="Edit me on GitHub" title="Edit me on GitHub">Edit me on GitHub</a>
-##NAVIGATION##
+<div class="doc-page-wrap">
+<div id="doc-nav" class="book-navi wrapper"></div>
+<script src="/documentation/nav.js"></script>
+<main class="main">
+  <div class="book-content wrapper">
 <div class="markdown-body">
