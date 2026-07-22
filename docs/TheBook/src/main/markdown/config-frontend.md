@@ -72,6 +72,23 @@ file lifetime.  The plots generated from this data by dCache-View will also
 not be available.  Please refer to the documentation under the [dCache History Service](config-history.md) for how to set
 this up.
 
+## Last-Modified header in monitoring responses
+
+GET responses for monitoring and admin data include a `Last-Modified` HTTP
+header indicating when the cached snapshot was last updated.  This applies
+to the following endpoints:
+
+- `/api/v1/alarms`
+- `/api/v1/billing`
+- `/api/v1/cells`
+- `/api/v1/domains`
+- `/api/v1/pools`
+- `/api/v1/restores`
+- `/api/v1/transfers`
+
+The header value reflects the timestamp of the most recent background
+collection cycle that refreshed the data.
+
 ## Properties controlling monitoring data access
 
 The following property should be noted.
