@@ -40,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.PoolManagerHandlerSubscriber;
+import org.dcache.poolmanager.RemotePoolMonitor;
 import org.dcache.services.login.IdentityResolverFactory;
 import org.dcache.services.login.RemoteLoginStrategy;
 import org.dcache.space.ReservationCaches;

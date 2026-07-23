@@ -97,7 +97,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.security.AccessController;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -120,6 +119,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
+
 import org.dcache.auth.Origin;
 import org.dcache.auth.RolePrincipal;
 import org.dcache.auth.RolePrincipal.Role;
@@ -136,7 +136,6 @@ import org.dcache.http.PathMapper;
 import org.dcache.missingfiles.AlwaysFailMissingFileStrategy;
 import org.dcache.missingfiles.MissingFileStrategy;
 import org.dcache.namespace.FileAttribute;
-import org.dcache.namespace.FileType;
 import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.Args;
@@ -1588,8 +1587,8 @@ public class DcacheResourceFactory
         return args.hasOption("binary") ? doorInfo : doorInfo.toString();
     }
 
-    private void initializeTransfer(HttpTransfer transfer, Subject subject)
-          throws URISyntaxException {
+    private void initializeTransfer(HttpTransfer transfer)
+            throws URISyntaxException {
         transfer.setLocation(getLocation());
         transfer.setCellAddress(getCellAddress());
         transfer.setPoolManagerStub(_poolManagerStub);
@@ -1755,7 +1754,7 @@ public class DcacheResourceFactory
         public HttpTransfer(PnfsHandler pnfs, Subject subject,
               Restriction restriction, FsPath path) throws URISyntaxException {
             super(pnfs, subject, restriction, path);
-            initializeTransfer(this, subject);
+            initializeTransfer(this);
             _clientAddressForPool = getClientAddress();
 
             var request = ServletRequest.getRequest();

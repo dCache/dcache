@@ -10,12 +10,14 @@ import static org.dcache.namespace.FileAttribute.STORAGEINFO;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
+import com.google.common.net.InetAddresses;
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.FileNotInCacheException;
+import diskCacheV111.util.FileNotInZoneCacheException;
 import diskCacheV111.util.FileNotOnlineCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.vehicles.IpProtocolInfo;
@@ -126,6 +128,7 @@ public class PoolMonitorV5
         private final Set<String> _excludedHosts;
         private final Predicate<String> _locationFilter;
         private final Predicate<String> _excludeFilter;
+        private final String _hostName;
 
         public PnfsFileLocation(FileAttributes fileAttributes,
               ProtocolInfo protocolInfo,
@@ -142,7 +145,6 @@ public class PoolMonitorV5
             _fileAttributes = fileAttributes;
             _protocolInfo = protocolInfo;
             _linkGroup = linkGroup;
-            _zone = zone;
             _excludedHosts = excludedHosts == null ?
                   Collections.EMPTY_SET : excludedHosts;
 
@@ -158,7 +160,9 @@ public class PoolMonitorV5
                 };
             }
 
+            _hostName = getHostName();
             _excludeFilter = _locationFilter.negate();
+            _zone = selectZone(zone);
         }
 
         @Override
@@ -166,6 +170,9 @@ public class PoolMonitorV5
             return _partition;
         }
 
+        public Optional<String> getZone() {
+            return _zone;
+        }
         /**
          * Returns the result of a PSU match for this PnfsFileLocation.
          * <p>
@@ -173,10 +180,9 @@ public class PoolMonitorV5
          * always false; thus only one boolean check is added to the PSU match routine.
          */
         private PoolPreferenceLevel[] match(DirectionType direction) {
-            String hostName = getHostName();
             String protocol = getProtocol();
             return _selectionUnit.match(direction,
-                  hostName,
+                  _hostName,
                   protocol,
                   _fileAttributes,
                   _linkGroup,
@@ -219,12 +225,29 @@ public class PoolMonitorV5
                         + "cache=%s,"
                         + "linkgroup=%s]",
                   type,
-                  getHostName(),
+                  _hostName,
                   getProtocol(),
                   _fileAttributes.getStorageClass(),
                   _fileAttributes.getHsm(),
                   nullToEmpty(_fileAttributes.getCacheClass()),
                   nullToEmpty(_linkGroup));
+        }
+
+        private Optional<String> selectZone(Optional<String> zone) {
+            if (_hostName == null) return zone;
+            PoolSelectionUnit psu = getPoolSelectionUnit();
+            InetAddress clientAddress = InetAddresses.forUriString(_hostName);
+            Map<String, PoolSelectionUnit.SelectionUnit> units = psu.getSelectionUnits();
+            List<NetUnit> netUnits = units.keySet()
+                    .stream()
+                    .filter(u -> units.get(u).getType().equals(PoolSelectionUnit.UnitType.NET))
+                    .map(units::get)
+                    .map(NetUnit.class::cast)
+                    .filter(u -> u.match(clientAddress))
+                    .filter(u -> u.getZone().isPresent())
+                    .distinct()
+                    .toList();
+            return (netUnits.size() == 1) ? netUnits.getFirst().getZone() : zone;
         }
 
         @Override
@@ -338,12 +361,12 @@ public class PoolMonitorV5
                             .toLowerCase()));
             }
 
-
             if (_zone.isPresent()) {
                 SelectedPool pool = filterReadPool(level, onlinePoolsWithFile, true);
                 if (pool != null) {
                     return pool;
                 }
+                throw new FileNotInZoneCacheException("File not in zone: " + _zone.get());
             }
 
             SelectedPool pool = filterReadPool(level, onlinePoolsWithFile, false);

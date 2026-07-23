@@ -70,6 +70,7 @@ import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import org.dcache.vehicles.FileAttributes;
@@ -302,16 +303,16 @@ final class TestSelectionUnit implements PoolSelectionUnit {
 
     private void createUnits(PoolSelectionUnitV2 psu) {
         for (String unit : TestData.PROTOCOL_UNITS) {
-            psu.createUnit(unit, false, false, false, true);
+            psu.createUnit(unit, false, false, false, true, Optional.empty());
         }
 
         for (String unit : TestData.NET_UNITS) {
-            psu.createUnit(unit, true, false, false, false);
+            psu.createUnit(unit, true, false, false, false, Optional.empty());
         }
 
         for (int i = 0; i < TestData.STORAGE_UNITS.length; ++i) {
             psu.createUnit(TestData.STORAGE_UNITS[i], false, true, false,
-                  false);
+                  false, Optional.empty());
             if (TestData.STORAGE_UNITS_SET[i] != null) {
                 psu.setStorageUnit(TestData.STORAGE_UNITS[i],
                       Integer.parseInt(TestData.STORAGE_UNITS_SET[i][0]),

@@ -12,11 +12,13 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
+import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.ListenableFuture;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.util.DestinationCostException;
 import diskCacheV111.util.FileNotInCacheException;
+import diskCacheV111.util.FileNotInZoneCacheException;
 import diskCacheV111.util.MissingResourceCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
@@ -52,6 +54,7 @@ import dmg.util.command.Command;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.Thread.UncaughtExceptionHandler;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -798,7 +801,7 @@ public class RequestContainerV5
             _handlerHash.compute(canonicalName, (k, v) -> {
                 if (v == null) {
                     PoolRequestHandler h = new PoolRequestHandler(pnfsId, poolGroup,
-                          canonicalName, allowedStates, envelope);
+                          canonicalName, allowedStates, envelope, hostName);
                     h.start();
                     return h;
                 } else {
@@ -850,6 +853,7 @@ public class RequestContainerV5
         private final List<CellMessage> _messages = new ArrayList<>();
         private int _retryCounter;
         private final CDC _cdc = new CDC();
+        private final String _hostName;
 
         /**
          * A list of objects that are notified whenever a PoolRequestHandler object changes state.
@@ -928,11 +932,12 @@ public class RequestContainerV5
 
         public PoolRequestHandler(PnfsId pnfsId, String poolGroup,
               String canonicalName, Collection<RequestState> allowedStates,
-              CellMessage message) {
+              CellMessage message, String hostName) {
             _pnfsId = pnfsId;
             _poolGroup = poolGroup;
             _name = canonicalName;
             _allowedStates = allowedStates;
+            _hostName = hostName;
 
             PoolMgrSelectReadPoolMsg request =
                   (PoolMgrSelectReadPoolMsg) message.getMessageObject();
@@ -1597,6 +1602,9 @@ public class RequestContainerV5
                                 failRequest(127, "Cost exceeded (st,p2p not allowed)");
                             }
                         }
+                    } catch (FileNotInZoneCacheException e) {
+                        LOGGER.info("[read] {} starting pool to pool", e.getMessage());
+                        nextStep(RequestState.ST_POOL_2_POOL);
                     } catch (FileNotInCacheException e) {
                         LOGGER.info("[read] {}", e.getMessage());
                         if (isFileStageable()) {

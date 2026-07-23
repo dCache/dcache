@@ -378,7 +378,7 @@ public abstract class AbstractFtpDoorV1
     private boolean _logAbortedTransfers;
     private final List<TimerTask> _activeTimerTasks = synchronizedList(new ArrayList<>());
 
-    Optional<String> _zone = Optional.empty();
+    private Optional<String> _zone = Optional.empty();
 
     private enum WorkAround {
         /* If globus-url-copy is organising a third-party copy then it will
@@ -439,6 +439,10 @@ public abstract class AbstractFtpDoorV1
     @Override
     public void setZone(Optional<String> zone) {
         _zone = zone;
+    }
+
+    public Optional<String> getZone() {
+        return _zone;
     }
 
     /**
@@ -3452,7 +3456,6 @@ public abstract class AbstractFtpDoorV1
                     delayedPassive,
                     protocolFamily,
                     version);
-        transfer.setZone(_zone);
         try {
             LOGGER.info("retrieve user={}", getUser());
             LOGGER.info("retrieve addr={}", _remoteSocketAddress);
@@ -3566,7 +3569,6 @@ public abstract class AbstractFtpDoorV1
                     delayedPassive,
                     protocolFamily,
                     version);
-        transfer.setZone(_zone);
         try {
             LOGGER.info("store receiving with mode {}", xferMode);
 

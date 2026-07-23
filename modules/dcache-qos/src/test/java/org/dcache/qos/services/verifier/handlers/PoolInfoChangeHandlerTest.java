@@ -71,6 +71,7 @@ import diskCacheV111.poolManager.PoolSelectionUnitV2;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolV2Mode;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -336,7 +337,7 @@ public class PoolInfoChangeHandlerTest {
 
     private void givenAdminHasAddedStorageUnit(String unit) {
         testUnit = unit;
-        nextPsu.createUnit(unit, false, true, false, false);
+        nextPsu.createUnit(unit, false, true, false, false, Optional.empty());
     }
 
     private void givenAdminHasRemovedPool(String pool) {

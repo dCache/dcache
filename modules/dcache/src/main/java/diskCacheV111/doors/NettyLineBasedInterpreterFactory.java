@@ -71,12 +71,12 @@ public interface NettyLineBasedInterpreterFactory {
      * @throws Exception If the interpreter could not be initialized
      */
     LineBasedInterpreter create(CellEndpoint endpoint, CellAddressCore myAddress,
-          InetSocketAddress remoteAddress, InetSocketAddress proxyAddress,
-          InetSocketAddress localAddress,
-          LineWriter writer, Executor executor, PoolManagerHandler poolManager,
-          IdentityResolverFactory identityResolverFactory,
-          LoadingCache<GetSpaceTokensKey, long[]> spaceDescriptionCache,
-          LoadingCache<String, Optional<Space>> spaceLookupCache)
+                                InetSocketAddress remoteAddress, InetSocketAddress proxyAddress,
+                                InetSocketAddress localAddress,
+                                LineWriter writer, Executor executor, PoolManagerHandler poolManager,
+                                IdentityResolverFactory identityResolverFactory,
+                                LoadingCache<GetSpaceTokensKey, long[]> spaceDescriptionCache,
+                                LoadingCache<String, Optional<Space>> spaceLookupCache)
           throws Exception;
 
     /**

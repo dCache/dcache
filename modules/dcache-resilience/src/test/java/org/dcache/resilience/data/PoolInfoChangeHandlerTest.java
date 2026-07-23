@@ -73,6 +73,7 @@ import com.google.common.collect.ImmutableList;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.dcache.resilience.TestBase;
@@ -436,7 +437,7 @@ public class PoolInfoChangeHandlerTest extends TestBase {
     }
 
     private void whenPsuUpdateContainsNewStorageUnit(String unit) {
-        getUpdatedPsu().createUnit(unit, false, true, false, false);
+        getUpdatedPsu().createUnit(unit, false, true, false, false, Optional.empty());
     }
 
     private void whenPsuUpdateContainsPoolGroupAddedToNewLink(String group,

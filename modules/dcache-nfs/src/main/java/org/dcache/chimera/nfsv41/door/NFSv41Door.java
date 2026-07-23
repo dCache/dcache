@@ -774,7 +774,6 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         return layoutDriver.getDeviceAddress(usableAddresses);
     }
-
     /**
      * ask pool manager for a file
      * <p>

@@ -2,10 +2,9 @@ package org.dcache.tests.poolmanager;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-
 import com.google.gson.GsonBuilder;
-import diskCacheV111.poolManager.CostModuleV1;
 import diskCacheV111.poolManager.PoolMonitorV5;
+import diskCacheV111.poolManager.CostModuleV1;
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnitAccess;
 import diskCacheV111.poolManager.PoolSelectionUnitV2;
@@ -154,6 +153,36 @@ public class PoolMonitorTest {
     }
 
     @Test
+    public void testSelectClientZoneOverDoorZone() throws Exception {
+        // Client is in 192.168.1.0/24 zone "A", door is in zone "B"
+        _access.createUnit("192.168.1.0/24", true, false, false, false, Optional.of("A"));
+
+        ProtocolInfo clientProtocolInfo = new DCapProtocolInfo("DCap", 3, 0,
+                new InetSocketAddress("192.168.1.100", 17));
+        FileAttributes fileAttributes = FileAttributes.of().pnfsId(_pnfsId).build();
+
+        PoolMonitorV5.PnfsFileLocation selector = (PoolMonitorV5.PnfsFileLocation)
+                _poolMonitor.getPoolSelector(fileAttributes, clientProtocolInfo, null,
+                        Optional.of("B"), Set.of());
+
+        assertEquals(Optional.of("A"), selector.getZone());
+    }
+
+    @Test
+    public void testDoorZoneKeptWhenNoNetUnitMatches() throws Exception {
+        // No NetUnit matching clients IP, door zone is kept
+        ProtocolInfo clientProtocolInfo = new DCapProtocolInfo("DCap", 3, 0,
+                new InetSocketAddress("10.0.0.1", 17));
+        FileAttributes fileAttributes = FileAttributes.of().pnfsId(_pnfsId).build();
+
+        PoolMonitorV5.PnfsFileLocation selector = (PoolMonitorV5.PnfsFileLocation)
+                _poolMonitor.getPoolSelector(fileAttributes, clientProtocolInfo, null,
+                        Optional.of("B"), Set.of());
+
+        assertEquals(Optional.of("B"), selector.getZone());
+    }
+
+    @Test
     public void testWritePoolZonePreference() throws Exception {
         prepareCostModule(false, true);
 
@@ -177,23 +206,6 @@ public class PoolMonitorTest {
                 null, Optional.of("1"), Collections.EMPTY_SET);
 
         assertEquals("pool1", selector.selectReadPool().name());
-    }
-
-    @Test
-    public void testReadPoolZoneFallback() throws Exception {
-        prepareCostModule(false, true);
-
-        // Only pool2 in zone 2 has the file
-        FileAttributes attributes = FileAttributes.of()
-                .pnfsId(_pnfsId)
-                .locations(Collections.singleton("pool2"))
-                .build();
-        StorageInfos.injectInto(_storageInfo, attributes);
-
-        PoolSelector selector = _poolMonitor.getPoolSelector(attributes, _protocolInfo,
-                null, Optional.of("1"), Collections.EMPTY_SET);
-
-        assertEquals("pool2", selector.selectReadPool().name());
     }
 
     @Test
@@ -223,6 +235,7 @@ public class PoolMonitorTest {
 
         assertEquals("pool2", selector.selectWritePool(0).name());
     }
+
     @Test
     public void testStagePoolZonePreference() throws Exception {
         _partitionManager.setProperties(null, Map.of("fallback-onspace", "yes"));
@@ -316,7 +329,6 @@ public class PoolMonitorTest {
             _selectionUnit.getPool("pool2").setHsmInstances(Set.of("osm"));
         }
     }
-
 
     private PoolSelector prepareHostExclusion() throws Exception {
         /*
