@@ -5,3 +5,17 @@ dcache:
     dcache.kafka.bootstrap-servers = billing-kafka:9092
     spacemanager.link-groups-update.period.unit=SECONDS
 
+    # Dummy HSM settings for tape QoS integration tests
+    pool.hsm.type=script
+    pool.hsm.script.command=/usr/local/bin/dummy-hsm.sh
+
+extraVolumes:
+  - name: hsm-script
+    configMap:
+      name: dummy-hsm-script
+      defaultMode: 0755 # execute (+x) permissions
+
+extraVolumeMounts:
+  - name: hsm-script
+    mountPath: /usr/local/bin/dummy-hsm.sh
+    subPath: dummy-hsm.sh

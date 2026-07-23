@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dummy-hsm-script
+data:
+  dummy-hsm.sh: |
+    #!/bin/bash
+    # Dummy HSM script for dCache tape QoS testing
+    exit 0
