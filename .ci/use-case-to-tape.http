@@ -1,4 +1,4 @@
-### This test uploads a file, checks file attributes before and after qos update, does a qos change from 'disk+tape' to 'tape', checks pool storage.
+### This test uploads a file, it checks file attributes before and after qos update, does a qos change from 'disk+tape' to 'tape', checks pool storage.
 
 ### Upload file
 PUT {{webdav-door}}/data/pool-a/FileToTape.h5
