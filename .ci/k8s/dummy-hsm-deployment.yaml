@@ -10,7 +10,7 @@ data:
 
     case "$ACTION" in
         put)
-            # Output required tape URI to stdout
+            # Print dummy storage URI to stdout for dCache registration
             echo "dummy://dummy/?store=default&group=default&bfid=${PNFSID:-000000000000}"
             exit 0
             ;;

@@ -8,7 +8,7 @@ PNFSID="$2"
 
 case "$ACTION" in
     put)
-        # Output required storage URI to stdout for dCache registration
+        # Print dummy storage URI to stdout for dCache registration
         echo "dummy://dummy/?store=default&group=default&bfid=${PNFSID:-000000000000}"
         exit 0
         ;;
