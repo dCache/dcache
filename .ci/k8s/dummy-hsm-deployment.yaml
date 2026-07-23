@@ -5,5 +5,16 @@ metadata:
 data:
   dummy-hsm.sh: |
     #!/bin/bash
-    # Dummy HSM script for dCache tape QoS testing
-    exit 0
+    ACTION="$1"
+    PNFSID="$2"
+
+    case "$ACTION" in
+        put)
+            # Output required tape URI to stdout
+            echo "dummy://dummy/?store=default&group=default&bfid=${PNFSID:-000000000000}"
+            exit 0
+            ;;
+        get|remove|*)
+            exit 0
+            ;;
+    esac

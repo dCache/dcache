@@ -5,22 +5,14 @@
 
 ACTION="$1"
 PNFSID="$2"
-FILEPATH="$3"
 
 case "$ACTION" in
     put)
-        # Simulate successful write to tape
+        # Output required storage URI to stdout for dCache registration
+        echo "dummy://dummy/?store=default&group=default&bfid=${PNFSID:-000000000000}"
         exit 0
         ;;
-    get)
-        # Simulate successful restore/stage from tape
-        exit 0
-        ;;
-    remove)
-        # Simulate removal from tape
-        exit 0
-        ;;
-    *)
+    get|remove|*)
         exit 0
         ;;
 esac
