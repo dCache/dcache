@@ -13,15 +13,7 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
 import com.google.common.util.concurrent.ListenableFuture;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.CheckStagePermission;
-import diskCacheV111.util.DestinationCostException;
-import diskCacheV111.util.FileNotInCacheException;
-import diskCacheV111.util.MissingResourceCacheException;
-import diskCacheV111.util.PermissionDeniedCacheException;
-import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.SourceCostException;
+import diskCacheV111.util.*;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.Message;
@@ -1597,6 +1589,9 @@ public class RequestContainerV5
                                 failRequest(127, "Cost exceeded (st,p2p not allowed)");
                             }
                         }
+                    } catch (FileNotInZoneCacheException e) {
+                        LOGGER.info("[read] {} starting pool to pool", e.getMessage());
+                        nextStep(RequestState.ST_POOL_2_POOL);
                     } catch (FileNotInCacheException e) {
                         LOGGER.info("[read] {}", e.getMessage());
                         if (isFileStageable()) {
@@ -1881,7 +1876,8 @@ public class RequestContainerV5
                 SelectedPool pool = _poolSelector.selectReadPool();
                 _parameter = _poolSelector.getCurrentPartition();
                 return pool;
-            } finally {
+            }
+            finally {
                 LOGGER.info("[read] Took  {} ms", (System.currentTimeMillis() - _started));
             }
         }

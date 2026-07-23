@@ -5,7 +5,7 @@ FROM almalinux:10-minimal as builder
 
 # Add JRE
 RUN microdnf -y install java-25-openjdk-devel java-25-openjdk-jmods binutils
-RUN jlink --compress=zip-6 --strip-debug --no-header-files --no-man-pages --add-modules java.base,java.compiler,java.instrument,java.logging,java.management,java.naming,java.security.jgss,java.transaction.xa,java.xml,jdk.jfr,jdk.security.auth,jdk.unsupported,java.desktop,java.sql,jdk.naming.dns,java.rmi,jdk.crypto.cryptoki --output /jlink-runtime
+RUN jlink --compress=zip-6 --strip-debug --no-header-files --no-man-pages --add-modules java.base,java.compiler,java.instrument,java.logging,java.management,java.naming,java.security.jgss,java.transaction.xa,java.xml,jdk.jfr,jdk.security.auth,jdk.unsupported,java.desktop,java.sql,jdk.naming.dns,java.rmi,jdk.crypto.cryptoki,jdk.jdwp.agent --output /jlink-runtime
 
 # Minimalistic Java image
 FROM almalinux:10-minimal
@@ -16,7 +16,7 @@ ARG JACOCO_ENABLED=false
 ENV JACOCO_ENABLED=${JACOCO_ENABLED}
 # Copy both the agent and the cli
 ENV DCACHE_INSTALL_DIR=/opt/dcache
-COPY staging-libs/ ${DCACHE_INSTALL_DIR}/share/classes/
+#COPY staging-libs/ ${DCACHE_INSTALL_DIR}/share/classes/
 
 # Neede by groupadd and useradd
 # REVISIT: in some environments base OS kernel doesnt allow use of xattrs and the installation of

@@ -13,11 +13,7 @@ import com.google.common.collect.Ordering;
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
 import diskCacheV111.pools.PoolCostInfo;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileLocality;
-import diskCacheV111.util.FileNotInCacheException;
-import diskCacheV111.util.FileNotOnlineCacheException;
-import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.*;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.ProtocolInfo;
 import java.net.InetAddress;
@@ -344,6 +340,7 @@ public class PoolMonitorV5
                 if (pool != null) {
                     return pool;
                 }
+                throw new FileNotInZoneCacheException("File not in zone: " + _zone.get());
             }
 
             SelectedPool pool = filterReadPool(level, onlinePoolsWithFile, false);
