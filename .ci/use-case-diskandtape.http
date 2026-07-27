@@ -128,7 +128,7 @@ Content-Type: application/octet-stream
 > {%
     client.test("Information on pool-a", function() {
         client.assert(response.status === 200, "Expected 200, got " + response.status);
-        client.assert(response.body.poolData.detailsData.costData.space.length != 0, "space is empty");
+        client.assert(response.body.poolData.detailsData.costData.space.length !== 0, "space is empty");
         client.assert(response.body.poolData.detailsData.costData.space.total > 0, "total space is less than zero");
         client.assert(response.body.poolData.detailsData.costData.space.free > 0, "free space is less than zero");
         client.assert(response.body.poolData.detailsData.costData.space.precious >= 0, "precious space is less than zero");
@@ -137,7 +137,13 @@ Content-Type: application/octet-stream
         client.global.set("free-space-after", response.body.poolData.detailsData.costData.space.free);
         client.global.set("precious-space-after", response.body.poolData.detailsData.costData.space.precious);
         client.global.set("removable-space-after", response.body.poolData.detailsData.costData.space.removable);
-        client.assert("free-space-after" > "free-space-before");
-        client.assert("precious-space-after" < "precious-space-before");
+
+        const freeAfter = Number(client.global.get("free-space-after"));
+        const freeBefore = Number(client.global.get("free-space-before"));
+        const preciousAfter = Number(client.global.get("precious-space-after"));
+        const preciousBefore = Number(client.global.get("precious-space-before"));
+
+        client.assert(freeAfter > freeBefore, "Expected free space after (" + freeAfter + ") to be greater than before (" + freeBefore + ")");
+        client.assert(preciousAfter < preciousBefore, "Expected precious space after (" + preciousAfter + ") to be less than before (" + preciousBefore + ")");
     });
 %}
