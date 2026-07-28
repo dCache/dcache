@@ -136,6 +136,7 @@ import org.dcache.http.PathMapper;
 import org.dcache.missingfiles.AlwaysFailMissingFileStrategy;
 import org.dcache.missingfiles.MissingFileStrategy;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.namespace.FileType;
 import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.Args;
@@ -663,7 +664,9 @@ public class DcacheResourceFactory
                           buildRequestedAttributes();
                     FileAttributes attributes =
                           pnfs.getFileAttributes(path.toString(), requestedAttributes);
-                    if(isDigestRequested() && attributes.getChecksums().isEmpty()) {
+                    if(isDigestRequested()
+                            && attributes.getChecksums().isEmpty()
+                            && !attributes.getFileType().equals(DIR)) {
                         int retry = 10;
                         do{
                             attributes = pnfs.getFileAttributes(path.toString(), requestedAttributes);
