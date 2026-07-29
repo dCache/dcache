@@ -613,6 +613,24 @@ Helm-Deploy Current dCache build:
     - kubectl -n ${K8S_NAMESPACE} exec minio -- mc alias set local http://localhost:9000 dcache let-me-in
     - kubectl -n ${K8S_NAMESPACE} exec minio -- mc mb --ignore-existing local/hsm
 
+#
+# pool.hsm.type/pool.hsm.script.command in custom-helm-config.yaml are not real
+# dCache properties and are silently ignored - HSM must be registered via the
+# 'hsm create' cell command instead.
+#
+Configure HSM on pools:
+  stage: test_deploy
+  extends: .kubernetes_image
+  needs:
+    - Helm-Deploy Current dCache build
+  script:
+    - kubectl -n ${K8S_NAMESPACE} get pods
+    - |
+      for POOL in pool-a pool-b; do
+        kubectl -n ${K8S_NAMESPACE} exec store-${POOL}-0 -- \
+          /opt/dcache/bin/dcache admin -e "\\s ${POOL} hsm create osm dummyhsm script -command=/usr/local/bin/dummy-hsm.sh"
+      done
+
 Helm-Deploy Latest dCache Golden Release:
   stage: test_deploy
   extends: .helm_image
@@ -687,20 +705,11 @@ Grid EL9 WN tests:
       junit:
         - "xunit*.xml"
 
-Configure HSM on pools:
-  stage: test_deploy
-  extends: .kubernetes_image
-  needs: [Helm-Deploy Current dCache build]
-  script:
-    - |
-      for POOL in pool-a pool-b; do
-        kubectl -n ${K8S_NAMESPACE} exec store-${POOL}-0 -- \
-          /opt/dcache/bin/dcache admin -e "\\s ${POOL} hsm create osm dummyhsm script -command=/usr/local/bin/dummy-hsm.sh"
-      done
-      
 Frontend test suite:
   stage: testing
   extends: .kubernetes_image
+  needs:
+    - Configure HSM on pools
   script:
     - kubectl -n $K8S_NAMESPACE apply -f .ci/frontend.yaml
     - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod http-tester; do sleep 1; done
