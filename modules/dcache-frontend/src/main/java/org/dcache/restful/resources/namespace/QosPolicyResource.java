@@ -83,11 +83,13 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import org.dcache.cells.CellStub;
 import org.dcache.http.PathMapper;
 import org.dcache.qos.QoSPolicyStat;
 import org.dcache.qos.data.FileQosPolicyInfo;
 import org.dcache.restful.util.HandlerBuilders;
+import org.dcache.restful.util.Responses;
 import org.dcache.vehicles.qos.FileQoSPolicyInfoMessage;
 import org.dcache.vehicles.qos.PnfsManagerGetQoSPolicyStatsMessage;
 import org.json.JSONException;
@@ -134,7 +136,7 @@ public class QosPolicyResource {
     })
     @Path("stats")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<QoSPolicyStat> getPolicyStats() {
+    public Response getPolicyStats() {
         PnfsManagerGetQoSPolicyStatsMessage message = new PnfsManagerGetQoSPolicyStatsMessage();
 
         try {
@@ -148,7 +150,8 @@ public class QosPolicyResource {
             throw new InternalServerErrorException(e);
         }
 
-        return message.getPolicyStats();
+        List<QoSPolicyStat> result = message.getPolicyStats();
+        return Responses.buildResponse(result);
     }
 
     @GET
@@ -162,7 +165,7 @@ public class QosPolicyResource {
     })
     @Path("id/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public FileQosPolicyInfo getPolicyInfoForPnfsId(@ApiParam("The pnfsid of the file for which to retrieve policy info.")
+    public Response getPolicyInfoForPnfsId(@ApiParam("The pnfsid of the file for which to retrieve policy info.")
     @PathParam("id")String id) {
         FileQoSPolicyInfoMessage message = new FileQoSPolicyInfoMessage(new PnfsId(id));
 
@@ -177,7 +180,8 @@ public class QosPolicyResource {
             throw new InternalServerErrorException(e);
         }
 
-        return message.getQosPolicyInfo();
+        FileQosPolicyInfo result = message.getQosPolicyInfo();
+        return Responses.buildResponse(result);
     }
 
     @GET
@@ -191,7 +195,7 @@ public class QosPolicyResource {
     })
     @Path("path/{path : .*}")
     @Produces(MediaType.APPLICATION_JSON)
-    public FileQosPolicyInfo getPolicyInfoForPath(@ApiParam("The path of the file for which to retrieve policy info.")
+    public Response getPolicyInfoForPath(@ApiParam("The path of the file for which to retrieve policy info.")
     @PathParam("path")String requestPath) {
         FileQoSPolicyInfoMessage message;
         PnfsHandler handler = HandlerBuilders.unrestrictedPnfsHandler(pnfsmanager);
@@ -211,7 +215,7 @@ public class QosPolicyResource {
 
         FileQosPolicyInfo stat = message.getQosPolicyInfo();
         stat.setPath(path);
-        return stat;
+        return Responses.buildResponse(stat);
     }
 
 }

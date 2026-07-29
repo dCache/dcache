@@ -73,9 +73,11 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.selection.Link;
 import org.dcache.restful.providers.selection.LinkGroup;
+import org.dcache.restful.util.Responses;
 import org.springframework.stereotype.Component;
 
 /**
@@ -97,12 +99,13 @@ public final class LinkResources {
     @ApiOperation("Get information about all links."
           + " Results sorted lexicographically by link name.")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<Link> getLinks() {
-        return poolMonitor.getPoolSelectionUnit().getLinks().values()
+    public Response getLinks() {
+        List<Link> result = poolMonitor.getPoolSelectionUnit().getLinks().values()
               .stream()
               .sorted(Comparator.comparing(SelectionLink::getName))
               .map(Link::new)
               .collect(Collectors.toList());
+        return Responses.buildResponse(result);
     }
 
     @GET
@@ -110,13 +113,14 @@ public final class LinkResources {
           + " Results sorted lexicographically by link group name.")
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/groups")
-    public List<LinkGroup> getLinkGroups() {
+    public Response getLinkGroups() {
         PoolSelectionUnit psu = poolMonitor.getPoolSelectionUnit();
 
-        return psu.getLinkGroups().values()
+        List<LinkGroup> result = psu.getLinkGroups().values()
               .stream()
               .sorted(Comparator.comparing(SelectionLinkGroup::getName))
               .map((g) -> new LinkGroup(g, psu))
               .collect(Collectors.toList());
+        return Responses.buildResponse(result);
     }
 }

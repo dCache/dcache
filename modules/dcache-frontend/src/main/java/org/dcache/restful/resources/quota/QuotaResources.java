@@ -100,6 +100,7 @@ import org.dcache.quota.data.QuotaInfo;
 import org.dcache.quota.data.QuotaRequest;
 import org.dcache.quota.data.QuotaType;
 import org.dcache.restful.util.RequestUser;
+import org.dcache.restful.util.Responses;
 import org.dcache.vehicles.quota.PnfsManagerGetQuotaMessage;
 import org.dcache.vehicles.quota.PnfsManagerQuotaMessage;
 import org.dcache.vehicles.quota.PnfsManagerRemoveQuotaMessage;
@@ -135,7 +136,7 @@ public final class QuotaResources {
     })
     @Path("/user")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<QuotaInfo> getUserQuotas(@ApiParam(value = "Return user quota associated with "
+    public Response getUserQuotas(@ApiParam(value = "Return user quota associated with "
           + "calling user only.")
     @DefaultValue("false")
     @QueryParam("user") boolean user) {
@@ -149,7 +150,8 @@ public final class QuotaResources {
             message = new PnfsManagerGetQuotaMessage(QuotaType.USER);
         }
 
-        return getQuotas(message);
+        List<QuotaInfo> result = getQuotas(message);
+        return Responses.buildResponse(result);
     }
 
     @GET
@@ -162,7 +164,7 @@ public final class QuotaResources {
     })
     @Path("/group")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<QuotaInfo> getGroupQuotas(@ApiParam(value = "Return group quota associated with "
+    public Response getGroupQuotas(@ApiParam(value = "Return group quota associated with "
           + "calling user only.")
     @DefaultValue("false")
     @QueryParam("user") boolean user) {
@@ -179,7 +181,8 @@ public final class QuotaResources {
             message = new PnfsManagerGetQuotaMessage(QuotaType.GROUP);
         }
 
-        return getQuotas(message);
+        List<QuotaInfo> result = getQuotas(message);
+        return Responses.buildResponse(result);
     }
 
     @GET
@@ -191,11 +194,12 @@ public final class QuotaResources {
     })
     @Path("/user/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<QuotaInfo> getUserQuota(
+    public Response getUserQuota(
           @ApiParam(value = "The user id to which the quota corresponds.",
                 required = true)
           @PathParam("id") int id) {
-        return getQuotas(new PnfsManagerGetQuotaMessage(id, QuotaType.USER));
+        List<QuotaInfo> result = getQuotas(new PnfsManagerGetQuotaMessage(id, QuotaType.USER));
+        return Responses.buildResponse(result);
     }
 
     @GET
@@ -207,11 +211,12 @@ public final class QuotaResources {
     })
     @Path("/group/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<QuotaInfo> getGroupQuota(
+    public Response getGroupQuota(
           @ApiParam(value = "The group id to which the quota corresponds.",
                 required = true)
           @PathParam("id") int id) {
-        return getQuotas(new PnfsManagerGetQuotaMessage(id, QuotaType.GROUP));
+        List<QuotaInfo> result = getQuotas(new PnfsManagerGetQuotaMessage(id, QuotaType.GROUP));
+        return Responses.buildResponse(result);
     }
 
     @POST

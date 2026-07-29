@@ -67,7 +67,6 @@ import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.Set;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
@@ -80,6 +79,7 @@ import javax.ws.rs.core.Response;
 
 import org.dcache.cells.json.DomainData;
 import org.dcache.restful.services.cells.DomainInfoService;
+import org.dcache.restful.util.Responses;
 import org.springframework.stereotype.Component;
 
 /**
@@ -100,11 +100,12 @@ public final class DomainInfoResources {
           @ApiResponse(code = 403, message = "Domain info service only accessible to admin users."),
     })
     @Produces(MediaType.APPLICATION_JSON)
-    public DomainData[] getDomains() {
-        return Arrays.stream(service.getAddresses())
+    public Response getDomains() {
+        DomainData[] result = Arrays.stream(service.getAddresses())
               .map(service::getDomainData)
               .sorted(Comparator.comparing(DomainData::getDomainName))
               .toArray(DomainData[]::new);
+        return Responses.buildResponse(result, service.getLastUpdated());
     }
 
     @GET
@@ -123,11 +124,6 @@ public final class DomainInfoResources {
             throw new NotFoundException("Domain not found: " + domain);
         }
         DomainData domainData = service.getDomainData(domain);
-        Response.ResponseBuilder responseBuilder = Response.ok(domainData);
-        long lastUpdated = service.getLastUpdated();
-        if(lastUpdated != 0) {
-            responseBuilder.lastModified(new Date(lastUpdated));
-        }
-        return responseBuilder.build();
+        return Responses.buildResponse(domainData, service.getLastUpdated());
     }
 }

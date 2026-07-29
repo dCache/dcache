@@ -113,6 +113,7 @@ import org.dcache.cells.CellStub;
 import org.dcache.http.PathMapper;
 import org.dcache.restful.util.HandlerBuilders;
 import org.dcache.restful.util.RequestUser;
+import org.dcache.restful.util.Responses;
 import org.dcache.restful.util.bulk.BulkServiceCommunicator;
 import org.dcache.services.bulk.BulkArchivedRequestInfo;
 import org.dcache.services.bulk.BulkArchivedRequestInfoMessage;
@@ -174,7 +175,7 @@ public final class BulkResources {
           @ApiResponse(code = 500, message = "Internal Server Error")
     })
     @Produces(MediaType.APPLICATION_JSON)
-    public List<BulkRequestSummary> getRequests(
+    public Response getRequests(
           @ApiParam("A comma-separated list of non-repeating elements, "
                 + "each of which is one of: queued, started, completed, "
                 + "cancelled.")
@@ -206,7 +207,8 @@ public final class BulkResources {
         BulkRequestListMessage message = new BulkRequestListMessage(statusSet, ownerSet, path, offset);
         message = service.send(message);
 
-        return message.getRequests();
+        List<BulkRequestSummary> result = message.getRequests();
+        return Responses.buildResponse(result);
     }
 
     /**
@@ -283,7 +285,7 @@ public final class BulkResources {
     })
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public BulkRequestInfo getBulkRequestStatus(@ApiParam("The unique id of the request.")
+    public Response getBulkRequestStatus(@ApiParam("The unique id of the request.")
     @PathParam("id") String id,
           @ApiParam("Offset for the target list (max length = 10K).")
           @DefaultValue("0")
@@ -295,7 +297,8 @@ public final class BulkResources {
         message.setSubject(subject);
         message.setOffset(offset);
         message = service.send(message);
-        return message.getInfo();
+        BulkRequestInfo result = message.getInfo();
+        return Responses.buildResponse(result);
     }
 
     @GET
@@ -310,7 +313,7 @@ public final class BulkResources {
     })
     @Path("/archived")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<BulkArchivedSummaryInfo> getArchivedSummaryList(
+    public Response getArchivedSummaryList(
           @ApiParam("A datetime string formatted as 'yyyy/MM/dd-HH:mm:ss'.")
           @QueryParam("before") String before,
           @ApiParam("A datetime string formatted as 'yyyy/MM/dd-HH:mm:ss'.")
@@ -344,7 +347,8 @@ public final class BulkResources {
         BulkArchivedSummaryInfoMessage message = new BulkArchivedSummaryInfoMessage(filter, restriction);
         message.setSubject(subject);
         message = service.send(message);
-        return message.getInfo();
+        List<BulkArchivedSummaryInfo> result = message.getInfo();
+        return Responses.buildResponse(result);
     }
 
     /**
@@ -367,14 +371,15 @@ public final class BulkResources {
     })
     @Path("/archived/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public BulkArchivedRequestInfo getArchivedRequestInfo(@ApiParam("The unique id of the request.")
+    public Response getArchivedRequestInfo(@ApiParam("The unique id of the request.")
     @PathParam("id") String id) {
         Subject subject = getSubject();
         Restriction restriction = getRestriction();
         BulkArchivedRequestInfoMessage message = new BulkArchivedRequestInfoMessage(id, restriction);
         message.setSubject(subject);
         message = service.send(message);
-        return message.getInfo();
+        BulkArchivedRequestInfo result = message.getInfo();
+        return Responses.buildResponse(result);
     }
 
     /**

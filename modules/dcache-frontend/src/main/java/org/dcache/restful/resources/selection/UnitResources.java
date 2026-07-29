@@ -73,8 +73,10 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.selection.Unit;
+import org.dcache.restful.util.Responses;
 import org.dcache.restful.providers.selection.UnitGroup;
 import org.springframework.stereotype.Component;
 
@@ -96,12 +98,13 @@ public final class UnitResources {
     @ApiOperation("List all units."
           + " Results sorted lexicographically by unit name.")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<Unit> getUnits() {
-        return poolMonitor.getPoolSelectionUnit().getSelectionUnits().values()
+    public Response getUnits() {
+        List<Unit> result = poolMonitor.getPoolSelectionUnit().getSelectionUnits().values()
               .stream()
               .sorted(Comparator.comparing(SelectionUnit::getName))
               .map(Unit::new)
               .collect(Collectors.toList());
+        return Responses.buildResponse(result);
     }
 
 
@@ -110,13 +113,14 @@ public final class UnitResources {
           + " Results sorted lexicographically by unit group name.")
     @Path("/groups")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<UnitGroup> getUnitGroups() {
+    public Response getUnitGroups() {
         PoolSelectionUnit psu = poolMonitor.getPoolSelectionUnit();
 
-        return poolMonitor.getPoolSelectionUnit().getUnitGroups().values()
+        List<UnitGroup> result = poolMonitor.getPoolSelectionUnit().getUnitGroups().values()
               .stream()
               .sorted(Comparator.comparing(SelectionUnitGroup::getName))
               .map((g) -> new UnitGroup(g, psu))
               .collect(Collectors.toList());
+        return Responses.buildResponse(result);
     }
 }

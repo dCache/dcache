@@ -88,6 +88,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import org.dcache.cells.CellStub;
 import org.dcache.http.PathMapper;
 import org.dcache.namespace.FileAttribute;
@@ -95,6 +96,7 @@ import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.JsonFileAttributes;
 import org.dcache.restful.util.HandlerBuilders;
 import org.dcache.restful.util.RequestUser;
+import org.dcache.restful.util.Responses;
 import org.dcache.restful.util.namespace.NamespaceUtils;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
@@ -144,7 +146,7 @@ public class IdResources {
     })
     @Path("{pnfsid}")
     @Produces(MediaType.APPLICATION_JSON)
-    public JsonFileAttributes getAttributes(@ApiParam("The PNFS-ID of a file or directory.")
+    public Response getAttributes(@ApiParam("The PNFS-ID of a file or directory.")
     @PathParam("pnfsid") String value) {
 
         if (RequestUser.isAnonymous()) {
@@ -212,6 +214,6 @@ public class IdResources {
             throw new InternalServerErrorException(e);
         }
 
-        return result;
+        return Responses.buildResponse(result);
     }
 }
