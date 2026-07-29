@@ -687,6 +687,17 @@ Grid EL9 WN tests:
       junit:
         - "xunit*.xml"
 
+Configure HSM on pools:
+  stage: test_deploy
+  extends: .kubernetes_image
+  needs: [Helm-Deploy Current dCache build]
+  script:
+    - |
+      for POOL in pool-a pool-b; do
+        kubectl -n ${K8S_NAMESPACE} exec store-${POOL}-0 -- \
+          /opt/dcache/bin/dcache admin -e "\\s ${POOL} hsm create osm dummyhsm script -command=/usr/local/bin/dummy-hsm.sh"
+      done
+      
 Frontend test suite:
   stage: testing
   extends: .kubernetes_image
