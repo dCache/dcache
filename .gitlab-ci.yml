@@ -616,7 +616,8 @@ Helm-Deploy Current dCache build:
 #
 # pool.hsm.type/pool.hsm.script.command in custom-helm-config.yaml are not real
 # dCache properties and are silently ignored - HSM must be registered via the
-# 'hsm create' cell command instead.
+# 'hsm create' cell command, issued over the admin SSH interface (port 22224),
+# not via `kubectl exec ... dcache admin` (no such subcommand exists).
 #
 Configure HSM on pools:
   stage: test_deploy
@@ -626,10 +627,17 @@ Configure HSM on pools:
   script:
     - kubectl -n ${K8S_NAMESPACE} get pods
     - |
-      for POOL in pool-a pool-b; do
-        kubectl -n ${K8S_NAMESPACE} exec store-${POOL}-0 -- \
-          /opt/dcache/bin/dcache admin -e "\\s ${POOL} hsm create osm dummyhsm script -command=/usr/local/bin/dummy-hsm.sh"
-      done
+      CMDS=$(cat <<'EOF'
+      \c pool-a
+      hsm create osm dummyhsm script -command=/usr/local/bin/dummy-hsm.sh
+      \q
+      \c pool-b
+      hsm create osm dummyhsm script -command=/usr/local/bin/dummy-hsm.sh
+      \q
+      EOF
+      )
+      echo "$CMDS" | kubectl -n ${K8S_NAMESPACE} run hsm-setup --rm -i --restart=Never \
+        --image=kroniak/ssh-client -- ssh -o StrictHostKeyChecking=no -p 22224 -l admin store-door-svc
 
 Helm-Deploy Latest dCache Golden Release:
   stage: test_deploy
