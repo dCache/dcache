@@ -25,6 +25,7 @@ COPY staging-libs/ ${DCACHE_INSTALL_DIR}/share/classes/
 
 # Run dCache as user 'dcache'
 #
+
 # REVISIT: as we cant use groupadd and useradd add user/group manually
 #
 # RUN groupadd dcache && useradd -r -g dcache dcache

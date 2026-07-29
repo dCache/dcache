@@ -68,7 +68,6 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 
-import java.util.Date;
 import java.util.UUID;
 import javax.inject.Inject;
 import javax.ws.rs.DefaultValue;
@@ -85,6 +84,7 @@ import org.dcache.restful.providers.SnapshotList;
 import org.dcache.restful.providers.restores.RestoreInfo;
 import org.dcache.restful.services.restores.RestoresInfoService;
 import org.dcache.restful.util.RequestUser;
+import org.dcache.restful.util.Responses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -165,12 +165,7 @@ public final class RestoreResources {
             SnapshotList<RestoreInfo> result = service.get(token, offset, limit, pnfsid, path, owner, group, subnet, pool,
                   status, sort);
 
-            Response.ResponseBuilder responseBuilder = Response.ok(result);
-            long timeOfCreation = result.getTimeOfCreation();
-            if(timeOfCreation != 0L) {
-                responseBuilder.lastModified(new Date(timeOfCreation));
-            }
-            return responseBuilder.build();
+            return Responses.buildResponse(result, result.getTimeOfCreation());
         } catch (CacheException e) {
             LOGGER.warn(Exceptions.meaningfulMessage(e));
             throw new InternalServerErrorException(e);

@@ -32,6 +32,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.dcache.restful.providers.UserAttributes;
+import org.dcache.restful.util.Responses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -80,7 +81,7 @@ public class UserSession {
         }
 
         session.setAttribute("user", user);
-        return Response.ok(user).build();
+        return Responses.buildResponse(user);
 
     }
 

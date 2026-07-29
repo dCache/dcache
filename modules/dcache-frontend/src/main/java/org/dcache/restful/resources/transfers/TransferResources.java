@@ -69,7 +69,6 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 
-import java.util.Date;
 import java.util.UUID;
 import javax.inject.Inject;
 import javax.ws.rs.DefaultValue;
@@ -84,6 +83,7 @@ import javax.ws.rs.core.Response;
 import org.dcache.restful.providers.SnapshotList;
 import org.dcache.restful.services.transfers.TransferInfoService;
 import org.dcache.restful.util.RequestUser;
+import org.dcache.restful.util.Responses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -176,12 +176,7 @@ public final class TransferResources {
                     pool,
                     client,
                     sort);
-            long timeOfCreation = result.getTimeOfCreation();
-            Response.ResponseBuilder responseBuilder = Response.ok(result);
-            if(timeOfCreation != 0L){
-                responseBuilder.lastModified(new Date(timeOfCreation));
-            }
-            return responseBuilder.build();
+            return Responses.buildResponse(result, result.getTimeOfCreation());
         } catch (CacheException e) {
             LOGGER.warn(Exceptions.meaningfulMessage(e));
             throw new InternalServerErrorException(e);

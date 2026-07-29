@@ -68,7 +68,6 @@ import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
@@ -80,6 +79,7 @@ import javax.ws.rs.core.Response;
 
 import org.dcache.cells.json.CellData;
 import org.dcache.restful.services.cells.CellInfoService;
+import org.dcache.restful.util.Responses;
 import org.dcache.services.topology.ClassicCellsTopology;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -139,10 +139,6 @@ public final class CellInfoResources {
               .stream()
               .sorted(Comparator.comparing(CellData::getCellName))
               .toArray(CellData[]::new);
-        Response.ResponseBuilder responseBuilder = Response.ok(results);
-        if(lastUpdated != 0L) {
-            responseBuilder.lastModified(new Date(lastUpdated));
-        }
-        return responseBuilder.build();
+        return Responses.buildResponse(results, lastUpdated);
     }
 }

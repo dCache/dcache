@@ -15,8 +15,10 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import org.dcache.restful.providers.doors.Door;
 import org.dcache.restful.util.HttpServletRequests;
+import org.dcache.restful.util.Responses;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -44,11 +46,12 @@ public class DoorsResources {
     @ApiResponses({
           @ApiResponse(code = 500, message = "Internal Server Error"),
     })
-    public List<Door> getDoors() {
+    public Response getDoors() {
         Boolean isAdmin = HttpServletRequests.isAdmin(request);
 
-        return loginBrokerSubscriber.doors().stream()
+        List<Door> result = loginBrokerSubscriber.doors().stream()
               .map(info -> new Door(isAdmin, info))
               .collect(Collectors.toList());
+        return Responses.buildResponse(result);
     }
 }
