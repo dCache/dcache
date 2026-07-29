@@ -626,6 +626,7 @@ Configure HSM on pools:
     - Helm-Deploy Current dCache build
   script:
     - kubectl -n ${K8S_NAMESPACE} get pods
+    - apk add --no-cache sshpass openssh-client 2>/dev/null || (apt-get update && apt-get install -y sshpass openssh-client)
     - |
       CMDS=$(cat <<'EOF'
       \c pool-a
@@ -636,8 +637,7 @@ Configure HSM on pools:
       \q
       EOF
       )
-      echo "$CMDS" | kubectl -n ${K8S_NAMESPACE} run hsm-setup --rm -i --restart=Never \
-        --image=kroniak/ssh-client -- ssh -o StrictHostKeyChecking=no -p 22224 -l admin store-door-svc
+      echo "$CMDS" | sshpass -p dickerelch ssh -o StrictHostKeyChecking=no -p 22224 -l admin store-door-svc
 
 Helm-Deploy Latest dCache Golden Release:
   stage: test_deploy
