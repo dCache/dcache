@@ -168,7 +168,7 @@ Content-Type: application/json
     "targetQos": "disk"
   },
   "target": [
-    "/data/pool-a/FileToDisk.h5"
+    "/data/pool-a/FileToTape.h5"
   ]
 }
 
@@ -198,7 +198,7 @@ Content-Type: application/json
 %}
 
 ### Check attributes of uploaded file stay the same as before
-GET {{frontend-door}}{{endpoint}}{{namespace}}/data/pool-a/FileToDisk.h5?locality=true&optional=true
+GET {{frontend-door}}{{endpoint}}{{namespace}}/data/pool-a/FileToTape.h5?locality=true&optional=true
 Authorization: Basic {{username}} {{password}}
 Accept: application/json
 
@@ -226,7 +226,7 @@ Content-Type: application/json
     "targetQos": "tape+disk"
   },
   "target": [
-    "/data/pool-a/FileToDiskandTapeFromTape.h5"
+    "/data/pool-a/FileToTape.h5"
   ]
 }
 
@@ -255,7 +255,7 @@ Content-Type: application/json
 
 
 ### Find attributes of uploaded file
-GET {{frontend-door}}{{endpoint}}{{namespace}}/data/pool-a/FileToDiskandTapeFromTape.h5?locality=true&optional=true&qos=true
+GET {{frontend-door}}{{endpoint}}{{namespace}}/data/pool-a/FileToTape.h5?locality=true&optional=true&qos=true
 Authorization: Basic {{admin_role}} {{password}}
 Accept: application/json
 
