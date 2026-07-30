@@ -16,6 +16,10 @@ Content-Type: application/octet-stream
 
 ### Find attributes of file with current qos set as 'disk and tape'
 ### Warning: file might still be in the flush queue, we might get only `ONLINE` locality.
+< {%
+    var start = Date.now();
+    while (Date.now() - start < 3000) {}
+%}
 GET {{frontend-door}}{{endpoint}}{{namespace}}/data/pool-a/FileToTape.h5?locality=true&optional=true&qos=true
 Authorization: Basic {{admin_role}} {{password}}
 Accept: application/json
@@ -91,6 +95,10 @@ Content-Type: application/json
 # example of bulk-request-id="http://localhost:3880/api/v1/bulk-requests?offset=0&path=db63a844-1f7e-4371-be82-2d4ac63934c9"
 ## curl -u admin#admin:dickerelch -X GET "http://localhost:3880/api/v1/id/00004A8E5226AFF5442C82A1E22D257657D2" -H "accept: application/json"
 
+< {%
+    var start = Date.now();
+    while (Date.now() - start < 3000) {}
+%}
 GET {{bulk-id-request}}
 Authorization: Basic {{username}} {{password}}
 accept: application/json
@@ -109,6 +117,10 @@ Content-Type: application/json
 
 
 ### Find attributes of uploaded file
+< {%
+    var start = Date.now();
+    while (Date.now() - start < 3000) {}
+%}
 GET {{frontend-door}}{{endpoint}}{{namespace}}/data/pool-a/FileToTape.h5?locality=true&optional=true&qos=true
 Authorization: Basic {{admin_role}} {{password}}
 Accept: application/json
@@ -179,6 +191,10 @@ Content-Type: application/json
 
 ### Find information on qos request: THIS IS A NEGATIVE TEST. This is an unsupported transition from tape to disk.
 # example of bulk-request-id="http://localhost:3880/api/v1/bulk-requests?offset=0&path=db63a844-1f7e-4371-be82-2d4ac63934c9"
+< {%
+    var start = Date.now();
+    while (Date.now() - start < 3000) {}
+%}
 GET {{bulk-id-request}}
 Authorization: Basic {{username}} {{password}}
 accept: application/json
@@ -237,6 +253,10 @@ Content-Type: application/json
 
 ### Find information on qos request
 # example of bulk-request-id="http://localhost:3880/api/v1/bulk-requests?offset=0&path=db63a844-1f7e-4371-be82-2d4ac63934c9"
+< {%
+    var start = Date.now();
+    while (Date.now() - start < 3000) {}
+%}
 GET {{bulk-id-request}}
 Authorization: Basic {{username}} {{password}}
 accept: application/json
@@ -255,6 +275,10 @@ Content-Type: application/json
 
 
 ### Find attributes of uploaded file
+< {%
+    var start = Date.now();
+    while (Date.now() - start < 3000) {}
+%}
 GET {{frontend-door}}{{endpoint}}{{namespace}}/data/pool-a/FileToTape.h5?locality=true&optional=true&qos=true
 Authorization: Basic {{admin_role}} {{password}}
 Accept: application/json
@@ -267,4 +291,3 @@ Accept: application/json
         client.assert(response.body.targetQos == "disk+tape", "currentQos not disk+tape");
     });
 %}
-

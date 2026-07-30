@@ -15,6 +15,10 @@ Content-Type: application/octet-stream
 
 
 ### Find attributes of uploaded file
+< {%
+    var start = Date.now();
+    while (Date.now() - start < 3000) {}
+%}
 GET {{frontend-door}}{{endpoint}}{{namespace}}/data/pool-a/FileToDiskandTape.h5?locality=true&optional=true&qos=true
 Authorization: Basic {{admin_role}} {{password}}
 Accept: application/json
@@ -86,6 +90,10 @@ Content-Type: application/json
 
 
 ### Find information on bulk request status
+< {%
+    var start = Date.now();
+    while (Date.now() - start < 3000) {}
+%}
 GET {{bulk-id-request}}
 Authorization: Basic {{username}} {{password}}
 accept: application/json
@@ -106,6 +114,10 @@ Content-Type: application/json
 
 
 ### Find attributes of uploaded file
+< {%
+    var start = Date.now();
+    while (Date.now() - start < 3000) {}
+%}
 GET {{frontend-door}}{{endpoint}}{{namespace}}/data/pool-a/FileToDiskandTape.h5?locality=true&optional=true&qos=true
 Authorization: Basic {{admin_role}} {{password}}
 Accept: application/json
