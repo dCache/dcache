@@ -206,15 +206,15 @@ Content-Type: application/json
         client.assert(response.body.status, "Body does not have status");
         client.assert(response.body.status == "COMPLETED", "status not COMPLETED");
         client.assert(response.body.targets, "Body does not have targets");
-        client.assert(response.body.targets.state == "FAILED", "state not FAILED");
-        client.assert(response.body.targets.errorMessage === "org.dcache.qos.QoSException: Unsupported transition from tape to disk: QoS currently does not support removal of tape locations.", "error message not thrown");
+        client.assert(response.body.targets[0].state == "FAILED", "state not FAILED");
+        client.assert(response.body.targets[0].errorMessage === "org.dcache.qos.QoSException: Unsupported transition from tape to disk: QoS currently does not support removal of tape locations.", "error message not thrown");
         client.assert(response.body.targets != null, "targets is NULL");
         client.assert(response.body.targets.length != 0, "targets is empty");
     });
 %}
 
 ### Check attributes of uploaded file stay the same as before
-GET {{frontend-door}}{{endpoint}}{{namespace}}/data/pool-a/FileToTape.h5?locality=true&optional=true
+GET {{frontend-door}}{{endpoint}}{{namespace}}/data/pool-a/FileToTape.h5?locality=true&optional=true&qos=true
 Authorization: Basic {{username}} {{password}}
 Accept: application/json
 
