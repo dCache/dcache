@@ -170,7 +170,7 @@ Content-Type: application/octet-stream
 
 ## Update QoS request using bulk service
 POST {{frontend-door}}{{endpoint}}/bulk-requests
-Authorization: Basic {{username}} {{password}}
+Authorization: Basic {{admin_role}} {{password}}
 accept: application/json
 Content-Type: application/json
 
@@ -232,7 +232,7 @@ Accept: application/json
 
 ### Update QoS request using bulk service
 POST {{frontend-door}}{{endpoint}}/bulk-requests
-Authorization: Basic {{username}} {{password}}
+Authorization: Basic {{admin_role}} {{password}}
 accept: application/json
 Content-Type: application/json
 
