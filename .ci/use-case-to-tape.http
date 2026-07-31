@@ -223,7 +223,7 @@ Accept: application/json
         client.assert(response.status === 200, "Expected 200, got " + response.status);
         client.assert(response.body.accessLatency == "NEARLINE", "accessLatency not nearline");
         client.assert(response.body.retentionPolicy == "CUSTODIAL", "retentionPolicy not custodial");
-        client.assert(response.body.currentQos == "tape", "currentQos not tape");
+        client.assert(response.body.currentQos == "disk+tape", "currentQos not disk+tape");
     });
 %}
 
