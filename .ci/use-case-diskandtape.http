@@ -29,7 +29,7 @@ Accept: application/json
         client.assert(response.body.fileLocality == "ONLINE", "fileLocality not online");
         client.assert(response.body.accessLatency == "NEARLINE", "accessLatency not nearline");
         client.assert(response.body.retentionPolicy == "CUSTODIAL", "retentionPolicy not custodial");
-        client.assert(response.body.currentQos == "tape", "currentQos not tape");
+        client.assert(response.body.currentQos == "disk", "currentQos not disk");
     });
 %}
 
