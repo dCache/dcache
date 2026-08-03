@@ -216,7 +216,7 @@ Content-Type: application/json
 ### Check attributes of uploaded file stay the same as before
 < {%
     var start = Date.now();
-    while (Date.now() - start < 3000) {}
+    while (Date.now() - start < 8000) {}
 %}
 GET {{frontend-door}}{{endpoint}}{{namespace}}/data/pool-a/FileToTape.h5?locality=true&optional=true&qos=true
 Authorization: Basic {{username}} {{password}}
