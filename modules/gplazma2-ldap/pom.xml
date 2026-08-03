@@ -15,6 +15,19 @@
     <name>gPlazma 2 LDAP plugin</name>
 
     <dependencies>
+
+        <dependency>
+            <groupId>org.openidentityplatform.opendj</groupId>
+            <artifactId>opendj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.openidentityplatform.opendj</groupId>
+            <artifactId>opendj-grizzly</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
@@ -28,11 +41,6 @@
             <groupId>org.dcache</groupId>
             <artifactId>gplazma2</artifactId>
             <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.dcache</groupId>
-            <artifactId>ldap4testing</artifactId>
-            <scope>test</scope>
         </dependency>
 
     </dependencies>
