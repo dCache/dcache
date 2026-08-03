@@ -61,7 +61,7 @@
 
 
         <version.slf4j>1.7.32</version.slf4j>
-        <version.milton>2.7.3.0-dcache-1</version.milton>
+        <version.milton>3.1.1.488</version.milton>
         <version.spring>5.3.39</version.spring>
         <!-- Remember to sync aspectj version in dcache.properties -->
         <version.aspectj>1.9.25.1</version.aspectj>
@@ -338,6 +338,11 @@
                         <artifactId>milton-mail-server</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.jdom</groupId>
+                <artifactId>jdom2</artifactId>
+                <version>2.0.6.1</version>
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>

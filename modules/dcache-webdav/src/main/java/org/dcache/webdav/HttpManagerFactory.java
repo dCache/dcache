@@ -10,6 +10,7 @@ import io.milton.http.Auth;
 import io.milton.http.AuthenticationService;
 import io.milton.http.HandlerHelper;
 import io.milton.http.HttpManager;
+import io.milton.http.Request;
 import io.milton.http.Response;
 import io.milton.http.Response.Status;
 import io.milton.http.http11.DefaultHttp11ResponseHandler;
@@ -124,6 +125,13 @@ public class HttpManagerFactory extends HttpManagerBuilder implements FactoryBea
                 if (etag != null) {
                     response.setEtag(etag);
                 }
+            }
+
+            @Override
+            public void respondRedirect(Response response, Request request, String redirectUrl) {
+                // new version of milton doesn't redirect anymore, so we override it to do the right thing
+                response.setStatus(Response.Status.SC_MOVED_TEMPORARILY);  // 302
+                response.setLocationHeader(redirectUrl);
             }
         };
     }
