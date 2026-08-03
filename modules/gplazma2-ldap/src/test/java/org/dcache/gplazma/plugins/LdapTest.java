@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 - 2020 Deutsches Elektronen-Synchroton,
+ * Copyright (c) 2017 - 2026 Deutsches Elektronen-Synchroton,
  * Member of the Helmholtz Association, (DESY), HAMBURG, GERMANY
  *
  * This library is free software; you can redistribute it and/or modify
@@ -31,6 +31,8 @@ import static org.dcache.gplazma.plugins.Ldap.LDAP_URL;
 import static org.dcache.gplazma.plugins.Ldap.LDAP_USER_FILTER;
 import static org.dcache.gplazma.plugins.Ldap.LDAP_USER_HOME;
 import static org.dcache.gplazma.plugins.Ldap.LDAP_USER_ROOT;
+import static org.forgerock.opendj.ldap.CommonLDAPOptions.LDAP_DECODE_OPTIONS;
+import static org.forgerock.opendj.ldap.LDAPListener.CONNECT_MAX_BACKLOG;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
@@ -38,16 +40,24 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
+import com.forgerock.reactive.ServerConnectionFactoryAdapter;
+import com.google.common.base.Throwables;
 import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.AbstractService;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.net.InetSocketAddress;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import javax.naming.Context;
+import javax.naming.NamingException;
+import javax.naming.directory.InitialDirContext;
+import javax.naming.ldap.InitialLdapContext;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
 import org.dcache.auth.PasswordCredential;
@@ -57,10 +67,20 @@ import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.NoSuchPrincipalException;
-import org.dcache.ldap4testing.EmbeddedServer;
+import org.forgerock.opendj.ldap.Connections;
+import org.forgerock.opendj.ldap.LDAPClientContext;
+import org.forgerock.opendj.ldap.LDAPListener;
+import org.forgerock.opendj.ldap.MemoryBackend;
+import org.forgerock.opendj.ldap.RequestContext;
+import org.forgerock.opendj.ldap.RequestHandler;
+import org.forgerock.opendj.ldap.ServerConnectionFactory;
+import org.forgerock.opendj.ldif.LDIFEntryReader;
+import org.forgerock.util.Options;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -262,5 +282,114 @@ public class LdapTest {
     @After
     public void tearDown() {
         ldapServer.stop();
+    }
+
+
+    /**
+     * Embedded LDAP server for testing purposes.
+     */
+    private static class EmbeddedServer extends AbstractService {
+
+        private static final Logger LOGGER = LoggerFactory.getLogger(LdapTest.class);
+
+        /**
+         * TCP port number to listen.
+         */
+        private final int port;
+
+        /**
+         * LDAP server listener.
+         */
+        private LDAPListener listener;
+
+        /**
+         * Reader which provides initial data in LDIF format.
+         */
+        private final InputStream ldifSource;
+
+        public EmbeddedServer(int port, InputStream ldifSource) {
+            this.port = port;
+            this.ldifSource = ldifSource;
+        }
+
+        @Override
+        protected void doStart() {
+            LOGGER.debug("Starting new embedded LDAP server on port; {}", port);
+            try {
+
+                final Options options = Options.defaultOptions().set(CONNECT_MAX_BACKLOG, 4096);
+
+                final LDIFEntryReader entryReader = new LDIFEntryReader(ldifSource);
+                final RequestHandler<RequestContext> requestHandler = new MemoryBackend(entryReader);
+                final ServerConnectionFactory<LDAPClientContext, Integer> connectionFactory = Connections.newServerConnectionFactory(requestHandler);
+
+                listener = new LDAPListener(port, new ServerConnectionFactoryAdapter(options.get(LDAP_DECODE_OPTIONS), connectionFactory), options);
+                notifyStarted();
+            } catch (IOException e) {
+                notifyFailed(e);
+            }
+
+        }
+
+        @Override
+        protected void doStop() {
+            LOGGER.debug("Starting new embedded LDAP server.");
+            listener.close();
+            notifyStopped();
+        }
+
+        /**
+         * An implementation of {@link InputStream}, which is always empty.
+         */
+        private static class EmptyStream extends InputStream {
+
+            @Override
+            public void close() throws IOException {
+                // NOP;
+            }
+
+            @Override
+            public int read() throws IOException {
+                return -1;
+            }
+        }
+
+        public void start() throws IOException {
+            try {
+                this.startAsync().awaitRunning();
+            } catch (IllegalStateException e) {
+                Throwable t = this.failureCause();
+                Throwables.throwIfInstanceOf(t, IOException.class);
+                Throwables.throwIfUnchecked(t);
+            }
+        }
+
+        public void stop() {
+            this.stopAsync().awaitTerminated();
+        }
+
+        public InetSocketAddress getSocketAddress() {
+            return (InetSocketAddress)listener.getSocketAddresses().stream().findFirst().get();
+        }
+
+        /**
+         * Get {@link InitialDirContext} to connected to this LDAP server
+         * @param dn LDAP user used to connect to the server
+         * @param pass user's password
+         * @return directory context
+         * @throws NamingException
+         */
+        public InitialDirContext getDirContext(String dn, String pass) throws NamingException {
+            Properties env = new Properties();
+            env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+            env.put(Context.PROVIDER_URL, String.format("ldap://localhost:%d/",
+                  getSocketAddress().getPort()));
+            env.put("com.sun.jndi.ldap.connect.pool", "true");
+            env.put("com.sun.jndi.ldap.connect.pool.maxsize", "10");
+            env.put(Context.SECURITY_AUTHENTICATION, "simple");
+            env.put(Context.SECURITY_PRINCIPAL, dn);
+            env.put(Context.SECURITY_CREDENTIALS, pass);
+            return new InitialLdapContext(env, null);
+        }
     }
 }
