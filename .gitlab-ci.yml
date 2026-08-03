@@ -625,6 +625,8 @@ Configure HSM on pools:
   needs:
     - Helm-Deploy Current dCache build
   script:
+    - kubectl -n ${K8S_NAMESPACE} delete pod store-pool-a-0 store-pool-b-0 --wait=true
+    - kubectl -n ${K8S_NAMESPACE} wait --for=condition=Ready pod/store-pool-a-0 pod/store-pool-b-0 --timeout=120s
     - kubectl -n ${K8S_NAMESPACE} get pods
     - apk add --no-cache sshpass openssh-client 2>/dev/null || (apt-get update && apt-get install -y sshpass openssh-client)
     - |
@@ -719,6 +721,7 @@ Frontend test suite:
   needs:
     - Configure HSM on pools
   script:
+    - kubectl -n $K8S_NAMESPACE exec store-pool-a-0 -- cat /usr/local/bin/dummy-hsm.sh
     - kubectl -n $K8S_NAMESPACE apply -f .ci/frontend.yaml
     - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod http-tester; do sleep 1; done
     - kubectl -n $K8S_NAMESPACE cp .ci/poolEndpoint.http http-tester:/poolEndpoint.http
