@@ -115,17 +115,12 @@ default:
   rules:
     - if: $CI_COMMIT_TAG
 
-# rules for running coverage
+# rules for running coverage & unit tests
 .no_release_rules:
-  rules:
-    - if: $CI_COMMIT_TAG == null
-
-#rule for skipping unit tests and code coverage by [skip ut] in commit message
-.rule_skip_ut:
   rules:
     - if: '$CI_COMMIT_MESSAGE =~ /\[skip ut\]/i'
       when: never
-    - when: on_success
+    - if: $CI_COMMIT_TAG == null
 
 # cache and image configuration for jacoco report jobs
 .jacoco_base:
@@ -180,7 +175,6 @@ run_ut_with_coverage:
   extends:
     - .build_cache
     - .no_release_rules
-    - .rule_skip_ut
   script:
     - mvn $MAVEN_CLI_OPTS -P code-coverage clean verify -DskipTests=false -Drun.slow.tests
   artifacts:
@@ -641,7 +635,6 @@ Extract Coverage:
   extends:
     - .kubernetes_image
     - .no_release_rules
-    - .rule_skip_ut
   dependencies:
     - get_jacoco_cli
   needs:
@@ -797,9 +790,7 @@ Run OIDC test:
 #Job to find JaCoCo CLI in cache or download it
 get_jacoco_cli:
   stage: build
-  extends: 
-    - .jacoco_base
-    - .rule_skip_ut
+  extends: .jacoco_base
   cache:
     key: "jacoco-cli-${JACOCO_VERSION}"
     paths:
@@ -817,9 +808,7 @@ get_jacoco_cli:
 # Job to generate JaCoCo report using script
 generate_jacoco_report:
   stage: testenv_post
-  extends: 
-    - .jacoco_base
-    - .rule_skip_ut
+  extends: .jacoco_base
   needs:
     - job: run_ut_with_coverage
       artifacts: true
