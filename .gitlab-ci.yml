@@ -629,17 +629,17 @@ Configure HSM on pools:
     - kubectl -n ${K8S_NAMESPACE} wait --for=condition=Ready pod/store-pool-a-0 pod/store-pool-b-0 --timeout=120s
     - kubectl -n ${K8S_NAMESPACE} get pods
     - apk add --no-cache sshpass openssh-client 2>/dev/null || (apt-get update && apt-get install -y sshpass openssh-client)
-    - kubectl -n ${K8S_NAMESPACE} cp .ci/dummy-hsm.sh store-pool-a-0:/usr/local/bin/dummy-hsm.sh -c pool
-    - kubectl -n ${K8S_NAMESPACE} cp .ci/dummy-hsm.sh store-pool-b-0:/usr/local/bin/dummy-hsm.sh -c pool
-    - kubectl -n ${K8S_NAMESPACE} exec store-pool-a-0 -c pool -- chmod +x /usr/local/bin/dummy-hsm.sh
-    - kubectl -n ${K8S_NAMESPACE} exec store-pool-b-0 -c pool -- chmod +x /usr/local/bin/dummy-hsm.sh
+    - kubectl -n ${K8S_NAMESPACE} cp .ci/dummy-hsm.sh store-pool-a-0:/tmp/dummy-hsm.sh -c pool
+    - kubectl -n ${K8S_NAMESPACE} cp .ci/dummy-hsm.sh store-pool-b-0:/tmp/dummy-hsm.sh -c pool
+    - kubectl -n ${K8S_NAMESPACE} exec store-pool-a-0 -c pool -- chmod +x /tmp/dummy-hsm.sh
+    - kubectl -n ${K8S_NAMESPACE} exec store-pool-b-0 -c pool -- chmod +x /tmp/dummy-hsm.sh
     - |
       CMDS=$(cat <<'EOF'
       \c pool-a
-      hsm create osm dummyhsm script -command=/usr/local/bin/dummy-hsm.sh
+      hsm create osm dummyhsm script -command=/tmp/dummy-hsm.sh
       \q
       \c pool-b
-      hsm create osm dummyhsm script -command=/usr/local/bin/dummy-hsm.sh
+      hsm create osm dummyhsm script -command=/tmp/dummy-hsm.sh
       \q
       EOF
       )
