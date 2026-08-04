@@ -130,7 +130,17 @@ default:
       when: on_success
 
     # specific tags provided AND commit message contains the job tag -> RUN
-    - if: '$CI_COMMIT_MESSAGE =~ $TEST_TAG'
+    - if: '$CI_COMMIT_MESSAGE =~ /\[.*skip[ _]?ut\s*,.*frontend.*\]/i'
+      when: on_success
+    - if: '$CI_COMMIT_MESSAGE =~ /\[.*skip[ _]?ut\s*,.*grid.*\]/i'
+      when: on_success
+    - if: '$CI_COMMIT_MESSAGE =~ /\[.*skip[ _]?ut\s*,.*xroot.*\]/i'
+      when: on_success
+    - if: '$CI_COMMIT_MESSAGE =~ /\[.*skip[ _]?ut\s*,.*webdav.*\]/i'
+      when: on_success
+    - if: '$CI_COMMIT_MESSAGE =~ /\[.*skip[ _]?ut\s*,.*nfs.*\]/i'
+      when: on_success
+    - if: '$CI_COMMIT_MESSAGE =~ /\[.*skip[ _]?ut\s*,.*oidc.*\]/i'
       when: on_success
 
     # specific tags provided BUT this job tag isn't in commit message -> SKIP
