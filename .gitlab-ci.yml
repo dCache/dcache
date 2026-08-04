@@ -143,7 +143,7 @@ default:
     - if: '$CI_COMMIT_MESSAGE =~ /\[.*skip[ _]?ut\s*,.*oidc.*\]/i && $TEST_TAG == "oidc"'
       when: on_success
 
-    # specific tags provided BUT this job tag isn't in commit message -> SKIP
+    # fallback
     - when: never
 
 # cache and image configuration for jacoco report jobs
