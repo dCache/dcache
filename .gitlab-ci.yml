@@ -115,12 +115,26 @@ default:
   rules:
     - if: $CI_COMMIT_TAG
 
-# rules for running coverage & skipping unit tests when [skip_ut]
+# rules for running/skipping coverage & unit tests with [skip_ut]
 .no_release_rules:
   rules:
     - if: '$CI_COMMIT_MESSAGE =~ /\[skip_ut\]/i'
       when: never
     - if: $CI_COMMIT_TAG == null
+
+# Used by all testing stage jobs for opt-in execution
+.selective_test:
+  rules:
+    # normal run: If no skip_ut tag, run all testing jobs as usual
+    - if: '$CI_COMMIT_MESSAGE !~ /\[.*skip[ _]?ut.*\]/i'
+      when: on_success
+
+    # skip active: Run ONLY if the job's TEST_TAG appears inside the commit message
+    - if: '$CI_COMMIT_MESSAGE =~ /\[.*skip[ _]?ut.*\]/i && $CI_COMMIT_MESSAGE =~ $TEST_TAG'
+      when: on_success
+
+    # fallback
+    - when: never
 
 # cache and image configuration for jacoco report jobs
 .jacoco_base:
@@ -676,7 +690,9 @@ Extract Coverage:
 
 Grid EL9 WN tests:
   stage: testing
-  extends: .kubernetes_image
+  extends: [.kubernetes_image, .selective_test]
+  variables:
+    TEST_TAG: "grid"
   script:
     - kubectl -n $K8S_NAMESPACE apply -f .ci/wn-with-cvmfs.yaml
     - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod grid-tester; do sleep 1; done
@@ -691,7 +707,9 @@ Grid EL9 WN tests:
 
 Frontend test suite:
   stage: testing
-  extends: .kubernetes_image
+  extends: [.kubernetes_image, .selective_test]
+  variables:
+    TEST_TAG: "frontend"
   script:
     - kubectl -n $K8S_NAMESPACE apply -f .ci/frontend.yaml
     - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod http-tester; do sleep 1; done
@@ -713,7 +731,9 @@ Frontend test suite:
 
 gsi_xroot_tests:
   stage: testing
-  extends: .kubernetes_image
+  extends: [.kubernetes_image, .selective_test]
+  variables:
+    TEST_TAG: "xroot"
   script:
     - kubectl -n $K8S_NAMESPACE apply -f .ci/wn-with-cvmfs-xroot.yaml
     - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod xroot-tester; do sleep 1; done
@@ -723,7 +743,9 @@ gsi_xroot_tests:
 
 webdav_with_x509_tests:
   stage: testing
-  extends: .kubernetes_image
+  extends: [.kubernetes_image, .selective_test]
+  variables:
+    TEST_TAG: "webdav"
   script:
     - kubectl -n $K8S_NAMESPACE apply -f .ci/webdav-wn-cvmfs.yaml
     - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod webdav-tester; do sleep 1; done
@@ -733,7 +755,9 @@ webdav_with_x509_tests:
 
 NFS4.x protocol compliance tests:
   stage: testing
-  extends: .kubernetes_image
+  extends: [.kubernetes_image, .selective_test]
+  variables:
+    TEST_TAG: "nfs"
   script:
     - kubectl -n $K8S_NAMESPACE run pynfs-tester --image=dcache/pynfs:0.5 --restart=Never  --command -- sleep 3600
     - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod pynfs-tester; do sleep 1; done
@@ -780,7 +804,9 @@ NFS4.x protocol compliance tests:
 
 Run OIDC test:
   stage: testing
-  extends: .kubernetes_image
+  extends: [.kubernetes_image, .selective_test]
+  variables:
+    TEST_TAG: "oidc"
   script:
     - kubectl -n $K8S_NAMESPACE run oidc-tester --image=almalinux:9 --restart=Never  --command -- sleep 3600
     - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod oidc-tester; do sleep 1; done
