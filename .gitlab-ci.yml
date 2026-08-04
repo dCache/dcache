@@ -599,7 +599,7 @@ Helm-Deploy Current dCache build:
       fi
     - helm repo add dcache ${DCACHE_HELM_REPO}
     - helm repo update
-    - kubectl -n ${K8S_NAMESPACE} apply -f .ci/dummy-hsm-deployment.yaml
+    - kubectl -n ${K8S_NAMESPACE} apply -f .ci/k8s/dummy-hsm-deployment.yaml
     - >
       helm -n ${K8S_NAMESPACE} upgrade --install store dcache/dcache
       --wait
