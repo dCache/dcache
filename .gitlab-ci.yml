@@ -125,16 +125,16 @@ default:
 # Used by all testing stage jobs for opt-in execution
 .selective_test:
   rules:
-    # if [skip_ut, grid]), run ONLY if TEST_TAG matches
-    - if: '$CI_COMMIT_MESSAGE =~ /\[.*skip[ _]?ut\s*,\s*[^\]]+\]/i && $CI_COMMIT_MESSAGE =~ $TEST_TAG'
+    # if no comma/specific tags inside skip_ut brackets -> Run all testing jobs
+    - if: '$CI_COMMIT_MESSAGE !~ /\[.*skip[ _]?ut\s*,\s*[^\]]+\]/i'
       when: on_success
 
-    # if specific tags are provided but this job wasn't listed -> Skip
-    - if: '$CI_COMMIT_MESSAGE =~ /\[.*skip[ _]?ut\s*,\s*[^\]]+\]/i'
-      when: never
+    # specific tags provided AND commit message contains the job tag -> RUN
+    - if: 'contains($CI_COMMIT_MESSAGE, $TEST_TAG)'
+      when: on_success
 
-    # fallback: Run normally
-    - when: on_success
+    # specific tags provided BUT this job tag isn't in commit message -> SKIP
+    - when: never
 
 # cache and image configuration for jacoco report jobs
 .jacoco_base:
