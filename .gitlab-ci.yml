@@ -129,7 +129,7 @@ default:
     - if: '$CI_COMMIT_MESSAGE !~ /\[.*skip[ _]?ut\s*,\s*[^\]]+\]/i'
       when: on_success
 
-    # specific tags provided AND commit message contains the job tag -> RUN
+    # specific commit message AND tags provided contains the job tag -> RUN
     - if: '$CI_COMMIT_MESSAGE =~ /\[.*skip[ _]?ut\s*,.*frontend.*\]/i && $TEST_TAG == "frontend"'
       when: on_success
     - if: '$CI_COMMIT_MESSAGE =~ /\[.*skip[ _]?ut\s*,.*grid.*\]/i && $TEST_TAG == "grid"'
