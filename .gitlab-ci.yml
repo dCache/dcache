@@ -130,17 +130,17 @@ default:
       when: on_success
 
     # specific tags provided AND commit message contains the job tag -> RUN
-    - if: '$CI_COMMIT_MESSAGE =~ /\[.*skip[ _]?ut\s*,.*frontend.*\]/i'
+    - if: '$CI_COMMIT_MESSAGE =~ /\[.*skip[ _]?ut\s*,.*frontend.*\]/i && $TEST_TAG == "frontend"'
       when: on_success
-    - if: '$CI_COMMIT_MESSAGE =~ /\[.*skip[ _]?ut\s*,.*grid.*\]/i'
+    - if: '$CI_COMMIT_MESSAGE =~ /\[.*skip[ _]?ut\s*,.*grid.*\]/i && $TEST_TAG == "grid"'
       when: on_success
-    - if: '$CI_COMMIT_MESSAGE =~ /\[.*skip[ _]?ut\s*,.*xroot.*\]/i'
+    - if: '$CI_COMMIT_MESSAGE =~ /\[.*skip[ _]?ut\s*,.*xroot.*\]/i && $TEST_TAG == "xroot"'
       when: on_success
-    - if: '$CI_COMMIT_MESSAGE =~ /\[.*skip[ _]?ut\s*,.*webdav.*\]/i'
+    - if: '$CI_COMMIT_MESSAGE =~ /\[.*skip[ _]?ut\s*,.*webdav.*\]/i && $TEST_TAG == "webdav"'
       when: on_success
-    - if: '$CI_COMMIT_MESSAGE =~ /\[.*skip[ _]?ut\s*,.*nfs.*\]/i'
+    - if: '$CI_COMMIT_MESSAGE =~ /\[.*skip[ _]?ut\s*,.*nfs.*\]/i && $TEST_TAG == "nfs"'
       when: on_success
-    - if: '$CI_COMMIT_MESSAGE =~ /\[.*skip[ _]?ut\s*,.*oidc.*\]/i'
+    - if: '$CI_COMMIT_MESSAGE =~ /\[.*skip[ _]?ut\s*,.*oidc.*\]/i && $TEST_TAG == "oidc"'
       when: on_success
 
     # specific tags provided BUT this job tag isn't in commit message -> SKIP
