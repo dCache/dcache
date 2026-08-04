@@ -625,7 +625,13 @@ Configure HSM on pools:
   needs:
     - Helm-Deploy Current dCache build
   script:
-    - kubectl -n ${K8S_NAMESPACE} delete pod store-pool-a-0 store-pool-b-0 --wait=true
+    - kubectl -n ${K8S_NAMESPACE} get configmap dummy-hsm-script -o jsonpath='{.data.dummy-hsm\.sh}'
+    - kubectl get statefulsets -n ${K8S_NAMESPACE}
+    
+    - kubectl -n ${K8S_NAMESPACE} rollout restart statefulset store-pool-a store-pool-b
+    - kubectl -n ${K8S_NAMESPACE} rollout status statefulset store-pool-a --timeout=120s
+    - kubectl -n ${K8S_NAMESPACE} rollout status statefulset store-pool-b --timeout=120s
+
     - kubectl -n ${K8S_NAMESPACE} wait --for=condition=Ready pod/store-pool-a-0 pod/store-pool-b-0 --timeout=120s
     - kubectl -n ${K8S_NAMESPACE} get pods
     - apk add --no-cache sshpass openssh-client 2>/dev/null || (apt-get update && apt-get install -y sshpass openssh-client)
