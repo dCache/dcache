@@ -599,7 +599,6 @@ Helm-Deploy Current dCache build:
       fi
     - helm repo add dcache ${DCACHE_HELM_REPO}
     - helm repo update
-    - kubectl -n ${K8S_NAMESPACE} apply -f .ci/k8s/dummy-hsm-deployment.yaml
     - >
       helm -n ${K8S_NAMESPACE} upgrade --install store dcache/dcache
       --wait
@@ -725,7 +724,7 @@ Frontend test suite:
   needs:
     - Configure HSM on pools
   script:
-    - kubectl -n $K8S_NAMESPACE exec store-pool-a-0 -- cat /usr/local/bin/dummy-hsm.sh
+    - kubectl -n $K8S_NAMESPACE exec store-pool-a-0 -- cat /tmp/dummy-hsm.sh
     - kubectl -n $K8S_NAMESPACE apply -f .ci/frontend.yaml
     - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod http-tester; do sleep 1; done
     - kubectl -n $K8S_NAMESPACE cp .ci/poolEndpoint.http http-tester:/poolEndpoint.http
