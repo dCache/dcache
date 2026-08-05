@@ -724,7 +724,6 @@ Frontend test suite:
   needs:
     - Configure HSM on pools
   script:
-    - kubectl -n $K8S_NAMESPACE exec store-pool-a-0 -- cat /tmp/dummy-hsm.sh
     - kubectl -n $K8S_NAMESPACE apply -f .ci/frontend.yaml
     - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod http-tester; do sleep 1; done
     - kubectl -n $K8S_NAMESPACE cp .ci/poolEndpoint.http http-tester:/poolEndpoint.http
@@ -742,9 +741,10 @@ Frontend test suite:
     - kubectl -n $K8S_NAMESPACE cp http-client.private.env.json http-tester:/http-client.private.env.json
     - kubectl -n $K8S_NAMESPACE exec http-tester -- java --add-opens=java.base/java.util=ALL-UNNAMED $IJHTTP_JAVA_OPTS -cp /intellij-http-client/\* com.intellij.httpClient.cli.HttpClientMain -e Test -D /poolEndpoint.http /use-case-diskandtape.http /use-case-to-tape.http /qosEndpoint.http /qosPolicyEndpoint.http /migrationEndpoint.http /userEndpoint.http /bulkRequestsEndpoint.http /spacemanagerEndpoint.http -p /http-client.private.env.json --insecure -L VERBOSE --report=/httpTests
     - kubectl -n $K8S_NAMESPACE cp http-tester:/httpTests/report.xml pool-report.xml
-
-    - kubectl -n $K8S_NAMESPACE exec store-pool-a-0 -- cat /tmp/dummy-hsm-calls.log || true
+  after_script:
+    - kubectl -n $K8S_NAMESPACE exec store-pool-a-0 -- cat /tmp/dummy-hsm.sh
   artifacts:
+    when: always
     reports:
       junit:
         - "*-report.xml"
