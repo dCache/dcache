@@ -642,7 +642,7 @@ Configure HSM on pools:
       \q
       EOF
       )
-      echo "$CMDS" | sshpass -p dickerelch ssh -o StrictHostKeyChecking=no -p 22224 -l admin store-door-svc.${K8S_NAMESPACE}.svc.cluster.local 2>&1 | tee /tmp/hsm-create-output.txt
+      echo "$CMDS" | sshpass -p dickerelch ssh -v -tt -o StrictHostKeyChecking=no -p 22224 -l admin store-door-svc.${K8S_NAMESPACE}.svc.cluster.local 2>&1 | tee /tmp/hsm-create-output.txt
       cat /tmp/hsm-create-output.txt
 
 Helm-Deploy Latest dCache Golden Release:
