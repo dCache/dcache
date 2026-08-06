@@ -642,7 +642,9 @@ Configure HSM on pools:
       \q
       EOF
       )
-      echo "$CMDS" | sshpass -p dickerelch ssh -o StrictHostKeyChecking=no -p 22224 -l admin store-door-svc.${K8S_NAMESPACE}.svc.cluster.local
+      echo "$CMDS" | sshpass -p dickerelch ssh -o StrictHostKeyChecking=no -p 22224 -l admin store-door-svc.${K8S_NAMESPACE}.svc.cluster.local 2>&1 | tee /tmp/hsm-create-output.txt
+      cat /tmp/hsm-create-output.txt
+    - kubectl -n ${K8S_NAMESPACE} exec store-pool-a-0 -c pool -- sh -c "echo '\\s pool-a hsm ls' | ..." # or equivalent admin query to list registered HSMs
 
 Helm-Deploy Latest dCache Golden Release:
   stage: test_deploy
