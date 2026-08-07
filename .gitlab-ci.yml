@@ -751,6 +751,8 @@ Frontend test suite:
     - kubectl -n $K8S_NAMESPACE exec store-pool-a-0 -- cat /tmp/dummy-hsm-calls.log || echo "NO CALLS ON POOL-A"
     - kubectl -n $K8S_NAMESPACE exec store-pool-b-0 -- cat /tmp/dummy-hsm-calls.log || echo "NO CALLS ON POOL-B"
     - kubectl -n $K8S_NAMESPACE exec store-pool-c-0 -- cat /tmp/dummy-hsm-calls.log || echo "NO CALLS ON POOL-C"
+    - kubectl -n $K8S_NAMESPACE exec store-pool-a-0 -- ls /opt/dcache/var/log/ || true
+    - kubectl -n $K8S_NAMESPACE exec store-pool-a-0 -- tail -200 /opt/dcache/var/log/pool-a.log || true
   artifacts:
     when: always
     reports:
