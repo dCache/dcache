@@ -81,6 +81,7 @@ public class MoverData implements Comparable<MoverData>, Serializable {
     private Long submitTime;
     private Long lastModified;
     private Integer moverId;
+    private UserData userData;
 
     @Override
     public int compareTo(MoverData o) {
@@ -91,6 +92,30 @@ public class MoverData implements Comparable<MoverData>, Serializable {
               .compare(door, o.door)
               .compare(pnfsId, o.pnfsId)
               .result();
+    }
+
+    public class UserData {
+        private String dn;
+        private Long userId;
+        private Long groupId;
+
+        public UserData(String dn, Long userId, Long groupId) {
+            this.dn = dn;
+            this.userId = userId;
+            this.groupId = groupId;
+        }
+
+        public String getDn() {
+            return dn;
+        }
+
+        public Long getUserId() {
+            return userId;
+        }
+
+        public Long getGroupId() {
+            return groupId;
+        }
     }
 
     public Long getBytes() {
@@ -141,6 +166,10 @@ public class MoverData implements Comparable<MoverData>, Serializable {
         return timeInSeconds;
     }
 
+    public UserData getUserData() {
+        return userData;
+    }
+
     public void setBytes(Long bytes) {
         this.bytes = bytes;
     }
@@ -187,5 +216,9 @@ public class MoverData implements Comparable<MoverData>, Serializable {
 
     public void setTimeInSeconds(Long timeInSeconds) {
         this.timeInSeconds = timeInSeconds;
+    }
+
+    public void setUserData(String dn, Long userId, Long groupId) {
+        this.userData = new UserData(dn, userId, groupId);
     }
 }

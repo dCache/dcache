@@ -60,6 +60,7 @@ documents or software obtained from this server.
 package org.dcache.restful.providers.pool;
 
 import java.io.Serializable;
+import org.dcache.pool.movers.json.MoverData.UserData;
 
 /**
  * <p>A frontend wrapper for the pool-side object</p>
@@ -74,12 +75,16 @@ public class MoverData
     private String door;
     private String storageClass;
     private String state;
+    private String dn;
     private Long bytes;
     private Long timeInMilliseconds;
     private Long startTime;
     private Long submitTime;
     private Long lastModified;
     private Integer moverId;
+    private Long userID;
+    private Long groupId;
+    private UserData userData;
 
     public MoverData() {
     }
@@ -97,6 +102,8 @@ public class MoverData
         submitTime = moverData.getSubmitTime();
         lastModified = moverData.getLastModified();
         moverId = moverData.getMoverId();
+        userData = moverData.getUserData();
+
     }
 
     public Long getBytes() {
@@ -147,6 +154,10 @@ public class MoverData
         return timeInMilliseconds;
     }
 
+    public UserData getUserData() {
+        return userData;
+    }
+
     public void setBytes(Long bytes) {
         this.bytes = bytes;
     }
@@ -193,5 +204,9 @@ public class MoverData
 
     public void setTimeInMilliseconds(Long timeInMilliseconds) {
         this.timeInMilliseconds = timeInMilliseconds;
+    }
+
+    public void setUserData(UserData userData) {
+        this.userData = userData;
     }
 }
