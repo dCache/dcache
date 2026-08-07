@@ -625,25 +625,32 @@ Configure HSM on pools:
   needs:
     - Helm-Deploy Current dCache build
   script:
-    - kubectl -n ${K8S_NAMESPACE} wait --for=condition=Ready pod/store-pool-a-0 pod/store-pool-b-0 --timeout=120s
+    - kubectl -n ${K8S_NAMESPACE} wait --for=condition=Ready pod/store-pool-a-0 pod/store-pool-b-0 pod/store-pool-c-0 --timeout=120s
     - kubectl -n ${K8S_NAMESPACE} get pods
     - apk add --no-cache sshpass openssh-client 2>/dev/null || (apt-get update && apt-get install -y sshpass openssh-client)
+
+    # Deliver script to ALL THREE pools (we don't yet know which one gets the test file)
     - kubectl -n ${K8S_NAMESPACE} cp .ci/dummy-hsm.sh store-pool-a-0:/tmp/dummy-hsm.sh -c pool
     - kubectl -n ${K8S_NAMESPACE} cp .ci/dummy-hsm.sh store-pool-b-0:/tmp/dummy-hsm.sh -c pool
+    - kubectl -n ${K8S_NAMESPACE} cp .ci/dummy-hsm.sh store-pool-c-0:/tmp/dummy-hsm.sh -c pool
     - kubectl -n ${K8S_NAMESPACE} exec store-pool-a-0 -c pool -- chmod +x /tmp/dummy-hsm.sh
     - kubectl -n ${K8S_NAMESPACE} exec store-pool-b-0 -c pool -- chmod +x /tmp/dummy-hsm.sh
-    - |
-      CMDS=$(cat <<'EOF'
-      \c pool-a
-      hsm create osm dummyhsm script -command=/tmp/dummy-hsm.sh
-      \q
-      \c pool-b
-      hsm create osm dummyhsm script -command=/tmp/dummy-hsm.sh
-      \q
-      EOF
-      )
-      echo "$CMDS" | sshpass -p dickerelch ssh -v -tt -o StrictHostKeyChecking=no -p 22224 -l admin store-door-svc.${K8S_NAMESPACE}.svc.cluster.local 2>&1 | tee /tmp/hsm-create-output.txt
-      cat /tmp/hsm-create-output.txt
+    - kubectl -n ${K8S_NAMESPACE} exec store-pool-c-0 -c pool -- chmod +x /tmp/dummy-hsm.sh
+
+    # Clear any stale call-log from a previous pod incarnation so we don't misread old data
+    - kubectl -n ${K8S_NAMESPACE} exec store-pool-a-0 -c pool -- rm -f /tmp/dummy-hsm-calls.log
+    - kubectl -n ${K8S_NAMESPACE} exec store-pool-b-0 -c pool -- rm -f /tmp/dummy-hsm-calls.log
+    - kubectl -n ${K8S_NAMESPACE} exec store-pool-c-0 -c pool -- rm -f /tmp/dummy-hsm-calls.log
+
+    # Register HSM on all three, one independent SSH call each — no shared heredoc, no ambiguity
+    - printf '\\c pool-a\nhsm create osm dummyhsm script -command=/tmp/dummy-hsm.sh\n\\q\n' | sshpass -p dickerelch ssh -tt -o StrictHostKeyChecking=no -p 22224 -l admin store-door-svc.${K8S_NAMESPACE}.svc.cluster.local 2>&1 | tee /tmp/hsm-pool-a.txt
+    - printf '\\c pool-b\nhsm create osm dummyhsm script -command=/tmp/dummy-hsm.sh\n\\q\n' | sshpass -p dickerelch ssh -tt -o StrictHostKeyChecking=no -p 22224 -l admin store-door-svc.${K8S_NAMESPACE}.svc.cluster.local 2>&1 | tee /tmp/hsm-pool-b.txt
+    - printf '\\c pool-c\nhsm create osm dummyhsm script -command=/tmp/dummy-hsm.sh\n\\q\n' | sshpass -p dickerelch ssh -tt -o StrictHostKeyChecking=no -p 22224 -l admin store-door-svc.${K8S_NAMESPACE}.svc.cluster.local 2>&1 | tee /tmp/hsm-pool-c.txt
+
+    # Verify registration actually stuck, per pool, explicitly
+    - printf '\\c pool-a\nhsm ls\n\\q\n' | sshpass -p dickerelch ssh -tt -o StrictHostKeyChecking=no -p 22224 -l admin store-door-svc.${K8S_NAMESPACE}.svc.cluster.local 2>&1 | tee /tmp/hsm-ls-a.txt
+    - printf '\\c pool-b\nhsm ls\n\\q\n' | sshpass -p dickerelch ssh -tt -o StrictHostKeyChecking=no -p 22224 -l admin store-door-svc.${K8S_NAMESPACE}.svc.cluster.local 2>&1 | tee /tmp/hsm-ls-b.txt
+    - printf '\\c pool-c\nhsm ls\n\\q\n' | sshpass -p dickerelch ssh -tt -o StrictHostKeyChecking=no -p 22224 -l admin store-door-svc.${K8S_NAMESPACE}.svc.cluster.local 2>&1 | tee /tmp/hsm-ls-c.txt
 
 Helm-Deploy Latest dCache Golden Release:
   stage: test_deploy
@@ -734,16 +741,16 @@ Frontend test suite:
     - kubectl -n $K8S_NAMESPACE cp .ci/userEndpoint.http http-tester:/userEndpoint.http
     - kubectl -n $K8S_NAMESPACE cp .ci/bulkRequestsEndpoint.http http-tester:/bulkRequestsEndpoint.http
     - kubectl -n $K8S_NAMESPACE cp .ci/spacemanagerEndpoint.http http-tester:/spacemanagerEndpoint.http
-    # use-case test
     - kubectl -n $K8S_NAMESPACE cp .ci/use-case-diskandtape.http http-tester:/use-case-diskandtape.http
     - kubectl -n $K8S_NAMESPACE cp .ci/use-case-to-tape.http http-tester:/use-case-to-tape.http
-    
     - kubectl -n $K8S_NAMESPACE cp README.md http-tester:/README.md
     - kubectl -n $K8S_NAMESPACE cp http-client.private.env.json http-tester:/http-client.private.env.json
     - kubectl -n $K8S_NAMESPACE exec http-tester -- java --add-opens=java.base/java.util=ALL-UNNAMED $IJHTTP_JAVA_OPTS -cp /intellij-http-client/\* com.intellij.httpClient.cli.HttpClientMain -e Test -D /poolEndpoint.http /use-case-diskandtape.http /use-case-to-tape.http /qosEndpoint.http /qosPolicyEndpoint.http /migrationEndpoint.http /userEndpoint.http /bulkRequestsEndpoint.http /spacemanagerEndpoint.http -p /http-client.private.env.json --insecure -L VERBOSE --report=/httpTests
     - kubectl -n $K8S_NAMESPACE cp http-tester:/httpTests/report.xml pool-report.xml
   after_script:
-    - kubectl -n $K8S_NAMESPACE exec store-pool-a-0 -- cat /tmp/dummy-hsm-calls.log || true
+    - kubectl -n $K8S_NAMESPACE exec store-pool-a-0 -- cat /tmp/dummy-hsm-calls.log || echo "NO CALLS ON POOL-A"
+    - kubectl -n $K8S_NAMESPACE exec store-pool-b-0 -- cat /tmp/dummy-hsm-calls.log || echo "NO CALLS ON POOL-B"
+    - kubectl -n $K8S_NAMESPACE exec store-pool-c-0 -- cat /tmp/dummy-hsm-calls.log || echo "NO CALLS ON POOL-C"
   artifacts:
     when: always
     reports:
