@@ -121,6 +121,11 @@
         </repository>
 
         <repository>
+            <id>thirdparty</id>
+            <url>https://download.dcache.org/nexus/content/repositories/thirdparty</url>
+        </repository>
+
+        <repository>
             <id>dcache.repository</id>
             <url>https://download.dcache.org/nexus/content/repositories/releases</url>
         </repository>
