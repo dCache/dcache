@@ -320,7 +320,7 @@ public final class PoolInfoRequestHandler implements CellMessageReceiver,
                             .flatMap((q) -> q.getMoverData(
                                   info.filter(),
                                   sorter).stream())
-                            .collect(Collectors.toList());
+                            .toList();
                 info.setTotal(data.size());
                 int offset = info.getOffset();
                 int limit = info.getLimit();

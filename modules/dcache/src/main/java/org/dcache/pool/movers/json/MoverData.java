@@ -70,6 +70,7 @@ public class MoverData implements Comparable<MoverData>, Serializable {
 
     private static final long serialVersionUID = 5130958721608671842L;
     private String pnfsId;
+    private String clientIp;
     private String queue;
     private String mode;
     private String door;
@@ -81,6 +82,7 @@ public class MoverData implements Comparable<MoverData>, Serializable {
     private Long submitTime;
     private Long lastModified;
     private Integer moverId;
+    private UserData userData;
 
     @Override
     public int compareTo(MoverData o) {
@@ -91,6 +93,30 @@ public class MoverData implements Comparable<MoverData>, Serializable {
               .compare(door, o.door)
               .compare(pnfsId, o.pnfsId)
               .result();
+    }
+
+    public static class UserData implements Serializable{
+        private String dn;
+        private Long userId;
+        private long[] groupIds;
+
+        public UserData(String dn, Long userId, long[] groupIds) {
+            this.dn = dn;
+            this.userId = userId;
+            this.groupIds = groupIds;
+        }
+
+        public String getDn() {
+            return dn;
+        }
+
+        public Long getUserId() {
+            return userId;
+        }
+
+        public long[] getGroupIds() {
+            return groupIds;
+        }
     }
 
     public Long getBytes() {
@@ -117,6 +143,10 @@ public class MoverData implements Comparable<MoverData>, Serializable {
         return pnfsId;
     }
 
+    public String getClientIp() {
+        return clientIp;
+    }
+
     public String getQueue() {
         return queue;
     }
@@ -139,6 +169,10 @@ public class MoverData implements Comparable<MoverData>, Serializable {
 
     public Long getTimeInSeconds() {
         return timeInSeconds;
+    }
+
+    public UserData getUserData() {
+        return userData;
     }
 
     public void setBytes(Long bytes) {
@@ -165,6 +199,10 @@ public class MoverData implements Comparable<MoverData>, Serializable {
         this.pnfsId = pnfsId;
     }
 
+    public void setClientIp(String clientIp) {
+        this.clientIp = clientIp;
+    }
+
     public void setQueue(String queue) {
         this.queue = queue;
     }
@@ -187,5 +225,12 @@ public class MoverData implements Comparable<MoverData>, Serializable {
 
     public void setTimeInSeconds(Long timeInSeconds) {
         this.timeInSeconds = timeInSeconds;
+    }
+
+    public void setUserData(String dn, long userId, long[] groupIds) {
+        this.userData = new UserData(dn, userId, groupIds);
+    }
+    public void setUserData(String dn) {
+        this.userData = new UserData(dn, null, null);
     }
 }
