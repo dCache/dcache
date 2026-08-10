@@ -647,6 +647,10 @@ Configure HSM on pools:
     - printf '\\c pool-b\nhsm create osm dummyhsm script -command=/tmp/dummy-hsm.sh\n\\q\n' | sshpass -p dickerelch ssh -tt -o StrictHostKeyChecking=no -p 22224 -l admin store-door-svc.${K8S_NAMESPACE}.svc.cluster.local 2>&1 | tee /tmp/hsm-pool-b.txt
     - printf '\\c pool-c\nhsm create osm dummyhsm script -command=/tmp/dummy-hsm.sh\n\\q\n' | sshpass -p dickerelch ssh -tt -o StrictHostKeyChecking=no -p 22224 -l admin store-door-svc.${K8S_NAMESPACE}.svc.cluster.local 2>&1 | tee /tmp/hsm-pool-c.txt
 
+    - printf '\\c pool-a\nhsm remove osm s3\n\\q\n' | sshpass -p dickerelch ssh -tt -o StrictHostKeyChecking=no -p 22224 -l admin store-door-svc.${K8S_NAMESPACE}.svc.cluster.local 2>&1 | tee /tmp/hsm-remove-s3-a.txt
+    - printf '\\c pool-b\nhsm remove osm s3\n\\q\n' | sshpass -p dickerelch ssh -tt -o StrictHostKeyChecking=no -p 22224 -l admin store-door-svc.${K8S_NAMESPACE}.svc.cluster.local 2>&1 | tee /tmp/hsm-remove-s3-b.txt
+    - printf '\\c pool-c\nhsm remove osm s3\n\\q\n' | sshpass -p dickerelch ssh -tt -o StrictHostKeyChecking=no -p 22224 -l admin store-door-svc.${K8S_NAMESPACE}.svc.cluster.local 2>&1 | tee /tmp/hsm-remove-s3-c.txt
+    
     # Verify registration actually stuck, per pool, explicitly
     - printf '\\c pool-a\nhsm ls\n\\q\n' | sshpass -p dickerelch ssh -tt -o StrictHostKeyChecking=no -p 22224 -l admin store-door-svc.${K8S_NAMESPACE}.svc.cluster.local 2>&1 | tee /tmp/hsm-ls-a.txt
     - printf '\\c pool-b\nhsm ls\n\\q\n' | sshpass -p dickerelch ssh -tt -o StrictHostKeyChecking=no -p 22224 -l admin store-door-svc.${K8S_NAMESPACE}.svc.cluster.local 2>&1 | tee /tmp/hsm-ls-b.txt
