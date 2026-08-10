@@ -101,6 +101,7 @@
         <datanucleus.plugin.version>6.0.0-release</datanucleus.plugin.version>
         <asm.version>9.5</asm.version>
         <asm-tools.version>5.0.3</asm-tools.version>
+        <opendj.version>5.1.2</opendj.version>
     </properties>
 
     <scm>
@@ -829,11 +830,19 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+
             <dependency>
-                <groupId>org.dcache</groupId>
-                <artifactId>ldap4testing</artifactId>
-                <version>1.0</version>
+                <groupId>org.openidentityplatform.opendj</groupId>
+                <artifactId>opendj-core</artifactId>
+                <version>${opendj.version}</version>
             </dependency>
+
+            <dependency>
+                <groupId>org.openidentityplatform.opendj</groupId>
+                <artifactId>opendj-grizzly</artifactId>
+                <version>${opendj.version}</version>
+            </dependency>
+
             <!-- used by alarms, needs to be deployed -->
             <dependency>
                 <groupId>javax.mail</groupId>
