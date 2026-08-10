@@ -115,15 +115,23 @@ default:
   rules:
     - if: $CI_COMMIT_TAG
 
-# rules for running coverage
-.no_release_rules:
+# Rules for running coverage & skipping unit tests via [fast_pass]
+.fast_pass_rules:
   rules:
+    - if: '$CI_COMMIT_MESSAGE =~ /\[\s*fast[ _]?pass\s*\]/i'
+      when: never
     - if: $CI_COMMIT_TAG == null
+
+# Base rule for testing stage jobs: runs by default if no [only: ...] filter is present
+.selective_test_base:
+  rules:
+    - if: '$CI_COMMIT_MESSAGE !~ /\[\s*only\s*:/i'
+      when: on_success
 
 # cache and image configuration for jacoco report jobs
 .jacoco_base:
   image: eclipse-temurin:21-jre
-  extends: .no_release_rules
+  extends: .fast_pass_rules
   cache:
     key: "jacoco-cli-${JACOCO_VERSION}"
     paths:
@@ -172,7 +180,7 @@ run_ut_with_coverage:
   image: maven:3.9.12-eclipse-temurin-21
   extends:
     - .build_cache
-    - .no_release_rules
+    - .fast_pass_rules
   script:
     - mvn $MAVEN_CLI_OPTS -P code-coverage clean verify -DskipTests=false -Drun.slow.tests
   artifacts:
@@ -186,7 +194,7 @@ run_ut_with_coverage:
       - "**/target/classes/"
     expire_in: 1 day
 
-# run unit tests without coverage
+# run unit tests without coverage for release pipeline
 run_unit_tests:
   stage: build
   image: maven:3.9.12-eclipse-temurin-21
@@ -632,13 +640,15 @@ Extract Coverage:
   stage: testenv_post
   extends:
     - .kubernetes_image
-    - .no_release_rules
+    - .fast_pass_rules
   dependencies:
     - get_jacoco_cli
   needs:
     - job: get_jacoco_cli
       artifacts: true
+      optional: true
     - job: NFS4.x protocol compliance tests
+      optional: true
   script:
     - JACOCO_CLI_PATH="jacoco-${JACOCO_VERSION}/lib/jacococli.jar"
     - PODS=$(kubectl -n $K8S_NAMESPACE get pods -l app.kubernetes.io/instance=store -o jsonpath='{.items[*].metadata.name}')
@@ -673,6 +683,11 @@ Extract Coverage:
 Grid EL9 WN tests:
   stage: testing
   extends: .kubernetes_image
+  rules:
+    - if: '$CI_COMMIT_MESSAGE =~ /\[\s*only\s*:[^\]]*\bgrid\b[^\]]*\]/i'
+      when: on_success
+    - !reference [.selective_test_base, rules]
+    - when: never
   script:
     - kubectl -n $K8S_NAMESPACE apply -f .ci/wn-with-cvmfs.yaml
     - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod grid-tester; do sleep 1; done
@@ -688,6 +703,11 @@ Grid EL9 WN tests:
 Frontend test suite:
   stage: testing
   extends: .kubernetes_image
+  rules:
+    - if: '$CI_COMMIT_MESSAGE =~ /\[\s*only\s*:[^\]]*\bfrontend\b[^\]]*\]/i'
+      when: on_success
+    - !reference [.selective_test_base, rules]
+    - when: never
   script:
     - kubectl -n $K8S_NAMESPACE apply -f .ci/frontend.yaml
     - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod http-tester; do sleep 1; done
@@ -710,6 +730,11 @@ Frontend test suite:
 gsi_xroot_tests:
   stage: testing
   extends: .kubernetes_image
+  rules:
+    - if: '$CI_COMMIT_MESSAGE =~ /\[\s*only\s*:[^\]]*\bxroot\b[^\]]*\]/i'
+      when: on_success
+    - !reference [.selective_test_base, rules]
+    - when: never
   script:
     - kubectl -n $K8S_NAMESPACE apply -f .ci/wn-with-cvmfs-xroot.yaml
     - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod xroot-tester; do sleep 1; done
@@ -720,6 +745,11 @@ gsi_xroot_tests:
 webdav_with_x509_tests:
   stage: testing
   extends: .kubernetes_image
+  rules:
+    - if: '$CI_COMMIT_MESSAGE =~ /\[\s*only\s*:[^\]]*\bwebdav\b[^\]]*\]/i'
+      when: on_success
+    - !reference [.selective_test_base, rules]
+    - when: never
   script:
     - kubectl -n $K8S_NAMESPACE apply -f .ci/webdav-wn-cvmfs.yaml
     - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod webdav-tester; do sleep 1; done
@@ -730,6 +760,11 @@ webdav_with_x509_tests:
 NFS4.x protocol compliance tests:
   stage: testing
   extends: .kubernetes_image
+  rules:
+    - if: '$CI_COMMIT_MESSAGE =~ /\[\s*only\s*:[^\]]*\bnfs\b[^\]]*\]/i'
+      when: on_success
+    - !reference [.selective_test_base, rules]
+    - when: never
   script:
     - kubectl -n $K8S_NAMESPACE run pynfs-tester --image=dcache/pynfs:0.5 --restart=Never  --command -- sleep 3600
     - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod pynfs-tester; do sleep 1; done
@@ -777,6 +812,11 @@ NFS4.x protocol compliance tests:
 Run OIDC test:
   stage: testing
   extends: .kubernetes_image
+  rules:
+    - if: '$CI_COMMIT_MESSAGE =~ /\[\s*only\s*:[^\]]*\boidc\b[^\]]*\]/i'
+      when: on_success
+    - !reference [.selective_test_base, rules]
+    - when: never
   script:
     - kubectl -n $K8S_NAMESPACE run oidc-tester --image=almalinux:9 --restart=Never  --command -- sleep 3600
     - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod oidc-tester; do sleep 1; done
@@ -786,7 +826,9 @@ Run OIDC test:
 #Job to find JaCoCo CLI in cache or download it
 get_jacoco_cli:
   stage: build
-  extends: .jacoco_base
+  extends: 
+    - .jacoco_base
+    - .fast_pass_rules
   cache:
     key: "jacoco-cli-${JACOCO_VERSION}"
     paths:
@@ -804,13 +846,18 @@ get_jacoco_cli:
 # Job to generate JaCoCo report using script
 generate_jacoco_report:
   stage: testenv_post
-  extends: .jacoco_base
+  extends: 
+    - .jacoco_base
+    - .fast_pass_rules
   needs:
     - job: run_ut_with_coverage
       artifacts: true
+      optional: true
     - job: get_jacoco_cli
+      optional: true
     - job: Extract Coverage
       artifacts: true
+      optional: true
   script:
     - ./generate-jacoco-report.sh
   artifacts:
