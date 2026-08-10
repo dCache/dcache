@@ -70,6 +70,7 @@ public class MoverData implements Comparable<MoverData>, Serializable {
 
     private static final long serialVersionUID = 5130958721608671842L;
     private String pnfsId;
+    private String clientIp;
     private String queue;
     private String mode;
     private String door;
@@ -97,12 +98,12 @@ public class MoverData implements Comparable<MoverData>, Serializable {
     public static class UserData implements Serializable{
         private String dn;
         private Long userId;
-        private Long groupId;
+        private long[] groupIds;
 
-        public UserData(String dn, Long userId, Long groupId) {
+        public UserData(String dn, Long userId, long[] groupIds) {
             this.dn = dn;
             this.userId = userId;
-            this.groupId = groupId;
+            this.groupIds = groupIds;
         }
 
         public String getDn() {
@@ -113,8 +114,8 @@ public class MoverData implements Comparable<MoverData>, Serializable {
             return userId;
         }
 
-        public Long getGroupId() {
-            return groupId;
+        public long[] getGroupIds() {
+            return groupIds;
         }
     }
 
@@ -140,6 +141,10 @@ public class MoverData implements Comparable<MoverData>, Serializable {
 
     public String getPnfsId() {
         return pnfsId;
+    }
+
+    public String getClientIp() {
+        return clientIp;
     }
 
     public String getQueue() {
@@ -194,6 +199,10 @@ public class MoverData implements Comparable<MoverData>, Serializable {
         this.pnfsId = pnfsId;
     }
 
+    public void setClientIp(String clientIp) {
+        this.clientIp = clientIp;
+    }
+
     public void setQueue(String queue) {
         this.queue = queue;
     }
@@ -218,8 +227,8 @@ public class MoverData implements Comparable<MoverData>, Serializable {
         this.timeInSeconds = timeInSeconds;
     }
 
-    public void setUserData(String dn, Long userId, Long groupId) {
-        this.userData = new UserData(dn, userId, groupId);
+    public void setUserData(String dn, long userId, long[] groupIds) {
+        this.userData = new UserData(dn, userId, groupIds);
     }
     public void setUserData(String dn) {
         this.userData = new UserData(dn, null, null);

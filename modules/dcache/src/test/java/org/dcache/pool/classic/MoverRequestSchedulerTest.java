@@ -8,9 +8,13 @@ import static org.mockito.Mockito.when;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellPath;
 import diskCacheV111.util.PnfsId;
+
+import java.lang.reflect.Array;
+import java.net.InetAddress;
 import java.util.Set;
 import javax.security.auth.Subject;
 import org.dcache.auth.GidPrincipal;
+import org.dcache.auth.Origin;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.pool.movers.Mover;
@@ -20,6 +24,7 @@ import org.dcache.vehicles.FileAttributes;
 import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 import org.junit.Before;
 import org.junit.Test;
+import org.python.antlr.op.Or;
 
 public class MoverRequestSchedulerTest {
 
@@ -67,13 +72,18 @@ public class MoverRequestSchedulerTest {
         subject.getPrincipals().add(new GlobusPrincipal(dn));
         subject.getPrincipals().add(new UidPrincipal(1000));
         subject.getPrincipals().add(new GidPrincipal(1000, true));
+        subject.getPrincipals().add(new GidPrincipal(2000, true));
+        subject.getPrincipals().add(new Origin(InetAddress.getByName("192.168.1.1")));
 
         addMover(pnfsId, false, subject);
+
+        long[] gids = new long[1];
+        gids[0] = 1000;
 
         MoverData data = scheduler.getMoverData(x -> true, MoverData::compareTo).get(0);
         assertEquals(dn, data.getUserData().getDn());
         assertEquals(Long.valueOf(1000), data.getUserData().getUserId());
-        assertEquals(Long.valueOf(1000), data.getUserData().getGroupId());
+        assertEquals(gids[0], data.getUserData().getGroupIds()[0]);
     }
 
     @Test
@@ -81,22 +91,29 @@ public class MoverRequestSchedulerTest {
         Subject subject = new Subject();
         subject.getPrincipals().add(new UidPrincipal(1000));
         subject.getPrincipals().add(new GidPrincipal(1000, true));
+        subject.getPrincipals().add(new GidPrincipal(2000, true));
+        subject.getPrincipals().add(new Origin(InetAddress.getByName("192.168.1.1")));
 
         addMover(pnfsId, false, subject);
+
+        long[] gids = new long[1];
+        gids[0] = 1000;
 
         MoverData data = scheduler.getMoverData(x -> true, MoverData::compareTo).get(0);
         assertNull(data.getUserData().getDn());
         assertEquals(Long.valueOf(1000), data.getUserData().getUserId());
-        assertEquals(Long.valueOf(1000), data.getUserData().getGroupId());
+        assertEquals(gids[0], data.getUserData().getGroupIds()[0]);
     }
 
     @Test
     public void shouldHaveNullUserDataFieldsForAnonymousSubject() throws Exception {
-        addMover(pnfsId, false, Subjects.NOBODY);
+        Subject subject = new Subject();
+        subject.getPrincipals().add(new Origin(InetAddress.getByName("192.168.1.1")));
+        addMover(pnfsId, false, subject);
 
         MoverData data = scheduler.getMoverData(x -> true, MoverData::compareTo).get(0);
         assertNull(data.getUserData().getUserId());
-        assertNull(data.getUserData().getGroupId());
+        assertNull(data.getUserData().getGroupIds());
     }
 
     private void addMover(PnfsId pnfsId, boolean isP2P) throws Exception {

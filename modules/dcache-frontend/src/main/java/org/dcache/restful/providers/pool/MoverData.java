@@ -70,20 +70,18 @@ public class MoverData
 
     private static final long serialVersionUID = 8037942643623452040L;
     private String pnfsId;
+    private String clientIp;
     private String queue;
     private String mode;
     private String door;
     private String storageClass;
     private String state;
-    private String dn;
     private Long bytes;
     private Long timeInMilliseconds;
     private Long startTime;
     private Long submitTime;
     private Long lastModified;
     private Integer moverId;
-    private Long userID;
-    private Long groupId;
     private UserData userData;
 
     public MoverData() {
@@ -91,6 +89,7 @@ public class MoverData
 
     public MoverData(org.dcache.pool.movers.json.MoverData moverData) {
         pnfsId = moverData.getPnfsId();
+        clientIp = moverData.getClientIp();
         queue = moverData.getQueue();
         mode = moverData.getMode();
         door = moverData.getDoor();
@@ -128,6 +127,10 @@ public class MoverData
 
     public String getPnfsId() {
         return pnfsId;
+    }
+
+    public String getClientIp() {
+        return clientIp;
     }
 
     public String getQueue() {
