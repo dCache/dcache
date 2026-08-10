@@ -94,7 +94,7 @@ public class MoverData implements Comparable<MoverData>, Serializable {
               .result();
     }
 
-    public class UserData {
+    public static class UserData implements Serializable{
         private String dn;
         private Long userId;
         private Long groupId;
@@ -220,5 +220,8 @@ public class MoverData implements Comparable<MoverData>, Serializable {
 
     public void setUserData(String dn, Long userId, Long groupId) {
         this.userData = new UserData(dn, userId, groupId);
+    }
+    public void setUserData(String dn) {
+        this.userData = new UserData(dn, null, null);
     }
 }
