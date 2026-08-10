@@ -9,13 +9,11 @@ import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellPath;
 import diskCacheV111.util.PnfsId;
 
-import java.lang.reflect.Array;
 import java.net.InetAddress;
 import java.util.Set;
 import javax.security.auth.Subject;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.Origin;
-import org.dcache.auth.Subjects;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.pool.movers.Mover;
 import org.dcache.pool.movers.json.MoverData;
@@ -24,7 +22,6 @@ import org.dcache.vehicles.FileAttributes;
 import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 import org.junit.Before;
 import org.junit.Test;
-import org.python.antlr.op.Or;
 
 public class MoverRequestSchedulerTest {
 
