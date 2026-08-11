@@ -6,7 +6,6 @@ import static org.dcache.util.ByteUnit.MiB;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DCapProrocolChallenge;
 import diskCacheV111.util.DiskErrorCacheException;
-import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -66,9 +65,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
     private String _status = "None";
     private boolean _io_ok = true;
     private Exception ioException = null;
-
-    private PnfsId _pnfsId;
-    private int _sessionId = -1;
 
     private final MoverIoBuffer _defaultBufferSize = new MoverIoBuffer(KiB.toBytes(256),
           KiB.toBytes(256), KiB.toBytes(256));
@@ -253,7 +249,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         addDesiredChecksums(fileChannel, dcapProtocolInfo);
 
         StorageInfo storage = fileAttributes.getStorageInfo();
-        _pnfsId = fileAttributes.getPnfsId();
         boolean isWrite = access.contains(StandardOpenOption.WRITE);
 
         ////////////////////////////////////////////////////////////////////////
@@ -268,7 +263,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         SocketChannel socketChannel = null;
         DCapOutputByteBuffer cntOut = new DCapOutputByteBuffer(KiB.toBytes(1));
 
-        _sessionId = dcapProtocolInfo.getSessionId();
+        int sessionId = dcapProtocolInfo.getSessionId();
 
         try (Listen listen = factory.acquireListen(bufferSize.getRecvBufferSize())) {
             InetAddress localAddress = NetworkUtils.
@@ -279,14 +274,13 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
             byte[] challenge = UUID.randomUUID().toString().getBytes();
             PoolPassiveIoFileMessage<byte[]> msg = new PoolPassiveIoFileMessage<>("pool",
                   socketAddress, challenge);
-            msg.setId(dcapProtocolInfo.getSessionId());
+            msg.setId(sessionId);
             _log.info("waiting for client to connect ({}:{})", localAddress,
                   listen.getPort());
 
             CellPath cellpath = dcapProtocolInfo.door();
             _cell.sendMessage(new CellMessage(cellpath, msg));
-            DCapProrocolChallenge dcapChallenge = new DCapProrocolChallenge(_sessionId,
-                  challenge);
+            DCapProrocolChallenge dcapChallenge = new DCapProrocolChallenge(sessionId, challenge);
             socketChannel = listen.getSocket(dcapChallenge);
         }
 
