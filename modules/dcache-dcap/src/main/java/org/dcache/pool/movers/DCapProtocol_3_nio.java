@@ -29,6 +29,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import org.dcache.net.ProtocolConnectionPool.Listen;
 import org.dcache.net.ProtocolConnectionPoolFactory;
@@ -56,10 +57,10 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
     private final CellEndpoint _cell;
 
     private Args _args;
-    private long _bytesTransferred = -1;
+    private final AtomicLong _bytesTransferred = new AtomicLong();
     private long _transferStarted;
     private long _transferTime = -1;
-    private long _lastTransferred = System.currentTimeMillis();
+    private final AtomicLong _lastTransferred = new AtomicLong(System.currentTimeMillis());
 
     private ByteBuffer _bigBuffer;
     private String _status = "None";
@@ -300,8 +301,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         //
         //
         _transferStarted = System.currentTimeMillis();
-        _bytesTransferred = 0;
-        _lastTransferred = _transferStarted;
+        _lastTransferred.set(_transferStarted);
 
         boolean notDone = true;
         RequestBlock requestBlock = new RequestBlock();
@@ -328,7 +328,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
 
                 _log.debug("Request Block : {}", requestBlock);
 
-                _lastTransferred = System.currentTimeMillis();
+                _lastTransferred.set(System.currentTimeMillis());
 
                 switch (requestBlock.getCommandCode()) {
                     //-------------------------------------------------------------
@@ -667,14 +667,14 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
             } catch (Exception xe) {
             }
 
-            dcapProtocolInfo.setBytesTransferred(_bytesTransferred);
+            dcapProtocolInfo.setBytesTransferred(_bytesTransferred.get());
 
             _transferTime = System.currentTimeMillis() -
                   _transferStarted;
             dcapProtocolInfo.setTransferTime(_transferTime);
 
             _log.info("(Transfer finished : {} bytes in {} seconds) ",
-                  _bytesTransferred, _transferTime / 1000);
+                  _bytesTransferred.get(), _transferTime / 1000);
 
             //
             // if we got an EOF from the inputstream
@@ -757,7 +757,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
                 socketChannel.write(_bigBuffer);
 
                 count -= rc;
-                _bytesTransferred += rc;
+                _bytesTransferred.addAndGet(rc);
 
             }
         }
@@ -950,7 +950,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
                     }
                 }
                 rest -= rc;
-                _bytesTransferred += rc;
+                _bytesTransferred.addAndGet(rc);
             }
 
             _log.debug("Block Done");
@@ -1004,7 +1004,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
             _bigBuffer.putInt(rc).rewind();
             socketChannel.write(_bigBuffer);
             rest -= rc;
-            _bytesTransferred += rc;
+            _bytesTransferred.addAndGet(rc);
             if (rest <= 0) {
                 break;
             }
@@ -1019,12 +1019,12 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
 
     @Override
     public long getLastTransferred() {
-        return _lastTransferred;
+        return _lastTransferred.get();
     }
 
     @Override
     public long getBytesTransferred() {
-        return _bytesTransferred;
+        return _bytesTransferred.get();
     }
 
     @Override
