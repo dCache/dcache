@@ -400,13 +400,19 @@ public class CanlContextFactory implements SslContextFactory {
             }
 
             PublicKey pubKey = certificateChain[0].getPublicKey();
-            String pubKeyAlgorithm = pubKey.getAlgorithm();
-            // REVISIT: BouncyCastle uses "ECDSA" as the private key algorithm and "EC" as the public key algorithm names for elliptic curve keys.
-            if (!privateKey.getAlgorithm().equals(pubKeyAlgorithm) && !(privateKey.getAlgorithm().equals("ECDSA") && pubKeyAlgorithm.equals("EC")))
-                throw new KeyStoreException("Private and public keys are not matching: different algorithms: "
-                        + privateKey.getAlgorithm() + " vs. " + pubKeyAlgorithm);
+            String pubAlg = pubKey.getAlgorithm();
+            String privAlg = privateKey.getAlgorithm();
+            // "EC" and "ECDSA" are both used for elliptic-curve keys depending on the
+            // provider and BouncyCastle version — treat them as equivalent.
+            boolean privIsEC = privAlg.equals("EC") || privAlg.equals("ECDSA");
+            boolean pubIsEC  = pubAlg.equals("EC")  || pubAlg.equals("ECDSA");
 
-            switch (pubKeyAlgorithm) {
+            if (!privAlg.equals(pubAlg) && !(privIsEC && pubIsEC)) {
+                throw new KeyStoreException("Private and public keys are not matching: different algorithms: "
+                        + privAlg + " vs. " + pubAlg);
+            }
+
+            switch (pubAlg) {
                 case "DSA":
                     if (!checkKeysViaSignature("SHA1withDSA", privateKey, pubKey))
                         throw new KeyStoreException("Private and public keys are not matching: DSA");
@@ -425,8 +431,9 @@ public class CanlContextFactory implements SslContextFactory {
                     if (!checkKeysViaSignature("GOST3411withECGOST3410", privateKey, pubKey))
                         throw new KeyStoreException("Private and public keys are not matching: EC GOST 34.10");
                     break;
+                case "EC":
                 case "ECDSA":
-                    if (!checkKeysViaSignature("SHA1withECDSA", privateKey, pubKey))
+                    if (!checkKeysViaSignature("SHA256withECDSA", privateKey, pubKey))
                         throw new KeyStoreException("Private and public keys are not matching: EC DSA");
                     break;
             }
