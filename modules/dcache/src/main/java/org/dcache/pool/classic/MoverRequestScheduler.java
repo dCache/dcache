@@ -771,7 +771,7 @@ public class MoverRequestScheduler {
             data.setLastModified(_mover.getLastTransferred());
             data.setMoverId(_id);
             Subject subject = _mover.getSubject();
-            data.setClientIp(Subjects.getOrigin(subject).getAddress().toString());
+            data.setClientIp(Subjects.getOrigin(subject).getAddress().getHostAddress());
             try {
                 data.setUserData(Subjects.getDn(subject), Subjects.getUid(subject), Subjects.getGids(subject));
             } catch (NoSuchElementException e) {
