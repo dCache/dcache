@@ -432,9 +432,6 @@ public class CanlContextFactory implements SslContextFactory {
                         throw new KeyStoreException("Private and public keys are not matching: EC GOST 34.10");
                     break;
                 case "EC":
-                    if (!checkKeysViaSignature("SHA256withECDSA", privateKey, pubKey))
-                        throw new KeyStoreException("Private and public keys are not matching: EC DSA");
-                    break;
                 case "ECDSA":
                     if (!checkKeysViaSignature("SHA256withECDSA", privateKey, pubKey))
                         throw new KeyStoreException("Private and public keys are not matching: EC DSA");
