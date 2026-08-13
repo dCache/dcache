@@ -65,6 +65,7 @@ import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.restful.providers.UserAttributes;
+import org.dcache.restful.util.OidcDiscovery;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,6 +82,8 @@ public class OidcCodeFlowCallback {
     public String oidcClientId;
     public String oidcClientSecret;
     public String oidcTokenUrl;
+    public String oidcIssuer;
+    private OidcDiscovery oidcDiscovery;
     private LoginStrategy _loginStrategy;
     private Restriction _doorRestriction;
 
@@ -97,6 +100,14 @@ public class OidcCodeFlowCallback {
 
     public void setTokenUrl(String oidcTokenUrl) {
         this.oidcTokenUrl = oidcTokenUrl;
+    }
+
+    public void setIssuer(String oidcIssuer) {
+        this.oidcIssuer = oidcIssuer;
+    }
+
+    public void setOidcDiscovery(OidcDiscovery oidcDiscovery) {
+        this.oidcDiscovery = oidcDiscovery;
     }
 
     public void setLoginStrategy(LoginStrategy loginStrategy) {
@@ -133,7 +144,7 @@ public class OidcCodeFlowCallback {
             String body = "&code=" + code +
                   "&grant_type=authorization_code" +
                   "&redirect_uri=" + host+request.getRequestURI();
-            URL url = new URL(oidcTokenUrl);
+            URL url = new URL(oidcDiscovery.resolveTokenEndpoint(oidcIssuer, oidcTokenUrl));
 
             String basicAuth = Base64.getEncoder().encodeToString(
                   (oidcClientId + ":" + oidcClientSecret).getBytes(
