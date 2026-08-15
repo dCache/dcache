@@ -177,6 +177,34 @@ In order to get all the restores (stages) on a given pool, the REST path
 
 must be used.
 
+## OpenID Connect for dCache View
+
+dCache View can log users in with the OpenID Connect authorization
+code flow.  Configure the client on the frontend cell:
+
+```ini
+[dCacheDomain/frontend]
+frontend.authn.oidc.issuer = https://op.example.org
+frontend.authn.oidc.client-id = <client-id>
+frontend.authn.oidc.client-secret = <client-secret>
+frontend.static!dcache-view.oidc-provider-name-list = ExampleOP
+frontend.static!dcache-view.oidc-client-id-list = <client-id>
+frontend.static!dcache-view.oidc-authz-redirect-url = https://view.example.org:3880/api/v1/auth/callback
+```
+
+The frontend then fetches `{issuer}/.well-known/openid-configuration`
+and takes `authorization_endpoint` (shown on the View login page) and
+`token_endpoint` (used to exchange the authorization code).  You can
+still set `frontend.static!dcache-view.oidc-authz-endpoint-list` and
+`frontend.authn.oidc.token-url` explicitly; those values override
+discovery.
+
+For more than one provider, give space-separated issuer URLs in
+`frontend.static!dcache-view.oidc-issuer-list` in the same order as
+the name and client-id lists.  The code-flow token exchange still uses
+a single token endpoint (`frontend.authn.oidc.issuer` /
+`frontend.authn.oidc.token-url`).
+
 ##### RESTful API for QoS transitions
 
 The RESTful commands now communicate with the [QoS Engine](config-qos-engine.md)
