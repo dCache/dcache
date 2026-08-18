@@ -316,7 +316,7 @@
         <constructor-arg ref="rate-limiter-config"/>
       <property name="handlers">
           <list>
-              <bean class="org.dcache.webdav.CrossOriginResourceSharingHandler">
+              <bean class="org.dcache.util.jetty.CrossOriginResourceSharingHandler">
                   <property name="allowedClientOrigins" value="${webdav.allowed.client.origins}"/>
               </bean>
               <bean class="org.eclipse.jetty.server.handler.ContextHandler">

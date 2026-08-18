@@ -1,4 +1,4 @@
-package org.dcache.webdav;
+package org.dcache.util.jetty;
 
 import static com.google.common.base.Preconditions.checkArgument;
 

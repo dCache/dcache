@@ -409,6 +409,9 @@
         <constructor-arg ref="rate-limiter-config"/>
         <property name="handlers">
             <list>
+              <bean class="org.dcache.util.jetty.CrossOriginResourceSharingHandler">
+                <property name="allowedClientOrigins" value="${frontend.allowed.client.origins}"/>
+              </bean>
                 <bean class="org.eclipse.jetty.server.handler.ContextHandler">
                     <description>Provide access to dcache-view</description>
                     <property name="contextPath" value="/"/>
