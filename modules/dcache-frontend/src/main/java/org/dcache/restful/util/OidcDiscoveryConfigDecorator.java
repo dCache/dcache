@@ -19,12 +19,16 @@
 package org.dcache.restful.util;
 
 import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableMap;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Path;
+import org.dcache.restful.resources.auth.OidcCodeFlowCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.FactoryBean;
@@ -33,6 +37,10 @@ import org.springframework.beans.factory.FactoryBean;
  * Fills {@code dcache-view.oidc-authz-endpoint-list} from OIDC discovery when the admin
  * did not set it. Issuers are taken from {@code dcache-view.oidc-issuer-list} when that
  * is set, otherwise from {@code frontend.authn.oidc.issuer}.
+ * <p>
+ * Also publishes {@code dcache-view.oidc-callback-path}, read via reflection off
+ * {@link OidcCodeFlowCallback}'s own {@code @Path} annotations, so the redirect_uri
+ * built by dCache View's login page never has to hard-code that path itself.
  */
 public class OidcDiscoveryConfigDecorator implements FactoryBean<Map<String, String>> {
 
@@ -40,6 +48,7 @@ public class OidcDiscoveryConfigDecorator implements FactoryBean<Map<String, Str
 
     static final String AUTHZ_ENDPOINT_LIST = "dcache-view.oidc-authz-endpoint-list";
     static final String ISSUER_LIST = "dcache-view.oidc-issuer-list";
+    static final String CALLBACK_PATH = "dcache-view.oidc-callback-path";
 
     private Map<String, String> delegate;
     private String issuer;
@@ -63,31 +72,50 @@ public class OidcDiscoveryConfigDecorator implements FactoryBean<Map<String, Str
     }
 
     Map<String, String> enrich(Map<String, String> data) {
-        if (data == null) {
-            return ImmutableMap.of();
+        Map<String, String> result = new LinkedHashMap<>(data == null ? Map.of() : data);
+
+        if (!OidcDiscovery.hasText(result.get(CALLBACK_PATH))) {
+            result.put(CALLBACK_PATH, discoverCallbackPath());
         }
-        if (OidcDiscovery.hasText(data.get(AUTHZ_ENDPOINT_LIST))) {
-            return data;
-        }
-        List<String> issuers = issuersFrom(data);
-        if (issuers.isEmpty()) {
-            return data;
-        }
-        List<String> endpoints = new ArrayList<>();
-        for (String iss : issuers) {
-            try {
-                endpoints.add(oidcDiscovery.authorizationEndpoint(URI.create(iss)));
-            } catch (Exception e) {
-                LOGGER.warn("Failed to discover authorization_endpoint for {}: {}", iss,
-                      e.toString());
+
+        if (!OidcDiscovery.hasText(result.get(AUTHZ_ENDPOINT_LIST))) {
+            List<String> issuers = issuersFrom(result);
+            if (!issuers.isEmpty()) {
+                List<String> endpoints = new ArrayList<>();
+                for (String iss : issuers) {
+                    try {
+                        endpoints.add(oidcDiscovery.authorizationEndpoint(URI.create(iss)));
+                    } catch (Exception e) {
+                        LOGGER.warn("Failed to discover authorization_endpoint for {}: {}", iss,
+                              e.toString());
+                    }
+                }
+                if (!endpoints.isEmpty()) {
+                    result.put(AUTHZ_ENDPOINT_LIST, String.join(" ", endpoints));
+                }
             }
         }
-        if (endpoints.isEmpty()) {
-            return data;
+
+        return Map.copyOf(result);
+    }
+
+    /**
+     * Reads {@code @Path("/auth")} off {@link OidcCodeFlowCallback} and {@code @Path("/callback")}
+     * off its {@code callback} method, so the path dCache View's login page redirects back to is
+     * always the resource's real route rather than a separately typed-out literal.
+     */
+    private static String discoverCallbackPath() {
+        try {
+            Path classPath = OidcCodeFlowCallback.class.getAnnotation(Path.class);
+            Method callback = OidcCodeFlowCallback.class.getMethod("callback",
+                  String.class, HttpServletRequest.class, HttpServletResponse.class);
+            Path methodPath = callback.getAnnotation(Path.class);
+            return (classPath.value() + methodPath.value()).replaceFirst("^/+", "");
+        } catch (NoSuchMethodException e) {
+            throw new AssertionError(
+                  "OidcCodeFlowCallback.callback signature no longer matches this reflection call",
+                  e);
         }
-        Map<String, String> copy = new LinkedHashMap<>(data);
-        copy.put(AUTHZ_ENDPOINT_LIST, String.join(" ", endpoints));
-        return ImmutableMap.copyOf(copy);
     }
 
     private List<String> issuersFrom(Map<String, String> data) {

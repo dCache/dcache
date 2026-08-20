@@ -189,7 +189,6 @@ frontend.authn.oidc.client-id = <client-id>
 frontend.authn.oidc.client-secret = <client-secret>
 frontend.static!dcache-view.oidc-provider-name-list = ExampleOP
 frontend.static!dcache-view.oidc-client-id-list = <client-id>
-frontend.static!dcache-view.oidc-authz-redirect-url = https://view.example.org:3880/api/v1/auth/callback
 ```
 
 The frontend then fetches `{issuer}/.well-known/openid-configuration`
@@ -198,6 +197,12 @@ and takes `authorization_endpoint` (shown on the View login page) and
 still set `frontend.static!dcache-view.oidc-authz-endpoint-list` and
 `frontend.authn.oidc.token-url` explicitly; those values override
 discovery.
+
+The redirect URL sent with the authorization request is never
+configured: dCache View derives it itself, from the browser's own
+origin plus `dcache-view.endpoints.webapi` (i.e.
+`{origin}/api/v1/auth/callback`), which always matches the callback
+the frontend serves.
 
 For more than one provider, give space-separated issuer URLs in
 `frontend.static!dcache-view.oidc-issuer-list` in the same order as
