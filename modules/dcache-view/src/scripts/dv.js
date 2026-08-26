@@ -791,6 +791,9 @@
     window.addEventListener('dv-namespace-close-central-dialogbox',()=>{
         app.$.centralDialogBox.close();
     });
+    window.addEventListener('dv-topbar-content-changed', () => {
+        app.$.dvMainTopBar.style.display = '';
+    });
     window.addEventListener('dv-authentication-successful', (e) => {
         window.CONFIG.isSomebody = true;
         window.CONFIG.isAdmin = e.detail.roles.includes('admin');

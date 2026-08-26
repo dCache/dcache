@@ -35280,6 +35280,7 @@ module.exports = Array.isArray || function (arr) {
             window.dispatchEvent(new CustomEvent('dv-namespace-show-message-toast', {
               detail: {message: e.detail.message}, bubbles: true, composed: true
             }));
+            const knownRoutes = ['user-profile', 'virtual', 'shared-files'];
             switch (redirectInfoObj.page) {
               case "home":
                 page("/");
@@ -35289,7 +35290,7 @@ module.exports = Array.isArray || function (arr) {
                     }));
                 break;
               default:
-                page(`/${redirectInfoObj.page}`);
+                page(knownRoutes.includes(redirectInfoObj.page) ? `/${redirectInfoObj.page}` : '/');
                 break;
             }
             window.dispatchEvent(new CustomEvent('dv-authentication-successful', {
@@ -35339,6 +35340,7 @@ module.exports = Array.isArray || function (arr) {
             window.dispatchEvent(new CustomEvent('dv-namespace-show-message-toast', {
               detail: {message: e.detail.message}, bubbles: true, composed: true
             }));
+            const knownRoutes = ['user-profile', 'virtual', 'shared-files'];
             switch (redirectInfoObj.page) {
               case "home":
                 page("/");
@@ -35347,7 +35349,7 @@ module.exports = Array.isArray || function (arr) {
                       detail: {path: redirectInfoObj.path}, bubbles: true, composed: true}));
                 break;
               default:
-                page(`/${redirectInfoObj.page}`);
+                page(knownRoutes.includes(redirectInfoObj.page) ? `/${redirectInfoObj.page}` : '/');
                 break;
             }
             window.dispatchEvent(new CustomEvent('dv-authentication-successful', {
@@ -36784,7 +36786,7 @@ window.customElements.define(IdenticonRequest.is, IdenticonRequest);</script></d
                 sessionStorage.setItem('useGravatar', 'yes');
             }
         } else {
-            this.src = this._requestImage(false);
+            this._requestImage(false);
             this.dispatchEvent(new CustomEvent('dv-namespace-show-message-toast', {
                 detail: {message: event.message}, bubbles: true, composed: true
             }));
@@ -36910,7 +36912,7 @@ window.customElements.define(IdenticonRequest.is, IdenticonRequest);</script></d
     _timeUp()
     {
         if (this._timerFlag) {
-            this.src = this._requestImage(false);
+            this._requestImage(false);
         }
     }
 }
@@ -37299,6 +37301,18 @@ window.customElements.define(UserProfileDropdown.is, UserProfileDropdown);</scri
                     this.$.container.appendChild(new UserProfileDropdown(sessionStorage.getItem("name"),
                         sessionStorage.getItem("email"), this.tagName));
                 }
+                // #container starts empty and is only populated here, asynchronously,
+                // on every page load and again after every auth state change. The
+                // top-bar's flex row doesn't always repaint correctly against its
+                // positioned background after this late DOM change (seen on Windows/
+                // macOS/WSL Firefox & Chrome, not native Linux Firefox). Routing
+                // already works around an equivalent issue by toggling
+                // dvMainTopBar.style.display on every navigation (routing.html); do
+                // the same right after this mutation instead of waiting for a route
+                // change / icon click.
+                this.dispatchEvent(
+                    new CustomEvent('dv-topbar-content-changed', {bubbles: true, composed: true})
+                );
             }
             _login()
             {
@@ -52986,6 +53000,9 @@ Configuration:
                                 this.authenticationParameters = {};
                                 break;
                             }
+                            this._namespaceRequestMessage = "Please login again - your credential is no longer valid.";
+                            window.CONFIG.isSomebody = false;
+                            break;
                         }
                         const a = `"page":"home","path":"${this.path}"`;
                         page.redirect(`/user-login?r=${encodeURIComponent(a)}`);

@@ -101,7 +101,7 @@ class UserImage extends Polymer.Element
                 sessionStorage.setItem('useGravatar', 'yes');
             }
         } else {
-            this.src = this._requestImage(false);
+            this._requestImage(false);
             this.dispatchEvent(new CustomEvent('dv-namespace-show-message-toast', {
                 detail: {message: event.message}, bubbles: true, composed: true
             }));
@@ -227,7 +227,7 @@ class UserImage extends Polymer.Element
     _timeUp()
     {
         if (this._timerFlag) {
-            this.src = this._requestImage(false);
+            this._requestImage(false);
         }
     }
 }

@@ -83,6 +83,18 @@
                     this.$.container.appendChild(new UserProfileDropdown(sessionStorage.getItem("name"),
                         sessionStorage.getItem("email"), this.tagName));
                 }
+                // #container starts empty and is only populated here, asynchronously,
+                // on every page load and again after every auth state change. The
+                // top-bar's flex row doesn't always repaint correctly against its
+                // positioned background after this late DOM change (seen on Windows/
+                // macOS/WSL Firefox & Chrome, not native Linux Firefox). Routing
+                // already works around an equivalent issue by toggling
+                // dvMainTopBar.style.display on every navigation (routing.html); do
+                // the same right after this mutation instead of waiting for a route
+                // change / icon click.
+                this.dispatchEvent(
+                    new CustomEvent('dv-topbar-content-changed', {bubbles: true, composed: true})
+                );
             }
             _login()
             {

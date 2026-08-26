@@ -180,6 +180,7 @@
             window.dispatchEvent(new CustomEvent('dv-namespace-show-message-toast', {
               detail: {message: e.detail.message}, bubbles: true, composed: true
             }));
+            const knownRoutes = ['user-profile', 'virtual', 'shared-files'];
             switch (redirectInfoObj.page) {
               case "home":
                 page("/");
@@ -189,7 +190,7 @@
                     }));
                 break;
               default:
-                page(`/${redirectInfoObj.page}`);
+                page(knownRoutes.includes(redirectInfoObj.page) ? `/${redirectInfoObj.page}` : '/');
                 break;
             }
             window.dispatchEvent(new CustomEvent('dv-authentication-successful', {
@@ -239,6 +240,7 @@
             window.dispatchEvent(new CustomEvent('dv-namespace-show-message-toast', {
               detail: {message: e.detail.message}, bubbles: true, composed: true
             }));
+            const knownRoutes = ['user-profile', 'virtual', 'shared-files'];
             switch (redirectInfoObj.page) {
               case "home":
                 page("/");
@@ -247,7 +249,7 @@
                       detail: {path: redirectInfoObj.path}, bubbles: true, composed: true}));
                 break;
               default:
-                page(`/${redirectInfoObj.page}`);
+                page(knownRoutes.includes(redirectInfoObj.page) ? `/${redirectInfoObj.page}` : '/');
                 break;
             }
             window.dispatchEvent(new CustomEvent('dv-authentication-successful', {

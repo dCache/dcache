@@ -378,6 +378,9 @@
                                 this.authenticationParameters = {};
                                 break;
                             }
+                            this._namespaceRequestMessage = "Please login again - your credential is no longer valid.";
+                            window.CONFIG.isSomebody = false;
+                            break;
                         }
                         const a = `"page":"home","path":"${this.path}"`;
                         page.redirect(`/user-login?r=${encodeURIComponent(a)}`);
