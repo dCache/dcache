@@ -80,8 +80,6 @@ import javax.ws.rs.core.Response;
 import org.dcache.cells.json.CellData;
 import org.dcache.restful.services.cells.CellInfoService;
 import org.dcache.restful.util.Responses;
-import org.dcache.services.topology.ClassicCellsTopology;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -94,8 +92,6 @@ public final class CellInfoResources {
 
     @Inject
     private CellInfoService service;
-    @Autowired
-    private ClassicCellsTopology classicCellsTopology;
 
 
     @GET
