@@ -801,6 +801,17 @@ Run OIDC test:
     - kubectl -n $K8S_NAMESPACE cp .ci/run-oidc-test.sh oidc-tester:/run-oidc-test.sh
     - kubectl -n $K8S_NAMESPACE exec oidc-tester -- /bin/sh /run-oidc-test.sh
 
+Run OIDC code flow test:
+  stage: testing
+  extends: .kubernetes_image
+  needs:
+    - Frontend test suite
+  script:
+    - kubectl -n $K8S_NAMESPACE run oidc-code-flow-tester --image=almalinux:9 --restart=Never  --command -- sleep 3600
+    - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod oidc-code-flow-tester; do sleep 1; done
+    - kubectl -n $K8S_NAMESPACE cp .ci/run-oidc-code-flow-test.sh oidc-code-flow-tester:/run-oidc-code-flow-test.sh
+    - kubectl -n $K8S_NAMESPACE exec oidc-code-flow-tester -- /bin/sh /run-oidc-code-flow-test.sh
+
 #Job to find JaCoCo CLI in cache or download it
 get_jacoco_cli:
   stage: build
