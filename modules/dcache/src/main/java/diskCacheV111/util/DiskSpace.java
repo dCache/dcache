@@ -94,7 +94,7 @@ public class DiskSpace {
     }
 
     public boolean isLargerThan(long value) {
-        return value < _value && _value < Long.MAX_VALUE;
+        return value < _value;
     }
 
     public boolean isLessThan(long value) {
