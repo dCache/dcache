@@ -30,6 +30,7 @@ import org.italiangrid.voms.error.VOMSValidationErrorMessage;
 import org.italiangrid.voms.store.VOMSTrustStore;
 import org.italiangrid.voms.store.VOMSTrustStores;
 import org.italiangrid.voms.util.CertificateValidatorBuilder;
+import org.italiangrid.voms.util.CertificateValidatorBuilder.OpensslHashFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,6 +71,7 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin {
               .lazyAnchorsLoading(false)
               .trustAnchorsUpdateInterval(trustAnchorsUpdateInterval)
               .trustAnchorsDir(caDir)
+              .opensslHashFunction(OpensslHashFunction.SHA1)
               .build();
         validator = VOMSValidators.newValidator(vomsTrustStore, certChainValidator);
     }
