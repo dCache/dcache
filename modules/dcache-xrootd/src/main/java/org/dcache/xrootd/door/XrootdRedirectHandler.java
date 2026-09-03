@@ -39,6 +39,7 @@ import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_gw;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_gx;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_mkpath;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_new;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ok;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_open_apnd;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_open_read;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_open_updt;
@@ -53,6 +54,7 @@ import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_retstat;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ur;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_uw;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ux;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_Unsupported;
 import static org.dcache.xrootd.util.TriedRc.ENOENT;
 import static org.dcache.xrootd.util.TriedRc.IOERR;
 
@@ -69,6 +71,7 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.QuotaExceededCacheException;
 import diskCacheV111.util.TimeoutCacheException;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
 import io.netty.channel.ChannelHandlerContext;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -114,6 +117,7 @@ import org.dcache.xrootd.protocol.messages.MvRequest;
 import org.dcache.xrootd.protocol.messages.OpenRequest;
 import org.dcache.xrootd.protocol.messages.OpenResponse;
 import org.dcache.xrootd.protocol.messages.PrepareRequest;
+import org.dcache.xrootd.protocol.messages.PrepareResponse;
 import org.dcache.xrootd.protocol.messages.QueryRequest;
 import org.dcache.xrootd.protocol.messages.QueryResponse;
 import org.dcache.xrootd.protocol.messages.RedirectResponse;
@@ -141,7 +145,7 @@ import org.slf4j.LoggerFactory;
  */
 public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
 
-    private static final Logger _log =
+    private static final Logger LOGGER =
           LoggerFactory.getLogger(XrootdRedirectHandler.class);
 
     private static final String EFFECTIVE_ROOT_NAME = "org.dcache.effectiveRoot";
@@ -157,7 +161,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
                 opaque = new HashMap<>();
             }
         } catch (ParseException e) {
-            _log.warn("Ignoring malformed open opaque {}: {}", opaqueString,
+            LOGGER.warn("Ignoring malformed open opaque {}: {}", opaqueString,
                   e.getMessage());
             opaque = new HashMap<>();
         }
@@ -279,23 +283,23 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable t) {
         if (t instanceof ClosedChannelException) {
-            _log.info("Connection unexpectedly closed on {}, cause {}.", ctx.channel(),
+            LOGGER.info("Connection unexpectedly closed on {}, cause {}.", ctx.channel(),
                   Throwables.getRootCause(t).toString());
         } else if (t instanceof RuntimeException || t instanceof Error) {
             Thread me = Thread.currentThread();
             me.getUncaughtExceptionHandler().uncaughtException(me, t);
         } else if (!isHealthCheck() || !(t instanceof IOException)) {
-            _log.warn("exception caught on {}: {}, cause {}.", ctx.channel(), t.getMessage(),
+            LOGGER.warn("exception caught on {}: {}, cause {}.", ctx.channel(), t.getMessage(),
                   Throwables.getRootCause(t).toString());
         } else {
-            _log.info("IO exception caught during health check on {}: {}, cause {}.", ctx.channel(),
+            LOGGER.info("IO exception caught during health check on {}: {}, cause {}.", ctx.channel(),
                   t.getMessage(), Throwables.getRootCause(t).toString());
         }
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        _log.info("channel inactive event received on {}.", ctx.channel());
+        LOGGER.info("channel inactive event received on {}.", ctx.channel());
 
         /**
          * If the doOnOpen call has not yet returned, interrupt its thread.
@@ -376,8 +380,8 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
 
             FilePerm neededPerm = req.getRequiredPermission();
 
-            _log.info("Opening {} for {}", req.getPath(), neededPerm.xmlText());
-            if (_log.isDebugEnabled()) {
+            LOGGER.info("Opening {} for {}", req.getPath(), neededPerm.xmlText());
+            if (LOGGER.isDebugEnabled()) {
                 logDebugOnOpen(req);
             }
 
@@ -390,11 +394,11 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
                     size = Long.valueOf(value);
                 }
             } catch (NumberFormatException exception) {
-                _log.warn("Ignoring malformed oss.asize: {}",
+                LOGGER.warn("Ignoring malformed oss.asize: {}",
                       exception.getMessage());
             }
 
-            _log.info("OPAQUE : {}", opaque);
+            LOGGER.info("OPAQUE : {}", opaque);
             Set<String> triedHosts = extractTriedHosts(opaque);
 
             UUID uuid = UUID.randomUUID();
@@ -556,11 +560,11 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
          */
         String host = redirectAddress.getHostName();
         if (InetAddresses.isInetAddress(host)) {
-            _log.warn("Unable to resolve IP address {} "
+            LOGGER.warn("Unable to resolve IP address {} "
                   + "to a canonical name", host);
         }
 
-        _log.info("Redirecting to {}, {}", host, redirectAddress.getPort());
+        LOGGER.info("Redirecting to {}, {}", host, redirectAddress.getPort());
 
         return redirectAddress;
     }
@@ -601,7 +605,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
                   restriction,
                   remoteHost);
             int fd = _door.nextTpcPlaceholder();
-            _log.debug("placement response to {} sent to {} with fhandle {}.",
+            LOGGER.debug("placement response to {} sent to {} with fhandle {}.",
                   req, remoteHost, fd);
             return new OpenResponse(req, fd,
                   null, null,
@@ -610,7 +614,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
 
         String tpcKey = opaque.get("tpc.key");
         if (tpcKey == null) {
-            _log.debug("{} -- not a third-party request.", req);
+            LOGGER.debug("{} -- not a third-party request.", req);
             return null;  // proceed as usual with mover + redirect
         }
 
@@ -620,7 +624,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
          * to the TPC client.
          */
         if (req.getSession().getDelegatedCredential() != null) {
-            _log.debug("{} -- third-party request with delegation.", req);
+            LOGGER.debug("{} -- third-party request with delegation.", req);
             return null;  // proceed as usual with mover + redirect
         }
 
@@ -651,14 +655,14 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
                  * remove the key and return immediately.
                  */
                 _door.removeTpcPlaceholder(tpcKey);
-                _log.debug("{} -- request contains authorization token.", req);
+                LOGGER.debug("{} -- request contains authorization token.", req);
                 return null;  // proceed as usual with mover + redirect
             }
 
             info.addInfoFromOpaque(slfn, opaque); /** updates the status **/
             switch (info.verify(remoteHost, slfn, opaque.get("tpc.org"))) {
                 case READY:
-                    _log.debug("Open request {} from destination server, info {}: "
+                    LOGGER.debug("Open request {} from destination server, info {}: "
                                 + "OK to proceed.",
                           req, info);
                     /*
@@ -669,7 +673,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
                      */
                     return null;
                 case PENDING:
-                    _log.debug("Open request {} from destination server, info {}: "
+                    LOGGER.debug("Open request {} from destination server, info {}: "
                                 + "PENDING client open; sending WAIT-RETRY.",
                           req, info);
                     /*
@@ -690,7 +694,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
                      *  read permissions on this file.
                      */
                     String error = "invalid open request (file permissions).";
-                    _log.warn("Open request {} from destination server, info {}: "
+                    LOGGER.warn("Open request {} from destination server, info {}: "
                                 + "ERROR: {}.",
                           req, info, error);
                     _door.removeTpcPlaceholder(info.getFd());
@@ -700,7 +704,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
                 case CANCELLED:
                     error = info.isExpired() ? "ttl expired" : "dst, path or org"
                           + " did not match";
-                    _log.warn("Open request {} from destination server, info {}: "
+                    LOGGER.warn("Open request {} from destination server, info {}: "
                                 + "CANCELLED: {}.",
                           req, info, error);
                     _door.removeTpcPlaceholder(info.getFd());
@@ -714,7 +718,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
          *  The request originated from the client, indicating that this door is the source.
          */
         if (opaque.containsKey("tpc.dst")) {
-            _log.debug("Open request {} from client to door as source, "
+            LOGGER.debug("Open request {} from client to door as source, "
                   + "info {}: OK.", req, info);
             FileStatus status = _door.getFileStatus(fsPath, subject, restriction, remoteHost);
             int flags = status.getFlags();
@@ -741,7 +745,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
          *  allow the write mover to be started on the selected pool.
          */
         if (opaque.containsKey("tpc.src")) {
-            _log.debug("Open request {} from client to door as destination: OK;"
+            LOGGER.debug("Open request {} from client to door as destination: OK;"
                   + "removing info {}.", req, info);
             _door.removeTpcPlaceholder(info.getFd());
             /*
@@ -772,13 +776,13 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
         String triedrc = Strings.emptyToNull(opaque.get("triedrc"));
 
         if (!_door.isTriedHostsEnabled()) {
-            _log.debug("tried hosts option not enabled, ignoring 'tried={},triedrc={}'.",
+            LOGGER.debug("tried hosts option not enabled, ignoring 'tried={},triedrc={}'.",
                   tried, triedrc);
             return Collections.EMPTY_SET;
         }
 
         if (tried == null || triedrc == null) {
-            _log.debug("tried {}, triedrc {}, ignoring.", tried, triedrc);
+            LOGGER.debug("tried {}, triedrc {}, ignoring.", tried, triedrc);
             return Collections.EMPTY_SET;
         }
 
@@ -802,12 +806,12 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
             if (value.equals(ENOENT.name()) || value.equals(IOERR.name())) {
                 String host = hostNames.get(i);
                 triedHosts.add(host);
-                _log.debug("tried {}, triedrc {}, {}.",
+                LOGGER.debug("tried {}, triedrc {}, {}.",
                       host, value, TriedRc.valueOf(value).description());
             }
         }
 
-        _log.debug("tried hosts : {}", triedHosts);
+        LOGGER.debug("tried hosts : {}", triedHosts);
         return triedHosts;
     }
 
@@ -834,7 +838,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
             Map<String, String> attr = OpaqueStringParser.getOpaqueMap(token);
             ioqueue = _appIoQueues.get(attr.get("xrd.appname"));
         } catch (ParseException e) {
-            _log.debug("Ignoring malformed login token {}: {}", token, e.getMessage());
+            LOGGER.debug("Ignoring malformed login token {}: {}", token, e.getMessage());
         }
 
         return ioqueue;
@@ -848,7 +852,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
     protected XrootdResponse<CloseRequest> doOnClose(ChannelHandlerContext ctx, CloseRequest msg)
           throws XrootdException {
         int fd = msg.getFileHandle();
-        _log.debug("doOnClose: removing tpc info for {}.", fd);
+        LOGGER.debug("doOnClose: removing tpc info for {}.", fd);
         if (_door.removeTpcPlaceholder(fd)) {
             return withOk(msg);
         } else {
@@ -921,7 +925,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
             throw new XrootdException(kXR_ArgMissing, "no path specified");
         }
 
-        _log.info("Trying to delete {}", req.getPath());
+        LOGGER.info("Trying to delete {}", req.getPath());
 
         try {
             LoginSessionInfo loginSessionInfo = sessionInfo();
@@ -949,7 +953,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
             throw new XrootdException(kXR_ArgMissing, "no path specified");
         }
 
-        _log.info("Trying to delete directory {}", req.getPath());
+        LOGGER.info("Trying to delete directory {}", req.getPath());
 
         try {
             LoginSessionInfo loginSessionInfo = sessionInfo();
@@ -976,7 +980,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
             throw new XrootdException(kXR_ArgMissing, "no path specified");
         }
 
-        _log.info("Trying to create directory {}", req.getPath());
+        LOGGER.info("Trying to create directory {}", req.getPath());
 
         try {
             LoginSessionInfo loginSessionInfo = sessionInfo();
@@ -1011,7 +1015,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
             throw new XrootdException(kXR_ArgMissing, "no target path specified");
         }
 
-        _log.info("Trying to rename {} to {}", req.getSourcePath(), req.getTargetPath());
+        LOGGER.info("Trying to rename {} to {}", req.getSourcePath(), req.getTargetPath());
 
         try {
             LoginSessionInfo loginSessionInfo = sessionInfo();
@@ -1105,7 +1109,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
                 throw new XrootdException(kXR_ArgMissing, "no source path specified");
             }
 
-            _log.info("Listing directory {}", listPath);
+            LOGGER.info("Listing directory {}", listPath);
             FsPath fullListPath = createFullPath(listPath, safelyExtractOpaque(request.getOpaque()));
 
             if (!_door.isReadAllowed(fullListPath)) {
@@ -1126,6 +1130,49 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
             return null;
         } catch (CacheException e) {
             throw xrootdException(e);
+        }
+    }
+
+    @Override
+    protected XrootdResponse<PrepareRequest> doOnPrepare(ChannelHandlerContext ctx,
+          PrepareRequest request)
+          throws XrootdException {
+
+        if (request.getPaths().length == 0) {
+            throw new XrootdException(kXR_ArgMissing, "no paths specified");
+        }
+
+        try {
+            FsPath[] paths = new FsPath[request.getPaths().length];
+            for (int i = 0; i < paths.length; i++) {
+                paths[i] = createFullPath(request.getPaths()[i],
+                      safelyExtractOpaque(request.getOpaques()[i]));
+            }
+            LoginSessionInfo loginSessionInfo = sessionInfo();
+            Subject subject = loginSessionInfo.getSubject();
+            Restriction restriction = loginSessionInfo.getRestriction();
+            InetSocketAddress clientAddress = getSourceAddress();
+
+            if (request.getOptions() == 0
+                  || (request.isStage() && !(request.isEvict() || request.isCancel()))) {
+                _door.pin(paths, clientAddress, subject, restriction);
+                return new PrepareResponse(request, kXR_ok, new byte[paths.length]);
+            } else if (request.isStage() && (request.isEvict() || request.isCancel())) {
+                throw new XrootdException(kXR_InvalidRequest,
+                      "Invalid parameters / conflicting options");
+            } else if (request.isCancel() || request.isEvict()) {
+                _door.unpin(paths, subject, restriction);
+                return new PrepareResponse(request, kXR_ok, new byte[paths.length]);
+            } else {
+                throw new XrootdException(kXR_Unsupported, "Unsupported option(s)");
+            }
+        } catch (PermissionDeniedCacheException e) {
+            throw xrootdException(e);
+        } catch (TimeoutCacheException e) {
+            throw xrootdException(e.getRc(), "Internal timeout");
+        } catch (CacheException e) {
+            throw xrootdException(e.getRc(),
+                  String.format("Failed to prepare files (%s [%d])", e.getMessage(), e.getRc()));
         }
     }
 
@@ -1171,7 +1218,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
             openFlags += " kXR_posc";
         }
 
-        _log.debug("open flags: {}", openFlags);
+        LOGGER.debug("open flags: {}", openFlags);
 
         int mode = req.getUMask();
         String s = "";
@@ -1228,7 +1275,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
             s += "-";
         }
 
-        _log.debug("mode to apply to open path: {}", s);
+        LOGGER.debug("mode to apply to open path: {}", s);
     }
 
     /**
@@ -1442,7 +1489,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
 
     private synchronized void interruptOnOpenThread() {
         if (onOpenThread != null) {
-            _log.info("{} called interruptOnOpenThread; interrupting {}.", Thread.currentThread(),
+            LOGGER.info("{} called interruptOnOpenThread; interrupting {}.", Thread.currentThread(),
                   onOpenThread);
             onOpenThread.interrupt();
         }
