@@ -24,6 +24,9 @@ check -strong xrootd.limits.login-cache.size
 check -strong xrootd.root
 check -strong xrootd.service.pool.timeout
 check -strong xrootd.service.pool.timeout.unit
+check -strong xrootd.service.pinmanager
+check -strong xrootd.service.pinmanager.timeout
+check -strong xrootd.service.pinmanager.timeout.unit
 check -strong xrootd.service.poolmanager
 check -strong xrootd.service.poolmanager.timeout
 check -strong xrootd.service.poolmanager.timeout.unit
@@ -56,6 +59,8 @@ check -strong xrootd.security.tls.ca.ocsp-mode
 
 check -strong xrootd.mover.timeout
 check -strong xrootd.mover.timeout.unit
+check -strong xrootd.pin.lifetime
+check -strong xrootd.pin.lifetime.unit
 check xrootd.mover.queue
 check -strong xrootd.plugins
 check -strong xrootd.authz.user
@@ -69,4 +74,3 @@ create org.dcache.cells.UniversalSpringCell ${xrootd.cell.name} \
         -profiles=kafka-${xrootd.enable.kafka}\
         -subscribe=${xrootd.cell.subscribe} \
         -cellClass=XrootdDoor"
-
