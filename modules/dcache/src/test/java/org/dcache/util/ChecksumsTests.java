@@ -682,6 +682,14 @@ public class ChecksumsTests {
               is(equalTo("sha-512,sha-256;q=0.8,sha;q=0.6,md5;q=0.4,adler32;q=0.2")));
     }
 
+    @Test
+    public void shouldBuildExpectedGenericWantRFC9530Digest() {
+        String wantDigest = Checksums.buildGenericWantDigest(Checksums.RfcType.RFC9530);
+
+        assertThat(wantDigest,
+              is(equalTo("sha-512,sha-256;q=0.5")));
+    }
+
     private Checksum newMd4Checksum(String value) {
         return new Checksum(ChecksumType.MD4_TYPE, value);
     }

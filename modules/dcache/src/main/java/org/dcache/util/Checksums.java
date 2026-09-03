@@ -19,7 +19,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps.EntryTransformer;
 import com.google.common.collect.Ordering;
 
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
@@ -108,13 +107,22 @@ public class Checksums {
         }
     };
 
-    private static final Ordering<ChecksumType> PREFERRED_CHECKSUM_TYPE_ORDERING =
-          Ordering.explicit(SHA512, SHA256, SHA1, MD5_TYPE, ADLER32, MD4_TYPE);
-    private static final Ordering<Checksum> PREFERRED_CHECKSUM_ORDERING =
-          PREFERRED_CHECKSUM_TYPE_ORDERING.onResultOf(Checksum::getType);
 
-    private static final Ordering<ChecksumType> PREFERRED_CHECKSUM_RFC9530_TYPE_ORDERING =
-            Ordering.explicit(SHA512, SHA256);
+    /**
+     * Order list of checksum types used by rfc3230.
+     */
+    private static final List<ChecksumType> PREFERRED_CHECKSUM_TYPE_ORDER = List.of(SHA512, SHA256, SHA1, MD5_TYPE, ADLER32, MD4_TYPE);
+
+    /**
+     * Order list of checksum types used by rfc9530.
+     */
+    private static final List<ChecksumType> PREFERRED_CHECKSUM_RFC9530_TYPE_ORDER = List.of(SHA512, SHA256);
+
+    private static final Ordering<Checksum> PREFERRED_CHECKSUM_ORDERING =
+          Ordering.explicit(PREFERRED_CHECKSUM_TYPE_ORDER).onResultOf(Checksum::getType);
+
+    private static final Ordering<ChecksumType> PREFERRED_CHECKSUM_TYPE_ORDERING =
+          Ordering.explicit(PREFERRED_CHECKSUM_TYPE_ORDER);
 
     /**
      * This Function maps an instance of Checksum to the corresponding fragment of an RFC 3230
@@ -183,11 +191,12 @@ public class Checksums {
      * supports, in the preferred order.
      */
     public static String buildGenericWantDigest(RfcType rfc) {
-        List<String> names = Arrays.stream(ChecksumType.values())
-              .sorted((rfc.equals(RfcType.RFC9530)) ? PREFERRED_CHECKSUM_RFC9530_TYPE_ORDERING : PREFERRED_CHECKSUM_TYPE_ORDERING)
+
+        var allowedTypes = rfc.equals(RfcType.RFC9530) ? PREFERRED_CHECKSUM_RFC9530_TYPE_ORDER : PREFERRED_CHECKSUM_TYPE_ORDER;
+        List<String> names = allowedTypes.stream()
               .map(CHECKSUMTYPE_TO_RFC_NAME::get)
               .filter(Objects::nonNull)
-              .collect(Collectors.toList());
+              .toList();
 
         return wantDigest(names);
     }
