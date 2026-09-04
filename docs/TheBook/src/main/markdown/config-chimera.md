@@ -458,7 +458,7 @@ commands.
 *WriteToken*:
 
 Assign a `WriteToken` tag to a directory in order to be able to write
-to a space token without using the SRM.
+to a space token without specifying it explicitly.
 
 ### Storage class and directory tags
 

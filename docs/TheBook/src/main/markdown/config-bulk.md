@@ -3,7 +3,8 @@ CHAPTER 18. THE BULK SERVICE
 
 The purpose of the bulk service is to manage mass file system operations involving lists of files
 and directories, the latter possibly treated recursively.  In one sense it is meant to incorporate
-into dCache proper some of the functionality provided by SRM (such as prestaging of files).
+into dCache proper some of the functionality previously provided by SRM (such as prestaging of
+files).
 
 -----
 [TOC bullet hierarchy]

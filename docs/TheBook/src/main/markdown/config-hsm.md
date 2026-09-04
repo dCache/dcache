@@ -354,7 +354,7 @@ The output will have the following format:
            |+-----------  (P) File is precious, i.e., it is only on disk
            +------------  (C) File is on tape and only cached on disk.
 
--   LOCK-TIME: The number of milli-seconds this file will still be locked. Please note that this is an internal lock and not the pin-time (SRM).
+-   LOCK-TIME: The number of milli-seconds this file will still be locked. Please note that this is an internal lock and not the pin-time.
 -   OPEN-COUNT: Number of clients currently reading this file.
 -   SIZE: File size
 -   STORAGE-CLASS: The storage class of this file.

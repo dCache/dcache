@@ -9,7 +9,7 @@ This section is a guide for exploring a newly installed dCache system. The confi
 
 ## CHECKING THE FUNCTIONALITY
 
-Reading and writing data to and from a dCache instance can be done with a number of protocols. After a standard installation, these protocols are **WebDav**, **xroot**, **GSIdCap**, and **GridFTP**. In addition dCache comes with an implementation of the **SRM** protocol which negotiates the actual data transfer protocol.
+Reading and writing data to and from a dCache instance can be done with a number of protocols. After a standard installation, these protocols are **WebDav**, **xroot**, **GSIdCap**, and **GridFTP**.
 
 ### dCache WITHOUT MOUNTED NAMESPACE
 
@@ -426,8 +426,7 @@ each domain:
       gPlazmaDomain : [gPlazma]
       webdavDomain : [WebDAV-example.dcache.org]
        gridftpDomain : [GFTP-example.dcache.org]
-      srmDomain : [RemoteTransferManager, CopyManager, SrmSpaceManager, SRM-example.dcache.org]
-       httpdDomain : [billing, srm-LoginBroker, TransferObserver]
+       httpdDomain : [billing, TransferObserver]
       poolDomain : [pool_2, pool_1]
        namespaceDomain : [PnfsManager, dirLookupPool, cleaner-disk]
 
@@ -682,7 +681,7 @@ In this tutorial we will use the [gplazmalite-vorole-mapping
 plugin](config-gplazma.md#the-gplazmalite-vorole-mapping-plug-in). To
 this end you need to edit the `/etc/grid-security/grid-vorolemap` and
 the `/etc/grid-security/storage-authzdb` as well as the
-`/etc/dcache/dcachesrm-gplazma.policy`.
+`/etc/dcache/gplazma.conf`.
 
 Example:
 The `/etc/grid-security/grid-vorolemap`:
@@ -692,26 +691,14 @@ The `/etc/grid-security/storage-authzdb`:
 
       authorize  doegroup read-write 12345 1234 / / /
 
-The `/etc/dcache/dcachesrm-gplazma.policy`:
-      # Switches
-      xacml-vo-mapping="OFF"
-      saml-vo-mapping="OFF"
-      kpwd="OFF"
-      grid-mapfile="OFF"
-      gplazmalite-vorole-mapping="ON"
-
-      # Priorities
-      xacml-vo-mapping-priority="5"
-      saml-vo-mapping-priority="2"
-      kpwd-priority="3"
-      grid-mapfile-priority="4"
-      gplazmalite-vorole-mapping-priority="1"
+For details on configuring the `/etc/dcache/gplazma.conf` file, please
+see [Chapter 10, Authorization in dCache](config-gplazma.md).
 
 
 
 ### HOW TO WORK WITH SECURED dCache
 
-If you want to copy files into dCache with GSIdCap, SRM or WebDAV with certificates you need to follow the instructions in the section [above](#authentication-and-authorization-in-dcache).
+If you want to copy files into dCache with GSIdCap or WebDAV with certificates you need to follow the instructions in the section [above](#authentication-and-authorization-in-dcache).
 
 
 
@@ -756,45 +743,6 @@ and copy it back.
 ```console-user
 dccp gsidcap://<dcache.example.org>:22128/data/world-writable/my-test-file3 /tmp/mytestfile3.tmp
 |801512 bytes in 0 seconds
-```
-
-### SRM
-
-To use the `SRM` you need to define the `srm` service in your layout file.
-
-```ini
-[srmDomain]
-[srmDomain/srm]
-```
-
-In addition, the user needs to install an `SRM` client for example the `dcache-srmclient`, which is contained in the gLite-UI, on the worker node and set the `PATH` environment variable.
-
-```console-user
-sudo yum install dcache-srmclient
-```
-
-You can now copy a file into your dCache using the SRM,
-
-```console-user
-srmcp -2 file:////bin/sh srm://dcache.example.org:8443/data/world-writable/my-test-file4
-```
-
-copy it back
-
-```console-user
-srmcp -2 srm://dcache.example.org:8443/data/world-writable/my-test-file4 file:////tmp/mytestfile4.tmp
-```
-
-and delete it.
-
-```console-user
-srmcp -2 srm://dcache.example.org:8443/data/world-writable/my-test-file4
-```
-
-If the grid functionality is not required the file can be deleted with the `NFS` mount of the CHIMERA namespace:
-
-```console-user
-rm /data/world-writable/my-test-file4
 ```
 
 ### WEBDAV WITH CERTIFICATES

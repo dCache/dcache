@@ -37,7 +37,6 @@ dCache supports the following I/O (and data management) protocols:
 - **FTP** (including **GridFTP**)
 - **HTTP** (and **WEBDAV**)
 - **NFS** (parallel NFSv4)
-- **SRM**
 - **XRootD**
 
 ### Authentication and Authorization

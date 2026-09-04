@@ -63,9 +63,9 @@ Also, since a `GridFTP` server has to authenticate with an `X.509` grid certific
 
 ### Solution
 
-Define two domains, one for the internal and one for the external use. Start a separate SRM and GRIDFTP service in these domains.
+Define two domains, one for the internal and one for the external use. Start a separate GRIDFTP service in these domains.
 
-The `srm` and the `gridftp` service have to be configured with the property `listen`, only to listen on the interface they should serve. The locations of the grid host certificate and key files for the interface have to be specified explicitly with the properties `dcache.authn.hostcert.cert` and `dcache.authn.hostcert.key`.
+The `gridftp` service has to be configured with the property `listen`, only to listen on the interface they should serve. The locations of the grid host certificate and key files for the interface have to be specified explicitly with the properties `dcache.authn.hostcert.cert` and `dcache.authn.hostcert.key`.
 
 In this example we show a setup for two `GridFTP` doors serving two network interfaces with the hostnames `door-internal` (111.111.111.5) and `door-external` (222.222.222.5) which are served by two GRIDFTP doors in two domains.
 
@@ -74,10 +74,6 @@ In this example we show a setup for two `GridFTP` doors serving two network inte
 listen=111.111.111.5
 dcache.authn.hostcert.cert=PATH-ODE-ED/interface-cert-internal.pem
 dcache.authn.hostcert.key=PATH-ODE-ED/interface-key-internal.pem
-[internalDomain/srm]
-srm.cell.name=srm-internal
-srm.protocols.loginbroker=loginbroker-internal
-srm.net.host=door-internal
 [internalDomain/ftp]
 ftp.authn.protocol = gsi
 ftp.cell.name=GFTP-door-internal
@@ -87,10 +83,6 @@ dcache.service.loginbroker=loginbroker-internal
 listen=222.222.222.5
 dcache.authn.hostcert.cert=PATH-ODE-ED/interface-cert-external.pem
 dcache.authn.hostcert.key=PATH-ODE-ED/interface-key-external.pem
-[externalDomain/srm]
-srm.cell.name=srm-external
-srm.protocols.loginbroker=loginbroker-external
-srm.net.host=door-external
 [externalDomain/ftp]
 ftp.authn.protocol = gsi
 ftp.cell.name=GFTP-door-external
@@ -129,7 +121,7 @@ For machines reachable through both IPv4 and IPv6, FTP and GridFTP doors must be
 
 ### Adding addresses
 
-When a new IPv6 address is added for a door, a restart of its domain is *not* required. Doors discover the available IP addresses as part of it publishing its details to SRM, frontend and info-provider.  This is done periodically (every 5 seconds by default).
+When a new IPv6 address is added for a door, a restart of its domain is *not* required. Doors discover the available IP addresses as part of it publishing its details to the frontend and info-provider.  This is done periodically (every 5 seconds by default).
 
 ### Links, Units and Groups
 

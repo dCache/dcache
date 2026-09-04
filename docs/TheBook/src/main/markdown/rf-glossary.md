@@ -195,10 +195,6 @@ files is foreseen, or if the file should be permanent but not reside on
 tertiary storage. The activation and configuration of resilience is described
 [in Chapter 6, The Resilience Service](config-resilience.md).
 
-## Storage Resource Manager (SRM)
-
-An SRM provides a standardised webservice interface for managing a storage resource (e.g. a dCache instance). It is possible to reserve space, initiate file storage or retrieve, and replicate files to another SRM. The actual transfer of data is not done via the SRM itself but via any protocol supported by both parties of the transfer. Authentication and authorisation is done with the grid security infrastructure. dCache comes with an implementation of an SRM which can turn any dCache instance into a grid storage element.
-
 ## Billing/Accounting
 
 Accounting information is either stored in a text file or in a PostgreSQL database by the billing cell usually started in the [domain](#domain) httpdDomain. This is described in [Chapter 15, The billing Service](config-billing.md).
@@ -217,11 +213,11 @@ The pool selection unit is a Java class responsible for determining the set of c
 
 ## Pin Manager
 
-The pin manager is a [cell](#cell) by default running in the utility [domain](#domain). It is a central service that can “pin” files to a pool for a certain time. It is used by the SRM to satisfy prestage requests.
+The pin manager is a [cell](#cell) by default running in the utility [domain](#domain). It is a central service that can “pin” files to a pool for a certain time, for example to satisfy prestage requests.
 
 ## Space Manager
 
-The (SRM) Space Manager is a [cell](#cell) by default running in the srm [domain](#domain). It is a central service that records reserved space on pools. A space reservation may be either for a specific duration or never expires. The Space Manager is used by the SRM to satisfy space reservation requests.
+The Space Manager is a [cell](#cell) that records reserved space on pools. A space reservation may be either for a specific duration or never expires. The Space Manager is used to satisfy space reservation requests. See [Chapter 12, The dCache Space Manager Service](config-spacemanager.md).
 
 ## Pool
 

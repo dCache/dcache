@@ -1,9 +1,9 @@
 Chapter 24. PostgreSQL and dCache
 =================================
 
-PostgreSQL is used for various things in a dCache system: The [SRM](rf-glossary.md#storage-resource-manager-srm), the [pin manager](rf-glossary.md#pin-manager), the [space manager](rf-glossary.md#space-manager), the [replica manager](rf-glossary.md#replica-manager), the [billing](rf-glossary.md#billing), and the pnfs server might make use of one or more databases in single or several separate PostgreSQL servers.
+PostgreSQL is used for various things in a dCache system: The [pin manager](rf-glossary.md#pin-manager), the [space manager](rf-glossary.md#space-manager), the [replica manager](rf-glossary.md#replica-manager), the [billing](rf-glossary.md#billing), and the pnfs server might make use of one or more databases in single or several separate PostgreSQL servers.
 
-The `SRM`, the pin manager, the space manager and the replica manager will use the PostgreSQL database as configured at cell start-up in the corresponding batch files. The `billing` will only write the accounting information into a database if it is configured with the option `-useSQL`. The `pnfs` server will use a PostgreSQL server if the `pnfs-posgresql` version is used. It will use several databases in the PostgreSQL server.
+The pin manager, the space manager and the replica manager will use the PostgreSQL database as configured at cell start-up in the corresponding batch files. The `billing` will only write the accounting information into a database if it is configured with the option `-useSQL`. The `pnfs` server will use a PostgreSQL server if the `pnfs-posgresql` version is used. It will use several databases in the PostgreSQL server.
 
 -----
 [TOC bullet hierarchy]
@@ -91,8 +91,8 @@ Table 24.1. Protocol Overview
 
 | Component        | Database Host                                                                | Database Name           | Database User | Database Password |
 |------------------|------------------------------------------------------------------------------|-------------------------|---------------|-------------------|
-| SRM              | `srm.db.host`or if not set: `srmDbHost` or if not set: localhost             | srm                     | dcache        | `--free--`        |
-| PinManager       | `pinManagerDatabaseHost` or if not set: `srmDbHost` or if not set: localhost | pinmanager              | pinmanager    | `--free--`        |
+| SpaceManager    | `spacemanager.db.host` or if not set: localhost                          | spacemanager            | dcache        | `--free--`        |
+| PinManager       | `pinmanager.db.host` or if not set: localhost                            | pinmanager              | pinmanager    | `--free--`        |
 | CELL-REPLICAMNGR | `replica.db.host` or if not set: localhost                                   | replica                 | dcache        | `--free--`        |
 | PNFS server      | localhost                                                                    | admin, data1, exp0, ... | pnfsserver    | --free--          |
 | billing          | `billingDatabaseHost` or if not set: localhost                               | billing                 | dcache        | `--free--`        |

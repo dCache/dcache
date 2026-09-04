@@ -4,7 +4,6 @@ Part IV. Reference
 ## Table of Contents
 
 - [dCache Clients](rf-clients.md)
-    - [The SRM Client Suite](rf-clients.md#the-srm-client-suite)
     - [The DCCP Utility](rf-clients.md#the-dccp-utility) — Copy a file from or to a dCache server.
 
 - [Common Cell Commands](rf-cc-common.md)

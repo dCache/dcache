@@ -26,7 +26,7 @@ Returns the media types on which the file is currently stored.
 
 ### NOTES:
 
-Currently, the NFS client sends 'localhost' to the poolmanager as its hostname (the protocol match defaults to '*/*').  SRM does something similar. In the future this may be modified to send the actual IP address of the client.
+Currently, the NFS client sends 'localhost' to the poolmanager as its hostname (the protocol match defaults to '*/*'). In the future this may be modified to send the actual IP address of the client.
 
 There are no guarantees concerning future availability of the file; in particular, ONLINE_AND_NEARLINE may revert back to NEARLINE at any time unless the file is pinned.
 

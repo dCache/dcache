@@ -863,7 +863,7 @@ To set the space cost factor on the `default` partition to `0.3`, use the follow
 
 ## Link Groups
 
-The PoolManager supports a type of objects called link groups. These link groups are used by the [SRM SpaceManager](config-SRM.md#srm-spacemanager) to make reservations against space. Each link group corresponds to a number of dCache pools in the following way: A link group is a collection of [links](#links) and each link points to a set of pools. Each link group knows about the size of its available space, which is the sum of all sizes of available space in all the pools included in this link group.
+The PoolManager supports a type of objects called link groups. These link groups are used by the [spacemanager](config-spacemanager.md) to make reservations against space. Each link group corresponds to a number of dCache pools in the following way: A link group is a collection of [links](#links) and each link points to a set of pools. Each link group knows about the size of its available space, which is the sum of all sizes of available space in all the pools included in this link group.
 
 To create a new link group login to the [Admin Interface](intouch.md#the-admin-interface) and `\c` to the PoolManager.
 
@@ -898,7 +898,7 @@ With `save` the changes will be saved to the file
 
 **Access latency and retention policy.**
 
-A space reservation has a *retention policy* and an *access latency*, where retention policy describes the quality of the storage service that will be provided for files in the space reservation and access latency describes the availability of the files. See [the section called “Properties of Space Reservation”](config-SRM.md#properties-of-space-reservation) for further details.
+A space reservation has a *retention policy* and an *access latency*, where retention policy describes the quality of the storage service that will be provided for files in the space reservation and access latency describes the availability of the files. See [the section called “Properties of Space Reservation”](config-spacemanager.md#properties-of-space-reservation) for further details.
 
 A link group has five boolean properties called `replicaAllowed,
 outputAllowed, custodialAllowed, onlineAllowed` and `nearlineAllowed`,
@@ -940,6 +940,4 @@ For a space reservation to be allowed in a link group, the the retention policy 
   [10]: #cmd-set_breakeven
   [11]: #cmd-set_pool_decision
   [slope]: #slope
-  [SRM CELL-SPACEMNGR]: #cf-srm-space
   [links]: #cf-pm-links
-  [12]: #cf-srm-intro-spaceReservation

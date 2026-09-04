@@ -292,9 +292,8 @@ each domain:
       gPlazmaDomain : [gPlazma]
       webdavDomain : [WebDAV-example.dcache.org]
        gridftpDomain : [GFTP-example.dcache.org]
-      srmDomain : [RemoteTransferManager, CopyManager, SrmSpaceManager, SRM-example.dcache.org]
-       httpdDomain : [billing, srm-LoginBroker, TransferObserver]
-      poolDomain : [pool_2, pool_1]
+       httpdDomain : [billing, TransferObserver]
+       poolDomain : [pool_2, pool_1]
        namespaceDomain : [PnfsManager, dirLookupPool, cleaner-disk]
 
 All cells implement the `info` command to display  general information about the cell and `show pinboard` command

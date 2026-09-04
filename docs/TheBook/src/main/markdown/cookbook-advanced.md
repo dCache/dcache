@@ -122,7 +122,7 @@ Since `dccp` requests may be quite different from other requests with the `dCap`
 | dcap.authz.mover-queue-overwrite | denied        | Controls whether an application is allowed to overwrite a queue name |
 | ftp.mover.queue                  | NO-DEFAULT    | GSIFTP I/O queue name                                                |
 | nfs.mover.queue                  | NO-DEFAULT    | NFS I/O queue name                                                   |
-| transfermanagers.mover.queue     | NO-DEFAULT    | queue used for SRM third-party transfers (i.e. the srmCopy command)  |
+| transfermanagers.mover.queue     | NO-DEFAULT    | queue used for third-party transfers           |
 | webdav.mover.queue               | NO-DEFAULT    | WEBDAV and HTTP I/O queue name                                       |
 | xrootd.mover.queue               | NO-DEFAULT    | XROOTD I/O queue name                                                |
 
@@ -145,7 +145,6 @@ Since `dccp` requests may be quite different from other requests with the `dCap`
 | spaceReservation                | FALSE                                      | Use the space reservation service              |
 | spaceReservationStrict          | FALSE                                      | Use the space reservation service              |
 | ftp.performance-marker-period   | 180                                        | Performance markers in seconds                 |
-| gplazmaPolicy                   | ${ourHomeDir}/etc/dcachesrm-gplazma.policy | Location of the gPlazma Policy File            |
 | ftp.service.poolmanager.timeout | 5400                                       | Pool Manager timeout in seconds                |
 | ftp.service.pool.timeout        | 600                                        | Pool timeout in seconds                        |
 | ftp.service.pnfsmanager.timeout | 300                                        | Pnfs timeout in seconds                        |
@@ -156,181 +155,6 @@ Since `dccp` requests may be quite different from other requests with the `dCap`
 | ftp.net.internal                | NO-DEFAULT                                 | In case of two interfaces                      |
 | ftp.net.port-range              | 20000:25000                                | The client data port range                     |
 | gplazma.kpwd.file               | `${ourHomeDir}/etc/dcache.kpwd`            | Legacy authorization                           |
-
-### SRM
-
-<table>
-<caption>Property Overview</caption>
-<colgroup>
-<col width="37%" />
-<col width="25%" />
-<col width="37%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th align="left">Property</th>
-<th>Default Value</th>
-<th align="left">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left">srm.net.port</td>
-<td>8443</td>
-<td align="left">srm.net.port</td>
-</tr>
-<tr class="even">
-<td align="left">srm.db.host</td>
-<td>localhost</td>
-<td align="left">srm.db.host</td>
-</tr>
-<tr class="odd">
-<td align="left">srm.limits.external-copy-script.timeout</td>
-<td>3600</td>
-<td align="left">srm.limits.external-copy-script.timeout</td>
-</tr>
-<tr class="even">
-<td align="left">srmVacuum</td>
-<td>TRUE</td>
-<td align="left">srmVacuum</td>
-</tr>
-<tr class="odd">
-<td align="left">srmVacuumPeriod</td>
-<td>21600</td>
-<td align="left">srmVacuumPeriod</td>
-</tr>
-<tr class="even">
-<td align="left">srmProxiesDirectory</td>
-<td><code>/tmp</code></td>
-<td align="left">srmProxiesDirectory</td>
-</tr>
-<tr class="odd">
-<td align="left">srm.limits.transfer-buffer.size</td>
-<td>1048576</td>
-<td align="left">srm.limits.transfer-buffer.size</td>
-</tr>
-<tr class="even">
-<td align="left">srm.limits.transfer-tcp-buffer.size</td>
-<td>1048576</td>
-<td align="left">srm.limits.transfer-tcp-buffer.size</td>
-</tr>
-<tr class="odd">
-<td align="left">srm.enable.external-copy-script.debug</td>
-<td>TRUE</td>
-<td align="left">srm.enable.external-copy-script.debug</td>
-</tr>
-<tr class="even">
-<td align="left">srm.limits.request.scheduler.thread.queue.size</td>
-<td>1000</td>
-<td align="left">srm.limits.request.scheduler.thread.queue.size</td>
-</tr>
-<tr class="odd">
-<td align="left">srm.limits.request.scheduler.thread.pool.size</td>
-<td>100</td>
-<td align="left">srm.limits.request.scheduler.thread.pool.size</td>
-</tr>
-<tr class="even">
-<td align="left">srm.limits.request.scheduler.waiting.max</td>
-<td>1000</td>
-<td align="left">srm.limits.request.scheduler.waiting.max</td>
-</tr>
-<tr class="odd">
-<td align="left">srm.limits.request.scheduler.ready-queue.size</td>
-<td>1000</td>
-<td align="left">srm.limits.request.scheduler.ready-queue.size</td>
-</tr>
-<tr class="even">
-<td align="left">srm.limits.request.scheduler.ready.max</td>
-<td>100</td>
-<td align="left">srm.limits.request.scheduler.ready.max</td>
-</tr>
-<tr class="odd">
-<td align="left">srm.limits.request.scheduler.retries.max</td>
-<td>10</td>
-<td align="left">srm.limits.request.scheduler.retries.max</td>
-</tr>
-<tr class="even">
-<td align="left">srm.limits.request.scheduler.retry-timeout</td>
-<td>60000</td>
-<td align="left">srm.limits.request.scheduler.retry-timeout</td>
-</tr>
-<tr class="odd">
-<td align="left">srm.limits.request.scheduler.same-owner-running.max</td>
-<td>10</td>
-<td align="left">srm.limits.request.scheduler.same-owner-running.max</td>
-</tr>
-<tr class="even">
-<td align="left">srm.limits.request.put.scheduler.thread.queue.size</td>
-<td>1000</td>
-<td align="left">srm.limits.request.put.scheduler.thread.queue.size</td>
-</tr>
-<tr class="odd">
-<td align="left">srm.limits.request.put.scheduler.thread.pool.size</td>
-<td>100</td>
-<td align="left">srm.limits.request.put.scheduler.thread.pool.size</td>
-</tr>
-<tr class="even">
-<td align="left">srm.limits.request.put.scheduler.waiting.max</td>
-<td>1000</td>
-<td align="left">srm.limits.request.put.scheduler.waiting.max</td>
-</tr>
-<tr class="odd">
-<td align="left">srm.limits.request.put.scheduler.ready-queue.size</td>
-<td>1000</td>
-<td align="left">srm.limits.request.put.scheduler.ready-queue.size</td>
-</tr>
-<tr class="even">
-<td align="left">srm.limits.request.put.scheduler.ready.max</td>
-<td>100</td>
-<td align="left">srm.limits.request.put.scheduler.ready.max</td>
-</tr>
-<tr class="odd">
-<td align="left">srm.limits.request.put.scheduler.retries.max</td>
-<td>10</td>
-<td align="left">srm.limits.request.put.scheduler.retries.max</td>
-</tr>
-<tr class="even">
-<td align="left">srm.limits.request.put.scheduler.retry-timeout</td>
-<td>60000</td>
-<td align="left">srm.limits.request.put.scheduler.retry-timeout</td>
-</tr>
-<tr class="odd">
-<td align="left">srm.limits.request.put.scheduler.same-owner-running.max</td>
-<td>10</td>
-<td align="left">srm.limits.request.put.scheduler.same-owner-running.max</td>
-</tr>
-<tr class="even">
-<td align="left">srm.limits.request.copy.scheduler.thread.queue.size</td>
-<td>1000</td>
-<td align="left">srm.limits.request.copy.scheduler.thread.queue.size</td>
-</tr>
-<tr class="odd">
-<td align="left">srm.limits.request.copy.scheduler.thread.pool.size</td>
-<td>100</td>
-<td align="left">srm.limits.request.copy.scheduler.thread.pool.size</td>
-</tr>
-<tr class="even">
-<td align="left">srm.limits.request.copy.scheduler.waiting.max</td>
-<td>1000</td>
-<td align="left">srm.limits.request.copy.scheduler.waiting.max</td>
-</tr>
-<tr class="odd">
-<td align="left">srm.limits.request.copy.scheduler.retries.max</td>
-<td>30</td>
-<td align="left">srm.limits.request.copy.scheduler.retries.max</td>
-</tr>
-<tr class="even">
-<td align="left">srm.limits.request.copy.scheduler.retry-timeout</td>
-<td>60000</td>
-<td align="left">srm.limits.request.copy.scheduler.retry-timeout</td>
-</tr>
-<tr class="odd">
-<td align="left">srm.limits.request.copy.scheduler.same-owner-running.max</td>
-<td>10</td>
-<td align="left">srm.limits.request.copy.scheduler.same-owner-running.max</td>
-</tr>
-</tbody>
-</table>
 
   [???]: #cmd-mover_set_max_active
   [1]: #cmd-mover_ls
