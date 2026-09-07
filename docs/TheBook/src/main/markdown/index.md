@@ -59,6 +59,8 @@ dCache Book
 
         - [statistics service](config-statistics.md)
 
+        - [scitags flow marking (firefly)](config-scitags.md)
+
         - [telemetry service](config-telemetry.md)
 
         - topo service
