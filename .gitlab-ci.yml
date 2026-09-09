@@ -137,7 +137,7 @@ rpm:
   image: dcache/maven-java21-rpm-build
   extends: .build_cache
   script:
-    - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl packages/fhs -P rpm clean package
+    - msvn $MAVEN_CLI_OPTS -DskipTests -am -pl packages/fhs -P rpm clean package
   artifacts:
     paths:
       - "packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm"
