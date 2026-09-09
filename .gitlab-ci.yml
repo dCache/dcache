@@ -83,7 +83,7 @@ default:
     - dcache-dev
   dependencies: []
   rules:
-    - when: always
+    - when: on_success
 
 .kubernetes_image:
   extends: .kubernetes_tags
