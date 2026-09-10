@@ -41,6 +41,26 @@ The service can be run out-of-the-box without changing default property
 values.  There are a few properties affecting the admin/monitoring components
 which should, however, be noted.
 
+## Cross-Origin Resource Sharing (CORS)
+
+By default, the frontend does not send any Cross-Origin Resource Sharing
+(CORS) headers.  This prevents a browser from making cross-origin requests to
+the REST API on behalf of a web application served from a different origin
+(such as an external data catalogue or portal).
+
+To allow such integration, list the origins that are permitted to make
+cross-origin requests to the frontend.  The value is a comma-separated list of
+website URLs without any path; for example:
+
+```ini
+# allow requests from these websites
+frontend.allowed.client.origins=https://example.org,http://example.org:8080
+```
+
+If the property is left empty, no website is authorised to make cross-origin
+requests.  Non-JavaScript clients (e.g., `curl`) are unaffected by this
+property.
+
 ## Properties controlling monitoring data collection
 
 The number of threads which are available to collect data from
