@@ -282,6 +282,20 @@ Check for duplicate dependencies:
     - ls -1 /dcache/share/classes/ | grep -v netty-tcnative-boringssl-static | sort | sed -e 's/\-[0-9].*$//' | uniq -D > duplicate-dependencies.txt
     - if [ -s duplicate-dependencies.txt ]; then cat duplicate-dependencies.txt; exit 1; fi
 
+
+Run Documetobot:
+  stage: build
+  image:
+    name: tollerort.desy.de/it-rs/pi-c:latest
+    entrypoint: ['']
+  allow_failure: true
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'master'
+  variables:
+    DESY_ASSISTANT_API_KEY: ${LLM_API_KEY}
+  script:
+    - pi -p --no-session "/skill:docubot"
+
 sign_rpm:
   stage: sign
   image: almalinux:10-minimal
