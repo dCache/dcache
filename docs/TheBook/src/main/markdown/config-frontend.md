@@ -72,6 +72,30 @@ file lifetime.  The plots generated from this data by dCache-View will also
 not be available.  Please refer to the documentation under the [dCache History Service](config-history.md) for how to set
 this up.
 
+## Cross-Origin Resource Sharing (CORS)
+
+The Frontend service can be integrated into third-party web applications, such
+as data catalogs, that run in a web browser.  By default, a web browser blocks
+JavaScript running on one website from making requests to the dCache Frontend
+service (a different origin) unless the service explicitly allows it.  This is
+controlled by the Cross-Origin Resource Sharing (CORS) mechanism.
+
+To allow a third-party website to call the REST API, list its origin in the
+`frontend.allowed.client.origins` property as a comma-separated list of website
+URLs without any path; for example:
+
+```ini
+frontend.allowed.client.origins = https://example.org, http://data.example.org:8080
+```
+
+If the property is empty (the default), then no website is authorised and the
+Frontend service cannot be called from browser-based JavaScript.
+Non-JavaScript clients are unaffected by this property.
+
+The Frontend service also serves the `dcache-view` web interface.  If the
+web interface and the API are accessed from the same origin (the normal case),
+then the `dcache-view` origin must be included in this list.
+
 ## Last-Modified header in monitoring responses
 
 GET responses for monitoring and admin data include a `Last-Modified` HTTP
