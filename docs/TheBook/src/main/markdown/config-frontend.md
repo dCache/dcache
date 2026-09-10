@@ -41,6 +41,25 @@ The service can be run out-of-the-box without changing default property
 values.  There are a few properties affecting the admin/monitoring components
 which should, however, be noted.
 
+## Allowing third-party web applications to call the REST API
+
+By default, the REST API can only be called from JavaScript served by the
+same origin as the dCache Frontend.  This prevents unauthorised websites from
+making requests on behalf of a logged-in user.  If you run a web application
+the browser loads from a different origin — for example a data catalogue or a
+dashboard — you can allow that origin to call the REST API by listing it in
+`frontend.allowed.client.origins`.
+
+```ini
+[frontendDomain/frontend]
+frontend.allowed.client.origins = https://catalogue.example.org, https://dashboard.example.org
+```
+
+Values are a comma-separated list of website origins (scheme, host and port
+if non-default) *without* any path.  If the list is empty, no website is
+authorised.  Non-JavaScript clients (for example `curl`) are unaffected by
+this property.
+
 ## Properties controlling monitoring data collection
 
 The number of threads which are available to collect data from
