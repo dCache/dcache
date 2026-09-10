@@ -26,6 +26,14 @@
 # The kubernetes based jobs don't use directly any job artefact, thus pulling artefact
 # is explicitly disabled by default.
 
+workflow:
+  rules:
+    # Disable pipelines triggered by Merge Requests
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: never
+    # Allow branch pushes, tag pushes, etc.
+    - when: always
+    
 stages:
   # build rpm, tar, deb, oci container
   - build
