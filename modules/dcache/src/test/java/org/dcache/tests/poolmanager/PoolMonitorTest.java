@@ -183,6 +183,21 @@ public class PoolMonitorTest {
     }
 
     @Test
+    public void testSelectClientZoneForIpv6Client() throws Exception {
+        _access.createUnit("::/0", true, false, false, false, Optional.of("A"));
+
+        ProtocolInfo clientProtocolInfo = new DCapProtocolInfo("DCap", 3, 0,
+                new InetSocketAddress("::1", 17));
+        FileAttributes fileAttributes = FileAttributes.of().pnfsId(_pnfsId).build();
+
+        PoolMonitorV5.PnfsFileLocation selector = (PoolMonitorV5.PnfsFileLocation)
+                _poolMonitor.getPoolSelector(fileAttributes, clientProtocolInfo, null,
+                        Optional.of("B"), Set.of());
+
+        assertEquals(Optional.of("A"), selector.getZone());
+    }
+
+    @Test
     public void testWritePoolZonePreference() throws Exception {
         prepareCostModule(false, true);
 

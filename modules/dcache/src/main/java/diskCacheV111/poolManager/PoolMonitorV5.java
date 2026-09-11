@@ -236,7 +236,16 @@ public class PoolMonitorV5
         private Optional<String> selectZone(Optional<String> zone) {
             if (_hostName == null) return zone;
             PoolSelectionUnit psu = getPoolSelectionUnit();
-            InetAddress clientAddress = InetAddresses.forUriString(_hostName);
+            InetAddress clientAddress;
+
+            try {
+                clientAddress = InetAddresses.forString(_hostName);
+            } catch (IllegalArgumentException e) {
+                LOGGER.warn("Cannot parse client address {} for zone selection: {}",
+                      _hostName, e.toString());
+                return zone;
+            }
+
             Map<String, PoolSelectionUnit.SelectionUnit> units = psu.getSelectionUnits();
             List<NetUnit> netUnits = units.keySet()
                     .stream()
