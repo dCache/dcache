@@ -28,12 +28,12 @@
 
 workflow:
   rules:
-    # Disable pipelines triggered by Merge Requests
+  # workflow to stop GitLab from starting a redundant pipeline after replicating PR into MR
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-      when: never
-    # Allow branch pushes, tag pushes, etc.
-    - when: always
-    
+      when: never 
+      # fallback for the rest of the pipelines
+    - when: always 
+
 stages:
   # build rpm, tar, deb, oci container
   - build
