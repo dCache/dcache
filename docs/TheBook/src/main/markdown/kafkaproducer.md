@@ -51,10 +51,9 @@ Set kafka topic name
 dcache.kafka.topic = billing
 ```
 
-"billing" is default. The following serice level variables
+"billing" is default. The following service level variables
 reference dcache.kafka.topic:
 
-   dcap.kafka.topic = ${dcache.kafka.topic}
    ftp.kafka.topic = ${dcache.kafka.topic}
    nfs.kafka.topic = ${dcache.kafka.topic}
    pool.kafka.topic = ${dcache.kafka.topic}
