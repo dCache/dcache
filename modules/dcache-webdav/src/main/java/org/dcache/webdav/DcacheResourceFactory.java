@@ -112,7 +112,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 import javax.annotation.PostConstruct;
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
@@ -158,10 +157,7 @@ import org.dcache.webdav.transfer.RemoteTransferHandler;
 import org.eclipse.jetty.io.EofException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
-import org.springframework.kafka.KafkaException;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.stringtemplate.v4.AutoIndentWriter;
 import org.stringtemplate.v4.ST;
 
@@ -289,17 +285,9 @@ public class DcacheResourceFactory
     private PoolMonitor _poolMonitor;
     private boolean _redirectToHttps;
 
-    private Consumer<DoorRequestInfoMessage> _kafkaSender = (s) -> {
-    };
-
     public DcacheResourceFactory()
           throws UnknownHostException {
         _internalAddress = InetAddress.getLocalHost();
-    }
-
-    @Autowired(required = false)
-    private void setTransferTemplate(KafkaTemplate kafkaTemplate) {
-        _kafkaSender = kafkaTemplate::sendDefault;
     }
 
     @Required
@@ -1282,12 +1270,6 @@ public class DcacheResourceFactory
         infoRemove.setFileSize(attributes.getSizeIfPresent().orElse(0L));
         infoRemove.setClient(Subjects.getOrigin(subject).getAddress().getHostAddress());
         _billingStub.notify(infoRemove);
-
-        try {
-            _kafkaSender.accept(infoRemove);
-        } catch (KafkaException | org.apache.kafka.common.KafkaException e) {
-            LOGGER.warn("Failed to send message to kafka: {} ", Throwables.getRootCause(e).getMessage());
-        }
     }
 
     /**
@@ -1600,7 +1582,6 @@ public class DcacheResourceFactory
                     ServletRequest.getRequest().getRemoteAddr()),  ServletRequest.getRequest().getRemotePort())
         ));
         transfer.setOverwriteAllowed(_isOverwriteAllowed);
-        transfer.setKafkaSender(_kafkaSender);
         transfer.setZone(_zone);
     }
 
