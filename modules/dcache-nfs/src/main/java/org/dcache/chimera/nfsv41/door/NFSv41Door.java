@@ -18,7 +18,6 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.IoDoorEntry;
 import diskCacheV111.vehicles.IoDoorInfo;
@@ -70,7 +69,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -193,7 +191,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
-import org.springframework.kafka.core.KafkaTemplate;
 
 public class NFSv41Door extends AbstractCellComponent implements
       NFSv41DeviceManager, CellCommandListener,
@@ -318,9 +315,6 @@ public class NFSv41Door extends AbstractCellComponent implements
     private LoginBrokerPublisher _loginBrokerPublisher;
 
     private ProxyIoFactory _proxyIoFactory;
-
-    private Consumer<DoorRequestInfoMessage> _kafkaSender = (s) -> {
-    };
 
     /**
      * Retry policy used for accessing files.
@@ -454,11 +448,6 @@ public class NFSv41Door extends AbstractCellComponent implements
     @Required
     public void setAccessLogMode(AccessLogMode accessLogMode) {
         _accessLogMode = accessLogMode;
-    }
-
-    @Autowired(required = false)
-    public void setKafkaTemplate(KafkaTemplate kafkaTemplate) {
-        _kafkaSender = kafkaTemplate::sendDefault;
     }
 
     @Autowired(required = false)
@@ -861,7 +850,6 @@ public class NFSv41Door extends AbstractCellComponent implements
                     transfer.setPnfsId(pnfsId);
                     transfer.setClientAddress(remote);
                     transfer.setIoQueue(_ioQueue);
-                    transfer.setKafkaSender(_kafkaSender);
 
                 } else {
                     // keep debug context in sync
