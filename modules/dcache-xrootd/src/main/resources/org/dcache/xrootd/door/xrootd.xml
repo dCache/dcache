@@ -270,34 +270,4 @@
     <property name="readPaths" value="#{ T(com.google.common.base.Splitter).on(':').omitEmptyStrings().splitToList('${xrootd.authz.read-paths}') }"/>
     <property name="writePaths" value="#{ T(com.google.common.base.Splitter).on(':').omitEmptyStrings().splitToList('${xrootd.authz.write-paths}') }"/>
   </bean>
-
-  <beans profile="kafka-true">
-
-
-    <bean id="listener" class="org.dcache.kafka.LoggingProducerListener"/>
-
-    <bean id="kafka-configs"
-          class="org.dcache.util.configuration.ConfigurationMapFactoryBean">
-      <property name="prefix" value="xrootd.kafka.producer.configs"/>
-      <property name="staticEnvironment" >
-        <map>
-          <entry key="bootstrap.servers" value="${xrootd.kafka.producer.bootstrap.servers}"/>
-          <entry key="key.serializer" value="org.apache.kafka.common.serialization.StringSerializer"/>
-          <entry key="value.serializer" value="org.dcache.notification.DoorRequestMessageSerializer"/>
-          <entry key="client.id" value="${xrootd.cell.name}@${dcache.domain.name}"/>
-        </map>
-      </property>
-
-    </bean>
-
-    <bean id="billing-template" class="org.springframework.kafka.core.KafkaTemplate">
-      <constructor-arg>
-        <bean class="org.springframework.kafka.core.DefaultKafkaProducerFactory">
-            <constructor-arg name="configs" ref ="kafka-configs"/>
-        </bean>
-      </constructor-arg>
-      <property name="defaultTopic" value="${xrootd.kafka.topic}"/>
-      <property name="producerListener" ref="listener"/>
-    </bean>
-  </beans>
 </beans>

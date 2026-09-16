@@ -38,7 +38,6 @@ import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_writable;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_xset;
 
 import com.google.common.base.Splitter;
-import com.google.common.base.Throwables;
 import com.google.common.collect.Range;
 import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.util.CacheException;
@@ -93,7 +92,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 import javax.annotation.concurrent.GuardedBy;
 import javax.security.auth.Subject;
 import org.dcache.acl.enums.AccessType;
@@ -141,11 +139,7 @@ import org.dcache.xrootd.util.ParseException;
 import org.dcache.xrootd.util.ServerProtocolFlags;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Required;
-import org.springframework.kafka.KafkaException;
-import org.springframework.kafka.core.KafkaTemplate;
 
 /**
  * Shared cell component used to interface with the rest of dCache.
@@ -212,9 +206,6 @@ public class XrootdDoor
 
     private ScheduledExecutorService _scheduledExecutor;
 
-    private Consumer<DoorRequestInfoMessage> _kafkaSender = (s) -> {
-    };
-
     @GuardedBy("this")
     private Optional<LoginBrokerInfo> _loginBrokerInfo = Optional.empty();
 
@@ -243,12 +234,6 @@ public class XrootdDoor
     private Optional<String> _zone = Optional.empty();
 
     private UnionLoginStrategy.AccessLevel anonymousUserAccess = AccessLevel.NONE;
-
-    @Autowired(required = false)
-    private void setKafkaTemplate(
-          @Qualifier("billing-template") KafkaTemplate kafkaTemplate) {
-        _kafkaSender = kafkaTemplate::sendDefault;
-    }
 
     public void setProxyGroups(EventLoopGroup acceptGroup, EventLoopGroup socketGroup,
           EventLoopGroup clientGroup) {
@@ -560,7 +545,6 @@ public class XrootdDoor
         }
         transfer.setIoQueue(ioQueue == null ? _ioQueue : ioQueue);
         transfer.setFileHandle(_handleCounter.getAndIncrement());
-        transfer.setKafkaSender(_kafkaSender);
         transfer.setTriedHosts(tried);
         transfer.setProxiedTransfer(proxied);
         transfer.logSciTagsRequest(opaque);
@@ -781,12 +765,6 @@ public class XrootdDoor
             infoRemove.setClient(origin.getAddress().getHostAddress());
         }
         _billingStub.notify(infoRemove);
-
-        try {
-            _kafkaSender.accept(infoRemove);
-        } catch (KafkaException | org.apache.kafka.common.KafkaException e) {
-            _log.warn("Failed to send message to kafka: {} ", Throwables.getRootCause(e).getMessage());
-        }
     }
 
     /**
