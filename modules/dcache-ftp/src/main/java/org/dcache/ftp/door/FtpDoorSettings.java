@@ -4,13 +4,7 @@ import diskCacheV111.util.PnfsHandler;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellPath;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Properties;
 import java.util.concurrent.TimeUnit;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerConfig;
 import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.PoolManagerHandler;
 import org.dcache.poolmanager.PoolManagerStub;
@@ -47,35 +41,6 @@ public class FtpDoorSettings {
           description = "Cell path to billing",
           defaultValue = "billing")
     protected CellPath billing;
-
-    @Option(name = "kafka",
-          description = "Kafka service enabled",
-          defaultValue = "false")
-    protected boolean isKafkaEnabled;
-
-    @Option(name = "bootstrap-server-kafka")
-    protected String kafkaBootstrapServer;
-
-    @Option(name = "kafka-topic")
-    protected String kafkaTopic;
-
-    @Option(name = "kafka-max-block",
-          defaultValue = "1")
-    protected long kafkaMaxBlock;
-
-    @Option(name = "kafka-max-block-units",
-          defaultValue = "SECONDS")
-    protected TimeUnit kafkaMaxBlockUnits;
-
-    @Option(name = "retries-kafka")
-    protected String kafkaRetries;
-
-    @Option(name = "kafka-clientid")
-    protected String kafkaclientid;
-
-    @Option(name = "kafka-config-file")
-    protected String kafkaConfigFile;
-
 
     @Option(name = "clientDataPortRange",
           defaultValue = "0")
@@ -233,9 +198,6 @@ public class FtpDoorSettings {
           defaultValue = "false")
     protected boolean logAbortedTransfers;
 
-    private KafkaProducer _kafkaProducer;
-
-
     public PortRange getPortRange() {
         return portRange;
     }
@@ -320,56 +282,6 @@ public class FtpDoorSettings {
         return listFormat;
     }
 
-    /**
-     * Returns Kafka service enabled If enabled, the various dCache services, like pools and doors
-     * will publish messages to a Kafka cluster after each transfer.
-     *
-     * @return true if the user wants to send messages to Kafka
-     */
-    public boolean isKafkaEnabled() {
-        return isKafkaEnabled;
-    }
-
-    /**
-     * Returns a list of host/port pairs (brokers) to use for establishing the initial connection to
-     * the Kafka cluster. This list is just used to discover the rest of the brokers in the cluster
-     * and should be in the form host1:port1,host2:port2,....
-     *
-     * @return the list of  of host/port pairs
-     */
-    public String getKafkaBootstrapServer() {
-        return kafkaBootstrapServer;
-    }
-
-    /**
-     * Returns name of kafka topic
-     *
-     * @return kafka topic name
-     */
-    public String getKafkaTopic() {
-        return kafkaTopic;
-    }
-
-    /**
-     * Returns the parameter that controls how long how long the producer will block when calling
-     * send(). By default set to 60000.
-     *
-     * @retrun a timeframe during which producer will block when calling send()
-     */
-    public String getKafkaMaxBlockMs() {
-        return String.valueOf(TimeUnit.MILLISECONDS.convert(kafkaMaxBlock, kafkaMaxBlockUnits));
-    }
-
-    /**
-     * Returns the number of retries that the producer will retry sending the messages before
-     * failing it.
-     *
-     * @return number of retries, set to 0 by default
-     */
-    public String getKafkaRetries() {
-        return kafkaRetries;
-    }
-
     public CellStub createBillingStub(CellEndpoint cellEndpoint) {
         return new CellStub(cellEndpoint, billing);
     }
@@ -395,51 +307,8 @@ public class FtpDoorSettings {
         return stub;
     }
 
-    public KafkaProducer createKafkaProducer() {
-        Properties props = new Properties();
-	if (kafkaConfigFile != null && !kafkaConfigFile.trim().isEmpty()) {
-	    try {
-		FileInputStream fis = new FileInputStream(kafkaConfigFile);
-		try {
-		    props.load(fis);
-		} catch (IOException ex) {
-		    LOGGER.error("failed to load configuration ", ex);
-		} finally {
-		    try {
-			fis.close();
-		    } catch (IOException ex) {
-			LOGGER.error("failed to close " + kafkaConfigFile, ex);
-		    }
-		}
-	    } catch (FileNotFoundException ex) {
-		LOGGER.error(ex.toString());
-	    }
-	}
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBootstrapServer);
-        props.put(ProducerConfig.CLIENT_ID_CONFIG, kafkaclientid);
-        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
-              "org.apache.kafka.common.serialization.StringSerializer");
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
-              "org.dcache.notification.DoorRequestMessageSerializer");
-        props.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, kafkaMaxBlock);
-        props.put(ProducerConfig.RETRIES_CONFIG, kafkaRetries);
-
-        _kafkaProducer = new KafkaProducer<>(props);
-        return _kafkaProducer;
-    }
-
     public PnfsHandler createPnfsHandler(CellEndpoint cellEndpoint) {
         return new PnfsHandler(
               new CellStub(cellEndpoint, pnfsManager, pnfsTimeout, pnfsTimeoutUnit));
-    }
-
-
-    public KafkaProducer getKafkaProducer() {
-        return _kafkaProducer;
-    }
-
-    public void destroy() {
-        getKafkaProducer().close();
-
     }
 }

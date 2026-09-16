@@ -209,8 +209,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.dcache.acl.enums.AccessType;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
@@ -916,8 +914,6 @@ public abstract class AbstractFtpDoorV1
     protected TransferRetryPolicy _readRetryPolicy;
     protected TransferRetryPolicy _writeRetryPolicy;
 
-    protected KafkaProducer _kafkaProducer;
-
     /**
      * Tape Protection
      */
@@ -1036,13 +1032,6 @@ public abstract class AbstractFtpDoorV1
             setPoolManagerStub(_poolManagerStub);
             setPoolStub(AbstractFtpDoorV1.this._poolStub);
             setBillingStub(_billingStub);
-
-            if (_settings.isKafkaEnabled()) {
-                setKafkaSender(m -> {
-                    _kafkaProducer.send(new ProducerRecord<String, DoorRequestInfoMessage>(
-                          _settings.getKafkaTopic(), m));
-                });
-            }
 
             _allo.ifPresent(this::setAllocation);
             setIoQueue(_settings.getIoQueueName());
@@ -1569,9 +1558,6 @@ public abstract class AbstractFtpDoorV1
 
         _billingStub = _settings.createBillingStub(_cellEndpoint);
 
-        if (_settings.isKafkaEnabled()) {
-            _kafkaProducer = _settings.getKafkaProducer();
-        }
         _poolManagerStub = _settings.createPoolManagerStub(_cellEndpoint, _cellAddress,
               _poolManagerHandler);
         _poolStub = _settings.createPoolStub(_cellEndpoint);
@@ -1753,12 +1739,6 @@ public abstract class AbstractFtpDoorV1
                 ((FtpTransfer) transfer).abort(new ClientAbortException(451,
                       "Aborting transfer due to session termination"));
             }
-
-            /*The producer consists of a pool of buffer space that holds records that haven't yet been
-              transmitted to the server as well as a background I/O thread
-              that is responsible for turning these records into requests and transmitting them to the cluster.
-              Failure to close the producer after use will leak these resources. Hence we need to  and close Kafka Producer
-             */
 
         } finally {
             _clientConnectionHandler.close();
@@ -4533,18 +4513,6 @@ public abstract class AbstractFtpDoorV1
         infoRemove.setClient(_clientDataAddress.getAddress().getHostAddress());
 
         _billingStub.notify(infoRemove);
-
-        if (_settings.isKafkaEnabled()) {
-            _kafkaProducer.send(
-                  new ProducerRecord<String, DoorRequestInfoMessage>("billing", infoRemove),
-                  (rm, e) -> {
-                      if (e != null) {
-                          LOGGER.error("Unable to send message to topic {} on  partition {}: {}",
-                                rm.topic(), rm.partition(), e.getMessage());
-                      }
-                  });
-        }
-
     }
 
     /**

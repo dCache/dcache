@@ -51,11 +51,6 @@ public abstract class FtpInterpreterFactory implements NettyLineBasedInterpreter
         OptionParser options = new OptionParser(args);
         options.inject(settings);
         options.inject(this);
-        if (settings.isKafkaEnabled) {
-            settings.createKafkaProducer();
-            LOGGER.info("Creating KafkaProducer");
-
-        }
     }
 
     @Override
@@ -86,9 +81,6 @@ public abstract class FtpInterpreterFactory implements NettyLineBasedInterpreter
 
     @Override
     public void destroy() {
-        if (settings.isKafkaEnabled) {
-            settings.destroy();
-            LOGGER.info("Shutdow KafkaProducer");
-        }
+        //ToDO nothing to do here, but the interface requires it
     }
 }
