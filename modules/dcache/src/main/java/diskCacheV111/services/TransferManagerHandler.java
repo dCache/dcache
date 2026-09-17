@@ -6,7 +6,6 @@ import static org.dcache.namespace.FileAttribute.SIZE;
 import static org.dcache.namespace.FileAttribute.STORAGECLASS;
 import static org.dcache.namespace.FileAttribute.STORAGEINFO;
 
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import diskCacheV111.util.CacheException;
@@ -61,7 +60,6 @@ import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.kafka.KafkaException;
 
 public class TransferManagerHandler extends AbstractMessageCallback<Message> {
 
@@ -742,13 +740,6 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message> {
         info.setResult(code, msg);
         LOGGER.debug("Sending info: {}", info);
         manager.getBillingStub().notify(info);
-
-        try {
-            manager.getKafkaSender().accept(info);
-        } catch (KafkaException | org.apache.kafka.common.KafkaException e) {
-            LOGGER.warn("Failed to send message to kafka: {} ",
-                        Throwables.getRootCause(e).getMessage());
-        }
     }
 
     public void timeout() {
