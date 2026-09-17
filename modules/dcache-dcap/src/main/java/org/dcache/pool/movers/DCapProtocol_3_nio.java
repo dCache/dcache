@@ -6,7 +6,6 @@ import static org.dcache.util.ByteUnit.MiB;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DCapProrocolChallenge;
 import diskCacheV111.util.DiskErrorCacheException;
-import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -29,6 +28,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import org.dcache.net.ProtocolConnectionPool.Listen;
 import org.dcache.net.ProtocolConnectionPoolFactory;
@@ -56,18 +56,15 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
     private final CellEndpoint _cell;
 
     private Args _args;
-    private long _bytesTransferred = -1;
+    private final AtomicLong _bytesTransferred = new AtomicLong();
     private long _transferStarted;
     private long _transferTime = -1;
-    private long _lastTransferred = System.currentTimeMillis();
+    private final AtomicLong _lastTransferred = new AtomicLong(System.currentTimeMillis());
 
     private ByteBuffer _bigBuffer;
     private String _status = "None";
     private boolean _io_ok = true;
     private Exception ioException = null;
-
-    private PnfsId _pnfsId;
-    private int _sessionId = -1;
 
     private final MoverIoBuffer _defaultBufferSize = new MoverIoBuffer(KiB.toBytes(256),
           KiB.toBytes(256), KiB.toBytes(256));
@@ -252,7 +249,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         addDesiredChecksums(fileChannel, dcapProtocolInfo);
 
         StorageInfo storage = fileAttributes.getStorageInfo();
-        _pnfsId = fileAttributes.getPnfsId();
         boolean isWrite = access.contains(StandardOpenOption.WRITE);
 
         ////////////////////////////////////////////////////////////////////////
@@ -267,7 +263,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         SocketChannel socketChannel = null;
         DCapOutputByteBuffer cntOut = new DCapOutputByteBuffer(KiB.toBytes(1));
 
-        _sessionId = dcapProtocolInfo.getSessionId();
+        int sessionId = dcapProtocolInfo.getSessionId();
 
         try (Listen listen = factory.acquireListen(bufferSize.getRecvBufferSize())) {
             InetAddress localAddress = NetworkUtils.
@@ -278,14 +274,13 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
             byte[] challenge = UUID.randomUUID().toString().getBytes();
             PoolPassiveIoFileMessage<byte[]> msg = new PoolPassiveIoFileMessage<>("pool",
                   socketAddress, challenge);
-            msg.setId(dcapProtocolInfo.getSessionId());
+            msg.setId(sessionId);
             _log.info("waiting for client to connect ({}:{})", localAddress,
                   listen.getPort());
 
             CellPath cellpath = dcapProtocolInfo.door();
             _cell.sendMessage(new CellMessage(cellpath, msg));
-            DCapProrocolChallenge dcapChallenge = new DCapProrocolChallenge(_sessionId,
-                  challenge);
+            DCapProrocolChallenge dcapChallenge = new DCapProrocolChallenge(sessionId, challenge);
             socketChannel = listen.getSocket(dcapChallenge);
         }
 
@@ -300,8 +295,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         //
         //
         _transferStarted = System.currentTimeMillis();
-        _bytesTransferred = 0;
-        _lastTransferred = _transferStarted;
+        _lastTransferred.set(_transferStarted);
 
         boolean notDone = true;
         RequestBlock requestBlock = new RequestBlock();
@@ -328,7 +322,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
 
                 _log.debug("Request Block : {}", requestBlock);
 
-                _lastTransferred = System.currentTimeMillis();
+                _lastTransferred.set(System.currentTimeMillis());
 
                 switch (requestBlock.getCommandCode()) {
                     //-------------------------------------------------------------
@@ -667,14 +661,14 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
             } catch (Exception xe) {
             }
 
-            dcapProtocolInfo.setBytesTransferred(_bytesTransferred);
+            dcapProtocolInfo.setBytesTransferred(_bytesTransferred.get());
 
             _transferTime = System.currentTimeMillis() -
                   _transferStarted;
             dcapProtocolInfo.setTransferTime(_transferTime);
 
             _log.info("(Transfer finished : {} bytes in {} seconds) ",
-                  _bytesTransferred, _transferTime / 1000);
+                  _bytesTransferred.get(), _transferTime / 1000);
 
             //
             // if we got an EOF from the inputstream
@@ -757,7 +751,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
                 socketChannel.write(_bigBuffer);
 
                 count -= rc;
-                _bytesTransferred += rc;
+                _bytesTransferred.addAndGet(rc);
 
             }
         }
@@ -950,7 +944,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
                     }
                 }
                 rest -= rc;
-                _bytesTransferred += rc;
+                _bytesTransferred.addAndGet(rc);
             }
 
             _log.debug("Block Done");
@@ -1004,7 +998,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
             _bigBuffer.putInt(rc).rewind();
             socketChannel.write(_bigBuffer);
             rest -= rc;
-            _bytesTransferred += rc;
+            _bytesTransferred.addAndGet(rc);
             if (rest <= 0) {
                 break;
             }
@@ -1019,12 +1013,12 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
 
     @Override
     public long getLastTransferred() {
-        return _lastTransferred;
+        return _lastTransferred.get();
     }
 
     @Override
     public long getBytesTransferred() {
-        return _bytesTransferred;
+        return _bytesTransferred.get();
     }
 
     @Override

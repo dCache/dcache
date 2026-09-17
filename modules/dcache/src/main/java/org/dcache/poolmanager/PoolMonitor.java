@@ -6,6 +6,7 @@ import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.util.FileLocality;
 import diskCacheV111.vehicles.ProtocolInfo;
 import java.util.Collection;
+import java.util.Optional;
 import java.util.Set;
 import org.dcache.vehicles.FileAttributes;
 
@@ -28,6 +29,15 @@ public interface PoolMonitor {
           ProtocolInfo protocolInfo,
           String linkGroup,
           Set<String> excludedHosts);
+
+    default PoolSelector getPoolSelector(
+          FileAttributes fileAttributes,
+          ProtocolInfo protocolInfo,
+          String linkGroup,
+          Optional<String> zone,
+          Set<String> excludedHosts) {
+        return getPoolSelector(fileAttributes, protocolInfo, linkGroup, excludedHosts);
+    }
 
     Collection<PoolCostInfo> queryPoolsByLinkName(String linkName);
 

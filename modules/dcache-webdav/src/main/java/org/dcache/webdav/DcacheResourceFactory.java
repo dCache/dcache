@@ -97,7 +97,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.security.AccessController;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -120,6 +119,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
+
 import org.dcache.auth.Origin;
 import org.dcache.auth.RolePrincipal;
 import org.dcache.auth.RolePrincipal.Role;
@@ -130,6 +130,7 @@ import org.dcache.auth.attributes.LoginAttributes;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.CellStub;
+import org.dcache.cells.ZoneAware;
 import org.dcache.http.AuthenticationHandler;
 import org.dcache.http.PathMapper;
 import org.dcache.missingfiles.AlwaysFailMissingFileStrategy;
@@ -152,7 +153,6 @@ import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryListPrinter;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
-import org.dcache.vehicles.PnfsSetFileAttributes;
 import org.dcache.webdav.owncloud.OwncloudClients;
 import org.dcache.webdav.transfer.RemoteTransferHandler;
 import org.eclipse.jetty.io.EofException;
@@ -170,7 +170,7 @@ import org.stringtemplate.v4.ST;
  */
 public class DcacheResourceFactory
     extends AbstractCellComponent
-    implements ResourceFactory, CellMessageReceiver, CellCommandListener, CellInfoProvider {
+    implements ResourceFactory, CellMessageReceiver, CellCommandListener, CellInfoProvider, ZoneAware {
 
     private static final Logger LOGGER =
         LoggerFactory.getLogger(DcacheResourceFactory.class);
@@ -251,6 +251,8 @@ public class DcacheResourceFactory
 
     private ScheduledExecutorService _executor;
 
+    private Optional<String> _zone = Optional.empty();
+
     private int _moverTimeout;
     private TimeUnit _moverTimeoutUnit;
     private long _killTimeout = 1500;
@@ -323,6 +325,11 @@ public class DcacheResourceFactory
     @Required
     public void setRemoteTransferHandler(RemoteTransferHandler handler) {
         _remoteTransferHandler = requireNonNull(handler);
+    }
+
+    @Override
+    public void setZone(Optional<String> zone) {
+        _zone = zone;
     }
 
     /**
@@ -656,6 +663,21 @@ public class DcacheResourceFactory
                           buildRequestedAttributes();
                     FileAttributes attributes =
                           pnfs.getFileAttributes(path.toString(), requestedAttributes);
+                    if(isDigestRequested()
+                            && attributes.getChecksums().isEmpty()
+                            && !attributes.getFileType().equals(DIR)) {
+                        int retry = 10;
+                        do{
+                            attributes = pnfs.getFileAttributes(path.toString(), requestedAttributes);
+                            if(!attributes.getChecksums().isEmpty()) break;
+                            retry--;
+                            try{
+                                MILLISECONDS.sleep(500);
+                            } catch (InterruptedException e) {
+                                break;
+                            }
+                        } while(retry > 0);
+                    }
                     return getResource(path, attributes);
                 } catch (FileNotFoundCacheException e) {
                     if (haveRetried) {
@@ -762,6 +784,7 @@ public class DcacheResourceFactory
         checkUploadSize(length);
 
         WriteTransfer transfer = new WriteTransfer(_pnfs, subject, restriction, path);
+        transfer.setZone(_zone);
         _transfers.put((int) transfer.getId(), transfer);
         try {
             boolean success = false;
@@ -845,6 +868,7 @@ public class DcacheResourceFactory
         String uri = null;
         WriteTransfer transfer = new WriteTransfer(_pnfs, subject, restriction, path);
         transfer.setSSL(_redirectToHttps && ServletRequest.getRequest().isSecure());
+        transfer.setZone(_zone);
         _transfers.put((int) transfer.getId(), transfer);
         try {
             transfer.createNameSpaceEntry();
@@ -1364,6 +1388,7 @@ public class DcacheResourceFactory
         transfer.setIsChecksumNeeded(isDigestRequested());
         transfer.setSSL(
               !isProxyTransfer && _redirectToHttps && ServletRequest.getRequest().isSecure());
+        transfer.setZone(_zone);
         _transfers.put((int) transfer.getId(), transfer);
         try {
             transfer.setProxyTransfer(isProxyTransfer);
@@ -1448,7 +1473,7 @@ public class DcacheResourceFactory
      * Returns the current Subject of the calling thread.
      */
     private static Subject getSubject() {
-        return Subject.getSubject(AccessController.getContext());
+        return Subject.current();
     }
 
     private Restriction getRestriction() {
@@ -1562,8 +1587,8 @@ public class DcacheResourceFactory
         return args.hasOption("binary") ? doorInfo : doorInfo.toString();
     }
 
-    private void initializeTransfer(HttpTransfer transfer, Subject subject)
-          throws URISyntaxException {
+    private void initializeTransfer(HttpTransfer transfer)
+            throws URISyntaxException {
         transfer.setLocation(getLocation());
         transfer.setCellAddress(getCellAddress());
         transfer.setPoolManagerStub(_poolManagerStub);
@@ -1576,6 +1601,7 @@ public class DcacheResourceFactory
         ));
         transfer.setOverwriteAllowed(_isOverwriteAllowed);
         transfer.setKafkaSender(_kafkaSender);
+        transfer.setZone(_zone);
     }
 
     private Set<FileAttribute> buildRequestedAttributes() {
@@ -1603,8 +1629,8 @@ public class DcacheResourceFactory
      *
      * @return an Optional containing the Want-Digest header value, if present.
      */
-    public static Optional<String> wantDigest() {
-        Enumeration<String> e = ServletRequest.getRequest().getHeaders("Want-Digest");
+    public static Optional<String> wantDigest(String digestType) {
+        Enumeration<String> e = ServletRequest.getRequest().getHeaders(digestType);
         if (e == null || !e.hasMoreElements()) {
             return Optional.empty();
         }
@@ -1622,11 +1648,12 @@ public class DcacheResourceFactory
     }
 
     private static boolean isDigestRequested() {
+        HttpServletRequest request = ServletRequest.getRequest();
         switch (HttpManager.request().getMethod()) {
             case PUT:
             case HEAD:
             case GET:
-                return wantDigest()
+                return wantDigest(Checksums.digestType(request))
                       .flatMap(Checksums::parseWantDigest)
                       .isPresent();
             default:
@@ -1727,7 +1754,7 @@ public class DcacheResourceFactory
         public HttpTransfer(PnfsHandler pnfs, Subject subject,
               Restriction restriction, FsPath path) throws URISyntaxException {
             super(pnfs, subject, restriction, path);
-            initializeTransfer(this, subject);
+            initializeTransfer(this);
             _clientAddressForPool = getClientAddress();
 
             var request = ServletRequest.getRequest();
@@ -1929,6 +1956,7 @@ public class DcacheResourceFactory
     private class WriteTransfer extends HttpTransfer {
 
         private final Optional<Checksum> _contentMd5;
+        private final Optional<Checksum> _rfcDigest;
         /** optional hits to tape system how to store the file */
         private final Optional<String> _archiveMetadata;
 
@@ -1936,8 +1964,10 @@ public class DcacheResourceFactory
               Restriction restriction, FsPath path) throws URISyntaxException {
             super(pnfs, subject, restriction, path);
 
+            HttpServletRequest request = ServletRequest.getRequest();
+            String digestType = Checksums.digestType(request);
 
-            wantDigest()
+            wantDigest(digestType)
                   .flatMap(Checksums::parseWantDigest)
                   .ifPresent(this::setWantedChecksum);
 
@@ -1949,6 +1979,11 @@ public class DcacheResourceFactory
                 throw new UncheckedBadRequestException("Bad Content-MD5 header: " + e.toString(),
                       null);
             }
+
+            String digestHeader = request.getHeader(digestType);
+
+            _rfcDigest = Checksums.decodeRfc(digestHeader, Checksums.RfcType.of(digestType)).stream().findFirst();
+
 
             _archiveMetadata = Optional.ofNullable(ServletRequest.getRequest().getHeader("ArchiveMetadata"));
         }
@@ -2002,6 +2037,10 @@ public class DcacheResourceFactory
 
             if (_contentMd5.isPresent()) {
                 setChecksum(_contentMd5.get());
+            }
+
+            if (_rfcDigest.isPresent()) {
+                setChecksum(_rfcDigest.get());
             }
 
             getMaxUploadSize().ifPresent(this::setMaximumLength);

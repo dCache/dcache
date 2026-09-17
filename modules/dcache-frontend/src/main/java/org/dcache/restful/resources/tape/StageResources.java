@@ -102,6 +102,7 @@ import org.dcache.cells.CellStub;
 import org.dcache.http.PathMapper;
 import org.dcache.restful.providers.tape.StageRequestInfo;
 import org.dcache.restful.util.HandlerBuilders;
+import org.dcache.restful.util.Responses;
 import org.dcache.restful.util.bulk.BulkServiceCommunicator;
 import org.dcache.services.bulk.BulkRequest;
 import org.dcache.services.bulk.BulkRequest.Depth;
@@ -164,7 +165,7 @@ public final class StageResources {
     })
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public StageRequestInfo getStageInfo(@ApiParam("The unique id of the request.")
+    public Response getStageInfo(@ApiParam("The unique id of the request.")
     @PathParam("id") String id) {
         Subject subject = getSubject();
         Restriction restriction = getRestriction();
@@ -192,7 +193,8 @@ public final class StageResources {
 
         lastInfo.setTargets(targetInfos);
 
-        return new StageRequestInfo(lastInfo);
+        StageRequestInfo result = new StageRequestInfo(lastInfo);
+        return Responses.buildResponse(result);
     }
 
     /**
@@ -210,6 +212,7 @@ public final class StageResources {
           @ApiResponse(code = 401, message = "Unauthorized"),
           @ApiResponse(code = 403, message = "Forbidden"),
           @ApiResponse(code = 404, message = "Not Found"),
+          @ApiResponse(code = 413, message = "Content Too Large"),
           @ApiResponse(code = 429, message = "Too many requests"),
           @ApiResponse(code = 500, message = "Internal Server Error")
     })
@@ -275,6 +278,7 @@ public final class StageResources {
           @ApiResponse(code = 400, message = "Bad request"),
           @ApiResponse(code = 401, message = "Unauthorized"),
           @ApiResponse(code = 403, message = "Forbidden"),
+          @ApiResponse(code = 413, message = "Content Too Large"),
           @ApiResponse(code = 429, message = "Too many requests"),
           @ApiResponse(code = 500, message = "Internal Server Error")
     })

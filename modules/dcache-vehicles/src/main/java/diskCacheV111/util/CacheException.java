@@ -85,6 +85,11 @@ public class CacheException extends Exception {
     public static final int FILE_EXISTS = 10008;
 
     /**
+     * returned by pool in case of a request on a file, which is not in the requested zone
+     */
+    public static final int FILE_NOT_IN_ZONE = 10009;
+
+    /**
      * returned in case of directory specific request ( like list ) on existing not a directory path
      * or pnfsid,
      */

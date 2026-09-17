@@ -16,6 +16,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.security.AccessController;
+import java.security.Principal;
 import java.security.PrivilegedAction;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -28,9 +29,13 @@ import java.util.Set;
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
+import javax.servlet.http.HttpSession;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
 import org.dcache.auth.BearerTokenCredential;
 import org.dcache.auth.DesiredRole;
 import org.dcache.auth.LoginNamePrincipal;
@@ -39,6 +44,7 @@ import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.Origin;
 import org.dcache.auth.PasswordCredential;
 import org.dcache.auth.Subjects;
+import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
@@ -75,6 +81,7 @@ public class AuthenticationHandler extends HandlerWrapper {
     private boolean _isSpnegoAuthenticationEnabled;
     private LoginStrategy _loginStrategy;
     private boolean _acceptBearerTokenUnencrypted;
+    private Set<String> _anonymousAccessiblePaths = Set.of();
 
     private CertificateFactory _cf = CertificateFactories.newX509CertificateFactory();
 
@@ -97,7 +104,7 @@ public class AuthenticationHandler extends HandlerWrapper {
      */
     public static Subject getX509Identity(HttpServletRequest request)
           throws CacheException {
-        Subject dCacheUser = Subject.getSubject(AccessController.getContext());
+        Subject dCacheUser = Subject.current();
         if (dCacheUser != null && Subjects.getDn(dCacheUser) != null) {
             return dCacheUser;
         }
@@ -129,6 +136,84 @@ public class AuthenticationHandler extends HandlerWrapper {
     public void handle(String target, Request baseRequest, HttpServletRequest request,
           HttpServletResponse servletResponse)
           throws IOException, ServletException {
+
+        HttpSession session = request.getSession(false);
+        LOG.debug("URI=" + request.getRequestURI());
+        LOG.debug("COOKIE=" + request.getHeader("Cookie"));
+        LOG.debug("AUTH=" + request.getHeader("Authorization"));
+
+        LOG.debug("SESSION=" + (session == null ? "null" : session.getId()));
+
+        //TODO: we should not be handling authentication here, but rather in a filter, and then
+        // just checking for the presence of an authenticated subject here, and if not, then
+        // just processing the request as an unauthenticated request, and then allowing
+        // the login strategy to determine whether the request is allowed or NOT,
+        // and then returning an appropriate response. BUT we should addapt dcache-view that
+        // is why now we are testing like that
+        if (session == null) {
+
+            LOG.debug("No session found for request to {} from {}", request.getRequestURI(),
+                  request.getRemoteAddr());
+            LOG.debug("COOKIE=" + request.getHeader("Cookie"));
+
+            //TODO this should be handled by a filter, and should not be an error,
+            // but rather just a request that is not authenticated.
+            // For now, we will just return an error, but eventually we want
+            // to allow unauthenticated requests to be processed as well.
+            // something to this similar
+            // servletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "No session found");
+            // baseRequest.setHandled(true);
+            // return;
+            // or
+            // return Response.status(Response.Status.UNAUTHORIZED).build();
+        } else {
+            LOG.error("Session found for request to {} from {}: {}", request.getRequestURI(),
+                  request.getRemoteAddr(), session.getId());
+            Object obj = session.getAttribute("subject");
+            if (obj == null) {
+                LOG.warn("No subject found in session: sessionId={}", session.getId());
+                return;
+            }
+
+            if (!(obj instanceof Subject)) {
+                LOG.warn("Unexpected type in session: sessionId={}, type={}",
+                      session.getId(), obj.getClass().getName());
+                return;
+            }
+
+            Subject subjectFromSession = (Subject) obj;
+
+            for (Principal principal : subjectFromSession.getPrincipals()) {
+                if (principal instanceof UidPrincipal) {
+                    LOG.debug("Found UID principal -> IN AUTH " + principal.getName());
+                }
+            }
+
+            request.setAttribute(DCACHE_SUBJECT_ATTRIBUTE, session.getAttribute("subject"));
+            request.setAttribute(DCACHE_RESTRICTION_ATTRIBUTE, session.getAttribute("restriction"));
+            request.setAttribute(DCACHE_LOGIN_ATTRIBUTES, session.getAttribute("attributes"));
+            request.setAttribute(AUTH_HANDLER_ATTRIBUTE, this);
+            /* Process the request as the authenticated user.*/
+            AuthHandlerResponse response = new AuthHandlerResponse(servletResponse, request);
+
+            Exception problem = Subject.doAs(subjectFromSession,
+                  (PrivilegedAction<Exception>) () -> {
+                      try {
+                          AuthenticationHandler.super.handle(target, baseRequest, request,
+                                response);
+                      } catch (IOException | ServletException e) {
+                          return e;
+                      }
+                      return null;
+                  });
+            if (problem != null) {
+                Throwables.throwIfInstanceOf(problem, IOException.class);
+                Throwables.throwIfInstanceOf(problem, ServletException.class);
+                throw new RuntimeException(problem);
+            }
+            return;
+
+        }
         if (isStarted() && !baseRequest.isHandled()) {
             AuthHandlerResponse response = new AuthHandlerResponse(servletResponse, request);
             try {
@@ -140,14 +225,29 @@ public class AuthenticationHandler extends HandlerWrapper {
                 addQueryBearerTokenToSubject(request, suppliedIdentity);
                 addDesiredRolesToSubject(request, suppliedIdentity);
 
-                LoginReply login = _loginStrategy.login(suppliedIdentity);
-                Subject authnIdentity = login.getSubject();
-                Restriction restriction = Restrictions.concat(_doorRestriction,
-                      login.getRestriction());
+                Subject authnIdentity;
+                Restriction restriction;
+                Set<LoginAttribute> loginAttributes;
+                try {
+                    LoginReply login = _loginStrategy.login(suppliedIdentity);
+                    authnIdentity = login.getSubject();
+                    restriction = Restrictions.concat(_doorRestriction, login.getRestriction());
+                    loginAttributes = login.getLoginAttributes();
+                } catch (PermissionDeniedCacheException e) {
+                    if (!isAnonymousAccessiblePath(request)) {
+                        throw e;
+                    }
+                    LOG.debug("Anonymous login rejected for exempt path {} from {}; "
+                          + "continuing as nobody", request.getRequestURI(),
+                          request.getRemoteAddr());
+                    authnIdentity = Subjects.NOBODY;
+                    restriction = _doorRestriction;
+                    loginAttributes = Set.of();
+                }
 
                 request.setAttribute(DCACHE_SUBJECT_ATTRIBUTE, authnIdentity);
                 request.setAttribute(DCACHE_RESTRICTION_ATTRIBUTE, restriction);
-                request.setAttribute(DCACHE_LOGIN_ATTRIBUTES, login.getLoginAttributes());
+                request.setAttribute(DCACHE_LOGIN_ATTRIBUTES, loginAttributes);
                 request.setAttribute(AUTH_HANDLER_ATTRIBUTE, this);
 
                 /* Process the request as the authenticated user.*/
@@ -356,6 +456,22 @@ public class AuthenticationHandler extends HandlerWrapper {
 
     public void setAcceptBearerTokenUnencrypted(boolean value) {
         _acceptBearerTokenUnencrypted = value;
+    }
+
+    /**
+     * Paths that must stay reachable even when the configured login strategy rejects
+     * anonymous access -- e.g. an OIDC callback endpoint, which is itself how a client
+     * with no prior credentials establishes them. A request to one of these paths that
+     * would otherwise be denied is instead let through as Subjects.NOBODY; the endpoint
+     * is responsible for performing its own authenticated login. Empty by default, which
+     * preserves the previous behaviour of rejecting every anonymous request equally.
+     */
+    public void setAnonymousAccessiblePaths(List<String> paths) {
+        _anonymousAccessiblePaths = Set.copyOf(paths);
+    }
+
+    private boolean isAnonymousAccessiblePath(HttpServletRequest request) {
+        return _anonymousAccessiblePaths.contains(request.getRequestURI());
     }
 
     private class AuthHandlerResponse extends HttpServletResponseWrapper {

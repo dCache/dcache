@@ -1,0 +1,35 @@
+<link rel="import" href="../../../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../../../bower_components/paper-button/paper-button.html">
+
+<dom-module id="login-button">
+    <template>
+        <style>
+            paper-button {
+                border: 1px solid white;
+                text-transform: initial;
+                font-size: 0.7em;
+            }
+        </style>
+        <paper-button on-tap="_login">log in</paper-button>
+    </template>
+    <script>
+        class LoginButton extends Polymer.Element
+        {
+            constructor()
+            {
+                super();
+            }
+            static get is()
+            {
+                return 'login-button';
+            }
+            _login()
+            {
+                this.dispatchEvent(
+                    new CustomEvent('dv-authentication-req-login', {bubbles: true, composed: true})
+                );
+            }
+        }
+        window.customElements.define(LoginButton.is, LoginButton);
+    </script>
+</dom-module>

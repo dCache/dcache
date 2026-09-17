@@ -1419,13 +1419,14 @@ public class PoolSelectionUnitV2
         }
     }
 
+    @Override
     public void createUnit(String name, boolean isNet, boolean isStore,
-          boolean isDcache, boolean isProtocol) {
+          boolean isDcache, boolean isProtocol, Optional<String> zone) {
         Unit unit = null;
         wlock();
         try {
             if (isNet) {
-                NetUnit net = new NetUnit(name);
+                NetUnit net = new NetUnit(name, zone);
                 _netHandler.add(net);
                 unit = net;
             } else if (isStore) {
@@ -2815,7 +2816,10 @@ public class PoolSelectionUnitV2
               args.hasOption("net"),
               args.hasOption("store"),
               args.hasOption("dcache"),
-              args.hasOption("protocol"));
+              args.hasOption("protocol"),
+                (args.getOption("zone") == null)
+                        ? Optional.empty()
+                        : Optional.of(args.getOption("zone")));
         return "";
     }
 

@@ -4,10 +4,6 @@
         <class>org.dcache.gplazma.plugins.VoRoleMapPlugin</class>
     </plugin>
     <plugin>
-        <name>gridmap</name>
-        <class>org.dcache.gplazma.plugins.GridMapFilePlugin</class>
-    </plugin>
-    <plugin>
         <name>authzdb</name>
         <class>org.dcache.gplazma.plugins.AuthzDbPlugin</class>
     </plugin>

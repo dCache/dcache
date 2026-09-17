@@ -91,6 +91,7 @@ public class LineBasedDoorFactory extends StreamEngineLoginCellFactory {
 
     @Override
     protected void doStop() {
+        //TODO we need to be deleted when kafka code will be deleted
         factory.destroy();
         poolManagerHandler.beforeStop();
         executor.shutdown();

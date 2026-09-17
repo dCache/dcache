@@ -38,6 +38,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
+import org.dcache.pool.FaultAction;
+import org.dcache.pool.FaultEvent;
+import org.dcache.pool.FaultListener;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.Repository;
@@ -47,7 +50,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ChecksumScanner
-      implements CellCommandListener, CellLifeCycleAware, CellSetupProvider, CellInfoProvider {
+      implements CellCommandListener, CellLifeCycleAware, CellSetupProvider, CellInfoProvider, FaultListener {
 
     private static final Logger LOGGER =
           LoggerFactory.getLogger(ChecksumScanner.class);
@@ -93,6 +96,7 @@ public class ChecksumScanner
 
     public void setRepository(Repository repository) {
         _repository = repository;
+        _repository.addFaultListener(this);
     }
 
     public void setChecksumModule(ChecksumModuleV1 csm) {
@@ -105,6 +109,17 @@ public class ChecksumScanner
 
     public void setPoolName(String poolName) {
         this.poolName = poolName;
+    }
+
+    @Override
+    public void faultOccurred(FaultEvent event) {
+        // If the fault is not a log-only event, stop the scrubber to avoid
+        // further stressing the underlying storage. The scrubber will be restarted
+        // when the pool recovers.
+        if (event.getAction() != FaultAction.LOG && _scrubber.isActive()) {
+            LOGGER.warn("Scrubber is stopping due to repository fault event: {}", event.getMessage());
+            stopScrubber();
+        }
     }
 
     private class FullScan extends Singleton {

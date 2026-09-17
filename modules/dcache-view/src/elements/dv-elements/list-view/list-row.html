@@ -1,0 +1,380 @@
+<link rel="import" href="../../../bower_components/polymer/polymer-element.html">
+
+<link rel="import" href="../../../bower_components/file-icon/file-icon.html">
+<dom-module id="list-row">
+    <template>
+        <style>
+            :host {
+                display: block;
+                font-size: 0.7em;
+            }
+            :host([x-selected]) {
+                background-color: #2196F3 !important;
+                color: #fff !important;
+            }
+            :host([x-selected]) .row {
+                border-bottom: 1px solid #2196F3;
+            }
+            :host([in-drop-zone]) {
+                background-color: #c7e4fc !important;
+                color: #333 !important;
+            }
+            :host([in-drop-zone]) .row {
+                border-bottom: 1px solid #e5e5e5;
+            }
+            :host([is-dragging]) {
+                background-color: #6ab8f7 !important;
+                color: #fff !important;
+            }
+            :host([is-dragging]) .row {
+                border-bottom: 1px solid #6ab8f7;
+            }
+            .row {
+                width: 100%;
+                max-width: 100%;
+                height: 40px;
+                border-bottom: 1px solid #e5e5e5;
+                text-decoration: none;
+                display: flex;
+                align-items: center;
+            }
+            .file-icon {
+                padding-left: 15px;
+                padding-right: 10px;
+                width: 50px;
+                max-width: 50px;
+                min-width: 50px;
+            }
+            .file-icon[selected] {
+                fill: white !important;
+            }
+            #fileName {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                padding-left:5px;
+            }
+            #nameContainer {
+                align-items: center;
+                padding-right: 24px;
+            }
+            .cell {
+                box-sizing: border-box;
+            }
+            @-webkit-keyframes blinker {
+                from {opacity: 1.0;}
+                to {opacity: 0.0;}
+            }
+            #qos-transition-icon {
+                width: 14px;
+                height: 14px;
+                text-decoration: blink;
+                -webkit-animation-name: blinker;
+                -webkit-animation-duration: 0.6s;
+                -webkit-animation-iteration-count:infinite;
+                -webkit-animation-timing-function:ease-in-out;
+                -webkit-animation-direction: alternate;
+            }
+
+            @media only screen and (min-width: 960px) {
+                /* larger screen: */
+                .name {
+                    flex: 1 1 auto;
+                    max-width: calc(100% - 410px);
+                }
+                .mode {
+                    width: 12ex;
+                    max-width: 12ex;
+                    min-width: 12ex;
+                }
+                .ctime, .qos {
+                    width: 150px;
+                    max-width: 150px;
+                    min-width: 150px;
+                }
+                .size {
+                    width: 60px;
+                    max-width: 60px;
+                    min-width: 60px;
+                    text-align: right;
+                }
+                .size > span {
+                    padding-right: 10px;
+                }
+            }
+            @media only screen and (max-width: 960px) {
+                /* smaller screen: */
+                .name {
+                    flex: 1 1 auto;
+                    max-width: calc(100% - 50px);
+                }
+                .mode, .ctime, .qos, .size {
+                    display: none;
+                }
+            }
+            .none {
+                display: none;
+            }
+        </style>
+        <div id="row" class="row">
+            <file-icon class="cell file-icon"
+                       mime-type="[[fileMetaData.fileMimeType]]"
+                       selected$="[[xSelected]]"></file-icon>
+            <div class="cell name">
+                <div id="nameContainer">
+                    <span id="fileName">[[fileMetaData.fileName]]</span>
+                    <div id="rename" class="none"></div>
+                </div>
+            </div>
+            <div class="cell mode">[[fileMode]]</div>
+            <div class="cell ctime">[[creationTime]]</div>
+            <div class="cell qos">
+                <iron-icon id="qos-transition-icon" class="none" icon="arrow-forward"></iron-icon>
+                <i>[[qosValue]]</i></div>
+            <div class="cell size" id="hovering">
+                <span>[[formattedSize]]</span>
+            </div>
+        </div>
+    </template>
+    <script>
+        class ListRow extends DcacheViewMixins.Commons(Polymer.Element)
+        {
+            static get is()
+            {
+                return 'list-row';
+            }
+
+            static get properties()
+            {
+                return {
+                    fileMetaData: {
+                        type: Object,
+                        notify: true
+                    },
+                    creationTime: {
+                        type: String,
+                        computed:'_formattedDateTime(fileMetaData.creationTime)'
+                    },
+                    formattedSize: {
+                        type: String,
+                        computed:'_computeSize(fileMetaData)'
+                    },
+                    parentPath: {
+                        type: String,
+                        notify: true
+                    },
+                    filePath: {
+                        type: String,
+                        computed:'_computeFilePath(parentPath, fileMetaData.fileName)'
+                    },
+                    fileMode: {
+                        type: String,
+                        computed:'_computeFileMode(fileMetaData.mode, fileMetaData.fileType)'
+                    },
+                    qosValue: {
+                        type: String,
+                        notify: true
+                    },
+                    counter: {
+                        type: Number,
+                        value: 0,
+                        notify: true
+                    },
+                    xSelected: {
+                        type: Boolean,
+                        notify: true,
+                        reflectToAttribute: true
+                    },
+                    inDropZone: {
+                        type: Boolean,
+                        notify: true,
+                        reflectToAttribute: true
+                    },
+                    isDragging: {
+                        type: Boolean,
+                        notify: true,
+                        reflectToAttribute: true
+                    },
+                    manualRenameEnabled: {
+                        type: Boolean,
+                        value: false,
+                        notify: true
+                    }
+                }
+            }
+
+            static get observers()
+            {
+                return [
+                    '_fileCurrentQOSValue(fileMetaData.currentQos)'
+                ];
+            }
+
+            connectedCallback()
+            {
+                super.connectedCallback();
+                this.$.row.addEventListener('dblclick', ()=>{this._openFileLoc()});
+                this.$.row.addEventListener('contextmenu', (e)=>{this._openContextMenu(e)});
+
+                this.addEventListener('drop', (e)=>{this._drop(e)});
+                this.addEventListener('dragenter', (e)=>{this._dragenter(e)});
+                this.addEventListener('dragleave', (e)=>{this._dragleave(e)});
+                this.addEventListener('dragstart', (e)=>{this._dragstart(e)});
+            }
+
+            disconnectedCallback()
+            {
+                super.disconnectedCallback();
+                this.$.row.removeEventListener('dblclick', ()=>{this._openFileLoc()});
+                this.$.row.removeEventListener('contextmenu', (e)=>{this._openContextMenu(e)});
+
+                this.removeEventListener('drop', (e)=>{this._drop(e)});
+                this.removeEventListener('dragenter', (e)=>{this._dragenter(e)});
+                this.removeEventListener('dragleave', (e)=>{this._dragleave(e)});
+                this.removeEventListener('dragstart', (e)=>{this._dragstart(e)});
+            }
+
+            _drop(event)
+            {
+                event.stopPropagation();
+                event.preventDefault();
+                if (this.fileMetaData.fileType === 'DIR'
+                    && (this.xSelected === undefined || this.xSelected === false)) {
+                    this.counter = 0;
+                    this.dispatchEvent(new CustomEvent('dv-namespace-drop', {
+                        detail: {file: this, evt: event, filePath: this.filePath}, bubbles: true, composed: true
+                    }));
+                }
+            }
+
+            _dragenter(event)
+            {
+                event.stopPropagation();
+                event.preventDefault();
+                if (this.fileMetaData.fileType === "DIR"
+                    && (this.xSelected === undefined || this.xSelected === false)) {
+                    this.counter++;
+                    this.setAttribute('in-drop-zone', true);
+                    this.dispatchEvent(new CustomEvent('dv-namespace-dragenter', {
+                        detail: {file: this, evt: event}, bubbles: true, composed: true
+                    }));
+                }
+            }
+
+            _dragleave(event)
+            {
+                event.stopPropagation();
+                event.preventDefault();
+                if (this.fileMetaData.fileType === "DIR"
+                    && (this.xSelected === undefined || this.xSelected === false)) {
+                    this.counter--;
+                    if (this.counter === 0) {
+                        this.removeAttribute('in-drop-zone');
+                        this.dispatchEvent(new CustomEvent('dv-namespace-dragleave', {
+                            detail: {}, bubbles: true, composed: true
+                        }));
+                    }
+                }
+            }
+
+            _dragstart(event)
+            {
+                this.dispatchEvent(new CustomEvent('dv-namespace-dragstart', {
+                    detail: {file: this, evt: event}, bubbles: true, composed: true}));
+            }
+
+            _computeFilePath(parentPath, fileName)
+            {
+                return parentPath.endsWith("/") ?
+                    `${parentPath}${fileName}`: `${parentPath}/${fileName}`;
+            }
+
+            _computeFileMode(mode, type)
+            {
+                return this.convertToUnixPermissions(mode, type);
+            }
+
+            _fileCurrentQOSValue(qos)
+            {
+
+                if (qos && qos.constructor === Array) {
+                    this.qosValue = qos[0];
+                    this.$['qos-transition-icon'].classList.remove("none");
+                    return;
+                }
+                this.$['qos-transition-icon'].classList.add("none");
+                switch (qos) {
+                    case "disk":
+                        this.qosValue = "Disk";
+                        break;
+                    case "tape":
+                        this.qosValue = "Tape";
+                        break;
+                    case "disk+tape":
+                        this.qosValue = "Disk & Tape";
+                        break;
+                    case "volatile":
+                        this.qosValue = "Volatile";
+                        break;
+                    default:
+                        this.qosValue = "unavailable";
+                }
+            }
+
+            _formattedDateTime(dateTimeValue)
+            {
+                const x = new Date(dateTimeValue);
+                return x.toLocaleString();
+            }
+
+            _computeSize(file)
+            {
+                if (file.fileType === "DIR") return "--";
+                return this.convertBytesToNearestBinaryPrefix(file.size)
+            }
+
+            _openFileLoc()
+            {
+                this.dispatchEvent(
+                    new CustomEvent('dv-namespace-open-file', {
+                        detail: {file: this}, bubbles: true, composed: true}));
+            }
+
+            _openContextMenu(event)
+            {
+                event.preventDefault();
+                event.stopPropagation();
+                /**
+                 * A WORKAROUND for firefox
+                 * TODO: When firefox support web components fully, revisit.
+                 */
+                this.dispatchEvent(new MouseEvent('contextmenu', {
+                    view: window,
+                    bubbles: true,
+                    composed: true,
+                    cancelable: true,
+                    clientX: event.clientX,
+                    clientY: event.clientY
+                }));
+            }
+            manualRenameStart(file, auth)
+            {
+                const input = new RenameInput(file, auth);
+                this.$["fileName"].classList.add("none");
+                this.$["rename"].classList.remove("none");
+                this.$["rename"].appendChild(input);
+                this.manualRenameEnabled = true;
+            }
+            manualRenameEnd()
+            {
+                if (this.manualRenameEnabled) {
+                    this.$["fileName"].classList.remove("none");
+                    this.$["rename"].classList.add("none");
+                    this.removeAllChildren(this.$["rename"]);
+                    this.manualRenameEnabled = false
+                }
+            }
+        }
+        window.customElements.define(ListRow.is, ListRow);
+    </script>
+</dom-module>

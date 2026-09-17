@@ -14,6 +14,7 @@ import java.io.StringReader;
 import java.util.Optional;
 import java.util.Properties;
 import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.imps.CuratorFrameworkBase;
 import org.apache.curator.framework.listen.Listenable;
 import org.dcache.util.configuration.ConfigurationProperties;
 import org.junit.Before;
@@ -49,7 +50,7 @@ public class DomainConfigurationTest {
     private final static SystemCell system;
 
     static {
-        CuratorFramework mockCurator = Mockito.mock(CuratorFramework.class);
+        CuratorFramework mockCurator = Mockito.mock(CuratorFrameworkBase.class);
         Mockito.when(mockCurator.getConnectionStateListenable())
               .thenReturn(Mockito.mock(Listenable.class));
         Mockito.when(mockCurator.getCuratorListenable())

@@ -77,4 +77,9 @@ public interface CellInfoService {
      * @return JSON object containing cell data corresponding to {@link dmg.cells.nucleus.CellInfo}.
      */
     CellData getCellData(String address);
+
+    /**
+     * @return unix time stamp of when the Cell Info was last updated.
+     */
+    long lastUpdated();
 }

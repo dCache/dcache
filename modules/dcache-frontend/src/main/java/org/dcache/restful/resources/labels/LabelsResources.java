@@ -52,6 +52,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import org.dcache.cells.CellStub;
 import org.dcache.http.PathMapper;
 import org.dcache.namespace.FileAttribute;
@@ -60,6 +61,7 @@ import org.dcache.restful.providers.JsonFileAttributes;
 import org.dcache.restful.providers.JsonListLabels;
 import org.dcache.restful.util.HttpServletRequests;
 import org.dcache.restful.util.RequestUser;
+import org.dcache.restful.util.Responses;
 import org.dcache.restful.util.namespace.NamespaceUtils;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryStream;
@@ -114,7 +116,7 @@ public class LabelsResources {
             @ApiResponse(code = 500, message = "Internal Server Error"),
     })
     @Produces(MediaType.APPLICATION_JSON)
-    public JsonListLabels getListLabels(
+    public Response getListLabels(
             @ApiParam("Limit number of replies in labels listing.")
             @QueryParam("limit") String limit,
             @ApiParam("Number of entries to skip in labels listing.")
@@ -173,7 +175,7 @@ public class LabelsResources {
             LOGGER.warn(Exceptions.meaningfulMessage(ex));
             throw new InternalServerErrorException(ex);
         }
-        return labels;
+        return Responses.buildResponse(labels);
     }
 
     @GET
@@ -188,7 +190,7 @@ public class LabelsResources {
     })
     @Path("{path : .*}")
     @Produces(MediaType.APPLICATION_JSON)
-    public JsonFileAttributes getFileAttributes(@ApiParam("Path of file or directory.")
+    public Response getFileAttributes(@ApiParam("Path of file or directory.")
     @PathParam("path") String requestPath,
           @ApiParam("Whether to include directory listing.")
           @DefaultValue("false")
@@ -282,6 +284,6 @@ public class LabelsResources {
             LOGGER.warn(Exceptions.meaningfulMessage(ex));
             throw new InternalServerErrorException(ex);
         }
-        return fileAttributes;
+        return Responses.buildResponse(fileAttributes);
     }
 }

@@ -47,7 +47,6 @@ This part is intended for people who are new to dCache. It gives an introduction
 1. [How to work with secured dCache](intouch.md#how-to-work-with-secured-dcache)
 
     - [**GSIdCap**](intouch.md#gsidcap)
-    - [**SRM**](intouch.md#srm)
     - [**WebDAV** with certificates](intouch.md#webdav-with-certificates)
 
 1. [Files](intouch.md#files)

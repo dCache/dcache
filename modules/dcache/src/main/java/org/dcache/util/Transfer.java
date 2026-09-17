@@ -68,6 +68,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.OptionalLong;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -144,6 +145,8 @@ public class Transfer implements Comparable<Transfer> {
     private boolean _isWrite;
     private List<InetSocketAddress> _clientAddresses;
     private String _ioQueue;
+
+    private Optional<String> _zone = Optional.empty();
 
     private Set<String> _tried;
 
@@ -459,6 +462,14 @@ public class Transfer implements Comparable<Transfer> {
         return _pool;
     }
 
+    public synchronized void setZone(Optional<String> zone) {
+        _zone = zone;
+    }
+
+    public synchronized Optional<String> getZone() {
+        return _zone;
+    }
+
     /**
      * Clear selected pool and enforce re-selection during retry procedure in {@link
      * #selectPoolAndStartMoverAsync(TransferRetryPolicy)}.
@@ -605,6 +616,11 @@ public class Transfer implements Comparable<Transfer> {
     public synchronized String getDomainName() {
         checkState(_cellAddress != null);
         return _cellAddress.getCellDomainName();
+    }
+
+    private synchronized String getMessageEventSource() {
+        return _cellAddress == null ? "<unknown>" :
+              _cellAddress.getCellName() + "@" + _cellAddress.getCellDomainName();
     }
 
     /**
@@ -810,7 +826,7 @@ public class Transfer implements Comparable<Transfer> {
         request.setUpdateAtime(true);
 
         MessageEvent nameSpaceReadEvent = new MessageEvent();
-        nameSpaceReadEvent.source = getCellName() + "@" + getDomainName();
+        nameSpaceReadEvent.source = getMessageEventSource();
         nameSpaceReadEvent.destination = "PnfsManager";
         nameSpaceReadEvent.message = PnfsGetFileAttributes.class.getSimpleName();
         nameSpaceReadEvent.begin();
@@ -985,7 +1001,7 @@ public class Transfer implements Comparable<Transfer> {
 
         // init JFR event
         MessageEvent poolSelectEvent = new MessageEvent();
-        poolSelectEvent.source = getCellName() + "@" + getDomainName();
+        poolSelectEvent.source = getMessageEventSource();
         poolSelectEvent.destination = "PoolManager";
         poolSelectEvent.message = isWrite() ? PoolMgrSelectReadPoolMsg.class.getSimpleName() : PoolMgrSelectWritePoolMsg.class.getSimpleName();
         poolSelectEvent.begin();
@@ -1007,6 +1023,7 @@ public class Transfer implements Comparable<Transfer> {
             request.setTransferPath(getTransferPath());
             request.setIoQueueName(getIoQueue());
             request.setExcludedHosts(_tried);
+            request.setZone(_zone);
 
             reply = _poolManager.sendAsync(request, timeout);
         } else {
@@ -1035,6 +1052,7 @@ public class Transfer implements Comparable<Transfer> {
             request.setTransferPath(getTransferPath());
             request.setIoQueueName(getIoQueue());
             request.setExcludedHosts(_tried);
+            request.setZone(_zone);
 
             reply = Futures.transform(_poolManager.sendAsync(request, timeout),
                   (PoolMgrSelectReadPoolMsg msg) -> {
@@ -1089,7 +1107,7 @@ public class Transfer implements Comparable<Transfer> {
 
         // init JFR event
         MessageEvent moverStartEvent = new MessageEvent();
-        moverStartEvent.source = getCellName() + "@" + getDomainName();
+        moverStartEvent.source = getMessageEventSource();
         moverStartEvent.destination = pool.getName();
         moverStartEvent.message = message.getClass().getSimpleName();
         moverStartEvent.begin();
@@ -1156,7 +1174,7 @@ public class Transfer implements Comparable<Transfer> {
 
             // init JFR event
             var killMoverEvent = new MessageEvent();
-            killMoverEvent.source = getCellName() + "@" + getDomainName();
+            killMoverEvent.source = getMessageEventSource();
             killMoverEvent.destination = pool.getName();
             killMoverEvent.message = message.getClass().getSimpleName();
 

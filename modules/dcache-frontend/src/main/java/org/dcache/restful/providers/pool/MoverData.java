@@ -60,6 +60,7 @@ documents or software obtained from this server.
 package org.dcache.restful.providers.pool;
 
 import java.io.Serializable;
+import org.dcache.pool.movers.json.MoverData.UserData;
 
 /**
  * <p>A frontend wrapper for the pool-side object</p>
@@ -69,6 +70,7 @@ public class MoverData
 
     private static final long serialVersionUID = 8037942643623452040L;
     private String pnfsId;
+    private String clientIp;
     private String queue;
     private String mode;
     private String door;
@@ -80,12 +82,14 @@ public class MoverData
     private Long submitTime;
     private Long lastModified;
     private Integer moverId;
+    private UserData userData;
 
     public MoverData() {
     }
 
     public MoverData(org.dcache.pool.movers.json.MoverData moverData) {
         pnfsId = moverData.getPnfsId();
+        clientIp = moverData.getClientIp();
         queue = moverData.getQueue();
         mode = moverData.getMode();
         door = moverData.getDoor();
@@ -97,6 +101,8 @@ public class MoverData
         submitTime = moverData.getSubmitTime();
         lastModified = moverData.getLastModified();
         moverId = moverData.getMoverId();
+        userData = moverData.getUserData();
+
     }
 
     public Long getBytes() {
@@ -123,6 +129,10 @@ public class MoverData
         return pnfsId;
     }
 
+    public String getClientIp() {
+        return clientIp;
+    }
+
     public String getQueue() {
         return queue;
     }
@@ -145,6 +155,10 @@ public class MoverData
 
     public Long getTimeInMilliseconds() {
         return timeInMilliseconds;
+    }
+
+    public UserData getUserData() {
+        return userData;
     }
 
     public void setBytes(Long bytes) {
@@ -193,5 +207,9 @@ public class MoverData
 
     public void setTimeInMilliseconds(Long timeInMilliseconds) {
         this.timeInMilliseconds = timeInMilliseconds;
+    }
+
+    public void setUserData(UserData userData) {
+        this.userData = userData;
     }
 }

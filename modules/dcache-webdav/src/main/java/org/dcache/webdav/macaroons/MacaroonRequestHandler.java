@@ -386,6 +386,6 @@ public class MacaroonRequestHandler extends AbstractHandler implements CellIdent
     }
 
     private Subject getSubject() {
-        return Subject.getSubject(AccessController.getContext());
+        return Subject.current();
     }
 }

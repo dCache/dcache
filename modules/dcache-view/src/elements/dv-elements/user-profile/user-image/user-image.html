@@ -1,0 +1,45 @@
+<link rel="import" href="../../../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../../../bower_components/paper-spinner/paper-spinner.html">
+<link rel="import" href="../gravatar-request/gravatar-request.html">
+<link rel="import" href="../identicon-request/identicon-request.html">
+
+<dom-module id="user-image">
+    <template>
+        <style>
+            :host {
+                --user-image-border-radius: 0;
+                --user-image-width: 60px;
+                --user-image-height: 60px;
+            }
+            .container{
+                width: 100%;
+                height: 100%;
+                display: flex;
+                justify-content: center;
+
+            }
+            paper-spinner {
+                margin:auto;
+                width: 20px;
+                height: 20px;
+            }
+            .hide {
+                display: none !important;
+            }
+            img {
+                border-radius: var(--user-image-border-radius);
+                width: var(--user-image-width);
+                height: var(--user-image-height);
+            }
+        </style>
+        <div class="container">
+            <gravatar-request id="gravatar"
+                              size="[[size]]"
+                              on-gravatar-request-error="_gravatarResponseListener"
+                              on-gravatar-request-successful="_gravatarResponseListener"></gravatar-request>
+            <img id="avatar">
+            <paper-spinner id="spinner" active="[[loading]]"></paper-spinner>
+        </div>
+    </template>
+    <script src="user-image.js"></script>
+</dom-module>

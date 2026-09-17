@@ -62,7 +62,6 @@ import io.netty.handler.timeout.IdleStateEvent;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.http.HttpHeaders;
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.StandardOpenOption;
@@ -81,6 +80,7 @@ import org.dcache.pool.repository.OutOfDiskException;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Checksums;
+import org.dcache.util.HttpExtHeader;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -94,7 +94,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
           LoggerFactory.getLogger(HttpPoolRequestHandler.class);
 
     public static final String REFERRER_QUERY_PARAM = "dcache-http-ref";
-    private static final String DIGEST = "Digest";
+    private static String _digest = HttpExtHeader.DIGEST;
 
     private static final String RANGE_SEPARATOR = "-";
     private static final String RANGE_PRE_TOTAL = "/";
@@ -136,6 +136,8 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
 
     private Optional<ChecksumType> _wantedDigest;
 
+    private Checksums.RfcType _rfcType;
+
     /**
      * A simple data class to encapsulate the errors to return by the mover to the pool for file
      * uploads and downloads, should transfers be aborted.
@@ -163,11 +165,23 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
         _useZeroCopy = useZeroCopy;
     }
 
+    @Override
+    protected void resetRequestState() {
+        _writeChannel = null;
+        _wantedDigest = Optional.empty();
+        _rfcType = Checksums.RfcType.RFC3230;
+        _digest = HttpExtHeader.DIGEST;
+    }
+
     private static Optional<String> wantDigest(HttpRequest request) {
-        List<String> wantDigests = request.headers().getAll("Want-Digest");
-        return wantDigests.isEmpty()
+        List<String> wantDigests = request.headers().getAll(HttpExtHeader.WANT_DIGEST);
+        List<String> wantReprDigests = request.headers().getAll(HttpExtHeader.WANT_REPR_DIGEST);
+        List<String> digests = (wantReprDigests != null && ! wantReprDigests.isEmpty())
+                ? wantReprDigests : wantDigests;
+
+        return digests.isEmpty()
               ? Optional.empty()
-              : Optional.of(wantDigests.stream()
+              : Optional.of(digests.stream()
                     .filter(s -> !s.isEmpty())
                     .collect(Collectors.joining(",")));
     }
@@ -385,6 +399,15 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
         return true;
     }
 
+    private void setRfcType(HttpRequest request) {
+        List<String> wantReprDigest = request.headers().getAll(HttpExtHeader.WANT_REPR_DIGEST);
+        if (!wantReprDigest.isEmpty()) _rfcType = Checksums.RfcType.RFC9530;
+    }
+
+    private void setDigest() {
+        _digest = (_rfcType.equals(Checksums.RfcType.RFC9530)) ? HttpExtHeader.REPR_DIGEST : HttpExtHeader.DIGEST;
+    }
+
     /**
      * Single GET operation.
      * <p>
@@ -394,6 +417,8 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
     @Override
     protected ChannelFuture doOnGet(ChannelHandlerContext context,
           HttpRequest request) {
+        setRfcType(request);
+        setDigest();
         NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file;
         List<HttpByteRange> ranges;
         long fileSize;
@@ -425,9 +450,8 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
             return context.writeAndFlush(
                   createErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage()));
         }
-
         Optional<String> digest = wantDigest(request)
-              .flatMap(h -> Checksums.digestHeader(h, file.getFileAttributes()));
+              .flatMap(h -> Checksums.digestHeader(h, file.getFileAttributes(), _rfcType));
 
         String closeHeader = request.headers().get(CONNECTION);
         boolean stopMover = closeHeader != null && closeHeader.equalsIgnoreCase("close");
@@ -504,6 +528,8 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
 
     @Override
     protected ChannelFuture doOnPut(ChannelHandlerContext context, HttpRequest request) {
+        setRfcType(request);
+        setDigest();
         NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file = null;
         Exception exception = null;
 
@@ -600,7 +626,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
                             try {
                                 Optional<String> digest = _wantedDigest
                                       .flatMap(t -> Checksums.digestHeader(t,
-                                            writeChannel.getFileAttributes()));
+                                            writeChannel.getFileAttributes(), _rfcType));
                                 var response = new HttpPutResponse(size, location, digest);
                                 if (writeChannel.getFileAttributes().isDefined(FileAttribute.MODIFICATION_TIME)) {
                                     response.headers().set("X-OC-MTime", "accepted");
@@ -659,7 +685,8 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
 
     @Override
     protected ChannelFuture doOnHead(ChannelHandlerContext context, HttpRequest request) {
-
+        setRfcType(request);
+        setDigest();
         if (isBadRequest(request)) {
             return context.newSucceededFuture();
         }
@@ -668,7 +695,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
             NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file = open(request, false);
 
             Optional<String> digest = wantDigest(request)
-                  .flatMap(h -> Checksums.digestHeader(h, file.getFileAttributes()));
+                  .flatMap(h -> Checksums.digestHeader(h, file.getFileAttributes(), _rfcType));
             context.write(new HttpGetResponse(file.size(), file, digest))
                   .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
             return context.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
@@ -834,7 +861,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
             HttpProtocolInfo protocolInfo = file.getProtocolInfo();
             headers().add(ACCEPT_RANGES, BYTES);
             headers().add(CONTENT_LENGTH, fileSize);
-            digest.ifPresent(v -> headers().add(DIGEST, v));
+            digest.ifPresent(v -> headers().add(_digest, v));
             headers().add("Content-Disposition",
                   contentDisposition(protocolInfo.getDisposition(),
                         FsPath.create(protocolInfo.getPath()).name()));
@@ -858,7 +885,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
             headers().add(ACCEPT_RANGES, BYTES);
             headers().add(CONTENT_LENGTH, String.valueOf((upper - lower) + 1));
             headers().add(CONTENT_RANGE, contentRange);
-            digest.ifPresent(v -> headers().add(DIGEST, v));
+            digest.ifPresent(v -> headers().add(_digest, v));
         }
     }
 
@@ -869,7 +896,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
             headers().add(ACCEPT_RANGES, BYTES);
             headers().add(CONTENT_LENGTH, totalBytes);
             headers().add(CONTENT_TYPE, MULTIPART_TYPE);
-            digest.ifPresent(v -> headers().add(DIGEST, v));
+            digest.ifPresent(v -> headers().add(_digest, v));
         }
     }
 
@@ -899,7 +926,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
                 headers().set(LOCATION, location);
             }
 
-            digest.ifPresent(v -> headers().add(DIGEST, v));
+            digest.ifPresent(v -> headers().add(_digest, v));
         }
     }
 

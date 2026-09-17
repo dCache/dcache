@@ -245,6 +245,13 @@ public class BillingInfoServiceImpl
 
     private final Map<String, HistogramModel> cachedData = new ConcurrentHashMap<>();
 
+    private volatile long lastUpdated;
+
+    @Override
+    public long getLastUpdated() {
+        return lastUpdated;
+    }
+
     @Override
     public Histogram getHistogram(String key)
           throws CacheException {
@@ -382,6 +389,7 @@ public class BillingInfoServiceImpl
          * insertion into map does not need synchronization.
          */
         waitForRequests(futures);
+        lastUpdated = System.currentTimeMillis();
     }
 
     private PagedList<DoorTransferRecord> getDoorTransfers(Type type,

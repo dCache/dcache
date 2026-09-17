@@ -79,9 +79,7 @@ support.
 | [missing-files](config-missing-files.md)                | A component designed to react to requests to retrieve missing files.      |
  |[pool](cookbook-pool.md)                      | Data storage (cookbook)    |
 | [pnfsmanager](config-PnfsManager.md)                   | Manages the pnfs file system (hierarchy), pnfs database, meta-data.    |
-| [srmmanager](config-SRM.md)                      | Storage Resource Manager (SRM) back-end. Provides dynamic space allocation and file management on shared storage components on the Grid.     |
-| [srm](config-SRM.md)                   | Front-end to SRM. Provides a client entry point to the SRM sub-system (see above). |
-| [spacemanager](config-SRM.md)                        |  A component of SRM responsible for dynamic space allocation. and management.  |
+| [spacemanager](config-spacemanager.md)                        |  Manages dynamic space allocation and space reservations.  |
 | [zookeeper](config-zookeeper.md)                    |  A distributed directory and coordination service that dCache relies on.|
 | [gplazma](config-gplazma.md)                      | Authentication and authorization interface to limit access to data. |
 | [dCap](cookbook-dCap.md)                  | Supports all necessary file metadata and namespace manipulation. operations     |
@@ -127,16 +125,16 @@ Most cells communicate in such a way that they don't rely on in which domain the
 
 ## Protocols Supported by dCache
 
-|                              |dCap  |FTP   |xrootd|NFSv4.1| WebDAV | SRM |
-|:----------------------------:|:----:|:----:|:----:|:-----:|:------:|:---:|
-|                              | +    | +    | +    | +     | +      | -   |
-| kerberos                     | +    | +    | -    | +     | -      | -   |
-| Client Certificate           | +    | +    | +    | -     | +      | +   |
-| username/password            | +    | +    | -    | -     | +      | -   |
-| Control Connection Encrypted | +    | +    | +    | +     | +      | +   |
-| Data Connection Encrypted    | -    | -    | -    | +     | +      | +   |
-| passive                      | +    | +    | +    | +     | +      | -   |
-| active                       | +    | +    | -    | -     | -      | -   |
+|                              |dCap  |FTP   |xrootd|NFSv4.1| WebDAV |
+|:----------------------------:|:----:|:----:|:----:|:-----:|:------:|
+|                              | +    | +    | +    | +     | +      |
+| kerberos                     | +    | +    | -    | +     | -      |
+| Client Certificate           | +    | +    | +    | -     | +      |
+| username/password            | +    | +    | -    | -     | +      |
+| Control Connection Encrypted | +    | +    | +    | +     | +      |
+| Data Connection Encrypted    | -    | -    | -    | +     | +      |
+| passive                      | +    | +    | +    | +     | +      |
+| active                       | +    | +    | -    | -     | -      |
 
 
 The next chapter  describes the installation of  dCache instance [Installation](install.md)

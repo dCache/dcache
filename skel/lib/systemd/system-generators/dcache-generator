@@ -42,6 +42,23 @@ for domain in $(getProperty dcache.domains); do
 	SuccessExitStatus=143
 	ProtectSystem=full
 	ProtectHome=true
+	PrivateTmp=yes
+	ProtectClock=yes
+	ProtectControlGroups=yes
+	ProtectHostname=yes
+	ProtectKernelLogs=yes
+	ProtectKernelModules=yes
+	ProtectKernelTunables=yes
+	ProtectProc=invisible
+	RemoveIPC=yes
+	RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+	RestrictNamespaces=yes
+	RestrictRealtime=yes
+	SystemCallArchitectures=native
+	UMask=0027
+	KeyringMode=private
+	LockPersonality=yes
+	MemoryDenyWriteExecute=no
 	NoNewPrivileges=true
 	SyslogIdentifier=dcache@$domain
 	Environment="CLASSPATH=$CLASSPATH" "LD_LIBRARY_PATH=$JAVA_LIBRARY_PATH"

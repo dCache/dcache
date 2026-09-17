@@ -1,0 +1,97 @@
+<link rel="import" href="../../../../../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../../../../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../../../../../bower_components/paper-icon-button/paper-icon-button.html">
+<dom-module id="add-macaroon-form">
+    <template>
+        <style>
+            :host {
+                display: flex;
+                flex-direction: column;
+                margin-top: -8px !important;
+                margin-bottom: 0 !important;
+                padding: 0 !important;
+            }
+            .header {
+                display: flex;
+                align-items: center;
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+            .main-title {
+                flex: 1 1 auto;
+                font-size: 14px;
+                line-height: 4;
+            }
+            .content {
+                margin: auto;
+                padding: 10px;
+                width: 500px;
+            }
+            .textarea-container {
+                border: 1px solid #bdbdbd;
+                width: 500px;
+                height: 60px;
+                box-sizing: border-box;
+                border-radius: 4px;
+                padding: 2px;
+                transition: border-color 1s;
+            }
+            .textarea-container-error {
+                border-color: #ff3620;
+            }
+            textarea {
+                width: 99%;
+                height: 90%;
+                overflow-y: auto;
+                border: none;
+                resize: none;
+                outline: none;
+            }
+            textarea :focus{
+                outline: none;
+            }
+            .button {
+                display: flex;
+                justify-content: flex-end;
+                padding: 10px;
+            }
+            paper-button {
+                text-transform: capitalize;
+                height: 30px;
+                margin: 0;
+            }
+            paper-button + paper-button {
+                margin-left: 10px;
+            }
+            .add {
+                background: #3284e1;
+                color: #fff;
+            }
+            paper-icon-button {
+                padding: 0;
+                width: 20px;
+                height: 20px;
+            }
+            paper-icon-button + paper-icon-button {
+                margin-left: 10px;
+            }
+        </style>
+        <div class="header">
+            <div class="main-title"><b>Add a Shared File</b></div>
+            <paper-icon-button icon="content-paste" title="paste" on-tap="_paste"></paper-icon-button>
+            <paper-icon-button icon="delete-forever" title="clear textarea" on-tap="_delete"></paper-icon-button>
+            <paper-icon-button icon="close" title="cancel" dialog-dismiss></paper-icon-button>
+        </div>
+        <div class="content">
+            <div class="textarea-container" id="macaroon-textarea-container">
+                <textarea id="macaroon-textarea" contenteditable="true"
+                          placeholder="Paste the macaroon here ..."></textarea>
+            </div>
+        </div>
+        <div class="button">
+            <paper-button dialog-dismiss>Cancel</paper-button>
+            <paper-button class="add" on-tap="_add">Add</paper-button>
+        </div>
+    </template>
+    <script src="add-macaroon-form.js"></script>
+</dom-module>

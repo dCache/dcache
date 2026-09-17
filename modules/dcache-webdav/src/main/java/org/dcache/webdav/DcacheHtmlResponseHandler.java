@@ -166,7 +166,7 @@ public class DcacheHtmlResponseHandler extends AbstractWrappingResponseHandler {
         template.add("config", _templateConfig);
         template.add("query", ServletRequest.getRequest().getQueryString());
 
-        Subject subject = Subject.getSubject(AccessController.getContext());
+        Subject subject = Subject.current();
         if (subject != null) {
             template.add("subject", subject.getPrincipals().toString());
         }

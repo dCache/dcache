@@ -57,10 +57,6 @@ dCache Book
 
         - [spacemanager service](config-spacemanager.md)
 
-        - [srm service](config-SRM.md)
-
-        - [srmmanager service](config-srmmanager.md)
-
         - [statistics service](config-statistics.md)
 
         - [telemetry service](config-telemetry.md)
@@ -93,7 +89,7 @@ dCache Book
 
         - [Stage Protection](config-stage-protection.md)
 
-        - [Using Space Reservations without SRM](config-write-token.md)
+        - [Using Space Reservations](config-write-token.md)
 
         - [Storage Descriptor / SRR](srr.md)
 

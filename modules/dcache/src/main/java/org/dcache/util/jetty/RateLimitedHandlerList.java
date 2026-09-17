@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2025 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2025 - 2026 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -25,6 +25,9 @@ import com.google.common.util.concurrent.RateLimiter;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
+import java.time.Instant;
+import java.util.concurrent.ThreadLocalRandom;
+import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
@@ -71,11 +74,6 @@ public class RateLimitedHandlerList extends HandlerCollection implements CellCom
     private int maxErrorsPerClient;
 
     /**
-     * An object used as a value when client is blocked.
-     */
-    private final Object BLOCK = new Object();
-
-    /**
      * Calculated per-client rate limit based on the global rate limit and factor.
      */
     private double perClientRate;
@@ -93,13 +91,27 @@ public class RateLimitedHandlerList extends HandlerCollection implements CellCom
     /**
      * Cache mapping client identifiers to a blocking marker object for temporarily blocked clients.
      */
-    private final Cache<String, Object> blockedClients;
+    private final Cache<String, Instant> blockedClients;
 
     /**
      * Cache mapping client identifiers to their respective error counters.
      */
     private final Cache<String, AtomicInteger> perClientErrorCount;
 
+
+    /**
+     * Duration after which an idle client's rate limiter is removed;
+     */
+    private final Duration clientIdleTime;
+
+    /**
+     * Duration for which a client is blocked after exceeding error threshold
+     */
+    private final Duration clientBlockingTime;
+
+    /**
+     * helper class to configure rate limiter.
+     */
     public static class Configuration {
         private int maxClientsToTrack;
         private long maxGlobalRequestsPerSecond;
@@ -187,6 +199,9 @@ public class RateLimitedHandlerList extends HandlerCollection implements CellCom
                                   Duration clientBlockingTime,
                                   Duration errorAcceptanceWindow) {
 
+        this.clientIdleTime = clientIdleTime;
+        this.clientBlockingTime = clientBlockingTime;
+
         perClientRates = CacheBuilder.newBuilder()
                 .initialCapacity(CLIENT_IP_CACHE_INITIAL_CAPACITY)
                 .maximumSize(maxClientsToTrack)
@@ -215,10 +230,11 @@ public class RateLimitedHandlerList extends HandlerCollection implements CellCom
 
         String client = getClientIp(request);
 
-        boolean blocked = blockedClients.getIfPresent(client) != null;
-        if (blocked) {
+        var blockedAt = blockedClients.getIfPresent(client);
+        if (blockedAt != null) {
             LOGGER.debug("Blocking client with too many auth errors {}", client);
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS_429);
+            response.addIntHeader(HttpHeader.RETRY_AFTER.asString(), (int)clientBlockingTime.minus(Duration.between(blockedAt, Instant.now())).getSeconds());
             response.getWriter().write("Server is busy. Please try again later.");
             baseRequest.setHandled(true);
             return;
@@ -227,6 +243,7 @@ public class RateLimitedHandlerList extends HandlerCollection implements CellCom
         if (!getClientRateLimiter(client).tryAcquire()) {
             LOGGER.debug("Blocking client with too many requests {}", client);
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS_429);
+            response.addIntHeader(HttpHeader.RETRY_AFTER.asString(), ThreadLocalRandom.current().nextInt(1, (int)clientIdleTime.toSeconds()));
             response.getWriter().write("Server is busy. Please try again later.");
             baseRequest.setHandled(true);
             return;
@@ -235,6 +252,7 @@ public class RateLimitedHandlerList extends HandlerCollection implements CellCom
         if (!globalRateLimiter.tryAcquire()) {
             LOGGER.debug("Blocking client due to globally too many requests {}", client);
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS_429);
+            response.addIntHeader(HttpHeader.RETRY_AFTER.asString(), ThreadLocalRandom.current().nextInt(1, (int)clientIdleTime.toSeconds()));
             response.getWriter().write("Server is busy. Please try again later.");
             baseRequest.setHandled(true);
             return;
@@ -250,7 +268,7 @@ public class RateLimitedHandlerList extends HandlerCollection implements CellCom
                         int errors = getClientErrorRateLimiter(client).incrementAndGet();
                         if (errors >= maxErrorsPerClient) {
                             LOGGER.warn("Blocking client due to too many auth errors: {}", client);
-                            blockedClients.put(client, BLOCK);
+                            blockedClients.put(client, Instant.now());
                             // as client blocked, no reason to keep track of further errors
                             perClientErrorCount.invalidate(client);
                             perClientRates.invalidate(client);

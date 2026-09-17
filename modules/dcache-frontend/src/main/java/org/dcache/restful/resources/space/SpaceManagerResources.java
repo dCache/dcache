@@ -79,6 +79,7 @@ import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import java.time.Duration;
 import java.util.Comparator;
+
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -100,6 +101,7 @@ import org.dcache.cells.CellStub;
 import org.dcache.restful.providers.space.LinkGroupInfo;
 import org.dcache.restful.providers.space.SpaceToken;
 import org.dcache.restful.util.RequestUser;
+import org.dcache.restful.util.Responses;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -134,7 +136,7 @@ public final class SpaceManagerResources {
     })
     @Path("/linkgroups")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<LinkGroupInfo> getLinkGroups(@ApiParam(value = "The name of the link group.")
+    public Response getLinkGroups(@ApiParam(value = "The name of the link group.")
     @QueryParam("name") String name,
           @ApiParam(value = "The id of the link group.")
           @QueryParam("id") Long id,
@@ -173,12 +175,13 @@ public final class SpaceManagerResources {
             GetLinkGroupsMessage reply
                   = spacemanagerStub.sendAndWait(new GetLinkGroupsMessage());
 
-            return reply.getLinkGroups()
+            List<LinkGroupInfo> result = reply.getLinkGroups()
                   .stream()
                   .sorted(Comparator.comparing(LinkGroup::getName))
                   .filter(filter)
                   .map(LinkGroupInfo::new)
                   .collect(Collectors.toList());
+            return Responses.buildResponse(result);
         } catch (CacheException | InterruptedException | NoRouteToCellException ex) {
             LOGGER.warn(Exceptions.meaningfulMessage(ex));
             throw new InternalServerErrorException(ex);
@@ -194,7 +197,7 @@ public final class SpaceManagerResources {
     })
     @Path("/tokens")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<SpaceToken> getTokensForGroup(@ApiParam(value = "The id of the space token.")
+    public Response getTokensForGroup(@ApiParam(value = "The id of the space token.")
     @QueryParam("id") Long id,
           @ApiParam(value = "VO group associated with the token.")
           @QueryParam("voGroup") String voGroup,
@@ -230,12 +233,13 @@ public final class SpaceManagerResources {
             GetSpaceTokensMessage reply
                   = spacemanagerStub.sendAndWait(new GetSpaceTokensMessage());
 
-            return reply.getSpaceTokenSet()
+            List<SpaceToken> result = reply.getSpaceTokenSet()
                   .stream()
                   .sorted(Comparator.comparing(Space::getId))
                   .filter(filter)
                   .map(SpaceToken::new)
                   .collect(Collectors.toList());
+            return Responses.buildResponse(result);
         } catch (CacheException | InterruptedException | NoRouteToCellException ex) {
             LOGGER.warn(Exceptions.meaningfulMessage(ex));
             throw new InternalServerErrorException(ex);

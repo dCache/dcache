@@ -3,15 +3,19 @@ th
   font-weight: normal;
 }
 
-th.active, th.max, th.queued
+th.active, th.max
 {
-  background: #FFA27F;
-  color: #3C3633;
+  background: #0099FF;
+}
+
+th.queued
+{
+  background: #00bbFF;
 }
 
 td.idle
 {
-  color: #3C3633;
+  color: #008080;
 }
 
 td.queued
@@ -21,6 +25,6 @@ td.queued
 
 tr.total th, tr.total td
 {
-  background: #FFE8C5;
-  color: #3C3633;
+  background: #0000FF;
+  color: white;
 }

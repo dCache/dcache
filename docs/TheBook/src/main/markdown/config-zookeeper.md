@@ -82,6 +82,34 @@ The individual dCache instances can then be pointed to the corresponding root ZN
         cluster-box1:2181,cluster-box2:2182,cluster-box3:2181/instance1
 
 
+### Enabling TLS for Zookeeper connection
+
+dCache supports TLS-encrypted connections between the Curator client and ZooKeeper using TLSv1.3. TLS is not supported with the embedded ZooKeeper cell. Use an external ZooKeeper installation instead.
+
+dCache uses the same PEM credentials already used by other services (HTTP, xrootd, broker channel): `hostcert.pem`, `hostkey.pem`, and the CA certificate directory under `/etc/grid-security/`. Deployments that already have grid security configured do not need any additional certificate setup.
+
+Refer to the [ZooKeeper TLS documentation](https://zookeeper.apache.org/doc/current/zookeeperAdmin.html#Quorum+TLS) for configuring the server side. ZooKeeper supports PEM files directly via the `ssl.keyStore.type = PEM` option.
+
+On the dCache side, enable TLS in `dcache.conf` or the layout file:
+
+```ini
+dcache.zookeeper.tls.enabled = true
+```
+
+The PEM file paths default to the standard grid-security locations. Override them only if the ZooKeeper client should use different files:
+
+```ini
+dcache.zookeeper.tls.key = /path/to/hostkey.pem
+dcache.zookeeper.tls.cert = /path/to/hostcert.pem
+dcache.zookeeper.tls.capath = /etc/grid-security/certificates
+```
+
+Also update `dcache.zookeeper.connection` to point to the ZooKeeper TLS port:
+
+```ini
+dcache.zookeeper.connection = <zookeeper-host>:<tls-port>
+```
+
 ## Inspecting ZooKeeper through dCache
 
 Every `System` cell offers two new commands, `zk ls` and `zk get` to list and read the data stored in ZooKeeper. Since all domains use the same ZooKeeper instance, the behavior of these commands is the same in all domains. ZooKeeper data is organized hierarchically. An element is called a _znode_ and may have children as well as a value. The namespace is organized like a POSIX file system, with slash as a name separator. E.g. `zk ls /` lists the children under the root znode.

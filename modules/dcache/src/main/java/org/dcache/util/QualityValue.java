@@ -25,11 +25,15 @@ import java.util.regex.Pattern;
  * A quality value (qvalue) string as defined in RFC 7231.  A ranking of possible values with an
  * associated desirability ("quality") between 0.0 and 1.0, with 1.0 indicating most desired, 0.001
  * indicating least acceptable, and 0 indicating not acceptable.
+ * RFC-9530 Headers will have a quality from 0 to 10 (integers but here represented as doubles e.g. 3.0).
+ * Where 0 is unwanted and increasing integer values represent higher priorities.
  */
 public class QualityValue<T> implements Comparable<QualityValue> {
 
     private static final Pattern QVALUE_PATTERN = Pattern.compile(
           ";[ \\t]*[Qq]=((?:1(?:\\.0{0,3})?)|(?:0(?:.[0-9]{0,3})?))$");
+
+    private static final Pattern QVALUE_RFC9530_PATTERN = Pattern.compile("=(\\d+)$");
 
     private final String rawValue;
     private final T convertedValue;
@@ -53,11 +57,17 @@ public class QualityValue<T> implements Comparable<QualityValue> {
      * @param conversion a method that converts the qvalue to the desired type.
      */
     public QualityValue(String value, Function<String, T> conversion) {
-        Matcher m = QVALUE_PATTERN.matcher(value);
-        if (m.find()) {
-            rawValue = value.substring(0, m.start());
-            quality = Double.parseDouble(m.group(1));
-        } else {
+        Matcher m3230 = QVALUE_PATTERN.matcher(value);
+        Matcher m9530 = QVALUE_RFC9530_PATTERN.matcher(value);
+        if (m3230.find()) {
+            rawValue = value.substring(0, m3230.start());
+            quality = Double.parseDouble(m3230.group(1));
+        }
+        else if (m9530.find()) {
+            rawValue = value.substring(0, m9530.start());
+            quality = Double.parseDouble(m9530.group(1));
+        }
+        else {
             rawValue = value;
             quality = 1;
         }
@@ -85,7 +95,7 @@ public class QualityValue<T> implements Comparable<QualityValue> {
     /**
      * The desirability (or quality) of this qvalue.
      *
-     * @return a value between 0.0 (inclusive) and 1.0 (inclusive).
+     * @return a value between 0.0 (inclusive) and 1.0 (inclusive) or infinity if RFC 9530 was used.
      */
     public double quality() {
         return quality;

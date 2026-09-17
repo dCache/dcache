@@ -159,7 +159,7 @@ public class DcacheResource
     }
 
     @Override
-    public LockResult refreshLock(String token) {
+    public LockResult refreshLock(String token, LockTimeout timeout) {
         return LockResult.success(createNullLock());
     }
 

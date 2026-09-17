@@ -127,16 +127,6 @@ Individual services:
      - [Explicit and implicit space reservations for data storage in dCache](config-spacemanager.md#explicit-and-implicit-space-reservations-for-data-storage-in-dcache)
      - [Spacemanager configuration](config-spacemanager.md#spacemanager-configuration)
 
-- [dCache Storage Resource Manager](config-SRM.md)
-     - [Configuring the srm service](config-SRM.md#configuring-the-srm-service)
-     - [Utilization of Space Reservations for Data Storage](config-SRM.md#utilization-of-space-reservations-for-data-storage)
-     - [Configuring the PostgreSQL Database](config-SRM.md#configuring-the-postgresql-database)
-     - [General SRM Concepts (for developers)](config-SRM.md#general-srm-concepts-for-developers)
-
-- [dCache SRM Manager Service](config-srmmanager.md)
-     - [Configuring the srm manager service](config-srmmanager.md#configuring-the-srm-manager-service)
-     - [Tape recall scheduling](config-srmmanager.md#tape-recall-scheduling)
-
 - [The Statistics Service](config-statistics.md)
      - [The Basic Setup](config-statistics.md#the-basic-setup)
      - [The Statistics Web Page](config-statistics.md#the-statistics-web-page)
@@ -219,7 +209,7 @@ Overarching concepts:
    - [Configuration of Stage Protection](config-stage-protection.md#configuration-of-stage-protection)
    - [Definition of the White List](config-stage-protection.md#definition-of-the-white-list)
 
-- [Using Space Reservations without SRM](config-write-token.md)
+- [Using Space Reservations](config-write-token.md)
     - [The Space Reservation](config-write-token.md#the-space-reservation)
     - [The WriteToken tag](config-write-token.md#the-writetoken-tag)
     - [Copy a File into the WriteToken](config-write-token.md#copy-a-file-into-the-writetoken)

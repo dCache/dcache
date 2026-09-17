@@ -76,7 +76,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.security.AccessController;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.util.EnumSet;
@@ -369,7 +368,7 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware {
      * Also turns Unix principals into Uid and Gid principals.
      */
     private static Subject getSubjectFromContext() {
-        return Subjects.fromUnixNumericSubject(Subject.getSubject(AccessController.getContext()));
+        return Subjects.fromUnixNumericSubject(Subject.current());
     }
 
     private String getRequestId(Subject subject) throws PermissionDeniedCacheException {

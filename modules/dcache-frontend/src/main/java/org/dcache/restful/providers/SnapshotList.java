@@ -95,7 +95,7 @@ public class SnapshotList<T extends InvalidatableItem & Serializable>
     private UUID currentToken;
 
     @ApiModelProperty("Timestamp in unix-time when snapshot was created.")
-    private long timeOfCreation = 0L;
+    private volatile long timeOfCreation = 0L;
 
     public int getCurrentOffset() {
         return currentOffset;

@@ -1,0 +1,129 @@
+<link rel="import" href="../../../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../../../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../user-image/user-image.html">
+<dom-module id="user-profile-dropdown">
+    <template>
+        <style>
+            .dropdown {
+                float: right;
+                position: relative;
+                display: inline-block;
+            }
+            .dropbtn {
+                cursor: pointer;
+                display: flex;
+            }
+            .dropdown-content {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: auto;
+                right: 0;
+                z-index: 100;
+                width: 180px;
+                margin-top: 8px;
+                padding-top: 5px;
+                padding-bottom: 5px;
+                list-style: none;
+                background-color: #fff;
+                background-clip: padding-box;
+                border: 1px solid rgba(27,31,35,0.15);
+                border-radius: 4px;
+                box-shadow: 0 3px 12px rgba(27,31,35,0.15);
+            }
+            .dropdown-content::before {
+                top: -16px;
+                right: 9px;
+                left: auto;
+                border: 8px solid transparent;
+                border-bottom-color: rgba(27,31,35,0.15);
+            }
+            .dropdown-content::after {
+                top: -14px;
+                right: 10px;
+                left: auto;
+                border: 7px solid transparent;
+                border-bottom-color: #fff;
+            }
+            .dropdown-content::before, .dropdown-content::after {
+                position: absolute;
+                display: inline-block;
+                content: "";
+            }
+            .dropdown-content > .item {
+                text-decoration: none;
+                display: block;
+                padding: 4px 10px 4px 15px;
+                overflow: hidden;
+                color: #24292e;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                box-sizing: border-box;
+            }
+            .dropdown-content .header {
+                display: flex;
+                flex-direction: column;
+                color: #24292e;
+                padding: 8px 16px;
+                font-size: 0.84em;
+            }
+            .header strong {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                vertical-align: top;
+                font-weight: 600;
+            }
+            .dropdown-content .selectable {
+                font-size: 0.78em;
+            }
+            .dropdown .selectable:hover {
+                background-color: #4696ec;
+                color: #fff;
+                cursor: pointer;
+            }
+            .show {
+                display: block;
+            }
+            user-image {
+                --user-image-border-radius: 5px;
+                --user-image-width: 20px;
+                --user-image-height: 20px;
+            }
+            .dropdown-content .dropdown-divider {
+                height: 1px;
+                margin: 8px 1px;
+                background-color: #e1e4e8;
+            }
+            iron-icon {
+                width: 15px;
+            }
+            small {
+                white-space: initial;
+                font-size: 0.68em;
+                color: #55aed5;
+            }
+        </style>
+        <div class="dropdown">
+            <div on-tap="_open" class="dropbtn">
+                <user-image name="[[username]]"
+                            email="[[email]]"
+                            request-gravatar="{{gravatarSwitch}}"></user-image>
+                <iron-icon icon="icons:arrow-drop-down"></iron-icon>
+            </div>
+            <div id="dropdownPanel" class="dropdown-content">
+                <div class="item header">
+                    <span>Logged in as</span>
+                    <strong>[[username]]</strong>
+                    <small>Using [[scheme]]</small>
+                </div>
+                <div class="dropdown-divider"></div>
+                <div class="item selectable" on-tap="_userProfile">Your profile</div>
+                <div class="item selectable" on-tap="_lsHome">Your home directory</div>
+                <div class="dropdown-divider"></div>
+                <div class="item selectable" on-tap="_loginout">[[state]]</div>
+            </div>
+        </div>
+    </template>
+    <script src="user-profile-dropdown.js"></script>
+</dom-module>

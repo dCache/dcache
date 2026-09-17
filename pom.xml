@@ -1,7 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.dcache</groupId>
-    <version>12.0.0-SNAPSHOT</version>
+    <version>12.1.0-SNAPSHOT</version>
     <artifactId>dcache-parent</artifactId>
     <packaging>pom</packaging>
 
@@ -56,23 +57,22 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>17</java.version>
+        <java.version>21</java.version>
         <argLine>--add-modules=java.security.jgss</argLine>
 
 
         <version.slf4j>1.7.32</version.slf4j>
-        <version.milton>2.7.3.0-dcache-1</version.milton>
+        <version.milton>3.1.1.488</version.milton>
         <version.spring>5.3.39</version.spring>
         <!-- Remember to sync aspectj version in dcache.properties -->
-        <version.aspectj>1.9.24</version.aspectj>
+        <version.aspectj>1.9.25.1</version.aspectj>
         <version.smc>7.6.0</version.smc>
         <version.xerces>2.12.0</version.xerces>
         <version.jetty>9.4.57.v20241219</version.jetty>
-        <version.xrootd4j>4.6.0</version.xrootd4j>
+        <version.xrootd4j>4.6.3</version.xrootd4j>
         <version.jersey>2.47</version.jersey>
-        <version.dcache-view>3.0.0</version.dcache-view>
         <version.dcache-view-admin>3.0.0</version.dcache-view-admin>
-        <version.netty>4.2.10.Final</version.netty>
+        <version.netty>4.2.16.Final</version.netty>
         <version.dcache>${project.version}</version.dcache>
         <version.swagger-ui>5.30.2</version.swagger-ui>
 
@@ -80,11 +80,11 @@
              when upgrading logback. -->
         <version.logback>1.2.13</version.logback>
         <version.logback.contrib>0.1.5</version.logback.contrib>
-        <version.jackson>2.18.6</version.jackson>
+        <version.jackson>2.18.8</version.jackson>
         <version.jna>5.18.1</version.jna>
         <jmh.version>1.35</jmh.version>
         <version.dropwizard>4.1.29</version.dropwizard>
-        <version.nfs4j>0.27.2</version.nfs4j>
+        <version.nfs4j>0.28.5</version.nfs4j>
 
 
 
@@ -102,6 +102,8 @@
         <asm.version>9.5</asm.version>
         <asm-tools.version>5.0.3</asm-tools.version>
         <jacoco.version>0.8.14</jacoco.version>
+
+        <opendj.version>5.1.2</opendj.version>
     </properties>
 
     <scm>
@@ -112,18 +114,20 @@
   </scm>
 
     <repositories>
+
+        <!-- ensure that maven central is used first -->
+        <repository>
+            <id>central</id>
+            <url>https://repo.maven.apache.org/maven2</url>
+            <releases><enabled>true</enabled></releases>
+            <snapshots><enabled>false</enabled></snapshots>
+        </repository>
+
         <repository>
             <id>dcache.repository</id>
-            <url>https://download.dcache.org/nexus/content/groups/public</url>
+            <url>https://download.dcache.org/nexus/content/repositories/releases</url>
         </repository>
     </repositories>
-
-    <pluginRepositories>
-        <pluginRepository>
-            <id>dcache.repository</id>
-            <url>https://download.dcache.org/nexus/content/groups/public</url>
-        </pluginRepository>
-    </pluginRepositories>
 
     <dependencyManagement>
         <dependencies>
@@ -241,7 +245,7 @@
             <dependency>
                 <groupId>eu.eu-emi.security</groupId>
                 <artifactId>canl</artifactId>
-                <version>2.8.3</version>
+                <version>2.9.0</version>
             </dependency>
             <dependency>
                 <groupId>org.italiangrid</groupId>
@@ -303,11 +307,6 @@
                 <version>1.0</version>
             </dependency>
             <dependency>
-                <groupId>org.jdom</groupId>
-                <artifactId>jdom</artifactId>
-                <version>1.1</version>
-            </dependency>
-            <dependency>
                 <groupId>com.zaxxer</groupId>
                 <artifactId>HikariCP</artifactId>
                 <version>5.0.1</version>
@@ -315,7 +314,7 @@
             <dependency>
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
-                <version>42.3.9</version>
+                <version>42.7.12</version>
             </dependency>
             <dependency>
                 <groupId>io.milton</groupId>
@@ -335,6 +334,11 @@
                         <artifactId>milton-mail-server</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.jdom</groupId>
+                <artifactId>jdom2</artifactId>
+                <version>2.0.6.1</version>
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
@@ -391,7 +395,7 @@
             <dependency>
                 <groupId>com.sleepycat</groupId>
                 <artifactId>je</artifactId>
-                <version>7.5.11</version>
+                <version>18.3.12</version>
             </dependency>
             <dependency>
                 <groupId>com.github.parboiled1</groupId>
@@ -647,12 +651,6 @@
             </dependency>
 
             <dependency>
-                <groupId>java.jndi</groupId>
-                <artifactId>nis</artifactId>
-                <version>1.2.1</version>
-            </dependency>
-
-            <dependency>
                 <groupId>org.json</groupId>
                 <artifactId>json</artifactId>
                 <version>20251224</version>
@@ -717,7 +715,7 @@
             <dependency>
                 <groupId>org.dcache</groupId>
                 <artifactId>dcache-view</artifactId>
-                <version>${version.dcache-view}</version>
+                <version>${project.version}</version>
             </dependency>
 
             <dependency>
@@ -770,11 +768,6 @@
                         <artifactId>jffi</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.dcache</groupId>
-                <artifactId>oncrpc4j-core</artifactId>
-                <version>3.4.2</version>
             </dependency>
         <dependency>
             <groupId>org.dcache</groupId>
@@ -834,11 +827,19 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+
             <dependency>
-                <groupId>org.dcache</groupId>
-                <artifactId>ldap4testing</artifactId>
-                <version>1.0</version>
+                <groupId>org.openidentityplatform.opendj</groupId>
+                <artifactId>opendj-core</artifactId>
+                <version>${opendj.version}</version>
             </dependency>
+
+            <dependency>
+                <groupId>org.openidentityplatform.opendj</groupId>
+                <artifactId>opendj-grizzly</artifactId>
+                <version>${opendj.version}</version>
+            </dependency>
+
             <!-- used by alarms, needs to be deployed -->
             <dependency>
                 <groupId>javax.mail</groupId>
@@ -1459,7 +1460,6 @@
         <module>modules/gplazma2-grid</module>
         <module>modules/gplazma2-krb5</module>
         <module>modules/gplazma2-jaas</module>
-        <module>modules/gplazma2-nis</module>
         <module>modules/gplazma2-nsswitch</module>
         <module>modules/gplazma2-banfile</module>
         <module>modules/gplazma2-voms</module>
@@ -1500,6 +1500,7 @@
         <module>docs</module>
         <module>packages</module>
         <module>archetypes</module>
+        <module>modules/dcache-view</module>
     </modules>
 
     <profiles>

@@ -49,10 +49,6 @@ certain directories so that any file written there will end up on
 tertiary storage.  This approach is available to all network protocols
 and only requires that you write to the correct directory.
 
-Another approach is to indicate that the file should end up on
-tertiary storage when uploading the file.  Currently only the SRM
-protocol supports this option.
-
 The final option is to write a file to dCache normally, using any
 supported protocol, and subsequently change the Quality of Service
 (QoS) for that file, indicating that the file should be stored on
@@ -98,7 +94,7 @@ before you are finished with it.
 It is very common to pin a file when staging its data back from
 tertiary storage.
 
-The SRM, Frontend, NFS and dcap protocols support prestaging a file
+The Frontend, NFS and dcap protocols support prestaging a file
 and then pinning the file.
 
 #### Staging without a pin
@@ -128,7 +124,8 @@ out of disk space: preventing it from receiving further files.
 Therefore, it is recommended to remove pins promptly when the file's
 data is no longer needed with online latency.
 
-Both the SRM, REST and NFS protocols allow a client to remove pins.
+Both the REST (Frontend) and NFS protocols allow a client to remove
+pins.
 
 ### File locality
 
@@ -163,9 +160,6 @@ still be cached in dCache's directly managed disk storage.  The file
 locality provides a way of discovering this information.
 
 #### Discovering file locality
-
-The SRM protocol supports the `srmLs` command, which returns (amongst
-other information) the file locality.
 
 The WebDAV protocol supports properties as key-value pairs describing
 a file or directory.  The `srm:FileLocality` property (where `srm` is

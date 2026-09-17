@@ -226,6 +226,7 @@ import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.cells.CellStub;
+import org.dcache.cells.ZoneAware;
 import org.dcache.ftp.TransferMode;
 import org.dcache.ftp.proxy.ActiveAdapter;
 import org.dcache.ftp.proxy.PassiveConnectionHandler;
@@ -348,7 +349,7 @@ class ClientAbortException extends FTPCommandException {
 
 public abstract class AbstractFtpDoorV1
       implements LineBasedInterpreter, CellMessageReceiver, CellCommandListener,
-      CellInfoProvider, CellMessageSender, CellIdentityAware {
+      CellInfoProvider, CellMessageSender, CellIdentityAware, ZoneAware {
 
     private static final long MINIMUM_PERFORMANCE_MARKER_PERIOD = 2;
     private static final long MAXIMUM_PERFORMANCE_MARKER_PERIOD = TimeUnit.MINUTES.toSeconds(5);
@@ -376,6 +377,8 @@ public abstract class AbstractFtpDoorV1
     private String _clientInfo;
     private boolean _logAbortedTransfers;
     private final List<TimerTask> _activeTimerTasks = synchronizedList(new ArrayList<>());
+
+    private Optional<String> _zone = Optional.empty();
 
     private enum WorkAround {
         /* If globus-url-copy is organising a third-party copy then it will
@@ -433,6 +436,14 @@ public abstract class AbstractFtpDoorV1
         REQUEST_MD5_WHEN_UPLOADING_FILES
     }
 
+    @Override
+    public void setZone(Optional<String> zone) {
+        _zone = zone;
+    }
+
+    public Optional<String> getZone() {
+        return _zone;
+    }
 
     /**
      * Simple class to allow easy accumulation of space usage.

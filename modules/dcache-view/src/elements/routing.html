@@ -1,0 +1,353 @@
+
+
+<script src="../bower_components/page/page.js"></script>
+
+<script>
+    window.addEventListener('WebComponentsReady', function() {
+
+        /**
+         * We use Page.js for routing. This is a Micro client-side router.
+         *  More info: https://visionmedia.github.io/page.js/
+         *
+         * WARNING: This application fully relying on this page,
+         * editing it will modified this application behaviour.
+         */
+
+        // Removes end / from app.baseUrl which page.base requires for production
+        if (window.location.port === '') {  // if production
+            page.base(app.baseUrl.replace(/\/$/, ''));
+        }
+
+        // Middleware
+        window.CONFIG.isSomebody = app.getAuthValue() !== "Basic YW5vbnltb3VzOm5vcGFzc3dvcmQ=";
+        window.CONFIG.isAdmin = sessionStorage.roles !== undefined &&
+            sessionStorage.roles.includes('admin');
+        app.config = window.CONFIG;
+        app.organisationName = window.CONFIG["dcache-view.org-name"];
+
+
+        // Routes
+        page('*', function(ctx, next) {
+            app.$.dvDrawerPanel.forceNarrow = false;
+            app.$.dvMainTopBar.style.display = '';
+            next();
+            window.dispatchEvent(new CustomEvent('dv-routing-changed',
+                {
+                    detail: { route: ctx }, bubbles: true, composed: true
+                }));
+            window.dispatchEvent(new CustomEvent('dv-role-validation',
+                { bubbles: true, composed: true }));
+        });
+
+        page('/', function() {
+            app.route = 'home';
+            app.params = "";
+
+            const currentVF = app.$["homedir"].querySelector('view-file');
+            if (!currentVF) {
+                const newVF = new ViewFile("/");
+                app.$["homedir"].appendChild(newVF);
+                newVF.__listDirectory();
+            }
+        });
+
+        page(app.baseUrl, function(e) {
+            page('/');
+        });
+
+        page('/user-login', function(ctx) {
+            app.removeAllChildren(app.$.loginSection);
+            app.$.loginSection.appendChild(new UserLoginPage(JSON.parse(`\{${ctx.querystring.substr(2)}\}`)));
+            app.$.dvDrawerPanel.forceNarrow = true;
+            app.$.dvMainTopBar.style.display = 'none';
+            app.route = 'user-login';
+            app.params = "";
+        });
+
+        page('/user-profile', function() {
+            if (!window.CONFIG.isSomebody) {
+                const a = '"page":"user-profile","path":""';
+                let pathName = '/user-login?r=' + encodeURIComponent(a);
+                page.redirect(pathName);
+                return;
+            }
+
+
+
+
+            let up = new UserProfile();
+            app.removeAllChildren(app.$.userProfileContainer);
+            app.$.userProfileContainer.appendChild(up);
+            app.route = 'user-profile';
+            app.params = "";
+        });
+
+      page('/virtual', function() {
+
+        if (!window.CONFIG.isSomebody) {
+
+          const a = '"page":"virtual","path":""';
+
+          let pathName = '/user-login?r=' + encodeURIComponent(a);
+
+          page.redirect(pathName);
+
+          return;
+
+        }
+        let vd = new ViewFileLabels();
+        app.removeAllChildren(app.$.virtualDirectoriesContainer);
+        app.$.virtualDirectoriesContainer.appendChild(vd);
+        app.route = 'virtual';
+        app.params = "";
+        vd.__listDirectoryLabel();
+      });
+
+        page('/shared-link', function (dt) {
+            app.route = 'shared-link';
+            if (dt.querystring) {
+                const arr = dt.querystring.split('&');
+                if (arr.length === 0 || !dt.querystring.includes("m=")) {
+                    page.redirect(app.baseUrl);
+                    window.dispatchEvent(new CustomEvent('dv-namespace-show-message-toast', {
+                        detail: {
+                            message: "Bad Request. The query parameter of the shareable link must contain the macaroon."
+                        }, bubbles: true,
+                        composed: true
+                    }));
+                    return;
+                }
+                const macaroon = arr.filter(function(el) {
+                    if(el.match('m') !== null) return true; })[0].split('=')[1];
+                app.$['selectedTitle']._shared();
+                window.dispatchEvent(new CustomEvent('dv-namespace-file-sharing-add-macaroon', {
+                    detail: {macaroon: macaroon}}));
+            }
+            page.redirect("/shared-files");
+        });
+
+        page('/shared-files', function () {
+            app.route = 'shared-files';
+            app.params = "";
+        });
+
+
+      // 404
+      page('*', function(dt) {
+
+        const url = window.location.href;
+
+       // Find the part after '?token='
+        const tokenIndex = url.indexOf('?token=');
+        let token = null;
+
+        //TODO this will be delete, for now the code still has a part with toke
+        //even though the token is not used, we will remove it in the future,
+        // but for now we want to make sure that if there is a token in the url,
+        // we can still get it and use it for authentication.
+        if (tokenIndex !== -1) {
+          // Everything after '?token='
+          token = url.substring(tokenIndex + 7);
+
+          // Optional: remove trailing hash or extra params if needed
+          const hashIndex = token.indexOf('#');
+          if (hashIndex !== -1) {
+            token = token.substring(0, hashIndex);
+          }
+
+          // Optional: decode URI components
+          token = decodeURIComponent(token);
+        }
+
+        console.log('Token:', token);
+
+        if (!url.includes("token")) {
+          console.log("CODE FLOW AUTH ")
+          const redirectInfoObj = JSON.parse(sessionStorage.getItem('redirect') || '{}');
+          //sessionStorage.removeItem('redirect');
+
+          const userAuth = new UserAuthentication(token);
+          console.log(
+              "SESSION check do we have the user name " + sessionStorage.getItem('username'));
+          console.log('user userAuth :' + userAuth);
+          userAuth.addEventListener('dv-user-authentication-successful', (e) => {
+            console.log('user credential before :');
+
+            const user = e.detail.credential;
+            console.log('user credential without a token :', user);
+
+            user['authType'] = 'Bearer';
+            window.dispatchEvent(new CustomEvent('dv-namespace-show-message-toast', {
+              detail: {message: e.detail.message}, bubbles: true, composed: true
+            }));
+            const knownRoutes = ['user-profile', 'virtual', 'shared-files'];
+            switch (redirectInfoObj.page) {
+              case "home":
+                page("/");
+                this.dispatchEvent(
+                    new CustomEvent('dv-namespace-ls-path', {
+                      detail: {path: redirectInfoObj.path}, bubbles: true, composed: true
+                    }));
+                break;
+              default:
+                page(knownRoutes.includes(redirectInfoObj.page) ? `/${redirectInfoObj.page}` : '/');
+                break;
+            }
+            window.dispatchEvent(new CustomEvent('dv-authentication-successful', {
+              detail: {
+                message: e.detail.message,
+                roles: e.detail.credential.roles === undefined ? "" : `${e.detail.credential.roles}`
+              }, bubbles: true, composed: true
+            }));
+          });
+          userAuth.addEventListener('dv-user-authentication-error', (e) => {
+            sessionStorage.removeItem('authType');
+            sessionStorage.removeItem('nonce');
+            const searchParams = `"page":"${redirectInfoObj.page}","path":"${redirectInfoObj.path}"`;
+            page(`/user-login?r=${encodeURIComponent(searchParams)}`);
+            this.dispatchEvent(new CustomEvent('dv-namespace-show-message-toast', {
+              detail: {message: e.detail.message}, bubbles: true, composed: true
+            }));
+          });
+          console.log("Bearer event has been send:");
+          userAuth.sendCodeFlow();
+          sessionStorage.removeItem('redirect');
+          return;
+        } else if (dt.pathname === "/#!/shared-link") {
+          page(`/shared-link?${dt.querystring}`);
+          return;
+        }
+
+        //TODO: this is for test only, we will remove it in the future,
+        // for now we want to make sure that if there is a token in the url, we can still
+        // get it and use it for authentication.
+        if (url.includes("token")) {
+          console.log('IMPLICIT FLOW AUTH with token:');
+          const redirectInfoObj = JSON.parse(sessionStorage.getItem('redirect') || '{}');
+          //sessionStorage.removeItem('redirect');
+          const userAuth = new UserAuthentication(token);
+          console.log("seesion" + sessionStorage.getItem('username'));
+          console.log('user userAuth with token :' + userAuth);
+
+          userAuth.addEventListener('dv-user-authentication-successful', (e)=>{
+            const user = e.detail.credential;
+            console.log('user credential with token :', user);
+
+            user['authType'] = 'Bearer';
+            user['upauth'] = token;
+            store(normaliseCredentialFormat(user));
+
+            window.dispatchEvent(new CustomEvent('dv-namespace-show-message-toast', {
+              detail: {message: e.detail.message}, bubbles: true, composed: true
+            }));
+            const knownRoutes = ['user-profile', 'virtual', 'shared-files'];
+            switch (redirectInfoObj.page) {
+              case "home":
+                page("/");
+                this.dispatchEvent(
+                    new CustomEvent('dv-namespace-ls-path', {
+                      detail: {path: redirectInfoObj.path}, bubbles: true, composed: true}));
+                break;
+              default:
+                page(knownRoutes.includes(redirectInfoObj.page) ? `/${redirectInfoObj.page}` : '/');
+                break;
+            }
+            window.dispatchEvent(new CustomEvent('dv-authentication-successful', {
+              detail: {
+                message: e.detail.message,
+                roles: e.detail.credential.roles === undefined ? "": `${e.detail.credential.roles}`
+              }, bubbles: true, composed: true
+            }));
+          });
+          userAuth.addEventListener('dv-user-authentication-error', (e) => {
+            sessionStorage.removeItem('authType');
+            sessionStorage.removeItem('nonce');
+            const searchParams = `"page":"${redirectInfoObj.page}","path":"${redirectInfoObj.path}"`;
+            page(`/user-login?r=${encodeURIComponent(searchParams)}`);
+            this.dispatchEvent(new CustomEvent('dv-namespace-show-message-toast', {
+              detail: {message: e.detail.message}, bubbles: true, composed: true}));
+          });
+
+          console.log("Bearer with token:");
+          userAuth.send("Bearer");
+          sessionStorage.removeItem('redirect');
+          return;
+        } else if (dt.pathname === "/#!/shared-link") {
+          page(`/shared-link?${dt.querystring}`);
+          return;
+        }
+
+        this.dispatchEvent(new CustomEvent('dv-namespace-show-message-toast', {
+          detail: {message: `Can't find: ${url}. Redirected you to Home Page`}, bubbles: true, composed: true}));
+        page.redirect(app.baseUrl);
+      });
+/*        page('*', function(dt) {
+            /!**
+             * Handle OpenID Connect Server Redirect
+             *!/
+            const url = window.location.href;
+            if (url.includes("access_token")) {
+                const accessToken = new URL(url).hash.split('&').filter(function(el) {
+                    if(el.match('access_token') !== null) return true; })[0].split('=')[1];
+                const redirectInfoObj = JSON.parse(sessionStorage.getItem('redirect'));
+                const userAuth = new UserAuthentication(accessToken);
+
+                userAuth.addEventListener('dv-user-authentication-successful', (e)=>{
+                    const user = e.detail.credential;
+                    user['authType'] = 'Bearer';
+                    user['upauth'] = accessToken;
+                    store(normaliseCredentialFormat(user));
+
+                    window.dispatchEvent(new CustomEvent('dv-namespace-show-message-toast', {
+                        detail: {message: e.detail.message}, bubbles: true, composed: true
+                    }));
+                    switch (redirectInfoObj.page) {
+                        case "home":
+                            page("/");
+                            this.dispatchEvent(
+                                new CustomEvent('dv-namespace-ls-path', {
+                                    detail: {path: redirectInfoObj.path}, bubbles: true, composed: true}));
+                            break;
+                        default:
+                            page(`/${redirectInfoObj.page}`);
+                            break;
+                    }
+                    window.dispatchEvent(new CustomEvent('dv-authentication-successful', {
+                        detail: {
+                            message: e.detail.message,
+                            roles: e.detail.credential.roles === undefined ? "": `${e.detail.credential.roles}`
+                        }, bubbles: true, composed: true
+                    }));
+                });
+                userAuth.addEventListener('dv-user-authentication-error', (e) => {
+                    sessionStorage.removeItem('authType');
+                    sessionStorage.removeItem('nonce');
+                    const searchParams = `"page":"${redirectInfoObj.page}","path":"${redirectInfoObj.path}"`;
+                    page(`/user-login?r=${encodeURIComponent(searchParams)}`);
+                    this.dispatchEvent(new CustomEvent('dv-namespace-show-message-toast', {
+                        detail: {message: e.detail.message}, bubbles: true, composed: true}));
+                });
+
+                userAuth.send("Bearer");
+                sessionStorage.removeItem('redirect');
+                return;
+            } else if (dt.pathname === "/#!/shared-link") {
+                page(`/shared-link?${dt.querystring}`);
+                return;
+            }
+
+            this.dispatchEvent(new CustomEvent('dv-namespace-show-message-toast', {
+                detail: {message: `Can't find: ${url}. Redirected you to Home Page`}, bubbles: true, composed: true}));
+            page.redirect(app.baseUrl);
+        });*/
+
+        // add #! before urls
+        page({
+            hashbang: true
+        });
+
+        page({
+            decodeURLComponents: true
+        });
+    });
+</script>

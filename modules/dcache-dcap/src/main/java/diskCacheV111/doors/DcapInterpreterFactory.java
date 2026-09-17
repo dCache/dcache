@@ -52,7 +52,7 @@ public class DcapInterpreterFactory implements LineBasedInterpreterFactory {
 
     @Override
     public void destroy() {
-        settings.destroy();
+        //ToDO nothing to do here, but the interface requires it
 
     }
 }

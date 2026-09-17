@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.dcache</groupId>
     <artifactId>dcache-parent</artifactId>
-    <version>12.0.0-SNAPSHOT</version>
+    <version>12.1.0-SNAPSHOT</version>
   </parent>
 
   <artifactId>packaging</artifactId>
@@ -152,11 +152,6 @@
     </dependency>
     <dependency>
         <groupId>org.dcache</groupId>
-        <artifactId>gplazma2-nis</artifactId>
-        <version>${project.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.dcache</groupId>
         <artifactId>gplazma2-voms</artifactId>
         <version>${project.version}</version>
     </dependency>
@@ -209,6 +204,7 @@
     <dependency>
         <groupId>org.dcache</groupId>
         <artifactId>dcache-view</artifactId>
+        <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.dcache</groupId>

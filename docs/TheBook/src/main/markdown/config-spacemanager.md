@@ -1,9 +1,8 @@
 CHAPTER 12. dCache SPACE MANAGER
 ===========================================
 
-The `spacemanager` is a component in dCache that manages space reservations, a concept that was
-first introduced in `SRM` version 2.2. Space reservation guarantees that the requested amount of
-storage space of a specified type is made available by the storage system for a specified amount of
+The `spacemanager` is a component in dCache that manages space reservations. Space reservation guarantees that the
+requested amount of storage space of a specified type is made available by the storage system for a specified amount of
 time.
 
 -----
@@ -12,7 +11,7 @@ time.
 
 ## Utilization of space reservations for data storage
 
-Users can create space reservations using an appropriate `SRM` client, although it is more common
+Users can create space reservations through the [dCache REST API](config-frontend.md), although it is more common
 for the dCache administrator to make space reservations for VOs (see the
 section [“SpaceManager configuration”](#spacemanager-configuration). Each space reservation has an
 associated ID (or space token). VOs then can copy directly into space tokens assigned to them by the
@@ -24,7 +23,7 @@ marked as allocated, so that it can not be taken by another, concurrently transf
 file is transferred successfully, the allocated space becomes used space within the space
 reservation, else the allocated space is released back to the space reservation as free space.
 
-`SRM` space reservation can be assigned a non-unique description which can be used to query the
+A space reservation can be assigned a non-unique description which can be used to query the
 system for space reservations with a given description.
 
 dCache only manages write space, i.e. space on disk can be reserved only for write operations. Once
@@ -38,7 +37,7 @@ A space reservation has a retention policy and an access latency.
 
 Retention policy describes the quality of the storage service that will be provided for the data (
 files) stored in the space reservation, and access latency describes the availability of this data.
-The `SRM` specification requires that if a space reservation is given on upload, then the specified
+dCache requires that if a space reservation is given on upload, then the specified
 retention policy and access latency must match those of the space reservation.
 
 The default values for the retention policy and access latency can be
@@ -95,7 +94,7 @@ dcache.default-access-latency=ONLINE
 
 ## Activating Spacemanager
 
-In order to enable the `SRM SpaceManager` you need to add the `spacemanager` service to your layout
+In order to enable the `spacemanager` service you need to add it to your layout
 file
 
 ```ini
@@ -110,7 +109,7 @@ the `poolmanager` service.
 
 ### Explicit Space Reservations
 
-Each SRM space reservation is made against the total available disk space of a particular link
+Each space reservation is made against the total available disk space of a particular link
 group. If dCache is configured correctly, each byte of disk space, that can be reserved, belongs to
 one and only one link group. See the
 section [“SpaceManager configuration”](#spacemanager-configuration) for a detailed description.
@@ -132,30 +131,35 @@ groups. Note however that a space reservation can never span more than a single 
 
 ### Implicit Space Reservations
 
-dCache can perform implicit space reservations for non-`SRM` transfers, `SRM` Version 1 transfers
-and for `SRM` Version 2.2 data transfers that are not given the space token explicitly. The
-parameter that enables this behavior is srm.enable.space-reservation.implicit, which is described in
-the section [“SRM configuration for experts”](#srm-configuration-for-experts). If no implicit space
-reservation can be made, the transfer will fail.
+By default, uploads that are not bound to a particular space reservation are only served by links
+that are not in any link group. Links within a link group can only be used for uploads into a space
+reservation, either by binding a space reservation to a directory through the `WriteToken` tag (see
+[Using Space Reservations](config-write-token.md)) or by uploading explicitly to a space
+reservation.
 
-Implicit space reservation means that the `srm` will create a space reservation for a single upload
-while negotiating the transfer parameters with the client. The space reservation will be created in
-a link group for which the user is authorized to create space reservations, which has enough
-available space, and which is able to hold the type of file being uploaded. The space reservation
-will be short lived. Once it expires, it will be released and the file it held will live on outside
-any space reservation, but still within the link group to which it was uploaded. Implicit space
-reservations are thus a technical means to upload files to link groups without using explicit space
-reservations.
+dCache can also perform implicit space reservations for transfers that are not given a space token
+explicitly. This behavior is enabled with the property
+
+```ini
+spacemanager.enable.unreserved-uploads-to-linkgroups=true
+```
+
+When enabled, an upload that is not bound to a particular space reservation can be served by links
+in a link group if the user is authorized to reserve space in that link group. The `spacemanager`
+will create a short-lived space reservation for the upload in a link group for which the user is
+authorized to create space reservations, which has enough available space, and which is able to
+hold the type of file being uploaded. Once the reservation expires, it will be released and the
+file it held will live on outside any space reservation, but still within the link group to which
+it was uploaded. If no implicit space reservation can be made, the transfer will fail.
 
 The reason dCache cannot just allow the file to be uploaded to the link group without any space
 reservation at all is, that we have to guarantee, that space already allocated for other
 reservations isn’t used by the file being uploaded. The best way to guarantee that there is enough
 space for the file is to make a space reservation to which to upload it.
 
-In case of `SRM` version 1.1 data transfers, where the access latency
-and retention policy cannot be specified, and in case of `SRM` V2.2
-clients, when the access latency and retention policy are not
-specified, default values will be used. First `SRM` will attempt to
+When the access latency and retention policy
+cannot be specified or are not
+specified by the client, default values will be used. First dCache will attempt to
 use the values of access latency and retention policy tags from the
 directory to which a file is being written. If the tags are not
 present, then the access latency and retention policy will be set on
@@ -212,7 +216,7 @@ chimera writetag /path/to/directory RetentionPolicy "<New RetentionPolicy>"
 
 ## Spacemanager configuration
 
-### SRM Spacemanager and Link Groups
+### Spacemanager and Link Groups
 
 `SpaceManager` is making reservations against free space available
 in [link groups](config-PoolManager.md#link-groups). The total free space in the given link group is
@@ -224,7 +228,7 @@ of space the link group corresponds to and who can make reservations against thi
 
 ### Making a Space Reservation
 
-Now that the `SRM SpaceManager` is activated you can make a space reservation. As mentioned above
+Now that the `spacemanager` is activated you can make a space reservation. As mentioned above
 you need link groups to make a space reservation.
 
 #### Prerequisites for Space Reservations
@@ -335,7 +339,7 @@ provide VOMS attributes to make use of space reservations.
 
 > **NOTE**
 >
-> You do not need to restart the DOMAIN-SRM or dCache after changing
+> You do not need to restart the `spacemanager` domain or dCache after changing
 > the `LinkGroupAuthorization.conf` file. The changes will be applied automatically after a few
 > minutes.
 >
@@ -406,12 +410,8 @@ and `-e` indicates that ephemeral (time limited) reservations should be displaye
 time limited reservations are not displayed as they are often implicit reservations). As can be
 seen, 5 MB are now reserved in the link group, although with approximate byte sizes, 5 MB do not
 make a visible difference in the 7.3 GB total size.
-You can now copy a file into that space token.
-
-```console-user
-srmcp -space_token=110000 file://bin/sh \
-|    srm://dcache.example.org/data/mydata
-```
+You can now copy a file into that space token, for example by binding the space token to a directory
+using the `WriteToken` tag; see [Using Space Reservations](config-write-token.md).
 
 Now you can check via the [Webadmin Interface](config-frontend.md) or
 the [Web Interface](intouch.md#the-web-interface-for-monitoring-dcache) that the file has been
@@ -472,8 +472,9 @@ You can see that the value for `state` has changed from `RESERVED` to `RELEASED`
 
 ### Making and Releasing a Space Reservation as a User
 
-If so authorized, a user can make a space reservation through the SRM
-protocol. A user is authorized to do so using the
+If so authorized, a user can make a space reservation through the
+[dCache REST API](config-frontend.md) (the `POST /api/v1/space/tokens` endpoint) or the
+admin interface. A user is authorized to do so using the
 `LinkGroupAuthorization.conf` file.
 
 #### VO based Authorization Prerequisites
@@ -504,9 +505,9 @@ the [`SpaceManagerLinkGroupAuthorizationFile`](#the-spacemanagerlinkgroupauthori
 This file contains a list of the link groups and all the VOs and the VO Roles that are permitted to
 make reservations in a given link group.
 
-When a `SRM` Space Reservation request is executed, its parameters, such as reservation size,
+When a space reservation request is executed, its parameters, such as reservation size,
 lifetime, access latency and retention policy as well as user's VO membership information is
-forwarded to the `SRM SpaceManager.
+forwarded to the `spacemanager`.
 
 Once a space reservation is created, no access control is performed, any user can store the files in
 this space reservation, provided he or she knows the exact space token.
@@ -514,41 +515,28 @@ this space reservation, provided he or she knows the exact space token.
 #### Making and Releasing a Space Reservation
 
 A user who is given the rights in the `SpaceManagerLinkGroupAuthorizationFile` can make a space
-reservation by
+reservation using the dCache REST API:
 
 ```console-user
-srm-reserve-space -retention_policy=<RetentionPolicy> -lifetime=<lifetimeInSecs> -desired_size=<sizeInBytes> -guaranteed_size=<sizeInBytes>  srm://example.dcache.org/
-|Space token =SpaceTokenId
-```
-
-and release it by
-
-```console-user
-srm-release-space srm://dcache.example.org/ -space_token=SpaceTokenId
+curl -X POST \
+|   'https://dcache.example.org/api/v1/space/tokens?accessLatency=NEARLINE&retentionPolicy=CUSTODIAL&minSize=5500000&lifeTime=PT5M&description=MY_RESERVATION'
+|{"id":110044,"description":"MY_RESERVATION","sizeInBytes":5500000}
 ```
 
 > **NOTE**
 >
-> Please note that it is obligatory to specify the retention policy while it is optional to specify
-> the access latency.
+> Please note that it is obligatory to specify the retention policy and access latency when creating
+> a space reservation.
 
-Example:
-
-```console-user
-srm-reserve-space -retention_policy=REPLICA -lifetime=300 -desired_size=5500000 -guaranteed_size=5500000  srm://dcache.example.org
-|Space token =110044
-```
-
-The space reservation can be released by:
+The space reservation can be released by an administrator via the admin interface:
 
 ```console-user
-srm-release-space srm://dcache.example.org -space_token=110044
+(SrmSpaceManager) admin > release space 110044
 ```
 
 #### Space Reservation without VOMS certificate
 
-If a client uses a regular grid proxy, created with `grid-proxy-init`, and not a VO proxy, which is
-created with the `voms-proxy-init`, when it is communicating with `SRM` server in dCache, then the
+If a client does not provide a VO proxy, created with the `voms-proxy-init`, then the
 VO attributes can not be extracted from its credential. In this case the name of the user is
 extracted from the Distinguished Name (DN) to use name mapping. For the purposes of the space
 reservation the name of the user as mapped by `gplazma` is used as its VO Group name, and the VO
@@ -558,29 +546,6 @@ Role is left empty. The entry in the `SpaceManagerLinkGroupAuthorizationFile` sh
     #
     <userName>
 
-#### Space Reservation for non SRM Transfers
-
-Edit the file `/etc/dcache/dcache.conf` to enable space reservation
-for non-SRM transfers.
-
-```ini
-spacemanager.enable.reserve-space-for-non-srm-transfers=true
-```
-
-If the `spacemanager` is enabled, `spacemanager.enable.reserve-space-for-non-srm-transfers` is set
-to true, and if the transfer request comes from a door, and there was no prior space reservation
-made for this file, the `SpaceManager` will try to reserve space before satisfying the request.
-
-Possible values are `true` or `false` and the default value is false.
-
-This is analogous to implicit space reservations performed by the srm, except that these
-reservations are created by the `spacemanager` itself. Since an `SRM` client uses a non-`SRM`
-protocol for the actual upload, setting the above option to true while disabling implicit space
-reservations in the `srm`, will still allow files to be uploaded to a link group even when no space
-token is provided. Such a configuration should however be avoided: If the srm does not create the
-reservation itself, it has no way of communicating access latency, retention policy, file size, nor
-lifetime to `spacemanager`.
-
 #### dcache.enable.space-reservation
 
 `dcache.enable.space-reservation` tells if the space management is activated.
@@ -589,12 +554,12 @@ Possible values are `true` and `false`. Default is `true`.
 
 #### dcache.enable.overwrite
 
-`dcache.enable.overwrite` tells SRM and GRIDFTP servers if overwriting is allowed. If enabled on
-the SRM node, it should be enabled on all GRIDFTP nodes.
+`dcache.enable.overwrite` tells the FTP and WebDAV doors if overwriting is allowed. If enabled,
+it should be enabled on all doors.
 
-Possible values are `true` and `false`. Default is `false`.
+Possible values are `true` and `false`. Default is `true`.
 
-#### spaceManagerDatabaseHost
+#### spacemanager.db.host
 
 `spacemanager.db.host` tells SpaceManager which database host to connect to.
 

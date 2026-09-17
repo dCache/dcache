@@ -16,12 +16,15 @@
  */
 package org.dcache.chimera;
 
+import javax.annotation.concurrent.ThreadSafe;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * @Threadsafe
+ * Generates globally unique inode ids.
  */
-public class InodeId {
+@ThreadSafe
+public final class InodeId {
 
     /**
      * no instance allowed
@@ -29,14 +32,16 @@ public class InodeId {
     private InodeId() { /**/ }
 
     /**
-     * generates new inode id format 0-3  - fsid 4-35 - inode id
+     * generates a 36 chars long globally unique new inode id, The format is:
+     * chars 0-3   - fsid, unused
+     * chars 4-35  - inode id
      *
-     * @param fsId
-     * @return
+     * @param fsId filesystem id.
+     * @return new inode unique id.
      */
     public static String newID(int fsId) {
 
-        UUID newId = UUID.randomUUID();
+        UUID newId = UUIDv7.randomUUID();
 
         String idString = digits((long) fsId >> 32, 4) +
               digits(newId.getMostSignificantBits() >> 32, 8) +
@@ -56,34 +61,63 @@ public class InodeId {
         return Long.toHexString(hi | (val & (hi - 1))).substring(1);
     }
 
-    public static byte[] hexStringToByteArray(String id) {
+    // By Robson Kades https://github.com/robsonkades/uuidv7
+    // Licensed under MIT License
+    /**
+     * UUID version 7 generator compatible with https://www.rfc-editor.org/rfc/rfc9562
+     *
+     * <p>UUIDv7 is a new time-ordered UUID based on the current timestamp and random bits.
+     * UUIDv7 is roughly sortable by generation time, which is more efficient for usage databases.
+     */
+    public final class UUIDv7 {
 
-        if (id.length() % 2 != 0) {
-            throw new IllegalArgumentException("The string needs to be even-length: " + id);
+        private UUIDv7() {
+            // Prevent instantiation
         }
 
-        int len = id.length() / 2;
-        byte[] bytes = new byte[len];
+        /**
+         * Generates a UUID version 7.
+         *
+         * <p>The format is:
+         * <ul>
+         *   <li>Bits 0–47: 48-bit timestamp (milliseconds since epoch, big-endian).</li>
+         *   <li>Bits 48–51: 4-bit version (binary 0111).</li>
+         *   <li>Bits 52–63: 12 random bits (extracted from a 64-bit random value).</li>
+         *   <li>Bits 64–65: 2-bit variant (binary 10).</li>
+         *   <li>Bits 66–127: Remaining 62 random bits (52 bits from 64-bit random, plus
+         *       10 bits from a 32-bit random, for a total of 74 bits entropy).</li>
+         * </ul>
+         *
+         * @return a {@link java.util.UUID} instance representing a UUIDv7.
+         *
+         * @see java.util.UUID
+         * @see java.util.concurrent.ThreadLocalRandom
+         */
+        public static UUID randomUUID() {
+            // 1) Fetch current time in ms, mask to 48 bits
+            long currentMillis = System.currentTimeMillis();
+            long ts48 = currentMillis & 0xFFFFFFFFFFFFL;  // 48-bit mask
 
-        for (int i = 0; i < len; i++) {
-            final int charIndex = i * 2;
-            final int d0 = toDigit(id.charAt(charIndex));
-            final int d1 = toDigit(id.charAt(charIndex + 1));
-            bytes[i] = (byte) ((d0 << 4) + d1);
-        }
-        return bytes;
-    }
+            // 2) Get 74 bits of entropy from ThreadLocalRandom: 64 + 32 bits
+            long random64 = ThreadLocalRandom.current().nextLong();
+            int random32 = ThreadLocalRandom.current().nextInt();
 
-    private static int toDigit(char ch) throws NumberFormatException {
-        if (ch >= '0' && ch <= '9') {
-            return ch - '0';
+            // Assemble the high 64 bits:
+            //   [ 48-bit timestamp ] [ 4-bit version=7 ] [ 12 high random bits ]
+            long high = (ts48 << 16);                         // place 48 ms bits at bits 0–47 of high<<16 = bits 16–63
+            long randHigh12 = (random64 >>> 52) & 0x0FFFL;    // top 12 bits of random64
+            high |= randHigh12;                              // bits 52–63
+            high |= 0x0000000000007000L;                     // set version (4 bits = 0b0111) at bits 48–51
+
+            // Assemble the low 64 bits:
+            //   [ 2-bit variant=10 ] [ 52 low bits of random64 ] [ 10 high bits of random32 ]
+            long low = 0x8000000000000000L;                   // set variant 0b10 at bits 64–65
+            long randLow52 = random64 & 0x000FFFFFFFFFFFFFL;  // lower 52 bits of random64
+            int rand32High10 = (random32 >>> 22) & 0x3FF;     // top 10 bits of random32
+            low |= (randLow52 << 10);                         // place 52 bits at bits 66–117
+            low |= rand32High10;                              // place 10 bits at bits 118–127
+
+            return new UUID(high, low);
         }
-        if (ch >= 'A' && ch <= 'F') {
-            return ch - 'A' + 10;
-        }
-        if (ch >= 'a' && ch <= 'f') {
-            return ch - 'a' + 10;
-        }
-        throw new NumberFormatException("illegal character '" + ch + '\'');
     }
 }

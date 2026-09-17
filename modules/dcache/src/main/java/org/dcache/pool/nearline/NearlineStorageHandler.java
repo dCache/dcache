@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 - 2024 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2026 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -135,37 +135,13 @@ public class NearlineStorageHandler
 
     /**
      * Queue occupation statistics.
-     * <p>
-     * REVISIT: change to record type when java14 is allowed.
      */
     @Immutable
-    public static final class QueueStat {
-
-        private final int queued;
-        private final int active;
-        private final int canceled;
-
-        public QueueStat(int queued, int active, int canceled) {
-
+    public record QueueStat(int queued, int active, int canceled)  {
+        public QueueStat {
             checkArgument(queued >= 0, "Negative number of queued requests");
             checkArgument(active >= 0, "Negative number of active requests");
             checkArgument(canceled >= 0, "Negative number of canceled requests");
-
-            this.queued = queued;
-            this.active = active;
-            this.canceled = canceled;
-        }
-
-        public int queued() {
-            return queued;
-        }
-
-        public int active() {
-            return active;
-        }
-
-        public int canceled() {
-            return canceled;
         }
     }
 

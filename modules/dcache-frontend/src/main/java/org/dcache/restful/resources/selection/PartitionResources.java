@@ -71,8 +71,10 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.selection.Partition;
+import org.dcache.restful.util.Responses;
 import org.springframework.stereotype.Component;
 
 /**
@@ -94,11 +96,12 @@ public final class PartitionResources {
     @ApiOperation("Get information about all partitions."
           + " Results sorted lexicographically by partition name.")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<Partition> getPartitions() {
-        return poolMonitor.getPartitionManager().getPartitions().entrySet()
+    public Response getPartitions() {
+        List<Partition> result = poolMonitor.getPartitionManager().getPartitions().entrySet()
               .stream()
               .sorted(Comparator.comparing(Entry::getKey))
               .map(Partition::new)
               .collect(Collectors.toList());
+        return Responses.buildResponse(result);
     }
 }

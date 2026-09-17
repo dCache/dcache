@@ -1377,7 +1377,7 @@ public class MigrationModule
                       "About to start migration job with id {} for pnfsId {}. Job definition: {}",
                       jobId, pnfsId, job.getDefinition());
                 try {
-                    job.start();
+                    job.start(Collections.singletonList(cacheEntry));
                     LOGGER.debug("Started migration job with id {} for pnfsId {}", jobId,
                           pnfsId);
                 } catch (Exception e) {

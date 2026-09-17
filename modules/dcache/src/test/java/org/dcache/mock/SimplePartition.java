@@ -66,7 +66,7 @@ public class SimplePartition extends Partition {
 
     @Override
     public P2pPair selectPool2Pool(CostModule cm, List<PoolInfo> src,
-          List<PoolInfo> dst, FileAttributes attributes, boolean force)
+          List<PoolInfo> dst, FileAttributes attributes, Optional<String> zone, boolean force)
           throws CacheException {
         throw new UnsupportedOperationException("Not supported yet.");
     }

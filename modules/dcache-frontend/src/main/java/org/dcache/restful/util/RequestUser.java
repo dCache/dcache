@@ -49,7 +49,7 @@ public class RequestUser implements ContainerRequestFilter, ContainerResponseFil
     }
 
     public static Subject getSubject() {
-        return Subject.getSubject(AccessController.getContext());
+        return Subject.current();
     }
 
     public static boolean isAnonymous() {

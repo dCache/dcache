@@ -81,7 +81,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import org.dcache.acl.enums.AccessMask;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.tape.ArchiveInfo;
@@ -95,7 +94,6 @@ public class ArchiveInfoCollector implements CellCommandListener {
     private static final Set<FileAttribute> REQUIRED_ATTRIBUTES
           = EnumSet.of(FileAttribute.TYPE, FileAttribute.SIZE, FileAttribute.STORAGEINFO,
           FileAttribute.LOCATIONS);
-    private static final Set<AccessMask> ACCESS_MASK = EnumSet.of(AccessMask.READ_DATA);
     private static final int MAX_PATHS_DEFAULT = 10_000;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ArchiveInfoCollector.class);
@@ -166,8 +164,7 @@ public class ArchiveInfoCollector implements CellCommandListener {
 
     private FileLocality getInfo(String path, String prefix, PnfsHandler pnfsHandler) throws CacheException {
         String absolutePath = computeFsPath(prefix, path).toString();
-        FileAttributes attributes = pnfsHandler.getFileAttributes(absolutePath, REQUIRED_ATTRIBUTES,
-              ACCESS_MASK, false);
+        FileAttributes attributes = pnfsHandler.getFileAttributes(absolutePath, REQUIRED_ATTRIBUTES);
         FileLocality locality = poolMonitor.getFileLocality(attributes, "localhost");
         /**
          * This is done to placate CERN FTS that refuses

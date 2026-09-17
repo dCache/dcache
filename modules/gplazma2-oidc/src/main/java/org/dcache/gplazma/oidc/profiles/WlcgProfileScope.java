@@ -77,6 +77,12 @@ public class WlcgProfileScope implements AuthorisationSupplier {
         STAGE("storage.stage", true, LIST, READ_METADATA, DOWNLOAD, Activity.STAGE),
 
         /**
+         * Query the status of a file, including whether it is online or nearline (tape). This
+         * scope allows clients to poll for the status of a file without requiring read access.
+         */
+        POLL("storage.poll", true, READ_METADATA),
+
+        /**
          * "Read" or query information about job status and attributes.
          */
         COMPUTE_READ("compute.read", false),
@@ -147,7 +153,7 @@ public class WlcgProfileScope implements AuthorisationSupplier {
         checkScopeValid(operation != null, "Unknown operation %s", operationLabel);
 
         if (colon == -1) {
-            checkScopeValid(!operation.isPathRequired(), "Path must be specified");
+            checkScopeValid(!operation.isPathRequired(), "Path must be specified for \"%s\"", operationLabel);
             path = "/";
         } else {
             String scopePath = scope.substring(colon + 1);

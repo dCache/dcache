@@ -120,6 +120,13 @@ public class BillingResources {
     private HttpServletResponse response;
     private boolean unlimitedOperationVisibility;
 
+    private void setlastModfied() {
+        long lastModified = service.getLastUpdated();
+        if(lastModified != 0L) {
+            response.addDateHeader("Last-Modified", lastModified);
+        }
+    }
+
     @GET
     @ApiOperation("Provides a list of read transfers for a specific PNFS-ID.")
     @ApiResponses({
@@ -165,6 +172,7 @@ public class BillingResources {
                   client,
                   sort);
             response.addIntHeader(TOTAL_COUNT_HEADER, result.total);
+            setlastModfied();
             return result.contents;
         } catch (FileNotFoundCacheException e) {
             throw new NotFoundException(e);
@@ -222,6 +230,7 @@ public class BillingResources {
                   client,
                   sort);
             response.addIntHeader(TOTAL_COUNT_HEADER, result.total);
+            setlastModfied();
             return result.contents;
         } catch (FileNotFoundCacheException e) {
             throw new NotFoundException(e);
@@ -282,6 +291,7 @@ public class BillingResources {
                   client,
                   sort);
             response.addIntHeader(TOTAL_COUNT_HEADER, result.total);
+            setlastModfied();
             return result.contents;
         } catch (FileNotFoundCacheException e) {
             throw new NotFoundException(e);
@@ -335,6 +345,7 @@ public class BillingResources {
                   pool,
                   sort);
             response.addIntHeader(TOTAL_COUNT_HEADER, result.total);
+            setlastModfied();
             return result.contents;
         } catch (FileNotFoundCacheException e) {
             throw new NotFoundException(e);
@@ -388,6 +399,7 @@ public class BillingResources {
                   pool,
                   sort);
             response.addIntHeader(TOTAL_COUNT_HEADER, result.total);
+            setlastModfied();
             return result.contents;
         } catch (FileNotFoundCacheException e) {
             throw new NotFoundException(e);
@@ -428,7 +440,7 @@ public class BillingResources {
             LOGGER.warn(e.getMessage());
             throw new InternalServerErrorException(e);
         }
-
+        setlastModfied();
         return gridData;
     }
 
@@ -461,6 +473,7 @@ public class BillingResources {
          *  No admin privileges necessary for billing histogram data.
          */
         try {
+            response.addDateHeader("Last-Modified", service.getLastUpdated());
             return service.getHistogram(key);
         } catch (CacheException e) {
             LOGGER.warn(e.getMessage());
@@ -484,6 +497,7 @@ public class BillingResources {
          *  No admin privileges necessary for billing histogram data.
          */
         try {
+            response.addDateHeader("Last-Modified", service.getLastUpdated());
             return service.getGrid();
         } catch (CacheException e) {
             LOGGER.warn(e.getMessage());

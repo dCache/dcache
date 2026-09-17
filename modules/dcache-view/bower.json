@@ -1,0 +1,42 @@
+{
+  "name": "dcache-view",
+  "authors": [
+    "Olufemi Adeyemi <olufemi.segun.adeyemi@desy.de>"
+  ],
+  "description": "A Web application that provide an easy to use User Interface for dCache System",
+  "main": "",
+  "moduleType": [],
+  "license": "GNU Affero General Public License",
+  "homepage": "http://www.dcache.org/",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "polymer": "Polymer/polymer#^2.0.0",
+    "polymer-iron-elements": "dCache/polymer-iron-elements#0.0.8",
+    "polymer-paper-elements": "dCache/polymer-paper-elements#0.0.8",
+    "neon-animation": "PolymerElements/neon-animation#^2.0.0",
+    "identicon.js": "stewartlord/identicon.js#2.3.1",
+    "JavaScript-MD5": "blueimp/JavaScript-MD5#2.10.0",
+    "page": "visionmedia/page.js#1.6.4",
+    "create-directory": "dCache/create-directory#0.0.5",
+    "dcache-namespace": "dCache/dcache-namespace#^0.1.3",
+    "file-icon": "dCache/file-icon#0.0.6",
+    "move-file": "dCache/move-file#0.0.15",
+    "qos-backend-information": "dCache/qos-backend-information#0.0.10",
+    "google-apis": "#2.0.0",
+    "google-chart": "#2.0.0",
+    "web-animations-js": "#2.3.1",
+    "pdfjs-dist": "mozilla/pdfjs-dist#2.0.550",
+    "qr.js": "lifthrasiir/qr.js#4234f130e5137626f8193aba2132575ae1602f39"
+  },
+  "resolutions": {
+    "dcache-namespace": "0.1.2"
+
+  }
+}

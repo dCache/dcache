@@ -51,11 +51,6 @@ dCache allows an arbitrary number of instances of a door, but these will all
 appear as separate endpoints to the enduser. There are several possibilities to
 balance load over these endpoints and to allow rolling upgrades:
 
--   Use the `srm` service. The SRM protocol acts as a redirector for transfers
-    and the implementation in dCache provides means of balancing load over
-    several doors as well as drain particular doors to allow them to be
-    upgraded.
-
 -   Let clients discover endpoints through an information service. If clients
     can discover endpoints through an information service such as BDII, such
     clients can load balance over available endpoints. dCache doors provides
@@ -71,20 +66,6 @@ balance load over these endpoints and to allow rolling upgrades:
     in front of the dCache doors to balance the load over all avaiable
     endpoints. Such a proxy may be implemented in a load balancing switch or in
     software such as HA Proxy.
-
-### `srm`
-
-The SRM implementation in dCache is technically a door, even though it merely
-redirects a client to one of the other endpoints for the actual transfer. In
-dCache 2.16, the SRM implementation was split into two separate services: The
-frontend service technically consitutes the door and is called `srm`. The
-backend service is called `srmmanager` and is treated as a central dCache
-service.
-
-The frontend `srm` service can be scaled like any other door. Each instance will
-appear as a separate endpoint and the instances will typically talk to the same
-`srmmanager` backend. The same techniques as for other doors may be used to make
-these appear as a single endpoint to the enduser.
 
 ## Critical Central Services
 
@@ -155,32 +136,6 @@ Spacemanager is fully replicable. Several instances must share the same
 database as requests from doors will be load balanced over all physical
 instances. The configuration should be synchronized such that all instances are
 configured the same way.
-
-### `srmmanager`
-
-Srmmanager is fully replicable. Several instance must have separate databases.
-The configuration should be synchronized such that with the exception of the
-database settings all instances are configured the same way.
-
-Requests are load balanced over all physical instances, but since the SRM
-protocol is stateful, stateful requests will be tagged by an instance
-identifier. Each instance registers itself in ZooKeeper and `srm` frontends
-forward tagged requests to the corresponding backend instance. When querying
-requests by token in the backend, one has to strip the tag from the token. E.g.
-a client may see a token as `fb1991c5:-1093540442`, where `fb1991c5` is a
-backend indentifier and `-1093540442` is the backend token. One may map the
-backend identifier to an instance through ZooKeeper:
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-\c System
-zk get /dcache/srm/backends/fb1991c5
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-It is possible to have several logical `srmmanager` instances, e.g. one per VO.
-Each logical instance may have one or more physical instances. This may be
-useful to provide VO specific configuration. In such a setup one would have VO
-specific `srm` frontends, each configured to talk to a specific logical backend
-(which in turn may be implemented by several physical instances).
 
 ### `transfermanager`
 

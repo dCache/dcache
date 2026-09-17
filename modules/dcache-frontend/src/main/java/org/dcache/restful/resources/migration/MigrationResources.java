@@ -34,6 +34,7 @@ import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.migrations.MigrationInfo;
 import org.dcache.restful.util.RequestUser;
+import org.dcache.restful.util.Responses;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -333,7 +334,7 @@ public final class MigrationResources {
     @Path("/{poolName}/{id}")
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces(MediaType.APPLICATION_JSON)
-    public MigrationInfo getMigrationInformation(@ApiParam("Name of the pool") @PathParam("poolName") String poolName,
+    public Response getMigrationInformation(@ApiParam("Name of the pool") @PathParam("poolName") String poolName,
           @ApiParam("Migration Job ID") @PathParam("id") Integer jobId) {
         // If no credentials were passed.
         if (RequestUser.isAnonymous()) {
@@ -410,7 +411,7 @@ public final class MigrationResources {
 
                 }
             }
-            return migInfoOutput;
+            return Responses.buildResponse(migInfoOutput);
         } catch (CacheException | NoRouteToCellException | InterruptedException e) {
             throw new InternalServerErrorException(e);
         }

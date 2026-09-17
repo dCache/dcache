@@ -96,6 +96,7 @@ import org.dcache.cells.CellStub;
 import org.dcache.qos.DefaultQoSPolicyJsonDeserializer;
 import org.dcache.qos.QoSPolicy;
 import org.dcache.restful.util.RequestUser;
+import org.dcache.restful.util.Responses;
 import org.dcache.vehicles.qos.PnfsManagerAddQoSPolicyMessage;
 import org.dcache.vehicles.qos.PnfsManagerGetQoSPolicyMessage;
 import org.dcache.vehicles.qos.PnfsManagerListQoSPoliciesMessage;
@@ -142,12 +143,11 @@ public class QoSPolicyResource {
           @ApiResponse(code = 500, message = "Internal Server Error"),
     })
     @Produces(MediaType.APPLICATION_JSON)
-    public List<String> listPolicies() {
+    public Response listPolicies() {
         PnfsManagerListQoSPoliciesMessage message = new PnfsManagerListQoSPoliciesMessage();
         message.setSubject(getCurrentSubject());
         try {
             message = qosEngine.sendAndWait(message);
-            return message.getPolicies();
         } catch (PermissionDeniedCacheException e) {
             if (RequestUser.isAnonymous()) {
                 throw new NotAuthorizedException(e);
@@ -160,6 +160,8 @@ public class QoSPolicyResource {
             LOGGER.warn(Exceptions.meaningfulMessage(e));
             throw new InternalServerErrorException(e);
         }
+        List<String> result = message.getPolicies();
+        return Responses.buildResponse(result);
     }
 
     /**
@@ -179,7 +181,7 @@ public class QoSPolicyResource {
           @ApiResponse(code = 500, message = "Internal Server Error"),
     })
     @Produces(MediaType.APPLICATION_JSON)
-    public QoSPolicy getPolicy(
+    public Response getPolicy(
           @ApiParam("The name of the policy (unique to this dCache instance).")
           @PathParam("name")String name) {
         PnfsManagerGetQoSPolicyMessage message = new PnfsManagerGetQoSPolicyMessage(name);
@@ -187,7 +189,6 @@ public class QoSPolicyResource {
 
         try {
             message = qosEngine.sendAndWait(message);
-            return message.getPolicy();
         } catch (PermissionDeniedCacheException e) {
             if (RequestUser.isAnonymous()) {
                 throw new NotAuthorizedException(e);
@@ -205,6 +206,8 @@ public class QoSPolicyResource {
             LOGGER.warn(Exceptions.meaningfulMessage(e));
             throw new InternalServerErrorException(e);
         }
+        QoSPolicy result = message.getPolicy();
+        return Responses.buildResponse(result);
     }
 
     /**

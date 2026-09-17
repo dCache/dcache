@@ -30,6 +30,7 @@ import org.italiangrid.voms.error.VOMSValidationErrorMessage;
 import org.italiangrid.voms.store.VOMSTrustStore;
 import org.italiangrid.voms.store.VOMSTrustStores;
 import org.italiangrid.voms.util.CertificateValidatorBuilder;
+import org.italiangrid.voms.util.CertificateValidatorBuilder.OpensslHashFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,6 +71,7 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin {
               .lazyAnchorsLoading(false)
               .trustAnchorsUpdateInterval(trustAnchorsUpdateInterval)
               .trustAnchorsDir(caDir)
+              .opensslHashFunction(OpensslHashFunction.SHA1)
               .build();
         validator = VOMSValidators.newValidator(vomsTrustStore, certChainValidator);
     }
@@ -101,9 +103,11 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin {
 
                         String voName = attr.getVO();
                         for (String fqan : attr.getFQANs()) {
-                            // fqan must start with vo name, e.g. for atlas must start with '/atlas/'
+                            // fqan must match the VO root or start with it,
+                            // e.g. '/atlas' or '/atlas/...'
                             // See https://ogf.org/documents/GFD.182.pdf p.6 §3.4.1.2
-                            if (!fqan.startsWith('/' + voName + '/')) {
+                            String voRoot = "/" + voName;
+                            if (!fqan.equals(voRoot) && !fqan.startsWith(voRoot + '/')) {
                                 continue;
                             }
 

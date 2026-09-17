@@ -19,9 +19,8 @@ about which ports may be deprecated.
 | 2288        | used to access dCache's legacy web interface (via http)                                         | Inbound for httpdDomain                                                           |
 | 2811        | is the **GSIFTP** port                                                                          | **ftp** doors                                                                     |
 | 2880        | is the **WebDAV** port                                                                          | In- and outbound traffic on **webdav** doors                                      |
-| 3456        | is for postmaster listening to requests for the PSQL database for dCache database functionality | Outbound for **SRM**, PnfsDomain, dCacheDomain and doors; inbound for PSQL server |
+| 3456        | is for postmaster listening to requests for the PSQL database for dCache database functionality | Outbound for PnfsDomain, dCacheDomain and doors; inbound for PSQL server          |
 | 3880        | used to access dCache View (via https)                                                          | frontend                                                                          |
-| 8443        | is the **SRM** port. See [the SRM chapter](config-SRM.md)                                       | Inbound for **SRM**                                                               |
 | 11111       | is used for internal dCache communication (deprecated)                                          | By default: outbound for all components, inbound for dCache domain                |
 | 22112       | provides access to the **info** service                                                         | info                                                                              |
 | 22725       | is used for **Kerberos dCap**                                                                   | Inbound for **dCap** doors                                                        |

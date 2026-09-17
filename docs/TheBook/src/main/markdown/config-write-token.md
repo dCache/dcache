@@ -1,5 +1,5 @@
-Chapter 22.  Using Space Reservations without SRM
-=================================================
+Chapter 22.  Using Space Reservations
+=====================================
 
 If you are using space reservations, i.e. you set
 
@@ -9,10 +9,9 @@ dcache.enable.space-reservation=true
 
 in your configuration file and all of your pools are in [link
 groups](config-PoolManager.md#link-groups), then you can only write
-into dCache if a link group is available for your transfer. Using the
-`SRM` you can specify the link group to write into. If you want to use
-another protocol like `http` or `xroot` you cannot specify a link
-group. In this case you need to use the `WriteToken` directory tag.
+into dCache if a link group is available for your transfer. To write
+into a specific space reservation you need to use the `WriteToken`
+directory tag.
 
 -----
 [TOC bullet hierarchy]
@@ -22,7 +21,7 @@ group. In this case you need to use the `WriteToken` directory tag.
 
 Before you can create a `WriteToken` tag you need to have a space reservation.
 
-Space reservations are made for link groups. The file [`LinkGroupAuthorization.conf`](config-SRM.md#the spacemanagerlinkgroupauthorizationfile) needs to contain the link groups that can be used for space reservations. You need to specify the location of the file in the `/etc/dcache/dcache.conf` file.
+Space reservations are made for link groups. The file [`LinkGroupAuthorization.conf`](config-spacemanager.md#the-spacemanagerlinkgroupauthorizationfile) needs to contain the link groups that can be used for space reservations. You need to specify the location of the file in the `/etc/dcache/dcache.conf` file.
 
 ```ini
 spacemanager.authz.link-group-file-name=/etc/dcache/LinkGroupAuthorization.conf
@@ -154,6 +153,6 @@ curl -T test.txt http://webdav-door.example.org:2880/data/write-token/curl-test.
 ```
 
  <!-- [link groups]: #cf-pm-linkgroups
-  [`LinkGroupAuthorization.conf`]: #cf-srm-linkgroupauthfile
+  [`LinkGroupAuthorization.conf`]: #cf-spacemanager-linkgroupauthfile
   [admin interface]: #intouch-admin
   [directory tag]: #chimera-tags

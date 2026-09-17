@@ -31,11 +31,13 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import org.dcache.auth.RolePrincipal;
 import org.dcache.auth.RolePrincipal.Role;
 import org.dcache.auth.Subjects;
@@ -44,6 +46,7 @@ import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.restful.providers.UserAttributes;
 import org.dcache.restful.util.RequestUser;
+import org.dcache.restful.util.Responses;
 import org.springframework.stereotype.Component;
 
 /**
@@ -59,7 +62,7 @@ public class UserResource {
           notes = "An introspection endpoint to allow the client to discover "
                 + "information about the current user.")
     @Produces(MediaType.APPLICATION_JSON)
-    public UserAttributes getUserAttributes(@Context HttpServletRequest request) {
+    public Response getUserAttributes(@Context HttpServletRequest request) {
         UserAttributes user = new UserAttributes();
 
         Subject subject = RequestUser.getSubject();
@@ -105,6 +108,6 @@ public class UserResource {
             }
         }
 
-        return user;
+        return Responses.buildResponse(user);
     }
 }

@@ -1,0 +1,7 @@
+{
+    "directory": "src/bower_components",
+    "strict-ssl": false,
+    "config": {
+        "interactive": false
+    }
+}

@@ -1,0 +1,89 @@
+<link rel="import" href="../../../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../../../bower_components/app-layout/app-toolbar/app-toolbar.html">
+<link rel="import" href="../../../../bower_components/paper-icon-button/paper-icon-button.html">
+<dom-module id="upload-error-dialog">
+    <template>
+        <style>
+            :host {
+                display: flex;
+                flex-direction: column;
+                margin: 0 -24px !important;
+                width: 450px;
+                height: 240px;
+                background: #fff;
+                box-sizing: border-box;
+                padding: 0 !important;
+            }
+            app-toolbar {
+                height: 40px;
+                min-height: 40px;
+                letter-spacing: .0125em;
+                -webkit-font-smoothing: antialiased;
+                background: #fff;
+                color: #222;
+                font-weight: normal;
+                line-height: 24px;
+                font-size: 20px;
+                padding: 0 10px;
+                border-bottom: 1px solid rgba(208,208,208,.87);
+            }
+            app-toolbar paper-icon-button {
+                color: rgba(0,0,0,.87);
+                padding: 0;
+                width: 20px;
+                height: 20px;
+            }
+            #content {
+                flex: 1 1 auto;
+                display: flex;
+                flex-direction: column;
+                padding: 0 10px;
+            }
+            p {
+                font-size: 0.93em;
+                margin-bottom: 0;
+            }
+            .reason {
+                padding: 10px 15px;
+                font-size: 0.8em;
+            }
+            .reason + .reason {
+                border-top: 1px solid #d4d4d4;
+            }
+            .reason div {
+                padding: 0 15px;
+                text-align: justify;
+            }
+        </style>
+        <app-toolbar>
+            <div main-title>File Upload Error</div>
+            <paper-icon-button icon="close" dialog-dismiss></paper-icon-button>
+        </app-toolbar>
+        <div id="content">
+            <div>
+                <p>
+                    The upload failed due to an unknown error. Below are couple of reason and suggestion:
+                </p>
+            </div>
+            <div class="reason">
+                <span>
+                    <b>1. </b>You might not have the permission to upload into this directory.
+                </span>
+                <div>
+                    <i>Please check if you have the write access to the directory you are
+                        trying to upload file into.</i>
+                </div>
+            </div>
+            <div class="reason">
+                <span>
+                    <b>2. </b>Your site WebDav door might be offline, not well configured or broken.
+                </span>
+                <div>
+                    <i>Please check the WebDav door or contact your admin.</i>
+                </div>
+            </div>
+        </div>
+    </template>
+    <script src="upload-error-dialog.js">
+    </script>
+</dom-module>

@@ -103,7 +103,7 @@ public final class SnapshotDataAccess<K, V extends InvalidatableItem & Serializa
     /**
      * <p>Last timestamp for update.</p>
      */
-    private long lastUpdate = 0L;
+    private volatile long lastUpdate = 0L;
 
     public List<V> getCurrent() {
         readLock.lock();

@@ -97,4 +97,11 @@ public class QualityValueTest {
         actual.sort(Comparator.naturalOrder());
         assertThat(actual, is(equalTo(expected)));
     }
+
+    @Test
+    public void shouldMatchRFC9530() {
+        QualityValue qvalue = QualityValue.of("audio/*=3");
+        assertThat(qvalue.value(), is(equalTo("audio/*")));
+        assertThat(qvalue.quality(), is(equalTo(3.0)));
+    }
 }

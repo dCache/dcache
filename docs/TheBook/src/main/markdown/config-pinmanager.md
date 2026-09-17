@@ -21,7 +21,7 @@ deleted for a certain duration. The pin effectively suppresses automatic garbage
 lifetime of the pin.
 
 Pins may have a finite or infinite lifetime. Pins also have an owner, which may be a dCache
-service (such as `resilience`) or client through a protocol such as `srm`. Only the owner is allowed
+service (such as `resilience`) or a client through a protocol such as `webdav`. Only the owner is allowed
 to remove unexpired pins. Several pins (for different users) can exist for the same `pnfsid`, and a
 file is considered pinned as long as at least one unexpired pin exists.
 

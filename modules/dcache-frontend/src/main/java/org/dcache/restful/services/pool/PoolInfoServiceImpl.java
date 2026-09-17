@@ -209,8 +209,15 @@ public class PoolInfoServiceImpl extends
      */
     private int maxPoolActivityListSize;
 
+    private volatile long lastUpdated = 0L;
+
     public ReadWriteData<String, PoolInfoWrapper> getCache() {
         return cache;
+    }
+
+    @Override
+    public long getLastUpdated() {
+        return lastUpdated;
     }
 
     /**
@@ -606,6 +613,7 @@ public class PoolInfoServiceImpl extends
           Map<String, ListenableFutureWrapper<PoolDataRequestMessage>> data) {
         try {
             processor.process(data);
+            lastUpdated = System.currentTimeMillis();
         } catch (IllegalStateException e) {
             LOGGER.info("Processing cycle for processor has overlapped; you may wish to "
                         + "increase the interval between pool "

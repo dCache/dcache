@@ -205,3 +205,37 @@ A word of warning though: The cells messaging system is deliberately very
 simple. There is no guaranteed delivery and no guaranteed ordering. Although
 dCache should be robust against such problems, core only deployments will be in
 uncharted territory.
+
+### TLS Encryption for domain to domain communication
+
+dCache supports TLS encryption for domain-to-domain tunnel connections. Core
+domains listen on two separate ports: one for plain-text and one for TLS
+connections.
+
+```ini
+dcache.broker.plain.port = 11111
+dcache.broker.tls.port = 11112
+```
+
+To enable TLS, set the security for core and satellite domains
+independently in the layout file:
+
+```ini
+# core domains
+dcache.broker.core.client.channel.security = tls
+
+# satellite domains
+dcache.broker.satellite.channel.security = tls
+```
+
+set to `none` for plain-text (default) or `tls`.
+
+TLS uses X.509 certificates. The broker reuses the host certificate
+and trusted CA path already configured for dCache. These can also be overridden.
+
+```ini
+dcache.broker.channel.credential.key = ${dcache.authn.hostcert.key}
+dcache.broker.channel.credential.cert = ${dcache.authn.hostcert.cert}
+dcache.broker.channel.capath = ${dcache.authn.capath}
+```
+

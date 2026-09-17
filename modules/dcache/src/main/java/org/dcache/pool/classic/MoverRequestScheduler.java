@@ -36,6 +36,10 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
+import javax.security.auth.Subject;
+
+import org.dcache.auth.Origin;
+import org.dcache.auth.Subjects;
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
@@ -767,6 +771,17 @@ public class MoverRequestScheduler {
             data.setSubmitTime(_submitTime);
             data.setLastModified(_mover.getLastTransferred());
             data.setMoverId(_id);
+            Subject subject = _mover.getSubject();
+            Origin origin = Subjects.getOrigin(subject);
+            if (origin != null) {
+                     data.setClientIp(origin.getAddress().getHostAddress());
+                 }
+            try {
+                data.setUserData(Subjects.getDn(subject), Subjects.getUid(subject), Subjects.getGids(subject));
+            } catch (NoSuchElementException e) {
+                LOGGER.debug(e.getMessage() + "Setting user data to anonymous default");
+                data.setUserData(Subjects.getDn(subject));
+            }
             return data;
         }
 

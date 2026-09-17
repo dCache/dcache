@@ -1,0 +1,208 @@
+<link rel="import" href="../../../bower_components/polymer/polymer-element.html">
+
+<link rel="import" href="../../../bower_components/paper-tabs/paper-tabs.html">
+<link rel="import" href="../../../bower_components/paper-tabs/paper-tab.html">
+<link rel="import" href="../../../bower_components/paper-tooltip/paper-tooltip.html">
+
+<dom-module id="qbi-dialog-content">
+    <template>
+        <style>
+            :host {
+                display: block;
+                margin: 0 -24px !important;
+                width: 400px;
+                height: 290px;
+            }
+            .content {
+                margin: 5px;
+                height: 120px;
+            }
+            .buttons {
+                background-color: #eaeaea;
+                height: 60px;
+                display: flex;
+                justify-content: flex-end;
+                align-items: center;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            paper-tabs {
+                height: 40px;
+                width: 100%;
+                background-color: #868a89;
+                color: #fafafa;
+                padding: 0;
+                margin: 0;
+                --paper-tabs-selection-bar-color: #00b395;
+            }
+            paper-toolbar {
+                height: 60px;
+                width: 100%;
+            }
+            .row {
+                height : 30px;
+                display: flex;
+                border-bottom: 1px solid #e0e0e0;
+                align-items: center;
+            }
+            .row > span {
+                padding-left: 5px;
+                font-size: 0.8em;
+                font-weight: bold;
+            }
+            .row > label {
+                font-size: 0.8em;
+                font-style: italic;
+                padding-right: 5px;
+            }
+            .spacer {
+                flex-grow: 1;
+            }
+            .key {
+                text-transform:capitalize;
+            }
+            div > iron-icon:hover {
+                fill: #f09300 !important;
+            }
+        </style>
+        <paper-toolbar>
+            <span class="title" slot="top">QoS Backend Information</span>
+            <paper-icon-button slot="top" icon="close" dialog-confirm></paper-icon-button>
+        </paper-toolbar>
+        <paper-tabs selected="{{selected}}" class="middle" scrollable fit-container>
+            <template is="dom-repeat" items="[[possibleTransition]]">
+                <paper-tab>
+                    [[item.backendCapability.name]]
+                </paper-tab>
+            </template>
+        </paper-tabs>
+        <div class="content">
+            <iron-pages selected="{{selected}}">
+                <template is="dom-repeat" items="[[possibleTransition]]">
+                    <div>
+                        <div class="row">
+                            <span class="key">Transition: </span>
+                            <span class="spacer"></span>
+                            <label>[[_valueToString(item.backendCapability.transition)]]</label>
+                        </div>
+                        <template is="dom-repeat" items="[[_getQosBackendMetadata(item.backendCapability.metadata)]]">
+                            <div class="row">
+                                <span class="key">[[_formatKey(item.key)]]: </span>
+                                <div style="display:inline-block;padding-left: 5px;">
+                                    <iron-icon icon="help" style="width:15px;height:15px; fill:#3588f4"></iron-icon>
+                                    <paper-tooltip>[[_getTooltipSting(item.key)]]</paper-tooltip>
+                                </div>
+                                <span class="spacer"></span>
+                                <label>[[_valueToString(item.value)]]</label>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+            </iron-pages>
+        </div>
+
+        <div class="buttons">
+            <paper-button style="color:#00b395" dialog-confirm autofocus>Close</paper-button>
+        </div>
+    </template>
+    <script>
+        class QbiDialogContent extends Polymer.Element
+        {
+            static get is()
+            {
+                return "qbi-dialog-content";
+            }
+
+            static get properties()
+            {
+                return {
+                    possibleTransition: {
+                        type: Array,
+                        value: function () {
+                            return window.CONFIG.qos;
+                        },
+                        notify: true
+                    },
+                    selected: {
+                        value: 0
+                    },
+                    tooltips: {
+                        type: Array,
+                        notify: true
+                    }
+                }
+            }
+
+            ready()
+            {
+                super.ready();
+                this.tooltips = [
+                    {
+                        "key": "cdmi_data_redundancy_provided",
+                        "value": "The current number of complete copies of the data object at this time."
+                    },
+                    {
+                        "key": "cdmi_geographic_placement_provided",
+                        "value": "An ISO-3166 identifier corresponds to a geopolitical region where the files are stored."
+                    },
+                    {
+                        "key": "cdmi_latency_provided",
+                        "value": "The provided maximum time in millisecond to first byte."
+                    }
+                ]
+            }
+
+            _valueToString(arr)
+            {
+                if (arr.toString() === "") {
+                    return 'null';
+                }
+                return arr.toString();
+            }
+
+            _getQosBackendMetadata(i)
+            {
+                let a = JSON.stringify(i);
+                a = a.slice(1, -1);
+                let b = a.split(",");
+                const len = b.length;
+                let arr = [];
+                for (let j=0; j<len; j++) {
+                    let z = b[j].split(":");
+                    let jsonString = '{"key": ' + z[0] + ', "value": ' + z[1] +'}';
+                    arr.push(JSON.parse(jsonString));
+                }
+                return arr;
+            }
+
+            _formatKey(str)
+            {
+                if (str.includes("cdmi_")) {
+                    str = str.replace("cdmi_", "");
+                }
+
+                if (str.includes("_provided")) {
+                    str = str.replace("_provided", "");
+                }
+
+                if (str.includes("_")) {
+                    str = str.replace("_", " ");
+                }
+
+                return str;
+            }
+
+            _getTooltipSting(key)
+            {
+                let arr = this.tooltips;
+                const len = arr.length;
+                for (let i = 0; i<len; i++) {
+                    if (arr[i].key === key) {
+                        return arr[i].value;
+                    }
+                }
+            }
+        }
+        window.customElements.define(QbiDialogContent.is, QbiDialogContent);
+    </script>
+</dom-module>

@@ -65,6 +65,9 @@ import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.http.AuthenticationHandler;
 import org.dcache.http.PathMapper;
+import org.dcache.util.Checksums;
+import org.dcache.util.HttpExtHeader;
+import org.dcache.webdav.RfcResponseHandler;
 import org.dcache.webdav.transfer.RemoteTransferHandler.Direction;
 import org.dcache.webdav.transfer.RemoteTransferHandler.TransferType;
 import org.slf4j.Logger;
@@ -401,17 +404,16 @@ public class CopyFilter implements Filter {
     }
 
     private static Optional<String> getWantDigest(HttpServletRequest request) {
-        List<String> wantDigests = Collections.list(request.getHeaders("Want-Digest"));
+        List<String> wantDigests = Collections.list(request.getHeaders(Checksums.digestType(request)));
         return wantDigests.isEmpty()
               ? Optional.empty()
               : Optional.of(wantDigests.stream()
                     .filter(s -> !s.isEmpty())
                     .collect(Collectors.joining(",")));
-
     }
 
 
-    private ImmutableMap<String, String> buildTransferHeaders(Request request) {
+    private ImmutableMap<String, String> buildTransferHeaders(Request request, Direction direction) {
         Map<String, String> requestHeaders = request.getHeaders();
 
         ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
@@ -421,6 +423,19 @@ public class CopyFilter implements Filter {
             if (key.toLowerCase().startsWith(REQUEST_HEADER_TRANSFER_HEADER_PREFIX)) {
                 builder.put(key.substring(REQUEST_HEADER_TRANSFER_HEADER_PREFIX.length()),
                       header.getValue());
+            }
+        }
+
+        if (direction == Direction.PUSH) {
+            HttpServletRequest servletRequest = ServletRequest.getRequest();
+            String reprDigest = servletRequest.getHeader(HttpExtHeader.REPR_DIGEST);
+            if (reprDigest != null) {
+                builder.put(HttpExtHeader.REPR_DIGEST, reprDigest);
+            } else {
+                String digest = servletRequest.getHeader(HttpExtHeader.DIGEST);
+                if (digest != null) {
+                    builder.put(HttpExtHeader.DIGEST, digest);
+                }
             }
         }
 
@@ -462,7 +477,7 @@ public class CopyFilter implements Filter {
             return;
         }
 
-        var transferHeaders = buildTransferHeaders(request);
+        var transferHeaders = buildTransferHeaders(request, direction);
         var transferFlags = buildTransferFlags();
           String transferTag = transferTagForPool(servletRequest);
 
@@ -566,7 +581,7 @@ public class CopyFilter implements Filter {
 
     private Object fetchCredential(CredentialSource source)
           throws InterruptedException, ErrorResponseException {
-        Subject subject = Subject.getSubject(AccessController.getContext());
+        Subject subject = Subject.current();
         switch (source) {
             case GRIDSITE:
                 try {
@@ -716,7 +731,7 @@ public class CopyFilter implements Filter {
     }
 
     private Subject getSubject() {
-        return Subject.getSubject(AccessController.getContext());
+        return Subject.current();
     }
 
     private Restriction getRestriction() {
@@ -726,7 +741,7 @@ public class CopyFilter implements Filter {
     }
 
     private boolean clientAuthnUsingOidc() {
-        return Subject.getSubject(AccessController.getContext()).getPrincipals().stream()
+        return Subject.current().getPrincipals().stream()
               .anyMatch(OidcSubjectPrincipal.class::isInstance);
     }
 

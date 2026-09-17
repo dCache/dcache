@@ -1,0 +1,492 @@
+<link rel="import" href="../../../bower_components/polymer/polymer-element.html">
+
+<link rel="import" href="../../../bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../../bower_components/paper-toggle-button/paper-toggle-button.html">
+<link rel="import" href="../../../bower_components/paper-tooltip/paper-tooltip.html">
+<link rel="import" href="../../../bower_components/paper-item/paper-item.html">
+
+<link rel="import" href="../pagination-button/pagination-button.html">
+<link rel="import" href="../upload-files/upload-files-button.html">
+
+<link rel="import" href="../../../bower_components/create-directory/create-directory.html">
+<link rel="import" href="../../../bower_components/dcache-namespace/dcache-namespace.html">
+<link rel="import" href="../../../bower_components/move-file/move-icons.html">
+<link rel="import" href="../../../bower_components/move-file/move-file.html">
+
+<dom-module id="selected-title">
+    <template>
+        <style>
+            :host {
+                display: block;
+                color: #333;
+                padding-left: 7px;
+            }
+            .row {
+                @apply(--layout-horizontal);
+                @apply(--layout-center);
+            }
+            .flex {
+                @apply(--layout-flex);
+            }
+            .flex2 {
+                @apply(--layout-flex-2);
+            }
+            .flex3 {
+                @apply(--layout-flex-3);
+            }
+            .standardTools {
+                padding-right: 20px;
+                @apply(--layout-horizontal);
+                @apply(--layout-end-justified);
+            }
+            .standardTools > paper-toggle-button {
+                display:inline-flex;
+                height:40px;
+                --paper-toggle-button-checked-bar-color: red;
+                --paper-toggle-button-checked-button-color:  red;
+                --paper-toggle-button-checked-ink-color: red;
+            }
+            .standardTools > div {
+                display:inline-flex;
+                max-height: 40px;
+                max-width: 40px;
+                @apply(--layout-center);
+            }
+            .standardTools > div + div {
+                margin-left: 10px;
+            }
+            .pagination > div {
+                display:inline-flex;
+            }
+            #pagination, #shared-pagination {
+                display: inline-block;
+                padding: 0;
+                margin: 0;
+                @apply(--layout-horizontal);
+            }
+            #pagination pagination-button, #shared-pagination pagination-button {
+                display: inline;
+            }
+            paper-tooltip {
+                --paper-tooltip-background: #5cb5ec;
+            }
+            .info {
+                border: solid 1px #dedede;
+                border-radius: 20px;
+                background: #f7f7f7;
+            }
+            .home {
+                border-top-right-radius:20%;
+                border-bottom-right-radius:20%;
+                border-top-left-radius:70%;
+                border-bottom-left-radius:70%;
+                color: #616161;
+            }
+            .create {
+                color: #2196F3;
+            }
+            .none {
+                display: none !important;
+            }
+            .stamp {
+                color:#b8b8b8;
+                margin-right:8px;
+                font-size:0.7em;
+            }
+            .shared {
+                text-transform: none;
+                font-size:0.87em;
+                color: #36476c;
+            }
+        </style>
+        <div class="row" class$="[[_computedRowClass(isNamespace)]]">
+            <div class="stamp">dCache.org</div>
+            <div class="flex3 pagination">
+                <div id="pagination">
+                    <pagination-button name="Root" file-path="/" active></pagination-button>
+                </div>
+            </div>
+            <div class="standardTools flex">
+                <div class$="[[_computedClass(isSelected)]]">
+                    <paper-icon-button class="move"
+                                       icon="move-icons:movefolder"
+                                       on-tap="_move"></paper-icon-button>
+                    <paper-tooltip>move the selected file to another directory</paper-tooltip>
+                </div>
+                <div>
+                    <paper-icon-button class="create"
+                                       icon="create-new-folder"
+                                       on-tap="_create"></paper-icon-button>
+                    <paper-tooltip>create new folder</paper-tooltip>
+                </div>
+                <div>
+                    <upload-files-button authentication-parameters="[[authenticationParameters]]"></upload-files-button>
+                </div>
+                <div>
+                    <paper-icon-button class="info"
+                                       icon="icons:info"
+                                       on-tap="_metadataInfo"></paper-icon-button>
+                    <paper-tooltip>metadata information</paper-tooltip>
+                </div>
+            </div>
+        </div>
+        <div class$="[[_computedRowClass(isAdmin)]]">
+            <div class="stamp">dCache.org</div>
+        </div>
+        <div class$="[[_computedRowClass(isUserLogin)]]"></div>
+        <div class="row" class$="[[_computedRowClass(isSharedPage)]]">
+            <div class="stamp">dCache.org</div>
+            <div class="flex3 pagination">
+                <paper-button class="shared"
+                              on-tap="_shared">Shared with me</paper-button>
+                <div id="shared-pagination"></div>
+            </div>
+            <div class="standardTools flex" id="sharing-standardTools">
+                <div class$="[[_computedClass(isSelected)]]">
+                    <paper-icon-button class="move"
+                                       icon="move-icons:movefolder"
+                                       on-tap="_move"></paper-icon-button>
+                    <paper-tooltip>move the selected file to another directory</paper-tooltip>
+                </div>
+                <div>
+                    <paper-icon-button class="create"
+                                       icon="create-new-folder"
+                                       on-tap="_create"></paper-icon-button>
+                    <paper-tooltip>create new folder</paper-tooltip>
+                </div>
+                <div>
+                    <upload-files-button authentication-parameters="[[authenticationParameters]]"></upload-files-button>
+                </div>
+                <div>
+                    <paper-icon-button class="info"
+                                       icon="icons:info"
+                                       on-tap="_metadataInfo"></paper-icon-button>
+                    <paper-tooltip>metadata information</paper-tooltip>
+                </div>
+            </div>
+        </div>
+    </template>
+    <script>
+        class SelectedTitle extends DcacheViewMixins.Commons(Polymer.Element)
+        {
+            constructor()
+            {
+                super();
+                this._isSelectedChanged_ = this._isSelectedChanged.bind(this);
+                this._setCurrentPath_ = this._setCurrentPath.bind(this);
+                this._resetViewFileDependentParameters_ = this._resetViewFileDependentParameters.bind(this);
+                this._setAuthenticationParameters_ = this._setAuthenticationParameters.bind(this);
+                this._sharingPageSwitch_ = this._sharingPageSwitchListener.bind(this);
+            }
+            ready()
+            {
+                super.ready();
+                Polymer.RenderStatus.afterNextRender(this, () => {
+                    //WORKAROUND: This is moved here because firefox wouldn't fire this during connectedCallback()
+                    this.dispatchEvent(
+                        new CustomEvent('dv-namespace-request-current-path', {bubbles: true, composed: true})
+                    );
+                });
+            }
+            static get is()
+            {
+                return 'selected-title';
+            }
+
+            connectedCallback()
+            {
+                super.connectedCallback();
+                this.$["sharing-standardTools"].style.visibility = "hidden";
+                window.addEventListener('dv-namespace-x-selected-items-changed', this._isSelectedChanged_);
+                window.addEventListener('dv-namespace-current-path', this._setCurrentPath_);
+                window.addEventListener('dv-namespace-view-file-created', this._resetViewFileDependentParameters_);
+                window.addEventListener('dv-namespace-current-authenticationParameters', this._setAuthenticationParameters_);
+                window.addEventListener('dv-file-sharing-page-switch', this._sharingPageSwitch_);
+            }
+
+            disconnectedCallback()
+            {
+                super.disconnectedCallback();
+                window.removeEventListener('dv-namespace-x-selected-items-changed', this._isSelectedChanged_);
+                window.removeEventListener('dv-namespace-current-path', this._setCurrentPath_);
+                window.removeEventListener('dv-namespace-view-file-created', this._resetViewFileDependentParameters_);
+                window.removeEventListener('dv-namespace-current-authenticationParameters', this._setAuthenticationParameters_);
+                window.removeEventListener('dv-file-sharing-page-switch', this._sharingPageSwitch_);
+            }
+
+            static get properties()
+            {
+                return {
+                    pgRoute: {
+                        type: String,
+                        notify: true
+                    },
+
+                    isNamespace: {
+                        type: Boolean,
+                        notify: true
+                    },
+
+                    isAdmin: {
+                        type: Boolean,
+                        notify: true
+                    },
+
+                    isUserLogin: {
+                        type: Boolean,
+                        notify: true
+                    },
+
+                    isSelected: {
+                        type: Boolean,
+                        value: false,
+                        notify: true
+                    },
+
+                    isSharedPage: {
+                        type: Boolean,
+                        notify: true
+                    },
+
+                    _selectedItems: {
+                        type: Array,
+                        value: [],
+                        notify: true
+                    },
+
+                    currentPath: {
+                        type: String,
+                    }
+                }
+            }
+
+            static get observers()
+            {
+                return [
+                    'changedSection(pgRoute)'
+                ];
+            }
+
+            changedSection(pgRoute)
+            {
+                switch (pgRoute) {
+                    case "home":
+                        this.isUserLogin = false;
+                        this.isAdmin = false;
+                        this.isSharedPage = false;
+                        this.isNamespace = true;
+                        break;
+                    case "admin":
+                    case "user-profile":
+                        this.isUserLogin = false;
+                        this.isNamespace = false;
+                        this.isSharedPage = false;
+                        this.isAdmin = true;
+                        break;
+                    case "user-login":
+                        this.isNamespace = false;
+                        this.isAdmin = false;
+                        this.isSharedPage = false;
+                        this.isUserLogin = true;
+                        break;
+                    case "shared-files":
+                        this.isUserLogin = false;
+                        this.isAdmin = false;
+                        this.isNamespace = false;
+                        this.isSharedPage = true;
+                        break;
+                }
+            }
+
+            _metadataInfo(e)
+            {
+                let path = this.currentPath.endsWith("/") ? this.currentPath.slice(0, -1) : this.currentPath;
+                path = this.isSelected ? `${path}/${this._selectedItems[0].fileName}` : path === "" ? '/' : path;
+
+                this.dispatchEvent(
+                    new CustomEvent('dv-namespace-open-filemetadata-panel', {
+                        detail: {file: {
+                            authenticationParameters: this.authenticationParameters,
+                            filePath: path,
+                            fileMetaData: this.isSelected ? Object.assign({}, this._selectedItems[0]): undefined
+                        }}, bubbles: true, composed: true
+                    })
+                );
+            }
+
+            _create(e)
+            {
+                //TODO: Lazy load create-directory and dcache-namespace
+                const mkdir = new CreateDirectory();
+                mkdir.dirFullPath = this.currentPath;
+                mkdir.header = false;
+                mkdir.addEventListener('create',(e) => {
+                    const name = e.detail.newFolderName;
+                    const namespace = new DcacheNamespace();
+
+                    namespace.auth = this.getAuthValue();
+                    namespace.promise.then(() => {
+                        this.dispatchEvent(new CustomEvent('dv-namespace-close-central-dialogbox', {
+                            detail: {}, bubbles: true, composed: true})
+                        );
+
+                        this.dispatchEvent(new CustomEvent('dv-namespace-add-items', {
+                            detail: {files: [
+                                {
+                                    "fileName" : name,
+                                    "fileMimeType" : "application/vnd.dcache.folder",
+                                    "fileLocality" : "",
+                                    "size" : "--",
+                                    "fileType" : "DIR",
+                                    "mtime" : "--",
+                                    "creationTime" : Date.now() //Assumption
+                                    //TODO: add creation time to the return object of the ajax response
+                                }]},
+                            bubbles: true, composed: true
+                        }));
+                        this.dispatchEvent(new CustomEvent('dv-namespace-show-message-toast', {
+                            detail: {message: "Done! New directory created."}, bubbles: true, composed: true})
+                        );
+                    }).catch((err) => {
+                        this.dispatchEvent(new CustomEvent('dv-namespace-show-message-toast', {
+                            detail: {message: err.message}, bubbles: true, composed: true})
+                        );
+                    });
+
+                    namespace.mkdir({
+                        url: `${window.CONFIG["dcache-view.endpoints.webapi"]}namespace`,
+                        path: this.encodePath(this.currentPath),
+                        name: name
+                    });
+                });
+                mkdir.addEventListener('close', () => {
+                    this.dispatchEvent(new CustomEvent('dv-namespace-close-central-dialogbox', {
+                        detail: {}, bubbles: true, composed: true})
+                    );
+                });
+
+                this.dispatchEvent(new CustomEvent('dv-namespace-open-central-dialogbox',{
+                    detail: {node: mkdir}, bubbles: true, composed: true
+                }));
+            }
+
+            _move()
+            {
+                const noOfMovedItems = this._selectedItems.length;
+                const fileType = this._selectedItems.length === 1 ? "item": "items";
+                const mv = new MoveFile();
+                mv.auth = this.getAuthValue();
+                mv.currentPath = this.currentPath;
+                mv.mvFiles = this._selectedItems;
+
+                mv.addEventListener('move', (e) => {
+                    this.dispatchEvent(new CustomEvent('dv-namespace-remove-items', {
+                        detail: {files: mv.mvFiles},bubbles: true, composed: true}));
+                    this.dispatchEvent(new CustomEvent('dv-namespace-close-central-dialogbox', {
+                        detail: {}, bubbles: true, composed: true})
+                    );
+                    this.dispatchEvent(new CustomEvent('dv-namespace-show-message-toast', {
+                        detail: {message: `${noOfMovedItems} ${fileType} have been moved from `+
+                            `${e.detail.response.sourceDirName} to ${e.detail.response.targetDirName}.`},
+                        bubbles: true, composed: true})
+                    );
+                });
+                mv.addEventListener('error', (e) => {
+                    this.dispatchEvent(new CustomEvent('dv-namespace-show-message-toast', {
+                        detail: {message: e.detail.error}, bubbles: true, composed: true})
+                    );
+                });
+                mv.addEventListener('dismiss', function (e) {
+                    this.dispatchEvent(new CustomEvent('dv-namespace-close-central-dialogbox',{
+                        detail: {}, bubbles: true, composed: true
+                    }));
+                });
+                mv.addEventListener('move-create', function (e) {
+                    const file = {
+                        "fileName" : e.detail.name,
+                        "fileMimeType" : "application/vnd.dcache.folder",
+                        "fileLocality" : "",
+                        "size" : "--",
+                        "fileType" : "DIR",
+                        "mtime" : "--",
+                        "creationTime" : Date.now() //Assumption
+                    };
+                    this.dispatchEvent(new CustomEvent('dv-namespace-add-items', {
+                            detail: {files: [file]},bubbles: true, composed: true}));
+                });
+
+                this.dispatchEvent(new CustomEvent('dv-namespace-open-central-dialogbox',{
+                    detail: {node: mv}, bubbles: true, composed: true
+                }));
+            }
+
+            _isSelectedChanged(e)
+            {
+                this.isSelected = e.detail.xSelectedItems.length !== 0;
+                this._selectedItems = e.detail.xSelectedItems;
+            }
+
+            _setCurrentPath(e)
+            {
+                this.currentPath = e.detail.currentPath;
+            }
+
+            _resetViewFileDependentParameters(e)
+            {
+                this._selectedItems = [];
+                this.isSelected = false;
+
+                if (this.pgRoute === "home") {
+                    this.removeAllChildren(this.$["pagination"]);
+                    const path = e.detail.path;
+                    const elRoot = new PaginationButton("Root", "/");
+                    this.$["pagination"].appendChild(elRoot);
+                    if (path === undefined || path === "" || path === "/") {
+                        elRoot.shadowRoot.querySelector('a').classList.add("active");
+                    } else {
+                        elRoot.shadowRoot.querySelector('a').classList.remove("active");
+                        const dirNames = path.split("/");
+                        const len = dirNames.length;
+                        let pt =  "";
+                        for (let i = 1; i < len; i++) {
+                            pt += "/" + dirNames[i];
+                            const el = new PaginationButton(dirNames[i], pt);
+                            this.$["pagination"].appendChild(el);
+                            el.shadowRoot.querySelector('a').classList.remove("active");
+                            if (i === len-1) {
+                                el.shadowRoot.querySelector('a').classList.add("active");
+                            }
+                        }
+                    }
+                }
+            }
+            _computedClass(isSelected)
+            {
+                return !isSelected ? ' none' : ' ';
+            }
+            _computedRowClass(isSelected)
+            {
+                return isSelected ? ` row` : ` none`;
+            }
+            _setAuthenticationParameters(e)
+            {
+                this.authenticationParameters = e.detail.authenticationParameters;
+            }
+            _shared()
+            {
+                this.$["sharing-standardTools"].style.visibility = "hidden";
+                this.dispatchEvent(
+                    new CustomEvent('dv-file-sharing-show-file-list-page', {bubbles: true, composed: true}));
+            }
+            _sharingPageSwitchListener(e)
+            {
+                if (e.detail.page === "shared-directory-view") {
+                    this.$["sharing-standardTools"].style.visibility = "visible";
+                }
+            }
+        }
+        window.customElements.define(SelectedTitle.is, SelectedTitle);
+    </script>
+</dom-module>

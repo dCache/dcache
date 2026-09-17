@@ -1,0 +1,1034 @@
+<link rel="import" href="../../../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../../../bower_components/iron-list/iron-list.html">
+<link rel="import" href="../../../../bower_components/iron-selector/iron-selector.html">
+<link rel="import"
+      href="../../../../bower_components/iron-scroll-threshold/iron-scroll-threshold.html">
+<link rel="import" href="../../../../bower_components/paper-spinner/paper-spinner.html">
+<link rel="import"
+      href="../../../../bower_components/paper-styles/element-styles/paper-material-styles.html">
+<link rel="import" href="../../../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../../../../bower_components/dcache-namespace/dcache-namespace.html">
+<link rel="import" href="../../list-view/list-row.html">
+<link rel="import" href="../../directory-ls-message/empty-directory.html">
+<link rel="import" href="../../directory-ls-message/directory-ls-error.html">
+<link rel="import" href="../../user-authentication/forms/user-login-page.html">
+<link rel="import" href="../../rename-input/rename-input.html">
+
+<dom-module id="view-file-labels">
+  <template>
+    <style include="paper-material-styles">
+
+      :host {
+        display: block;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -khtml-user-select: none;
+        -ms-user-select: none;
+      }
+
+      :host, #content {
+        height: 100%;
+      }
+
+      #content {
+        overflow: auto;
+        padding-right: 10px;
+        padding-bottom: 5px;
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+      }
+
+      #content[elevation="1"] {
+        background: #fff;
+      }
+
+      #content[elevation="0"] {
+        background: transparent;
+      }
+
+      .item {
+        text-decoration: none !important;
+        background-color: white;
+        @apply(--layout-flex);
+        cursor: pointer;
+      }
+
+      .item:focus {
+        outline: 0 solid transparent !important;
+      }
+
+      .loading {
+        display: none;
+      }
+
+      .loading[is-loading] {
+        position: absolute;
+        height: 50px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.14);
+        margin-bottom: 2px;
+        text-align: center;
+        font-size: 0.8em;
+      }
+
+      .loading paper-spinner {
+        width: 20px;
+        height: 20px;
+
+      }
+
+      .search-container {
+        display: flex;
+        height: 70px;
+        align-items: center;
+        justify-content: center;
+        padding: 0.7rem 2rem;
+        background-color: #fbfbfb;
+        margin: 1rem;
+        border-radius: 10px;
+      }
+
+      .search-txt {
+        width: 80%;
+        margin-right: 1rem;
+        --primary-text-color: #01579B;
+        --paper-input-container-color: black;
+        --paper-input-container-focus-color: black;
+        --paper-input-container-invalid-color: black;
+        border: 1px solid #BDBDBD;
+        border-radius: 5px;
+
+        /* Reset some defaults */
+
+        --paper-input-container: {
+          padding: 0;
+        };
+
+        --paper-input-container-underline: {
+          display: none;
+          height: 0;
+        };
+
+        --paper-input-container-underline-focus: {
+          display: none;
+        };
+
+        /* New custom styles */
+
+        --paper-input-container-input: {
+          box-sizing: border-box;
+          font-size: inherit;
+          padding: 4px;
+
+        };
+
+        --paper-input-container-input-focus: {
+          background: rgba(0, 0, 0, 0.1);
+        };
+
+        --paper-input-container-input-invalid: {
+          background: rgba(255, 0, 0, 0.3);
+        };
+
+        --paper-input-container-label: {
+          top: -8px;
+          left: 4px;
+          background: white;
+          padding: 2px;
+          font-weight: bold;
+        };
+
+        --paper-input-container-label-floating: {
+          width: auto;
+        };
+
+      }
+
+      .search-txt.custom:hover {
+        border: 1px solid #29B6F6;
+      }
+
+      .search-btn {
+        background-color: #4285f4;
+        color: white;
+        --paper-button-raised-keyboard-focus: {
+          background-color: #4285f4 !important;
+          color: white !important;
+        };
+
+        border: none !important;
+        text-transform: none;
+        border-radius: 0 !important;
+        margin: 0 !important;
+        float: right;
+      }
+    </style>
+
+    <div id="content" class="paper-material" elevation="1">
+      <div class="paper-material search-container" elevation="1">
+        <paper-input class="search-txt" label="Search"
+                     always-float-label placeholder="Search for a particular label"
+                     value="{{label}}"></paper-input>
+        <paper-button class="search-btn" on-tap="_listVirtualDirectory">Search</paper-button>
+      </div>
+
+      <iron-list id="feList" items="[]"
+                 selected-item="{{selectedItem}}"
+                 selection-enabled>
+
+        <template>
+          <div>
+            <list-row tabindex$="[[tabIndex]]"
+                      class$="[[_computedClass(selected,item.pnfsId)]]"
+                      x-selected$="[[__computedXselected(item.xSelected)]]"
+                      file-meta-data="{{item}}" parent-path="[[parent]]"
+                      draggable="[[_computedDraggable(item.xSelected)]]"
+                      authentication-parameters="[[authenticationParameters]]"></list-row>
+          </div>
+        </template>
+
+      </iron-list>
+
+    </div>
+
+    <div class="loading" id="loading" is-loading$="[[loading]]">
+
+      <paper-spinner active="[[loading]]"></paper-spinner>
+      Fetching data
+
+    </div>
+
+    <iron-scroll-threshold id="threshold"
+                           lower-threshold="500"
+                           on-lower-threshold="_loadNamespaceData">
+    </iron-scroll-threshold>
+
+  </template>
+
+  <script>
+
+    class ViewFileLabels extends DcacheViewMixins.LABELS(
+        DcacheViewMixins.Commons(Polymer.Element)) {
+      constructor(path) {
+        super();
+        this.path = path === undefined ? "/" : path;
+        window.dispatchEvent(
+            new CustomEvent('dv-namespace-view-file-lable-created', {
+
+              detail: {path: path}, bubbles: true, composed: true
+            }));
+        window.dispatchEvent(
+            new CustomEvent('dv-namespace-current-path', {
+
+              detail: {currentPath: path}, bubbles: true, composed: true
+            }));
+
+        this._removeItems_ = this._removeItems.bind(this);
+        this._addItems_ = this._addItems.bind(this);
+        this._sendCurrentPath_ = this._sendCurrentPath.bind(this);
+        this._sendItemIndex_ = this._sendItemIndex.bind(this);
+        this._reset_ = this._reset.bind(this);
+        this._renameInputStart_ = this._renameInputStart.bind(this);
+        this._renameInputEnd_ = this._renameInputEnd.bind(this);
+        this._sendCurrentChildren_ = this._sendCurrentChildren.bind(this);
+        this._eventsChannelStatus_ = this._eventsChannelStatus.bind(this);
+        this._eventsChannelStatus(window.CONFIG["sse"].status); // need to called once for init
+      }
+
+      ready() {
+
+        super.ready();
+        this.$.feList.scrollTarget = this.$.content;
+        this.$.threshold.scrollTarget = this.$.content;
+
+        Polymer.RenderStatus.afterNextRender(this, () => {
+
+          this.dispatchEvent(
+              new CustomEvent('dv-namespace-current-authenticationParameters', {
+
+                detail: {authenticationParameters: this.authenticationParameters},
+
+                bubbles: true, composed: true
+              })
+          );
+        });
+
+      }
+
+      connectedCallback() {
+
+        super.connectedCallback();
+        this.$.feList.addEventListener('click', this._stopPropagation);
+        this.addEventListener('keydown', this._multipleSelectionShortcuts);
+        this.addEventListener('keyup', this._resetMultipleSelectionShortcuts);
+        this.addEventListener('dv-namespace-rename-input', this._renameInputEnd_);
+
+        window.addEventListener('dv-namespace-remove-items', this._removeItems_);
+        window.addEventListener('dv-namespace-add-items', this._addItems_);
+        window.addEventListener('dv-namespace-request-current-path', this._sendCurrentPath_);
+        window.addEventListener('dv-namespace-request-item-index', this._sendItemIndex_);
+        window.addEventListener('dv-namespace-reset-element-internal-parameters', this._reset_);
+        window.addEventListener('dv-namespace-open-rename-dialogbox', this._renameInputStart_);
+        window.addEventListener('dv-namespace-request-children', this._sendCurrentChildren_);
+        window.addEventListener('dv-sse-channel-status-change', this._eventsChannelStatus_);
+        window.addEventListener('dv-sse-events-stream', this._receiveStreams_);
+
+      }
+
+      disconnectedCallback() {
+
+        super.disconnectedCallback();
+
+        this.$.feList.removeEventListener('click', this._stopPropagation);
+        this.removeEventListener('keydown', this._multipleSelectionShortcuts);
+        this.removeEventListener('keyup', this._resetMultipleSelectionShortcuts);
+        this.removeEventListener('dv-namespace-rename-input', this._renameInputEnd_);
+
+        window.removeEventListener('dv-namespace-remove-items', this._removeItems_);
+        window.removeEventListener('dv-namespace-add-items', this._addItems_);
+        window.removeEventListener('dv-namespace-request-current-path', this._sendCurrentPath_);
+        window.removeEventListener('dv-namespace-request-item-index', this._sendItemIndex_);
+        window.removeEventListener('dv-namespace-reset-element-internal-parameters', this._reset_);
+        window.removeEventListener('dv-namespace-open-rename-dialogbox', this._renameInputStart_);
+        window.removeEventListener('dv-namespace-request-children', this._sendCurrentChildren_);
+        window.removeEventListener('dv-sse-channel-status-change', this._eventsChannelStatus_);
+        window.removeEventListener('dv-sse-events-stream', this._receiveStreams_);
+
+        if (this._taskManager) {
+          this._taskManager.cancelAll()
+        }
+
+      }
+
+      static get is() {
+        return "view-file-labels";
+      }
+
+      static get properties() {
+        return {
+          path: {
+            type: String,
+            notify: true
+          },
+          parent: {
+            type: String,
+            notify: true,
+            computed: '_computeParentPath(path)'
+          },
+          selectedItem: {
+            type: Object
+          },
+          url: {
+            type: String,
+            notify: true,
+            computed: '_url(path)'
+          },
+          label: {
+            type: String,
+            notify: true,
+          },
+          currentDirName: {
+
+            type: String,
+            computed: '_computeCurrentDirName(path)',
+            notify: true
+          },
+
+          currentDirMetaData: {
+            type: Object,
+            value: () => {
+              return {};
+            }
+          },
+
+          __counter__: {
+            type: Number,
+            value: 0,
+            notify: true
+          },
+
+          loading: {
+            type: Boolean,
+            value: false,
+            notify: true
+          },
+
+          _isSubsequentRequest: {
+            type: Boolean,
+            value: false
+          },
+
+          _shiftKeyOn: {
+            type: Boolean,
+            value: false,
+            notify: true
+          },
+
+          _ctrlKeyOn: {
+            type: Boolean,
+            value: false,
+            notify: true
+          },
+
+          _xSelectedItems: {
+            type: Array,
+            value: () => {
+              return [];
+            },
+            notify: true
+
+          },
+
+          _temporarySelectedItemsHolder: {
+            type: Array,
+            value: () => {
+              return [];
+            }
+          },
+
+          _namespaceRequestMessage: {
+            type: String
+          },
+
+          _taskIDArray: {
+
+            type: Array,
+            value: () => {
+              return [];
+            }
+          }
+        }
+      }
+
+      static get observers() {
+
+        return [
+          'selectedItemChanged(selectedItem)',
+          '_temporarySelectedItemsHolderModified(_temporarySelectedItemsHolder.splices)',
+          '__xSelectedItemsChanged(_xSelectedItems.splices)',
+          '_setSequentRequestStatus(__counter__)'
+        ];
+
+      }
+
+      _computedDraggable(isSelected) {
+        return !!isSelected;
+      }
+
+      _computedClass(isSelected, pnfsId) {
+
+        let classes = `item _dv${pnfsId}`;
+        if (isSelected) {
+          classes += ' selected';
+        }
+        this.updateStyles();
+        return classes;
+      }
+
+      _listVirtualDirectory() {
+        this.loading = true;
+        const message = {          'endpoint': `${window.location.origin}${window.CONFIG['dcache-view.endpoints.webapi']}`,
+          'file': this.currentDirMetaData,
+          'filePath': this.encodePath(this.label),
+          'scope': 'partial',
+          'limit': 100,
+          //TODO should be re- written
+          'offset': this.__counter__ * 0,
+          'upauth': this.getAuthValue()
+
+        };
+
+
+        this.fileMetadataPromise(message).then(metadata => {
+          this.handleResponse(metadata);
+          this.loading = false;
+        }).catch(error => {
+          this.handleError(error.message);
+          this.loading = false;
+        })
+      }
+
+      _url(path) {
+        const isHome = path === null || path === "" || path === "/";
+
+        const filePath = this.getAuthValue() !== "Basic YW5vbnltb3VzOm5vcGFzc3dvcmQ=" ? isHome
+        === true ?
+            "/?children=true&qos=true" : `${path}/?children=true&qos=true` : isHome === true ?
+            "/?children=true" : `${path}/?children=true`;
+        return `${window.CONFIG["dcache-view.endpoints.webapi"]}namespace${this.encodePath(
+            filePath)}`;
+
+      }
+
+
+      _computeParentPath(path) {
+        return this.path == null || this.path === "" || this.path === "/" ? "/" : `${this.path}/`;
+      }
+
+      handleResponse(response) {
+        this.$["feList"].items = [];
+        this.$.feList.fire('iron-resize');
+        const children = response.children;
+        this._namespaceRequestMessage = "successful";
+        if (!(children.length === 0 && this.__counter__ === 0)) {
+          children.forEach((child) => {
+            this.$.feList.push('items', child)
+          });
+
+          this.$.threshold.clearTriggers();
+
+          if (children.length > 0) {
+            this.__counter__++;
+            this.$.feList.fire('iron-resize');
+          }
+
+        }
+
+        if (Object.keys(this.currentDirMetaData).length === 0) {
+
+          const a = JSON.parse(JSON.stringify(response));
+          delete a['children'];
+          this.currentDirMetaData = a;
+          this.currentDirMetaData.fileName = this.currentDirName;
+       }
+        this._updateContentElevationAttribute();
+      }
+
+      handleError(error) {
+        const err = JSON.parse(error.substr(error.indexOf("{")));
+        this._namespaceRequestMessage = err.message;
+        const code = err.status ? err.status : 500;
+        this.$.content.setAttribute("elevation", 0);
+        switch (parseInt(code)) {
+          case 401:
+            if (window.CONFIG.isSomebody || !!sessionStorage.upauth) {
+              //something is wrong with the credential
+
+              const x = page.current;
+              if (x === "/" || x.startsWith("/?")) {
+                this._namespaceRequestMessage = "Please login again - your credential is no longer valid.";
+                window.CONFIG.isSomebody = false;
+                break;
+              }
+
+              if (x.startsWith("/shared-files")) {
+
+                this._namespaceRequestMessage = "Something is wrong with the sharing credential " +
+                    "you are using to view this file. Most likely this credential has expired. " +
+                    "Request for a new one.";
+                const macaroonList = sessionStorage.getItem("macaroonList");
+                const macaroonArray = macaroonList.split(" ");
+                macaroonArray.filter(
+                    macaroon => macaroon !== this.authenticationParameters.value).join(" ");
+                this.authenticationParameters = {};
+                break;
+              }
+            }
+
+            const a = `"page":"home","path":"${this.path}"`;
+            page.redirect(`/user-login?r=${encodeURIComponent(a)}`);
+            break;
+          case 403:
+            this._namespaceRequestMessage = "Access Denied! Please login using a credentials with the right permission.";
+            break;
+          default:
+            this._namespaceRequestMessage = this._namespaceRequestMessage === undefined ?
+                "Something is terribly wrong! Please contact your admin." : msg;
+        }
+
+        const dle = new DirectoryLsError(this._namespaceRequestMessage, code, this.path);
+        this.$.content.appendChild(dle);
+        this.currentDirMetaData = {"fileName": this.currentDirName, "fileType": "DIR", "size": 512};
+        Polymer.dom.flush();
+        this.updateStyles();
+      }
+
+      selectedItemChanged(selectedItem) {
+        if (selectedItem) {
+          if (this._shiftKeyOn) {
+            this._temporarySelectedItemsHolder.push({"keyValue": "shift", "file": selectedItem});
+          } else if (this._ctrlKeyOn) {
+            this._temporarySelectedItemsHolder.push({"keyValue": "ctrl", "file": selectedItem});
+          } else {
+            this._temporarySelectedItemsHolder.push({"keyValue": "none", "file": selectedItem});
+          }
+          this.notifySplices('_temporarySelectedItemsHolder');
+          this.$.feList.clearSelection();
+        }
+      }
+
+      _renameInputStart(e) {
+        const listRow =
+            this.$.feList.querySelector(`._dv${e.detail.file.fileMetaData.pnfsId}`);
+        listRow.manualRenameStart(e.detail.file, this.getAuthValue());      }
+
+      _renameInputEnd(e) {
+        if (e.detail.isAborted ||
+            !(window.CONFIG.sse["status"] === "running" || window.CNFIG.sse["status"]
+                === "created")) {
+          this._renameOperation(e.detail.pnfsId, e.detail.newFileName);
+        }
+      }
+
+      _renameOperation(pnfsId, newFileName) {
+
+        const listRow = this.$["feList"].querySelector(`._dv${pnfsId}`);
+        const index = this.__findItemIndexOnAList(this.$["feList"].items, pnfsId, "pnfsId");
+        this.$["feList"].items[index].fileName = newFileName;
+        this.$["feList"].notifyPath(`items.${index}.fileName`);
+        listRow.manualRenameEnd();
+      }
+
+      _loadNamespaceData() {
+
+        //FIXME: race condition problem
+
+        if (this._isSubsequentRequest) {
+          this.__listDirectoryLabel();
+        } else {
+          window.addEventListener('WebComponentsReady', () => this.__listDirectoryLabel());
+
+        }
+
+      }
+
+      _loadNamespaceDataLabel() {
+
+        //FIXME: race condition problem
+        this.__listDirectoryLabel();
+
+      }
+
+      _multipleSelectionShortcuts(event)
+      {
+        if ((window.navigator.platform.match("Mac")
+            ? event.metaKey : event.ctrlKey) && event.key === "ArrowUp") {
+          this.__arrowUpDown_CtrlShift('up');
+        } else if ((window.navigator.platform.match("Mac")
+            ? event.metaKey : event.ctrlKey) && event.key === "ArrowDown") {
+          this.__arrowUpDown_CtrlShift('down');
+        } else if (event.shiftKey && event.key === "ArrowUp") {
+          this.__arrowUpDown_CtrlShift('up');
+        } else if (event.shiftKey && event.key === "ArrowDown") {
+          this.__arrowUpDown_CtrlShift('down');
+        } else if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+          const key = event.key;
+          const file = this._temporarySelectedItemsHolder[this._temporarySelectedItemsHolder.length - 1].file;
+
+          this.$.feList.clearSelection();
+          this._removeAllXSelected();
+          this._temporarySelectedItemsHolder = [];
+          let index;
+          switch (key) {
+            case 'ArrowUp':
+              index = this.$.feList.items.indexOf(file) - 1 === -1 ? 0 :
+                  this.$.feList.items.indexOf(file) - 1;
+              break;
+            default:
+              index = this.$.feList.items.indexOf(file) + 1 === this.$.feList.items.length ?
+                  this.$.feList.items.indexOf(file) : this.$.feList.items.indexOf(file) + 1;
+          }
+          this.$.feList.selectIndex(index);
+        } else if (event.shiftKey) {
+          this._shiftKeyOn = true;
+          this._ctrlKeyOn = false;
+        } else if (window.navigator.platform.match("Mac") ? event.metaKey : event.ctrlKey) {
+          this._shiftKeyOn = false;
+          this._ctrlKeyOn = true;
+        }
+
+      }
+
+      _resetMultipleSelectionShortcuts(event)
+      {
+        if (event.key === "Shift") {
+          this._shiftKeyOn = false;
+        }
+
+        if (window.navigator.platform.match("Mac") ?
+            event.key === "Meta" : event.key === "Control") {
+          this._ctrlKeyOn = false;
+        }
+
+        if (event.key === "Escape" || event.key === "Esc") {
+          window.dispatchEvent(
+              new CustomEvent('dv-namespace-reset-element-internal-parameters', {
+                detail: {element: 'view-file'}, bubbles: true, composed: true}));
+        }
+      }
+
+      __computedXselected(xSelected)
+      {
+        return xSelected ? xSelected: false;
+      }
+
+      _xSelectItem(index)
+      {
+        this.$.feList.items[index].xSelected = true;
+        this.$.feList.notifyPath(`items.${index}.xSelected`);
+      }
+
+      _removeAllXSelected()
+      {
+        const items = this.$.feList.items;
+        const len = items.length;
+        for (let i=0; i < len; i++) {
+          if (items[i].xSelected) {
+            this._removeXSelected(i);
+          }
+        }
+      }
+
+      _removeXSelected(idx)
+      {
+        this.$.feList.items[idx].xSelected = false;
+        this.$.feList.notifyPath(`items.${idx}.xSelected`);
+        delete this.$.feList.items[idx].xSelected;
+      }
+
+      _temporarySelectedItemsHolderModified(arr)
+      {
+        if (arr) {
+          const len = this._temporarySelectedItemsHolder.length;
+          const lastKeyValue = this._temporarySelectedItemsHolder[len-1].keyValue;
+          const lastFile = this._temporarySelectedItemsHolder[len-1].file;
+          const idx1 = this.$.feList.items.indexOf(lastFile);
+          switch (lastKeyValue) {
+            case 'none':
+              this._removeAllXSelected();
+              lastFile.xSelected = true;
+              this._temporarySelectedItemsHolder = [{"keyValue":"none", "file": lastFile}];
+              this._xSelectItem(idx1);
+              break;
+            case 'shift':
+              let idx0;
+              for (let i = 2; i < len+1; i++ ) {
+                if (this._temporarySelectedItemsHolder[len-i].keyValue !== "shift") {
+                  idx0 =
+                      this.$.feList.items.indexOf(this._temporarySelectedItemsHolder[len-i].file);
+                  break;
+                }
+              }
+
+              if (len > 2 && (this._temporarySelectedItemsHolder[len-2].keyValue === "shift")) {
+                const idx0S =
+                    this.$.feList.items.indexOf(this._temporarySelectedItemsHolder[len-2].file);
+                const idxes = this.__getLoopBoundaries(idx0S, idx1);
+                for (let i = idxes[0]; i < idxes[1]; i++) {
+                  this._removeXSelected(i);
+                }
+              }
+
+              if (this.__getLoopBoundaries(idx0, idx1) !== []) {
+                const idxes = this.__getLoopBoundaries(idx0, idx1);
+
+                for (let i = idxes[0]; i < idxes[1]; i++) {
+                  this._xSelectItem(i)
+                }
+              }
+              break;
+            case 'ctrl':
+              if (this.$.feList.items[idx1].xSelected) {
+                this._removeXSelected(idx1);
+
+                const id = this._temporarySelectedItemsHolder.findIndex(el => {
+                  return el.file.fileName === lastFile.fileName;
+                });
+                if (id >= 0) {
+                  this._temporarySelectedItemsHolder.splice(id, 1);
+                }
+              } else {
+                this._temporarySelectedItemsHolder[len-1].file.xSelected = true;
+                this._xSelectItem(idx1);
+              }
+              break;
+            case 'arrow-up':
+            case 'arrow-down':
+              if (this.$.feList.items[idx1].xSelected) {
+                const myD = this._temporarySelectedItemsHolder.slice(0,len-1);
+                const id = myD.findIndex(el => {
+                  return el.file.fileName === lastFile.fileName;
+                });
+                if (id >= 0 && myD[id].keyValue === lastKeyValue) {
+                  this._removeXSelected(idx1);
+                  this._temporarySelectedItemsHolder.splice(id, 1);
+                }
+              } else {
+                this._temporarySelectedItemsHolder[len-1].file.xSelected = true;
+                this._xSelectItem(idx1);
+              }
+              break;
+          }
+          this.__getAllItemsXSelected();
+        }
+      }
+
+      __getLoopBoundaries(idx0,idx1)
+      {
+        return idx0 < idx1 || idx0 > idx1 ? idx0 < idx1 ? [idx0, idx1 + 1] : [idx1, idx0 + 1] : [];
+      }
+
+      __getAllItemsXSelected()
+      {
+        this._xSelectedItems = [];
+        const len = (this.$.feList.items).length;
+        for (let i=0; i<len; i++) {
+          if (this.$.feList.items[i].xSelected) {
+            const x = Object.assign({}, this.$.feList.items[i]);
+            delete x.xSelected;
+            this._xSelectedItems.push(x);
+          }
+        }
+        this.notifySplices('_xSelectedItems');
+      }
+
+      __xSelectedItemsChanged(arr)
+      {
+        if (arr) {
+          this.dispatchEvent(
+              new CustomEvent('dv-namespace-x-selected-items-changed', {
+                detail:{xSelectedItems: this._xSelectedItems},
+                bubbles: true, composed: true})
+          );
+        }
+      }
+
+      _removeItems(event)
+      {
+        if (!(window.CONFIG.sse["status"] === "running" || window.CONFIG.sse["status"] === "created")) {
+          const files = event.detail.files;
+          const len = this.$.feList.items.length;
+          files.forEach((file) => {
+            for (let i = 0; i < len; i++) {
+              if (this.$.feList.items[i].fileName === file.fileName) {
+                this.$.feList.splice('items', i, 1);
+                if (this._xSelectedItems.length > 0) {
+                  const idx = this._xSelectedItems.indexOf(file);
+                  this.splice('_xSelectedItems', idx, 1);
+                }
+                break;
+              }
+            }
+          });
+          this._updateContentElevationAttribute();
+        }
+      }
+
+      _removeItem(name)
+      {
+        const len = this.$.feList.items.length;
+        for (let i = 0; i < len; i++) {
+          if (this.$.feList.items[i].fileName === name) {
+            this.$.feList.splice('items', i, 1);
+            if (this._xSelectedItems.length > 0) {
+              const idx = this.__findItemIndexOnAList(this._xSelectedItems, {"fileName": name});
+              this.splice('_xSelectedItems', idx, 1);
+            }
+            break;
+          }
+        }
+        this._updateContentElevationAttribute();
+      }
+
+      _addItems(event)
+      {
+        if (!(window.CONFIG.sse["status"] === "running" || window.CONFIG.sse["status"] === "created")) {
+          const ed = this.shadowRoot.querySelector('empty-directory');
+          if (ed) {
+            this.$["content"].removeChild(ed);
+          }
+          if (this.$["feList"] !== null || true) {
+            const files = event.detail.files;
+            files.forEach((file) => {
+              this.$["feList"].unshift('items', file);
+            });
+          }
+          this.$["feList"].fire('iron-resize');
+          this._updateContentElevationAttribute();
+        }
+      }
+      _addItem(file)
+      {
+        const ed = this.shadowRoot.querySelector('empty-directory');
+
+        if (ed) {
+          this.$["content"].removeChild(ed);
+        }
+        if (this.$["feList"] !== null || true) {
+          this.$["feList"].unshift('items', file);
+        }
+        this.$["feList"].fire('iron-resize');
+        this._updateContentElevationAttribute();
+      }
+
+      _sendCurrentPath()
+      {
+        this.dispatchEvent(
+            new CustomEvent('dv-namespace-current-path', {
+              detail: {currentPath: this.path}, bubbles: true, composed: true}));
+      }
+
+      /**
+       * TODO: Moved the method to the Base mixin class
+       */
+      __findItemIndexOnAList(list, item, searchKey)
+      {
+        searchKey = !searchKey ? 'fileName': searchKey;
+        return list.findIndex(el => {
+          return item === Object(item) ?
+              el[`${searchKey}`] === item[`${searchKey}`] : el[`${searchKey}`] === item;
+        });
+      }
+
+      __getItemCurrentIndex(item)
+      {
+        return this.__findItemIndexOnAList(this.$.feList.items, item);
+      }
+
+      _sendItemIndex(event)
+      {
+        const index = this.__getItemCurrentIndex(event.detail.item);
+        this.dispatchEvent(
+            new CustomEvent('dv-namespace-receive-item-index', {
+              detail: {index: index}, bubbles: true, composed: true}));
+      }
+
+      _reset(event)
+      {
+        if (event.detail.element === "view-file-labels") {
+          this.$.feList.clearSelection();
+          this._removeAllXSelected();
+          this._xSelectedItems = [];
+          this._temporarySelectedItemsHolder = [];
+          this.notifySplices('_xSelectedItems');
+          this._shiftKeyOn = false;
+          this._ctrlKeyOn = false;
+        }
+      }
+
+      __arrowUpDown_CtrlShift(arrowType)
+      {
+        const file =
+            this._temporarySelectedItemsHolder[this._temporarySelectedItemsHolder.length - 1].file;
+        const keyValue =
+            this._temporarySelectedItemsHolder[this._temporarySelectedItemsHolder.length - 1].keyValue;
+        const idx = this.__getItemCurrentIndex(file);
+
+        if (keyValue === 'arrow-down' && arrowType === 'up'
+            || keyValue === 'arrow-up' && arrowType === 'down') {
+          this._removeXSelected(idx);
+          this._temporarySelectedItemsHolder.pop();
+          this.__getAllItemsXSelected();
+          return;
+        }
+        switch (arrowType) {
+          case 'up':
+            if (idx > 0) {
+              const selectedItem = this.$.feList.items[idx-1];
+              this._temporarySelectedItemsHolder.push({"keyValue": "arrow-up", "file": selectedItem});
+              this.notifySplices('_temporarySelectedItemsHolder');
+            }
+            break;
+          case 'down':
+            if (idx >= 0 && idx < this.$.feList.items.length -1) {
+              const selectedItem = this.$.feList.items[idx + 1];
+              this._temporarySelectedItemsHolder.push({"keyValue": "arrow-down", "file": selectedItem});
+              this.notifySplices('_temporarySelectedItemsHolder');
+            }
+            break;
+        }
+      }
+
+      _computeCurrentDirName(path)
+      {
+        return path === "/" ? 'ROOT' : path.slice(path.lastIndexOf("/")+1);
+      }
+
+      _setSequentRequestStatus(c)
+      {
+        this._isSubsequentRequest = c !== 0;
+      }
+
+      _updateContentElevationAttribute()
+      {
+        if (this.$.feList.items.length > 0) {
+          if (this.$.content.getAttribute("elevation") === "0") {
+            this.$.content.setAttribute("elevation", 1);
+          }
+        } else {
+          if (this.$.content.getAttribute("elevation") === "1") {
+            this.$.content.setAttribute("elevation", 0);
+          }
+          if (this.$.feList.items.length === 0) {
+            const el1 = new EmptyDirectory();
+            this.$.content.appendChild(el1);
+          }
+        }
+      }
+
+      _stopPropagation(e)
+      {
+        e.stopPropagation();
+      }
+
+      _sendCurrentChildren()
+      {
+        this.dispatchEvent(
+            new CustomEvent('dv-namespace-receive-children', {
+              detail: {message: this._namespaceRequestMessage,
+                children: this.$.feList.items}, bubbles: true, composed: true}));
+      }
+
+      _eventsChannelStatus(event)
+      {
+        const status = event ? event.detail ? event.detail.current : event : '';
+        switch (status) {
+          case 'created':
+          case 'running':
+            break;
+          case 'disconnected':
+            break;
+          case 'pending':
+          default:
+            break;
+        }
+      }
+
+      async _getFileAttribute(name)
+      {
+        /**
+         * TODO -- use web-worker for this request
+         */
+        const headers = new Headers({
+          "Suppress-WWW-Authenticate": "Suppress",
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        });
+        if (this.getAuthValue() !== "") {
+          headers.append("Authorization", `${this.getAuthValue()}`);
+        }
+        const req = new Request(
+            `${window.CONFIG['dcache-view.endpoints.webapi']}namespace${this.path}/${name}?qos=true`,
+            {headers: headers}
+        );
+        const response = await fetch(req);
+        if (response.ok) {
+          return await response.json();
+        } else {
+          throw {"status":response.status, "message": response.statusText};
+        }
+      }
+
+    }
+    window.customElements.define(ViewFileLabels.is, ViewFileLabels);
+
+  </script>
+
+</dom-module>

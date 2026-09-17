@@ -81,8 +81,10 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import org.dcache.cells.CellStub;
 import org.dcache.restful.providers.selection.PreferenceResult;
+import org.dcache.restful.util.Responses;
 import org.json.JSONException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -112,7 +114,7 @@ public final class PoolPreferenceResources {
           @ApiResponse(code = 500, message = "Internal Server Error"),
     })
     @Produces(MediaType.APPLICATION_JSON)
-    public List<PreferenceResult> match(
+    public Response match(
           @ApiParam(value = "The I/O direction.", allowableValues = "READ,CACHE,WRITE,P2P")
           @DefaultValue("READ")
           @QueryParam("ioDirection") String ioDirection,
@@ -158,7 +160,7 @@ public final class PoolPreferenceResources {
                 results.add(new PreferenceResult(level));
             }
 
-            return results;
+            return Responses.buildResponse(results);
         } catch (JSONException | IllegalArgumentException e) {
             throw new BadRequestException(e);
         } catch (CacheException | InterruptedException | NoRouteToCellException e) {

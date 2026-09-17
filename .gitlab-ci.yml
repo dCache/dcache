@@ -26,6 +26,14 @@
 # The kubernetes based jobs don't use directly any job artefact, thus pulling artefact
 # is explicitly disabled by default.
 
+workflow:
+  rules:
+  # workflow to stop GitLab from starting a redundant pipeline after replicating PR into MR
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: never 
+      # fallback for the rest of the pipelines
+    - when: always 
+
 stages:
   # build rpm, tar, deb, oci container
   - build
@@ -148,6 +156,8 @@ deb:
   image: dcache/maven-java21-deb-build
   extends: .build_cache
   script:
+    - apt-get -qq update && apt-get -qq install -y git
+    - git config --global url."https://".insteadOf git://
     - mvn $MAVEN_CLI_OPTS -DskipTests -am -pl packages/fhs -P deb clean package
   artifacts:
     paths:
@@ -252,6 +262,13 @@ container:
         cp jacoco-${JACOCO_VERSION}/lib/jacococli.jar staging-libs/
       fi
 
+    - mkdir -p staging-libs
+    - |
+      if [ -d "jacoco-${JACOCO_VERSION}/lib" ]; then
+        echo "JaCoCo artifacts found, staging for Docker..."
+        cp jacoco-${JACOCO_VERSION}/lib/jacocoagent.jar staging-libs/
+        cp jacoco-${JACOCO_VERSION}/lib/jacococli.jar staging-libs/
+      fi
     - mkdir -p /kaniko/.docker
     - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
     - >
@@ -269,6 +286,9 @@ container:
 Check for duplicate dependencies:
   stage: build
   image: almalinux:10-minimal
+  variables:
+    # Avoid git cloning. The sources are not needed for this job.
+    GIT_STRATEGY: none
   needs:
     - tar
   dependencies:
@@ -280,10 +300,27 @@ Check for duplicate dependencies:
     - ls -1 /dcache/share/classes/ | grep -v netty-tcnative-boringssl-static | sort | sed -e 's/\-[0-9].*$//' | uniq -D > duplicate-dependencies.txt
     - if [ -s duplicate-dependencies.txt ]; then cat duplicate-dependencies.txt; exit 1; fi
 
+
+Run Documetobot:
+  stage: build
+  image:
+    name: tollerort.desy.de/it-rs/pi-c:latest
+    entrypoint: ['']
+  allow_failure: true
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'master'
+  variables:
+    DESY_ASSISTANT_API_KEY: ${LLM_API_KEY}
+  script:
+    - pi -p --no-session "/skill:docubot"
+
 sign_rpm:
   stage: sign
   image: almalinux:10-minimal
   needs: ["rpm"]
+  variables:
+    # Avoid git cloning. The sources are not needed for this job.
+    GIT_STRATEGY: none
   script:
     - microdnf install -y rpm-sign gpg
     - echo $DCACHE_ORG_PGP_KEY | base64 -d -i > secret.gpg
@@ -300,6 +337,9 @@ sign_deb:
   stage: sign
   image: ubuntu:22.04
   needs: ["deb"]
+  variables:
+    # Avoid git cloning. The sources are not needed for this job.
+    GIT_STRATEGY: none
   script:
     - apt-get -qq update
     - apt-get -qq install debsigs gpg
@@ -319,6 +359,9 @@ sign_deb:
 RPM test install on EL9:
   stage: test_deploy
   image: almalinux:9
+  variables:
+    # Avoid git cloning. The sources are not needed for this job.
+    GIT_STRATEGY: none
   script:
     - dnf --nogpgcheck install -y packages/fhs/target/rpmbuild/RPMS/noarch/dcache*.rpm
 
@@ -332,7 +375,10 @@ RPM test install on EL9:
 # upload_rpm:
 #   stage: upload
 #   image: almalinux:10-minimal
-#   dependencies:
+#   variables:
+    # Avoid git cloning. The sources are not needed for this job.
+#    GIT_STRATEGY: none
+#  dependencies:
 #     - sign_rpm
 #   extends: .upload_rules
 #   script:
@@ -343,7 +389,10 @@ RPM test install on EL9:
 # upload_deb:
 #   stage: upload
 #   image: almalinux:10-minimal
-#   dependencies:
+#   variables:
+    # Avoid git cloning. The sources are not needed for this job.
+#    GIT_STRATEGY: none
+#  dependencies:
 #     - sign_deb
 #   extends: .upload_rules
 #   script:
@@ -354,7 +403,10 @@ RPM test install on EL9:
 # upload_tar:
 #   stage: upload
 #   image: almalinux:10-minimal
-#   dependencies:
+#   variables:
+    # Avoid git cloning. The sources are not needed for this job.
+#    GIT_STRATEGY: none
+#  dependencies:
 #     - tar
 #   extends: .upload_rules
 #   script:
@@ -378,17 +430,18 @@ RPM test install on EL9:
 #       tag=$CI_COMMIT_TAG
 #       branch_latest=`echo $CI_COMMIT_TAG | cut -d '.' -f 1,2`
 
-#     - mkdir maven
-#     - tar -C maven --strip-components=1 -xzvf packages/tar/target/dcache-*.tar.gz
-#     - cp $CI_PROJECT_DIR/packages/tar/src/main/container/* .
-#     - mkdir -p /kaniko/.docker
-#     - echo "{\"auths\":{\"https://index.docker.io/v1/\":{\"username\":\"$DOCKER_HUB_USER\",\"password\":\"$DOCKER_HUB_ACCESS_KEY\"}}}" > /kaniko/.docker/config.json
-#     - >
-#       /kaniko/executor
-#       --label dcache.build=GA
-#       --context $CI_PROJECT_DIR
-#       --dockerfile $CI_PROJECT_DIR/Dockerfile
-#       --destination dcache/dcache:$tag --destination dcache/dcache:$branch_latest
+    - mkdir maven
+    - tar -C maven --strip-components=1 -xzvf packages/tar/target/dcache-*.tar.gz
+    - cp $CI_PROJECT_DIR/packages/tar/src/main/container/* .
+    - mkdir -p staging-libs
+    - mkdir -p /kaniko/.docker
+    - echo "{\"auths\":{\"https://index.docker.io/v1/\":{\"username\":\"$DOCKER_HUB_USER\",\"password\":\"$DOCKER_HUB_ACCESS_KEY\"}}}" > /kaniko/.docker/config.json
+    - >
+      /kaniko/executor
+      --label dcache.build=GA
+      --context $CI_PROJECT_DIR
+      --dockerfile $CI_PROJECT_DIR/Dockerfile
+      --destination dcache/dcache:$tag --destination dcache/dcache:$branch_latest
 
 #
 # This jobs needs that the number of changes to fetch from GitLab when cloning a repository is high enough to generate
@@ -451,6 +504,9 @@ Release Notes Table:
 Prepare k8s environment:
   stage: testenv_pre
   extends: .kubernetes_image
+  variables:
+    # Avoid git cloning. The sources are not needed for this job.
+    GIT_STRATEGY: none
   script:
     - kubectl create namespace ${K8S_NAMESPACE}
 
@@ -461,6 +517,9 @@ Prepare k8s environment:
 Collect container logs:
   stage: testenv_post
   extends: .kubernetes_image
+  variables:
+    # Avoid git cloning. The sources are not needed for this job.
+    GIT_STRATEGY: none
   when: always
   allow_failure: true
   script:
@@ -479,6 +538,9 @@ Collect container logs:
 Clean k8s environment:
   stage: testenv_post
   extends: .kubernetes_image
+  variables:
+    # Avoid git cloning. The sources are not needed for this job.
+    GIT_STRATEGY: none
   needs:
     - Collect container logs
     - job: Extract Coverage
@@ -524,11 +586,10 @@ Deploy Kafka:
 #
 Deploy MinIO as Tape:
   stage: test_infra
-  extends: .helm_image
+  extends: .kubernetes_image
   script:
-    - helm repo add minio https://charts.min.io/
-    - helm repo update
-    - helm -n ${K8S_NAMESPACE} install ${HELM_OPTS} --set-string rootUser=dcache --set-string rootPassword=let-me-in --set replicas=1 --set persistence.enabled=false --set mode=standalone --set buckets[0].name=hsm,buckets[0].policy=none,buckets[0].purge=false --wait tape minio/minio
+    - kubectl -n ${K8S_NAMESPACE} apply -f .ci/k8s/minio-deployment.yaml
+    - kubectl -n ${K8S_NAMESPACE} wait --for=condition=Ready pod/minio
 
 
 #
@@ -606,10 +667,6 @@ Extract Coverage:
     - .no_release_rules
   dependencies:
     - get_jacoco_cli
-  needs:
-    - job: get_jacoco_cli
-      artifacts: true
-    - job: NFS4.x protocol compliance tests
   script:
     - JACOCO_CLI_PATH="jacoco-${JACOCO_VERSION}/lib/jacococli.jar"
     - PODS=$(kubectl -n $K8S_NAMESPACE get pods -l app.kubernetes.io/instance=store -o jsonpath='{.items[*].metadata.name}')
@@ -753,6 +810,17 @@ Run OIDC test:
     - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod oidc-tester; do sleep 1; done
     - kubectl -n $K8S_NAMESPACE cp .ci/run-oidc-test.sh oidc-tester:/run-oidc-test.sh
     - kubectl -n $K8S_NAMESPACE exec oidc-tester -- /bin/sh /run-oidc-test.sh
+
+Run OIDC code flow test:
+  stage: testing
+  extends: .kubernetes_image
+  needs:
+    - Frontend test suite
+  script:
+    - kubectl -n $K8S_NAMESPACE run oidc-code-flow-tester --image=almalinux:9 --restart=Never  --command -- sleep 3600
+    - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod oidc-code-flow-tester; do sleep 1; done
+    - kubectl -n $K8S_NAMESPACE cp .ci/run-oidc-code-flow-test.sh oidc-code-flow-tester:/run-oidc-code-flow-test.sh
+    - kubectl -n $K8S_NAMESPACE exec oidc-code-flow-tester -- /bin/sh /run-oidc-code-flow-test.sh
 
 #Job to find JaCoCo CLI in cache or download it
 get_jacoco_cli:

@@ -80,11 +80,13 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import org.dcache.pool.statistics.StorageUnitSpaceStatistics;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.pool.PoolGroupInfo;
 import org.dcache.restful.providers.selection.PoolGroup;
 import org.dcache.restful.services.pool.PoolInfoService;
+import org.dcache.restful.util.Responses;
 import org.springframework.stereotype.Component;
 
 /**
@@ -107,23 +109,25 @@ public final class PoolGroupInfoResources {
     @ApiOperation("Get a list of poolgroups."
           + " Results sorted lexicographically by group name.")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<PoolGroup> getPoolGroups() {
+    public Response getPoolGroups() {
         PoolSelectionUnit psu = poolMonitor.getPoolSelectionUnit();
 
-        return psu.getPoolGroups().values()
+        List<PoolGroup> result = psu.getPoolGroups().values()
               .stream()
               .sorted(Comparator.comparing(SelectionPoolGroup::getName))
               .map((g) -> new PoolGroup(g.getName(), psu))
               .collect(Collectors.toList());
+        return Responses.buildResponse(result, service.getLastUpdated());
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @ApiOperation("Get information about a poolgroup.")
     @Path("/{group}")
-    public PoolGroup getPoolGroup(@ApiParam("The poolgroup to be described.")
+    public Response getPoolGroup(@ApiParam("The poolgroup to be described.")
     @PathParam("group") String group) {
-        return new PoolGroup(group, poolMonitor.getPoolSelectionUnit());
+        PoolGroup result = new PoolGroup(group, poolMonitor.getPoolSelectionUnit());
+        return Responses.buildResponse(result, service.getLastUpdated());
     }
 
     @GET
@@ -132,13 +136,10 @@ public final class PoolGroupInfoResources {
           + "poolgroup is specified then all pools are listed. "
           + "Results sorted lexicographically by pool name.")
     @Produces(MediaType.APPLICATION_JSON)
-    public String[] getPoolsOfGroup(@ApiParam("The poolgroup to be described.")
+    public Response getPoolsOfGroup(@ApiParam("The poolgroup to be described.")
     @PathParam("group") String group) {
-        if (group == null) {
-            return service.listPools();
-        }
-
-        return service.listPools(group);
+        String[] result = (group == null) ? service.listPools() : service.listPools(group);
+        return Responses.buildResponse(result, service.getLastUpdated());
     }
 
 
@@ -146,13 +147,13 @@ public final class PoolGroupInfoResources {
     @ApiOperation("Get usage metadata about a specific poolgroup.")
     @Path("/{group}/usage")
     @Produces(MediaType.APPLICATION_JSON)
-    public PoolGroupInfo getGroupUsage(@ApiParam("The poolgroup to be described.")
+    public Response getGroupUsage(@ApiParam("The poolgroup to be described.")
     @PathParam("group") String group) {
         PoolGroupInfo info = new PoolGroupInfo();
 
         service.getGroupCellInfos(group, info);
 
-        return info;
+        return Responses.buildResponse(info, service.getLastUpdated());
     }
 
 
@@ -160,13 +161,13 @@ public final class PoolGroupInfoResources {
     @ApiOperation("Get pool activity information about pools of a specific poolgroup.")
     @Path("/{group}/queues")
     @Produces(MediaType.APPLICATION_JSON)
-    public PoolGroupInfo getQueueInfo(@ApiParam("The poolgroup to be described.")
+    public Response getQueueInfo(@ApiParam("The poolgroup to be described.")
     @PathParam("group") String group) {
         PoolGroupInfo info = new PoolGroupInfo();
 
         service.getGroupQueueInfos(group, info);
 
-        return info;
+        return Responses.buildResponse(info, service.getLastUpdated());
     }
 
 
@@ -174,13 +175,13 @@ public final class PoolGroupInfoResources {
     @ApiOperation("Get space information about pools of a specific poolgroup.")
     @Path("/{group}/space")
     @Produces(MediaType.APPLICATION_JSON)
-    public PoolGroupInfo getSpaceInfo(@ApiParam("The poolgroup to be described.")
+    public Response getSpaceInfo(@ApiParam("The poolgroup to be described.")
     @PathParam("group") String group) {
         PoolGroupInfo info = new PoolGroupInfo();
 
         service.getGroupSpaceInfos(group, info);
 
-        return info;
+        return Responses.buildResponse(info, service.getLastUpdated());
     }
 
     @ApiResponses({@ApiResponse(code = 404, message = "Not Found")})
@@ -188,7 +189,7 @@ public final class PoolGroupInfoResources {
     @ApiOperation("Get the storage units linked to pools of a specific poolgroup.")
     @Path("/{group}/storageunits")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<String> getStorageGroups(@ApiParam("The poolgroup to be described.")
+    public Response getStorageGroups(@ApiParam("The poolgroup to be described.")
     @PathParam("group") String group,
           @ApiParam("Return full storage unit string; "
                 + "otherwise, just the storage class")
@@ -199,7 +200,8 @@ public final class PoolGroupInfoResources {
             throw new NotFoundException("no such group: " + group);
         }
 
-        return map.keySet().stream().collect(Collectors.toList());
+        List<String> result = map.keySet().stream().collect(Collectors.toList());
+        return Responses.buildResponse(result, service.getLastUpdated());
     }
 
     @ApiResponses({@ApiResponse(code = 404, message = "Not Found")})
@@ -207,14 +209,15 @@ public final class PoolGroupInfoResources {
     @ApiOperation("Get space information about the storage units linked to pools of a specific poolgroup.")
     @Path("/{group}/storageunits/space")
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, StorageUnitSpaceStatistics> getStorageGroupSpaceInfo(
+    public Response getStorageGroupSpaceInfo(
           @ApiParam("The poolgroup to be described.")
           @PathParam("group") String group,
           @ApiParam("Return full storage unit string as keys; "
                 + "otherwise, just the storage class")
           @DefaultValue("false")
           @QueryParam("useUnits") boolean useUnits) {
-        return getSpaceByStorageUnits(group, useUnits);
+        Map<String, StorageUnitSpaceStatistics> result = getSpaceByStorageUnits(group, useUnits);
+        return Responses.buildResponse(result, service.getLastUpdated());
     }
 
     @ApiResponses({@ApiResponse(code = 404, message = "Not Found")})
@@ -222,7 +225,7 @@ public final class PoolGroupInfoResources {
     @ApiOperation("Get space information about a given storage unit linked to pools of a specific poolgroup.")
     @Path("/{group}/storageunits/{key}/space")
     @Produces(MediaType.APPLICATION_JSON)
-    public StorageUnitSpaceStatistics getStorageGroupSpaceInfo(
+    public Response getStorageGroupSpaceInfo(
           @ApiParam("The poolgroup to be described.")
           @PathParam("group") String group,
           @ApiParam("The storage unit to be described.")
@@ -235,20 +238,20 @@ public final class PoolGroupInfoResources {
         if (statistics == null) {
             throw new NotFoundException("no such storage key: " + key);
         }
-        return statistics;
+        return Responses.buildResponse(statistics, service.getLastUpdated());
     }
 
     @GET
     @ApiOperation("Get aggregated pool activity histogram information from pools in a specific poolgroup.")
     @Path("/{group}/histograms/queues")
     @Produces(MediaType.APPLICATION_JSON)
-    public PoolGroupInfo getQueueHistograms(@ApiParam("The poolgroup to be described.")
+    public Response getQueueHistograms(@ApiParam("The poolgroup to be described.")
     @PathParam("group") String group) {
         PoolGroupInfo info = new PoolGroupInfo();
 
         service.getQueueStat(group, info);
 
-        return info;
+        return Responses.buildResponse(info, service.getLastUpdated());
     }
 
 
@@ -256,13 +259,13 @@ public final class PoolGroupInfoResources {
     @ApiOperation("Get aggregated file statistics histogram information from pools in a specific poolgroup.")
     @Path("/{group}/histograms/files")
     @Produces(MediaType.APPLICATION_JSON)
-    public PoolGroupInfo getFilesHistograms(@ApiParam("The poolgroup to be described.")
+    public Response getFilesHistograms(@ApiParam("The poolgroup to be described.")
     @PathParam("group") String group) {
         PoolGroupInfo info = new PoolGroupInfo();
 
         service.getFileStat(group, info);
 
-        return info;
+        return Responses.buildResponse(info, service.getLastUpdated());
     }
 
     private Map<String, StorageUnitSpaceStatistics> getSpaceByStorageUnits(String group,

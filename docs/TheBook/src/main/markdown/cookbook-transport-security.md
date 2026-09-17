@@ -141,7 +141,7 @@ A famous test is the Qualys SSL test at https://www.ssllabs.com/ssltest/. This t
 
 ### nmap
 
-`nmap --script ssl-enum-ciphers` is a good alternative. It has the advantage that it's very fast, it can scan internal networks, and it can scan SRM doors as well as WebDAV doors. It does not test as much as the Qualys test though. You may need to download the latest version to have a reliable result. Here is an example of a test with nmap:
+`nmap --script ssl-enum-ciphers` is a good alternative. It has the advantage that it's very fast, it can scan internal networks, and it can scan WebDAV doors. It does not test as much as the Qualys test though. You may need to download the latest version to have a reliable result. Here is an example of a test with nmap:
 
 ```console-root
 nmap --script ssl-enum-ciphers -p 443 -P0 example.org

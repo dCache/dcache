@@ -615,7 +615,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable, QuotaVfs {
     }
 
     private static boolean isRoot() {
-        return UnixSubjects.isRootSubject(Subject.getSubject(AccessController.getContext()));
+        return UnixSubjects.isRootSubject(Subject.current());
     }
 
     @Override

@@ -34,6 +34,13 @@ public class Properties {
     public static final String PROPERTY_ZOOKEPER_CONNECTION_TIMEOUT_UNIT = "dcache.zookeeper.connection-timeout.unit";
     public static final String PROPERTY_ZOOKEPER_SESSION_TIMEOUT = "dcache.zookeeper.session-timeout";
     public static final String PROPERTY_ZOOKEPER_SESSION_TIMEOUT_UNIT = "dcache.zookeeper.session-timeout.unit";
+    public static final String PROPERTY_ZOOKEEPER_TLS_ENABLED = "dcache.zookeeper.tls.enabled";
+    public static final String PROPERTY_ZOOKEEPER_PEM_CERT = "dcache.zookeeper.tls.cert";
+    public static final String PROPERTY_ZOOKEEPER_PEM_KEY = "dcache.zookeeper.tls.key";
+    public static final String PROPERTY_ZOOKEEPER_PEM_CA = "dcache.zookeeper.tls.capath";
+
+    public static final String PROPERTY_CRL_MODE = "dcache.authn.crl-mode";
+    public static final String PROPERTY_OCSP_MODE = "dcache.authn.ocsp-mode";
 
     public static final String PROPERTY_DOMAINS = "dcache.domains";
     public static final String PROPERTY_PLUGIN_PATH = "dcache.paths.plugins";

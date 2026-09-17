@@ -72,6 +72,23 @@ file lifetime.  The plots generated from this data by dCache-View will also
 not be available.  Please refer to the documentation under the [dCache History Service](config-history.md) for how to set
 this up.
 
+## Last-Modified header in monitoring responses
+
+GET responses for monitoring and admin data include a `Last-Modified` HTTP
+header indicating when the cached snapshot was last updated.  This applies
+to the following endpoints:
+
+- `/api/v1/alarms`
+- `/api/v1/billing`
+- `/api/v1/cells`
+- `/api/v1/domains`
+- `/api/v1/pools`
+- `/api/v1/restores`
+- `/api/v1/transfers`
+
+The header value reflects the timestamp of the most recent background
+collection cycle that refreshed the data.
+
 ## Properties controlling monitoring data access
 
 The following property should be noted.
@@ -159,6 +176,39 @@ In order to get all the restores (stages) on a given pool, the REST path
 ```
 
 must be used.
+
+## OpenID Connect for dCache View
+
+dCache View can log users in with the OpenID Connect authorization
+code flow.  Configure the client on the frontend cell:
+
+```ini
+[dCacheDomain/frontend]
+frontend.authn.oidc.issuer = https://op.example.org
+frontend.authn.oidc.client-id = <client-id>
+frontend.authn.oidc.client-secret = <client-secret>
+frontend.static!dcache-view.oidc-provider-name-list = ExampleOP
+frontend.static!dcache-view.oidc-client-id-list = <client-id>
+```
+
+The frontend then fetches `{issuer}/.well-known/openid-configuration`
+and takes `authorization_endpoint` (shown on the View login page) and
+`token_endpoint` (used to exchange the authorization code).  You can
+still set `frontend.static!dcache-view.oidc-authz-endpoint-list` and
+`frontend.authn.oidc.token-url` explicitly; those values override
+discovery.
+
+The redirect URL sent with the authorization request is never
+configured: dCache View derives it itself, from the browser's own
+origin plus `dcache-view.endpoints.webapi` (i.e.
+`{origin}/api/v1/auth/callback`), which always matches the callback
+the frontend serves.
+
+For more than one provider, give space-separated issuer URLs in
+`frontend.static!dcache-view.oidc-issuer-list` in the same order as
+the name and client-id lists.  The code-flow token exchange still uses
+a single token endpoint (`frontend.authn.oidc.issuer` /
+`frontend.authn.oidc.token-url`).
 
 ##### RESTful API for QoS transitions
 

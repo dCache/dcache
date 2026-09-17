@@ -83,6 +83,7 @@ public class WassPartition extends ClassicPartition {
           List<PoolInfo> src,
           List<PoolInfo> dst,
           FileAttributes attributes,
+          Optional<String> zone,
           boolean force)
           throws CacheException {
         checkState(!src.isEmpty());
@@ -153,6 +154,8 @@ public class WassPartition extends ClassicPartition {
                           .collect(toList());
                 }
 
+                destinations = filterByZone(destinations, zone);
+
                 PoolInfo destination =
                       wass.selectByAvailableSpace(destinations, filesize, PoolInfo::getCostInfo);
                 if (destination != null) {
@@ -168,6 +171,8 @@ public class WassPartition extends ClassicPartition {
                       "P2P denied: sameHostCopy is 'never' and no matching pool found");
             }
         }
+
+        dst = filterByZone(dst, zone);
 
         PoolInfo destination = wass.selectByAvailableSpace(dst, filesize, PoolInfo::getCostInfo);
         if (destination == null) {

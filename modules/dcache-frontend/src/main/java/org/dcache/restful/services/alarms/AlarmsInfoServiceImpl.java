@@ -181,17 +181,24 @@ public final class AlarmsInfoServiceImpl extends
         }
     }
 
+    private volatile long lastUpdated = 0L;
+
     /**
      * <p>Alarm type to priority mapping.</p>
      */
     private Map<String, String> priorityMap = Collections.EMPTY_MAP;
-
+    
     @Override
     public void delete(List<LogEntry> entries)
           throws CacheException, InterruptedException {
         AlarmsDeleteMessage message = new AlarmsDeleteMessage();
         message.setToDelete(entries);
         collector.sendRequestToAlarmService(message);
+    }
+
+    @Override
+    public long getLastUpdated() {
+        return lastUpdated;
     }
 
     @Override
@@ -253,5 +260,6 @@ public final class AlarmsInfoServiceImpl extends
         synchronized (this) {
             this.priorityMap = copy;
         }
+        lastUpdated = System.currentTimeMillis();
     }
 }

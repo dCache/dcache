@@ -21,6 +21,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.dcache.restful.util.Responses;
 import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.srr.SrrBuilder;
@@ -144,7 +145,7 @@ public class SrrResource {
               .withDoorTag(doorTag)
               .generate();
 
-        return Response.ok(record)
+        return Response.fromResponse(Responses.buildResponse(record))
               .header("Link",
                     "<https://raw.githubusercontent.com/sjones-hep-ph-liv-ac-uk/json_info_system/master/srr/v4.2/schema/srrschema_4.2.json>; rel=\"describedby\"")
               .build();

@@ -74,6 +74,7 @@ import org.dcache.restful.providers.JsonFileAttributes;
 import org.dcache.restful.util.HandlerBuilders;
 import org.dcache.restful.util.HttpServletRequests;
 import org.dcache.restful.util.RequestUser;
+import org.dcache.restful.util.Responses;
 import org.dcache.restful.util.namespace.NamespaceUtils;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryStream;
@@ -145,7 +146,7 @@ public class FileResources {
     })
     @Path("{path : .*}")
     @Produces(MediaType.APPLICATION_JSON)
-    public JsonFileAttributes getFileAttributes(@ApiParam("Path of file or directory.")
+    public Response getFileAttributes(@ApiParam("Path of file or directory.")
     @PathParam("path") String requestPath,
           @ApiParam("Whether to include directory listing.")
           @DefaultValue("false")
@@ -255,7 +256,7 @@ public class FileResources {
             LOG.warn(Exceptions.meaningfulMessage(ex));
             throw new InternalServerErrorException(ex);
         }
-        return fileAttributes;
+        return Responses.buildResponse(fileAttributes);
     }
 
     @POST

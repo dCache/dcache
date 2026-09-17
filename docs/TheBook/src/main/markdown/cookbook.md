@@ -14,16 +14,7 @@ This part contains guides for specific tasks a system administrator might want t
     - [dCap](cookbook-clients.md#dcap)
     - [dccp](cookbook-clients.md#dccp)
     - [Using the dCache client interposition library.](cookbook-clients.md#using-the-dcache-client-interposition-library)
-    - [SRM](cookbook-clients.md#srm)
-      - [Creating a new directory.](cookbook-clients.md#creating-a-new-directory)
-      - [Removing files from dCache](cookbook-clients.md#removing-files-from-dcache)
-      - [Removing empty directories from dCache](cookbook-clients.md#removing-empty-directories-from-dcache)
-      - [srmcp for SRM v1](cookbook-clients.md#srmcp-for-srm-v1)
-      - [srmcp for SRM v2.2](cookbook-clients.md#srmcp-for-v2.2)
     - [ldap](cookbook-clients.md#ldap)
-    - [Using the LCG commands with dCache](cookbook-clients.md#using-the-lcg-commands-with-dcache)
-      - [The lcg-gt Application](cookbook-clients.md#the-lcg-gt-application)
-      - [The lcg-sd Application](cookbook-clients.md#the-lcg-sd-application)
 
 - [Using dcap](cookbook-dCap.md)
 
@@ -82,7 +73,6 @@ This part contains guides for specific tasks a system administrator might want t
    - [Tunable Properties](cookbook-advanced.md#tunable-properties)
       - [dCap](cookbook-advanced.md#dcap)
       - [GridFTP](cookbook-advanced.md#gridftp)
-      - [SRM](cookbook-advanced.md#srm)
 
 - [Complex Network Configuration](cookbook-net.md)
     - [Firewall Configuration](cookbook-net.md#firewall-configuration)

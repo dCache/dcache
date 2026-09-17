@@ -17,6 +17,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import diskCacheV111.poolManager.Pool;
 import diskCacheV111.poolManager.PoolMonitorV5;
+import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CheckStagePermission;
@@ -141,6 +142,9 @@ public class PinManagerTests {
                   ProtocolInfo protocolInfo,
                   String linkGroup,
                   Set<String> excludes) {
+                PoolSelectionUnit psu = mock(PoolSelectionUnit.class);
+                when(psu.getSelectionUnits()).thenReturn(Collections.emptyMap());
+                setPoolSelectionUnit(psu);
                 return new PoolMonitorV5.PnfsFileLocation(fileAttributes, protocolInfo, linkGroup,
                       excludes) {
                     @Override

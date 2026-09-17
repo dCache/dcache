@@ -14,7 +14,6 @@ import com.google.common.util.concurrent.Monitor;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.common.util.concurrent.Uninterruptibles;
-import dmg.cells.zookeeper.CellCuratorFramework;
 import dmg.util.Pinboard;
 import dmg.util.logback.FilterThresholdSet;
 import dmg.util.logback.RootFilterThresholds;
@@ -30,6 +29,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.PriorityQueue;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
@@ -55,9 +55,12 @@ import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.GuardedBy;
 import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.imps.CuratorFrameworkBase;
+import org.apache.curator.framework.imps.PublicDelegatingCuratorFramework;
 import org.dcache.util.BoundedCachedExecutor;
 import org.dcache.util.BoundedExecutor;
 import org.dcache.util.FireAndForgetTask;
+import org.dcache.util.SequentialExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -162,7 +165,7 @@ public class CellNucleus implements ThreadFactory {
 
     private volatile long _lastQueueTime;
 
-    private final CellCuratorFramework _curatorFramework;
+    private final CuratorFramework _curatorFramework;
 
     private final Monitor _lifeCycleMonitor = new Monitor();
 
@@ -223,7 +226,43 @@ public class CellNucleus implements ThreadFactory {
               : new BoundedExecutor(executor, 1);
 
         CuratorFramework curatorFramework = __cellGlue.getCuratorFramework();
-        _curatorFramework = new CellCuratorFramework(curatorFramework, _messageExecutor);
+        // Per-cell nucleaus curator with CDC
+        _curatorFramework = new PublicDelegatingCuratorFramework((CuratorFrameworkBase) curatorFramework) {
+
+            private final Executor sequentialExecutor = new SequentialExecutor(_messageExecutor) {
+                @Override
+                public void execute(Runnable task) {
+                    try {
+
+                        super.execute(task);
+                    } catch (RejectedExecutionException e) {
+                        /* There is no way to unregister curatorWatchers from ZooKeeper. Thus
+                         * it is possible for ZooKeeper to try to call a watcher after a
+                         * cell shut down, resulting in a RejectedExecutionException.
+                         */
+                        if (!isShutdown()) {
+                            throw e;
+                        }
+                    }
+                }
+            };
+
+            @Override
+            public CompletableFuture<Void> runSafe(Runnable runnable) {
+                return CompletableFuture.runAsync(runnable, sequentialExecutor);
+            }
+            @Override
+            public void start() {
+                // forced by the interface.
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public void close() {
+                // forced by the interface.
+                throw new UnsupportedOperationException();
+            }
+        };
 
         LOGGER.info("Created {}", cellName);
     }
@@ -1167,8 +1206,15 @@ public class CellNucleus implements ThreadFactory {
         __cellGlue.routeDelete(route);
     }
 
-    CellRoute routeFind(CellAddressCore addr) {
-        return __cellGlue.getRoutingTable().find(addr, getZone(), true);
+    /**
+     * Finds a route to the specified cell or queue address. If no direct route is found, topic routes
+     * are searched.
+     * @param addr Cell address to find a route for.
+     * @return A set of routes to the specified address, or an empty set if no route was found.
+     */
+    Set<CellRoute> routeFind(CellAddressCore addr) {
+        var route =  __cellGlue.getRoutingTable().find(addr, getZone(), true);
+        return route == null ? __cellGlue.getRoutingTable().findTopicRoutes(addr) : Set.of(route);
     }
 
     public CellRoutingTable getRoutingTable() {

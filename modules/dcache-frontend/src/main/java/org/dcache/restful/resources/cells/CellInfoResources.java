@@ -75,8 +75,11 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
 import org.dcache.cells.json.CellData;
 import org.dcache.restful.services.cells.CellInfoService;
+import org.dcache.restful.util.Responses;
 import org.springframework.stereotype.Component;
 
 /**
@@ -124,12 +127,14 @@ public final class CellInfoResources {
           @ApiResponse(code = 403, message = "Cell info service only accessible to admin users."),
     })
     @Produces(MediaType.APPLICATION_JSON)
-    public CellData[] getCells() throws CacheException {
-        return Arrays.stream(service.getAddresses())
+    public Response getCells() throws CacheException {
+        long lastUpdated = service.lastUpdated();
+        CellData[] results =  Arrays.stream(service.getAddresses())
               .map(service::getCellData)
               .collect(Collectors.toList())
               .stream()
               .sorted(Comparator.comparing(CellData::getCellName))
               .toArray(CellData[]::new);
+        return Responses.buildResponse(results, lastUpdated);
     }
 }

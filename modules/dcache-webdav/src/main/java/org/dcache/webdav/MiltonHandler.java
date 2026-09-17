@@ -63,7 +63,7 @@ public class MiltonHandler
             if ("USERINFO".equals(request.getMethod())) {
                 response.sendError(501);
             } else {
-                Subject subject = Subject.getSubject(AccessController.getContext());
+                Subject subject = Subject.current();
                 ServletRequest req = new DcacheServletRequest(request, context);
                 ServletResponse resp = new DcacheServletResponse(response);
 
@@ -95,33 +95,6 @@ public class MiltonHandler
               ServletContext context) {
             super(request, context);
             this.request = request;
-        }
-
-        @Override
-        public void parseRequestParameters(Map<String, String> params, Map<String, FileItem> files)
-              throws RequestParseException {
-            /*
-             * io.milton.http.ResourceHandlerHelper#process calls
-             * Request#parseRequestParameters and catches any
-             * RequestParseException thrown.  Unfortunately, it logs this
-             * with a stack-trace, but otherwise ignores such failures.
-             *
-             * See  https://github.com/miltonio/milton2/issues/93 for details.
-             *
-             * As a work-around, such exceptions are caught here and
-             * converted into an unchecked exception that results in
-             * the server responding with a 400 Bad Request.
-             */
-            try {
-                super.parseRequestParameters(params, files);
-            } catch (RequestParseException e) {
-                // Inexplicably, Milton wraps any FileUploadException with a
-                // RequestParseException containing a meaningless message.
-                String message = e.getCause() instanceof FileUploadException
-                      ? e.getCause().getMessage()
-                      : e.getMessage();
-                throw new UncheckedBadRequestException(message, e, null);
-            }
         }
 
         /**

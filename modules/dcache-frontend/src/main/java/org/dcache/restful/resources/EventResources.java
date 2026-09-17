@@ -66,6 +66,7 @@ import javax.ws.rs.sse.Sse;
 import javax.ws.rs.sse.SseEventSink;
 import org.dcache.restful.events.Channel;
 import org.dcache.restful.events.EventStreamRepository;
+import org.dcache.restful.util.Responses;
 import org.dcache.restful.events.EventStreamRepository.EventStreamMetadata;
 import org.dcache.restful.events.Registrar;
 import org.dcache.restful.events.SubscriptionResult;
@@ -200,8 +201,8 @@ public class EventResources {
           notes = "This query returns information that applies independent of "
                 + "a specific event-type, and independent of a specific "
                 + "channel.")
-    public ServiceMetadata serviceMetadata() {
-        return serviceMetadata;
+    public Response serviceMetadata() {
+        return Responses.buildResponse(serviceMetadata);
     }
 
 
@@ -218,9 +219,9 @@ public class EventResources {
           @ApiResponse(code = 401, message = "anonymous access not allowed"),
     })
     @Path("/eventTypes")
-    public List<String> getEventTypes() {
+    public Response getEventTypes() {
         checkAuthenticated();
-        return repository.listEventTypes();
+        return Responses.buildResponse(repository.listEventTypes());
     }
 
 
@@ -235,11 +236,12 @@ public class EventResources {
           @ApiResponse(code = 404, message = "No such event type"),
     })
     @Path("/eventTypes/{type}")
-    public EventStreamMetadata getEventType(@ApiParam("The specific event type to be described.")
+    public Response getEventType(@ApiParam("The specific event type to be described.")
     @NotNull @PathParam("type") String type) {
         checkAuthenticated();
-        return repository.metadataForEventType(type)
+        EventStreamMetadata result = repository.metadataForEventType(type)
               .orElseThrow(() -> new NotFoundException("No such event type"));
+        return Responses.buildResponse(result);
     }
 
 
@@ -253,11 +255,12 @@ public class EventResources {
           @ApiResponse(code = 404, message = "No such event type"),
     })
     @Path("/eventTypes/{type}/selector")
-    public ObjectNode getSelectorSchema(@ApiParam("The specific event type to be described.")
+    public Response getSelectorSchema(@ApiParam("The specific event type to be described.")
     @NotNull @PathParam("type") String type) {
         checkAuthenticated();
-        return repository.selectorSchemaForEventType(type)
+        ObjectNode result = repository.selectorSchemaForEventType(type)
               .orElseThrow(() -> new NotFoundException("No such event type"));
+        return Responses.buildResponse(result);
     }
 
     @GET
@@ -270,11 +273,12 @@ public class EventResources {
           @ApiResponse(code = 404, message = "No such event type"),
     })
     @Path("/eventTypes/{type}/event")
-    public ObjectNode getEventSchema(@ApiParam("The specific event type to be described.")
+    public Response getEventSchema(@ApiParam("The specific event type to be described.")
     @NotNull @PathParam("type") String type) {
         checkAuthenticated();
-        return repository.eventSchemaForEventType(type)
+        ObjectNode result = repository.eventSchemaForEventType(type)
               .orElseThrow(() -> new NotFoundException("No such event type"));
+        return Responses.buildResponse(result);
     }
 
     @GET
@@ -296,7 +300,7 @@ public class EventResources {
           @ApiResponse(code = 401, message = "anonymous access not allowed"),
     })
     @Path("/channels")
-    public List<String> getChannels(@Context UriInfo uriInfo,
+    public Response getChannels(@Context UriInfo uriInfo,
           @ApiParam("Limit channels by client-id")
           @QueryParam("client-id") String clientId) {
         checkAuthenticated();
@@ -307,10 +311,11 @@ public class EventResources {
         List<String> ids = clientId == null
               ? registrar.idsForUser(RequestUser.getSubject())
               : registrar.idsForUser(RequestUser.getSubject(), canonicaliseClientId(clientId));
-        return ids.stream()
+        List<String> result = ids.stream()
               .map(idToUri::build)
               .map(URI::toASCIIString)
               .collect(Collectors.toList());
+        return Responses.buildResponse(result);
     }
 
 
@@ -416,8 +421,8 @@ public class EventResources {
           @ApiResponse(code = 404, message = "No such channel"),
     })
     @Path("/channels/{id}")
-    public ChannelMetadata channelMetadata(@NotNull @PathParam("id") String id) {
-        return new ChannelMetadata(channelForId(id));
+    public Response channelMetadata(@NotNull @PathParam("id") String id) {
+        return Responses.buildResponse(new ChannelMetadata(channelForId(id)));
     }
 
 
@@ -475,12 +480,13 @@ public class EventResources {
           @ApiResponse(code = 404, message = "No such channel"),
     })
     @Path("/channels/{id}/subscriptions")
-    public List<URI> channelSubscriptions(
+    public Response channelSubscriptions(
           @Context UriInfo uriInfo,
           @NotNull @PathParam("id") String channalId) {
-        return channelForId(channalId).getSubscriptions().stream()
+        List<URI> result = channelForId(channalId).getSubscriptions().stream()
               .map(s -> locationOfSubscription(uriInfo, channalId, s.getEventType(), s.getId()))
               .collect(Collectors.toList());
+        return Responses.buildResponse(result);
     }
 
 
@@ -560,14 +566,15 @@ public class EventResources {
           @ApiResponse(code = 404, message = "No such channel"),
     })
     @Path("/channels/{channel_id}/subscriptions/{type}/{subscription_id}")
-    public JsonNode channelSubscription(
+    public Response channelSubscription(
           @NotNull @PathParam("channel_id") String channelId,
           @NotNull @PathParam("type") String eventType,
           @NotNull @PathParam("subscription_id") String subscriptionId) {
-        return channelForId(channelId)
+        JsonNode result = channelForId(channelId)
               .getSubscription(eventType, subscriptionId)
               .orElseThrow(() -> new NotFoundException("No such subscription"))
               .getSelector();
+        return Responses.buildResponse(result);
     }
 
 

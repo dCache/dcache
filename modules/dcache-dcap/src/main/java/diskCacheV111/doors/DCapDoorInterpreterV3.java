@@ -82,8 +82,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import javax.security.auth.Subject;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.RsType;
 import org.dcache.acl.parser.ACLParser;
@@ -179,8 +177,6 @@ public class DCapDoorInterpreterV3
     private final CellStub _pinManagerStub;
     private final PoolManagerStub _poolMgrStub;
 
-    private KafkaProducer _kafkaProducer;
-
     /**
      * The client PID set through the hello command. Only used for billing purposes.
      */
@@ -232,9 +228,6 @@ public class DCapDoorInterpreterV3
         _pinManagerStub = settings.createPinManagerStub(cell);
         _loginStrategy = settings.createLoginStrategy(cell);
 
-        if (_settings.isKafkaEnabled()) {
-            _kafkaProducer = settings.getKafkaProducer();
-        }
         _startedTS = new Date();
     }
 
@@ -2462,22 +2455,6 @@ public class DCapDoorInterpreterV3
 
     private void postToBilling(DoorRequestInfoMessage info) {
         _cell.sendMessage(new CellMessage(_settings.getBilling(), info));
-
-        if (_settings.isKafkaEnabled()) {
-            sendAsynctoKafka(info);
-        }
-    }
-
-    private void sendAsynctoKafka(DoorRequestInfoMessage info) {
-
-        ProducerRecord<String, DoorRequestInfoMessage> record = new ProducerRecord<String, DoorRequestInfoMessage>(
-              _settings.getKafkaTopic(), info);
-        _kafkaProducer.send(record, (rm, e) -> {
-            if (e != null) {
-                _log.error("Unable to send message to topic {} on  partition {}: {}",
-                      record.topic(), record.partition(), e.getMessage());
-            }
-        });
     }
 
 }

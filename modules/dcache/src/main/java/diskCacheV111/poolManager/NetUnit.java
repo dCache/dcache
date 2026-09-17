@@ -2,17 +2,27 @@ package diskCacheV111.poolManager;
 
 import java.net.InetAddress;
 import java.util.Objects;
+import java.util.Optional;
+
+import org.dcache.cells.ZoneAware;
 import org.dcache.util.Subnet;
 
-class NetUnit extends Unit implements Comparable<NetUnit> {
+public class NetUnit extends Unit implements Comparable<NetUnit>, ZoneAware {
 
     private static final long serialVersionUID = -2510355260024374990L;
     private final Subnet _subnet;
+    private String _zone = null;
 
     public NetUnit(String name) {
         super(name, PoolSelectionUnit.UnitType.NET);
 
         _subnet = Subnet.create(name);
+    }
+
+    public NetUnit(String name, Optional<String> zone) {
+        super(name, PoolSelectionUnit.UnitType.NET);
+        _subnet = Subnet.create(name);
+        _zone = zone.orElse(null);
     }
 
     public InetAddress getHostAddress() {
@@ -61,11 +71,20 @@ class NetUnit extends Unit implements Comparable<NetUnit> {
             return false;
         }
         NetUnit netUnit = (NetUnit) o;
-        return _subnet.equals(netUnit._subnet);
+        return _subnet.equals(netUnit._subnet) && Objects.equals(_zone, netUnit._zone);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(_subnet);
+        return Objects.hash(_subnet, _zone);
+    }
+
+    @Override
+    public void setZone(Optional<String> zone) {
+        _zone = zone.orElse(null);
+    }
+
+    public Optional<String> getZone() {
+        return Optional.ofNullable(_zone);
     }
 }

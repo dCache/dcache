@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import diskCacheV111.poolManager.RequestContainerV5;
 import java.util.EnumSet;
+import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nonnull;
 import org.dcache.vehicles.FileAttributes;
@@ -16,6 +17,7 @@ public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {
     private String _ioQueueName;
     private String _pnfsPath;
     private String _linkGroup;
+    private String _zone;
     private Set<String> _excludedHosts;
     private final EnumSet<RequestContainerV5.RequestState> _allowedStates;
 
@@ -73,6 +75,14 @@ public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {
 
     public String getLinkGroup() {
         return _linkGroup;
+    }
+
+    public void setZone(Optional<String> zone) {
+        _zone = zone.orElse(null);
+    }
+
+    public Optional<String> getZone() {
+        return Optional.ofNullable(_zone);
     }
 
     @Nonnull

@@ -2,6 +2,7 @@ package diskCacheV111.poolManager;
 
 import com.google.common.collect.ImmutableList;
 import java.net.UnknownHostException;
+import java.util.Optional;
 
 /**
  * Pulled out of the PoolSelectionUnit implementation. An abstraction layer between the command-line
@@ -30,7 +31,7 @@ public interface PoolSelectionUnitAccess {
     void createPoolGroup(String name, boolean isResilient);
 
     void createUnit(String name, boolean isNet, boolean isStore,
-          boolean isDcache, boolean isProtocol);
+          boolean isDcache, boolean isProtocol, Optional<String> zone);
 
     void createUnitGroup(String name);
 

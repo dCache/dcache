@@ -55,6 +55,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.Stack;
 import java.util.StringTokenizer;
@@ -912,20 +913,23 @@ public class CellShell extends CommandInterpreter
 
         @Override
         public String call() throws Exception {
-            CellRoute route = _nucleus.routeFind(address);
-            if (route == null) {
+            Set<CellRoute> routes = _nucleus.routeFind(address);
+            if (routes.isEmpty()) {
                 return "No route for address " + address + '\n';
             }
 
             StringBuilder sb = new StringBuilder();
             sb.append("Routing details for a message with ").append(address)
-                  .append(" as next-hop address:\n");
-            sb.append("         type: ").append(route.getRouteTypeName().toUpperCase())
-                  .append('\n');
-            sb.append("  destination: ").append(route.getCellName()).append('@')
-                  .append(route.getDomainName()).append('\n');
-            sb.append("       target: ").append(route.getTarget()).append('\n');
-            sb.append("         zone: ").append(route.getZone().orElse("Undefined")).append('\n');
+                    .append(" as next-hop address:\n");
+
+            for (CellRoute route : routes) {
+                sb.append("         type: ").append(route.getRouteTypeName().toUpperCase())
+                        .append('\n');
+                sb.append("  destination: ").append(route.getCellName()).append('@')
+                        .append(route.getDomainName()).append('\n');
+                sb.append("       target: ").append(route.getTarget()).append('\n');
+                sb.append("         zone: ").append(route.getZone().orElse("Undefined")).append("\n\n");
+            }
 
             return sb.toString();
         }
