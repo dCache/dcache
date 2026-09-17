@@ -26,6 +26,14 @@
 # The kubernetes based jobs don't use directly any job artefact, thus pulling artefact
 # is explicitly disabled by default.
 
+workflow:
+  rules:
+  # workflow to stop GitLab from starting a redundant pipeline after replicating PR into MR
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: never 
+      # fallback for the rest of the pipelines
+    - when: always 
+
 stages:
   # build rpm, tar, deb, oci container
   - build
@@ -635,10 +643,6 @@ Extract Coverage:
     - .no_release_rules
   dependencies:
     - get_jacoco_cli
-  needs:
-    - job: get_jacoco_cli
-      artifacts: true
-    - job: NFS4.x protocol compliance tests
   script:
     - JACOCO_CLI_PATH="jacoco-${JACOCO_VERSION}/lib/jacococli.jar"
     - PODS=$(kubectl -n $K8S_NAMESPACE get pods -l app.kubernetes.io/instance=store -o jsonpath='{.items[*].metadata.name}')
