@@ -1766,6 +1766,10 @@ Therefore each line has three fields: the user's DN, the user's FQAN, and the us
 
 The FQAN is sometimes semantically referred to as the “role”. The same user can be mapped to different usernames depending on what their FQAN is. The FQAN is determined by how the user creates their proxy, for example, using [`voms-proxy-init`](config-gplazma.md#voms-proxy-certificate). The FQAN contains the user's Group, Role (optional), and Capability (optional). The latter two may be set to the string “NULL”, in which case they will be ignored by the plug-in. Therefore the three lines in the example above are equivalent.
 
+When matching a FQAN against a `grid-vorolemap` entry, the `voms` plug-in accepts both the VO root itself and any FQAN below it. For example, for the VO `some-vo`, both the FQAN `/some-vo` and `/some-vo/Role=production` are recognised. This means a user with a proxy carrying the root FQAN `/some-vo` can be mapped using a `grid-vorolemap` entry such as
+
+    "/C=DE/O=GermanGrid/OU=DESY/CN=John Doe" "/some-vo" somevo
+
 Example:
 
 If a user is authorized in multiple roles, for example
