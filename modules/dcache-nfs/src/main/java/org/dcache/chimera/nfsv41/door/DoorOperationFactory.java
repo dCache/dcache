@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2017 - 2020 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2017 - 2026 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -53,6 +53,7 @@ import org.dcache.nfs.v4.OperationOPEN;
 import org.dcache.nfs.v4.OperationREMOVE;
 import org.dcache.nfs.v4.OperationRENAME;
 import org.dcache.nfs.v4.OperationSETATTR;
+import org.dcache.nfs.v4.xdr.nfs4_prot;
 import org.dcache.nfs.v4.xdr.nfs_argop4;
 import org.dcache.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.nfs.v4.xdr.nfs_resop4;
@@ -361,6 +362,12 @@ public class DoorOperationFactory extends MDSOperationExecutor {
 
             int status = nfsstat.NFS_OK;
             try {
+
+                // as dCache is WORM storage, deny any other concurrent accesses as long as file is open for write.
+                if ((_args.opopen.share_access.value & nfs4_prot.OPEN4_SHARE_ACCESS_WRITE) != 0) {
+                    _args.opopen.share_deny.value = nfs4_prot.OPEN4_SHARE_DENY_BOTH;
+                }
+
                 super.process(context, result);
                 Inode inode = context.currentInode();
                 FsInode cInode = _vfs.inodeFromBytes(inode.getFileId());
