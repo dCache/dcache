@@ -4,14 +4,18 @@ import diskCacheV111.admin.UserAdminShell;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessageSender;
 import java.io.File;
+
+import org.apache.curator.framework.CuratorFramework;
 import org.apache.sshd.server.channel.ChannelSession;
 import org.apache.sshd.server.command.Command;
 import org.apache.sshd.server.shell.ShellFactory;
 import org.dcache.cells.CellStub;
+import org.dcache.cells.CuratorFrameworkAware;
+import org.dcache.http.CustomResponseHeadersHandler;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.springframework.beans.factory.annotation.Required;
 
-public class AdminShellFactory implements ShellFactory, CellMessageSender {
+public class AdminShellFactory implements ShellFactory, CellMessageSender, CuratorFrameworkAware {
 
     private CellEndpoint _endpoint;
     private File _historyFile;
@@ -20,6 +24,7 @@ public class AdminShellFactory implements ShellFactory, CellMessageSender {
     private CellStub _pnfsManager;
     private CellStub _poolManager;
     private CellStub _acm;
+    private CuratorFramework _curator;
     private String _prompt;
     private ListDirectoryHandler _list;
 
@@ -68,6 +73,10 @@ public class AdminShellFactory implements ShellFactory, CellMessageSender {
         _endpoint = endpoint;
     }
 
+    public void setCuratorFramework(CuratorFramework curator) {
+        _curator = curator;
+    }
+
     @Override
     public Command createShell(ChannelSession channelSession) {
         return new ShellCommand(_historyFile, _historySize, _useColor, createAdminShell());
@@ -78,8 +87,10 @@ public class AdminShellFactory implements ShellFactory, CellMessageSender {
         shell.setCellEndpoint(_endpoint);
         shell.setPnfsManager(_pnfsManager);
         shell.setPoolManager(_poolManager);
+        shell.setCurator(_curator);
         shell.setAcm(_acm);
         shell.setListHandler(_list);
         return shell;
     }
+
 }
