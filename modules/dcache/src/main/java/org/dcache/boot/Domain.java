@@ -1,6 +1,7 @@
 package org.dcache.boot;
 
 import static com.google.common.base.Strings.emptyToNull;
+
 import static org.dcache.boot.Properties.PATH_DELIMITER;
 import static org.dcache.boot.Properties.PROPERTY_DOMAIN_NAME;
 import static org.dcache.boot.Properties.PROPERTY_DOMAIN_PRELOAD;
@@ -26,7 +27,6 @@ import static org.dcache.boot.Properties.PROPERTY_ZOOKEEPER_PEM_CERT;
 import static org.dcache.boot.Properties.PROPERTY_ZOOKEEPER_PEM_KEY;
 import static org.dcache.boot.Properties.PROPERTY_CRL_MODE;
 import static org.dcache.boot.Properties.PROPERTY_OCSP_MODE;
-
 import static org.dcache.util.Exceptions.genericCheck;
 
 import ch.qos.logback.classic.LoggerContext;
@@ -41,6 +41,7 @@ import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellShell;
 import dmg.cells.nucleus.SerializationHandler;
 import dmg.cells.nucleus.SystemCell;
+import dmg.cells.zookeeper.LmPersistentNode;
 import dmg.util.CommandException;
 import java.io.File;
 import java.io.IOException;
@@ -56,6 +57,7 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import eu.emi.security.authn.x509.CrlCheckingMode;
 import eu.emi.security.authn.x509.OCSPCheckingMode;
@@ -63,6 +65,7 @@ import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.client.ZKClientConfig;
 import org.dcache.ssl.CanlContextFactory;
 import org.dcache.util.Args;
@@ -165,8 +168,9 @@ public class Domain {
 
         SerializationHandler.Serializer cellSerializer = SerializationHandler.enumFromConfigString(
               _properties.getValue(PROPERTY_MSG_PAYLOAD_SERIALIZER));
+        CuratorFramework curator = createCuratorFramework();
         SystemCell systemCell = SystemCell.create(domainName,
-              createCuratorFramework(), zone, cellSerializer);
+              curator, zone, cellSerializer);
         try {
             systemCell.start().get();
         } catch (ExecutionException e) {
@@ -175,6 +179,20 @@ public class Domain {
                     e);
         }
         LOGGER.info("Starting {}", domainName);
+
+        if(zone.isPresent()){
+            try{
+                LmPersistentNode.createOrUpdate(
+                        curator,
+                        "/dcache/zones/" + zone.get() + "/" + domainName,
+                        new byte[0],
+                        Function.identity(),
+                        null
+                );
+            } catch (Exception e) {
+                LOGGER.warn("Failed to add zone {} in ZooKeeper", zone.get(), e);
+            }
+        }
 
         executePreload(systemCell);
         for (ConfigurationProperties serviceConfig : _services) {

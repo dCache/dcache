@@ -25,6 +25,7 @@ import com.google.common.base.Splitter;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Range;
 import com.google.common.util.concurrent.Futures;
@@ -80,6 +81,8 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jline.console.completer.Completer;
 import jline.console.completer.StringsCompleter;
+import org.apache.curator.framework.CuratorFramework;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.CellStub;
@@ -156,6 +159,8 @@ public class UserAdminShell
      * jline completer for pnfs manager cell commands.
      */
     private Completer _pnfsManagerCompleter;
+
+    private CuratorFramework _curator;
 
     /**
      * Client handler for listing directories in the dCache name space.
@@ -236,6 +241,10 @@ public class UserAdminShell
     public void setPnfsManager(CellStub stub) {
         _pnfsManager = stub;
         _pnfsManagerCompleter = createRemoteCompleter(_pnfsManager.getDestinationPath());
+    }
+
+    public void setCurator(CuratorFramework curator){
+        _curator = curator;
     }
 
     public void setListHandler(ListDirectoryHandler list) {
@@ -390,8 +399,7 @@ public class UserAdminShell
      * The result is sorted lexicographically and case insensitive, but the order of the input
      * patterns is preserved (ie. the output contains matching cells in the same order).
      */
-    private List<String> expandCellPatterns(List<String> patterns)
-          throws CacheException, InterruptedException, ExecutionException, NoRouteToCellException {
+    private List<String> expandCellPatterns(List<String> patterns) throws CommandException, CacheException, NoRouteToCellException, InterruptedException, ExecutionException {
         /* Query domains and well-known cells on demand. */
         Supplier<Future<Map<String, Collection<String>>>> domains =
               Suppliers.memoize(() -> transform(_cellStub.send(new CellPath("RoutingMgr"),
@@ -414,31 +422,65 @@ public class UserAdminShell
                 continue;
             }
 
-            i = pattern.indexOf('/');
-            if (i >= 0) {
-                Predicate<String> matchesPool = toGlobPredicate(pattern.substring(0, i));
+            List<ListenableFuture<List<String>>> zoneCellFutures;
+            List<String> zoneCells;
 
-                if (i + 1 == pattern.length()) {
+            int zoneIdx = pattern.indexOf('#');
+            int pGroupIdx = pattern.indexOf('/');
+            if (zoneIdx >= 0) {
+                String zone = pGroupIdx < 0 ? pattern.substring(zoneIdx + 1) : pattern.substring(zoneIdx + 1, pGroupIdx);
+                try {
+                    List<String> zoneDomains = _curator.getChildren().forPath("/dcache/zones/" + zone);
+                    Predicate<String> matchesCellName = toGlobPredicate(pattern.substring(0, zoneIdx));
+                    zoneCellFutures = zoneDomains.stream()
+                            .sorted(CASE_INSENSITIVE_ORDER)
+                            .map(domain -> getCells(domain, matchesCellName))
+                            .toList();
+
+                    zoneCells = Objects.requireNonNull(allAsList(zoneCellFutures).get()).stream()
+                            .flatMap(List::stream)
+                            .map(addr -> addr.contains("@") ? addr.substring(0, addr.indexOf('@')) : addr)
+                            .toList();
+
+                } catch (Exception e) {
+                    throw new CommandException("Can not send to zone: " + zone, e.getCause());
+                }
+
+            } else {
+                zoneCells = null;
+                zoneCellFutures = null;
+            }
+
+            if (pGroupIdx >= 0) {
+                int endPoolName = (zoneIdx >= 0) ? zoneIdx : pGroupIdx;
+                Predicate<String> matchesPool = toGlobPredicate(pattern.substring(0, endPoolName));
+                Predicate<String> isInZone = cell -> zoneCells == null || zoneCells.contains(cell);
+                if (pGroupIdx + 1 == pattern.length()) {
                     /* Special case when no pool group is specified - matches over all pools, even those
                      * not in a pool group.
                      */
                     futures.add(transform(getPools(matchesPool),
                           (List<String> pools) ->
                                 pools.stream()
-                                      .sorted(CASE_INSENSITIVE_ORDER)
-                                      .collect(toList()), MoreExecutors.directExecutor()));
+                                        .filter(isInZone)
+                                        .sorted(CASE_INSENSITIVE_ORDER)
+                                        .collect(toList()), MoreExecutors.directExecutor()));
                 } else {
                     /* Find the pools of each matching pool group.
                      */
-                    Predicate<String> matchesPoolGroup = toGlobPredicate(pattern.substring(i + 1));
+                    Predicate<String> matchesPoolGroup = toGlobPredicate(pattern.substring(pGroupIdx + 1));
                     futures.add(
                           transform(getPoolsInGroups(matchesPoolGroup),
                                 (List<String> pools) ->
                                       pools.stream()
-                                            .filter(matchesPool)
-                                            .sorted(CASE_INSENSITIVE_ORDER)
-                                            .collect(toList()), MoreExecutors.directExecutor()));
+                                              .filter(matchesPool)
+                                              .filter(isInZone)
+                                              .sorted(CASE_INSENSITIVE_ORDER)
+                                              .collect(toList()), MoreExecutors.directExecutor()));
                 }
+                continue;
+            } else if (zoneCellFutures != null) {
+                futures.addAll(zoneCellFutures);
                 continue;
             }
 
@@ -463,7 +505,7 @@ public class UserAdminShell
      */
     private static boolean isExpandable(String s) {
         return !s.contains(":") && (s.startsWith("@") || s.endsWith("@") || Glob.isGlob(s)
-              || s.indexOf('/') > -1);
+              || s.indexOf('/') > -1 || s.indexOf('#') > -1);
     }
 
     /**
@@ -734,7 +776,7 @@ public class UserAdminShell
 
         @Override
         public Serializable call()
-              throws InterruptedException, NoRouteToCellException, CommandException, AclException {
+                throws InterruptedException, NoRouteToCellException, CommandException, AclException {
             return sendObject(_poolManager.getDestinationPath(), args.toString());
         }
     }
@@ -756,8 +798,7 @@ public class UserAdminShell
 
         @Override
         public Serializable call()
-              throws InterruptedException, ExecutionException, CacheException, AclException,
-              CommandException, NoRouteToCellException {
+                throws Exception {
             args.shift();
             AuthorizedString command = new AuthorizedString(_user, args.toString());
 
@@ -768,17 +809,23 @@ public class UserAdminShell
                 return sendObject(destination, command);
             }
 
-            /* Expand wildcards.
-             */
             Map<Boolean, List<String>> expandable =
-                  StreamSupport.stream(Glob.expandList(destination).spliterator(), false)
-                        .collect(partitioningBy(UserAdminShell::isExpandable));
+                    StreamSupport.stream(Glob.expandList(destination).spliterator(), false)
+                            .collect(partitioningBy(UserAdminShell::isExpandable));
             Iterable<String> destinations = concat(expandable.get(false),
-                  expandCellPatterns(expandable.get(true)));
+                    expandCellPatterns(expandable.get(true)));
 
             return sendToMany(destinations, command);
         }
     }
+
+    private @NonNull Iterable<String> expandWildcards(String destination) throws CacheException, InterruptedException, ExecutionException, NoRouteToCellException, CommandException {Map<Boolean, List<String>> expandable =
+            StreamSupport.stream(Glob.expandList(destination).spliterator(), false)
+                    .collect(partitioningBy(UserAdminShell::isExpandable));
+
+        return concat(expandable.get(false), expandCellPatterns(expandable.get(true)));
+    }
+
 
     @Command(name = "\\sl", hint = "send to locations",
           description = "Sends COMMAND to all pools hosting a copy of the given file. If the " +
@@ -884,6 +931,9 @@ public class UserAdminShell
             return -1;
         } catch (InterruptedException e) {
             return -1;
+        } catch (CommandException e) {
+            LOGGER.warn(e.getMessage());
+            return -1;
         }
     }
 
@@ -922,6 +972,9 @@ public class UserAdminShell
             LOGGER.info("Completion failed: {}", e.toString());
             return -1;
         } catch (InterruptedException e) {
+            return -1;
+        } catch (CommandException e) {
+            LOGGER.warn(e.getMessage());
             return -1;
         }
     }
