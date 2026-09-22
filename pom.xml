@@ -1501,6 +1501,7 @@
         <module>packages</module>
         <module>archetypes</module>
         <module>modules/dcache-view</module>
+        <module>modules/dcache-view-2</module>
     </modules>
 
     <profiles>
