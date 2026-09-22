@@ -207,6 +207,11 @@
         <version>${project.version}</version>
     </dependency>
     <dependency>
+        <groupId>org.dcache</groupId>
+        <artifactId>dcache-view-2</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.dcache</groupId>
       <artifactId>dcache-view-admin</artifactId>
     </dependency>
