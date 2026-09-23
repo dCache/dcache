@@ -34,7 +34,7 @@ spec:
     spec:
       containers:
         - name: kafka
-          image: apache/kafka:3.9.1
+          image: apache/kafka:3.9.2
           ports:
             - name: kafka
               containerPort: 9092
