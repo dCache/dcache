@@ -116,6 +116,8 @@ import org.dcache.xrootd.protocol.messages.MkDirRequest;
 import org.dcache.xrootd.protocol.messages.MvRequest;
 import org.dcache.xrootd.protocol.messages.OpenRequest;
 import org.dcache.xrootd.protocol.messages.OpenResponse;
+import org.dcache.xrootd.protocol.messages.PingRequest;
+import org.dcache.xrootd.protocol.messages.PingResponse;
 import org.dcache.xrootd.protocol.messages.PrepareRequest;
 import org.dcache.xrootd.protocol.messages.PrepareResponse;
 import org.dcache.xrootd.protocol.messages.QueryRequest;
@@ -1131,6 +1133,13 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
         } catch (CacheException e) {
             throw xrootdException(e);
         }
+    }
+
+    @Override
+    protected XrootdResponse<PingRequest> doOnPing(ChannelHandlerContext ctx,
+          PingRequest request)
+          throws XrootdException {
+        return new PingResponse(request, kXR_ok);
     }
 
     @Override

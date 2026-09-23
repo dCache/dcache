@@ -473,8 +473,6 @@ public class AccessLogHandler extends ChannelDuplexHandler {
                 return "mv";
             case kXR_open:
                 return "open";
-            case kXR_ping:
-                return "ping";
             case kXR_chkpoint:
                 return "chkpoint";
             case kXR_read:
@@ -493,6 +491,8 @@ public class AccessLogHandler extends ChannelDuplexHandler {
                 return "write";
             case kXR_fattr:
                 return "fattr";
+            case kXR_ping:
+                return "ping";
             case kXR_prepare:
                 return "prepare";
             case kXR_statx:
