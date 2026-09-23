@@ -89,7 +89,6 @@
 
 
 
-        <version.spring-integration-kafka>5.5.11</version.spring-integration-kafka>
         <version.spring_kafka>2.9.11</version.spring_kafka>
         <version.kafka>3.1.0</version.kafka>
 
@@ -853,11 +852,6 @@
             </dependency>
 
             <dependency>
-                <groupId>org.springframework.integration</groupId>
-                <artifactId>spring-integration-kafka</artifactId>
-                <version>${version.spring-integration-kafka}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.springframework.kafka</groupId>
                 <artifactId>spring-kafka</artifactId>
                 <exclusions>
@@ -867,21 +861,6 @@
                     </exclusion>
                 </exclusions>
                 <version>${version.spring_kafka}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.kafka</groupId>
-                <artifactId>kafka_2.12</artifactId>
-                <version>${version.kafka}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.zookeeper</groupId>
-                        <artifactId>zookeeper</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-log4j12</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.kafka</groupId>

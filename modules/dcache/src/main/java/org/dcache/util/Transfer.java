@@ -18,7 +18,6 @@ import static org.dcache.namespace.FileType.REGULAR;
 import static org.dcache.util.MathUtils.addWithInfinity;
 import static org.dcache.util.MathUtils.subWithInfinity;
 
-import com.google.common.base.Throwables;
 import com.google.common.collect.Sets;
 import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.Longs;
@@ -76,7 +75,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.security.auth.Subject;
@@ -98,7 +96,6 @@ import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
-import org.springframework.kafka.KafkaException;
 
 /**
  * Facade for transfer related operations. Encapsulates information about and typical operations of
@@ -161,10 +158,6 @@ public class Transfer implements Comparable<Transfer> {
           EnumSet.noneOf(FileAttribute.class);
 
     private MoverInfoMessage moverInfoMessage;
-
-    private Consumer<DoorRequestInfoMessage> _kafkaSender = (s) -> {
-    };
-
 
     private static final ThreadFactory RETRY_THREAD_FACTORY =
           new ThreadFactoryBuilder().setDaemon(true).setNameFormat("transfer-retry-timer-%d")
@@ -316,10 +309,6 @@ public class Transfer implements Comparable<Transfer> {
      */
     public synchronized void setBillingStub(CellStub stub) {
         _billing = requireNonNull(stub, "Billing stub can't be null");
-    }
-
-    public synchronized void setKafkaSender(Consumer<DoorRequestInfoMessage> kafkaSender) {
-        _kafkaSender = kafkaSender;
     }
 
     public synchronized void
@@ -1287,12 +1276,6 @@ public class Transfer implements Comparable<Transfer> {
         _isBillingNotified = true;
 
         msg.setMoverInfo(moverInfoMessage);
-
-        try {
-            _kafkaSender.accept(msg);
-        } catch (KafkaException | org.apache.kafka.common.KafkaException e) {
-            _log.warn("Failed to send message to kafka: {} ", Throwables.getRootCause(e).getMessage());
-        }
     }
 
     private static long getTimeoutFor(long deadline) {
