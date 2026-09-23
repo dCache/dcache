@@ -55,10 +55,11 @@ dcache.kafka.topic = billing
 reference dcache.kafka.topic:
 
    ftp.kafka.topic = ${dcache.kafka.topic}
-   nfs.kafka.topic = ${dcache.kafka.topic}
    pool.kafka.topic = ${dcache.kafka.topic}
    webdav.kafka.topic = ${dcache.kafka.topic}
    xrootd.kafka.topic = ${dcache.kafka.topic}
+
+> **Note**: Kafka producer support has been removed from the NFS door. The `nfs.kafka.*` properties are obsolete and no longer have any effect.
 
 ### 3. Start Server
 
