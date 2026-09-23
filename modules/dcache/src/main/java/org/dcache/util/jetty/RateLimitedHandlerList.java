@@ -240,6 +240,10 @@ public class RateLimitedHandlerList extends HandlerCollection implements CellCom
             return;
         }
 
+
+
+        // REVISIT: do we want to keep per-client rate limiter or only for authentication errors?
+        /*
         if (!getClientRateLimiter(client).tryAcquire()) {
             LOGGER.debug("Blocking client with too many requests {}", client);
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS_429);
@@ -257,7 +261,7 @@ public class RateLimitedHandlerList extends HandlerCollection implements CellCom
             baseRequest.setHandled(true);
             return;
         }
-
+         */
         Handler[] handlers = this.getHandlers();
         if (handlers != null && this.isStarted()) {
             for (Handler handler : handlers) {
