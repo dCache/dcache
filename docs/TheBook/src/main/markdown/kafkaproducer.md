@@ -58,7 +58,10 @@ reference dcache.kafka.topic:
    nfs.kafka.topic = ${dcache.kafka.topic}
    pool.kafka.topic = ${dcache.kafka.topic}
    webdav.kafka.topic = ${dcache.kafka.topic}
-   xrootd.kafka.topic = ${dcache.kafka.topic}
+
+> **Note:** Kafka producer support has been removed from the xrootd door. The
+> corresponding `xrootd.kafka.*` properties are obsolete and will be ignored;
+> xrootd messages are no longer published to Kafka.
 
 ### 3. Start Server
 
