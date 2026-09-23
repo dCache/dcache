@@ -28,5 +28,4 @@ check transfermanagers.mover.queue
 
 create org.dcache.cells.UniversalSpringCell ${transfermanagers.cell.name} \
         "classpath:diskCacheV111/services/transfer-manager.xml \
-        -consume=${transfermanagers.cell.consume} \
-        -profiles=kafka-${transfermanagers.enable.kafka}"
+        -consume=${transfermanagers.cell.consume}"

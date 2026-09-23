@@ -7,7 +7,6 @@ import static com.google.common.base.Preconditions.checkState;
 import static java.util.stream.Collectors.toList;
 
 import com.google.common.base.Splitter;
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
@@ -87,7 +86,6 @@ import java.util.TreeSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadFactory;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
@@ -123,11 +121,7 @@ import org.dcache.util.Version;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Required;
-import org.springframework.kafka.KafkaException;
-import org.springframework.kafka.core.KafkaTemplate;
 
 public class PoolV4
       extends AbstractCellComponent
@@ -209,9 +203,6 @@ public class PoolV4
 
     private Executor _executor;
 
-    private Consumer<RemoveFileInfoMessage> _kafkaSender = (s) -> {
-    };
-
     private ThreadFactory _threadFactory;
 
     // Hot file monitoring
@@ -237,12 +228,6 @@ public class PoolV4
 
     protected void assertNotRunning(String error) {
         checkState(!_running, error);
-    }
-
-    @Autowired(required = false)
-    @Qualifier("remove")
-    public void setKafkaTemplate(KafkaTemplate kafkaTemplate) {
-        _kafkaSender = kafkaTemplate::sendDefault;
     }
 
     @Required
@@ -596,13 +581,6 @@ public class PoolV4
                 msg.setSubject(Subjects.ROOT);
                 msg.setResult(0, event.getWhy());
                 _billingStub.notify(msg);
-
-                try {
-                    _kafkaSender.accept(msg);
-                } catch (KafkaException | org.apache.kafka.common.KafkaException e) {
-                    LOGGER.warn("Failed to send message to kafka: {} ",
-                          Throwables.getRootCause(e).getMessage());
-                }
             }
         }
     }

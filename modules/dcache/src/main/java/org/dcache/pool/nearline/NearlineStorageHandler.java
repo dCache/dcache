@@ -27,7 +27,6 @@ import static org.dcache.namespace.FileAttribute.STORAGEINFO;
 import static org.dcache.util.Exceptions.messageOrClassName;
 
 import com.google.common.base.Functions;
-import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -80,7 +79,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -119,11 +117,7 @@ import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Required;
-import org.springframework.kafka.KafkaException;
-import org.springframework.kafka.core.KafkaTemplate;
 
 /**
  * Entry point to and management interface for the nearline storage subsystem.
@@ -173,10 +167,6 @@ public class NearlineStorageHandler
 
     private CellAddressCore cellAddress;
 
-    private Consumer<StorageInfoMessage> _kafkaSender = (s) -> {
-    };
-
-
     @Override
     public void setCellAddress(CellAddressCore address) {
         cellAddress = address;
@@ -187,12 +177,6 @@ public class NearlineStorageHandler
         this.scheduledExecutor = requireNonNull(executor);
     }
 
-
-    @Autowired(required = false)
-    @Qualifier("hsm")
-    public void setKafkaTemplate(KafkaTemplate kafkaTemplate) {
-        _kafkaSender = kafkaTemplate::sendDefault;
-    }
 
     @Required
     public void setExecutor(ListeningExecutorService executor) {
@@ -1187,11 +1171,6 @@ public class NearlineStorageHandler
             addFromNearlineStorage(infoMsg, storage);
 
             billingStub.notify(infoMsg);
-            try {
-                _kafkaSender.accept(infoMsg);
-            } catch (KafkaException | org.apache.kafka.common.KafkaException e) {
-                LOGGER.warn("Failed to send message to kafka: {} ", Throwables.getRootCause(e).getMessage());
-            }
             flushRequests.removeAndCallback(pnfsId, cause);
         }
 
@@ -1421,11 +1400,6 @@ public class NearlineStorageHandler
             addFromNearlineStorage(infoMsg, storage);
 
             billingStub.notify(infoMsg);
-            try {
-                _kafkaSender.accept(infoMsg);
-            } catch (KafkaException | org.apache.kafka.common.KafkaException e) {
-                LOGGER.warn("Failed to send message to kafka: {} ", Throwables.getRootCause(e).getMessage());
-            }
             stageRequests.removeAndCallback(pnfsId, cause);
         }
 

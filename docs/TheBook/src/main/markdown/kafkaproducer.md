@@ -51,15 +51,13 @@ Set kafka topic name
 dcache.kafka.topic = billing
 ```
 
-"billing" is default. The following service level variables
-reference dcache.kafka.topic:
+"billing" is default.
 
-   ftp.kafka.topic = ${dcache.kafka.topic}
-   pool.kafka.topic = ${dcache.kafka.topic}
-   webdav.kafka.topic = ${dcache.kafka.topic}
-   xrootd.kafka.topic = ${dcache.kafka.topic}
 
-> **Note**: Kafka producer support has been removed from the NFS door. The `nfs.kafka.*` properties are obsolete and no longer have any effect.
+**Note** that doors no longer supports pushing messages to Kafka; the
+producer for doors has been removed and any `nfs/ftp/webdav.kafka.*` properties are now
+obsolete.
+
 
 ### 3. Start Server
 

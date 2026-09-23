@@ -20,7 +20,6 @@ package org.dcache.pool.classic;
 import static com.google.common.net.InetAddresses.toUriString;
 import static org.dcache.util.Exceptions.messageOrClassName;
 
-import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import diskCacheV111.util.CacheException;
@@ -40,7 +39,6 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 import org.dcache.cells.CellStub;
 import org.dcache.pool.movers.Mover;
 import org.dcache.pool.movers.TransferLifeCycle;
@@ -56,11 +54,7 @@ import org.dcache.util.NetworkUtils;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Required;
-import org.springframework.kafka.KafkaException;
-import org.springframework.kafka.core.KafkaTemplate;
 
 public class DefaultPostTransferService extends AbstractCellComponent implements
       PostTransferService, CellInfoProvider {
@@ -77,9 +71,6 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
     private ChecksumModule _checksumModule;
     private CellStub _door;
 
-    private Consumer<MoverInfoMessage> _kafkaSender = (s) -> {
-    };
-
     private TransferLifeCycle transferLifeCycle;
 
     @Required
@@ -95,12 +86,6 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
     @Required
     public void setChecksumModule(ChecksumModule checksumModule) {
         _checksumModule = checksumModule;
-    }
-
-    @Autowired(required = false)
-    @Qualifier("transfer")
-    public void setKafkaTemplate(KafkaTemplate kafkaTemplate) {
-        _kafkaSender = kafkaTemplate::sendDefault;
     }
 
     public void setTransferLifeCycle(TransferLifeCycle transferLifeCycle) {
@@ -169,12 +154,6 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
 
     private void sendBillingInfo(MoverInfoMessage moverInfoMessage) {
         _billing.notify(moverInfoMessage);
-
-        try {
-            _kafkaSender.accept(moverInfoMessage);
-        } catch (KafkaException | org.apache.kafka.common.KafkaException e) {
-            LOGGER.warn("Failed to send message to kafka: {} ", Throwables.getRootCause(e).getMessage());
-        }
     }
 
     public MoverInfoMessage generateBillingMessage(Mover<?> mover, long fileSize) {
