@@ -54,11 +54,14 @@ dcache.kafka.topic = billing
 "billing" is default. The following service level variables
 reference dcache.kafka.topic:
 
-   ftp.kafka.topic = ${dcache.kafka.topic}
    nfs.kafka.topic = ${dcache.kafka.topic}
    pool.kafka.topic = ${dcache.kafka.topic}
    webdav.kafka.topic = ${dcache.kafka.topic}
    xrootd.kafka.topic = ${dcache.kafka.topic}
+
+Note that the FTP door no longer supports pushing messages to Kafka; the
+producer for FTP has been removed and any `ftp.kafka.*` properties are now
+obsolete.
 
 ### 3. Start Server
 
