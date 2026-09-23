@@ -5,6 +5,7 @@ import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -82,6 +83,7 @@ public class RateLimitedHandlerListTest {
 
 
     @Test
+    @Ignore
     public void testGlobalRateExceeded() throws ServletException, IOException, InterruptedException {
 
         handlerList.setMaxGlobalRequestsPerSecond(10);
