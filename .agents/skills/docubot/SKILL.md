@@ -51,22 +51,14 @@ Before branching, confirm the working tree is clean (stash or abort otherwise, s
    Fill in `<AI-model>/<AI-provider>` with whatever actually produced the suggestion, e.g. `reasoning/desy-assistant`.
    Use `[skip-ci]` prefix for commit message to bypass CI for documentation only changes.
 
-3. Push the branch:
-   ```
-   git push -u origin docubot-<githash>
-   ```
+3. Open the PR:
 
-4. Open the PR:
+   Open a pull request using the GitHub CLI:
+
    ```
    gh pr create --base <default-branch> --head docubot-<githash> \
      --title "[skip-ci] docs: <short summary>" \
      --body "Suggested documentation update for <githash> (\"<commit subject>\"). AI-generated — please review for accuracy before merging."
    ```
-
-5. Flag it for reviewers with an `eyes` reaction:
-   ```
-   gh api repos/<owner>/<repo>/issues/<pr-number>/reactions -f content=eyes
-   ```
-   `<pr-number>` is printed by `gh pr create`, or can be read back with `gh pr view --json number`.
 
 Leave the PR open for a human to review — never merge it automatically. The suggestion is a starting point, not a finished change.
