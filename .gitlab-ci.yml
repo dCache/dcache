@@ -312,7 +312,7 @@ Check for duplicate dependencies:
     - if [ -s duplicate-dependencies.txt ]; then cat duplicate-dependencies.txt; exit 1; fi
 
 
-Run Documetobot:
+Run Documetobot 🤖:
   stage: build
   image:
     name: tollerort.desy.de/it-rs/pi-c:latest
@@ -457,7 +457,7 @@ upload_container:
 #
 # This jobs needs that the number of changes to fetch from GitLab when cloning a repository is high enough to generate
 # the changelog.
-AI Generated Release Notes:
+AI Generated Release Notes 🤖:
   image: almalinux:10-minimal
   stage: upload
   extends: .upload_rules
