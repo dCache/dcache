@@ -94,6 +94,8 @@
     <property name="executor" ref="workerThreadPool"/>
     <property name="fileRequestMonitor" ref="migration"/>
     <property name="hotFileReplicationEnabled" value="${pool.hotfile.replication.enable}"/>
+      <property name="poolManagerStub" ref="poolManagerStub"/>
+    <property name="mainZoneReplicationEnabled" value="${pool.destination.replicate.to.main.zone.on.write:false}"/>
   </bean>
 
   <bean id="pnfs" class="diskCacheV111.util.PnfsHandler">
@@ -246,6 +248,7 @@
       <property name="timeout" value="${pool.service.poolmanager.timeout}"/>
       <property name="timeoutUnit" value="${pool.service.poolmanager.timeout.unit}"/>
   </bean>
+
 
   <bean id="doorStub" class="org.dcache.cells.CellStub">
       <description>Door cell stub</description>
