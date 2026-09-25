@@ -392,7 +392,7 @@ public class SystemCell
             _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.FATAL_JVM_ERROR,
                         getCellDomainName(),
                         getCellName()),
-                  "Restarting due to fatal JVM error: {}", e.toString());
+                  "Restarting due to fatal JVM error: {}", e.toString(), e);
             return;
         }
 

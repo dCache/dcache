@@ -156,13 +156,13 @@ public class Domain {
         }
         LOGGER.info("Starting {}", domainName);
 
-        boolean isMain = Boolean.getBoolean(_properties.getValue(PROPERTY_ZONE_IS_MAIN));
+        boolean isMain = Boolean.parseBoolean(_properties.getValue(PROPERTY_ZONE_IS_MAIN));
 
         if(zone.isPresent() && isMain){
             try{
                 LmPersistentNode.createOrUpdate(
                         curator,
-                        "dcache/main-zones/" + zone.get() + "/" + domainName,
+                        "/dcache/main-zones/" + zone.get() + "/" + domainName,
                         new byte[0],
                         Function.identity(),
                         null

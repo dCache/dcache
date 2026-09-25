@@ -13,6 +13,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListenableFutureTask;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.RateLimiter;
@@ -89,6 +90,10 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadFactory;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
+
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.cache.ChildData;
+import org.apache.curator.framework.recipes.cache.PathChildrenCache;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.auth.Subjects;
@@ -96,6 +101,7 @@ import org.dcache.cells.CellStub;
 import org.dcache.cells.MessageReply;
 import org.dcache.cells.ThreadCreator;
 import org.dcache.cells.ZoneAware;
+import org.dcache.cells.CuratorFrameworkAware;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
 import org.dcache.pool.PoolDataBeanProvider;
@@ -133,7 +139,7 @@ public class PoolV4
       extends AbstractCellComponent
       implements FaultListener, CellCommandListener, CellMessageReceiver, CellSetupProvider,
       CellLifeCycleAware, CellInfoProvider,
-      PoolDataBeanProvider<PoolDataDetails>, ZoneAware, ThreadCreator {
+      PoolDataBeanProvider<PoolDataDetails>, ZoneAware, ThreadCreator, CuratorFrameworkAware {
 
     private static final int P2P_CACHED = 1;
     private static final int P2P_PRECIOUS = 2;
@@ -167,6 +173,11 @@ public class PoolV4
     private StorageClassContainer _storageQueue;
     private Repository _repository;
 
+    private CuratorFramework _curator;
+    private PathChildrenCache _zkMainZoneCache;
+    private boolean _isMainZone;
+    private boolean _mainZoneReplicationEnabled;
+
     private Account _account;
 
     private String _poolupDestination;
@@ -175,6 +186,8 @@ public class PoolV4
     private CellStub _billingStub;
     private final Map<String, String> _tags = new HashMap<>();
     private String _baseDir;
+
+    private CellStub _poolManagerStub;
 
     private final PoolManagerPingThread _pingThread = new PoolManagerPingThread();
     private HsmFlushController _flushingThread;
@@ -420,6 +433,14 @@ public class PoolV4
         _transferServices = transferServices;
     }
 
+    public void setPoolManagerStub(CellStub stub) {
+        _poolManagerStub = stub;
+    }
+
+    public void setMainZoneReplicationEnabled(boolean enabled) {
+        _mainZoneReplicationEnabled = enabled;
+    }
+
     @Override
     public void setZone(Optional<String> zone) {
         zone.ifPresent(z -> _tags.put(ZONE_TAG, z));
@@ -448,6 +469,16 @@ public class PoolV4
 
     @Override
     public void afterStart() {
+        String zone = _tags.get(ZONE_TAG);
+        if (_curator != null && zone != null) {
+            _zkMainZoneCache = new PathChildrenCache(_curator, "/dcache/main-zones/" + zone, false);
+            _zkMainZoneCache.getListenable().addListener((c, e) -> updateIsMainZone());
+            try {
+                _zkMainZoneCache.start();
+            } catch (Exception e) {
+                LOGGER.warn("Failed to start main zone ZooKeeper watch: {}", e.getMessage());
+            }
+        }
         disablePool(PoolV2Mode.DISABLED_STRICT, 1, "Awaiting initialization");
         _pingThread.start();
         _threadFactory.newThread(() -> {
@@ -487,6 +518,13 @@ public class PoolV4
 
     @Override
     public void beforeStop() {
+        if (_zkMainZoneCache != null) {
+            try {
+                _zkMainZoneCache.close();
+            } catch (IOException e) {
+                LOGGER.debug("Failed to close main zone ZooKeeper cache: {}", e.getMessage());
+            }
+        }
         _flushingThread.stop();
 
         /*
@@ -539,6 +577,20 @@ public class PoolV4
                       "Pool: {}, fault occurred in {}: {}. {}",
                       _poolName, event.getSource(), event.getMessage(), poolState);
             }
+        }
+    }
+
+    @Override
+    public void setCuratorFramework(CuratorFramework client) {
+        _curator = client;
+    }
+
+    private void updateIsMainZone() {
+        if (_zkMainZoneCache != null) {
+            _isMainZone = _zkMainZoneCache.getCurrentData().stream()
+                    .map(ChildData::getPath)
+                    .map(path -> path.substring(path.lastIndexOf('/') + 1))
+                    .anyMatch(domainName -> domainName.equals(getCellDomainName()));
         }
     }
 
@@ -821,7 +873,7 @@ public class PoolV4
         private void initiateReplication(PnfsId id, String source) {
             if (_replicationManager != null) {
                 try {
-                    _initiateReplication(_repository.getEntry(id), source);
+                    _initiateReplication(_repository.getEntry(id), id, source);
                 } catch (InterruptedException e) {
                     LOGGER.warn("Replication request was interrupted");
                     Thread.currentThread().interrupt();
@@ -831,7 +883,7 @@ public class PoolV4
             }
         }
 
-        private void _initiateReplication(CacheEntry entry, String source) {
+        private void _initiateReplication(CacheEntry entry, PnfsId id, String source) {
             FileAttributes attributes = entry.getFileAttributes().clone();
             attributes.setLocations(Collections.singleton(_poolName));
             attributes.getStorageInfo().setKey("replication.source", source);
@@ -840,8 +892,36 @@ public class PoolV4
                   new PoolMgrReplicateFileMsg(attributes,
                         new DCapProtocolInfo("DCap", 3, 0,
                               new InetSocketAddress(_replicationIp, 2222)));
-            req.setReplyRequired(false);
-            sendMessage(new CellMessage(_replicationManager, req));
+            if(!_mainZoneReplicationEnabled || _isMainZone){
+                req.setReplyRequired(false);
+                sendMessage(new CellMessage(_replicationManager, req));
+            }
+            else if(source.equals("write")){
+                ListenableFuture<PoolMgrReplicateFileMsg> future = _poolManagerStub.send(req);
+                Futures.addCallback(future,
+                        new FutureCallback<PoolMgrReplicateFileMsg>() {
+                            @Override
+                            public void onSuccess(PoolMgrReplicateFileMsg reply) {
+                                if (reply.getReturnCode() == 0) {
+                                    try {
+                                        _repository.setState(id, ReplicaState.CACHED,
+                                                "File was replicated to main-site pool");
+                                    } catch (InterruptedException e) {
+                                        Thread.currentThread().interrupt();
+                                        LOGGER.warn("Interrupted while setting replica state for {}", id);
+                                    } catch (CacheException e) {
+                                        LOGGER.warn("Failed to set replica state for {}: {}", id, e.getMessage());
+                                    }
+                                }
+                            }
+                            @Override
+                            public void onFailure(Throwable t) {
+                                LOGGER.warn("Main zone replication failed for {}: {}", id, t.getMessage());
+                            }
+                        },
+                        MoreExecutors.directExecutor()
+                );
+            }
         }
     }
 
