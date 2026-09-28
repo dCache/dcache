@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 - 2017 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2026 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -59,6 +59,7 @@ public class ProxyDelegationStore {
               .lazyAnchorsLoading(false)
               .trustAnchorsUpdateInterval(refresh)
               .trustAnchorsDir(caCertificatePath)
+              .opensslHashFunction(CertificateValidatorBuilder.OpensslHashFunction.SHA1)
               .build();
         vomsValidator = VOMSValidators.newValidator(vomsTrustStore,
               certChainValidator);
