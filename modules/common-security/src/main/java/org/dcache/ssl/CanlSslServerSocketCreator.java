@@ -6,6 +6,7 @@ import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Iterables.toArray;
 import static java.util.Arrays.asList;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
 import eu.emi.security.authn.x509.CrlCheckingMode;
@@ -31,6 +32,7 @@ public class CanlSslServerSocketCreator extends ServerSocketFactory {
 
     private static final String SERVICE_KEY = "service_key";
     private static final String SERVICE_CERT = "service_cert";
+    private static final String REQUIRE_CLIENT_AUTH = "require-client-auth";
     private static final String SERVICE_TRUSTED_CERTS = "service_trusted_certs";
     private static final String CIPHER_FLAGS = "ciphers";
     private static final String CRL_MODE = "crl-mode";
@@ -40,6 +42,7 @@ public class CanlSslServerSocketCreator extends ServerSocketFactory {
 
     private final Set<String> bannedCiphers;
     private final Callable<SSLContext> factory;
+    private final boolean requireClientAuth;
 
     public CanlSslServerSocketCreator(String arguments) throws IOException {
         this(new Args(arguments));
@@ -49,14 +52,23 @@ public class CanlSslServerSocketCreator extends ServerSocketFactory {
         this(new File(args.getOption(SERVICE_KEY)),
               new File(args.getOption(SERVICE_CERT)),
               new File(args.getOption(SERVICE_TRUSTED_CERTS)),
+              args.getBooleanOption(REQUIRE_CLIENT_AUTH, false),
               Crypto.getBannedCipherSuitesFromConfigurationValue(args.getOption(CIPHER_FLAGS)),
               CrlCheckingMode.valueOf(args.getOption(CRL_MODE)),
               OCSPCheckingMode.valueOf(args.getOption(OCSP_MODE)));
     }
 
+    @VisibleForTesting
+    CanlSslServerSocketCreator(SSLContext sslContext, boolean requireClientAuth) {
+        this.factory = () -> sslContext;
+        this.requireClientAuth = requireClientAuth;
+        this.bannedCiphers = ImmutableSet.of();
+    }
+
     public CanlSslServerSocketCreator(File keyPath,
           File certPath,
           File caPath,
+          boolean requireClientAuth,
           String[] bannedCiphers,
           CrlCheckingMode crlMode,
           OCSPCheckingMode ocspMode) throws IOException {
@@ -66,6 +78,7 @@ public class CanlSslServerSocketCreator extends ServerSocketFactory {
             LOGGER.info("service_trusted_certs {}", caPath);
 
             this.bannedCiphers = ImmutableSet.copyOf(bannedCiphers);
+            this.requireClientAuth = requireClientAuth;
 
             factory = CanlContextFactory.custom()
                   .withCertificateAuthorityPath(caPath.toPath())
@@ -133,7 +146,12 @@ public class CanlSslServerSocketCreator extends ServerSocketFactory {
               not(in(bannedProtocols))), String.class);
         socket.setEnabledCipherSuites(cipherSuites);
         socket.setEnabledProtocols(protocols);
-        socket.setWantClientAuth(true);
+        if (requireClientAuth) {
+            socket.setNeedClientAuth(true);
+        }
+        else {
+            socket.setWantClientAuth(true);
+        }
         socket.setUseClientMode(false);
     }
 }
