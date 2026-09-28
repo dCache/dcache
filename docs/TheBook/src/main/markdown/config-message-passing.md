@@ -239,3 +239,23 @@ dcache.broker.channel.credential.cert = ${dcache.authn.hostcert.cert}
 dcache.broker.channel.capath = ${dcache.authn.capath}
 ```
 
+### Mutual TLS for domain to domain communication
+
+By default, TLS tunnel connections only authenticate the server (the core
+domain). Connecting domains are not required to present a certificate. To
+require that every connecting domain also presents a valid certificate signed
+by the shared CA, enable mutual TLS:
+
+```ini
+dcache.broker.channel.require-client-auth = true
+```
+
+When enabled, the core domain will reject any incoming tunnel connection that
+does not carry a valid client certificate. This prevents unauthorized domains
+from joining the cluster.
+
+Each domain must have a host certificate signed by the same CA that is
+configured in `dcache.broker.channel.capath`. The connecting domain already
+loads its certificate automatically through `dcache.broker.channel.credential.cert`
+— no additional client-side configuration is needed.
+

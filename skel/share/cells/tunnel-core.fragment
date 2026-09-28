@@ -11,6 +11,7 @@ check -strong dcache.broker.channel.capath
 check -strong dcache.authn.ciphers
 check -strong dcache.authn.crl-mode
 check -strong dcache.authn.ocsp-mode
+check -strong dcache.broker.channel.require-client-auth
 
 create -- dmg.cells.services.CoreRoutingManager RoutingMgr "-role=core"
 create -- dmg.cells.services.LocationManager lm \
@@ -23,7 +24,8 @@ create -- dmg.cells.services.LocationManager lm \
                                         -service_trusted_certs="${dcache.broker.channel.capath}" \
                                         -ciphers="${dcache.authn.ciphers}" \
                                         -crl-mode="${dcache.authn.crl-mode}" \
-                                        -ocsp-mode="${dcache.authn.ocsp-mode}"' \
+                                        -ocsp-mode="${dcache.authn.ocsp-mode}" \
+                                        -require-client-auth="${dcache.broker.channel.require-client-auth}"' \
                     -- \
                     ${dcache.broker.plain.port} ${dcache.broker.tls.port}"
 
