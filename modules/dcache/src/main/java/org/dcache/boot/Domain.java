@@ -156,19 +156,17 @@ public class Domain {
         }
         LOGGER.info("Starting {}", domainName);
 
-        boolean isMain = Boolean.getBoolean(_properties.getValue(PROPERTY_ZONE_IS_MAIN));
-
-        if(zone.isPresent() && isMain){
+        if(zone.isPresent()){
             try{
                 LmPersistentNode.createOrUpdate(
                         curator,
-                        "dcache/main-zones/" + zone.get() + "/" + domainName,
+                        "/dcache/zones/" + zone.get() + "/" + domainName,
                         new byte[0],
                         Function.identity(),
                         null
                 );
             } catch (Exception e) {
-                LOGGER.warn("Failed to add zone {} as main in ZooKeeper", zone.get(), e);
+                LOGGER.warn("Failed to add zone {} in ZooKeeper", zone.get(), e);
             }
         }
 

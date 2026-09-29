@@ -38,12 +38,7 @@ import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.PoolManagerGetPoolsByPoolGroupMessage;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import dmg.cells.network.PingMessage;
-import dmg.cells.nucleus.CellAddressCore;
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellMessageAnswerable;
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.cells.nucleus.*;
 import dmg.cells.services.GetAllDomainsReply;
 import dmg.cells.services.GetAllDomainsRequest;
 import dmg.util.AclException;
@@ -76,10 +71,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jline.console.completer.Completer;
 import jline.console.completer.StringsCompleter;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.cache.PathChildrenCache;
+import org.checkerframework.checker.units.qual.C;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.CellStub;
@@ -157,6 +156,10 @@ public class UserAdminShell
      */
     private Completer _pnfsManagerCompleter;
 
+    private CuratorFramework _curator;
+
+    private PathChildrenCache zoneCache;
+
     /**
      * Client handler for listing directories in the dCache name space.
      */
@@ -224,6 +227,10 @@ public class UserAdminShell
         _cellStub = new CellStub(_cellEndpoint);
     }
 
+    void setCellStub(CellStub stub) {
+        _cellStub = stub;
+    }
+
     public void setAcm(CellStub stub) {
         _acmStub = stub;
     }
@@ -236,6 +243,10 @@ public class UserAdminShell
     public void setPnfsManager(CellStub stub) {
         _pnfsManager = stub;
         _pnfsManagerCompleter = createRemoteCompleter(_pnfsManager.getDestinationPath());
+    }
+
+    public void setCurator(CuratorFramework curator){
+        _curator = curator;
     }
 
     public void setListHandler(ListDirectoryHandler list) {
@@ -756,16 +767,27 @@ public class UserAdminShell
 
         @Override
         public Serializable call()
-              throws InterruptedException, ExecutionException, CacheException, AclException,
-              CommandException, NoRouteToCellException {
+                throws Exception {
             args.shift();
             AuthorizedString command = new AuthorizedString(_user, args.toString());
 
             /* Special case non-wildcard single cell destinations to avoid the indentation and
              * addition of a cell name header. Makes the command nicer to use in scripts.
              */
+            Exception e = null;
             if (!destination.contains(",") && !isExpandable(destination)) {
-                return sendObject(destination, command);
+                try {
+                    return sendObject(destination, command);
+                } catch (NoRouteToCellException noRoute) {
+                    e = noRoute;
+                }
+            }
+
+            boolean destIsZone = _curator.getChildren().forPath("/dcache/zones").stream()
+                    .anyMatch(zone -> zone.equals(destination));
+
+            if (e != null && destIsZone) {
+                return sendToZone(destination, command);
             }
 
             /* Expand wildcards.
@@ -1172,6 +1194,22 @@ public class UserAdminShell
             Throwables.throwIfInstanceOf(cause, NoRouteToCellException.class);
             Throwables.throwIfInstanceOf(cause, CommandException.class);
             throw new CommandThrowableException(cause.toString(), cause);
+        }
+    }
+
+    private String sendToZone(String zone, Serializable object) throws CommandException {
+        try {
+            List<String> domains = _curator.getChildren().forPath("/dcache/zones/" + zone);
+            List<ListenableFuture<List<String>>> futures = domains.stream()
+                    .map(domain -> getCells(domain, cell -> true))
+                    .toList();
+            Iterable<String> allCells = Objects.requireNonNull(allAsList(futures).get())
+                    .stream()
+                    .flatMap(List::stream)
+                    .toList();
+            return sendToMany(allCells, object);
+        } catch (Exception e) {
+            throw new CommandException("Can not send " + object.toString() + " to zone: " + zone, e.getCause());
         }
     }
 
