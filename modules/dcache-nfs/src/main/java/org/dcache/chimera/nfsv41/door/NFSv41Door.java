@@ -9,6 +9,7 @@ import static org.dcache.util.TransferRetryPolicy.alwaysRetry;
 import com.google.common.collect.Sets;
 import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import diskCacheV111.namespace.EventNotifier;
 import diskCacheV111.util.CacheException;
@@ -631,12 +632,7 @@ public class NFSv41Door extends AbstractCellComponent implements
     public void messageArrived(PoolPassiveIoFileMessage<?> message) {
 
         String poolName = message.getPoolName();
-        long verifier = message.getVerifier();
-        InetSocketAddress[] poolAddresses = message.socketAddresses();
-
         _log.debug("NFS mover ready: {}", poolName);
-
-        PoolDS device = _poolDeviceMap.getOrCreateDS(poolName, verifier, poolAddresses);
 
 
         // REVISIT 11.0: remove drop legacy support. Old polls will send legacy stateid.
@@ -652,6 +648,31 @@ public class NFSv41Door extends AbstractCellComponent implements
          * Door reboot.
          */
         if (transfer != null) {
+
+            long verifier = message.getVerifier();
+            InetSocketAddress[] poolAddresses = message.socketAddresses();
+
+            PoolDS device = _poolDeviceMap.getOrCreateDS(poolName, verifier, poolAddresses);
+
+            if (transfer.getMoverId() == null) {
+                _log.warn("NFS mover ready for transfer without mover: {}", stateid);
+                // we have not got a reply from pool manager yet, try to start mover again.
+                // as mover start requests is idempotent, we can safely re-issue it.
+                // Only redirect once the (re-)started mover is actually known; otherwise the
+                // client would be sent to a pool without a running mover. Also guard against
+                // re-starting a mover for a transfer that is already being torn down.
+                if (!transfer.hasMover()) {
+                    transfer.startMoverAsync(_poolStub.getTimeoutInMillis()).addListener(() -> {
+                        if (transfer.getMoverId() != null) {
+                            transfer.redirect(device);
+                        } else {
+                            _log.error("Failed to re-start mover for transfer without mover: {}", stateid);
+                        }
+                    }, MoreExecutors.directExecutor());
+                }
+                return;
+            }
+
             transfer.redirect(device);
         }
     }
