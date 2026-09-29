@@ -1073,6 +1073,7 @@ public class Transfer implements Comparable<Transfer> {
 
     /**
      * Creates a mover for the transfer.
+     * @param timeout timeout in milliseconds
      */
     public ListenableFuture<Void> startMoverAsync(long timeout) {
         FileAttributes fileAttributes = getFileAttributes();
