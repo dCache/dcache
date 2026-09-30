@@ -790,7 +790,7 @@ public class UserAdminShell
         }
     }
 
-    @Command(name = "\\s zone", hint = "send to zone",
+    @Command(name = "\\sz", hint = "send to zone",
             description = "Sends COMMAND to cells in the zone specified after zone. " +
                 "not specifying exact cells will send COMMAND to all cells in the zone.")
     class SendToZoneCommand implements Callable<Serializable> {
