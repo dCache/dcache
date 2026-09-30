@@ -25,6 +25,7 @@ import com.google.common.base.Splitter;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Range;
 import com.google.common.util.concurrent.Futures;
@@ -38,7 +39,12 @@ import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.PoolManagerGetPoolsByPoolGroupMessage;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import dmg.cells.network.PingMessage;
-import dmg.cells.nucleus.*;
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellMessageAnswerable;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.GetAllDomainsReply;
 import dmg.cells.services.GetAllDomainsRequest;
 import dmg.util.AclException;
@@ -71,14 +77,12 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jline.console.completer.Completer;
 import jline.console.completer.StringsCompleter;
 import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.recipes.cache.PathChildrenCache;
-import org.checkerframework.checker.units.qual.C;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.CellStub;
@@ -157,8 +161,6 @@ public class UserAdminShell
     private Completer _pnfsManagerCompleter;
 
     private CuratorFramework _curator;
-
-    private PathChildrenCache zoneCache;
 
     /**
      * Client handler for listing directories in the dCache name space.
@@ -745,7 +747,7 @@ public class UserAdminShell
 
         @Override
         public Serializable call()
-              throws InterruptedException, NoRouteToCellException, CommandException, AclException {
+                throws InterruptedException, NoRouteToCellException, CommandException, AclException {
             return sendObject(_poolManager.getDestinationPath(), args.toString());
         }
     }
@@ -774,33 +776,55 @@ public class UserAdminShell
             /* Special case non-wildcard single cell destinations to avoid the indentation and
              * addition of a cell name header. Makes the command nicer to use in scripts.
              */
-            Exception e = null;
             if (!destination.contains(",") && !isExpandable(destination)) {
-                try {
-                    return sendObject(destination, command);
-                } catch (NoRouteToCellException noRoute) {
-                    e = noRoute;
-                }
+                return sendObject(destination, command);
             }
 
-            boolean destIsZone = _curator.getChildren().forPath("/dcache/zones").stream()
-                    .anyMatch(zone -> zone.equals(destination));
-
-            if (e != null && destIsZone) {
-                return sendToZone(destination, command);
-            }
-
-            /* Expand wildcards.
-             */
             Map<Boolean, List<String>> expandable =
-                  StreamSupport.stream(Glob.expandList(destination).spliterator(), false)
-                        .collect(partitioningBy(UserAdminShell::isExpandable));
+                    StreamSupport.stream(Glob.expandList(destination).spliterator(), false)
+                            .collect(partitioningBy(UserAdminShell::isExpandable));
             Iterable<String> destinations = concat(expandable.get(false),
-                  expandCellPatterns(expandable.get(true)));
+                    expandCellPatterns(expandable.get(true)));
 
             return sendToMany(destinations, command);
         }
     }
+
+    @Command(name = "\\s zone", hint = "send to zone",
+            description = "Sends COMMAND to cells in the zone specified after zone. " +
+                "not specifying exact cells will send COMMAND to all cells in the zone.")
+    class SendToZoneCommand implements Callable<Serializable> {
+        @Argument(index = 0, valueSpec = "ZONE",
+                usage = "The Zone the COMMAND should be sent to")
+        String zone;
+
+        @Argument(index = 1, valueSpec = "(CELL[@DOMAIN]|POOL/POOLGROUP)[,(CELL[@DOMAIN]|POOL/POOLGROUP)]...",
+                usage = "List of cell addresses. Wildcards are expanded. An * matches any name.")
+        String destination;
+
+        @Argument(index = 2, usage = "A cell command")
+        String[] command;
+
+        @CommandLine(allowAnyOption = true, valueSpec = "[OPTIONS]")
+        Args args;
+
+        @Override
+        public Serializable call()
+                throws Exception {
+            args.shift(2);
+            AuthorizedString command = new AuthorizedString(_user, args.toString());
+
+            return sendToZone(zone, destination, command);
+        }
+    }
+
+    private @NonNull Iterable<String> expandWildcards(String destination) throws CacheException, InterruptedException, ExecutionException, NoRouteToCellException {Map<Boolean, List<String>> expandable =
+            StreamSupport.stream(Glob.expandList(destination).spliterator(), false)
+                    .collect(partitioningBy(UserAdminShell::isExpandable));
+
+        return concat(expandable.get(false), expandCellPatterns(expandable.get(true)));
+    }
+
 
     @Command(name = "\\sl", hint = "send to locations",
           description = "Sends COMMAND to all pools hosting a copy of the given file. If the " +
@@ -1197,19 +1221,23 @@ public class UserAdminShell
         }
     }
 
-    private String sendToZone(String zone, Serializable object) throws CommandException {
+    private String sendToZone(String zone, String destinationPattern, Serializable object)
+            throws CommandException {
         try {
             List<String> domains = _curator.getChildren().forPath("/dcache/zones/" + zone);
+            Predicate<String> matches = toGlobPredicate(destinationPattern);
+
             List<ListenableFuture<List<String>>> futures = domains.stream()
-                    .map(domain -> getCells(domain, cell -> true))
+                    .map(domain -> getCells(domain, matches))
                     .toList();
-            Iterable<String> allCells = Objects.requireNonNull(allAsList(futures).get())
-                    .stream()
+
+            List<String> allCells = Objects.requireNonNull(allAsList(futures).get()).stream()
                     .flatMap(List::stream)
                     .toList();
+
             return sendToMany(allCells, object);
         } catch (Exception e) {
-            throw new CommandException("Can not send " + object.toString() + " to zone: " + zone, e.getCause());
+            throw new CommandException("Can not send to zone: " + zone, e.getCause());
         }
     }
 

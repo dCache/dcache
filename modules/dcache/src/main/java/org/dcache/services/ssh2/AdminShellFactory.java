@@ -73,9 +73,8 @@ public class AdminShellFactory implements ShellFactory, CellMessageSender, Curat
         _endpoint = endpoint;
     }
 
-    @Override
-    public void setCuratorFramework(CuratorFramework client) {
-        _curator = client;
+    public void setCuratorFramework(CuratorFramework curator) {
+        _curator = curator;
     }
 
     @Override
