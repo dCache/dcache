@@ -1062,6 +1062,7 @@ public class Transfer implements Comparable<Transfer> {
 
     /**
      * Creates a mover for the transfer.
+     * @param timeout timeout in milliseconds
      */
     public ListenableFuture<Void> startMoverAsync(long timeout) {
         FileAttributes fileAttributes = getFileAttributes();
@@ -1275,12 +1276,6 @@ public class Transfer implements Comparable<Transfer> {
         _billing.notify(msg);
 
         _isBillingNotified = true;
-
-        try {
-            _kafkaSender.accept(msg);
-        } catch (KafkaException | org.apache.kafka.common.KafkaException e) {
-            _log.warn("Failed to send message to kafka: {} ", Throwables.getRootCause(e).getMessage());
-        }
     }
 
     private static long getTimeoutFor(long deadline) {
