@@ -23,6 +23,7 @@ import static org.dcache.restful.util.HttpServletRequests.getLoginAttributes;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.Authorization;
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.security.Principal;
@@ -33,6 +34,7 @@ import java.util.Map;
 
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.net.URLEncoder;
 import javax.security.auth.Subject;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -257,13 +259,56 @@ public class OidcCodeFlowCallback {
         }
 
         // Explicitly clear the session cookie
-        Cookie cookie = new Cookie("JSESSIONID", "");
-        cookie.setMaxAge(0);
-        cookie.setPath("/");
-        response.addCookie(cookie);
-        LOGGER.debug("Logout completed: user={}, ip={}", user, ip);
-        return Response.ok().build();
+        Cookie apiSessionCookie = new Cookie("DCACHE_API_SESSION", "");
+        apiSessionCookie.setMaxAge(0);
+        apiSessionCookie.setPath("/");
+        response.addCookie(apiSessionCookie);
 
+        String logoutUrl = null;
+        try {
+            if (oidcDiscovery != null && oidcIssuer != null && !oidcIssuer.isBlank()) {
+                Optional<String> endSessionEndpoint = oidcDiscovery.endSessionEndpoint(URI.create(oidcIssuer));
+                if (endSessionEndpoint.isPresent()) {
+                    String host = request.getScheme() + "://" + request.getServerName() + ":"
+                          + request.getServerPort();
+                    String candidateLogoutUrl = endSessionEndpoint.get()
+                          + "?client_id=" + URLEncoder.encode(oidcClientId, StandardCharsets.UTF_8)
+                          + "&post_logout_redirect_uri=" + URLEncoder.encode(host + "/", StandardCharsets.UTF_8);
+                    if (isRedirectUriAccepted(candidateLogoutUrl)) {
+                        logoutUrl = candidateLogoutUrl;
+                    } else {
+                        LOGGER.warn("IdP rejected post_logout_redirect_uri for client {} at issuer {}; "
+                              + "check the IdP's 'Valid post logout redirect URIs' setting. "
+                              + "Falling back to local-only logout.", oidcClientId, oidcIssuer);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            LOGGER.debug("Could not resolve end_session_endpoint for issuer {}: {}", oidcIssuer, e.getMessage());
+        }
+
+        LOGGER.debug("Logout completed: user={}, ip={}", user, ip);
+        return Response.ok(Map.of("logoutUrl", logoutUrl == null ? "" : logoutUrl)).build();
+    }
+
+    /**
+     * Probe the IdP's end-session URL without following the redirect, to check whether it
+     * accepts our post_logout_redirect_uri before sending a user's browser there.
+     */
+    private boolean isRedirectUriAccepted(String candidateLogoutUrl) {
+        try {
+            HttpURLConnection conn = (HttpURLConnection) new URL(candidateLogoutUrl).openConnection();
+            conn.setInstanceFollowRedirects(false);
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(5000);
+            conn.setReadTimeout(5000);
+            int status = conn.getResponseCode();
+            conn.disconnect();
+            return status >= 300 && status < 400;
+        } catch (IOException e) {
+            LOGGER.debug("Failed to probe end-session endpoint: {}", e.getMessage());
+            return false;
+        }
     }
 
     /**

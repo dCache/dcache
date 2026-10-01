@@ -100,54 +100,15 @@ class UserProfileDropdown extends Polymer.Element
         this.$.dropdownPanel.classList.remove('show');
         if (this.state.includes('Log out')) {
             console.log("Logging out ..." + `${window.CONFIG["dcache-view.endpoints.webapi"]}auth/logout`);
-            await deleteChannelPromise(window.CONFIG.sse.channel);
 
-            // Call server logout to invalidate session
+            try {
+                await deleteChannelPromise(window.CONFIG.sse.channel);
+            } catch (e) {
+                console.debug("No active SSE channel to delete, continuing logout", e);
+            }
 
-            await fetch(`${window.CONFIG["dcache-view.endpoints.webapi"]}auth/logout`, {
-                method: 'POST',
-                credentials: 'include',
-                /*headers: {
-                    "Suppress-WWW-Authenticate": "Suppress",
-                    "Accept": "Application/json"
-                }*/
-            });
-
-            console.log("sessionStorage 1");
-
-            //logout
-            //TODO: think of showing a message that the user is being logged out
-            // Stop SSE
-            //await deleteChannelPromise(window.CONFIG.sse.channel);
-            sessionStorage.clear();
-
-            console.log("sessionStorage");
-
-            Polymer.dom.flush();
-            this.updateStyles();
-            //window.location.reload();
-
-            // Redirect to GitLab to also kill the IDP session
-            //if (data.logoutUrl) {
-            //    window.location.href = data.logoutUrl;
-           // } else {
-                window.location.reload();
-            //}
-        } else {
-            //login with another credential
-            this.dispatchEvent(new CustomEvent('dv-authentication-req-login', {bubbles: true,
-                composed: true}));
-        }
-        }
-
-   /* async _loginout() {
-        this.$.dropdownPanel.classList.remove('show');
-        if (this.state.includes('Log out')) {
-            console.log("Logging out ..." + `${window.CONFIG["dcache-view.endpoints.webapi"]}auth/logout`);
-
-            await deleteChannelPromise(window.CONFIG.sse.channel);
-
-            // Call server logout to invalidate session
+            // Call server logout to invalidate session and, if the IdP supports it,
+            // get a URL that also ends the session at the IdP.
             let logoutUrl = null;
             try {
                 const response = await fetch(`${window.CONFIG["dcache-view.endpoints.webapi"]}auth/logout`, {
@@ -156,7 +117,6 @@ class UserProfileDropdown extends Polymer.Element
                 });
                 const data = await response.json();
                 logoutUrl = data.logoutUrl;
-                console.log("Logout URL from server response:", logoutUrl);
             } catch (e) {
                 console.error("Logout request failed", e);
             }
@@ -170,12 +130,11 @@ class UserProfileDropdown extends Polymer.Element
             } else {
                 window.location.reload();
             }
-
         } else {
+            //login with another credential
             this.dispatchEvent(new CustomEvent('dv-authentication-req-login', {bubbles: true,
                 composed: true}));
         }
-
-    }*/
+        }
 }
 window.customElements.define(UserProfileDropdown.is, UserProfileDropdown);

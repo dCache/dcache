@@ -25,6 +25,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -87,6 +88,19 @@ public class OidcDiscovery {
 
     public String tokenEndpoint(URI issuer) throws IOException {
         return requiredEndpoint(fetchDocument(issuer), "token_endpoint", issuer);
+    }
+
+    /**
+     * Return the issuer's end_session_endpoint (RP-Initiated Logout), when the
+     * discovery document advertises one.
+     */
+    public Optional<String> endSessionEndpoint(URI issuer) throws IOException {
+        JSONObject document = fetchDocument(issuer);
+        if (!document.has("end_session_endpoint") || document.isNull("end_session_endpoint")) {
+            return Optional.empty();
+        }
+        String value = document.getString("end_session_endpoint");
+        return hasText(value) ? Optional.of(value) : Optional.empty();
     }
 
     public JSONObject fetchDocument(URI issuer) throws IOException {
