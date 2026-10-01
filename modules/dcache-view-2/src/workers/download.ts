@@ -1,26 +1,43 @@
-// Dummy placeholder module
+import type {WorkerMessageData, WorkerResponse} from "./types";
 
-// Typescript type describing what a DLRequest should contain
-interface DownloadRequest {
-    url: string;
-    filename: string;
+export function buildRequest(e: MessageEvent<WorkerMessageData>): Request {
+    const headers = new Headers({
+        "Suppress-WWW-Authenticate": "Suppress",
+        "Content-Type": e.data.mime
+    });
+
+    if (e.data.upauth && e.data.upauth !== "") {
+        headers.append("Authorization", e.data.upauth);
+    }
+
+    const request = new Request(e.data.url, {
+        headers,
+        mode: "cors",
+        redirect: "follow",
+        credentials: "include"
+    });
+    return request;
 }
 
-// Typescript type describing what a DLProgress message should contain
-interface DownloadProgress {
-    type: "progress" | "done" | "error";
-    loaded?: number;
-    total?: number;
-    error?: string;
+export async function processResponse(response: Response, e: MessageEvent<WorkerMessageData>)
+    : Promise<WorkerResponse | undefined> {
+    console.log("download the file " + response.url);
+
+    if (response.ok) {
+        console.log("download is possible " + e.data.return);
+        const data = e.data.return === 'json' ? await response.json() : await response.blob();
+        return {data: data} as WorkerResponse;
+    } else if (response.status >= 400 && response.status < 500) {
+        throw new Error(`Request failed with response status code ${response.status}.`);
+    } else if (response.status >= 500) {
+        throw new Error(`Status code ${response.status} - dCache Internal Server Error. Please contact the admin.`);
+    }
 }
 
-export function handleMessage(data: DownloadRequest): DownloadProgress {
-    // dummy download function returning success message every time
-    console.log(`download: ${data.filename} from ${data.url}`);
-    return { type: "done" };
-}
+self.addEventListener('message', (e: MessageEvent<WorkerMessageData>) => {
 
-// module should do when message arrives at worker
-self.onmessage = (e: MessageEvent<DownloadRequest>) => {
-    self.postMessage(handleMessage(e.data));
-};
+    fetch(buildRequest(e))
+        .then(response => processResponse(response, e))
+        .then(data => self.postMessage(data));
+
+}, false);
