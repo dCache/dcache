@@ -1269,11 +1269,11 @@ public class Transfer implements Comparable<Transfer> {
         if (_fileAttributes.isDefined(STORAGEINFO)) {
             msg.setStorageInfo(_fileAttributes.getStorageInfo());
         }
+        msg.setMoverInfo(moverInfoMessage);
+
         _billing.notify(msg);
 
         _isBillingNotified = true;
-
-        msg.setMoverInfo(moverInfoMessage);
 
         try {
             _kafkaSender.accept(msg);
