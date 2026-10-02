@@ -1,4 +1,4 @@
-import type {WorkerMessageData, WorkerResponse} from "./types";
+import type { WorkerMessageData, WorkerResponse } from "./types";
 
 export function buildRequest(e: MessageEvent<WorkerMessageData>): Request {
     const headers = new Headers({
