@@ -1,4 +1,4 @@
-import type {WorkerMessageData, WorkerResponse} from "./types";
+import type { WorkerMessageData, WorkerResponse } from "./types.ts";
 
 export function buildRequest(e: MessageEvent<WorkerMessageData>): Request {
     const headers = new Headers({
@@ -34,10 +34,8 @@ export async function processResponse(response: Response, e: MessageEvent<Worker
     }
 }
 
-self.addEventListener('message', (e: MessageEvent<WorkerMessageData>) => {
-
+self.onmessage = (e: MessageEvent<WorkerMessageData>) => {
     fetch(buildRequest(e))
         .then(response => processResponse(response, e))
         .then(data => self.postMessage(data));
-
-}, false);
+};
