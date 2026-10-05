@@ -2,7 +2,31 @@ package org.dcache.boot;
 
 import static com.google.common.base.Strings.emptyToNull;
 
-import static org.dcache.boot.Properties.*;
+import static org.dcache.boot.Properties.PATH_DELIMITER;
+import static org.dcache.boot.Properties.PROPERTY_DOMAIN_NAME;
+import static org.dcache.boot.Properties.PROPERTY_DOMAIN_PRELOAD;
+import static org.dcache.boot.Properties.PROPERTY_DOMAIN_SERVICE;
+import static org.dcache.boot.Properties.PROPERTY_DOMAIN_SERVICE_BATCH;
+import static org.dcache.boot.Properties.PROPERTY_DOMAIN_SERVICE_URI;
+import static org.dcache.boot.Properties.PROPERTY_DOMAIN_SERVICE_URI_BASE;
+import static org.dcache.boot.Properties.PROPERTY_LOG_CONFIG;
+import static org.dcache.boot.Properties.PROPERTY_MSG_PAYLOAD_SERIALIZER;
+import static org.dcache.boot.Properties.PROPERTY_PLUGIN_PATH;
+import static org.dcache.boot.Properties.PROPERTY_ZONE;
+import static org.dcache.boot.Properties.PROPERTY_ZOOKEPER_CONNECTION;
+import static org.dcache.boot.Properties.PROPERTY_ZOOKEPER_CONNECTION_TIMEOUT;
+import static org.dcache.boot.Properties.PROPERTY_ZOOKEPER_CONNECTION_TIMEOUT_UNIT;
+import static org.dcache.boot.Properties.PROPERTY_ZOOKEPER_RETRIES;
+import static org.dcache.boot.Properties.PROPERTY_ZOOKEPER_SESSION_TIMEOUT;
+import static org.dcache.boot.Properties.PROPERTY_ZOOKEPER_SESSION_TIMEOUT_UNIT;
+import static org.dcache.boot.Properties.PROPERTY_ZOOKEPER_SLEEP;
+import static org.dcache.boot.Properties.PROPERTY_ZOOKEPER_SLEEP_UNIT;
+import static org.dcache.boot.Properties.PROPERTY_ZOOKEEPER_TLS_ENABLED;
+import static org.dcache.boot.Properties.PROPERTY_ZOOKEEPER_PEM_CA;
+import static org.dcache.boot.Properties.PROPERTY_ZOOKEEPER_PEM_CERT;
+import static org.dcache.boot.Properties.PROPERTY_ZOOKEEPER_PEM_KEY;
+import static org.dcache.boot.Properties.PROPERTY_CRL_MODE;
+import static org.dcache.boot.Properties.PROPERTY_OCSP_MODE;
 import static org.dcache.util.Exceptions.genericCheck;
 
 import ch.qos.logback.classic.LoggerContext;
