@@ -229,10 +229,6 @@ public class UserAdminShell
         _cellStub = new CellStub(_cellEndpoint);
     }
 
-    void setCellStub(CellStub stub) {
-        _cellStub = stub;
-    }
-
     public void setAcm(CellStub stub) {
         _acmStub = stub;
     }
