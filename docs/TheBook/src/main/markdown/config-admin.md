@@ -357,7 +357,7 @@ While the first line for each pool gives the information stored in the cache of 
 
 ## Zone-scoped bulk commands
 
-When dCache is deployed with [zones](config-zones.md), the `\s` command supports a `#<zone>` suffix to restrict a bulk command to cells that belong to a specific zone.
+When dCache is deployed with zones (`dcache.zone` property), the `\s` command supports a `#<zone>` suffix to restrict a bulk command to cells that belong to a specific zone.
 
 The general syntax is:
 
