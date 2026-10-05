@@ -365,16 +365,16 @@ The general syntax is:
 \s [OPTIONS] <cellPattern>#<zone>[/<poolgroup>] command...
 ```
 
-For example, to send `rep ls` to all pools in zone `east`:
+For example, to send `rep ls` to all pools in zone `zone`:
 
 ```
-(local) admin > \s pool*#east rep ls
+(local) admin > \s pool*#zone rep ls
 ```
 
 To further restrict to a pool group within the zone:
 
 ```
-(local) admin > \s pool*#east/highcap rep ls
+(local) admin > \s pool*#zone/poolGroup rep ls
 ```
 
 The zone filter is resolved through ZooKeeper: each domain registers itself under
@@ -385,10 +385,10 @@ cells whose domain is listed there.
 You can combine the zone filter with glob patterns as usual:
 
 ```
-(local) admin > \s *#east st set max-active 10
+(local) admin > \s *#zone st set max-active 10
 ```
 
-This sends the command to every well-known cell in zone `east`.
+This sends the command to every well-known cell in the selected zone.
 
 ## Creating a new user
 
