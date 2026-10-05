@@ -181,7 +181,7 @@ send supported cell commands to other cells. Once logged in you are prompted to 
 \h [command]...  # display help for cell commands
 \l [cell[@domain]|pool/poolgroup]...  # list cells
 \q # quit
-\s [OPTIONS] (cell[@domain]|pool/poolgroup)[,(cell[@domain]|pool/poolgroup)]... command...  # send command
+\s [OPTIONS] (cell[@domain]|pool[#zone][/poolgroup])[,(cell[@domain]|pool[#zone][/poolgroup])]... command...  # send command
 \sl [options] pnfsid|path command...  # send to locations
 \sn [options] command...  # send pnfsmanager command
 \sp [options] command...  # send poolmanager command
@@ -191,7 +191,7 @@ send supported cell commands to other cells. Once logged in you are prompted to 
 ```
 
 Shell commands are always available at command prompt, whereas in order to execute cell commands you have to either connect to the cell
-using `\c cell[@domain]` and execute command or send command to the cell using `\s [OPTIONS] (cell[@domain]|pool/poolgroup)[,(cell[@domain]|pool/poolgroup)]... command...`. For instance:
+using `\c cell[@domain]` and execute command or send command to the cell using `\s [OPTIONS] (cell[@domain]|pool[#zone][/poolgroup])[,...] command...`. For instance:
 
 ```
 [headnode] (local) enstore > \? \c
@@ -354,6 +354,41 @@ pool_2={Tag={{hostname=example.org}};size=0;SC=2.7939677238464355E-4;CC=0.0;}
 
 
 While the first line for each pool gives the information stored in the cache of the cost module, the second line gives the    costs (SC: [space cost](rf-glossary.md#space-cost), CC: [performance cost](rf-glossary.md#performance-cost)) calculated for a (hypothetical) file of zero size. For details on how these are calculated and their meaning, see [the section called “Classic Partitions”](#config-poolmanager.md#classic-partitions).
+
+## Zone-scoped bulk commands
+
+When dCache is deployed with [zones](config-zones.md), the `\s` command supports a `#<zone>` suffix to restrict a bulk command to cells that belong to a specific zone.
+
+The general syntax is:
+
+```
+\s [OPTIONS] <cellPattern>#<zone>[/<poolgroup>] command...
+```
+
+For example, to send `rep ls` to all pools in zone `east`:
+
+```
+(local) admin > \s pool*#east rep ls
+```
+
+To further restrict to a pool group within the zone:
+
+```
+(local) admin > \s pool*#east/highcap rep ls
+```
+
+The zone filter is resolved through ZooKeeper: each domain registers itself under
+`/dcache/zones/<zone>/<domainName>` at startup when `dcache.zone` is configured.
+The admin shell looks up the children of that ZooKeeper path and keeps only those
+cells whose domain is listed there.
+
+You can combine the zone filter with glob patterns as usual:
+
+```
+(local) admin > \s *#east st set max-active 10
+```
+
+This sends the command to every well-known cell in zone `east`.
 
 ## Creating a new user
 
