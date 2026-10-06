@@ -1,6 +1,6 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { getUser, sendUser } from '../../workers/authentification';
-import type { User } from '../../workers/types';
+import { getUser, sendUser } from '../../workers/user-authentification.ts';
+import type { User } from '../../workers/types.ts';
 
 const authenticatedUser: User = {
     status: 'AUTHENTICATED',

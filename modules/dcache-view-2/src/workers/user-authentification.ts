@@ -1,7 +1,6 @@
 import type { User } from './types.ts'
 
 export async function getUser(response: Response): Promise<User> {
-    console.log("IS USER RESOURCE STILL CALLED ");
     if (response.status !== 200) {
         throw new Error(`Looks like there was a problem. Status Code: ${response.status}`);
     }
@@ -9,7 +8,6 @@ export async function getUser(response: Response): Promise<User> {
 }
 
 export function sendUser(user: User) {
-    console.log("AUTHENTICATED user resource: ");
     if (user.status === "AUTHENTICATED") {
         self.postMessage(user);
     }
@@ -28,3 +26,5 @@ export function authenticate() {
         .then(response => getUser(response))
         .then(user => sendUser(user));
 }
+
+authenticate()
