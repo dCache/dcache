@@ -21,10 +21,12 @@ const init: RequestInit = {
     }
 }
 
-export function authenticate() {
+function authenticate() {
     fetch('/api/v1/user', init)
         .then(response => getUser(response))
         .then(user => sendUser(user));
 }
 
-authenticate()
+if (typeof window === 'undefined') {
+    authenticate();
+}

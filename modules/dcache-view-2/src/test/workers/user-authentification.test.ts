@@ -1,6 +1,8 @@
-import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { getUser, sendUser } from '../../workers/user-authentification.ts';
-import type { User } from '../../workers/types.ts';
+import {beforeEach, describe, expect, test, vi} from 'vitest';
+import {getUser, sendUser} from '../../workers/user-authentification.ts';
+import type {User} from '../../workers/types.ts';
+
+vi.stubGlobal('fetch', vi.fn().mockResolvedValue({}));
 
 const authenticatedUser: User = {
     status: 'AUTHENTICATED',

@@ -10,13 +10,18 @@ export interface User {
     email: string[] | null;
 }
 
-export interface WorkerMessageData {
+export interface FileContentRequest {
     url: string;
     mime: string;
     upauth?: string;
-    return: 'json' | 'blob';
 }
 
-export interface WorkerResponse {
-    data : Blob | object;
+export interface FileContent {
+    data : Blob | unknown;
+}
+
+export interface FileContentResponse {
+    data: unknown;
+    loading: boolean;
+    error: Error | null;
 }
