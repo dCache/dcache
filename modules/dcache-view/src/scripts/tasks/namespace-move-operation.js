@@ -17,7 +17,7 @@
  * }
  */
 self.addEventListener('message', function(e) {
-    if (!(e.data.endpoint && e.data.upauth && e.data.source && e.data.destination)) {
+    if (!(e.data.endpoint && e.data.source && e.data.destination)) {
         throw new TypeError('One or more of the required parameters is not provided.');
     }
     const headers = new Headers({
@@ -31,6 +31,7 @@ self.addEventListener('message', function(e) {
     fetch(new Request(`${e.data.endpoint}namespace${e.data.source}`, {
         method: "POST",
         headers: headers,
+        credentials: "include",
         body: JSON.stringify({"action": "mv", "destination": e.data.destination})
     })).then(response => {
         if (!response.ok) {

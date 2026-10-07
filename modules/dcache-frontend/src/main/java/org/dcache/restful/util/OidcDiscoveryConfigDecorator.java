@@ -108,7 +108,7 @@ public class OidcDiscoveryConfigDecorator implements FactoryBean<Map<String, Str
         try {
             Path classPath = OidcCodeFlowCallback.class.getAnnotation(Path.class);
             Method callback = OidcCodeFlowCallback.class.getMethod("callback",
-                  String.class, HttpServletRequest.class, HttpServletResponse.class);
+                  String.class, String.class, HttpServletRequest.class, HttpServletResponse.class);
             Path methodPath = callback.getAnnotation(Path.class);
             return (classPath.value() + methodPath.value()).replaceFirst("^/+", "");
         } catch (NoSuchMethodException e) {

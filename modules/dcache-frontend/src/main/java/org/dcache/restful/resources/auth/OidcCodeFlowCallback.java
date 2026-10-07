@@ -29,6 +29,7 @@ import java.net.URI;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -88,6 +89,9 @@ public class OidcCodeFlowCallback {
     private OidcDiscovery oidcDiscovery;
     private LoginStrategy _loginStrategy;
     private Restriction _doorRestriction;
+    private final Map<String, ProviderConfig> providers = new HashMap<>();
+
+    private record ProviderConfig(String clientId, String clientSecret, String issuer) {}
 
     /* ---------------------------------------------------------------------- */
     /* Configuration setters (Spring-injected) */
@@ -106,6 +110,18 @@ public class OidcCodeFlowCallback {
 
     public void setIssuer(String oidcIssuer) {
         this.oidcIssuer = oidcIssuer;
+    }
+
+    /** Splits the (possibly space-separated) client-id/secret/issuer fields into a provider map. */
+    public void init() {
+        String[] ids = oidcClientId.trim().split("\\s+");
+        String[] secrets = oidcClientSecret.trim().split("\\s+");
+        String[] issuers = oidcIssuer.trim().split("\\s+");
+        for (int i = 0; i < ids.length; i++) {
+            String secret = i < secrets.length ? secrets[i] : "";
+            String issuer = i < issuers.length ? issuers[i] : "";
+            providers.put(ids[i], new ProviderConfig(ids[i], secret, issuer));
+        }
     }
 
     public void setOidcDiscovery(OidcDiscovery oidcDiscovery) {
@@ -137,19 +153,24 @@ public class OidcCodeFlowCallback {
      */
     @GET
     @Path("/callback")
-    public Response callback(@QueryParam("code") String code, @Context HttpServletRequest request,
-          @Context HttpServletResponse response) {
+    public Response callback(@QueryParam("code") String code, @QueryParam("state") String state,
+          @Context HttpServletRequest request, @Context HttpServletResponse response) {
         try {
+            ProviderConfig provider = providers.get(state);
+            if (provider == null) {
+                throw new IllegalArgumentException("Unknown or missing OIDC provider for state=" + state);
+            }
 
             String host = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
             LOGGER.debug("OIDC provide with code is calling.");
             String body = "&code=" + code +
                   "&grant_type=authorization_code" +
                   "&redirect_uri=" + host+request.getRequestURI();
-            URL url = new URL(oidcDiscovery.resolveTokenEndpoint(oidcIssuer, oidcTokenUrl));
+            URL url = new URL(oidcDiscovery.resolveTokenEndpoint(provider.issuer(),
+                  providers.size() == 1 ? oidcTokenUrl : null));
 
             String basicAuth = Base64.getEncoder().encodeToString(
-                  (oidcClientId + ":" + oidcClientSecret).getBytes(
+                  (provider.clientId() + ":" + provider.clientSecret()).getBytes(
                         StandardCharsets.UTF_8));
 
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -208,6 +229,8 @@ public class OidcCodeFlowCallback {
             session.setAttribute("subject", subject);
             session.setAttribute("restriction", restriction);
             session.setAttribute("attributes", login.getLoginAttributes());
+            session.setAttribute("oidcClientId", provider.clientId());
+            session.setAttribute("oidcIssuer", provider.issuer());
 
 
             // -------------------------------
@@ -251,6 +274,8 @@ public class OidcCodeFlowCallback {
         LOGGER.debug("Logout requested: user={}, ip={}", user, ip);
 
         HttpSession session = request.getSession(false);
+        String sessionClientId = session != null ? (String) session.getAttribute("oidcClientId") : null;
+        String sessionIssuer = session != null ? (String) session.getAttribute("oidcIssuer") : null;
         if (session != null) {
             session.invalidate();
             LOGGER.debug("Session invalidated: user={}, ip={}", user, ip);
@@ -266,25 +291,25 @@ public class OidcCodeFlowCallback {
 
         String logoutUrl = null;
         try {
-            if (oidcDiscovery != null && oidcIssuer != null && !oidcIssuer.isBlank()) {
-                Optional<String> endSessionEndpoint = oidcDiscovery.endSessionEndpoint(URI.create(oidcIssuer));
+            if (oidcDiscovery != null && sessionIssuer != null && !sessionIssuer.isBlank()) {
+                Optional<String> endSessionEndpoint = oidcDiscovery.endSessionEndpoint(URI.create(sessionIssuer));
                 if (endSessionEndpoint.isPresent()) {
                     String host = request.getScheme() + "://" + request.getServerName() + ":"
                           + request.getServerPort();
                     String candidateLogoutUrl = endSessionEndpoint.get()
-                          + "?client_id=" + URLEncoder.encode(oidcClientId, StandardCharsets.UTF_8)
+                          + "?client_id=" + URLEncoder.encode(sessionClientId, StandardCharsets.UTF_8)
                           + "&post_logout_redirect_uri=" + URLEncoder.encode(host + "/", StandardCharsets.UTF_8);
                     if (isRedirectUriAccepted(candidateLogoutUrl)) {
                         logoutUrl = candidateLogoutUrl;
                     } else {
                         LOGGER.warn("IdP rejected post_logout_redirect_uri for client {} at issuer {}; "
                               + "check the IdP's 'Valid post logout redirect URIs' setting. "
-                              + "Falling back to local-only logout.", oidcClientId, oidcIssuer);
+                              + "Falling back to local-only logout.", sessionClientId, sessionIssuer);
                     }
                 }
             }
         } catch (IOException e) {
-            LOGGER.debug("Could not resolve end_session_endpoint for issuer {}: {}", oidcIssuer, e.getMessage());
+            LOGGER.debug("Could not resolve end_session_endpoint for issuer {}: {}", sessionIssuer, e.getMessage());
         }
 
         LOGGER.debug("Logout completed: user={}, ip={}", user, ip);

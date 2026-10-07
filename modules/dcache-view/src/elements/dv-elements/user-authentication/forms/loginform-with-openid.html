@@ -310,7 +310,8 @@
                     'response_type=code' +                       // Authorization Code Flow
                     '&client_id=' + encodeURIComponent(provider.id) +
                     '&redirect_uri=' + encodeURIComponent(redirectUri) +
-                    '&scope=openid%20profile%20email'; // adjust scope as needed
+                    '&scope=openid%20profile%20email' +          // adjust scope as needed
+                    '&state=' + encodeURIComponent(provider.id); // tells the callback which provider this is
 
                 // 7. Append extra parameters if specified
                 if (provider.extra && provider.extra !== '-') {

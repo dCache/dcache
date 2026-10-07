@@ -712,7 +712,7 @@
 
     <bean id="oidcDiscovery" class="org.dcache.restful.util.OidcDiscovery"/>
 
-    <bean class="org.dcache.restful.resources.auth.OidcCodeFlowCallback" scope="request">
+    <bean class="org.dcache.restful.resources.auth.OidcCodeFlowCallback" scope="request" init-method="init">
       <property name="clientId" value="${frontend.authn.oidc.client-id}"/>
       <property name="clientSecret" value="${frontend.authn.oidc.client-secret}"/>
       <property name="tokenUrl" value="${frontend.authn.oidc.token-url}"/>
