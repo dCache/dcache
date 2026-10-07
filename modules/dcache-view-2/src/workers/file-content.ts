@@ -1,6 +1,6 @@
-import type { WorkerMessageData, WorkerResponse } from "./types.ts";
+import type { FileContentRequest, FileContent } from "./types.ts";
 
-export function buildRequest(e: MessageEvent<WorkerMessageData>): Request {
+export function buildRequest(e: MessageEvent<FileContentRequest>): Request {
     const headers = new Headers({
         "Suppress-WWW-Authenticate": "Suppress",
         "Content-Type": e.data.mime
@@ -19,14 +19,13 @@ export function buildRequest(e: MessageEvent<WorkerMessageData>): Request {
     return request;
 }
 
-export async function processResponse(response: Response, e: MessageEvent<WorkerMessageData>)
-    : Promise<WorkerResponse | undefined> {
+export async function processResponse(response: Response, e: MessageEvent<FileContentRequest>)
+    : Promise<FileContent | undefined> {
     console.log("download the file " + response.url);
 
     if (response.ok) {
-        console.log("download is possible " + e.data.return);
-        const data = e.data.return === 'json' ? await response.json() : await response.blob();
-        return {data: data} as WorkerResponse;
+        const data: Blob | unknown = e.data.mime.includes('json') ? await response.json() : await response.blob();
+        return {data: data} as FileContent;
     } else if (response.status >= 400 && response.status < 500) {
         throw new Error(`Request failed with response status code ${response.status}.`);
     } else if (response.status >= 500) {
@@ -34,7 +33,7 @@ export async function processResponse(response: Response, e: MessageEvent<Worker
     }
 }
 
-self.onmessage = (e: MessageEvent<WorkerMessageData>) => {
+self.onmessage = (e: MessageEvent<FileContentRequest>) => {
     fetch(buildRequest(e))
         .then(response => processResponse(response, e))
         .then(data => self.postMessage(data));
