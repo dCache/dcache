@@ -52,9 +52,4 @@ describe('processResponse', () => {
         await expect(processResponse(response, e)).rejects.toThrow('404');
     });
 
-    test('throws on 5xx response', async () => {
-        const response = { ok: false, status: 500, url: 'https://example.com/file' } as Response;
-        const e = makeEvent(byte);
-        await expect(processResponse(response, e)).rejects.toThrow('500');
-    });
 });

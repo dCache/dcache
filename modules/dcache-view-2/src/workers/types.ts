@@ -59,3 +59,8 @@ export interface FileMetadataRequest {
     limit: number | 'max';
     offset: number;
 }
+
+export interface FileMetadataResponse {
+    data: FileAttributes;
+    error?: Error;
+}

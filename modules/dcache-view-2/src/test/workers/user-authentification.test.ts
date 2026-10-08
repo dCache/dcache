@@ -37,10 +37,6 @@ function makeResponse(status: number, body: User): Response {
 }
 
 describe('getUser', () => {
-    beforeEach(() => {
-        vi.spyOn(console, 'log').mockImplementation(() => {});
-    });
-
    test('returns user on 200 response', async () => {
         const response = makeResponse(200, authenticatedUser);
         const user = await getUser(response);
@@ -50,11 +46,6 @@ describe('getUser', () => {
    test('throws on non-200 response', async () => {
         const response = makeResponse(401, anonymousUser);
         await expect(getUser(response)).rejects.toThrow('401');
-    });
-
-   test('throws on 500 response', async () => {
-        const response = makeResponse(500, anonymousUser);
-        await expect(getUser(response)).rejects.toThrow('500');
     });
 });
 

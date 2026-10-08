@@ -23,7 +23,6 @@ export function fileAttributes(r: FileMetadataRequest, headers: Headers): Promis
                 }
             );
     }
-
     throw new TypeError("The file object parameter is not set. Provide either file.pnfsId or filePath.")
 }
 
