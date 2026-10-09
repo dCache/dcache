@@ -125,6 +125,18 @@ In this example, hosts in the dcache.org may read and write, while host external
 
 If there are multiple path specifications, the shortest matching path wins. If there are multiple host/subnet specifications, the most precise specification wins.
 
+## Concurrent write access
+
+A file that is currently open for writing is exclusively locked: while such an
+open file exists, the NFS door denies any other attempt to open the same file,
+regardless of whether that attempt requests read or write access. Any such
+attempt fails with `Permission denied` (`EACCES`).
+
+When the writing client closes the file, the lock is released and further opens
+succeed. This prevents two concurrent writers from creating competing replicas
+of the same file (with the same pnfsid but different contents) and reflects the
+fact that dCache treats file content as write-once.
+
 ## Configuring NFSv4.1 door with GSS-API support
 
 Adding `sec=krb5` into `/etc/exports` is not sufficient to get
