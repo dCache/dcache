@@ -62,7 +62,10 @@
        runtime through the dCache admin shell.
   -->
 
-  <if condition='"${dcache.log.destination}".equals("file")'>
+  <condition class="ch.qos.logback.core.boolex.ExpressionPropertyCondition">
+    <expression>propertyEquals("dcache.log.destination", "file")</expression>
+  </condition>
+  <if>
     <then>
       <appender name="stdout" class="ch.qos.logback.core.FileAppender">
         <file>${dcache.log.file}</file>
@@ -133,7 +136,10 @@
   <!-- The conditional is to avoid an infinite retry of a non-existent connection
        by the socket appender if an alarms service is not running, which,
        for example, is the case when remote logging is left off system-wide. -->
-  <if condition='!"${dcache.log.level.remote}".equals("off")'>
+  <condition class="ch.qos.logback.core.boolex.ExpressionPropertyCondition">
+    <expression>!propertyEquals("dcache.log.level.remote", "off")</expression>
+  </condition>
+  <if>
     <then>
       <appender name="socket" class="ch.qos.logback.classic.net.SocketAppender">
         <!-- Regardless of the level to which the remote appender is set,
@@ -146,6 +152,15 @@
       <appender name="remote" class="ch.qos.logback.classic.AsyncAppender">
         <appender-ref ref="socket" />
       </appender>
+
+      <!-- An <if> element cannot be nested within <root> or <logger>;
+           the appender is therefore attached here. -->
+      <root>
+        <appender-ref ref="remote"/>
+      </root>
+      <logger name="dummy" level="OFF">
+        <appender-ref ref="remote"/>
+      </logger>
     </then>
   </if>
 
@@ -171,7 +186,10 @@
     </encoder>
   </appender>
 
-  <if condition='!"${dcache.log.level.kafka}".equals("off")'>
+  <condition class="ch.qos.logback.core.boolex.ExpressionPropertyCondition">
+    <expression>!propertyEquals("dcache.log.level.kafka", "off")</expression>
+  </condition>
+  <if>
     <then>
       <!-- This is the kafkaAppender -->
       <appender name="kafka" class="com.github.danielwegener.logback.kafka.KafkaAppender">
@@ -197,22 +215,21 @@
         <!-- bootstrap.servers is the only mandatory producerConfig -->
         <producerConfig>bootstrap.servers=${dcache.kafka.bootstrap-servers}</producerConfig>
       </appender>
+
+      <!-- An <if> element cannot be nested within <root> or <logger>;
+           the appender is therefore attached here. -->
+      <root>
+        <appender-ref ref="kafka"/>
+      </root>
+      <logger name="dummy" level="OFF">
+        <appender-ref ref="kafka"/>
+      </logger>
     </then>
   </if>
 
   <root>
     <appender-ref ref="stdout"/>
     <appender-ref ref="pinboard"/>
-    <if condition='!"${dcache.log.level.kafka}".equals("off")'>
-      <then>
-        <appender-ref ref="kafka" />
-      </then>
-    </if>
-    <if condition='!"${dcache.log.level.remote}".equals("off")'>
-      <then>
-        <appender-ref ref="remote"/>
-      </then>
-    </if>
   </root>
 
   <logger name="org.dcache.events" additivity="false">
@@ -244,22 +261,10 @@
     <appender-ref ref="events"/>
     <appender-ref ref="access"/>
     <appender-ref ref="zookeeper"/>
-    <if condition='!"${dcache.log.level.remote}".equals("off")'>
-      <then>
-        <appender-ref ref="remote"/>
-      </then>
-    </if>
-    <if condition='!"${dcache.log.level.kafka}".equals("off")'>
-      <then>
-        <appender-ref ref="kafka" />
-      </then>
-    </if>
     <appender-ref ref="resilience"/>
   </logger>
 
   <turboFilter class="dmg.util.logback.CellThresholdFilter">
-    <!-- Important: This turboFilter must be instantiated after
-                    appenders and loggers have been instantiated. -->
     <onHigherOrEqual>ACCEPT</onHigherOrEqual>
     <onLower>DENY</onLower>
     <threshold>
@@ -319,25 +324,31 @@
     </threshold>
 
     <threshold>
-      <appender>stdout</appender>
+      <appenderName>stdout</appenderName>
       <logger>root</logger>
       <level>${dcache.log.level.file}</level>
     </threshold>
 
-    <if condition='!"${dcache.log.level.remote}".equals("off")'>
+    <condition class="ch.qos.logback.core.boolex.ExpressionPropertyCondition">
+      <expression>!propertyEquals("dcache.log.level.remote", "off")</expression>
+    </condition>
+    <if>
       <then>
         <threshold>
-          <appender>remote</appender>
+          <appenderName>remote</appenderName>
           <logger>root</logger>
           <level>${dcache.log.level.remote}</level>
         </threshold>
       </then>
     </if>
 
-    <if condition='!"${dcache.log.level.kafka}".equals("off")'>
+    <condition class="ch.qos.logback.core.boolex.ExpressionPropertyCondition">
+      <expression>!propertyEquals("dcache.log.level.kafka", "off")</expression>
+    </condition>
+    <if>
       <then>
         <threshold>
-          <appender>kafka</appender>
+          <appenderName>kafka</appenderName>
           <logger>root</logger>
           <level>${dcache.log.level.kafka}</level>
         </threshold>
@@ -345,37 +356,37 @@
     </if>
 
     <threshold>
-      <appender>pinboard</appender>
+      <appenderName>pinboard</appenderName>
       <logger>root</logger>
       <level>${dcache.log.level.pinboard}</level>
     </threshold>
 
     <threshold>
-      <appender>events</appender>
+      <appenderName>events</appenderName>
       <logger>org.dcache.events</logger>
       <level>${dcache.log.level.events}</level>
     </threshold>
 
     <threshold>
-      <appender>access</appender>
+      <appenderName>access</appenderName>
       <logger>org.dcache.access</logger>
       <level>${dcache.log.level.access}</level>
     </threshold>
 
     <threshold>
-      <appender>zookeeper</appender>
+      <appenderName>zookeeper</appenderName>
       <logger>org.dcache.zookeeper</logger>
       <level>${dcache.log.level.zookeeper}</level>
     </threshold>
 
     <threshold>
-      <appender>resilience</appender>
+      <appenderName>resilience</appenderName>
       <logger>org.dcache.resilience-log</logger>
       <level>${dcache.log.level.resilience}</level>
     </threshold>
 
     <threshold>
-      <appender>qos</appender>
+      <appenderName>qos</appenderName>
       <logger>org.dcache.qos-log</logger>
       <level>${dcache.log.level.qos}</level>
     </threshold>

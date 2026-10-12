@@ -253,9 +253,10 @@ public class LogEntryAppenderTest {
         event.setLevel(Level.ERROR);
         event.setLoggerName(this.getClass().getCanonicalName());
         if (marker != null) {
-            event.setMarker(marker);
+            event.addMarker(marker);
         }
         event.setMessage(message);
+        event.setMDCPropertyMap(Collections.emptyMap());
         event.setThreadName(Thread.currentThread().getName());
         event.setTimeStamp(System.currentTimeMillis());
         if (e != null) {

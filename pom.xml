@@ -61,7 +61,7 @@
         <argLine>--add-modules=java.security.jgss</argLine>
 
 
-        <version.slf4j>1.7.32</version.slf4j>
+        <version.slf4j>2.0.20</version.slf4j>
         <version.milton>3.1.1.488</version.milton>
         <version.spring>5.3.39</version.spring>
         <!-- Remember to sync aspectj version in dcache.properties -->
@@ -78,7 +78,7 @@
 
         <!-- Remember to update modules/logback-test-config/pom.xml
              when upgrading logback. -->
-        <version.logback>1.2.13</version.logback>
+        <version.logback>1.6.5</version.logback>
         <version.logback.contrib>0.1.5</version.logback.contrib>
         <version.jackson>2.18.11</version.jackson>
         <version.jna>5.18.1</version.jna>
@@ -160,11 +160,6 @@
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-core</artifactId>
                 <version>${version.logback}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.codehaus.janino</groupId>
-                <artifactId>janino</artifactId>
-                <version>3.0.6</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.curator</groupId>
@@ -841,9 +836,22 @@
 
             <!-- used by alarms, needs to be deployed -->
             <dependency>
+                <groupId>jakarta.mail</groupId>
+                <artifactId>jakarta.mail-api</artifactId>
+                <version>2.1.5</version>
+            </dependency>
+            <!-- Not used by alarms any more, but provides javax.mail and,
+                 transitively, javax.activation to other services; the
+                 frontend fails to start without javax.activation. -->
+            <dependency>
                 <groupId>javax.mail</groupId>
                 <artifactId>mail</artifactId>
                 <version>1.4.7</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.angus</groupId>
+                <artifactId>angus-mail</artifactId>
+                <version>2.0.4</version>
             </dependency>
             <dependency>
                 <groupId>org.mongodb</groupId>

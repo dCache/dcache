@@ -54,7 +54,7 @@ public class SendAlarmCLI {
         Logger logger = context.getLogger(SendAlarmCLI.class);
         LoggingEvent event = new LoggingEvent(Logger.class.getName(), logger, Level.ERROR, msg,
               null, null);
-        event.setMarker(AlarmMarkerFactory.getMarker(getPredefinedAlarm(type)));
+        event.addMarker(AlarmMarkerFactory.getMarker(getPredefinedAlarm(type)));
         event.setMDCPropertyMap(getMdc(cell, domain));
         return event;
     }

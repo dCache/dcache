@@ -33,6 +33,7 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.core.joran.spi.JoranException;
 import ch.qos.logback.core.util.StatusPrinter;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.base.Supplier;
 import com.google.common.base.Throwables;
@@ -86,6 +87,7 @@ import javax.net.ssl.SSLContext;
 public class Domain {
 
     private static final String SYSTEM_CELL_NAME = "System";
+    private static final String STDOUT_APPENDER = "stdout";
 
     private static final Logger LOGGER =
           LoggerFactory.getLogger(SystemCell.class);
@@ -325,8 +327,30 @@ public class Domain {
             } finally {
                 StatusPrinter.printInCaseOfErrorsOrWarnings(loggerContext);
             }
+            checkLogConfiguration(loggerContext, configuration.getDescription());
         } catch (JoranException e) {
             throw new IOException("Failed to load log configuration:" + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Refuses a log configuration that leaves the domain without its main log.
+     * <p>
+     * Logback no longer evaluates the 'condition' attribute of an 'if' element. A configuration
+     * file written for an earlier dCache version is loaded without errors, but none of its
+     * conditional parts is applied, including the definition of the stdout appender.
+     */
+    @VisibleForTesting
+    static void checkLogConfiguration(LoggerContext loggerContext, String description)
+          throws IOException {
+        ch.qos.logback.classic.Logger root =
+              loggerContext.getLogger(Logger.ROOT_LOGGER_NAME);
+        if (root.getAppender(STDOUT_APPENDER) == null) {
+            throw new IOException("Log configuration " + description + " does not attach the '"
+                  + STDOUT_APPENDER + "' appender to the root logger. The file was probably"
+                  + " written for an earlier dCache version: conditional parts now require a"
+                  + " <condition> element in front of <if>. Compare the file with the"
+                  + " logback.xml shipped with dCache and consult the release notes.");
         }
     }
 

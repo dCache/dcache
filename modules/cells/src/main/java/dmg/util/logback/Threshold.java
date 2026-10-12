@@ -28,11 +28,15 @@ public class Threshold {
         return _level;
     }
 
-    public void setAppender(String appender) {
+    /**
+     * Restricts the threshold to the appender with the given name. The property isn't called
+     * 'appender', as logback interprets any element of that name as an appender definition.
+     */
+    public void setAppenderName(String appender) {
         _appender = appender;
     }
 
-    public String getAppender() {
+    public String getAppenderName() {
         return _appender;
     }
 

@@ -78,8 +78,10 @@ COPYRIGHT STATUS:
  */
 package org.dcache.alarms.logback;
 
+import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.net.server.HardenedLoggingEventInputStream;
 import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.classic.spi.LoggingEvent;
 import dmg.cells.nucleus.CDC;
 import java.io.BufferedInputStream;
 import java.io.EOFException;
@@ -122,7 +124,23 @@ final class LogEntryServerSocketNode implements Runnable {
         this.socket = socket;
         hostName = socket.getInetAddress().getCanonicalHostName();
         inputStream =
-            new HardenedLoggingEventInputStream(new BufferedInputStream(socket.getInputStream()));
+            new HardenedLoggingEventInputStream(
+                  (LoggerContext) LoggerFactory.getILoggerFactory(),
+                  new BufferedInputStream(socket.getInputStream()));
+    }
+
+    /**
+     * Replaces the cell and domain of the sender's diagnostic context with the alarm tags.
+     */
+    static LoggingEvent toLocalEvent(ILoggingEvent event, String hostName) {
+        /* The map of a received event is unmodifiable. */
+        Map<String, String> mdc = new HashMap<>(event.getMDCPropertyMap());
+        Map<String, String> properties = new HashMap<>();
+        properties.put(Alarm.HOST_TAG, hostName);
+        properties.put(Alarm.SERVICE_TAG, mdc.remove(CDC.MDC_CELL));
+        properties.put(Alarm.DOMAIN_TAG, mdc.remove(CDC.MDC_DOMAIN));
+        properties.putAll(mdc);
+        return LoggingEventConverter.replaceMDC(event, properties);
     }
 
     public void run() {
@@ -131,12 +149,7 @@ final class LogEntryServerSocketNode implements Runnable {
         try {
             while (running) {
                 ILoggingEvent event = (ILoggingEvent) inputStream.readObject();
-                Map<String, String> properties = new HashMap<>();
-                Map<String, String> mdc = event.getMDCPropertyMap();
-                properties.put(Alarm.HOST_TAG, hostName);
-                properties.put(Alarm.SERVICE_TAG, mdc.remove(CDC.MDC_CELL));
-                properties.put(Alarm.DOMAIN_TAG, mdc.remove(CDC.MDC_DOMAIN));
-                handler.handle(LoggingEventConverter.updateMDC(event, properties));
+                handler.handle(toLocalEvent(event, hostName));
             }
         } catch (EOFException e) {
             LOGGER.trace("Benign EOF ({}).", e.getMessage());

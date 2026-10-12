@@ -66,6 +66,7 @@ import ch.qos.logback.classic.spi.LoggingEvent;
 import com.google.common.collect.Streams;
 import dmg.cells.nucleus.CDC;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -118,6 +119,10 @@ final class LoggingEventConverter {
 
     static LoggingEvent updateMDC(ILoggingEvent event, Map<String, String> properties) {
         properties.putAll(event.getMDCPropertyMap());
+        return replaceMDC(event, properties);
+    }
+
+    static LoggingEvent replaceMDC(ILoggingEvent event, Map<String, String> properties) {
         LoggingEvent newEvent = new LoggingEvent();
         newEvent.setArgumentArray(event.getArgumentArray());
         if (event.hasCallerData()) {
@@ -127,7 +132,10 @@ final class LoggingEventConverter {
         newEvent.setLoggerContextRemoteView(event.getLoggerContextVO());
         newEvent.setLoggerName(event.getLoggerName());
         newEvent.setThreadName(event.getThreadName());
-        newEvent.setMarker(event.getMarker());
+        List<Marker> markers = event.getMarkerList();
+        if (markers != null) {
+            markers.forEach(newEvent::addMarker);
+        }
         newEvent.setMDCPropertyMap(properties);
         newEvent.setMessage(event.getMessage());
         newEvent.setTimeStamp(event.getTimeStamp());

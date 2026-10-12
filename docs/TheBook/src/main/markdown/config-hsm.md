@@ -435,7 +435,7 @@ file as described below. dCache components need to be restarted to
 activate the changes.
 
     <threshold>
-         <appender>stdout</appender>
+         <appenderName>stdout</appenderName>
          <logger>root</logger>
          <level>warn</level>
        </threshold>
@@ -443,7 +443,7 @@ activate the changes.
 needs to be changed to
 
     <threshold>
-         <appender>stdout</appender>
+         <appenderName>stdout</appenderName>
          <logger>root</logger>
          <level>info</level>
        </threshold>
