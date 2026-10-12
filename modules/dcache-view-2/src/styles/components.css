@@ -1,0 +1,207 @@
+/* ── Design tokens ─────────────────────────────────────────── */
+:root {
+  /* surfaces */
+  --ds-bg:           #f3f4f8;
+  --ds-surface:      #ffffff;
+  --ds-surface-alt:  #eef0f5;
+
+  /* text */
+  --ds-text:         #111318;
+  --ds-text-muted:   #6b7280;
+
+  /* border */
+  --ds-border:       #e2e4eb;
+
+  /* brand */
+  --ds-accent:       #4f46e5;
+  --ds-accent-hover: #4338ca;
+  --ds-accent-text:  #ffffff;
+
+  /* feedback */
+  --ds-error:        #dc2626;
+  --ds-error-bg:     #fef2f2;
+  --ds-error-border: #fca5a5;
+
+  /* shape */
+  --ds-radius-sm:    6px;
+  --ds-radius:       10px;
+  --ds-radius-lg:    16px;
+
+  /* shadow */
+  --ds-shadow-sm:    0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.05);
+  --ds-shadow:       0 4px 20px rgba(0,0,0,.09), 0 1px 4px rgba(0,0,0,.06);
+
+  /* spacing */
+  --ds-gap: 16px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ds-bg:           #0d0f14;
+    --ds-surface:      #161920;
+    --ds-surface-alt:  #1e2130;
+
+    --ds-text:         #e8eaf0;
+    --ds-text-muted:   #8b8fa8;
+
+    --ds-border:       #2a2d3a;
+
+    --ds-accent:       #6366f1;
+    --ds-accent-hover: #818cf8;
+
+    --ds-error:        #f87171;
+    --ds-error-bg:     #1f1010;
+    --ds-error-border: #7f1d1d;
+  }
+}
+
+/* ── Button ─────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: 1px solid transparent;
+  border-radius: var(--ds-radius-sm);
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s, opacity 0.15s;
+
+  &:focus-visible {
+    outline: 2px solid var(--ds-accent);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.btn-primary {
+  background: var(--ds-accent);
+  color: var(--ds-accent-text);
+
+  &:hover:not(:disabled) {
+    background: var(--ds-accent-hover);
+    box-shadow: var(--ds-shadow-sm);
+  }
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--ds-text);
+  border-color: var(--ds-border);
+
+  &:hover:not(:disabled) {
+    background: var(--ds-surface-alt);
+  }
+}
+
+.btn-full {
+  width: 100%;
+}
+
+/* ── Form elements ──────────────────────────────────────────── */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ds-text-muted);
+}
+
+.input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-sm);
+  background: var(--ds-surface);
+  color: var(--ds-text);
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  box-sizing: border-box;
+
+  &::placeholder {
+    color: var(--ds-text-muted);
+    opacity: 0.7;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--ds-accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ds-accent) 18%, transparent);
+  }
+}
+
+.form-error {
+  font-size: 13px;
+  color: var(--ds-error);
+  background: var(--ds-error-bg);
+  border: 1px solid var(--ds-error-border);
+  border-radius: var(--ds-radius-sm);
+  padding: 8px 12px;
+}
+
+/* ── Card ───────────────────────────────────────────────────── */
+.card {
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-lg);
+  box-shadow: var(--ds-shadow);
+  padding: 32px;
+}
+
+/* ── Login page ─────────────────────────────────────────────── */
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-grow: 1;
+  background: var(--ds-bg);
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 380px;
+}
+
+.login-card__header {
+  text-align: center;
+  margin-bottom: 28px;
+
+  img {
+    height: 36px;
+    margin-bottom: 16px;
+  }
+
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--ds-text);
+    margin: 0 0 4px;
+    letter-spacing: -0.3px;
+  }
+
+  p {
+    font-size: 14px;
+    color: var(--ds-text-muted);
+  }
+}
+
+.login-card__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}

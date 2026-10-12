@@ -7,7 +7,7 @@ export function useAuth(): { user: User | null, error: Error | null } {
 
     useEffect(() => {
         const worker = new Worker(
-            new URL('../workers/user-authentification.ts', import.meta.url),
+            new URL('../workers/user-authentication.ts', import.meta.url),
             {type: 'module'}
         );
 

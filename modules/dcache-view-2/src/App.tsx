@@ -1,34 +1,35 @@
-import { useState } from 'react'
-import dCacheLogoImg from './assets/dCacheLogo.png'
+import { useEffect } from 'react'
+import { useAuthStore } from './store/authStore.ts'
+import { LoginForm } from './components/LoginForm.tsx'
+import { Button } from './components/Button.tsx'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+    const user = useAuthStore(state => state.user);
+    const authError = useAuthStore(state => state.error);
+    const passiveAuth = useAuthStore(state => state.passiveAuth);
+    const logout = useAuthStore(state => state.logout);
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={dCacheLogoImg} className="base" width="170" height="179" alt="" />
-        </div>
-        <div>
-          <h1>dCache view 2.0</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    useEffect(() => {
+        passiveAuth();
+    }, []);
 
-      <div className="ticks"></div>
-    </>
-  )
+    if (authError) return <p>Auth check failed: {authError.message}</p>;
+    if (user === null) return <LoginForm/>;
+    if (user.status === 'ANONYMOUS') return (
+        <>
+            <p>ANONYMOUS USER</p>
+            <LoginForm />
+            {/*placeholder.
+            When user is anonymous the login button should be in some top bar that will be added later*/}
+        </>
+    );
+    return (
+        <>
+            <p>Logged in as {user.username}</p>
+            <Button label="Logout" onClick={logout} variant={"ghost"} />
+        </>
+    );
 }
 
 export default App
