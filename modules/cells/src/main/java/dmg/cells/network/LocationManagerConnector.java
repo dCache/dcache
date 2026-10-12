@@ -6,6 +6,7 @@ import com.google.common.base.Throwables;
 import com.google.common.net.HostAndPort;
 import com.google.common.util.concurrent.Uninterruptibles;
 import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellDomainRole;
 import dmg.util.DummyStreamEngine;
 import dmg.util.Exceptions;
 import dmg.util.StreamEngine;
@@ -22,7 +23,6 @@ import java.util.concurrent.ExecutionException;
 import javax.net.SocketFactory;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
-import org.dcache.util.Args;
 import org.dcache.util.NDC;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +37,7 @@ public class LocationManagerConnector
     private final String _domain;
     private final SocketFactory _ssf;
     private final InetSocketAddress _address;
+    private final CellDomainRole _role;
     private Thread _thread;
     private volatile String _status = "disconnected";
     private volatile int _retries;
@@ -48,12 +49,14 @@ public class LocationManagerConnector
      * @param socketFactory the socket factory to use for creating connections
      * @param remoteDomain the domain name of the location manager
      * @param endpoint the address of the location manager
+     * @param role the role of the local domain, announced to the remote domain during tunnel handshake
      */
-    public LocationManagerConnector(String cellName, SocketFactory socketFactory, String remoteDomain, InetSocketAddress endpoint) {
-        super(cellName, "System");
+    public LocationManagerConnector(String cellName, SocketFactory socketFactory, String remoteDomain, InetSocketAddress endpoint, CellDomainRole role) {
+        super(cellName, "System", "");
         _domain = remoteDomain;
         _ssf = requireNonNull(socketFactory);
         _address = endpoint;
+        _role = requireNonNull(role);
     }
 
     @Override
@@ -89,7 +92,6 @@ public class LocationManagerConnector
          * 4 to 20 seconds between connection attempts. The thread is
          * terminated by interrupting it.
          */
-        Args args = getArgs();
         String name = getCellName() + '*';
         Random random = new Random();
         NDC.push(_address.toString());
@@ -98,7 +100,7 @@ public class LocationManagerConnector
                 try {
                     _retries++;
 
-                    LocationMgrTunnel tunnel = new LocationMgrTunnel(name, connect(), args);
+                    LocationMgrTunnel tunnel = new LocationMgrTunnel(name, connect(), _role);
                     try {
                         tunnel.start().get();
                         _retries = 0;

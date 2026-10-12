@@ -719,7 +719,8 @@ public class LocationManager extends CellAdapter {
         String cellName = "c-" + remoteDomain + '*';
         LOGGER.info("Starting connector {} to {} ({})", cellName, remoteDomain, where);
         InetSocketAddress tunnelEndpoint = new InetSocketAddress(where.getHost(), where.getPort());
-        LocationManagerConnector c = new LocationManagerConnector(cellName, socketFactory, remoteDomain, tunnelEndpoint);
+        LocationManagerConnector c = new LocationManagerConnector(cellName, socketFactory, remoteDomain,
+              tunnelEndpoint, role);
         c.start().get();
         return c.getCellName();
     }
