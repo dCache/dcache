@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2001 - 2018 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2001 - 2026 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package dmg.cells.network;
+
+import static java.util.Objects.requireNonNull;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellDomainInfo;
@@ -91,13 +93,29 @@ public class LocationMgrTunnel
     private LongAdder _messagesToSystem = new LongAdder();
 
     public LocationMgrTunnel(String cellName, StreamEngine engine, Args args) {
+        this(cellName, engine, args, CellDomainRole.valueOf(
+              args.getOption("role", CellDomainRole.SATELLITE.name()).toUpperCase()));
+    }
+
+    /**
+     * Create a new tunnel.
+     * @param cellName the name of this tunnel as a cell
+     * @param engine the stream engine of the established connection
+     * @param role the role of the local domain, announced to the remote domain during handshake
+     */
+    public LocationMgrTunnel(String cellName, StreamEngine engine, CellDomainRole role) {
+        this(cellName, engine, new Args(""), role);
+    }
+
+    private LocationMgrTunnel(String cellName, StreamEngine engine, Args args,
+          CellDomainRole role) {
         super(cellName, "System", args);
+
+        requireNonNull(role);
         _nucleus = getNucleus();
         _socket = engine.getSocket();
         _rawOut = new BufferedOutputStream(engine.getOutputStream());
         _rawIn = new BufferedInputStream(engine.getInputStream());
-        CellDomainRole role = args.hasOption("role") ? CellDomainRole.valueOf(
-              args.getOption("role").toUpperCase()) : CellDomainRole.SATELLITE;
         _localDomainInfo = new CellDomainInfo(_nucleus.getCellDomainName(),
               Version.of(LocationMgrTunnel.class).getVersion(),
               role,
