@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import {getUser} from "../api/user.ts";
-import type { User } from '../workers/types.ts';
+import type { User } from '../types/types.ts';
 
 const UPAUTH_KEY: string = 'upauth';
 const UPAUTH_EXPIRY_KEY: string = 'upauth_expiry';

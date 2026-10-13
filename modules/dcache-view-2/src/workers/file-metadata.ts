@@ -1,4 +1,4 @@
-import type { FileAttributes, FileMetadataRequest } from "./types.ts";
+import type { FileAttributes, FileMetadataRequest } from "../types/types.ts";
 
 const endpoint: string = "./api/v1/"
 

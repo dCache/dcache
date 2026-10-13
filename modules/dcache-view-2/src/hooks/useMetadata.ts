@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import type {FileAttributes, FileMetadataResponse, FileMetadataRequest} from "../workers/types.ts";
+import type {FileAttributes, FileMetadataResponse, FileMetadataRequest} from "../types/types.ts";
 
 export function useMetadata(request: FileMetadataRequest): FileMetadataResponse{
     const [data, setData] = useState<FileAttributes | null>(null);

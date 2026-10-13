@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import { useAuthStore, loadCredential } from '../../store/authStore.ts';
-import type { User } from '../../workers/types.ts';
+import { useAuthStore, loadCredential } from '../authStore.ts';
+import type { User } from '../../types/types.ts';
 
 const UPAUTH_KEY = 'upauth';
 const UPAUTH_EXPIRY_KEY = 'upauth_expiry';
