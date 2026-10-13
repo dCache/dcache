@@ -1,4 +1,4 @@
-import type { FileContentRequest, FileContent } from "./types.ts";
+import type { FileContentRequest, FileContent } from "../types/types.ts";
 
 export function buildRequest(e: MessageEvent<FileContentRequest>): Request {
     const headers = new Headers({
