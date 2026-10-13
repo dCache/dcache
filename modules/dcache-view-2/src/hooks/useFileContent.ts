@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type {FileContent, FileContentResponse} from "../workers/types.ts";
+import type {FileContent, FileContentResponse} from "../types/types.ts";
 
 export function useFileContent(url: string, mime: string, upauth?: string): FileContentResponse {
     const [data, setData] = useState<Blob | unknown | null>(null);

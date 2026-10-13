@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { User } from '../workers/types.ts';
+import type { User } from '../types/types.ts';
 
 export function useAuth(): { user: User | null, error: Error | null } {
     const [user, setUser] = useState<User | null>(null);

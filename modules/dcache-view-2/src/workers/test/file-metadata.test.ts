@@ -1,6 +1,6 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { fileAttributes, fetchFileAttributes } from '../../workers/file-metadata';
-import type { FileAttributes, FileMetadataRequest } from '../../workers/types';
+import { fileAttributes, fetchFileAttributes } from '../file-metadata.ts';
+import type { FileAttributes, FileMetadataRequest } from '../../types/types.ts';
 
 const mockAttributes: FileAttributes = {
     pnfsId: 'abc123',

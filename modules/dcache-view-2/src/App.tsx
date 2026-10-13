@@ -2,7 +2,6 @@ import { useEffect } from 'react'
 import { useAuthStore } from './store/authStore.ts'
 import { LoginForm } from './components/LoginForm.tsx'
 import { Button } from './components/Button.tsx'
-import './App.css'
 
 function App() {
     const user = useAuthStore(state => state.user);

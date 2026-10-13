@@ -1,6 +1,6 @@
 import {describe, test, expect, vi, beforeEach} from 'vitest';
-import { buildRequest, processResponse } from '../../workers/file-content.ts';
-import type { FileContentRequest } from '../../workers/types.ts';
+import { buildRequest, processResponse } from '../file-content.ts';
+import type { FileContentRequest } from '../../types/types.ts';
 
 function makeEvent(data: FileContentRequest): MessageEvent<FileContentRequest> {
     return { data } as MessageEvent<FileContentRequest>;
