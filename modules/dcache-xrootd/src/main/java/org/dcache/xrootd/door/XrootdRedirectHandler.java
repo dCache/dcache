@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 - 2022 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2026 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -375,7 +375,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
                   loginSessionInfo,
                   opaque,
                   path,
-                  remoteAddress.getHostName());
+                  remoteAddress.getHostString());
             if (response != null) {
                 return response;
             }
@@ -824,7 +824,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
         String clientHost;
         SocketAddress remoteAddress = session.getChannel().remoteAddress();
         if (remoteAddress instanceof InetSocketAddress) {
-            clientHost = ((InetSocketAddress) remoteAddress).getHostName();
+            clientHost = ((InetSocketAddress) remoteAddress).getHostString();
         } else {
             clientHost = "localhost";
         }
