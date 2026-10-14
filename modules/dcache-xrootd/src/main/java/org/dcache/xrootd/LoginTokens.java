@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2022 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2022 - 2026 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -20,9 +20,7 @@ package org.dcache.xrootd;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.base.Splitter;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -47,6 +45,12 @@ public class LoginTokens
                 + addr.getHostString() + HOST_PORT_SEPERATOR + addr.getPort();
     }
 
+    /**
+     * Decode the login token and return the unresolved InetSocketAddress of the door.
+     *
+     * @param token the login token
+     * @return the unresolved InetSocketAddress of the door, or empty if the token is invalid
+     */
     public static Optional<InetSocketAddress> decodeToken(String token) {
         try {
             /*checkArgument(token.startsWith(INITIAL_ELEMENT),
@@ -69,10 +73,9 @@ public class LoginTokens
             String host = hostAndPort.substring(0, seperator);
             String port = hostAndPort.substring(seperator+1);
 
-            InetSocketAddress addr = new InetSocketAddress(InetAddress.getByName(host),
-                    Integer.parseInt(port));
+            InetSocketAddress addr = InetSocketAddress.createUnresolved(host, Integer.parseInt(port));
             return Optional.of(addr);
-        } catch (UnknownHostException | IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
             LOGGER.debug("Bad kXR_login token \"{}\": {}", token, e.getMessage());
         }
 
