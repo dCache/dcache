@@ -45,12 +45,6 @@ export interface FileContent {
     data : Blob | unknown;
 }
 
-export interface FileContentResponse {
-    data: unknown;
-    loading: boolean;
-    error: Error | null;
-}
-
 export interface FileMetadataRequest {
     pnfsId?: string;
     path?: string;
@@ -58,9 +52,4 @@ export interface FileMetadataRequest {
     scope: 'partial' | 'full';
     limit: number | 'max';
     offset: number;
-}
-
-export interface FileMetadataResponse {
-    data: FileAttributes;
-    error?: Error;
 }
