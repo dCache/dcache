@@ -149,6 +149,31 @@ The page “Pool Request Queues” (or “Pool Transfer Queues”) gives informa
 
 The remaining pages are only relevant with more advanced configurations: The page “Pools” (or “Pool Attraction Configuration”) can be used to analyze the current configuration of the [pool selection unit](rf-glossary.md#pool-selection-unit) in the pool manager. The remaining pages are relevant only if a [tertiary storage system (HSM)](rf-glossary.md#hsm-type) is connected to the dCache instance.
 
+### Configuring the look and feel
+
+The appearance of the dCache-internal web pages is controlled by the property `httpd.look-and-feel`. Two styles are shipped with dCache:
+
+| Value     | Description                                                                   |
+|:----------|:------------------------------------------------------------------------------|
+| `classic` | The traditional dCache look and feel. This is the default.                    |
+| `new`     | A more modern look and feel.                                                  |
+
+For example, to switch to the new style, set the property in your `dcache.conf` file:
+
+```ini
+httpd.look-and-feel=new
+```
+
+The property determines which directory of CSS files is served: `classic` uses the `styles-classic` directory and `new` uses `styles-new`, both located under the `httpd.static-content.dir` directory (`httpd.static-content.styles`). The value is checked when dCache starts, so the `httpd` service must be restarted for a change to take effect.
+
+Because the styles are ordinary CSS files, you can also customise the appearance by pointing `httpd.static-content.styles` at a directory containing your own CSS files:
+
+```ini
+httpd.static-content.styles=/etc/dcache/my-styles
+```
+
+Any such directory must provide the same set of CSS files as the shipped styles directories (for example `common.css`, `cellInfo.css` and `poolinfo.css`).
+
 ## THE ADMIN INTERFACE
 
 > **JUST USE COMMANDS THAT ARE DOCUMENTED HERE**
