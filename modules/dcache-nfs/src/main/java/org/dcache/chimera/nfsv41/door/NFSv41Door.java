@@ -807,6 +807,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         final stateid4 stateid = Stateids.getCurrentStateidIfNeeded(context, args.loga_stateid);
 
         LayoutDriver layoutDriver = getLayoutDriver(layoutType);
+        NfsTransfer transfer = null;
 
         final NFS4Client client;
         if (context.getMinorversion() == 0) {
@@ -840,7 +841,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                     throw new LayoutUnavailableException("special DOT file");
                 }
 
-                NfsTransfer transfer = layoutStateid != null ? _transfers.get(layoutStateid) : null;
+                transfer = layoutStateid != null ? _transfers.get(layoutStateid) : null;
                 if (transfer == null) {
                     Transfer.initSession(false, false);
                     NDC.push(pnfsId.toString());
@@ -917,6 +918,20 @@ public class NFSv41Door extends AbstractCellComponent implements
              */
             client.releaseState(stateid);
             throw new StaleException("File is removed", e);
+        } catch (PermissionDeniedCacheException e) {
+            // pool selection due to stage protection or an overwrite attempt of an existing file.
+            if (transfer.getPool() == null) {
+                // safe to forget
+                _log.error("Removing pool-less transfer for client {} for file {}: {}",
+                      toAddrString(context.getRemoteSocketAddress().getAddress()),
+                      transfer.getPnfsId(), e.getMessage());
+                _transfers.remove(transfer.getStateid().stateid());
+            } else {
+                // should never happen
+                _log.error("Report to support@dcache.org: Unexpected permission denied for transfer {} with assigned pool: {}", transfer, e.toString());
+            }
+
+            throw new PermException(e.getMessage(), e);
         } catch (CacheException | ChimeraFsException | TimeoutException | ExecutionException e) {
             throw asNfsException(e, LayoutTryLaterException.class);
         } catch (InterruptedException e) {
@@ -1532,7 +1547,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                  * allow writes only into new files
                  */
                 if (!attr.getStorageInfo().isCreatedOnly()) {
-                    throw new PermException("Can't modify existing file");
+                    throw new PermissionDeniedCacheException("Can't modify existing file");
                 }
 
                 // REVISIT: this have to go into Transfer class.
