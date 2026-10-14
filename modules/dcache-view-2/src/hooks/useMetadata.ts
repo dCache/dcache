@@ -1,29 +1,10 @@
-import { useState, useEffect } from 'react'
-import type {FileAttributes, FileMetadataResponse, FileMetadataRequest} from "../types/types.ts";
+import { useQuery } from '@tanstack/react-query'
+import type {FileMetadataRequest} from "../types/types.ts";
+import { fileAttributes, buildHeaders } from '../api/namespace.ts'
 
-export function useMetadata(request: FileMetadataRequest): FileMetadataResponse{
-    const [data, setData] = useState<FileAttributes | null>(null);
-    const [error, setError] = useState<Error | null>(null);
-
-    useEffect(() => {
-        const worker = new Worker(
-            new URL('../workers/file-metadata.ts', import.meta.url),
-            {type: 'module'}
-        );
-
-        worker.postMessage(request)
-
-        worker.onmessage = (e: MessageEvent<FileAttributes>) => {
-            setData(e.data)
-            worker.terminate();
-        };
-
-        worker.onerror = (e: ErrorEvent)=>{
-            console.warn(e);
-            setError(new Error(e.message));
-            worker.terminate();
-        };
-        return () => worker.terminate();
-    }, []);
-    return {data, error} as FileMetadataResponse;
+export function useMetadata(request: FileMetadataRequest){
+    return useQuery({
+        queryKey: ['metadata', request.pnfsId ?? request.path],
+        queryFn: () => fileAttributes(request, buildHeaders(request.upauth))
+    })
 }
