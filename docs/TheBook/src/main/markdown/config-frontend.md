@@ -204,11 +204,55 @@ origin plus `dcache-view.endpoints.webapi` (i.e.
 `{origin}/api/v1/auth/callback`), which always matches the callback
 the frontend serves.
 
-For more than one provider, give space-separated issuer URLs in
-`frontend.static!dcache-view.oidc-issuer-list` in the same order as
-the name and client-id lists.  The code-flow token exchange still uses
-a single token endpoint (`frontend.authn.oidc.issuer` /
-`frontend.authn.oidc.token-url`).
+### Multiple OpenID Connect providers
+
+dCache View can offer several OpenID Connect providers.  Each of the
+properties takes a space-separated list with one entry per provider,
+and the lists are matched up positionally, so they **must** be given
+in the same order:
+
+| Property | Purpose |
+|----------|---------|
+| `frontend.static!dcache-view.oidc-provider-name-list` | Name shown on the login page |
+| `frontend.static!dcache-view.oidc-client-id-list` | Client id used in the authorization request |
+| `frontend.static!dcache-view.oidc-issuer-list` | Provider issuer URL, used for discovery |
+| `frontend.authn.oidc.client-id` | Client id used in the code-for-token exchange |
+| `frontend.authn.oidc.client-secret` | Client secret used in the code-for-token exchange |
+
+Every provider whose login can complete must have a matching entry in
+all three of `frontend.authn.oidc.client-id`,
+`frontend.authn.oidc.client-secret` and
+`frontend.authn.oidc.issuer`, in the same order as the name and
+client-id lists.  The frontend selects the right
+credentials from the authorization `state` parameter it sent with the
+request, so a provider that is listed in the View login page but has
+no matching entry here cannot complete login.
+
+```ini
+[dCacheDomain/frontend]
+frontend.authn.oidc.client-id = <client-id-openid1> <client-id-openid2>
+frontend.authn.oidc.client-secret = <secret-openid1> <secret-openid2>
+frontend.authn.oidc.issuer = \
+    https://oidc.example.com \
+    https://auth.example.org
+frontend.static!dcache-view.oidc-provider-name-list = openid1 openid2
+frontend.static!dcache-view.oidc-client-id-list = <client-id-openid1> <client-id-openid2>
+frontend.static!dcache-view.oidc-issuer-list = \
+    https://oidc.example.com \
+    https://auth.example.org
+```
+
+With several providers configured, dCache no longer uses a single
+token endpoint: for each login it resolves the token endpoint from
+that provider's issuer by OpenID Connect Discovery.  When only one
+provider is configured, `frontend.authn.oidc.token-url` still
+overrides discovery.
+
+Logging out uses the provider the user logged in with, so RP-initiated
+logout is sent to the correct IdP even with more than one provider
+configured.  Make sure each client registers the dCache server's
+post-logout redirect URI with its IdP; if the IdP rejects it, dCache
+falls back to a local-only logout.
 
 ##### RESTful API for QoS transitions
 
