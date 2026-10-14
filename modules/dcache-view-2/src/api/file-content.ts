@@ -1,16 +1,16 @@
 import type { FileContentRequest, FileContent } from "../types/types.ts";
 
-export function buildRequest(e: MessageEvent<FileContentRequest>): Request {
+function buildRequest(r: FileContentRequest): Request {
     const headers = new Headers({
         "Suppress-WWW-Authenticate": "Suppress",
-        "Content-Type": e.data.mime
+        "Content-Type": r.mime
     });
 
-    if (e.data.upauth && e.data.upauth !== "") {
-        headers.append("Authorization", e.data.upauth);
+    if (r.upauth && r.upauth !== "") {
+        headers.append("Authorization", r.upauth);
     }
 
-    const request = new Request(e.data.url, {
+    const request = new Request(r.url, {
         headers,
         mode: "cors",
         redirect: "follow",
@@ -19,22 +19,23 @@ export function buildRequest(e: MessageEvent<FileContentRequest>): Request {
     return request;
 }
 
-export async function processResponse(response: Response, e: MessageEvent<FileContentRequest>)
-    : Promise<FileContent | undefined> {
+export async function processResponse(response: Response, r: FileContentRequest)
+    : Promise<FileContent> {
     console.log("download the file " + response.url);
 
     if (response.ok) {
-        const data: Blob | unknown = e.data.mime.includes('json') ? await response.json() : await response.blob();
+        const data: Blob | unknown = r.mime.includes('json') ? await response.json() : await response.blob();
         return {data: data} as FileContent;
     } else if (response.status >= 400 && response.status < 500) {
         throw new Error(`Request failed with response status code ${response.status}.`);
     } else if (response.status >= 500) {
         throw new Error(`Status code ${response.status} - dCache Internal Server Error. Please contact the admin.`);
+    } else {
+        throw new Error(`Unexpected response status code ${response.status}.`);
     }
 }
 
-self.onmessage = (e: MessageEvent<FileContentRequest>) => {
-    fetch(buildRequest(e))
-        .then(response => processResponse(response, e))
-        .then(data => self.postMessage(data));
-};
+export async function fileContent(r: FileContentRequest): Promise<FileContent> {
+    return await fetch(buildRequest(r))
+        .then(response => processResponse(response, r))
+}

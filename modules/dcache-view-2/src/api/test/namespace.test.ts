@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { fileAttributes, fetchFileAttributes } from '../file-metadata.ts';
+import { fileAttributes, buildHeaders } from '../namespace.ts';
 import type { FileAttributes, FileMetadataRequest } from '../../types/types.ts';
 
 const mockAttributes: FileAttributes = {
@@ -27,12 +27,6 @@ const mockAttributes: FileAttributes = {
     locations: null,
 };
 
-const headers = new Headers({
-    "Suppress-WWW-Authenticate": "Suppress",
-    "Accept": "application/json",
-    "Content-Type": "application/json"
-});
-
 function makeResponse(ok: boolean, body: unknown, status = 200, statusText = 'OK'): Response {
     return {
         ok,
@@ -42,26 +36,9 @@ function makeResponse(ok: boolean, body: unknown, status = 200, statusText = 'OK
     } as unknown as Response;
 }
 
-describe('fetchFileAttributes', () => {
-    beforeEach(() => {
-        vi.restoreAllMocks();
-    });
-
-    test('returns FileAttributes on ok response', async () => {
-        vi.stubGlobal('fetch', vi.fn().mockResolvedValue(makeResponse(true, mockAttributes)));
-        const result = await fetchFileAttributes(new Request('./api/v1/namespace/test'));
-        expect(result).toEqual(mockAttributes);
-    });
-
-    test('throws on non-ok response', async () => {
-        vi.stubGlobal('fetch', vi.fn().mockResolvedValue(makeResponse(false, null, 404, 'Not Found')));
-        await expect(fetchFileAttributes(new Request('./api/v1/namespace/test')))
-            .rejects.toThrow('404: Not Found');
-    });
-
-});
-
 describe('fileAttributes', () => {
+    const headers = buildHeaders();
+
     beforeEach(() => {
         vi.restoreAllMocks();
     });
@@ -114,8 +91,15 @@ describe('fileAttributes', () => {
         expect(fetchMock.mock.calls[0][0].url).toContain('limit=2147483647');
     });
 
-    test('throws TypeError when neither path nor pnfsId provided', () => {
+    test('throws on non-ok response', async () => {
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue(makeResponse(false, null, 404, 'Not Found')));
+
+        const r: FileMetadataRequest = { pnfsId: 'abc123', scope: 'full', limit: 100, offset: 0 };
+        await expect(fileAttributes(r, headers)).rejects.toThrow('404: Not Found');
+    });
+
+    test('throws TypeError when neither path nor pnfsId provided', async () => {
         const r: FileMetadataRequest = { scope: 'partial', limit: 100, offset: 0 };
-        expect(() => fileAttributes(r, headers)).toThrow(TypeError);
+        await expect(fileAttributes(r, headers)).rejects.toThrow(TypeError);
     });
 });
