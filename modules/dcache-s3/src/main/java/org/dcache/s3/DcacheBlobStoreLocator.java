@@ -23,6 +23,7 @@ import com.google.common.base.Suppliers;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.TimeoutCacheException;
 import java.net.InetAddress;
 import java.util.Optional;
 import javax.security.auth.Subject;
@@ -46,7 +47,8 @@ import org.slf4j.LoggerFactory;
  * not log in: an unsigned request could otherwise make the door query gPlazma.  It returns the
  * secret from the key store and a blob store that logs in on first use, once the handler has
  * verified the signature with that secret.  Unknown access keys get no grant, which the handler
- * reports as {@code InvalidAccessKeyId}.
+ * reports as {@code InvalidAccessKeyId}.  A denied login is {@code AccessDenied}, a login timeout
+ * {@code ServiceUnavailable}.
  * <p>
  * The secret is looked up on every request, so a key removed from the key store stops working at
  * once, even while gPlazma's answer for it is still cached.
@@ -104,9 +106,12 @@ public class DcacheBlobStoreLocator implements BlobStoreLocator {
         } catch (PermissionDeniedCacheException e) {
             LOGGER.info("Login denied for S3 access key {}: {}", accessKey, e.getMessage());
             throw new S3ProxyException(S3ErrorCode.ACCESS_DENIED, e);
+        } catch (TimeoutCacheException e) {
+            LOGGER.warn("Login timed out for S3 access key {}: {}", accessKey, e.getMessage());
+            throw S3Errors.serviceUnavailable("Login timed out", e);
         } catch (CacheException e) {
             LOGGER.warn("Login failed for S3 access key {}: {}", accessKey, e.getMessage());
-            throw new S3ProxyException(S3ErrorCode.INTERNAL_ERROR, e);
+            throw S3Errors.internalError(e);
         }
 
         FsPath userRoot = LoginAttributes.getUserRoot(reply.getLoginAttributes());
