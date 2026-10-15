@@ -18,6 +18,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.TimeoutCacheException;
@@ -38,9 +39,11 @@ import org.gaul.s3proxy.AccessGrant;
 import org.gaul.s3proxy.S3ErrorCode;
 import org.gaul.s3proxy.S3ProxyException;
 import org.gaul.s3proxy.blobstore.BlobStore;
+import org.gaul.s3proxy.blobstore.S3Exceptions;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 public class DcacheBlobStoreLocatorTest {
 
@@ -200,9 +203,21 @@ public class DcacheBlobStoreLocatorTest {
     }
 
     @Test
-    public void shouldReportInternalErrorWhenLoginFails() throws Exception {
+    public void shouldReportServiceUnavailableWhenLoginTimesOut() throws Exception {
         givenKey(ACCESS_KEY, "secret");
         when(loginStrategy.login(any())).thenThrow(new TimeoutCacheException("timeout"));
+
+        locator.locateBlobStore(ACCESS_KEY, "bucket", "key");
+
+        S3Exception e = assertThrows(S3Exception.class, user::get);
+        assertThat(e.statusCode(), is(503));
+        assertThat(S3Exceptions.errorCode(e), is("ServiceUnavailable"));
+    }
+
+    @Test
+    public void shouldReportInternalErrorWhenLoginFails() throws Exception {
+        givenKey(ACCESS_KEY, "secret");
+        when(loginStrategy.login(any())).thenThrow(new CacheException("broken"));
 
         locator.locateBlobStore(ACCESS_KEY, "bucket", "key");
 
