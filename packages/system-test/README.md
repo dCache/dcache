@@ -51,6 +51,24 @@ All data written into the resilient storage group (/resilient directory) will be
 
 See: [poolmanager.conf](src/main/skel/var/config/poolmanager.conf)
 
+### S3 doors
+
+Two S3 doors serve the whole namespace: every top-level directory is a
+bucket. Port `9000` uses HTTP, port `9001` HTTPS with the system-test host
+certificate. Both accept the access key `AKIASYSTEMTEST` with the secret
+`system-test-secret`, which gPlazma maps to the user running the system test.
+
+```
+rclone --s3-provider Other --s3-endpoint http://localhost:9000 \
+       --s3-access-key-id AKIASYSTEMTEST --s3-secret-access-key system-test-secret \
+       ls :s3:public
+s3cmd --host localhost:9000 --host-bucket localhost:9000 --no-ssl \
+      --access_key AKIASYSTEMTEST --secret_key system-test-secret ls s3://public
+```
+
+Files in `/tape` that are only on tape are listed with storage class
+`GLACIER` and must be restored (`RestoreObject`) before they can be read.
+
 ## Debugging
 
 The system-test deployment is started with remote debugging enabled on port `2299`.

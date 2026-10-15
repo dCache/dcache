@@ -21,17 +21,18 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static org.dcache.namespace.FileAttribute.CHECKSUM;
 import static org.dcache.namespace.FileAttribute.CREATION_TIME;
+import static org.dcache.namespace.FileAttribute.LOCATIONS;
 import static org.dcache.namespace.FileAttribute.MODIFICATION_TIME;
 import static org.dcache.namespace.FileAttribute.PNFSID;
 import static org.dcache.namespace.FileAttribute.SIZE;
+import static org.dcache.namespace.FileAttribute.STORAGEINFO;
 import static org.dcache.namespace.FileAttribute.TYPE;
 import static org.dcache.namespace.FileAttribute.XATTR;
 
+import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
 import com.google.common.hash.Hashing;
-import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.NotDirCacheException;
@@ -49,7 +50,6 @@ import java.util.Set;
 import java.util.function.Supplier;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
-import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.list.DirectoryEntry;
@@ -105,8 +105,8 @@ import software.amazon.awssdk.services.s3.model.UploadPartResponse;
  * An s3proxy blob store over the dCache namespace, acting as one user for one request.
  * <p>
  * Buckets are the directories below the user's bucket root and objects the regular files below a
- * bucket (see {@link S3Paths}).  Files whose only copy is on tape are reported with storage class
- * {@code GLACIER} and cannot be read until they are restored.
+ * bucket (see {@link S3Paths}).  Files whose only copy is on tape (no pool has a replica) are
+ * reported with storage class {@code GLACIER} and cannot be read until they are restored.
  * <p>
  * The ETag of a file is its MD5 checksum if dCache has one.  Otherwise it is an opaque value
  * derived from the file's identity and modification time, with a {@code -1} suffix that tells
@@ -138,43 +138,36 @@ public class DcacheBlobStore implements BlobStore {
 
     private static final long MINIMUM_MULTIPART_PART_SIZE = 5L * 1024 * 1024;
 
-    private static final Set<FileAttribute> LIST_ATTRIBUTES = Sets.union(
-          EnumSet.of(TYPE, PNFSID, SIZE, MODIFICATION_TIME, CHECKSUM),
-          PoolMonitorV5.getRequiredAttributesForFileLocality());
+    // Sent to PnfsManager, so they must be serializable: Sets.union views are not.
+    private static final Set<FileAttribute> LIST_ATTRIBUTES = Sets.immutableEnumSet(
+          TYPE, PNFSID, SIZE, MODIFICATION_TIME, CHECKSUM, LOCATIONS, STORAGEINFO);
 
-    private static final Set<FileAttribute> OBJECT_ATTRIBUTES =
-          Sets.union(LIST_ATTRIBUTES, EnumSet.of(XATTR));
+    private static final Set<FileAttribute> OBJECT_ATTRIBUTES = Sets.immutableEnumSet(
+          Sets.union(LIST_ATTRIBUTES, EnumSet.of(XATTR)));
 
     private final Supplier<S3User> user;
     private final PnfsHandler pnfs;
     private final DirectoryListSource lister;
-    private final PoolMonitor poolMonitor;
     private final S3ObjectReader reader;
     private final S3ObjectRestorer restorer;
-    private final String clientHost;
     private final int maxListEntries;
 
     /**
      * @param user           logs in the client on first use
      * @param pnfs           the door's PnfsHandler; requests run as {@code user}
      * @param lister         lists directories
-     * @param poolMonitor    tells whether a file is on disk or only on tape
      * @param reader         reads file content
      * @param restorer       brings files back from tape
-     * @param clientHost     the client's address, for pool selection
      * @param maxListEntries how many directory entries a listing without delimiter reads before
      *                       it ends the page early
      */
     public DcacheBlobStore(Supplier<S3User> user, PnfsHandler pnfs, DirectoryListSource lister,
-          PoolMonitor poolMonitor, S3ObjectReader reader, S3ObjectRestorer restorer,
-          String clientHost, int maxListEntries) {
+          S3ObjectReader reader, S3ObjectRestorer restorer, int maxListEntries) {
         this.user = requireNonNull(user);
         this.pnfs = requireNonNull(pnfs);
         this.lister = requireNonNull(lister);
-        this.poolMonitor = requireNonNull(poolMonitor);
         this.reader = requireNonNull(reader);
         this.restorer = requireNonNull(restorer);
-        this.clientHost = requireNonNull(clientHost);
         this.maxListEntries = maxListEntries;
     }
 
@@ -189,7 +182,7 @@ public class DcacheBlobStore implements BlobStore {
         S3User u = user.get();
         var buckets = new ArrayList<Bucket>();
         try (DirectoryStream stream = lister.list(u.subject(), u.restriction(), u.root(), null,
-              null, EnumSet.of(TYPE, CREATION_TIME))) {
+              Range.all(), EnumSet.of(TYPE, CREATION_TIME))) {
             for (DirectoryEntry entry : stream) {
                 FileAttributes attributes = entry.getFileAttributes();
                 if (attributes.getFileType() == FileType.DIR
@@ -565,7 +558,7 @@ public class DcacheBlobStore implements BlobStore {
               throws CacheException, InterruptedException {
             var entries = new ArrayList<DirectoryEntry>();
             try (DirectoryStream stream = lister.list(user.subject(), user.restriction(),
-                  directory, null, null, LIST_ATTRIBUTES)) {
+                  directory, null, Range.all(), LIST_ATTRIBUTES)) {
                 stream.forEach(entries::add);
             }
             entriesRead += entries.size();
@@ -610,11 +603,17 @@ public class DcacheBlobStore implements BlobStore {
 
     // Object attributes
 
-    private boolean isOnTapeOnly(FileAttributes attributes) {
-        return poolMonitor.getFileLocality(attributes, clientHost) == FileLocality.NEARLINE;
+    /**
+     * Whether the only copy of a file is on tape: no pool has a replica, so reading it means
+     * staging it.  A replica on any pool counts, as PoolManager copies it to a pool the client
+     * may read from.
+     */
+    static boolean isOnTapeOnly(FileAttributes attributes) {
+        return attributes.isDefined(LOCATIONS) && attributes.getLocations().isEmpty()
+              && attributes.isDefined(STORAGEINFO) && attributes.getStorageInfo().isStored();
     }
 
-    private StorageClass storageClass(FileAttributes attributes) {
+    private static StorageClass storageClass(FileAttributes attributes) {
         return isOnTapeOnly(attributes) ? StorageClass.GLACIER : StorageClass.STANDARD;
     }
 

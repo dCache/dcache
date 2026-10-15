@@ -39,7 +39,6 @@ check -strong s3.service.gplazma.cache.size
 check -strong s3.service.gplazma.cache.timeout
 check -strong s3.service.gplazma.cache.timeout.unit
 check -strong s3.service.billing
-check -strong s3.pool-monitor.topic
 check s3.mover.queue
 check -strong s3.mover.timeout
 check -strong s3.mover.timeout.unit

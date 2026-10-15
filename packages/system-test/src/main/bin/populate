@@ -325,6 +325,15 @@ if [ ! -f etc/dcache.kpwd ]; then
     fi
 fi
 
+if [ ! -f etc/s3-keys.conf ]; then
+    # S3 doors: access key AKIASYSTEMTEST, secret system-test-secret
+    echo "AKIASYSTEMTEST system-test-secret" > etc/s3-keys.conf
+    chmod 600 etc/s3-keys.conf
+    echo "s3:AKIASYSTEMTEST username:${username} uid:$uid gid:$gid,true" >> etc/multi-mapfile
+    grep -q "^username:${username} " etc/omnisession.conf ||
+        echo "username:${username} root:/ home:/" >> etc/omnisession.conf
+fi
+
 if [ ! -f etc/admin/authorized_keys2 ]; then
     for pubkey in id_rsa.pub id_dsa.pub; do
         if [ -f ~/.ssh/$pubkey ]; then

@@ -70,5 +70,11 @@
       <artifactId>jimfs</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>url-connection-client</artifactId>
+      <version>${version.awssdk}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>

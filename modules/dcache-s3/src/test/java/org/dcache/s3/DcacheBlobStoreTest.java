@@ -6,7 +6,6 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
@@ -15,43 +14,29 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.AdditionalAnswers.delegatesTo;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.google.common.util.concurrent.Futures;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileLocality;
-import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.TimeoutCacheException;
-import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import javax.security.auth.Subject;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.attributes.Restrictions;
-import org.dcache.cells.CellStub;
-import org.dcache.namespace.FileType;
-import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
-import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryListSource;
-import org.dcache.util.list.DirectoryStream;
 import org.dcache.vehicles.FileAttributes;
-import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.gaul.s3proxy.S3ErrorCode;
 import org.gaul.s3proxy.S3ProxyException;
 import org.gaul.s3proxy.blobstore.S3Exceptions;
@@ -79,59 +64,29 @@ import software.amazon.awssdk.services.s3.model.StorageClass;
 public class DcacheBlobStoreTest {
 
     private static final FsPath ROOT = FsPath.create("/data/s3");
-    private static final long MTIME = 1_700_000_000_000L;
-    private static final String MD5 = "9e107d9d372bb6826bd81d3542a419d6";
+        private static final String MD5 = "9e107d9d372bb6826bd81d3542a419d6";
 
-    private final Map<FsPath, FileAttributes> namespace = new HashMap<>();
-    private final Map<FsPath, byte[]> content = new HashMap<>();
-    private final Set<FsPath> onTapeOnly = new HashSet<>();
-    private final List<FsPath> listed = new ArrayList<>();
-    private final List<Subject> requestSubjects = new ArrayList<>();
-    private Set<FsPath> denied = new HashSet<>();
+    private final FakeDcache dcache = new FakeDcache();
+    private final List<FsPath> listed = dcache.listed;
+    private final List<Subject> requestSubjects = dcache.requestSubjects;
+    private final Set<FsPath> denied = dcache.denied;
 
     private Subject subject;
-    private CellStub pnfsStub;
+    private PnfsHandler pnfs;
     private DirectoryListSource lister;
-    private PoolMonitor poolMonitor;
     private S3ObjectReader reader;
     private S3ObjectRestorer restorer;
     private DcacheBlobStore store;
-    private int nextId;
 
     @Before
     public void setup() throws Exception {
         subject = new Subject();
         subject.getPrincipals().add(new UidPrincipal(1000));
 
-        pnfsStub = mock(CellStub.class);
-        when(pnfsStub.send(any(PnfsGetFileAttributes.class), anyLong())).thenAnswer(i -> {
-            PnfsGetFileAttributes msg = i.getArgument(0);
-            requestSubjects.add(msg.getSubject());
-            getFileAttributes(msg);
-            return Futures.immediateFuture(msg);
-        });
-
-        lister = mock(DirectoryListSource.class);
-        when(lister.list(any(), any(), any(), any(), any(), any())).thenAnswer(
-              i -> list(i.getArgument(2)));
-
-        poolMonitor = mock(PoolMonitor.class);
-        when(poolMonitor.getFileLocality(any(), eq("192.0.2.1"))).thenAnswer(i -> {
-            FileAttributes attributes = i.getArgument(0);
-            return onTapeOnly.stream()
-                  .anyMatch(p -> namespace.get(p).getPnfsId().equals(attributes.getPnfsId()))
-                  ? FileLocality.NEARLINE : FileLocality.ONLINE;
-        });
-
+        pnfs = dcache.pnfsHandler();
+        lister = dcache.lister();
         restorer = mock(S3ObjectRestorer.class);
-
-        reader = mock(S3ObjectReader.class);
-        when(reader.read(any(), any(), any(), anyLong(), anyLong())).thenAnswer(i -> {
-            FsPath path = i.getArgument(1);
-            long offset = i.getArgument(3);
-            long length = i.getArgument(4);
-            return new ByteArrayInputStream(content.get(path), (int) offset, (int) length);
-        });
+        reader = mock(S3ObjectReader.class, delegatesTo(dcache.reader()));
 
         store = newStore(1000);
 
@@ -197,7 +152,7 @@ public class DcacheBlobStoreTest {
         assertThat(head.eTag(), is('"' + MD5 + '"'));
         assertThat(head.contentType(), is("text/plain"));
         assertThat(head.metadata(), is(equalTo(Map.of("color", "blue"))));
-        assertThat(head.lastModified(), is(Instant.ofEpochMilli(MTIME)));
+        assertThat(head.lastModified(), is(Instant.ofEpochMilli(FakeDcache.MTIME)));
         assertThat(head.storageClass(), is(StorageClass.STANDARD));
     }
 
@@ -216,7 +171,7 @@ public class DcacheBlobStoreTest {
         FileAttributes attributes = givenFile("/data/s3/bucket/file", "hello");
         String eTag = store.blobMetadata("bucket", "file").eTag();
 
-        attributes.setModificationTime(MTIME + 1000);
+        attributes.setModificationTime(FakeDcache.MTIME + 1000);
 
         assertThat(eTag, endsWith("-1\""));
         assertThat(store.blobMetadata("bucket", "file").eTag(), is(not(eTag)));
@@ -229,6 +184,15 @@ public class DcacheBlobStoreTest {
         givenOnTapeOnly("/data/s3/bucket/file");
 
         assertThat(store.blobMetadata("bucket", "file").storageClass(), is(StorageClass.GLACIER));
+    }
+
+    @Test
+    public void shouldNotReportFileWithReplicaAndTapeCopyAsGlacier() {
+        givenDirectory("/data/s3/bucket");
+        givenFile("/data/s3/bucket/file", "hello").getStorageInfo()
+              .addLocation(URI.create("osm://osm/?store=test&bfid=1"));
+
+        assertThat(store.blobMetadata("bucket", "file").storageClass(), is(StorageClass.STANDARD));
     }
 
     @Test
@@ -366,9 +330,10 @@ public class DcacheBlobStoreTest {
         givenDirectory("/data/s3/bucket");
         givenFile("/data/s3/bucket/file", "hello");
 
-        store.getBlob(get("file").ifModifiedSince(Instant.ofEpochMilli(MTIME - 1000)).build());
+        store.getBlob(get("file")
+              .ifModifiedSince(Instant.ofEpochMilli(FakeDcache.MTIME - 1000)).build());
         S3Exception e = assertThrows(S3Exception.class, () -> store.getBlob(
-              get("file").ifModifiedSince(Instant.ofEpochMilli(MTIME)).build()));
+              get("file").ifModifiedSince(Instant.ofEpochMilli(FakeDcache.MTIME)).build()));
         assertThat(e.statusCode(), is(304));
     }
 
@@ -377,9 +342,9 @@ public class DcacheBlobStoreTest {
         givenDirectory("/data/s3/bucket");
         givenFile("/data/s3/bucket/file", "hello");
 
-        store.getBlob(get("file").ifUnmodifiedSince(Instant.ofEpochMilli(MTIME)).build());
+        store.getBlob(get("file").ifUnmodifiedSince(Instant.ofEpochMilli(FakeDcache.MTIME)).build());
         S3Exception e = assertThrows(S3Exception.class, () -> store.getBlob(
-              get("file").ifUnmodifiedSince(Instant.ofEpochMilli(MTIME - 1000)).build()));
+              get("file").ifUnmodifiedSince(Instant.ofEpochMilli(FakeDcache.MTIME - 1000)).build()));
         assertThat(e.statusCode(), is(412));
     }
 
@@ -639,7 +604,7 @@ public class DcacheBlobStoreTest {
         assertThat(object.key(), is("file"));
         assertThat(object.size(), is(5L));
         assertThat(object.eTag(), is('"' + MD5 + '"'));
-        assertThat(object.lastModified(), is(Instant.ofEpochMilli(MTIME)));
+        assertThat(object.lastModified(), is(Instant.ofEpochMilli(FakeDcache.MTIME)));
         assertThat(object.storageClass(), is(ObjectStorageClass.GLACIER));
     }
 
@@ -668,8 +633,8 @@ public class DcacheBlobStoreTest {
 
     private DcacheBlobStore newStore(int maxListEntries) {
         S3User user = new S3User("AKIAEXAMPLE", subject, Restrictions.none(), ROOT);
-        return new DcacheBlobStore(() -> user, new PnfsHandler(pnfsStub), lister, poolMonitor,
-              reader, restorer, "192.0.2.1", maxListEntries);
+        return new DcacheBlobStore(() -> user, pnfs, lister, reader, restorer,
+              maxListEntries);
     }
 
     /**
@@ -713,73 +678,14 @@ public class DcacheBlobStoreTest {
     }
 
     private void givenDirectory(String path) {
-        namespace.put(FsPath.create(path), FileAttributes.of()
-              .fileType(FileType.DIR)
-              .pnfsId(nextPnfsId())
-              .creationTime(MTIME)
-              .modificationTime(MTIME)
-              .build());
+        dcache.directory(path);
     }
 
     private FileAttributes givenFile(String path, String data) {
-        FileAttributes attributes = FileAttributes.of()
-              .fileType(FileType.REGULAR)
-              .pnfsId(nextPnfsId())
-              .size(data.length())
-              .creationTime(MTIME)
-              .modificationTime(MTIME)
-              .build();
-        namespace.put(FsPath.create(path), attributes);
-        content.put(FsPath.create(path), data.getBytes(UTF_8));
-        return attributes;
+        return dcache.file(path, data);
     }
 
     private void givenOnTapeOnly(String path) {
-        onTapeOnly.add(FsPath.create(path));
-    }
-
-    private PnfsId nextPnfsId() {
-        return new PnfsId(String.format("0000%032X", nextId++));
-    }
-
-    private void getFileAttributes(PnfsGetFileAttributes msg) {
-        FsPath path = FsPath.create(msg.getPnfsPath());
-        for (FsPath parent = path.parent(); !parent.isRoot(); parent = parent.parent()) {
-            FileAttributes attributes = namespace.get(parent);
-            if (attributes != null && attributes.getFileType() != FileType.DIR) {
-                msg.setFailed(CacheException.NOT_DIR, "Not a directory");
-                return;
-            }
-        }
-        FileAttributes attributes = namespace.get(path);
-        if (attributes == null) {
-            msg.setFailed(CacheException.FILE_NOT_FOUND, "No such file or directory");
-        } else if (denied.contains(path)) {
-            msg.setFailed(CacheException.PERMISSION_DENIED, "Permission denied");
-        } else {
-            msg.setFileAttributes(attributes);
-        }
-    }
-
-    private DirectoryStream list(FsPath directory) throws CacheException {
-        listed.add(directory);
-        FileAttributes attributes = namespace.get(directory);
-        if (attributes == null || attributes.getFileType() != FileType.DIR) {
-            throw new FileNotFoundCacheException("No such directory: " + directory);
-        }
-        List<DirectoryEntry> entries = namespace.entrySet().stream()
-              .filter(e -> !e.getKey().isRoot() && e.getKey().parent().equals(directory))
-              .map(e -> new DirectoryEntry(e.getKey().name(), e.getValue()))
-              .collect(Collectors.toList());
-        return new DirectoryStream() {
-            @Override
-            public Iterator<DirectoryEntry> iterator() {
-                return entries.iterator();
-            }
-
-            @Override
-            public void close() {
-            }
-        };
+        dcache.onTapeOnly(path);
     }
 }
