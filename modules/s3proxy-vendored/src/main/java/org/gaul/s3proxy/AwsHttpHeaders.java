@@ -77,6 +77,8 @@ public final class AwsHttpHeaders {
     public static final String SERVER_SIDE_ENCRYPTION_CUSTOMER_KEY_MD5 =
             "x-amz-server-side-encryption-customer-key-md5";
     public static final String STORAGE_CLASS = "x-amz-storage-class";
+    // dCache patch: RestoreObject status on HEAD and GET.
+    public static final String RESTORE = "x-amz-restore";
     public static final String TRAILER = "x-amz-trailer";
     public static final String TRANSFER_ENCODING = "x-amz-te";
     public static final String USER_AGENT = "x-amz-user-agent";

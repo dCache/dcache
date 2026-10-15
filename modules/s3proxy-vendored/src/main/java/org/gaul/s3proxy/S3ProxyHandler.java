@@ -166,6 +166,9 @@ import software.amazon.awssdk.services.s3.model.PutBucketVersioningRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Error;
+import software.amazon.awssdk.services.s3.model.RestoreObjectRequest;
+import software.amazon.awssdk.services.s3.model.RestoreObjectResponse;
+import software.amazon.awssdk.services.s3.model.RestoreRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.s3.model.ServerSideEncryptionByDefault;
@@ -263,7 +266,7 @@ public class S3ProxyHandler {
             "publicAccessBlock",
             "replication",
             "requestPayment",
-            "restore",
+            // dCache patch: "restore" is handled (RestoreObject).
             "retention",
             "tagging",
             "torrent",
@@ -1274,6 +1277,13 @@ public class S3ProxyHandler {
                 handleMultiBlobRemove(request, response, is, blobStore,
                         path[1]);
                 return;
+            } else if (request.getParameter("restore") != null &&
+                    path.length > 2 && !path[2].isEmpty()) {
+                // dCache patch: RestoreObject.
+                setOperation(ctx, S3Operation.RESTORE_OBJECT);
+                handleRestoreObject(request, response, is, blobStore,
+                        path[1], path[2]);
+                return;
             } else if (request.getParameter("uploads") != null) {
                 setOperation(ctx, S3Operation.CREATE_MULTIPART_UPLOAD);
                 handleInitiateMultipartUpload(request, response, blobStore,
@@ -2127,6 +2137,42 @@ public class S3ProxyHandler {
         } catch (XMLStreamException xse) {
             throw new IOException(xse);
         }
+    }
+
+    /**
+     * dCache patch: RestoreObject.  Only the Days of a restore request are
+     * passed to the store; the store answers 202 when it starts a restore and
+     * 200 when the object is already restored, through the status of the
+     * response it returns.
+     */
+    private void handleRestoreObject(HttpServletRequest request,
+            HttpServletResponse response, InputStream is, BlobStore blobStore,
+            String containerName, String blobName) throws IOException {
+        byte[] body = ByteStreams.limit(is, v4MaxNonChunkedRequestSize + 1)
+                .readAllBytes();
+        if (body.length == v4MaxNonChunkedRequestSize + 1) {
+            throw new S3ProxyException(S3ErrorCode.MAX_MESSAGE_LENGTH_EXCEEDED);
+        }
+        var restoreRequest = RestoreRequest.builder();
+        if (body.length > 0) {
+            RestoreObjectXmlRequest xml = readXmlBody(body,
+                    RestoreObjectXmlRequest.class);
+            if (xml.days() != null && xml.days() < 1) {
+                throw new S3ProxyException(S3ErrorCode.INVALID_ARGUMENT,
+                        "Days must be a positive integer");
+            }
+            restoreRequest.days(xml.days());
+        }
+        RestoreObjectResponse result = blobStore.restoreObject(
+                RestoreObjectRequest.builder()
+                        .bucket(containerName)
+                        .key(blobName)
+                        .restoreRequest(restoreRequest.build())
+                        .build());
+        var httpResponse = result.sdkHttpResponse();
+        response.setStatus(httpResponse == null ?
+                HttpServletResponse.SC_ACCEPTED : httpResponse.statusCode());
+        addCorsResponseHeader(request, response);
     }
 
     private void handleSetBucketVersioning(HttpServletRequest request,
@@ -6069,6 +6115,11 @@ public class S3ProxyHandler {
         String storageClass = metadata.storageClassAsString();
         if (storageClass != null) {
             response.addHeader(AwsHttpHeaders.STORAGE_CLASS, storageClass);
+        }
+        // dCache patch: RestoreObject status.
+        String restore = metadata.restore();
+        if (restore != null) {
+            response.addHeader(AwsHttpHeaders.RESTORE, restore);
         }
         addServerSideEncryptionHeaders(response,
                 metadata.serverSideEncryptionAsString(),

@@ -35,6 +35,7 @@ public class DcacheBlobStoreFactory implements S3BlobStoreFactory {
     private final DirectoryListSource lister;
     private final PoolMonitor poolMonitor;
     private final S3ObjectReader reader;
+    private final S3ObjectRestorer restorer;
     private final int maxListEntries;
 
     /**
@@ -42,18 +43,20 @@ public class DcacheBlobStoreFactory implements S3BlobStoreFactory {
      *                       it ends the page early
      */
     public DcacheBlobStoreFactory(PnfsHandler pnfs, DirectoryListSource lister,
-          PoolMonitor poolMonitor, S3ObjectReader reader, int maxListEntries) {
+          PoolMonitor poolMonitor, S3ObjectReader reader, S3ObjectRestorer restorer,
+          int maxListEntries) {
         this.pnfs = requireNonNull(pnfs);
         this.lister = requireNonNull(lister);
         this.poolMonitor = requireNonNull(poolMonitor);
         this.reader = requireNonNull(reader);
+        this.restorer = requireNonNull(restorer);
         this.maxListEntries = maxListEntries;
     }
 
     @Override
     public BlobStore create(Supplier<S3User> user) {
         String clientHost = RequestOrigin.current().map(InetAddress::getHostAddress).orElse("");
-        return new DcacheBlobStore(user, pnfs, lister, poolMonitor, reader, clientHost,
+        return new DcacheBlobStore(user, pnfs, lister, poolMonitor, reader, restorer, clientHost,
               maxListEntries);
     }
 }

@@ -13,6 +13,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -26,6 +27,7 @@ import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.TimeoutCacheException;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.time.Instant;
@@ -68,6 +70,8 @@ import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.ObjectStorageClass;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.RestoreObjectRequest;
+import software.amazon.awssdk.services.s3.model.RestoreRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.s3.model.StorageClass;
@@ -90,6 +94,7 @@ public class DcacheBlobStoreTest {
     private DirectoryListSource lister;
     private PoolMonitor poolMonitor;
     private S3ObjectReader reader;
+    private S3ObjectRestorer restorer;
     private DcacheBlobStore store;
     private int nextId;
 
@@ -117,6 +122,8 @@ public class DcacheBlobStoreTest {
                   .anyMatch(p -> namespace.get(p).getPnfsId().equals(attributes.getPnfsId()))
                   ? FileLocality.NEARLINE : FileLocality.ONLINE;
         });
+
+        restorer = mock(S3ObjectRestorer.class);
 
         reader = mock(S3ObjectReader.class);
         when(reader.read(any(), any(), any(), anyLong(), anyLong())).thenAnswer(i -> {
@@ -376,6 +383,112 @@ public class DcacheBlobStoreTest {
         assertThat(e.statusCode(), is(412));
     }
 
+    // Restore
+
+    @Test
+    public void shouldAnswerRestoreOfObjectOnDiskWithOk() throws Exception {
+        givenDirectory("/data/s3/bucket");
+        givenFile("/data/s3/bucket/file", "hello");
+
+        assertThat(store.restoreObject(restore("file", 7)).sdkHttpResponse().statusCode(),
+              is(200));
+        verify(restorer, never()).restore(any(), any(), any(), anyInt());
+    }
+
+    @Test
+    public void shouldStartRestoreOfTapeOnlyObject() throws Exception {
+        givenDirectory("/data/s3/bucket");
+        FileAttributes attributes = givenFile("/data/s3/bucket/dir/file", "hello");
+        givenDirectory("/data/s3/bucket/dir");
+        givenOnTapeOnly("/data/s3/bucket/dir/file");
+
+        assertThat(store.restoreObject(restore("dir/file", 7)).sdkHttpResponse().statusCode(),
+              is(202));
+        verify(restorer).restore(any(), eq(FsPath.create("/data/s3/bucket/dir/file")),
+              eq(attributes), eq(7));
+    }
+
+    @Test
+    public void shouldRestoreForOneDayByDefault() throws Exception {
+        givenDirectory("/data/s3/bucket");
+        givenFile("/data/s3/bucket/file", "hello");
+        givenOnTapeOnly("/data/s3/bucket/file");
+
+        store.restoreObject(RestoreObjectRequest.builder().bucket("bucket").key("file").build());
+
+        verify(restorer).restore(any(), any(), any(), eq(1));
+    }
+
+    @Test
+    public void shouldRefuseRestoreWhileRestoring() throws Exception {
+        givenDirectory("/data/s3/bucket");
+        givenFile("/data/s3/bucket/file", "hello");
+        givenOnTapeOnly("/data/s3/bucket/file");
+        when(restorer.isRestoring(any(), any())).thenReturn(true);
+
+        S3Exception e = assertThrows(S3Exception.class,
+              () -> store.restoreObject(restore("file", 1)));
+
+        assertThat(e.statusCode(), is(409));
+        assertThat(S3Exceptions.errorCode(e), is("RestoreAlreadyInProgress"));
+        verify(restorer, never()).restore(any(), any(), any(), anyInt());
+    }
+
+    @Test
+    public void shouldNotRestoreMissingObject() {
+        givenDirectory("/data/s3/bucket");
+
+        assertThrows(NoSuchKeyException.class, () -> store.restoreObject(restore("file", 1)));
+    }
+
+    @Test
+    public void shouldReportOngoingRestoreOnHead() throws Exception {
+        givenDirectory("/data/s3/bucket");
+        givenFile("/data/s3/bucket/file", "hello");
+        givenOnTapeOnly("/data/s3/bucket/file");
+        when(restorer.isRestoring(any(), any())).thenReturn(true);
+
+        assertThat(store.blobMetadata("bucket", "file").restore(),
+              is("ongoing-request=\"true\""));
+    }
+
+    @Test
+    public void shouldNotReportRestoreOfTapeOnlyObjectNotBeingRestored() throws Exception {
+        givenDirectory("/data/s3/bucket");
+        givenFile("/data/s3/bucket/file", "hello");
+        givenOnTapeOnly("/data/s3/bucket/file");
+
+        assertThat(store.blobMetadata("bucket", "file").restore(), is(nullValue()));
+    }
+
+    @Test
+    public void shouldNotAskForRestoreOfObjectOnDisk() throws Exception {
+        givenDirectory("/data/s3/bucket");
+        givenFile("/data/s3/bucket/file", "hello");
+
+        assertThat(store.blobMetadata("bucket", "file").restore(), is(nullValue()));
+        verify(restorer, never()).isRestoring(any(), any());
+    }
+
+    @Test
+    public void shouldAnswerHeadWhenRestoreStatusIsUnknown() throws Exception {
+        givenDirectory("/data/s3/bucket");
+        givenFile("/data/s3/bucket/file", "hello");
+        givenOnTapeOnly("/data/s3/bucket/file");
+        when(restorer.isRestoring(any(), any())).thenThrow(new TimeoutCacheException("down"));
+
+        HeadObjectResponse head = store.blobMetadata("bucket", "file");
+
+        assertThat(head.restore(), is(nullValue()));
+        assertThat(head.storageClass(), is(StorageClass.GLACIER));
+    }
+
+    private static RestoreObjectRequest restore(String key, int days) {
+        return RestoreObjectRequest.builder().bucket("bucket").key(key)
+              .restoreRequest(RestoreRequest.builder().days(days).build())
+              .build();
+    }
+
     // Listing
 
     @Test
@@ -556,7 +669,7 @@ public class DcacheBlobStoreTest {
     private DcacheBlobStore newStore(int maxListEntries) {
         S3User user = new S3User("AKIAEXAMPLE", subject, Restrictions.none(), ROOT);
         return new DcacheBlobStore(() -> user, new PnfsHandler(pnfsStub), lister, poolMonitor,
-              reader, "192.0.2.1", maxListEntries);
+              reader, restorer, "192.0.2.1", maxListEntries);
     }
 
     /**
