@@ -24,6 +24,7 @@ import com.google.common.net.HttpHeaders;
 import com.google.common.net.InetAddresses;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.util.List;
 import java.util.Optional;
@@ -99,6 +100,10 @@ public class S3JettyHandler extends AbstractHandler {
                 // Typically the client went away; nothing left to tell it.
                 LOGGER.debug("S3 request failed: {}", e.toString());
                 throw (IOException) e;
+            } else if (e instanceof UncheckedIOException) {
+                // Reading an upload from the client failed.
+                LOGGER.debug("S3 request failed: {}", e.getCause().toString());
+                throw ((UncheckedIOException) e).getCause();
             } else {
                 LOGGER.error("Bug while handling S3 request {} {}", request.getMethod(),
                       request.getRequestURI(), e);

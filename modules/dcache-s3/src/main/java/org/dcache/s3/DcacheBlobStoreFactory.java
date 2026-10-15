@@ -32,6 +32,7 @@ public class DcacheBlobStoreFactory implements S3BlobStoreFactory {
     private final PnfsHandler pnfs;
     private final DirectoryListSource lister;
     private final S3ObjectReader reader;
+    private final S3ObjectWriter writer;
     private final S3ObjectRestorer restorer;
     private final int maxListEntries;
 
@@ -40,16 +41,19 @@ public class DcacheBlobStoreFactory implements S3BlobStoreFactory {
      *                       it ends the page early
      */
     public DcacheBlobStoreFactory(PnfsHandler pnfs, DirectoryListSource lister,
-          S3ObjectReader reader, S3ObjectRestorer restorer, int maxListEntries) {
+          S3ObjectReader reader, S3ObjectWriter writer, S3ObjectRestorer restorer,
+          int maxListEntries) {
         this.pnfs = requireNonNull(pnfs);
         this.lister = requireNonNull(lister);
         this.reader = requireNonNull(reader);
+        this.writer = requireNonNull(writer);
         this.restorer = requireNonNull(restorer);
         this.maxListEntries = maxListEntries;
     }
 
     @Override
     public BlobStore create(Supplier<S3User> user) {
-        return new DcacheBlobStore(user, pnfs, lister, reader, restorer, maxListEntries);
+        return new DcacheBlobStore(user, pnfs, lister, reader, writer, restorer,
+              maxListEntries);
     }
 }

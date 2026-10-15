@@ -3,12 +3,14 @@ package org.dcache.s3;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -20,13 +22,17 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.TimeoutCacheException;
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Base64;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -44,17 +50,24 @@ import org.junit.Before;
 import org.junit.Test;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.services.s3.model.Bucket;
+import software.amazon.awssdk.services.s3.model.BucketAlreadyOwnedByYouException;
+import software.amazon.awssdk.services.s3.model.BucketCannedACL;
 import software.amazon.awssdk.services.s3.model.CommonPrefix;
+import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
+import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
+import software.amazon.awssdk.services.s3.model.MetadataDirective;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
+import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 import software.amazon.awssdk.services.s3.model.ObjectStorageClass;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.RestoreObjectRequest;
 import software.amazon.awssdk.services.s3.model.RestoreRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
@@ -65,6 +78,11 @@ public class DcacheBlobStoreTest {
 
     private static final FsPath ROOT = FsPath.create("/data/s3");
         private static final String MD5 = "9e107d9d372bb6826bd81d3542a419d6";
+
+    /**
+     * The MD5 checksum of "hello world".
+     */
+    private static final String HELLO_MD5 = "5eb63bbbe01eeed093cb22bb8f5acdc3";
 
     private final FakeDcache dcache = new FakeDcache();
     private final List<FsPath> listed = dcache.listed;
@@ -620,21 +638,358 @@ public class DcacheBlobStoreTest {
     // Writes
 
     @Test
-    public void shouldNotImplementWrites() {
+    public void shouldPutObject() throws Exception {
         givenDirectory("/data/s3/bucket");
 
-        S3ProxyException e = assertThrows(S3ProxyException.class, () -> store.putBlob(
-              PutObjectRequest.builder().bucket("bucket").key("file").build(),
-              InputStream.nullInputStream()));
+        String eTag = put("file", "hello world").eTag();
+
+        assertThat(eTag, is('"' + HELLO_MD5 + '"'));
+        assertThat(contentOf("/data/s3/bucket/file"), is("hello world"));
+        assertThat(store.blobMetadata("bucket", "file").eTag(), is(eTag));
+        assertThat(dcache.written.get(0).parent(), is(FsPath.create("/data/s3/bucket")));
+        assertThat(dcache.written.get(0).name(), startsWith(".s3-tmp-"));
+        assertThat(filesIn("/data/s3/bucket"), contains("file"));
+    }
+
+    @Test
+    public void shouldPutEmptyObject() throws Exception {
+        givenDirectory("/data/s3/bucket");
+
+        put("empty", "");
+
+        assertThat(contentOf("/data/s3/bucket/empty"), is(""));
+        assertThat(dcache.written.size(), is(1));
+    }
+
+    @Test
+    public void shouldStoreContentTypeAndUserMetadata() {
+        givenDirectory("/data/s3/bucket");
+
+        store.putBlob(PutObjectRequest.builder().bucket("bucket").key("file")
+                    .contentLength(5L).contentType("text/plain").metadata(Map.of("color", "blue"))
+                    .build(),
+              new ByteArrayInputStream("hello".getBytes(UTF_8)));
+
+        HeadObjectResponse head = store.blobMetadata("bucket", "file");
+        assertThat(head.contentType(), is("text/plain"));
+        assertThat(head.metadata(), is(equalTo(Map.of("color", "blue"))));
+    }
+
+    @Test
+    public void shouldCreateDirectoriesOfKey() throws Exception {
+        givenDirectory("/data/s3/bucket");
+
+        put("a/b/file", "hello world");
+
+        assertThat(contentOf("/data/s3/bucket/a/b/file"), is("hello world"));
+    }
+
+    @Test
+    public void shouldReplaceObject() throws Exception {
+        givenDirectory("/data/s3/bucket");
+        givenFile("/data/s3/bucket/file", "old");
+
+        put("file", "hello world");
+
+        assertThat(contentOf("/data/s3/bucket/file"), is("hello world"));
+        assertThat(filesIn("/data/s3/bucket"), contains("file"));
+    }
+
+    @Test
+    public void shouldAcceptMatchingContentMd5() throws Exception {
+        givenDirectory("/data/s3/bucket");
+
+        put(putRequest("file", "hello world").contentMD5(base64(HELLO_MD5)), "hello world");
+
+        assertThat(contentOf("/data/s3/bucket/file"), is("hello world"));
+    }
+
+    @Test
+    public void shouldRejectBadDigestAndKeepObject() throws Exception {
+        givenDirectory("/data/s3/bucket");
+        givenFile("/data/s3/bucket/file", "old");
+
+        S3ProxyException e = assertThrows(S3ProxyException.class,
+              () -> put(putRequest("file", "hello").contentMD5(base64(HELLO_MD5)), "hello"));
+
+        assertThat(e.getError(), is(S3ErrorCode.BAD_DIGEST));
+        assertThat(contentOf("/data/s3/bucket/file"), is("old"));
+        assertThat(filesIn("/data/s3/bucket"), contains("file"));
+    }
+
+    @Test
+    public void shouldKeepObjectWhenWriteFails() throws Exception {
+        givenDirectory("/data/s3/bucket");
+        givenFile("/data/s3/bucket/file", "old");
+        dcache.writeError = new CacheException(CacheException.NO_POOL_ONLINE, "No pool online");
+
+        S3Exception e = assertThrows(S3Exception.class, () -> put("file", "hello"));
+
+        assertThat(e.statusCode(), is(503));
+        assertThat(contentOf("/data/s3/bucket/file"), is("old"));
+    }
+
+    @Test
+    public void shouldNotPutIntoMissingBucket() {
+        assertThrows(NoSuchBucketException.class, () -> put("file", "hello"));
+    }
+
+    @Test
+    public void shouldRefuseKeyBelowObject() {
+        givenDirectory("/data/s3/bucket");
+        givenFile("/data/s3/bucket/file", "x");
+
+        S3Exception e = assertThrows(S3Exception.class, () -> put("file/below", "hello"));
+
+        assertThat(e.awsErrorDetails().errorCode(), is("InvalidArgument"));
+    }
+
+    @Test
+    public void shouldRefuseKeyOfDirectory() {
+        givenDirectory("/data/s3/bucket/dir");
+        givenFile("/data/s3/bucket/dir/file", "x");
+
+        S3Exception e = assertThrows(S3Exception.class, () -> put("dir", "hello"));
+
+        assertThat(e.awsErrorDetails().errorCode(), is("InvalidArgument"));
+        assertThat(filesIn("/data/s3/bucket"), contains("dir"));
+    }
+
+    @Test
+    public void shouldNotImplementPublicObjects() {
+        givenDirectory("/data/s3/bucket");
+
+        S3ProxyException e = assertThrows(S3ProxyException.class,
+              () -> put(putRequest("file", "x").acl(ObjectCannedACL.PUBLIC_READ), "x"));
+
         assertThat(e.getError(), is(S3ErrorCode.NOT_IMPLEMENTED));
+    }
+
+    @Test
+    public void shouldCopyObjectWithItsMetadata() throws Exception {
+        givenDirectory("/data/s3/bucket");
+        FileAttributes source = givenFile("/data/s3/bucket/file", "hello world");
+        source.setXattrs(Map.of("s3.content-type", "text/plain", "s3.meta.color", "blue"));
+
+        String eTag = store.copyBlob(copy("file", "copy").build()).copyObjectResult().eTag();
+
+        assertThat(eTag, is('"' + HELLO_MD5 + '"'));
+        assertThat(contentOf("/data/s3/bucket/copy"), is("hello world"));
+        HeadObjectResponse head = store.blobMetadata("bucket", "copy");
+        assertThat(head.contentType(), is("text/plain"));
+        assertThat(head.metadata(), is(equalTo(Map.of("color", "blue"))));
+    }
+
+    @Test
+    public void shouldCopyObjectReplacingMetadata() throws Exception {
+        givenDirectory("/data/s3/bucket");
+        FileAttributes source = givenFile("/data/s3/bucket/file", "hello world");
+        source.setXattrs(Map.of("s3.content-type", "text/plain", "s3.meta.color", "blue"));
+
+        store.copyBlob(copy("file", "file").metadataDirective(MetadataDirective.REPLACE)
+              .contentType("text/html").metadata(Map.of("size", "big")).build());
+
+        assertThat(contentOf("/data/s3/bucket/file"), is("hello world"));
+        HeadObjectResponse head = store.blobMetadata("bucket", "file");
+        assertThat(head.contentType(), is("text/html"));
+        assertThat(head.metadata(), is(equalTo(Map.of("size", "big"))));
+    }
+
+    @Test
+    public void shouldNotCopyTapeOnlyObject() {
+        givenDirectory("/data/s3/bucket");
+        givenFile("/data/s3/bucket/file", "hello world");
+        givenOnTapeOnly("/data/s3/bucket/file");
+
+        S3Exception e = assertThrows(S3Exception.class,
+              () -> store.copyBlob(copy("file", "copy").build()));
+
+        assertThat(e.awsErrorDetails().errorCode(), is("InvalidObjectState"));
+    }
+
+    @Test
+    public void shouldHonourCopySourceIfMatch() {
+        givenDirectory("/data/s3/bucket");
+        givenFile("/data/s3/bucket/file", "hello world");
+
+        S3Exception e = assertThrows(S3Exception.class,
+              () -> store.copyBlob(copy("file", "copy").copySourceIfMatch("\"other\"").build()));
+
+        assertThat(e.statusCode(), is(412));
+        assertThat(dcache.written, is(emptyIterable()));
+    }
+
+    @Test
+    public void shouldDeleteObjectAndKeepDirectories() {
+        givenDirectory("/data/s3/bucket");
+        givenFile("/data/s3/bucket/dir/file", "x");
+
+        store.removeBlob("bucket", "dir/file");
+
+        assertThat(filesIn("/data/s3/bucket"), contains("dir"));
+        assertThat(filesIn("/data/s3/bucket/dir"), is(emptyIterable()));
+    }
+
+    @Test
+    public void shouldDeleteMissingObject() {
+        givenDirectory("/data/s3/bucket");
+
+        store.removeBlob("bucket", "missing/file");
+    }
+
+    @Test
+    public void shouldNotDeleteDirectoryAsObject() {
+        givenDirectory("/data/s3/bucket/dir");
+
+        store.removeBlob("bucket", "dir");
+
+        assertThat(filesIn("/data/s3/bucket"), contains("dir"));
+    }
+
+    @Test
+    public void shouldNotDeleteInMissingBucket() {
+        assertThrows(NoSuchBucketException.class, () -> store.removeBlob("bucket", "file"));
+    }
+
+    @Test
+    public void shouldDenyDeleteWhenNamespaceDenies() {
+        givenDirectory("/data/s3/bucket");
+        givenFile("/data/s3/bucket/file", "x");
+        denied.add(FsPath.create("/data/s3/bucket/file"));
+
+        S3ProxyException e = assertThrows(S3ProxyException.class,
+              () -> store.removeBlob("bucket", "file"));
+
+        assertThat(e.getError(), is(S3ErrorCode.ACCESS_DENIED));
+    }
+
+    @Test
+    public void shouldCreateBucket() {
+        store.createContainer("bucket");
+
+        assertThat(filesIn("/data/s3"), contains("bucket"));
+    }
+
+    @Test
+    public void shouldRefuseToCreateExistingBucket() {
+        givenDirectory("/data/s3/bucket");
+
+        assertThrows(BucketAlreadyOwnedByYouException.class,
+              () -> store.createContainer("bucket"));
+    }
+
+    @Test
+    public void shouldReportExistingBucketWhereBucketsCannotBeCreated() {
+        givenDirectory("/data/s3/bucket");
+        denied.add(FsPath.create("/data/s3"));
+
+        assertThrows(BucketAlreadyOwnedByYouException.class,
+              () -> store.createContainer("bucket"));
+    }
+
+    @Test
+    public void shouldDenyCreatingBucketWhereBucketsCannotBeCreated() {
+        denied.add(FsPath.create("/data/s3"));
+
+        S3ProxyException e = assertThrows(S3ProxyException.class,
+              () -> store.createContainer("bucket"));
+
+        assertThat(e.getError(), is(S3ErrorCode.ACCESS_DENIED));
+    }
+
+    @Test
+    public void shouldNotImplementPublicBuckets() {
+        S3ProxyException e = assertThrows(S3ProxyException.class,
+              () -> store.createContainer(CreateBucketRequest.builder().bucket("bucket")
+                    .acl(BucketCannedACL.PUBLIC_READ)
+                    .build()));
+
+        assertThat(e.getError(), is(S3ErrorCode.NOT_IMPLEMENTED));
+    }
+
+    @Test
+    public void shouldDeleteBucketWithEmptyDirectories() {
+        givenDirectory("/data/s3/bucket/a/b");
+        givenDirectory("/data/s3/bucket/c");
+
+        store.deleteBucket("bucket");
+
+        assertThat(filesIn("/data/s3"), is(emptyIterable()));
+    }
+
+    @Test
+    public void shouldNotDeleteBucketWithObjects() {
+        givenDirectory("/data/s3/bucket/a");
+        givenFile("/data/s3/bucket/c/file", "x");
+
+        S3Exception e = assertThrows(S3Exception.class, () -> store.deleteBucket("bucket"));
+
+        assertThat(e.awsErrorDetails().errorCode(), is("BucketNotEmpty"));
+        assertThat(filesIn("/data/s3/bucket"), containsInAnyOrder("a", "c"));
+    }
+
+    @Test
+    public void shouldNotDeleteBucketWithUploadInProgress() {
+        givenFile("/data/s3/bucket/.s3-tmp-1234", "x");
+
+        S3Exception e = assertThrows(S3Exception.class, () -> store.deleteBucket("bucket"));
+
+        assertThat(e.awsErrorDetails().errorCode(), is("BucketNotEmpty"));
+    }
+
+    @Test
+    public void shouldDeleteMissingBucketQuietly() {
+        store.deleteBucket("bucket");
     }
 
     // Helpers
 
     private DcacheBlobStore newStore(int maxListEntries) {
         S3User user = new S3User("AKIAEXAMPLE", subject, Restrictions.none(), ROOT);
-        return new DcacheBlobStore(() -> user, pnfs, lister, reader, restorer,
+        return new DcacheBlobStore(() -> user, pnfs, lister, reader, dcache.writer(), restorer,
               maxListEntries);
+    }
+
+    private static PutObjectRequest.Builder putRequest(String key, String data) {
+        return PutObjectRequest.builder().bucket("bucket").key(key)
+              .contentLength((long) data.getBytes(UTF_8).length);
+    }
+
+    private PutObjectResponse put(String key, String data) {
+        return put(putRequest(key, data), data);
+    }
+
+    private PutObjectResponse put(
+          PutObjectRequest.Builder request, String data) {
+        return store.putBlob(request.build(), new ByteArrayInputStream(data.getBytes(UTF_8)));
+    }
+
+    private static CopyObjectRequest.Builder copy(String sourceKey, String key) {
+        return CopyObjectRequest.builder().sourceBucket("bucket").sourceKey(sourceKey)
+              .destinationBucket("bucket").destinationKey(key);
+    }
+
+    private static String base64(String hex) {
+        return Base64.getEncoder().encodeToString(HexFormat.of().parseHex(hex));
+    }
+
+    private String contentOf(String path) {
+        byte[] data = dcache.content.get(FsPath.create(path));
+        return data == null ? null : new String(data, UTF_8);
+    }
+
+    /**
+     * Returns the names in a directory.
+     */
+    private List<String> filesIn(String path) {
+        FsPath directory = FsPath.create(path);
+        synchronized (dcache.namespace) {
+            return dcache.namespace.keySet().stream()
+                  .filter(p -> !p.isRoot() && p.parent().equals(directory))
+                  .map(FsPath::name)
+                  .sorted()
+                  .toList();
+        }
     }
 
     /**

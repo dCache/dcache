@@ -3,6 +3,8 @@ package org.dcache.s3;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThrows;
@@ -24,7 +26,9 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.security.auth.Subject;
@@ -48,12 +52,15 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.Bucket;
 import software.amazon.awssdk.services.s3.model.CommonPrefix;
+import software.amazon.awssdk.services.s3.model.DeleteObjectsResponse;
+import software.amazon.awssdk.services.s3.model.DeletedObject;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
+import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.ObjectStorageClass;
 import software.amazon.awssdk.services.s3.model.RestoreObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Exception;
@@ -99,7 +106,7 @@ public class S3ClientTest {
         S3KeyStore keyStore = key -> key.equals(ACCESS_KEY)
               ? Optional.of(SECRET) : Optional.empty();
         var factory = new DcacheBlobStoreFactory(dcache.pnfsHandler(), dcache.lister(),
-              dcache.reader(), restorer, 1000);
+              dcache.reader(), dcache.writer(), restorer, 1000);
         var locator = new DcacheBlobStoreLocator(keyStore, loginStrategy,
               FsPath.create("/data/s3"), factory);
         var handler = new DcacheS3ProxyHandler(locator, AuthenticationType.AWS_V2_OR_V4, "",
@@ -330,12 +337,131 @@ public class S3ClientTest {
         }
     }
 
+    // Writes
+
     @Test
-    public void shouldRefuseWrite() {
+    public void shouldPutAndGetObject() {
+        String eTag = s3.putObject(b -> b.bucket("bucket").key("new/file").contentType("text/plain")
+                    .metadata(Map.of("color", "blue")),
+              RequestBody.fromString("hello world")).eTag();
+
+        assertThat(eTag, is('"' + MD5 + '"'));
+        ResponseBytes<GetObjectResponse> object = s3.getObjectAsBytes(
+              b -> b.bucket("bucket").key("new/file"));
+        assertThat(object.asUtf8String(), is("hello world"));
+        assertThat(object.response().eTag(), is(eTag));
+        assertThat(object.response().contentType(), is("text/plain"));
+        assertThat(object.response().metadata(), is(Map.of("color", "blue")));
+    }
+
+    /**
+     * Jetty 9 passes on such a Content-Type as "text/plain; charset=UTF-8", which broke the
+     * signature, and getContentType() normalises it further.
+     */
+    @Test
+    public void shouldPutObjectWithCharset() {
+        s3.putObject(b -> b.bucket("bucket").key("text").contentType("text/plain; charset=utf-8"),
+              RequestBody.fromString("hello world"));
+
+        assertThat(s3.headObject(b -> b.bucket("bucket").key("text")).contentType(),
+              is("text/plain;charset=utf-8"));
+    }
+
+    @Test
+    public void shouldPutObjectWithUpperCaseCharset() {
+        s3.putObject(b -> b.bucket("bucket").key("text").contentType("text/plain; charset=UTF-8"),
+              RequestBody.fromString("hello world"));
+
+        assertThat(s3.headObject(b -> b.bucket("bucket").key("text")).contentLength(), is(11L));
+    }
+
+    @Test
+    public void shouldPutLargeObject() {
+        byte[] data = new byte[3 * 1024 * 1024 + 7];
+        new Random(1).nextBytes(data);
+
+        s3.putObject(b -> b.bucket("bucket").key("large"), RequestBody.fromBytes(data));
+
+        assertThat(s3.getObjectAsBytes(b -> b.bucket("bucket").key("large")).asByteArray(),
+              is(data));
+    }
+
+    @Test
+    public void shouldReplaceObject() {
+        s3.putObject(b -> b.bucket("bucket").key("hello.txt"), RequestBody.fromString("bye"));
+
+        assertThat(s3.getObjectAsBytes(b -> b.bucket("bucket").key("hello.txt"))
+              .asUtf8String(), is("bye"));
+        assertThat(s3.listObjectsV2(b -> b.bucket("bucket").delimiter("/")).contents().stream()
+              .map(S3Object::key).toList(), contains("hello.txt", "tape"));
+    }
+
+    @Test
+    public void shouldRejectBadContentMd5() {
         S3Exception e = assertThrows(S3Exception.class, () -> s3.putObject(
-              b -> b.bucket("bucket").key("new"), RequestBody.fromString("data")));
+              b -> b.bucket("bucket").key("hello.txt").contentMD5("XrY7u+Ae7tCTyyK7j1rNww=="),
+              RequestBody.fromString("bye")));
+
+        assertThat(e.statusCode(), is(400));
+        assertThat(e.awsErrorDetails().errorCode(), is("BadDigest"));
+        assertThat(s3.getObjectAsBytes(b -> b.bucket("bucket").key("hello.txt"))
+              .asUtf8String(), is("hello world"));
+    }
+
+    @Test
+    public void shouldNotImplementConditionalPut() {
+        S3Exception e = assertThrows(S3Exception.class, () -> s3.putObject(
+              b -> b.bucket("bucket").key("new").ifNoneMatch("*"),
+              RequestBody.fromString("data")));
 
         assertThat(e.statusCode(), is(501));
-        assertThat(e.awsErrorDetails().errorCode(), is("NotImplemented"));
+    }
+
+    @Test
+    public void shouldCopyObject() {
+        s3.copyObject(b -> b.sourceBucket("bucket").sourceKey("hello.txt")
+              .destinationBucket("other").destinationKey("copy"));
+
+        assertThat(s3.getObjectAsBytes(b -> b.bucket("other").key("copy")).asUtf8String(),
+              is("hello world"));
+    }
+
+    @Test
+    public void shouldDeleteObject() {
+        s3.deleteObject(b -> b.bucket("bucket").key("hello.txt"));
+
+        assertThrows(NoSuchKeyException.class,
+              () -> s3.headObject(b -> b.bucket("bucket").key("hello.txt")));
+    }
+
+    @Test
+    public void shouldDeleteObjects() {
+        DeleteObjectsResponse response = s3.deleteObjects(b -> b.bucket("bucket")
+              .delete(d -> d.objects(ObjectIdentifier.builder().key("dir/a").build(),
+                    ObjectIdentifier.builder().key("dir/b").build(),
+                    ObjectIdentifier.builder().key("missing").build())));
+
+        assertThat(response.deleted().stream().map(DeletedObject::key).toList(),
+              containsInAnyOrder("dir/a", "dir/b", "missing"));
+        assertThat(response.errors(), is(empty()));
+        assertThat(s3.listObjectsV2(b -> b.bucket("bucket").prefix("dir/")).contents().stream()
+              .map(S3Object::key).toList(), contains("dir/sub/c"));
+    }
+
+    @Test
+    public void shouldCreateAndDeleteBucket() {
+        s3.createBucket(b -> b.bucket("new-bucket"));
+        s3.putObject(b -> b.bucket("new-bucket").key("a/b"), RequestBody.fromString("x"));
+
+        S3Exception e = assertThrows(S3Exception.class,
+              () -> s3.deleteBucket(b -> b.bucket("new-bucket")));
+        assertThat(e.statusCode(), is(409));
+        assertThat(e.awsErrorDetails().errorCode(), is("BucketNotEmpty"));
+
+        s3.deleteObject(b -> b.bucket("new-bucket").key("a/b"));
+        s3.deleteBucket(b -> b.bucket("new-bucket"));
+
+        assertThat(s3.listBuckets().buckets().stream().map(Bucket::name).toList(),
+              contains("bucket", "other"));
     }
 }

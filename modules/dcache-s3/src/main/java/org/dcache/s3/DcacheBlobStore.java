@@ -33,21 +33,33 @@ import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
 import com.google.common.hash.Hashing;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.NotDirCacheException;
+import diskCacheV111.util.NotFileCacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Supplier;
+import org.dcache.auth.attributes.Restrictions;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.util.Checksum;
@@ -76,11 +88,14 @@ import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 import software.amazon.awssdk.services.s3.model.CopyObjectResponse;
+import software.amazon.awssdk.services.s3.model.CopyObjectResult;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 import software.amazon.awssdk.services.s3.model.CreateBucketResponse;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
+import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
+import software.amazon.awssdk.services.s3.model.DeleteObjectsResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
@@ -90,6 +105,7 @@ import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListBucketsResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
+import software.amazon.awssdk.services.s3.model.MetadataDirective;
 import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 import software.amazon.awssdk.services.s3.model.Part;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
@@ -115,7 +131,11 @@ import software.amazon.awssdk.services.s3.model.UploadPartResponse;
  * {@code GLACIER} files are restored by {@link S3ObjectRestorer}; while that is in progress, HEAD
  * answers with {@code x-amz-restore: ongoing-request="true"}.
  * <p>
- * This store supports reading only; writes are answered with {@code NotImplemented}.
+ * An upload writes to a hidden file next to the object's file and renames it over the object
+ * once the data is complete, so readers see either the old or the new object.  The door
+ * computes the MD5 checksum of the data, which becomes the ETag and is stored as the file's
+ * checksum.  Content type and user metadata are stored as extended attributes.  Deleting an
+ * object keeps its parent directories.  Multipart uploads are not supported yet.
  */
 public class DcacheBlobStore implements BlobStore {
 
@@ -142,6 +162,8 @@ public class DcacheBlobStore implements BlobStore {
     private static final Set<FileAttribute> LIST_ATTRIBUTES = Sets.immutableEnumSet(
           TYPE, PNFSID, SIZE, MODIFICATION_TIME, CHECKSUM, LOCATIONS, STORAGEINFO);
 
+    private static final Set<FileAttribute> TYPE_ATTRIBUTES = Sets.immutableEnumSet(TYPE);
+
     private static final Set<FileAttribute> OBJECT_ATTRIBUTES = Sets.immutableEnumSet(
           Sets.union(LIST_ATTRIBUTES, EnumSet.of(XATTR)));
 
@@ -149,6 +171,7 @@ public class DcacheBlobStore implements BlobStore {
     private final PnfsHandler pnfs;
     private final DirectoryListSource lister;
     private final S3ObjectReader reader;
+    private final S3ObjectWriter writer;
     private final S3ObjectRestorer restorer;
     private final int maxListEntries;
 
@@ -157,16 +180,19 @@ public class DcacheBlobStore implements BlobStore {
      * @param pnfs           the door's PnfsHandler; requests run as {@code user}
      * @param lister         lists directories
      * @param reader         reads file content
+     * @param writer         writes file content
      * @param restorer       brings files back from tape
      * @param maxListEntries how many directory entries a listing without delimiter reads before
      *                       it ends the page early
      */
     public DcacheBlobStore(Supplier<S3User> user, PnfsHandler pnfs, DirectoryListSource lister,
-          S3ObjectReader reader, S3ObjectRestorer restorer, int maxListEntries) {
+          S3ObjectReader reader, S3ObjectWriter writer, S3ObjectRestorer restorer,
+          int maxListEntries) {
         this.user = requireNonNull(user);
         this.pnfs = requireNonNull(pnfs);
         this.lister = requireNonNull(lister);
         this.reader = requireNonNull(reader);
+        this.writer = requireNonNull(writer);
         this.restorer = requireNonNull(restorer);
         this.maxListEntries = maxListEntries;
     }
@@ -212,6 +238,110 @@ public class DcacheBlobStore implements BlobStore {
         S3User u = user.get();
         bucketDirectory(u, container);
         return BucketCannedACL.PRIVATE;
+    }
+
+    @Override
+    public void setContainerAccess(String container, BucketCannedACL access) {
+        if (access != BucketCannedACL.PRIVATE) {
+            throw notImplemented();
+        }
+        getContainerAccess(container);
+    }
+
+    @Override
+    public CreateBucketResponse createContainer(CreateBucketRequest request) {
+        if (request.acl() != null && request.acl() != BucketCannedACL.PRIVATE) {
+            throw notImplemented();
+        }
+        S3User u = user.get();
+        String bucket = request.bucket();
+        FsPath path = S3Paths.bucket(u.root(), bucket);
+        try {
+            pnfs(u).createPnfsDirectory(path.toString());
+        } catch (FileExistsCacheException e) {
+            throw S3Exceptions.bucketAlreadyOwnedByYou(bucket);
+        } catch (PermissionDeniedCacheException e) {
+            // Chimera checks permissions first.  Clients create buckets they already have
+            // (rclone before each upload), and expect to be told so.
+            if (containerExists(bucket)) {
+                throw S3Exceptions.bucketAlreadyOwnedByYou(bucket);
+            }
+            throw S3Errors.from(e, bucket, null);
+        } catch (CacheException e) {
+            throw S3Errors.from(e, bucket, null);
+        }
+        return CreateBucketResponse.builder().location("/" + bucket).build();
+    }
+
+    /**
+     * Removes a bucket that holds no files.  Directories left behind by deleted objects do not
+     * count: they are removed with the bucket.
+     */
+    @Override
+    public void deleteBucket(String container) {
+        S3User u = user.get();
+        FsPath path = S3Paths.bucket(u.root(), container);
+        try {
+            var directories = new ArrayList<FsPath>();
+            if (!collectEmptyTree(u, container, path, directories)) {
+                return;
+            }
+            for (FsPath directory : directories) {
+                try {
+                    pnfs(u).deletePnfsEntry(directory.toString(), EnumSet.of(FileType.DIR));
+                } catch (FileNotFoundCacheException e) {
+                    // Removed concurrently; what matters is that it is gone.
+                } catch (PermissionDeniedCacheException e) {
+                    throw e;
+                } catch (CacheException e) {
+                    // Chimera has no distinct error for a directory that is not empty.
+                    if (!read(u, directory, TYPE_ATTRIBUTES).isEmpty()) {
+                        throw S3Exceptions.bucketNotEmpty(container);
+                    }
+                    throw e;
+                }
+            }
+        } catch (CacheException e) {
+            throw S3Errors.from(e, container, null);
+        } catch (InterruptedException e) {
+            throw S3Errors.interrupted(e);
+        }
+    }
+
+    /**
+     * Adds the directories below and including {@code directory} to {@code directories},
+     * children before their parents.
+     *
+     * @return false if the directory does not exist
+     * @throws software.amazon.awssdk.services.s3.model.S3Exception BucketNotEmpty if the tree
+     *                                                              holds anything but directories
+     */
+    private boolean collectEmptyTree(S3User u, String bucket, FsPath directory,
+          List<FsPath> directories) throws CacheException, InterruptedException {
+        List<DirectoryEntry> entries;
+        try {
+            entries = read(u, directory, TYPE_ATTRIBUTES);
+        } catch (FileNotFoundCacheException | NotDirCacheException e) {
+            return false;
+        }
+        for (DirectoryEntry entry : entries) {
+            if (entry.getFileAttributes().getFileType() != FileType.DIR) {
+                throw S3Exceptions.bucketNotEmpty(bucket);
+            }
+            collectEmptyTree(u, bucket, directory.child(entry.getName()), directories);
+        }
+        directories.add(directory);
+        return true;
+    }
+
+    private List<DirectoryEntry> read(S3User u, FsPath directory, Set<FileAttribute> attributes)
+          throws CacheException, InterruptedException {
+        var entries = new ArrayList<DirectoryEntry>();
+        try (DirectoryStream stream = lister.list(u.subject(), u.restriction(), directory, null,
+              Range.all(), attributes)) {
+            stream.forEach(entries::add);
+        }
+        return entries;
     }
 
     /**
@@ -375,6 +505,225 @@ public class DcacheBlobStore implements BlobStore {
         S3User u = user.get();
         objectAttributes(u, container, name);
         return ObjectCannedACL.PRIVATE;
+    }
+
+    @Override
+    public void setBlobAccess(String container, String name, ObjectCannedACL access) {
+        if (access != ObjectCannedACL.PRIVATE) {
+            throw notImplemented();
+        }
+        getBlobAccess(container, name);
+    }
+
+    @Override
+    public PutObjectResponse putBlob(PutObjectRequest request, InputStream payload) {
+        try (payload) {
+            if (request.acl() != null && request.acl() != ObjectCannedACL.PRIVATE) {
+                throw notImplemented();
+            }
+            S3User u = user.get();
+            String bucket = request.bucket();
+            String key = request.key();
+            FsPath path = S3Paths.object(bucketDirectory(u, bucket), key);
+            byte[] contentMd5 = request.contentMD5() == null
+                  ? null : Base64.getDecoder().decode(request.contentMD5());
+            String eTag = store(u, bucket, key, path,
+                  xattrs(request.contentType(), request.metadata()), payload,
+                  request.contentLength(), contentMd5);
+            return PutObjectResponse.builder().eTag(eTag).build();
+        } catch (IOException e) {
+            // Reading the client's data failed.
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    /**
+     * Copies an object through the door: its data is read from a pool and written as a new
+     * file.  Copying an object onto itself replaces its metadata the same way.
+     */
+    @Override
+    public CopyObjectResponse copyBlob(CopyObjectRequest request) {
+        if (request.sourceVersionId() != null) {
+            throw new UnsupportedOperationException("versioning not supported");
+        }
+        if (request.acl() != null && request.acl() != ObjectCannedACL.PRIVATE) {
+            throw notImplemented();
+        }
+        S3User u = user.get();
+        String sourceBucket = request.sourceBucket();
+        String sourceKey = request.sourceKey();
+        FileAttributes source = objectAttributes(u, sourceBucket, sourceKey);
+        checkCopySourceConditions(request, eTag(source), lastModified(source));
+        if (isOnTapeOnly(source)) {
+            throw S3Errors.invalidObjectState();
+        }
+
+        String bucket = request.destinationBucket();
+        String key = request.destinationKey();
+        FsPath path = S3Paths.object(bucketDirectory(u, bucket), key);
+        Map<String, String> xattrs = request.metadataDirective() == MetadataDirective.REPLACE
+              ? xattrs(request.contentType(), request.metadata())
+              : objectXattrs(source);
+
+        FsPath sourcePath = S3Paths.object(S3Paths.bucket(u.root(), sourceBucket), sourceKey);
+        long size = source.getSize();
+        String eTag;
+        try (InputStream data = size == 0
+              ? InputStream.nullInputStream()
+              : reader.read(u, sourcePath, source, 0, size)) {
+            eTag = store(u, bucket, key, path, xattrs, data, size, null);
+        } catch (CacheException e) {
+            throw S3Errors.from(e, sourceBucket, sourceKey);
+        } catch (InterruptedException e) {
+            throw S3Errors.interrupted(e);
+        } catch (IOException e) {
+            throw S3Errors.serviceUnavailable("Failed to read " + sourceKey + ": "
+                  + e.getMessage(), e);
+        }
+        // Without LastModified, the frontend reads it from the new object.
+        return CopyObjectResponse.builder()
+              .copyObjectResult(CopyObjectResult.builder().eTag(eTag).build())
+              .build();
+    }
+
+    /**
+     * Writes an object.  The data goes to a new hidden file in the object's directory, which
+     * replaces the object's file once the data is complete and its MD5 checksum is recorded.
+     *
+     * @param contentMd5 the MD5 checksum the client expects, or null
+     * @return the quoted ETag of the object
+     * @throws IOException if reading {@code data} failed
+     */
+    private String store(S3User u, String bucket, String key, FsPath path,
+          Map<String, String> xattrs, InputStream data, long length, byte @Nullable [] contentMd5)
+          throws IOException {
+        FsPath upload = path.parent().child(S3Paths.UPLOAD_PREFIX + UUID.randomUUID());
+        MessageDigest md5 = md5();
+        PnfsId pnfsId;
+        try {
+            pnfsId = writer.write(u, upload, path, xattrs, new DigestInputStream(data, md5),
+                  length);
+        } catch (CacheException e) {
+            throw writeError(e, bucket, key);
+        } catch (InterruptedException e) {
+            throw S3Errors.interrupted(e);
+        }
+
+        boolean isStored = false;
+        try {
+            byte[] digest = md5.digest();
+            if (contentMd5 != null && !MessageDigest.isEqual(contentMd5, digest)) {
+                throw new S3ProxyException(S3ErrorCode.BAD_DIGEST);
+            }
+            Checksum checksum = new Checksum(ChecksumType.MD5_TYPE, digest);
+            // The door's own record of what it received, so it does not depend on the user's
+            // permission to change the file's attributes.
+            pnfs.setFileAttributes(pnfsId, FileAttributes.ofChecksum(checksum));
+            pnfs(u).renameEntry(pnfsId, upload.toString(), path.toString(), true);
+            isStored = true;
+            return '"' + checksum.getValue() + '"';
+        } catch (CacheException e) {
+            throw writeError(e, bucket, key);
+        } finally {
+            if (!isStored) {
+                removeUpload(u, pnfsId, upload);
+            }
+        }
+    }
+
+    /**
+     * Removes the file of a failed upload.  As for other doors, this is done without the user's
+     * restriction, which may allow uploading but not deleting.
+     */
+    private void removeUpload(S3User u, PnfsId pnfsId, FsPath upload) {
+        try {
+            new PnfsHandler(pnfs, u.subject(), Restrictions.none())
+                  .deletePnfsEntry(pnfsId, upload.toString());
+        } catch (CacheException e) {
+            LOGGER.warn("Failed to remove {} ({}) after failed upload: {}", upload, pnfsId,
+                  e.getMessage());
+        }
+    }
+
+    /**
+     * Maps a failed write.  dCache cannot hold both a key and keys below it ({@code a} and
+     * {@code a/b}), so writing either when the other exists fails.
+     */
+    private static RuntimeException writeError(CacheException e, String bucket, String key) {
+        if (e instanceof NotDirCacheException || e instanceof NotFileCacheException
+              || e instanceof FileExistsCacheException) {
+            return S3Exceptions.invalidArgument(
+                  "Object key " + key + " conflicts with an existing object or prefix");
+        }
+        return S3Errors.from(e, bucket, key);
+    }
+
+    private static MessageDigest md5() {
+        try {
+            return MessageDigest.getInstance("MD5");
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("MD5 is not supported", e);
+        }
+    }
+
+    /**
+     * Applies the conditions of a copy on its source the way S3 does: each failed condition is
+     * a 412, except that a matching If-Match overrides a failed If-Unmodified-Since, and a
+     * failed If-None-Match overrides If-Modified-Since.
+     */
+    private static void checkCopySourceConditions(CopyObjectRequest request, String eTag,
+          Instant lastModified) {
+        String ifMatch = request.copySourceIfMatch();
+        String ifNoneMatch = request.copySourceIfNoneMatch();
+        if (ifMatch != null && !ifMatch.equals("*") && !eTag.equals(quoted(ifMatch))) {
+            throw conditionFailed(412, eTag);
+        }
+        if (ifNoneMatch != null && (ifNoneMatch.equals("*") || eTag.equals(quoted(ifNoneMatch)))) {
+            throw conditionFailed(412, eTag);
+        }
+        Instant ifModifiedSince = request.copySourceIfModifiedSince();
+        if (ifModifiedSince != null && ifNoneMatch == null
+              && !lastModified.isAfter(ifModifiedSince)) {
+            throw conditionFailed(412, eTag);
+        }
+        Instant ifUnmodifiedSince = request.copySourceIfUnmodifiedSince();
+        if (ifUnmodifiedSince != null && ifMatch == null
+              && lastModified.isAfter(ifUnmodifiedSince)) {
+            throw conditionFailed(412, eTag);
+        }
+    }
+
+    /**
+     * Deletes an object.  Deleting a missing object succeeds, as in S3; its parent directories
+     * are kept.
+     */
+    @Override
+    public DeleteObjectResponse removeBlob(DeleteObjectRequest request) {
+        if (request.versionId() != null) {
+            throw new UnsupportedOperationException("versioning not supported");
+        }
+        S3User u = user.get();
+        String bucket = request.bucket();
+        String key = request.key();
+        FsPath path = S3Paths.object(S3Paths.bucket(u.root(), bucket), key);
+        try {
+            pnfs(u).deletePnfsEntry(path.toString(), EnumSet.of(FileType.REGULAR));
+        } catch (FileNotFoundCacheException | NotDirCacheException | NotFileCacheException e) {
+            bucketDirectory(u, bucket);
+        } catch (CacheException e) {
+            throw S3Errors.from(e, bucket, key);
+        }
+        return DeleteObjectResponse.builder().build();
+    }
+
+    /**
+     * Deletes objects in parallel threads, which do not know the client's address; so the
+     * client is logged in first.
+     */
+    @Override
+    public DeleteObjectsResponse removeBlobs(DeleteObjectsRequest request) {
+        user.get();
+        return BlobStore.super.removeBlobs(request);
     }
 
     /**
@@ -556,11 +905,8 @@ public class DcacheBlobStore implements BlobStore {
 
         private List<DirectoryEntry> read(FsPath directory)
               throws CacheException, InterruptedException {
-            var entries = new ArrayList<DirectoryEntry>();
-            try (DirectoryStream stream = lister.list(user.subject(), user.restriction(),
-                  directory, null, Range.all(), LIST_ATTRIBUTES)) {
-                stream.forEach(entries::add);
-            }
+            List<DirectoryEntry> entries = DcacheBlobStore.this.read(user, directory,
+                  LIST_ATTRIBUTES);
             entriesRead += entries.size();
             return entries;
         }
@@ -648,6 +994,35 @@ public class DcacheBlobStore implements BlobStore {
         return ContentMetadata.DEFAULT_CONTENT_TYPE;
     }
 
+    /**
+     * Returns the extended attributes that store an object's content type and user metadata.
+     */
+    private static Map<String, String> xattrs(@Nullable String contentType,
+          Map<String, String> userMetadata) {
+        var xattrs = new HashMap<String, String>();
+        if (contentType != null && !contentType.equals(ContentMetadata.DEFAULT_CONTENT_TYPE)) {
+            xattrs.put(XATTR_CONTENT_TYPE, contentType);
+        }
+        userMetadata.forEach((name, value) -> xattrs.put(XATTR_USER_METADATA_PREFIX + name, value));
+        return xattrs;
+    }
+
+    /**
+     * Returns the extended attributes of a file that store object metadata.
+     */
+    private static Map<String, String> objectXattrs(FileAttributes attributes) {
+        var xattrs = new HashMap<String, String>();
+        if (attributes.isDefined(XATTR)) {
+            attributes.getXattrs().forEach((name, value) -> {
+                if (name.equals(XATTR_CONTENT_TYPE)
+                      || name.startsWith(XATTR_USER_METADATA_PREFIX)) {
+                    xattrs.put(name, value);
+                }
+            });
+        }
+        return xattrs;
+    }
+
     private static Map<String, String> userMetadata(FileAttributes attributes) {
         var metadata = new HashMap<String, String>();
         if (attributes.isDefined(XATTR)) {
@@ -660,46 +1035,11 @@ public class DcacheBlobStore implements BlobStore {
         return metadata;
     }
 
-    // Writes are not supported yet.
-
     private static S3ProxyException notImplemented() {
         return new S3ProxyException(S3ErrorCode.NOT_IMPLEMENTED);
     }
 
-    @Override
-    public CreateBucketResponse createContainer(CreateBucketRequest request) {
-        throw notImplemented();
-    }
-
-    @Override
-    public void setContainerAccess(String container, BucketCannedACL access) {
-        throw notImplemented();
-    }
-
-    @Override
-    public void deleteBucket(String container) {
-        throw notImplemented();
-    }
-
-    @Override
-    public PutObjectResponse putBlob(PutObjectRequest request, InputStream payload) {
-        throw notImplemented();
-    }
-
-    @Override
-    public CopyObjectResponse copyBlob(CopyObjectRequest request) {
-        throw notImplemented();
-    }
-
-    @Override
-    public DeleteObjectResponse removeBlob(DeleteObjectRequest request) {
-        throw notImplemented();
-    }
-
-    @Override
-    public void setBlobAccess(String container, String name, ObjectCannedACL access) {
-        throw notImplemented();
-    }
+    // Multipart uploads are not supported yet.
 
     @Override
     public MultipartUpload initiateMultipartUpload(CreateMultipartUploadRequest request) {

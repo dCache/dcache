@@ -6,8 +6,10 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -16,6 +18,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import diskCacheV111.util.CacheException;
@@ -29,18 +32,24 @@ import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.HttpDoorUrlInfoMessage;
 import diskCacheV111.vehicles.HttpProtocolInfo;
+import diskCacheV111.vehicles.PnfsCreateEntryMessage;
+import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
 import diskCacheV111.vehicles.Pool;
-import diskCacheV111.vehicles.PoolDeliverFileMessage;
-import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
+import diskCacheV111.vehicles.PoolAcceptFileMessage;
+import diskCacheV111.vehicles.PoolIoFileMessage;
+import diskCacheV111.vehicles.PoolMgrSelectPoolMsg;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellPath;
+import java.io.ByteArrayInputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import javax.security.auth.Subject;
@@ -61,18 +70,23 @@ import org.junit.Test;
 public class S3TransferManagerTest {
 
     private static final FsPath PATH = FsPath.create("/data/s3/bucket/file");
+    private static final FsPath UPLOAD = FsPath.create("/data/s3/bucket/.s3-tmp-1");
     private static final PnfsId PNFSID = new PnfsId("0000A1B2C3D4E5F60718293A4B5C6D7E8F90");
     private static final byte[] DATA = "hello world".getBytes(UTF_8);
 
     private final List<String> ranges = new CopyOnWriteArrayList<>();
     private final List<DoorRequestInfoMessage> billing = new CopyOnWriteArrayList<>();
     private final List<PoolMoverKillMessage> kills = new CopyOnWriteArrayList<>();
+    private final List<String> deleted = new CopyOnWriteArrayList<>();
+    private final List<PnfsCreateEntryMessage> created = new CopyOnWriteArrayList<>();
+    private volatile byte[] uploaded;
 
     private HttpServer pool;
     private int poolStatus = 200;
+    private int uploadStatus = 201;
     private boolean sendsRedirect = true;
     private boolean reportsCompletion = true;
-    private volatile PoolDeliverFileMessage mover;
+    private volatile PoolIoFileMessage mover;
     private CacheException pnfsError;
     private CacheException poolManagerError;
 
@@ -210,6 +224,76 @@ public class S3TransferManagerTest {
         assertThat(billing.get(0).getResultCode(), is(CacheException.PERMISSION_DENIED));
     }
 
+    @Test
+    public void shouldWriteFile() throws Exception {
+        PnfsId pnfsId = write(DATA, DATA.length);
+
+        assertThat(pnfsId, is(PNFSID));
+        assertThat(new String(uploaded, UTF_8), is("hello world"));
+        assertThat(created.get(0).getPnfsPath(), is(UPLOAD.toString()));
+        assertThat(created.get(0).getFileAttributes().getXattrs(),
+              is(Map.of("s3.content-type", "text/plain")));
+        assertThat(mover, instanceOf(PoolAcceptFileMessage.class));
+        assertThat(kills, is(empty()));
+        assertThat(deleted, is(empty()));
+        assertThat(billing, hasSize(1));
+        assertThat(billing.get(0).getResultCode(), is(0));
+        assertThat(billing.get(0).getBillingPath(), is(PATH.toString()));
+        assertThat(billing.get(0).getTransferPath(), is(UPLOAD.toString()));
+    }
+
+    @Test
+    public void shouldRemoveFileWhenPoolRefusesUpload() {
+        uploadStatus = 500;
+
+        CacheException e = assertThrows(CacheException.class, () -> write(DATA, DATA.length));
+
+        assertThat(e.getMessage(), containsString("500"));
+        assertThat(kills, hasSize(1));
+        assertThat(deleted, is(List.of(UPLOAD.toString())));
+        assertThat(billing.get(0).getResultCode(), is(not(0)));
+    }
+
+    @Test
+    public void shouldReportInsufficientStorage() {
+        uploadStatus = 507;
+
+        CacheException e = assertThrows(CacheException.class, () -> write(DATA, DATA.length));
+
+        assertThat(e.getRc(), is(CacheException.RESOURCE));
+        assertThat(deleted, is(List.of(UPLOAD.toString())));
+    }
+
+    @Test
+    public void shouldRemoveFileWhenClientSendsTooLittle() {
+        reportsCompletion = false;
+
+        assertThrows(EOFException.class, () -> write(DATA, DATA.length + 5));
+
+        assertThat(kills, hasSize(1));
+        assertThat(deleted, is(List.of(UPLOAD.toString())));
+        assertThat(billing, hasSize(1));
+        assertThat(billing.get(0).getMessage(), containsString("Failed to read data from client"));
+    }
+
+    @Test
+    public void shouldNotStartMoverWhenCreateIsDenied() {
+        pnfsError = new PermissionDeniedCacheException("Permission denied");
+
+        assertThrows(PermissionDeniedCacheException.class, () -> write(DATA, DATA.length));
+
+        assertThat(mover, is(nullValue()));
+        assertThat(deleted, is(empty()));
+        assertThat(billing.get(0).getResultCode(), is(CacheException.PERMISSION_DENIED));
+    }
+
+    private PnfsId write(byte[] data, long length) throws Exception {
+        try (var ignored = RequestOrigin.bind(InetAddress.getByName("192.0.2.1"))) {
+            return manager.write(user, UPLOAD, PATH, Map.of("s3.content-type", "text/plain"),
+                  new ByteArrayInputStream(data), length);
+        }
+    }
+
     private InputStream read(long offset, long length) throws Exception {
         try (var ignored = RequestOrigin.bind(InetAddress.getByName("192.0.2.1"))) {
             return manager.read(user, PATH, attributes, offset, length);
@@ -229,13 +313,29 @@ public class S3TransferManagerTest {
             }
             return Futures.immediateFuture(msg);
         });
+        when(stub.send(any(PnfsCreateEntryMessage.class), anyLong())).thenAnswer(i -> {
+            PnfsCreateEntryMessage msg = i.getArgument(0);
+            created.add(msg);
+            if (pnfsError != null) {
+                msg.setFailed(pnfsError.getRc(), pnfsError.getMessage());
+            } else {
+                attributes.setXattrs(msg.getFileAttributes().getXattrs());
+                msg.setFileAttributes(attributes);
+            }
+            return Futures.immediateFuture(msg);
+        });
+        when(stub.send(any(PnfsDeleteEntryMessage.class), anyLong())).thenAnswer(i -> {
+            PnfsDeleteEntryMessage msg = i.getArgument(0);
+            deleted.add(msg.getPnfsPath());
+            return Futures.immediateFuture(msg);
+        });
         return stub;
     }
 
     private PoolManagerStub poolManagerStub() {
         PoolManagerStub stub = mock(PoolManagerStub.class);
-        when(stub.sendAsync(any(PoolMgrSelectReadPoolMsg.class), anyLong())).thenAnswer(i -> {
-            PoolMgrSelectReadPoolMsg msg = i.getArgument(0);
+        when(stub.sendAsync(any(PoolMgrSelectPoolMsg.class), anyLong())).thenAnswer(i -> {
+            PoolMgrSelectPoolMsg msg = i.getArgument(0);
             if (poolManagerError != null) {
                 msg.setFailed(poolManagerError.getRc(), poolManagerError.getMessage());
             } else {
@@ -244,31 +344,19 @@ public class S3TransferManagerTest {
             }
             return Futures.immediateFuture(msg);
         });
+        // Upload movers are started through PoolManager.
+        when(stub.startAsync(any(CellAddressCore.class), any(PoolIoFileMessage.class), anyLong()))
+              .thenAnswer(i -> startMover(i.getArgument(1)));
         return stub;
     }
 
     /**
-     * Starts movers by announcing the fake pool's URL to the door, and ends them when killed.
+     * Starts download movers, and ends movers when killed.
      */
     private CellStub poolStub() {
         CellStub stub = mock(CellStub.class);
-        when(stub.send(any(CellPath.class), any(PoolDeliverFileMessage.class), anyLong()))
-              .thenAnswer(i -> {
-                  PoolDeliverFileMessage msg = i.getArgument(1);
-                  msg.setMoverId(42);
-                  mover = msg;
-                  if (sendsRedirect) {
-                      var protocolInfo = (HttpProtocolInfo) msg.getProtocolInfo();
-                      assertThat(protocolInfo.getSocketAddress().getAddress(),
-                            is(InetAddress.getLoopbackAddress()));
-                      var redirect = new HttpDoorUrlInfoMessage(PNFSID.toString(),
-                            "http://127.0.0.1:" + pool.getAddress().getPort()
-                                  + protocolInfo.getPath() + "?dcache-http-uuid=x");
-                      redirect.setId(msg.getId());
-                      manager.messageArrived(redirect);
-                  }
-                  return Futures.immediateFuture(msg);
-              });
+        when(stub.send(any(CellPath.class), any(PoolIoFileMessage.class), anyLong()))
+              .thenAnswer(i -> startMover(i.getArgument(1)));
         doAnswer(i -> {
             PoolMoverKillMessage kill = i.getArgument(1);
             kills.add(kill);
@@ -276,6 +364,25 @@ public class S3TransferManagerTest {
             return null;
         }).when(stub).notify(any(CellPath.class), any(PoolMoverKillMessage.class));
         return stub;
+    }
+
+    /**
+     * Starts a mover by announcing the fake pool's URL to the door.
+     */
+    private ListenableFuture<PoolIoFileMessage> startMover(PoolIoFileMessage msg) {
+        msg.setMoverId(42);
+        mover = msg;
+        if (sendsRedirect) {
+            var protocolInfo = (HttpProtocolInfo) msg.getProtocolInfo();
+            assertThat(protocolInfo.getSocketAddress().getAddress(),
+                  is(InetAddress.getLoopbackAddress()));
+            var redirect = new HttpDoorUrlInfoMessage(PNFSID.toString(),
+                  "http://127.0.0.1:" + pool.getAddress().getPort()
+                        + protocolInfo.getPath() + "?dcache-http-uuid=x");
+            redirect.setId(msg.getId());
+            manager.messageArrived(redirect);
+        }
+        return Futures.immediateFuture(msg);
     }
 
     private CellStub billingStub() {
@@ -288,10 +395,14 @@ public class S3TransferManagerTest {
     }
 
     /**
-     * The fake mover: serves the file, honouring a Range header, and reports the end of the
-     * transfer to the door.
+     * The fake mover: serves the file, honouring a Range header, or receives an upload, and
+     * reports the end of the transfer to the door.
      */
     private void serve(HttpExchange exchange) throws IOException {
+        if (exchange.getRequestMethod().equals("PUT")) {
+            receive(exchange);
+            return;
+        }
         String range = exchange.getRequestHeaders().getFirst("Range");
         ranges.add(range == null ? "" : range);
         int offset = 0;
@@ -318,8 +429,22 @@ public class S3TransferManagerTest {
         }
     }
 
+    private void receive(HttpExchange exchange) throws IOException {
+        try (InputStream in = exchange.getRequestBody()) {
+            uploaded = in.readAllBytes();
+        } catch (IOException e) {
+            // The door gave up.
+            return;
+        }
+        exchange.sendResponseHeaders(uploadStatus, -1);
+        exchange.close();
+        if (uploadStatus < 300 && reportsCompletion) {
+            finishMover(0, "");
+        }
+    }
+
     private void finishMover(int rc, String error) {
-        PoolDeliverFileMessage msg = mover;
+        PoolIoFileMessage msg = mover;
         if (msg == null) {
             return;
         }
