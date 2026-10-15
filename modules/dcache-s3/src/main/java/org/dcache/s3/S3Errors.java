@@ -61,6 +61,14 @@ final class S3Errors {
               "The operation is not valid for the object's storage class", null);
     }
 
+    /**
+     * The 409 that S3 answers a RestoreObject with while an earlier restore is running.
+     */
+    static S3Exception restoreAlreadyInProgress() {
+        return error(409, "RestoreAlreadyInProgress", "Object restore is already in progress",
+              null);
+    }
+
     static S3Exception accessDenied(@Nullable Throwable cause) {
         return new S3ProxyException(S3ErrorCode.ACCESS_DENIED, cause);
     }

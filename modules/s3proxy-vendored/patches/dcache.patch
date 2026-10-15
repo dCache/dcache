@@ -9,6 +9,59 @@
  
  import org.gaul.s3proxy.AwsHttpHeaders;
  import org.gaul.s3proxy.S3ErrorCode;
+--- a/src/main/java/org/gaul/s3proxy/blobstore/BlobStore.java
++++ b/src/main/java/org/gaul/s3proxy/blobstore/BlobStore.java
+@@ -86,6 +86,8 @@
+ import software.amazon.awssdk.services.s3.model.PutBucketVersioningResponse;
+ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+ import software.amazon.awssdk.services.s3.model.PutObjectResponse;
++import software.amazon.awssdk.services.s3.model.RestoreObjectRequest;
++import software.amazon.awssdk.services.s3.model.RestoreObjectResponse;
+ import software.amazon.awssdk.services.s3.model.S3Error;
+ import software.amazon.awssdk.services.s3.model.S3Exception;
+ import software.amazon.awssdk.services.s3.model.S3Object;
+@@ -789,6 +791,17 @@
+                 .build();
+     }
+ 
++    /**
++     * dCache patch: RestoreObject, bringing an archived object back for the
++     * request's Days.  The response's HTTP status says what happened: 202
++     * when a restore was started, 200 when the object is already restored.
++     * A restore already in progress is refused with RestoreAlreadyInProgress
++     * (409); an object that is not archived with InvalidObjectState (403).
++     */
++    default RestoreObjectResponse restoreObject(RestoreObjectRequest request) {
++        throw new UnsupportedOperationException("restore not supported");
++    }
++
+     ObjectCannedACL getBlobAccess(String container, String name);
+ 
+     /**
+--- a/src/main/java/org/gaul/s3proxy/blobstore/ForwardingBlobStore.java
++++ b/src/main/java/org/gaul/s3proxy/blobstore/ForwardingBlobStore.java
+@@ -66,6 +66,8 @@
+ import software.amazon.awssdk.services.s3.model.PutBucketVersioningResponse;
+ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+ import software.amazon.awssdk.services.s3.model.PutObjectResponse;
++import software.amazon.awssdk.services.s3.model.RestoreObjectRequest;
++import software.amazon.awssdk.services.s3.model.RestoreObjectResponse;
+ import software.amazon.awssdk.services.s3.model.UploadPartRequest;
+ import software.amazon.awssdk.services.s3.model.UploadPartResponse;
+ 
+@@ -221,6 +223,12 @@
+         return delegate().deleteBucketEncryption(request);
+     }
+ 
++    // dCache patch: RestoreObject.
++    @Override
++    public RestoreObjectResponse restoreObject(RestoreObjectRequest request) {
++        return delegate().restoreObject(request);
++    }
++
+     @Override
+     public ObjectCannedACL getBlobAccess(String container, String name) {
+         return delegate().getBlobAccess(container, name);
 --- a/src/main/java/org/gaul/s3proxy/checksum/FlexChecksum.java
 +++ b/src/main/java/org/gaul/s3proxy/checksum/FlexChecksum.java
 @@ -22,7 +22,7 @@
@@ -59,6 +112,51 @@
 +        return ".mpus-" + uploadId + "-" + blobName + "-" + partNumber;
 +    }
  }
+--- a/src/main/java/org/gaul/s3proxy/AwsHttpHeaders.java
++++ b/src/main/java/org/gaul/s3proxy/AwsHttpHeaders.java
+@@ -77,6 +77,8 @@
+     public static final String SERVER_SIDE_ENCRYPTION_CUSTOMER_KEY_MD5 =
+             "x-amz-server-side-encryption-customer-key-md5";
+     public static final String STORAGE_CLASS = "x-amz-storage-class";
++    // dCache patch: RestoreObject status on HEAD and GET.
++    public static final String RESTORE = "x-amz-restore";
+     public static final String TRAILER = "x-amz-trailer";
+     public static final String TRANSFER_ENCODING = "x-amz-te";
+     public static final String USER_AGENT = "x-amz-user-agent";
+--- /dev/null
++++ b/src/main/java/org/gaul/s3proxy/RestoreObjectXmlRequest.java
+@@ -0,0 +1,31 @@
++/*
++ * Copyright 2014-2026 Andrew Gaul <andrew@gaul.org>
++ * Copyright 2026 Deutsches Elektronen-Synchrotron
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * https://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package org.gaul.s3proxy;
++
++import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
++
++import tools.jackson.dataformat.xml.annotation.JacksonXmlProperty;
++
++/**
++ * dCache patch: the body of a RestoreObject request.  Only Days is read; the
++ * retrieval tier and the select parameters do not apply.
++ */
++@JsonIgnoreProperties(ignoreUnknown = true)
++record RestoreObjectXmlRequest(
++        @JacksonXmlProperty(localName = "Days") Integer days) {
++}
 --- a/src/main/java/org/gaul/s3proxy/S3ErrorCode.java
 +++ b/src/main/java/org/gaul/s3proxy/S3ErrorCode.java
 @@ -20,7 +20,7 @@
@@ -70,6 +168,17 @@
  
  /**
   * List of S3 error codes.  Reference:
+--- a/src/main/java/org/gaul/s3proxy/S3Operation.java
++++ b/src/main/java/org/gaul/s3proxy/S3Operation.java
+@@ -50,6 +50,8 @@
+     PUT_BUCKET_VERSIONING("PutBucketVersioning"),
+     LIST_OBJECT_VERSIONS("ListObjectVersions"),
+     OPTIONS_OBJECT("OptionsObject"),
++    // dCache patch: RestoreObject is supported.
++    RESTORE_OBJECT("RestoreObject"),
+     UNKNOWN("Unknown");
+ 
+     private final String value;
 --- a/src/main/java/org/gaul/s3proxy/S3ProxyHandler.java
 +++ b/src/main/java/org/gaul/s3proxy/S3ProxyHandler.java
 @@ -80,13 +80,9 @@
@@ -88,7 +197,83 @@
  import org.gaul.s3proxy.auth.AuthenticationType;
  import org.gaul.s3proxy.auth.AwsSignature;
  import org.gaul.s3proxy.auth.PostPolicy;
-@@ -4543,268 +4539,9 @@
+@@ -170,6 +166,9 @@
+ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+ import software.amazon.awssdk.services.s3.model.PutObjectResponse;
+ import software.amazon.awssdk.services.s3.model.S3Error;
++import software.amazon.awssdk.services.s3.model.RestoreObjectRequest;
++import software.amazon.awssdk.services.s3.model.RestoreObjectResponse;
++import software.amazon.awssdk.services.s3.model.RestoreRequest;
+ import software.amazon.awssdk.services.s3.model.S3Exception;
+ import software.amazon.awssdk.services.s3.model.S3Object;
+ import software.amazon.awssdk.services.s3.model.ServerSideEncryptionByDefault;
+@@ -267,7 +266,7 @@
+             "publicAccessBlock",
+             "replication",
+             "requestPayment",
+-            "restore",
++            // dCache patch: "restore" is handled (RestoreObject).
+             "retention",
+             "tagging",
+             "torrent",
+@@ -1278,6 +1277,13 @@
+                 handleMultiBlobRemove(request, response, is, blobStore,
+                         path[1]);
+                 return;
++            } else if (request.getParameter("restore") != null &&
++                    path.length > 2 && !path[2].isEmpty()) {
++                // dCache patch: RestoreObject.
++                setOperation(ctx, S3Operation.RESTORE_OBJECT);
++                handleRestoreObject(request, response, is, blobStore,
++                        path[1], path[2]);
++                return;
+             } else if (request.getParameter("uploads") != null) {
+                 setOperation(ctx, S3Operation.CREATE_MULTIPART_UPLOAD);
+                 handleInitiateMultipartUpload(request, response, blobStore,
+@@ -2133,6 +2139,42 @@
+         }
+     }
+ 
++    /**
++     * dCache patch: RestoreObject.  Only the Days of a restore request are
++     * passed to the store; the store answers 202 when it starts a restore and
++     * 200 when the object is already restored, through the status of the
++     * response it returns.
++     */
++    private void handleRestoreObject(HttpServletRequest request,
++            HttpServletResponse response, InputStream is, BlobStore blobStore,
++            String containerName, String blobName) throws IOException {
++        byte[] body = ByteStreams.limit(is, v4MaxNonChunkedRequestSize + 1)
++                .readAllBytes();
++        if (body.length == v4MaxNonChunkedRequestSize + 1) {
++            throw new S3ProxyException(S3ErrorCode.MAX_MESSAGE_LENGTH_EXCEEDED);
++        }
++        var restoreRequest = RestoreRequest.builder();
++        if (body.length > 0) {
++            RestoreObjectXmlRequest xml = readXmlBody(body,
++                    RestoreObjectXmlRequest.class);
++            if (xml.days() != null && xml.days() < 1) {
++                throw new S3ProxyException(S3ErrorCode.INVALID_ARGUMENT,
++                        "Days must be a positive integer");
++            }
++            restoreRequest.days(xml.days());
++        }
++        RestoreObjectResponse result = blobStore.restoreObject(
++                RestoreObjectRequest.builder()
++                        .bucket(containerName)
++                        .key(blobName)
++                        .restoreRequest(restoreRequest.build())
++                        .build());
++        var httpResponse = result.sdkHttpResponse();
++        response.setStatus(httpResponse == null ?
++                HttpServletResponse.SC_ACCEPTED : httpResponse.statusCode());
++        addCorsResponseHeader(request, response);
++    }
++
+     private void handleSetBucketVersioning(HttpServletRequest request,
+             HttpServletResponse response, InputStream is, BlobStore blobStore,
+             String containerName) throws IOException {
+@@ -4543,268 +4585,9 @@
              HttpServletResponse response, InputStream is,
              BlobStore anonymousBlobStore, String containerName)
              throws IOException {
@@ -360,6 +545,18 @@
      }
  
      /**
+@@ -6333,6 +6116,11 @@
+         if (storageClass != null) {
+             response.addHeader(AwsHttpHeaders.STORAGE_CLASS, storageClass);
+         }
++        // dCache patch: RestoreObject status.
++        String restore = metadata.restore();
++        if (restore != null) {
++            response.addHeader(AwsHttpHeaders.RESTORE, restore);
++        }
+         addServerSideEncryptionHeaders(response,
+                 metadata.serverSideEncryptionAsString(),
+                 metadata.ssekmsKeyId(), /*kmsContext=*/ null,
 --- a/src/test/java/org/gaul/s3proxy/auth/AwsSignatureTest.java
 +++ b/src/test/java/org/gaul/s3proxy/auth/AwsSignatureTest.java
 @@ -16,11 +16,14 @@

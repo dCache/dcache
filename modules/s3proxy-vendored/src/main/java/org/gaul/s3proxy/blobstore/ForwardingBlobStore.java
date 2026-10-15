@@ -66,6 +66,8 @@ import software.amazon.awssdk.services.s3.model.PutBucketVersioningRequest;
 import software.amazon.awssdk.services.s3.model.PutBucketVersioningResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
+import software.amazon.awssdk.services.s3.model.RestoreObjectRequest;
+import software.amazon.awssdk.services.s3.model.RestoreObjectResponse;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 
@@ -219,6 +221,12 @@ public abstract class ForwardingBlobStore extends ForwardingObject
     public DeleteBucketEncryptionResponse deleteBucketEncryption(
             DeleteBucketEncryptionRequest request) {
         return delegate().deleteBucketEncryption(request);
+    }
+
+    // dCache patch: RestoreObject.
+    @Override
+    public RestoreObjectResponse restoreObject(RestoreObjectRequest request) {
+        return delegate().restoreObject(request);
     }
 
     @Override

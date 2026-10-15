@@ -58,6 +58,19 @@ marked with `dCache patch` comments.
    (`assertArrayEquals` for `byte[]`), `assertThatThrownBy` →
    `Assert.assertThrows` followed by assertions on the exception.
 
+6. RestoreObject (`POST /bucket/key?restore`): `restore` is removed from
+   `UNSUPPORTED_PARAMETERS`; `S3ProxyHandler.handleRestoreObject` reads the
+   request's `Days` (`RestoreObjectXmlRequest`, a dCache file) and calls the
+   new `BlobStore.restoreObject`, which answers through the HTTP status of
+   its response (202 started, 200 already restored). `ForwardingBlobStore`
+   forwards it; `S3Operation.RESTORE_OBJECT` and `AwsHttpHeaders.RESTORE`
+   are added, and `addMetadataToResponse` sends `x-amz-restore` from
+   `HeadObjectResponse.restore()`.
+
+`patches/dcache.patch` is generated with `diff -u` of each vendored source
+against the upstream file (`/dev/null` for dCache files), subdirectories
+before files as `diff -r` orders them.
+
 ## Updating to a newer upstream release
 
 1. Check out the new tag; recompute the class closure of the three entry

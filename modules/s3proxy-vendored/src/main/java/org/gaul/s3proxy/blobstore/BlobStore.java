@@ -86,6 +86,8 @@ import software.amazon.awssdk.services.s3.model.PutBucketVersioningRequest;
 import software.amazon.awssdk.services.s3.model.PutBucketVersioningResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
+import software.amazon.awssdk.services.s3.model.RestoreObjectRequest;
+import software.amazon.awssdk.services.s3.model.RestoreObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Error;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.model.S3Object;
@@ -787,6 +789,17 @@ public interface BlobStore extends AutoCloseable {
                 .code(code)
                 .message(details == null ? null : details.errorMessage())
                 .build();
+    }
+
+    /**
+     * dCache patch: RestoreObject, bringing an archived object back for the
+     * request's Days.  The response's HTTP status says what happened: 202
+     * when a restore was started, 200 when the object is already restored.
+     * A restore already in progress is refused with RestoreAlreadyInProgress
+     * (409); an object that is not archived with InvalidObjectState (403).
+     */
+    default RestoreObjectResponse restoreObject(RestoreObjectRequest request) {
+        throw new UnsupportedOperationException("restore not supported");
     }
 
     ObjectCannedACL getBlobAccess(String container, String name);

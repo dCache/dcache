@@ -65,7 +65,10 @@ import org.gaul.s3proxy.blobstore.SdkRequests;
 import org.gaul.s3proxy.blobstore.SdkResponses;
 import org.gaul.s3proxy.blobstore.domain.MultipartUpload;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.http.SdkHttpResponse;
 import software.amazon.awssdk.services.s3.model.Bucket;
 import software.amazon.awssdk.services.s3.model.BucketCannedACL;
 import software.amazon.awssdk.services.s3.model.CommonPrefix;
@@ -91,6 +94,8 @@ import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 import software.amazon.awssdk.services.s3.model.Part;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
+import software.amazon.awssdk.services.s3.model.RestoreObjectRequest;
+import software.amazon.awssdk.services.s3.model.RestoreObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.s3.model.StorageClass;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
@@ -107,9 +112,14 @@ import software.amazon.awssdk.services.s3.model.UploadPartResponse;
  * derived from the file's identity and modification time, with a {@code -1} suffix that tells
  * clients, as for multipart uploads, not to compare it with an MD5 of the content.
  * <p>
+ * {@code GLACIER} files are restored by {@link S3ObjectRestorer}; while that is in progress, HEAD
+ * answers with {@code x-amz-restore: ongoing-request="true"}.
+ * <p>
  * This store supports reading only; writes are answered with {@code NotImplemented}.
  */
 public class DcacheBlobStore implements BlobStore {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(DcacheBlobStore.class);
 
     /**
      * The most keys S3 returns in one listing page.
@@ -140,6 +150,7 @@ public class DcacheBlobStore implements BlobStore {
     private final DirectoryListSource lister;
     private final PoolMonitor poolMonitor;
     private final S3ObjectReader reader;
+    private final S3ObjectRestorer restorer;
     private final String clientHost;
     private final int maxListEntries;
 
@@ -149,17 +160,20 @@ public class DcacheBlobStore implements BlobStore {
      * @param lister         lists directories
      * @param poolMonitor    tells whether a file is on disk or only on tape
      * @param reader         reads file content
+     * @param restorer       brings files back from tape
      * @param clientHost     the client's address, for pool selection
      * @param maxListEntries how many directory entries a listing without delimiter reads before
      *                       it ends the page early
      */
     public DcacheBlobStore(Supplier<S3User> user, PnfsHandler pnfs, DirectoryListSource lister,
-          PoolMonitor poolMonitor, S3ObjectReader reader, String clientHost, int maxListEntries) {
+          PoolMonitor poolMonitor, S3ObjectReader reader, S3ObjectRestorer restorer,
+          String clientHost, int maxListEntries) {
         this.user = requireNonNull(user);
         this.pnfs = requireNonNull(pnfs);
         this.lister = requireNonNull(lister);
         this.poolMonitor = requireNonNull(poolMonitor);
         this.reader = requireNonNull(reader);
+        this.restorer = requireNonNull(restorer);
         this.clientHost = requireNonNull(clientHost);
         this.maxListEntries = maxListEntries;
     }
@@ -232,6 +246,7 @@ public class DcacheBlobStore implements BlobStore {
         }
         S3User u = user.get();
         FileAttributes attributes = objectAttributes(u, request.bucket(), request.key());
+        boolean isOnTapeOnly = isOnTapeOnly(attributes);
         return HeadObjectResponse.builder()
               .acceptRanges("bytes")
               .contentLength(attributes.getSize())
@@ -239,7 +254,63 @@ public class DcacheBlobStore implements BlobStore {
               .eTag(eTag(attributes))
               .lastModified(lastModified(attributes))
               .metadata(userMetadata(attributes))
-              .storageClass(storageClass(attributes))
+              .storageClass(isOnTapeOnly ? StorageClass.GLACIER : StorageClass.STANDARD)
+              .restore(isOnTapeOnly && isRestoring(u, attributes)
+                    ? "ongoing-request=\"true\"" : null)
+              .build();
+    }
+
+    /**
+     * Whether a tape-only file is being restored.  Failing to find out is not worth failing a
+     * HEAD request for, so it counts as not restoring.
+     */
+    private boolean isRestoring(S3User u, FileAttributes attributes) {
+        try {
+            return restorer.isRestoring(u, attributes);
+        } catch (CacheException e) {
+            LOGGER.debug("Failed to query restore of {}: {}", attributes.getPnfsId(),
+                  e.getMessage());
+            return false;
+        } catch (InterruptedException e) {
+            throw S3Errors.interrupted(e);
+        }
+    }
+
+    /**
+     * Restores a tape-only file for the request's Days, one day if it names none.  A file with a
+     * copy on disk counts as restored.
+     */
+    @Override
+    public RestoreObjectResponse restoreObject(RestoreObjectRequest request) {
+        if (request.versionId() != null) {
+            throw new UnsupportedOperationException("versioning not supported");
+        }
+        S3User u = user.get();
+        String bucket = request.bucket();
+        String key = request.key();
+        FileAttributes attributes = objectAttributes(u, bucket, key);
+        if (!isOnTapeOnly(attributes)) {
+            return restoreResponse(200);
+        }
+
+        Integer days = request.restoreRequest() == null ? null : request.restoreRequest().days();
+        FsPath path = S3Paths.object(S3Paths.bucket(u.root(), bucket), key);
+        try {
+            if (restorer.isRestoring(u, attributes)) {
+                throw S3Errors.restoreAlreadyInProgress();
+            }
+            restorer.restore(u, path, attributes, days == null ? 1 : days);
+        } catch (CacheException e) {
+            throw S3Errors.from(e, bucket, key);
+        } catch (InterruptedException e) {
+            throw S3Errors.interrupted(e);
+        }
+        return restoreResponse(202);
+    }
+
+    private static RestoreObjectResponse restoreResponse(int status) {
+        return (RestoreObjectResponse) RestoreObjectResponse.builder()
+              .sdkHttpResponse(SdkHttpResponse.builder().statusCode(status).build())
               .build();
     }
 

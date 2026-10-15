@@ -50,6 +50,8 @@ public enum S3Operation {
     PUT_BUCKET_VERSIONING("PutBucketVersioning"),
     LIST_OBJECT_VERSIONS("ListObjectVersions"),
     OPTIONS_OBJECT("OptionsObject"),
+    // dCache patch: RestoreObject is supported.
+    RESTORE_OBJECT("RestoreObject"),
     UNKNOWN("Unknown");
 
     private final String value;
