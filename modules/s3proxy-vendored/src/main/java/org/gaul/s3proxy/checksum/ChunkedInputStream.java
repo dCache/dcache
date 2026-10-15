@@ -1,0 +1,359 @@
+/*
+ * Copyright 2014-2026 Andrew Gaul <andrew@gaul.org>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gaul.s3proxy.checksum;
+
+import java.io.EOFException;
+import java.io.FilterInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
+import java.util.HexFormat;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
+import com.google.common.io.ByteStreams;
+
+import org.gaul.s3proxy.S3ErrorCode;
+import org.gaul.s3proxy.S3ProxyException;
+import org.jspecify.annotations.Nullable;
+
+import software.amazon.awssdk.checksums.SdkChecksum;
+
+/**
+ * Parse an AWS v4 signature chunked stream.  Reference:
+ * https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-streaming.html
+ */
+public final class ChunkedInputStream extends FilterInputStream {
+    private static final int MAX_LINE_LENGTH = 4096;
+    private static final String EMPTY_SHA256 =
+            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+    /** Grow-only scratch holding the current chunk's first currentLength
+     * bytes; clients send uniform chunk sizes, so reuse avoids an
+     * allocation per chunk. */
+    private byte[] chunk = new byte[0];
+    private int currentIndex;
+    private int currentLength;
+    /** Created on the first chunk and reused; digest() and doFinal() reset
+     * them. */
+    @Nullable private MessageDigest sha256;
+    @Nullable private Mac mac;
+    /** Whether the zero-length chunk that ends the body has been read, which
+     * is the only thing that makes end of stream here a complete body. */
+    private boolean finished;
+    @Nullable private String currentSignature;
+    private final int maxChunkSize;
+    @Nullable private final SdkChecksum checksum;
+    private final byte @Nullable [] signingKey;
+    @Nullable private final String hmacAlgorithm;
+    @Nullable private final String timestamp;
+    @Nullable private final String scope;
+    @Nullable private String previousSignature;
+
+    public ChunkedInputStream(InputStream is, int maxChunkSize) {
+        super(is);
+        this.maxChunkSize = maxChunkSize;
+        checksum = null;
+        signingKey = null;
+        hmacAlgorithm = null;
+        timestamp = null;
+        scope = null;
+    }
+
+    public ChunkedInputStream(InputStream is, int maxChunkSize,
+            @Nullable String trailer) {
+        super(is);
+        this.maxChunkSize = maxChunkSize;
+        var algorithm = trailer == null ? null :
+                FlexChecksum.fromHeaderName(trailer);
+        checksum = algorithm == null ? null : algorithm.newChecksum();
+        signingKey = null;
+        hmacAlgorithm = null;
+        timestamp = null;
+        scope = null;
+    }
+
+    /**
+     * Construct a chunked stream that verifies the per-chunk signature chain
+     * used by STREAMING-AWS4-HMAC-SHA256-PAYLOAD.
+     *
+     * @param seedSignature the Authorization header signature (hex-encoded)
+     * @param signingKey    the AWS SigV4 signing key
+     * @param hmacAlgorithm HMAC algorithm name (e.g. "HmacSHA256")
+     * @param timestamp     full ISO8601 request timestamp (x-amz-date)
+     * @param scope         credential scope (date/region/service/aws4_request)
+     */
+    public ChunkedInputStream(InputStream is, int maxChunkSize,
+            String seedSignature, byte[] signingKey, String hmacAlgorithm,
+            String timestamp, String scope) {
+        this(is, maxChunkSize, seedSignature, signingKey, hmacAlgorithm,
+                timestamp, scope, /*trailer=*/ null);
+    }
+
+    /**
+     * Construct a chunked stream that verifies the per-chunk signature chain
+     * AND validates the flexible-checksum trailer used by
+     * STREAMING-AWS4-HMAC-SHA256-PAYLOAD-TRAILER.
+     */
+    public ChunkedInputStream(InputStream is, int maxChunkSize,
+            String seedSignature, byte[] signingKey, String hmacAlgorithm,
+            String timestamp, String scope, @Nullable String trailer) {
+        super(is);
+        this.maxChunkSize = maxChunkSize;
+        var algorithm = trailer == null ? null :
+                FlexChecksum.fromHeaderName(trailer);
+        checksum = algorithm == null ? null : algorithm.newChecksum();
+        this.signingKey = signingKey.clone();
+        this.hmacAlgorithm = hmacAlgorithm;
+        this.timestamp = timestamp;
+        this.scope = scope;
+        this.previousSignature = seedSignature;
+    }
+
+    @Override
+    public int read() throws IOException {
+        while (currentIndex == currentLength) {
+            if (finished) {
+                return -1;
+            }
+            String line = readLine(in);
+            // A body that stops where the next chunk header belongs is one
+            // the sender did not finish: aws-chunked says it is over with a
+            // zero-length chunk, and without that this cannot tell an upload
+            // that ended from one that was cut short.  Answering EOF here
+            // stores whatever arrived as though it were the whole object.
+            if (line == null || line.isEmpty()) {
+                throw new IOException(new S3ProxyException(
+                        S3ErrorCode.INCOMPLETE_BODY));
+            }
+            String[] parts = line.split(";", 2);
+            if (parts[0].startsWith("x-amz-checksum-")) {
+                if (checksum == null) {
+                    throw new IOException("unexpected trailer: " + parts[0]);
+                }
+                String[] checksumParts = parts[0].split(":", 2);
+                // A trailer carrying no value at all, which validateTrailerHash
+                // already refuses on the other path that reads one.  Wrap the
+                // S3ProxyException so that the handler answers 400 rather than
+                // letting an index out of bounds become a 500.
+                if (checksumParts.length != 2) {
+                    throw new IOException(new S3ProxyException(
+                            S3ErrorCode.INVALID_REQUEST));
+                }
+                var expectedHash = checksumParts[1];
+                if (FlexChecksum.fromHeaderName(
+                        checksumParts[0]) == null) {
+                    throw new IllegalArgumentException("Unknown value: " + checksumParts[0]);
+                }
+                // getChecksumBytes answers in AWS wire order for every
+                // algorithm, so the digest needs no reordering here.
+                var actualHash = checksum.getChecksumBytes();
+                if (!expectedHash.equals(Base64.getEncoder().encodeToString(actualHash))) {
+                    throw new IOException(new S3ProxyException(S3ErrorCode.BAD_DIGEST));
+                }
+                currentLength = 0;
+            } else {
+                currentLength = Integer.parseInt(parts[0], 16);
+                if (currentLength < 0 || currentLength > maxChunkSize) {
+                    throw new IOException(
+                            "chunk size exceeds maximum: " + currentLength);
+                }
+            }
+            if (parts.length > 1) {
+                String sigPart = parts[1];
+                int eq = sigPart.indexOf('=');
+                currentSignature = eq >= 0 ? sigPart.substring(eq + 1) : sigPart;
+            } else {
+                currentSignature = null;
+            }
+            if (chunk.length < currentLength) {
+                chunk = new byte[currentLength];
+            }
+            currentIndex = 0;
+            try {
+                ByteStreams.readFully(in, chunk, 0, currentLength);
+            } catch (EOFException eofe) {
+                // The chunk header promised bytes the body does not carry.
+                throw new IOException(new S3ProxyException(
+                        S3ErrorCode.INCOMPLETE_BODY, eofe));
+            }
+            if (checksum != null) {
+                checksum.update(chunk, 0, currentLength);
+            }
+            if (signingKey != null) {
+                verifyChunkSignature(chunk, currentLength, currentSignature);
+            }
+            if (currentLength == 0) {
+                // AWS aws-chunked sends trailing-headers AFTER the zero-
+                // length chunk, terminated by an empty line.  Drain and
+                // validate them before signaling EOF.  The body is complete
+                // either way by now, so a stream that stops among them is
+                // one missing its terminator rather than one cut short.
+                if (checksum != null) {
+                    while (true) {
+                        String trailerLine = readLine(in);
+                        if (trailerLine == null || trailerLine.isEmpty()) {
+                            break;
+                        }
+                        validateTrailerHash(checksum, trailerLine);
+                    }
+                }
+                finished = true;
+                return -1;
+            }
+            // consume trailing \r\n
+            readLine(in);
+        }
+        return chunk[currentIndex++] & 0xFF;
+    }
+
+    @Override
+    public int read(byte[] b, int off, int len) throws IOException {
+        if (len == 0) {
+            return 0;
+        }
+        // Read one byte through read() so the chunk (re)fill, per-chunk
+        // signature verification, trailer validation, and EOF handling all
+        // run exactly as before; this also consumes the first byte.
+        int first = read();
+        if (first == -1) {
+            return -1;
+        }
+        b[off] = (byte) first;
+        int total = 1;
+        // Bulk-copy the remainder of the already-materialized chunk instead of
+        // dispatching every byte through read().
+        if (currentIndex < currentLength) {
+            int n = Math.min(len - total, currentLength - currentIndex);
+            System.arraycopy(chunk, currentIndex, b, off + total, n);
+            currentIndex += n;
+            total += n;
+        }
+        return total;
+    }
+
+    private void verifyChunkSignature(byte[] data, int len,
+            @Nullable String signature) throws IOException {
+        if (signature == null) {
+            throw new IOException(new S3ProxyException(
+                    S3ErrorCode.SIGNATURE_DOES_NOT_MATCH));
+        }
+        String chunkHash;
+        try {
+            if (sha256 == null) {
+                sha256 = MessageDigest.getInstance("SHA-256");
+            }
+            sha256.update(data, 0, len);
+            chunkHash = HexFormat.of().formatHex(sha256.digest());
+        } catch (NoSuchAlgorithmException e) {
+            throw new IOException(e);
+        }
+        String stringToSign = "AWS4-HMAC-SHA256-PAYLOAD\n" +
+                timestamp + "\n" +
+                scope + "\n" +
+                previousSignature + "\n" +
+                EMPTY_SHA256 + "\n" +
+                chunkHash;
+        String expected;
+        try {
+            if (mac == null) {
+                Mac newMac = Mac.getInstance(hmacAlgorithm);
+                newMac.init(new SecretKeySpec(signingKey, hmacAlgorithm));
+                mac = newMac;
+            }
+            expected = HexFormat.of().formatHex(
+                    mac.doFinal(stringToSign.getBytes(StandardCharsets.UTF_8)));
+        } catch (InvalidKeyException | NoSuchAlgorithmException e) {
+            throw new IOException(e);
+        }
+        if (!constantTimeEquals(expected, signature)) {
+            throw new IOException(new S3ProxyException(
+                    S3ErrorCode.SIGNATURE_DOES_NOT_MATCH));
+        }
+        previousSignature = signature;
+    }
+
+    /**
+     * If {@code line} is an x-amz-checksum-* trailer, validate the encoded
+     * hash against the running hasher.  Other trailer lines (e.g.
+     * x-amz-trailer-signature) are ignored.
+     */
+    private static void validateTrailerHash(SdkChecksum checksum, String line)
+            throws IOException {
+        String[] parts = line.split(":", 2);
+        if (parts.length != 2 || !parts[0].startsWith("x-amz-checksum-")) {
+            return;
+        }
+        String expectedHash = parts[1];
+        if (FlexChecksum.fromHeaderName(parts[0]) == null) {
+            throw new IOException("unknown trailer: " + parts[0]);
+        }
+        var actualHash = checksum.getChecksumBytes();
+        if (!expectedHash.equals(
+                Base64.getEncoder().encodeToString(actualHash))) {
+            throw new IOException(new S3ProxyException(S3ErrorCode.BAD_DIGEST));
+        }
+    }
+
+    private static boolean constantTimeEquals(String a, String b) {
+        if (a.length() != b.length()) {
+            return false;
+        }
+        int diff = 0;
+        for (int i = 0; i < a.length(); i++) {
+            diff |= a.charAt(i) ^ b.charAt(i);
+        }
+        return diff == 0;
+    }
+
+    /**
+     * Read a \r\n terminated line from an InputStream.
+     *
+     * @return the line without its newline, or null at end of stream.  The
+     *     two are distinct: a line with nothing on it terminates the
+     *     trailing headers, while end of stream means the sender stopped,
+     *     which is only ever complete after the zero-length chunk.  A line
+     *     the stream ends in the middle of is no more complete than none at
+     *     all, so it reads as end of stream too.
+     */
+    @Nullable
+    private static String readLine(InputStream is) throws IOException {
+        var builder = new StringBuilder();
+        while (true) {
+            int ch = is.read();
+            if (ch == '\r') {
+                ch = is.read();
+                if (ch == '\n') {
+                    break;
+                } else {
+                    throw new IOException("unexpected char after \\r: " + ch);
+                }
+            } else if (ch == -1) {
+                return null;
+            }
+            if (builder.length() >= MAX_LINE_LENGTH) {
+                throw new IOException("chunk header too long");
+            }
+            builder.append((char) ch);
+        }
+        return builder.toString();
+    }
+}
