@@ -70,11 +70,6 @@
     <property name="destination" value="${s3.service.billing}"/>
   </bean>
 
-  <bean id="pool-monitor" class="org.dcache.poolmanager.RemotePoolMonitor">
-    <description>Maintains runtime information about all pools</description>
-    <property name="poolManagerStub" ref="pool-manager-stub"/>
-  </bean>
-
   <bean id="scheduled-thread-pool"
         class="org.dcache.util.CDCScheduledExecutorServiceDecorator"
         destroy-method="shutdown">
@@ -146,10 +141,9 @@
     <description>Creates the blob store of each request</description>
     <constructor-arg index="0" ref="pnfs-handler"/>
     <constructor-arg index="1" ref="list-handler"/>
-    <constructor-arg index="2" ref="pool-monitor"/>
-    <constructor-arg index="3" ref="transfer-manager"/>
-    <constructor-arg index="4" ref="restorer"/>
-    <constructor-arg index="5" value="${s3.limits.list.max-entries}"/>
+    <constructor-arg index="2" ref="transfer-manager"/>
+    <constructor-arg index="3" ref="restorer"/>
+    <constructor-arg index="4" value="${s3.limits.list.max-entries}"/>
   </bean>
 
   <bean id="blob-store-locator" class="org.dcache.s3.DcacheBlobStoreLocator">
