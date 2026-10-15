@@ -523,6 +523,9 @@ public class Subjects {
                 case "email":
                     principal = new EmailAddressPrincipal(value);
                     break;
+                case "s3":
+                    principal = new S3AccessKeyPrincipal(value);
+                    break;
                 case "uid":
                     principal = new UidPrincipal(value);
                     break;
@@ -591,6 +594,9 @@ public class Subjects {
             appendOptionallyInQuotes(sb, principal.getName());
         } else if (principal instanceof EmailAddressPrincipal) {
             sb.append("email:");
+            appendOptionallyInQuotes(sb, principal.getName());
+        } else if (principal instanceof S3AccessKeyPrincipal) {
+            sb.append("s3:");
             appendOptionallyInQuotes(sb, principal.getName());
         } else if (principal instanceof UserNamePrincipal) {
             sb.append("user:");
