@@ -1,0 +1,97 @@
+#
+#      S3 Door
+#
+
+onerror shutdown
+check -strong s3.cell.name
+check s3.cell.consume
+check s3.cell.subscribe
+check -strong s3.root
+check -strong s3.net.port
+check s3.net.listen
+check s3.net.internal
+check s3.net.virtual-host
+check -strong s3.authn.protocol
+check -strong s3.authn.connector
+check -strong s3.authn.signature
+check -strong s3.authn.max-time-skew
+check -strong s3.authn.max-time-skew.unit
+check -strong s3.authn.keystore.file
+check -strong s3.authn.namespace-mode
+check -strong s3.authn.crl-mode
+check -strong s3.authn.ocsp-mode
+check s3.authn.ciphers
+check -strong s3.service.pnfsmanager
+check -strong s3.service.pnfsmanager.timeout
+check -strong s3.service.pnfsmanager.timeout.unit
+check -strong s3.service.poolmanager
+check -strong s3.service.poolmanager.timeout
+check -strong s3.service.poolmanager.timeout.unit
+check -strong s3.service.pool.timeout
+check -strong s3.service.pool.timeout.unit
+check -strong s3.service.pinmanager
+check -strong s3.service.pinmanager.timeout
+check -strong s3.service.pinmanager.timeout.unit
+check -strong s3.service.gplazma
+check -strong s3.service.gplazma.timeout
+check -strong s3.service.gplazma.timeout.unit
+check -strong s3.service.gplazma.cache.size
+check -strong s3.service.gplazma.cache.timeout
+check -strong s3.service.gplazma.cache.timeout.unit
+check -strong s3.service.billing
+check -strong s3.pool-monitor.topic
+check s3.mover.queue
+check -strong s3.mover.timeout
+check -strong s3.mover.timeout.unit
+check -strong s3.mover.read-timeout
+check -strong s3.mover.read-timeout.unit
+check -strong s3.mover.transfer-confirmation-timeout
+check -strong s3.mover.transfer-confirmation-timeout.unit
+check -strong s3.mover.kill-timeout
+check -strong s3.mover.kill-timeout.unit
+check -strong s3.limits.list.max-entries
+check -strong s3.restore.max-days
+check -strong s3.loginbroker.request-topic
+check -strong s3.loginbroker.update-topic
+check -strong s3.loginbroker.update-period
+check -strong s3.loginbroker.update-period.unit
+check -strong s3.loginbroker.update-threshold
+check -strong s3.loginbroker.version
+check -strong s3.loginbroker.family
+check s3.loginbroker.address
+check -strong s3.loginbroker.port
+check s3.loginbroker.tags
+check -strong s3.loginbroker.root
+check -strong s3.limits.threads.max
+check -strong s3.limits.threads.min
+check -strong s3.limits.threads.idle-time
+check -strong s3.limits.threads.idle-time.unit
+check -strong s3.limits.queue-length
+check -strong s3.limits.acceptors
+check -strong s3.limits.backlog
+check -strong s3.limits.idle-time
+check -strong s3.limits.idle-time.unit
+check -strong s3.limits.graceful-shutdown
+check -strong s3.limits.graceful-shutdown.unit
+
+define env verify-PLAIN.exe enddefine
+enddefine
+
+define env verify-TLS.exe enddefine
+  check -strong s3.authn.hostcert.cert
+  check -strong s3.authn.hostcert.key
+  check -strong s3.authn.hostcert.refresh
+  check -strong s3.authn.hostcert.refresh.unit
+  check -strong s3.authn.capath
+  check -strong s3.authn.capath.refresh
+  check -strong s3.authn.capath.refresh.unit
+enddefine
+
+exec env verify-${s3.authn.connector}.exe
+
+onerror shutdown
+create org.dcache.cells.UniversalSpringCell ${s3.cell.name} \
+   "classpath:org/dcache/s3/s3.xml \
+    -consume=${s3.cell.consume} \
+    -subscribe=${s3.cell.subscribe} \
+    -cellClass=S3Door"
