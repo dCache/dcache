@@ -181,13 +181,22 @@
      private final String value;
 --- a/src/main/java/org/gaul/s3proxy/S3ProxyHandler.java
 +++ b/src/main/java/org/gaul/s3proxy/S3ProxyHandler.java
-@@ -80,13 +80,9 @@
+@@ -40,6 +40,7 @@
+ import java.util.Base64;
+ import java.util.Collections;
+ import java.util.Comparator;
++import java.util.Enumeration;
+ import java.util.HashMap;
+ import java.util.HashSet;
+ import java.util.HexFormat;
+@@ -80,13 +81,10 @@
  import com.google.common.net.HttpHeaders;
  import com.google.common.net.PercentEscaper;
  
 -import jakarta.servlet.http.HttpServletRequest;
 -import jakarta.servlet.http.HttpServletResponse;
 +import javax.servlet.http.HttpServletRequest;
++import javax.servlet.http.HttpServletRequestWrapper;
 +import javax.servlet.http.HttpServletResponse;
  
 -import org.eclipse.jetty.http.MultiPartFormData;
@@ -197,7 +206,7 @@
  import org.gaul.s3proxy.auth.AuthenticationType;
  import org.gaul.s3proxy.auth.AwsSignature;
  import org.gaul.s3proxy.auth.PostPolicy;
-@@ -170,6 +166,9 @@
+@@ -170,6 +168,9 @@
  import software.amazon.awssdk.services.s3.model.PutObjectRequest;
  import software.amazon.awssdk.services.s3.model.PutObjectResponse;
  import software.amazon.awssdk.services.s3.model.S3Error;
@@ -207,7 +216,17 @@
  import software.amazon.awssdk.services.s3.model.S3Exception;
  import software.amazon.awssdk.services.s3.model.S3Object;
  import software.amazon.awssdk.services.s3.model.ServerSideEncryptionByDefault;
-@@ -267,7 +266,7 @@
+@@ -249,6 +250,9 @@
+     /** The most buckets ListBuckets returns, and its max-buckets ceiling. */
+     private static final int MAX_BUCKETS = 10_000;
+     /** An S3 composite ETag: the parts' MD5s hashed, then the part count. */
++    // dCache patch: the charset of a Content-Type, see withLowerCaseCharset.
++    private static final Pattern CHARSET_PARAMETER = Pattern.compile(
++            "(?i);\\s*charset=([^;\\s]+)");
+     private static final Pattern COMPOSITE_ETAG = Pattern.compile(
+             "[0-9a-fA-F]{32}-([0-9]+)");
+     private static final Set<String> UNSUPPORTED_PARAMETERS = Set.of(
+@@ -267,7 +271,7 @@
              "publicAccessBlock",
              "replication",
              "requestPayment",
@@ -216,7 +235,106 @@
              "retention",
              "tagging",
              "torrent",
-@@ -1278,6 +1277,13 @@
+@@ -516,6 +520,54 @@
+                         .COPY_SOURCE_SERVER_SIDE_ENCRYPTION_CUSTOMER_KEY);
+     }
+ 
++    /**
++     * dCache patch: Jetty 9 matches header values against a cache of common
++     * ones regardless of case and passes on the cached spelling, so a
++     * Content-Type of "text/plain; charset=utf-8" arrives as
++     * "text/plain; charset=UTF-8" and no longer reads as the client signed
++     * it.  Returns the request with the charset in lower case, the spelling
++     * clients mostly use, for a second check of the signature; or null if
++     * the Content-Type has no charset with upper-case letters.  Not needed
++     * with Jetty 12.
++     */
++    @Nullable
++    private static HttpServletRequest withLowerCaseCharset(
++            HttpServletRequest request) {
++        String contentType = request.getHeader(HttpHeaders.CONTENT_TYPE);
++        if (contentType == null) {
++            return null;
++        }
++        var matcher = CHARSET_PARAMETER.matcher(contentType);
++        if (!matcher.find()) {
++            return null;
++        }
++        String lowerCase = contentType.substring(0, matcher.start(1)) +
++                matcher.group(1).toLowerCase(Locale.ROOT) +
++                contentType.substring(matcher.end(1));
++        if (lowerCase.equals(contentType)) {
++            return null;
++        }
++        return new HttpServletRequestWrapper(request) {
++            @Override
++            public String getHeader(String name) {
++                return HttpHeaders.CONTENT_TYPE.equalsIgnoreCase(name) ?
++                        lowerCase : super.getHeader(name);
++            }
++
++            @Override
++            public Enumeration<String> getHeaders(String name) {
++                return HttpHeaders.CONTENT_TYPE.equalsIgnoreCase(name) ?
++                        Collections.enumeration(List.of(lowerCase)) :
++                        super.getHeaders(name);
++            }
++
++            @Override
++            public String getContentType() {
++                return lowerCase;
++            }
++        };
++    }
++
+     private static String getBlobStoreType(BlobStore blobStore) {
+         BlobStore inner = blobStore;
+         while (inner instanceof org.gaul.s3proxy.blobstore.ForwardingBlobStore fbs) {
+@@ -964,6 +1016,20 @@
+                                     presignedUrl, haveBothDateHeader);
+                     expectedSignature = signatureDetail.signature();
+                 }
++                // dCache patch: see withLowerCaseCharset.
++                HttpServletRequest lowerCaseCharset =
++                        withLowerCaseCharset(request);
++                if (lowerCaseCharset != null && !constantTimeEquals(
++                        expectedSignature, authHeader.getSignature())) {
++                    var detail = AwsSignature.createAuthorizationSignature(
++                            lowerCaseCharset, uriForSigning, credential,
++                            presignedUrl, haveBothDateHeader);
++                    if (constantTimeEquals(detail.signature(),
++                            authHeader.getSignature())) {
++                        signatureDetail = detail;
++                        expectedSignature = detail.signature();
++                    }
++                }
+             } else {
+                 String contentSha256 = request.getHeader(
+                         AwsHttpHeaders.CONTENT_SHA256);
+@@ -1063,6 +1129,22 @@
+                                 verifiedContentSha256);
+                         expectedSignature = signatureDetail.signature();
+                     }
++                    // dCache patch: see withLowerCaseCharset.
++                    HttpServletRequest lowerCaseCharset =
++                            withLowerCaseCharset(baseRequest);
++                    if (lowerCaseCharset != null && !constantTimeEquals(
++                            expectedSignature, authHeader.getSignature())) {
++                        var detail = AwsSignature
++                                .createAuthorizationSignatureV4(
++                                lowerCaseCharset, authHeader, payload,
++                                uriForSigning, credential, presignedUrl,
++                                pinnedSha256, verifiedContentSha256);
++                        if (constantTimeEquals(detail.signature(),
++                                authHeader.getSignature())) {
++                            signatureDetail = detail;
++                            expectedSignature = detail.signature();
++                        }
++                    }
+                     if ("STREAMING-AWS4-HMAC-SHA256-PAYLOAD".equals(
+                             contentSha256) ||
+                             "STREAMING-AWS4-HMAC-SHA256-PAYLOAD-TRAILER".equals(
+@@ -1278,6 +1360,13 @@
                  handleMultiBlobRemove(request, response, is, blobStore,
                          path[1]);
                  return;
@@ -230,7 +348,7 @@
              } else if (request.getParameter("uploads") != null) {
                  setOperation(ctx, S3Operation.CREATE_MULTIPART_UPLOAD);
                  handleInitiateMultipartUpload(request, response, blobStore,
-@@ -2133,6 +2139,42 @@
+@@ -2133,6 +2222,42 @@
          }
      }
  
@@ -273,7 +391,7 @@
      private void handleSetBucketVersioning(HttpServletRequest request,
              HttpServletResponse response, InputStream is, BlobStore blobStore,
              String containerName) throws IOException {
-@@ -4543,268 +4585,9 @@
+@@ -4543,268 +4668,9 @@
              HttpServletResponse response, InputStream is,
              BlobStore anonymousBlobStore, String containerName)
              throws IOException {
@@ -545,7 +663,7 @@
      }
  
      /**
-@@ -6333,6 +6116,11 @@
+@@ -6333,6 +6199,11 @@
          if (storageClass != null) {
              response.addHeader(AwsHttpHeaders.STORAGE_CLASS, storageClass);
          }
