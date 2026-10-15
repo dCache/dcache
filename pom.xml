@@ -1512,6 +1512,7 @@
         <module>modules/dcache-resilience</module>
         <module>modules/dcache-webdav</module>
         <module>modules/s3proxy-vendored</module>
+        <module>modules/dcache-s3</module>
         <module>modules/dcache-xrootd</module>
         <module>modules/dcache-dcap</module>
         <module>modules/dcache-gplazma</module>
