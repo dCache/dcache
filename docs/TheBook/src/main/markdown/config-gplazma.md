@@ -828,6 +828,7 @@ The following principal types are supported (as input as well as output):
 | kerberos    | Kerberos principal                                            |
 | oidc        | OIDC principal matching `sub` claim                           |
 | oidcgrp     | OIDC group nam pricipal provided by IdP                       |
+| s3          | S3 access key ID verified by the S3 door (input only)         |
 | uid         | User numeric id principal                                     |
 | username    | User name principal                                           |
 | entitlement | Entitlement principal that represents an eduPersonEntitlement |

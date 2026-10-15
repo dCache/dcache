@@ -300,6 +300,8 @@ public class Gplazma2LoginStrategy implements LoginStrategy, CellCommandListener
             "              the sub claim and OP alias (e.g., SUB@OP).\n" +
             "    email     (org.dcache.auth.EmailAddressPrincipal)\n" +
             "              the user's email address.\n" +
+            "    s3        (org.dcache.auth.S3AccessKeyPrincipal)\n" +
+            "              an S3 access key ID.\n" +
             "    uid       (org.dcache.auth.UidPrincipal)\n" +
             "              a numerical user ID.\n" +
             "    username  (org.dcache.auth.UserNamePrincipal)\n" +

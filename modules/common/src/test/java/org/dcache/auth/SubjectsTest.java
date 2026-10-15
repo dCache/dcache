@@ -372,6 +372,23 @@ public class SubjectsTest {
     }
 
     @Test
+    public void shouldBuildSubjectWithS3AccessKey() {
+        var args = asList("s3:AKIAEXAMPLE");
+
+        var subject = Subjects.subjectFromArgs(args);
+
+        assertThat(subject.getPrincipals(), contains(new S3AccessKeyPrincipal("AKIAEXAMPLE")));
+    }
+
+    @Test
+    public void shouldFormatS3AccessKey() {
+        Subject subject = new Subject();
+        subject.getPrincipals().add(new S3AccessKeyPrincipal("AKIAEXAMPLE"));
+
+        assertThat(Subjects.toStringList(subject), contains("s3:AKIAEXAMPLE"));
+    }
+
+    @Test
     public void shouldBuildSubjectWithTokenAndPrincipal() {
         var args = asList("token:FOO", "origin:192.0.2.42");
 

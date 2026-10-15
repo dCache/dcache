@@ -33,6 +33,7 @@ import org.dcache.auth.RolePrincipal;
 import org.dcache.auth.OAuthProviderPrincipal;
 import org.dcache.auth.OidcSubjectPrincipal;
 import org.dcache.auth.OpenIdGroupPrincipal;
+import org.dcache.auth.S3AccessKeyPrincipal;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
@@ -117,6 +118,7 @@ public class GplazmaMultiMapFile {
             }
         },
         OIDC_GROUP("oidcgrp", OpenIdGroupPrincipal.class),
+        S3_ACCESS_KEY("s3", S3AccessKeyPrincipal.class),
         UID("uid", UidPrincipal.class),
         USER_NAME("username", UserNamePrincipal.class),
         ENTITLEMENT("entitlement", EntitlementPrincipal.class),
