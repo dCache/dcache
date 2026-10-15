@@ -105,11 +105,14 @@ public class S3TransferManagerTest {
 
         manager = new S3TransferManager();
         manager.setCellAddress(new CellAddressCore("S3-door", "s3Domain"));
-        manager.setInternalAddress(InetAddress.getLoopbackAddress());
-        manager.setMoverTimeout(2, TimeUnit.SECONDS);
-        manager.setPoolTimeout(5, TimeUnit.SECONDS);
-        manager.setTransferConfirmationTimeout(2, TimeUnit.SECONDS);
-        manager.setKillTimeout(0, TimeUnit.SECONDS);
+        manager.setInternalAddress(InetAddress.getLoopbackAddress().getHostAddress());
+        manager.setMoverTimeout(2);
+        manager.setMoverTimeoutUnit(TimeUnit.SECONDS);
+        manager.setPoolTimeout(5);
+        manager.setPoolTimeoutUnit(TimeUnit.SECONDS);
+        manager.setTransferConfirmationTimeout(2);
+        manager.setTransferConfirmationTimeoutUnit(TimeUnit.SECONDS);
+        manager.setKillTimeout(0);
         manager.setPnfsHandler(new PnfsHandler(pnfsStub()));
         manager.setPoolManagerStub(poolManagerStub());
         manager.setPoolStub(poolStub());
