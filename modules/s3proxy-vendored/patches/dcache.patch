@@ -1,0 +1,932 @@
+--- a/src/main/java/org/gaul/s3proxy/auth/AwsSignature.java
++++ b/src/main/java/org/gaul/s3proxy/auth/AwsSignature.java
+@@ -44,7 +44,7 @@
+ import com.google.common.net.HttpHeaders;
+ import com.google.common.net.PercentEscaper;
+ 
+-import jakarta.servlet.http.HttpServletRequest;
++import javax.servlet.http.HttpServletRequest;
+ 
+ import org.gaul.s3proxy.AwsHttpHeaders;
+ import org.gaul.s3proxy.S3ErrorCode;
+--- a/src/main/java/org/gaul/s3proxy/checksum/FlexChecksum.java
++++ b/src/main/java/org/gaul/s3proxy/checksum/FlexChecksum.java
+@@ -22,7 +22,7 @@
+ import java.util.Map;
+ import java.util.function.Supplier;
+ 
+-import jakarta.servlet.http.HttpServletRequest;
++import javax.servlet.http.HttpServletRequest;
+ 
+ import org.gaul.s3proxy.AwsHttpHeaders;
+ import org.gaul.s3proxy.CompleteMultipartUploadRequest;
+--- a/src/main/java/org/gaul/s3proxy/checksum/MpuChecksums.java
++++ b/src/main/java/org/gaul/s3proxy/checksum/MpuChecksums.java
+@@ -24,14 +24,13 @@
+ import java.util.TreeMap;
+ import java.util.TreeSet;
+ 
+-import jakarta.servlet.http.HttpServletRequest;
++import javax.servlet.http.HttpServletRequest;
+ 
+ import org.gaul.s3proxy.AwsHttpHeaders;
+ import org.gaul.s3proxy.CompleteMultipartUploadRequest;
+ import org.gaul.s3proxy.S3ErrorCode;
+ import org.gaul.s3proxy.S3ProxyException;
+ import org.gaul.s3proxy.blobstore.BlobStore;
+-import org.gaul.s3proxy.nio2blob.AbstractNio2BlobStore;
+ import org.jspecify.annotations.Nullable;
+ 
+ import software.amazon.awssdk.checksums.SdkChecksum;
+@@ -154,7 +153,7 @@
+             ResponseInputStream<GetObjectResponse> blob;
+             try {
+                 blob = blobStore.getBlob(containerName,
+-                        AbstractNio2BlobStore.multipartPartName(uploadId,
++                        multipartPartName(uploadId,
+                                 blobName, partNumber));
+             } catch (NoSuchKeyException nske) {
+                 // a missing part is rejected elsewhere; fall back to the
+@@ -295,4 +294,11 @@
+     @SuppressWarnings("ArrayRecordComponent")
+     public record PartChecksum(byte[] digest, long length) {
+     }
++
++    // dCache patch: copied from AbstractNio2BlobStore.multipartPartName,
++    // which is not vendored.
++    private static String multipartPartName(String uploadId, String blobName,
++            int partNumber) {
++        return ".mpus-" + uploadId + "-" + blobName + "-" + partNumber;
++    }
+ }
+--- a/src/main/java/org/gaul/s3proxy/S3ErrorCode.java
++++ b/src/main/java/org/gaul/s3proxy/S3ErrorCode.java
+@@ -20,7 +20,7 @@
+ 
+ import com.google.common.base.CaseFormat;
+ 
+-import jakarta.servlet.http.HttpServletResponse;
++import javax.servlet.http.HttpServletResponse;
+ 
+ /**
+  * List of S3 error codes.  Reference:
+--- a/src/main/java/org/gaul/s3proxy/S3ProxyHandler.java
++++ b/src/main/java/org/gaul/s3proxy/S3ProxyHandler.java
+@@ -80,13 +80,9 @@
+ import com.google.common.net.HttpHeaders;
+ import com.google.common.net.PercentEscaper;
+ 
+-import jakarta.servlet.http.HttpServletRequest;
+-import jakarta.servlet.http.HttpServletResponse;
++import javax.servlet.http.HttpServletRequest;
++import javax.servlet.http.HttpServletResponse;
+ 
+-import org.eclipse.jetty.http.MultiPartFormData;
+-import org.eclipse.jetty.io.ByteBufferPool;
+-import org.eclipse.jetty.io.content.InputStreamContentSource;
+-import org.eclipse.jetty.util.Promise;
+ import org.gaul.s3proxy.auth.AuthenticationType;
+ import org.gaul.s3proxy.auth.AwsSignature;
+ import org.gaul.s3proxy.auth.PostPolicy;
+@@ -4543,268 +4539,9 @@
+             HttpServletResponse response, InputStream is,
+             BlobStore anonymousBlobStore, String containerName)
+             throws IOException {
+-        String contentTypeHeader = request.getHeader(HttpHeaders.CONTENT_TYPE);
+-        if (contentTypeHeader == null) {
+-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+-            return;
+-        }
+-        List<String> contentTypeParts = Splitter.on(';').splitToList(
+-                contentTypeHeader);
+-        if (contentTypeParts.size() < 2 || !contentTypeParts.get(0).trim()
+-                .equalsIgnoreCase("multipart/form-data")) {
+-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+-            return;
+-        }
+-        String boundary = null;
+-        for (int i = 1; i < contentTypeParts.size(); i++) {
+-            String param = contentTypeParts.get(i).trim();
+-            int eq = param.indexOf('=');
+-            if (eq > 0 && param.substring(0, eq).trim()
+-                    .equalsIgnoreCase("boundary")) {
+-                boundary = param.substring(eq + 1).trim();
+-                if (boundary.length() >= 2 && boundary.startsWith("\"") &&
+-                        boundary.endsWith("\"")) {
+-                    boundary = boundary.substring(1, boundary.length() - 1);
+-                }
+-                break;
+-            }
+-        }
+-        if (Strings.isNullOrEmpty(boundary)) {
+-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+-            return;
+-        }
+-
+-        // Every field, lowercased, since both a policy condition and the form
+-        // field it names are matched without regard to case.  The payload is
+-        // deliberately absent: it is the one field whose value is not a
+-        // string, and the policy constrains its length rather than its bytes.
+-        var fields = new LinkedHashMap<String, String>();
+-        String fileName = null;
+-        byte[] payload = null;
+-        FlexChecksum checksum = null;
+-        String checksumValue = null;
+-        var parser = new MultiPartFormData.Parser(boundary);
+-        // A fallback should the bounds below ever diverge; no part reaches it
+-        // while they agree.
+-        parser.setFilesDirectory(java.nio.file.Path.of(
+-                System.getProperty("java.io.tmpdir")));
+-        // Jetty bounds the number of parts and nothing else, so say how large
+-        // a body may be.  Nothing has authorized this one -- a form POST
+-        // carries no Authorization header, and the policy that speaks for it
+-        // is inside the body still being read -- so an unbounded body is one
+-        // anyone who can reach the proxy may send.  Bound it where the other
+-        // body read into memory is bounded, and hold parts in memory up to
+-        // the same bound rather than Jetty's default of writing every file
+-        // part to disk: the payload is about to be buffered whole anyway, and
+-        // the write turns a read-only temporary directory into a baffling 400
+-        // for every form upload.
+-        parser.setMaxLength(v4MaxNonChunkedRequestSize);
+-        parser.setMaxMemoryFileSize(v4MaxNonChunkedRequestSize);
+-        var futureParts = new CompletableFuture<MultiPartFormData.Parts>();
+-        parser.parse(new InputStreamContentSource(is,
+-                ByteBufferPool.SIZED_NON_POOLING),
+-                Promise.Invocable.toPromise(futureParts));
+-        MultiPartFormData.Parts parts;
+-        try {
+-            parts = futureParts.join();
+-        } catch (CompletionException ce) {
+-            throw multipartParseFailure(ce);
+-        }
+-        try {
+-            for (var part : parts) {
+-                var name = part.getName();
+-                if (name.equalsIgnoreCase("file")) {
+-                    // TODO: buffers entire payload
+-                    payload = part.getContentAsString(
+-                            StandardCharsets.ISO_8859_1)
+-                            .getBytes(StandardCharsets.ISO_8859_1);
+-                    fileName = part.getFileName();
+-                    continue;
+-                }
+-                String value = part.getContentAsString(StandardCharsets.UTF_8);
+-                fields.put(name.toLowerCase(java.util.Locale.ROOT), value);
+-                FlexChecksum candidate = FlexChecksum.fromHeaderName(name);
+-                if (candidate != null) {
+-                    if (checksum != null && checksum != candidate) {
+-                        throw new S3ProxyException(S3ErrorCode.INVALID_REQUEST,
+-                                "Expecting a single x-amz-checksum- field.");
+-                    }
+-                    checksum = candidate;
+-                    checksumValue = value;
+-                }
+-            }
+-        } finally {
+-            parts.close();
+-        }
+-
+-        String blobName = fields.get("key");
+-        // Substituted before the policy sees it, so a condition constrains the
+-        // name the object is stored under rather than the literal the form
+-        // sent.  A form that names ${filename} and a policy that requires the
+-        // key to start with "foo" agree only after this.
+-        if (blobName != null && blobName.contains("${filename}")) {
+-            blobName = blobName.replace("${filename}",
+-                    Strings.nullToEmpty(fileName));
+-            fields.put("key", blobName);
+-        }
+-        // The bucket a condition is matched against is the one being written
+-        // to, not a bucket field the form supplied: a form may name any bucket
+-        // it likes, and a policy naming the same one must still not authorize
+-        // a POST aimed elsewhere.
+-        fields.put("bucket", containerName);
+-
+-        byte[] policy = null;
+-        String policyField = fields.get("policy");
+-        if (policyField != null) {
+-            policy = policyField.getBytes(StandardCharsets.ISO_8859_1);
+-        }
+-        String identity = fields.get("awsaccesskeyid");
+-        if (identity == null) {
+-            identity = fields.get("x-amz-credential");
+-        }
+-        String signature = fields.get("signature");
+-        if (signature == null) {
+-            signature = fields.get("x-amz-signature");
+-        }
+-        String algorithm = fields.get("x-amz-algorithm");
+-        String contentType = fields.get("content-type");
+-
+-        if (blobName == null || payload == null) {
+-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+-            return;
+-        }
+-        // This key comes from the form rather than the URI, so it has not
+-        // passed the check in doHandle.
+-        checkReservedBlobName(blobName);
+-
+-        // A POST carries no Authorization header -- doHandle routes a request
+-        // without one here -- so either the policy or the bucket's own
+-        // permissions must say the caller may write.  A form carrying no
+-        // policy is answered as S3 answers it: the upload proceeds only when
+-        // the bucket grants AllUsers WRITE, and is refused otherwise.
+-        if (policy == null && signature == null && identity == null) {
+-            checkPublicWriteAccess(anonymousBlobStore, containerName);
+-            finishPostBlob(request, response, anonymousBlobStore,
+-                    containerName, blobName, contentType, fields, payload,
+-                    checksum, checksumValue);
+-            return;
+-        }
+-        // Carrying some but not all of them is a form built wrong rather than
+-        // one that meant to go unsigned, and saying so beats reporting it as a
+-        // refusal the caller cannot act on.
+-        if (policy == null || signature == null) {
+-            throw new S3ProxyException(S3ErrorCode.INVALID_ARGUMENT,
+-                    "Bucket POST must contain both 'policy' and a signature" +
+-                    " when it is authenticated.");
+-        }
+-
+-        String headerAuthorization = null;
+-        S3AuthorizationHeader authHeader = null;
+-        boolean signatureVersion4;
+-        if (algorithm == null) {
+-            if (identity == null || signature == null) {
+-                throw new S3ProxyException(S3ErrorCode.ACCESS_DENIED);
+-            }
+-            signatureVersion4 = false;
+-            headerAuthorization = "AWS " + identity + ":" + signature;
+-        } else if (algorithm.equals("AWS4-HMAC-SHA256")) {
+-            if (identity == null || signature == null) {
+-                throw new S3ProxyException(S3ErrorCode.ACCESS_DENIED);
+-            }
+-            signatureVersion4 = true;
+-            headerAuthorization = "AWS4-HMAC-SHA256" +
+-                    " Credential=" + identity +
+-                    ", Signature=" + signature;
+-        } else {
+-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+-            return;
+-        }
+-
+-        try {
+-            authHeader = new S3AuthorizationHeader(headerAuthorization);
+-        } catch (IllegalArgumentException iae) {
+-            throw new S3ProxyException(S3ErrorCode.INVALID_ARGUMENT, iae);
+-        }
+-
+-        switch (authHeader.getAuthenticationType()) {
+-        case AWS_V2 -> {
+-            switch (authenticationType) {
+-            case AWS_V2, AWS_V2_OR_V4, NONE -> { }
+-            default -> throw new S3ProxyException(S3ErrorCode.ACCESS_DENIED);
+-            }
+-        }
+-        case AWS_V4 -> {
+-            switch (authenticationType) {
+-            case AWS_V4, AWS_V2_OR_V4, NONE -> { }
+-            default -> throw new S3ProxyException(S3ErrorCode.ACCESS_DENIED);
+-            }
+-        }
+-        case NONE -> { }
+-        default -> throw new IllegalArgumentException("Unhandled type: " +
+-                authHeader.getAuthenticationType());
+-        }
+-
+-        // Locating with the bucket and key rather than with the identity alone
+-        // both authorizes them -- a BlobStoreLocator which scopes buckets to
+-        // identities answers null for one this caller may not address -- and
+-        // names the store to write to, which is not necessarily the default
+-        // one the anonymous path arrived with.
+-        AccessGrant grant = blobStoreLocator.locateBlobStore(
+-                authHeader.getIdentity(), containerName, blobName);
+-        if (grant == null) {
+-            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+-            return;
+-        }
+-        Optional<String> credentialOptional = grant.credential();
+-        if (credentialOptional.isEmpty()) {
+-            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+-            return;
+-        }
+-        String credential = credentialOptional.orElseThrow();
+-
+-        if (signatureVersion4) {
+-            // V4 headers always carry these fields
+-            byte[] kSecret = ("AWS4" + credential).getBytes(
+-                    StandardCharsets.UTF_8);
+-            byte[] kDate = hmac("HmacSHA256",
+-                    requireNonNull(authHeader.getDate()).getBytes(
+-                            StandardCharsets.UTF_8),
+-                    kSecret);
+-            byte[] kRegion = hmac("HmacSHA256",
+-                    requireNonNull(authHeader.getRegion()).getBytes(
+-                            StandardCharsets.UTF_8),
+-                    kDate);
+-            byte[] kService = hmac("HmacSHA256",
+-                    requireNonNull(authHeader.getService()).getBytes(
+-                            StandardCharsets.UTF_8),
+-                    kRegion);
+-            byte[] kSigning = hmac("HmacSHA256",
+-                    "aws4_request".getBytes(StandardCharsets.UTF_8), kService);
+-            String expectedSignature = HexFormat.of().formatHex(
+-                    hmac("HmacSHA256", policy, kSigning));
+-            if (!constantTimeEquals(signature, expectedSignature)) {
+-                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+-                return;
+-            }
+-        } else {
+-            String expectedSignature = Base64.getEncoder().encodeToString(
+-                    hmac("HmacSHA1", policy,
+-                            credential.getBytes(StandardCharsets.UTF_8)));
+-            if (!constantTimeEquals(signature, expectedSignature)) {
+-                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+-                return;
+-            }
+-        }
+-
+-        // The signature proves only that the policy came from someone holding
+-        // the credential.  Whether this particular form is the one the policy
+-        // describes is a separate question, and asking it is the whole point
+-        // of the document.
+-        PostPolicy.parse(policy).evaluate(fields, payload.length);
+-
+-        finishPostBlob(request, response, grant.blobStore(), containerName,
+-                blobName, contentType, fields, payload, checksum,
+-                checksumValue);
++        // dCache patch: browser POST upload needs Jetty 12
++        // MultiPartFormData, which is not available on Jetty 9.
++        throw new S3ProxyException(S3ErrorCode.NOT_IMPLEMENTED);
+     }
+ 
+     /**
+--- a/src/test/java/org/gaul/s3proxy/auth/AwsSignatureTest.java
++++ b/src/test/java/org/gaul/s3proxy/auth/AwsSignatureTest.java
+@@ -16,11 +16,14 @@
+ 
+ package org.gaul.s3proxy.auth;
+ 
+-import static org.assertj.core.api.Assertions.assertThat;
++import static org.junit.Assert.assertArrayEquals;
++import static org.junit.Assert.assertEquals;
++import static org.junit.Assert.assertFalse;
+ 
++import java.util.Arrays;
+ import java.util.HexFormat;
+ 
+-import org.junit.jupiter.api.Test;
++import org.junit.Test;
+ 
+ public final class AwsSignatureTest {
+ 
+@@ -37,9 +40,9 @@
+                 "SignedHeaders=host, Signature=ignored");
+         byte[] signingKey = AwsSignature.deriveSigningKeyV4(auth,
+                 "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY");
+-        assertThat(HexFormat.of().formatHex(signingKey))
+-                .isEqualTo("c4afb1cc5771d871763a393e44b7035" +
+-                        "71b55cc28424d1a5e86da6ed3c154a4b9");
++        assertEquals("c4afb1cc5771d871763a393e44b7035" +
++                        "71b55cc28424d1a5e86da6ed3c154a4b9",
++                HexFormat.of().formatHex(signingKey));
+     }
+ 
+     @Test
+@@ -49,7 +52,7 @@
+                 "aws4_request, SignedHeaders=host, Signature=ignored");
+         byte[] first = AwsSignature.deriveSigningKeyV4(auth, "secret");
+         byte[] second = AwsSignature.deriveSigningKeyV4(auth, "secret");
+-        assertThat(first).isEqualTo(second);
++        assertArrayEquals(second, first);
+     }
+ 
+     @Test
+@@ -62,7 +65,7 @@
+                 "aws4_request, SignedHeaders=host, Signature=ignored");
+         byte[] day1 = AwsSignature.deriveSigningKeyV4(auth1, "secret");
+         byte[] day2 = AwsSignature.deriveSigningKeyV4(auth2, "secret");
+-        assertThat(day1).isNotEqualTo(day2);
++        assertFalse(Arrays.equals(day1, day2));
+     }
+ 
+     @Test
+@@ -73,8 +76,9 @@
+         var west = new S3AuthorizationHeader(
+                 "AWS4-HMAC-SHA256 Credential=AKID/20260101/us-west-2/s3/" +
+                 "aws4_request, SignedHeaders=host, Signature=ignored");
+-        assertThat(AwsSignature.deriveSigningKeyV4(east, "secret"))
+-                .isNotEqualTo(AwsSignature.deriveSigningKeyV4(west, "secret"));
++        assertFalse(Arrays.equals(
++                AwsSignature.deriveSigningKeyV4(east, "secret"),
++                AwsSignature.deriveSigningKeyV4(west, "secret")));
+     }
+ 
+     @Test
+@@ -82,7 +86,8 @@
+         var auth = new S3AuthorizationHeader(
+                 "AWS4-HMAC-SHA256 Credential=AKID/20260101/us-east-1/s3/" +
+                 "aws4_request, SignedHeaders=host, Signature=ignored");
+-        assertThat(AwsSignature.deriveSigningKeyV4(auth, "secret-1"))
+-                .isNotEqualTo(AwsSignature.deriveSigningKeyV4(auth, "secret-2"));
++        assertFalse(Arrays.equals(
++                AwsSignature.deriveSigningKeyV4(auth, "secret-1"),
++                AwsSignature.deriveSigningKeyV4(auth, "secret-2")));
+     }
+ }
+--- a/src/test/java/org/gaul/s3proxy/auth/PostPolicyTest.java
++++ b/src/test/java/org/gaul/s3proxy/auth/PostPolicyTest.java
+@@ -16,8 +16,8 @@
+ 
+ package org.gaul.s3proxy.auth;
+ 
+-import static org.assertj.core.api.Assertions.assertThat;
+-import static org.assertj.core.api.Assertions.assertThatThrownBy;
++import static org.junit.Assert.assertEquals;
++import static org.junit.Assert.assertThrows;
+ 
+ import java.nio.charset.StandardCharsets;
+ import java.time.Instant;
+@@ -26,10 +26,10 @@
+ import java.util.LinkedHashMap;
+ import java.util.Map;
+ 
+-import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
+ import org.gaul.s3proxy.S3ErrorCode;
+ import org.gaul.s3proxy.S3ProxyException;
+-import org.junit.jupiter.api.Test;
++import org.junit.Test;
++import org.junit.function.ThrowingRunnable;
+ 
+ /**
+  * A signature over a policy proves only where the policy came from.  These
+@@ -66,11 +66,9 @@
+         return map;
+     }
+ 
+-    private static void assertCode(ThrowingCallable call, S3ErrorCode code) {
+-        assertThatThrownBy(call)
+-                .isInstanceOf(S3ProxyException.class)
+-                .satisfies(t -> assertThat(((S3ProxyException) t).getError())
+-                        .isEqualTo(code));
++    private static void assertCode(ThrowingRunnable call, S3ErrorCode code) {
++        S3ProxyException e = assertThrows(S3ProxyException.class, call);
++        assertEquals(code, e.getError());
+     }
+ 
+     @Test
+--- a/src/test/java/org/gaul/s3proxy/auth/S3AuthorizationHeaderTest.java
++++ b/src/test/java/org/gaul/s3proxy/auth/S3AuthorizationHeaderTest.java
+@@ -16,25 +16,27 @@
+ 
+ package org.gaul.s3proxy.auth;
+ 
+-import static org.assertj.core.api.Assertions.assertThat;
+-import static org.assertj.core.api.Assertions.assertThatThrownBy;
++import static org.hamcrest.MatcherAssert.assertThat;
++import static org.hamcrest.Matchers.containsString;
++import static org.junit.Assert.assertEquals;
++import static org.junit.Assert.assertNull;
++import static org.junit.Assert.assertThrows;
+ 
+-import org.junit.jupiter.api.Test;
++import org.junit.Test;
+ 
+ public final class S3AuthorizationHeaderTest {
+ 
+     @Test
+     public void parsesAwsV2Header() {
+         var header = new S3AuthorizationHeader("AWS access-key:abc123/sig=");
+-        assertThat(header.getAuthenticationType())
+-                .isEqualTo(AuthenticationType.AWS_V2);
+-        assertThat(header.getIdentity()).isEqualTo("access-key");
+-        assertThat(header.getSignature()).isEqualTo("abc123/sig=");
+-        assertThat(header.getHmacAlgorithm()).isNull();
+-        assertThat(header.getHashAlgorithm()).isNull();
+-        assertThat(header.getRegion()).isNull();
+-        assertThat(header.getDate()).isNull();
+-        assertThat(header.getService()).isNull();
++        assertEquals(AuthenticationType.AWS_V2, header.getAuthenticationType());
++        assertEquals("access-key", header.getIdentity());
++        assertEquals("abc123/sig=", header.getSignature());
++        assertNull(header.getHmacAlgorithm());
++        assertNull(header.getHashAlgorithm());
++        assertNull(header.getRegion());
++        assertNull(header.getDate());
++        assertNull(header.getService());
+     }
+ 
+     @Test
+@@ -44,15 +46,14 @@
+                 "aws4_request, SignedHeaders=host;x-amz-date, " +
+                 "Signature=abc123";
+         var header = new S3AuthorizationHeader(raw);
+-        assertThat(header.getAuthenticationType())
+-                .isEqualTo(AuthenticationType.AWS_V4);
+-        assertThat(header.getIdentity()).isEqualTo("AKIAIOSFODNN7EXAMPLE");
+-        assertThat(header.getDate()).isEqualTo("20260101");
+-        assertThat(header.getRegion()).isEqualTo("us-east-1");
+-        assertThat(header.getService()).isEqualTo("s3");
+-        assertThat(header.getHmacAlgorithm()).isEqualTo("HmacSHA256");
+-        assertThat(header.getHashAlgorithm()).isEqualTo("SHA-256");
+-        assertThat(header.getSignature()).isEqualTo("abc123");
++        assertEquals(AuthenticationType.AWS_V4, header.getAuthenticationType());
++        assertEquals("AKIAIOSFODNN7EXAMPLE", header.getIdentity());
++        assertEquals("20260101", header.getDate());
++        assertEquals("us-east-1", header.getRegion());
++        assertEquals("s3", header.getService());
++        assertEquals("HmacSHA256", header.getHmacAlgorithm());
++        assertEquals("SHA-256", header.getHashAlgorithm());
++        assertEquals("abc123", header.getSignature());
+     }
+ 
+     @Test
+@@ -61,9 +62,9 @@
+                 "Credential=key/20260101/us-west-2/s3/aws4_request, " +
+                 "SignedHeaders=host, Signature=deadbeef";
+         var header = new S3AuthorizationHeader(raw);
+-        assertThat(header.getHmacAlgorithm()).isEqualTo("HmacSHA1");
+-        assertThat(header.getHashAlgorithm()).isEqualTo("SHA-1");
+-        assertThat(header.getRegion()).isEqualTo("us-west-2");
++        assertEquals("HmacSHA1", header.getHmacAlgorithm());
++        assertEquals("SHA-1", header.getHashAlgorithm());
++        assertEquals("us-west-2", header.getRegion());
+     }
+ 
+     @Test
+@@ -74,36 +75,33 @@
+                 "Credential=k/20260101/us-east-1/s3/aws4_request, " +
+                 "SignedHeaders=host, Signature=zzz";
+         var header = new S3AuthorizationHeader(raw);
+-        assertThat(header.getSignature()).isEqualTo("zzz");
++        assertEquals("zzz", header.getSignature());
+     }
+ 
+     @Test
+     public void rejectsUnknownAuthScheme() {
+-        assertThatThrownBy(() -> new S3AuthorizationHeader("Bearer token"))
+-                .isInstanceOf(IllegalArgumentException.class)
+-                .hasMessage("Invalid header");
++        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
++                () -> new S3AuthorizationHeader("Bearer token"));
++        assertEquals("Invalid header", e.getMessage());
+     }
+ 
+     @Test
+     public void rejectsAwsV2WithoutColon() {
+-        assertThatThrownBy(
+-                () -> new S3AuthorizationHeader("AWS access-key-no-colon"))
+-                .isInstanceOf(IllegalArgumentException.class);
++        assertThrows(IllegalArgumentException.class,
++                () -> new S3AuthorizationHeader("AWS access-key-no-colon"));
+     }
+ 
+     @Test
+     public void rejectsAwsV2WithExtraSpaces() {
+-        assertThatThrownBy(() -> new S3AuthorizationHeader(
+-                "AWS too many parts here"))
+-                .isInstanceOf(IllegalArgumentException.class)
+-                .hasMessage("Invalid header");
++        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
++                () -> new S3AuthorizationHeader("AWS too many parts here"));
++        assertEquals("Invalid header", e.getMessage());
+     }
+ 
+     @Test
+     public void rejectsAwsV4WithoutSpace() {
+-        assertThatThrownBy(
+-                () -> new S3AuthorizationHeader("AWS4-HMAC-SHA256"))
+-                .isInstanceOf(IllegalArgumentException.class);
++        assertThrows(IllegalArgumentException.class,
++                () -> new S3AuthorizationHeader("AWS4-HMAC-SHA256"));
+     }
+ 
+     @Test
+@@ -111,16 +109,15 @@
+         var raw = "AWS4-HMAC-SHA512 " +
+                 "Credential=k/20260101/us-east-1/s3/aws4_request, " +
+                 "SignedHeaders=host, Signature=zzz";
+-        assertThatThrownBy(() -> new S3AuthorizationHeader(raw))
+-                .isInstanceOf(IllegalArgumentException.class)
+-                .hasMessageContaining("Unsupported signing algorithm");
++        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
++                () -> new S3AuthorizationHeader(raw));
++        assertThat(e.getMessage(), containsString("Unsupported signing algorithm"));
+     }
+ 
+     @Test
+     public void rejectsAwsV4WithoutCredentialField() {
+         var raw = "AWS4-HMAC-SHA256 SignedHeaders=host, Signature=zzz";
+-        assertThatThrownBy(() -> new S3AuthorizationHeader(raw))
+-                .isInstanceOf(IllegalArgumentException.class);
++        assertThrows(IllegalArgumentException.class, () -> new S3AuthorizationHeader(raw));
+     }
+ 
+     @Test
+@@ -128,9 +125,9 @@
+         // Only 3 slash-separated parts in Credential= rather than 5.
+         var raw = "AWS4-HMAC-SHA256 Credential=k/20260101/s3, " +
+                 "SignedHeaders=host, Signature=zzz";
+-        assertThatThrownBy(() -> new S3AuthorizationHeader(raw))
+-                .isInstanceOf(IllegalArgumentException.class)
+-                .hasMessageContaining("Invalid Credential");
++        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
++                () -> new S3AuthorizationHeader(raw));
++        assertThat(e.getMessage(), containsString("Invalid Credential"));
+     }
+ 
+     @Test
+@@ -138,8 +135,8 @@
+         var raw = "AWS4-HMAC-SHA256 " +
+                 "Credential=k/20260101/us-east-1/s3/aws4_request, " +
+                 "SignedHeaders=host";
+-        assertThatThrownBy(() -> new S3AuthorizationHeader(raw))
+-                .isInstanceOf(IllegalArgumentException.class)
+-                .hasMessageContaining("Invalid signature");
++        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
++                () -> new S3AuthorizationHeader(raw));
++        assertThat(e.getMessage(), containsString("Invalid signature"));
+     }
+ }
+--- a/src/test/java/org/gaul/s3proxy/checksum/ChunkedInputStreamTest.java
++++ b/src/test/java/org/gaul/s3proxy/checksum/ChunkedInputStreamTest.java
+@@ -16,8 +16,13 @@
+ 
+ package org.gaul.s3proxy.checksum;
+ 
+-import static org.assertj.core.api.Assertions.assertThat;
+-import static org.assertj.core.api.Assertions.assertThatThrownBy;
++import static org.hamcrest.MatcherAssert.assertThat;
++import static org.hamcrest.Matchers.containsString;
++import static org.hamcrest.Matchers.instanceOf;
++import static org.junit.Assert.assertArrayEquals;
++import static org.junit.Assert.assertEquals;
++import static org.junit.Assert.assertThrows;
++import static org.junit.Assert.assertTrue;
+ 
+ import java.io.ByteArrayInputStream;
+ import java.io.ByteArrayOutputStream;
+@@ -34,7 +39,7 @@
+ 
+ import org.gaul.s3proxy.S3ErrorCode;
+ import org.gaul.s3proxy.S3ProxyException;
+-import org.junit.jupiter.api.Test;
++import org.junit.Test;
+ 
+ public final class ChunkedInputStreamTest {
+     private static final int MAX_CHUNK_SIZE = 64 * 1024;
+@@ -51,7 +56,7 @@
+         byte[] body = unsignedChunked(new byte[0][]);
+         try (var in = new ChunkedInputStream(new ByteArrayInputStream(body),
+                 MAX_CHUNK_SIZE)) {
+-            assertThat(in.read()).isEqualTo(-1);
++            assertEquals(-1, in.read());
+         }
+     }
+ 
+@@ -61,7 +66,7 @@
+         byte[] body = unsignedChunked(new byte[][] {payload});
+         try (var in = new ChunkedInputStream(new ByteArrayInputStream(body),
+                 MAX_CHUNK_SIZE)) {
+-            assertThat(in.readAllBytes()).isEqualTo(payload);
++            assertArrayEquals(payload, in.readAllBytes());
+         }
+     }
+ 
+@@ -73,8 +78,8 @@
+         byte[] body = unsignedChunked(new byte[][] {one, two, three});
+         try (var in = new ChunkedInputStream(new ByteArrayInputStream(body),
+                 MAX_CHUNK_SIZE)) {
+-            assertThat(in.readAllBytes()).isEqualTo(
+-                    "firstsecondthird".getBytes(StandardCharsets.UTF_8));
++            assertArrayEquals("firstsecondthird".getBytes(StandardCharsets.UTF_8),
++                    in.readAllBytes());
+         }
+     }
+ 
+@@ -90,7 +95,7 @@
+         try (var in = new ChunkedInputStream(new ByteArrayInputStream(body),
+                 MAX_CHUNK_SIZE)) {
+             // A zero-length read must consume nothing and return 0.
+-            assertThat(in.read(new byte[4], 0, 0)).isEqualTo(0);
++            assertEquals(0, in.read(new byte[4], 0, 0));
+ 
+             // Read through a buffer smaller than the chunks so the bulk-copy
+             // path is exercised with len as the limiting bound and across
+@@ -99,10 +104,10 @@
+             byte[] buf = new byte[3];
+             int n;
+             while ((n = in.read(buf, 0, buf.length)) != -1) {
+-                assertThat(n).isBetween(1, buf.length);
++                assertTrue(n >= 1 && n <= buf.length);
+                 out.write(buf, 0, n);
+             }
+-            assertThat(out.toByteArray()).isEqualTo(expected);
++            assertArrayEquals(expected, out.toByteArray());
+         }
+     }
+ 
+@@ -117,12 +122,11 @@
+ 
+         try (var in = new ChunkedInputStream(new ByteArrayInputStream(
+                 out.toByteArray()), MAX_CHUNK_SIZE)) {
+-            assertThatThrownBy(in::readAllBytes)
+-                    .isInstanceOf(IOException.class)
+-                    .hasCauseInstanceOf(S3ProxyException.class)
+-                    .cause()
+-                    .extracting(c -> ((S3ProxyException) c).getError())
+-                    .isEqualTo(S3ErrorCode.INCOMPLETE_BODY);
++            IOException e = assertThrows(IOException.class,
++                    in::readAllBytes);
++            assertThat(e.getCause(), instanceOf(S3ProxyException.class));
++            assertEquals(S3ErrorCode.INCOMPLETE_BODY,
++                    ((S3ProxyException) e.getCause()).getError());
+         }
+     }
+ 
+@@ -132,12 +136,11 @@
+ 
+         try (var in = new ChunkedInputStream(new ByteArrayInputStream(body),
+                 MAX_CHUNK_SIZE)) {
+-            assertThatThrownBy(in::readAllBytes)
+-                    .isInstanceOf(IOException.class)
+-                    .hasCauseInstanceOf(S3ProxyException.class)
+-                    .cause()
+-                    .extracting(c -> ((S3ProxyException) c).getError())
+-                    .isEqualTo(S3ErrorCode.INCOMPLETE_BODY);
++            IOException e = assertThrows(IOException.class,
++                    in::readAllBytes);
++            assertThat(e.getCause(), instanceOf(S3ProxyException.class));
++            assertEquals(S3ErrorCode.INCOMPLETE_BODY,
++                    ((S3ProxyException) e.getCause()).getError());
+         }
+     }
+ 
+@@ -146,12 +149,11 @@
+     public void emptyBodyIsRejected() throws IOException {
+         try (var in = new ChunkedInputStream(
+                 new ByteArrayInputStream(new byte[0]), MAX_CHUNK_SIZE)) {
+-            assertThatThrownBy(in::read)
+-                    .isInstanceOf(IOException.class)
+-                    .hasCauseInstanceOf(S3ProxyException.class)
+-                    .cause()
+-                    .extracting(c -> ((S3ProxyException) c).getError())
+-                    .isEqualTo(S3ErrorCode.INCOMPLETE_BODY);
++            IOException e = assertThrows(IOException.class,
++                    in::read);
++            assertThat(e.getCause(), instanceOf(S3ProxyException.class));
++            assertEquals(S3ErrorCode.INCOMPLETE_BODY,
++                    ((S3ProxyException) e.getCause()).getError());
+         }
+     }
+ 
+@@ -165,10 +167,9 @@
+                 "hello".getBytes(StandardCharsets.UTF_8)});
+         try (var in = new ChunkedInputStream(new ByteArrayInputStream(body),
+                 MAX_CHUNK_SIZE)) {
+-            assertThat(in.readAllBytes()).isEqualTo(
+-                    "hello".getBytes(StandardCharsets.UTF_8));
+-            assertThat(in.read()).isEqualTo(-1);
+-            assertThat(in.read(new byte[4], 0, 4)).isEqualTo(-1);
++            assertArrayEquals("hello".getBytes(StandardCharsets.UTF_8), in.readAllBytes());
++            assertEquals(-1, in.read());
++            assertEquals(-1, in.read(new byte[4], 0, 4));
+         }
+     }
+ 
+@@ -178,9 +179,8 @@
+         byte[] body = unsignedChunked(new byte[][] {tooBig});
+         try (var in = new ChunkedInputStream(new ByteArrayInputStream(body),
+                 /*maxChunkSize=*/ 8)) {
+-            assertThatThrownBy(in::readAllBytes)
+-                    .isInstanceOf(IOException.class)
+-                    .hasMessageContaining("chunk size exceeds maximum");
++            IOException e = assertThrows(IOException.class, in::readAllBytes);
++            assertThat(e.getMessage(), containsString("chunk size exceeds maximum"));
+         } catch (IOException ioe) {
+             throw new RuntimeException(ioe);
+         }
+@@ -194,7 +194,7 @@
+         try (var in = new ChunkedInputStream(new ByteArrayInputStream(body),
+                 MAX_CHUNK_SIZE, SEED_SIGNATURE, signingKey, HMAC, TIMESTAMP,
+                 SCOPE)) {
+-            assertThat(in.readAllBytes()).isEqualTo(payload);
++            assertArrayEquals(payload, in.readAllBytes());
+         }
+     }
+ 
+@@ -213,12 +213,11 @@
+         try (var in = new ChunkedInputStream(new ByteArrayInputStream(body),
+                 MAX_CHUNK_SIZE, SEED_SIGNATURE, signingKey, HMAC, TIMESTAMP,
+                 SCOPE)) {
+-            assertThatThrownBy(in::readAllBytes)
+-                    .isInstanceOf(IOException.class)
+-                    .hasCauseInstanceOf(S3ProxyException.class)
+-                    .cause()
+-                    .extracting(c -> ((S3ProxyException) c).getError())
+-                    .isEqualTo(S3ErrorCode.SIGNATURE_DOES_NOT_MATCH);
++            IOException e = assertThrows(IOException.class,
++                    in::readAllBytes);
++            assertThat(e.getCause(), instanceOf(S3ProxyException.class));
++            assertEquals(S3ErrorCode.SIGNATURE_DOES_NOT_MATCH,
++                    ((S3ProxyException) e.getCause()).getError());
+         }
+     }
+ 
+@@ -231,7 +230,7 @@
+ 
+         try (var in = new ChunkedInputStream(new ByteArrayInputStream(body),
+                 MAX_CHUNK_SIZE, "x-amz-checksum-crc32")) {
+-            assertThat(in.readAllBytes()).isEqualTo(payload);
++            assertArrayEquals(payload, in.readAllBytes());
+         }
+     }
+ 
+@@ -244,12 +243,11 @@
+ 
+         try (var in = new ChunkedInputStream(new ByteArrayInputStream(body),
+                 MAX_CHUNK_SIZE, "x-amz-checksum-crc32")) {
+-            assertThatThrownBy(in::readAllBytes)
+-                    .isInstanceOf(IOException.class)
+-                    .hasCauseInstanceOf(S3ProxyException.class)
+-                    .cause()
+-                    .extracting(c -> ((S3ProxyException) c).getError())
+-                    .isEqualTo(S3ErrorCode.BAD_DIGEST);
++            IOException e = assertThrows(IOException.class,
++                    in::readAllBytes);
++            assertThat(e.getCause(), instanceOf(S3ProxyException.class));
++            assertEquals(S3ErrorCode.BAD_DIGEST,
++                    ((S3ProxyException) e.getCause()).getError());
+         }
+     }
+ 
+@@ -269,12 +267,11 @@
+         try (var in = new ChunkedInputStream(new ByteArrayInputStream(
+                 out.toByteArray()), MAX_CHUNK_SIZE,
+                 "x-amz-checksum-crc32")) {
+-            assertThatThrownBy(in::readAllBytes)
+-                    .isInstanceOf(IOException.class)
+-                    .hasCauseInstanceOf(S3ProxyException.class)
+-                    .cause()
+-                    .extracting(c -> ((S3ProxyException) c).getError())
+-                    .isEqualTo(S3ErrorCode.BAD_DIGEST);
++            IOException e = assertThrows(IOException.class,
++                    in::readAllBytes);
++            assertThat(e.getCause(), instanceOf(S3ProxyException.class));
++            assertEquals(S3ErrorCode.BAD_DIGEST,
++                    ((S3ProxyException) e.getCause()).getError());
+         }
+     }
+ 
+@@ -305,7 +302,7 @@
+ 
+         try (var in = new ChunkedInputStream(new ByteArrayInputStream(
+                 out.toByteArray()), MAX_CHUNK_SIZE, "x-amz-checksum-crc32")) {
+-            assertThat(in.readAllBytes()).isEqualTo(payload);
++            assertArrayEquals(payload, in.readAllBytes());
+         }
+     }
+ 
+--- a/src/test/java/org/gaul/s3proxy/checksum/CrcCombineTest.java
++++ b/src/test/java/org/gaul/s3proxy/checksum/CrcCombineTest.java
+@@ -16,13 +16,13 @@
+ 
+ package org.gaul.s3proxy.checksum;
+ 
+-import static org.assertj.core.api.Assertions.assertThat;
++import static org.junit.Assert.assertEquals;
+ 
+ import java.util.Random;
+ 
+ import com.google.common.hash.Hashing;
+ 
+-import org.junit.jupiter.api.Test;
++import org.junit.Test;
+ 
+ @SuppressWarnings("deprecation")
+ public final class CrcCombineTest {
+@@ -61,8 +61,8 @@
+         long crc = Hashing.crc32().hashBytes(
+                 "abc".getBytes(java.nio.charset.StandardCharsets.UTF_8))
+                 .padToLong();
+-        assertThat(CrcCombine.combine(crc, 0, /*lengthB=*/ 0,
+-                CRC32_POLYNOMIAL, 32)).isEqualTo(crc);
++        assertEquals(crc, CrcCombine.combine(crc, 0, /*lengthB=*/ 0,
++                CRC32_POLYNOMIAL, 32));
+     }
+ 
+     private interface Crc {
+@@ -87,10 +87,10 @@
+             System.arraycopy(b, 0, concatenated, a.length, b.length);
+ 
+             long mask = width == 32 ? 0xffffffffL : -1L;
+-            assertThat(CrcCombine.combine(crc.of(a), crc.of(b), b.length,
+-                    polynomial, width) & mask)
+-                    .as("lengths %d and %d", a.length, b.length)
+-                    .isEqualTo(crc.of(concatenated) & mask);
++            assertEquals(String.format("lengths %d and %d", a.length, b.length),
++                    crc.of(concatenated) & mask,
++                    CrcCombine.combine(crc.of(a), crc.of(b), b.length,
++                            polynomial, width) & mask);
+         }
+     }
+ }

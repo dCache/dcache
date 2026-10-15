@@ -81,6 +81,14 @@
         <version.logback>1.2.13</version.logback>
         <version.logback.contrib>0.1.5</version.logback.contrib>
         <version.jackson>2.18.11</version.jackson>
+        <!-- Jackson 3, AWS SDK v2 and jspecify are used by the vendored
+             s3proxy; keep them in sync with modules/s3proxy-vendored/VENDORED.md -->
+        <version.jackson3>3.2.2</version.jackson3>
+        <!-- Jackson 3 needs annotations 2.22; annotations stay backward
+             compatible with Jackson 2.18 databind -->
+        <version.jackson-annotations>2.22</version.jackson-annotations>
+        <version.awssdk>2.54.13</version.awssdk>
+        <version.jspecify>1.0.1</version.jspecify>
         <version.jna>5.18.1</version.jna>
         <jmh.version>1.35</jmh.version>
         <version.dropwizard>4.1.29</version.dropwizard>
@@ -913,13 +921,48 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-annotations</artifactId>
-                <version>${version.jackson}</version>
+                <version>${version.jackson-annotations}</version>
             </dependency>
 
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-core</artifactId>
                 <version>${version.jackson}</version>
+            </dependency>
+
+            <!-- tools.jackson.dataformat.xml.XmlMapper (vendored s3proxy) -->
+            <dependency>
+                <groupId>tools.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-xml</artifactId>
+                <version>${version.jackson3}</version>
+            </dependency>
+
+            <!-- software.amazon.awssdk.services.s3.model (vendored s3proxy);
+                 only the model classes are used, no HTTP client -->
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>s3</artifactId>
+                <version>${version.awssdk}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>software.amazon.awssdk</groupId>
+                        <artifactId>netty-nio-client</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>software.amazon.awssdk</groupId>
+                        <artifactId>apache-client</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>software.amazon.awssdk</groupId>
+                        <artifactId>apache5-client</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.jspecify</groupId>
+                <artifactId>jspecify</artifactId>
+                <version>${version.jspecify}</version>
             </dependency>
 
             <dependency>
@@ -1460,6 +1503,7 @@
         <module>modules/dcache-ftp</module>
         <module>modules/dcache-resilience</module>
         <module>modules/dcache-webdav</module>
+        <module>modules/s3proxy-vendored</module>
         <module>modules/dcache-xrootd</module>
         <module>modules/dcache-dcap</module>
         <module>modules/dcache-gplazma</module>
