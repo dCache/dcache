@@ -66,6 +66,16 @@ s3cmd --host localhost:9000 --host-bucket localhost:9000 --no-ssl \
       --access_key AKIASYSTEMTEST --secret_key system-test-secret ls s3://public
 ```
 
+Objects can be uploaded, copied and deleted in the buckets the test user
+owns (`disk`, `tape`, `replica`, `resilient`, `reserved`), and in `public`.
+New buckets cannot be created, as `/` is read-only.
+
+```
+rclone --s3-provider Other --s3-endpoint http://localhost:9000 \
+       --s3-access-key-id AKIASYSTEMTEST --s3-secret-access-key system-test-secret \
+       copy ./dir :s3:disk/dir
+```
+
 Files in `/tape` that are only on tape are listed with storage class
 `GLACIER` and must be restored (`RestoreObject`) before they can be read.
 

@@ -22,6 +22,7 @@ import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FileNotOnlineCacheException;
 import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.QuotaExceededCacheException;
 import diskCacheV111.util.TimeoutCacheException;
 import org.gaul.s3proxy.S3ErrorCode;
 import org.gaul.s3proxy.S3ProxyException;
@@ -97,6 +98,10 @@ final class S3Errors {
         }
         if (e instanceof TimeoutCacheException) {
             return serviceUnavailable(e.getMessage(), e);
+        }
+        if (e instanceof QuotaExceededCacheException) {
+            // As Ceph RGW answers.
+            return error(403, "QuotaExceeded", e.getMessage(), e);
         }
         switch (e.getRc()) {
             case CacheException.SERVICE_UNAVAILABLE:

@@ -23,6 +23,7 @@ import static org.dcache.util.TransferRetryPolicy.tryOnce;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.HttpDoorUrlInfoMessage;
@@ -33,6 +34,7 @@ import dmg.cells.nucleus.CellIdentityAware;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.InetAddress;
@@ -47,22 +49,23 @@ import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.PingMoversTask;
+import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.TransferRetryPolicy;
 import org.dcache.vehicles.FileAttributes;
 
 /**
- * Reads files from pools for the S3 door, relaying the data through the door.
+ * Reads and writes files on pools for the S3 door, relaying the data through the door.
  * <p>
- * Each read is a {@link S3ReadTransfer} with its own HTTP mover.  This component receives the
- * pools' messages about those movers, so it must be registered as a message receiver of the
- * door's cell.
+ * Each read is a {@link S3ReadTransfer} and each write a {@link S3WriteTransfer}, with its own
+ * HTTP mover.  This component receives the pools' messages about those movers, so it must be
+ * registered as a message receiver of the door's cell.
  */
-public class S3TransferManager implements S3ObjectReader, CellMessageReceiver,
+public class S3TransferManager implements S3ObjectReader, S3ObjectWriter, CellMessageReceiver,
       CellIdentityAware, CellInfoProvider {
 
     private static final long PING_PERIOD = TimeUnit.MINUTES.toMillis(5);
 
-    private final Map<Integer, S3ReadTransfer> transfers = new ConcurrentHashMap<>();
+    private final Map<Integer, RedirectedTransfer<String>> transfers = new ConcurrentHashMap<>();
 
     private PnfsHandler pnfs;
     private PoolManagerStub poolManagerStub;
@@ -132,7 +135,8 @@ public class S3TransferManager implements S3ObjectReader, CellMessageReceiver,
     }
 
     /**
-     * Timeout for connecting to the mover and for each read from it.
+     * Timeout for connecting to the mover and for each read from it; for uploads, how long to
+     * wait for the mover's answer once all data was sent.
      */
     public void setPoolTimeout(long timeout) {
         poolTimeout = timeout;
@@ -143,7 +147,7 @@ public class S3TransferManager implements S3ObjectReader, CellMessageReceiver,
     }
 
     /**
-     * How long to wait for the pool to confirm a transfer once all data was read.
+     * How long to wait for the pool to confirm a transfer once all data was transferred.
      */
     public void setTransferConfirmationTimeout(long timeout) {
         transferConfirmationTimeout = timeout;
@@ -175,41 +179,24 @@ public class S3TransferManager implements S3ObjectReader, CellMessageReceiver,
         var transfer = new S3ReadTransfer(pnfs, user.subject(), user.restriction(), path,
               internalAddress);
         transfer.setPnfsId(attributes.getPnfsId());
-        transfer.setCellAddress(cellAddress);
-        transfer.setPoolManagerStub(poolManagerStub);
-        transfer.setPoolStub(poolStub);
-        transfer.setBillingStub(billingStub);
-        transfer.setIoQueue(ioQueue);
-        transfer.setClientAddresses(List.of(new InetSocketAddress(
-              RequestOrigin.current().orElse(InetAddress.getLoopbackAddress()), 0)));
+        initialise(transfer);
 
-        long moverTimeoutMillis = moverTimeoutUnit.toMillis(moverTimeout);
         long killTimeoutMillis = killTimeoutUnit.toMillis(killTimeout);
         int id = (int) transfer.getId();
         transfers.put(id, transfer);
         boolean isStarted = false;
         try {
             transfer.readNameSpaceEntry(false);
-            TransferRetryPolicy policy = tryOnce().timeoutAfter(moverTimeoutMillis,
-                  TimeUnit.MILLISECONDS);
-            try {
-                transfer.selectPoolAndStartMover(policy);
-                if (transfer.waitForRedirect(moverTimeoutMillis, TimeUnit.MILLISECONDS) == null) {
-                    throw new TimeoutCacheException("Server is busy (internal timeout)");
-                }
-            } finally {
-                transfer.setStatus(null);
-            }
-            int poolTimeoutMillis = (int) Math.min(Integer.MAX_VALUE,
-                  poolTimeoutUnit.toMillis(poolTimeout));
-            InputStream in = transfer.open(offset, length, poolTimeoutMillis,
+            startMover(transfer);
+            InputStream in = transfer.open(offset, length, poolTimeoutMillis(),
                   transferConfirmationTimeoutUnit.toMillis(transferConfirmationTimeout),
                   killTimeoutMillis, () -> transfers.remove(id));
             isStarted = true;
             return in;
         } catch (CacheException e) {
             transfer.notifyBilling(e.getRc(), e.getMessage());
-            transfer.killMover(killTimeoutMillis, "door experienced internal error: " + e.getMessage());
+            transfer.killMover(killTimeoutMillis,
+                  "door experienced internal error: " + e.getMessage());
             throw e;
         } catch (InterruptedException e) {
             transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, "Shutting down");
@@ -226,11 +213,89 @@ public class S3TransferManager implements S3ObjectReader, CellMessageReceiver,
         }
     }
 
+    @Override
+    public PnfsId write(S3User user, FsPath path, FsPath billingPath, Map<String, String> xattrs,
+          InputStream data, long length)
+          throws CacheException, InterruptedException, IOException {
+        var transfer = new S3WriteTransfer(pnfs, user.subject(), user.restriction(), path,
+              billingPath, internalAddress, xattrs);
+        initialise(transfer);
+
+        long killTimeoutMillis = killTimeoutUnit.toMillis(killTimeout);
+        int id = (int) transfer.getId();
+        transfers.put(id, transfer);
+        boolean isWritten = false;
+        try {
+            transfer.createNameSpaceEntryWithParents();
+            transfer.setLength(length);
+            startMover(transfer);
+            transfer.relay(data, length, poolTimeoutMillis(),
+                  transferConfirmationTimeoutUnit.toMillis(transferConfirmationTimeout));
+            isWritten = true;
+            return transfer.getPnfsId();
+        } catch (IOException e) {
+            String explanation = "Failed to read data from client: " + e.getMessage();
+            transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, explanation);
+            transfer.killMover(killTimeoutMillis, explanation);
+            throw e;
+        } catch (CacheException e) {
+            transfer.notifyBilling(e.getRc(), e.getMessage());
+            transfer.killMover(killTimeoutMillis,
+                  "door experienced internal error: " + e.getMessage());
+            throw e;
+        } catch (InterruptedException e) {
+            transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, "Shutting down");
+            transfer.killMover(0, "door shutting down");
+            throw e;
+        } catch (RuntimeException e) {
+            transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.toString());
+            transfer.killMover(killTimeoutMillis, "door encountered a bug");
+            throw e;
+        } finally {
+            if (!isWritten && transfer.isWrite()) {
+                transfer.deleteNameSpaceEntry();
+            }
+            transfers.remove(id);
+        }
+    }
+
+    private void initialise(RedirectedTransfer<String> transfer) {
+        transfer.setCellAddress(cellAddress);
+        transfer.setPoolManagerStub(poolManagerStub);
+        transfer.setPoolStub(poolStub);
+        transfer.setBillingStub(billingStub);
+        transfer.setIoQueue(ioQueue);
+        transfer.setClientAddresses(List.of(new InetSocketAddress(
+              RequestOrigin.current().orElse(InetAddress.getLoopbackAddress()), 0)));
+    }
+
+    /**
+     * Selects a pool, starts a mover and waits for its URL.
+     */
+    private void startMover(RedirectedTransfer<String> transfer)
+          throws CacheException, InterruptedException {
+        long moverTimeoutMillis = moverTimeoutUnit.toMillis(moverTimeout);
+        TransferRetryPolicy policy = tryOnce().timeoutAfter(moverTimeoutMillis,
+              TimeUnit.MILLISECONDS);
+        try {
+            transfer.selectPoolAndStartMover(policy);
+            if (transfer.waitForRedirect(moverTimeoutMillis, TimeUnit.MILLISECONDS) == null) {
+                throw new TimeoutCacheException("Server is busy (internal timeout)");
+            }
+        } finally {
+            transfer.setStatus(null);
+        }
+    }
+
+    private int poolTimeoutMillis() {
+        return (int) Math.min(Integer.MAX_VALUE, poolTimeoutUnit.toMillis(poolTimeout));
+    }
+
     /**
      * The mover URL of a transfer.
      */
     public void messageArrived(HttpDoorUrlInfoMessage message) {
-        S3ReadTransfer transfer = transfers.get((int) message.getId());
+        RedirectedTransfer<String> transfer = transfers.get((int) message.getId());
         if (transfer != null) {
             transfer.redirect(message.getUrl());
         }
@@ -240,7 +305,7 @@ public class S3TransferManager implements S3ObjectReader, CellMessageReceiver,
      * The end of a transfer.
      */
     public void messageArrived(DoorTransferFinishedMessage message) {
-        S3ReadTransfer transfer = transfers.get((int) message.getId());
+        RedirectedTransfer<String> transfer = transfers.get((int) message.getId());
         if (transfer != null) {
             transfer.finished(message);
         }
