@@ -67,6 +67,14 @@ marked with `dCache patch` comments.
    are added, and `addMetadataToResponse` sends `x-amz-restore` from
    `HeadObjectResponse.restore()`.
 
+7. Signatures over a `Content-Type` with a charset: Jetty 9 matches header
+   values against its cache of common ones regardless of case and passes on
+   the cached spelling, so `text/plain; charset=utf-8` reaches the handler
+   as `text/plain; charset=UTF-8` and the V2 and V4 signatures no longer
+   match. When a signature does not match and the charset has upper-case
+   letters, `S3ProxyHandler` checks it once more with the charset in lower
+   case (`withLowerCaseCharset`). Not needed with Jetty 12.
+
 `patches/dcache.patch` is generated with `diff -u` of each vendored source
 against the upstream file (`/dev/null` for dCache files), subdirectories
 before files as `diff -r` orders them.

@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.HexFormat;
@@ -81,6 +82,7 @@ import com.google.common.net.HttpHeaders;
 import com.google.common.net.PercentEscaper;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 
 import org.gaul.s3proxy.auth.AuthenticationType;
@@ -248,6 +250,9 @@ public class S3ProxyHandler {
     /** The most buckets ListBuckets returns, and its max-buckets ceiling. */
     private static final int MAX_BUCKETS = 10_000;
     /** An S3 composite ETag: the parts' MD5s hashed, then the part count. */
+    // dCache patch: the charset of a Content-Type, see withLowerCaseCharset.
+    private static final Pattern CHARSET_PARAMETER = Pattern.compile(
+            "(?i);\\s*charset=([^;\\s]+)");
     private static final Pattern COMPOSITE_ETAG = Pattern.compile(
             "[0-9a-fA-F]{32}-([0-9]+)");
     private static final Set<String> UNSUPPORTED_PARAMETERS = Set.of(
@@ -513,6 +518,54 @@ public class S3ProxyHandler {
                         AwsHttpHeaders.SERVER_SIDE_ENCRYPTION_CUSTOMER_KEY) ||
                 headerName.equalsIgnoreCase(AwsHttpHeaders
                         .COPY_SOURCE_SERVER_SIDE_ENCRYPTION_CUSTOMER_KEY);
+    }
+
+    /**
+     * dCache patch: Jetty 9 matches header values against a cache of common
+     * ones regardless of case and passes on the cached spelling, so a
+     * Content-Type of "text/plain; charset=utf-8" arrives as
+     * "text/plain; charset=UTF-8" and no longer reads as the client signed
+     * it.  Returns the request with the charset in lower case, the spelling
+     * clients mostly use, for a second check of the signature; or null if
+     * the Content-Type has no charset with upper-case letters.  Not needed
+     * with Jetty 12.
+     */
+    @Nullable
+    private static HttpServletRequest withLowerCaseCharset(
+            HttpServletRequest request) {
+        String contentType = request.getHeader(HttpHeaders.CONTENT_TYPE);
+        if (contentType == null) {
+            return null;
+        }
+        var matcher = CHARSET_PARAMETER.matcher(contentType);
+        if (!matcher.find()) {
+            return null;
+        }
+        String lowerCase = contentType.substring(0, matcher.start(1)) +
+                matcher.group(1).toLowerCase(Locale.ROOT) +
+                contentType.substring(matcher.end(1));
+        if (lowerCase.equals(contentType)) {
+            return null;
+        }
+        return new HttpServletRequestWrapper(request) {
+            @Override
+            public String getHeader(String name) {
+                return HttpHeaders.CONTENT_TYPE.equalsIgnoreCase(name) ?
+                        lowerCase : super.getHeader(name);
+            }
+
+            @Override
+            public Enumeration<String> getHeaders(String name) {
+                return HttpHeaders.CONTENT_TYPE.equalsIgnoreCase(name) ?
+                        Collections.enumeration(List.of(lowerCase)) :
+                        super.getHeaders(name);
+            }
+
+            @Override
+            public String getContentType() {
+                return lowerCase;
+            }
+        };
     }
 
     private static String getBlobStoreType(BlobStore blobStore) {
@@ -963,6 +1016,20 @@ public class S3ProxyHandler {
                                     presignedUrl, haveBothDateHeader);
                     expectedSignature = signatureDetail.signature();
                 }
+                // dCache patch: see withLowerCaseCharset.
+                HttpServletRequest lowerCaseCharset =
+                        withLowerCaseCharset(request);
+                if (lowerCaseCharset != null && !constantTimeEquals(
+                        expectedSignature, authHeader.getSignature())) {
+                    var detail = AwsSignature.createAuthorizationSignature(
+                            lowerCaseCharset, uriForSigning, credential,
+                            presignedUrl, haveBothDateHeader);
+                    if (constantTimeEquals(detail.signature(),
+                            authHeader.getSignature())) {
+                        signatureDetail = detail;
+                        expectedSignature = detail.signature();
+                    }
+                }
             } else {
                 String contentSha256 = request.getHeader(
                         AwsHttpHeaders.CONTENT_SHA256);
@@ -1061,6 +1128,22 @@ public class S3ProxyHandler {
                                 credential, presignedUrl, /*pinnedHash=*/ null,
                                 verifiedContentSha256);
                         expectedSignature = signatureDetail.signature();
+                    }
+                    // dCache patch: see withLowerCaseCharset.
+                    HttpServletRequest lowerCaseCharset =
+                            withLowerCaseCharset(baseRequest);
+                    if (lowerCaseCharset != null && !constantTimeEquals(
+                            expectedSignature, authHeader.getSignature())) {
+                        var detail = AwsSignature
+                                .createAuthorizationSignatureV4(
+                                lowerCaseCharset, authHeader, payload,
+                                uriForSigning, credential, presignedUrl,
+                                pinnedSha256, verifiedContentSha256);
+                        if (constantTimeEquals(detail.signature(),
+                                authHeader.getSignature())) {
+                            signatureDetail = detail;
+                            expectedSignature = detail.signature();
+                        }
                     }
                     if ("STREAMING-AWS4-HMAC-SHA256-PAYLOAD".equals(
                             contentSha256) ||
