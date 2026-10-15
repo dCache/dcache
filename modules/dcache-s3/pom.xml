@@ -33,6 +33,11 @@
       <artifactId>cells</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.dcache</groupId>
+      <artifactId>dcache-s3proxy-vendored</artifactId>
+      <version>${project.version}</version>
+    </dependency>
 
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
