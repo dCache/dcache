@@ -59,6 +59,11 @@ class FakeDcache {
 
     static final long MTIME = 1_700_000_000_000L;
 
+    /**
+     * The owner of directories.
+     */
+    static final int OWNER = 1000;
+
     final Map<FsPath, FileAttributes> namespace = Collections.synchronizedMap(new HashMap<>());
     final Map<FsPath, byte[]> content = Collections.synchronizedMap(new HashMap<>());
     final Set<FsPath> denied = Collections.synchronizedSet(new HashSet<>());
@@ -88,6 +93,7 @@ class FakeDcache {
         FileAttributes attributes = FileAttributes.of()
               .fileType(FileType.DIR)
               .pnfsId(nextPnfsId())
+              .uid(OWNER)
               .creationTime(MTIME)
               .modificationTime(MTIME)
               .build();
@@ -284,7 +290,8 @@ class FakeDcache {
             checkAllowed(path.parent());
             directory(path.toString());
         } else if (attributes.getFileType() != FileType.DIR) {
-            throw new NotDirCacheException("Not a directory");
+            // As Chimera does when a file is created below a file.
+            throw new PermissionDeniedCacheException("Access denied");
         }
     }
 

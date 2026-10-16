@@ -23,6 +23,7 @@ import static org.dcache.namespace.FileAttribute.CHECKSUM;
 import static org.dcache.namespace.FileAttribute.CREATION_TIME;
 import static org.dcache.namespace.FileAttribute.LOCATIONS;
 import static org.dcache.namespace.FileAttribute.MODIFICATION_TIME;
+import static org.dcache.namespace.FileAttribute.OWNER;
 import static org.dcache.namespace.FileAttribute.PNFSID;
 import static org.dcache.namespace.FileAttribute.SIZE;
 import static org.dcache.namespace.FileAttribute.STORAGEINFO;
@@ -51,6 +52,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -60,10 +62,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.UUID;
 import java.util.function.Supplier;
+import java.util.stream.LongStream;
+import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
@@ -109,15 +114,19 @@ import software.amazon.awssdk.services.s3.model.HeadBucketResponse;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListBucketsResponse;
+import software.amazon.awssdk.services.s3.model.ListObjectVersionsRequest;
+import software.amazon.awssdk.services.s3.model.ListObjectVersionsResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.MetadataDirective;
 import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
+import software.amazon.awssdk.services.s3.model.ObjectVersion;
 import software.amazon.awssdk.services.s3.model.Part;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.RestoreObjectRequest;
 import software.amazon.awssdk.services.s3.model.RestoreObjectResponse;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.s3.model.StorageClass;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
@@ -140,7 +149,8 @@ import software.amazon.awssdk.services.s3.model.UploadPartResponse;
  * An upload writes to a hidden file next to the object's file and renames it over the object
  * once the data is complete, so readers see either the old or the new object.  The door
  * computes the MD5 checksum of the data, which becomes the ETag and is stored as the file's
- * checksum.  Content type and user metadata are stored as extended attributes.  Deleting an
+ * checksum.  Content type, the other standard content headers and user metadata are stored as
+ * extended attributes.  Deleting an
  * object keeps its parent directories.
  * <p>
  * Multipart uploads are kept in the bucket (see {@link S3MultipartUploads}).  Completing one
@@ -162,17 +172,38 @@ public class DcacheBlobStore implements BlobStore {
     static final String XATTR_CONTENT_TYPE = "s3.content-type";
 
     /**
+     * The extended attributes holding an object's other standard HTTP headers.
+     */
+    static final String XATTR_CACHE_CONTROL = "s3.cache-control";
+    static final String XATTR_CONTENT_DISPOSITION = "s3.content-disposition";
+    static final String XATTR_CONTENT_ENCODING = "s3.content-encoding";
+    static final String XATTR_CONTENT_LANGUAGE = "s3.content-language";
+    static final String XATTR_EXPIRES = "s3.expires";
+
+    /**
+     * The prefix of all extended attributes holding object metadata.
+     */
+    private static final String XATTR_PREFIX = "s3.";
+
+    /**
      * The prefix of the extended attributes holding an object's user metadata.
      */
     static final String XATTR_USER_METADATA_PREFIX = "s3.meta.";
 
     private static final long MINIMUM_MULTIPART_PART_SIZE = 5L * 1024 * 1024;
 
+    /**
+     * The version id of objects in buckets that never had versioning.
+     */
+    private static final String NULL_VERSION = "null";
+
     // Sent to PnfsManager, so they must be serializable: Sets.union views are not.
     private static final Set<FileAttribute> LIST_ATTRIBUTES = Sets.immutableEnumSet(
           TYPE, PNFSID, SIZE, MODIFICATION_TIME, CHECKSUM, LOCATIONS, STORAGEINFO);
 
     private static final Set<FileAttribute> TYPE_ATTRIBUTES = Sets.immutableEnumSet(TYPE);
+
+    private static final Set<FileAttribute> OWNER_ATTRIBUTES = Sets.immutableEnumSet(TYPE, OWNER);
 
     private static final Set<FileAttribute> ENTRY_ATTRIBUTES =
           Sets.immutableEnumSet(TYPE, MODIFICATION_TIME);
@@ -281,14 +312,11 @@ public class DcacheBlobStore implements BlobStore {
         try {
             pnfs(u).createPnfsDirectory(path.toString());
         } catch (FileExistsCacheException e) {
-            throw S3Exceptions.bucketAlreadyOwnedByYou(bucket);
+            throw bucketExists(u, bucket, path).orElseThrow(() -> S3Errors.from(e, bucket, null));
         } catch (PermissionDeniedCacheException e) {
             // Chimera checks permissions first.  Clients create buckets they already have
             // (rclone before each upload), and expect to be told so.
-            if (containerExists(bucket)) {
-                throw S3Exceptions.bucketAlreadyOwnedByYou(bucket);
-            }
-            throw S3Errors.from(e, bucket, null);
+            throw bucketExists(u, bucket, path).orElseThrow(() -> S3Errors.from(e, bucket, null));
         } catch (CacheException e) {
             throw S3Errors.from(e, bucket, null);
         }
@@ -296,9 +324,30 @@ public class DcacheBlobStore implements BlobStore {
     }
 
     /**
-     * Removes a bucket that holds no files.  Directories left behind by deleted objects do not
-     * count, nor do multipart uploads and files of interrupted uploads older than the maximum
-     * upload age: they are removed with the bucket.
+     * Returns the error S3 answers creating a bucket that exists: BucketAlreadyOwnedByYou if the
+     * user owns the bucket's directory, BucketAlreadyExists if someone else does; empty if there
+     * is no such bucket.  The door looks the directory up itself, as the user may not.
+     */
+    private Optional<S3Exception> bucketExists(S3User u, String bucket, FsPath path) {
+        try {
+            FileAttributes attributes = pnfs.getFileAttributes(path, OWNER_ATTRIBUTES);
+            if (attributes.getFileType() != FileType.DIR) {
+                return Optional.empty();
+            }
+            boolean isOwner = LongStream.of(Subjects.getUids(u.subject()))
+                  .anyMatch(uid -> uid == attributes.getOwner());
+            return Optional.of(isOwner
+                  ? S3Exceptions.bucketAlreadyOwnedByYou(bucket)
+                  : S3Errors.bucketAlreadyExists(bucket));
+        } catch (CacheException e) {
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Removes a bucket that holds no objects.  Directories left behind by deleted objects do not
+     * count, nor do multipart uploads in progress (as in S3) and files of interrupted uploads
+     * older than the maximum upload age: they are removed with the bucket.
      */
     @Override
     public void deleteBucket(String container) {
@@ -377,7 +426,7 @@ public class DcacheBlobStore implements BlobStore {
                 FsPath path = directory.child(name);
                 if (attributes.getFileType() == FileType.DIR) {
                     collect(u, path, inUploads || name.equals(S3Paths.MULTIPART_DIRECTORY));
-                } else if ((inUploads || name.startsWith(S3Paths.UPLOAD_PREFIX))
+                } else if (inUploads || name.startsWith(S3Paths.UPLOAD_PREFIX)
                       && Instant.ofEpochMilli(attributes.getModificationTime()).isBefore(cutoff)) {
                     leftovers.add(path);
                 } else {
@@ -419,9 +468,7 @@ public class DcacheBlobStore implements BlobStore {
 
     @Override
     public HeadObjectResponse blobMetadata(HeadObjectRequest request) {
-        if (request.versionId() != null) {
-            throw new UnsupportedOperationException("versioning not supported");
-        }
+        checkVersion(request.versionId());
         S3User u = user.get();
         FileAttributes attributes = objectAttributes(u, request.bucket(), request.key());
         boolean isOnTapeOnly = isOnTapeOnly(attributes);
@@ -429,6 +476,11 @@ public class DcacheBlobStore implements BlobStore {
               .acceptRanges("bytes")
               .contentLength(attributes.getSize())
               .contentType(contentType(attributes))
+              .cacheControl(xattr(attributes, XATTR_CACHE_CONTROL))
+              .contentDisposition(xattr(attributes, XATTR_CONTENT_DISPOSITION))
+              .contentEncoding(xattr(attributes, XATTR_CONTENT_ENCODING))
+              .contentLanguage(xattr(attributes, XATTR_CONTENT_LANGUAGE))
+              .expires(expires(attributes))
               .eTag(eTag(attributes))
               .lastModified(lastModified(attributes))
               .metadata(userMetadata(attributes))
@@ -460,9 +512,7 @@ public class DcacheBlobStore implements BlobStore {
      */
     @Override
     public RestoreObjectResponse restoreObject(RestoreObjectRequest request) {
-        if (request.versionId() != null) {
-            throw new UnsupportedOperationException("versioning not supported");
-        }
+        checkVersion(request.versionId());
         S3User u = user.get();
         String bucket = request.bucket();
         String key = request.key();
@@ -494,9 +544,7 @@ public class DcacheBlobStore implements BlobStore {
 
     @Override
     public ResponseInputStream<GetObjectResponse> getBlob(GetObjectRequest request) {
-        if (request.versionId() != null) {
-            throw new UnsupportedOperationException("versioning not supported");
-        }
+        checkVersion(request.versionId());
         S3User u = user.get();
         String bucket = request.bucket();
         String key = request.key();
@@ -534,6 +582,11 @@ public class DcacheBlobStore implements BlobStore {
               .contentLength(length)
               .contentRange(contentRange)
               .contentType(contentType(attributes))
+              .cacheControl(xattr(attributes, XATTR_CACHE_CONTROL))
+              .contentDisposition(xattr(attributes, XATTR_CONTENT_DISPOSITION))
+              .contentEncoding(xattr(attributes, XATTR_CONTENT_ENCODING))
+              .contentLanguage(xattr(attributes, XATTR_CONTENT_LANGUAGE))
+              .expires(expires(attributes))
               .eTag(eTag)
               .lastModified(lastModified(attributes))
               .metadata(userMetadata(attributes))
@@ -583,7 +636,10 @@ public class DcacheBlobStore implements BlobStore {
             byte[] contentMd5 = request.contentMD5() == null
                   ? null : Base64.getDecoder().decode(request.contentMD5());
             String eTag = store(u, bucket, key, path,
-                  xattrs(request.contentType(), request.metadata()), payload,
+                  xattrs(request.contentType(), request.cacheControl(),
+                        request.contentDisposition(), request.contentEncoding(),
+                        request.contentLanguage(), request.expires(), request.metadata()),
+                  payload,
                   request.contentLength(), contentMd5);
             return PutObjectResponse.builder().eTag(eTag).build();
         } catch (IOException e) {
@@ -598,9 +654,7 @@ public class DcacheBlobStore implements BlobStore {
      */
     @Override
     public CopyObjectResponse copyBlob(CopyObjectRequest request) {
-        if (request.sourceVersionId() != null) {
-            throw new UnsupportedOperationException("versioning not supported");
-        }
+        checkVersion(request.sourceVersionId());
         if (request.acl() != null && request.acl() != ObjectCannedACL.PRIVATE) {
             throw notImplemented();
         }
@@ -617,7 +671,9 @@ public class DcacheBlobStore implements BlobStore {
         String key = request.destinationKey();
         FsPath path = S3Paths.object(bucketDirectory(u, bucket), key);
         Map<String, String> xattrs = request.metadataDirective() == MetadataDirective.REPLACE
-              ? xattrs(request.contentType(), request.metadata())
+              ? xattrs(request.contentType(), request.cacheControl(),
+                    request.contentDisposition(), request.contentEncoding(),
+                    request.contentLanguage(), request.expires(), request.metadata())
               : objectXattrs(source);
 
         FsPath sourcePath = S3Paths.object(S3Paths.bucket(u.root(), sourceBucket), sourceKey);
@@ -659,7 +715,7 @@ public class DcacheBlobStore implements BlobStore {
             pnfsId = writer.write(u, upload, path, xattrs, new DigestInputStream(data, md5),
                   length);
         } catch (CacheException e) {
-            throw writeError(e, bucket, key);
+            throw writeError(e, bucket, key, path);
         } catch (InterruptedException e) {
             throw S3Errors.interrupted(e);
         }
@@ -678,7 +734,7 @@ public class DcacheBlobStore implements BlobStore {
             isStored = true;
             return '"' + checksum.getValue() + '"';
         } catch (CacheException e) {
-            throw writeError(e, bucket, key);
+            throw writeError(e, bucket, key, path);
         } finally {
             if (!isStored) {
                 removeUpload(u, pnfsId, upload);
@@ -701,16 +757,38 @@ public class DcacheBlobStore implements BlobStore {
     }
 
     /**
-     * Maps a failed write.  dCache cannot hold both a key and keys below it ({@code a} and
-     * {@code a/b}), so writing either when the other exists fails.
+     * Maps a failed write of {@code path}.  dCache cannot hold both a key and keys below it
+     * ({@code a} and {@code a/b}), so writing either when the other exists fails.  Chimera
+     * reports a file among the parents as a permission problem, so the door looks for one.
      */
-    private static RuntimeException writeError(CacheException e, String bucket, String key) {
+    private RuntimeException writeError(CacheException e, String bucket, String key,
+          FsPath path) {
         if (e instanceof NotDirCacheException || e instanceof NotFileCacheException
-              || e instanceof FileExistsCacheException) {
+              || e instanceof FileExistsCacheException
+              || e instanceof PermissionDeniedCacheException && hasFileAsParent(path)) {
             return S3Exceptions.invalidArgument(
                   "Object key " + key + " conflicts with an existing object or prefix");
         }
         return S3Errors.from(e, bucket, key);
+    }
+
+    /**
+     * Whether the nearest existing parent of a path is not a directory.
+     */
+    private boolean hasFileAsParent(FsPath path) {
+        for (FsPath parent = path.parent(); !parent.isRoot(); parent = parent.parent()) {
+            try {
+                return pnfs.getFileAttributes(parent, TYPE_ATTRIBUTES).getFileType()
+                      != FileType.DIR;
+            } catch (FileNotFoundCacheException e) {
+                // Look further up.
+            } catch (NotDirCacheException e) {
+                return true;
+            } catch (CacheException e) {
+                return false;
+            }
+        }
+        return false;
     }
 
     private static MessageDigest md5() {
@@ -754,9 +832,7 @@ public class DcacheBlobStore implements BlobStore {
      */
     @Override
     public DeleteObjectResponse removeBlob(DeleteObjectRequest request) {
-        if (request.versionId() != null) {
-            throw new UnsupportedOperationException("versioning not supported");
-        }
+        checkVersion(request.versionId());
         S3User u = user.get();
         String bucket = request.bucket();
         String key = request.key();
@@ -1002,6 +1078,60 @@ public class DcacheBlobStore implements BlobStore {
     private record Child(String key, DirectoryEntry entry) {
     }
 
+    // Versions
+
+    /**
+     * Refuses a version id other than {@code null}, which S3 gives the objects of buckets that
+     * never had versioning: it names the object itself.
+     */
+    private static void checkVersion(@Nullable String versionId) {
+        if (versionId != null && !versionId.equals(NULL_VERSION)) {
+            throw new UnsupportedOperationException("versioning not supported");
+        }
+    }
+
+    /**
+     * Lists every object as its only version, {@code null}, as S3 does for buckets that never
+     * had versioning.  Clients that empty buckets (s3-tests among them) use this listing.
+     */
+    @Override
+    public ListObjectVersionsResponse listVersions(ListObjectVersionsRequest request) {
+        ListObjectsV2Response page = list(ListObjectsV2Request.builder()
+              .bucket(request.bucket())
+              .prefix(request.prefix())
+              .delimiter(request.delimiter())
+              .maxKeys(request.maxKeys())
+              .startAfter(request.keyMarker())
+              .build());
+        var versions = page.contents().stream()
+              .map(object -> ObjectVersion.builder()
+                    .key(object.key())
+                    .versionId(NULL_VERSION)
+                    .isLatest(true)
+                    .eTag(object.eTag())
+                    .size(object.size())
+                    .lastModified(object.lastModified())
+                    .storageClass(object.storageClassAsString())
+                    .build())
+              .toList();
+        var response = ListObjectVersionsResponse.builder()
+              .name(request.bucket())
+              .prefix(request.prefix())
+              .delimiter(request.delimiter())
+              .keyMarker(request.keyMarker())
+              .versionIdMarker(request.versionIdMarker())
+              .maxKeys(request.maxKeys())
+              .versions(versions)
+              .commonPrefixes(page.commonPrefixes())
+              .isTruncated(page.isTruncated());
+        if (Boolean.TRUE.equals(page.isTruncated())) {
+            // The continuation token is the last key listed.
+            response.nextKeyMarker(page.nextContinuationToken())
+                  .nextVersionIdMarker(NULL_VERSION);
+        }
+        return response.build();
+    }
+
     // Object attributes
 
     /**
@@ -1049,17 +1179,45 @@ public class DcacheBlobStore implements BlobStore {
         return ContentMetadata.DEFAULT_CONTENT_TYPE;
     }
 
+    private static @Nullable String xattr(FileAttributes attributes, String name) {
+        return attributes.isDefined(XATTR) ? attributes.getXattrs().get(name) : null;
+    }
+
+    private static @Nullable Instant expires(FileAttributes attributes) {
+        String expires = xattr(attributes, XATTR_EXPIRES);
+        try {
+            return expires == null ? null : Instant.parse(expires);
+        } catch (DateTimeParseException e) {
+            return null;
+        }
+    }
+
     /**
-     * Returns the extended attributes that store an object's content type and user metadata.
+     * Returns the extended attributes that store an object's standard headers and user
+     * metadata.
      */
     private static Map<String, String> xattrs(@Nullable String contentType,
-          Map<String, String> userMetadata) {
+          @Nullable String cacheControl, @Nullable String contentDisposition,
+          @Nullable String contentEncoding, @Nullable String contentLanguage,
+          @Nullable Instant expires, Map<String, String> userMetadata) {
         var xattrs = new HashMap<String, String>();
         if (contentType != null && !contentType.equals(ContentMetadata.DEFAULT_CONTENT_TYPE)) {
             xattrs.put(XATTR_CONTENT_TYPE, contentType);
         }
+        putIfNotNull(xattrs, XATTR_CACHE_CONTROL, cacheControl);
+        putIfNotNull(xattrs, XATTR_CONTENT_DISPOSITION, contentDisposition);
+        putIfNotNull(xattrs, XATTR_CONTENT_ENCODING, contentEncoding);
+        putIfNotNull(xattrs, XATTR_CONTENT_LANGUAGE, contentLanguage);
+        putIfNotNull(xattrs, XATTR_EXPIRES, expires == null ? null : expires.toString());
         userMetadata.forEach((name, value) -> xattrs.put(XATTR_USER_METADATA_PREFIX + name, value));
         return xattrs;
+    }
+
+    private static void putIfNotNull(Map<String, String> map, String key,
+          @Nullable String value) {
+        if (value != null) {
+            map.put(key, value);
+        }
     }
 
     /**
@@ -1069,8 +1227,7 @@ public class DcacheBlobStore implements BlobStore {
         var xattrs = new HashMap<String, String>();
         if (attributes.isDefined(XATTR)) {
             attributes.getXattrs().forEach((name, value) -> {
-                if (name.equals(XATTR_CONTENT_TYPE)
-                      || name.startsWith(XATTR_USER_METADATA_PREFIX)) {
+                if (name.startsWith(XATTR_PREFIX)) {
                     xattrs.put(name, value);
                 }
             });
@@ -1114,7 +1271,9 @@ public class DcacheBlobStore implements BlobStore {
         try {
             sweepUploads(uploads, bucketPath);
             var upload = uploads.create(bucketPath, key,
-                  xattrs(request.contentType(), request.metadata()));
+                  xattrs(request.contentType(), request.cacheControl(),
+                        request.contentDisposition(), request.contentEncoding(),
+                        request.contentLanguage(), request.expires(), request.metadata()));
             return new MultipartUpload(upload.id(), request);
         } catch (CacheException e) {
             throw S3Errors.from(e, bucket, null);

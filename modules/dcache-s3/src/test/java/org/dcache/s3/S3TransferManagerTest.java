@@ -2,6 +2,7 @@ package org.dcache.s3;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
@@ -22,6 +23,8 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileExistsCacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
@@ -50,6 +53,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import javax.security.auth.Subject;
@@ -79,6 +84,7 @@ public class S3TransferManagerTest {
     private final List<PoolMoverKillMessage> kills = new CopyOnWriteArrayList<>();
     private final List<String> deleted = new CopyOnWriteArrayList<>();
     private final List<PnfsCreateEntryMessage> created = new CopyOnWriteArrayList<>();
+    private final Queue<CacheException> createErrors = new ConcurrentLinkedQueue<>();
     private volatile byte[] uploaded;
 
     private HttpServer pool;
@@ -243,6 +249,18 @@ public class S3TransferManagerTest {
     }
 
     @Test
+    public void shouldAcceptParentCreatedByConcurrentUpload() throws Exception {
+        // The parent is missing, and another upload creates it before this one can.
+        createErrors.add(new FileNotFoundCacheException("No such directory"));
+        createErrors.add(new FileExistsCacheException("File exists"));
+
+        assertThat(write(DATA, DATA.length), is(PNFSID));
+
+        assertThat(created.stream().map(PnfsCreateEntryMessage::getPnfsPath).toList(),
+              contains(UPLOAD.toString(), UPLOAD.parent().toString(), UPLOAD.toString()));
+    }
+
+    @Test
     public void shouldRemoveFileWhenPoolRefusesUpload() {
         uploadStatus = 500;
 
@@ -316,7 +334,10 @@ public class S3TransferManagerTest {
         when(stub.send(any(PnfsCreateEntryMessage.class), anyLong())).thenAnswer(i -> {
             PnfsCreateEntryMessage msg = i.getArgument(0);
             created.add(msg);
-            if (pnfsError != null) {
+            CacheException createError = createErrors.poll();
+            if (createError != null) {
+                msg.setFailed(createError.getRc(), createError.getMessage());
+            } else if (pnfsError != null) {
                 msg.setFailed(pnfsError.getRc(), pnfsError.getMessage());
             } else {
                 attributes.setXattrs(msg.getFileAttributes().getXattrs());
