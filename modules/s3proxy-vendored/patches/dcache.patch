@@ -391,7 +391,23 @@
      private void handleSetBucketVersioning(HttpServletRequest request,
              HttpServletResponse response, InputStream is, BlobStore blobStore,
              String containerName) throws IOException {
-@@ -4543,268 +4668,9 @@
+@@ -2367,10 +2492,11 @@
+     private void handleListObjectVersions(HttpServletRequest request,
+             HttpServletResponse response, BlobStore blobStore,
+             String containerName) throws IOException {
+-        if (!blobStore.supportsVersioning()) {
+-            throw new S3ProxyException(S3ErrorCode.NOT_IMPLEMENTED,
+-                    "Versioning is not supported.");
+-        }
++        // dCache patch: a store without versioning is asked too.  S3 lists
++        // the objects of a bucket that never had versioning as their only
++        // version, "null", and clients that empty buckets rely on that; a
++        // store that cannot list throws UnsupportedOperationException,
++        // which answers NotImplemented as before.
+ 
+         String encodingType = request.getParameter("encoding-type");
+         var versionsRequest = ListObjectVersionsRequest.builder()
+@@ -4543,268 +4669,9 @@
              HttpServletResponse response, InputStream is,
              BlobStore anonymousBlobStore, String containerName)
              throws IOException {
@@ -663,7 +679,7 @@
      }
  
      /**
-@@ -6333,6 +6199,11 @@
+@@ -6333,6 +6200,11 @@
          if (storageClass != null) {
              response.addHeader(AwsHttpHeaders.STORAGE_CLASS, storageClass);
          }

@@ -2492,10 +2492,11 @@ public class S3ProxyHandler {
     private void handleListObjectVersions(HttpServletRequest request,
             HttpServletResponse response, BlobStore blobStore,
             String containerName) throws IOException {
-        if (!blobStore.supportsVersioning()) {
-            throw new S3ProxyException(S3ErrorCode.NOT_IMPLEMENTED,
-                    "Versioning is not supported.");
-        }
+        // dCache patch: a store without versioning is asked too.  S3 lists
+        // the objects of a bucket that never had versioning as their only
+        // version, "null", and clients that empty buckets rely on that; a
+        // store that cannot list throws UnsupportedOperationException,
+        // which answers NotImplemented as before.
 
         String encodingType = request.getParameter("encoding-type");
         var versionsRequest = ListObjectVersionsRequest.builder()

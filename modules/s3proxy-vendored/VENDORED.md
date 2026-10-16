@@ -75,6 +75,13 @@ marked with `dCache patch` comments.
    letters, `S3ProxyHandler` checks it once more with the charset in lower
    case (`withLowerCaseCharset`). Not needed with Jetty 12.
 
+8. ListObjectVersions on a store without versioning: S3 lists the objects
+   of a bucket that never had versioning as their only version, `null`, and
+   clients that empty buckets rely on it (s3-tests among them).
+   `handleListObjectVersions` no longer refuses such stores itself but asks
+   `BlobStore.listVersions`, whose default still throws
+   `UnsupportedOperationException` (NotImplemented).
+
 `patches/dcache.patch` is generated with `diff -u` of each vendored source
 against the upstream file (`/dev/null` for dCache files), subdirectories
 before files as `diff -r` orders them.
