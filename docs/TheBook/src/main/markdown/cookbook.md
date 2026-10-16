@@ -26,6 +26,14 @@ This part contains guides for specific tasks a system administrator might want t
 
 - [Migration of classic SE (nfs, disk) to dCache](cookbook-classic-se-to-dcache.md)
 
+- [Exporting dCache over S3 with VersityGW](cookbook-s3-versitygw.md)
+    - [When to use VersityGW](cookbook-s3-versitygw.md#when-to-use-versitygw)
+    - [How it works](cookbook-s3-versitygw.md#how-it-works)
+    - [Preparing dCache](cookbook-s3-versitygw.md#preparing-dcache)
+    - [Setting up the gateway](cookbook-s3-versitygw.md#setting-up-the-gateway)
+    - [Accounts and buckets](cookbook-s3-versitygw.md#accounts-and-buckets)
+    - [Things to know](cookbook-s3-versitygw.md#things-to-know)
+
 - [Pool Operations](cookbook-pool.md)
     - [Checksums](cookbook-pool.md#checksums)
     - [How to configure checksum calculation](cookbook-pool.md#how-to-configure-checksum-calculation)
