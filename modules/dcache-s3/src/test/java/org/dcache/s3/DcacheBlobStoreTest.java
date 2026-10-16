@@ -692,6 +692,28 @@ public class DcacheBlobStoreTest {
     }
 
     @Test
+    public void shouldStoreStandardHeaders() {
+        givenDirectory("/data/s3/bucket");
+        Instant expires = Instant.parse("2030-01-01T00:00:00Z");
+
+        store.putBlob(PutObjectRequest.builder().bucket("bucket").key("file")
+                    .contentLength(5L).cacheControl("no-cache")
+                    .contentDisposition("attachment; filename=\"a.txt\"")
+                    .contentEncoding("gzip").contentLanguage("de").expires(expires).build(),
+              new ByteArrayInputStream("hello".getBytes(UTF_8)));
+        store.copyBlob(copy("file", "copy").build());
+
+        for (String key : List.of("file", "copy")) {
+            HeadObjectResponse head = store.blobMetadata("bucket", key);
+            assertThat(head.cacheControl(), is("no-cache"));
+            assertThat(head.contentDisposition(), is("attachment; filename=\"a.txt\""));
+            assertThat(head.contentEncoding(), is("gzip"));
+            assertThat(head.contentLanguage(), is("de"));
+            assertThat(head.expires(), is(expires));
+        }
+    }
+
+    @Test
     public void shouldCreateDirectoriesOfKey() throws Exception {
         givenDirectory("/data/s3/bucket");
 
@@ -709,6 +731,28 @@ public class DcacheBlobStoreTest {
 
         assertThat(contentOf("/data/s3/bucket/file"), is("hello world"));
         assertThat(filesIn("/data/s3/bucket"), contains("file"));
+    }
+
+    @Test
+    public void shouldServeOldObjectUntilReplacementIsComplete() throws Exception {
+        givenDirectory("/data/s3/bucket");
+        givenFile("/data/s3/bucket/file", "old");
+        var seen = new ArrayList<String>();
+        S3ObjectWriter writer = dcache.writer();
+        S3User user = new S3User("AKIAEXAMPLE", subject, Restrictions.none(), ROOT);
+        store = new DcacheBlobStore(() -> user, pnfs, lister, reader,
+              (u, path, billingPath, xattrs, data, length) -> {
+                  var pnfsId = writer.write(u, path, billingPath, xattrs, data, length);
+                  // The new data is on a pool, but not yet the object.
+                  seen.add(new String(store.getBlob(get("file").build()).readAllBytes(), UTF_8));
+                  seen.add(String.valueOf(store.blobMetadata("bucket", "file").contentLength()));
+                  return pnfsId;
+              }, restorer, 1000, MAX_UPLOAD_AGE);
+
+        put("file", "new content");
+
+        assertThat(seen, contains("old", "3"));
+        assertThat(contentOf("/data/s3/bucket/file"), is("new content"));
     }
 
     @Test
@@ -914,6 +958,17 @@ public class DcacheBlobStoreTest {
     }
 
     @Test
+    public void shouldReportBucketOfOtherUser() {
+        givenDirectory("/data/s3/bucket");
+        dcache.namespace.get(FsPath.create("/data/s3/bucket")).setOwner(2000);
+
+        S3Exception e = assertThrows(S3Exception.class, () -> store.createContainer("bucket"));
+
+        assertThat(e.statusCode(), is(409));
+        assertThat(e.awsErrorDetails().errorCode(), is("BucketAlreadyExists"));
+    }
+
+    @Test
     public void shouldNotImplementPublicBuckets() {
         S3ProxyException e = assertThrows(S3ProxyException.class,
               () -> store.createContainer(CreateBucketRequest.builder().bucket("bucket")
@@ -965,14 +1020,14 @@ public class DcacheBlobStoreTest {
     }
 
     @Test
-    public void shouldNotDeleteBucketWithMultipartUploadInProgress() {
+    public void shouldDeleteBucketWithMultipartUploadInProgress() {
         givenDirectory("/data/s3/bucket");
         MultipartUpload upload = initiate("file");
         uploadPart(upload, 1, "part");
 
-        S3Exception e = assertThrows(S3Exception.class, () -> store.deleteBucket("bucket"));
+        store.deleteBucket("bucket");
 
-        assertThat(e.awsErrorDetails().errorCode(), is("BucketNotEmpty"));
+        assertThat(filesIn("/data/s3"), is(emptyIterable()));
     }
 
     // Multipart uploads

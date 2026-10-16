@@ -106,20 +106,8 @@ public class S3ClientTest {
             return null;
         }).when(restorer).restore(any(), any(), any(), anyInt());
 
-        S3KeyStore keyStore = key -> key.equals(ACCESS_KEY)
-              ? Optional.of(SECRET) : Optional.empty();
-        var factory = new DcacheBlobStoreFactory(dcache.pnfsHandler(), dcache.lister(),
-              dcache.reader(), dcache.writer(), restorer, 1000, 7, TimeUnit.DAYS);
-        var locator = new DcacheBlobStoreLocator(keyStore, loginStrategy,
-              FsPath.create("/data/s3"), factory);
-        var handler = new DcacheS3ProxyHandler(locator, AuthenticationType.AWS_V2_OR_V4, "",
-              900);
-
-        jetty = new Server(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
-        jetty.setHandler(new S3JettyHandler(handler));
-        jetty.start();
-        int port = ((ServerConnector) jetty.getConnectors()[0]).getLocalPort();
-        endpoint = URI.create("http://127.0.0.1:" + port);
+        jetty = startDoor();
+        endpoint = endpointOf(jetty);
         s3 = client(ACCESS_KEY, SECRET);
 
         dcache.directory("/data/s3");
@@ -141,7 +129,35 @@ public class S3ClientTest {
         jetty.stop();
     }
 
+    /**
+     * Starts a door on the fake dCache, as another door instance would run on the same dCache.
+     */
+    private Server startDoor() throws Exception {
+        S3KeyStore keyStore = key -> key.equals(ACCESS_KEY)
+              ? Optional.of(SECRET) : Optional.empty();
+        var factory = new DcacheBlobStoreFactory(dcache.pnfsHandler(), dcache.lister(),
+              dcache.reader(), dcache.writer(), restorer, 1000, 7, TimeUnit.DAYS);
+        var locator = new DcacheBlobStoreLocator(keyStore, loginStrategy,
+              FsPath.create("/data/s3"), factory);
+        var handler = new DcacheS3ProxyHandler(locator, AuthenticationType.AWS_V2_OR_V4, "",
+              900);
+
+        Server server = new Server(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+        server.setHandler(new S3JettyHandler(handler));
+        server.start();
+        return server;
+    }
+
+    private static URI endpointOf(Server server) {
+        int port = ((ServerConnector) server.getConnectors()[0]).getLocalPort();
+        return URI.create("http://127.0.0.1:" + port);
+    }
+
     private S3Client client(String accessKey, String secret) {
+        return client(endpoint, accessKey, secret);
+    }
+
+    private static S3Client client(URI endpoint, String accessKey, String secret) {
         return S3Client.builder()
               .endpointOverride(endpoint)
               .region(Region.US_EAST_1)
@@ -547,5 +563,74 @@ public class S3ClientTest {
         assertThrows(NoSuchUploadException.class, () -> s3.uploadPart(
               b -> b.bucket("bucket").key("mpu").uploadId(id).partNumber(1),
               RequestBody.fromString("data")));
+    }
+
+    @Test
+    public void shouldUploadPartsThroughTwoDoors() throws Exception {
+        Server other = startDoor();
+        try (S3Client s3b = client(endpointOf(other), ACCESS_KEY, SECRET)) {
+            byte[] first = new byte[5 * 1024 * 1024 + 3];
+            new Random(2).nextBytes(first);
+            byte[] second = new byte[1024 * 1024 + 11];
+            new Random(3).nextBytes(second);
+            String id = s3.createMultipartUpload(b -> b.bucket("bucket").key("two-doors"))
+                  .uploadId();
+
+            String eTag1 = s3.uploadPart(b -> b.bucket("bucket").key("two-doors").uploadId(id)
+                  .partNumber(1), RequestBody.fromBytes(first)).eTag();
+            String eTag2 = s3b.uploadPart(b -> b.bucket("bucket").key("two-doors").uploadId(id)
+                  .partNumber(2), RequestBody.fromBytes(second)).eTag();
+
+            assertThat(s3b.listParts(b -> b.bucket("bucket").key("two-doors").uploadId(id))
+                  .parts().size(), is(2));
+            s3b.completeMultipartUpload(b -> b.bucket("bucket").key("two-doors").uploadId(id)
+                  .multipartUpload(m -> m.parts(
+                        CompletedPart.builder().partNumber(1).eTag(eTag1).build(),
+                        CompletedPart.builder().partNumber(2).eTag(eTag2).build())));
+
+            byte[] expected = new byte[first.length + second.length];
+            System.arraycopy(first, 0, expected, 0, first.length);
+            System.arraycopy(second, 0, expected, first.length, second.length);
+            assertThat(s3.getObjectAsBytes(b -> b.bucket("bucket").key("two-doors"))
+                  .asByteArray(), is(expected));
+        } finally {
+            other.stop();
+        }
+    }
+
+    // Versions
+
+    @Test
+    public void shouldListObjectsAsNullVersions() {
+        var page = s3.listObjectVersions(b -> b.bucket("bucket").prefix("dir/").maxKeys(2));
+
+        assertThat(page.versions().stream().map(v -> v.key() + " " + v.versionId() + " "
+              + v.isLatest()).toList(), contains("dir/a null true", "dir/b null true"));
+        assertThat(page.isTruncated(), is(true));
+        assertThat(page.nextKeyMarker(), is("dir/b"));
+        var next = s3.listObjectVersions(b -> b.bucket("bucket").prefix("dir/")
+              .keyMarker(page.nextKeyMarker()).versionIdMarker(page.nextVersionIdMarker()));
+        assertThat(next.versions().stream().map(v -> v.key()).toList(), contains("dir/sub/c"));
+    }
+
+    @Test
+    public void shouldAcceptNullVersion() {
+        assertThat(s3.getObjectAsBytes(b -> b.bucket("bucket").key("hello.txt").versionId("null"))
+              .asUtf8String(), is("hello world"));
+
+        var response = s3.deleteObjects(b -> b.bucket("bucket").delete(d -> d.objects(
+              ObjectIdentifier.builder().key("dir/a").versionId("null").build())));
+
+        assertThat(response.errors(), is(empty()));
+        assertThrows(NoSuchKeyException.class,
+              () -> s3.headObject(b -> b.bucket("bucket").key("dir/a")));
+    }
+
+    @Test
+    public void shouldNotImplementOtherVersions() {
+        S3Exception e = assertThrows(S3Exception.class, () -> s3.getObjectAsBytes(
+              b -> b.bucket("bucket").key("hello.txt").versionId("3HL4kqtJlcpXroDTDmJ")));
+
+        assertThat(e.statusCode(), is(501));
     }
 }

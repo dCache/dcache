@@ -21,6 +21,8 @@ import static java.util.Objects.requireNonNull;
 import static org.dcache.util.TransferRetryPolicy.tryOnce;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileExistsCacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
@@ -226,7 +228,13 @@ public class S3TransferManager implements S3ObjectReader, S3ObjectWriter, CellMe
         transfers.put(id, transfer);
         boolean isWritten = false;
         try {
-            transfer.createNameSpaceEntryWithParents();
+            try {
+                transfer.createNameSpaceEntry();
+            } catch (FileNotFoundCacheException e) {
+                createDirectories(new PnfsHandler(pnfs, user.subject(), user.restriction()),
+                      path.parent());
+                transfer.createNameSpaceEntry();
+            }
             transfer.setLength(length);
             startMover(transfer);
             transfer.relay(data, length, poolTimeoutMillis(),
@@ -256,6 +264,23 @@ public class S3TransferManager implements S3ObjectReader, S3ObjectWriter, CellMe
                 transfer.deleteNameSpaceEntry();
             }
             transfers.remove(id);
+        }
+    }
+
+    /**
+     * Creates a directory and its missing parents.  Unlike {@link PnfsHandler#createDirectories},
+     * this accepts directories that a concurrent upload creates at the same time, as clients
+     * upload several objects below a new prefix at once.
+     */
+    private static void createDirectories(PnfsHandler pnfs, FsPath directory)
+          throws CacheException {
+        try {
+            pnfs.createPnfsDirectory(directory.toString());
+        } catch (FileNotFoundCacheException e) {
+            createDirectories(pnfs, directory.parent());
+            createDirectories(pnfs, directory);
+        } catch (FileExistsCacheException e) {
+            // Created concurrently; if it is not a directory, creating the file fails.
         }
     }
 

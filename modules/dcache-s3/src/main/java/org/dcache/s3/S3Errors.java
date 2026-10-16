@@ -70,7 +70,15 @@ final class S3Errors {
               null);
     }
 
-    static S3Exception accessDenied(@Nullable Throwable cause) {
+    /**
+     * The 409 that S3 answers creating a bucket that someone else owns.
+     */
+    static S3Exception bucketAlreadyExists(String bucket) {
+        return error(409, "BucketAlreadyExists",
+              "The requested bucket name is not available: " + bucket, null);
+    }
+
+        static S3Exception accessDenied(@Nullable Throwable cause) {
         return new S3ProxyException(S3ErrorCode.ACCESS_DENIED, cause);
     }
 
