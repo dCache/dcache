@@ -1,6 +1,8 @@
 package dmg.cells.network;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import dmg.cells.nucleus.CellDomainInfo;
 import dmg.cells.nucleus.CellDomainRole;
@@ -72,6 +74,32 @@ public class LocationMgrTunnelTest {
         LocationMgrTunnel tunnel = new LocationMgrTunnel("tunnel*", new DummyStreamEngine(_local),
               CellDomainRole.CORE);
         assertEquals(CellDomainRole.CORE, announcedDomainInfo(tunnel).getRole());
+    }
+
+    @Test
+    public void shouldMatchTrailingWildcard() {
+        assertTrue(LocationMgrTunnel.matchesCN("pool*", "pool1.desy.de"));
+        assertTrue(LocationMgrTunnel.matchesCN("pool*", "pool"));
+        assertFalse(LocationMgrTunnel.matchesCN("pool*", "door1.desy.de"));
+    }
+
+    @Test
+    public void shouldMatchLeadingWildcard() {
+        assertTrue(LocationMgrTunnel.matchesCN("*.desy.de", "pool1.desy.de"));
+        assertFalse(LocationMgrTunnel.matchesCN("*.desy.de", "pool1.cern.ch"));
+    }
+
+    @Test
+    public void shouldMatchInfixWildcard() {
+        assertTrue(LocationMgrTunnel.matchesCN("pool*.desy.de", "pool1.desy.de"));
+        assertTrue(LocationMgrTunnel.matchesCN("pool*.desy.de", "pool.desy.de"));
+        assertFalse(LocationMgrTunnel.matchesCN("pool*.desy.de", "door1.desy.de"));
+        assertFalse(LocationMgrTunnel.matchesCN("pool*.desy.de", "pool1.cern.ch"));
+    }
+
+    @Test
+    public void shouldNotLetPrefixAndSuffixOverlap() {
+        assertFalse(LocationMgrTunnel.matchesCN("ab*ba", "aba"));
     }
 
     private CellDomainInfo announcedDomainInfo(Args args) throws Exception {

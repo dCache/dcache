@@ -47,15 +47,26 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.nio.channels.AsynchronousCloseException;
+import java.security.cert.X509Certificate;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.LongAdder;
+
+import org.apache.zookeeper.KeeperException;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x500.style.BCStyle;
+import org.bouncycastle.asn1.x500.style.IETFUtils;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.dcache.util.Args;
 import org.dcache.util.NDC;
 import org.dcache.util.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.net.ssl.SSLSocket;
 
 public class LocationMgrTunnel
       extends CellAdapter
@@ -125,8 +136,55 @@ public class LocationMgrTunnel
     @Override
     protected void starting() throws Exception {
         _socket.setTcpNoDelay(true);
+        if(_localDomainInfo.getRole() == CellDomainRole.CORE) {
+            isAllowedCN();
+        }
         handshake();
         _tunnels.add(this);
+    }
+
+    static boolean matchesCN(String pattern, String cn) {
+        if (pattern.contains("*")) {
+            int asteriskPos = pattern.indexOf('*');
+            String start = pattern.substring(0, asteriskPos);
+            String end = pattern.substring(asteriskPos +1);
+            return cn.startsWith(start) && cn.endsWith(end)
+                    && cn.length() >= start.length() + end.length();
+        }
+        return pattern.equals(cn);
+    }
+
+    private void isAllowedCN() throws Exception {
+        List<String> allowedCN;
+        try {
+            allowedCN = getCuratorFramework()
+                    // usingNamespace(null) does not change directory and reads same node.
+                    // forwards to the client inside wrapper which makes it mockable for testing.
+                    .usingNamespace(null)
+                    .getChildren()
+                    .forPath("/dcache/tunnels/allowed-cns");
+        } catch (KeeperException.NoNodeException e) {
+            allowedCN = Collections.emptyList();
+        }
+        if (allowedCN.isEmpty()) {
+            return;
+        }
+
+        if (!(_socket instanceof SSLSocket)) {
+            throw new IOException("CN filtering is enabled, but connection is not using TLS");
+        }
+        SSLSocket ssl = (SSLSocket) _socket;
+        X509Certificate cert = (X509Certificate) ssl.getSession().getPeerCertificates()[0];
+        X500Name x500name = new JcaX509CertificateHolder(cert).getSubject();
+
+        String cn = IETFUtils
+                .valueToString(x500name.getRDNs(BCStyle.CN)[0]
+                .getFirst()
+                .getValue());
+
+        if ((allowedCN.stream().noneMatch(p -> matchesCN(p, cn)))){
+            throw new IOException("CN: " + cn + "from presented Certificate not allowed");
+        }
     }
 
     @Override

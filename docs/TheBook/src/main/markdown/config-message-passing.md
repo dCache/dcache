@@ -259,3 +259,43 @@ configured in `dcache.broker.channel.capath`. The connecting domain already
 loads its certificate automatically through `dcache.broker.channel.credential.cert`
 — no additional client-side configuration is needed.
 
+### Restricting tunnel connections by certificate CN
+
+When mutual TLS is enabled, one can further restrict which domains are allowed
+to connect by specifying an allowlist of certificate Common Names (CNs) in a
+file, one pattern per line. Empty lines and lines starting with `#` are
+ignored:
+
+```
+# /etc/dcache/tunnel-allowed-cn.conf
+satellite-1
+satellite-2
+```
+
+Only domains whose certificate CN matches one of the listed values will be
+permitted to establish a tunnel. Connections from domains with a CN not in the
+list are rejected, even if the certificate is otherwise valid.
+
+Wildcard suffixes are supported: a pattern ending in `*` matches any CN that
+starts with the given prefix.
+
+```
+# /etc/dcache/tunnel-allowed-cn.conf
+remote-*
+main-*
+site-a-door-*
+```
+
+The location of this file is configured with
+`dcache.broker.channel.allowed-cn.file`, which defaults to
+`${dcache.paths.etc}/tunnel-allowed-cn.conf`. If the file does not exist or
+lists no patterns, CN filtering is disabled and all valid certificates are
+accepted.
+
+The list of allowed CNs is read when the core domain starts and replaces the
+previously stored list. A CN that is removed from the configuration is
+therefore no longer allowed once the core domain has been restarted.
+
+This setting has no effect unless `dcache.broker.channel.require-client-auth`
+is set to `true`.
+
