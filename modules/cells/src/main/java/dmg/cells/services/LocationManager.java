@@ -42,17 +42,11 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.net.SocketFactory;
 import org.apache.curator.framework.CuratorFramework;
@@ -621,6 +615,26 @@ public class LocationManager extends CellAdapter {
         coreDomains = CoreDomains.createWithMode(getCellDomainName(), getCuratorFramework(),
               this.args.getOpt("mode"));
 
+        String cns = this.args.getOption("allowed-cn");
+
+        if (cns != null){
+        Arrays.stream(cns.split(","))
+                .forEach(cn -> {
+                    try {
+                        getCuratorFramework()
+                                .create()
+                                .creatingParentsIfNeeded()
+                                .forPath("/dcache/tunnels/allowed-cns/" + cn,
+                                        new byte[0]);
+                    } catch (Exception e) {
+                        throw new RuntimeException("could not create zookeeper node "
+                                + cn + " in tunnels/allowed-cns: "
+                                + e.getMessage());
+                    }
+                });
+        }
+
+
         if (this.args.hasOption("role")) {
             role = CellDomainRole.valueOf(this.args.getOption("role").toUpperCase());
             switch (role) {
@@ -670,7 +684,9 @@ public class LocationManager extends CellAdapter {
           throws ExecutionException, InterruptedException {
         String cellName = "l*";
         String cellClass = "dmg.cells.network.LocationMgrTunnel";
-        String cellArgs = args + ' ' + cellClass + ' ' + "-prot=raw" + " -role=" + role;
+        String allowedCN = this.args.getOpt("allowed-cn");
+        String cellArgs = args + ' ' + cellClass + ' ' + "-prot=raw" + " -role=" + role
+                + " -allowed-cn=" + allowedCN;
         LOGGER.info("Starting acceptor with arguments: {}", cellArgs);
         LoginManager c = new LoginManager(cellName, "System", cellArgs);
         c.start().get();
