@@ -12,7 +12,7 @@ of dCache.
 
 ## When to use VersityGW
 
-dCache has its own S3 door, which runs inside dCache: every request is
+dCache has its own [S3 door](config-s3.md), which runs inside dCache: every request is
 authenticated by gPlazma as a dCache user, data is moved by dCache's
 transfer machinery, billing records the user, and files that are only on tape
 behave like S3 Glacier objects.  It is the better choice in most cases.

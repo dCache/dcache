@@ -55,6 +55,8 @@ dCache Book
 
         - [qos service](config-qos-engine.md)
 
+        - [s3 service](config-s3.md)
+
         - [spacemanager service](config-spacemanager.md)
 
         - [statistics service](config-statistics.md)
