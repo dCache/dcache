@@ -41,6 +41,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
 import org.dcache.cells.CellStub;
+import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryListSource;
@@ -172,7 +173,8 @@ class FakeDcache {
 
     /**
      * Writes files as the transfer manager does: it creates missing parent directories, and a
-     * file that could not be written is removed.
+     * file that could not be written is removed.  Unlike the files added by the tests, written
+     * files and the directories the door creates are new.
      */
     S3ObjectWriter writer() {
         return (user, path, billingPath, xattrs, data, length) -> {
@@ -191,8 +193,8 @@ class FakeDcache {
                   .fileType(FileType.REGULAR)
                   .pnfsId(nextPnfsId())
                   .size(length)
-                  .creationTime(MTIME)
-                  .modificationTime(MTIME)
+                  .creationTime(System.currentTimeMillis())
+                  .modificationTime(System.currentTimeMillis())
                   .locations(List.of("pool1"))
                   .storageInfo(new GenericStorageInfo("osm", "test:tape"))
                   .xattrs(Map.copyOf(xattrs))
@@ -265,7 +267,14 @@ class FakeDcache {
         if (namespace.containsKey(path)) {
             throw new FileExistsCacheException("File exists: " + path);
         }
-        msg.setFileAttributes(directory(path.toString()));
+        FileAttributes requested = msg.getFileAttributes();
+        FileAttributes attributes = directory(path.toString());
+        attributes.setCreationTime(System.currentTimeMillis());
+        attributes.setModificationTime(System.currentTimeMillis());
+        if (requested.isDefined(FileAttribute.XATTR)) {
+            attributes.setXattrs(Map.copyOf(requested.getXattrs()));
+        }
+        msg.setFileAttributes(attributes);
     }
 
     private void createDirectories(FsPath path) throws CacheException {
@@ -286,7 +295,7 @@ class FakeDcache {
               : FsPath.create(msg.getPnfsPath());
         FileAttributes attributes = lookup(path);
         FileAttributes update = msg.getFileAttributes();
-        if (update.isDefined(org.dcache.namespace.FileAttribute.CHECKSUM)) {
+        if (update.isDefined(FileAttribute.CHECKSUM)) {
             attributes.addChecksums(update.getChecksums());
         }
         msg.setFileAttributes(attributes);

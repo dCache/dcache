@@ -131,6 +131,8 @@ public class S3DoorContextTest {
             p.put("s3.mover." + timeout + ".unit", "MILLISECONDS");
         }
         p.put("s3.limits.list.max-entries", "100");
+        p.put("s3.limits.multipart.max-age", "7");
+        p.put("s3.limits.multipart.max-age.unit", "DAYS");
         p.put("s3.restore.max-days", "30");
         p.put("s3.loginbroker.update-topic", "LoginBrokerTopic");
         p.put("s3.loginbroker.update-period", "5");
