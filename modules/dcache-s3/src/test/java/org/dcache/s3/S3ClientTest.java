@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.security.auth.Subject;
 import org.dcache.auth.LoginReply;
@@ -52,6 +53,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.Bucket;
 import software.amazon.awssdk.services.s3.model.CommonPrefix;
+import software.amazon.awssdk.services.s3.model.CompletedPart;
 import software.amazon.awssdk.services.s3.model.DeleteObjectsResponse;
 import software.amazon.awssdk.services.s3.model.DeletedObject;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
@@ -60,6 +62,7 @@ import software.amazon.awssdk.services.s3.model.ListObjectsResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
+import software.amazon.awssdk.services.s3.model.NoSuchUploadException;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.ObjectStorageClass;
 import software.amazon.awssdk.services.s3.model.RestoreObjectResponse;
@@ -106,7 +109,7 @@ public class S3ClientTest {
         S3KeyStore keyStore = key -> key.equals(ACCESS_KEY)
               ? Optional.of(SECRET) : Optional.empty();
         var factory = new DcacheBlobStoreFactory(dcache.pnfsHandler(), dcache.lister(),
-              dcache.reader(), dcache.writer(), restorer, 1000);
+              dcache.reader(), dcache.writer(), restorer, 1000, 7, TimeUnit.DAYS);
         var locator = new DcacheBlobStoreLocator(keyStore, loginStrategy,
               FsPath.create("/data/s3"), factory);
         var handler = new DcacheS3ProxyHandler(locator, AuthenticationType.AWS_V2_OR_V4, "",
@@ -463,5 +466,86 @@ public class S3ClientTest {
 
         assertThat(s3.listBuckets().buckets().stream().map(Bucket::name).toList(),
               contains("bucket", "other"));
+    }
+
+    // Multipart uploads
+
+    @Test
+    public void shouldUploadInParts() {
+        byte[] first = new byte[5 * 1024 * 1024];
+        new Random(1).nextBytes(first);
+        byte[] second = "the end".getBytes(UTF_8);
+        String id = s3.createMultipartUpload(b -> b.bucket("bucket").key("mpu/file")
+              .contentType("text/plain")).uploadId();
+
+        String eTag1 = s3.uploadPart(b -> b.bucket("bucket").key("mpu/file").uploadId(id)
+              .partNumber(1), RequestBody.fromBytes(first)).eTag();
+        String eTag2 = s3.uploadPart(b -> b.bucket("bucket").key("mpu/file").uploadId(id)
+              .partNumber(2), RequestBody.fromBytes(second)).eTag();
+
+        assertThat(s3.listMultipartUploads(b -> b.bucket("bucket")).uploads().stream()
+              .map(u -> u.key() + " " + u.uploadId()).toList(), contains("mpu/file " + id));
+        assertThat(s3.listParts(b -> b.bucket("bucket").key("mpu/file").uploadId(id)).parts()
+              .stream().map(p -> p.partNumber() + " " + p.size() + " " + p.eTag()).toList(),
+              contains("1 " + first.length + " " + eTag1, "2 " + second.length + " " + eTag2));
+
+        s3.completeMultipartUpload(b -> b.bucket("bucket").key("mpu/file").uploadId(id)
+              .multipartUpload(m -> m.parts(
+                    CompletedPart.builder().partNumber(1).eTag(eTag1).build(),
+                    CompletedPart.builder().partNumber(2).eTag(eTag2).build())));
+
+        ResponseBytes<GetObjectResponse> object = s3.getObjectAsBytes(
+              b -> b.bucket("bucket").key("mpu/file"));
+        byte[] expected = new byte[first.length + second.length];
+        System.arraycopy(first, 0, expected, 0, first.length);
+        System.arraycopy(second, 0, expected, first.length, second.length);
+        assertThat(object.asByteArray(), is(expected));
+        assertThat(object.response().contentType(), is("text/plain"));
+        assertThat(s3.listMultipartUploads(b -> b.bucket("bucket")).uploads(), is(empty()));
+    }
+
+    @Test
+    public void shouldRefuseSmallPartsBeforeTheLast() {
+        String id = s3.createMultipartUpload(b -> b.bucket("bucket").key("mpu")).uploadId();
+        String eTag1 = s3.uploadPart(b -> b.bucket("bucket").key("mpu").uploadId(id)
+              .partNumber(1), RequestBody.fromString("small")).eTag();
+        String eTag2 = s3.uploadPart(b -> b.bucket("bucket").key("mpu").uploadId(id)
+              .partNumber(2), RequestBody.fromString("last")).eTag();
+
+        S3Exception e = assertThrows(S3Exception.class, () -> s3.completeMultipartUpload(
+              b -> b.bucket("bucket").key("mpu").uploadId(id).multipartUpload(m -> m.parts(
+                    CompletedPart.builder().partNumber(1).eTag(eTag1).build(),
+                    CompletedPart.builder().partNumber(2).eTag(eTag2).build()))));
+
+        assertThat(e.awsErrorDetails().errorCode(), is("EntityTooSmall"));
+    }
+
+    @Test
+    public void shouldCopyPart() {
+        String id = s3.createMultipartUpload(b -> b.bucket("bucket").key("mpu")).uploadId();
+        String eTag = s3.uploadPartCopy(b -> b.sourceBucket("bucket").sourceKey("hello.txt")
+              .destinationBucket("bucket").destinationKey("mpu").uploadId(id).partNumber(1)
+              .copySourceRange("bytes=6-10")).copyPartResult().eTag();
+
+        s3.completeMultipartUpload(b -> b.bucket("bucket").key("mpu").uploadId(id)
+              .multipartUpload(m -> m.parts(
+                    CompletedPart.builder().partNumber(1).eTag(eTag).build())));
+
+        assertThat(s3.getObjectAsBytes(b -> b.bucket("bucket").key("mpu")).asUtf8String(),
+              is("world"));
+    }
+
+    @Test
+    public void shouldAbortUpload() {
+        String id = s3.createMultipartUpload(b -> b.bucket("bucket").key("mpu")).uploadId();
+        s3.uploadPart(b -> b.bucket("bucket").key("mpu").uploadId(id).partNumber(1),
+              RequestBody.fromString("data"));
+
+        s3.abortMultipartUpload(b -> b.bucket("bucket").key("mpu").uploadId(id));
+
+        assertThat(s3.listMultipartUploads(b -> b.bucket("bucket")).uploads(), is(empty()));
+        assertThrows(NoSuchUploadException.class, () -> s3.uploadPart(
+              b -> b.bucket("bucket").key("mpu").uploadId(id).partNumber(1),
+              RequestBody.fromString("data")));
     }
 }

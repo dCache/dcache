@@ -145,6 +145,18 @@
     <constructor-arg index="3" ref="transfer-manager"/>
     <constructor-arg index="4" ref="restorer"/>
     <constructor-arg index="5" value="${s3.limits.list.max-entries}"/>
+    <constructor-arg index="6" value="${s3.limits.multipart.max-age}"/>
+    <constructor-arg index="7" value="${s3.limits.multipart.max-age.unit}"/>
+  </bean>
+
+  <bean id="upload-sweeper" class="org.dcache.s3.S3UploadSweeper">
+    <description>Removes multipart uploads that were never completed</description>
+    <property name="pnfsHandler" ref="pnfs-handler"/>
+    <property name="lister" ref="list-handler"/>
+    <property name="root" value="${s3.root}"/>
+    <property name="maxAge" value="${s3.limits.multipart.max-age}"/>
+    <property name="maxAgeUnit" value="${s3.limits.multipart.max-age.unit}"/>
+    <property name="executor" ref="scheduled-thread-pool"/>
   </bean>
 
   <bean id="blob-store-locator" class="org.dcache.s3.DcacheBlobStoreLocator">

@@ -43,10 +43,13 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InterruptedIOException;
 import java.io.UncheckedIOException;
+import java.net.InetAddress;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -54,9 +57,11 @@ import java.util.Base64;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.UUID;
 import java.util.function.Supplier;
 import org.dcache.auth.attributes.Restrictions;
@@ -86,6 +91,7 @@ import software.amazon.awssdk.services.s3.model.BucketCannedACL;
 import software.amazon.awssdk.services.s3.model.CommonPrefix;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse;
+import software.amazon.awssdk.services.s3.model.CompletedPart;
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 import software.amazon.awssdk.services.s3.model.CopyObjectResponse;
 import software.amazon.awssdk.services.s3.model.CopyObjectResult;
@@ -135,7 +141,11 @@ import software.amazon.awssdk.services.s3.model.UploadPartResponse;
  * once the data is complete, so readers see either the old or the new object.  The door
  * computes the MD5 checksum of the data, which becomes the ETag and is stored as the file's
  * checksum.  Content type and user metadata are stored as extended attributes.  Deleting an
- * object keeps its parent directories.  Multipart uploads are not supported yet.
+ * object keeps its parent directories.
+ * <p>
+ * Multipart uploads are kept in the bucket (see {@link S3MultipartUploads}).  Completing one
+ * streams the parts through the door into the object, so its ETag is the object's MD5 checksum
+ * too.  Uploads older than a maximum age are removed when an upload is started in the bucket.
  */
 public class DcacheBlobStore implements BlobStore {
 
@@ -164,6 +174,9 @@ public class DcacheBlobStore implements BlobStore {
 
     private static final Set<FileAttribute> TYPE_ATTRIBUTES = Sets.immutableEnumSet(TYPE);
 
+    private static final Set<FileAttribute> ENTRY_ATTRIBUTES =
+          Sets.immutableEnumSet(TYPE, MODIFICATION_TIME);
+
     private static final Set<FileAttribute> OBJECT_ATTRIBUTES = Sets.immutableEnumSet(
           Sets.union(LIST_ATTRIBUTES, EnumSet.of(XATTR)));
 
@@ -174,6 +187,13 @@ public class DcacheBlobStore implements BlobStore {
     private final S3ObjectWriter writer;
     private final S3ObjectRestorer restorer;
     private final int maxListEntries;
+    private final Duration maxUploadAge;
+
+    /**
+     * The address of the client, captured when s3proxy asks for the blob store on the request's
+     * thread, for operations s3proxy runs in other threads.
+     */
+    private final @Nullable InetAddress origin = RequestOrigin.current().orElse(null);
 
     /**
      * @param user           logs in the client on first use
@@ -184,10 +204,11 @@ public class DcacheBlobStore implements BlobStore {
      * @param restorer       brings files back from tape
      * @param maxListEntries how many directory entries a listing without delimiter reads before
      *                       it ends the page early
+     * @param maxUploadAge   how long multipart uploads and files of interrupted uploads are kept
      */
     public DcacheBlobStore(Supplier<S3User> user, PnfsHandler pnfs, DirectoryListSource lister,
           S3ObjectReader reader, S3ObjectWriter writer, S3ObjectRestorer restorer,
-          int maxListEntries) {
+          int maxListEntries, Duration maxUploadAge) {
         this.user = requireNonNull(user);
         this.pnfs = requireNonNull(pnfs);
         this.lister = requireNonNull(lister);
@@ -195,6 +216,7 @@ public class DcacheBlobStore implements BlobStore {
         this.writer = requireNonNull(writer);
         this.restorer = requireNonNull(restorer);
         this.maxListEntries = maxListEntries;
+        this.maxUploadAge = requireNonNull(maxUploadAge);
     }
 
     private PnfsHandler pnfs(S3User user) {
@@ -275,18 +297,27 @@ public class DcacheBlobStore implements BlobStore {
 
     /**
      * Removes a bucket that holds no files.  Directories left behind by deleted objects do not
-     * count: they are removed with the bucket.
+     * count, nor do multipart uploads and files of interrupted uploads older than the maximum
+     * upload age: they are removed with the bucket.
      */
     @Override
     public void deleteBucket(String container) {
         S3User u = user.get();
         FsPath path = S3Paths.bucket(u.root(), container);
         try {
-            var directories = new ArrayList<FsPath>();
-            if (!collectEmptyTree(u, container, path, directories)) {
+            var tree = new BucketTree(container, Instant.now().minus(maxUploadAge));
+            if (!tree.collect(u, path, false)) {
                 return;
             }
-            for (FsPath directory : directories) {
+            for (FsPath file : tree.leftovers) {
+                try {
+                    pnfs(u).deletePnfsEntry(file.toString(),
+                          EnumSet.of(FileType.REGULAR, FileType.LINK));
+                } catch (FileNotFoundCacheException e) {
+                    // Removed concurrently.
+                }
+            }
+            for (FsPath directory : tree.directories) {
                 try {
                     pnfs(u).deletePnfsEntry(directory.toString(), EnumSet.of(FileType.DIR));
                 } catch (FileNotFoundCacheException e) {
@@ -309,29 +340,53 @@ public class DcacheBlobStore implements BlobStore {
     }
 
     /**
-     * Adds the directories below and including {@code directory} to {@code directories},
-     * children before their parents.
-     *
-     * @return false if the directory does not exist
-     * @throws software.amazon.awssdk.services.s3.model.S3Exception BucketNotEmpty if the tree
-     *                                                              holds anything but directories
+     * What deleting a bucket removes: its directories, children before their parents, and the
+     * files the door left behind that are older than a point in time.
      */
-    private boolean collectEmptyTree(S3User u, String bucket, FsPath directory,
-          List<FsPath> directories) throws CacheException, InterruptedException {
-        List<DirectoryEntry> entries;
-        try {
-            entries = read(u, directory, TYPE_ATTRIBUTES);
-        } catch (FileNotFoundCacheException | NotDirCacheException e) {
-            return false;
+    private class BucketTree {
+
+        private final String bucket;
+        private final Instant cutoff;
+        private final List<FsPath> directories = new ArrayList<>();
+        private final List<FsPath> leftovers = new ArrayList<>();
+
+        BucketTree(String bucket, Instant cutoff) {
+            this.bucket = bucket;
+            this.cutoff = cutoff;
         }
-        for (DirectoryEntry entry : entries) {
-            if (entry.getFileAttributes().getFileType() != FileType.DIR) {
-                throw S3Exceptions.bucketNotEmpty(bucket);
+
+        /**
+         * Adds the tree below and including {@code directory}.
+         *
+         * @param inUploads whether the directory is in the bucket's multipart upload area
+         * @return false if the directory does not exist
+         * @throws software.amazon.awssdk.services.s3.model.S3Exception BucketNotEmpty if the
+         *                                                              tree holds any other file
+         */
+        boolean collect(S3User u, FsPath directory, boolean inUploads)
+              throws CacheException, InterruptedException {
+            List<DirectoryEntry> entries;
+            try {
+                entries = read(u, directory, ENTRY_ATTRIBUTES);
+            } catch (FileNotFoundCacheException | NotDirCacheException e) {
+                return false;
             }
-            collectEmptyTree(u, bucket, directory.child(entry.getName()), directories);
+            for (DirectoryEntry entry : entries) {
+                String name = entry.getName();
+                FileAttributes attributes = entry.getFileAttributes();
+                FsPath path = directory.child(name);
+                if (attributes.getFileType() == FileType.DIR) {
+                    collect(u, path, inUploads || name.equals(S3Paths.MULTIPART_DIRECTORY));
+                } else if ((inUploads || name.startsWith(S3Paths.UPLOAD_PREFIX))
+                      && Instant.ofEpochMilli(attributes.getModificationTime()).isBefore(cutoff)) {
+                    leftovers.add(path);
+                } else {
+                    throw S3Exceptions.bucketNotEmpty(bucket);
+                }
+            }
+            directories.add(directory);
+            return true;
         }
-        directories.add(directory);
-        return true;
     }
 
     private List<DirectoryEntry> read(S3User u, FsPath directory, Set<FileAttribute> attributes)
@@ -1039,44 +1094,277 @@ public class DcacheBlobStore implements BlobStore {
         return new S3ProxyException(S3ErrorCode.NOT_IMPLEMENTED);
     }
 
-    // Multipart uploads are not supported yet.
+    // Multipart uploads
 
+    /**
+     * Starts a multipart upload, removing the bucket's uploads that are older than the maximum
+     * age on the way.
+     */
     @Override
     public MultipartUpload initiateMultipartUpload(CreateMultipartUploadRequest request) {
-        throw notImplemented();
+        if (request.acl() != null && request.acl() != ObjectCannedACL.PRIVATE) {
+            throw notImplemented();
+        }
+        S3User u = user.get();
+        String bucket = request.bucket();
+        String key = request.key();
+        FsPath bucketPath = bucketDirectory(u, bucket);
+        S3Paths.object(bucketPath, key);
+        S3MultipartUploads uploads = uploads(u);
+        try {
+            sweepUploads(uploads, bucketPath);
+            var upload = uploads.create(bucketPath, key,
+                  xattrs(request.contentType(), request.metadata()));
+            return new MultipartUpload(upload.id(), request);
+        } catch (CacheException e) {
+            throw S3Errors.from(e, bucket, null);
+        }
     }
 
-    @Override
-    public void abortMultipartUpload(MultipartUpload mpu) {
-        throw notImplemented();
+    /**
+     * Removes the uploads of a bucket that are older than the maximum age.  Failing to do so
+     * does not fail the request.
+     */
+    private void sweepUploads(S3MultipartUploads uploads, FsPath bucket) {
+        try {
+            uploads.sweep(bucket, Instant.now().minus(maxUploadAge));
+        } catch (CacheException e) {
+            LOGGER.debug("Failed to remove old uploads in {}: {}", bucket, e.getMessage());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
-    @Override
-    public CompleteMultipartUploadResponse completeMultipartUpload(MultipartUpload mpu,
-          CompleteMultipartUploadRequest request) {
-        throw notImplemented();
-    }
-
+    /**
+     * Writes a part like an object: through a hidden file in the upload's directory, which
+     * replaces any earlier upload of the same part.
+     */
     @Override
     public UploadPartResponse uploadMultipartPart(MultipartUpload mpu, UploadPartRequest request,
           InputStream is) {
-        throw notImplemented();
+        try (is) {
+            S3User u = user.get();
+            var upload = upload(u, mpu);
+            FsPath path = upload.directory().child(String.valueOf(request.partNumber()));
+            byte[] contentMd5 = request.contentMD5() == null
+                  ? null : Base64.getDecoder().decode(request.contentMD5());
+            String eTag = store(u, mpu.containerName(), mpu.blobName(), path, Map.of(), is,
+                  request.contentLength(), contentMd5);
+            return SdkResponses.uploadedPart(eTag);
+        } catch (IOException e) {
+            // Reading the client's data failed.
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override
     public List<Part> listMultipartUpload(MultipartUpload mpu) {
-        throw notImplemented();
+        S3User u = user.get();
+        var upload = upload(u, mpu);
+        var parts = new ArrayList<Part>();
+        try {
+            uploads(u).parts(upload, LIST_ATTRIBUTES).forEach((number, attributes) ->
+                  parts.add(SdkResponses.part(number, attributes.getSize(), eTag(attributes),
+                        lastModified(attributes))));
+        } catch (CacheException e) {
+            throw S3Errors.from(e, mpu.containerName(), mpu.blobName());
+        } catch (InterruptedException e) {
+            throw S3Errors.interrupted(e);
+        }
+        return parts;
     }
 
     @Override
     public List<software.amazon.awssdk.services.s3.model.MultipartUpload> listMultipartUploads(
           String container) {
-        headBucket(HeadBucketRequest.builder().bucket(container).build());
-        return List.of();
+        S3User u = user.get();
+        FsPath bucketPath = bucketDirectory(u, container);
+        try {
+            return uploads(u).list(bucketPath).stream()
+                  .map(upload -> SdkResponses.upload(upload.key(), upload.id(),
+                        upload.initiated().truncatedTo(ChronoUnit.SECONDS)))
+                  .toList();
+        } catch (CacheException e) {
+            throw S3Errors.from(e, container, null);
+        } catch (InterruptedException e) {
+            throw S3Errors.interrupted(e);
+        }
+    }
+
+    /**
+     * Joins the parts the request names into the object, streaming them from their pools
+     * through the door into a new file that then replaces the object as for a PUT.  The ETag is
+     * the object's MD5 checksum, not S3's checksum of the parts' checksums.
+     * <p>
+     * s3proxy runs this in a thread of its own, which is given the client's address.
+     */
+    @Override
+    public CompleteMultipartUploadResponse completeMultipartUpload(MultipartUpload mpu,
+          CompleteMultipartUploadRequest request) {
+        try (var ignored = bindOrigin()) {
+            S3User u = user.get();
+            String bucket = mpu.containerName();
+            String key = mpu.blobName();
+            var upload = upload(u, mpu);
+            S3MultipartUploads uploads = uploads(u);
+            SortedMap<Integer, FileAttributes> uploaded;
+            try {
+                uploaded = uploads.parts(upload, LIST_ATTRIBUTES);
+            } catch (CacheException e) {
+                throw S3Errors.from(e, bucket, key);
+            }
+
+            var parts = new ArrayList<Map.Entry<FsPath, FileAttributes>>();
+            long size = 0;
+            for (CompletedPart part : request.multipartUpload().parts()) {
+                FileAttributes attributes = uploaded.get(part.partNumber());
+                if (attributes == null) {
+                    throw new S3ProxyException(S3ErrorCode.INVALID_PART);
+                }
+                parts.add(Map.entry(upload.directory().child(part.partNumber().toString()),
+                      attributes));
+                size += attributes.getSize();
+            }
+
+            FsPath path = S3Paths.object(bucketDirectory(u, bucket), key);
+            String eTag;
+            try (InputStream data = new PartsInputStream(u, parts)) {
+                eTag = store(u, bucket, key, path, upload.xattrs(), data, size, null);
+            } catch (IOException e) {
+                if (e.getCause() instanceof CacheException cause) {
+                    throw S3Errors.from(cause, bucket, key);
+                }
+                throw S3Errors.serviceUnavailable("Failed to read parts of " + key + ": "
+                      + e.getMessage(), e);
+            }
+
+            try {
+                uploads.remove(upload.directory());
+            } catch (CacheException e) {
+                LOGGER.warn("Failed to remove completed upload {}: {}", upload.directory(),
+                      e.getMessage());
+            }
+            return CompleteMultipartUploadResponse.builder()
+                  .bucket(bucket)
+                  .key(key)
+                  .eTag(eTag)
+                  .build();
+        } catch (InterruptedException e) {
+            throw S3Errors.interrupted(e);
+        }
+    }
+
+    @Override
+    public void abortMultipartUpload(MultipartUpload mpu) {
+        S3User u = user.get();
+        var upload = upload(u, mpu);
+        try {
+            uploads(u).remove(upload.directory());
+        } catch (CacheException e) {
+            throw S3Errors.from(e, mpu.containerName(), mpu.blobName());
+        } catch (InterruptedException e) {
+            throw S3Errors.interrupted(e);
+        }
     }
 
     @Override
     public long getMinimumMultipartPartSize() {
         return MINIMUM_MULTIPART_PART_SIZE;
+    }
+
+    private S3MultipartUploads uploads(S3User u) {
+        return new S3MultipartUploads(pnfs(u), lister, u.subject(), u.restriction());
+    }
+
+    /**
+     * Returns an upload in progress.
+     *
+     * @throws software.amazon.awssdk.services.s3.model.S3Exception NoSuchUpload if there is no
+     *                                                              such upload of the key
+     */
+    private S3MultipartUploads.Upload upload(S3User u, MultipartUpload mpu) {
+        FsPath bucketPath = bucketDirectory(u, mpu.containerName());
+        try {
+            return uploads(u).find(bucketPath, mpu.id(), mpu.blobName())
+                  .orElseThrow(() -> new S3ProxyException(S3ErrorCode.NO_SUCH_UPLOAD));
+        } catch (CacheException e) {
+            throw S3Errors.from(e, mpu.containerName(), mpu.blobName());
+        }
+    }
+
+    /**
+     * Binds the client's address to the current thread unless it has one bound already.
+     */
+    private RequestOrigin.Scope bindOrigin() {
+        if (origin == null || RequestOrigin.current().isPresent()) {
+            return () -> {
+            };
+        }
+        return RequestOrigin.bind(origin);
+    }
+
+    /**
+     * The parts of an upload, one after the other.  Each part is read from its pool when the
+     * previous one has been read.
+     */
+    private class PartsInputStream extends InputStream {
+
+        private final S3User user;
+        private final Iterator<Map.Entry<FsPath, FileAttributes>> parts;
+        private InputStream current = InputStream.nullInputStream();
+
+        PartsInputStream(S3User user, List<Map.Entry<FsPath, FileAttributes>> parts) {
+            this.user = user;
+            this.parts = parts.iterator();
+        }
+
+        @Override
+        public int read() throws IOException {
+            byte[] b = new byte[1];
+            return read(b, 0, 1) == -1 ? -1 : b[0] & 0xff;
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            if (len == 0) {
+                return 0;
+            }
+            while (true) {
+                int n = current.read(b, off, len);
+                if (n != -1) {
+                    return n;
+                }
+                if (!openNext()) {
+                    return -1;
+                }
+            }
+        }
+
+        private boolean openNext() throws IOException {
+            current.close();
+            current = InputStream.nullInputStream();
+            if (!parts.hasNext()) {
+                return false;
+            }
+            var part = parts.next();
+            long size = part.getValue().getSize();
+            if (size > 0) {
+                try {
+                    current = reader.read(user, part.getKey(), part.getValue(), 0, size);
+                } catch (CacheException e) {
+                    throw new IOException("Failed to read " + part.getKey() + ": "
+                          + e.getMessage(), e);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new InterruptedIOException("Interrupted while reading parts");
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public void close() throws IOException {
+            current.close();
+        }
     }
 }

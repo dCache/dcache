@@ -28,13 +28,16 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.TimeoutCacheException;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.net.InetAddress;
 import java.net.URI;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import javax.security.auth.Subject;
 import org.dcache.auth.UidPrincipal;
@@ -46,6 +49,7 @@ import org.dcache.vehicles.FileAttributes;
 import org.gaul.s3proxy.S3ErrorCode;
 import org.gaul.s3proxy.S3ProxyException;
 import org.gaul.s3proxy.blobstore.S3Exceptions;
+import org.gaul.s3proxy.blobstore.domain.MultipartUpload;
 import org.junit.Before;
 import org.junit.Test;
 import software.amazon.awssdk.core.ResponseInputStream;
@@ -53,8 +57,13 @@ import software.amazon.awssdk.services.s3.model.Bucket;
 import software.amazon.awssdk.services.s3.model.BucketAlreadyOwnedByYouException;
 import software.amazon.awssdk.services.s3.model.BucketCannedACL;
 import software.amazon.awssdk.services.s3.model.CommonPrefix;
+import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse;
+import software.amazon.awssdk.services.s3.model.CompletedMultipartUpload;
+import software.amazon.awssdk.services.s3.model.CompletedPart;
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
+import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
@@ -66,6 +75,7 @@ import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 import software.amazon.awssdk.services.s3.model.ObjectStorageClass;
+import software.amazon.awssdk.services.s3.model.Part;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.RestoreObjectRequest;
@@ -73,6 +83,8 @@ import software.amazon.awssdk.services.s3.model.RestoreRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.s3.model.StorageClass;
+import software.amazon.awssdk.services.s3.model.UploadPartRequest;
+import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 
 public class DcacheBlobStoreTest {
 
@@ -83,6 +95,10 @@ public class DcacheBlobStoreTest {
      * The MD5 checksum of "hello world".
      */
     private static final String HELLO_MD5 = "5eb63bbbe01eeed093cb22bb8f5acdc3";
+
+    private static final Duration MAX_UPLOAD_AGE = Duration.ofDays(7);
+
+    private static final String UPLOAD_ID = "0b6c9a52-2a64-4dc8-9c39-7b4a5d0d3a11";
 
     private final FakeDcache dcache = new FakeDcache();
     private final List<FsPath> listed = dcache.listed;
@@ -930,12 +946,192 @@ public class DcacheBlobStoreTest {
 
     @Test
     public void shouldNotDeleteBucketWithUploadInProgress() {
-        givenFile("/data/s3/bucket/.s3-tmp-1234", "x");
+        givenFile("/data/s3/bucket/.s3-tmp-1234", "x")
+              .setModificationTime(System.currentTimeMillis());
 
         S3Exception e = assertThrows(S3Exception.class, () -> store.deleteBucket("bucket"));
 
         assertThat(e.awsErrorDetails().errorCode(), is("BucketNotEmpty"));
     }
+
+    @Test
+    public void shouldDeleteBucketWithOldLeftovers() {
+        givenFile("/data/s3/bucket/dir/.s3-tmp-1234", "x");
+        givenFile("/data/s3/bucket/.s3-multipart/" + UPLOAD_ID + "/1", "x");
+
+        store.deleteBucket("bucket");
+
+        assertThat(filesIn("/data/s3"), is(emptyIterable()));
+    }
+
+    @Test
+    public void shouldNotDeleteBucketWithMultipartUploadInProgress() {
+        givenDirectory("/data/s3/bucket");
+        MultipartUpload upload = initiate("file");
+        uploadPart(upload, 1, "part");
+
+        S3Exception e = assertThrows(S3Exception.class, () -> store.deleteBucket("bucket"));
+
+        assertThat(e.awsErrorDetails().errorCode(), is("BucketNotEmpty"));
+    }
+
+    // Multipart uploads
+
+    @Test
+    public void shouldStartUpload() {
+        givenDirectory("/data/s3/bucket");
+
+        MultipartUpload upload = initiate("dir/file");
+
+        var uploads = store.listMultipartUploads("bucket");
+        assertThat(uploads.size(), is(1));
+        assertThat(uploads.get(0).key(), is("dir/file"));
+        assertThat(uploads.get(0).uploadId(), is(upload.id()));
+        assertThat(filesIn("/data/s3/bucket/.s3-multipart"), contains(upload.id()));
+    }
+
+    @Test
+    public void shouldHideUploadsFromListing() {
+        givenDirectory("/data/s3/bucket");
+        initiate("file");
+
+        assertThat(keys(store.list(list().build())), is(emptyIterable()));
+    }
+
+    @Test
+    public void shouldUploadAndCompleteParts() throws Exception {
+        givenDirectory("/data/s3/bucket");
+        MultipartUpload upload = store.initiateMultipartUpload(
+              CreateMultipartUploadRequest.builder().bucket("bucket").key("dir/file")
+                    .contentType("text/plain").metadata(Map.of("color", "blue")).build());
+        String eTag1 = uploadPart(upload, 1, "hello ").eTag();
+        uploadPart(upload, 2, "world");
+
+        List<Part> parts = store.listMultipartUpload(upload);
+        assertThat(parts.stream().map(Part::partNumber).toList(), contains(1, 2));
+        assertThat(parts.get(0).eTag(), is(eTag1));
+        assertThat(parts.get(0).size(), is(6L));
+
+        String eTag = complete(upload, 1, 2).eTag();
+
+        assertThat(eTag, is('"' + HELLO_MD5 + '"'));
+        assertThat(contentOf("/data/s3/bucket/dir/file"), is("hello world"));
+        HeadObjectResponse head = store.blobMetadata("bucket", "dir/file");
+        assertThat(head.eTag(), is(eTag));
+        assertThat(head.contentType(), is("text/plain"));
+        assertThat(head.metadata(), is(equalTo(Map.of("color", "blue"))));
+        assertThat(filesIn("/data/s3/bucket/.s3-multipart"), is(emptyIterable()));
+        assertThat(filesIn("/data/s3/bucket/dir"), contains("file"));
+    }
+
+    @Test
+    public void shouldCompleteWithSomeParts() throws Exception {
+        givenDirectory("/data/s3/bucket");
+        MultipartUpload upload = initiate("file");
+        uploadPart(upload, 1, "hello ");
+        uploadPart(upload, 2, "cruel ");
+        uploadPart(upload, 3, "world");
+
+        complete(upload, 1, 3);
+
+        assertThat(contentOf("/data/s3/bucket/file"), is("hello world"));
+    }
+
+    @Test
+    public void shouldReplacePart() throws Exception {
+        givenDirectory("/data/s3/bucket");
+        MultipartUpload upload = initiate("file");
+        uploadPart(upload, 1, "goodbye ");
+        uploadPart(upload, 1, "hello ");
+        uploadPart(upload, 2, "world");
+
+        complete(upload, 1, 2);
+
+        assertThat(contentOf("/data/s3/bucket/file"), is("hello world"));
+    }
+
+    @Test
+    public void shouldRefuseToCompleteWithMissingPart() {
+        givenDirectory("/data/s3/bucket");
+        MultipartUpload upload = initiate("file");
+        uploadPart(upload, 1, "hello");
+
+        S3ProxyException e = assertThrows(S3ProxyException.class, () -> complete(upload, 1, 2));
+
+        assertThat(e.getError(), is(S3ErrorCode.INVALID_PART));
+        assertThat(contentOf("/data/s3/bucket/file"), is(nullValue()));
+    }
+
+    @Test
+    public void shouldCompleteWithClientAddressInAnotherThread() throws Exception {
+        givenDirectory("/data/s3/bucket");
+        var origins = new ArrayList<Optional<InetAddress>>();
+        reader = (u, path, attributes, offset, length) -> {
+            origins.add(RequestOrigin.current());
+            return dcache.reader().read(u, path, attributes, offset, length);
+        };
+        InetAddress client = InetAddress.getByName("192.0.2.1");
+        try (var ignored = RequestOrigin.bind(client)) {
+            store = newStore(1000);
+        }
+        MultipartUpload upload = initiate("file");
+        uploadPart(upload, 1, "hello world");
+
+        var thread = new Thread(() -> complete(upload, 1));
+        thread.start();
+        thread.join();
+
+        assertThat(origins, contains(Optional.of(client)));
+        assertThat(contentOf("/data/s3/bucket/file"), is("hello world"));
+    }
+
+    @Test
+    public void shouldRefuseUnknownUpload() {
+        givenDirectory("/data/s3/bucket");
+        MultipartUpload upload = initiate("file");
+
+        for (var unknown : List.of(new MultipartUpload(UPLOAD_ID, create("file")),
+              new MultipartUpload(upload.id(), create("other")),
+              new MultipartUpload("../" + upload.id(), create("file")))) {
+            S3ProxyException e = assertThrows(S3ProxyException.class,
+                  () -> uploadPart(unknown, 1, "x"));
+            assertThat(e.getError(), is(S3ErrorCode.NO_SUCH_UPLOAD));
+        }
+    }
+
+    @Test
+    public void shouldAbortUpload() {
+        givenDirectory("/data/s3/bucket");
+        MultipartUpload upload = initiate("file");
+        uploadPart(upload, 1, "hello");
+
+        store.abortMultipartUpload(upload);
+
+        assertThat(filesIn("/data/s3/bucket/.s3-multipart"), is(emptyIterable()));
+        S3ProxyException e = assertThrows(S3ProxyException.class,
+              () -> store.abortMultipartUpload(upload));
+        assertThat(e.getError(), is(S3ErrorCode.NO_SUCH_UPLOAD));
+    }
+
+    @Test
+    public void shouldRemoveOldUploadsWhenStartingUpload() {
+        givenDirectory("/data/s3/bucket");
+        MultipartUpload old = initiate("old");
+        uploadPart(old, 1, "x");
+        FsPath oldDirectory = FsPath.create("/data/s3/bucket/.s3-multipart/" + old.id());
+        dcache.namespace.get(oldDirectory).setCreationTime(
+              System.currentTimeMillis() - MAX_UPLOAD_AGE.toMillis() - 1000);
+        MultipartUpload recent = initiate("recent");
+
+        assertThat(filesIn("/data/s3/bucket/.s3-multipart"), contains(recent.id()));
+    }
+
+    @Test
+    public void shouldNotStartUploadInMissingBucket() {
+        assertThrows(NoSuchBucketException.class, () -> initiate("file"));
+    }
+
+
 
     @Test
     public void shouldDeleteMissingBucketQuietly() {
@@ -947,7 +1143,35 @@ public class DcacheBlobStoreTest {
     private DcacheBlobStore newStore(int maxListEntries) {
         S3User user = new S3User("AKIAEXAMPLE", subject, Restrictions.none(), ROOT);
         return new DcacheBlobStore(() -> user, pnfs, lister, reader, dcache.writer(), restorer,
-              maxListEntries);
+              maxListEntries, MAX_UPLOAD_AGE);
+    }
+
+    private static CreateMultipartUploadRequest create(String key) {
+        return CreateMultipartUploadRequest.builder().bucket("bucket").key(key).build();
+    }
+
+    private MultipartUpload initiate(String key) {
+        return store.initiateMultipartUpload(create(key));
+    }
+
+    private UploadPartResponse uploadPart(MultipartUpload upload, int number, String data) {
+        byte[] bytes = data.getBytes(UTF_8);
+        return store.uploadMultipartPart(upload, UploadPartRequest.builder()
+                    .bucket(upload.containerName()).key(upload.blobName())
+                    .uploadId(upload.id()).partNumber(number)
+                    .contentLength((long) bytes.length).build(),
+              new ByteArrayInputStream(bytes));
+    }
+
+    private CompleteMultipartUploadResponse complete(MultipartUpload upload, int... numbers) {
+        var parts = new ArrayList<CompletedPart>();
+        for (int number : numbers) {
+            parts.add(CompletedPart.builder().partNumber(number).build());
+        }
+        return store.completeMultipartUpload(upload, CompleteMultipartUploadRequest.builder()
+              .bucket(upload.containerName()).key(upload.blobName()).uploadId(upload.id())
+              .multipartUpload(CompletedMultipartUpload.builder().parts(parts).build())
+              .build());
     }
 
     private static PutObjectRequest.Builder putRequest(String key, String data) {

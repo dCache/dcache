@@ -20,6 +20,8 @@ package org.dcache.s3;
 import static java.util.Objects.requireNonNull;
 
 import diskCacheV111.util.PnfsHandler;
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import org.dcache.util.list.DirectoryListSource;
 import org.gaul.s3proxy.blobstore.BlobStore;
@@ -35,25 +37,29 @@ public class DcacheBlobStoreFactory implements S3BlobStoreFactory {
     private final S3ObjectWriter writer;
     private final S3ObjectRestorer restorer;
     private final int maxListEntries;
+    private final Duration maxUploadAge;
 
     /**
      * @param maxListEntries how many directory entries a listing without delimiter reads before
      *                       it ends the page early
+     * @param maxUploadAge   how long multipart uploads and files of interrupted uploads are kept
+     * @param unit           the unit of {@code maxUploadAge}
      */
     public DcacheBlobStoreFactory(PnfsHandler pnfs, DirectoryListSource lister,
           S3ObjectReader reader, S3ObjectWriter writer, S3ObjectRestorer restorer,
-          int maxListEntries) {
+          int maxListEntries, long maxUploadAge, TimeUnit unit) {
         this.pnfs = requireNonNull(pnfs);
         this.lister = requireNonNull(lister);
         this.reader = requireNonNull(reader);
         this.writer = requireNonNull(writer);
         this.restorer = requireNonNull(restorer);
         this.maxListEntries = maxListEntries;
+        this.maxUploadAge = Duration.of(maxUploadAge, unit.toChronoUnit());
     }
 
     @Override
     public BlobStore create(Supplier<S3User> user) {
         return new DcacheBlobStore(user, pnfs, lister, reader, writer, restorer,
-              maxListEntries);
+              maxListEntries, maxUploadAge);
     }
 }
