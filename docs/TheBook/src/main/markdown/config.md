@@ -120,6 +120,16 @@ Individual services:
      - [Some typical scenarios part 1 - what happens when ...?](config-qos-engine.md#some-typical-scenarios-part-1-what-happens-when-)
      - [Some typical scenarios part 2 - how do I ...?](config-qos-engine.md#some-typical-scenarios-part-2-how-do-i-)
 
+- [The S3 Service](config-s3.md)
+    - [Introduction](config-s3.md#introduction)
+    - [Setting up](config-s3.md#setting-up)
+    - [Buckets and objects](config-s3.md#buckets-and-objects)
+    - [Writing objects](config-s3.md#writing-objects)
+    - [Files on tape](config-s3.md#files-on-tape)
+    - [Clients](config-s3.md#clients)
+    - [Operation](config-s3.md#operation)
+    - [Limitations](config-s3.md#limitations)
+
 - [dCache SpaceManager Service](config-spacemanager.md)
      - [Utilization of space reservations for data storage](config-spacemanager.md#utilization-of-space-reservations-for-data-storage)
      - [Properties of space reservation](config-spacemanager.md#properties-of-space-reservation)
