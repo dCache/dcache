@@ -150,7 +150,7 @@ public class LocationMgrTunnel
         return pattern.equals(cn);
     }
 
-    private boolean isAllowedCN() throws Exception {
+    private void isAllowedCN() throws Exception {
         List<String> allowedCN;
         try {
             allowedCN = getCuratorFramework()
@@ -160,7 +160,7 @@ public class LocationMgrTunnel
             allowedCN = Collections.emptyList();
         }
         if (allowedCN.isEmpty()) {
-            return true;
+            return;
         }
 
         if (!(_socket instanceof SSLSocket)) {
@@ -178,7 +178,6 @@ public class LocationMgrTunnel
         if ((allowedCN.stream().noneMatch(p -> matchesCN(p, cn)))){
             throw new IOException("CN: " + cn + "from presented Certificate not allowed");
         }
-        return true;
     }
 
     @Override
