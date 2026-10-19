@@ -42,10 +42,14 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -622,22 +626,48 @@ public class LocationManager extends CellAdapter {
               this.args.getOpt("mode"));
 
         String cns = this.args.getOption("allowed-cn");
+        String cnFile = this.args.getOption("allowed-cn-file");
+        Path path = (cnFile == null) ? null : Paths.get(cnFile);
 
-        if (cns != null){
-        Arrays.stream(cns.split(","))
-                .forEach(cn -> {
-                    try {
-                        getCuratorFramework()
-                                .create()
-                                .creatingParentsIfNeeded()
-                                .forPath("/dcache/tunnels/allowed-cns/" + cn,
-                                        new byte[0]);
-                    } catch (Exception e) {
-                        throw new RuntimeException("could not create zookeeper node "
-                                + cn + " in tunnels/allowed-cns: "
-                                + e.getMessage());
-                    }
-                });
+        List<String> allowedCNs = null;
+
+        if (path != null && Files.exists(path)) {
+            allowedCNs = Files.readAllLines(path).stream()
+                    .filter(line -> !line.trim().startsWith("#"))
+                    .toList();
+        } else if (cns != null) {
+            allowedCNs = Arrays.asList(cns.split(","));
+        }
+
+        if (allowedCNs != null) {
+            try {
+                if (getCuratorFramework().checkExists().forPath("/dcache/tunnels/allowed-cns") != null) {
+                    getCuratorFramework()
+                            .delete()
+                            .deletingChildrenIfNeeded()
+                            .forPath("/dcache/tunnels/allowed-cns");
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("could not delete zookeeper node tunnels/allowed-cns: "
+                        + e.getMessage());
+            }
+            allowedCNs.stream()
+                    .map(String::trim)
+                    .filter(cn -> !cn.isEmpty())
+                    .forEach(cn -> {
+                        try {
+                            getCuratorFramework()
+                                    .create()
+                                    .orSetData()
+                                    .creatingParentsIfNeeded()
+                                    .forPath("/dcache/tunnels/allowed-cns/" + cn,
+                                            new byte[0]);
+                        } catch (Exception e) {
+                            throw new RuntimeException("could not create zookeeper node "
+                                    + cn + " in tunnels/allowed-cns: "
+                                    + e.getMessage());
+                        }
+                    });
         }
 
 

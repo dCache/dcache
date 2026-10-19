@@ -19,6 +19,7 @@ create -- dmg.cells.services.LocationManager lm \
                     -mode='${dcache.broker.core.client.channel.security}' \
                     -netmask='${dcache.broker.core.allowed-subnets}' \
                     -allowed-cn='${dcache.broker.channel.allowed-cn}' \
+                    -allowed-cn-file='${dcache.broker.channel.allowed-cn.file}' \
                     -socketfactory='org.dcache.ssl.CanlSslServerSocketCreator \
                                         -service_key="${dcache.broker.channel.credential.key}" \
                                         -service_cert="${dcache.broker.channel.credential.cert}" \

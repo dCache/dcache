@@ -280,7 +280,27 @@ dcache.broker.channel.allowed-cn = pool-*,door-*
 ```
 
 Multiple patterns are separated by commas. An empty value (the default) disables
-CN filtering — all valid certificates are accepted.
+CN filtering. All valid certificates are accepted.
+
+For longer lists, the patterns can be kept in a separate file, one pattern per
+line. Empty lines and lines starting with `#` are ignored:
+
+```
+# /etc/dcache/tunnel-allowed-cn.conf
+remote-*
+main-*
+site-a-door-*
+```
+
+The location of this file is configured with
+`dcache.broker.channel.allowed-cn.file`, which defaults to
+`${dcache.paths.etc}/tunnel-allowed-cn.conf`. If the file exists, it replaces
+`dcache.broker.channel.allowed-cn`, which is then ignored. If the file does not
+exist, `dcache.broker.channel.allowed-cn` is used.
+
+The list of allowed CNs is read when the core domain starts and replaces the
+previously stored list. A CN that is removed from the configuration is
+therefore no longer allowed once the core domain has been restarted.
 
 This setting has no effect unless `dcache.broker.channel.require-client-auth`
 is set to `true`.

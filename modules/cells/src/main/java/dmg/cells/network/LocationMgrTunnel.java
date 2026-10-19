@@ -47,15 +47,15 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.nio.channels.AsynchronousCloseException;
-import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.LongAdder;
 
-import org.bouncycastle.asn1.x500.RDN;
+import org.apache.zookeeper.KeeperException;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x500.style.IETFUtils;
@@ -150,14 +150,25 @@ public class LocationMgrTunnel
         return pattern.equals(cn);
     }
 
-    private boolean isAllowedCN() throws CertificateEncodingException, IOException, Exception {
+    private boolean isAllowedCN() throws Exception {
+        List<String> allowedCN;
+        try {
+            allowedCN = getCuratorFramework()
+                    .getChildren()
+                    .forPath("/dcache/tunnels/allowed-cns");
+        } catch (KeeperException.NoNodeException e) {
+            allowedCN = Collections.emptyList();
+        }
+        if (allowedCN.isEmpty()) {
+            return true;
+        }
+
+        if (!(_socket instanceof SSLSocket)) {
+            throw new IOException("CN filtering is enabled, but connection is not using TLS");
+        }
         SSLSocket ssl = (SSLSocket) _socket;
         X509Certificate cert = (X509Certificate) ssl.getSession().getPeerCertificates()[0];
         X500Name x500name = new JcaX509CertificateHolder(cert).getSubject();
-
-        List<String> allowedCN = getCuratorFramework()
-                .getChildren()
-                .forPath("/dcache/tunnels/allowed-cns");
 
         String cn = IETFUtils
                 .valueToString(x500name.getRDNs(BCStyle.CN)[0]
