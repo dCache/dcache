@@ -125,6 +125,30 @@ In this example, hosts in the dcache.org may read and write, while host external
 
 If there are multiple path specifications, the shortest matching path wins. If there are multiple host/subnet specifications, the most precise specification wins.
 
+## Pool IP addresses for pNFS redirection
+
+With pNFS the NFS door redirects clients to the pool that holds the data, so
+each pool must know the IP addresses it advertises to clients. By default a pool
+advertises the addresses of all of the host's non-loopback network interfaces
+that are up, and rediscovers them while running.
+
+The advertised addresses can be restricted with the `pool.mover.nfs.multipath`
+property, which takes a comma separated list of IP addresses:
+
+```ini
+pool.mover.nfs.multipath=192.168.1.1,fe80::2e2e:50de:7aa5:395
+```
+
+When `pool.mover.nfs.multipath` is empty, the pool advertises all local
+addresses, unless the `org.dcache.net.localaddresses` Java property is set.
+
+If a pool cannot identify any IP addresses — for example because
+`pool.mover.nfs.multipath` lists no valid addresses, or because no non-loopback
+network interface is up — then the pool fails to start instead of running
+without the addresses needed for pNFS redirection. In that case check that the
+host's network interfaces are up and correctly configured, and that
+`pool.mover.nfs.multipath` (if set) contains valid addresses.
+
 ## Concurrent write access
 
 A file that is currently open for writing is exclusively locked: while such an
