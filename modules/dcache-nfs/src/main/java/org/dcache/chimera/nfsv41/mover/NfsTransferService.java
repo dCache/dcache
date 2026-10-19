@@ -212,6 +212,11 @@ public class NfsTransferService
             _localSocketAddresses = localSocketAddresses(_multipathAddresses, localPort);
         }
 
+        // REVISIT: pool can wait until addresses are there.
+        if (_localSocketAddresses.length == 0) {
+            throw new IllegalStateException("No local addresses found");
+        }
+
         _embededDS = new NFSServerV41.Builder()
               .withOperationExecutor(_operationFactory)
               .build();
