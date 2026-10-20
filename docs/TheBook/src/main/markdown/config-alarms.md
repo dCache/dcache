@@ -92,6 +92,13 @@ dcache.log.server.host=localhost
 dcache.log.server.port=9867
 ```
 
+> **NOTE**
+>
+> The serialized form of log events has changed with the update of the
+> underlying logging library. Alarms sent between domains running
+> different dCache versions lose the alarm marker and the timestamp.
+> Upgrade the alarm service and the domains that report to it together.
+
 As with the `alarms` service database type, remote logging is turned off by
 default. Under normal circumstances it should be sufficient to set this to `warn`
 in order to receive alarms. All alarms are currently in fact guaranteed to be
