@@ -92,6 +92,7 @@ import org.dcache.pool.repository.Repository;
 
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.PortRange;
+import org.dcache.util.Version;
 import org.dcache.vehicles.DoorValidateMoverMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -219,6 +220,8 @@ public class NfsTransferService
 
         _embededDS = new NFSServerV41.Builder()
               .withOperationExecutor(_operationFactory)
+              .withImplementationName("dcache-" + Version.of(this.getClass()).getBuild())
+              .withImplementationDate(Instant.parse(Version.of(this.getClass()).getBuildTime()))
               .build();
         _rpcService.register(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4),
               _embededDS);
