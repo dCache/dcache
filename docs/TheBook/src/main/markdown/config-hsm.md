@@ -427,6 +427,43 @@ reported. This behavior can be changed by either modifying
 level of particular components as described
 [below](#obtain-information-via-the-dcache-command-line-admin-interface).
 
+The `/etc/dcache/logback.xml` file is the shipped default. If you have
+customized it, you must re-merge your changes with the shipped file
+after a dCache upgrade: the logging library behind it (logback) now
+processes the configuration in two phases and is no longer compatible
+with the syntax used by earlier dCache versions. In particular:
+
+- A conditional block is no longer introduced by `<if condition="...">`.
+  It now needs a separate `<condition>` element in front of the `<if>`
+  element, for example:
+
+      <condition class="ch.qos.logback.core.boolex.ExpressionPropertyCondition">
+        <expression>propertyEquals("dcache.log.destination", "file")</expression>
+      </condition>
+      <if>
+        <then> ... </then>
+        <else> ... </else>
+      </if>
+
+- An `<if>` element can no longer be nested inside `<root>` or a
+  `<logger>` element. An appender that should be attached to the root
+  logger under a condition must instead be attached inside the `<then>`
+  branch of the conditional that defines it.
+
+- Inside a `<threshold>` element, the appender is now named with an
+  `<appenderName>` element instead of `<appender>`:
+
+      <threshold>
+        <appenderName>stdout</appenderName>
+        <logger>root</logger>
+        <level>info</level>
+      </threshold>
+
+If the `stdout` appender is not attached to the root logger — which is
+what happens when an unmodified old `logback.xml` is loaded — the domain
+refuses to start. Compare your file with the shipped `/etc/dcache/logback.xml`
+and consult the release notes when upgrading.
+
 ##### Increase the dCache log level by changes in `/etc/dcache/logback.xml`
 
 If you intend to increase the log level of all components on a
