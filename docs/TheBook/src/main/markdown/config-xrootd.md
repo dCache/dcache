@@ -7,6 +7,10 @@ TXNetfile and xrdcp to do file operations against a dCache instance in
 a transparent manner. dCache implements version 2.1.6 of `xroot`
 protocol.
 
+For SciTags (Firefly) flow marking details, including use of the
+`scitag.flow` request parameter and pool-side marker behavior, see
+[SciTags Flow Marking (Firefly)](config-scitags.md).
+
 -----
 [TOC bullet hierarchy]
 -----
