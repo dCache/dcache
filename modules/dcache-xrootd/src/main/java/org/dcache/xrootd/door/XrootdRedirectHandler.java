@@ -1162,18 +1162,28 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
             Restriction restriction = loginSessionInfo.getRestriction();
             InetSocketAddress clientAddress = getSourceAddress();
 
-            if (request.getOptions() == 0
-                  || (request.isStage() && !(request.isEvict() || request.isCancel()))) {
-                _door.pin(paths, clientAddress, subject, restriction);
-                return new PrepareResponse(request, kXR_ok, new byte[paths.length]);
-            } else if (request.isStage() && (request.isEvict() || request.isCancel())) {
-                throw new XrootdException(kXR_InvalidRequest,
-                      "Invalid parameters / conflicting options");
-            } else if (request.isCancel() || request.isEvict()) {
-                _door.unpin(paths, subject, restriction);
-                return new PrepareResponse(request, kXR_ok, new byte[paths.length]);
+            // if no options specified just return success
+
+            if (request.getOptions() == 0 && request.getOptionX()  == 0) {
+                return new PrepareResponse(request,
+                       kXR_ok, new byte[paths.length]);
+            }
+
+            if (request.isStage()) {
+                if (request.isEvict() || request.isCancel()) {
+                    throw new XrootdException(kXR_InvalidRequest,
+                          "Invalid parameters / conflicting options");
+                } else {
+                    _door.pin(paths, clientAddress, subject, restriction);
+                    return new PrepareResponse(request, kXR_ok, new byte[paths.length]);
+                }
             } else {
-                throw new XrootdException(kXR_Unsupported, "Unsupported option(s)");
+                if  (request.isCancel() || request.isEvict()) {
+                    _door.unpin(paths, subject, restriction);
+                    return new PrepareResponse(request, kXR_ok, new byte[paths.length]);
+                } else {
+                    throw new XrootdException(kXR_Unsupported, "Unsupported option(s)");
+                }
             }
         } catch (PermissionDeniedCacheException e) {
             throw xrootdException(e);
