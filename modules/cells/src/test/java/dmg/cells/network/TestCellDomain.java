@@ -5,7 +5,7 @@ import static org.mockito.Mockito.mock;
 import dmg.cells.nucleus.SerializationHandler;
 import dmg.cells.nucleus.SystemCell;
 import java.util.Optional;
-import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.imps.CuratorFrameworkBase;
 
 /**
  * The cell domain used for testing. The cell domain is created when the enum is loaded.
@@ -18,7 +18,7 @@ enum TestCellDomain {
 
     TestCellDomain(String name) {
         this.name = name;
-        SystemCell.create(name, mock(CuratorFramework.class), Optional.empty(),
+        SystemCell.create(name, mock(CuratorFrameworkBase.class), Optional.empty(),
               SerializationHandler.Serializer.JOS);
     }
 
