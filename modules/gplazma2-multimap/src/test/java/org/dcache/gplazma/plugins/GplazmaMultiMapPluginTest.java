@@ -123,6 +123,29 @@ public class GplazmaMultiMapPluginTest {
     }
 
 
+    @Test
+    public void shouldMapS3AccessKeyToUsername() throws Exception {
+        givenConfig("s3:AKIAEXAMPLE    username:kermit");
+
+        whenMapCalledWith(aSetOfPrincipals().withS3AccessKey("AKIAEXAMPLE"));
+
+        assertThat(results, hasItem(new UserNamePrincipal("kermit")));
+    }
+
+    @Test(expected = AuthenticationException.class)
+    public void shouldFailS3AccessKeyToUsernameWhenSuppliedOtherKey() throws Exception {
+        givenConfig("s3:AKIAEXAMPLE    username:kermit");
+
+        whenMapCalledWith(aSetOfPrincipals().withS3AccessKey("AKIAOTHER"));
+    }
+
+    @Test(expected = AuthenticationException.class)
+    public void shouldFailS3AccessKeyToUsernameWhenSuppliedUsername() throws Exception {
+        givenConfig("s3:kermit    username:kermit");
+
+        whenMapCalledWith(aSetOfPrincipals().withUsername("kermit"));
+    }
+
     @Test(expected = AuthenticationException.class)
     public void shouldFailKerberosToUsernameWhenSuppliedOidc() throws Exception {
         givenConfig("oidc:googleoidcsub    username:kermit");

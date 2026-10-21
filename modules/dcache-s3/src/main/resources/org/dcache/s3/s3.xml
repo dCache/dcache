@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+  <context:property-placeholder/>
+  <context:annotation-config/>
+
+  <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
+    <description>Undeliverable message logger</description>
+    <property name="excludedDestinations" value="${s3.loginbroker.update-topic}"/>
+  </bean>
+
+  <!-- Communication with other services -->
+
+  <bean id="pnfs-stub" class="org.dcache.cells.CellStub">
+    <description>PnfsManager communication stub</description>
+    <property name="destination" value="${s3.service.pnfsmanager}"/>
+    <property name="timeout" value="${s3.service.pnfsmanager.timeout}"/>
+    <property name="timeoutUnit" value="${s3.service.pnfsmanager.timeout.unit}"/>
+  </bean>
+
+  <bean id="pnfs-handler" class="diskCacheV111.util.PnfsHandler">
+    <description>PnfsManager client</description>
+    <constructor-arg ref="pnfs-stub"/>
+  </bean>
+
+  <bean id="list-handler" class="org.dcache.util.list.ListDirectoryHandler">
+    <description>Client stub for directory listing</description>
+    <constructor-arg ref="pnfs-handler"/>
+  </bean>
+
+  <bean id="pool-manager-stub" class="org.dcache.cells.CellStub">
+    <description>PoolManager communication stub</description>
+    <property name="destination" value="${s3.service.poolmanager}"/>
+    <property name="timeout" value="${s3.service.poolmanager.timeout}"/>
+    <property name="timeoutUnit" value="${s3.service.poolmanager.timeout.unit}"/>
+  </bean>
+
+  <bean id="pool-manager-handler" class="org.dcache.poolmanager.PoolManagerHandlerSubscriber">
+    <description>Pool manager client</description>
+    <property name="poolManager" ref="pool-manager-stub"/>
+  </bean>
+
+  <bean id="pool-stub" class="org.dcache.cells.CellStub">
+    <description>Pool communication stub</description>
+    <property name="timeout" value="${s3.service.pool.timeout}"/>
+    <property name="timeoutUnit" value="${s3.service.pool.timeout.unit}"/>
+  </bean>
+
+  <bean id="pinmanager-stub" class="org.dcache.cells.CellStub">
+    <description>PinManager communication stub</description>
+    <property name="destination" value="${s3.service.pinmanager}"/>
+    <property name="timeout" value="${s3.service.pinmanager.timeout}"/>
+    <property name="timeoutUnit" value="${s3.service.pinmanager.timeout.unit}"/>
+  </bean>
+
+  <bean id="login-stub" class="org.dcache.cells.CellStub">
+    <description>gPlazma communication stub</description>
+    <property name="destination" value="${s3.service.gplazma}"/>
+    <property name="timeout" value="${s3.service.gplazma.timeout}"/>
+    <property name="timeoutUnit" value="${s3.service.gplazma.timeout.unit}"/>
+  </bean>
+
+  <bean id="billing-stub" class="org.dcache.cells.CellStub">
+    <description>Billing communication stub</description>
+    <property name="destination" value="${s3.service.billing}"/>
+  </bean>
+
+  <bean id="scheduled-thread-pool"
+        class="org.dcache.util.CDCScheduledExecutorServiceDecorator"
+        destroy-method="shutdown">
+    <description>Thread pool for scheduled activities</description>
+    <constructor-arg>
+      <bean class="java.util.concurrent.Executors"
+            factory-method="newScheduledThreadPool">
+        <constructor-arg value="2"/>
+      </bean>
+    </constructor-arg>
+  </bean>
+
+  <!-- Authentication -->
+
+  <bean id="key-store" class="org.dcache.s3.FileS3KeyStore">
+    <description>Secret keys of S3 clients</description>
+    <constructor-arg value="#{T(java.nio.file.Paths).get('${s3.authn.keystore.file}')}"/>
+  </bean>
+
+  <bean id="login-strategy" class="org.dcache.auth.CachingLoginStrategy">
+    <description>Maps access keys to users, caching gPlazma's answers</description>
+    <constructor-arg index="0">
+      <bean class="org.dcache.services.login.RemoteLoginStrategy">
+        <property name="cellStub" ref="login-stub"/>
+      </bean>
+    </constructor-arg>
+    <constructor-arg index="1" value="${s3.service.gplazma.cache.size}"/>
+    <constructor-arg index="2" value="${s3.service.gplazma.cache.timeout}"/>
+    <constructor-arg index="3" value="${s3.service.gplazma.cache.timeout.unit}"/>
+  </bean>
+
+  <!-- Data access -->
+
+  <bean id="transfer-manager" class="org.dcache.s3.S3TransferManager">
+    <description>Relays file content between pools and S3 clients</description>
+    <property name="pnfsHandler" ref="pnfs-handler"/>
+    <property name="poolManagerStub">
+      <bean class="org.dcache.poolmanager.PoolManagerStub">
+        <property name="handler" ref="pool-manager-handler"/>
+        <property name="maximumPoolManagerTimeout" value="${s3.service.poolmanager.timeout}"/>
+        <property name="maximumPoolManagerTimeoutUnit" value="${s3.service.poolmanager.timeout.unit}"/>
+        <property name="maximumPoolTimeout" value="${s3.service.pool.timeout}"/>
+        <property name="maximumPoolTimeoutUnit" value="${s3.service.pool.timeout.unit}"/>
+      </bean>
+    </property>
+    <property name="poolStub" ref="pool-stub"/>
+    <property name="billingStub" ref="billing-stub"/>
+    <property name="internalAddress" value="${s3.net.internal}"/>
+    <property name="ioQueue" value="${s3.mover.queue}"/>
+    <property name="moverTimeout" value="${s3.mover.timeout}"/>
+    <property name="moverTimeoutUnit" value="${s3.mover.timeout.unit}"/>
+    <property name="poolTimeout" value="${s3.mover.read-timeout}"/>
+    <property name="poolTimeoutUnit" value="${s3.mover.read-timeout.unit}"/>
+    <property name="transferConfirmationTimeout" value="${s3.mover.transfer-confirmation-timeout}"/>
+    <property name="transferConfirmationTimeoutUnit" value="${s3.mover.transfer-confirmation-timeout.unit}"/>
+    <property name="killTimeout" value="${s3.mover.kill-timeout}"/>
+    <property name="killTimeoutUnit" value="${s3.mover.kill-timeout.unit}"/>
+    <property name="executor" ref="scheduled-thread-pool"/>
+  </bean>
+
+  <bean id="restorer" class="org.dcache.s3.PinManagerRestorer">
+    <description>Restores files from tape by pinning them</description>
+    <property name="pinManagerStub" ref="pinmanager-stub"/>
+    <property name="pnfsHandler" ref="pnfs-handler"/>
+    <property name="maxDays" value="${s3.restore.max-days}"/>
+  </bean>
+
+  <bean id="blob-store-factory" class="org.dcache.s3.DcacheBlobStoreFactory">
+    <description>Creates the blob store of each request</description>
+    <constructor-arg index="0" ref="pnfs-handler"/>
+    <constructor-arg index="1" ref="list-handler"/>
+    <constructor-arg index="2" ref="transfer-manager"/>
+    <constructor-arg index="3" ref="transfer-manager"/>
+    <constructor-arg index="4" ref="restorer"/>
+    <constructor-arg index="5" value="${s3.limits.list.max-entries}"/>
+    <constructor-arg index="6" value="${s3.limits.multipart.max-age}"/>
+    <constructor-arg index="7" value="${s3.limits.multipart.max-age.unit}"/>
+  </bean>
+
+  <bean id="upload-sweeper" class="org.dcache.s3.S3UploadSweeper">
+    <description>Removes multipart uploads that were never completed</description>
+    <property name="pnfsHandler" ref="pnfs-handler"/>
+    <property name="lister" ref="list-handler"/>
+    <property name="root" value="${s3.root}"/>
+    <property name="maxAge" value="${s3.limits.multipart.max-age}"/>
+    <property name="maxAgeUnit" value="${s3.limits.multipart.max-age.unit}"/>
+    <property name="executor" ref="scheduled-thread-pool"/>
+  </bean>
+
+  <bean id="blob-store-locator" class="org.dcache.s3.DcacheBlobStoreLocator">
+    <description>Finds the secret and blob store of an access key</description>
+    <constructor-arg index="0" ref="key-store"/>
+    <constructor-arg index="1" ref="login-strategy"/>
+    <constructor-arg index="2" value="#{T(diskCacheV111.util.FsPath).create('${s3.root}')}"/>
+    <constructor-arg index="3" ref="blob-store-factory"/>
+  </bean>
+
+  <!-- HTTP -->
+
+  <bean id="s3-proxy-handler" class="org.dcache.s3.DcacheS3ProxyHandler">
+    <description>S3 protocol handler</description>
+    <constructor-arg index="0" ref="blob-store-locator"/>
+    <constructor-arg index="1"
+                     value="#{T(org.gaul.s3proxy.auth.AuthenticationType).fromString('${s3.authn.signature}')}"/>
+    <constructor-arg index="2" value="${s3.net.virtual-host}"/>
+    <constructor-arg index="3"
+                     value="#{T(java.util.concurrent.TimeUnit).SECONDS.convert(
+                              ${s3.authn.max-time-skew}, '${s3.authn.max-time-skew.unit}')}"/>
+  </bean>
+
+  <bean id="banned-ciphers" class="org.dcache.util.Crypto"
+        factory-method="getBannedCipherSuitesFromConfigurationValue">
+    <constructor-arg value="${s3.authn.ciphers}"/>
+  </bean>
+
+  <bean id="thread-pool" class="org.eclipse.jetty.util.thread.QueuedThreadPool">
+    <!-- Note that Jetty manages the lifecycle of this thread pool -->
+    <description>Thread pool used by Jetty for request processing</description>
+    <constructor-arg value="${s3.limits.threads.max}"/>
+    <constructor-arg value="${s3.limits.threads.min}"/>
+    <constructor-arg
+        value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                 ${s3.limits.threads.idle-time}, '${s3.limits.threads.idle-time.unit}')}"/>
+    <constructor-arg>
+      <bean class="org.eclipse.jetty.util.BlockingArrayQueue">
+        <constructor-arg value="${s3.limits.queue-length}"/>
+      </bean>
+    </constructor-arg>
+    <property name="name" value="jetty-s3"/>
+  </bean>
+
+  <bean id="jetty" class="org.eclipse.jetty.server.Server"
+        init-method="start" destroy-method="stop">
+    <description>Embedded HTTP server</description>
+    <constructor-arg ref="thread-pool"/>
+    <property name="stopTimeout"
+              value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                       ${s3.limits.graceful-shutdown}, '${s3.limits.graceful-shutdown.unit}')}"/>
+    <property name="connectors">
+      <list>
+        <ref bean="server-connector"/>
+      </list>
+    </property>
+    <property name="handler">
+      <bean class="org.dcache.s3.S3LoggingHandler">
+        <property name="handler">
+          <bean class="org.dcache.s3.S3JettyHandler">
+            <constructor-arg ref="s3-proxy-handler"/>
+          </bean>
+        </property>
+      </bean>
+    </property>
+  </bean>
+
+  <bean id="server-connector" class="org.dcache.util.jetty.ConnectorFactoryBean">
+    <description>HTTP or HTTPS connector</description>
+    <property name="server" ref="jetty"/>
+    <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull('${s3.net.listen}') }"/>
+    <property name="port" value="${s3.net.port}"/>
+    <property name="backlog" value="${s3.limits.backlog}"/>
+    <property name="idleTimeout" value="${s3.limits.idle-time}"/>
+    <property name="idleTimeoutUnit" value="${s3.limits.idle-time.unit}"/>
+    <property name="acceptors" value="${s3.limits.acceptors}"/>
+
+    <property name="protocol" value="${s3.authn.connector}"/>
+    <property name="wantClientAuth" value="false"/>
+    <property name="needClientAuth" value="false"/>
+    <property name="excludedCipherSuites" ref="banned-ciphers"/>
+
+    <property name="caPath" value="${s3.authn.capath}"/>
+    <property name="caPathTimeout" value="${s3.authn.capath.refresh}"/>
+    <property name="caPathTimeoutUnit" value="${s3.authn.capath.refresh.unit}"/>
+
+    <property name="serverCertificatePath" value="${s3.authn.hostcert.cert}"/>
+    <property name="serverKeyPath" value="${s3.authn.hostcert.key}"/>
+    <property name="serverCertificateTimeout" value="${s3.authn.hostcert.refresh}"/>
+    <property name="serverCertificateTimeoutUnit" value="${s3.authn.hostcert.refresh.unit}"/>
+
+    <property name="namespaceMode" value="${s3.authn.namespace-mode}"/>
+    <property name="crlCheckingMode" value="${s3.authn.crl-mode}"/>
+    <property name="ocspCheckingMode" value="${s3.authn.ocsp-mode}"/>
+  </bean>
+
+  <bean id="lb" class="dmg.cells.services.login.LoginBrokerPublisher">
+    <description>Registers the S3 door with a LoginBroker</description>
+    <property name="executor" ref="scheduled-thread-pool"/>
+    <property name="updateTime" value="${s3.loginbroker.update-period}"/>
+    <property name="updateTimeUnit" value="${s3.loginbroker.update-period.unit}"/>
+    <property name="updateThreshold" value="${s3.loginbroker.update-threshold}"/>
+    <property name="protocolEngine" value="org.dcache.s3.S3JettyHandler"/>
+    <property name="protocolVersion" value="${s3.loginbroker.version}"/>
+    <property name="protocolFamilies" value="${s3.loginbroker.family}"/>
+    <property name="address" value="#{ T(com.google.common.base.Strings).emptyToNull('${s3.loginbroker.address}') }"/>
+    <property name="port" value="${s3.loginbroker.port}"/>
+    <property name="topic" value="${s3.loginbroker.update-topic}"/>
+    <property name="tags" value="#{ T(com.google.common.base.Splitter).on(',').omitEmptyStrings().splitToList('${s3.loginbroker.tags}') }"/>
+    <property name="root" value="${s3.loginbroker.root}"/>
+    <property name="readPaths" value="#{ T(java.util.Arrays).asList('/') }"/>
+    <property name="writePaths" value="#{ T(java.util.Arrays).asList('/') }"/>
+  </bean>
+</beans>

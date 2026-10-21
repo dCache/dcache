@@ -15,6 +15,7 @@ import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
 import org.dcache.auth.OAuthProviderPrincipal;
 import org.dcache.auth.OidcSubjectPrincipal;
+import org.dcache.auth.S3AccessKeyPrincipal;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
@@ -196,6 +197,16 @@ public class PrincipalSetMaker {
      */
     public PrincipalSetMaker withKerberos(String kerberos) {
         _principals.add(new KerberosPrincipal(kerberos));
+        return this;
+    }
+
+    /**
+     * Add an S3 access key principal to the set.
+     *
+     * @param accessKey the access key ID to be added.
+     */
+    public PrincipalSetMaker withS3AccessKey(String accessKey) {
+        _principals.add(new S3AccessKeyPrincipal(accessKey));
         return this;
     }
 
