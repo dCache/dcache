@@ -196,6 +196,8 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
 
     private static final String AUTH_BEARER = "Bearer ";
 
+    private static final String SCITAG_HEADER = "SciTag";
+
     private static final String WANT_DIGEST_VALUE = Checksums.buildGenericWantDigest();
     private static final Pattern MATCH_HEXADECIMAL = Pattern.compile("[0-9a-f]+");
 
@@ -953,6 +955,14 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
         boolean dropAuthorizationHeader = flags.contains(HeaderFlags.NO_AUTHORIZATION_HEADER);
 
         info.getHeaders().forEach(request::addHeader);
+
+        // Propagate the SciTag to the remote party, unless the client already
+        // supplied one explicitly via a TransferHeaderSciTag header.
+        String transferTag = info.getTransferTag();
+        if (transferTag != null && !transferTag.isEmpty()
+              && !request.containsHeader(SCITAG_HEADER)) {
+            request.addHeader(SCITAG_HEADER, transferTag);
+        }
 
         if (info.hasTokenCredential() && !dropAuthorizationHeader) {
             request.addHeader("Authorization",
