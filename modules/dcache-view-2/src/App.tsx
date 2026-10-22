@@ -2,16 +2,28 @@ import { useEffect } from 'react'
 import { useAuthStore } from './store/authStore.ts'
 import { LoginForm } from './components/LoginForm.tsx'
 import { Button } from './components/Button.tsx'
+import { takeReturnPath } from "./store/authStore.ts";
+import {useNavigate} from "react-router";
 
 function App() {
     const user = useAuthStore(state => state.user);
     const authError = useAuthStore(state => state.error);
     const passiveAuth = useAuthStore(state => state.passiveAuth);
     const logout = useAuthStore(state => state.logout);
+    const navigate = useNavigate();
 
     useEffect(() => {
         passiveAuth();
     }, []);
+
+    useEffect(() => {
+        if (user?.status === "AUTHENTICATED") {
+            const path = takeReturnPath();
+            if (path && path.startsWith("/") && !path.startsWith("//")) {
+                navigate(path, {replace: true});
+            }
+        }
+    }, [user, navigate]);
 
     if (authError) return <p>Auth check failed: {authError.message}</p>;
     if (user === null) return <LoginForm/>;

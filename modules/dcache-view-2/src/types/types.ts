@@ -53,3 +53,21 @@ export interface FileMetadataRequest {
     limit: number | 'max';
     offset: number;
 }
+
+export interface IdP {
+    name: string;
+    clientId: string;
+    authEndPoint: string;
+    authEndPointExtra?: string;
+    callBackPath: string;
+}
+
+export interface ViewConfig {
+    'dcache-view.endpoints.webapi': string;
+    'dcache-view.oidc-provider-name-list': string;
+    'dcache-view.oidc-client-id-list': string;
+    'dcache-view.oidc-authz-endpoint-list': string;
+    'dcache-view.oidc-authz-endpoint-extra'?: string;
+    'dcache-view.oidc-callback-path': string;
+    [key: string]: string | undefined;
+}

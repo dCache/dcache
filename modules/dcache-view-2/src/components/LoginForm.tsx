@@ -1,10 +1,14 @@
 import { useState, type SyntheticEvent } from 'react';
 import { useAuthStore } from '../store/authStore.ts';
+import { useOIDCProviders } from "../hooks/auth.ts";
 import { Button } from './Button.tsx';
 import logo from '../assets/dCacheLogo.png';
+import type {IdP} from "../types/types.ts";
 
 export function LoginForm() {
     const login = useAuthStore(state => state.login);
+    const loginWithOIDC = useAuthStore(state => state.loginWithOidc);
+    const {data: providers, error: providersError} = useOIDCProviders();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [formError, setFormError] = useState('');
@@ -14,6 +18,19 @@ export function LoginForm() {
         setFormError('');
         try {
             await login(username, password);
+        } catch (err) {
+            setFormError((err as Error).message);
+        }
+    }
+
+    async function handleOidcLogin(idp: IdP) {
+        if (providersError) {
+            setFormError(providersError.message);
+        } else {
+            setFormError('');
+        }
+        try {
+            await loginWithOIDC(idp);
         } catch (err) {
             setFormError((err as Error).message);
         }
@@ -50,6 +67,19 @@ export function LoginForm() {
                     </div>
                     <Button type="submit" label="Sign in" variant="primary" fullWidth />
                 </form>
+                {providers && providers.length > 0 && (
+                    <div className="login-card__providers">
+                        <p className="login-card__divider">or sign in with</p>
+                        {providers.map(idp => (
+                            <Button
+                                key={idp.clientId}
+                                label={idp.name}
+                                onClick={() => handleOidcLogin(idp)}
+                                fullWidth
+                            />
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     );

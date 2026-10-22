@@ -205,3 +205,17 @@
   flex-direction: column;
   gap: 16px;
 }
+
+.login-card__providers {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.login-card__divider {
+  text-align: center;
+  font-size: 13px;
+  color: var(--ds-text-muted);
+  margin: 0 0 4px;
+}

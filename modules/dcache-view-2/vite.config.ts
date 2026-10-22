@@ -5,7 +5,10 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/api': 'http://localhost:3880',
+      // keep Host: localhost:5173 so dCache rebuilds the OIDC redirect_uri
+      // (and its post-login redirect) with the dev server's origin
+      '/api': { target: 'http://localhost:3880', changeOrigin: false },
+      '/scripts': 'http://localhost:3880',
     }
   },
   test: {

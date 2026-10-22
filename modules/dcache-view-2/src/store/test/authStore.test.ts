@@ -32,7 +32,7 @@ const anonymousUser: User = {
     email: null
 };
 
-function makeResponse(status: number, body: User): Response {
+function makeResponse(status: number, body: User | {logoutUrl: string}): Response {
     return {
         status: status,
         ok: status >= 200 && status < 300,
@@ -41,24 +41,24 @@ function makeResponse(status: number, body: User): Response {
 }
 
 beforeEach(() => {
-    localStorage.clear();
+    sessionStorage.clear();
     fetchMock.mockReset();
     useAuthStore.setState({ user: null, upauth: null, error: null });
 });
 
 describe('loadCredential', () => {
-    test('returns null and clears localStorage when expired', () => {
-        localStorage.setItem(UPAUTH_KEY, 'dXNlcjpwYXNz');
-        localStorage.setItem(UPAUTH_EXPIRY_KEY, String(Date.now() - 1));
+    test('returns null and clears sessionStorage when expired', () => {
+        sessionStorage.setItem(UPAUTH_KEY, 'dXNlcjpwYXNz');
+        sessionStorage.setItem(UPAUTH_EXPIRY_KEY, String(Date.now() - 1));
 
         expect(loadCredential()).toBeNull();
-        expect(localStorage.getItem(UPAUTH_KEY)).toBeNull();
-        expect(localStorage.getItem(UPAUTH_EXPIRY_KEY)).toBeNull();
+        expect(sessionStorage.getItem(UPAUTH_KEY)).toBeNull();
+        expect(sessionStorage.getItem(UPAUTH_EXPIRY_KEY)).toBeNull();
     });
 
     test('returns credential when not expired', () => {
-        localStorage.setItem(UPAUTH_KEY, 'dXNlcjpwYXNz');
-        localStorage.setItem(UPAUTH_EXPIRY_KEY, String(Date.now() + 60000));
+        sessionStorage.setItem(UPAUTH_KEY, 'dXNlcjpwYXNz');
+        sessionStorage.setItem(UPAUTH_EXPIRY_KEY, String(Date.now() + 60000));
 
         expect(loadCredential()).toBe('dXNlcjpwYXNz');
     });
@@ -67,8 +67,8 @@ describe('loadCredential', () => {
 
 describe('passiveAuth', () => {
     test('restores session from valid stored credential', async () => {
-        localStorage.setItem(UPAUTH_KEY, 'dXNlcjpwYXNz');
-        localStorage.setItem(UPAUTH_EXPIRY_KEY, String(Date.now() + 60000));
+        sessionStorage.setItem(UPAUTH_KEY, 'dXNlcjpwYXNz');
+        sessionStorage.setItem(UPAUTH_EXPIRY_KEY, String(Date.now() + 60000));
         fetchMock.mockResolvedValue(makeResponse(200, authenticatedUser));
 
         await useAuthStore.getState().passiveAuth();
@@ -79,24 +79,24 @@ describe('passiveAuth', () => {
     });
 
     test('clears stored credential on rejection and leaves user null', async () => {
-        localStorage.setItem(UPAUTH_KEY, 'dXNlcjpwYXNz');
-        localStorage.setItem(UPAUTH_EXPIRY_KEY, String(Date.now() + 60000));
+        sessionStorage.setItem(UPAUTH_KEY, 'dXNlcjpwYXNz');
+        sessionStorage.setItem(UPAUTH_EXPIRY_KEY, String(Date.now() + 60000));
         fetchMock.mockResolvedValue(makeResponse(401, anonymousUser));
 
         await useAuthStore.getState().passiveAuth();
 
-        expect(localStorage.getItem(UPAUTH_KEY)).toBeNull();
+        expect(sessionStorage.getItem(UPAUTH_KEY)).toBeNull();
         expect(useAuthStore.getState().user).toBeNull();
     });
 
     test('clears stored credential when server returns ANONYMOUS for it', async () => {
-        localStorage.setItem(UPAUTH_KEY, 'dXNlcjpwYXNz');
-        localStorage.setItem(UPAUTH_EXPIRY_KEY, String(Date.now() + 60000));
+        sessionStorage.setItem(UPAUTH_KEY, 'dXNlcjpwYXNz');
+        sessionStorage.setItem(UPAUTH_EXPIRY_KEY, String(Date.now() + 60000));
         fetchMock.mockResolvedValue(makeResponse(200, anonymousUser));
 
         await useAuthStore.getState().passiveAuth();
 
-        expect(localStorage.getItem(UPAUTH_KEY)).toBeNull();
+        expect(sessionStorage.getItem(UPAUTH_KEY)).toBeNull();
         expect(useAuthStore.getState().user).toBeNull();
     });
 
@@ -130,7 +130,7 @@ describe('login', () => {
         const state = useAuthStore.getState();
         expect(state.user).toEqual(authenticatedUser);
         expect(state.upauth).toBe(btoa('testuser:password'));
-        expect(localStorage.getItem(UPAUTH_KEY)).toBe(btoa('testuser:password'));
+        expect(sessionStorage.getItem(UPAUTH_KEY)).toBe(btoa('testuser:password'));
     });
 
     test('throws when server returns non-authenticated status', async () => {
@@ -147,17 +147,35 @@ describe('login', () => {
 });
 
 describe('logout', () => {
-    test('clears user, upauth, and stored credential', () => {
+    test('clears user, upauth, and stored credential',
+        async () => {
+        fetchMock.mockResolvedValue({ status: 200, ok: true, json: () => Promise.resolve({logoutUrl: ''})});
         useAuthStore.setState({ user: authenticatedUser, upauth: 'dXNlcjpwYXNz', error: null });
-        localStorage.setItem(UPAUTH_KEY, 'dXNlcjpwYXNz');
-        localStorage.setItem(UPAUTH_EXPIRY_KEY, String(Date.now() + 60000));
+        sessionStorage.setItem(UPAUTH_KEY, 'dXNlcjpwYXNz');
+        sessionStorage.setItem(UPAUTH_EXPIRY_KEY, String(Date.now() + 60000));
 
-        useAuthStore.getState().logout();
+        await useAuthStore.getState().logout();
 
         const state = useAuthStore.getState();
         expect(state.user).toBeNull();
         expect(state.upauth).toBeNull();
-        expect(localStorage.getItem(UPAUTH_KEY)).toBeNull();
-        expect(localStorage.getItem(UPAUTH_EXPIRY_KEY)).toBeNull();
+        expect(sessionStorage.getItem(UPAUTH_KEY)).toBeNull();
+        expect(sessionStorage.getItem(UPAUTH_EXPIRY_KEY)).toBeNull();
     });
+    test('user/upauth is null on error',
+        async () => {
+        fetchMock.mockResolvedValue(makeResponse(500, {logoutUrl: ""}));
+            useAuthStore.setState({ user: authenticatedUser, upauth: 'dXNlcjpwYXNz', error: null });
+            sessionStorage.setItem(UPAUTH_KEY, 'dXNlcjpwYXNz');
+            sessionStorage.setItem(UPAUTH_EXPIRY_KEY, String(Date.now() + 60000));
+
+            await useAuthStore.getState().logout();
+
+            const state = useAuthStore.getState();
+            expect(state.user).toBeNull();
+            expect(state.upauth).toBeNull();
+            expect(state.error).toEqual(Error("500"));
+            expect(sessionStorage.getItem(UPAUTH_KEY)).toBeNull();
+            expect(sessionStorage.getItem(UPAUTH_EXPIRY_KEY)).toBeNull();
+        });
 });

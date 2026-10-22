@@ -1,6 +1,9 @@
 import { create } from 'zustand';
 import {getUser} from "../api/user.ts";
-import type { User } from '../types/types.ts';
+import type {IdP, User} from '../types/types.ts';
+import { authURL, postLogout} from "../api/authorisation.ts";
+
+const OIDC_ORIGIN_KEY: string = 'oidc-entry';
 
 const UPAUTH_KEY: string = 'upauth';
 const UPAUTH_EXPIRY_KEY: string = 'upauth_expiry';
@@ -12,7 +15,8 @@ interface AuthState {
     error: Error | null;
     passiveAuth: () => void;
     login: (username: string, password: string) => Promise<void>;
-    logout: () => void;
+    loginWithOidc: (idp: IdP) => Promise<void>;
+    logout: () => Promise<void>;
 }
 
 async function fetchUser(upauth?: string): Promise<User> {
@@ -42,6 +46,12 @@ export function loadCredential(): string | null {
         return null;
     }
     return upauth;
+}
+
+export function takeReturnPath(): string | null {
+    const returnPath: string | null = sessionStorage.getItem(OIDC_ORIGIN_KEY);
+    sessionStorage.removeItem(OIDC_ORIGIN_KEY);
+    return returnPath
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -84,8 +94,24 @@ export const useAuthStore = create<AuthState>((set) => ({
         set({ user: user, upauth: b64 });
     },
 
-    logout: () => {
+    loginWithOidc: async (idp: IdP) => {
+        const url: string = authURL(window.location.origin, idp);
+        sessionStorage.setItem(OIDC_ORIGIN_KEY, window.location.pathname + window.location.search);
+        window.location.href = url;
+    },
+
+    logout: async () => {
+        let logoutUrl: string = "";
+        set({ error: null })
+        try {
+            logoutUrl = await postLogout();
+        } catch (e) {
+            set({ error: e as Error})
+        }
         clearCredential();
-        set({ user: null, upauth: null, error: null });
+        set({ user: null, upauth: null });
+        if (logoutUrl !== "") {
+            window.location.href = logoutUrl;
+        }
     },
 }));
