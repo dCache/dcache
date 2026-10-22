@@ -48,3 +48,15 @@ export function authURL(origin: string, idp: IdP): string {
     }
     return url.toString();
 }
+
+export async function postLogout(): Promise<string> {
+    const headers: Record<string, string> = {
+        'Suppress-WWW-Authenticate': 'Suppress',
+        'Accept': 'application/json',
+    };
+    const response: Response = await fetch('/api/v1/auth/logout',
+        {method: 'POST', credentials: 'include', headers } as RequestInit);
+    if (response.status !== 200) throw new Error(`${response.status}`);
+    const { logoutUrl } = await response.json() as {logoutUrl: string};
+    return logoutUrl;
+}

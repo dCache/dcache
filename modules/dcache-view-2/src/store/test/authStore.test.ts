@@ -32,7 +32,7 @@ const anonymousUser: User = {
     email: null
 };
 
-function makeResponse(status: number, body: User): Response {
+function makeResponse(status: number, body: User | {logoutUrl: string}): Response {
     return {
         status: status,
         ok: status >= 200 && status < 300,
@@ -147,12 +147,14 @@ describe('login', () => {
 });
 
 describe('logout', () => {
-    test('clears user, upauth, and stored credential', () => {
+    test('clears user, upauth, and stored credential',
+        async () => {
+        fetchMock.mockResolvedValue({ status: 200, ok: true, json: () => Promise.resolve({logoutUrl: ''})});
         useAuthStore.setState({ user: authenticatedUser, upauth: 'dXNlcjpwYXNz', error: null });
         sessionStorage.setItem(UPAUTH_KEY, 'dXNlcjpwYXNz');
         sessionStorage.setItem(UPAUTH_EXPIRY_KEY, String(Date.now() + 60000));
 
-        useAuthStore.getState().logout();
+        await useAuthStore.getState().logout();
 
         const state = useAuthStore.getState();
         expect(state.user).toBeNull();
@@ -160,4 +162,20 @@ describe('logout', () => {
         expect(sessionStorage.getItem(UPAUTH_KEY)).toBeNull();
         expect(sessionStorage.getItem(UPAUTH_EXPIRY_KEY)).toBeNull();
     });
+    test('user/upauth is null on error',
+        async () => {
+        fetchMock.mockResolvedValue(makeResponse(500, {logoutUrl: ""}));
+            useAuthStore.setState({ user: authenticatedUser, upauth: 'dXNlcjpwYXNz', error: null });
+            sessionStorage.setItem(UPAUTH_KEY, 'dXNlcjpwYXNz');
+            sessionStorage.setItem(UPAUTH_EXPIRY_KEY, String(Date.now() + 60000));
+
+            await useAuthStore.getState().logout();
+
+            const state = useAuthStore.getState();
+            expect(state.user).toBeNull();
+            expect(state.upauth).toBeNull();
+            expect(state.error).toEqual(Error("500"));
+            expect(sessionStorage.getItem(UPAUTH_KEY)).toBeNull();
+            expect(sessionStorage.getItem(UPAUTH_EXPIRY_KEY)).toBeNull();
+        });
 });
