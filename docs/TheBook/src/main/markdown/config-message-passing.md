@@ -262,10 +262,14 @@ loads its certificate automatically through `dcache.broker.channel.credential.ce
 ### Restricting tunnel connections by certificate CN
 
 When mutual TLS is enabled, one can further restrict which domains are allowed
-to connect by specifying an allowlist of certificate Common Names (CNs):
+to connect by specifying an allowlist of certificate Common Names (CNs) in a
+file, one pattern per line. Empty lines and lines starting with `#` are
+ignored:
 
-```ini
-dcache.broker.channel.allowed-cn = satellite-1,satellite-2
+```
+# /etc/dcache/tunnel-allowed-cn.conf
+satellite-1
+satellite-2
 ```
 
 Only domains whose certificate CN matches one of the listed values will be
@@ -274,16 +278,6 @@ list are rejected, even if the certificate is otherwise valid.
 
 Wildcard suffixes are supported: a pattern ending in `*` matches any CN that
 starts with the given prefix.
-
-```ini
-dcache.broker.channel.allowed-cn = pool-*,door-*
-```
-
-Multiple patterns are separated by commas. An empty value (the default) disables
-CN filtering. All valid certificates are accepted.
-
-For longer lists, the patterns can be kept in a separate file, one pattern per
-line. Empty lines and lines starting with `#` are ignored:
 
 ```
 # /etc/dcache/tunnel-allowed-cn.conf
@@ -294,9 +288,9 @@ site-a-door-*
 
 The location of this file is configured with
 `dcache.broker.channel.allowed-cn.file`, which defaults to
-`${dcache.paths.etc}/tunnel-allowed-cn.conf`. If the file exists, it replaces
-`dcache.broker.channel.allowed-cn`, which is then ignored. If the file does not
-exist, `dcache.broker.channel.allowed-cn` is used.
+`${dcache.paths.etc}/tunnel-allowed-cn.conf`. If the file does not exist or
+lists no patterns, CN filtering is disabled and all valid certificates are
+accepted.
 
 The list of allowed CNs is read when the core domain starts and replaces the
 previously stored list. A CN that is removed from the configuration is

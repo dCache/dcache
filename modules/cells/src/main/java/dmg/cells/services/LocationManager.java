@@ -625,7 +625,6 @@ public class LocationManager extends CellAdapter {
         coreDomains = CoreDomains.createWithMode(getCellDomainName(), getCuratorFramework(),
               this.args.getOpt("mode"));
 
-        String cns = this.args.getOption("allowed-cn");
         String cnFile = this.args.getOption("allowed-cn-file");
         Path path = (cnFile == null) ? null : Paths.get(cnFile);
 
@@ -635,8 +634,8 @@ public class LocationManager extends CellAdapter {
             allowedCNs = Files.readAllLines(path).stream()
                     .filter(line -> !line.trim().startsWith("#"))
                     .toList();
-        } else if (cns != null) {
-            allowedCNs = Arrays.asList(cns.split(","));
+        } else if (path != null) {
+            allowedCNs = Collections.emptyList();
         }
 
         if (allowedCNs != null) {
@@ -720,9 +719,7 @@ public class LocationManager extends CellAdapter {
           throws ExecutionException, InterruptedException {
         String cellName = "l*";
         String cellClass = "dmg.cells.network.LocationMgrTunnel";
-        String allowedCN = this.args.getOpt("allowed-cn");
-        String cellArgs = args + ' ' + cellClass + ' ' + "-prot=raw" + " -role=" + role
-                + " -allowed-cn=" + allowedCN;
+        String cellArgs = args + ' ' + cellClass + ' ' + "-prot=raw" + " -role=" + role;
         LOGGER.info("Starting acceptor with arguments: {}", cellArgs);
         LoginManager c = new LoginManager(cellName, "System", cellArgs);
         c.start().get();
