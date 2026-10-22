@@ -24,8 +24,10 @@ In this document:
 The behavior is:
 
 1. The door extracts SciTags data from protocol-specific request metadata.
-2. The pool validates and decodes the value (or falls back to VO-to-experiment mapping via FQAN).
-3. dCache sends Firefly markers to:
+2. For HTTP-TPC, the active pool forwards the tag to the remote (passive) party, so both
+   endpoints classify the transfer under the same SciTag.
+3. The pool validates and decodes the value (or falls back to VO-to-experiment mapping via FQAN).
+4. dCache sends Firefly markers to:
    - the data-flow destination host on UDP 10514 (default), and
    - optionally, an additional configured collector.
 
@@ -122,6 +124,28 @@ Behavior:
   3. empty string
 - `RemoteTransferHandler` copies this into
   `RemoteHttpDataTransferProtocolInfo` / `RemoteHttpsDataTransferProtocolInfo` via `setTransferTag(...)`.
+
+#### Propagation to the remote (passive) party
+
+The active pool sends the transfer tag to the remote endpoint of an HTTP-TPC transfer, so
+that the passive side can classify the flow and record the same `transferTag` in its billing
+records (for example, the `Http`/`Https` mover records in the Kafka stream).
+
+Implementation: `modules/dcache/src/main/java/org/dcache/pool/movers/RemoteHttpDataTransferProtocol.java`.
+`RemoteHttpDataTransferProtocol#addHeadersToRequest(...)` adds an outbound `SciTag` request
+header carrying `RemoteHttpDataTransferProtocolInfo.getTransferTag()` to every request the
+pool issues to the remote party (GET, PUT, HEAD and DELETE, including retries and redirects).
+
+Behavior:
+
+- The header is only added when a transfer tag is set (empty or missing tags are not sent).
+- If the client already supplied an explicit `SciTag` header via `TransferHeaderSciTag`, the
+  original header is forwarded unchanged and no extra tag is added.
+- Because all requests for a transfer are built through the same method, the remote party sees
+  the same tag for the whole transfer.
+
+This is an automatic, per-transfer behavior with no site configuration. It has no effect on
+transfers that do not carry a tag.
 
 ### XRootD door path
 
@@ -400,6 +424,8 @@ precedence end-to-end.
 - WebDAV TPC forwarding: `modules/dcache-webdav/src/main/java/org/dcache/webdav/transfer/CopyFilter.java`
 - Remote HTTP TPC propagation:
   `modules/dcache-webdav/src/main/java/org/dcache/webdav/transfer/RemoteTransferHandler.java`
+- Remote HTTP TPC outbound SciTag header:
+  `modules/dcache/src/main/java/org/dcache/pool/movers/RemoteHttpDataTransferProtocol.java`
 - XRootD extraction: `modules/dcache-xrootd/src/main/java/org/dcache/xrootd/door/XrootdTransfer.java`
 - XRootD transfer creation call-site: `modules/dcache-xrootd/src/main/java/org/dcache/xrootd/door/XrootdDoor.java`
 - Flow marker payload builder: `modules/dcache/src/main/java/org/dcache/net/FlowMarker.java`
