@@ -1,6 +1,9 @@
 import { create } from 'zustand';
 import {getUser} from "../api/user.ts";
-import type { User } from '../types/types.ts';
+import type {IdP, User} from '../types/types.ts';
+import {authURL} from "../api/authorisation.ts";
+
+const OIDC_ORIGIN_KEY: string = 'oidc-entry';
 
 const UPAUTH_KEY: string = 'upauth';
 const UPAUTH_EXPIRY_KEY: string = 'upauth_expiry';
@@ -12,6 +15,7 @@ interface AuthState {
     error: Error | null;
     passiveAuth: () => void;
     login: (username: string, password: string) => Promise<void>;
+    loginWithOidc: (idp: IdP) => Promise<void>;
     logout: () => void;
 }
 
@@ -82,6 +86,12 @@ export const useAuthStore = create<AuthState>((set) => ({
         if (user.status !== 'AUTHENTICATED') throw new Error('Login failed');
         storeCredential(b64);
         set({ user: user, upauth: b64 });
+    },
+
+    loginWithOidc: async (idp: IdP) => {
+        const url: string = authURL(window.location.origin, idp);
+        sessionStorage.setItem(OIDC_ORIGIN_KEY, window.location.pathname + window.location.search);
+        window.location.href = url;
     },
 
     logout: () => {
