@@ -136,16 +136,20 @@ public class LocationMgrTunnel
     @Override
     protected void starting() throws Exception {
         _socket.setTcpNoDelay(true);
-        handshake();
         if(_localDomainInfo.getRole() == CellDomainRole.CORE) {
             isAllowedCN();
         }
+        handshake();
         _tunnels.add(this);
     }
 
     static boolean matchesCN(String pattern, String cn) {
-        if (pattern.endsWith("*")) {
-            return cn.startsWith(pattern.substring(0, pattern.length() - 1));
+        if (pattern.contains("*")) {
+            int asteriskPos = pattern.indexOf('*');
+            String start = pattern.substring(0, asteriskPos);
+            String end = pattern.substring(asteriskPos +1);
+            return cn.startsWith(start) && cn.endsWith(end)
+                    && cn.length() >= start.length() + end.length();
         }
         return pattern.equals(cn);
     }
@@ -154,6 +158,9 @@ public class LocationMgrTunnel
         List<String> allowedCN;
         try {
             allowedCN = getCuratorFramework()
+                    // usingNamespace(null) does not change directory and reads same node.
+                    // forwards to the client inside wrapper which makes it mockable for testing.
+                    .usingNamespace(null)
                     .getChildren()
                     .forPath("/dcache/tunnels/allowed-cns");
         } catch (KeeperException.NoNodeException e) {
