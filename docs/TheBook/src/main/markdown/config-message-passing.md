@@ -276,15 +276,25 @@ Only domains whose certificate CN matches one of the listed values will be
 permitted to establish a tunnel. Connections from domains with a CN not in the
 list are rejected, even if the certificate is otherwise valid.
 
-Wildcard suffixes are supported: a pattern ending in `*` matches any CN that
-starts with the given prefix.
+Patterns support a single `*` wildcard, which matches any sequence of
+characters (including an empty one) at that position. The wildcard may appear
+at the beginning, in the middle, or at the end of a pattern:
 
 ```
 # /etc/dcache/tunnel-allowed-cn.conf
 remote-*
-main-*
-site-a-door-*
+*.domain.name
+site-a-*-door
 ```
+
+This matches CNs starting with `remote-`, CNs ending with `.domain.name`, and CNs
+of the form `site-a-<anything>-door`, respectively. Patterns without a `*`
+must match the CN exactly.
+
+Note that a `#` only marks a comment when it is the first non-blank character
+on a line; a `#` appearing inside a pattern is treated as part of that pattern.
+Only the first `*` in a pattern acts as a wildcard — any further asterisks are
+matched literally.
 
 The location of this file is configured with
 `dcache.broker.channel.allowed-cn.file`, which defaults to
