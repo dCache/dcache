@@ -283,11 +283,11 @@ at the beginning, in the middle, or at the end of a pattern:
 ```
 # /etc/dcache/tunnel-allowed-cn.conf
 remote-*
-*.desy.de
+*.domain.name
 site-a-*-door
 ```
 
-This matches CNs starting with `remote-`, CNs ending with `.desy.de`, and CNs
+This matches CNs starting with `remote-`, CNs ending with `.domain.name`, and CNs
 of the form `site-a-<anything>-door`, respectively. Patterns without a `*`
 must match the CN exactly.
 
