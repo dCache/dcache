@@ -3,8 +3,6 @@ package diskCacheV111.cells;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.dcache.util.ByteUnit.BYTES;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
@@ -41,6 +39,7 @@ import org.dcache.util.TransferCollector;
 import org.dcache.util.TransferCollector.Transfer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.databind.ObjectMapper;
 
 public class TransferObserverV1
       extends CellAdapter
@@ -485,8 +484,6 @@ public class TransferObserverV1
         } catch (ExecutionException e) {
             Throwables.throwIfUnchecked(e.getCause());
             throw new RuntimeException(e.getCause());
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
         }
     }
 

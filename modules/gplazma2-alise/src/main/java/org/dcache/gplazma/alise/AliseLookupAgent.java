@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2024 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2024 - 2026 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -18,9 +18,6 @@
  */
 package org.dcache.gplazma.alise;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
 import com.google.common.hash.Hashing;
@@ -43,6 +40,9 @@ import org.dcache.auth.UserNamePrincipal;
 import org.dcache.util.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import static java.util.Objects.requireNonNull;
 import static org.dcache.util.TimeUtils.TimeUnitFormat.SHORT;
@@ -130,7 +130,7 @@ public class AliseLookupAgent implements LookupAgent {
         try {
             ObjectMapper mapper = new ObjectMapper();
             json = mapper.readValue(response.body(), JsonNode.class);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             return Result.failure("Bad JSON in response: " + e.getMessage());
         }
 
@@ -145,8 +145,8 @@ public class AliseLookupAgent implements LookupAgent {
     private String buildErrorMessage(JsonNode body) {
         if (body.has("message")) {
             JsonNode messageNode = body.get("message");
-            if (messageNode.isTextual()) {
-                return messageNode.asText();
+            if (messageNode.isString()) {
+                return messageNode.asString();
             } else {
                 return "unknown (\"message\" field is not textual)";
             }
@@ -171,8 +171,8 @@ public class AliseLookupAgent implements LookupAgent {
 
                 if (detail.has("msg")) {
                     JsonNode msgNode = detail.get("msg");
-                    if (msgNode.isTextual()) {
-                        sb.append(msgNode.asText());
+                    if (msgNode.isString()) {
+                        sb.append(msgNode.asString());
                     } else {
                         sb.append("unknown (").append(msgNode).append(')');
                     }
@@ -189,8 +189,8 @@ public class AliseLookupAgent implements LookupAgent {
                             if (haveFirst) {
                                 sb.append(", ");
                             }
-                            if (locNode.isTextual()) {
-                                sb.append(locNode.asText());
+                            if (locNode.isString()) {
+                                sb.append(locNode.asString());
                             } else {
                                 sb.append("unknown (").append(locNode).append(')');
                             }
@@ -225,17 +225,17 @@ public class AliseLookupAgent implements LookupAgent {
         }
 
         JsonNode usernameNode = internalNode.get("username");
-        if (!usernameNode.isTextual()) {
+        if (!usernameNode.isString()) {
             return Result.failure("Non-textual \"username\" field");
         }
 
         List<Principal> principals = new ArrayList<>(2);
-        principals.add(new UserNamePrincipal(usernameNode.asText()));
+        principals.add(new UserNamePrincipal(usernameNode.asString()));
 
         if (internalNode.has("display_name")) {
             JsonNode displayNameNode = internalNode.get("display_name");
-            if (displayNameNode.isTextual()) {
-                principals.add(new FullNamePrincipal(displayNameNode.asText()));
+            if (displayNameNode.isString()) {
+                principals.add(new FullNamePrincipal(displayNameNode.asString()));
             }
         }
 

@@ -17,9 +17,6 @@
  */
 package org.dcache.gplazma.oidc;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Arrays;
@@ -27,6 +24,8 @@ import java.util.stream.Collectors;
 import org.dcache.gplazma.util.JsonWebToken;
 import org.junit.Before;
 import org.junit.Test;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import static com.github.npathai.hamcrestopt.OptionalMatchers.isPresentAnd;
 import static java.time.temporal.ChronoUnit.MINUTES;
@@ -150,11 +149,11 @@ public class JwtFactoryTest {
         return new JwtFactoryBuilder();
     }
 
-    private JsonNode jsonString(String value) throws JsonProcessingException {
+    private JsonNode jsonString(String value) {
         return mapper.readTree("\"" + value + "\"");
     }
 
-    private JsonNode jsonArray(String... value) throws JsonProcessingException {
+    private JsonNode jsonArray(String... value) {
         String json = Arrays.stream(value).collect(Collectors.joining("\", \"", "[\"", "\"]"));
         return mapper.readTree(json);
     }

@@ -17,13 +17,13 @@
  */
 package org.dcache.gplazma.oidc;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.MissingNode;
 import java.net.URI;
 import org.dcache.gplazma.oidc.helpers.ReasonBearingMissingNode;
 import org.mockito.BDDMockito;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.MissingNode;
 
 import static org.mockito.Mockito.mock;
 
@@ -64,7 +64,7 @@ public class MockIdentityProviderBuilder {
         try {
             JsonNode document = mapper.readTree(json);
             BDDMockito.given(provider.discoveryDocument()).willReturn(document);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException(e);
         }
         return this;

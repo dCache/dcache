@@ -17,9 +17,6 @@
  */
 package org.dcache.gplazma.oidc;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Collections;
@@ -29,6 +26,8 @@ import java.util.Map;
 import org.dcache.gplazma.AuthenticationException;
 import org.junit.Test;
 import org.mockito.Mockito;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -49,7 +48,7 @@ public class ChainedTokenProcessorTest {
             return this;
         }
 
-        public ResultBuilder withClaim(String key, String value) throws JsonProcessingException {
+        public ResultBuilder withClaim(String key, String value) {
             JsonNode json = mapper.readTree(value);
             claims.put(key, json);
             return this;

@@ -66,8 +66,6 @@ import static org.dcache.services.bulk.util.BulkServiceStatistics.DATE_FORMAT;
 import static org.dcache.services.bulk.util.BulkServiceStatistics.DATE_FORMATTER;
 import static org.dcache.services.bulk.util.BulkServiceStatistics.getTimestamp;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.common.base.Splitter;
 import diskCacheV111.util.PnfsId;
 import dmg.cells.nucleus.CellCommandListener;
@@ -122,6 +120,8 @@ import org.dcache.services.bulk.util.BulkTargetFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectWriter;
 
 /**
  * Collects all admin shell commands for convenience.

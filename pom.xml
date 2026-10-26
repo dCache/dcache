@@ -80,12 +80,11 @@
              when upgrading logback. -->
         <version.logback>1.6.5</version.logback>
         <version.logback.contrib>0.1.5</version.logback.contrib>
+        <!-- Jackson 2 is used only by dcache-frontend and third-party libraries -->
         <version.jackson>2.18.11</version.jackson>
-        <!-- Jackson 3, AWS SDK v2 and jspecify are used by the vendored
-             s3proxy; keep them in sync with modules/s3proxy-vendored/VENDORED.md -->
+        <!-- Jackson 3 is used by buld, gplazma, s3 -->
         <version.jackson3>3.2.2</version.jackson3>
-        <!-- Jackson 3 needs annotations 2.22; annotations stay backward
-             compatible with Jackson 2.18 databind -->
+        <!-- Jackson 3 needs annotations 2.22 -->
         <version.jackson-annotations>2.22</version.jackson-annotations>
         <version.awssdk>2.54.13</version.awssdk>
         <version.jspecify>1.0.1</version.jspecify>
@@ -913,6 +912,10 @@
                 <version>${version.logback.contrib}</version>
             </dependency>
 
+            <!-- Jackson 2: kept only for dcache-frontend and third-party
+                 libraries (Jersey, swagger, logback-contrib). dCache code
+                 uses Jackson 3 (tools.jackson), see jackson-bom below. -->
+
             <!-- com.fasterxml.jackson.databind.ObjectMapper -->
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
@@ -938,11 +941,14 @@
                 <version>${version.jackson}</version>
             </dependency>
 
-            <!-- tools.jackson.dataformat.xml.XmlMapper (vendored s3proxy) -->
+            <!-- Jackson 3: tools.jackson.databind.ObjectMapper,
+                 tools.jackson.dataformat.xml.XmlMapper (vendored s3proxy) -->
             <dependency>
-                <groupId>tools.jackson.dataformat</groupId>
-                <artifactId>jackson-dataformat-xml</artifactId>
+                <groupId>tools.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
                 <version>${version.jackson3}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
 
             <!-- software.amazon.awssdk.services.s3.model (vendored s3proxy);

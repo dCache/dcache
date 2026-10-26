@@ -20,13 +20,17 @@ package org.dcache.gplazma.util;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.Optional;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1StreamParser;
@@ -112,6 +116,32 @@ public class JsonWebTokenTest {
         assertThat(jwt.getPayloadInstant("iat"),
               is(equalTo(Optional.of(Instant.parse("2019-03-11T09:00:17Z")))));
         assertThat(jwt.getPayloadInstant("nothere"), is(equalTo(Optional.empty())));
+    }
+
+    @Test(expected = IOException.class)
+    public void shouldRejectJwtWithNonJsonHeader() throws Exception {
+        new JsonWebToken(jwtOf("not json", "{\"sub\":\"user\"}"));
+    }
+
+    @Test(expected = IOException.class)
+    public void shouldRejectJwtWithNonJsonPayload() throws Exception {
+        new JsonWebToken(jwtOf("{\"alg\":\"RS256\"}", "{\"sub\":"));
+    }
+
+    @Test
+    public void shouldAcceptJwtWithNonTextualHeaderValues() throws Exception {
+        JsonWebToken jwt = new JsonWebToken(jwtOf("{\"alg\":5,\"kid\":{\"a\":1}}",
+              "{\"sub\":\"user\"}"));
+
+        assertThat(jwt.getKeyIdentifier(), is(nullValue()));
+        assertThat(jwt.getPayloadString("sub"), is(equalTo(Optional.of("user"))));
+    }
+
+    private static String jwtOf(String header, String payload) {
+        Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
+        return encoder.encodeToString(header.getBytes(StandardCharsets.UTF_8))
+              + "." + encoder.encodeToString(payload.getBytes(StandardCharsets.UTF_8))
+              + "." + encoder.encodeToString(new byte[]{1, 2, 3});
     }
 
     @Test

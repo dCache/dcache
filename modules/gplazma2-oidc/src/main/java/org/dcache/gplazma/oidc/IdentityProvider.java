@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2018-2024 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2018-2026 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -18,9 +18,6 @@
  */
 package org.dcache.gplazma.oidc;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.MissingNode;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 
@@ -39,6 +36,9 @@ import org.apache.http.client.HttpClient;
 import org.dcache.gplazma.oidc.helpers.ReasonBearingMissingNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.MissingNode;
 
 
 

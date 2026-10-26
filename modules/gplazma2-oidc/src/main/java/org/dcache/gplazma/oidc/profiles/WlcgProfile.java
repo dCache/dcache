@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2022 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2022 - 2026 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,7 +17,6 @@
  */
 package org.dcache.gplazma.oidc.profiles;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Splitter;
 import diskCacheV111.util.FsPath;
 import java.security.Principal;
@@ -34,6 +33,7 @@ import org.dcache.gplazma.oidc.IdentityProvider;
 import org.dcache.gplazma.oidc.ProfileResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.databind.JsonNode;
 
 import static java.util.Objects.requireNonNull;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
@@ -62,8 +62,8 @@ public class WlcgProfile extends ScopeBasedAuthzProfile {
     private void checkProfileVersion(Map<String,JsonNode> claims) throws AuthenticationException {
         JsonNode ver = claims.get("wlcg.ver");
         checkAuthentication(ver != null, "wlcg.ver claim is missing");
-        checkAuthentication(ver.isTextual(), "wlcg.ver claim not textural");
-        checkAuthentication(ver.asText().equals("1.0"), "Unsupported version of WLCG profile \"%s\"",
+        checkAuthentication(ver.isString(), "wlcg.ver claim not textural");
+        checkAuthentication(ver.asString().equals("1.0"), "Unsupported version of WLCG profile \"%s\"",
                 ver);
     }
 
@@ -84,11 +84,11 @@ public class WlcgProfile extends ScopeBasedAuthzProfile {
 
         List<Principal> principals = new ArrayList<>();
         for (JsonNode group : groups) {
-            if (!group.isTextual()) {
+            if (!group.isString()) {
                 LOGGER.debug("Ignoring malformed \"wlcg.groups\" value: {}", group);
                 continue;
             }
-            var groupName = group.asText();
+            var groupName = group.asString();
             var principal = new OpenIdGroupPrincipal(groupName);
             principals.add(principal);
         }

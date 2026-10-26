@@ -28,9 +28,6 @@ import static org.dcache.namespace.FileAttribute.SIZE;
 import static org.dcache.namespace.FileAttribute.TYPE;
 import static org.dcache.namespace.FileAttribute.XATTR;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
@@ -172,6 +169,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectWriter;
 
 public class PnfsManagerV3
       extends AbstractCellComponent
@@ -985,7 +985,7 @@ public class PnfsManagerV3
                ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
                try {
                    return ow.writeValueAsString(optional.get());
-               } catch (JsonProcessingException e) {
+               } catch (JacksonException e) {
                    throw new CacheException(CacheException.INVALID_ARGS, e.getMessage());
                }
            }

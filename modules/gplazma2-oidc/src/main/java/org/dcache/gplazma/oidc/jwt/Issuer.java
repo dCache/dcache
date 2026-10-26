@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2019 - 2024 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2019 - 2026 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -19,8 +19,6 @@ package org.dcache.gplazma.oidc.jwt;
 
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.google.common.collect.EvictingQueue;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -55,6 +53,8 @@ import org.dcache.gplazma.util.JsonWebToken;
 import org.dcache.util.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.JsonNodeType;
 
 import static java.util.Objects.requireNonNull;
 
@@ -124,12 +124,12 @@ public class Issuer {
             return Result.failure("discovery document missing jwks_uri");
         }
 
-        if (!jwksNode.isTextual()) {
+        if (!jwksNode.isString()) {
             LOGGER.warn("configuration has non-textual jwks_uri");
             return Result.failure("discovery document has non-textual jwks_uri");
         }
 
-        String url = jwksNode.asText();
+        String url = jwksNode.asString();
 
         if (url.isEmpty()) {
             LOGGER.warn("configuration has empty jwks_uri");
@@ -232,18 +232,18 @@ public class Issuer {
         if (target == null) {
             throw new BadKeyDescriptionException("Missing attribute " + key);
         }
-        if (!target.isTextual()) {
+        if (!target.isString()) {
             throw new BadKeyDescriptionException("Attribute not textual " + key);
         }
-        return target.asText();
+        return target.asString();
     }
 
     private Optional<String> getOptionalString(JsonNode details, String key) throws BadKeyDescriptionException {
         JsonNode value = details.get(key);
-        if (value != null && !value.isTextual()) {
+        if (value != null && !value.isString()) {
             throw new BadKeyDescriptionException("Attribute not textual " + key);
         }
-        return Optional.ofNullable(value).map(JsonNode::asText);
+        return Optional.ofNullable(value).map(JsonNode::asString);
     }
 
     private PublicKey buildRSAPublicKey(JsonNode details) throws BadKeyDescriptionException {

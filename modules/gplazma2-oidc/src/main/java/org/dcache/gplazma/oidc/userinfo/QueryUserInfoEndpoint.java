@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2022 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2022 - 2026 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,14 +17,11 @@
  */
 package org.dcache.gplazma.oidc.userinfo;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Throwables;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.google.common.collect.Streams;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListenableFutureTask;
@@ -58,6 +55,8 @@ import org.dcache.util.BoundedCachedExecutor;
 import org.dcache.util.TimeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.JsonNodeType;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toMap;
@@ -270,10 +269,10 @@ public class QueryUserInfoEndpoint implements TokenProcessor {
             if (userinfo == null) {
                 return LookupResult.error(ip, "Discovery document has no \"userinfo_endpoint\" field.");
             }
-            if (!userinfo.isTextual()) {
+            if (!userinfo.isString()) {
                 return LookupResult.error(ip, "Discovery document has wrong type: " + userinfo.getNodeType());
             }
-            String userInfoEndPoint = userinfo.asText();
+            String userInfoEndPoint = userinfo.asString();
 
             userinfoLookupTiming = Stopwatch.createStarted();
             Map<String,JsonNode> claims = claimsFromUserInfoEndpoint(token, userInfoEndPoint);
@@ -309,7 +308,7 @@ public class QueryUserInfoEndpoint implements TokenProcessor {
             if (!userInfo.isObject()) {
                 throw new OidcException("User-info endpoint returned a non-JSON object");
             }
-            return Streams.stream(userInfo.fields())
+            return userInfo.propertyStream()
                     .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
         } catch (IllegalArgumentException iae) {
             throw new OidcException("Error parsing UserInfo: " + iae.getMessage());
@@ -324,8 +323,8 @@ public class QueryUserInfoEndpoint implements TokenProcessor {
             throw new OidcException("Querying the user-info endpoint failed");
         }
         if (userInfo.has("error")) {
-            String error = userInfo.get("error").asText();
-            String errorDescription = userInfo.get("error_description").asText();
+            String error = userInfo.get("error").asString("");
+            String errorDescription = userInfo.get("error_description").asString("");
             throw new OidcException("User-info endpoint replied: [" + error + ", " + errorDescription + " ]");
         } else {
             return userInfo;

@@ -24,6 +24,7 @@ import static org.dcache.gplazma.oidc.MockHttpClientBuilder.aClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
@@ -34,7 +35,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.google.common.collect.ImmutableList;
 import java.net.URI;
 import java.time.Duration;
@@ -44,8 +44,10 @@ import java.util.Collections;
 import java.util.List;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+import org.dcache.gplazma.oidc.helpers.ReasonBearingMissingNode;
 import org.junit.Before;
 import org.junit.Test;
+import tools.jackson.databind.node.JsonNodeType;
 
 public class IdentityProviderTests {
 
@@ -241,11 +243,11 @@ public class IdentityProviderTests {
         var userinfo = discovery.get("userinfo_endpoint");
         assertThat(userinfo, is(not(nullValue())));
         assertThat(userinfo.getNodeType(), is(equalTo(JsonNodeType.STRING)));
-        assertThat(userinfo.asText(), is(equalTo("https://login.helmholtz.de/oauth2/userinfo")));
+        assertThat(userinfo.asString(), is(equalTo("https://login.helmholtz.de/oauth2/userinfo")));
         var jwks = discovery.get("jwks_uri");
         assertThat(jwks, is(not(nullValue())));
         assertThat(jwks.getNodeType(), is(equalTo(JsonNodeType.STRING)));
-        assertThat(jwks.asText(), is(equalTo("https://login.helmholtz.de/oauth2/jwk")));
+        assertThat(jwks.asString(), is(equalTo("https://login.helmholtz.de/oauth2/jwk")));
     }
 
     @Test
@@ -299,7 +301,7 @@ public class IdentityProviderTests {
         var userinfo = discovery.get("userinfo_endpoint");
         assertThat(userinfo, is(not(nullValue())));
         assertThat(userinfo.getNodeType(), is(equalTo(JsonNodeType.STRING)));
-        assertThat(userinfo.asText(), is(equalTo("https://op.example.org/userinfo")));
+        assertThat(userinfo.asString(), is(equalTo("https://op.example.org/userinfo")));
     }
 
     @Test
@@ -313,6 +315,22 @@ public class IdentityProviderTests {
         verify(client).execute(any(HttpGet.class));
 
         assertThat(discovery.getNodeType(), is(equalTo(JsonNodeType.MISSING)));
+    }
+
+    @Test
+    public void shouldReturnMissingDocumentWithReasonOnMalformedJson() throws Exception {
+        given(anIdentityProvider("UNITY").withIssuer("https://op.example.org/").withClient(aClient()
+              .onGet("https://op.example.org/.well-known/openid-configuration")
+              .responds().withEntity("{\"userinfo_endpoint\": ")));
+
+        var discovery = identityProvider.discoveryDocument();
+
+        verify(client).execute(any(HttpGet.class));
+
+        assertThat(discovery.getNodeType(), is(equalTo(JsonNodeType.MISSING)));
+        assertThat(discovery, is(instanceOf(ReasonBearingMissingNode.class)));
+        assertThat(((ReasonBearingMissingNode) discovery).getReason(),
+              containsString("Bad JSON"));
     }
 
     @Test
@@ -354,7 +372,7 @@ public class IdentityProviderTests {
         var userinfo = discovery.get("userinfo_endpoint");
         assertThat(userinfo, is(not(nullValue())));
         assertThat(userinfo.getNodeType(), is(equalTo(JsonNodeType.STRING)));
-        assertThat(userinfo.asText(), is(equalTo("https://op.example.org/new-userinfo")));
+        assertThat(userinfo.asString(), is(equalTo("https://op.example.org/new-userinfo")));
     }
 
     private void given(IdentityProviderBuilder builder) {

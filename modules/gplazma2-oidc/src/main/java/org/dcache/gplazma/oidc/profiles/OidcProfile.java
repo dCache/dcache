@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2022 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2022 - 2026 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -18,7 +18,6 @@
  */
 package org.dcache.gplazma.oidc.profiles;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import java.net.URISyntaxException;
@@ -42,6 +41,7 @@ import org.dcache.gplazma.oidc.IdentityProvider;
 import org.dcache.gplazma.oidc.ProfileResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.databind.JsonNode;
 
 /**
  * The OIDC profile handles claims that identify a person.
@@ -178,11 +178,11 @@ public class OidcProfile extends BaseProfile {
         }
 
         for (JsonNode group : groups) {
-            if (!group.isTextual()) {
+            if (!group.isString()) {
                 LOGGER.debug("Ignoring malformed \"wlcg.groups\" value: {}", group);
                 continue;
             }
-            var groupName = group.asText();
+            var groupName = group.asString();
             var principal = new OpenIdGroupPrincipal(groupName);
             principals.add(principal);
         }
@@ -191,7 +191,7 @@ public class OidcProfile extends BaseProfile {
     private void addLoAs(Map<String,JsonNode> claims, Set<Principal> principals) {
         if (claims.containsKey("eduperson_assurance") && claims.get("eduperson_assurance").isArray()) {
             StreamSupport.stream(claims.get("eduperson_assurance").spliterator(), false)
-                  .map(JsonNode::asText)
+                  .map(n -> n.asString(""))
                   .map(EDUPERSON_ASSURANCE::get)
                   .filter(Objects::nonNull)
                   // FIXME we need to know when to accept REFEDS_IAP_LOCAL_ENTERPRISE.
@@ -203,7 +203,7 @@ public class OidcProfile extends BaseProfile {
 
     private void addEmail(Map<String,JsonNode> claims, Set<Principal> principals) {
         if (claims.containsKey("email")) {
-            principals.add(new EmailAddressPrincipal(claims.get("email").asText()));
+            principals.add(new EmailAddressPrincipal(claims.get("email").asString("")));
         }
     }
 
@@ -212,11 +212,11 @@ public class OidcProfile extends BaseProfile {
         JsonNode familyName = claims.get("family_name");
         JsonNode fullName = claims.get("name");
 
-        if (fullName != null && !fullName.asText().isEmpty()) {
-            principals.add(new FullNamePrincipal(fullName.asText()));
-        } else if (givenName != null && !givenName.asText().isEmpty()
-              && familyName != null && !familyName.asText().isEmpty()) {
-            principals.add(new FullNamePrincipal(givenName.asText(), familyName.asText()));
+        if (fullName != null && !fullName.asString("").isEmpty()) {
+            principals.add(new FullNamePrincipal(fullName.asString("")));
+        } else if (givenName != null && !givenName.asString("").isEmpty()
+              && familyName != null && !familyName.asString("").isEmpty()) {
+            principals.add(new FullNamePrincipal(givenName.asString(""), familyName.asString("")));
         }
     }
 
@@ -232,10 +232,10 @@ public class OidcProfile extends BaseProfile {
 
         if (value.isArray()) {
             StreamSupport.stream(value.spliterator(), false)
-                  .map(JsonNode::asText)
+                  .map(n -> n.asString(""))
                   .forEach(v -> addEntitlement(principals, v));
-        } else if (value.isTextual()) {
-            addEntitlement(principals, value.asText());
+        } else if (value.isString()) {
+            addEntitlement(principals, value.asString());
         }
     }
 
@@ -243,7 +243,7 @@ public class OidcProfile extends BaseProfile {
     private void addGroups(Map<String,JsonNode> claims, Set<Principal> principals) {
         if (claims.containsKey("groups") && claims.get("groups").isArray()) {
             for (JsonNode group : claims.get("groups")) {
-                String groupName = group.asText();
+                String groupName = group.asString("");
                 var principal = toGroupPrincipal.apply(groupName);
                 principals.add(principal);
             }
@@ -252,8 +252,8 @@ public class OidcProfile extends BaseProfile {
 
     private void addUsername(Map<String,JsonNode> claims, Set<Principal> principals) {
         JsonNode value = claims.get("preferred_username");
-        if (value != null && value.isTextual()) {
-            principals.add(new UserNamePrincipal(value.asText()));
+        if (value != null && value.isString()) {
+            principals.add(new UserNamePrincipal(value.asString()));
         }
     }
 

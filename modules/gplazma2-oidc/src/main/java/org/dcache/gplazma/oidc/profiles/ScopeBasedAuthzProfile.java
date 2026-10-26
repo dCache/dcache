@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2022 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2022 - 2026 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -18,7 +18,6 @@
  */
 package org.dcache.gplazma.oidc.profiles;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Streams;
 import diskCacheV111.util.FsPath;
 import java.security.Principal;
@@ -38,6 +37,7 @@ import org.dcache.auth.attributes.Restriction;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.oidc.IdentityProvider;
 import org.dcache.gplazma.oidc.ProfileResult;
+import tools.jackson.databind.JsonNode;
 
 import static java.util.Objects.requireNonNull;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
@@ -84,10 +84,10 @@ abstract class ScopeBasedAuthzProfile extends BaseProfile {
 
         var node = claims.get("scope");
         checkAuthentication(node != null, "Missing 'scope' claim");
-        checkAuthentication(node.isTextual(), "'scope' claim has wrong type: %s",
+        checkAuthentication(node.isString(), "'scope' claim has wrong type: %s",
                 node.getNodeType());
 
-        String scopeClaim = node.asText();
+        String scopeClaim = node.asString();
         List<AuthorisationSupplier> authorisationStatements = parseScope(scopeClaim);
 
         if (!authorisationStatements.isEmpty()) {

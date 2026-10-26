@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2022 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2022 - 2026 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -19,9 +19,6 @@ package org.dcache.gplazma.oidc;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.MissingNode;
 import com.google.common.base.Stopwatch;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -35,6 +32,10 @@ import org.dcache.util.Strings;
 import org.dcache.util.TimeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.MissingNode;
 
 /**
  * Utility class for HttpClient instances.
@@ -88,6 +89,10 @@ public class HttpClientUtils {
         response.writeTo(os);
         String responseAsJson = os.toString(UTF_8);
         var mapper = new ObjectMapper();
-        return mapper.readValue(responseAsJson, JsonNode.class);
+        try {
+            return mapper.readValue(responseAsJson, JsonNode.class);
+        } catch (JacksonException e) {
+            throw new IOException("Bad JSON: " + e.getMessage(), e);
+        }
     }
 }

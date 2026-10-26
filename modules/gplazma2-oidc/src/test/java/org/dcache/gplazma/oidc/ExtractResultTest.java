@@ -17,13 +17,13 @@
  */
 package org.dcache.gplazma.oidc;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.junit.Test;
+import tools.jackson.databind.ObjectMapper;
 
 import static org.dcache.gplazma.oidc.MockHttpClientBuilder.aClient;
 import static org.hamcrest.MatcherAssert.assertThat;

@@ -7,8 +7,6 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.spi.LoggingEvent;
 import ch.qos.logback.contrib.jackson.JacksonJsonFormatter;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import dmg.cells.nucleus.CDC;
 import java.util.HashMap;
 import java.util.Locale;
@@ -20,6 +18,8 @@ import org.dcache.alarms.PredefinedAlarm;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Guards the JSON document sent to the kafka log appender. Consumers of the alarms topic depend

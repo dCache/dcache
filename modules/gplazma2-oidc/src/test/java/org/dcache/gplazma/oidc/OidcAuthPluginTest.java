@@ -17,9 +17,6 @@
  */
 package org.dcache.gplazma.oidc;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import diskCacheV111.util.FsPath;
 import java.net.URI;
 import java.security.Principal;
@@ -51,6 +48,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatchers;
 import org.mockito.BDDMockito;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import static com.google.common.base.Preconditions.checkState;
 import static java.time.temporal.ChronoUnit.MINUTES;
@@ -909,13 +908,9 @@ public class OidcAuthPluginTest {
         }
 
         public ClaimMapBuilder with(String key, String jsonValue) {
-            try {
-                JsonNode json = mapper.readTree(jsonValue);
-                claims.put(key, json);
-                return this;
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
-            }
+            JsonNode json = mapper.readTree(jsonValue);
+            claims.put(key, json);
+            return this;
         }
 
         public Map<String,JsonNode> build() {

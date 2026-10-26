@@ -17,11 +17,11 @@
  */
 package org.dcache.gplazma.oidc.helpers;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.node.JsonNodeType;
 import org.junit.Test;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.core.JsonToken;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.node.JsonNodeType;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -94,9 +94,9 @@ public class ReasonBearingMissingNodeTest {
     }
 
     @Test
-    public void shouldAsTextAsEmptyString() {
+    public void shouldAsStringAsEmptyString() {
         var node = new ReasonBearingMissingNode("What went wrong.");
-        assertThat(node.asText(), equalTo(""));
+        assertThat(node.asString(), equalTo(""));
     }
 
     @Test
@@ -112,9 +112,9 @@ public class ReasonBearingMissingNodeTest {
     }
 
     @Test
-    public void shouldAsTextWithDefaultToDefault() {
+    public void shouldAsStringWithDefaultToDefault() {
         var node = new ReasonBearingMissingNode("What went wrong.");
-        assertThat(node.asText("default value"), equalTo("default value"));
+        assertThat(node.asString("default value"), equalTo("default value"));
     }
 
     @Test
@@ -122,7 +122,7 @@ public class ReasonBearingMissingNodeTest {
         var node = new ReasonBearingMissingNode("What went wrong.");
 
         var g = mock(JsonGenerator.class);
-        var p = mock(SerializerProvider.class);
+        var p = mock(SerializationContext.class);
 
         node.serialize(g, p);
 

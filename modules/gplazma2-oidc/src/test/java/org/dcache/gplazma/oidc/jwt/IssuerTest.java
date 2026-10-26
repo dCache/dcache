@@ -17,7 +17,6 @@
  */
 package org.dcache.gplazma.oidc.jwt;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.security.PublicKey;
 import java.util.Base64;
 import java.util.Optional;
@@ -31,6 +30,7 @@ import org.dcache.gplazma.util.JsonWebToken;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.BDDMockito;
+import tools.jackson.databind.node.ObjectNode;
 
 import static com.google.common.base.Preconditions.checkState;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
@@ -451,7 +451,7 @@ public class IssuerTest {
     }
 
     private ObjectNode mangle(ObjectNode description) {
-        String encodedN = description.get("n").asText();
+        String encodedN = description.get("n").asString();
         byte[] n = Base64.getUrlDecoder().decode(encodedN);
 
         // Mangle the modulus

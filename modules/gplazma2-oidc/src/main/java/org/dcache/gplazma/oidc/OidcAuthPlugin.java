@@ -1,6 +1,5 @@
 package org.dcache.gplazma.oidc;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
@@ -41,6 +40,7 @@ import org.dcache.gplazma.util.JsonWebToken;
 import org.dcache.util.Args;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.databind.JsonNode;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.dcache.gplazma.oidc.PropertiesUtils.asDuration;
@@ -244,7 +244,7 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
 
         if (audClaim.isArray()) {
             List<String> audClaimAsList = new ArrayList<>(audClaim.size());
-            audClaim.elements().forEachRemaining(e -> audClaimAsList.add(e.textValue()));
+            audClaim.values().forEach(e -> audClaimAsList.add(e.stringValue(null)));
 
             if (!audClaimAsList.stream().anyMatch(audienceTargets::contains)) {
                 if (suppressAudience) {
@@ -255,7 +255,7 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
                 throw new AuthenticationException("intended for " + audClaimAsList);
             }
         } else {
-            String aud = audClaim.textValue();
+            String aud = audClaim.stringValue(null);
             if (!audienceTargets.contains(aud)) {
                 if (suppressAudience) {
                     logAudienceSuppression(aud, idp.getName(), claims, principals, "this audience");
@@ -285,15 +285,15 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
 
     private static Optional<String> clientId(Map<String,JsonNode> claims) {
         var clientIdClaim = claims.get("client_id");
-        if (clientIdClaim != null && clientIdClaim.isTextual()) {
-            return Optional.of(clientIdClaim.textValue());
+        if (clientIdClaim != null && clientIdClaim.isString()) {
+            return Optional.of(clientIdClaim.stringValue());
         }
 
         // Some OPs (*cough* EGI CheckIn *cough*) violate RFC 9068 by issuing JWTs without a
         // 'client_id' claim; however, they do provide an 'azp' claim.
         var azpClaim = claims.get("azp");
-        if (azpClaim != null && azpClaim.isTextual()) {
-            return Optional.of(azpClaim.textValue());
+        if (azpClaim != null && azpClaim.isString()) {
+            return Optional.of(azpClaim.stringValue());
         }
 
         return Optional.empty();

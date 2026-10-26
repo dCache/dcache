@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2019 - 2020 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2019 - 2026 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -20,7 +20,6 @@ package org.dcache.gplazma.scitoken;
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.EvictingQueue;
 import com.google.common.collect.ImmutableSet;
 import diskCacheV111.util.FsPath;
@@ -48,6 +47,7 @@ import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.util.JsonWebToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.databind.JsonNode;
 
 /**
  * Represents a SciToken issuer, a service with associated metadata.  This typically represents a
@@ -64,8 +64,8 @@ public class Issuer {
     private final FsPath prefix;
     private final Queue<String> previousJtis;
 
-    private final JsonNode configuration;
-    private final JsonNode jwks;
+    private final Supplier<JsonNode> configuration;
+    private final Supplier<JsonNode> jwks;
 
 
     private Supplier<Map<String, PublicKey>> keys = MemoizeMapWithExpiry.memorize(this::parseJwks)
@@ -90,9 +90,9 @@ public class Issuer {
         userIdentity = Set.copyOf(identity);
         opIdentity = new OAuthProviderPrincipal(id, URI.create(endpoint));
 
-        this.configuration = new HttpJsonNode(client, configEndpoint,
+        this.configuration = new HttpJsonDocument(client, configEndpoint,
               Duration.ofHours(1), Duration.ofSeconds(10));
-        this.jwks = new HttpJsonNode(client, this::parseConfigurationForJwksUri,
+        this.jwks = new HttpJsonDocument(client, this::parseConfigurationForJwksUri,
               Duration.ofSeconds(1), Duration.ofSeconds(1));
 
         previousJtis = tokenHistory > 0 ? EvictingQueue.create(tokenHistory) : null;
@@ -128,19 +128,19 @@ public class Issuer {
     }
 
     private Optional<String> parseConfigurationForJwksUri() {
-        JsonNode jwksNode = configuration.get("jwks_uri");
+        JsonNode jwksNode = configuration.get().get("jwks_uri");
 
         if (jwksNode == null) {
             LOGGER.warn("configuration does not have jwks_uri");
             return Optional.empty();
         }
 
-        if (!jwksNode.isTextual()) {
+        if (!jwksNode.isString()) {
             LOGGER.warn("configuration has non-textual jwks_uri");
             return Optional.empty();
         }
 
-        String url = jwksNode.asText();
+        String url = jwksNode.asString();
 
         if (url.isEmpty()) {
             LOGGER.warn("configuration has empty jwks_uri");
@@ -152,14 +152,14 @@ public class Issuer {
 
     private Optional<String> getOptionalString(JsonNode details, String key) throws BadKeyDescriptionException {
         JsonNode value = details.get(key);
-        if (value != null && !value.isTextual()) {
+        if (value != null && !value.isString()) {
             throw new BadKeyDescriptionException("Attribute not textual " + key);
         }
-        return Optional.ofNullable(value).map(JsonNode::asText);
+        return Optional.ofNullable(value).map(JsonNode::asString);
     }
 
     private Map<String, PublicKey> parseJwks() {
-        JsonNode keys = jwks.get("keys");
+        JsonNode keys = jwks.get().get("keys");
         if (keys == null) {
             LOGGER.warn("missing keys");
             return Collections.emptyMap();
@@ -196,10 +196,10 @@ public class Issuer {
         if (target == null) {
             throw new BadKeyDescriptionException("Missing attribute " + key);
         }
-        if (!target.isTextual()) {
+        if (!target.isString()) {
             throw new BadKeyDescriptionException("Attribute not textual " + key);
         }
-        return target.asText();
+        return target.asString();
     }
 
     private PublicKey buildRSAPublicKey(JsonNode details) throws BadKeyDescriptionException {

@@ -18,9 +18,6 @@
  */
 package org.dcache.gplazma.oidc.profiles;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.HashMap;
 import java.util.Map;
 import org.dcache.gplazma.AuthenticationException;
@@ -28,6 +25,9 @@ import org.dcache.gplazma.oidc.IdentityProvider;
 import org.dcache.gplazma.oidc.MockIdentityProviderBuilder;
 import org.dcache.gplazma.oidc.Profile;
 import org.dcache.gplazma.oidc.ProfileResult;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import static java.util.Objects.requireNonNull;
 
@@ -50,7 +50,7 @@ public class ProfileInvocationBuilder {
     public ProfileInvocationBuilder withClaim(String id, String json) {
         try {
             claims.put(id, mapper.readTree(json));
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException("Bad claim value " + json + ": " + e);
         }
         return this;

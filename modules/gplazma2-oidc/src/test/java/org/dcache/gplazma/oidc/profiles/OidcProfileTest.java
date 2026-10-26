@@ -231,6 +231,20 @@ public class OidcProfileTest {
     }
 
     @Test
+    public void shouldAcceptGroupsClaimWithNonStringElements() throws Exception {
+        given(anOidcProfile());
+
+        when(invoked().withIdP(anIp("MY-OP"))
+                .withStringClaim("sub", "sub-claim-value")
+                .withClaim("groups", "[\"group-A\", {\"name\": \"group-B\"}, [\"group-C\"]]"));
+
+        assertThat(principals, hasItem(new OidcSubjectPrincipal("sub-claim-value", "MY-OP")));
+        assertThat(principals, hasItem(new OpenIdGroupPrincipal("group-A")));
+        assertThat(principals, not(hasItem(new OpenIdGroupPrincipal("group-B"))));
+        assertThat(principals, not(hasItem(new OpenIdGroupPrincipal("group-C"))));
+    }
+
+    @Test
     public void shouldIgnoreNameIfNameClaimNotString() throws Exception {
         given(anOidcProfile());
 

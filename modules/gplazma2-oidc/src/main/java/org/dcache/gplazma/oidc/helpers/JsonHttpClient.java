@@ -2,8 +2,6 @@ package org.dcache.gplazma.oidc.helpers;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Stopwatch;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -23,6 +21,9 @@ import org.dcache.util.TimeUtils;
 import org.dcache.util.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import static java.util.Objects.requireNonNull;
 
@@ -64,8 +65,11 @@ public class JsonHttpClient {
         String responseAsJson = new String(os.toByteArray(), UTF_8);
 
         ObjectMapper mapper = new ObjectMapper();
-        JsonNode json = mapper.readValue(responseAsJson, JsonNode.class);
-        return json;
+        try {
+            return mapper.readValue(responseAsJson, JsonNode.class);
+        } catch (JacksonException e) {
+            throw new IOException("Bad JSON: " + e.getMessage(), e);
+        }
     }
 
     public JsonNode doGet(URI url) throws IOException {

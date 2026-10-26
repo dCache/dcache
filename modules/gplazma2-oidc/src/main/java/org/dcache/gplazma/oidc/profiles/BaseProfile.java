@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2022 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2022 - 2026 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,7 +17,6 @@
  */
 package org.dcache.gplazma.oidc.profiles;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import java.security.Principal;
 import java.util.HashSet;
 import java.util.Map;
@@ -29,6 +28,7 @@ import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.oidc.IdentityProvider;
 import org.dcache.gplazma.oidc.Profile;
 import org.dcache.gplazma.oidc.ProfileResult;
+import tools.jackson.databind.JsonNode;
 
 /**
  * This class provides a common behaviour for Profiles.  In particular, it adds Principals that
@@ -54,8 +54,8 @@ public class BaseProfile implements Profile {
             Set<Principal> principals) {
         var node = claims.get("sub");
 
-        if (node != null && node.isTextual()) {
-            String claimValue = node.asText();
+        if (node != null && node.isString()) {
+            String claimValue = node.asString();
             principals.add(new OidcSubjectPrincipal(claimValue, idp.getName()));
 
             // REVISIT: the JwtSubPrincipal is only included for backwards compatibility.  It is
@@ -68,8 +68,8 @@ public class BaseProfile implements Profile {
           Set<Principal> principals) {
         var node = claims.get("jti");
 
-        if (node != null && node.isTextual()) {
-            var value = node.asText();
+        if (node != null && node.isString()) {
+            var value = node.asString();
             principals.add(new JwtJtiPrincipal(idp.getName(), value));
         }
     }

@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2019 - 2022 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2019 - 2026 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,11 +17,8 @@
  */
 package org.dcache.gplazma.util;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import static com.google.common.base.Preconditions.checkArgument;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Streams;
 import java.io.IOException;
@@ -35,6 +32,7 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -42,6 +40,9 @@ import java.util.stream.StreamSupport;
 import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * A JsonWebToken is a bearer token with three parts: a header, a payload and a signature.  This
@@ -80,7 +81,11 @@ public class JsonWebToken {
 
     private JsonNode decodeToJson(String encoded) throws IOException {
         String data = new String(decodeToBytes(encoded), StandardCharsets.UTF_8);
-        return mapper.readValue(data, JsonNode.class);
+        try {
+            return mapper.readValue(data, JsonNode.class);
+        } catch (JacksonException e) {
+            throw new IOException("Bad JSON: " + e.getMessage(), e);
+        }
     }
 
     private static byte[] decodeToBytes(String data) {
@@ -96,7 +101,7 @@ public class JsonWebToken {
         checkArgument(elements.size() == 3, "Wrong number of '.' in token");
 
         JsonNode header = decodeToJson(elements.get(0));
-        alg = header.get("alg").textValue();
+        alg = header.get("alg").stringValue(null);
         typ = getOptionalString(header, "typ");
         kid = getOptionalString(header, "kid");
 
@@ -106,7 +111,7 @@ public class JsonWebToken {
 
     private String getOptionalString(JsonNode object, String key) {
         JsonNode node = object.get(key);
-        return node == null ? null : node.textValue();
+        return node == null ? null : node.stringValue(null);
     }
 
     @Nullable
@@ -228,8 +233,8 @@ public class JsonWebToken {
 
     public Optional<String> getPayloadString(String key) {
         return Optional.ofNullable(payload.get(key))
-              .filter(JsonNode::isTextual)
-              .map(JsonNode::textValue);
+              .filter(JsonNode::isString)
+              .map(JsonNode::stringValue);
     }
 
     public Optional<String> getPayloadValueAsString(String key) {
@@ -237,15 +242,15 @@ public class JsonWebToken {
               .map(n -> {
                     try {
                         return mapper.writeValueAsString(n);
-                    } catch (JsonProcessingException e) {
+                    } catch (JacksonException e) {
                         return "Bad JSON: " + e;
                     }
                   });
     }
 
     public Map<String,JsonNode> getPayloadMap() {
-        return Streams.stream(payload.fields())
-                .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
+        return payload.properties().stream()
+                .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
     }
 
     /**
@@ -260,7 +265,7 @@ public class JsonWebToken {
      */
     public List<String> getPayloadStringOrArray(String key) {
         return Optional.ofNullable(payload.get(key))
-              .filter(n -> n.isArray() || n.isTextual())
+              .filter(n -> n.isArray() || n.isString())
               .map(JsonWebToken::toStringList)
               .orElse(Collections.emptyList());
     }
@@ -268,11 +273,11 @@ public class JsonWebToken {
     private static List<String> toStringList(JsonNode node) {
         if (node.isArray()) {
             return StreamSupport.stream(node.spliterator(), false)
-                  .filter(JsonNode::isTextual) // Non text array elements are simply ignored
-                  .map(JsonNode::textValue)
+                  .filter(JsonNode::isString) // Non text array elements are simply ignored
+                  .map(JsonNode::stringValue)
                   .collect(Collectors.toList());
-        } else if (node.isTextual()) {
-            return Collections.singletonList(node.textValue());
+        } else if (node.isString()) {
+            return Collections.singletonList(node.stringValue());
         } else {
             throw new RuntimeException("Unable to convert node " + node
                   + " to List<String>");

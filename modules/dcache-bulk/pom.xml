@@ -42,5 +42,9 @@
       <artifactId>common-cli</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>tools.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+    </dependency>
   </dependencies>
 </project>

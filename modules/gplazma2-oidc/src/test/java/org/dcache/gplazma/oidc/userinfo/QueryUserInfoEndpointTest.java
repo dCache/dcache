@@ -17,9 +17,6 @@
  */
 package org.dcache.gplazma.oidc.userinfo;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Collections;
@@ -41,6 +38,8 @@ import org.dcache.gplazma.oidc.helpers.JsonHttpClient;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
@@ -383,23 +382,23 @@ public class QueryUserInfoEndpointTest {
         return jwtFactory.aJwt();
     }
 
-    private JsonNode jsonOf(String json) throws JsonProcessingException {
+    private JsonNode jsonOf(String json) {
         return mapper.readTree(json);
     }
 
-    private JsonNode jsonNull() throws JsonProcessingException {
+    private JsonNode jsonNull() {
         return jsonOf("null");
     }
 
-    private JsonNode jsonNumber(int value) throws JsonProcessingException {
+    private JsonNode jsonNumber(int value) {
         return jsonOf(Integer.toString(value));
     }
 
-    private JsonNode jsonString(String json) throws JsonProcessingException {
+    private JsonNode jsonString(String json) {
         return jsonOf("\"" + json + "\"");
     }
 
-    private JsonNode jsonStringArray(String... json) throws JsonProcessingException {
+    private JsonNode jsonStringArray(String... json) {
         return jsonOf(Stream.of(json).collect(Collectors.joining("\", \"", "[\"", "\"]")));
     }
 }

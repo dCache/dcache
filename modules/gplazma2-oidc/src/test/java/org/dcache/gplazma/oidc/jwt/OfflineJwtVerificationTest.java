@@ -17,9 +17,6 @@
  */
 package org.dcache.gplazma.oidc.jwt;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +30,9 @@ import org.dcache.gplazma.oidc.UnableToProcess;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.BDDMockito;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import static com.google.common.base.Preconditions.checkState;
 import static java.time.temporal.ChronoUnit.MINUTES;
@@ -236,7 +236,7 @@ public class OfflineJwtVerificationTest {
         verification.extract(jwt);
     }
 
-    private JsonNode jsonString(String json) throws JsonProcessingException {
+    private JsonNode jsonString(String json) throws JacksonException {
         return mapper.readTree("\"" + json + "\"");
     }
 
