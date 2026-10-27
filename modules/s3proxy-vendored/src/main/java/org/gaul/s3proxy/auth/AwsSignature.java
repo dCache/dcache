@@ -18,7 +18,6 @@ package org.gaul.s3proxy.auth;
 
 import static java.util.Objects.requireNonNull;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
@@ -103,6 +102,22 @@ public final class AwsSignature {
      *  UNSIGNED-PAYLOAD or STREAMING-* tokens that header also accepts. */
     private static final Pattern SHA256_HEX = Pattern.compile(
             "[0-9a-fA-F]{64}");
+
+    /** The message carried by the S3ProxyException thrown when
+     *  x-amz-content-sha256 names neither a payload token nor a SHA-256
+     *  digest, shared so the door and the signer refuse it identically. */
+    public static final String INVALID_CONTENT_SHA256 =
+            "x-amz-content-sha256 must be UNSIGNED-PAYLOAD,"
+            + " STREAMING-AWS4-HMAC-SHA256-PAYLOAD,"
+            + " STREAMING-AWS4-HMAC-SHA256-PAYLOAD-TRAILER,"
+            + " STREAMING-UNSIGNED-PAYLOAD-TRAILER or a valid sha256 value";
+
+    /** Whether a value is a SHA-256 as x-amz-content-sha256 spells it, as
+     *  opposed to one of the UNSIGNED-PAYLOAD or STREAMING-* tokens that
+     *  header also accepts. */
+    public static boolean isSha256Hex(String value) {
+        return value != null && SHA256_HEX.matcher(value).matches();
+    }
 
     private AwsSignature() { }
 
@@ -443,12 +458,10 @@ public final class AwsSignature {
     }
 
     private static String createCanonicalRequest(HttpServletRequest request,
-                                                 String uri, byte[] payload,
-                                                 String hashAlgorithm,
+                                                 String uri,
                                                  boolean presignedUrl,
                                                  @Nullable String pinnedHash,
-                                                 @Nullable String verifiedHash)
-            throws IOException, NoSuchAlgorithmException {
+                                                 @Nullable String verifiedHash) {
         // A presigned request is signed through the query string.  Any
         // Authorization header it also carries addresses something other than
         // this proxy, so it names neither the signed headers nor the payload
@@ -475,15 +488,17 @@ public final class AwsSignature {
             digest = "STREAMING-UNSIGNED-PAYLOAD-TRAILER";
         } else if ("UNSIGNED-PAYLOAD".equals(xAmzContentSha256)) {
             digest = "UNSIGNED-PAYLOAD";
-        } else if (verifiedHash != null) {
-            // The caller already hashed the payload to check the
-            // x-amz-content-sha256 header, so hashing it again here can only
-            // repeat that answer.  Reuse it for the payload line; the hash a
-            // request carries but the caller did not verify -- one whose
-            // presigned parameters skipped the body -- never reaches here.
-            digest = verifiedHash;
         } else {
-            digest = getMessageDigest(payload, hashAlgorithm);
+            // The signature covers the digest the request claims its body
+            // hashes to, whether or not the body lives up to the claim --
+            // checking that is the caller's, as the body streams.  A request
+            // whose header names neither a token nor a digest has nothing
+            // to sign: refuse it rather than guess a payload line.
+            digest = verifiedHash != null ? verifiedHash : xAmzContentSha256;
+            if (digest == null) {
+                throw new S3ProxyException(S3ErrorCode.INVALID_ARGUMENT,
+                        INVALID_CONTENT_SHA256);
+            }
         }
         List<String> signedHeaders = signedHeaderNames(request, presignedUrl);
         if (signedHeaders == null) {
@@ -522,14 +537,14 @@ public final class AwsSignature {
      */
     public static SignatureDetail createAuthorizationSignatureV4(
             HttpServletRequest request, S3AuthorizationHeader authHeader,
-            byte[] payload, String uri, String credential,
+            String uri, String credential,
             boolean presignedUrl, @Nullable String pinnedHash,
             @Nullable String verifiedHash)
-            throws InvalidKeyException, IOException, NoSuchAlgorithmException {
+            throws InvalidKeyException, NoSuchAlgorithmException {
         // V4 headers always carry these fields
         String hashAlgorithm = requireNonNull(authHeader.getHashAlgorithm());
-        String canonicalRequest = createCanonicalRequest(request, uri, payload,
-                hashAlgorithm, presignedUrl, pinnedHash, verifiedHash);
+        String canonicalRequest = createCanonicalRequest(request, uri,
+                presignedUrl, pinnedHash, verifiedHash);
         String algorithm = requireNonNull(authHeader.getHmacAlgorithm());
         byte[] signingKey = deriveSigningKeyV4(authHeader, credential);
         String date = request.getHeader(AwsHttpHeaders.DATE);

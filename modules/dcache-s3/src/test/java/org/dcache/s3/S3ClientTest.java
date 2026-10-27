@@ -4,6 +4,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.is;
@@ -24,14 +25,25 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.MessageDigest;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HexFormat;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import javax.security.auth.Subject;
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
@@ -155,6 +167,54 @@ public class S3ClientTest {
 
     private S3Client client(String accessKey, String secret) {
         return client(endpoint, accessKey, secret);
+    }
+
+    /**
+     * Puts an object with a signature v4-computed the way the AWS SDK would, over whatever
+     * payload digest the request claims: the signature covers the claim, whether or not the
+     * body lives up to it.
+     */
+    private HttpResponse<String> putSigned(String bucket, String key, String claimedDigest,
+          String body) throws Exception {
+        String amzDate = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'", Locale.ROOT)
+              .withZone(ZoneOffset.UTC).format(Instant.now());
+        String date = amzDate.substring(0, 8);
+        String scope = date + "/us-east-1/s3/aws4_request";
+        String canonicalRequest = "PUT\n"
+              + "/" + bucket + "/" + key + "\n"
+              + "\n"
+              + "x-amz-content-sha256:" + claimedDigest + "\n"
+              + "x-amz-date:" + amzDate + "\n"
+              + "\n"
+              + "x-amz-content-sha256;x-amz-date\n"
+              + claimedDigest;
+        String stringToSign = "AWS4-HMAC-SHA256\n"
+              + amzDate + "\n"
+              + scope + "\n"
+              + sha256Of(canonicalRequest.getBytes(StandardCharsets.UTF_8));
+        String signature = HexFormat.of().formatHex(hmac(hmac(hmac(hmac(hmac(
+              ("AWS4" + SECRET).getBytes(StandardCharsets.UTF_8), date),
+              "us-east-1"), "s3"), "aws4_request"), stringToSign));
+        HttpRequest request = HttpRequest.newBuilder(endpoint.resolve("/" + bucket + "/" + key))
+              .PUT(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8))
+              .setHeader("x-amz-date", amzDate)
+              .setHeader("x-amz-content-sha256", claimedDigest)
+              .setHeader("Authorization", "AWS4-HMAC-SHA256 Credential="
+                    + ACCESS_KEY + "/" + scope
+                    + ", SignedHeaders=x-amz-content-sha256;x-amz-date"
+                    + ", Signature=" + signature)
+              .build();
+        return HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+    }
+
+    private static String sha256Of(byte[] data) throws Exception {
+        return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(data));
+    }
+
+    private static byte[] hmac(byte[] key, String data) throws Exception {
+        Mac mac = Mac.getInstance("HmacSHA256");
+        mac.init(new SecretKeySpec(key, "HmacSHA256"));
+        return mac.doFinal(data.getBytes(StandardCharsets.UTF_8));
     }
 
     private static S3Client client(URI endpoint, String accessKey, String secret) {
@@ -425,6 +485,65 @@ public class S3ClientTest {
         assertThat(e.awsErrorDetails().errorCode(), is("BadDigest"));
         assertThat(s3.getObjectAsBytes(b -> b.bucket("bucket").key("hello.txt"))
               .asUtf8String(), is("hello world"));
+    }
+
+    /**
+     * The door checks the body against the digest the request signed as the body streams past,
+     * rather than buffering the body to hash it first, so a request whose signature covers a
+     * digest its body does not match is answered only once the whole body has arrived -- and
+     * leaves nothing behind.
+     */
+    @Test
+    public void shouldRejectBodyNotMatchingSignedDigest() throws Exception {
+        String digestOfAnotherBody = sha256Of("a different body".getBytes(UTF_8));
+
+        HttpResponse<String> response = putSigned("bucket", "digest", digestOfAnotherBody,
+              "the actual body");
+
+        assertThat(response.statusCode(), is(400));
+        assertThat(response.body(), containsString("XAmzContentSHA256Mismatch"));
+        assertThrows(NoSuchKeyException.class,
+              () -> s3.headObject(b -> b.bucket("bucket").key("digest")));
+    }
+
+    /**
+     * A header that names neither a token nor a digest has nothing a signature could cover,
+     * whatever it is signed over.
+     */
+    @Test
+    public void shouldRejectRequestWithNonHexContentSha256() throws Exception {
+        HttpResponse<String> response = putSigned("bucket", "garbage", "not-a-digest", "any body");
+
+        assertThat(response.statusCode(), is(400));
+        assertThat(response.body(), containsString("InvalidArgument"));
+        assertThrows(NoSuchKeyException.class,
+              () -> s3.headObject(b -> b.bucket("bucket").key("garbage")));
+    }
+
+    /**
+     * A body larger than the 128 MiB the door used to buffer in memory to verify: the memory
+     * the door needs no longer grows with the body.
+     */
+    @Test
+    public void shouldPutObjectLargerThanFormerMaxNonChunkedSize() throws Exception {
+        long size = 129L * 1024 * 1024;
+        Path data = Files.createTempFile("s3-large-object", ".bin");
+        try {
+            byte[] chunk = new byte[1024 * 1024];
+            new Random(1).nextBytes(chunk);
+            try (var out = Files.newOutputStream(data)) {
+                for (long written = 0; written < size; written += chunk.length) {
+                    out.write(chunk, 0, (int) Math.min(chunk.length, size - written));
+                }
+            }
+
+            s3.putObject(b -> b.bucket("bucket").key("huge"), RequestBody.fromFile(data));
+
+            assertThat(s3.headObject(b -> b.bucket("bucket").key("huge")).contentLength(),
+                  is(size));
+        } finally {
+            Files.deleteIfExists(data);
+        }
     }
 
     @Test

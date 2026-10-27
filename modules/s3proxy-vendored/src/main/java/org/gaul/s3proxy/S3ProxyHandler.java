@@ -241,12 +241,12 @@ public class S3ProxyHandler {
     private static final long MAX_MULTIPART_COPY_SIZE =
             5L * 1024L * 1024L * 1024L;
     /**
-     * The largest body read into a single array, whatever
-     * v4MaxNonChunkedRequestSize is configured to: the JVM will not allocate
-     * an array of Integer.MAX_VALUE on every implementation, and a request
-     * this side of that limit has other problems.
+     * The most a request body read for its XML alone may weigh: the
+     * configurations and key lists are a few kilobytes, but the request is
+     * otherwise attacker-controlled, so read at most one byte past the
+     * limit and reject rather than exhaust the heap.
      */
-    private static final long MAX_BUFFERED_PAYLOAD = Integer.MAX_VALUE - 8;
+    private static final int MAX_XML_BODY = 1024 * 1024;
     /** The most buckets ListBuckets returns, and its max-buckets ceiling. */
     private static final int MAX_BUCKETS = 10_000;
     /** An S3 composite ETag: the parts' MD5s hashed, then the part count. */
@@ -397,6 +397,10 @@ public class S3ProxyHandler {
     private final AuthenticationType authenticationType;
     private final Optional<String> virtualHost;
     private final long maxSinglePartObjectSize;
+    /** The most a body whose length only the reading reveals may weigh: an
+     *  upload that framed itself with Transfer-Encoding: chunked names no
+     *  length, and the backends that need one are told the size this many
+     *  bytes of buffering bought. */
     private final long v4MaxNonChunkedRequestSize;
     private final int v4MaxChunkSize;
     private final boolean ignoreUnknownHeaders;
@@ -1033,74 +1037,57 @@ public class S3ProxyHandler {
             } else {
                 String contentSha256 = request.getHeader(
                         AwsHttpHeaders.CONTENT_SHA256);
-                // The header value once the buffered payload has hashed to
-                // it, letting the canonical request reuse the digest rather
-                // than hash the body a second time.  Stays null on the paths
-                // that never verify the body against the header.
+                // The header value the request's body is being checked
+                // against as it streams, letting the canonical request
+                // reuse the digest rather than hash the body.  Stays null
+                // on the paths that never verify the body against the
+                // header.
                 String verifiedContentSha256 = null;
                 try {
-                    byte[] payload;
                     if (request.getParameter("X-Amz-Algorithm") != null) {
-                        payload = new byte[0];
+                        // A presigned URL never buffers: the canonical
+                        // request it signed names the payload treatment
+                        // outright, and a pinned hash is enforced by the
+                        // wrapping further below.
                     } else if ("STREAMING-AWS4-HMAC-SHA256-PAYLOAD".equals(
                             contentSha256) ||
                             "STREAMING-AWS4-HMAC-SHA256-PAYLOAD-TRAILER".equals(
                             contentSha256)) {
-                        payload = new byte[0];
                         // ChunkedInputStream constructed below after deriving
                         // the signing key so per-chunk signatures can be
                         // verified.
                     } else if ("STREAMING-UNSIGNED-PAYLOAD-TRAILER".equals(contentSha256)) {
-                        payload = new byte[0];
                         is = new ChunkedInputStream(is, v4MaxChunkSize, request.getHeader(AwsHttpHeaders.TRAILER));
                     } else if ("UNSIGNED-PAYLOAD".equals(contentSha256)) {
-                        payload = new byte[0];
+                        // The request says nothing about its body, so
+                        // nothing is checked against one.
                     } else {
-                        // The signature covers a digest of the body, so the
-                        // body has to be in hand before the request can be
-                        // authenticated: everything read here is read on
-                        // behalf of a caller who has so far offered only an
-                        // access key id, which is not a secret.  Refuse a
-                        // length that says up front it will not fit, rather
-                        // than reading the limit's worth to find out, and
-                        // read a length that will fit into a buffer of
-                        // exactly that size, since growing one of unknown
-                        // size ends up holding twice the body it keeps.
-                        long declaredLength = request.getContentLengthLong();
-                        if (declaredLength > v4MaxNonChunkedRequestSize) {
+                        // The request claims a digest of its body and the
+                        // signature covers that claim: the signature is
+                        // verified against the claimed value, and the body
+                        // is checked against the same claim as it streams
+                        // past, so nothing is buffered whatever the body
+                        // weighs.  A request without the header, or with a
+                        // value no digest could be, has nothing a signature
+                        // could cover: refuse it rather than parse it.
+                        if (contentSha256 == null ||
+                                !AwsSignature.isSha256Hex(contentSha256)) {
                             throw new S3ProxyException(
-                                    S3ErrorCode.MAX_MESSAGE_LENGTH_EXCEEDED);
-                        }
-                        if (declaredLength >= 0 &&
-                                declaredLength <= MAX_BUFFERED_PAYLOAD) {
-                            payload = is.readNBytes((int) declaredLength);
-                        } else {
-                            // A body of unannounced length, e.g. one framed
-                            // by Transfer-Encoding: chunked.
-                            payload = ByteStreams.limit(is,
-                                    v4MaxNonChunkedRequestSize + 1)
-                                    .readAllBytes();
-                            if (payload.length ==
-                                    v4MaxNonChunkedRequestSize + 1) {
-                                throw new S3ProxyException(
-                                        S3ErrorCode
-                                        .MAX_MESSAGE_LENGTH_EXCEEDED);
-                            }
-                        }
-
-                        // maybe we should check this when signing,
-                        // a lot of dup code with aws sign code.
-                        MessageDigest md = MessageDigest.getInstance(
-                            authHeader.getHashAlgorithm());
-                        byte[] hash = md.digest(payload);
-                        if (!HexFormat.of().formatHex(hash)
-                                .equals(contentSha256)) {
-                            throw new S3ProxyException(
-                                    S3ErrorCode
-                                    .X_AMZ_CONTENT_S_H_A_256_MISMATCH);
+                                    S3ErrorCode.INVALID_ARGUMENT,
+                                    AwsSignature.INVALID_CONTENT_SHA256);
                         }
                         verifiedContentSha256 = contentSha256;
-                        is = new ByteArrayInputStream(payload);
+                        long declaredLength = request.getContentLengthLong();
+                        is = new ChecksumValidatingInputStream(is,
+                                FlexChecksum.SHA256.newChecksum(),
+                                HexFormat.of().parseHex(contentSha256),
+                                // A body of unannounced length, e.g. one
+                                // framed by Transfer-Encoding: chunked, is
+                                // checked at end of stream rather than at
+                                // the boundary a length would have named.
+                                declaredLength >= 0 ? declaredLength
+                                        : Long.MAX_VALUE,
+                                S3ErrorCode.X_AMZ_CONTENT_S_H_A_256_MISMATCH);
                     }
 
                     // originalUri already includes the service path and, unlike
@@ -1111,7 +1098,7 @@ public class S3ProxyHandler {
                             baseRequest);
                     signatureDetail = AwsSignature
                             .createAuthorizationSignatureV4(// v4 sign
-                            baseRequest, authHeader, payload, uriForSigning,
+                            baseRequest, authHeader, uriForSigning,
                             credential, presignedUrl, pinnedSha256,
                             verifiedContentSha256);
                     expectedSignature = signatureDetail.signature();
@@ -1124,7 +1111,7 @@ public class S3ProxyHandler {
                             expectedSignature, authHeader.getSignature())) {
                         signatureDetail = AwsSignature
                                 .createAuthorizationSignatureV4(
-                                baseRequest, authHeader, payload, uriForSigning,
+                                baseRequest, authHeader, uriForSigning,
                                 credential, presignedUrl, /*pinnedHash=*/ null,
                                 verifiedContentSha256);
                         expectedSignature = signatureDetail.signature();
@@ -1136,7 +1123,7 @@ public class S3ProxyHandler {
                             expectedSignature, authHeader.getSignature())) {
                         var detail = AwsSignature
                                 .createAuthorizationSignatureV4(
-                                lowerCaseCharset, authHeader, payload,
+                                lowerCaseCharset, authHeader,
                                 uriForSigning, credential, presignedUrl,
                                 pinnedSha256, verifiedContentSha256);
                         if (constantTimeEquals(detail.signature(),
@@ -1211,10 +1198,13 @@ public class S3ProxyHandler {
             // buffering to check, unlike the header-authorized path above.
             String pinnedSha256 = AwsSignature.pinnedPayloadHash(baseRequest);
             if (pinnedSha256 != null) {
+                long pinnedLength = request.getContentLengthLong();
                 is = new ChecksumValidatingInputStream(is,
                         FlexChecksum.SHA256.newChecksum(),
                         HexFormat.of().parseHex(pinnedSha256),
-                        request.getContentLengthLong(),
+                        // A body of unannounced length is checked at end of
+                        // stream rather than at a boundary no length named.
+                        pinnedLength >= 0 ? pinnedLength : Long.MAX_VALUE,
                         S3ErrorCode.X_AMZ_CONTENT_S_H_A_256_MISMATCH);
             }
         }
@@ -2231,9 +2221,9 @@ public class S3ProxyHandler {
     private void handleRestoreObject(HttpServletRequest request,
             HttpServletResponse response, InputStream is, BlobStore blobStore,
             String containerName, String blobName) throws IOException {
-        byte[] body = ByteStreams.limit(is, v4MaxNonChunkedRequestSize + 1)
+        byte[] body = ByteStreams.limit(is, MAX_XML_BODY + 1)
                 .readAllBytes();
-        if (body.length == v4MaxNonChunkedRequestSize + 1) {
+        if (body.length == MAX_XML_BODY + 1) {
             throw new S3ProxyException(S3ErrorCode.MAX_MESSAGE_LENGTH_EXCEEDED);
         }
         var restoreRequest = RestoreRequest.builder();
@@ -2268,9 +2258,9 @@ public class S3ProxyHandler {
 
         // Bound the buffered body: the configuration is a few elements, but
         // the request is otherwise attacker-controlled.
-        byte[] body = ByteStreams.limit(is, v4MaxNonChunkedRequestSize + 1)
+        byte[] body = ByteStreams.limit(is, MAX_XML_BODY + 1)
                 .readAllBytes();
-        if (body.length == v4MaxNonChunkedRequestSize + 1) {
+        if (body.length == MAX_XML_BODY + 1) {
             throw new S3ProxyException(S3ErrorCode.MAX_MESSAGE_LENGTH_EXCEEDED);
         }
         VersioningConfigurationRequest vcr = readXmlBody(body,
@@ -2377,9 +2367,9 @@ public class S3ProxyHandler {
         }
         // Bound the buffered body: the configuration is a few elements, but
         // the request is otherwise attacker-controlled.
-        byte[] body = ByteStreams.limit(is, v4MaxNonChunkedRequestSize + 1)
+        byte[] body = ByteStreams.limit(is, MAX_XML_BODY + 1)
                 .readAllBytes();
-        if (body.length == v4MaxNonChunkedRequestSize + 1) {
+        if (body.length == MAX_XML_BODY + 1) {
             throw new S3ProxyException(S3ErrorCode.MAX_MESSAGE_LENGTH_EXCEEDED);
         }
         var configuration = readXmlBody(body,
@@ -3287,9 +3277,9 @@ public class S3ProxyHandler {
         // Bound the buffered body: a MultiObjectDelete is limited to 1000
         // keys, but the request is otherwise attacker-controlled, so read at
         // most one byte past the limit and reject rather than exhaust the heap.
-        byte[] body = ByteStreams.limit(is, v4MaxNonChunkedRequestSize + 1)
+        byte[] body = ByteStreams.limit(is, MAX_XML_BODY + 1)
                 .readAllBytes();
-        if (body.length == v4MaxNonChunkedRequestSize + 1) {
+        if (body.length == MAX_XML_BODY + 1) {
             throw new S3ProxyException(S3ErrorCode.MAX_MESSAGE_LENGTH_EXCEEDED);
         }
         validateMultiBlobRemoveChecksum(request, body);
@@ -6758,10 +6748,9 @@ public class S3ProxyHandler {
      * is known before a backend is asked to store it.  S3 accepts an upload
      * framed with Transfer-Encoding: chunked, but most backends need a size
      * before they can stream one on, and a chunked body says nothing about how
-     * large it will turn out to be -- hence the same bound, and the same
-     * error beyond it, that a SigV4 request whose payload must be digested
-     * already carries.  An upload that framed its body neither way is the one
-     * S3 answers 411 to.
+     * large it will turn out to be -- hence the bound, and the error beyond
+     * it, that v4MaxNonChunkedRequestSize names.  An upload that framed its
+     * body neither way is the one S3 answers 411 to.
      */
     private byte[] readBodyOfUnknownLength(HttpServletRequest request,
             InputStream is) throws IOException {
