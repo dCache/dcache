@@ -81,6 +81,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -531,9 +532,15 @@ public class NearlineStorageHandler
          */
         private final AtomicReference<QueueStat> queueStat;
 
-        AbstractRequest(NearlineStorage storage, @Nonnull AtomicReference<QueueStat> queueStat) {
+        /**
+         * Lock used to protect the queue statistics counters and state updates.
+         */
+        private final ReentrantLock queueLock;
+
+        AbstractRequest(NearlineStorage storage, @Nonnull AtomicReference<QueueStat> queueStat, ReentrantLock queueLock) {
             this.storage = storage;
             this.queueStat = queueStat;
+            this.queueLock = queueLock;
         }
 
         // Implements NearlineRequest#setIncluded
@@ -546,30 +553,46 @@ public class NearlineStorageHandler
         }
 
         public void onQueued() {
-            incQueued();
+            queueLock.lock();
+            try {
+                incQueued();
+            } finally {
+                queueLock.unlock();
+            }
         }
 
-        protected synchronized <T> ListenableFuture<T> register(ListenableFuture<T> future) {
-            if (state.get() == State.CANCELED) {
-                /*
-                 * do not interrupt thread as we don't know how
-                 * it will react on it (BerkeleyDB will require
-                 * to re-open db).
-                 */
-                future.cancel(false);
-            } else {
-                asyncTasks.add(future);
+        protected <T> ListenableFuture<T> register(ListenableFuture<T> future) {
+            queueLock.lock();
+            try {
+
+                if (state.get() == State.CANCELED) {
+                    /*
+                     * do not interrupt thread as we don't know how
+                     * it will react on it (BerkeleyDB will require
+                     * to re-open db).
+                     */
+                    future.cancel(false);
+                } else {
+                    asyncTasks.add(future);
+                }
+                return future;
+            } finally {
+                queueLock.unlock();
             }
-            return future;
         }
 
         public ListenableFuture<Void> activate() {
-            if (!state.compareAndSet(State.QUEUED, State.ACTIVE)) {
-                return Futures.immediateFailedFuture(
-                      new IllegalStateException("Request is no longer queued."));
+            queueLock.lock();
+            try {
+                if (!state.compareAndSet(State.QUEUED, State.ACTIVE)) {
+                    return Futures.immediateFailedFuture(
+                          new IllegalStateException("Request is no longer queued."));
+                }
+                activatedAt = System.currentTimeMillis();
+                incActiveFromQueued();
+            } finally {
+                queueLock.unlock();
             }
-            activatedAt = System.currentTimeMillis();
-            incActiveFromQueued();
             return Futures.immediateFuture(null);
         }
 
@@ -584,15 +607,27 @@ public class NearlineStorageHandler
         }
 
         public void cancel() {
-            State oldState = state.getAndSet(State.CANCELED);
-            if (oldState != State.CANCELED) {
-                if (oldState == State.ACTIVE) {
-                    incCancelFromActive();
-                } else {
-                    incCancelFromQueued();
+
+            queueLock.lock();
+            try {
+                State oldState = state.get();
+
+                if (oldState == State.REMOVED) {
+                    // removed from queue. the cancel path is already done, so nothing to do here.
+                    return;
                 }
-                storage.cancel(uuid);
-                synchronized (this) {
+
+                /*
+                 Request already canceled, but if attempted again, probably ignored by HSM, so remind it.
+                 Assume that canceling is idempotent.
+                */
+                if (oldState != State.CANCELED) {
+                    state.set(State.CANCELED);
+                    if (oldState == State.ACTIVE) {
+                        incCancelFromActive();
+                    } else {
+                        incCancelFromQueued();
+                    }
                     for (Future<?> task : asyncTasks) {
                         /*
                          * do not interrupt thread as we don't know how
@@ -602,13 +637,11 @@ public class NearlineStorageHandler
                         task.cancel(false);
                     }
                 }
-            } else {
-                /*
-                 Request already canceled, but if attempted again, probably ignored by HSM, so remind it.
-                 Assume that canceling is idempotent.
-                 */
-                storage.cancel(uuid);
+            } finally {
+                queueLock.unlock();
             }
+
+            storage.cancel(uuid);
         }
 
         public void failed(int rc, String msg) {
@@ -646,95 +679,78 @@ public class NearlineStorageHandler
         }
 
         public void removeFromQueue() {
-            State currentState = state.getAndSet(State.REMOVED);
-            switch (currentState) {
-                case QUEUED:
-                    decQueued();
-                    break;
-                case ACTIVE:
-                    decActive();
-                    break;
-                case CANCELED:
-                    decCanceled();
-                    break;
-                case REMOVED:
-                    LOGGER.warn("Request {} was already removed from the queue.", this);
-                    break;
-                default:
-                    throw new RuntimeException();
+            queueLock.lock();
+            try {
+                State currentState = state.getAndSet(State.REMOVED);
+                switch (currentState) {
+                    case QUEUED:
+                        decQueued();
+                        break;
+                    case ACTIVE:
+                        decActive();
+                        break;
+                    case CANCELED:
+                        decCanceled();
+                        break;
+                    case REMOVED:
+                        LOGGER.warn("Request {} was already removed from the queue.", this);
+                        break;
+                    default:
+                        throw new RuntimeException();
+                }
+            } finally {
+                queueLock.unlock();
             }
         }
 
         private void incQueued() {
-            boolean isSet;
-            do {
-                QueueStat current = queueStat.get();
-                QueueStat withThis = new QueueStat(current.queued() + 1, current.active(),
-                      current.canceled());
-                isSet = queueStat.compareAndSet(current, withThis);
-            } while (!isSet);
+            QueueStat current = queueStat.get();
+            QueueStat withThis = new QueueStat(current.queued() + 1, current.active(),
+                  current.canceled());
+            queueStat.set(withThis);
         }
 
         private void incActiveFromQueued() {
-            boolean isSet;
-            do {
-                QueueStat current = queueStat.get();
-                QueueStat withThis = new QueueStat(current.queued() - 1, current.active() + 1,
-                      current.canceled());
-                isSet = queueStat.compareAndSet(current, withThis);
-            } while (!isSet);
+            QueueStat current = queueStat.get();
+            QueueStat withThis = new QueueStat(current.queued() - 1, current.active() + 1,
+                  current.canceled());
+            queueStat.set(withThis);
         }
 
         private void incCancelFromActive() {
-            boolean isSet;
-            do {
-                QueueStat current = queueStat.get();
-                QueueStat withThis = new QueueStat(current.queued(), current.active() - 1,
-                      current.canceled() + 1);
-                isSet = queueStat.compareAndSet(current, withThis);
-            } while (!isSet);
+            QueueStat current = queueStat.get();
+            QueueStat withThis = new QueueStat(current.queued(), current.active() - 1,
+                  current.canceled() + 1);
+            queueStat.set(withThis);
         }
 
         private void incCancelFromQueued() {
-            boolean isSet;
-            do {
-                QueueStat current = queueStat.get();
-                QueueStat withThis = new QueueStat(current.queued() - 1, current.active(),
-                      current.canceled() + 1);
-                isSet = queueStat.compareAndSet(current, withThis);
-            } while (!isSet);
+            QueueStat current = queueStat.get();
+            QueueStat withThis = new QueueStat(current.queued() - 1, current.active(),
+                  current.canceled() + 1);
+            queueStat.set(withThis);
         }
 
         private void decQueued() {
-            boolean isSet;
-            do {
-                QueueStat current = queueStat.get();
-                QueueStat withThis = new QueueStat(current.queued() - 1, current.active(),
-                      current.canceled());
-                isSet = queueStat.compareAndSet(current, withThis);
-            } while (!isSet);
+            QueueStat current = queueStat.get();
+            QueueStat withThis = new QueueStat(current.queued() - 1, current.active(),
+                  current.canceled());
+            queueStat.set(withThis);
         }
 
         private void decActive() {
-            boolean isSet;
-            do {
-                QueueStat current = queueStat.get();
-                QueueStat withThis = new QueueStat(current.queued(), current.active() - 1,
-                      current.canceled());
-                isSet = queueStat.compareAndSet(current, withThis);
-            } while (!isSet);
+            QueueStat current = queueStat.get();
+            QueueStat withThis = new QueueStat(current.queued(), current.active() - 1,
+                  current.canceled());
+            queueStat.set(withThis);
         }
 
         private void decCanceled() {
-            boolean isSet;
-            do {
-                QueueStat current = queueStat.get();
-                QueueStat withThis = new QueueStat(current.queued(), current.active(),
-                      current.canceled() - 1);
-                isSet = queueStat.compareAndSet(current, withThis);
-            } while (!isSet);
+            QueueStat current = queueStat.get();
+            QueueStat withThis = new QueueStat(current.queued(), current.active(),
+                  current.canceled() - 1);
+            queueStat.set(withThis);
         }
-
     }
 
     /**
@@ -756,6 +772,11 @@ public class NearlineStorageHandler
         protected final ConcurrentHashMap<K, R> requests = new ConcurrentHashMap<>();
 
         private final ContainerState state = new ContainerState();
+
+        /**
+         * Lock used to protect the queue statistics counters.
+         */
+        protected final ReentrantLock queueLock = new ReentrantLock();
 
         /**
          * Queue usage statistics.
@@ -936,7 +957,7 @@ public class NearlineStorageHandler
         @Override
         protected FlushRequestImpl createRequest(NearlineStorage storage, PnfsId id)
               throws CacheException, InterruptedException {
-            return new FlushRequestImpl(storage, queueStats, id);
+            return new FlushRequestImpl(storage, queueStats, queueLock, id);
         }
 
         @Override
@@ -957,7 +978,7 @@ public class NearlineStorageHandler
         protected StageRequestImpl createRequest(NearlineStorage storage,
               FileAttributes file)
               throws CacheException {
-            return new StageRequestImpl(storage, queueStats, file);
+            return new StageRequestImpl(storage, queueStats, queueLock, file);
         }
 
         @Override
@@ -976,7 +997,7 @@ public class NearlineStorageHandler
 
         @Override
         protected RemoveRequestImpl createRequest(NearlineStorage storage, URI uri) {
-            return new RemoveRequestImpl(storage, queueStats, uri);
+            return new RemoveRequestImpl(storage, queueStats, queueLock, uri);
         }
 
         @Override
@@ -990,9 +1011,9 @@ public class NearlineStorageHandler
         private final ReplicaDescriptor descriptor;
         private final StorageInfoMessage infoMsg;
 
-        public FlushRequestImpl(NearlineStorage nearlineStorage, AtomicReference<QueueStat> stats,
+        public FlushRequestImpl(NearlineStorage nearlineStorage, AtomicReference<QueueStat> stats, ReentrantLock queueLock,
               PnfsId pnfsId) throws CacheException, InterruptedException {
-            super(nearlineStorage, stats);
+            super(nearlineStorage, stats, queueLock);
             descriptor = repository.openEntry(pnfsId, EnumSet.of(OpenFlags.NOATIME));
             infoMsg = new StorageInfoMessage(cellAddress, pnfsId, false);
             infoMsg.setStorageInfo(descriptor.getFileAttributes().getStorageInfo());
@@ -1294,9 +1315,9 @@ public class NearlineStorageHandler
         private final ModifiableReplicaDescriptor descriptor;
         private ListenableFuture<Void> allocationFuture;
 
-        public StageRequestImpl(NearlineStorage storage, AtomicReference<QueueStat> stats,
+        public StageRequestImpl(NearlineStorage storage, AtomicReference<QueueStat> stats, ReentrantLock queueLock,
               FileAttributes fileAttributes) throws CacheException {
-            super(storage, stats);
+            super(storage, stats, queueLock);
             PnfsId pnfsId = fileAttributes.getPnfsId();
             infoMsg = new StorageInfoMessage(cellAddress, pnfsId, true);
             infoMsg.setStorageInfo(fileAttributes.getStorageInfo());
@@ -1472,8 +1493,8 @@ public class NearlineStorageHandler
 
         private final URI uri;
 
-        RemoveRequestImpl(NearlineStorage storage, AtomicReference<QueueStat> stats, URI uri) {
-            super(storage, stats);
+        RemoveRequestImpl(NearlineStorage storage, AtomicReference<QueueStat> stats, ReentrantLock queueLock, URI uri) {
+            super(storage, stats, queueLock);
             this.uri = uri;
             LOGGER.debug("Remove request created for {}.", uri);
         }

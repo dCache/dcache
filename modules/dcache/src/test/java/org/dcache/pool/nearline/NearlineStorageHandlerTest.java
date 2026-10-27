@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -21,9 +22,13 @@ import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import java.net.URI;
 import java.nio.channels.CompletionHandler;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -33,9 +38,12 @@ import org.dcache.namespace.FileType;
 import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.nearline.spi.NearlineRequest;
 import org.dcache.pool.nearline.spi.NearlineStorage;
+import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.ModifiableReplicaDescriptor;
+import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.Repository;
+import org.dcache.pool.repository.StateChangeEvent;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
 import org.junit.Before;
@@ -383,6 +391,70 @@ public class NearlineStorageHandlerTest {
         requests.forEach(r -> r.completed(null));
         assertThat(nsh.getActiveRemoveJobs(), is(0));
         verify(hsmRemoveRequestCallack, times(1)).completed(any(), any());
+    }
+
+
+    // Regression test for #7511: racing lifecycle transitions (activate, cancel, failure)
+    @Test
+    public void testConcurrentCancelActivateAndFailure() throws Exception {
+        int nFiles = 200;
+        List<PnfsId> ids = new ArrayList<>();
+        for (int i = 0; i < nFiles; i++) {
+            var fa = FileAttributes.of()
+                  .fileType(FileType.REGULAR)
+                  .accessLatency(AccessLatency.NEARLINE)
+                  .retentionPolicy(RetentionPolicy.CUSTODIAL)
+                  .pnfsId(InodeId.newID(0))
+                  .storageClass("a:b")
+                  .hsm("foo")
+                  .storageInfo(GenericStorageInfo.valueOf("a:b@foo", "*"))
+                  .size(34567)
+                  .build();
+            var descriptor = mock(ModifiableReplicaDescriptor.class);
+            when(descriptor.getFileAttributes()).thenReturn(fa);
+            when(repository.openEntry(eq(fa.getPnfsId()), any())).thenReturn(descriptor);
+            ids.add(fa.getPnfsId());
+        }
+
+        nsh.flush("foo", ids, hsmMigrationRequestCallack);
+
+        var ac = ArgumentCaptor.forClass(Iterable.class);
+        verify(nearlineStorage).flush(ac.capture());
+        List<NearlineRequest> requests = (List<NearlineRequest>) StreamSupport.stream(
+              ac.getValue().spliterator(), false).collect(
+              Collectors.toList());
+
+        ExecutorService pool = Executors.newFixedThreadPool(8);
+        try {
+            List<Future<?>> futures = new ArrayList<>();
+            for (int i = 0; i < requests.size(); i++) {
+                NearlineRequest request = requests.get(i);
+                PnfsId pnfsId = ids.get(i);
+                futures.add(pool.submit(() -> request.activate()));
+                futures.add(pool.submit(() -> request.activate()));
+                futures.add(pool.submit(() -> nsh.stateChanged(removedEvent(pnfsId))));
+                futures.add(pool.submit(() -> nsh.stateChanged(removedEvent(pnfsId))));
+                futures.add(pool.submit(() -> request.failed(1, "forcefully failed")));
+            }
+            for (Future<?> future : futures) {
+                /* propagates any uncaught invariant violation, e.g. a negative counter */
+                future.get(30, TimeUnit.SECONDS);
+            }
+        } finally {
+            pool.shutdownNow();
+        }
+
+        assertThat(nsh.getStoreQueueSize(), is(0));
+        assertThat(nsh.getActiveStoreJobs(), is(0));
+        verify(hsmMigrationRequestCallack, times(nFiles)).failed(any(), any());
+        verify(hsmMigrationRequestCallack, never()).completed(any(), any());
+    }
+
+    private StateChangeEvent removedEvent(PnfsId pnfsId) {
+        CacheEntry entry = mock(CacheEntry.class);
+        when(entry.getPnfsId()).thenReturn(pnfsId);
+        return new StateChangeEvent("file deleted", entry, entry,
+              ReplicaState.CACHED, ReplicaState.REMOVED);
     }
 
     private class FileBuilder {
