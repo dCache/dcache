@@ -1129,6 +1129,10 @@ public class ChimeraNameSpaceProvider
                 }
             }
 
+            if (attr.isDefined(LABELS) && inode.isDirectory()) {
+                throw new NotFileCacheException("Directory object cannot have a label.");
+            }
+
             /* Update the t_inodes row first (the Stat object) to acquire a FOR UPDATE / FOR NO KEY UPDATE
              * first. If the inserts into secondary table referring t_inodes would be done first, the
              * referential integrity check would obtain a FOR SHARE / FOR KEY SHARE on the t_inodes row which
