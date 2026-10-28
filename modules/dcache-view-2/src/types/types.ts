@@ -71,3 +71,11 @@ export interface ViewConfig {
     'dcache-view.oidc-callback-path': string;
     [key: string]: string | undefined;
 }
+
+export type LabelAction = 'set-label' | 'rm-label';
+
+export interface LabelRequest {
+    path: string;
+    label: string;
+    upauth?: string;
+}
