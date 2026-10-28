@@ -73,7 +73,7 @@ public class S3JettyHandler extends AbstractHandler {
         baseRequest.setHandled(true);
         accessKey(request).ifPresent(key -> request.setAttribute(ACCESS_KEY_ATTRIBUTE, key));
         var ctx = new S3ProxyHandler.RequestContext();
-        InetAddress client = InetAddresses.forString(request.getRemoteAddr());
+        InetAddress client = InetAddresses.forUriString(request.getRemoteAddr());
         try (var origin = RequestOrigin.bind(client);
               InputStream is = request.getInputStream()) {
             handler.doHandle(request, request, response, is, ctx);
