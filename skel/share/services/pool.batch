@@ -86,8 +86,6 @@ check -strong pool.service.pinmanager.timeout
 check -strong pool.service.pinmanager.timeout.unit
 check -strong pool.service.billing
 check -strong pool.destination.heartbeat
-check pool.destination.replicate
-check pool.destination.replicate.ip
 check pool.check-health-command
 check pool.resilience.request-threads
 check pool.qos.request-threads

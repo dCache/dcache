@@ -68,10 +68,6 @@
               value="4"/>
     <property name="poolUpDestination"
               value="${pool.destination.heartbeat}"/>
-    <property name="replicationNotificationDestination"
-              value="${pool.destination.replicate}"/>
-    <property name="replicationIp"
-              value="${pool.destination.replicate.ip}"/>
     <property name="tags"
               value="${pool.tags}"/>
     <property name="pnfsHandler" ref="pnfs"/>

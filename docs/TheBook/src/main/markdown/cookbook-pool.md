@@ -122,7 +122,7 @@ Typical use cases for the migration module include:
 
 -   Caching data on other pools, thus distributing the load and increasing availability.
 
--   As an alternative to the hopping manager.
+-   Replicating newly written or restored files to other pools (replication on arrival).
 
 
 ### Overview and Terminology
@@ -143,7 +143,7 @@ All operations are idempotent. This means that a migration job can be safely rer
 
 It is safe to run migration jobs while pools are in use. Once started, migration jobs run to completion and do only operate on those files that matched the selection filters at the time the migration job started. New files that arrive on the pool are not touched. Neither are files that change state after a migration job has been initialized, even though the selection filters would match the new state of the file. The exception to the rule is when files are deleted from the pool or change state so that they no longer match the selection filter. Such files will be excluded from the migration job, unless the file was already processed. Rerunning a migration job will force it to pick up any new files. Because the job is idempotent, any files copied before are not copied again.
 
-Permanent migration jobs behave differently. Rather than running to completion, permanent jobs keep running until explicitly cancelled. They monitor the pool for any new files or state changes, and dynamically add or remove files from the transfer queue. Permanent jobs are made persistent when the **save** command is executed and will be recreated on pool restart. The main use case for permanent jobs is as an alternative to using a central hopping manager.
+Permanent migration jobs behave differently. Rather than running to completion, permanent jobs keep running until explicitly cancelled. They monitor the pool for any new files or state changes, and dynamically add or remove files from the transfer queue. Permanent jobs are made persistent when the **save** command is executed and will be recreated on pool restart. The main use case for permanent jobs is replicating new files to other pools as they arrive.
 
 Idempotence is achieved by locating existing copies of a file on any of the target pools. If an existing copy is found, rather than creating a new copy, the state of the existing copy is updated to reflect the target state specified for the migration job. Care is taken to never make a file more volatile than it already is: Sticky flags are added, or existing sticky flags are extended, but never removed or shortened; cached files may be marked precious, but not vice versa. One caveat is when the target pool containing the existing copy is offline. In that case the existence of the copy cannot be verified. Rather than creating a new copy, the task fails and the file is put back into the transfer queue. This behaviour can be modified by marking a migration job as eager. Eager jobs create new copies if an existing copy cannot be immediately verified. As a rule of thumb, permanent jobs should never be marked eager. This is to avoid that a large number of unnecessary copies are created when several pools are restarted simultaneously.
 
@@ -382,6 +382,102 @@ Say we want to cache all files belonging to the storage group `atlas:default` an
     [72] 00010000000000000000BE10: TASK.Copying -> [pool_2@local]
 
 The files on the source pool will not be altered. Any file copied to one of the target pools will be marked cached.
+
+### Replacing file hopping
+
+> **Note**
+>
+> File hopping has been removed from dCache. This includes the pool properties
+> `pool.destination.replicate` and `pool.destination.replicate.ip`, the
+> `hoppingmanager` service, the pool admin command `set replication` and the
+> `PoolManager` admin command `replicate`. The two pool properties are marked
+> obsolete: dCache logs a warning if they are still set, but otherwise ignores
+> them. A layout file that still contains a `hoppingmanager` service must be
+> updated, as the service no longer exists.
+
+File hopping copied a file to another pool as soon as it arrived on a pool,
+either written by a client or restored from tape. The same result is achieved
+with a permanent migration job on the pool where files arrive. A permanent job
+keeps running, picks up every new file, and is recreated on pool restart once
+it is saved.
+
+#### Migrating a configuration
+
+1.  Remove `pool.destination.replicate` and `pool.destination.replicate.ip`
+    from `dcache.conf` and the layout files.
+
+2.  Remove the `hoppingmanager` service from the layout file. The rules in
+    `/var/lib/dcache/config/HoppingManager.conf` are no longer read; use them
+    as a template for the migration jobs.
+
+3.  On every pool that had `pool.destination.replicate` set, create a
+    permanent migration job and save the pool setup:
+
+        (<writePool>) admin > migration copy -permanent -tmode=cached -target=pgroup <readPools>
+        (<writePool>) admin > save
+
+    Always give `-tmode` explicitly. File hopping created cached copies by
+    default, whereas a migration job defaults to `-tmode=same` and would
+    create precious copies of precious files.
+
+Unlike file hopping, a permanent job also copies the matching files that are
+already on the pool when the job is created, and files that arrive on the pool
+by pool-to-pool transfer. Use the filter options, e.g. `-state` or
+`-storage`, to restrict it.
+
+The options of the old configuration translate as follows:
+
+| File hopping                                  | Permanent migration job                                    |
+|:----------------------------------------------|:-----------------------------------------------------------|
+| `pool.destination.replicate` on a pool        | `migration copy -permanent ...` on that pool, then `save`  |
+| Target selected by the `PoolManager` for `pool.destination.replicate.ip` or `-host`/`-protType` | Target given explicitly: `-target=pool`, `-target=pgroup` or `-target=link` |
+| Rule mode `cached` / `precious`               | `-tmode=cached` / `-tmode=precious`                        |
+| Rule mode `keep`, or `pool.destination.replicate=PoolManager` (mode chosen by the target pool, `cached` unless configured otherwise) | `-tmode=cached`, or `-tmode=precious` if the target pools were configured for precious pool-to-pool copies |
+| Rule storage class pattern                    | `-storage=<class>` (exact match; one job per storage class) |
+| `-source=write` / `-source=restore`           | No direct equivalent, see below                            |
+
+A migration job cannot tell whether a file was written by a client or restored
+from tape. On pools attached to tape, newly written files are precious until
+they have been flushed, while restored files are cached. Filtering with
+`-state=precious` therefore approximates `-source=write`, and `-state=cached`
+approximates `-source=restore`.
+
+#### Example
+
+Consider a file hopping setup in which the pool `write-pool` sends files of
+the storage class `exp-a:need-fast-access@osm` to the read pools and marks the
+copies cached:
+
+    # layout file
+    [exampleDomain/pool]
+    name=write-pool
+    pool.destination.replicate=HoppingManager
+
+    # HoppingManager.conf
+    define hop nfs-hop exp-a:need-fast-access@osm cached -protType=nfs -protMajor=4 -protMinor=1
+
+Here the read pools were selected indirectly, through the `PoolManager` read
+links for NFSv4.1. Assuming these pools form the pool group `read-pools`, the
+replacement is a single permanent job on `write-pool`:
+
+    (write-pool) admin > migration copy -permanent -storage=exp-a:need-fast-access@osm -tmode=cached -target=pgroup read-pools
+    [1] INITIALIZING migration copy -permanent -storage=exp-a:need-fast-access@osm -tmode=cached -target=pgroup read-pools
+    (write-pool) admin > save
+
+Alternatively, `-target=link` selects the pools of a `PoolManager` link
+instead of a pool group.
+
+The migration job also controls the state of the source replica, which file
+hopping could not. For instance, to keep the copy on the read pools as the
+precious replica and mark the replica on `write-pool` as cached once the copy
+has been made:
+
+    (write-pool) admin > migration copy -permanent -state=precious -smode=cached -tmode=precious -target=pgroup read-pools
+    (write-pool) admin > save
+
+Since a cached replica is never flushed, the responsibility for flushing the
+file to tape moves to the read pools in this case. Only use this if the read
+pools are attached to tape.
 
 ## Renaming a Pool
 

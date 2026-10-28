@@ -54,14 +54,12 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DestinationCostException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
-import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.SourceCostException;
 import diskCacheV111.vehicles.InfoMessage;
 import diskCacheV111.vehicles.Pool2PoolTransferMsg;
 import diskCacheV111.vehicles.PoolFetchFileMessage;
 import diskCacheV111.vehicles.PoolHitInfoMessage;
-import diskCacheV111.vehicles.PoolMgrReplicateFileMsg;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg.Context;
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -133,9 +131,6 @@ public class RequestContainerV5Test {
 
     @Mock
     CellStub pool;
-
-    @Mock
-    PnfsHandler pnfs;
 
     @Mock
     CellEndpoint endpoint;
@@ -528,19 +523,20 @@ public class RequestContainerV5Test {
     }
 
     @Test
-    public void shouldSendPoolAPool2PoolRequestForReplicateRequest() throws Exception {
+    public void shouldSendPoolAPool2PoolRequestIfPermissionDeniedAndP2pAllowed() throws Exception {
         var fileAttributes = fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo())
               .build();
-        given(aPartitionManager().withDefault(aPartition().withP2pAllowed(false)));
+        given(aPartitionManager().withDefault(aPartition().withP2pAllowed(true)));
         given(aPoolSelectionUnit().withNetUnit("all-net", "192.168.1.1")
               .withProtocolUnit("HTTP", "http/1"));
         given(aPoolMonitor().thatReturns(aPoolSelectorThat()
+              .onReadThrows(aPermissionDeniedCacheException())
               .onPool2PoolSelects(aPoolPair()
                     .withSource("source-pool@dCacheDomain")
                     .withDestination("destination-pool@dCacheDomain"))));
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
 
-        whenReceiving(aReplicateRequest()
+        whenReceiving(aReadRequest()
               .forFile("80D1B8B90CED30430608C58002811B3285FC")
               .withPath("/public/test")
               .withFileAttributes(fileAttributes)
@@ -559,76 +555,6 @@ public class RequestContainerV5Test {
         assertThat(message.getSourcePoolName(), equalTo("source-pool"));
         assertThat(message.getFileAttributes(), equalTo(fileAttributes));
         then(billing).shouldHaveNoInteractions();
-    }
-
-    @Test
-    public void shouldDuplicateFileForReplicateRequest() throws Exception {
-        given(aPartitionManager().withDefault(aPartition().withP2pAllowed(false)));
-        given(aPoolSelectionUnit().withNetUnit("all-net", "192.168.1.1")
-              .withProtocolUnit("HTTP", "http/1"));
-        given(aPoolMonitor().thatReturns(aPoolSelectorThat()
-              .onPool2PoolSelects(aPoolPair()
-                    .withSource("source-pool@dCacheDomain")
-                    .withDestination("destination-pool@dCacheDomain"))));
-        given(aCell("destination-pool@dCacheDomain").communicatingVia(endpoint)
-              .thatOnReceiving(Pool2PoolTransferMsg.class).repliesWithSuccess());
-        given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
-
-        whenReceiving(aReplicateRequest()
-              .forFile("80D1B8B90CED30430608C58002811B3285FC")
-              .withPath("/public/test")
-              .withFileAttributes(
-                    fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()))
-              .withProtocolInfo(aProtocolInfo().withProtocol("http")
-                    .withMajorVersion(1).withIPAddress("192.168.1.1")));
-
-        var reply = replySentWith(endpoint);
-        then(reply).should().setSucceeded();
-        then(reply).should().setContext(1, null);
-        var selectedPool = poolSetInMessage(reply);
-        assertThat(selectedPool.getName(), equalTo("destination-pool"));
-        assertThat(selectedPool.getAddress(),
-              equalTo(new CellAddressCore("destination-pool@dCacheDomain")));
-        then(billing).shouldHaveNoInteractions();
-    }
-
-    @Test
-    public void shouldDuplicateFileWithHitInfoForReplicateRequest() throws Exception {
-        var storageInfo = aStorageInfo().build();
-        var protocolInfo = aProtocolInfo().withProtocol("http").withMajorVersion(1)
-              .withIPAddress("192.168.1.1").build();
-        given(aPartitionManager().withDefault(aPartition().withP2pAllowed(false)));
-        given(aPoolSelectionUnit().withNetUnit("all-net", "192.168.1.1")
-              .withProtocolUnit("HTTP", "http/1"));
-        given(aPoolMonitor().thatReturns(aPoolSelectorThat()
-              .onPool2PoolSelects(aPoolPair()
-                    .withSource("source-pool@dCacheDomain")
-                    .withDestination("destination-pool@dCacheDomain"))));
-        given(aCell("destination-pool@dCacheDomain").communicatingVia(endpoint)
-              .thatOnReceiving(Pool2PoolTransferMsg.class).repliesWithSuccess());
-        given(aContainer("PoolManager@dCacheDomain").thatSendsHitMessages());
-
-        whenReceiving(aReplicateRequest()
-              .forFile("80D1B8B90CED30430608C58002811B3285FC")
-              .withPath("/public/test")
-              .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(storageInfo))
-              .withProtocolInfo(protocolInfo));
-
-        var info = notificationSentWith(billing, PoolHitInfoMessage.class);
-        assertThat(info.getCellAddress(), equalTo(new CellAddressCore("source-pool@dCacheDomain")));
-        assertThat(info.getBillingPath(), equalTo("/public/test"));
-        assertThat(info.getTransferPath(), equalTo("/public/test"));
-        assertThat(info.getFileSize(), equalTo(KiB.toBytes(10L)));
-        assertThat(info.getStorageInfo(), is(storageInfo));
-        assertThat(info.getProtocolInfo(), is(protocolInfo));
-
-        var reply = replySentWith(endpoint);
-        then(reply).should().setSucceeded();
-        then(reply).should().setContext(1, null);
-        var selectedPool = poolSetInMessage(reply);
-        assertThat(selectedPool.getName(), equalTo("destination-pool"));
-        assertThat(selectedPool.getAddress(),
-              equalTo(new CellAddressCore("destination-pool@dCacheDomain")));
     }
 
     @Test
@@ -993,29 +919,6 @@ public class RequestContainerV5Test {
     }
 
     @Test
-    public void shouldFailForReplicateRequestWhenP2pPermissionDenied() throws Exception {
-        given(aPartitionManager().withDefault(aPartition()));
-        given(aPoolSelectionUnit().withNetUnit("all-net", "192.168.1.1")
-              .withProtocolUnit("HTTP", "http/1"));
-        given(aPoolMonitor().thatReturns(aPoolSelectorThat()
-              .onPool2PoolThrows(aPermissionDeniedCacheException())));
-        given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
-
-        whenReceiving(aReplicateRequest()
-              .forFile("80D1B8B90CED30430608C58002811B3285FC")
-              .withPath("/public/test")
-              .withFileAttributes(
-                    fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()))
-              .withProtocolInfo(aProtocolInfo().withProtocol("http")
-                    .withMajorVersion(1).withIPAddress("192.168.1.1")));
-
-        var reply = replySentWith(endpoint);
-        then(reply).should().setFailed(eq(10018), any());
-        then(reply).should().setContext(1, null);
-        then(billing).shouldHaveNoInteractions();
-    }
-
-    @Test
     public void shouldStageReadRequestForTapeFileWhenReadAndP2pTriggerPermissionDenied()
           throws Exception {
         var stagePool = aPool("stage-pool@dCacheDomain");
@@ -1230,32 +1133,6 @@ public class RequestContainerV5Test {
     }
 
     @Test
-    public void shouldFailReplicateRequestIfSourceCostExceededPool2PoolAndStageOnCost()
-          throws Exception {
-        given(aPartitionManager().withDefault(
-              aPartition().withP2pOnCost(true).withStageAllowed(true).withStageOnCost(true)));
-        given(aPoolSelectionUnit().withNetUnit("all-net", "192.168.1.1")
-              .withProtocolUnit("HTTP", "http/1"));
-        given(aPoolMonitor().thatReturns(aPoolSelectorThat()
-              .onPool2PoolThrows(aSourceCostException())));
-        given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
-
-        whenReceiving(aReplicateRequest()
-              .forFile("80D1B8B90CED30430608C58002811B3285FC")
-              .withBillingPath("/public/test")
-              .withTransferPath("/uploads/50/test")
-              .withFileAttributes(fileAttributes().withSize(10, KiB)
-                    .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
-              .withProtocolInfo(aProtocolInfo().withProtocol("http")
-                    .withMajorVersion(1).withIPAddress("192.168.1.1")));
-
-        var reply = replySentWith(endpoint);
-        then(reply).should().setFailed(eq(10017), any());
-        then(reply).should().setContext(1, null);
-        then(billing).shouldHaveNoInteractions();
-    }
-
-    @Test
     public void shouldStageReadRequestIfSourceCostExceededPool2PoolAndStageOnCost()
           throws Exception {
         var stagePool = aPool("stage-pool@dCacheDomain");
@@ -1419,32 +1296,6 @@ public class RequestContainerV5Test {
     }
 
     @Test
-    public void shouldFailReplicateRequestIfDestinationCostExceededPool2PoolAndStageOnCost()
-          throws Exception {
-        given(aPartitionManager().withDefault(
-              aPartition().withP2pOnCost(true).withStageAllowed(true).withStageOnCost(true)));
-        given(aPoolSelectionUnit().withNetUnit("all-net", "192.168.1.1")
-              .withProtocolUnit("HTTP", "http/1"));
-        given(aPoolMonitor().thatReturns(aPoolSelectorThat()
-              .onPool2PoolThrows(aDestinationCostException())));
-        given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
-
-        whenReceiving(aReplicateRequest()
-              .forFile("80D1B8B90CED30430608C58002811B3285FC")
-              .withBillingPath("/public/test")
-              .withTransferPath("/uploads/50/test")
-              .withFileAttributes(fileAttributes().withSize(10, KiB)
-                    .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
-              .withProtocolInfo(aProtocolInfo().withProtocol("http")
-                    .withMajorVersion(1).withIPAddress("192.168.1.1")));
-
-        var reply = replySentWith(endpoint);
-        then(reply).should().setFailed(eq(10017), any());
-        then(reply).should().setContext(1, null);
-        then(billing).shouldHaveNoInteractions();
-    }
-
-    @Test
     public void shouldFailIfDestinationCostExceededAndNoFallback() throws Exception {
         given(aPartitionManager().withDefault(aPartition().withP2pAllowed(true)));
         given(aPoolSelectionUnit().withNetUnit("all-net", "192.168.1.1")
@@ -1498,82 +1349,6 @@ public class RequestContainerV5Test {
         assertThat(selectedPool.getName(), equalTo("hot-pool"));
         assertThat(selectedPool.getAddress(),
               equalTo(new CellAddressCore("hot-pool@dCacheDomain")));
-        then(billing).shouldHaveNoInteractions();
-    }
-
-    @Test
-    public void shouldFailReplicateRequestForPool2PoolCacheException() throws Exception {
-        given(aPartitionManager().withDefault(aPartition().withP2pOnCost(true)));
-        given(aPoolSelectionUnit().withNetUnit("all-net", "192.168.1.1")
-              .withProtocolUnit("HTTP", "http/1"));
-        given(aPoolMonitor().thatReturns(aPoolSelectorThat()
-              .onPool2PoolThrows(aCacheException(3141))));
-        given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
-
-        whenReceiving(aReplicateRequest()
-              .forFile("80D1B8B90CED30430608C58002811B3285FC")
-              .withBillingPath("/public/test")
-              .withTransferPath("/uploads/50/test")
-              .withFileAttributes(fileAttributes().withSize(10, KiB)
-                    .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
-              .withProtocolInfo(aProtocolInfo().withProtocol("http")
-                    .withMajorVersion(1).withIPAddress("192.168.1.1")));
-
-        var reply = replySentWith(endpoint);
-        then(reply).should().setFailed(eq(3141), any());
-        then(reply).should().setContext(1, null);
-        then(billing).shouldHaveNoInteractions();
-    }
-
-    @Test
-    public void shouldFailReplicateRequestForPool2PoolWithIllegalArgumentException()
-          throws Exception {
-        given(aPartitionManager().withDefault(aPartition().withP2pOnCost(true)));
-        given(aPoolSelectionUnit().withNetUnit("all-net", "192.168.1.1")
-              .withProtocolUnit("HTTP", "http/1"));
-        given(aPoolMonitor().thatReturns(aPoolSelectorThat()
-              .onPool2PoolThrows(anIllegalArgumentException())));
-        given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
-
-        whenReceiving(aReplicateRequest()
-              .forFile("80D1B8B90CED30430608C58002811B3285FC")
-              .withBillingPath("/public/test")
-              .withTransferPath("/uploads/50/test")
-              .withFileAttributes(fileAttributes().withSize(10, KiB)
-                    .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
-              .withProtocolInfo(aProtocolInfo().withProtocol("http")
-                    .withMajorVersion(1).withIPAddress("192.168.1.1")));
-
-        var reply = replySentWith(endpoint);
-        then(reply).should().setFailed(eq(128), any());
-        then(reply).should().setContext(1, null);
-        then(billing).shouldHaveNoInteractions();
-    }
-
-    @Test
-    public void shouldFailReplicateRequestForPool2PoolWithRuntimeException() throws Exception {
-        given(aPartitionManager().withDefault(aPartition().withP2pOnCost(true)));
-        given(aPoolSelectionUnit().withNetUnit("all-net", "192.168.1.1")
-              .withProtocolUnit("HTTP", "http/1"));
-        given(aPoolMonitor().thatReturns(aPoolSelectorThat()
-              .onPool2PoolThrows(aRuntimeException())));
-        given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
-
-        whenReceiving(aReplicateRequest()
-              .forFile("80D1B8B90CED30430608C58002811B3285FC")
-              .withBillingPath("/public/test")
-              .withTransferPath("/uploads/50/test")
-              .withFileAttributes(fileAttributes().withSize(10, KiB)
-                    .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
-              .withProtocolInfo(aProtocolInfo().withProtocol("http")
-                    .withMajorVersion(1).withIPAddress("192.168.1.1")));
-
-        var reply = replySentWith(endpoint);
-        // With dCache v7.1, bugs in PoolSelector no longer handled specially.
-        // Therefore, there door receives a "generic bug" return code (10011)
-        // instead of a PoolSelector-specific bug return code (128).
-        then(reply).should().setFailed(eq(10011), any());
-        then(reply).should().setContext(1, null);
         then(billing).shouldHaveNoInteractions();
     }
 
@@ -1756,39 +1531,6 @@ public class RequestContainerV5Test {
     }
 
     @Test
-    public void shouldSucceedForReplicateRequestTriggeringSuccessfulPool2PoolWithP2pForTransfer()
-          throws Exception {
-        given(aPartitionManager().withDefault(
-              aPartition().withP2pAllowed(true).withP2pForTransfer(true)));
-        given(aPoolSelectionUnit().withNetUnit("all-net", "192.168.1.1")
-              .withProtocolUnit("HTTP", "http/1"));
-        given(aPoolMonitor().thatReturns(aPoolSelectorThat()
-              .onPool2PoolSelects(aPoolPair()
-                    .withSource("source-pool@dCacheDomain")
-                    .withDestination("destination-pool@dCacheDomain"))));
-        given(aCell("destination-pool@dCacheDomain").communicatingVia(endpoint)
-              .thatOnReceiving(Pool2PoolTransferMsg.class).repliesWithSuccess());
-        given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
-
-        whenReceiving(aReplicateRequest()
-              .forFile("80D1B8B90CED30430608C58002811B3285FC")
-              .withPath("/public/test")
-              .withFileAttributes(
-                    fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()))
-              .withProtocolInfo(aProtocolInfo().withProtocol("http")
-                    .withMajorVersion(1).withIPAddress("192.168.1.1")));
-
-        var reply = replySentWith(endpoint);
-        then(reply).should().setSucceeded();
-        then(reply).should().setContext(1, null);
-        var selectedPool = poolSetInMessage(reply);
-        assertThat(selectedPool.getName(), equalTo("destination-pool"));
-        assertThat(selectedPool.getAddress(),
-              equalTo(new CellAddressCore("destination-pool@dCacheDomain")));
-        then(billing).shouldHaveNoInteractions();
-    }
-
-    @Test
     public void shouldFailReadRequestTriggeringFailedPool2PoolWithNoHsm() throws Exception {
         given(aPartitionManager().withDefault(
               aPartition().withP2pAllowed(true).withStageAllowed(false)));
@@ -1920,16 +1662,17 @@ public class RequestContainerV5Test {
     }
 
     @Test
-    public void shouldFailReplicateRequestWithFailWhileWaitingForP2pResult() throws Exception {
+    public void shouldFailReadRequestWithFailWhileWaitingForP2pResult() throws Exception {
         given(aPartitionManager().withDefault(aPartition().withP2pAllowed(true)));
         given(aPoolSelectionUnit().withNetUnit("all-net", "192.168.1.1")
               .withProtocolUnit("HTTP", "http/1"));
         given(aPoolMonitor().thatReturns(aPoolSelectorThat()
+              .onReadThrows(aPermissionDeniedCacheException())
               .onPool2PoolSelects(aPoolPair()
                     .withSource("source-pool@dCacheDomain")
                     .withDestination("destination-pool@dCacheDomain"))));
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
-        var id = given(aReplicateRequest()
+        var id = given(aReadRequest()
               .forFile("80D1B8B90CED30430608C58002811B3285FC")
               .withPath("/public/test")
               .withFileAttributes(
@@ -1946,17 +1689,18 @@ public class RequestContainerV5Test {
     }
 
     @Test
-    public void shouldFailReplicateRequestWithFailWithCodeWhileWaitingForP2pResult()
+    public void shouldFailReadRequestWithFailWithCodeWhileWaitingForP2pResult()
           throws Exception {
         given(aPartitionManager().withDefault(aPartition().withP2pAllowed(true)));
         given(aPoolSelectionUnit().withNetUnit("all-net", "192.168.1.1")
               .withProtocolUnit("HTTP", "http/1"));
         given(aPoolMonitor().thatReturns(aPoolSelectorThat()
+              .onReadThrows(aPermissionDeniedCacheException())
               .onPool2PoolSelects(aPoolPair()
                     .withSource("source-pool@dCacheDomain")
                     .withDestination("destination-pool@dCacheDomain"))));
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
-        var id = given(aReplicateRequest()
+        var id = given(aReadRequest()
               .forFile("80D1B8B90CED30430608C58002811B3285FC")
               .withPath("/public/test")
               .withFileAttributes(
@@ -1973,17 +1717,18 @@ public class RequestContainerV5Test {
     }
 
     @Test
-    public void shouldFailReplicateRequestWithFailWithCodeAndMessageWhileWaitingForP2pResult()
+    public void shouldFailReadRequestWithFailWithCodeAndMessageWhileWaitingForP2pResult()
           throws Exception {
         given(aPartitionManager().withDefault(aPartition().withP2pAllowed(true)));
         given(aPoolSelectionUnit().withNetUnit("all-net", "192.168.1.1")
               .withProtocolUnit("HTTP", "http/1"));
         given(aPoolMonitor().thatReturns(aPoolSelectorThat()
+              .onReadThrows(aPermissionDeniedCacheException())
               .onPool2PoolSelects(aPoolPair()
                     .withSource("source-pool@dCacheDomain")
                     .withDestination("destination-pool@dCacheDomain"))));
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
-        var id = given(aReplicateRequest()
+        var id = given(aReadRequest()
               .forFile("80D1B8B90CED30430608C58002811B3285FC")
               .withPath("/public/test")
               .withFileAttributes(
@@ -2000,16 +1745,17 @@ public class RequestContainerV5Test {
     }
 
     @Test
-    public void shouldRetryReplicateRequestWhileWaitingForP2pResult() throws Exception {
+    public void shouldRetryReadRequestWhileWaitingForP2pResult() throws Exception {
         given(aPartitionManager().withDefault(aPartition().withP2pAllowed(true)));
         given(aPoolSelectionUnit().withNetUnit("all-net", "192.168.1.1")
               .withProtocolUnit("HTTP", "http/1"));
         given(aPoolMonitor().thatReturns(aPoolSelectorThat()
+              .onReadThrows(aPermissionDeniedCacheException())
               .onPool2PoolSelects(aPoolPair()
                     .withSource("source-pool@dCacheDomain")
                     .withDestination("destination-pool@dCacheDomain"))));
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
-        var id = given(aReplicateRequest()
+        var id = given(aReadRequest()
               .forFile("80D1B8B90CED30430608C58002811B3285FC")
               .withPath("/public/test")
               .withFileAttributes(
@@ -2031,13 +1777,14 @@ public class RequestContainerV5Test {
         given(aPoolSelectionUnit().withNetUnit("all-net", "192.168.1.1")
               .withProtocolUnit("HTTP", "http/1"));
         given(aPoolMonitor().thatReturns(aPoolSelectorThat()
+              .onReadThrows(aPermissionDeniedCacheException())
               .onPool2PoolSelects(aPoolPair()
                     .withSource("source-pool@dCacheDomain")
                     .withDestination("destination-pool@dCacheDomain"))));
         given(aCell("destination-pool@dCacheDomain").communicatingVia(pool)
               .thatOnAdminCommand("pp ls").repliesWith(""));
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
-        given(aReplicateRequest()
+        given(aReadRequest()
               .forFile("80D1B8B90CED30430608C58002811B3285FC")
               .withPath("/public/test")
               .withFileAttributes(
@@ -2059,6 +1806,7 @@ public class RequestContainerV5Test {
         given(aPoolSelectionUnit().withNetUnit("all-net", "192.168.1.1")
               .withProtocolUnit("HTTP", "http/1"));
         given(aPoolMonitor().thatReturns(aPoolSelectorThat()
+              .onReadThrows(aPermissionDeniedCacheException())
               .onPool2PoolSelects(aPoolPair()
                     .withSource("source-pool@dCacheDomain")
                     .withDestination("destination-pool@dCacheDomain"))));
@@ -2066,7 +1814,7 @@ public class RequestContainerV5Test {
               .thatOnReceiving(Pool2PoolTransferMsg.class).repliesWith(PoolFetchFileMessage.class));
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
 
-        whenReceiving(aReplicateRequest()
+        whenReceiving(aReadRequest()
               .forFile("80D1B8B90CED30430608C58002811B3285FC")
               .withPath("/public/test")
               .withFileAttributes(
@@ -2975,16 +2723,17 @@ public class RequestContainerV5Test {
 
     @Test
     public void shouldReturnSingleInfoForReplicatingFile() throws Exception {
-        given(aPartitionManager().withDefault(aPartition()));
+        given(aPartitionManager().withDefault(aPartition().withP2pAllowed(true)));
         given(aPoolSelectionUnit().withNetUnit("all-net", "192.168.1.1")
               .withProtocolUnit("HTTP", "http/1"));
         given(aPoolMonitor().thatReturns(aPoolSelectorThat()
+              .onReadThrows(aPermissionDeniedCacheException())
               .onPool2PoolSelects(aPoolPair()
                     .withSource("source-pool@dCacheDomain")
                     .withDestination("destination-pool@dCacheDomain"))));
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
         long startTimeLowerBound = System.currentTimeMillis();
-        var id = given(aReplicateRequest()
+        var id = given(aReadRequest()
               .forFile("80D1B8B90CED30430608C58002811B3285FC")
               .withPath("/public/test")
               .withFileAttributes(
@@ -3048,15 +2797,16 @@ public class RequestContainerV5Test {
 
     @Test
     public void shouldRetryPool2PoolOnDestinationPoolUp() throws Exception {
-        given(aPartitionManager().withDefault(aPartition()));
+        given(aPartitionManager().withDefault(aPartition().withP2pAllowed(true)));
         given(aPoolSelectionUnit().withNetUnit("all-net", "192.168.1.1")
               .withProtocolUnit("HTTP", "http/1"));
         given(aPoolMonitor().thatReturns(aPoolSelectorThat()
+              .onReadThrows(aPermissionDeniedCacheException())
               .onPool2PoolSelects(aPoolPair()
                     .withSource("source-pool@dCacheDomain")
                     .withDestination("destination-pool@dCacheDomain"))));
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
-        given(aReplicateRequest()
+        given(aReadRequest()
               .forFile("80D1B8B90CED30430608C58002811B3285FC")
               .withPath("/public/test")
               .withFileAttributes(
@@ -3074,15 +2824,16 @@ public class RequestContainerV5Test {
 
     @Test
     public void shouldDoNothingOnPoolUpUnrelatedToOngoingPool2Pool() throws Exception {
-        given(aPartitionManager().withDefault(aPartition()));
+        given(aPartitionManager().withDefault(aPartition().withP2pAllowed(true)));
         given(aPoolSelectionUnit().withNetUnit("all-net", "192.168.1.1")
               .withProtocolUnit("HTTP", "http/1"));
         given(aPoolMonitor().thatReturns(aPoolSelectorThat()
+              .onReadThrows(aPermissionDeniedCacheException())
               .onPool2PoolSelects(aPoolPair()
                     .withSource("source-pool@dCacheDomain")
                     .withDestination("destination-pool@dCacheDomain"))));
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
-        given(aReplicateRequest()
+        given(aReadRequest()
               .forFile("80D1B8B90CED30430608C58002811B3285FC")
               .withPath("/public/test")
               .withFileAttributes(
@@ -3099,15 +2850,16 @@ public class RequestContainerV5Test {
 
     @Test
     public void shouldRetryPool2PoolOnDestinationPoolDown() throws Exception {
-        given(aPartitionManager().withDefault(aPartition()));
+        given(aPartitionManager().withDefault(aPartition().withP2pAllowed(true)));
         given(aPoolSelectionUnit().withNetUnit("all-net", "192.168.1.1")
               .withProtocolUnit("HTTP", "http/1"));
         given(aPoolMonitor().thatReturns(aPoolSelectorThat()
+              .onReadThrows(aPermissionDeniedCacheException())
               .onPool2PoolSelects(aPoolPair()
                     .withSource("source-pool@dCacheDomain")
                     .withDestination("destination-pool@dCacheDomain"))));
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
-        given(aReplicateRequest()
+        given(aReadRequest()
               .forFile("80D1B8B90CED30430608C58002811B3285FC")
               .withPath("/public/test")
               .withFileAttributes(
@@ -3125,15 +2877,16 @@ public class RequestContainerV5Test {
 
     @Test
     public void shouldDoNothingOnPoolDownUnrelatedToOngoingPool2Pool() throws Exception {
-        given(aPartitionManager().withDefault(aPartition()));
+        given(aPartitionManager().withDefault(aPartition().withP2pAllowed(true)));
         given(aPoolSelectionUnit().withNetUnit("all-net", "192.168.1.1")
               .withProtocolUnit("HTTP", "http/1"));
         given(aPoolMonitor().thatReturns(aPoolSelectorThat()
+              .onReadThrows(aPermissionDeniedCacheException())
               .onPool2PoolSelects(aPoolPair()
                     .withSource("source-pool@dCacheDomain")
                     .withDestination("destination-pool@dCacheDomain"))));
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
-        given(aReplicateRequest()
+        given(aReadRequest()
               .forFile("80D1B8B90CED30430608C58002811B3285FC")
               .withPath("/public/test")
               .withFileAttributes(
@@ -3552,10 +3305,6 @@ public class RequestContainerV5Test {
         return new SelectReadPoolRequestBuilder(doorAddress);
     }
 
-    private ReplicateFileRequestBuilder aReplicateRequest() {
-        return new ReplicateFileRequestBuilder();
-    }
-
     private ResponseMessageDeliverable aResponseTo(Future<CellMessage> outbound)
           throws InterruptedException, ExecutionException {
         if (!outbound.isDone()) {
@@ -3644,7 +3393,6 @@ public class RequestContainerV5Test {
 
             container.setBilling(billing);
             container.setPoolStub(pool);
-            container.setPnfsHandler(pnfs);
             container.setCellEndpoint(endpoint);
             container.setCellAddress(address);
             container.setStageConfigurationFile(null);
@@ -3720,52 +3468,6 @@ public class RequestContainerV5Test {
         @Override
         public void deliverTo(RequestContainerV5 container) {
             container.poolStatusChanged(pool, status);
-        }
-    }
-
-    /**
-     * Deliver a PoolMgrReplicateFileMsg to RequestContainerV5 using the builder pattern.  The
-     * Hopping Manager makes use of this message to request that RequestContainerV5 makes additional
-     * copies of a file.
-     */
-    private class ReplicateFileRequestBuilder extends SelectReadPoolRequestBuilder {
-
-        private boolean allowRestore;
-        private boolean isAllowRestoreSet;
-        private int fileStatus;
-        private boolean isFileStatusSet;
-
-        public ReplicateFileRequestBuilder allowRestore(boolean value) {
-            allowRestore = value;
-            isAllowRestoreSet = true;
-            return this;
-        }
-
-        public ReplicateFileRequestBuilder withDestinationFileStatus(int status) {
-            fileStatus = status;
-            isFileStatusSet = true;
-            return this;
-        }
-
-        @Override
-        protected PoolMgrReplicateFileMsg newMock() {
-            return mock(PoolMgrReplicateFileMsg.class);
-        }
-
-        @Override
-        protected PoolMgrSelectReadPoolMsg buildRequest() {
-            PoolMgrReplicateFileMsg request =
-                  (PoolMgrReplicateFileMsg) super.buildRequest();
-
-            if (isAllowRestoreSet) {
-                BDDMockito.given(request.allowRestore()).willReturn(allowRestore);
-            }
-
-            if (isFileStatusSet) {
-                BDDMockito.given(request.getDestinationFileStatus()).willReturn(fileStatus);
-            }
-
-            return request;
         }
     }
 

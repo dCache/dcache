@@ -13,7 +13,6 @@ import diskCacheV111.poolManager.PoolSelectionUnitV2;
 import diskCacheV111.poolManager.RequestContainerV5;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolV2Mode;
-import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.OSMStorageInfo;
@@ -59,7 +58,6 @@ public class HsmRestoreTest {
     private PoolSelectionUnit _selectionUnit;
     private PoolSelectionUnitAccess _access;
     private PartitionManager _partitionManager;
-    private PnfsHandler _pnfsHandler;
     private RequestContainerV5 _rc;
 
     private List<CellMessage> __messages;
@@ -83,8 +81,6 @@ public class HsmRestoreTest {
         _selectionUnit = psu;
         _costModule = new CostModuleV1();
 
-        _pnfsHandler = new PnfsHandler(new CellPath("PnfsManager"));
-        _pnfsHandler.setCellEndpoint(_cell);
         _poolMonitor = new PoolMonitorV5();
         _poolMonitor.setPoolSelectionUnit(_selectionUnit);
         _poolMonitor.setCostModule(_costModule);
@@ -96,14 +92,12 @@ public class HsmRestoreTest {
         _partitionManager.setProperties(null, ImmutableMap.of("stage-allowed", "yes"));
         _rc = new RequestContainerV5(RETRY_INTERVAL);
         _rc.setPoolSelectionUnit(_selectionUnit);
-        _rc.setPnfsHandler(_pnfsHandler);
         _rc.setPoolMonitor(_poolMonitor);
         _rc.setPartitionManager(_partitionManager);
         _rc.setExecutor(MoreExecutors.directExecutor());
         _rc.setCellEndpoint(_cell);
         _rc.ac_rc_set_retry_$_1(new Args("0"));
         _rc.setStageConfigurationFile(null);
-        _rc.setPnfsHandler(_pnfsHandler);
         _rc.start();
         __messages = new ArrayList<>();
     }

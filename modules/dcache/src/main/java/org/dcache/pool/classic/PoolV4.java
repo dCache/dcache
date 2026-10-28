@@ -9,7 +9,6 @@ import static java.util.stream.Collectors.toList;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFutureTask;
@@ -29,7 +28,6 @@ import diskCacheV111.util.LockedCacheException;
 import diskCacheV111.util.OutOfDateCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.Pool2PoolTransferMsg;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.PoolCheckFreeSpaceMessage;
@@ -37,7 +35,6 @@ import diskCacheV111.vehicles.PoolDeliverFileMessage;
 import diskCacheV111.vehicles.PoolFetchFileMessage;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
-import diskCacheV111.vehicles.PoolMgrReplicateFileMsg;
 import diskCacheV111.vehicles.PoolModifyModeMessage;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
 import diskCacheV111.vehicles.PoolRemoveFilesFromHSMMessage;
@@ -65,9 +62,7 @@ import dmg.util.command.Option;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.URI;
-import java.net.UnknownHostException;
 import java.nio.channels.CompletionHandler;
 import java.nio.file.OpenOption;
 import java.util.ArrayList;
@@ -185,12 +180,7 @@ public class PoolV4
     private boolean _hybridInventoryActive;
     private int _hybridCurrent;
 
-    private final ReplicationHandler _replicationHandler = new ReplicationHandler();
-
     private ReplicaStatePolicy _replicaStatePolicy;
-
-    private CellPath _replicationManager;
-    private InetAddress _replicationIp;
 
     private boolean _running;
     private double _breakEven = DEFAULT_BREAK_EVEN;
@@ -245,25 +235,6 @@ public class PoolV4
     @Required
     public void setVersion(int version) {
         _version = version;
-    }
-
-    @Required
-    public void setReplicationNotificationDestination(String address) {
-        _replicationManager = (!address.isEmpty()) ? new CellPath(address) : null;
-    }
-
-    @Required
-    public void setReplicationIp(String address) {
-        if (!address.isEmpty()) {
-            _replicationIp = InetAddresses.forString(address);
-        } else {
-            try {
-                _replicationIp = InetAddress.getLocalHost();
-            } catch (UnknownHostException ee) {
-                _replicationIp = InetAddress.getLoopbackAddress();
-
-            }
-        }
     }
 
     @Required
@@ -424,7 +395,6 @@ public class PoolV4
         _repository.addFaultListener(this);
         _repository.addListener(new RepositoryLoader());
         _repository.addListener(new NotifyBillingOnRemoveListener());
-        _repository.addListener(_replicationHandler);
 
         _ioQueue.addFaultListener(this);
 
@@ -762,67 +732,6 @@ public class PoolV4
         envelope.revertDirection();
         sendMessage(envelope);
     }
-
-    // //////////////////////////////////////////////////////////////
-    //
-    // replication on data arrived
-    //
-    private class ReplicationHandler
-          extends AbstractStateChangeListener {
-
-        @Override
-        public void stateChanged(StateChangeEvent event) {
-            ReplicaState from = event.getOldState();
-            ReplicaState to = event.getNewState();
-
-            if (to == ReplicaState.CACHED || to == ReplicaState.PRECIOUS) {
-                switch (from) {
-                    case FROM_CLIENT:
-                        initiateReplication(event.getPnfsId(), "write");
-                        break;
-                    case FROM_STORE:
-                        initiateReplication(event.getPnfsId(), "restore");
-                        break;
-                }
-            }
-        }
-
-        @Override
-        public String toString() {
-            if (_replicationManager != null) {
-                return "{Mgr=" + _replicationManager + ",Host=" + _replicationIp + "}";
-            } else {
-                return "Disabled";
-            }
-        }
-
-        private void initiateReplication(PnfsId id, String source) {
-            if (_replicationManager != null) {
-                try {
-                    _initiateReplication(_repository.getEntry(id), source);
-                } catch (InterruptedException e) {
-                    LOGGER.warn("Replication request was interrupted");
-                    Thread.currentThread().interrupt();
-                } catch (CacheException e) {
-                    LOGGER.error("Problem in sending replication request: {}", e.getMessage());
-                }
-            }
-        }
-
-        private void _initiateReplication(CacheEntry entry, String source) {
-            FileAttributes attributes = entry.getFileAttributes().clone();
-            attributes.setLocations(Collections.singleton(_poolName));
-            attributes.getStorageInfo().setKey("replication.source", source);
-
-            PoolMgrReplicateFileMsg req =
-                  new PoolMgrReplicateFileMsg(attributes,
-                        new DCapProtocolInfo("DCap", 3, 0,
-                              new InetSocketAddress(_replicationIp, 2222)));
-            req.setReplyRequired(false);
-            sendMessage(new CellMessage(_replicationManager, req));
-        }
-    }
-
 
     // //////////////////////////////////////////////////////////////////////////
     //
@@ -1489,32 +1398,6 @@ public class PoolV4
         @Override
         public String call() throws CacheException, IllegalArgumentException {
             return _pnfs.getPathByPnfsId(pnfsId).toString();
-        }
-    }
-
-    @Command(name = "set replication")
-    class SetReplicationCommand implements Callable<String> {
-
-        @Option(name = "off")
-        boolean off;
-
-        @Argument(required = false, index = 0)
-        String mgr;
-
-        @Argument(required = false, index = 1)
-        String host;
-
-        @Override
-        public String call() {
-            if (off) {
-                setReplicationNotificationDestination("");
-            } else if (mgr != null) {
-                setReplicationNotificationDestination(mgr);
-                if (host != null) {
-                    setReplicationIp(host);
-                }
-            }
-            return _replicationHandler.toString();
         }
     }
 
