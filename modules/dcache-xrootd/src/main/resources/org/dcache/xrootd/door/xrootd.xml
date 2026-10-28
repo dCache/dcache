@@ -56,6 +56,13 @@
     <property name="timeoutUnit" value="${xrootd.service.poolmanager.timeout.unit}"/>
   </bean>
 
+  <bean id="spacemanager-stub" class="org.dcache.cells.CellStub">
+    <description>Space manager communication stub</description>
+    <property name="destination" value="${xrootd.service.spacemanager}"/>
+    <property name="timeout" value="${xrootd.service.spacemanager.timeout}"/>
+    <property name="timeoutUnit" value="${xrootd.service.spacemanager.timeout.unit}"/>
+  </bean>
+
   <bean id="billing-stub" class="org.dcache.cells.CellStub">
     <description>Billing communication stub</description>
     <property name="destination" value="${xrootd.service.billing}"/>
@@ -193,6 +200,21 @@
       </bean>
     </property>
     <property name="billingStub" ref="billing-stub"/>
+    <property name="capacity">
+      <bean class="org.dcache.space.Capacity$Provider">
+        <constructor-arg value="${xrootd.capacity.source}"/>
+        <constructor-arg value=""/>
+        <constructor-arg ref="pool-monitor"/>
+        <constructor-arg>
+          <bean class="org.dcache.space.ReservationCaches" factory-method="buildSpaceLookupCache">
+            <constructor-arg ref="spacemanager-stub"/>
+            <constructor-arg ref="scheduled-thread-pool"/>
+          </bean>
+        </constructor-arg>
+        <property name="spaceReservation" value="${xrootd.enable.space-reservation}"/>
+        <property name="spaceManager" ref="spacemanager-stub"/>
+      </bean>
+    </property>
     <property name="writePaths" value="${xrootd.authz.write-paths}"/>
     <property name="readPaths" value="${xrootd.authz.read-paths}"/>
     <property name="pnfsHandler" ref="pnfs"/>

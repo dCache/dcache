@@ -115,6 +115,7 @@ import org.dcache.pinmanager.PinManagerPinMessage;
 import org.dcache.pinmanager.PinManagerUnpinMessage;
 import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.poolmanager.PoolMonitor;
+import org.dcache.space.Capacity;
 import org.dcache.util.Checksum;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.NettyPortRange;
@@ -186,6 +187,8 @@ public class XrootdDoor
     private CellStub _billingStub;
 
     private PoolMonitor _poolMonitor;
+
+    private Capacity.Provider _capacity;
 
     private final PermissionHandler _pdp = new ChainedPermissionHandler(
           new ACLPermissionHandler(),
@@ -268,6 +271,10 @@ public class XrootdDoor
     @Required
     public void setPinManagerStub(CellStub pinManagerStub) {
         this.pinManagerStub = pinManagerStub;
+    }
+
+    public void setCapacity(Capacity.Provider capacity) {
+        _capacity = capacity;
     }
 
     @Required
@@ -1152,6 +1159,18 @@ public class XrootdDoor
         FileAttributes attributes =
               pnfsHandler.getFileAttributes(fullPath.toString(), requestedAttributes);
         return attributes.getChecksums();
+    }
+
+    /**
+     * Returns the capacity reported to the client for the given path, which must exist and be
+     * accessible.
+     */
+    public Capacity getCapacity(FsPath fullPath, Subject subject, Restriction restriction,
+          InetSocketAddress client) throws CacheException {
+        FileAttributes attributes = new PnfsHandler(_pnfs, subject, restriction)
+              .getFileAttributes(fullPath.toString(), EnumSet.of(STORAGEINFO));
+        return _capacity.get(attributes, client.getAddress().getHostAddress(),
+              XROOTD_PROTOCOL_STRING + "/" + XrootdProtocol.PROTOCOL_VERSION_MAJOR);
     }
 
     public FileStatus getFileStatus(FsPath fullPath, Subject subject,
