@@ -131,6 +131,46 @@ To read it back into ROOT from dCache:
     KEY: TH1F     testhisto;1     test
 
 
+## Reporting capacity to clients
+
+The xrootd door answers space queries (`kXR_Qspace`, used for example by
+`xrdfs spaceinfo` and by clients that show how much space is available).
+Without this, those clients see a size of 0 and may hide the mount, so
+dCache reports a capacity in the same format as xrootd's own `oss` plugin.
+
+The `xrootd.capacity.source` property controls what is reported. It defaults to
+the value of `dcache.capacity.source`, which is `namespace` unless changed:
+
+```ini
+xrootd.capacity.source=namespace
+```
+
+The supported values are:
+
+- **namespace**: a fixed size of 1 EiB, all of it free. This is the default.
+
+- **pools**: the total and free space of the online pools that a file in the
+  queried path is written to, counting removable (cached) replicas as free,
+  just as the frontend does for storage resource reporting. If no write link
+  matches, 1 EiB is reported.
+
+  When space reservation is enabled (`dcache.enable.space-reservation=true`),
+  the pools are those of the link group selected by the spacemanager: the link
+  group of the space reservation in the `WriteToken` tag of the queried path,
+  or, for paths without one, a matching link group as if unreserved uploads to
+  link groups were allowed.
+
+- **reservation**: the size and available space of the space reservation given
+  by the `WriteToken` tag of the queried path. This is what the FTP door reports
+  for `SITE USAGE`. For a path without a `WriteToken` tag, the door behaves as
+  for `pools`.
+
+If the capacity cannot be determined (for example, while the spacemanager or
+poolmanager is unavailable) the space query fails with a server error, which is
+logged once and reported again once the capacity can be determined. For a path
+without a reservation, the space group in the reply is `public`, xrootd's
+default space name.
+
 ## Pool memory requirements
 
 In general, each `xroot` connection to the pool will require approximately 8 MiB
