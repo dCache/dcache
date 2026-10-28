@@ -29,6 +29,7 @@ import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_InvalidRequest;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ItExists;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_Qcksum;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_Qconfig;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_Qspace;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ServerError;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_async;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_compress;
@@ -101,6 +102,7 @@ import org.dcache.auth.attributes.Restrictions;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.space.Capacity;
 import org.dcache.util.Checksum;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
@@ -1096,9 +1098,39 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler {
                 } catch (CacheException e) {
                     throw xrootdException(e);
                 }
+
+            case kXR_Qspace:
+                try {
+                    // xrootd4j splits path and opaque data only for checksum and xattr queries
+                    String[] args = msg.getArgs().split("\\?", 2);
+                    LoginSessionInfo loginSessionInfo = sessionInfo();
+                    Capacity capacity = _door.getCapacity(createFullPath(args[0],
+                                safelyExtractOpaque(args.length > 1 ? args[1] : "")),
+                          loginSessionInfo.getSubject(),
+                          loginSessionInfo.getRestriction(), getSourceAddress());
+                    return new QueryResponse(msg, toSpaceInfo(capacity));
+                } catch (CacheException e) {
+                    throw xrootdException(e);
+                }
+
             default:
                 return unsupported(ctx, msg);
         }
+    }
+
+    /**
+     * Formats the capacity like xrootd's oss plugin. The space group is the space token of a
+     * reservation, or "public", xrootd's default space name, otherwise.
+     */
+    static String toSpaceInfo(Capacity capacity) {
+        long total = capacity.getTotalSpace();
+        long free = capacity.getFreeSpace();
+        return "oss.cgroup=" + capacity.getReservation().orElse("public")
+              + "&oss.space=" + total
+              + "&oss.free=" + free
+              + "&oss.maxf=" + free
+              + "&oss.used=" + capacity.getUsedSpace()
+              + "&oss.quota=" + total;
     }
 
     @Override

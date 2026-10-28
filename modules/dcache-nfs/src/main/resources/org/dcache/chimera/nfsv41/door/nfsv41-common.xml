@@ -149,6 +149,26 @@
 	<property name="queryPnfsManagerOnRename" value="${nfs.enable.pnfsmanager-query-on-move}"/>
 	<property name="quota" ref="quota-system"/>
 	<property name="quotaEnabled" value="${nfs.enable.quota}"/>
+        <property name="capacity">
+            <bean class="org.dcache.space.Capacity$Provider">
+                <constructor-arg value="${nfs.capacity.source}"/>
+                <constructor-arg value="${nfs.capacity.reservation}"/>
+                <constructor-arg ref="pool-monitor"/>
+                <constructor-arg>
+                    <bean class="org.dcache.space.ReservationCaches"
+                          factory-method="buildSpaceLookupCache">
+                        <constructor-arg>
+                            <bean class="org.dcache.cells.CellStub">
+                                <property name="destination" value="${nfs.service.spacemanager}"/>
+                                <property name="timeout" value="${nfs.service.spacemanager.timeout}"/>
+                                <property name="timeoutUnit" value="${nfs.service.spacemanager.timeout.unit}"/>
+                            </bean>
+                        </constructor-arg>
+                        <constructor-arg ref="scheduled-thread-pool"/>
+                    </bean>
+                </constructor-arg>
+            </bean>
+        </property>
 	<property name="defaultRetentionPolicy" value="#{ T(diskCacheV111.util.RetentionPolicy).getRetentionPolicy('${nfs.default-retention-policy}') }"/>
 
     </bean>

@@ -95,6 +95,7 @@ import org.dcache.pinmanager.PinManagerListPinsMessage.Info;
 import org.dcache.pinmanager.PinManagerPinMessage;
 import org.dcache.pinmanager.PinManagerUnpinMessage;
 import org.dcache.poolmanager.RemotePoolMonitor;
+import org.dcache.space.Capacity;
 import org.dcache.vehicles.FileAttributes;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -103,7 +104,8 @@ import org.springframework.transaction.PlatformTransactionManager;
 /**
  * Overrides protected methods so as to be able to provide live locality information if requested;
  * the latter calls the PNFS and Pool managers. Also implements requests to pin manager for STAGE
- * command.
+ * command. Optionally reports the capacity of the pools or a space reservation as file system
+ * statistics.
  *
  * @author arossi
  */
@@ -176,6 +178,8 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware {
      */
     private RemotePoolMonitor poolMonitor;
 
+    private Capacity.Provider capacity;
+
     @Required
     public void setQueryPnfsManagerOnRename(boolean yes) {
         queryPnfsManagerOnRename = yes;
@@ -205,6 +209,30 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware {
 
     public void setPoolMonitor(RemotePoolMonitor poolMonitor) {
         this.poolMonitor = poolMonitor;
+    }
+
+    public void setCapacity(Capacity.Provider capacity) {
+        if (capacity.usesWriteToken()) {
+            // NFS doesn't tell the door which export a statfs request is for.
+            throw new IllegalArgumentException(
+                  "nfs.capacity.source=reservation requires nfs.capacity.reservation");
+        }
+        this.capacity = capacity;
+    }
+
+    @Override
+    public FsStat getFsStat() throws ChimeraFsException {
+        FsStat fsStat = super.getFsStat();
+        if (capacity == null || capacity.getSource() == Capacity.Source.NAMESPACE) {
+            return fsStat;
+        }
+        try {
+            Capacity c = capacity.get();
+            return new FsStat(c.getTotalSpace(), fsStat.getTotalFiles(), c.getUsedSpace(),
+                  fsStat.getUsedFiles());
+        } catch (CacheException e) {
+            return fsStat; // logged by Capacity.Provider
+        }
     }
 
     @Override
