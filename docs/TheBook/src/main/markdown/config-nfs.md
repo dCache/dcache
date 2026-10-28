@@ -161,6 +161,59 @@ succeed. This prevents two concurrent writers from creating competing replicas
 of the same file (with the same pnfsid but different contents) and reflects the
 fact that dCache treats file content as write-once.
 
+## Reporting capacity to clients
+
+Clients that mount dCache with NFSv4.1 use the file system statistics (the
+values shown by `df`) to see how much space is available. By default the NFS
+door reports a fixed size of 1 EiB with all of it free, so `df` is of little
+use for monitoring or for clients that decide whether they can upload based on
+the reported free space.
+
+The `nfs.capacity.source` property controls the capacity the door reports. It
+defaults to the value of `dcache.capacity.source`, which is `namespace` unless
+changed:
+
+```ini
+nfs.capacity.source=namespace
+```
+
+The supported values are:
+
+- **namespace**: a fixed size of 1 EiB, all of it free. This is the default and
+  keeps the previous behaviour. The number of files and (with this source) the
+  used space are taken from the namespace.
+
+- **pools**: the total and free space of the online pools, counting removable
+  (cached) replicas as free, just as the frontend does for storage resource
+  reporting.
+
+  Because NFS does not tell the door which file a statistics request is for,
+  the NFS door always reports the space of **all** online pools. It cannot
+  narrow the reported pools to those that a file in a particular directory
+  would be written to, so the reported capacity does not reflect the routing or
+  space reservation configuration for a specific path.
+
+- **reservation**: the size and available space of a space reservation, as the
+  FTP door reports for `SITE USAGE`.
+
+  As the NFS door does not know the queried path, it cannot read the
+  `WriteToken` tag itself. With this source you must set the space token of the
+  reservation to report:
+
+  ```ini
+  nfs.capacity.source=reservation
+  nfs.capacity.reservation=10000
+  ```
+
+  The door fails to start if `reservation` is selected without
+  `nfs.capacity.reservation`. The value must be the numeric id of a space
+  reservation.
+
+For `pools` and `reservation`, the door keeps the file counts from the namespace
+and falls back to the namespace statistics if the capacity cannot be determined
+(for example, while the spacemanager or poolmanager is unavailable). A failure
+is logged once and reported again once the capacity can be determined.
+
 ## Configuring NFSv4.1 door with GSS-API support
 
 Adding `sec=krb5` into `/etc/exports` is not sufficient to get
