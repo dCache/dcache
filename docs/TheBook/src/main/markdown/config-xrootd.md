@@ -151,14 +151,18 @@ The supported values are:
 
 - **pools**: the total and free space of the online pools that a file in the
   queried path is written to, counting removable (cached) replicas as free,
-  just as the frontend does for storage resource reporting. If no write link
-  matches, 1 EiB is reported.
+  just as the frontend does for storage resource reporting. The pools are
+  those of the write links with the highest preference that match the storage
+  information of the queried directory, the client's address and the `Xrootd`
+  protocol. If no write link matches, 1 EiB is reported.
 
-  When space reservation is enabled (`dcache.enable.space-reservation=true`),
-  the pools are those of the link group selected by the spacemanager: the link
-  group of the space reservation in the `WriteToken` tag of the queried path,
-  or, for paths without one, a matching link group as if unreserved uploads to
-  link groups were allowed.
+  When space reservation is enabled (`xrootd.enable.space-reservation=true`,
+  which defaults to `dcache.enable.space-reservation`), link groups are chosen
+  as the spacemanager does: the link group of the space reservation in the
+  `WriteToken` tag of the queried path or, for paths without one, a matching
+  link group as if `spacemanager.enable.unreserved-uploads-to-linkgroups` were
+  true, since the door cannot see that setting. If no link group matches, the
+  links outside link groups are used.
 
 - **reservation**: the size and available space of the space reservation given
   by the `WriteToken` tag of the queried path. This is what the FTP door reports
@@ -170,6 +174,17 @@ poolmanager is unavailable) the space query fails with a server error, which is
 logged once and reported again once the capacity can be determined. For a path
 without a reservation, the space group in the reply is `public`, xrootd's
 default space name.
+
+The reply describes the space for new files in the queried directory, not the
+space used by the files below it. Files written with another space token or
+moved in from elsewhere are not reflected.
+
+`xrdfs spaceinfo` reports the space of the path given. `xrootdfs`, however,
+caches the result of a space query for 120 seconds per mount rather than per
+path, so `df` shows the value of whichever path was queried first. `df` is
+therefore only consistent if all directories below the mount point share one
+space reservation or pool selection; mount such a directory rather than the
+root of the tree, or use `xrdfs spaceinfo` for per-path values.
 
 ## Pool memory requirements
 
