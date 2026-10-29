@@ -192,12 +192,6 @@ Overarching concepts:
    - [How to Store-/Restore files via the Admin Interface](config-hsm.md#how-to-store-restore-files-via-the-admin-interface)
    - [How to monitor what's going on](config-hsm.md#how-to-monitor-whats-going-on)
 
-- [File Hopping](config-hopping.md)
-   - [File Hopping on arrival from outside dCache](config-hopping.md#file-hopping-on-arrival-from-outside-dcache)
-   - [File mode of replicated files](config-hopping.md#file-mode-of-replicated-files)
-   - [File Hopping managed by the PoolManager](config-hopping.md#file-hopping-managed-by-the-poolmanager)
-   - [File Hopping managed by the HoppingManager](config-hopping.md#file-hopping-managed-by-the-hoppingmanager)
-
 - [gPlazma: Authorization in dCache](config-gplazma.md)
    - [Basics](config-gplazma.md#basics)
    - [Configuration](config-gplazma.md#configuration)

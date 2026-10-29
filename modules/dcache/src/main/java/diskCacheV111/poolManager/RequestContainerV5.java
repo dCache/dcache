@@ -21,16 +21,13 @@ import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.FileNotInZoneCacheException;
 import diskCacheV111.util.MissingResourceCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
-import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.SourceCostException;
-import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.Pool2PoolTransferMsg;
 import diskCacheV111.vehicles.PoolFetchFileMessage;
 import diskCacheV111.vehicles.PoolHitInfoMessage;
-import diskCacheV111.vehicles.PoolMgrReplicateFileMsg;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.PoolStatusChangedMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -210,7 +207,6 @@ public class RequestContainerV5
 
     private PoolSelectionUnit _selectionUnit;
     private PoolMonitorV5 _poolMonitor;
-    private PnfsHandler _pnfsHandler;
 
     private Executor _executor;
     private final Map<PnfsId, CacheException> _selections = new ConcurrentHashMap<>();
@@ -282,11 +278,6 @@ public class RequestContainerV5
     @Required
     public void setPoolMonitor(PoolMonitorV5 poolMonitor) {
         _poolMonitor = poolMonitor;
-    }
-
-    @Required
-    public void setPnfsHandler(PnfsHandler pnfsHandler) {
-        _pnfsHandler = pnfsHandler;
     }
 
     @Required
@@ -757,8 +748,6 @@ public class RequestContainerV5
     public void messageArrived(CellMessage envelope,
           PoolMgrSelectReadPoolMsg request)
           throws PatternSyntaxException, IOException {
-        boolean enforceP2P = false;
-
         PnfsId pnfsId = request.getPnfsId();
         String poolGroup = request.getPoolGroup();
         ProtocolInfo protocolInfo = request.getProtocolInfo();
@@ -783,17 +772,8 @@ public class RequestContainerV5
                   IllegalArgumentException("Protocol not found : " + protocolNameFromInfo);
         }
 
-        if (request instanceof PoolMgrReplicateFileMsg) {
-            if (request.isReply()) {
-                LOGGER.warn("Unexpected PoolMgrReplicateFileMsg arrived (is a reply)");
-                return;
-            } else {
-                enforceP2P = true;
-            }
-        }
-
         String canonicalName =
-              pnfsId + "@" + netName + "-" + protocolName + (enforceP2P ? "-p2p" : "")
+              pnfsId + "@" + netName + "-" + protocolName
                     + (poolGroup == null ? "" : ("-pg-" + poolGroup));
 
         LOGGER.info("Adding request for : {}", canonicalName);
@@ -811,36 +791,6 @@ public class RequestContainerV5
             });
         }
     }
-
-    // replicate a file
-    public static final String hh_replicate = " <pnfsid> <client IP>";
-
-    public String ac_replicate_$_2(Args args) {
-
-        String commandReply = "Replication initiated...";
-
-        try {
-            FileAttributes fileAttributes =
-                  _pnfsHandler.getFileAttributes(new PnfsId(args.argv(0)),
-                        PoolMgrReplicateFileMsg.getRequiredAttributes());
-
-            // TODO: call p2p direct
-            // send message to yourself
-            PoolMgrReplicateFileMsg req =
-                  new PoolMgrReplicateFileMsg(fileAttributes,
-                        new DCapProtocolInfo("DCap", 3, 0,
-                              new InetSocketAddress(args.argv(1),
-                                    2222)));
-
-            sendMessage(new CellMessage(new CellAddressCore("PoolManager"), req));
-
-        } catch (CacheException e) {
-            commandReply = "P2P failed : " + e.getMessage();
-        }
-
-        return commandReply;
-    }
-
 
     ///////////////////////////////////////////////////////////////
     //
@@ -920,8 +870,6 @@ public class RequestContainerV5
         private final String _transferPath;
         private final PoolSelector _poolSelector;
         private final boolean _failOnExcluded;
-        private final boolean _enforceP2P;
-        private final int _destinationFileStatus;
 
         private Partition _parameter = _partitionManager.getDefaultPartition();
 
@@ -956,14 +904,6 @@ public class RequestContainerV5
 
             _retryCounter = request.getContext().getRetryCounter();
             _stageCandidate = Optional.ofNullable(request.getContext().getPreviousStagePool());
-
-            if (request instanceof PoolMgrReplicateFileMsg) {
-                _enforceP2P = true;
-                _destinationFileStatus = ((PoolMgrReplicateFileMsg) request).getDestinationFileStatus();
-            } else {
-                _enforceP2P = false;
-                _destinationFileStatus = Pool2PoolTransferMsg.UNDETERMINED;
-            }
 
             Set<String> excluded = request.getExcludedHosts();
             _failOnExcluded = excluded != null && !excluded.isEmpty();
@@ -1171,7 +1111,6 @@ public class RequestContainerV5
             // TOOD: Include assumptions in request
             Pool2PoolTransferMsg pool2pool =
                   new Pool2PoolTransferMsg(sourcePool.name(), destPool.name(), _fileAttributes);
-            pool2pool.setDestinationFileStatus(_destinationFileStatus);
             LOGGER.info("[p2p] Sending transfer request: {}", pool2pool);
             CellMessage cellMessage =
                   new CellMessage(new CellPath(destPool.address()), pool2pool);
@@ -1576,11 +1515,6 @@ public class RequestContainerV5
                         return;
                     }
 
-                    if (_enforceP2P) {
-                        nextStep(RequestState.ST_POOL_2_POOL);
-                        return;
-                    }
-
                     try {
                         try {
                             SelectedPool pool = selectReadPool();
@@ -1649,9 +1583,7 @@ public class RequestContainerV5
                     } catch (PermissionDeniedCacheException e) {
                         LOGGER.info("[p2p] {}", e.toString());
                         if (_hotPoolWithFile == null) {
-                            if (_enforceP2P) {
-                                failRequest(e.getRc(), e.getMessage());
-                            } else if (isFileStageable()) {
+                            if (isFileStageable()) {
                                 LOGGER.info(
                                       "ST_POOL_2_POOL : Pool to pool not permitted, trying to stage the file");
                                 nextStep(RequestState.ST_STAGE);
@@ -1666,12 +1598,8 @@ public class RequestContainerV5
                     } catch (SourceCostException e) {
                         LOGGER.info("[p2p] {}", e.getMessage());
                         if (isFileStageable() && _parameter._stageOnCost) {
-                            if (_enforceP2P) {
-                                failRequest(e.getRc(), e.getMessage());
-                            } else {
-                                LOGGER.info("ST_POOL_2_POOL : staging");
-                                nextStep(RequestState.ST_STAGE);
-                            }
+                            LOGGER.info("ST_POOL_2_POOL : staging");
+                            nextStep(RequestState.ST_STAGE);
                         } else {
                             if (_hotPoolWithFile != null) {
                                 success(_hotPoolWithFile);
@@ -1690,11 +1618,7 @@ public class RequestContainerV5
                             //
                             // this can't possibly happen
                             //
-                            if (!_enforceP2P) {
-                                failRequest(192, "PANIC : File not present in any reasonable pool");
-                            } else {
-                                failRequest(e.getRc(), e.getMessage());
-                            }
+                            failRequest(192, "PANIC : File not present in any reasonable pool");
                         } else {
                             success(_hotPoolWithFile);
                             LOGGER.info(" found high cost object");
@@ -1703,9 +1627,7 @@ public class RequestContainerV5
                         int rc = e instanceof CacheException ?
                               ((CacheException) e).getRc() : 128;
                         LOGGER.warn("[p2p] {}", e.getMessage());
-                        if (_enforceP2P) {
-                            failRequest(rc, e.getMessage());
-                        } else if (isFileStageable()) {
+                        if (isFileStageable()) {
                             nextStep(RequestState.ST_STAGE);
                         } else {
                             // FIXME refactor askForPoolToPool to avoid
@@ -1746,7 +1668,7 @@ public class RequestContainerV5
                         Pool2PoolTransferMsg message = (Pool2PoolTransferMsg) inputObject;
 
                         if (message.getReturnCode() == 0) {
-                            if (_parameter._p2pForTransfer && !_enforceP2P) {
+                            if (_parameter._p2pForTransfer) {
                                 failRequest(CacheException.OUT_OF_DATE,
                                       "Pool locations changed due to p2p transfer");
                             } else {

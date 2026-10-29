@@ -33,6 +33,7 @@ This part contains guides for specific tasks a system administrator might want t
     - [Overview and Terminology](cookbook-pool.md#overview-and-terminology)
     - [Command Summary](cookbook-pool.md#command-summary)
     - [Examples](cookbook-pool.md#examples)
+    - [Replacing file hopping](cookbook-pool.md#replacing-file-hopping)
     - [Renaming a Pool](cookbook-pool.md#renaming-a-pool)
     - [Pinning Files to a Pool](cookbook-pool.md#pinning-files-to-a-pool)
     - [Keeping metadata on MongoDB](cookbook-pool.md#keeping-metadata-on-mongodb)

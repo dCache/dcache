@@ -83,8 +83,6 @@ dCache Book
 
         - [dCache Tertiary Storage System Interface](config-hsm.md)
 
-        - [File Hopping](config-hopping.md)
-
         - [gPlazma: Authorization in dCache](config-gplazma.md)
 
         - [Kafka](kafkaproducer.md)
