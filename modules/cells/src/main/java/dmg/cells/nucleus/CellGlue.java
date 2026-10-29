@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -243,11 +242,18 @@ class CellGlue {
         return kill(nucleus, nucleus);
     }
 
+    /**
+     * Kill a cell. This method returns a future that completes when the cell has been killed.
+     * Note: if the cell is already dead, the future completes immediately.
+     *
+     * @param sender   The cell that requested the kill
+     * @param cellName The name of the cell to kill
+     * @return A future that completes when the cell has been killed.
+     */
     CompletableFuture<?> kill(CellNucleus sender, String cellName) {
         CellNucleus nucleus = _cellList.get(cellName);
         if (nucleus == null) {
-            return CompletableFuture.failedFuture(
-                  new NoSuchElementException("No such cell: " + cellName));
+            return CompletableFuture.completedFuture(null);
         }
         return kill(sender, nucleus);
     }
@@ -380,12 +386,19 @@ class CellGlue {
         notifyAll();
     }
 
+    /**
+     * Kill a cell. This method returns a future that completes when the cell has been killed.
+     * Note: if the cell is already dead, the future completes immediately.
+     *
+     * @param source      The cell that requested the kill
+     * @param destination The cell to be killed
+     * @return A future that completes when the cell has been killed.
+     */
     private synchronized CompletableFuture<?> kill(CellNucleus source, CellNucleus destination) {
         String cellToKill = destination.getCellName();
 
         if (_cellList.get(cellToKill) != destination) {
-            return CompletableFuture.failedFuture(
-                  new NoSuchElementException("No such cell: " + cellToKill));
+            return CompletableFuture.completedFuture(null);
         }
 
         /* Mark the cell as being killed to prevent it from being killed more
