@@ -51,7 +51,7 @@ class S3ReadTransfer extends RedirectedTransfer<String> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(S3ReadTransfer.class);
 
-    private static final String PROTOCOL_INFO_NAME = "Http";
+    private static final String PROTOCOL_INFO_NAME = "S3";
     private static final int PROTOCOL_INFO_MAJOR_VERSION = 1;
     private static final int PROTOCOL_INFO_MINOR_VERSION = 1;
 

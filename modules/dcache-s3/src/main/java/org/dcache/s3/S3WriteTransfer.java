@@ -47,7 +47,7 @@ import org.dcache.vehicles.FileAttributes;
  */
 class S3WriteTransfer extends RedirectedTransfer<String> {
 
-    private static final String PROTOCOL_INFO_NAME = "Http";
+    private static final String PROTOCOL_INFO_NAME = "S3";
     private static final int PROTOCOL_INFO_MAJOR_VERSION = 1;
     private static final int PROTOCOL_INFO_MINOR_VERSION = 1;
 
