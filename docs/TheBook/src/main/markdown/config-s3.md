@@ -181,6 +181,16 @@ object once all data has arrived and its checksum is recorded.  Until then,
 readers see the previous version of the object.  If the upload fails, the
 hidden file is removed.
 
+The door streams a request body to the pool as it arrives.  When the request
+signs the body -- the `x-amz-content-sha256` header names a digest rather than
+a token such as `UNSIGNED-PAYLOAD` -- the body is checked against that digest
+while it streams past, so the memory the door needs does not grow with the
+size of the object; a body that does not match the digest is refused with
+`XAmzContentSHA256Mismatch` once the whole body has arrived, leaving nothing
+behind.  Earlier releases buffered every signed body in memory to hash it
+first and refused a single request whose body exceeded 128 MiB; neither limit
+applies now.
+
 Clients upload large objects in parts.  The door keeps the parts of an upload
 in progress as files in the bucket's directory `.s3-multipart`.  Completing
 the upload copies the parts into the object through the door, after which the
