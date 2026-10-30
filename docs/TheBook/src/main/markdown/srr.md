@@ -79,6 +79,36 @@ publishes pool groups user and store for VO cms and will produce output like:
     } ]
 ```
 
+### Publishing paths
+
+By default, the generated `storageshares` entries do not include a `path` field.
+The optional `frontend.srr.paths` property populates this field, describing the
+namespace paths that correspond to a storage share. Paths may be published for
+either pool groups or space reservations. For example:
+
+```
+frontend.srr.paths=cms-user:/cms/store/user,default:/cms
+```
+
+adds a `path` field to the published shares, producing output like:
+
+```json
+    "storageshares" : [ {
+      "name" : "cms-user",
+      "timestamp" : 1601977212,
+      "totalsize" : 5973622320626816,
+      "usedsize" : 4904609242438918,
+      "assignedendpoints" : [ "all" ],
+      "path" : [ "/cms/store/user" ],
+      "vos" : [ "/cms" ]
+    } ]
+```
+
+A single share may be mapped to several paths by specifying the same key more
+than once; each key may also map to multiple paths, all of which are published.
+The key is the pool group name or the storage description of a space
+reservation. Shares without a matching entry are published unchanged.
+
 The WLCG SRR uses the following info-provider properties to control the generated json output:
 
 ```
