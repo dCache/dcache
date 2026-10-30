@@ -289,6 +289,11 @@ The door writes an access log (logger `org.dcache.access.s3`) with the access
 key and the S3 operation of each request.  Billing records each transfer with
 the dCache user, like the transfers of other doors.
 
+Transfers through this door report the protocol name `S3` with version 1.1,
+not `Http`, so rules that match on the protocol must be updated: billing
+entries show `S3-1.1`, while PoolManager protocol units and stage protection
+patterns match `S3/1`.
+
 ### Admin commands
 
 Besides `s3 uploads`, the door has the admin commands `login clear cache` and

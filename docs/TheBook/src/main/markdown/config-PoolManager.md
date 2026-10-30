@@ -96,7 +96,7 @@ A *network unit* consists of an IP address and a net mask written as <IP-address
     psu addto ugroup <name-of-unitgroup> <IP-address>/<net mask>
 
 **Protocol Unit**
-A *protocol unit* consists of the name of the protocol and the version number written as protocol-name/version-number, e.g., `xrootd/3`.
+A *protocol unit* consists of the name of the protocol and the version number written as protocol-name/version-number, e.g., `xrootd/3`.  Transfers received through the S3 door are reported with the protocol name `S3`, so they match the protocol unit `S3/1` (and not `Http/1`).
 
     psu create ugroup <name-of-unitgroup>
     psu create unit -protocol <protocol-name>/<version-number>
