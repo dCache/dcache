@@ -295,7 +295,7 @@ public class RemoteHttpTransferClient {
             try {
                 try (CloseableHttpResponse response = _client.execute(head)) {
                     haveReceivedChecksum = acceptChecksums(response, integrityChecker);
-                    checkThirdPartyTransferSuccessful(!haveReceivedChecksum,
+                    checkThirdPartyTransferSuccessful(haveReceivedChecksum,
                           "no checksum in HEAD response");
                 }
             } catch (IOException e) {
