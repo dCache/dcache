@@ -134,6 +134,23 @@ public class MoverRequestSchedulerTest {
         verify(completionHandler).failed(any(InterruptedException.class), isNull());
     }
 
+    @Test
+    public void shouldSetMoverIdOnRequestCreation() throws Exception {
+        Mover mover = mock(Mover.class);
+
+        new MoverRequestScheduler.PrioritizedRequest(42, "door-test", mover, IoPriority.REGULAR);
+
+        verify(mover).setMoverId(42);
+        verify(mover, never()).execute(any());
+    }
+
+    @Test
+    public void shouldNeverGenerateZeroJobId() {
+        assertEquals(1, MoverRequestScheduler.nextId(0));
+        assertEquals(0x00FFFFFF, MoverRequestScheduler.nextId(0x00FFFFFE));
+        assertEquals(1, MoverRequestScheduler.nextId(0x00FFFFFF));
+    }
+
     private void addMover(PnfsId pnfsId, boolean isP2P) throws Exception {
         addMover(pnfsId, isP2P, new Subject());
     }

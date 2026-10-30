@@ -645,12 +645,29 @@ public class NFSv41Door extends AbstractCellComponent implements
          */
         if (transfer != null) {
 
+            /*
+             * Pools send the redirect before the reply to the mover start request, thus use the
+             * mover id provided with the redirect. Zero indicates an old pool that doesn't send it.
+             */
+            int moverId = message.getMoverId();
+            if (moverId != 0) {
+                Integer knownMoverId = transfer.getMoverId();
+                if (knownMoverId == null) {
+                    transfer.setMoverId(moverId);
+                } else if (knownMoverId != moverId) {
+                    _log.warn("Ignoring redirect from stale mover {} on {} for {} (current mover {})",
+                          moverId, poolName, stateid, knownMoverId);
+                    return;
+                }
+            }
+
             long verifier = message.getVerifier();
             InetSocketAddress[] poolAddresses = message.socketAddresses();
 
             PoolDS device = _poolDeviceMap.getOrCreateDS(poolName, verifier, poolAddresses);
 
-            if (transfer.getMoverId() == null) {
+            // REVISIT: pre-12.2 pools don't send mover id with the redirect. Remove when they are not supported.
+            if (moverId == 0 && transfer.getMoverId() == null) {
                 _log.warn("NFS mover ready for transfer without mover: {}", stateid);
                 // we have not got a reply from pool manager yet, try to start mover again.
                 // as mover start requests is idempotent, we can safely re-issue it.

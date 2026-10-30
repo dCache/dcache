@@ -65,6 +65,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractMover.class);
 
     protected final long _id;
+    private volatile int _moverId;
     protected final String _queue;
     protected final String _initiator;
     protected final boolean _isPoolToPoolTransfer;
@@ -144,6 +145,16 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
     @Override
     public long getClientId() {
         return _id;
+    }
+
+    @Override
+    public void setMoverId(int moverId) {
+        _moverId = moverId;
+    }
+
+    @Override
+    public int getMoverId() {
+        return _moverId;
     }
 
     @Override

@@ -77,6 +77,21 @@ public interface Mover<T extends ProtocolInfo> {
     long getClientId();
 
     /**
+     * Sets the mover id assigned by the pool's mover queue. Called by the queue when the mover
+     * request is created, so that the mover can include the id in messages sent to the door.
+     * Not to be confused with {@link #getClientId()}, which is the transfer id assigned by the
+     * door.
+     *
+     * @param moverId non-zero mover id.
+     */
+    void setMoverId(int moverId);
+
+    /**
+     * Returns the mover id assigned by the pool's mover queue, or zero if not yet set.
+     */
+    int getMoverId();
+
+    /**
      * Set transfer status.
      * <p>
      * The provided status and error message will be sent to billing and to the door. Only the first

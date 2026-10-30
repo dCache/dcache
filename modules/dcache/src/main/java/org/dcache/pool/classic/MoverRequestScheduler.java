@@ -9,6 +9,7 @@ import static org.dcache.pool.classic.IoRequestState.NEW;
 import static org.dcache.pool.classic.IoRequestState.QUEUED;
 import static org.dcache.pool.classic.IoRequestState.RUNNING;
 
+import com.google.common.annotations.VisibleForTesting;
 import diskCacheV111.pools.PoolCostInfo.NamedPoolQueueInfo;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
@@ -302,12 +303,17 @@ public class MoverRequestScheduler {
     }
 
     private synchronized int nextId() {
-        if (_nextId == 0x00FFFFFF) {
-            _nextId = 0;
-        } else {
-            _nextId++;
-        }
+        _nextId = nextId(_nextId);
         return _nextId;
+    }
+
+    /**
+     * Returns the job id that follows {@code id}. Job ids are in the range [1, 0x00FFFFFF], thus
+     * zero is never returned and can be used to indicate a missing mover id.
+     */
+    @VisibleForTesting
+    static int nextId(int id) {
+        return id == 0x00FFFFFF ? 1 : id + 1;
     }
 
     /**
@@ -676,6 +682,7 @@ public class MoverRequestScheduler {
         PrioritizedRequest(int id, String doorUniqueId, Mover<?> mover, IoPriority p) {
             _id = id;
             _mover = mover;
+            _mover.setMoverId(id);
             _priority = p;
             _ctime = System.nanoTime();
             _submitTime = System.currentTimeMillis();

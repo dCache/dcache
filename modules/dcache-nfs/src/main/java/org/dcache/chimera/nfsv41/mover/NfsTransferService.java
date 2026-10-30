@@ -428,10 +428,12 @@ public class NfsTransferService
         stateid4 stateid = LegacyUtils.toStateid(stateObject);
 
         // never send legacy stateid.
-        _door.notify(directDoorPath,
+        PoolPassiveIoFileMessage<stateid4> msg =
               new PoolPassiveIoFileMessage<>(_cellAddress.getCellName(), _localSocketAddresses,
                     stateid,
-                    _bootVerifier));
+                    _bootVerifier);
+        msg.setMoverId(mover.getMoverId());
+        _door.notify(directDoorPath, msg);
     }
 
     @Override

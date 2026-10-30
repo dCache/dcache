@@ -16,6 +16,11 @@ public class PoolPassiveIoFileMessage<T extends Serializable> extends PoolMessag
      */
     private final long _verifier;
 
+    /**
+     * Mover id, or zero if not provided (e.g. by an old pool).
+     */
+    private int _moverId;
+
     public PoolPassiveIoFileMessage(String pool, InetSocketAddress socketAddress, T challenge) {
         this(pool, new InetSocketAddress[]{socketAddress}, challenge, 0);
     }
@@ -47,5 +52,13 @@ public class PoolPassiveIoFileMessage<T extends Serializable> extends PoolMessag
 
     public T challange() {
         return _challange;
+    }
+
+    public int getMoverId() {
+        return _moverId;
+    }
+
+    public void setMoverId(int moverId) {
+        _moverId = moverId;
     }
 }
