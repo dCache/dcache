@@ -120,17 +120,17 @@ public class RemoteHttpTransferService extends SecureRemoteTransferService {
                 "'pool.mover.http-tpc.connections.max-idle' must be greater than zero");
 
         var settings = new RemoteHttpClientFactory.Settings();
-        settings.userAgent = USER_AGENT;
-        settings.certificateAuthorityPath = getCertificateAuthorityPath();
-        settings.certificateAuthorityUpdateInterval = getCertificateAuthorityUpdateInterval();
-        settings.certificateAuthorityUpdateIntervalUnit = getCertificateAuthorityUpdateIntervalUnit();
-        settings.namespaceMode = getNamespaceMode();
-        settings.crlCheckingMode = getCrlCheckingMode();
-        settings.ocspCheckingMode = getOcspCheckingMode();
-        settings.maxConnections = maxConnections;
-        settings.maxConnectionsPerEndpoint = maxConnectionsPerEndpoint;
-        settings.maxIdle = maxIdle;
-        settings.maxIdleUnits = maxIdleUnits;
+        settings.setUserAgent(USER_AGENT);
+        settings.setCertificateAuthorityPath(getCertificateAuthorityPath());
+        settings.setCertificateAuthorityUpdateInterval(getCertificateAuthorityUpdateInterval());
+        settings.setCertificateAuthorityUpdateIntervalUnit(getCertificateAuthorityUpdateIntervalUnit());
+        settings.setNamespaceMode(getNamespaceMode());
+        settings.setCrlCheckingMode(getCrlCheckingMode());
+        settings.setOcspCheckingMode(getOcspCheckingMode());
+        settings.setMaxConnections(maxConnections);
+        settings.setMaxConnectionsPerEndpoint(maxConnectionsPerEndpoint);
+        settings.setMaxIdle(maxIdle);
+        settings.setMaxIdleUnits(maxIdleUnits);
         clientFactory = new RemoteHttpClientFactory(settings);
     }
 

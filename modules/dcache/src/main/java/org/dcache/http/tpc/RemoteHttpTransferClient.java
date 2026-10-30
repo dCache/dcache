@@ -67,6 +67,7 @@ import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.conn.ConnectionShutdownException;
@@ -206,6 +207,9 @@ public class RemoteHttpTransferClient {
 
     private volatile Long _expectedTransferSize;
 
+    private volatile boolean _aborted;
+    private volatile HttpUriRequest _currentRequest;
+
     /**
      * @param client      the HTTP client used to make all requests
      * @param info        describes the remote resource, credentials and headers
@@ -293,7 +297,7 @@ public class RemoteHttpTransferClient {
             head.addHeader(HttpExtHeader.WANT_REPR_DIGEST, WANT_REPR_DIGEST_VALUE);
 
             try {
-                try (CloseableHttpResponse response = _client.execute(head)) {
+                try (CloseableHttpResponse response = execute(head, null)) {
                     haveReceivedChecksum = acceptChecksums(response, integrityChecker);
                     checkThirdPartyTransferSuccessful(haveReceivedChecksum,
                           "no checksum in HEAD response");
@@ -326,6 +330,30 @@ public class RemoteHttpTransferClient {
             throw new ThirdPartyTransferFailedCacheException("verification " +
                   "failed: " + e.getMessage());
         }
+    }
+
+    /**
+     * Cancel the transfer.  Any request in progress is aborted, which interrupts any blocking
+     * network operation, and no further requests are made.  This may be called from any thread.
+     */
+    public void abort() {
+        _aborted = true;
+        HttpUriRequest request = _currentRequest;
+        if (request != null) {
+            request.abort();
+        }
+    }
+
+    private CloseableHttpResponse execute(HttpUriRequest request, HttpContext context)
+          throws IOException {
+        if (_aborted) {
+            throw new IOException("transfer cancelled");
+        }
+        _currentRequest = request;
+        if (_aborted) {
+            request.abort();
+        }
+        return _client.execute(request, context);
     }
 
     /**
@@ -508,7 +536,7 @@ public class RemoteHttpTransferClient {
     private CloseableHttpResponse doGet(HttpContext context, long deadline) throws IOException,
           ThirdPartyTransferFailedCacheException, InterruptedException {
         HttpGet get = buildGetRequest(deadline);
-        CloseableHttpResponse response = _client.execute(get, context);
+        CloseableHttpResponse response = execute(get, context);
 
         _onConnected.run();
 
@@ -519,7 +547,7 @@ public class RemoteHttpTransferClient {
 
                 response.close();
                 get = buildGetRequest(deadline);
-                response = _client.execute(get);
+                response = execute(get, null);
             }
 
             int statusCode = response.getStatusLine().getStatusCode();
@@ -560,7 +588,7 @@ public class RemoteHttpTransferClient {
                 HttpPut put = buildPutRequest(location, entity.get(),
                       redirectionCount > 0 ? REDIRECTED_REQUEST : INITIAL_REQUEST);
 
-                try (CloseableHttpResponse response = _client.execute(put, context)) {
+                try (CloseableHttpResponse response = execute(put, context)) {
                     _onConnected.run();
                     StatusLine status = response.getStatusLine();
                     switch (status.getStatusCode()) {
@@ -711,7 +739,7 @@ public class RemoteHttpTransferClient {
                 }
 
                 try {
-                    try (CloseableHttpResponse response = _client.execute(head, context)) {
+                    try (CloseableHttpResponse response = execute(head, context)) {
                         StatusLine status = response.getStatusLine();
 
                         if (status.getStatusCode() >= 300) {
@@ -854,7 +882,7 @@ public class RemoteHttpTransferClient {
     private void deleteRemoteFile(String why) throws ThirdPartyTransferFailedCacheException {
         HttpDelete delete = buildDeleteRequest();
 
-        try (CloseableHttpResponse response = _client.execute(delete)) {
+        try (CloseableHttpResponse response = execute(delete, null)) {
             StatusLine status = response.getStatusLine();
 
             if (status.getStatusCode() >= 300) {
