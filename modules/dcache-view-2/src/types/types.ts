@@ -1,5 +1,6 @@
 export interface FileAttributes {
     pnfsId: string;
+    fileName?: string;
     fileType: 'REGULAR' | 'DIR' | 'LINK' | 'SPECIAL';
     size: number | null;
     creationTime: number | null;
@@ -21,6 +22,7 @@ export interface FileAttributes {
     qosPolicy: string | null;
     qosState: number | null;
     locations: string[] | null;
+    children?: FileAttributes[];
 }
 
 export interface User {

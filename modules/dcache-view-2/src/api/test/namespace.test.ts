@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { fileAttributes, buildHeaders } from '../namespace.ts';
+import { fileAttributes, buildHeaders, ls } from '../namespace.ts';
 import type { FileAttributes, FileMetadataRequest } from '../../types/types.ts';
 
 const mockAttributes: FileAttributes = {
@@ -67,6 +67,8 @@ describe('fileAttributes', () => {
         expect(url).toContain('children=true');
         expect(url).toContain('limit=100');
         expect(url).toContain('offset=5');
+        // qos=true makes the backend ask the PinManager for every entry and fails with 500 without one
+        expect(url).not.toContain('qos');
     });
 
     test('fetches partial first then full when scope is full but no pnfsId', async () => {
@@ -101,5 +103,22 @@ describe('fileAttributes', () => {
     test('throws TypeError when neither path nor pnfsId provided', async () => {
         const r: FileMetadataRequest = { scope: 'partial', limit: 100, offset: 0 };
         await expect(fileAttributes(r, headers)).rejects.toThrow(TypeError);
+    });
+});
+
+describe('ls', () => {
+    const dir: FileAttributes = { ...mockAttributes, fileType: 'DIR' };
+
+    test('returns the children of a directory', () => {
+        const child: FileAttributes = { ...mockAttributes, fileName: 'a.txt' };
+        expect(ls({ ...dir, children: [child] })).toEqual([child]);
+    });
+
+    test('returns an empty list when the response has no children', () => {
+        expect(ls(dir)).toEqual([]);
+    });
+
+    test('throws TypeError for a file', () => {
+        expect(() => ls(mockAttributes)).toThrow(TypeError);
     });
 });

@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useAuthStore } from './store/authStore.ts'
 import { LoginForm } from './components/LoginForm.tsx'
 import { Button } from './components/Button.tsx'
+import { FileList } from './components/FileList.tsx'
 
 function App() {
     const user = useAuthStore(state => state.user);
@@ -27,6 +28,7 @@ function App() {
         <>
             <p>Logged in as {user.username}</p>
             <Button label="Logout" onClick={logout} variant={"ghost"} />
+            <FileList />
         </>
     );
 }
