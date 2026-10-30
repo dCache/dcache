@@ -797,6 +797,7 @@ public class MoverRequestScheduler {
             try {
                 if (_state != QUEUED) {
                     completionHandler.failed(new InterruptedException("Transfer cancelled"), null);
+                    return;
                 }
                 _state = RUNNING;
                 _startTime = System.currentTimeMillis();

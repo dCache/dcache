@@ -2,7 +2,11 @@ package org.dcache.pool.classic;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import dmg.cells.nucleus.CellAddressCore;
@@ -10,6 +14,7 @@ import dmg.cells.nucleus.CellPath;
 import diskCacheV111.util.PnfsId;
 
 import java.net.InetAddress;
+import java.nio.channels.CompletionHandler;
 import java.util.Set;
 import javax.security.auth.Subject;
 import org.dcache.auth.GidPrincipal;
@@ -111,6 +116,22 @@ public class MoverRequestSchedulerTest {
         MoverData data = scheduler.getMoverData(x -> true, MoverData::compareTo).get(0);
         assertNull(data.getUserData().getUserId());
         assertNull(data.getUserData().getGroupIds());
+    }
+
+    @Test
+    public void shouldNotExecuteCancelledRequest() throws Exception {
+        Mover mover = mock(Mover.class);
+        CompletionHandler<Void, Void> completionHandler = mock(CompletionHandler.class);
+
+        MoverRequestScheduler.PrioritizedRequest request =
+              new MoverRequestScheduler.PrioritizedRequest(1, "door-test", mover,
+                    IoPriority.REGULAR);
+        request.queue();
+        request.kill("test");
+        request.transfer(completionHandler);
+
+        verify(mover, never()).execute(any());
+        verify(completionHandler).failed(any(InterruptedException.class), isNull());
     }
 
     private void addMover(PnfsId pnfsId, boolean isP2P) throws Exception {
