@@ -57,6 +57,7 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.QuotaExceededCacheException;
 import diskCacheV111.util.RetentionPolicy;
+import diskCacheV111.util.ThirdPartyTransferFailedCacheException;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.IoDoorEntry;
 import diskCacheV111.vehicles.IoJobInfo;
@@ -71,6 +72,7 @@ import diskCacheV111.vehicles.transferManager.RemoteTransferManagerMessage;
 import diskCacheV111.vehicles.transferManager.TransferCompleteMessage;
 import diskCacheV111.vehicles.transferManager.TransferFailedMessage;
 import diskCacheV111.vehicles.transferManager.TransferStatusQueryMessage;
+import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
@@ -88,7 +90,11 @@ import io.milton.http.Response;
 import io.milton.http.Response.Status;
 import io.milton.servlet.ServletRequest;
 import io.milton.servlet.ServletResponse;
+import java.io.FilterOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InterruptedIOException;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
@@ -96,10 +102,13 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.StandardProtocolFamily;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -111,19 +120,25 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.annotation.PreDestroy;
+import javax.annotation.concurrent.GuardedBy;
 import javax.security.auth.Subject;
 import javax.servlet.AsyncContext;
 import javax.servlet.ServletResponseWrapper;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.http.entity.AbstractHttpEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.OpenIdCredential;
 import org.dcache.auth.attributes.Restriction;
@@ -132,10 +147,14 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.util.BoundedCachedExecutor;
 import org.dcache.util.BoundedExecutor;
+import org.dcache.http.tpc.RemoteHttpClientFactory;
+import org.dcache.http.tpc.RemoteHttpTransferClient;
+import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Checksums;
 import org.dcache.util.ColumnWriter;
 import org.dcache.util.ColumnWriter.TabulatedRow;
+import org.dcache.util.Exceptions;
 import org.dcache.util.Glob;
 import org.dcache.util.LineIndentingPrintWriter;
 import org.dcache.util.NetworkUtils;
@@ -144,6 +163,7 @@ import org.dcache.util.Strings;
 import org.dcache.util.URIs;
 import org.dcache.util.Xattrs;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.webdav.DcacheResourceFactory;
 import org.dcache.webdav.RfcResponseHandler;
 import org.dcache.webdav.transfer.CopyFilter.CredentialSource;
 import org.eclipse.jetty.http.HttpFields;
@@ -151,6 +171,8 @@ import org.eclipse.jetty.io.EndPoint;
 import org.eclipse.jetty.server.HttpConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import static diskCacheV111.services.TransferManagerHandler.RECEIVED_FIRST_POOL_REPLY_STATE;
@@ -281,6 +303,14 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
     private final ScheduledExecutorService _scheduler = Executors.newScheduledThreadPool(1);
     private final BoundedExecutor _activity =
           new BoundedCachedExecutor(r -> new Thread(r, "transfer-finaliser-" + nextThreadCount()), 1);
+    private final BoundedExecutor _proxiedTransfers =
+          new BoundedCachedExecutor(r -> new Thread(r, "tpc-proxy-" + nextThreadCount()), 1);
+    private final AtomicLong _nextProxiedTransferId = new AtomicLong(1);
+
+    private DcacheResourceFactory _resourceFactory;
+    private ObjectFactory<RemoteHttpClientFactory> _httpClientFactory;
+    private boolean _redirectOnRead = true;
+    private boolean _redirectOnWrite = true;
 
 
     /** The time when the most recent message was processed. */
@@ -310,6 +340,40 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
 
     public void setMaxConcurrentFinalisers(int count) {
         _activity.setMaximumPoolSize(count);
+    }
+
+    /**
+     * Used to relay data between the pool and the door when third-party transfers are proxied.
+     */
+    public void setResourceFactory(DcacheResourceFactory factory) {
+        _resourceFactory = factory;
+    }
+
+    /**
+     * Provides the HTTP client factory, which is created only when it is first needed.
+     */
+    public void setHttpClientFactory(ObjectFactory<RemoteHttpClientFactory> factory) {
+        _httpClientFactory = factory;
+    }
+
+    /**
+     * Whether the door redirects clients to pools when they read files.  If false, a third-party
+     * transfer that pushes a file to a remote server is proxied by the door.
+     */
+    public void setRedirectOnRead(boolean enabled) {
+        _redirectOnRead = enabled;
+    }
+
+    /**
+     * Whether the door redirects clients to pools when they write files.  If false, a third-party
+     * transfer that pulls a file from a remote server is proxied by the door.
+     */
+    public void setRedirectOnWrite(boolean enabled) {
+        _redirectOnWrite = enabled;
+    }
+
+    public void setMaxConcurrentProxiedTransfers(int count) {
+        _proxiedTransfers.setMaximumPoolSize(count);
     }
 
     private enum IPFamilyMatcher {
@@ -642,6 +706,8 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
     public void stop() {
         _scheduler.shutdown();
         _activity.shutdown();
+        _proxiedTransfers.shutdown();
+        _transfers.values().forEach(t -> t.cancelProxied("dCache is shutting down"));
     }
 
     @Override
@@ -789,6 +855,21 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         private ScheduledFuture<?> _sendingMarkers;
         private AsyncContext _async;
         private CellStub _transferManager = _genericTransferManager;
+        private String _key;
+
+        /** Whether the door (rather than a pool) connects to the remote server. */
+        private final boolean _proxied;
+        private RemoteHttpTransferClient _proxyClient;
+        private DcacheResourceFactory.RelayedRead _relayedRead;
+        private DcacheResourceFactory.RelayedWrite _relayedWrite;
+        private final AtomicLong _relayedBytes = new AtomicLong();
+        private volatile long _proxyStartedAt;
+        private volatile long _lastRelayed;
+        private volatile Long _expectedBytes;
+        private final Object _workerLock = new Object();
+        @GuardedBy("_workerLock")
+        private Thread _worker;
+        private volatile String _cancelReason;
 
         public RemoteTransfer(Subject subject, Restriction restriction,
               FsPath path, URI destination, @Nullable Object credential,
@@ -830,6 +911,9 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
             _wantDigest = wantDigest;
             HttpServletRequest request = ServletRequest.getRequest();
             _rfcType = Checksums.RfcType.of(Checksums.digestType(request));
+            _proxied = _resourceFactory != null && _httpClientFactory != null
+                  && _type != TransferType.GSIFTP
+                  && !(direction == Direction.PULL ? _redirectOnWrite : _redirectOnRead);
         }
 
         private IoDoorEntry describe() {
@@ -847,7 +931,8 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
             String pool = _pool.orElse("<unknown>");
             long whenSubmitted = _whenSubmitted.toEpochMilli();
             String protocol = "HTTP-TPC / " + _destination.getScheme().toLowerCase();
-            CellAddressCore managerAddress = _transferManager.getDestinationPath().getDestinationAddress();
+            CellAddressCore managerAddress = _proxied ? null
+                  : _transferManager.getDestinationPath().getDestinationAddress();
 
             return new IoDoorEntry(_id, _pnfsId, _path.toString(), _subject,
                     pool, status.toString(), whenSubmitted, client,
@@ -951,6 +1036,10 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
             FileAttributes attributes = resolvePath();
             _pnfsId = attributes.getPnfsId();
 
+            if (_proxied) {
+                return startProxied(attributes);
+            }
+
             RemoteTransferManagerMessage message =
                   new RemoteTransferManagerMessage(_destination, _path,
                         _direction == Direction.PULL, DUMMY_LONG,
@@ -969,7 +1058,8 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                     _transferManager = _genericTransferManager.withDestination(path);
                 }
                 _id = response.getId();
-                _transfers.put(getTransferId(_transferManager, _id), this);
+                _key = getTransferId(_transferManager, _id);
+                _transfers.put(_key, this);
                 addDigestResponseHeader(attributes);
             } catch (NoRouteToCellException | TimeoutCacheException e) {
                 LOGGER.error("Failed to send request to transfer manager: {}", e.getMessage());
@@ -981,6 +1071,19 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                       "transfer not accepted: " + e.getMessage());
             }
 
+            beginResponse();
+
+            _sendingMarkers = _scheduler.scheduleAtFixedRate(this::generateMarker,
+                  _performanceMarkerPeriod,
+                  _performanceMarkerPeriod, MILLISECONDS);
+
+            return _transferResult;
+        }
+
+        /**
+         * Tell the client the transfer is accepted and start asynchronous processing.
+         */
+        private void beginResponse() {
             HttpServletResponse servletResponse = ServletResponse.getResponse();
             servletResponse.setStatus(SC_ACCEPTED);
             servletResponse.setContentType("text/perf-marker-stream");
@@ -1002,12 +1105,6 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                 // Ensure this is called before any perf-marker data is sent.
                 addTrailerCallback();
             }
-
-            _sendingMarkers = _scheduler.scheduleAtFixedRate(this::generateMarker,
-                  _performanceMarkerPeriod,
-                  _performanceMarkerPeriod, MILLISECONDS);
-
-            return _transferResult;
         }
 
         /**
@@ -1017,6 +1114,11 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
          */
         private void checkClientConnected() {
             if (!_endpoint.isOpen()) {
+                if (_proxied) {
+                    cancelProxied("client went away");
+                    return;
+                }
+
                 CancelTransferMessage message =
                       new CancelTransferMessage(_id, DUMMY_LONG);
                 message.setExplanation("client went away");
@@ -1175,7 +1277,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         }
 
         private void completed(String transferError) {
-            if (_transfers.remove(getTransferId(_transferManager, _id)) == null) {
+            if (_transfers.remove(_key) == null) {
                 // Something else called complete, so do nothing.
                 return;
             }
@@ -1245,6 +1347,307 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                 out.flush();
             } catch (IOException e) {
                 LOGGER.warn("Unable to get writer: {}", e.toString());
+            }
+        }
+
+        /**
+         * Start a transfer where the door, instead of a pool, communicates with the remote server.
+         * Data flows between a pool and the remote server via this door.
+         */
+        private ListenableFuture<Optional<String>> startProxied(FileAttributes attributes)
+              throws ErrorResponseException {
+            RemoteHttpDataTransferProtocolInfo info =
+                  (RemoteHttpDataTransferProtocolInfo) buildProtocolInfo();
+
+            CloseableHttpClient httpClient = null;
+            boolean closeClient = false;
+            try {
+                RemoteHttpClientFactory factory = _httpClientFactory.getObject();
+                if (info instanceof RemoteHttpsDataTransferProtocolInfo
+                      && ((RemoteHttpsDataTransferProtocolInfo) info).hasCredential()) {
+                    httpClient = factory.clientFor(
+                          ((RemoteHttpsDataTransferProtocolInfo) info).getCredential());
+                    closeClient = true;
+                } else {
+                    httpClient = factory.sharedClient();
+                }
+
+                if (_direction == Direction.PULL) {
+                    _relayedWrite = _resourceFactory.prepareRelayedWrite(_subject, _restriction,
+                          _path, attributes);
+                } else {
+                    _relayedRead = _resourceFactory.prepareRelayedRead(_subject, _restriction,
+                          _path, _pnfsId);
+                }
+            } catch (BeansException | GeneralSecurityException | URISyntaxException e) {
+                LOGGER.error("Failed to prepare proxied third-party transfer: {}", e.toString());
+                if (closeClient) {
+                    closeQuietly(httpClient);
+                }
+                if (_direction == Direction.PULL) {
+                    deleteFile();
+                }
+                throw new ErrorResponseException(Response.Status.SC_INTERNAL_SERVER_ERROR,
+                      "transfer service unavailable");
+            }
+
+            // Worker threads are reused, so run each transfer with this thread's logging context
+            // (which includes the transfer's session) and restore the worker's afterwards.
+            CDC cdc = new CDC();
+            _proxyClient = new RemoteHttpTransferClient(httpClient, info, () -> { });
+            _id = _nextProxiedTransferId.getAndIncrement();
+            _key = "door-" + _id;
+            _transfers.put(_key, this);
+            addDigestResponseHeader(attributes);
+
+            beginResponse();
+
+            _sendingMarkers = _scheduler.scheduleAtFixedRate(this::generateProxiedMarker,
+                  _performanceMarkerPeriod, _performanceMarkerPeriod, MILLISECONDS);
+
+            CloseableHttpClient client = httpClient;
+            boolean close = closeClient;
+            try {
+                _proxiedTransfers.execute(
+                      () -> cdc.execute(() -> runProxied(attributes, client, close)));
+            } catch (RejectedExecutionException e) {
+                if (close) {
+                    closeQuietly(client);
+                }
+                completed("dCache is shutting down");
+            }
+
+            return _transferResult;
+        }
+
+        private void closeQuietly(CloseableHttpClient client) {
+            try {
+                client.close();
+            } catch (IOException e) {
+                LOGGER.warn("Failed to shut down HTTP client cleanly: {}", e.toString());
+            }
+        }
+
+        private void runProxied(FileAttributes attributes, CloseableHttpClient httpClient,
+              boolean closeClient) {
+            synchronized (_workerLock) {
+                _worker = Thread.currentThread();
+            }
+
+            String error = null;
+            try {
+                _proxyStartedAt = System.currentTimeMillis();
+                _lastRelayed = _proxyStartedAt;
+                if (_direction == Direction.PULL) {
+                    pull();
+                } else {
+                    push(attributes);
+                }
+            } catch (ThirdPartyTransferFailedCacheException e) {
+                error = e.getMessage();
+            } catch (CacheException | IOException e) {
+                error = Exceptions.messageOrClassName(e);
+            } catch (InterruptedException e) {
+                error = "dCache is shutting down";
+            } catch (RuntimeException e) {
+                LOGGER.error("Bug in proxied third-party transfer", e);
+                error = "internal error: " + e;
+            } finally {
+                synchronized (_workerLock) {
+                    _worker = null;
+                }
+                // Clear any interrupt sent to cancel this transfer.
+                Thread.interrupted();
+
+                if (closeClient) {
+                    closeQuietly(httpClient);
+                }
+            }
+
+            String cancelReason = _cancelReason;
+            completed(error != null && cancelReason != null ? cancelReason : error);
+        }
+
+        private void pull() throws CacheException, IOException, InterruptedException {
+            List<Checksum> remote = new CopyOnWriteArrayList<>();
+            List<Checksum> calculated = new ArrayList<>();
+
+            _proxyClient.get(remote::add,
+                  entity -> {
+                      Set<ChecksumType> types = remote.stream().map(Checksum::getType)
+                            .collect(Collectors.toSet());
+                      var in = new ProxiedTransferChecksums.CalculatingInputStream(
+                            entity.getContent(), types, this::relayed);
+                      try {
+                          _relayedWrite.relay(in);
+                      } catch (CacheException e) {
+                          throw new IOException(e.getMessage(), e);
+                      }
+                      calculated.addAll(in.checksums());
+                  },
+                  progress(),
+                  length -> {
+                      _expectedBytes = length;
+                      _relayedWrite.setLength(length);
+                  });
+
+            List<Checksum> local = new ArrayList<>(calculated);
+            boolean haveUncovered = remote.stream().anyMatch(r -> calculated.stream()
+                  .noneMatch(c -> c.getType() == r.getType()));
+            if (haveUncovered) {
+                // The remote server supplied checksums that were not known when the transfer started.
+                try {
+                    _pnfs.getFileAttributes(_path, EnumSet.of(CHECKSUM)).getChecksumsIfPresent()
+                          .ifPresent(local::addAll);
+                } catch (CacheException e) {
+                    LOGGER.warn("Failed to fetch checksums of {}: {}", _path, e.getMessage());
+                }
+            }
+
+            ProxiedTransferChecksums.verify(remote, local,
+                  _flags.contains(TransferFlag.REQUIRE_VERIFICATION));
+        }
+
+        private void push(FileAttributes attributes)
+              throws CacheException, ThirdPartyTransferFailedCacheException {
+            Optional<Set<Checksum>> known = attributes.getChecksumsIfPresent();
+            if (known.isEmpty()) {
+                known = _pnfs.getFileAttributes(_path, EnumSet.of(CHECKSUM))
+                      .getChecksumsIfPresent();
+            }
+
+            if (_flags.contains(TransferFlag.REQUIRE_VERIFICATION) && known.isEmpty()) {
+                throw new ThirdPartyTransferFailedCacheException(
+                      "checksum verification failed: file has no checksum");
+            }
+
+            _expectedBytes = _size;
+            _proxyClient.putAndVerify(RelayedReadEntity::new, progress(), _size, known);
+        }
+
+        private RemoteHttpTransferClient.Progress progress() {
+            return new RemoteHttpTransferClient.Progress() {
+                @Override
+                public long getBytesTransferred() {
+                    return _relayedBytes.get();
+                }
+
+                @Override
+                public long getSize() {
+                    Long expected = _expectedBytes;
+                    return expected == null ? -1 : expected;
+                }
+            };
+        }
+
+        private void relayed(long bytes) {
+            _relayedBytes.addAndGet(bytes);
+            _lastRelayed = System.currentTimeMillis();
+        }
+
+        /**
+         * Cancel a proxied transfer.  Does nothing if this transfer is not proxied.
+         */
+        private void cancelProxied(String reason) {
+            if (!_proxied || _cancelReason != null) {
+                return;
+            }
+            _cancelReason = reason;
+
+            if (_proxyClient != null) {
+                _proxyClient.abort();
+            }
+
+            synchronized (_workerLock) {
+                if (_worker != null) {
+                    _worker.interrupt();
+                }
+            }
+        }
+
+        private void generateProxiedMarker() {
+            long started = _proxyStartedAt;
+            long now = System.currentTimeMillis();
+            RemoteHttpTransferClient client = _proxyClient;
+
+            List<InetSocketAddress> remote = client == null ? null
+                  : client.remoteAddress().map(List::of).orElse(null);
+            IoJobInfo info = new IoJobInfo(_whenSubmitted.toEpochMilli(), started,
+                  started > 0 ? "RUNNING" : "QUEUED", (int) _id, "door", _id, _pnfsId,
+                  _relayedBytes.get(), _expectedBytes, started > 0 ? now - started : 0,
+                  _lastRelayed, remote);
+            int state = started > 0 ? RECEIVED_FIRST_POOL_REPLY_STATE : INITIAL_STATE;
+
+            _lastState = state;
+            _lastInfo = Optional.of(info);
+            if (started > 0 && _transferStarted.isEmpty()) {
+                _transferStarted = Optional.of(Instant.ofEpochMilli(started));
+            }
+
+            if (_pool.isEmpty()) {
+                Optional<String> pool = _direction == Direction.PULL
+                      ? Optional.ofNullable(_relayedWrite).flatMap(r -> r.getPool())
+                      : Optional.ofNullable(_relayedRead).flatMap(r -> r.getPool());
+                pool.ifPresent(p -> _pool = Optional.of(p));
+            }
+
+            sendMarker(state, info);
+            checkClientConnected();
+        }
+
+        /**
+         * The body of a PUT request to the remote server, supplied by relaying a pool's data.
+         */
+        private class RelayedReadEntity extends AbstractHttpEntity {
+
+            @Override
+            public boolean isRepeatable() {
+                return false;
+            }
+
+            @Override
+            public long getContentLength() {
+                return _size;
+            }
+
+            @Override
+            public InputStream getContent() {
+                throw new UnsupportedOperationException("data is relayed to an OutputStream");
+            }
+
+            @Override
+            public boolean isStreaming() {
+                return true;
+            }
+
+            @Override
+            public void writeTo(OutputStream output) throws IOException {
+                OutputStream counting = new FilterOutputStream(output) {
+                    @Override
+                    public void write(int b) throws IOException {
+                        out.write(b);
+                        relayed(1);
+                    }
+
+                    @Override
+                    public void write(byte[] b, int off, int len) throws IOException {
+                        out.write(b, off, len);
+                        relayed(len);
+                    }
+
+                    @Override
+                    public void close() throws IOException {
+                        flush();
+                    }
+                };
+
+                try {
+                    _relayedRead.relay(counting);
+                } catch (CacheException e) {
+                    throw new IOException(e.getMessage(), e);
+                } catch (InterruptedException e) {
+                    throw new InterruptedIOException("transfer interrupted");
+                }
             }
         }
 

@@ -949,6 +949,177 @@ public class DcacheResourceFactory
     }
 
     /**
+     * A door-relayed read of a file: the data flows from a pool, through this door, to the
+     * supplied stream.  This is used by third-party copy when the door is not redirecting
+     * clients to pools.
+     */
+    public class RelayedRead {
+
+        private final ReadTransfer _transfer;
+
+        private RelayedRead(ReadTransfer transfer) {
+            _transfer = transfer;
+        }
+
+        /**
+         * The name of the pool serving the data, once known.
+         */
+        public Optional<String> getPool() {
+            return Optional.ofNullable(_transfer.getPool()).map(p -> p.getName());
+        }
+
+        /**
+         * Start a mover and copy the file's content to the stream.  May be called from any
+         * thread, but only once.
+         */
+        public void relay(OutputStream outputStream)
+              throws CacheException, InterruptedException, IOException {
+            _transfer.restoreSession();
+            _transfers.put((int) _transfer.getId(), _transfer);
+            try {
+                _transfer.readNameSpaceEntry(false);
+                _transfer.selectPoolAndStartMover(_retryPolicy);
+                String uri = _transfer.waitForRedirect(_moverTimeout, _moverTimeoutUnit);
+                if (uri == null) {
+                    throw new TimeoutCacheException("Server is busy (internal timeout)");
+                }
+                _transfer.relayData(outputStream, null);
+            } catch (CacheException e) {
+                _transfer.notifyBilling(e.getRc(), e.getMessage());
+                _transfer.killMover("door experienced internal error: " + e.getMessage());
+                throw e;
+            } catch (InterruptedException e) {
+                _transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                      "Shutting down");
+                _transfer.killMover("door shutting down");
+                throw e;
+            } catch (IOException e) {
+                String message = Exceptions.messageOrClassName(e);
+                _transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                      "Error relaying data: " + message);
+                _transfer.killMover("door experienced error relaying data: " + message);
+                throw e;
+            } catch (RuntimeException e) {
+                _transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                      "Found bug: " + e);
+                _transfer.killMover("door encountered a bug");
+                throw e;
+            } finally {
+                _transfer.killMover("door found orphaned mover");
+                _transfers.remove((int) _transfer.getId());
+            }
+        }
+    }
+
+    /**
+     * A door-relayed write of a file that already has a name-space entry: the data flows from the
+     * supplied stream, through this door, to a pool.  This is used by third-party copy when the
+     * door is not redirecting clients to pools.
+     */
+    public class RelayedWrite {
+
+        private final WriteTransfer _transfer;
+
+        private RelayedWrite(WriteTransfer transfer) {
+            _transfer = transfer;
+        }
+
+        /**
+         * The name of the pool receiving the data, once known.
+         */
+        public Optional<String> getPool() {
+            return Optional.ofNullable(_transfer.getPool()).map(p -> p.getName());
+        }
+
+        /**
+         * Specify the size of the data that will be relayed.
+         */
+        public void setLength(long length) {
+            _transfer.setLength(length);
+        }
+
+        /**
+         * Start a mover and copy all data from the stream into the file.  The name-space entry is
+         * not removed on failure.  May be called from any thread, but only once.
+         */
+        public void relay(InputStream inputStream)
+              throws CacheException, InterruptedException, IOException {
+            _transfer.restoreSession();
+            _transfers.put((int) _transfer.getId(), _transfer);
+            try {
+                _transfer.selectPoolAndStartMover(_retryPolicy);
+                String uri = _transfer.waitForRedirect(_moverTimeout, _moverTimeoutUnit);
+                if (uri == null) {
+                    throw new TimeoutCacheException("Server is busy (internal timeout)");
+                }
+                _transfer.relayData(inputStream);
+            } catch (BadRequestException e) {
+                _transfer.notifyBilling(CacheException.INVALID_ARGS, e.getMessage());
+                _transfer.killMover("pool reported bad request: " + e.getMessage());
+                throw new CacheException(CacheException.INVALID_ARGS,
+                      "pool rejected data: " + e.getMessage());
+            } catch (InsufficientStorageException e) {
+                _transfer.notifyBilling(CacheException.RESOURCE, e.getMessage());
+                _transfer.killMover("pool reported insufficient storage: " + e.getMessage());
+                throw new CacheException(CacheException.RESOURCE,
+                      "insufficient storage: " + e.getMessage());
+            } catch (CacheException e) {
+                _transfer.notifyBilling(e.getRc(), e.getMessage());
+                _transfer.killMover("door experienced internal error: " + e.getMessage());
+                throw e;
+            } catch (InterruptedException e) {
+                _transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                      "Shutting down");
+                _transfer.killMover("door shutting down");
+                throw e;
+            } catch (IOException e) {
+                String message = Exceptions.messageOrClassName(e);
+                _transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                      "Error relaying data: " + message);
+                _transfer.killMover("door experienced error relaying data: " + message);
+                throw e;
+            } catch (RuntimeException e) {
+                _transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                      "Found bug: " + e);
+                _transfer.killMover("door encountered a bug");
+                throw e;
+            } finally {
+                _transfer.killMover("door found orphaned mover");
+                _transfers.remove((int) _transfer.getId());
+            }
+        }
+    }
+
+    /**
+     * Prepare to relay a file's data from a pool.  This must be called from the thread processing
+     * the HTTP request, as it captures request-specific information.
+     */
+    public RelayedRead prepareRelayedRead(Subject subject, Restriction restriction, FsPath path,
+          PnfsId pnfsid) throws URISyntaxException {
+        ReadTransfer transfer = new ReadTransfer(_pnfs, subject, restriction, path, pnfsid, null);
+        transfer.setIsChecksumNeeded(false);
+        transfer.setZone(_zone);
+        transfer.setProxyTransfer(true);
+        return new RelayedRead(transfer);
+    }
+
+    /**
+     * Prepare to relay data into a pool for a file that has just been created in the name space.
+     * This must be called from the thread processing the HTTP request, as it captures
+     * request-specific information.
+     *
+     * @param attributes the attributes returned when the name-space entry was created
+     */
+    public RelayedWrite prepareRelayedWrite(Subject subject, Restriction restriction, FsPath path,
+          FileAttributes attributes) throws URISyntaxException {
+        WriteTransfer transfer = new WriteTransfer(_pnfs, subject, restriction, path);
+        transfer.useCreatedEntry(attributes);
+        transfer.setZone(_zone);
+        transfer.setProxyTransfer(true);
+        return new RelayedWrite(transfer);
+    }
+
+    /**
      * Performs a directory listing returning a list of Resource objects.
      */
     public List<DcacheResource> list(final FsPath path)
@@ -2030,6 +2201,14 @@ public class DcacheResourceFactory
             if (_archiveMetadata.isPresent() && getFileAttributes().getRetentionPolicy() == RetentionPolicy.CUSTODIAL) {
                 getFileAttributes().getStorageInfo().setKey("archive_metadata", _archiveMetadata.get());
             }
+        }
+
+        /**
+         * Use an existing name-space entry, instead of creating one, for this upload.
+         */
+        public void useCreatedEntry(FileAttributes attributes) {
+            setFileAttributes(attributes);
+            setWrite(true);
         }
 
         public void relayData(InputStream inputStream)

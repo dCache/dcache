@@ -137,6 +137,39 @@
                      '${webdav.third-party-transfers.performance-marker-period.unit}')}" />
       <property name="maxConcurrentFinalisers"
               value="${webdav.third-party-transfers.concurrent-finalisers}"/>
+      <property name="resourceFactory" ref="resource-factory"/>
+      <property name="httpClientFactory">
+          <bean class="org.springframework.beans.factory.config.ObjectFactoryCreatingFactoryBean">
+              <property name="targetBeanName" value="tpc-http-client-factory"/>
+          </bean>
+      </property>
+      <property name="redirectOnRead" value="${webdav.redirect.on-read}"/>
+      <property name="redirectOnWrite" value="${webdav.redirect.on-write}"/>
+      <property name="maxConcurrentProxiedTransfers"
+              value="${webdav.third-party-transfers.proxy.max-concurrent}"/>
+  </bean>
+
+  <bean id="tpc-http-client-settings"
+        class="org.dcache.http.tpc.RemoteHttpClientFactory$Settings">
+      <description>Settings for the HTTP client used when the door proxies third-party transfers</description>
+
+      <property name="certificateAuthorityPath" value="${webdav.authn.capath}"/>
+      <property name="certificateAuthorityUpdateInterval" value="${webdav.authn.capath.refresh}"/>
+      <property name="certificateAuthorityUpdateIntervalUnit" value="${webdav.authn.capath.refresh.unit}"/>
+      <property name="namespaceMode" value="${webdav.authn.namespace-mode}"/>
+      <property name="crlCheckingMode" value="${webdav.authn.crl-mode}"/>
+      <property name="ocspCheckingMode" value="${webdav.authn.ocsp-mode}"/>
+      <property name="maxConnections" value="${webdav.third-party-transfers.proxy.max-concurrent}"/>
+      <property name="maxConnectionsPerEndpoint" value="${webdav.third-party-transfers.proxy.max-concurrent}"/>
+      <property name="maxIdle" value="60"/>
+      <property name="maxIdleUnits" value="SECONDS"/>
+  </bean>
+
+  <bean id="tpc-http-client-factory" class="org.dcache.http.tpc.RemoteHttpClientFactory"
+        lazy-init="true" destroy-method="close">
+      <description>Created when the first proxied third-party transfer starts</description>
+
+      <constructor-arg ref="tpc-http-client-settings"/>
   </bean>
 
   <bean id="oidc-client-ids"

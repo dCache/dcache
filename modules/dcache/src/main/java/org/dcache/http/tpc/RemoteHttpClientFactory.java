@@ -60,6 +60,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpRequestExecutor;
 import org.dcache.security.trust.AggregateX509TrustManager;
+import org.dcache.util.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,17 +76,105 @@ public class RemoteHttpClientFactory implements AutoCloseable {
      */
     public static class Settings {
 
-        public String userAgent;
-        public String certificateAuthorityPath;
-        public long certificateAuthorityUpdateInterval;
-        public TimeUnit certificateAuthorityUpdateIntervalUnit;
-        public NamespaceCheckingMode namespaceMode;
-        public CrlCheckingMode crlCheckingMode;
-        public OCSPCheckingMode ocspCheckingMode;
-        public int maxConnections;
-        public int maxConnectionsPerEndpoint;
-        public int maxIdle;
-        public TimeUnit maxIdleUnits;
+        private String userAgent = "dCache/" + Version.of(RemoteHttpClientFactory.class).getVersion();
+        private String certificateAuthorityPath;
+        private long certificateAuthorityUpdateInterval;
+        private TimeUnit certificateAuthorityUpdateIntervalUnit;
+        private NamespaceCheckingMode namespaceMode;
+        private CrlCheckingMode crlCheckingMode;
+        private OCSPCheckingMode ocspCheckingMode;
+        private int maxConnections;
+        private int maxConnectionsPerEndpoint;
+        private int maxIdle;
+        private TimeUnit maxIdleUnits;
+
+        public String getUserAgent() {
+            return userAgent;
+        }
+
+        public void setUserAgent(String userAgent) {
+            this.userAgent = userAgent;
+        }
+
+        public String getCertificateAuthorityPath() {
+            return certificateAuthorityPath;
+        }
+
+        public void setCertificateAuthorityPath(String certificateAuthorityPath) {
+            this.certificateAuthorityPath = certificateAuthorityPath;
+        }
+
+        public long getCertificateAuthorityUpdateInterval() {
+            return certificateAuthorityUpdateInterval;
+        }
+
+        public void setCertificateAuthorityUpdateInterval(long certificateAuthorityUpdateInterval) {
+            this.certificateAuthorityUpdateInterval = certificateAuthorityUpdateInterval;
+        }
+
+        public TimeUnit getCertificateAuthorityUpdateIntervalUnit() {
+            return certificateAuthorityUpdateIntervalUnit;
+        }
+
+        public void setCertificateAuthorityUpdateIntervalUnit(TimeUnit certificateAuthorityUpdateIntervalUnit) {
+            this.certificateAuthorityUpdateIntervalUnit = certificateAuthorityUpdateIntervalUnit;
+        }
+
+        public NamespaceCheckingMode getNamespaceMode() {
+            return namespaceMode;
+        }
+
+        public void setNamespaceMode(NamespaceCheckingMode namespaceMode) {
+            this.namespaceMode = namespaceMode;
+        }
+
+        public CrlCheckingMode getCrlCheckingMode() {
+            return crlCheckingMode;
+        }
+
+        public void setCrlCheckingMode(CrlCheckingMode crlCheckingMode) {
+            this.crlCheckingMode = crlCheckingMode;
+        }
+
+        public OCSPCheckingMode getOcspCheckingMode() {
+            return ocspCheckingMode;
+        }
+
+        public void setOcspCheckingMode(OCSPCheckingMode ocspCheckingMode) {
+            this.ocspCheckingMode = ocspCheckingMode;
+        }
+
+        public int getMaxConnections() {
+            return maxConnections;
+        }
+
+        public void setMaxConnections(int maxConnections) {
+            this.maxConnections = maxConnections;
+        }
+
+        public int getMaxConnectionsPerEndpoint() {
+            return maxConnectionsPerEndpoint;
+        }
+
+        public void setMaxConnectionsPerEndpoint(int maxConnectionsPerEndpoint) {
+            this.maxConnectionsPerEndpoint = maxConnectionsPerEndpoint;
+        }
+
+        public int getMaxIdle() {
+            return maxIdle;
+        }
+
+        public void setMaxIdle(int maxIdle) {
+            this.maxIdle = maxIdle;
+        }
+
+        public TimeUnit getMaxIdleUnits() {
+            return maxIdleUnits;
+        }
+
+        public void setMaxIdleUnits(TimeUnit maxIdleUnits) {
+            this.maxIdleUnits = maxIdleUnits;
+        }
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RemoteHttpClientFactory.class);
@@ -137,7 +226,7 @@ public class RemoteHttpClientFactory implements AutoCloseable {
         FileSystem defaultFileSystem = FileSystems.getDefault();
 
         var trustManagers = Splitter.on(':').omitEmptyStrings()
-              .splitToList(settings.certificateAuthorityPath).stream()
+              .splitToList(settings.getCertificateAuthorityPath()).stream()
               .map(defaultFileSystem::getPath)
               .map(this::buildTrustManager)
               .collect(Collectors.toList());
@@ -165,10 +254,10 @@ public class RemoteHttpClientFactory implements AutoCloseable {
 
     private CloseableHttpClient createClient(SSLContext context) {
         return HttpClients.custom()
-              .setUserAgent(settings.userAgent)
-              .evictIdleConnections(settings.maxIdle, settings.maxIdleUnits)
-              .setMaxConnPerRoute(settings.maxConnectionsPerEndpoint)
-              .setMaxConnTotal(settings.maxConnections)
+              .setUserAgent(settings.getUserAgent())
+              .evictIdleConnections(settings.getMaxIdle(), settings.getMaxIdleUnits())
+              .setMaxConnPerRoute(settings.getMaxConnectionsPerEndpoint())
+              .setMaxConnTotal(settings.getMaxConnections())
               .setRequestExecutor(new HttpRequestExecutor((int) EXPECT_100_TIMEOUT.toMillis()))
               .setRedirectStrategy(DROP_AUTHORIZATION_HEADER)
               .setSSLContext(context)
@@ -185,13 +274,13 @@ public class RemoteHttpClientFactory implements AutoCloseable {
     }
 
     private X509ExtendedTrustManager buildTrustManager(Path path) {
-        var ocspParameters = new OCSPParametes(settings.ocspCheckingMode);
-        var revocationParams = new RevocationParameters(settings.crlCheckingMode, ocspParameters);
+        var ocspParameters = new OCSPParametes(settings.getOcspCheckingMode());
+        var revocationParams = new RevocationParameters(settings.getCrlCheckingMode(), ocspParameters);
         var validatorParams = new ValidatorParams(revocationParams, ProxySupport.ALLOW);
-        long updateInterval = settings.certificateAuthorityUpdateIntervalUnit.toMillis(
-              settings.certificateAuthorityUpdateInterval);
+        long updateInterval = settings.getCertificateAuthorityUpdateIntervalUnit().toMillis(
+              settings.getCertificateAuthorityUpdateInterval());
         var validator = new OpensslCertChainValidator(path.toString(), true,
-              settings.namespaceMode, updateInterval, validatorParams, false);
+              settings.getNamespaceMode(), updateInterval, validatorParams, false);
         onShutdownTasks.add(validator::dispose);
         return new SSLTrustManagerWithHostnameChecking(validator,
               new EnforcingNameMismatchCallback());

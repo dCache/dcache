@@ -42,7 +42,10 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.http.HttpEntity;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -314,6 +317,60 @@ public class RemoteHttpTransferClientTest {
         }
 
         assertThat(requests, contains("PUT /file"));
+    }
+
+    @Test
+    public void shouldNotMakeRequestsAfterAbort() throws Exception {
+        handle("/file", e -> respond(e, 200, DATA));
+        RemoteHttpTransferClient transfer = clientFor(info("/file", false));
+
+        transfer.abort();
+
+        try {
+            transfer.get(c -> {
+            }, entity -> {
+            }, NO_PROGRESS, l -> {
+            });
+            fail("expected failure");
+        } catch (ThirdPartyTransferFailedCacheException e) {
+            assertThat(e.getMessage(), containsString("cancelled"));
+        }
+        assertThat(requests, empty());
+    }
+
+    @Test
+    public void shouldInterruptDownloadInProgressWhenAborted() throws Exception {
+        CountDownLatch bodyStarted = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        handle("/slow", e -> {
+            e.sendResponseHeaders(200, 1_000_000);
+            e.getResponseBody().write(DATA);
+            e.getResponseBody().flush();
+            bodyStarted.countDown();
+            release.await(30, TimeUnit.SECONDS);
+        });
+        RemoteHttpTransferClient transfer = clientFor(info("/slow", false));
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+
+        Thread download = new Thread(() -> {
+            try {
+                transfer.get(c -> {
+                }, entity -> entity.writeTo(new ByteArrayOutputStream()), NO_PROGRESS, l -> {
+                });
+            } catch (Throwable t) {
+                failure.set(t);
+            }
+        });
+        download.start();
+        assertThat(bodyStarted.await(10, TimeUnit.SECONDS), equalTo(true));
+
+        transfer.abort();
+        download.join(10_000);
+        release.countDown();
+
+        assertThat(download.isAlive(), equalTo(false));
+        assertThat(failure.get() instanceof ThirdPartyTransferFailedCacheException,
+              equalTo(true));
     }
 
     @Test
