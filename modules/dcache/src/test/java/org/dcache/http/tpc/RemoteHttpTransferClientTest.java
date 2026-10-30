@@ -182,6 +182,41 @@ public class RemoteHttpTransferClientTest {
     }
 
     @Test
+    public void shouldFailDownloadWhenVerificationRequiredButNoChecksumOffered() throws Exception {
+        handle("/file", e -> respond(e, 200, DATA));
+        RemoteHttpTransferClient transfer = clientFor(info("/file", true));
+
+        try {
+            transfer.get(c -> {
+            }, entity -> entity.writeTo(new ByteArrayOutputStream()), NO_PROGRESS, l -> {
+            });
+            fail("expected failure");
+        } catch (ThirdPartyTransferFailedCacheException e) {
+            assertThat(e.getMessage(), containsString("no checksum in HEAD response"));
+        }
+    }
+
+    @Test
+    public void shouldUseChecksumFromHeadWhenGetOffersNone() throws Exception {
+        handle("/file", e -> {
+            if (e.getRequestMethod().equals("HEAD")) {
+                respond(e, 200, null, "Content-MD5", md5(DATA));
+            } else {
+                respond(e, 200, DATA);
+            }
+        });
+        List<Checksum> received = new ArrayList<>();
+        RemoteHttpTransferClient transfer = clientFor(info("/file", true));
+
+        transfer.get(received::add, entity -> entity.writeTo(new ByteArrayOutputStream()),
+              NO_PROGRESS, l -> {
+              });
+
+        assertThat(received, contains(md5Checksum(DATA)));
+        assertThat(requests, contains("GET /file", "HEAD /file"));
+    }
+
+    @Test
     public void shouldUploadAndVerifyFile() throws Exception {
         handle("/file", e -> {
             switch (e.getRequestMethod()) {
