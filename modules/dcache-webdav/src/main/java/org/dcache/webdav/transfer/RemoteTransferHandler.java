@@ -311,6 +311,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
     private ObjectFactory<RemoteHttpClientFactory> _httpClientFactory;
     private boolean _redirectOnRead = true;
     private boolean _redirectOnWrite = true;
+    private boolean _bindToRequestAddress = true;
 
 
     /** The time when the most recent message was processed. */
@@ -370,6 +371,14 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
      */
     public void setRedirectOnWrite(boolean enabled) {
         _redirectOnWrite = enabled;
+    }
+
+    /**
+     * Whether a proxied transfer connects to the remote server from the address on which the client
+     * connected to the door.
+     */
+    public void setBindToRequestAddress(boolean enabled) {
+        _bindToRequestAddress = enabled;
     }
 
     public void setMaxConcurrentProxiedTransfers(int count) {
@@ -1395,6 +1404,10 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
             // (which includes the transfer's session) and restore the worker's afterwards.
             CDC cdc = new CDC();
             _proxyClient = new RemoteHttpTransferClient(httpClient, info, () -> { });
+            if (_bindToRequestAddress) {
+                ProxiedTransferSource.choose(ServletRequest.getRequest().getLocalAddr(),
+                      _destination.getHost()).ifPresent(_proxyClient::setLocalAddress);
+            }
             _id = _nextProxiedTransferId.getAndIncrement();
             _key = "door-" + _id;
             _transfers.put(_key, this);

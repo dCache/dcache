@@ -52,6 +52,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -207,6 +208,9 @@ public class RemoteHttpTransferClient {
 
     private volatile Long _expectedTransferSize;
 
+    @Nullable
+    private InetAddress _localAddress;
+
     private volatile boolean _aborted;
     private volatile HttpUriRequest _currentRequest;
 
@@ -221,6 +225,14 @@ public class RemoteHttpTransferClient {
         _client = requireNonNull(client);
         _info = requireNonNull(info);
         _onConnected = requireNonNull(onConnected);
+    }
+
+    /**
+     * Make all connections from the given local address.  By default, the operating system
+     * chooses the address.  This must be called before the transfer starts.
+     */
+    public void setLocalAddress(@Nullable InetAddress address) {
+        _localAddress = address;
     }
 
     /**
@@ -527,6 +539,7 @@ public class RemoteHttpTransferClient {
         int socketTimeout = Math.max(SOCKET_TIMEOUT, timeLeftBeforeDeadline);
 
         get.setConfig(RequestConfig.custom()
+              .setLocalAddress(_localAddress)
               .setConnectTimeout(CONNECTION_TIMEOUT)
               .setSocketTimeout(socketTimeout)
               .build());
@@ -675,6 +688,7 @@ public class RemoteHttpTransferClient {
     private HttpPut buildPutRequest(URI location, HttpEntity entity, Set<HeaderFlags> flags) {
         HttpPut put = new HttpPut(location);
         put.setConfig(RequestConfig.custom()
+              .setLocalAddress(_localAddress)
               .setConnectTimeout(CONNECTION_TIMEOUT)
               .setExpectContinueEnabled(true)
               .setSocketTimeout(0)
@@ -803,6 +817,7 @@ public class RemoteHttpTransferClient {
         int socketTimeout = Math.max(SOCKET_TIMEOUT, timeLeftBeforeDeadline);
 
         head.setConfig(RequestConfig.custom()
+              .setLocalAddress(_localAddress)
               .setConnectTimeout(CONNECTION_TIMEOUT)
               .setSocketTimeout(socketTimeout)
 
@@ -901,6 +916,7 @@ public class RemoteHttpTransferClient {
     private HttpDelete buildDeleteRequest() {
         HttpDelete delete = new HttpDelete(_info.getUri());
         delete.setConfig(RequestConfig.custom()
+              .setLocalAddress(_localAddress)
               .setConnectTimeout(CONNECTION_TIMEOUT)
               .setSocketTimeout(SOCKET_TIMEOUT)
               .build());

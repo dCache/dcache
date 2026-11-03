@@ -53,6 +53,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -371,6 +372,29 @@ public class RemoteHttpTransferClientTest {
         assertThat(download.isAlive(), equalTo(false));
         assertThat(failure.get() instanceof ThirdPartyTransferFailedCacheException,
               equalTo(true));
+    }
+
+    @Test
+    public void shouldConnectFromConfiguredLocalAddress() throws Exception {
+        InetAddress source = InetAddress.getByName("127.0.0.2");
+        try (java.net.ServerSocket probe = new java.net.ServerSocket(0, 1, source)) {
+            // 127.0.0.2 is bindable on this host
+        } catch (IOException e) {
+            Assume.assumeNoException(e);
+        }
+        AtomicReference<InetAddress> seen = new AtomicReference<>();
+        handle("/file", e -> {
+            seen.set(e.getRemoteAddress().getAddress());
+            respond(e, 200, DATA);
+        });
+        RemoteHttpTransferClient transfer = clientFor(info("/file", false));
+        transfer.setLocalAddress(source);
+
+        transfer.get(c -> {
+        }, entity -> entity.writeTo(new ByteArrayOutputStream()), NO_PROGRESS, l -> {
+        });
+
+        assertThat(seen.get(), equalTo(source));
     }
 
     @Test

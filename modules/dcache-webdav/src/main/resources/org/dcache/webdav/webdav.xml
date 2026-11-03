@@ -145,6 +145,8 @@
       </property>
       <property name="redirectOnRead" value="${webdav.redirect.on-read}"/>
       <property name="redirectOnWrite" value="${webdav.redirect.on-write}"/>
+      <property name="bindToRequestAddress"
+              value="${webdav.third-party-transfers.proxy.bind-to-request-address}"/>
       <property name="maxConcurrentProxiedTransfers"
               value="${webdav.third-party-transfers.proxy.max-concurrent}"/>
   </bean>
