@@ -40,6 +40,18 @@ final class ProxiedTransferSource {
     }
 
     /**
+     * Parse an IP address literal.  Servlet containers may enclose an IPv6 address in square
+     * brackets, as in a URI.
+     */
+    private static InetAddress parseAddress(String literal) {
+        try {
+            return InetAddresses.forUriString(literal);
+        } catch (IllegalArgumentException e) {
+            return InetAddresses.forString(literal);
+        }
+    }
+
+    /**
      * Select the local address to use.
      *
      * @param requestLocalAddress the address the client connected to, as a literal IP address
@@ -49,9 +61,9 @@ final class ProxiedTransferSource {
     static Optional<InetAddress> choose(String requestLocalAddress, String remoteHost) {
         InetAddress local;
         try {
-            local = InetAddresses.forString(requestLocalAddress);
+            local = parseAddress(requestLocalAddress);
         } catch (IllegalArgumentException e) {
-            LOGGER.debug("Not binding: request local address \"{}\" is not an IP address",
+            LOGGER.info("Not binding: request local address \"{}\" is not an IP address",
                   requestLocalAddress);
             return Optional.empty();
         }
@@ -63,11 +75,11 @@ final class ProxiedTransferSource {
         try {
             if (NetworkInterface.getByInetAddress(local) == null) {
                 // For example, a virtual address of a load balancer.
-                LOGGER.debug("Not binding: {} is not an address of this host", local);
+                LOGGER.info("Not binding: {} is not an address of this host", local);
                 return Optional.empty();
             }
         } catch (SocketException e) {
-            LOGGER.debug("Not binding: cannot check whether {} is local: {}", local,
+            LOGGER.info("Not binding: cannot check whether {} is local: {}", local,
                   e.toString());
             return Optional.empty();
         }
@@ -75,6 +87,7 @@ final class ProxiedTransferSource {
         try {
             for (InetAddress remote : InetAddress.getAllByName(remoteHost)) {
                 if (remote.getClass() == local.getClass()) {
+                    LOGGER.debug("Connecting to {} from {}", remoteHost, local);
                     return Optional.of(local);
                 }
             }
@@ -82,7 +95,7 @@ final class ProxiedTransferSource {
             return Optional.empty();
         }
 
-        LOGGER.debug("Not binding: {} has no address in the same IP family as {}", remoteHost,
+        LOGGER.info("Not binding: {} has no address in the same IP family as {}", remoteHost,
               local);
         return Optional.empty();
     }

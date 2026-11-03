@@ -21,7 +21,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
 import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.util.Optional;
+import org.junit.Assume;
 import org.junit.Test;
 
 public class ProxiedTransferSourceTest {
@@ -30,6 +32,24 @@ public class ProxiedTransferSourceTest {
     public void shouldUseLocalAddressInSameFamilyAsRemote() throws Exception {
         assertThat(ProxiedTransferSource.choose("127.0.0.1", "127.0.0.1"),
               equalTo(Optional.of(InetAddress.getByName("127.0.0.1"))));
+    }
+
+    @Test
+    public void shouldAcceptBracketedIpv6Address() throws Exception {
+        Assume.assumeTrue("host has no IPv6 loopback address",
+              NetworkInterface.getByInetAddress(InetAddress.getByName("::1")) != null);
+
+        assertThat(ProxiedTransferSource.choose("[::1]", "[::1]"),
+              equalTo(Optional.of(InetAddress.getByName("::1"))));
+    }
+
+    @Test
+    public void shouldAcceptUnbracketedIpv6Address() throws Exception {
+        Assume.assumeTrue("host has no IPv6 loopback address",
+              NetworkInterface.getByInetAddress(InetAddress.getByName("::1")) != null);
+
+        assertThat(ProxiedTransferSource.choose("::1", "::1"),
+              equalTo(Optional.of(InetAddress.getByName("::1"))));
     }
 
     @Test
