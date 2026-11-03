@@ -21,6 +21,7 @@ about which ports may be deprecated.
 | 2880        | is the **WebDAV** port                                                                          | In- and outbound traffic on **webdav** doors                                      |
 | 3456        | is for postmaster listening to requests for the PSQL database for dCache database functionality | Outbound for PnfsDomain, dCacheDomain and doors; inbound for PSQL server          |
 | 3880        | used to access dCache View (via https)                                                          | frontend                                                                          |
+| 9000        | is the **S3** port                                                                              | In- and outbound traffic on **s3** doors                                          |
 | 11111       | is used for internal dCache communication (deprecated)                                          | By default: outbound for all components, inbound for dCache domain                |
 | 22112       | provides access to the **info** service                                                         | info                                                                              |
 | 22725       | is used for **Kerberos dCap**                                                                   | Inbound for **dCap** doors                                                        |
