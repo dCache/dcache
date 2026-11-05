@@ -80,9 +80,12 @@ For a minimal test installation:
   - At least 500 MiB free disk space
 
 - Software:
-  - OpenJDK 17 (required) or OpenJDK 21 (tested)
+  - OpenJDK 21 or newer (required)
   - PostgreSQL Server 9.5 or later
   - Apache ZooKeeper 3.8 or 3.9 (tested)
+
+Note that the dCache RPM packages require Java 21 and cannot be installed
+on a host that only provides Java 17.
 
 For high performance production scenarios, the hardware requirements greatly
 differ, which makes it impossible to provide such parameters here. However, if

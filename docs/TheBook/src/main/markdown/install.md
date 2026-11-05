@@ -78,10 +78,10 @@ For example, `##SERIES##` could be `10.1` and `##VERSION##` could be `10.1.1`.
 
 ### Installing prerequisite packages
 
-First, install OpenJDK and httpd-tools packages.
+First, install OpenJDK 21 and httpd-tools packages.
 
 ```console-root
-yum install java-17-openjdk-headless httpd-tools
+yum install java-21-openjdk-headless httpd-tools
 ```
 
 ### Installing PostgreSQL
