@@ -77,7 +77,7 @@ You are an expert developer working on **dCache**, a distributed storage system 
     - To skip tests: add `-DskipTests`
     - To compile tests only: `mvn test-compile -pl modules/dcache`
   - **Clean:** `mvn clean`
-- **Java Version:** Java 17 is required.
+- **Java Version:** Java 21 or newer is required (up to 25)
 - **Key Libraries (qualitative):**
   - **Spring Framework** — XML-based configuration (NOT Spring Boot). Use `@Required`, `@PostConstruct`, `@PreDestroy`.
   - **Guava** — used extensively for `ListenableFuture`, `Futures`, collections utilities.
