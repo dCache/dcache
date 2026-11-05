@@ -105,7 +105,48 @@ Enstore specific storage information’s keys
 	 - <volume>: Tape Volume (get only) (e.g. IA6912)
 	 - <location>: Location on tape (get only) (e.g. : 0000_000000000_0000117)
 
+Client provided storage information’s keys
+
+	- <archive_metadata>: Optional, opaque hint provided by the client on upload, which the TSS may use to optimise on-tape placement of the file (put only). See [Archive metadata provided by clients](#archive-metadata-provided-by-clients).
+
 There might be more key values pairs which are used by the dCache internally and which should not affect the behaviour of the   executable.
+
+#### Archive metadata provided by clients
+
+When a file is written through the WebDAV door, the client may provide an
+`ArchiveMetadata` HTTP header with additional information intended for the
+tape system, for example to collocate files that belong to the same dataset
+on the same tape. This is supported for:
+
+- direct uploads using HTTP `PUT`, and
+- HTTP third-party copy in pull mode (an HTTP `COPY` request with a `Source`
+  header, where dCache fetches the file from a remote server).
+
+The header is only honoured if the file's retention policy is `CUSTODIAL`;
+for any other retention policy it is silently ignored. No configuration is
+required to enable this behaviour.
+
+dCache does not interpret or validate the value. It is stored unchanged in the
+file's storage information under the key `archive_metadata` and handed to the
+tape system when the file is flushed:
+
+- An EXECUTABLE configured with the `script` nearline storage provider
+  receives it as part of the `-si=` option, for example:
+
+        -si=size=1048576000;new=true;stored=false;sClass=desy:cms-sc3;cClass=-;hsm=osm;archive_metadata=<value>;
+
+  Since `;` is used as the separator between storage information entries,
+  values containing `;` can not be reliably extracted by the executable.
+
+- A nearline storage plugin can access it from the flush request:
+
+        String amd = request.getFileAttributes().getStorageInfo().getKey("archive_metadata");
+
+  The returned value is `null` if the client did not provide the header.
+
+It is up to the EXECUTABLE or plugin to decide how to use this information;
+an executable that does not know about the `archive_metadata` key can safely
+ignore it.
 
 #### Storage URI
 
@@ -354,7 +395,7 @@ The output will have the following format:
            |+-----------  (P) File is precious, i.e., it is only on disk
            +------------  (C) File is on tape and only cached on disk.
 
--   LOCK-TIME: The number of milli-seconds this file will still be locked. Please note that this is an internal lock and not the pin-time.
+-   LOCK-TIME: The number of milli-seconds this file will still be locked. Please note that this is an internal lock and not the pin-time (SRM).
 -   OPEN-COUNT: Number of clients currently reading this file.
 -   SIZE: File size
 -   STORAGE-CLASS: The storage class of this file.
@@ -435,7 +476,7 @@ file as described below. dCache components need to be restarted to
 activate the changes.
 
     <threshold>
-         <appenderName>stdout</appenderName>
+         <appender>stdout</appender>
          <logger>root</logger>
          <level>warn</level>
        </threshold>
@@ -443,7 +484,7 @@ activate the changes.
 needs to be changed to
 
     <threshold>
-         <appenderName>stdout</appenderName>
+         <appender>stdout</appender>
          <logger>root</logger>
          <level>info</level>
        </threshold>

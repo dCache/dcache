@@ -37,6 +37,14 @@ failure of the request.
 Each request object has a unique ID and dCache may cancel a nearline request at
 any time using this ID.
 
+For files uploaded through the WebDAV door, the client may have supplied
+placement hints for the tape system with the `ArchiveMetadata` HTTP header. For
+`CUSTODIAL` files this value is available to the driver on flush via
+`request.getFileAttributes().getStorageInfo().getKey("archive_metadata")`
+(`null` if no hint was given). See
+[Archive metadata provided by clients](config-hsm.md#archive-metadata-provided-by-clients)
+for details.
+
 ## Identifying Replicas
 
 In dCache, a physical copy of a logical file is called a *replica*. Thus pools
