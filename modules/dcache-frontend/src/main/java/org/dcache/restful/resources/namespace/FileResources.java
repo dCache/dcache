@@ -12,9 +12,12 @@ import diskCacheV111.util.NoAttributeCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.HttpProtocolInfo;
 import diskCacheV111.vehicles.PnfsWriteExtendedAttributesMessage.Mode;
 import diskCacheV111.vehicles.ProtocolInfo;
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellIdentityAware;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Exceptions;
 import io.swagger.annotations.Api;
@@ -25,18 +28,21 @@ import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import io.swagger.annotations.Example;
 import io.swagger.annotations.ExampleProperty;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.security.auth.Subject;
@@ -59,6 +65,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.dcache.auth.Origin;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
 import org.dcache.http.PathMapper;
@@ -94,7 +101,7 @@ import org.springframework.stereotype.Component;
 @Api(value = "namespace", authorizations = {@Authorization("basicAuth")})
 @Component
 @Path("/namespace")
-public class FileResources {
+public class FileResources implements CellIdentityAware {
 
     private static final Logger LOG = LoggerFactory.getLogger(FileResources.class);
 
@@ -130,6 +137,13 @@ public class FileResources {
     @Inject
     @Named("qos-engine")
     private CellStub qosEngine;
+
+    @Inject
+    @Named("billing-topic-stub")
+    private CellStub billingTopic;
+
+    /* Set by the cell, so billing records name this door. */
+    private CellAddressCore cellAddress;
 
     private boolean useQosService;
 
@@ -610,9 +624,12 @@ public class FileResources {
         PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager);
         FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new, handler);
 
+        FileAttributes attributes;
         try {
-            handler.deletePnfsEntry(path.toString());
-
+            /* PnfsManager returns these attributes of the deleted entry for the billing record. */
+            attributes = handler.deletePnfsEntry(null, path.toString(),
+                  EnumSet.allOf(FileType.class),
+                  EnumSet.of(FileAttribute.PNFSID, FileAttribute.TYPE, FileAttribute.SIZE));
         } catch (FileNotFoundCacheException e) {
             throw new NotFoundException(e);
         } catch (PermissionDeniedCacheException e) {
@@ -627,7 +644,41 @@ public class FileResources {
             LOG.warn(Exceptions.meaningfulMessage(e));
             throw new InternalServerErrorException(e);
         }
+
+        /* As in the other doors, only the removal of files and links is billed. */
+        if (attributes.getFileType() != FileType.DIR) {
+            try {
+                sendRemoveInfoToBilling(attributes, path);
+            } catch (RuntimeException e) {
+                /* The entry is already deleted, so the request still succeeds. */
+                LOG.warn("Failed to send remove record for {} to billing: {}", path,
+                      e.toString());
+            }
+        }
         return successfulResponse(Response.Status.OK);
+    }
+
+    private void sendRemoveInfoToBilling(FileAttributes attributes, FsPath path) {
+        /* The requesting user, even if the delete ran with an admin role as root. */
+        Subject subject = RequestUser.getSubject();
+        DoorRequestInfoMessage infoRemove = new DoorRequestInfoMessage(cellAddress, "remove");
+        infoRemove.setSubject(subject);
+        infoRemove.setBillingPath(path.toString());
+        infoRemove.setPnfsId(attributes.getPnfsId());
+        infoRemove.setFileSize(attributes.getSizeIfPresent().orElse(0L));
+        Origin origin = Subjects.getOrigin(subject);
+        if (origin != null) {
+            infoRemove.setClient(origin.getAddress().getHostAddress());
+            infoRemove.setClientChain(origin.getClientChain().stream()
+                  .map(InetAddress::getHostAddress)
+                  .collect(Collectors.joining(",")));
+        }
+        billingTopic.notify(infoRemove);
+    }
+
+    @Override
+    public void setCellAddress(CellAddressCore address) {
+        cellAddress = address;
     }
 
     @Required
