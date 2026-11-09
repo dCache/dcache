@@ -74,6 +74,7 @@ import diskCacheV111.vehicles.PoolModifyModeMessage;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.util.CommandThrowableException;
 import dmg.util.Exceptions;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -85,15 +86,16 @@ import io.swagger.annotations.ResponseHeader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.BadRequestException;
+import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
@@ -102,6 +104,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.PATCH;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -121,6 +124,7 @@ import org.dcache.restful.services.pool.PoolInfoService;
 import org.dcache.restful.services.transfers.TransferInfoService;
 import org.dcache.restful.util.RequestUser;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -144,6 +148,9 @@ public final class PoolInfoResources {
                 + "type parameter, or p2p movers using "
                 + "'p2p-client,p2p-server'";
 
+    // reject any pool name input that is not a valid name or includes flags
+    private static final Pattern VALID_POOL_NAME = Pattern.compile("[A-Za-z0-9_.][A-Za-z0-9_.-]*");
+
     @Context
     private HttpServletRequest request;
 
@@ -162,6 +169,10 @@ public final class PoolInfoResources {
     @Inject
     @Named("pool-stub")
     private CellStub poolStub;
+
+    @Inject
+    @Named("pool-manager-stub")
+    private CellStub poolManagerStub;
 
     private boolean unlimitedOperationVisibility;
 
@@ -502,7 +513,7 @@ public final class PoolInfoResources {
     }
 
     @PATCH
-    @ApiOperation("Modify a pool's mode.  Requires admin role.")
+    @ApiOperation("Modify a pool's mode.  Requires admin role. This change is not persistent after restart")
     @ApiResponses({
           @ApiResponse(code = 400, message = "Bad Request"),
           @ApiResponse(code = 403, message = "Pool command only accessible to admin users."),
@@ -538,6 +549,129 @@ public final class PoolInfoResources {
             throw new InternalServerErrorException(e);
         }
 
+        return successfulResponse(Response.Status.OK);
+    }
+
+    @POST
+    @ApiOperation("Add a pool. Requires admin role. Changes are persistent after restart.")
+    @ApiResponses({
+            @ApiResponse(code = 400, message = "Bad Request"),
+            @ApiResponse(code = 403, message = "Pool command only accessible to admin users."),
+            @ApiResponse(code = 409, message = "Pool already exists"),
+            @ApiResponse(code = 500, message = "Internal Server Error"),
+    })
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response addPool(@ApiParam(value = "JSON object describing the new pool: "
+            + "name (String, required), "
+            + "noping, disabled, rdonly (boolean, default false).",
+            required = true) String requestPayload){
+
+        if (!RequestUser.isAdmin()) {
+            throw new ForbiddenException("Pool command only accessible to admin users.");
+        }
+
+        String name;
+        try {
+            JSONObject payload = new JSONObject(requestPayload);
+            name = payload.getString("name");
+            if (!VALID_POOL_NAME.matcher(name).matches()) {
+                throw new BadRequestException("Invalid pool name: " + name);
+            }
+            String noping = payload.optBoolean("noping") ? " -noping" : "";
+            String disabled = payload.optBoolean("disabled") ? " -disabled" : "";
+            String rdonly = payload.optBoolean("rdonly") ? " -rdonly" : "";
+
+            String adminCommand = "psu create pool " + name + disabled + noping + rdonly;
+
+            poolManagerStub.sendAndWait(adminCommand, String.class);
+
+        } catch (JSONException | IllegalArgumentException e) {
+            throw new BadRequestException(e);
+        } catch (CacheException e) {
+            if (e.getCause() instanceof CommandThrowableException
+                  && ((CommandThrowableException) e.getCause()).getTargetException()
+                  instanceof IllegalArgumentException) {
+                throw new ClientErrorException(Response.Status.CONFLICT);
+            }
+            LOGGER.warn(Exceptions.meaningfulMessage(e));
+            throw new InternalServerErrorException(e);
+        } catch (InterruptedException | NoRouteToCellException e) {
+            LOGGER.warn(Exceptions.meaningfulMessage(e));
+            throw new InternalServerErrorException(e);
+        }
+
+        try {
+            poolManagerStub.sendAndWait("save", String.class);
+        } catch (CacheException | NoRouteToCellException | InterruptedException e) {
+            LOGGER.warn("Pool {} created but PoolManager configuration could not be saved: {}",
+                  name, Exceptions.meaningfulMessage(e));
+            throw new InternalServerErrorException(
+                    "Pool " + name + " created but configuration could not be saved");
+        }
+        return successfulResponse(Response.Status.OK);
+    }
+
+    @PATCH
+    @ApiOperation("Change a pool's selection settings via 'psu set pool'. Requires admin role. "
+            + "Changes are persistent after restart.")
+    @ApiResponses({
+            @ApiResponse(code = 400, message = "Bad Request"),
+            @ApiResponse(code = 403, message = "Pool command only accessible to admin users."),
+            @ApiResponse(code = 404, message = "Not Found"),
+            @ApiResponse(code = 500, message = "Internal Server Error"),
+    })
+    @Path("/{pool}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response updatePoolMode(@ApiParam(value = "The pool affected by the mode change.",
+                    required = true)
+            @PathParam("pool") String pool,
+            @ApiParam(value = "JSON object describing the pool's selection settings: "
+                    + "disabled, noping, rdonly (boolean). Only fields present are changed.",
+                    required = true) String requestPayload) {
+
+        if (!RequestUser.isAdmin()) {
+            throw new ForbiddenException("Pool command only accessible to admin users.");
+        }
+
+        if (!VALID_POOL_NAME.matcher(pool).matches()) {
+            throw new BadRequestException("Invalid pool name: " + pool);
+        }
+
+        try {
+            JSONObject payload = new JSONObject(requestPayload);
+            List<String> modes = new ArrayList<>();
+            if (payload.has("disabled")) {
+                modes.add(payload.getBoolean("disabled") ? "disabled" : "enabled");
+            }
+            if (payload.has("noping")) {
+                modes.add(payload.getBoolean("noping") ? "noping" : "ping");
+            }
+            if (payload.has("rdonly")) {
+                modes.add(payload.getBoolean("rdonly") ? "rdonly" : "notrdonly");
+            }
+
+            for (String mode : modes) {
+                String reply = poolManagerStub.sendAndWait("psu set pool " + pool + " " + mode,
+                        String.class);
+                if (reply.startsWith("No pools")) {
+                    throw new NotFoundException("Pool not found: " + pool);
+                }
+            }
+        } catch (JSONException e) {
+            throw new BadRequestException(e);
+        } catch (InterruptedException | NoRouteToCellException | CacheException e) {
+            LOGGER.warn(Exceptions.meaningfulMessage(e));
+            throw new InternalServerErrorException(e);
+        }
+
+        try {
+            poolManagerStub.sendAndWait("save", String.class);
+        } catch (CacheException | NoRouteToCellException | InterruptedException e) {
+            LOGGER.warn("Pool {} mode changed but PoolManager configuration could not be saved: {}",
+                    pool, Exceptions.meaningfulMessage(e));
+            throw new InternalServerErrorException(
+                    "Pool " + pool + " mode changed but configuration could not be saved");
+        }
         return successfulResponse(Response.Status.OK);
     }
 }
