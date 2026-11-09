@@ -553,8 +553,10 @@ public final class PoolInfoResources {
     }
 
     @POST
-    @ApiOperation("Add a pool. Requires admin role. Changes are persistent after restart.")
+    @ApiOperation("Add a pool via 'psu create pool'. Requires admin role. "
+            + "Saves the PoolManager configuration.")
     @ApiResponses({
+            @ApiResponse(code = 201, message = "Created"),
             @ApiResponse(code = 400, message = "Bad Request"),
             @ApiResponse(code = 403, message = "Pool command only accessible to admin users."),
             @ApiResponse(code = 409, message = "Pool already exists"),
@@ -564,7 +566,7 @@ public final class PoolInfoResources {
     public Response addPool(@ApiParam(value = "JSON object describing the new pool: "
             + "name (String, required), "
             + "noping, disabled, rdonly (boolean, default false).",
-            required = true) String requestPayload){
+            required = true) String requestPayload) {
 
         if (!RequestUser.isAdmin()) {
             throw new ForbiddenException("Pool command only accessible to admin users.");
@@ -600,20 +602,12 @@ public final class PoolInfoResources {
             throw new InternalServerErrorException(e);
         }
 
-        try {
-            poolManagerStub.sendAndWait("save", String.class);
-        } catch (CacheException | NoRouteToCellException | InterruptedException e) {
-            LOGGER.warn("Pool {} created but PoolManager configuration could not be saved: {}",
-                  name, Exceptions.meaningfulMessage(e));
-            throw new InternalServerErrorException(
-                    "Pool " + name + " created but configuration could not be saved");
-        }
-        return successfulResponse(Response.Status.OK);
+        return saveAndRespond(name, "was added", Response.Status.CREATED);
     }
 
     @PATCH
     @ApiOperation("Change a pool's selection settings via 'psu set pool'. Requires admin role. "
-            + "Changes are persistent after restart.")
+            + "Saves the PoolManager configuration.")
     @ApiResponses({
             @ApiResponse(code = 400, message = "Bad Request"),
             @ApiResponse(code = 403, message = "Pool command only accessible to admin users."),
@@ -664,14 +658,66 @@ public final class PoolInfoResources {
             throw new InternalServerErrorException(e);
         }
 
+        return saveAndRespond(pool, "mode changed", Response.Status.OK);
+    }
+
+    @DELETE
+    @ApiOperation("Remove a stopped pool via 'psu remove pool'. Requires admin role. "
+            + "Saves the PoolManager configuration.")
+    @ApiResponses({
+            @ApiResponse(code = 400, message = "Bad Request"),
+            @ApiResponse(code = 403, message = "Pool command only accessible to admin users."),
+            @ApiResponse(code = 404, message = "Not Found"),
+            @ApiResponse(code = 409, message = "Pool is running"),
+            @ApiResponse(code = 500, message = "Internal Server Error"),
+    })
+    @Path("/{pool}")
+    public Response deletePool(@ApiParam(value = "The pool to be deleted.",
+                    required = true)
+            @PathParam("pool") String pool) {
+
+        if (!RequestUser.isAdmin()) {
+            throw new ForbiddenException("Pool command only accessible to admin users.");
+        }
+
+        if (!VALID_POOL_NAME.matcher(pool).matches()) {
+            throw new BadRequestException("Invalid pool name: " + pool);
+        }
+
+        SelectionPool selectionPool = poolMonitor.getPoolSelectionUnit().getPool(pool);
+        if (selectionPool != null && selectionPool.isActive()) {
+            throw new ClientErrorException("Pool " + pool + " is running; stop it first",
+                    Response.Status.CONFLICT);
+        }
+
+        try {
+            String command = "psu remove pool " + pool;
+            poolManagerStub.sendAndWait(command, String.class);
+        } catch (CacheException e) {
+            if (e.getCause() instanceof CommandThrowableException
+                    && ((CommandThrowableException) e.getCause()).getTargetException()
+                    instanceof IllegalArgumentException) {
+                throw new NotFoundException("Pool not found: " + pool);
+            }
+            LOGGER.warn(Exceptions.meaningfulMessage(e));
+            throw new InternalServerErrorException(e);
+        } catch (InterruptedException | NoRouteToCellException e) {
+            LOGGER.warn(Exceptions.meaningfulMessage(e));
+            throw new InternalServerErrorException(e);
+        }
+
+        return saveAndRespond(pool, "was deleted", Response.Status.OK);
+    }
+
+    private Response saveAndRespond(String pool, String change, Response.Status status) {
         try {
             poolManagerStub.sendAndWait("save", String.class);
         } catch (CacheException | NoRouteToCellException | InterruptedException e) {
-            LOGGER.warn("Pool {} mode changed but PoolManager configuration could not be saved: {}",
-                    pool, Exceptions.meaningfulMessage(e));
+            LOGGER.warn("Pool {} {} but PoolManager configuration could not be saved: {}",
+                    pool, change, Exceptions.meaningfulMessage(e));
             throw new InternalServerErrorException(
-                    "Pool " + pool + " mode changed but configuration could not be saved");
+                    "Pool " + pool + " " + change + " but configuration could not be saved");
         }
-        return successfulResponse(Response.Status.OK);
+        return successfulResponse(status);
     }
 }
