@@ -72,6 +72,11 @@ public class RemotePoolManagerHandler implements SerializablePoolManagerHandler 
     }
 
     @Override
+    public ListenableFuture<CellAddressCore> adminBackend() {
+        return Futures.immediateFuture(destination);
+    }
+
+    @Override
     public <T extends PoolIoFileMessage> ListenableFuture<T> startAsync(
           CellEndpoint endpoint, CellAddressCore pool, T msg, long timeout) {
         return submit(endpoint, new CellPath(pool), msg, timeout);

@@ -797,6 +797,11 @@ class TestPoolManagerStub extends PoolManagerStub implements CellMessageReceiver
             public void send(CellEndpoint endpoint, CellMessage envelope, PoolManagerMessage msg) {
 
             }
+
+            @Override
+            public ListenableFuture<CellAddressCore> adminBackend() {
+                return Futures.immediateFuture(new CellAddressCore("PoolManager"));
+            }
         });
     }
 }

@@ -35,7 +35,6 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import org.dcache.cells.FutureCellMessageAnswerable;
 import org.dcache.poolmanager.SerializablePoolManagerHandler;
-import org.dcache.util.CompletableFutures;
 
 /**
  * PoolManagerHandler published by space manager.
@@ -76,6 +75,11 @@ public class SpaceManagerHandler implements SerializablePoolManagerHandler {
         } else {
             inner.send(endpoint, envelope, msg);
         }
+    }
+
+    @Override
+    public ListenableFuture<CellAddressCore> adminBackend() {
+        return inner.adminBackend();
     }
 
     @Override
