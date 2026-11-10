@@ -36,6 +36,8 @@ public class HttpProtocolInfo implements IpProtocolInfo {
     private final int _minor;
     private final int _major;
     private final InetSocketAddress _clientSocketAddress;
+    @Nullable
+    private InetSocketAddress _originAddress;
     private long _transferTime;
     private long _bytesTransferred;
     private String _transferTag;
@@ -184,8 +186,8 @@ public class HttpProtocolInfo implements IpProtocolInfo {
 
     public String toString() {
         String sb = getVersionString() +
-              ':' + _clientSocketAddress.getAddress().getHostAddress() +
-              ':' + _clientSocketAddress.getPort() +
+              ':' + getOriginAddress().getAddress().getHostAddress() +
+              ':' + getOriginAddress().getPort() +
               ':' + httpDoorCellName +
               ':' + httpDoorDomainName +
               ':' + path;
@@ -207,6 +209,15 @@ public class HttpProtocolInfo implements IpProtocolInfo {
     @Override
     public InetSocketAddress getSocketAddress() {
         return _clientSocketAddress;
+    }
+
+    @Override
+    public InetSocketAddress getOriginAddress() {
+        return _originAddress != null ? _originAddress : _clientSocketAddress;
+    }
+
+    public void setOriginAddress(@Nullable InetSocketAddress address) {
+        _originAddress = address;
     }
 
     /**

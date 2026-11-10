@@ -64,7 +64,7 @@ public class MoverInfoMessageSerializer implements Serializer<MoverInfoMessage> 
         o.put("transferTime", data.getConnectionTime());
         o.put("isWrite", data.isFileCreated() ? "write" : "read");
 
-        InetSocketAddress remoteHost = ((IpProtocolInfo) data.getProtocolInfo()).getSocketAddress();
+        InetSocketAddress remoteHost = ((IpProtocolInfo) data.getProtocolInfo()).getOriginAddress();
 
         JSONObject protocolInfo = new JSONObject();
         protocolInfo.put("protocol", data.getProtocolInfo().getProtocol());
