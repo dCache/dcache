@@ -1,5 +1,6 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { fileAttributes, buildHeaders, ls } from '../namespace.ts';
+import { fileAttributes, ls } from '../namespace.ts';
+import { buildHeaders } from '../util.ts';
 import type { FileAttributes, FileMetadataRequest } from '../../types/types.ts';
 
 const mockAttributes: FileAttributes = {

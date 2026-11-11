@@ -1,8 +1,5 @@
 import type { LabelRequest, LabelAction, FileAttributes } from "../types/types.ts";
-// TODO: move endpoint and buildHeaders to a shared src/api/util.ts (also used in namespace.ts)
-import { buildHeaders } from "./namespace.ts";
-
-const endpoint: string = "./api/v1/"
+import { endpoint, buildHeaders } from "./util.ts";
 
 /** Adds a label to a file. Throws on error (see throwOnError). */
 export async function setLabel(r: LabelRequest): Promise<void> {

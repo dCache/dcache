@@ -1,6 +1,5 @@
 import type {FileAttributes, FileMetadataRequest} from "../types/types.ts";
-
-const endpoint: string = "./api/v1/"
+import { endpoint } from "./util.ts";
 
 export async function fileAttributes(r: FileMetadataRequest, headers: Headers): Promise<FileAttributes> {
     const limit = r.limit === 'max' ? 2147483647 : (r.limit ?? 100);
@@ -38,16 +37,4 @@ async function fetchFileAttributes(request: Request): Promise<FileAttributes> {
         throw new Error(`${response.status}: ${response.statusText}`);
     }
     return await response.json() as Promise<FileAttributes>;
-}
-
-export function buildHeaders(upauth?: string) {
-    const headers = new Headers({
-        "Suppress-WWW-Authenticate": "Suppress",
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-    });
-    if (upauth) {
-        headers.append("Authorization", upauth);
-    }
-    return headers;
 }

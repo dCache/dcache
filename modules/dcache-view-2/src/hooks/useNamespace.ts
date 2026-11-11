@@ -1,6 +1,7 @@
 import {useQuery, type UseQueryResult} from '@tanstack/react-query'
 import type {FileAttributes, FileMetadataRequest} from "../types/types.ts";
-import {fileAttributes, buildHeaders, ls} from '../api/namespace.ts'
+import {fileAttributes, ls} from '../api/namespace.ts'
+import {buildHeaders} from '../api/util.ts'
 
 export function useMetadata(request: FileMetadataRequest): UseQueryResult<FileAttributes, Error> {
     return useQuery({
