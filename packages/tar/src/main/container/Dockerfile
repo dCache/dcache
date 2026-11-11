@@ -39,15 +39,6 @@ RUN microdnf -y install hostname which procps-ng tar gzip
 # Add dCache
 COPY maven /opt/dcache
 
-# RUN microdnf -y install  openssh-clients
-# generate ssh keys
-# RUN ssh-keygen -t rsa -b 2048 -N '' -f ${DCACHE_INSTALL_DIR}/etc/admin/ssh_host_rsa_key
-# RUN chown dcache:dcache ${DCACHE_INSTALL_DIR}/etc/admin/ssh_host_rsa_key
-
-# fix liquibase
-#RUN rm ${DCACHE_INSTALL_DIR}/share/classes/liquibase-core-*.jar
-#COPY liquibase-core-3.5.3.jar ${DCACHE_INSTALL_DIR}/share/classes/liquibase-core-3.5.3.jar
-
 # Post-install brutal cleanup
 RUN microdnf clean all && rm -rf /var/cache/yum /var/lib/dnf /var/lib/rpm
 
@@ -62,7 +53,7 @@ COPY s3-tape.yml /${DCACHE_INSTALL_DIR}/etc/s3-tape.yml
 # where we store the data
 # location of init scripts
 # Stupid grid tools....
-RUN mkdir -p /pool /dcache.init.d /etc/grid-security/certificates
+RUN mkdir -p /pool /dcache.init.d /etc/grid-security/certificates/vomsdir
 
 # adjust permissions
 RUN chown -R dcache:dcache ${DCACHE_INSTALL_DIR}/var /pool
