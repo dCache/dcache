@@ -61,33 +61,60 @@ package org.dcache.restful.resources.pool;
 
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
+import diskCacheV111.util.CacheException;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.util.CommandThrowableException;
+import dmg.util.Exceptions;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
+
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.inject.Inject;
+import javax.inject.Named;
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.ClientErrorException;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotFoundException;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import org.dcache.cells.CellStub;
 import org.dcache.pool.statistics.StorageUnitSpaceStatistics;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.pool.PoolGroupInfo;
 import org.dcache.restful.providers.selection.PoolGroup;
 import org.dcache.restful.services.pool.PoolInfoService;
 import org.dcache.restful.util.Responses;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+
+import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse;
 
 /**
  * <p>RESTful API to the {@link PoolInfoService} service.</p>
@@ -99,11 +126,19 @@ import org.springframework.stereotype.Component;
 @Path("/poolgroups")
 public final class PoolGroupInfoResources {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(PoolInfoResources.class);
+
+    private static final Pattern VALID_TAG = Pattern.compile("([A-Za-z0-9_.-]+)=[A-Za-z0-9_.-]+");
+
     @Inject
     private PoolInfoService service;
 
     @Inject
     private PoolMonitor poolMonitor;
+
+    @Inject
+    @Named("pool-manager-stub")
+    private CellStub poolManagerStub;
 
     @GET
     @ApiOperation("Get a list of poolgroups."
@@ -118,6 +153,167 @@ public final class PoolGroupInfoResources {
               .map((g) -> new PoolGroup(g.getName(), psu))
               .collect(Collectors.toList());
         return Responses.buildResponse(result, service.getLastUpdated());
+    }
+
+    @POST
+    @ApiOperation("add pool group.")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response addPoolGroup(@ApiParam("JSON Object describing the pool group:" +
+            "name (required)" +
+            "primary, dynamic (boolean, default false)" +
+            "tags (list of strings)") String requestPayload) {
+
+        String name;
+        try {
+            JSONObject payload = new JSONObject(requestPayload);
+            name = payload.getString("name");
+            String primary = payload.optBoolean("primary") ? " -primary" : "";
+            String dynamic = payload.optBoolean("dynamic") ? " -dynamic" : "";
+            JSONArray tagArray = payload.optJSONArray("tags");
+            validateTags(tagArray);
+            String tags = (tagArray == null) ? ""
+                    : IntStream.range(0, tagArray.length())
+                    .mapToObj(tagArray::getString)
+                    .collect(Collectors.joining(","));
+            String tagsCommand = (tags.isEmpty()) ? tags : " -tags=" + tags;
+            String adminCommand = "psu create pgroup " + name + primary + dynamic
+                    + tagsCommand;
+            poolManagerStub.sendAndWait(adminCommand, String.class);
+        } catch (JSONException | IllegalArgumentException e) {
+            throw new BadRequestException(e);
+        } catch (CacheException e) {
+            if (e.getCause() instanceof CommandThrowableException
+                    && ((CommandThrowableException) e.getCause()).getTargetException()
+                    instanceof IllegalArgumentException) {
+                throw new ClientErrorException(Response.Status.CONFLICT);
+            }
+            LOGGER.warn(Exceptions.meaningfulMessage(e));
+            throw new InternalServerErrorException(e);
+        } catch (InterruptedException | NoRouteToCellException e) {
+            LOGGER.warn(Exceptions.meaningfulMessage(e));
+            throw new InternalServerErrorException(e);
+        }
+        return saveAndRespond("Pool group: " + name + " was created", Response.Status.CREATED);
+    }
+
+    @DELETE
+    @ApiOperation("remove pool group.")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/{group}")
+    public Response removePoolGroup(
+            @ApiParam(value = "name of pool group to be removed")
+            @PathParam("group") String group) {
+
+        try{
+            poolManagerStub.sendAndWait("psu remove pgroup " + group, String.class);
+        } catch (JSONException | IllegalArgumentException e) {
+            throw new BadRequestException(e);
+        } catch (CacheException e) {
+            throwIfClientError(e);
+            LOGGER.warn(Exceptions.meaningfulMessage(e));
+            throw new InternalServerErrorException(e);
+        } catch (InterruptedException | NoRouteToCellException e) {
+            LOGGER.warn(Exceptions.meaningfulMessage(e));
+            throw new InternalServerErrorException(e);
+        }
+        return saveAndRespond("Pool group: " + group + " was removed.",
+                Response.Status.OK);
+    }
+
+    @PUT
+    @ApiOperation("add pool to group.")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/{group}/pools/{pool}")
+    public Response addPoolToGroup(
+            @ApiParam(value = "The pool group the pool should be added to.", required = true)
+            @PathParam("group") String group,
+            @ApiParam(value= "The pool to be added.", required = true)
+            @PathParam("pool") String pool){
+        try{
+            poolManagerStub.sendAndWait("psu addto pgroup " + group + " " + pool, String.class);
+        } catch (JSONException | IllegalArgumentException e) {
+            throw new BadRequestException(e);
+        } catch (CacheException e) {
+            throwIfClientError(e);
+            LOGGER.warn(Exceptions.meaningfulMessage(e));
+            throw new InternalServerErrorException(e);
+        } catch (InterruptedException | NoRouteToCellException e) {
+            LOGGER.warn(Exceptions.meaningfulMessage(e));
+            throw new InternalServerErrorException(e);
+        }
+        return saveAndRespond("Pool: " + pool + " was added to pool group: " + group,
+                Response.Status.OK);
+    }
+
+    @DELETE
+    @ApiOperation("remove pool from pool group.")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/{group}/pools/{pool}")
+    public Response removePoolFromGroup(
+            @ApiParam(value = "The pool group the pool should be removed from.", required = true)
+            @PathParam("group") String group,
+            @ApiParam(value= "The pool to be removed.", required = true)
+            @PathParam("pool") String pool){
+        try{
+            poolManagerStub.sendAndWait("psu removefrom pgroup " + group + " " + pool, String.class);
+        } catch (JSONException | IllegalArgumentException e) {
+            throw new BadRequestException(e);
+        } catch (CacheException e) {
+            throwIfClientError(e);
+            LOGGER.warn(Exceptions.meaningfulMessage(e));
+            throw new InternalServerErrorException(e);
+        } catch (InterruptedException | NoRouteToCellException e) {
+            LOGGER.warn(Exceptions.meaningfulMessage(e));
+            throw new InternalServerErrorException(e);
+        }
+        return saveAndRespond("Pool: " + pool + " was removed from pool group: " + group,
+                Response.Status.OK);
+    }
+
+    private static void validateTags(JSONArray tagArray) {
+        if (tagArray == null) {
+            return;
+        }
+        Set<String> keys = new HashSet<>();
+        for (int i = 0; i < tagArray.length(); i++) {
+            String tag = tagArray.getString(i);
+            Matcher matcher = VALID_TAG.matcher(tag);
+            if (!matcher.matches()) {
+                throw new BadRequestException("Invalid tag (expected key=value): " + tag);
+            }
+            if (!keys.add(matcher.group(1))) {
+                throw new BadRequestException("Duplicate tag key: " + matcher.group(1));
+            }
+        }
+    }
+
+    private static void throwIfClientError(CacheException e) {
+        if (!(e.getCause() instanceof CommandThrowableException)) {
+            return;
+        }
+        Throwable target = ((CommandThrowableException) e.getCause()).getTargetException();
+        if (!(target instanceof IllegalArgumentException)) {
+            return;
+        }
+        String message = String.valueOf(target.getMessage());
+        if (message.contains("Not found") || message.contains("not found")
+                || message.contains("not member of") || message.contains("not a subgroup of")) {
+            throw new NotFoundException(message);
+        }
+        throw new ClientErrorException(Response.Status.CONFLICT);
+    }
+
+    private Response saveAndRespond(String action, Response.Status status) {
+        try {
+            poolManagerStub.sendAndWait("save", String.class);
+        } catch (CacheException | NoRouteToCellException | InterruptedException e) {
+            LOGGER.warn("{} but PoolManager configuration could not be saved: {}",
+                    action, Exceptions.meaningfulMessage(e));
+            throw new InternalServerErrorException(
+                    action + " but configuration could not be saved");
+        }
+        return successfulResponse(status);
     }
 
     @GET
