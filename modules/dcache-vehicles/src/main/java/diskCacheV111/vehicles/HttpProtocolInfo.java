@@ -38,6 +38,7 @@ public class HttpProtocolInfo implements IpProtocolInfo {
     private final InetSocketAddress _clientSocketAddress;
     @Nullable
     private InetSocketAddress _originAddress;
+    private boolean _relayed;
     private long _transferTime;
     private long _bytesTransferred;
     private String _transferTag;
@@ -218,6 +219,17 @@ public class HttpProtocolInfo implements IpProtocolInfo {
 
     public void setOriginAddress(@Nullable InetSocketAddress address) {
         _originAddress = address;
+    }
+
+    /**
+     * Whether the door relays the data, so that the pool's peer is the door.
+     */
+    public boolean isRelayed() {
+        return _relayed;
+    }
+
+    public void setRelayed(boolean relayed) {
+        _relayed = relayed;
     }
 
     /**

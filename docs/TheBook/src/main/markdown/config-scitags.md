@@ -10,8 +10,9 @@ It is written for two audiences:
 ## Scope and terminology
 
 Within dCache, SciTags classification data is carried as a transfer tag string (`transferTag`) in
-door-to-pool protocol info objects. Pool-side code then derives `experiment-id` and `activity-id`
-and emits a Firefly marker over UDP.
+door-to-pool protocol info objects. The service that exchanges data with the remote party then
+derives `experiment-id` and `activity-id` and emits a Firefly marker over UDP. That service is a
+pool or, when a WebDAV door relays the data, the door.
 
 In this document:
 
@@ -57,29 +58,37 @@ Accepted SciTag value range in current implementation is `64..65535` (inclusive)
 
 ## End-user and operator configuration
 
-Primary settings are in pool configuration defaults:
+Site-wide settings are in the dCache configuration defaults:
 
-- `pool.enable.firefly`
-- `pool.firefly.destination`
-- `pool.firefly.excludes`
-- `pool.firefly.vo-mapping`
-- `pool.firefly.storage-statistics`
+- `dcache.enable.firefly`
+- `dcache.firefly.destination`
+- `dcache.firefly.excludes`
+- `dcache.firefly.vo-mapping`
 
-Reference defaults: `skel/share/defaults/pool.properties`.
+Pools and WebDAV doors each have their own properties, which default to the site-wide values:
+`pool.enable.firefly`, `pool.firefly.destination`, `pool.firefly.excludes`,
+`pool.firefly.vo-mapping` and the corresponding `webdav.enable.firefly` and `webdav.firefly.*`
+properties. Set these only where a service must differ from the rest of the site.
+
+In addition, `pool.firefly.storage-statistics` controls whether pools include storage statistics
+in end markers.
+
+Reference defaults: `skel/share/defaults/dcache.properties`, `skel/share/defaults/pool.properties`
+and `skel/share/defaults/webdav.properties`.
 
 Typical site configuration in `/etc/dcache/dcache.conf`:
 
 ```ini
-pool.enable.firefly=true
+dcache.enable.firefly=true
 
 # Optional additional collector (host or host:port).
-pool.firefly.destination=us.scitags.org:10333
+dcache.firefly.destination=us.scitags.org:10333
 
 # Optional list of subnets to exclude from marker emission when BOTH endpoints are local.
-pool.firefly.excludes=10.0.0.0/8,192.168.0.0/16
+dcache.firefly.excludes=10.0.0.0/8,192.168.0.0/16
 
 # Fallback mapping when transferTag is missing (keys are lower-cased VO names).
-pool.firefly.vo-mapping=atlas:2,cms:3,lhcb:4,alice:5
+dcache.firefly.vo-mapping=atlas:2,cms:3,lhcb:4,alice:5
 
 # Include storage statistics in end markers.
 pool.firefly.storage-statistics=true
@@ -87,9 +96,11 @@ pool.firefly.storage-statistics=true
 
 Notes:
 
-- If `pool.firefly.destination` is unset, markers are sent only to the peer host at UDP 10514.
+- If no destination is configured, markers are sent only to the peer host at UDP 10514.
 - If set, dCache sends an additional copy to that collector (unless it equals the primary destination).
 - Exclusion requires both source and destination addresses to match configured local subnets.
+- When a WebDAV door relays data, the door sends the markers and the pool sends none. The
+  door must therefore have firefly enabled for such transfers to be marked.
 
 ## Request-side extraction by protocol
 
@@ -202,9 +213,10 @@ Core implementation:
 The pool emits markers on transfer start/end with guard checks:
 
 1. Firefly enabled.
-2. Not excluded by local subnet rules.
-3. Protocol supported.
-4. Experiment ID resolvable (from transferTag or VO fallback).
+2. Data is not relayed by a door (`HttpProtocolInfo.isRelayed()`).
+3. Not excluded by local subnet rules.
+4. Protocol supported.
+5. Experiment ID resolvable (from transferTag or VO fallback).
 
 If any check fails, marker emission is skipped.
 
@@ -235,9 +247,32 @@ Current invocation is from:
 
 ### Developer note on service paths
 
-The only direct call to `TransferLifeCycle.onStart(...)` is currently in `NettyTransferService`.
+On pools, `TransferLifeCycle.onStart(...)` is called from `NettyTransferService` and, for
+HTTP-TPC, from `RemoteHttpDataTransferProtocol`.
 `TransferLifeCycle.onEnd(...)` is invoked from `DefaultPostTransferService` when a local
 endpoint is available from the mover or can be derived from the remote endpoint.
+
+## Door-side marker emission
+
+When a WebDAV door relays data, the flow that crosses the site boundary is between the door and
+the remote party. The pool only sees the door, so it sends no marker; the door marks the flow
+instead, using its own `TransferLifeCycle` instance configured by the `webdav.enable.firefly` and
+`webdav.firefly.*` properties.
+
+This applies to:
+
+- Uploads and downloads when the door does not redirect the client
+  (`webdav.redirect.on-write=false`, `webdav.redirect.on-read=false`). The marker describes the
+  client's connection to the door, as reported by the HTTP request. The application is `http` or
+  `https`, depending on how the client connected to the door.
+  Implementation: `DcacheResourceFactory.HttpTransfer`.
+- Third-party copies that the door proxies. The marker describes the door's connection to the
+  remote server, as established by the HTTP client, after any redirection. The application is
+  `remotehttpdatatransfer` or `remotehttpsdatatransfer`, as for a third-party copy made by a pool.
+  Implementation: `RemoteTransferHandler.RemoteTransfer`.
+
+In both cases the source is the remote endpoint and the destination is the door's endpoint. End
+markers report the number of bytes the door relayed, and do not contain storage statistics.
 
 ## Classification logic
 
@@ -259,13 +294,15 @@ If transferTag is empty/missing:
 - get group path,
 - lowercase,
 - split on first `/` boundary,
-- map first segment (VO name) via `pool.firefly.vo-mapping`.
+- map first segment (VO name) via the service's `vo-mapping` property (`pool.firefly.vo-mapping`
+  or `webdav.firefly.vo-mapping`).
 
 Fallback activity-id defaults to `1`.
 
 ### Exclusion logic
 
-`pool.firefly.excludes` builds an OR-combined subnet predicate.
+The service's `excludes` property (`pool.firefly.excludes` or `webdav.firefly.excludes`) builds an
+OR-combined subnet predicate.
 Transfer is excluded only when both source and destination addresses match excluded subnets.
 
 ## Firefly payload details
@@ -306,6 +343,12 @@ Relevant class loggers are:
 - `org.dcache.scitags` (DEBUG): structured SciTags lifecycle/request/marker diagnostics.
 - `org.dcache.pool.movers.TransferLifeCycle` (WARN): invalid transferTag values,
   invalid VO mapping entries, and marker send failures.
+
+Example:
+
+```
+   admin > log set stdout org.dcache.scitags DEBUG
+```
 
 ### Enabling debug output for SciTags-related classes
 
@@ -355,7 +398,7 @@ On the pool host, verify UDP emission (example):
 tcpdump -nn -i any udp port 10514
 ```
 
-If `pool.firefly.destination` is configured, also verify traffic to the collector host/port.
+If a collector destination is configured, also verify traffic to the collector host/port.
 
 ## Developer extension guide
 

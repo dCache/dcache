@@ -24,6 +24,7 @@ import static com.google.common.net.InetAddresses.toUriString;
 import com.google.common.base.Splitter;
 import com.google.common.net.HostAndPort;
 
+import diskCacheV111.vehicles.HttpProtocolInfo;
 import diskCacheV111.vehicles.MoverInfoMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import java.io.IOException;
@@ -41,6 +42,7 @@ import java.util.Map;
 import java.util.OptionalInt;
 import java.util.HashMap;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 import org.dcache.auth.Subjects;
 import org.dcache.net.FlowMarker.FlowMarkerBuilder;
@@ -85,7 +87,7 @@ public class TransferLifeCycle {
     /**
      * Mark transfer start.
      * @param src remote client endpoint
-     * @param dst local pool endpoint
+     * @param dst local endpoint
      * @param protocolInfo access protocol information
      * @param subject associated with the transfer
      */
@@ -94,6 +96,11 @@ public class TransferLifeCycle {
 
         if (!enabled) {
                         logSkippedMarker("disabled", src, dst, protocolInfo);
+            return;
+        }
+
+        if (isRelayed(protocolInfo)) {
+            logSkippedMarker("relayed-by-door", src, dst, protocolInfo);
             return;
         }
 
@@ -135,17 +142,45 @@ public class TransferLifeCycle {
     /**
      * Mark transfer end.
      * @param src remote client endpoint
-     * @param dst local pool endpoint
-     * @param protocolInfo access protocol information
-     * @param subject associated with the transfer
+     * @param dst local endpoint
+     * @param mover the mover's description of the completed transfer
      */
     public void onEnd(InetSocketAddress src, InetSocketAddress dst, MoverInfoMessage mover) {
-        ProtocolInfo protocolInfo = mover.getProtocolInfo();
-        Subject subject = mover.getSubject();
+        onEnd(src, dst, mover.getProtocolInfo(), mover.getSubject(),
+              Instant.ofEpochMilli(mover.getTimestamp()), mover.getConnectionTime(),
+              mover.getBytesRead(), mover.getBytesWritten(),
+              storageStatisticsEnabled ? mover : null);
+    }
 
+    /**
+     * Mark transfer end, for a transfer that has no mover.
+     * @param src remote client endpoint
+     * @param dst local endpoint
+     * @param protocolInfo access protocol information
+     * @param subject associated with the transfer
+     * @param startedAt when the transfer started
+     * @param durationMillis how long the transfer took
+     * @param bytesRead number of bytes sent to the remote endpoint
+     * @param bytesWritten number of bytes received from the remote endpoint
+     */
+    public void onEnd(InetSocketAddress src, InetSocketAddress dst, ProtocolInfo protocolInfo,
+          Subject subject, Instant startedAt, long durationMillis, long bytesRead,
+          long bytesWritten) {
+        onEnd(src, dst, protocolInfo, subject, startedAt, durationMillis, bytesRead,
+              bytesWritten, null);
+    }
+
+    private void onEnd(InetSocketAddress src, InetSocketAddress dst, ProtocolInfo protocolInfo,
+          Subject subject, Instant startedAt, long durationMillis, double bytesRead,
+          double bytesWritten, @Nullable MoverInfoMessage storageStatistics) {
 
         if (!enabled) {
             logSkippedMarker("disabled", src, dst, protocolInfo);
+            return;
+        }
+
+        if (isRelayed(protocolInfo)) {
+            logSkippedMarker("relayed-by-door", src, dst, protocolInfo);
             return;
         }
 
@@ -166,9 +201,7 @@ public class TransferLifeCycle {
         }
 
         int activityId = getActivity(protocolInfo);
-        long transferDurationMillis = Math.max(0L, mover.getConnectionTime());
-        Instant startedAt = Instant.ofEpochMilli(mover.getTimestamp());
-        Instant finishedAt = startedAt.plusMillis(transferDurationMillis);
+        Instant finishedAt = startedAt.plusMillis(Math.max(0L, durationMillis));
 
         var data = new FlowMarkerBuilder()
               .withStartedAt(startedAt)
@@ -176,20 +209,20 @@ public class TransferLifeCycle {
               .withExperimentId(optionalExpId.getAsInt())
               .withActivityId(activityId)
               .wittApplication(getApplication(protocolInfo))
-              .withUsage(mover.getBytesRead(), mover.getBytesWritten())
+              .withUsage(bytesRead, bytesWritten)
               .withProtocol("tcp")
               .withAFI(toAFI(dst))
               .withDestination(dst)
               .withSource(src);
-        if (storageStatisticsEnabled) {
-            data.withStats(mover);
+        if (storageStatistics != null) {
+            data.withStats(storageStatistics);
         }
         var firefly = data.build("end");
 
         InetSocketAddress fireflyDestination = toFireflyDestination.apply(src);
         sendToMultipleDestinations(fireflyDestination, firefly);
         logMarkerEvent("end", src, dst, protocolInfo, optionalExpId.getAsInt(), activityId,
-              mover.getBytesRead(), mover.getBytesWritten(), fireflyDestination);
+              bytesRead, bytesWritten, fireflyDestination);
     }
 
     /**
@@ -286,6 +319,15 @@ public class TransferLifeCycle {
         } catch (IOException e) {
             LOGGER.warn("Failed to send flow marker: {}", e.getMessage());
         }
+    }
+
+    /**
+     * Whether a door relays the data.  The pool's peer is then the door, which is responsible
+     * for marking the flow between itself and the remote party.
+     */
+    private boolean isRelayed(ProtocolInfo protocolInfo) {
+        return protocolInfo instanceof HttpProtocolInfo
+              && ((HttpProtocolInfo) protocolInfo).isRelayed();
     }
 
     private boolean needMarker(ProtocolInfo protocolInfo) {
