@@ -47,6 +47,26 @@ public class FlowMarker {
         private final JSONObject usage = new JSONObject();
         private final JSONObject stats = new JSONObject();
 
+        /**
+         * RFC 5424 NILVALUE, used when the syslog HOSTNAME is unknown.
+         */
+        private static final String SYSLOG_NILVALUE = "-";
+
+        private String hostname = SYSLOG_NILVALUE;
+
+        /**
+         * Set the syslog HOSTNAME of the marker, i.e. the identity of the
+         * system emitting the firefly. This should identify the dCache node
+         * (preferably by its FQDN, as recommended by RFC 5424), not the
+         * remote peer of the flow.
+         */
+        public FlowMarkerBuilder withHostname(String hostname) {
+            this.hostname = hostname == null || hostname.isBlank()
+                  ? SYSLOG_NILVALUE
+                  : hostname;
+            return this;
+        }
+
         public FlowMarkerBuilder withStartedAt(Instant startTime) {
             lifecycle.put("start-time", DateTimeFormatter.ISO_INSTANT.format(startTime));
             return this;
@@ -159,8 +179,8 @@ public class FlowMarker {
 
             String jsonPayload = payload.toString();
             String time = DateTimeFormatter.ISO_INSTANT.format(Instant.now());
-            String host = flow.has("src-ip") ? flow.getString("src-ip") : "localhost";
-            String syslogHeader = String.format("<134>1 %s %s dCache - firefly-json - ", time, host);
+            String syslogHeader = String.format("<134>1 %s %s dCache - firefly-json - ", time,
+                  hostname);
 
             return syslogHeader + jsonPayload;
         }
