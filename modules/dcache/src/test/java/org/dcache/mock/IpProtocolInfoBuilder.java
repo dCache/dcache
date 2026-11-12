@@ -18,6 +18,7 @@
  */
 package org.dcache.mock;
 
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 
 import com.google.common.net.InetAddresses;
@@ -52,5 +53,8 @@ public class IpProtocolInfoBuilder extends ProtocolInfoBuilder {
 
         InetSocketAddress client = new InetSocketAddress(address, CLIENT_EPHEMERIAL_PORT);
         BDDMockito.given(mock.getSocketAddress()).willReturn(client);
+        // A mock does not run the interface's default method, so mirror its
+        // fall-back to the socket address.  Lenient, as not every test reads it
+        lenient().when(mock.getOriginAddress()).thenReturn(client);
     }
 }

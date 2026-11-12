@@ -1383,10 +1383,10 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
 
                 if (_direction == Direction.PULL) {
                     _relayedWrite = _resourceFactory.prepareRelayedWrite(_subject, _restriction,
-                          _path, attributes);
+                          _path, attributes, info.getSocketAddress());
                 } else {
                     _relayedRead = _resourceFactory.prepareRelayedRead(_subject, _restriction,
-                          _path, _pnfsId);
+                          _path, _pnfsId, info.getSocketAddress());
                 }
             } catch (BeansException | GeneralSecurityException | URISyntaxException e) {
                 LOGGER.error("Failed to prepare proxied third-party transfer: {}", e.toString());

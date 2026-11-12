@@ -119,7 +119,7 @@ public final class MoverData extends PnfsStorageInfo {
             protocol = info.getProtocolInfo()
                   .getVersionString();
             client = ((IpProtocolInfo) info.getProtocolInfo()).
-                  getSocketAddress().getAddress().getHostAddress();
+                  getOriginAddress().getAddress().getHostAddress();
         } else {
             protocol = DEFAULT_PROTOCOL;
             client = DEFAULT_PROTOCOL;

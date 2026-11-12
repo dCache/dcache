@@ -1095,11 +1095,11 @@ public class DcacheResourceFactory
      * the HTTP request, as it captures request-specific information.
      */
     public RelayedRead prepareRelayedRead(Subject subject, Restriction restriction, FsPath path,
-          PnfsId pnfsid) throws URISyntaxException {
+          PnfsId pnfsid, InetSocketAddress remote) throws URISyntaxException {
         ReadTransfer transfer = new ReadTransfer(_pnfs, subject, restriction, path, pnfsid, null);
         transfer.setIsChecksumNeeded(false);
         transfer.setZone(_zone);
-        transfer.setProxyTransfer(true);
+        transfer.setRemoteParty(remote);
         return new RelayedRead(transfer);
     }
 
@@ -1111,11 +1111,11 @@ public class DcacheResourceFactory
      * @param attributes the attributes returned when the name-space entry was created
      */
     public RelayedWrite prepareRelayedWrite(Subject subject, Restriction restriction, FsPath path,
-          FileAttributes attributes) throws URISyntaxException {
+          FileAttributes attributes, InetSocketAddress remote) throws URISyntaxException {
         WriteTransfer transfer = new WriteTransfer(_pnfs, subject, restriction, path);
         transfer.useCreatedEntry(attributes);
         transfer.setZone(_zone);
-        transfer.setProxyTransfer(true);
+        transfer.setRemoteParty(remote);
         return new RelayedWrite(transfer);
     }
 
@@ -1887,6 +1887,7 @@ public class DcacheResourceFactory
         private URI _location;
         private ChecksumType _wantedChecksum;
         private InetSocketAddress _clientAddressForPool;
+        private InetSocketAddress _originAddress;
         protected HttpProtocolInfo.Disposition _disposition;
         private boolean _isSSL;
 
@@ -1972,6 +1973,7 @@ public class DcacheResourceFactory
                         _location,
                         _disposition,
                         wantedChecksums);
+            protocolInfo.setOriginAddress(_originAddress);
             protocolInfo.setSessionId((int) getId());
             protocolInfo.setTransferTag(_transferTag);
             if (LOGGER.isDebugEnabled()) {
@@ -2005,6 +2007,17 @@ public class DcacheResourceFactory
             } else {
                 _clientAddressForPool = getClientAddress();
             }
+        }
+
+        /**
+         * Declare that the door relays this transfer's data to or from a remote party.  That
+         * party is used for pool selection and reported in billing, instead of the client that
+         * made the request.
+         */
+        public void setRemoteParty(InetSocketAddress address) {
+            setClientAddress(address);
+            _originAddress = address;
+            setProxyTransfer(true);
         }
 
         public void setSSL(boolean isSSL) {
