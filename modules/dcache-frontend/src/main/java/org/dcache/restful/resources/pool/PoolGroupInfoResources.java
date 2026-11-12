@@ -88,6 +88,7 @@ import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotFoundException;
@@ -106,6 +107,7 @@ import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.pool.PoolGroupInfo;
 import org.dcache.restful.providers.selection.PoolGroup;
 import org.dcache.restful.services.pool.PoolInfoService;
+import org.dcache.restful.util.RequestUser;
 import org.dcache.restful.util.Responses;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -126,7 +128,7 @@ import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse
 @Path("/poolgroups")
 public final class PoolGroupInfoResources {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PoolInfoResources.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PoolGroupInfoResources.class);
 
     private static final Pattern VALID_TAG = Pattern.compile("([A-Za-z0-9_.-]+)=[A-Za-z0-9_.-]+");
 
@@ -159,10 +161,14 @@ public final class PoolGroupInfoResources {
     @ApiOperation("add pool group.")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response addPoolGroup(@ApiParam("JSON Object describing the pool group:" +
-            "name (required)" +
-            "primary, dynamic (boolean, default false)" +
-            "tags (list of strings)") String requestPayload) {
+    public Response addPoolGroup(@ApiParam("JSON Object describing the pool group: " +
+            "name (required) " +
+            "primary, dynamic (boolean, default false) " +
+            "tags (list of strings) ") String requestPayload) {
+
+        if (!RequestUser.isAdmin()) {
+            throw new ForbiddenException("Pool command only accessible to admin users.");
+        }
 
         String name;
         try {
@@ -205,6 +211,10 @@ public final class PoolGroupInfoResources {
             @ApiParam(value = "name of pool group to be removed")
             @PathParam("group") String group) {
 
+        if (!RequestUser.isAdmin()) {
+            throw new ForbiddenException("Pool command only accessible to admin users.");
+        }
+
         try{
             poolManagerStub.sendAndWait("psu remove pgroup " + group, String.class);
         } catch (JSONException | IllegalArgumentException e) {
@@ -230,6 +240,11 @@ public final class PoolGroupInfoResources {
             @PathParam("group") String group,
             @ApiParam(value= "The pool to be added.", required = true)
             @PathParam("pool") String pool){
+
+        if (!RequestUser.isAdmin()) {
+            throw new ForbiddenException("Pool command only accessible to admin users.");
+        }
+
         try{
             poolManagerStub.sendAndWait("psu addto pgroup " + group + " " + pool, String.class);
         } catch (JSONException | IllegalArgumentException e) {
@@ -255,6 +270,11 @@ public final class PoolGroupInfoResources {
             @PathParam("group") String group,
             @ApiParam(value= "The pool to be removed.", required = true)
             @PathParam("pool") String pool){
+
+        if (!RequestUser.isAdmin()) {
+            throw new ForbiddenException("Pool command only accessible to admin users.");
+        }
+
         try{
             poolManagerStub.sendAndWait("psu removefrom pgroup " + group + " " + pool, String.class);
         } catch (JSONException | IllegalArgumentException e) {
