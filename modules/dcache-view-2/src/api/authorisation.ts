@@ -1,6 +1,6 @@
 import type {IdP, ViewConfig} from "../types/types.ts";
 
-async function fetchProviders(): Promise<ViewConfig> {
+export async function fetchProviders(): Promise<ViewConfig> {
     const headers: Record<string, string> = {
         'Suppress-WWW-Authenticate': 'Suppress',
         'Accept': 'application/json',

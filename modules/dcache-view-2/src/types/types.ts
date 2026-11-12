@@ -66,6 +66,7 @@ export interface IdP {
 
 export interface ViewConfig {
     'dcache-view.endpoints.webapi': string;
+    'dcache-view.endpoints.webdav'?: string;
     'dcache-view.oidc-provider-name-list': string;
     'dcache-view.oidc-client-id-list': string;
     'dcache-view.oidc-authz-endpoint-list': string;
