@@ -359,8 +359,8 @@ Main JSON sections:
 - `usage` (`received`, `sent`)
 - optional `storage-stats` when `pool.firefly.storage-statistics=true`
 
-For end markers, `start-time` is reconstructed from mover submit time and `end-time`
-is derived as `start-time + max(connectionTime, 0)`.
+For end markers sent by a pool, `end-time` is the time the transfer finished and
+`start-time` is derived as `end-time - max(connectionTime, 0)`.
 
 Test schema file:
 
