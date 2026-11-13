@@ -97,7 +97,8 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
 
     private volatile RemoteHttpTransferClient _transfer;
 
-    private InetSocketAddress _localEndpoint;
+    private volatile InetSocketAddress _localEndpoint;
+    private volatile InetSocketAddress _remoteEndpoint;
     private final TransferLifeCycle _transferLifeCycle;
     private Subject _subject;
     private boolean _startMarkerSent;
@@ -164,8 +165,14 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
      */
     protected void afterTransfer() {}
 
+    /**
+     * Called once, when the connection that carries the file's data is known.  The remote server
+     * may have redirected the request, and its name may resolve to several addresses, so both
+     * endpoints are taken from the connection rather than from the transfer's URL.
+     */
     private void onConnected() {
         _localEndpoint = _transfer.localAddress().orElse(null);
+        _remoteEndpoint = _transfer.remoteAddress().orElse(null);
         startFlowMarker();
     }
 
@@ -239,7 +246,9 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
             return;
         }
 
-        InetSocketAddress remoteEndpoint = ipInfo.getSocketAddress();
+        InetSocketAddress remoteEndpoint = _remoteEndpoint != null
+              ? _remoteEndpoint
+              : ipInfo.getSocketAddress();
         if (remoteEndpoint == null) {
             return;
         }
@@ -252,5 +261,15 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     @Override
     public Optional<InetSocketAddress> getLocalEndpoint() {
         return Optional.ofNullable(_localEndpoint);
+    }
+
+    @Override
+    public Optional<InetSocketAddress> getRemoteEndpoint() {
+        return Optional.ofNullable(_remoteEndpoint);
+    }
+
+    @Override
+    public boolean isActive() {
+        return true;
     }
 }

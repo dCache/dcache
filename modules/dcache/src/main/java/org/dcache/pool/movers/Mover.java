@@ -215,6 +215,15 @@ public interface Mover<T extends ProtocolInfo> {
     }
 
     /**
+     * Whether this mover connects to the remote party itself and reports that connection through
+     * {@link #getLocalEndpoint()}.  Such a mover has no data connection, and therefore no network
+     * flow, until {@link #getLocalEndpoint()} returns a value.
+     */
+    default boolean isActive() {
+        return false;
+    }
+
+    /**
      * Provide the expected total number of bytes transferred for this transfer, if known.  Returns
      * null if this value is unknown.
      */

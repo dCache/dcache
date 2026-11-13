@@ -71,4 +71,23 @@ public interface MoverProtocol {
     default Optional<InetSocketAddress> getLocalEndpoint() {
         return Optional.empty();
     }
+
+    /**
+     * Returns the {@link Optional} containing {@link InetSocketAddress} of the remote endpoint of
+     * the connection that carries the data, if the mover established that connection itself
+     * and knows it.  This may differ from the address in the protocol info, for example if the
+     * remote server redirected the request.
+     */
+    default Optional<InetSocketAddress> getRemoteEndpoint() {
+        return Optional.empty();
+    }
+
+    /**
+     * Whether this mover connects to the remote party itself and reports that connection through
+     * {@link #getLocalEndpoint()}.  Such a mover has no data connection, and therefore no network
+     * flow, until {@link #getLocalEndpoint()} returns a value.
+     */
+    default boolean isActive() {
+        return false;
+    }
 }
