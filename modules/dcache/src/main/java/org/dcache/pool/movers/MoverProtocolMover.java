@@ -83,4 +83,9 @@ public class MoverProtocolMover extends AbstractMover<ProtocolInfo, MoverProtoco
     public Optional<InetSocketAddress> getLocalEndpoint() {
         return _moverProtocol.getLocalEndpoint();
     }
+
+    @Override
+    public Optional<InetSocketAddress> getRemoteEndpoint() {
+        return _moverProtocol.getRemoteEndpoint();
+    }
 }

@@ -219,4 +219,14 @@ public interface Mover<T extends ProtocolInfo> {
      * to access the mover.
      */
     Optional<InetSocketAddress> getLocalEndpoint();
+
+    /**
+     * Returns the {@link Optional} containing {@link InetSocketAddress} of the remote endpoint of
+     * the connection that carries the data, if the mover established that connection itself
+     * and knows it.  This may differ from the address in the protocol info, for example if the
+     * remote server redirected the request.
+     */
+    default Optional<InetSocketAddress> getRemoteEndpoint() {
+        return Optional.empty();
+    }
 }
