@@ -106,5 +106,22 @@ public interface PoolManagerHandler {
      * @param msg      The pool manager request
      */
     void send(CellEndpoint endpoint, CellMessage envelope, PoolManagerMessage msg);
+
+    /**
+     * Returns the address of a single pool manager instance to which admin commands should be
+     * sent.
+     * <p>
+     * Admin commands modify the state of the pool manager instance that receives them. When
+     * several instances are running, all commands belonging together (e.g. a change followed by
+     * {@code save}) must be sent to the same instance, rather than to the service name, which
+     * may route each message to a different instance. Implementations should return the same
+     * instance to all callers as long as the set of pool managers does not change.
+     * <p>
+     * The address is returned asynchronously, as it may not be known until a handler has been
+     * received from pool manager.
+     *
+     * @return An asynchronous reply with the address of a pool manager instance
+     */
+    ListenableFuture<CellAddressCore> adminBackend();
 }
 

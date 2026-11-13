@@ -130,6 +130,11 @@ public class RendezvousPoolManagerHandler implements SerializablePoolManagerHand
     }
 
     @Override
+    public ListenableFuture<CellAddressCore> adminBackend() {
+        return Futures.immediateFuture(backends.getFirst());
+    }
+
+    @Override
     public <T extends PoolIoFileMessage> ListenableFuture<T> startAsync(
           CellEndpoint endpoint, CellAddressCore pool, T msg, long timeout) {
         return submit(endpoint, new CellPath(pool), msg, timeout);

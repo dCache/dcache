@@ -196,6 +196,11 @@ public class PoolManagerHandlerSubscriber
     }
 
     @Override
+    public ListenableFuture<CellAddressCore> adminBackend() {
+        return transformAsync(current(), PoolManagerHandler::adminBackend, MoreExecutors.directExecutor());
+    }
+
+    @Override
     public String toString() {
         ListenableFuture<SerializablePoolManagerHandler> current = this.current;
         if (current.isDone()) {

@@ -62,6 +62,9 @@ package org.dcache.restful.resources.pool;
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
 import diskCacheV111.util.CacheException;
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.CommandThrowableException;
 import dmg.util.Exceptions;
@@ -77,6 +80,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -103,6 +107,7 @@ import javax.ws.rs.core.Response;
 
 import org.dcache.cells.CellStub;
 import org.dcache.pool.statistics.StorageUnitSpaceStatistics;
+import org.dcache.poolmanager.PoolManagerHandlerSubscriber;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.pool.PoolGroupInfo;
 import org.dcache.restful.providers.selection.PoolGroup;
@@ -142,6 +147,10 @@ public final class PoolGroupInfoResources {
     @Named("pool-manager-stub")
     private CellStub poolManagerStub;
 
+    @Inject
+    @Named("pool-manager-handler-subscriber")
+    private PoolManagerHandlerSubscriber subscriber;
+
     @GET
     @ApiOperation("Get a list of poolgroups."
           + " Results sorted lexicographically by group name.")
@@ -164,13 +173,14 @@ public final class PoolGroupInfoResources {
     public Response addPoolGroup(@ApiParam("JSON Object describing the pool group: " +
             "name (required) " +
             "primary, dynamic (boolean, default false) " +
-            "tags (list of strings) ") String requestPayload) {
+            "tags (list of strings) ") String requestPayload){
 
         if (!RequestUser.isAdmin()) {
             throw new ForbiddenException("Pool command only accessible to admin users.");
         }
 
         String name;
+        CellPath path;
         try {
             JSONObject payload = new JSONObject(requestPayload);
             name = payload.getString("name");
@@ -185,7 +195,8 @@ public final class PoolGroupInfoResources {
             String tagsCommand = (tags.isEmpty()) ? tags : " -tags=" + tags;
             String adminCommand = "psu create pgroup " + name + primary + dynamic
                     + tagsCommand;
-            poolManagerStub.sendAndWait(adminCommand, String.class);
+            path = new CellPath(subscriber.adminBackend().get());
+            poolManagerStub.sendAndWait(path, adminCommand, String.class);
         } catch (JSONException | IllegalArgumentException e) {
             throw new BadRequestException(e);
         } catch (CacheException e) {
@@ -196,11 +207,11 @@ public final class PoolGroupInfoResources {
             }
             LOGGER.warn(Exceptions.meaningfulMessage(e));
             throw new InternalServerErrorException(e);
-        } catch (InterruptedException | NoRouteToCellException e) {
+        } catch (InterruptedException | NoRouteToCellException | ExecutionException e) {
             LOGGER.warn(Exceptions.meaningfulMessage(e));
             throw new InternalServerErrorException(e);
         }
-        return saveAndRespond("Pool group: " + name + " was created", Response.Status.CREATED);
+        return saveAndRespond(path, "Pool group: " + name + " was created", Response.Status.CREATED);
     }
 
     @DELETE
@@ -215,19 +226,21 @@ public final class PoolGroupInfoResources {
             throw new ForbiddenException("Pool command only accessible to admin users.");
         }
 
+        CellPath path;
         try{
-            poolManagerStub.sendAndWait("psu remove pgroup " + group, String.class);
+            path = new CellPath(subscriber.adminBackend().get());
+            poolManagerStub.sendAndWait(path, "psu remove pgroup " + group, String.class);
         } catch (JSONException | IllegalArgumentException e) {
             throw new BadRequestException(e);
         } catch (CacheException e) {
             throwIfClientError(e);
             LOGGER.warn(Exceptions.meaningfulMessage(e));
             throw new InternalServerErrorException(e);
-        } catch (InterruptedException | NoRouteToCellException e) {
+        } catch (InterruptedException | NoRouteToCellException | ExecutionException e) {
             LOGGER.warn(Exceptions.meaningfulMessage(e));
             throw new InternalServerErrorException(e);
         }
-        return saveAndRespond("Pool group: " + group + " was removed.",
+        return saveAndRespond(path, "Pool group: " + group + " was removed.",
                 Response.Status.OK);
     }
 
@@ -245,19 +258,22 @@ public final class PoolGroupInfoResources {
             throw new ForbiddenException("Pool command only accessible to admin users.");
         }
 
+        CellPath path;
         try{
-            poolManagerStub.sendAndWait("psu addto pgroup " + group + " " + pool, String.class);
+            path = new CellPath(subscriber.adminBackend().get());
+            poolManagerStub.sendAndWait(path, "psu addto pgroup " + group + " " + pool,
+                    String.class);
         } catch (JSONException | IllegalArgumentException e) {
             throw new BadRequestException(e);
         } catch (CacheException e) {
             throwIfClientError(e);
             LOGGER.warn(Exceptions.meaningfulMessage(e));
             throw new InternalServerErrorException(e);
-        } catch (InterruptedException | NoRouteToCellException e) {
+        } catch (InterruptedException | NoRouteToCellException | ExecutionException e) {
             LOGGER.warn(Exceptions.meaningfulMessage(e));
             throw new InternalServerErrorException(e);
         }
-        return saveAndRespond("Pool: " + pool + " was added to pool group: " + group,
+        return saveAndRespond(path, "Pool: " + pool + " was added to pool group: " + group,
                 Response.Status.OK);
     }
 
@@ -275,19 +291,22 @@ public final class PoolGroupInfoResources {
             throw new ForbiddenException("Pool command only accessible to admin users.");
         }
 
+        CellPath path;
         try{
-            poolManagerStub.sendAndWait("psu removefrom pgroup " + group + " " + pool, String.class);
+            path = new CellPath(subscriber.adminBackend().get());
+            poolManagerStub.sendAndWait(path, "psu removefrom pgroup " + group + " " + pool,
+                    String.class);
         } catch (JSONException | IllegalArgumentException e) {
             throw new BadRequestException(e);
         } catch (CacheException e) {
             throwIfClientError(e);
             LOGGER.warn(Exceptions.meaningfulMessage(e));
             throw new InternalServerErrorException(e);
-        } catch (InterruptedException | NoRouteToCellException e) {
+        } catch (InterruptedException | NoRouteToCellException | ExecutionException e) {
             LOGGER.warn(Exceptions.meaningfulMessage(e));
             throw new InternalServerErrorException(e);
         }
-        return saveAndRespond("Pool: " + pool + " was removed from pool group: " + group,
+        return saveAndRespond(path, "Pool: " + pool + " was removed from pool group: " + group,
                 Response.Status.OK);
     }
 
@@ -324,9 +343,9 @@ public final class PoolGroupInfoResources {
         throw new ClientErrorException(Response.Status.CONFLICT);
     }
 
-    private Response saveAndRespond(String action, Response.Status status) {
+    private Response saveAndRespond(CellPath path, String action, Response.Status status) {
         try {
-            poolManagerStub.sendAndWait("save", String.class);
+            poolManagerStub.sendAndWait(path,"save", String.class);
         } catch (CacheException | NoRouteToCellException | InterruptedException e) {
             LOGGER.warn("{} but PoolManager configuration could not be saved: {}",
                     action, Exceptions.meaningfulMessage(e));

@@ -60,6 +60,11 @@
       <property name="timeoutUnit" value="${frontend.service.poolmanager.timeout.unit}"/>
   </bean>
 
+  <bean id="pool-manager-handler-subscriber" class="org.dcache.poolmanager.PoolManagerHandlerSubscriber">
+      <description>PoolManager Handler Subscriber</description>
+      <property name="poolManager" ref="pool-manager-stub"/>
+  </bean>
+
   <bean id="pool-stub" class="org.dcache.cells.CellStub">
     <description>Pool communication stub</description>
     <property name="timeout" value="${frontend.service.pool.timeout}"/>
