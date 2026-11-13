@@ -30,10 +30,15 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import diskCacheV111.util.ThirdPartyTransferFailedCacheException;
 import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.ArrayList;
@@ -267,6 +272,93 @@ public class RemoteHttpTransferClientTest {
         assertThat(uploaded.toByteArray(), equalTo(DATA));
         assertThat(requests.get(0), equalTo("PUT /file"));
         assertThat(requests.get(1), equalTo("PUT /target"));
+    }
+
+    @Test
+    public void shouldReportConnectionBeforeSendingUpload() throws Exception {
+        List<Optional<InetSocketAddress>> reported = Collections.synchronizedList(new ArrayList<>());
+        AtomicInteger reportedWhenBodyReceived = new AtomicInteger(-1);
+        handle("/file", e -> {
+            if (e.getRequestMethod().equals("PUT")) {
+                e.getRequestBody().transferTo(uploaded);
+                reportedWhenBodyReceived.set(reported.size());
+                respond(e, 201, null);
+            } else {
+                respond(e, 200, null, "Content-Length", String.valueOf(DATA.length));
+            }
+        });
+        AtomicReference<RemoteHttpTransferClient> transfer = new AtomicReference<>();
+        transfer.set(new RemoteHttpTransferClient(client, info("/file", false),
+              () -> reported.add(transfer.get().remoteAddress())));
+
+        transfer.get().putAndVerify(RemoteHttpTransferClientTest::entity, NO_PROGRESS,
+              DATA.length, Optional.empty());
+
+        assertThat(uploaded.toByteArray(), equalTo(DATA));
+        assertEquals("connection must be reported before the upload completes",
+              1, reportedWhenBodyReceived.get());
+        assertThat(reported.get(0).map(InetSocketAddress::getPort),
+              equalTo(Optional.of(server.getAddress().getPort())));
+    }
+
+    @Test
+    public void shouldReportOnlyDataConnectionWhenUploadIsRedirected() throws Exception {
+        handle("/target", e -> {
+            if (e.getRequestMethod().equals("PUT")) {
+                e.getRequestBody().transferTo(uploaded);
+                respond(e, 201, null);
+            } else {
+                respond(e, 200, null, "Content-Length", String.valueOf(DATA.length));
+            }
+        });
+        String target = "http://127.0.0.1:" + server.getAddress().getPort() + "/target";
+
+        // Like a dCache door: answers the request headers with a redirect, without sending
+        // "100 Continue", so the client never sends it any data.
+        try (ServerSocket door = new ServerSocket(0, 5, InetAddress.getLoopbackAddress())) {
+            Thread doorThread = new Thread(() -> redirectAllRequests(door, target));
+            doorThread.setDaemon(true);
+            doorThread.start();
+
+            List<Optional<InetSocketAddress>> reported =
+                  Collections.synchronizedList(new ArrayList<>());
+            AtomicReference<RemoteHttpTransferClient> transfer = new AtomicReference<>();
+            RemoteHttpDataTransferProtocolInfo info = new RemoteHttpDataTransferProtocolInfo(
+                  "RemoteHttpDataTransfer", 1, 1,
+                  new InetSocketAddress(InetAddress.getLoopbackAddress(), door.getLocalPort()),
+                  "http://127.0.0.1:" + door.getLocalPort() + "/file",
+                  false, ImmutableMap.of(), List.of());
+            transfer.set(new RemoteHttpTransferClient(client, info,
+                  () -> reported.add(transfer.get().remoteAddress())));
+
+            transfer.get().putAndVerify(RemoteHttpTransferClientTest::entity, NO_PROGRESS,
+                  DATA.length, Optional.empty());
+
+            assertThat(uploaded.toByteArray(), equalTo(DATA));
+            assertThat(reported.stream()
+                        .map(a -> a.map(InetSocketAddress::getPort)).toList(),
+                  contains(Optional.of(server.getAddress().getPort())));
+        }
+    }
+
+    private static void redirectAllRequests(ServerSocket door, String location) {
+        while (!door.isClosed()) {
+            try (Socket socket = door.accept()) {
+                BufferedReader in = new BufferedReader(new InputStreamReader(
+                      socket.getInputStream(), StandardCharsets.US_ASCII));
+                String line;
+                while ((line = in.readLine()) != null && !line.isEmpty()) {
+                    // skip the request line and headers
+                }
+                OutputStream out = socket.getOutputStream();
+                out.write(("HTTP/1.1 307 Temporary Redirect\r\nLocation: " + location
+                      + "\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+                      .getBytes(StandardCharsets.US_ASCII));
+                out.flush();
+            } catch (IOException e) {
+                // the test closed the socket, or the client went away
+            }
+        }
     }
 
     @Test

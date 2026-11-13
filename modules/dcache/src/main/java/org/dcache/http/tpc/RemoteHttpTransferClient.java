@@ -34,6 +34,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.ThirdPartyTransferFailedCacheException;
 import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -70,6 +71,7 @@ import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.entity.HttpEntityWrapper;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.conn.ConnectionShutdownException;
 import org.apache.http.protocol.HttpContext;
@@ -217,8 +219,12 @@ public class RemoteHttpTransferClient {
     /**
      * @param client      the HTTP client used to make all requests
      * @param info        describes the remote resource, credentials and headers
-     * @param onConnected called after the first response headers of a request have been received,
-     *                    when the connection's endpoints are known
+     * @param onConnected called when the connection that carries the file's data is known: for
+     *                    a download, after the response headers have been received; for an
+     *                    upload, just before the first byte of the file is sent.  At that time
+     *                    {@link #remoteAddress()} and {@link #localAddress()} describe that
+     *                    connection.  An upload request that is redirected before any data is
+     *                    sent is not reported.
      */
     public RemoteHttpTransferClient(CloseableHttpClient client,
           RemoteHttpDataTransferProtocolInfo info, Runnable onConnected) {
@@ -602,7 +608,6 @@ public class RemoteHttpTransferClient {
                       redirectionCount > 0 ? REDIRECTED_REQUEST : INITIAL_REQUEST);
 
                 try (CloseableHttpResponse response = execute(put, context)) {
-                    _onConnected.run();
                     StatusLine status = response.getStatusLine();
                     switch (status.getStatusCode()) {
                         case 200: /* OK (not actually a valid response from PUT) */
@@ -694,7 +699,16 @@ public class RemoteHttpTransferClient {
               .setSocketTimeout(0)
               .build());
         addHeadersToRequest(put, flags);
-        put.setEntity(entity);
+        put.setEntity(new HttpEntityWrapper(entity) {
+            @Override
+            public void writeTo(OutputStream out) throws IOException {
+                // The request is only complete once all data is sent, which is too late to
+                // learn about the connection.  With expect-continue, the entity is not
+                // written to a server that redirects the request.
+                _onConnected.run();
+                super.writeTo(out);
+            }
+        });
 
         long size = entity.getContentLength();
         if (size != -1) {

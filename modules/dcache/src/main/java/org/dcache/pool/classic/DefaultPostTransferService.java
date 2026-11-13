@@ -238,7 +238,10 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
                   mover.getFileAttributes().getPnfsId(),
                   transferTag(mover));
         } else {
-            InetSocketAddress remoteEndpoint = ipProtocolInfo.getSocketAddress();
+            // Prefer the endpoint of the connection the mover made, as reported in the start
+            // marker; the address in the protocol info is the one the door resolved.
+            InetSocketAddress remoteEndpoint = mover.getRemoteEndpoint()
+                  .orElseGet(ipProtocolInfo::getSocketAddress);
             if (remoteEndpoint == null) {
                 SCITAGS_LOGGER.debug(
                       "scitags lifecycle=end skip reason=no-remote-endpoint protocol={} pnfsid={} transferTag={}",
