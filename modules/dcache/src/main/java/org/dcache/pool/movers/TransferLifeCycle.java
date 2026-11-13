@@ -167,8 +167,10 @@ public class TransferLifeCycle {
 
         int activityId = getActivity(protocolInfo);
         long transferDurationMillis = Math.max(0L, mover.getConnectionTime());
-        Instant startedAt = Instant.ofEpochMilli(mover.getTimestamp());
-        Instant finishedAt = startedAt.plusMillis(transferDurationMillis);
+        // The mover info message is created when the transfer has finished, so its
+        // timestamp is the end of the transfer; the start is derived from the duration.
+        Instant finishedAt = Instant.ofEpochMilli(mover.getTimestamp());
+        Instant startedAt = finishedAt.minusMillis(transferDurationMillis);
 
         var data = new FlowMarkerBuilder()
               .withStartedAt(startedAt)
