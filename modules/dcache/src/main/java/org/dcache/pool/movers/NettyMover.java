@@ -44,4 +44,13 @@ public class NettyMover<P extends ProtocolInfo> extends MoverChannelMover<P, Net
     public UUID getUuid() {
         return uuid;
     }
+
+    /**
+     * A Netty mover listens for the client: the data connection exists once a client has
+     * presented the UUID of this mover.
+     */
+    @Override
+    public boolean isPassive() {
+        return true;
+    }
 }

@@ -85,6 +85,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
     private volatile Optional<RepositoryChannel> _channel = Optional.empty();
 
     private volatile InetSocketAddress _localEndpoint;
+    private volatile InetSocketAddress _remoteEndpoint;
 
     public AbstractMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor,
           TransferService<M> transferService) {
@@ -376,5 +377,14 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
     @Override
     public Optional<InetSocketAddress> getLocalEndpoint() {
         return Optional.ofNullable(_localEndpoint);
+    }
+
+    public void setRemoteEndpoint(InetSocketAddress addr) {
+        _remoteEndpoint = addr;
+    }
+
+    @Override
+    public Optional<InetSocketAddress> getRemoteEndpoint() {
+        return Optional.ofNullable(_remoteEndpoint);
     }
 }

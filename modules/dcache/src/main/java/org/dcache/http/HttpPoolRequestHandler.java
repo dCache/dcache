@@ -435,6 +435,9 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
                       "Resource is not open for reading");
             }
 
+            // This connection carries the file: report it as the transfer's network flow.
+            file.connected(context.channel().remoteAddress(), context.channel().localAddress());
+
             fileSize = file.size();
             ranges = parseHttpRange(request, 0, fileSize - 1);
         } catch (Redirect e) {
@@ -546,6 +549,9 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
                 throw new HttpException(METHOD_NOT_ALLOWED.code(),
                       "Resource is not open for writing");
             }
+
+            // This connection carries the file: report it as the transfer's network flow.
+            file.connected(context.channel().remoteAddress(), context.channel().localAddress());
 
             contentMd5Checksum(request).ifPresent(file::addChecksum);
 

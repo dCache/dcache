@@ -50,6 +50,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.CompletionHandler;
 import java.util.ArrayList;
@@ -61,6 +62,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import org.dcache.cells.CellStub;
 import org.dcache.pool.classic.Cancellable;
@@ -368,6 +370,7 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
                 UUID uuid = mover.getUuid();
                 NettyMoverChannel channel =
                       autoclose(new NettyMoverChannel(uuid,
+                            mover,
                             mover.open(),
                             connectTimeoutUnit.toMillis(connectTimeout), this,
                             mover::addChecksumType,
@@ -382,9 +385,12 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
 
                 InetSocketAddress localEndpoint = new InetSocketAddress(localIP, getServerAddress().getPort());
                 mover.setLocalEndpoint(localEndpoint);
-                transferLifeCycle.onStart(((IpProtocolInfo)mover.getProtocolInfo()).getSocketAddress(),
-                        localEndpoint, mover.getProtocolInfo(), mover.getSubject());
 
+                /* No flow marker is sent here: the client has not connected yet, so the
+                 * endpoints of the data connection are unknown.  The address in the protocol
+                 * info is that of the client's connection to the door.  The marker is sent by
+                 * NettyMoverChannel#connected once the client has attached to the mover.
+                 */
                 sendAddressToDoor(mover, localEndpoint);
             }
 
@@ -443,8 +449,11 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
         private final Consumer<ChecksumType> checksumCalculation;
         private final Consumer<Checksum> integrityChecker;
         private final UUID moverUuid;
+        private final NettyMover<P> mover;
+        private final AtomicBoolean isConnected = new AtomicBoolean();
 
         public NettyMoverChannel(UUID moverUuid,
+              NettyMover<P> mover,
               MoverChannel<P> file,
               long connectTimeout,
               CompletionHandler<Void, Void> completionHandler,
@@ -452,6 +461,7 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
               Consumer<Checksum> integrityChecker) {
             super(file);
             this.moverUuid = moverUuid;
+            this.mover = mover;
             this.completionHandler = completionHandler;
             this.checksumCalculation = checksumCalculation;
             this.integrityChecker = integrityChecker;
@@ -478,6 +488,31 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
 
         public UUID getMoverUuid() {
             return moverUuid;
+        }
+
+        /**
+         * Reports the connection through which a client has attached to this mover.  This is the
+         * connection that carries the data, so its endpoints, rather than those the door saw,
+         * identify the network flow.  The first connection reported is recorded on the mover
+         * and announced with a start flow marker; the end marker reuses the same endpoints.
+         * Further connections to the same mover (keep-alive requests, reconnects) are ignored.
+         *
+         * @param remote the client's end of the connection
+         * @param local the pool's end of the connection
+         */
+        public void connected(SocketAddress remote, SocketAddress local) {
+            if (remote instanceof InetSocketAddress remoteEndpoint
+                  && local instanceof InetSocketAddress localEndpoint
+                  && isConnected.compareAndSet(false, true)) {
+                mover.setLocalEndpoint(localEndpoint);
+                mover.setRemoteEndpoint(remoteEndpoint);
+                if (transferLifeCycle != null) {
+                    try (CDC ignored = cdc.restore()) {
+                        transferLifeCycle.onStart(remoteEndpoint, localEndpoint,
+                              mover.getProtocolInfo(), mover.getSubject());
+                    }
+                }
+            }
         }
 
         @Override
