@@ -18,6 +18,7 @@
 package org.dcache.webdav.owncloud;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -27,7 +28,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.rewrite.handler.RewriteHandler;
 import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.util.StringUtil;
 import org.springframework.http.MediaType;
 import tools.jackson.databind.ObjectMapper;
 
@@ -63,7 +63,7 @@ public class OwnCloudHandler extends RewriteHandler {
 
             if (json != null) {
                 response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                response.setCharacterEncoding(StringUtil.__UTF8);
+                response.setCharacterEncoding(StandardCharsets.UTF_8.name());
                 response.getOutputStream().write(json.getBytes());
                 response.setStatus(HttpServletResponse.SC_OK);
                 baseRequest.setHandled(true);

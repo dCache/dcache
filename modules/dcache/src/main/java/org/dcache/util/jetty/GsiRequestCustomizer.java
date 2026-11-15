@@ -10,7 +10,6 @@ import org.eclipse.jetty.io.ssl.SslConnection.DecryptedEndPoint;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.util.log.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +44,7 @@ public class GsiRequestCustomizer implements HttpConfiguration.Customizer {
                 request.setAttribute(X509_CREDENTIAL, delegCred);
             }
         } catch (Exception e) {
-            LOGGER.warn(Log.EXCEPTION, e);
+            LOGGER.warn("Failed to inject delegated credential", e);
         }
     }
 
