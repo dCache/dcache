@@ -129,6 +129,11 @@ public final class TpcWriteDescriptor extends WriteDescriptor
     private Integer transferStatus;
     private int clientChunkSize;
 
+    /*
+     * Whether the connection that carries the file has been reported to the mover.
+     */
+    private volatile boolean isDataConnectionReported;
+
     public TpcWriteDescriptor(NettyTransferService<XrootdProtocolInfo>.NettyMoverChannel channel,
           boolean posc,
           ChannelHandlerContext ctx,
@@ -328,7 +333,31 @@ public final class TpcWriteDescriptor extends WriteDescriptor
     @Override
     public void write(InboundReadResponse inboundReadResponse)
           throws IOException {
+        reportDataConnection();
         write((ByteBuffersProvider) inboundReadResponse);
+    }
+
+    /**
+     * Reports the connection over which the file arrives as the network flow of the transfer.
+     * The connection from the client that requested the copy carries no file data; the file
+     * arrives over the connection the third-party client has made to the source.  That
+     * connection is only known for certain once data arrives, since the source may redirect
+     * the client to another server first.
+     */
+    private void reportDataConnection() {
+        if (isDataConnectionReported) {
+            return;
+        }
+        isDataConnectionReported = true;
+
+        XrootdTpcClient current = client;
+        ChannelFuture future = current == null ? null : current.getChannelFuture();
+        Channel channel = future == null ? null : future.channel();
+        if (channel == null) {
+            LOGGER.debug("Third-party client has no channel; data connection not reported.");
+            return;
+        }
+        getChannel().connected(channel.remoteAddress(), channel.localAddress());
     }
 
     @Override
