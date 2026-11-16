@@ -171,19 +171,12 @@
     </dependency>
     <dependency>
         <groupId>org.eclipse.jetty</groupId>
-        <artifactId>jetty-deploy</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.eclipse.jetty</groupId>
-        <artifactId>jetty-webapp</artifactId>
+        <artifactId>jetty-servlet</artifactId>
+        <scope>test</scope>
     </dependency>
     <dependency>
         <groupId>org.eclipse.jetty</groupId>
         <artifactId>jetty-servlets</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.eclipse.jetty</groupId>
-        <artifactId>jetty-plus</artifactId>
     </dependency>
     <dependency>
         <groupId>org.eclipse.jetty</groupId>

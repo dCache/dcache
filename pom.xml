@@ -486,22 +486,12 @@
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-deploy</artifactId>
-                <version>${version.jetty}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-webapp</artifactId>
+                <artifactId>jetty-servlet</artifactId>
                 <version>${version.jetty}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-servlets</artifactId>
-                <version>${version.jetty}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-plus</artifactId>
                 <version>${version.jetty}</version>
             </dependency>
             <dependency>
@@ -513,11 +503,6 @@
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-rewrite</artifactId>
                 <version>${version.jetty}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.jetty.toolchain</groupId>
-                <artifactId>jetty-schemas</artifactId>
-                <version>3.1</version>
             </dependency>
 
             <dependency>
