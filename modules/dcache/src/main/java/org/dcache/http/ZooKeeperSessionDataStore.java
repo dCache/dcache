@@ -22,7 +22,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.zookeeper.CreateMode;
@@ -76,9 +75,10 @@ public class ZooKeeperSessionDataStore extends AbstractSessionDataStore
         try {
             return deserialize(bytes);
         } catch (Exception e) {
-            // e.g. stored by an older Jetty version; treat as missing
-            LOGGER.info("Dropping unreadable session {}: {}", id, e.toString());
-            delete(id);
+            // e.g. stored by an older Jetty version; treat as missing. The node is left
+            // alone: it may belong to another door, and it is ephemeral, so it goes away
+            // with the door that created it.
+            LOGGER.warn("Ignoring unreadable session {}", id, e);
             return null;
         }
     }
@@ -100,35 +100,21 @@ public class ZooKeeperSessionDataStore extends AbstractSessionDataStore
         return expired;
     }
 
+    /**
+     * Sessions not managed by this door are not searched for: their nodes are ephemeral and go
+     * away with the door that created them, and the door checks its own sessions through
+     * {@link #doCheckExpired}.  A search would read every session of every door.
+     */
     @Override
     public Set<String> doGetExpired(long before) {
-        Set<String> expired = new HashSet<>();
-        for (String id : sessionIds()) {
-            try {
-                SessionData data = doLoad(id);
-                if (data != null && data.isExpiredAt(before)
-                      && data.getContextPath().equals(_context.getCanonicalContextPath())) {
-                    expired.add(id);
-                }
-            } catch (Exception e) {
-                LOGGER.debug("Failed to check session {}: {}", id, e.toString());
-            }
-        }
-        return expired;
+        return Set.of();
     }
 
+    /**
+     * Nothing to do, see {@link #doGetExpired}.
+     */
     @Override
     public void doCleanOrphans(long time) {
-        for (String id : sessionIds()) {
-            try {
-                SessionData data = doLoad(id);
-                if (data != null && data.isExpiredAt(time)) {
-                    delete(id);
-                }
-            } catch (Exception e) {
-                LOGGER.debug("Failed to clean session {}: {}", id, e.toString());
-            }
-        }
     }
 
     @Override
@@ -158,15 +144,6 @@ public class ZooKeeperSessionDataStore extends AbstractSessionDataStore
     // ------------------------
     private String path(String id) {
         return root + "/" + id;
-    }
-
-    private List<String> sessionIds() {
-        try {
-            return curator.getChildren().forPath(root);
-        } catch (Exception e) {
-            LOGGER.warn("Failed to list sessions in {}: {}", root, e.toString());
-            return List.of();
-        }
     }
 
     // -------------------------------
