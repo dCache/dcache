@@ -2,7 +2,7 @@
 
 S3 protocol handling (request parsing, SigV2/SigV4 verification, aws-chunked
 bodies, XML responses) copied from [s3proxy](https://github.com/gaul/s3proxy)
-and patched to run on dCache's Jetty 9 (`javax.servlet`).
+and patched to run on dCache's Jetty 12 ee8 environment (`javax.servlet`).
 
 The dCache S3 door (`modules/dcache-s3`) implements
 `org.gaul.s3proxy.blobstore.BlobStore` and `org.gaul.s3proxy.BlobStoreLocator`
@@ -67,13 +67,10 @@ marked with `dCache patch` comments.
    are added, and `addMetadataToResponse` sends `x-amz-restore` from
    `HeadObjectResponse.restore()`.
 
-7. Signatures over a `Content-Type` with a charset: Jetty 9 matches header
-   values against its cache of common ones regardless of case and passes on
-   the cached spelling, so `text/plain; charset=utf-8` reaches the handler
-   as `text/plain; charset=UTF-8` and the V2 and V4 signatures no longer
-   match. When a signature does not match and the charset has upper-case
-   letters, `S3ProxyHandler` checks it once more with the charset in lower
-   case (`withLowerCaseCharset`). Not needed with Jetty 12.
+7. Removed. It retried signatures over a `Content-Type` charset whose case
+   Jetty 9 had changed. dCache's connector (`ConnectorFactoryBean`) now makes
+   Jetty's header cache case-sensitive, so header values reach the handler
+   as the client signed them.
 
 8. ListObjectVersions on a store without versioning: S3 lists the objects
    of a bucket that never had versioning as their only version, `null`, and

@@ -1,6 +1,14 @@
 --- a/src/main/java/org/gaul/s3proxy/auth/AwsSignature.java
 +++ b/src/main/java/org/gaul/s3proxy/auth/AwsSignature.java
-@@ -44,7 +44,7 @@
+@@ -18,7 +18,6 @@
+ 
+ import static java.util.Objects.requireNonNull;
+ 
+-import java.io.IOException;
+ import java.nio.charset.StandardCharsets;
+ import java.security.InvalidKeyException;
+ import java.security.MessageDigest;
+@@ -44,7 +43,7 @@
  import com.google.common.net.HttpHeaders;
  import com.google.common.net.PercentEscaper;
  
@@ -9,6 +17,89 @@
  
  import org.gaul.s3proxy.AwsHttpHeaders;
  import org.gaul.s3proxy.S3ErrorCode;
+@@ -104,6 +103,22 @@
+     private static final Pattern SHA256_HEX = Pattern.compile(
+             "[0-9a-fA-F]{64}");
+ 
++    /** The message carried by the S3ProxyException thrown when
++     *  x-amz-content-sha256 names neither a payload token nor a SHA-256
++     *  digest, shared so the door and the signer refuse it identically. */
++    public static final String INVALID_CONTENT_SHA256 =
++            "x-amz-content-sha256 must be UNSIGNED-PAYLOAD,"
++            + " STREAMING-AWS4-HMAC-SHA256-PAYLOAD,"
++            + " STREAMING-AWS4-HMAC-SHA256-PAYLOAD-TRAILER,"
++            + " STREAMING-UNSIGNED-PAYLOAD-TRAILER or a valid sha256 value";
++
++    /** Whether a value is a SHA-256 as x-amz-content-sha256 spells it, as
++     *  opposed to one of the UNSIGNED-PAYLOAD or STREAMING-* tokens that
++     *  header also accepts. */
++    public static boolean isSha256Hex(String value) {
++        return value != null && SHA256_HEX.matcher(value).matches();
++    }
++
+     private AwsSignature() { }
+ 
+     /**
+@@ -443,12 +458,10 @@
+     }
+ 
+     private static String createCanonicalRequest(HttpServletRequest request,
+-                                                 String uri, byte[] payload,
+-                                                 String hashAlgorithm,
++                                                 String uri,
+                                                  boolean presignedUrl,
+                                                  @Nullable String pinnedHash,
+-                                                 @Nullable String verifiedHash)
+-            throws IOException, NoSuchAlgorithmException {
++                                                 @Nullable String verifiedHash) {
+         // A presigned request is signed through the query string.  Any
+         // Authorization header it also carries addresses something other than
+         // this proxy, so it names neither the signed headers nor the payload
+@@ -475,15 +488,17 @@
+             digest = "STREAMING-UNSIGNED-PAYLOAD-TRAILER";
+         } else if ("UNSIGNED-PAYLOAD".equals(xAmzContentSha256)) {
+             digest = "UNSIGNED-PAYLOAD";
+-        } else if (verifiedHash != null) {
+-            // The caller already hashed the payload to check the
+-            // x-amz-content-sha256 header, so hashing it again here can only
+-            // repeat that answer.  Reuse it for the payload line; the hash a
+-            // request carries but the caller did not verify -- one whose
+-            // presigned parameters skipped the body -- never reaches here.
+-            digest = verifiedHash;
+         } else {
+-            digest = getMessageDigest(payload, hashAlgorithm);
++            // The signature covers the digest the request claims its body
++            // hashes to, whether or not the body lives up to the claim --
++            // checking that is the caller's, as the body streams.  A request
++            // whose header names neither a token nor a digest has nothing
++            // to sign: refuse it rather than guess a payload line.
++            digest = verifiedHash != null ? verifiedHash : xAmzContentSha256;
++            if (digest == null) {
++                throw new S3ProxyException(S3ErrorCode.INVALID_ARGUMENT,
++                        INVALID_CONTENT_SHA256);
++            }
+         }
+         List<String> signedHeaders = signedHeaderNames(request, presignedUrl);
+         if (signedHeaders == null) {
+@@ -522,14 +537,14 @@
+      */
+     public static SignatureDetail createAuthorizationSignatureV4(
+             HttpServletRequest request, S3AuthorizationHeader authHeader,
+-            byte[] payload, String uri, String credential,
++            String uri, String credential,
+             boolean presignedUrl, @Nullable String pinnedHash,
+             @Nullable String verifiedHash)
+-            throws InvalidKeyException, IOException, NoSuchAlgorithmException {
++            throws InvalidKeyException, NoSuchAlgorithmException {
+         // V4 headers always carry these fields
+         String hashAlgorithm = requireNonNull(authHeader.getHashAlgorithm());
+-        String canonicalRequest = createCanonicalRequest(request, uri, payload,
+-                hashAlgorithm, presignedUrl, pinnedHash, verifiedHash);
++        String canonicalRequest = createCanonicalRequest(request, uri,
++                presignedUrl, pinnedHash, verifiedHash);
+         String algorithm = requireNonNull(authHeader.getHmacAlgorithm());
+         byte[] signingKey = deriveSigningKeyV4(authHeader, credential);
+         String date = request.getHeader(AwsHttpHeaders.DATE);
 --- a/src/main/java/org/gaul/s3proxy/blobstore/BlobStore.java
 +++ b/src/main/java/org/gaul/s3proxy/blobstore/BlobStore.java
 @@ -86,6 +86,8 @@
@@ -181,22 +272,13 @@
      private final String value;
 --- a/src/main/java/org/gaul/s3proxy/S3ProxyHandler.java
 +++ b/src/main/java/org/gaul/s3proxy/S3ProxyHandler.java
-@@ -40,6 +40,7 @@
- import java.util.Base64;
- import java.util.Collections;
- import java.util.Comparator;
-+import java.util.Enumeration;
- import java.util.HashMap;
- import java.util.HashSet;
- import java.util.HexFormat;
-@@ -80,13 +81,10 @@
+@@ -80,13 +80,9 @@
  import com.google.common.net.HttpHeaders;
  import com.google.common.net.PercentEscaper;
  
 -import jakarta.servlet.http.HttpServletRequest;
 -import jakarta.servlet.http.HttpServletResponse;
 +import javax.servlet.http.HttpServletRequest;
-+import javax.servlet.http.HttpServletRequestWrapper;
 +import javax.servlet.http.HttpServletResponse;
  
 -import org.eclipse.jetty.http.MultiPartFormData;
@@ -206,7 +288,7 @@
  import org.gaul.s3proxy.auth.AuthenticationType;
  import org.gaul.s3proxy.auth.AwsSignature;
  import org.gaul.s3proxy.auth.PostPolicy;
-@@ -170,6 +168,9 @@
+@@ -170,6 +166,9 @@
  import software.amazon.awssdk.services.s3.model.PutObjectRequest;
  import software.amazon.awssdk.services.s3.model.PutObjectResponse;
  import software.amazon.awssdk.services.s3.model.S3Error;
@@ -216,17 +298,25 @@
  import software.amazon.awssdk.services.s3.model.S3Exception;
  import software.amazon.awssdk.services.s3.model.S3Object;
  import software.amazon.awssdk.services.s3.model.ServerSideEncryptionByDefault;
-@@ -249,6 +250,9 @@
+@@ -240,12 +239,12 @@
+     private static final long MAX_MULTIPART_COPY_SIZE =
+             5L * 1024L * 1024L * 1024L;
+     /**
+-     * The largest body read into a single array, whatever
+-     * v4MaxNonChunkedRequestSize is configured to: the JVM will not allocate
+-     * an array of Integer.MAX_VALUE on every implementation, and a request
+-     * this side of that limit has other problems.
++     * The most a request body read for its XML alone may weigh: the
++     * configurations and key lists are a few kilobytes, but the request is
++     * otherwise attacker-controlled, so read at most one byte past the
++     * limit and reject rather than exhaust the heap.
+      */
+-    private static final long MAX_BUFFERED_PAYLOAD = Integer.MAX_VALUE - 8;
++    private static final int MAX_XML_BODY = 1024 * 1024;
      /** The most buckets ListBuckets returns, and its max-buckets ceiling. */
      private static final int MAX_BUCKETS = 10_000;
      /** An S3 composite ETag: the parts' MD5s hashed, then the part count. */
-+    // dCache patch: the charset of a Content-Type, see withLowerCaseCharset.
-+    private static final Pattern CHARSET_PARAMETER = Pattern.compile(
-+            "(?i);\\s*charset=([^;\\s]+)");
-     private static final Pattern COMPOSITE_ETAG = Pattern.compile(
-             "[0-9a-fA-F]{32}-([0-9]+)");
-     private static final Set<String> UNSUPPORTED_PARAMETERS = Set.of(
-@@ -267,7 +271,7 @@
+@@ -267,7 +266,7 @@
              "publicAccessBlock",
              "replication",
              "requestPayment",
@@ -235,106 +325,160 @@
              "retention",
              "tagging",
              "torrent",
-@@ -516,6 +520,54 @@
-                         .COPY_SOURCE_SERVER_SIDE_ENCRYPTION_CUSTOMER_KEY);
-     }
- 
-+    /**
-+     * dCache patch: Jetty 9 matches header values against a cache of common
-+     * ones regardless of case and passes on the cached spelling, so a
-+     * Content-Type of "text/plain; charset=utf-8" arrives as
-+     * "text/plain; charset=UTF-8" and no longer reads as the client signed
-+     * it.  Returns the request with the charset in lower case, the spelling
-+     * clients mostly use, for a second check of the signature; or null if
-+     * the Content-Type has no charset with upper-case letters.  Not needed
-+     * with Jetty 12.
-+     */
-+    @Nullable
-+    private static HttpServletRequest withLowerCaseCharset(
-+            HttpServletRequest request) {
-+        String contentType = request.getHeader(HttpHeaders.CONTENT_TYPE);
-+        if (contentType == null) {
-+            return null;
-+        }
-+        var matcher = CHARSET_PARAMETER.matcher(contentType);
-+        if (!matcher.find()) {
-+            return null;
-+        }
-+        String lowerCase = contentType.substring(0, matcher.start(1)) +
-+                matcher.group(1).toLowerCase(Locale.ROOT) +
-+                contentType.substring(matcher.end(1));
-+        if (lowerCase.equals(contentType)) {
-+            return null;
-+        }
-+        return new HttpServletRequestWrapper(request) {
-+            @Override
-+            public String getHeader(String name) {
-+                return HttpHeaders.CONTENT_TYPE.equalsIgnoreCase(name) ?
-+                        lowerCase : super.getHeader(name);
-+            }
-+
-+            @Override
-+            public Enumeration<String> getHeaders(String name) {
-+                return HttpHeaders.CONTENT_TYPE.equalsIgnoreCase(name) ?
-+                        Collections.enumeration(List.of(lowerCase)) :
-+                        super.getHeaders(name);
-+            }
-+
-+            @Override
-+            public String getContentType() {
-+                return lowerCase;
-+            }
-+        };
-+    }
-+
-     private static String getBlobStoreType(BlobStore blobStore) {
-         BlobStore inner = blobStore;
-         while (inner instanceof org.gaul.s3proxy.blobstore.ForwardingBlobStore fbs) {
-@@ -964,6 +1016,20 @@
-                                     presignedUrl, haveBothDateHeader);
-                     expectedSignature = signatureDetail.signature();
-                 }
-+                // dCache patch: see withLowerCaseCharset.
-+                HttpServletRequest lowerCaseCharset =
-+                        withLowerCaseCharset(request);
-+                if (lowerCaseCharset != null && !constantTimeEquals(
-+                        expectedSignature, authHeader.getSignature())) {
-+                    var detail = AwsSignature.createAuthorizationSignature(
-+                            lowerCaseCharset, uriForSigning, credential,
-+                            presignedUrl, haveBothDateHeader);
-+                    if (constantTimeEquals(detail.signature(),
-+                            authHeader.getSignature())) {
-+                        signatureDetail = detail;
-+                        expectedSignature = detail.signature();
-+                    }
-+                }
+@@ -393,6 +392,10 @@
+     private final AuthenticationType authenticationType;
+     private final Optional<String> virtualHost;
+     private final long maxSinglePartObjectSize;
++    /** The most a body whose length only the reading reveals may weigh: an
++     *  upload that framed itself with Transfer-Encoding: chunked names no
++     *  length, and the backends that need one are told the size this many
++     *  bytes of buffering bought. */
+     private final long v4MaxNonChunkedRequestSize;
+     private final int v4MaxChunkSize;
+     private final boolean ignoreUnknownHeaders;
+@@ -967,74 +970,57 @@
              } else {
                  String contentSha256 = request.getHeader(
                          AwsHttpHeaders.CONTENT_SHA256);
-@@ -1063,6 +1129,22 @@
-                                 verifiedContentSha256);
-                         expectedSignature = signatureDetail.signature();
-                     }
-+                    // dCache patch: see withLowerCaseCharset.
-+                    HttpServletRequest lowerCaseCharset =
-+                            withLowerCaseCharset(baseRequest);
-+                    if (lowerCaseCharset != null && !constantTimeEquals(
-+                            expectedSignature, authHeader.getSignature())) {
-+                        var detail = AwsSignature
-+                                .createAuthorizationSignatureV4(
-+                                lowerCaseCharset, authHeader, payload,
-+                                uriForSigning, credential, presignedUrl,
-+                                pinnedSha256, verifiedContentSha256);
-+                        if (constantTimeEquals(detail.signature(),
-+                                authHeader.getSignature())) {
-+                            signatureDetail = detail;
-+                            expectedSignature = detail.signature();
-+                        }
-+                    }
-                     if ("STREAMING-AWS4-HMAC-SHA256-PAYLOAD".equals(
+-                // The header value once the buffered payload has hashed to
+-                // it, letting the canonical request reuse the digest rather
+-                // than hash the body a second time.  Stays null on the paths
+-                // that never verify the body against the header.
++                // The header value the request's body is being checked
++                // against as it streams, letting the canonical request
++                // reuse the digest rather than hash the body.  Stays null
++                // on the paths that never verify the body against the
++                // header.
+                 String verifiedContentSha256 = null;
+                 try {
+-                    byte[] payload;
+                     if (request.getParameter("X-Amz-Algorithm") != null) {
+-                        payload = new byte[0];
++                        // A presigned URL never buffers: the canonical
++                        // request it signed names the payload treatment
++                        // outright, and a pinned hash is enforced by the
++                        // wrapping further below.
+                     } else if ("STREAMING-AWS4-HMAC-SHA256-PAYLOAD".equals(
                              contentSha256) ||
                              "STREAMING-AWS4-HMAC-SHA256-PAYLOAD-TRAILER".equals(
-@@ -1278,6 +1360,13 @@
+                             contentSha256)) {
+-                        payload = new byte[0];
+                         // ChunkedInputStream constructed below after deriving
+                         // the signing key so per-chunk signatures can be
+                         // verified.
+                     } else if ("STREAMING-UNSIGNED-PAYLOAD-TRAILER".equals(contentSha256)) {
+-                        payload = new byte[0];
+                         is = new ChunkedInputStream(is, v4MaxChunkSize, request.getHeader(AwsHttpHeaders.TRAILER));
+                     } else if ("UNSIGNED-PAYLOAD".equals(contentSha256)) {
+-                        payload = new byte[0];
++                        // The request says nothing about its body, so
++                        // nothing is checked against one.
+                     } else {
+-                        // The signature covers a digest of the body, so the
+-                        // body has to be in hand before the request can be
+-                        // authenticated: everything read here is read on
+-                        // behalf of a caller who has so far offered only an
+-                        // access key id, which is not a secret.  Refuse a
+-                        // length that says up front it will not fit, rather
+-                        // than reading the limit's worth to find out, and
+-                        // read a length that will fit into a buffer of
+-                        // exactly that size, since growing one of unknown
+-                        // size ends up holding twice the body it keeps.
+-                        long declaredLength = request.getContentLengthLong();
+-                        if (declaredLength > v4MaxNonChunkedRequestSize) {
++                        // The request claims a digest of its body and the
++                        // signature covers that claim: the signature is
++                        // verified against the claimed value, and the body
++                        // is checked against the same claim as it streams
++                        // past, so nothing is buffered whatever the body
++                        // weighs.  A request without the header, or with a
++                        // value no digest could be, has nothing a signature
++                        // could cover: refuse it rather than parse it.
++                        if (contentSha256 == null ||
++                                !AwsSignature.isSha256Hex(contentSha256)) {
+                             throw new S3ProxyException(
+-                                    S3ErrorCode.MAX_MESSAGE_LENGTH_EXCEEDED);
+-                        }
+-                        if (declaredLength >= 0 &&
+-                                declaredLength <= MAX_BUFFERED_PAYLOAD) {
+-                            payload = is.readNBytes((int) declaredLength);
+-                        } else {
+-                            // A body of unannounced length, e.g. one framed
+-                            // by Transfer-Encoding: chunked.
+-                            payload = ByteStreams.limit(is,
+-                                    v4MaxNonChunkedRequestSize + 1)
+-                                    .readAllBytes();
+-                            if (payload.length ==
+-                                    v4MaxNonChunkedRequestSize + 1) {
+-                                throw new S3ProxyException(
+-                                        S3ErrorCode
+-                                        .MAX_MESSAGE_LENGTH_EXCEEDED);
+-                            }
+-                        }
+-
+-                        // maybe we should check this when signing,
+-                        // a lot of dup code with aws sign code.
+-                        MessageDigest md = MessageDigest.getInstance(
+-                            authHeader.getHashAlgorithm());
+-                        byte[] hash = md.digest(payload);
+-                        if (!HexFormat.of().formatHex(hash)
+-                                .equals(contentSha256)) {
+-                            throw new S3ProxyException(
+-                                    S3ErrorCode
+-                                    .X_AMZ_CONTENT_S_H_A_256_MISMATCH);
++                                    S3ErrorCode.INVALID_ARGUMENT,
++                                    AwsSignature.INVALID_CONTENT_SHA256);
+                         }
+                         verifiedContentSha256 = contentSha256;
+-                        is = new ByteArrayInputStream(payload);
++                        long declaredLength = request.getContentLengthLong();
++                        is = new ChecksumValidatingInputStream(is,
++                                FlexChecksum.SHA256.newChecksum(),
++                                HexFormat.of().parseHex(contentSha256),
++                                // A body of unannounced length, e.g. one
++                                // framed by Transfer-Encoding: chunked, is
++                                // checked at end of stream rather than at
++                                // the boundary a length would have named.
++                                declaredLength >= 0 ? declaredLength
++                                        : Long.MAX_VALUE,
++                                S3ErrorCode.X_AMZ_CONTENT_S_H_A_256_MISMATCH);
+                     }
+ 
+                     // originalUri already includes the service path and, unlike
+@@ -1045,7 +1031,7 @@
+                             baseRequest);
+                     signatureDetail = AwsSignature
+                             .createAuthorizationSignatureV4(// v4 sign
+-                            baseRequest, authHeader, payload, uriForSigning,
++                            baseRequest, authHeader, uriForSigning,
+                             credential, presignedUrl, pinnedSha256,
+                             verifiedContentSha256);
+                     expectedSignature = signatureDetail.signature();
+@@ -1058,7 +1044,7 @@
+                             expectedSignature, authHeader.getSignature())) {
+                         signatureDetail = AwsSignature
+                                 .createAuthorizationSignatureV4(
+-                                baseRequest, authHeader, payload, uriForSigning,
++                                baseRequest, authHeader, uriForSigning,
+                                 credential, presignedUrl, /*pinnedHash=*/ null,
+                                 verifiedContentSha256);
+                         expectedSignature = signatureDetail.signature();
+@@ -1129,10 +1115,13 @@
+             // buffering to check, unlike the header-authorized path above.
+             String pinnedSha256 = AwsSignature.pinnedPayloadHash(baseRequest);
+             if (pinnedSha256 != null) {
++                long pinnedLength = request.getContentLengthLong();
+                 is = new ChecksumValidatingInputStream(is,
+                         FlexChecksum.SHA256.newChecksum(),
+                         HexFormat.of().parseHex(pinnedSha256),
+-                        request.getContentLengthLong(),
++                        // A body of unannounced length is checked at end of
++                        // stream rather than at a boundary no length named.
++                        pinnedLength >= 0 ? pinnedLength : Long.MAX_VALUE,
+                         S3ErrorCode.X_AMZ_CONTENT_S_H_A_256_MISMATCH);
+             }
+         }
+@@ -1278,6 +1267,13 @@
                  handleMultiBlobRemove(request, response, is, blobStore,
                          path[1]);
                  return;
@@ -348,7 +492,7 @@
              } else if (request.getParameter("uploads") != null) {
                  setOperation(ctx, S3Operation.CREATE_MULTIPART_UPLOAD);
                  handleInitiateMultipartUpload(request, response, blobStore,
-@@ -2133,6 +2222,42 @@
+@@ -2133,6 +2129,42 @@
          }
      }
  
@@ -361,9 +505,9 @@
 +    private void handleRestoreObject(HttpServletRequest request,
 +            HttpServletResponse response, InputStream is, BlobStore blobStore,
 +            String containerName, String blobName) throws IOException {
-+        byte[] body = ByteStreams.limit(is, v4MaxNonChunkedRequestSize + 1)
++        byte[] body = ByteStreams.limit(is, MAX_XML_BODY + 1)
 +                .readAllBytes();
-+        if (body.length == v4MaxNonChunkedRequestSize + 1) {
++        if (body.length == MAX_XML_BODY + 1) {
 +            throw new S3ProxyException(S3ErrorCode.MAX_MESSAGE_LENGTH_EXCEEDED);
 +        }
 +        var restoreRequest = RestoreRequest.builder();
@@ -391,7 +535,31 @@
      private void handleSetBucketVersioning(HttpServletRequest request,
              HttpServletResponse response, InputStream is, BlobStore blobStore,
              String containerName) throws IOException {
-@@ -2367,10 +2492,11 @@
+@@ -2143,9 +2175,9 @@
+ 
+         // Bound the buffered body: the configuration is a few elements, but
+         // the request is otherwise attacker-controlled.
+-        byte[] body = ByteStreams.limit(is, v4MaxNonChunkedRequestSize + 1)
++        byte[] body = ByteStreams.limit(is, MAX_XML_BODY + 1)
+                 .readAllBytes();
+-        if (body.length == v4MaxNonChunkedRequestSize + 1) {
++        if (body.length == MAX_XML_BODY + 1) {
+             throw new S3ProxyException(S3ErrorCode.MAX_MESSAGE_LENGTH_EXCEEDED);
+         }
+         VersioningConfigurationRequest vcr = readXmlBody(body,
+@@ -2252,9 +2284,9 @@
+         }
+         // Bound the buffered body: the configuration is a few elements, but
+         // the request is otherwise attacker-controlled.
+-        byte[] body = ByteStreams.limit(is, v4MaxNonChunkedRequestSize + 1)
++        byte[] body = ByteStreams.limit(is, MAX_XML_BODY + 1)
+                 .readAllBytes();
+-        if (body.length == v4MaxNonChunkedRequestSize + 1) {
++        if (body.length == MAX_XML_BODY + 1) {
+             throw new S3ProxyException(S3ErrorCode.MAX_MESSAGE_LENGTH_EXCEEDED);
+         }
+         var configuration = readXmlBody(body,
+@@ -2367,10 +2399,11 @@
      private void handleListObjectVersions(HttpServletRequest request,
              HttpServletResponse response, BlobStore blobStore,
              String containerName) throws IOException {
@@ -407,7 +575,19 @@
  
          String encodingType = request.getParameter("encoding-type");
          var versionsRequest = ListObjectVersionsRequest.builder()
-@@ -4543,268 +4669,9 @@
+@@ -3161,9 +3194,9 @@
+         // Bound the buffered body: a MultiObjectDelete is limited to 1000
+         // keys, but the request is otherwise attacker-controlled, so read at
+         // most one byte past the limit and reject rather than exhaust the heap.
+-        byte[] body = ByteStreams.limit(is, v4MaxNonChunkedRequestSize + 1)
++        byte[] body = ByteStreams.limit(is, MAX_XML_BODY + 1)
+                 .readAllBytes();
+-        if (body.length == v4MaxNonChunkedRequestSize + 1) {
++        if (body.length == MAX_XML_BODY + 1) {
+             throw new S3ProxyException(S3ErrorCode.MAX_MESSAGE_LENGTH_EXCEEDED);
+         }
+         validateMultiBlobRemoveChecksum(request, body);
+@@ -4543,268 +4576,9 @@
              HttpServletResponse response, InputStream is,
              BlobStore anonymousBlobStore, String containerName)
              throws IOException {
@@ -679,7 +859,7 @@
      }
  
      /**
-@@ -6333,6 +6200,11 @@
+@@ -6333,6 +6107,11 @@
          if (storageClass != null) {
              response.addHeader(AwsHttpHeaders.STORAGE_CLASS, storageClass);
          }
@@ -691,6 +871,20 @@
          addServerSideEncryptionHeaders(response,
                  metadata.serverSideEncryptionAsString(),
                  metadata.ssekmsKeyId(), /*kmsContext=*/ null,
+@@ -6886,10 +6665,9 @@
+      * is known before a backend is asked to store it.  S3 accepts an upload
+      * framed with Transfer-Encoding: chunked, but most backends need a size
+      * before they can stream one on, and a chunked body says nothing about how
+-     * large it will turn out to be -- hence the same bound, and the same
+-     * error beyond it, that a SigV4 request whose payload must be digested
+-     * already carries.  An upload that framed its body neither way is the one
+-     * S3 answers 411 to.
++     * large it will turn out to be -- hence the bound, and the error beyond
++     * it, that v4MaxNonChunkedRequestSize names.  An upload that framed its
++     * body neither way is the one S3 answers 411 to.
+      */
+     private byte[] readBodyOfUnknownLength(HttpServletRequest request,
+             InputStream is) throws IOException {
 --- a/src/test/java/org/gaul/s3proxy/auth/AwsSignatureTest.java
 +++ b/src/test/java/org/gaul/s3proxy/auth/AwsSignatureTest.java
 @@ -16,11 +16,14 @@

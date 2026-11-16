@@ -446,8 +446,8 @@ public class S3ClientTest {
     }
 
     /**
-     * Jetty 9 passes on such a Content-Type as "text/plain; charset=UTF-8", which broke the
-     * signature, and getContentType() normalises it further.
+     * The signature covers the Content-Type as sent; the door's connector must not change its
+     * case (Jetty's header cache does by default), and getContentType() normalises it further.
      */
     @Test
     public void shouldPutObjectWithCharset() {
