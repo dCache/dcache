@@ -330,11 +330,11 @@ public class ConnectorFactoryBean implements FactoryBean<ServerConnector> {
                 break;
             case TLS:
                 httpConnectionFactory.getHttpConfiguration()
-                      .addCustomizer(new SecureRequestCustomizer());
+                      .addCustomizer(newSecureRequestCustomizer());
                 break;
             case GSI:
                 httpConnectionFactory.getHttpConfiguration()
-                      .addCustomizer(new SecureRequestCustomizer());
+                      .addCustomizer(newSecureRequestCustomizer());
                 httpConnectionFactory.getHttpConfiguration()
                       .addCustomizer(new GsiRequestCustomizer());
                 break;
@@ -368,6 +368,14 @@ public class ConnectorFactoryBean implements FactoryBean<ServerConnector> {
     @Override
     public Class<?> getObjectType() {
         return ServerConnector.class;
+    }
+
+    /**
+     * Without the SNI host check: as with Jetty 9, clients may use any host name or IP address,
+     * not only names in the host certificate.
+     */
+    private static SecureRequestCustomizer newSecureRequestCustomizer() {
+        return new SecureRequestCustomizer(false);
     }
 
     @Override
