@@ -32,13 +32,14 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.dcache.util.jetty.ConnectorFactoryBean.Protocol;
-import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.ee8.nested.AbstractHandler;
+import org.eclipse.jetty.ee8.nested.ContextHandler;
+import org.eclipse.jetty.ee8.nested.Request;
+import org.eclipse.jetty.ee8.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee8.servlet.ServletHolder;
+import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.eclipse.jetty.server.handler.HandlerList;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,12 +48,13 @@ import org.junit.Test;
  * Records how request paths reach dCache code, so that a change of the
  * embedded Jetty does not silently change which file names clients can use.
  * <p>
- * Two fixtures mirror the production layouts: a handler directly below the
- * server (as {@code MiltonHandler} in the WebDAV door, which uses the raw
- * request URL and the decoded target) and a {@code /api} servlet context with
- * a {@code /v1/*} servlet (as the frontend REST API).
+ * Two fixtures mirror the production layouts: a handler in the root context
+ * (as {@code MiltonHandler} in the WebDAV door, which uses the raw request URL
+ * and the decoded target) and a {@code /api} servlet context with a
+ * {@code /v1/*} servlet (as the frontend REST API).
  * <p>
- * The expected values are the behaviour of Jetty 9.4.
+ * The expected values are the behaviour of Jetty 9.4, except for invalid
+ * UTF-8, which is rejected now.
  */
 public class UriComplianceBaselineTest {
 
@@ -83,10 +85,11 @@ public class UriComplianceBaselineTest {
                 "200 url=http://localhost/dav/dir/%C3%A9 target=/dav/dir/\u00e9"
                 + " pathInfo=/dav/dir/\u00e9",
                 "200 uri=/api/v1/dir/%C3%A9 servletPath=/v1 pathInfo=/dir/\u00e9"},
+          // invalid UTF-8: Jetty 9.4 decoded it as ISO-8859-1 (200, "\u00c3("); Jetty 12 can
+          // only reject it or replace it with U+FFFD, we reject it.
           {"/dir/%C3%28",
-                "200 url=http://localhost/dav/dir/%C3%28 target=/dav/dir/\u00c3("
-                + " pathInfo=/dav/dir/\u00c3(",
-                "200 uri=/api/v1/dir/%C3%28 servletPath=/v1 pathInfo=/dir/\u00c3("},
+                "400",
+                "400"},
           {"/dir/a%25b",
                 "200 url=http://localhost/dav/dir/a%25b target=/dav/dir/a%b pathInfo=/dav/dir/a%b",
                 "200 uri=/api/v1/dir/a%25b servletPath=/v1 pathInfo=/dir/a%b"},
@@ -196,10 +199,10 @@ public class UriComplianceBaselineTest {
         api.setContextPath("/api");
         api.addServlet(new ServletHolder(new EchoServlet()), "/v1/*");
 
-        HandlerList handlers = new HandlerList();
-        handlers.addHandler(api);
-        handlers.addHandler(new EchoHandler());
-        server.setHandler(handlers);
+        ContextHandler root = new ContextHandler("/");
+        root.setHandler(new EchoHandler());
+
+        server.setHandler(new Handler.Sequence(api.get(), root.get()));
         server.start();
         port = connector.getLocalPort();
     }

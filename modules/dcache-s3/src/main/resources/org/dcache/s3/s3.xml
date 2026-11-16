@@ -213,6 +213,12 @@
         <ref bean="server-connector"/>
       </list>
     </property>
+    <property name="handler" value="#{rootContext.get()}"/>
+  </bean>
+
+  <bean id="rootContext" class="org.eclipse.jetty.ee8.nested.ContextHandler">
+    <description>Root servlet context</description>
+    <property name="contextPath" value="/"/>
     <property name="handler">
       <bean class="org.dcache.s3.S3LoggingHandler">
         <property name="handler">

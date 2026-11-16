@@ -209,7 +209,6 @@ public class CanlContextFactory extends SslContextFactory.Server {
                 super.setSessionCachingEnabled(CanlContextFactory.this.isSessionCachingEnabled());
                 super.setSslSessionCacheSize(CanlContextFactory.this.getSslSessionCacheSize());
                 super.setSslSessionTimeout(CanlContextFactory.this.getSslSessionTimeout());
-                super.setStopTimeout(CanlContextFactory.this.getStopTimeout());
                 super.setUseCipherSuitesOrder(CanlContextFactory.this.isUseCipherSuitesOrder());
                 super.setWantClientAuth(CanlContextFactory.this.getWantClientAuth());
                 super.setNeedClientAuth(CanlContextFactory.this.getNeedClientAuth());

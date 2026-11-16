@@ -236,9 +236,7 @@ public class OidcCodeFlowCallback {
             // -------------------------------
             // Force session dirty to trigger doStore()
             // -------------------------------
-            if (session instanceof org.eclipse.jetty.server.session.Session jettySession) {
-                jettySession.setAttribute("forceDirty", System.currentTimeMillis());
-            }
+            session.setAttribute("forceDirty", System.currentTimeMillis());
 
 
             Cookie cookie = new Cookie("DCACHE_API_SESSION", session.getId());

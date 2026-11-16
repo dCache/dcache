@@ -1,6 +1,6 @@
 package org.dcache.services.httpd.util;
 
-import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.ee8.nested.Handler;
 
 /**
  * Abstraction for httpd aliases.

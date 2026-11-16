@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.dcache.gsi.KeyPairCache;
+import org.eclipse.jetty.http.UriCompliance;
 import org.eclipse.jetty.server.ConnectionFactory;
 import org.eclipse.jetty.server.ForwardedRequestCustomizer;
 import org.eclipse.jetty.server.HttpConnectionFactory;
@@ -275,7 +276,7 @@ public class ConnectorFactoryBean implements FactoryBean<ServerConnector> {
         isForwardedHeaderProcessingEnabled = forwardedHeaderProcessingEnabled;
     }
 
-    private SslContextFactory createContextFactory() throws Exception {
+    private SslContextFactory.Server createContextFactory() throws Exception {
         CanlContextFactory factory = new CanlContextFactory();
         factory.setCertificatePath(serverCertificatePath);
         factory.setKeyPath(serverKeyPath);
@@ -312,6 +313,17 @@ public class ConnectorFactoryBean implements FactoryBean<ServerConnector> {
          * disable reporting of Jetty version
          */
         httpConnectionFactory.getHttpConfiguration().setSendServerVersion(false);
+        /*
+         * accept the request paths Jetty 9 accepted, e.g. %2F, // or [], but reject invalid UTF-8
+         */
+        /*
+         * pass header values as sent: Jetty otherwise replaces them by a cached spelling that
+         * differs in case, e.g. "charset=UTF-8" by "charset=utf-8", which breaks S3 signatures
+         */
+        httpConnectionFactory.getHttpConfiguration().setHeaderCacheCaseSensitive(true);
+        httpConnectionFactory.getHttpConfiguration().setUriCompliance(
+              UriCompliance.LEGACY.with("DCACHE",
+                    UriCompliance.Violation.ILLEGAL_PATH_CHARACTERS));
 
         switch (protocol) {
             case PLAIN:

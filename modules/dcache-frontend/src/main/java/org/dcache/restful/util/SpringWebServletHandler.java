@@ -21,7 +21,7 @@ import static org.springframework.web.context.WebApplicationContext.ROOT_WEB_APP
 
 import java.lang.annotation.Annotation;
 import javax.servlet.ServletContext;
-import org.eclipse.jetty.servlet.ServletHandler;
+import org.eclipse.jetty.ee8.servlet.ServletHandler;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.ApplicationContext;

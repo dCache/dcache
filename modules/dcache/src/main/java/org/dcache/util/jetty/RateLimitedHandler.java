@@ -26,28 +26,24 @@ import dmg.cells.nucleus.CellCommandListener;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
 import java.time.Instant;
-import java.util.concurrent.ThreadLocalRandom;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpStatus;
+import org.eclipse.jetty.io.Content;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.HandlerCollection;
+import org.eclipse.jetty.server.Response;
+import org.eclipse.jetty.util.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
 /**
- * A Jetty handler collection that enforces per-client and global rate limiting,
+ * A Jetty handler wrapper that enforces per-client and global rate limiting,
  * as well as temporary blocking of clients that exceed error thresholds.
  * <p>
  * Each client IP is assigned a rate limiter and error counter. If a client exceeds
@@ -59,9 +55,9 @@ import static com.google.common.base.Preconditions.checkArgument;
  *
  * Based on original code by Sandro Grizzo.
  */
-public class RateLimitedHandlerList extends HandlerCollection implements CellCommandListener {
+public class RateLimitedHandler extends Handler.Wrapper implements CellCommandListener {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(RateLimitedHandlerList.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RateLimitedHandler.class);
 
     /**
      * Initial capacity of the client IP rates limiters map size.
@@ -167,11 +163,11 @@ public class RateLimitedHandlerList extends HandlerCollection implements CellCom
     }
 
 
-    /** * Constructs a RateLimitedHandlerList with parameters from the given configuration.
+    /** * Constructs a RateLimitedHandler with parameters from the given configuration.
      *
      * @param configuration the configuration object containing rate limiting and blocking parameters
      */
-    public RateLimitedHandlerList(Configuration configuration) {
+    public RateLimitedHandler(Configuration configuration) {
         this(configuration.maxClientsToTrack,
                 configuration.maxGlobalRequestsPerSecond,
              configuration.maxErrorsPerClient,
@@ -181,7 +177,7 @@ public class RateLimitedHandlerList extends HandlerCollection implements CellCom
              Duration.of(configuration.errorAcceptanceWindow, configuration.errorAcceptanceWindowUnit));
     }
 
-    /** * Constructs a RateLimitedHandlerList with specified rate limiting and blocking parameters.
+    /** * Constructs a RateLimitedHandler with specified rate limiting and blocking parameters.
      *
      * @param maxGlobalRequestsPerSecond maximum number of requests per second allowed globally
      * @param maxErrorsPerClient maximum number of errors allowed per client before blocking
@@ -190,7 +186,7 @@ public class RateLimitedHandlerList extends HandlerCollection implements CellCom
      * @param clientBlockingTime duration for which a client is blocked after exceeding error threshold
      * @param errorAcceptanceWindow time window for counting errors per client
      */
-    public RateLimitedHandlerList(
+    public RateLimitedHandler(
             int maxClientsToTrack,
                 long maxGlobalRequestsPerSecond,
                                   int maxErrorsPerClient,
@@ -226,7 +222,8 @@ public class RateLimitedHandlerList extends HandlerCollection implements CellCom
 
 
     @Override
-    public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+    public boolean handle(Request request, Response response, Callback callback)
+            throws Exception {
 
         String client = getClientIp(request);
 
@@ -234,54 +231,34 @@ public class RateLimitedHandlerList extends HandlerCollection implements CellCom
         if (blockedAt != null) {
             LOGGER.debug("Blocking client with too many auth errors {}", client);
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS_429);
-            response.addIntHeader(HttpHeader.RETRY_AFTER.asString(), (int)clientBlockingTime.minus(Duration.between(blockedAt, Instant.now())).getSeconds());
-            response.getWriter().write("Server is busy. Please try again later.");
-            baseRequest.setHandled(true);
-            return;
+            response.getHeaders().put(HttpHeader.RETRY_AFTER,
+                    clientBlockingTime.minus(Duration.between(blockedAt, Instant.now())).getSeconds());
+            Content.Sink.write(response, true, "Server is busy. Please try again later.", callback);
+            return true;
         }
 
+        // REVISIT: do we want to keep per-client and global rate limiters or only for
+        // authentication errors? See getClientRateLimiter and globalRateLimiter.
 
-
-        // REVISIT: do we want to keep per-client rate limiter or only for authentication errors?
-        /*
-        if (!getClientRateLimiter(client).tryAcquire()) {
-            LOGGER.debug("Blocking client with too many requests {}", client);
-            response.setStatus(HttpStatus.TOO_MANY_REQUESTS_429);
-            response.addIntHeader(HttpHeader.RETRY_AFTER.asString(), ThreadLocalRandom.current().nextInt(1, (int)clientIdleTime.toSeconds()));
-            response.getWriter().write("Server is busy. Please try again later.");
-            baseRequest.setHandled(true);
-            return;
+        Handler next = getHandler();
+        if (next == null) {
+            return false;
         }
 
-        if (!globalRateLimiter.tryAcquire()) {
-            LOGGER.debug("Blocking client due to globally too many requests {}", client);
-            response.setStatus(HttpStatus.TOO_MANY_REQUESTS_429);
-            response.addIntHeader(HttpHeader.RETRY_AFTER.asString(), ThreadLocalRandom.current().nextInt(1, (int)clientIdleTime.toSeconds()));
-            response.getWriter().write("Server is busy. Please try again later.");
-            baseRequest.setHandled(true);
-            return;
-        }
-         */
-        Handler[] handlers = this.getHandlers();
-        if (handlers != null && this.isStarted()) {
-            for (Handler handler : handlers) {
-                handler.handle(target, baseRequest, request, response);
-                if (baseRequest.isHandled()) {
-                    // block clients that hammer with authentication failures
-                    if (response.getStatus() == 401) {
-                        int errors = getClientErrorRateLimiter(client).incrementAndGet();
-                        if (errors >= maxErrorsPerClient) {
-                            LOGGER.warn("Blocking client due to too many auth errors: {}", client);
-                            blockedClients.put(client, Instant.now());
-                            // as client blocked, no reason to keep track of further errors
-                            perClientErrorCount.invalidate(client);
-                            perClientRates.invalidate(client);
-                        }
-                    }
-                    return;
+        // block clients that hammer with authentication failures; check the status before
+        // completing the response, as the response may be recycled afterwards
+        return next.handle(request, response, Callback.from(() -> {
+            if (response.getStatus() == HttpStatus.UNAUTHORIZED_401) {
+                int errors = getClientErrorRateLimiter(client).incrementAndGet();
+                if (errors >= maxErrorsPerClient) {
+                    LOGGER.warn("Blocking client due to too many auth errors: {}", client);
+                    blockedClients.put(client, Instant.now());
+                    // as client blocked, no reason to keep track of further errors
+                    perClientErrorCount.invalidate(client);
+                    perClientRates.invalidate(client);
                 }
             }
-        }
+        }, callback));
     }
 
     /**
@@ -290,10 +267,10 @@ public class RateLimitedHandlerList extends HandlerCollection implements CellCom
      * @param request the HTTP request
      * @return the client IP address
      */
-    private String getClientIp(HttpServletRequest request) {
-        String forwardedIp = request.getHeader("X-Forwarded-For");
+    private String getClientIp(Request request) {
+        String forwardedIp = request.getHeaders().get("X-Forwarded-For");
         if (forwardedIp == null) {
-            return request.getRemoteAddr();
+            return Request.getRemoteAddr(request);
         }
         return forwardedIp.split(",")[0];
     }
@@ -330,7 +307,7 @@ public class RateLimitedHandlerList extends HandlerCollection implements CellCom
 
     @Override
     public String toString() {
-        return String.format("RateLimitedHandlerList{globalRate=%.1f, perClientRate=%.1f, maxErrorsPerClient=%d}",
+        return String.format("RateLimitedHandler{globalRate=%.1f, perClientRate=%.1f, maxErrorsPerClient=%d}",
                 globalRateLimiter.getRate(), perClientRate, maxErrorsPerClient);
     }
 
@@ -341,7 +318,7 @@ public class RateLimitedHandlerList extends HandlerCollection implements CellCom
     }
 
     @Command(name="limits reset", description="Reset all rate limiters and error counters")
-    public class LimitsResetCommand implements Callable<String> {
+    public class LimitsResetCommand implements java.util.concurrent.Callable<String> {
         @Override
         public String call() {
             perClientRates.invalidateAll();
@@ -354,7 +331,7 @@ public class RateLimitedHandlerList extends HandlerCollection implements CellCom
 
 
     @Command(name="limits info", description="Show current rate limits and statistics. The retuned information is approximate.")
-    public class LimitsShowCommand implements Callable<String> {
+    public class LimitsShowCommand implements java.util.concurrent.Callable<String> {
 
         @Option(name="l", usage="Verbose listing")
         boolean verbose = false;

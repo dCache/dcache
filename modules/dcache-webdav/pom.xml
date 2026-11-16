@@ -57,15 +57,23 @@
     </dependency>
     <dependency>
         <groupId>org.eclipse.jetty</groupId>
-        <artifactId>jetty-servlets</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.eclipse.jetty</groupId>
         <artifactId>jetty-security</artifactId>
     </dependency>
     <dependency>
         <groupId>org.eclipse.jetty</groupId>
         <artifactId>jetty-rewrite</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.eclipse.jetty.ee8</groupId>
+        <artifactId>jetty-ee8-nested</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.eclipse.jetty.ee8</groupId>
+        <artifactId>jetty-ee8-security</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.eclipse.jetty.ee8</groupId>
+        <artifactId>jetty-ee8-servlets</artifactId>
     </dependency>
     <dependency>
         <groupId>org.antlr</groupId>

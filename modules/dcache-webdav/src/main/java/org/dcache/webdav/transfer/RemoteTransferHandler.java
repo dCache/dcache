@@ -167,9 +167,9 @@ import org.dcache.vehicles.FileAttributes;
 import org.dcache.webdav.DcacheResourceFactory;
 import org.dcache.webdav.RfcResponseHandler;
 import org.dcache.webdav.transfer.CopyFilter.CredentialSource;
+import org.eclipse.jetty.ee8.nested.Request;
 import org.eclipse.jetty.http.HttpFields;
 import org.eclipse.jetty.io.EndPoint;
-import org.eclipse.jetty.server.HttpConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -857,7 +857,8 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         private final Instant _whenSubmitted = Instant.now();
         private final SettableFuture<Optional<String>> _transferResult = SettableFuture.create();
         private long _id;
-        private final EndPoint _endpoint = HttpConnection.getCurrentConnection().getEndPoint();
+        private final EndPoint _endpoint = Request.getBaseRequest(ServletRequest.getRequest())
+              .getHttpChannel().getEndPoint();
 
         private int _lastState = INITIAL_STATE;
         private Optional<IoJobInfo> _lastInfo = Optional.empty();
@@ -941,10 +942,10 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         }
 
         private IoDoorEntry describe() {
-            @Nullable
-            InetSocketAddress remoteAddress = _endpoint.getRemoteAddress();
             // This may trigger DNS lookup; however, result should be cached by JVM.
-            String client = remoteAddress == null ? "(disconnected)" : remoteAddress.getHostName();
+            String client = _endpoint.getRemoteSocketAddress() instanceof InetSocketAddress remoteAddress
+                  ? remoteAddress.getHostName()
+                  : "(disconnected)";
             StringBuilder status = new StringBuilder();
             status.append(_direction == Direction.PULL ? "PULL from" : "PUSH to");
             status.append(' ').append(_destination.getHost());
@@ -1230,7 +1231,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
          */
         private HttpFields getTrailers() {
             return _digestValue.map(v -> {
-                      HttpFields fields = new HttpFields();
+                      HttpFields.Mutable fields = HttpFields.build();
                       fields.put(_rfcType == Checksums.RfcType.RFC9530 ? HttpExtHeader.REPR_DIGEST : HttpExtHeader.DIGEST, v);
                       return fields;
                   })
@@ -1267,16 +1268,14 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                   .stream()
                   .anyMatch(v -> v.equals("trailers") || v.startsWith("trailers;q="))) {
 
-                /* REVISIT: trailers are available with Servlet v4.0; however
-                 * support for Servlet v4.0 is only scheduled for Jetty v10.
-                 * Jetty does support trailers but with a prioprietary interface,
-                 * requiring the following ugly code.
+                /* Servlet v4.0 setTrailerFields fails for HTTP/1.0 requests; use
+                 * Jetty's proprietary interface, which silently drops trailers.
                  */
                 HttpServletResponse response = (HttpServletResponse) _async.getResponse();
                 while (response instanceof ServletResponseWrapper) {
                     response = (HttpServletResponse) ((ServletResponseWrapper) response).getResponse();
                 }
-                ((org.eclipse.jetty.server.Response) response).setTrailers(this::getTrailers);
+                ((org.eclipse.jetty.ee8.nested.Response) response).setTrailers(this::getTrailers);
             }
         }
 

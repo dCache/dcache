@@ -74,8 +74,8 @@ import org.dcache.services.httpd.wellknown.WellKnownForwardingProducer;
 import org.dcache.services.httpd.wellknown.WellKnownProducer;
 import org.dcache.services.httpd.wellknown.WellKnownProducerFactory;
 import org.dcache.services.httpd.wellknown.WellKnownProducerFactoryProvider;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.eclipse.jetty.ee8.nested.AbstractHandler;
+import org.eclipse.jetty.ee8.nested.Request;
 
 /**
  * Provides response for .well-known path requests.

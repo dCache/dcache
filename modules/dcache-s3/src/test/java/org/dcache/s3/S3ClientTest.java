@@ -20,7 +20,6 @@ import static org.mockito.Mockito.when;
 
 import diskCacheV111.util.FsPath;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -49,6 +48,8 @@ import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.attributes.Restrictions;
+import org.dcache.util.jetty.ConnectorFactoryBean;
+import org.eclipse.jetty.ee8.nested.ContextHandler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.gaul.s3proxy.auth.AuthenticationType;
@@ -154,8 +155,19 @@ public class S3ClientTest {
         var handler = new DcacheS3ProxyHandler(locator, AuthenticationType.AWS_V2_OR_V4, "",
               900);
 
-        Server server = new Server(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
-        server.setHandler(new S3JettyHandler(handler));
+        // the door's connector, which passes header values as signed by the client
+        Server server = new Server();
+        ConnectorFactoryBean connector = new ConnectorFactoryBean();
+        connector.setServer(server);
+        connector.setProtocol(ConnectorFactoryBean.Protocol.PLAIN);
+        connector.setHost(InetAddress.getLoopbackAddress().getHostAddress());
+        connector.setPort(0);
+        connector.setIdleTimeout(30);
+        connector.setIdleTimeoutUnit(TimeUnit.SECONDS);
+        server.addConnector(connector.getObject());
+        ContextHandler context = new ContextHandler("/");
+        context.setHandler(new S3JettyHandler(handler));
+        server.setHandler(context.get());
         server.start();
         return server;
     }

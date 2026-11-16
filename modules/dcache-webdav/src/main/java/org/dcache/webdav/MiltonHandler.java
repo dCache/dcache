@@ -22,9 +22,9 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.fileupload.FileUploadException;
 import org.dcache.auth.Subjects;
 import org.dcache.util.Transfer;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.eclipse.jetty.server.handler.ContextHandler;
+import org.eclipse.jetty.ee8.nested.AbstractHandler;
+import org.eclipse.jetty.ee8.nested.ContextHandler;
+import org.eclipse.jetty.ee8.nested.Request;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

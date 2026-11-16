@@ -25,9 +25,9 @@ import java.util.Map;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.eclipse.jetty.ee8.nested.AbstractHandler;
+import org.eclipse.jetty.ee8.nested.Request;
 import org.eclipse.jetty.http.HttpMethod;
-import org.eclipse.jetty.rewrite.handler.RewriteHandler;
-import org.eclipse.jetty.server.Request;
 import org.springframework.http.MediaType;
 import tools.jackson.databind.ObjectMapper;
 
@@ -37,7 +37,7 @@ import tools.jackson.databind.ObjectMapper;
  *
  * @author ugrin
  */
-public class OwnCloudHandler extends RewriteHandler {
+public class OwnCloudHandler extends AbstractHandler {
 
     private static final String OWNCLOUD_STATUS_ENDPOINT = "/status.php";
     private static final String OWNCLOUD_CAPABILITIES_ENDPOINT = "/ocs/v1.php/cloud/capabilities";

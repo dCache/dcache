@@ -22,12 +22,14 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
 import org.dcache.cells.CuratorFrameworkAware;
-import org.eclipse.jetty.server.session.AbstractSessionDataStore;
-import org.eclipse.jetty.server.session.SessionData;
+import org.eclipse.jetty.session.AbstractSessionDataStore;
+import org.eclipse.jetty.session.SessionData;
 import org.eclipse.jetty.util.ClassLoadingObjectInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,19 +66,30 @@ public class ZooKeeperSessionDataStore extends AbstractSessionDataStore
     @Override
     public SessionData doLoad(String id) throws Exception {
         LOGGER.debug("Loading session: {}", id);
-        byte[] bytes = curator.getData().forPath(path(id));
-        return deserialize(bytes);
+        byte[] bytes;
+        try {
+            bytes = curator.getData().forPath(path(id));
+        } catch (KeeperException.NoNodeException e) {
+            return null;
+        }
+
+        try {
+            return deserialize(bytes);
+        } catch (Exception e) {
+            // e.g. stored by an older Jetty version; treat as missing
+            LOGGER.info("Dropping unreadable session {}: {}", id, e.toString());
+            delete(id);
+            return null;
+        }
     }
 
     @Override
-    public Set<String> doGetExpired(Set<String> candidates) {
+    public Set<String> doCheckExpired(Set<String> candidates, long time) {
         Set<String> expired = new HashSet<>();
-        long now = System.currentTimeMillis();
-
         for (String id : candidates) {
             try {
                 SessionData data = doLoad(id);
-                if (data == null || data.getExpiry() >= now) {
+                if (data == null || data.isExpiredAt(time)) {
                     expired.add(id);
                 }
             } catch (Exception e) {
@@ -84,8 +97,38 @@ public class ZooKeeperSessionDataStore extends AbstractSessionDataStore
                 expired.add(id);
             }
         }
-
         return expired;
+    }
+
+    @Override
+    public Set<String> doGetExpired(long before) {
+        Set<String> expired = new HashSet<>();
+        for (String id : sessionIds()) {
+            try {
+                SessionData data = doLoad(id);
+                if (data != null && data.isExpiredAt(before)
+                      && data.getContextPath().equals(_context.getCanonicalContextPath())) {
+                    expired.add(id);
+                }
+            } catch (Exception e) {
+                LOGGER.debug("Failed to check session {}: {}", id, e.toString());
+            }
+        }
+        return expired;
+    }
+
+    @Override
+    public void doCleanOrphans(long time) {
+        for (String id : sessionIds()) {
+            try {
+                SessionData data = doLoad(id);
+                if (data != null && data.isExpiredAt(time)) {
+                    delete(id);
+                }
+            } catch (Exception e) {
+                LOGGER.debug("Failed to clean session {}: {}", id, e.toString());
+            }
+        }
     }
 
     @Override
@@ -117,32 +160,32 @@ public class ZooKeeperSessionDataStore extends AbstractSessionDataStore
         return root + "/" + id;
     }
 
+    private List<String> sessionIds() {
+        try {
+            return curator.getChildren().forPath(root);
+        } catch (Exception e) {
+            LOGGER.warn("Failed to list sessions in {}: {}", root, e.toString());
+            return List.of();
+        }
+    }
+
     // -------------------------------
     // Required methods
     // -------------------------------
     @Override
-    public boolean exists(String id) throws Exception {
+    public boolean doExists(String id) throws Exception {
         return curator.checkExists().forPath(path(id)) != null;
-    }
-
-    @Override
-    public SessionData load(String id) throws Exception {
-        if (!exists(id)) {
-            return null;
-        }
-        byte[] bytes = curator.getData().forPath(path(id));
-        return deserialize(bytes);
     }
 
     @Override
     public boolean delete(String id) throws Exception {
         LOGGER.debug("Deleting session: {}", id);
-        if (!exists(id)) {
-            LOGGER.error("Session not found, nothing to delete: {}", id);
+        try {
+            curator.delete().forPath(path(id));
+        } catch (KeeperException.NoNodeException e) {
+            LOGGER.debug("Session not found, nothing to delete: {}", id);
             return false;
         }
-
-        curator.delete().forPath(path(id));
         LOGGER.debug("Successfully deleted session: {}", id);
         return true;
     }
@@ -154,7 +197,7 @@ public class ZooKeeperSessionDataStore extends AbstractSessionDataStore
         byte[] bytes = serialize(data);
         String fullPath = path(id);
 
-        if (exists(id)) {
+        if (doExists(id)) {
             curator.setData().forPath(fullPath, bytes);
             LOGGER.debug("Updated existing session: {}, size: {} bytes", id, bytes.length);
         } else {
@@ -164,24 +207,6 @@ public class ZooKeeperSessionDataStore extends AbstractSessionDataStore
                   .forPath(fullPath, bytes);
             LOGGER.debug("Created new session: {}, size: {} bytes", id, bytes.length);
         }
-    }
-
-    @Override
-    public Set<String> getExpired(Set<String> candidates) {
-        Set<String> expired = new HashSet<>();
-        long now = System.currentTimeMillis();
-
-        for (String id : candidates) {
-            try {
-                SessionData data = load(id);
-                if (data == null || data.getExpiry() <= now) {
-                    expired.add(id);
-                }
-            } catch (Exception e) {
-                expired.add(id);
-            }
-        }
-        return expired;
     }
 
     @Override

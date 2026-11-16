@@ -51,7 +51,10 @@
         <description>Embedded HTTP server</description>
         <constructor-arg ref="thread-pool"/>
         <property name="connectors" ref="connectors"/>
-        <property name="handler" ref="handler-collection"/>
+        <property name="handler" value="#{rootContext.get()}"/>
+        <property name="requestLog">
+            <bean class="org.dcache.services.httpd.HttpdRequestLog"/>
+        </property>
     </bean>
 
     <bean id="connector" abstract="true" class="org.dcache.util.jetty.ConnectorFactoryBean">
@@ -72,18 +75,10 @@
         <property name="protocol" value="PLAIN"/>
     </bean>
 
-    <bean id="handler-collection" class="org.eclipse.jetty.server.handler.HandlerCollection">
-        <property name="handlers">
-            <list>
-                <ref bean="delegator"/>
-                <bean class="org.eclipse.jetty.server.handler.DefaultHandler"/>
-                <bean class="org.eclipse.jetty.server.handler.RequestLogHandler">
-                    <property name="requestLog">
-                        <bean class="org.dcache.services.httpd.HttpdRequestLog"/>
-                    </property>
-                </bean>
-            </list>
-        </property>
+    <bean id="rootContext" class="org.eclipse.jetty.ee8.nested.ContextHandler">
+        <description>Root servlet context; unhandled requests get 404</description>
+        <property name="contextPath" value="/"/>
+        <property name="handler" ref="delegator"/>
     </bean>
 
     <util:list id="connectors">

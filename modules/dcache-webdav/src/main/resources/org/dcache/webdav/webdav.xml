@@ -315,7 +315,7 @@
     </bean>
 
 
-    <bean id="rate-limiter-config" class="org.dcache.util.jetty.RateLimitedHandlerList.Configuration">
+    <bean id="rate-limiter-config" class="org.dcache.util.jetty.RateLimitedHandler.Configuration">
         <description>Configuration of requests rate limiter</description>
         <property name="maxClientsToTrack" value="${webdav.limits.max-blocked-clients}"/>
         <property name="globalRequestsPerSecond" value="${webdav.limits.rate.overall}"/>
@@ -335,18 +335,25 @@
   </bean>
 
   <!-- 2. WebDAV SessionHandler -->
-  <bean id="webdavSessionHandler" class="org.eclipse.jetty.server.session.SessionHandler">
+  <bean id="webdavSessionHandler" class="org.eclipse.jetty.ee8.nested.SessionHandler">
     <property name="sessionCookie" value="DCACHE_API_SESSION"/>
+    <property name="handler">
+      <bean class="org.dcache.webdav.LoggingHandler">
+        <property name="handler"
+                  value="#{ '${webdav.authn.spnego}'.equals('true') ? spnegohandler : authhandler }"/>
+      </bean>
+    </property>
   </bean>
 
   <!-- 3. SessionCache wrapping ZooKeeper store -->
-  <bean id="webdavSessionCache" class="org.eclipse.jetty.server.session.DefaultSessionCache">
-    <constructor-arg ref="webdavSessionHandler"/>
+  <bean id="webdavSessionCache" class="org.eclipse.jetty.session.DefaultSessionCache">
+    <constructor-arg value="#{webdavSessionHandler.sessionManager}"/>
     <property name="sessionDataStore" ref="zkSessionDataStore"/>
   </bean>
 
   <!-- 4. Inject SessionCache -->
-  <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+  <bean id="webdav-session-cache-inject"
+        class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
     <property name="targetObject" ref="webdavSessionHandler"/>
     <property name="targetMethod" value="setSessionCache"/>
     <property name="arguments">
@@ -356,33 +363,44 @@
     </property>
   </bean>
 
-    <bean id="handlers" class="org.dcache.util.jetty.RateLimitedHandlerList">
+    <bean id="rate-limiter" class="org.dcache.util.jetty.RateLimitedHandler">
+      <description>Blocks clients with too many authentication failures</description>
+      <constructor-arg ref="rate-limiter-config"/>
+      <property name="handler" value="#{rootContext.get()}"/>
+    </bean>
+
+    <bean id="rootContext" class="org.eclipse.jetty.ee8.nested.ContextHandler">
+      <description>Root servlet context; unhandled requests get 404</description>
+      <property name="contextPath" value="/"/>
+      <property name="handler" ref="handlers"/>
+    </bean>
+
+    <bean id="handlers" class="org.eclipse.jetty.ee8.nested.HandlerList">
       <description>List of handlers for HTTP requests</description>
-        <constructor-arg ref="rate-limiter-config"/>
       <property name="handlers">
           <list>
               <bean class="org.dcache.webdav.CrossOriginResourceSharingHandler">
                   <property name="allowedClientOrigins" value="${webdav.allowed.client.origins}"/>
               </bean>
-              <bean class="org.eclipse.jetty.server.handler.ContextHandler">
+              <bean class="org.dcache.util.jetty.PathContextHandler">
                   <property name="contextPath" value="${webdav.static-content.location}"/>
                   <property name="handler">
-                      <bean class="org.eclipse.jetty.server.handler.ResourceHandler">
+                      <bean class="org.eclipse.jetty.ee8.nested.ResourceHandler">
                           <property name="directoriesListed" value="true"/>
-                          <property name="resourceBase" value="${webdav.static-content.dir.local}"/>
+                          <property name="baseResourceAsString" value="${webdav.static-content.dir.local}"/>
                       </bean>
                   </property>
               </bean>
-              <bean class="org.eclipse.jetty.server.handler.ContextHandler">
+              <bean class="org.dcache.util.jetty.PathContextHandler">
                   <property name="contextPath" value="${webdav.static-content.location}"/>
                   <property name="handler">
-                      <bean class="org.eclipse.jetty.server.handler.ResourceHandler">
+                      <bean class="org.eclipse.jetty.ee8.nested.ResourceHandler">
                           <property name="directoriesListed" value="true"/>
-                          <property name="resourceBase" value="${webdav.static-content.dir.default}"/>
+                          <property name="baseResourceAsString" value="${webdav.static-content.dir.default}"/>
                       </bean>
                   </property>
               </bean>
-              <bean class="org.eclipse.jetty.server.handler.ContextHandler">
+              <bean class="org.dcache.util.jetty.PathContextHandler">
                   <property name="contextPath" value="/robots.txt"/>
                   <property name="allowNullPathInfo" value="true"/>
                   <property name="handler">
@@ -391,7 +409,7 @@
                       </bean>
                   </property>
               </bean>
-            <bean class="org.eclipse.jetty.server.handler.ContextHandler">
+            <bean class="org.dcache.util.jetty.PathContextHandler">
               <property name="contextPath" value="/.well-known"/>
               <property name="allowNullPathInfo" value="true"/>
               <property name="handler">
@@ -401,54 +419,36 @@
               </property>
             </bean>
               <bean class="org.dcache.webdav.owncloud.OwnCloudHandler"/>
-              <!--<bean class="org.dcache.webdav.LoggingHandler">
-                  <property name="handler">
-                      <bean class="org.eclipse.jetty.server.handler.HandlerList">
-                          <property name="handlers" value="#{ '${webdav.authn.spnego}'.equals('true') ?
-                                                                        T(java.util.Arrays).asList(spnegohandler):
-                                                                        T(java.util.Arrays).asList(authhandler) }"/>
-                      </bean>
-                  </property>
-              </bean>-->
             <!-- WebDAV SessionHandler with ZooKeeper session store -->
-            <bean id="webdavSessionHandler" class="org.eclipse.jetty.server.session.SessionHandler">
-              <property name="sessionCookie" value="DCACHE_API_SESSION"/>
-              <property name="sessionCache" ref="webdavSessionCache"/>
-              <property name="handler">
-                <bean class="org.dcache.webdav.LoggingHandler">
-                  <property name="handler">
-                    <bean class="org.eclipse.jetty.server.handler.HandlerList">
-                      <property name="handlers"
-                        value="#{ '${webdav.authn.spnego}'.equals('true') ?
-                                 T(java.util.Arrays).asList(spnegohandler) :
-                                 T(java.util.Arrays).asList(authhandler) }"/>
-                    </bean>
-                  </property>
-                </bean>
-              </property>
-            </bean>
+            <ref bean="webdavSessionHandler"/>
           </list>
       </property>
   </bean>
 
-    <bean id="spnegohandler" class="org.eclipse.jetty.security.ConstraintSecurityHandler">
+    <bean id="spnegohandler" class="org.eclipse.jetty.ee8.security.ConstraintSecurityHandler">
         <property name="loginService">
-            <bean class="org.eclipse.jetty.security.SpnegoLoginService">
-                <property name="config" value="${webdav.authz.spnego.file}"/>
-                <property name="name" value="${dcache.authn.kerberos.realm}"/>
+            <bean class="org.eclipse.jetty.security.SPNEGOLoginService">
+                <constructor-arg value="${dcache.authn.kerberos.realm}"/>
+                <constructor-arg>
+                    <description>Accepts any principal verified by Kerberos</description>
+                    <bean class="org.eclipse.jetty.security.AnyUserLoginService">
+                        <constructor-arg value="${dcache.authn.kerberos.realm}"/>
+                        <constructor-arg><null/></constructor-arg>
+                    </bean>
+                </constructor-arg>
+                <property name="keyTabPath" value="${webdav.authn.spnego.keytab-file}"/>
+                <property name="serviceName" value="${webdav.authn.spnego.service-name}"/>
             </bean>
         </property>
         <property name="authenticator">
-            <bean class="org.eclipse.jetty.security.authentication.SpnegoAuthenticator">
-                <constructor-arg name="authMethod" value="org.eclipse.jetty.util.security.Constraint.__SPNEGO_AUTH"/>
-            </bean>
+            <bean class="org.eclipse.jetty.ee8.security.authentication.ConfigurableSpnegoAuthenticator"/>
         </property>
         <property name="constraintMappings">
             <list>
-                <bean class="org.eclipse.jetty.security.ConstraintMapping">
+                <bean class="org.eclipse.jetty.ee8.security.ConstraintMapping">
                     <property name="constraint">
-                        <bean class="org.eclipse.jetty.util.security.Constraint">
-                            <property name="name" value="org.eclipse.jetty.util.security.Constraint.__SPNEGO_AUTH"/>
+                        <bean class="org.eclipse.jetty.ee8.nested.ServletConstraint">
+                            <property name="name" value="SPNEGO"/>
                             <property name="roles">
                                 <list value-type="java.lang.String">
                                     <value>${dcache.authn.kerberos.realm}</value>
@@ -462,15 +462,7 @@
             </list>
         </property>
         <property name="realmName" value="${dcache.authn.kerberos.realm}"/>
-        <property name="handler">
-            <bean class="org.eclipse.jetty.server.handler.HandlerList">
-                <property name="handlers">
-                    <list>
-                        <ref bean="authhandler"/>
-                    </list>
-                </property>
-            </bean>
-        </property>
+        <property name="handler" ref="authhandler"/>
     </bean>
 
     <bean id="authhandler" class="org.dcache.http.AuthenticationHandler">
@@ -528,7 +520,8 @@
     </bean>
 
     <bean id="jetty" class="org.eclipse.jetty.server.Server"
-          init-method="start" destroy-method="stop">
+          init-method="start" destroy-method="stop"
+          depends-on="webdav-session-cache-inject">
         <description>Embedded HTTP server</description>
         <constructor-arg ref="thread-pool"/>
         <property name="stopTimeout" value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
@@ -552,12 +545,12 @@
               |  mistakenly breaking the response.
               +-->
             <bean class="org.eclipse.jetty.rewrite.handler.RewriteHandler">
-                <property name="rules">
+                <constructor-arg>
                     <bean class="org.dcache.util.jetty.HeaderRewriteRuleContainerFactoryBean">
                         <property name="headers" ref="custom-headers"/>
                     </bean>
-                </property>
-                <property name="handler" ref="handlers"/>
+                </constructor-arg>
+                <property name="handler" ref="rate-limiter"/>
             </bean>
         </property>
 
@@ -633,7 +626,7 @@
             </property>
         </bean>
 
-        <bean id="authorised-handlers" class="org.eclipse.jetty.server.handler.HandlerList">
+        <bean id="authorised-handlers" class="org.eclipse.jetty.ee8.nested.HandlerList">
             <property name="handlers">
                 <list>
                     <bean class="org.dcache.webdav.macaroons.MacaroonRequestHandler">
@@ -652,7 +645,6 @@
                     <bean class="org.dcache.webdav.MiltonHandler">
                         <property name="httpManager" ref="http-manager"/>
                     </bean>
-                    <bean class="org.eclipse.jetty.server.handler.DefaultHandler"/>
                 </list>
             </property>
         </bean>
@@ -676,13 +668,12 @@
     </beans>
 
     <beans profile="macaroons-false">
-        <bean id="authorised-handlers" class="org.eclipse.jetty.server.handler.HandlerList">
+        <bean id="authorised-handlers" class="org.eclipse.jetty.ee8.nested.HandlerList">
             <property name="handlers">
                 <list>
                     <bean class="org.dcache.webdav.MiltonHandler">
                         <property name="httpManager" ref="http-manager"/>
                     </bean>
-                    <bean class="org.eclipse.jetty.server.handler.DefaultHandler"/>
                 </list>
             </property>
         </bean>

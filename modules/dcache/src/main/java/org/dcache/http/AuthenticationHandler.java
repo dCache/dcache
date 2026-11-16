@@ -49,12 +49,12 @@ import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.util.CertificateFactories;
+import org.eclipse.jetty.ee8.nested.Authentication;
+import org.eclipse.jetty.ee8.nested.HandlerWrapper;
+import org.eclipse.jetty.ee8.nested.Request;
+import org.eclipse.jetty.ee8.security.UserAuthentication;
 import org.eclipse.jetty.http.HttpHeader;
-import org.eclipse.jetty.security.UserAuthentication;
-import org.eclipse.jetty.server.Authentication;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.UserIdentity;
-import org.eclipse.jetty.server.handler.HandlerWrapper;
+import org.eclipse.jetty.security.UserIdentity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

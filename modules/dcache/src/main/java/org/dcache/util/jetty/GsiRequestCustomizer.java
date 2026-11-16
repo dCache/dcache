@@ -5,9 +5,9 @@ import static org.dcache.gsi.ServerGsiEngine.X509_CREDENTIAL;
 import eu.emi.security.authn.x509.X509Credential;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLSession;
-import org.eclipse.jetty.io.ssl.SslConnection;
-import org.eclipse.jetty.io.ssl.SslConnection.DecryptedEndPoint;
-import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.http.HttpFields;
+import org.eclipse.jetty.io.EndPoint;
+import org.eclipse.jetty.io.ssl.SslConnection.SslEndPoint;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.Request;
 import org.slf4j.Logger;
@@ -24,13 +24,12 @@ public class GsiRequestCustomizer implements HttpConfiguration.Customizer {
     private static final Logger LOGGER = LoggerFactory.getLogger(GsiRequestCustomizer.class);
 
     @Override
-    public void customize(Connector connector, HttpConfiguration channelConfig, Request request) {
-        if (request.getHttpChannel().getEndPoint() instanceof DecryptedEndPoint) {
-            DecryptedEndPoint ssl_endp = (DecryptedEndPoint) request.getHttpChannel().getEndPoint();
-            SslConnection sslConnection = ssl_endp.getSslConnection();
-            SSLEngine sslEngine = sslConnection.getSSLEngine();
-            customize(sslEngine, request);
+    public Request customize(Request request, HttpFields.Mutable responseHeaders) {
+        EndPoint endPoint = request.getConnectionMetaData().getConnection().getEndPoint();
+        if (endPoint instanceof SslEndPoint sslEndPoint) {
+            customize(sslEndPoint.getSslConnection().getSSLEngine(), request);
         }
+        return request;
     }
 
     /**
