@@ -864,7 +864,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         private Optional<IoJobInfo> _lastInfo = Optional.empty();
         private Optional<Instant> _transferStarted = Optional.empty();
         private PnfsId _pnfsId;
-        private Optional<String> _digestValue;
+        private Optional<String> _digestValue = Optional.empty();
         private Optional<String> _pool = Optional.empty();
         private Optional<Instant> _discoveredTransferMissing = Optional.empty();
         private Optional<Instant> _failTransferAfter = Optional.empty();
@@ -1112,6 +1112,12 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
             HttpServletResponse servletResponse = ServletResponse.getResponse();
             servletResponse.setStatus(SC_ACCEPTED);
             servletResponse.setContentType("text/perf-marker-stream");
+
+            if (_direction == Direction.PULL && _wantDigest.isPresent()) {
+                // Jetty takes the trailers when committing the response.
+                addTrailerCallback(servletResponse);
+            }
+
             try {
                 // Commit status and response headers now, rather than waiting
                 // for first performance marker or result line.
@@ -1125,11 +1131,6 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
             HttpServletRequest servletRequest = ServletRequest.getRequest();
             _async = servletRequest.startAsync();
             _async.setTimeout(0); // Disable timeout as we don't know how long we'll take.
-
-            if (_direction == Direction.PULL && _wantDigest.isPresent()) {
-                // Ensure this is called before any perf-marker data is sent.
-                addTrailerCallback();
-            }
         }
 
         /**
@@ -1255,7 +1256,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
             }
         }
 
-        private void addTrailerCallback() {
+        private void addTrailerCallback(HttpServletResponse response) {
             /*
              * According to RFC 7230, we should only return trailers if the
              * client indicates (with the TE header) that it can understand
@@ -1271,7 +1272,6 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                 /* Servlet v4.0 setTrailerFields fails for HTTP/1.0 requests; use
                  * Jetty's proprietary interface, which silently drops trailers.
                  */
-                HttpServletResponse response = (HttpServletResponse) _async.getResponse();
                 while (response instanceof ServletResponseWrapper) {
                     response = (HttpServletResponse) ((ServletResponseWrapper) response).getResponse();
                 }
