@@ -652,6 +652,8 @@ Helm-Deploy Current dCache build:
       --set dcache.hsm.enabled=true
       --set dcache.qos.enabled=true
       --set services.srm.enabled=false
+      --set services.s3.enabled=true
+      --set services.s3s.enabled=true
       --values .ci/custom-helm-config.yaml
 
 Helm-Deploy Latest dCache Golden Release:
@@ -785,6 +787,30 @@ webdav_with_x509_tests:
     - kubectl -n $K8S_NAMESPACE cp .ci/init-el9-ui.sh webdav-tester:/init-el9-ui.sh
     - kubectl -n $K8S_NAMESPACE cp .ci/run-webdav-tests.sh webdav-tester:/run-webdav-tests.sh
     - kubectl -n $K8S_NAMESPACE exec webdav-tester -- /bin/sh /run-webdav-tests.sh
+
+S3 test suite:
+  stage: testing
+  extends: .kubernetes_image
+  rules:
+    - if: '$CI_COMMIT_MESSAGE =~ /\[\s*only\s*:[^\]]*\bs3\b[^\]]*\]/i'
+      when: on_success
+    - !reference [.selective_test_base, rules]
+    - when: never
+  script:
+    - kubectl -n $K8S_NAMESPACE run s3-tester --image=python:3.12 --restart=Never --command -- sleep 3600
+    - while ! kubectl -n $K8S_NAMESPACE wait --for=condition=Ready pod s3-tester; do sleep 1; done
+    - kubectl -n $K8S_NAMESPACE cp .ci/run-s3-tests.sh s3-tester:/run-s3-tests.sh
+    - kubectl -n $K8S_NAMESPACE cp .ci/s3-tests-pass-list.txt s3-tester:/s3-tests-pass-list.txt
+    - rc=0
+    - kubectl -n $K8S_NAMESPACE exec s3-tester -- /bin/bash /run-s3-tests.sh || rc=$?
+    - kubectl -n $K8S_NAMESPACE cp s3-tester:/junit-s3tests.xml junit-s3tests.xml || true
+    - exit $rc
+  environment: testing
+  artifacts:
+    when: always
+    reports:
+      junit:
+        - "junit-s3*.xml"
 
 NFS4.x protocol compliance tests:
   stage: testing
