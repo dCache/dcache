@@ -18,6 +18,8 @@
  */
 package org.dcache.util.jetty;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
@@ -51,6 +53,8 @@ public class PathContextHandler extends HandlerWrapper {
     }
 
     public void setContextPath(String contextPath) {
+        checkArgument(contextPath.startsWith("/") && contextPath.length() > 1,
+              "context path must be a path below /: %s", contextPath);
         this.contextPath = contextPath.length() > 1 && contextPath.endsWith("/")
               ? contextPath.substring(0, contextPath.length() - 1)
               : contextPath;
@@ -99,17 +103,22 @@ public class PathContextHandler extends HandlerWrapper {
 
         private final String contextPath;
         private final String pathInfo;
-        private final ServletContext servletContext;
+        private ServletContext servletContext;
 
         PathRequest(HttpServletRequest request, String contextPath, String pathInfo) {
             super(request);
             this.contextPath = contextPath;
             this.pathInfo = pathInfo;
-            this.servletContext = prefixDispatchers(request.getServletContext());
         }
 
+        /**
+         * Created on first use only: most handlers never ask for the servlet context.
+         */
         @Override
         public ServletContext getServletContext() {
+            if (servletContext == null) {
+                servletContext = prefixDispatchers(super.getServletContext());
+            }
             return servletContext;
         }
 

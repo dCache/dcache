@@ -19,6 +19,7 @@
 package org.dcache.util.jetty;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -147,6 +148,12 @@ public class PathContextHandlerTest {
     @Test
     public void shouldServeRootWelcomeFile() throws Exception {
         assertEquals("root welcome", get("/").getContent());
+    }
+
+    @Test
+    public void shouldRejectRootAsPrefix() {
+        assertThrows(IllegalArgumentException.class,
+              () -> new PathContextHandler().setContextPath("/"));
     }
 
     private HttpTester.Response get(String path) throws Exception {
