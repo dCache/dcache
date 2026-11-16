@@ -39,6 +39,8 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
+import com.google.common.io.CountingInputStream;
+import com.google.common.io.CountingOutputStream;
 import com.google.common.net.InetAddresses;
 import com.google.common.net.MediaType;
 import com.google.common.net.PercentEscaper;
@@ -97,6 +99,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -112,6 +115,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
@@ -135,6 +139,7 @@ import org.dcache.http.PathMapper;
 import org.dcache.missingfiles.AlwaysFailMissingFileStrategy;
 import org.dcache.missingfiles.MissingFileStrategy;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.pool.movers.TransferLifeCycle;
 import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.Args;
@@ -276,6 +281,7 @@ public class DcacheResourceFactory
     private ReloadableTemplate _template;
     private ImmutableMap<String, String> _templateConfig;
     private RemoteTransferHandler _remoteTransferHandler;
+    private TransferLifeCycle _transferLifeCycle;
 
     private TransferRetryPolicy _retryPolicy;
 
@@ -308,6 +314,11 @@ public class DcacheResourceFactory
     @Required
     public void setRedirectToHttps(boolean redirectToHttps) {
         _redirectToHttps = redirectToHttps;
+    }
+
+    @Required
+    public void setTransferLifeCycle(TransferLifeCycle transferLifeCycle) {
+        _transferLifeCycle = transferLifeCycle;
     }
 
     @Required
@@ -1888,6 +1899,13 @@ public class DcacheResourceFactory
         private ChecksumType _wantedChecksum;
         private InetSocketAddress _clientAddressForPool;
         private InetSocketAddress _originAddress;
+        private boolean _isProxy;
+
+        /** The door's end of the client's connection, if known. */
+        @Nullable
+        private final InetSocketAddress _doorEndpoint;
+        private final boolean _isRequestSecure;
+        private Instant _clientFlowStartedAt;
         protected HttpProtocolInfo.Disposition _disposition;
         private boolean _isSSL;
 
@@ -1914,6 +1932,55 @@ public class DcacheResourceFactory
             request.setAttribute(TRANSACTION_ATTRIBUTE, getTransaction());
             _requestPath = Requests.stripToPath(request.getRequestURL().toString());
             _transferTag = readTransferTag(request);
+            _doorEndpoint = localEndpoint(request);
+            _isRequestSecure = request.isSecure();
+        }
+
+        @Nullable
+        private static InetSocketAddress localEndpoint(HttpServletRequest request) {
+            String literal = request.getLocalAddr();
+            try {
+                InetAddress address;
+                try {
+                    address = InetAddresses.forUriString(literal);
+                } catch (IllegalArgumentException e) {
+                    address = InetAddresses.forString(literal);
+                }
+                return new InetSocketAddress(address, request.getLocalPort());
+            } catch (IllegalArgumentException e) {
+                return null;
+            }
+        }
+
+        /**
+         * Send the firefly start marker for data this door is about to relay to or from the
+         * client that made the request.  Does nothing if the data is relayed for a third party.
+         */
+        protected void clientFlowStarted() {
+            if (_originAddress != null || _doorEndpoint == null) {
+                return;
+            }
+            _clientFlowStartedAt = Instant.now();
+            _transferLifeCycle.onStart(getClientAddress(), _doorEndpoint,
+                  createProtocolInfo(getClientAddress(), _isRequestSecure), _subject);
+        }
+
+        /**
+         * Send the firefly end marker, if a start marker was sent.
+         *
+         * @param sent     number of bytes sent to the client
+         * @param received number of bytes received from the client
+         */
+        protected void clientFlowEnded(long sent, long received) {
+            Instant startedAt = _clientFlowStartedAt;
+            if (startedAt == null) {
+                return;
+            }
+            _clientFlowStartedAt = null;
+            _transferLifeCycle.onEnd(getClientAddress(), _doorEndpoint,
+                  createProtocolInfo(getClientAddress(), _isRequestSecure), _subject,
+                  startedAt, Duration.between(startedAt, Instant.now()).toMillis(),
+                  sent, received);
         }
 
         private String readTransferTag(HttpServletRequest request) {
@@ -1958,13 +2025,13 @@ public class DcacheResourceFactory
             }
         }
 
-        protected ProtocolInfo createProtocolInfo(InetSocketAddress address) {
+        private HttpProtocolInfo createProtocolInfo(InetSocketAddress address, boolean isSSL) {
             List<ChecksumType> wantedChecksums = _wantedChecksum == null
                     ? Collections.emptyList()
                     : List.of(_wantedChecksum);
             HttpProtocolInfo protocolInfo =
                   new HttpProtocolInfo(
-                        _isSSL ? PROTOCOL_INFO_SSL_NAME : PROTOCOL_INFO_NAME,
+                        isSSL ? PROTOCOL_INFO_SSL_NAME : PROTOCOL_INFO_NAME,
                         PROTOCOL_INFO_MAJOR_VERSION,
                         PROTOCOL_INFO_MINOR_VERSION,
                         address,
@@ -1985,12 +2052,14 @@ public class DcacheResourceFactory
 
         @Override
         protected ProtocolInfo getProtocolInfoForPoolManager() {
-            return createProtocolInfo(getClientAddress());
+            return createProtocolInfo(getClientAddress(), _isSSL);
         }
 
         @Override
         protected ProtocolInfo getProtocolInfoForPool() {
-            return createProtocolInfo(_clientAddressForPool);
+            HttpProtocolInfo protocolInfo = createProtocolInfo(_clientAddressForPool, _isSSL);
+            protocolInfo.setRelayed(_isProxy);
+            return protocolInfo;
         }
 
         public void setLocation(URI location) {
@@ -2002,6 +2071,7 @@ public class DcacheResourceFactory
         }
 
         public void setProxyTransfer(boolean isProxyTransfer) {
+            _isProxy = isProxyTransfer;
             if (isProxyTransfer) {
                 _clientAddressForPool = new InetSocketAddress(_internalAddress, 0);
             } else {
@@ -2082,8 +2152,14 @@ public class DcacheResourceFactory
                           .getInputStream()) {
                         setStatus("Mover " + getPool() + "/" + getMoverId() +
                               ": Sending data");
-                        inputStream.transferTo(outputStream);
-                        outputStream.flush();
+                        CountingOutputStream counting = new CountingOutputStream(outputStream);
+                        clientFlowStarted();
+                        try {
+                            inputStream.transferTo(counting);
+                            counting.flush();
+                        } finally {
+                            clientFlowEnded(counting.getCount(), 0);
+                        }
                     }
 
                 } finally {
@@ -2245,8 +2321,10 @@ public class DcacheResourceFactory
                     try (OutputStream outputStream = connection.getOutputStream()) {
                         setStatus("Mover " + getPool() + "/" + getMoverId() +
                               ": Receiving data");
+                        CountingInputStream counting = new CountingInputStream(inputStream);
+                        clientFlowStarted();
                         try {
-                            inputStream.transferTo(outputStream);
+                            counting.transferTo(outputStream);
                             outputStream.flush();
                         } catch (IOException e) {
                             // Although we were unable to send all the data,
@@ -2257,6 +2335,8 @@ public class DcacheResourceFactory
                                 // oh well, propagate the original exception
                                 throw e;
                             }
+                        } finally {
+                            clientFlowEnded(0, counting.getCount());
                         }
                     }
                     switch (connection.getResponseCode()) {

@@ -149,6 +149,7 @@ import org.dcache.util.BoundedCachedExecutor;
 import org.dcache.util.BoundedExecutor;
 import org.dcache.http.tpc.RemoteHttpClientFactory;
 import org.dcache.http.tpc.RemoteHttpTransferClient;
+import org.dcache.pool.movers.TransferLifeCycle;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Checksums;
@@ -312,6 +313,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
     private boolean _redirectOnRead = true;
     private boolean _redirectOnWrite = true;
     private boolean _bindToRequestAddress = true;
+    private TransferLifeCycle _transferLifeCycle;
 
 
     /** The time when the most recent message was processed. */
@@ -379,6 +381,11 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
      */
     public void setBindToRequestAddress(boolean enabled) {
         _bindToRequestAddress = enabled;
+    }
+
+    @Required
+    public void setTransferLifeCycle(TransferLifeCycle transferLifeCycle) {
+        _transferLifeCycle = transferLifeCycle;
     }
 
     public void setMaxConcurrentProxiedTransfers(int count) {
@@ -869,6 +876,14 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         /** Whether the door (rather than a pool) connects to the remote server. */
         private final boolean _proxied;
         private RemoteHttpTransferClient _proxyClient;
+        private RemoteHttpDataTransferProtocolInfo _proxyInfo;
+
+        /* The connection to the remote server that firefly markers describe.  Only the
+         * thread running the proxied transfer uses these fields. */
+        private InetSocketAddress _flowRemote;
+        private InetSocketAddress _flowLocal;
+        private Instant _flowStartedAt;
+        private long _flowStartBytes;
         private DcacheResourceFactory.RelayedRead _relayedRead;
         private DcacheResourceFactory.RelayedWrite _relayedWrite;
         private final AtomicLong _relayedBytes = new AtomicLong();
@@ -1403,7 +1418,14 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
             // Worker threads are reused, so run each transfer with this thread's logging context
             // (which includes the transfer's session) and restore the worker's afterwards.
             CDC cdc = new CDC();
-            _proxyClient = new RemoteHttpTransferClient(httpClient, info, () -> { });
+            _proxyInfo = info;
+            // When uploading, the client only reports being connected after sending the data;
+            // the request's entity marks the flow instead.
+            _proxyClient = new RemoteHttpTransferClient(httpClient, info, () -> {
+                if (_direction == Direction.PULL) {
+                    flowConnected();
+                }
+            });
             if (_bindToRequestAddress) {
                 ProxiedTransferSource.choose(ServletRequest.getRequest().getLocalAddr(),
                       _destination.getHost()).ifPresent(_proxyClient::setLocalAddress);
@@ -1472,6 +1494,8 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                 // Clear any interrupt sent to cancel this transfer.
                 Thread.interrupted();
 
+                flowEnded();
+
                 if (closeClient) {
                     closeQuietly(httpClient);
                 }
@@ -1536,6 +1560,45 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
 
             _expectedBytes = _size;
             _proxyClient.putAndVerify(RelayedReadEntity::new, progress(), _size, known);
+        }
+
+        /**
+         * Send the firefly start marker for the connection to the remote server.  Does nothing
+         * if that connection is not known or is already marked.
+         */
+        private void flowConnected() {
+            Optional<InetSocketAddress> remote = _proxyClient.remoteAddress();
+            Optional<InetSocketAddress> local = _proxyClient.localAddress();
+            if (remote.isEmpty() || local.isEmpty()
+                  || (remote.get().equals(_flowRemote) && local.get().equals(_flowLocal))) {
+                return;
+            }
+
+            // A redirection may have moved the transfer to another connection.
+            flowEnded();
+
+            _flowRemote = remote.get();
+            _flowLocal = local.get();
+            _flowStartedAt = Instant.now();
+            _flowStartBytes = _relayedBytes.get();
+            _transferLifeCycle.onStart(_flowRemote, _flowLocal, _proxyInfo, _subject);
+        }
+
+        /**
+         * Send the firefly end marker, if a start marker was sent.
+         */
+        private void flowEnded() {
+            Instant startedAt = _flowStartedAt;
+            if (startedAt == null) {
+                return;
+            }
+            _flowStartedAt = null;
+
+            long bytes = _relayedBytes.get() - _flowStartBytes;
+            boolean isPull = _direction == Direction.PULL;
+            _transferLifeCycle.onEnd(_flowRemote, _flowLocal, _proxyInfo, _subject, startedAt,
+                  Duration.between(startedAt, Instant.now()).toMillis(),
+                  isPull ? 0 : bytes, isPull ? bytes : 0);
         }
 
         private RemoteHttpTransferClient.Progress progress() {
@@ -1635,6 +1698,8 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
 
             @Override
             public void writeTo(OutputStream output) throws IOException {
+                flowConnected();
+
                 OutputStream counting = new FilterOutputStream(output) {
                     @Override
                     public void write(int b) throws IOException {

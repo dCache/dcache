@@ -32,6 +32,7 @@ import diskCacheV111.util.ThirdPartyTransferFailedCacheException;
 import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -299,6 +300,30 @@ public class RemoteHttpTransferClientTest {
         }
 
         assertThat(requests, contains("PUT /file", "HEAD /file", "DELETE /file"));
+    }
+
+    @Test
+    public void shouldKnowConnectionWhileSendingUpload() throws Exception {
+        handle("/file", e -> {
+            e.getRequestBody().transferTo(uploaded);
+            respond(e, 201, null);
+        });
+        RemoteHttpTransferClient transfer = clientFor(info("/file", false));
+        List<Optional<InetSocketAddress>> seen = new ArrayList<>();
+
+        transfer.putAndVerify(() -> new ByteArrayEntity(DATA) {
+            @Override
+            public void writeTo(OutputStream out) throws IOException {
+                seen.add(transfer.remoteAddress());
+                seen.add(transfer.localAddress());
+                super.writeTo(out);
+            }
+        }, NO_PROGRESS, DATA.length, Optional.empty());
+
+        assertThat(seen.size(), equalTo(2));
+        assertThat(seen.get(0).map(InetSocketAddress::getPort),
+              equalTo(Optional.of(server.getAddress().getPort())));
+        assertThat(seen.get(1).isPresent(), equalTo(true));
     }
 
     @Test

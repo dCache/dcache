@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.HttpProtocolInfo;
 import diskCacheV111.vehicles.MoverInfoMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import dmg.cells.nucleus.CellAddressCore;
@@ -17,6 +18,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
+import java.net.URI;
 import java.util.OptionalInt;
 import javax.security.auth.Subject;
 import org.dcache.auth.FQANPrincipal;
@@ -81,6 +83,59 @@ public class TransferLifeCycleTest {
     }
 
     @Test
+    public void shouldSendMarkerForHttpTransferThatIsNotRelayed() throws Exception {
+        assertTrue(sendsStartMarker("203.0.113.20", "198.51.100.55", "10.0.0.0/8",
+              httpProtocolInfo(false)));
+    }
+
+    @Test
+    public void shouldSuppressMarkerWhenDoorRelaysData() throws Exception {
+        assertFalse(sendsStartMarker("203.0.113.20", "198.51.100.55", "10.0.0.0/8",
+              httpProtocolInfo(true)));
+    }
+
+    @Test
+    public void shouldSendEndMarkerForTransferWithoutMover() throws Exception {
+        try (DatagramSocket socket = new DatagramSocket(0, InetAddress.getByName("127.0.0.1"))) {
+            socket.setSoTimeout(700);
+
+            TransferLifeCycle lifecycle = new TransferLifeCycle();
+            lifecycle.setEnabled(true);
+            lifecycle.setFireflyDestination("127.0.0.1:" + socket.getLocalPort());
+
+            Instant startedAt = Instant.parse("2026-11-11T10:00:00Z");
+
+            lifecycle.onEnd(
+                  new InetSocketAddress("203.0.113.20", 443),
+                  new InetSocketAddress("198.51.100.55", 42000),
+                  new TestProtocolInfo("remotehttpsdatatransfer", "129"),
+                  new Subject(), startedAt, 2500, 10, 2048);
+
+            var packet = new DatagramPacket(new byte[4096], 4096);
+            socket.receive(packet);
+
+            String text = new String(packet.getData(), 0, packet.getLength(),
+                  StandardCharsets.UTF_8);
+            JSONObject payload = new JSONObject(text.substring(text.indexOf('{')));
+            JSONObject lifecyclePayload = payload.getJSONObject("flow-lifecycle");
+            JSONObject flow = payload.getJSONObject("flow-id");
+            JSONObject usage = payload.getJSONObject("usage");
+
+            assertEquals("end", lifecyclePayload.getString("state"));
+            assertEquals(startedAt, Instant.parse(lifecyclePayload.getString("start-time")));
+            assertEquals(startedAt.plusMillis(2500),
+                  Instant.parse(lifecyclePayload.getString("end-time")));
+            assertEquals("203.0.113.20", flow.getString("src-ip"));
+            assertEquals(443, flow.getInt("src-port"));
+            assertEquals("198.51.100.55", flow.getString("dst-ip"));
+            assertEquals(42000, flow.getInt("dst-port"));
+            assertEquals(10, usage.getLong("sent"));
+            assertEquals(2048, usage.getLong("received"));
+            assertFalse(payload.has("storage-stats"));
+        }
+    }
+
+    @Test
     public void shouldSetEndMarkerStartTimeFromTransferDuration() throws Exception {
         try (DatagramSocket socket = new DatagramSocket(0, InetAddress.getByName("127.0.0.1"))) {
             socket.setSoTimeout(700);
@@ -128,7 +183,21 @@ public class TransferLifeCycleTest {
               new TestProtocolInfo("xrootd", transferTag), subject);
     }
 
+    private static HttpProtocolInfo httpProtocolInfo(boolean isRelayed) {
+        HttpProtocolInfo info = new HttpProtocolInfo("Http", 1, 1,
+              new InetSocketAddress("203.0.113.20", 40000), "WebDAV", "webdavDomain",
+              "/data/file", URI.create("https://door.example.org/data/file"));
+        info.setTransferTag("129");
+        info.setRelayed(isRelayed);
+        return info;
+    }
+
     private boolean sendsStartMarker(String srcIp, String dstIp, String excludes) throws Exception {
+        return sendsStartMarker(srcIp, dstIp, excludes, new TestProtocolInfo("xrootd", "129"));
+    }
+
+    private boolean sendsStartMarker(String srcIp, String dstIp, String excludes,
+          ProtocolInfo protocolInfo) throws Exception {
         try (DatagramSocket socket = new DatagramSocket(0, InetAddress.getByName("127.0.0.1"))) {
             socket.setSoTimeout(700);
 
@@ -141,7 +210,7 @@ public class TransferLifeCycleTest {
             lifecycle.onStart(
                   new InetSocketAddress(srcIp, 40000),
                   new InetSocketAddress(dstIp, 20066),
-                  new TestProtocolInfo("xrootd", "129"),
+                  protocolInfo,
                   new Subject());
 
             var packet = new DatagramPacket(new byte[4096], 4096);

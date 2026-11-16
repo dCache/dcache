@@ -147,6 +147,7 @@ Individual services:
    - [End-user and operator configuration](config-scitags.md#end-user-and-operator-configuration)
    - [Request-side extraction by protocol](config-scitags.md#request-side-extraction-by-protocol)
    - [Pool-side lifecycle and marker emission](config-scitags.md#pool-side-lifecycle-and-marker-emission)
+   - [Door-side marker emission](config-scitags.md#door-side-marker-emission)
    - [Logging and debugging](config-scitags.md#logging-and-debugging)
    - [Developer extension guide](config-scitags.md#developer-extension-guide)
 

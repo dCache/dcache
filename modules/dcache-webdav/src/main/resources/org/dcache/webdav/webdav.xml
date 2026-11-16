@@ -149,6 +149,15 @@
               value="${webdav.third-party-transfers.proxy.bind-to-request-address}"/>
       <property name="maxConcurrentProxiedTransfers"
               value="${webdav.third-party-transfers.proxy.max-concurrent}"/>
+      <property name="transferLifeCycle" ref="transfer-lifecycle"/>
+  </bean>
+
+  <bean id="transfer-lifecycle" class="org.dcache.pool.movers.TransferLifeCycle">
+      <description>Firefly markers for data relayed by the door</description>
+      <property name="enabled" value="${webdav.enable.firefly}"/>
+      <property name="fireflyDestination" value="${webdav.firefly.destination}"/>
+      <property name="excludes" value="${webdav.firefly.excludes}"/>
+      <property name="voMapping" value="${webdav.firefly.vo-mapping}"/>
   </bean>
 
   <bean id="tpc-http-client-settings"
@@ -214,6 +223,7 @@
         <description>Exposes dCache resources to Milton WebDAV library</description>
 
         <property name="remoteTransferHandler" ref="remote-transfer-handler"/>
+        <property name="transferLifeCycle" ref="transfer-lifecycle"/>
         <property name="pnfsStub" ref="pnfs-stub"/>
         <property name="spaceLookupCache">
             <bean class="org.dcache.space.ReservationCaches" factory-method="buildSpaceLookupCache">
