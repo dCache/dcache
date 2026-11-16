@@ -27,12 +27,15 @@ The behavior is:
 1. The door extracts SciTags data from protocol-specific request metadata.
 2. For HTTP-TPC, the active pool forwards the tag to the remote (passive) party, so both
    endpoints classify the transfer under the same SciTag.
-3. The pool validates and decodes the value (or falls back to VO-to-experiment mapping via FQAN).
+3. The service that exchanges data with the remote party validates and decodes the value (or
+   falls back to VO-to-experiment mapping via FQAN). That service is a pool; for data the door
+   relays (uploads and downloads that are not redirected, and proxied third-party copies) it is
+   the WebDAV door, and the pool then sends no marker.
 4. dCache sends Firefly markers to:
    - the data-flow destination host on UDP 10514 (default), and
    - optionally, an additional configured collector.
 
-Supported marker protocols in current pool logic:
+Supported marker protocols:
 
 - `xrootd`
 - `http`
@@ -101,6 +104,27 @@ Notes:
 - Exclusion requires both source and destination addresses to match configured local subnets.
 - When a WebDAV door relays data, the door sends the markers and the pool sends none. The
   door must therefore have firefly enabled for such transfers to be marked.
+- Firefly settings may be given once for the whole site, or per service where a service must
+  differ. `dcache.*` applies to pools and WebDAV doors, unless overridden by the service's own
+  property.
+
+### Migration from releases before the door-side markers
+
+In earlier releases only pools sent markers and the properties were named after the pool:
+
+| Before | Now |
+|--------|-----|
+| `pool.enable.firefly` | `dcache.enable.firefly` (still honored for pools) |
+| `pool.firefly.destination` | `dcache.firefly.destination` (still honored for pools) |
+| `pool.firefly.excludes` | `dcache.firefly.excludes` (still honored for pools) |
+| `pool.firefly.vo-mapping` | `dcache.firefly.vo-mapping` (still honored for pools) |
+
+`pool.*` keeps working, but it now only affects pools. A site that enabled marking with
+`pool.enable.firefly=true` therefore no longer marks transfers that a WebDAV door relays. To
+restore marking of those flows, either rename the property to `dcache.enable.firefly=true` (which
+pools and doors then inherit) or additionally set `webdav.enable.firefly=true`. The same applies
+to `destination`, `excludes` and `vo-mapping`: values given as `pool.firefly.*` are not
+inherited by doors.
 
 ## Request-side extraction by protocol
 
@@ -174,7 +198,9 @@ Door call-site: `XrootdDoor.createTransfer(...)` constructs `XrootdTransfer`, an
 
 ### Important validation boundary
 
-Door code primarily captures and propagates tag values; SciTag numeric validation is pool-side.
+Door code captures and propagates tag values; numeric validation of SciTags happens in
+`TransferLifeCycle`, which runs in the pool and, for data relayed by a WebDAV door, in the door.
+The error messages and loggers are therefore the same in both cases.
 
 ## Client examples
 
@@ -272,7 +298,15 @@ This applies to:
   Implementation: `RemoteTransferHandler.RemoteTransfer`.
 
 In both cases the source is the remote endpoint and the destination is the door's endpoint. End
-markers report the number of bytes the door relayed, and do not contain storage statistics.
+markers report the number of bytes the door relayed, and do not contain storage statistics, since
+the door has no pool-level storage accounting for that data. `pool.firefly.storage-statistics`
+therefore has no effect on markers sent by a door.
+
+The door applies the same guard checks as a pool, including the exclusion rules: no marker is
+sent when both the door's endpoint and the remote endpoint are inside the configured excluded
+networks. Because the door marks the flow, the internal pool-to-door connection is not marked;
+this is why markers for relayed transfers no longer report the door's internal address with
+port 0.
 
 ## Classification logic
 
