@@ -38,6 +38,7 @@ import static org.dcache.webdav.transfer.CopyFilter.CredentialSource.GRIDSITE;
 import static org.dcache.webdav.transfer.CopyFilter.CredentialSource.NONE;
 import static org.dcache.webdav.transfer.CopyFilter.CredentialSource.OIDC;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.EvictingQueue;
@@ -128,6 +129,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.annotation.PreDestroy;
@@ -832,6 +834,49 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
      * cancelled.  Unfortunately, there is no container-independent mechanism for discovering this,
      * so Jetty-specific code is needed.
      */
+    /**
+     * Commit the status and headers of the response to a third-party copy request, rather than
+     * waiting for the first performance marker or the result line.  Jetty takes the trailers
+     * when the response is committed, so they are set first.
+     *
+     * @param trailers the trailers to send after the response body if the client accepts them,
+     *                 or null for none
+     */
+    @VisibleForTesting
+    static void commitResponse(HttpServletRequest request, HttpServletResponse response,
+          @Nullable Supplier<HttpFields> trailers) {
+        response.setStatus(SC_ACCEPTED);
+        response.setContentType("text/perf-marker-stream");
+
+        if (trailers != null && acceptsTrailers(request)) {
+            /* Servlet v4.0 setTrailerFields fails for HTTP/1.0 requests; use
+             * Jetty's proprietary interface, which silently drops trailers.
+             */
+            HttpServletResponse unwrapped = response;
+            while (unwrapped instanceof ServletResponseWrapper) {
+                unwrapped = (HttpServletResponse) ((ServletResponseWrapper) unwrapped).getResponse();
+            }
+            ((org.eclipse.jetty.ee8.nested.Response) unwrapped).setTrailers(trailers);
+        }
+
+        try {
+            response.flushBuffer();
+        } catch (IOException e) {
+            LOGGER.warn("Unable to send response status and headers.");
+        }
+    }
+
+    /**
+     * According to RFC 7230, we should only return trailers if the client indicates (with the TE
+     * header) that it can understand them.  Jetty doesn't check this, so we must.
+     */
+    private static boolean acceptsTrailers(HttpServletRequest request) {
+        String te = request.getHeader("TE");
+        return te != null && Splitter.on(',').omitEmptyStrings().trimResults().splitToList(te)
+              .stream()
+              .anyMatch(v -> v.equals("trailers") || v.startsWith("trailers;q="));
+    }
+
     private class RemoteTransfer {
 
         private final TransferType _type;
@@ -1109,22 +1154,9 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
          * Tell the client the transfer is accepted and start asynchronous processing.
          */
         private void beginResponse() {
-            HttpServletResponse servletResponse = ServletResponse.getResponse();
-            servletResponse.setStatus(SC_ACCEPTED);
-            servletResponse.setContentType("text/perf-marker-stream");
-
-            if (_direction == Direction.PULL && _wantDigest.isPresent()) {
-                // Jetty takes the trailers when committing the response.
-                addTrailerCallback(servletResponse);
-            }
-
-            try {
-                // Commit status and response headers now, rather than waiting
-                // for first performance marker or result line.
-                servletResponse.flushBuffer();
-            } catch (IOException e) {
-                LOGGER.warn("Unable to send response status and headers.");
-            }
+            commitResponse(ServletRequest.getRequest(), ServletResponse.getResponse(),
+                  _direction == Direction.PULL && _wantDigest.isPresent()
+                        ? this::getTrailers : null);
 
             /* Start async processing: no more exceptions! */
 
@@ -1253,29 +1285,6 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                         return empty;
                     }
                 }).orElse(empty);
-            }
-        }
-
-        private void addTrailerCallback(HttpServletResponse response) {
-            /*
-             * According to RFC 7230, we should only return trailers if the
-             * client indicates (with the TE header) that it can understand
-             * them.
-             *
-             * Jetty currently doesn't do this, so we must, instead.what
-             */
-            String te = ServletRequest.getRequest().getHeader("TE");
-            if (te != null && Splitter.on(',').omitEmptyStrings().trimResults().splitToList(te)
-                  .stream()
-                  .anyMatch(v -> v.equals("trailers") || v.startsWith("trailers;q="))) {
-
-                /* Servlet v4.0 setTrailerFields fails for HTTP/1.0 requests; use
-                 * Jetty's proprietary interface, which silently drops trailers.
-                 */
-                while (response instanceof ServletResponseWrapper) {
-                    response = (HttpServletResponse) ((ServletResponseWrapper) response).getResponse();
-                }
-                ((org.eclipse.jetty.ee8.nested.Response) response).setTrailers(this::getTrailers);
             }
         }
 
