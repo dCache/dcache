@@ -20,9 +20,11 @@ package org.dcache.services.httpd;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import org.dcache.util.NetLoggerBuilder;
+import org.eclipse.jetty.http.HttpURI;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.RequestLog;
 import org.eclipse.jetty.server.Response;
+import org.eclipse.jetty.util.HostPort;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +41,8 @@ class HttpdRequestLog extends AbstractLifeCycle
         NetLoggerBuilder log = new NetLoggerBuilder(logLevel(code), "org.dcache.httpd.request");
         log.add("request.method", request.getMethod());
         log.add("request.scheme", request.getHttpURI().getScheme());
-        log.add("request.url", request.getHttpURI().asString());
+        // as Servlet getRequestURL(): without the query
+        log.add("request.url", HttpURI.build(request.getHttpURI()).query(null).asString());
         log.add("request.hostname", localName(request));
         log.add("request.remoteIP", Request.getRemoteAddr(request));
 
@@ -50,7 +53,7 @@ class HttpdRequestLog extends AbstractLifeCycle
     private static String localName(Request request) {
         SocketAddress local = request.getConnectionMetaData().getLocalSocketAddress();
         return local instanceof InetSocketAddress
-              ? ((InetSocketAddress) local).getHostString()
+              ? HostPort.normalizeHost(((InetSocketAddress) local).getHostString())
               : null;
     }
 
