@@ -250,6 +250,11 @@
     <property name="destination" value="${frontend.service.pinmanager}"/>
   </bean>
 
+  <bean id="billing-topic-stub" class="org.dcache.cells.CellStub">
+    <description>Billing topic stub for publishing billing records</description>
+    <property name="destination" value="${frontend.service.billing.topic}"/>
+  </bean>
+
   <bean id="qos-engine" class="org.dcache.cells.CellStub">
     <description>QoS Engine cell stub</description>
     <property name="timeout" value="${frontend.service.qos.timeout}"/>
