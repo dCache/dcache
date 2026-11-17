@@ -137,6 +137,9 @@ public final class PoolGroupInfoResources {
 
     private static final Pattern VALID_TAG = Pattern.compile("([A-Za-z0-9_.-]+)=[A-Za-z0-9_.-]+");
 
+    // reject any pool or pool group name input that is not a valid name or includes flags
+    private static final Pattern VALID_NAME = Pattern.compile("[A-Za-z0-9_.][A-Za-z0-9_.-]*");
+
     @Inject
     private PoolInfoService service;
 
@@ -184,6 +187,7 @@ public final class PoolGroupInfoResources {
         try {
             JSONObject payload = new JSONObject(requestPayload);
             name = payload.getString("name");
+            validateName("pool group", name);
             String primary = payload.optBoolean("primary") ? " -primary" : "";
             String dynamic = payload.optBoolean("dynamic") ? " -dynamic" : "";
             JSONArray tagArray = payload.optJSONArray("tags");
@@ -226,6 +230,8 @@ public final class PoolGroupInfoResources {
             throw new ForbiddenException("Pool command only accessible to admin users.");
         }
 
+        validateName("pool group", group);
+
         CellPath path;
         try{
             path = new CellPath(subscriber.adminBackend().get());
@@ -257,6 +263,9 @@ public final class PoolGroupInfoResources {
         if (!RequestUser.isAdmin()) {
             throw new ForbiddenException("Pool command only accessible to admin users.");
         }
+
+        validateName("pool group", group);
+        validateName("pool", pool);
 
         CellPath path;
         try{
@@ -291,6 +300,9 @@ public final class PoolGroupInfoResources {
             throw new ForbiddenException("Pool command only accessible to admin users.");
         }
 
+        validateName("pool group", group);
+        validateName("pool", pool);
+
         CellPath path;
         try{
             path = new CellPath(subscriber.adminBackend().get());
@@ -324,6 +336,12 @@ public final class PoolGroupInfoResources {
             if (!keys.add(matcher.group(1))) {
                 throw new BadRequestException("Duplicate tag key: " + matcher.group(1));
             }
+        }
+    }
+
+    private static void validateName(String kind, String name) {
+        if (!VALID_NAME.matcher(name).matches()) {
+            throw new BadRequestException("Invalid " + kind + " name: " + name);
         }
     }
 
