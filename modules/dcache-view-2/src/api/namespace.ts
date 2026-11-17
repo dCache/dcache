@@ -10,17 +10,26 @@ export async function fileAttributes(r: FileMetadataRequest, headers: Headers): 
     } else if (!r.pnfsId && r.path) {
         if (r.scope === "partial") {
             return fetchFileAttributes(new Request(
-                `${endpoint}namespace${r.path}?children=true&offset=${r.offset}&limit=${limit}&qos=true`, {
+                `${endpoint}namespace${r.path}?children=true&offset=${r.offset}&limit=${limit}`, {
                     headers: headers, credentials: "include"
                 }));
         }
         const atts = await fetchFileAttributes(new Request(
-            `${endpoint}namespace${r.path}?children=true&offset=${r.offset}&limit=${limit}&qos=true`, {
+            `${endpoint}namespace${r.path}?children=true&offset=${r.offset}&limit=${limit}`, {
                 headers: headers, credentials: "include"
             }));
         return await fileAttributes({...r, pnfsId: atts.pnfsId}, headers);
     }
     throw new TypeError("The file object parameter is not set. Provide either file.pnfsId or filePath.")
+}
+
+export function ls(file: FileAttributes): FileAttributes[]{
+    if (file.fileType !== 'DIR') {
+        throw new TypeError(file.fileName + " is not a directory");
+    } else if (!file.children || file.children.length === 0) {
+        return [];
+    }
+    return file.children;
 }
 
 async function fetchFileAttributes(request: Request): Promise<FileAttributes> {
