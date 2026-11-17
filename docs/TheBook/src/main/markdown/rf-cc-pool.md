@@ -416,7 +416,7 @@ RUNNING
 Job runs (schedules new tasks)
 
 SLEEPING
-A task failed; no tasks are scheduled for 10 seconds
+A task failed; no tasks are scheduled for 10 seconds, plus a random delay of up to 10 seconds after lock contention.
 
 PAUSED
 Pause expression evaluates to true; no tasks are scheduled for 10 seconds.

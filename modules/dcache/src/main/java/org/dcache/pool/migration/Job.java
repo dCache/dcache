@@ -14,6 +14,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -69,7 +70,8 @@ import dmg.cells.nucleus.DelayedReply;
  *   <dt>RUNNING</dt>
  *   <dd>Job runs (schedules new tasks)</dd>
  *   <dt>SLEEPING</dt>
- *   <dd>A task failed; no tasks are scheduled for 10 seconds</dd>
+ *   <dd>A task failed; no tasks are scheduled for 10 seconds, plus up to 10 seconds of jitter
+ *   after lock contention</dd>
  *   <dt>PAUSED</dt>
  *   <dd>Pause expression evaluates to true; no tasks are scheduled for 10 seconds</dd>
  *   <dt>STOPPING</dt>
@@ -95,6 +97,8 @@ public class Job
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Job.class);
+
+    private static final long RETRY_DELAY_MILLIS = 10_000;
 
     private final Set<PnfsId> _queued = new LinkedHashSet<>();
     private final Map<PnfsId, Long> _sizes = new HashMap<>();
@@ -507,6 +511,10 @@ public class Job
      * @see schedule
      */
     private void setState(State state) {
+        setState(state, RETRY_DELAY_MILLIS);
+    }
+
+    private void setState(State state, long sleepDelayMillis) {
         _lock.lock();
         try {
             if (_state != state) {
@@ -526,7 +534,7 @@ public class Job
                             } finally {
                                 _lock.unlock();
                             }
-                        }), 10, TimeUnit.SECONDS);
+                        }), sleepDelayMillis, TimeUnit.MILLISECONDS);
                         break;
 
                     case PAUSED:
@@ -838,6 +846,16 @@ public class Job
             if (task == _running.remove(pnfsId)) {
                 _queued.add(pnfsId);
                 _context.unlock(pnfsId);
+                if (_state == State.RUNNING) {
+                    // Leave the replica unlocked between attempts so that reciprocal migrations
+                    // can make progress instead of immediately rejecting each other again.
+                    long delay = RETRY_DELAY_MILLIS;
+                    if (rc == CacheException.LOCKED) {
+                        // Avoid keeping competing pools' retries in lockstep.
+                        delay += ThreadLocalRandom.current().nextLong(RETRY_DELAY_MILLIS);
+                    }
+                    setState(State.SLEEPING, delay);
+                }
             }
             schedule();
             addNote(new Note(task.getId(), pnfsId, msg));
