@@ -74,7 +74,6 @@ import diskCacheV111.vehicles.PoolModifyModeMessage;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.util.CommandThrowableException;
 import dmg.util.Exceptions;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -88,8 +87,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.concurrent.ExecutionException;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -115,7 +112,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.dcache.cells.CellStub;
 import org.dcache.pool.nearline.json.NearlineData;
-import org.dcache.poolmanager.PoolManagerHandlerSubscriber;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.PagedList;
 import org.dcache.restful.providers.pool.MoverData;
@@ -125,6 +121,8 @@ import org.dcache.restful.providers.selection.Pool;
 import org.dcache.restful.services.pool.PoolInfoService;
 import org.dcache.restful.services.transfers.TransferInfoService;
 import org.dcache.restful.util.RequestUser;
+import org.dcache.restful.util.selection.PsuAdminCommands;
+import org.dcache.restful.util.selection.SelectionNames;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -150,9 +148,6 @@ public final class PoolInfoResources {
                 + "type parameter, or p2p movers using "
                 + "'p2p-client,p2p-server'";
 
-    // reject any pool name input that is not a valid name or includes flags
-    private static final Pattern VALID_POOL_NAME = Pattern.compile("[A-Za-z0-9_.][A-Za-z0-9_.-]*");
-
     @Context
     private HttpServletRequest request;
 
@@ -173,12 +168,8 @@ public final class PoolInfoResources {
     private CellStub poolStub;
 
     @Inject
-    @Named("pool-manager-stub")
-    private CellStub poolManagerStub;
-
-    @Inject
-    @Named("pool-manager-handler-subscriber")
-    private PoolManagerHandlerSubscriber subscriber;
+    @Named("psu-admin-commands")
+    private PsuAdminCommands psuAdminCommands;
 
     private boolean unlimitedOperationVisibility;
 
@@ -487,9 +478,7 @@ public final class PoolInfoResources {
           @ApiParam(value = "The id of the mover to be killed.",
                 required = true)
           @PathParam("id") int id) {
-        if (!RequestUser.isAdmin()) {
-            throw new ForbiddenException("Pool command only accessible to admin users.");
-        }
+        RequestUser.checkAdmin("Pool command only accessible to admin users.");
 
         try {
             poolStub.sendAndWait(new CellPath(pool),
@@ -536,9 +525,7 @@ public final class PoolInfoResources {
                 + "(Corresponds to PoolModeUpdate.)",
                 required = true)
                 String requestPayload) {
-        if (!RequestUser.isAdmin()) {
-            throw new ForbiddenException("Pool command only accessible to admin users.");
-        }
+        RequestUser.checkAdmin("Pool command only accessible to admin users.");
 
         try {
             PoolModeUpdate update
@@ -574,43 +561,25 @@ public final class PoolInfoResources {
             + "noping, disabled, rdonly (boolean, default false).",
             required = true) String requestPayload) {
 
-        if (!RequestUser.isAdmin()) {
-            throw new ForbiddenException("Pool command only accessible to admin users.");
-        }
+        RequestUser.checkAdmin("Pool command only accessible to admin users.");
 
         String name;
-        CellPath path;
+        String adminCommand;
         try {
             JSONObject payload = new JSONObject(requestPayload);
             name = payload.getString("name");
-            if (!VALID_POOL_NAME.matcher(name).matches()) {
-                throw new BadRequestException("Invalid pool name: " + name);
-            }
+            SelectionNames.checkValidName("pool", name);
             String noping = payload.optBoolean("noping") ? " -noping" : "";
             String disabled = payload.optBoolean("disabled") ? " -disabled" : "";
             String rdonly = payload.optBoolean("rdonly") ? " -rdonly" : "";
 
-            String adminCommand = "psu create pool " + name + disabled + noping + rdonly;
-
-            path = new CellPath(subscriber.adminBackend().get());
-            poolManagerStub.sendAndWait(path, adminCommand, String.class);
-
+            adminCommand = "psu create pool " + name + disabled + noping + rdonly;
         } catch (JSONException | IllegalArgumentException e) {
             throw new BadRequestException(e);
-        } catch (CacheException e) {
-            if (e.getCause() instanceof CommandThrowableException
-                  && ((CommandThrowableException) e.getCause()).getTargetException()
-                  instanceof IllegalArgumentException) {
-                throw new ClientErrorException(Response.Status.CONFLICT);
-            }
-            LOGGER.warn(Exceptions.meaningfulMessage(e));
-            throw new InternalServerErrorException(e);
-        } catch (InterruptedException | NoRouteToCellException | ExecutionException e) {
-            LOGGER.warn(Exceptions.meaningfulMessage(e));
-            throw new InternalServerErrorException(e);
         }
 
-        return saveAndRespond(path, name, "was added", Response.Status.CREATED);
+        return psuAdminCommands.execute("Pool " + name + " was added", Response.Status.CREATED,
+                adminCommand);
     }
 
     @PATCH
@@ -631,18 +600,13 @@ public final class PoolInfoResources {
                     + "disabled, noping, rdonly (boolean). Only fields present are changed.",
                     required = true) String requestPayload) {
 
-        if (!RequestUser.isAdmin()) {
-            throw new ForbiddenException("Pool command only accessible to admin users.");
-        }
+        RequestUser.checkAdmin("Pool command only accessible to admin users.");
 
-        if (!VALID_POOL_NAME.matcher(pool).matches()) {
-            throw new BadRequestException("Invalid pool name: " + pool);
-        }
+        SelectionNames.checkValidName("pool", pool);
 
-        CellPath path;
+        List<String> modes = new ArrayList<>();
         try {
             JSONObject payload = new JSONObject(requestPayload);
-            List<String> modes = new ArrayList<>();
             if (payload.has("disabled")) {
                 modes.add(payload.getBoolean("disabled") ? "disabled" : "enabled");
             }
@@ -652,24 +616,20 @@ public final class PoolInfoResources {
             if (payload.has("rdonly")) {
                 modes.add(payload.getBoolean("rdonly") ? "rdonly" : "notrdonly");
             }
-
-            path = new CellPath(subscriber.adminBackend().get());
-            for (String mode : modes) {
-                String reply = poolManagerStub.sendAndWait(path,
-                        "psu set pool " + pool + " " + mode, String.class);
-                if (reply.startsWith("No pools")) {
-                    throw new NotFoundException("Pool not found: " + pool);
-                }
-            }
         } catch (JSONException e) {
             throw new BadRequestException(e);
-        } catch (InterruptedException | NoRouteToCellException | CacheException
-                | ExecutionException e) {
-            LOGGER.warn(Exceptions.meaningfulMessage(e));
-            throw new InternalServerErrorException(e);
         }
 
-        return saveAndRespond(path, pool, "mode changed", Response.Status.OK);
+        CellPath path = psuAdminCommands.adminBackend();
+        for (String mode : modes) {
+            String reply = psuAdminCommands.send(path, "psu set pool " + pool + " " + mode);
+            if (reply.startsWith("No pools")) {
+                throw new NotFoundException("Pool not found: " + pool);
+            }
+        }
+
+        return psuAdminCommands.saveAndRespond(path, "Pool " + pool + " mode changed",
+                Response.Status.OK);
     }
 
     @DELETE
@@ -687,13 +647,9 @@ public final class PoolInfoResources {
                     required = true)
             @PathParam("pool") String pool) {
 
-        if (!RequestUser.isAdmin()) {
-            throw new ForbiddenException("Pool command only accessible to admin users.");
-        }
+        RequestUser.checkAdmin("Pool command only accessible to admin users.");
 
-        if (!VALID_POOL_NAME.matcher(pool).matches()) {
-            throw new BadRequestException("Invalid pool name: " + pool);
-        }
+        SelectionNames.checkValidName("pool", pool);
 
         SelectionPool selectionPool = poolMonitor.getPoolSelectionUnit().getPool(pool);
         if (selectionPool != null && selectionPool.isActive()) {
@@ -701,37 +657,7 @@ public final class PoolInfoResources {
                     Response.Status.CONFLICT);
         }
 
-        CellPath path;
-        try {
-            String command = "psu remove pool " + pool;
-            path = new CellPath(subscriber.adminBackend().get());
-            poolManagerStub.sendAndWait(path, command, String.class);
-        } catch (CacheException e) {
-            if (e.getCause() instanceof CommandThrowableException
-                    && ((CommandThrowableException) e.getCause()).getTargetException()
-                    instanceof IllegalArgumentException) {
-                throw new NotFoundException("Pool not found: " + pool);
-            }
-            LOGGER.warn(Exceptions.meaningfulMessage(e));
-            throw new InternalServerErrorException(e);
-        } catch (InterruptedException | NoRouteToCellException | ExecutionException e) {
-            LOGGER.warn(Exceptions.meaningfulMessage(e));
-            throw new InternalServerErrorException(e);
-        }
-
-        return saveAndRespond(path, pool, "was deleted", Response.Status.OK);
-    }
-
-    private Response saveAndRespond(CellPath path, String pool, String change,
-            Response.Status status) {
-        try {
-            poolManagerStub.sendAndWait(path, "save", String.class);
-        } catch (CacheException | NoRouteToCellException | InterruptedException e) {
-            LOGGER.warn("Pool {} {} but PoolManager configuration could not be saved: {}",
-                    pool, change, Exceptions.meaningfulMessage(e));
-            throw new InternalServerErrorException(
-                    "Pool " + pool + " " + change + " but configuration could not be saved");
-        }
-        return successfulResponse(status);
+        return psuAdminCommands.execute("Pool " + pool + " was deleted", Response.Status.OK,
+                "psu remove pool " + pool);
     }
 }

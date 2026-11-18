@@ -20,10 +20,10 @@ package org.dcache.restful.util;
 import static com.google.common.base.Preconditions.checkState;
 
 import java.io.IOException;
-import java.security.AccessController;
 import javax.inject.Inject;
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
@@ -67,6 +67,16 @@ public class RequestUser implements ContainerRequestFilter, ContainerResponseFil
         Boolean isAdmin = IS_ADMIN.get();
         checkState(isAdmin != null, "RequestUser#isAdmin called outside of REST request");
         return isAdmin;
+    }
+
+    public static void checkAdmin() {
+        checkAdmin("Requires admin privileges.");
+    }
+
+    public static void checkAdmin(String message) {
+        if (!isAdmin()) {
+            throw new ForbiddenException(message);
+        }
     }
 
     public static boolean canViewFileOperations(boolean isUnlimitedVisibility) {

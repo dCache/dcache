@@ -65,6 +65,12 @@
       <property name="poolManager" ref="pool-manager-stub"/>
   </bean>
 
+  <bean id="psu-admin-commands" class="org.dcache.restful.util.selection.PsuAdminCommands">
+      <description>Sends pool selection setup changes to a single PoolManager and saves them</description>
+      <property name="poolManagerStub" ref="pool-manager-stub"/>
+      <property name="subscriber" ref="pool-manager-handler-subscriber"/>
+  </bean>
+
   <bean id="pool-stub" class="org.dcache.cells.CellStub">
     <description>Pool communication stub</description>
     <property name="timeout" value="${frontend.service.pool.timeout}"/>
