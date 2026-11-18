@@ -180,6 +180,8 @@ public final class BulkServiceStatistics implements CellInfoProvider {
 
         pw.println(String.format(CONCURRENCY_FORMAT, "Available permits for directory listing",
               factory.getDirListSemaphoreAvailable()));
+        pw.println(String.format(CONCURRENCY_FORMAT, "Directory listings waiting for permit",
+              factory.getDirListPending()));
         pw.println(String.format(CONCURRENCY_FORMAT, "Available permits for in-flight targets",
               factory.getInFlightSemaphoreAvailable()));
         pw.println();
