@@ -234,15 +234,31 @@
                 const c = window.CONFIG["dcache-view.oidc-authz-endpoint-list"].trim().split(" ");
 
                 const d = (window.CONFIG["dcache-view.oidc-authz-endpoint-extra"] || "").trim().split(" ");
+                const e = LoginformWithOpenid._parseQuotedList(window.CONFIG["dcache-view.oidc-scope-list"] || "");
 
                 const len = a.length;
                 let jsonArray = [];
                 for (let i=0; i<len; i++) {
-                    const extra = i < d.length ? d[i] : '-'
+                    const extra = i < d.length ? d[i] : '-';
+                    const scope = i < e.length ? e[i] : 'openid profile email';
                     jsonArray.push({"name": `${decodeURIComponent(a[i])}`, "id": `${decodeURIComponent(b[i])}`,
-                        "endpoint": `${c[i]}`, "extra": `${extra}`});
+                        "endpoint": `${c[i]}`, "extra": `${extra}`, "scope": `${scope}`});
                 }
                 this.openIDProviders = jsonArray;
+            }
+
+            /**
+             * Split a space-separated list where individual entries may be
+             * enclosed in double quotes (e.g. "openid profile email").
+             * Returns the entries with surrounding quotes stripped.
+             */
+            static _parseQuotedList(str)
+            {
+                if (!str || !str.trim()) {
+                    return [];
+                }
+                return (str.match(/"[^"]*"|\S+/g) || [])
+                    .map(s => (s.startsWith('"') && s.endsWith('"')) ? s.slice(1, -1) : s);
             }
             static get is()
             {
@@ -310,7 +326,7 @@
                     'response_type=code' +                       // Authorization Code Flow
                     '&client_id=' + encodeURIComponent(provider.id) +
                     '&redirect_uri=' + encodeURIComponent(redirectUri) +
-                    '&scope=openid%20profile%20email' +          // adjust scope as needed
+                    '&scope=' + encodeURIComponent(provider.scope || 'openid profile email') +
                     '&state=' + encodeURIComponent(provider.id); // tells the callback which provider this is
 
                 // 7. Append extra parameters if specified
