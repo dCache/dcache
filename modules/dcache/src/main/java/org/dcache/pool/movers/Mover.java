@@ -206,6 +206,15 @@ public interface Mover<T extends ProtocolInfo> {
     }
 
     /**
+     * Whether this mover waits for the remote party to connect to it.  Such a mover has no data
+     * connection, and therefore no network flow, until {@link #getRemoteEndpoint()} returns a
+     * value.
+     */
+    default boolean isPassive() {
+        return false;
+    }
+
+    /**
      * Provide the expected total number of bytes transferred for this transfer, if known.  Returns
      * null if this value is unknown.
      */
@@ -219,4 +228,14 @@ public interface Mover<T extends ProtocolInfo> {
      * to access the mover.
      */
     Optional<InetSocketAddress> getLocalEndpoint();
+
+    /**
+     * Returns the {@link Optional} containing {@link InetSocketAddress} of the remote endpoint of
+     * the connection that carries the data, if the mover established that connection itself
+     * and knows it.  This may differ from the address in the protocol info, for example if the
+     * remote server redirected the request.
+     */
+    default Optional<InetSocketAddress> getRemoteEndpoint() {
+        return Optional.empty();
+    }
 }

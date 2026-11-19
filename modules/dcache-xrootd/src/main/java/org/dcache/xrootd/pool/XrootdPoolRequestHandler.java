@@ -373,6 +373,17 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
     }
 
     /**
+     * Reports the client's connection as the network flow of the transfer.  This is not done when
+     * the pool is the destination of a third-party copy: the file then arrives over a connection
+     * that the third-party client opens to the source, and the connection from the client that
+     * requested the copy carries no file data.
+     */
+    private static void reportDataConnection(ChannelHandlerContext ctx,
+          NettyTransferService<XrootdProtocolInfo>.NettyMoverChannel file) {
+        file.connected(ctx.channel().remoteAddress(), ctx.channel().localAddress());
+    }
+
+    /**
      * Obtains the right mover channel using an opaque token in the request. The mover channel is
      * wrapped by a file descriptor. The file descriptor is stored for subsequent access.
      * <p>
@@ -444,9 +455,11 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
                               tlsSessionInfo);
                     } else {
                         descriptor = new WriteDescriptor(file, posc);
+                        reportDataConnection(ctx, file);
                     }
                 } else {
                     descriptor = new ReadDescriptor(file);
+                    reportDataConnection(ctx, file);
                 }
 
                 FileStatus stat = msg.isRetStat() ? stat(file) : null;
