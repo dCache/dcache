@@ -64,25 +64,46 @@ import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLinkGroup;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
+import javax.inject.Named;
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.ClientErrorException;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.PATCH;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.selection.Link;
 import org.dcache.restful.providers.selection.LinkGroup;
+import org.dcache.restful.util.RequestUser;
 import org.dcache.restful.util.Responses;
+import org.dcache.restful.util.selection.PsuAdminCommands;
+import org.dcache.restful.util.selection.SelectionNames;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.stereotype.Component;
 
 /**
  * <p>RESTful API to the {@link org.dcache.poolmanager.PoolMonitor}, in
- * order to deliver link and link group information.</p>
+ * order to deliver link and link group information as well as to add/remove/manage
+ * links and link groups.</p>
  *
  * @version v1.0
  */
@@ -94,6 +115,9 @@ public final class LinkResources {
     @Inject
     private PoolMonitor poolMonitor;
 
+    @Inject
+    @Named("psu-admin-commands")
+    private PsuAdminCommands psuAdminCommands;
 
     @GET
     @ApiOperation("Get information about all links."
@@ -122,5 +146,384 @@ public final class LinkResources {
               .map((g) -> new LinkGroup(g, psu))
               .collect(Collectors.toList());
         return Responses.buildResponse(result);
+    }
+
+    @POST
+    @ApiOperation("Add a link via 'psu create link'. Requires admin role. "
+            + "Saves the PoolManager configuration.")
+    @ApiResponses({
+            @ApiResponse(code = 201, message = "Created"),
+            @ApiResponse(code = 400, message = "Bad Request"),
+            @ApiResponse(code = 403, message = "Link command only accessible to admin users."),
+            @ApiResponse(code = 404, message = "Unit group not found"),
+            @ApiResponse(code = 409, message = "Link already exists"),
+            @ApiResponse(code = 500, message = "Internal Server Error"),
+    })
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response addLink(@ApiParam(value = "JSON object describing the new link: "
+            + "name (String, required), "
+            + "unitGroups (array of String, required, at least one unit group).",
+            required = true) String requestPayload) {
+
+        RequestUser.checkAdmin("Link command only accessible to admin users.");
+
+        String name;
+        StringBuilder command = new StringBuilder("psu create link ");
+        try {
+            JSONObject payload = new JSONObject(requestPayload);
+            name = payload.getString("name");
+            SelectionNames.checkValidName("link", name);
+            command.append(name);
+
+            JSONArray unitGroups = payload.getJSONArray("unitGroups");
+            if (unitGroups.length() == 0) {
+                throw new BadRequestException("A link needs at least one unit group");
+            }
+            for (int i = 0; i < unitGroups.length(); i++) {
+                String unitGroup = unitGroups.getString(i);
+                SelectionNames.checkValidName("unit group", unitGroup);
+                command.append(' ').append(unitGroup);
+            }
+        } catch (JSONException e) {
+            throw new BadRequestException(e);
+        }
+
+        return psuAdminCommands.execute("Link: " + name + " was created",
+                Response.Status.CREATED, command.toString());
+    }
+
+    @PATCH
+    @ApiOperation("Change a link's preferences and section via 'psu set link'. "
+            + "Requires admin role. Saves the PoolManager configuration.")
+    @ApiResponses({
+            @ApiResponse(code = 400, message = "Bad Request"),
+            @ApiResponse(code = 403, message = "Link command only accessible to admin users."),
+            @ApiResponse(code = 404, message = "Not Found"),
+            @ApiResponse(code = 500, message = "Internal Server Error"),
+    })
+    @Path("/{link}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response updateLink(
+            @ApiParam(value = "The link to be changed.", required = true)
+            @PathParam("link") String link,
+            @ApiParam(value = "JSON object describing the link's settings: "
+                    + "readpref, writepref, cachepref, p2ppref (int), "
+                    + "section (String, NONE removes the section). "
+                    + "Only fields present are changed.",
+                    required = true) String requestPayload) {
+
+        RequestUser.checkAdmin("Link command only accessible to admin users.");
+        SelectionNames.checkValidName("link", link);
+
+        StringBuilder command = new StringBuilder("psu set link ").append(link);
+        try {
+            JSONObject payload = new JSONObject(requestPayload);
+            for (String preference : List.of("readpref", "writepref", "cachepref", "p2ppref")) {
+                if (payload.has(preference)) {
+                    command.append(" -").append(preference).append('=')
+                            .append(payload.getInt(preference));
+                }
+            }
+            if (payload.has("section")) {
+                String section = payload.getString("section");
+                SelectionNames.checkValidName("section", section);
+                command.append(" -section=").append(section);
+            }
+        } catch (JSONException e) {
+            throw new BadRequestException(e);
+        }
+
+        return psuAdminCommands.execute("Link: " + link + " was changed", Response.Status.OK,
+                command.toString());
+    }
+
+    @DELETE
+    @ApiOperation("Remove a link via 'psu remove link'. Requires admin role. "
+            + "Saves the PoolManager configuration.")
+    @ApiResponses({
+            @ApiResponse(code = 400, message = "Bad Request"),
+            @ApiResponse(code = 403, message = "Link command only accessible to admin users."),
+            @ApiResponse(code = 404, message = "Not Found"),
+            @ApiResponse(code = 500, message = "Internal Server Error"),
+    })
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/{link}")
+    public Response removeLink(
+            @ApiParam(value = "The link to be removed.", required = true)
+            @PathParam("link") String link) {
+
+        RequestUser.checkAdmin("Link command only accessible to admin users.");
+        SelectionNames.checkValidName("link", link);
+
+        return psuAdminCommands.execute("Link: " + link + " was removed", Response.Status.OK,
+                "psu remove link " + link);
+    }
+
+    @PUT
+    @ApiOperation("Make a link select a pool group via 'psu addto link'. Requires admin role. "
+            + "Saves the PoolManager configuration.")
+    @ApiResponses({
+            @ApiResponse(code = 400, message = "Bad Request"),
+            @ApiResponse(code = 403, message = "Link command only accessible to admin users."),
+            @ApiResponse(code = 404, message = "Not Found"),
+            @ApiResponse(code = 500, message = "Internal Server Error"),
+    })
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/{link}/poolgroups/{group}")
+    public Response addPoolGroupToLink(
+            @ApiParam(value = "The link the pool group should be added to.", required = true)
+            @PathParam("link") String link,
+            @ApiParam(value = "The pool group to be added.", required = true)
+            @PathParam("group") String group) {
+
+        RequestUser.checkAdmin("Link command only accessible to admin users.");
+        SelectionNames.checkValidName("link", link);
+        SelectionNames.checkValidName("pool group", group);
+        checkNotAlsoPool(group);
+
+        return psuAdminCommands.execute("Pool group: " + group + " was added to link: " + link,
+                Response.Status.OK, "psu addto link " + link + " " + group);
+    }
+
+    @DELETE
+    @ApiOperation("Stop a link from selecting a pool group via 'psu removefrom link'. "
+            + "Requires admin role. Saves the PoolManager configuration.")
+    @ApiResponses({
+            @ApiResponse(code = 400, message = "Bad Request"),
+            @ApiResponse(code = 403, message = "Link command only accessible to admin users."),
+            @ApiResponse(code = 404, message = "Not Found"),
+            @ApiResponse(code = 500, message = "Internal Server Error"),
+    })
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/{link}/poolgroups/{group}")
+    public Response removePoolGroupFromLink(
+            @ApiParam(value = "The link the pool group should be removed from.", required = true)
+            @PathParam("link") String link,
+            @ApiParam(value = "The pool group to be removed.", required = true)
+            @PathParam("group") String group) {
+
+        RequestUser.checkAdmin("Link command only accessible to admin users.");
+        SelectionNames.checkValidName("link", link);
+        SelectionNames.checkValidName("pool group", group);
+        checkNotAlsoPool(group);
+
+        return psuAdminCommands.execute(
+                "Pool group: " + group + " was removed from link: " + link,
+                Response.Status.OK, "psu removefrom link " + link + " " + group);
+    }
+
+    @PUT
+    @ApiOperation("Make a link select a single pool via 'psu addto link'. Requires admin role. "
+            + "Saves the PoolManager configuration.")
+    @ApiResponses({
+            @ApiResponse(code = 400, message = "Bad Request"),
+            @ApiResponse(code = 403, message = "Link command only accessible to admin users."),
+            @ApiResponse(code = 404, message = "Not Found"),
+            @ApiResponse(code = 500, message = "Internal Server Error"),
+    })
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/{link}/pools/{pool}")
+    public Response addPoolToLink(
+            @ApiParam(value = "The link the pool should be added to.", required = true)
+            @PathParam("link") String link,
+            @ApiParam(value = "The pool to be added.", required = true)
+            @PathParam("pool") String pool) {
+
+        RequestUser.checkAdmin("Link command only accessible to admin users.");
+        SelectionNames.checkValidName("link", link);
+        SelectionNames.checkValidName("pool", pool);
+        checkIsNotOnlyPoolGroup(pool);
+
+        return psuAdminCommands.execute("Pool: " + pool + " was added to link: " + link,
+                Response.Status.OK, "psu addto link " + link + " " + pool);
+    }
+
+    @DELETE
+    @ApiOperation("Stop a link from selecting a single pool via 'psu removefrom link'. "
+            + "Requires admin role. Saves the PoolManager configuration.")
+    @ApiResponses({
+            @ApiResponse(code = 400, message = "Bad Request"),
+            @ApiResponse(code = 403, message = "Link command only accessible to admin users."),
+            @ApiResponse(code = 404, message = "Not Found"),
+            @ApiResponse(code = 500, message = "Internal Server Error"),
+    })
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/{link}/pools/{pool}")
+    public Response removePoolFromLink(
+            @ApiParam(value = "The link the pool should be removed from.", required = true)
+            @PathParam("link") String link,
+            @ApiParam(value = "The pool to be removed.", required = true)
+            @PathParam("pool") String pool) {
+
+        RequestUser.checkAdmin("Link command only accessible to admin users.");
+        SelectionNames.checkValidName("link", link);
+        SelectionNames.checkValidName("pool", pool);
+        checkIsNotOnlyPoolGroup(pool);
+
+        return psuAdminCommands.execute("Pool: " + pool + " was removed from link: " + link,
+                Response.Status.OK, "psu removefrom link " + link + " " + pool);
+    }
+
+    @POST
+    @ApiOperation("Add a link group via 'psu create linkGroup'. Requires admin role. "
+            + "Saves the PoolManager configuration.")
+    @ApiResponses({
+            @ApiResponse(code = 201, message = "Created"),
+            @ApiResponse(code = 400, message = "Bad Request"),
+            @ApiResponse(code = 403, message = "Link command only accessible to admin users."),
+            @ApiResponse(code = 409, message = "Link group already exists"),
+            @ApiResponse(code = 500, message = "Internal Server Error"),
+    })
+    @Path("/groups")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response addLinkGroup(@ApiParam(value = "JSON object describing the new link group: "
+            + "name (String, required).", required = true) String requestPayload) {
+
+        RequestUser.checkAdmin("Link command only accessible to admin users.");
+
+        String name;
+        try {
+            name = new JSONObject(requestPayload).getString("name");
+        } catch (JSONException e) {
+            throw new BadRequestException(e);
+        }
+        SelectionNames.checkValidName("link group", name);
+
+        return psuAdminCommands.execute("Link group: " + name + " was created",
+                Response.Status.CREATED, "psu create linkGroup " + name);
+    }
+
+    @PATCH
+    @ApiOperation("Change which retention policies and access latencies a link group allows "
+            + "via 'psu set linkGroup'. Requires admin role. "
+            + "Saves the PoolManager configuration.")
+    @ApiResponses({
+            @ApiResponse(code = 400, message = "Bad Request"),
+            @ApiResponse(code = 403, message = "Link command only accessible to admin users."),
+            @ApiResponse(code = 404, message = "Not Found"),
+            @ApiResponse(code = 500, message = "Internal Server Error"),
+    })
+    @Path("/groups/{group}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response updateLinkGroup(
+            @ApiParam(value = "The link group to be changed.", required = true)
+            @PathParam("group") String group,
+            @ApiParam(value = "JSON object describing the link group's settings: "
+                    + "custodialAllowed, replicaAllowed, outputAllowed, onlineAllowed, "
+                    + "nearlineAllowed (boolean). Only fields present are changed.",
+                    required = true) String requestPayload) {
+
+        RequestUser.checkAdmin("Link command only accessible to admin users.");
+        SelectionNames.checkValidName("link group", group);
+
+        List<String> commands = new ArrayList<>();
+        try {
+            JSONObject payload = new JSONObject(requestPayload);
+            for (String flag : List.of("custodialAllowed", "replicaAllowed", "outputAllowed",
+                    "onlineAllowed", "nearlineAllowed")) {
+                if (payload.has(flag)) {
+                    commands.add("psu set linkGroup " + flag + " " + group + " "
+                            + payload.getBoolean(flag));
+                }
+            }
+        } catch (JSONException e) {
+            throw new BadRequestException(e);
+        }
+
+        return psuAdminCommands.execute("Link group: " + group + " was changed",
+                Response.Status.OK, commands.toArray(String[]::new));
+    }
+
+    @DELETE
+    @ApiOperation("Remove a link group via 'psu remove linkGroup'. Its links are kept. "
+            + "Requires admin role. Saves the PoolManager configuration.")
+    @ApiResponses({
+            @ApiResponse(code = 400, message = "Bad Request"),
+            @ApiResponse(code = 403, message = "Link command only accessible to admin users."),
+            @ApiResponse(code = 404, message = "Not Found"),
+            @ApiResponse(code = 500, message = "Internal Server Error"),
+    })
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/groups/{group}")
+    public Response removeLinkGroup(
+            @ApiParam(value = "The link group to be removed.", required = true)
+            @PathParam("group") String group) {
+
+        RequestUser.checkAdmin("Link command only accessible to admin users.");
+        SelectionNames.checkValidName("link group", group);
+
+        return psuAdminCommands.execute("Link group: " + group + " was removed",
+                Response.Status.OK, "psu remove linkGroup " + group);
+    }
+
+    @PUT
+    @ApiOperation("Add a link to a link group via 'psu addto linkGroup'. A link can only be "
+            + "in one link group. Requires admin role. Saves the PoolManager configuration.")
+    @ApiResponses({
+            @ApiResponse(code = 400, message = "Bad Request"),
+            @ApiResponse(code = 403, message = "Link command only accessible to admin users."),
+            @ApiResponse(code = 404, message = "Not Found"),
+            @ApiResponse(code = 409, message = "Link is already in a link group"),
+            @ApiResponse(code = 500, message = "Internal Server Error"),
+    })
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/groups/{group}/links/{link}")
+    public Response addLinkToGroup(
+            @ApiParam(value = "The link group the link should be added to.", required = true)
+            @PathParam("group") String group,
+            @ApiParam(value = "The link to be added.", required = true)
+            @PathParam("link") String link) {
+
+        RequestUser.checkAdmin("Link command only accessible to admin users.");
+        SelectionNames.checkValidName("link group", group);
+        SelectionNames.checkValidName("link", link);
+
+        return psuAdminCommands.execute("Link: " + link + " was added to link group: " + group,
+                Response.Status.OK, "psu addto linkGroup " + group + " " + link);
+    }
+
+    @DELETE
+    @ApiOperation("Remove a link from a link group via 'psu removefrom linkGroup'. "
+            + "Requires admin role. Saves the PoolManager configuration.")
+    @ApiResponses({
+            @ApiResponse(code = 400, message = "Bad Request"),
+            @ApiResponse(code = 403, message = "Link command only accessible to admin users."),
+            @ApiResponse(code = 404, message = "Not Found"),
+            @ApiResponse(code = 409, message = "Link is not in the link group"),
+            @ApiResponse(code = 500, message = "Internal Server Error"),
+    })
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/groups/{group}/links/{link}")
+    public Response removeLinkFromGroup(
+            @ApiParam(value = "The link group the link should be removed from.", required = true)
+            @PathParam("group") String group,
+            @ApiParam(value = "The link to be removed.", required = true)
+            @PathParam("link") String link) {
+
+        RequestUser.checkAdmin("Link command only accessible to admin users.");
+        SelectionNames.checkValidName("link group", group);
+        SelectionNames.checkValidName("link", link);
+
+        return psuAdminCommands.execute(
+                "Link: " + link + " was removed from link group: " + group,
+                Response.Status.OK, "psu removefrom linkGroup " + group + " " + link);
+    }
+
+    private void checkNotAlsoPool(String group) {
+        if (poolMonitor.getPoolSelectionUnit().getPool(group) != null) {
+            throw new ClientErrorException("A pool with the same name as pool group " + group
+                    + " exists", Response.Status.CONFLICT);
+        }
+    }
+
+    private void checkIsNotOnlyPoolGroup(String pool) {
+        PoolSelectionUnit psu = poolMonitor.getPoolSelectionUnit();
+        if (psu.getPool(pool) == null && psu.getPoolGroups().containsKey(pool)) {
+            throw new NotFoundException("Pool not found: " + pool);
+        }
     }
 }
