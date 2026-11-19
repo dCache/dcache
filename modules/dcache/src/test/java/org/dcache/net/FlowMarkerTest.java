@@ -1,5 +1,6 @@
 package org.dcache.net;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -112,6 +113,48 @@ public class FlowMarkerTest {
         assertFirefly(data);
     }
 
+    @Test
+    public void shouldUseConfiguredHostnameNotSourceAddress() {
+        var data = new FlowMarkerBuilder()
+              .withStartedAt(Instant.now())
+              .withExperimentId(2)
+              .withActivityId(1)
+              .wittApplication("curl")
+              .withProtocol("tcp")
+              .withAFI("ipv4")
+              .withHostname("pool.example.org")
+              .withDestination(new InetSocketAddress("198.51.100.55", 1234))
+              .withSource(new InetSocketAddress("203.0.113.20", 5678))
+              .build("start");
+
+        assertFirefly(data);
+        assertEquals("pool.example.org", syslogHostname(data));
+    }
+
+    @Test
+    public void shouldUseNilValueWhenHostnameNotSet() {
+        var data = new FlowMarkerBuilder()
+              .withStartedAt(Instant.now())
+              .withExperimentId(2)
+              .withActivityId(1)
+              .wittApplication("curl")
+              .withProtocol("tcp")
+              .withAFI("ipv4")
+              .withDestination(new InetSocketAddress("198.51.100.55", 1234))
+              .withSource(new InetSocketAddress("203.0.113.20", 5678))
+              .build("start");
+
+        assertFirefly(data);
+        assertEquals("-", syslogHostname(data));
+    }
+
+    /**
+     * Extract the HOSTNAME field from an RFC 5424 header:
+     * {@code <PRI>VERSION TIMESTAMP HOSTNAME APP-NAME PROCID MSGID SD MSG}.
+     */
+    private static String syslogHostname(String firefly) {
+        return firefly.split(" ", 4)[2];
+    }
 
     private void assertFirefly(String firefly) {
         assertTrue(firefly.contains("dCache - firefly-json -"));

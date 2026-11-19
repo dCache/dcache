@@ -47,6 +47,7 @@ import javax.security.auth.Subject;
 import org.dcache.auth.Subjects;
 import org.dcache.net.FlowMarker.FlowMarkerBuilder;
 import org.dcache.util.IPMatcher;
+import org.dcache.util.NetworkUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -79,6 +80,10 @@ public class TransferLifeCycle {
 
     // optional additional collector destination for firefly markers
     private InetSocketAddress fireflyCollector;
+
+    // syslog HOSTNAME of emitted fireflies: the FQDN of this pool node. Resolved once;
+    // it must not depend on the flow's src/dst, as either may be the remote party.
+    private final String hostname = NetworkUtils.getCanonicalHostName();
     private boolean enabled;
     private boolean storageStatisticsEnabled;
 
@@ -128,6 +133,7 @@ public class TransferLifeCycle {
               .withActivityId(activityId)
               .wittApplication(getApplication(protocolInfo))
               .withProtocol("tcp")
+              .withHostname(hostname)
               .withAFI(toAFI(dst))
               .withDestination(dst)
               .withSource(src)
@@ -211,6 +217,7 @@ public class TransferLifeCycle {
               .wittApplication(getApplication(protocolInfo))
               .withUsage(bytesRead, bytesWritten)
               .withProtocol("tcp")
+              .withHostname(hostname)
               .withAFI(toAFI(dst))
               .withDestination(dst)
               .withSource(src);
