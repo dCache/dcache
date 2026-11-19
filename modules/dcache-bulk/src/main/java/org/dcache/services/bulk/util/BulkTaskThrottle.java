@@ -85,11 +85,17 @@ public final class BulkTaskThrottle {
     private final Queue<Runnable> pending = new ConcurrentLinkedQueue<>();
 
     /*
-     *  A launcher may release its permit immediately (e.g., its request was cancelled),
-     *  which would re-enter drain(); the outer loop picks up the work instead, so as not
-     *  to recur once per pending task.
+     *  Per-thread re-entrancy guard; it does NOT exclude other threads from draining
+     *  concurrently (concurrent drains coordinate solely through the semaphore and the
+     *  concurrent queue).
+     *
+     *  A launcher runs inside drain() and may call release() or submit() in the same
+     *  thread (e.g., its request was cancelled while queued).  Rather than recurring once
+     *  per pending task, the nested call returns, and the loop of the enclosing drain() in
+     *  this same thread picks up the change on its next iteration.
      */
-    private final ThreadLocal<Boolean> draining = ThreadLocal.withInitial(() -> false);
+    private final ThreadLocal<Boolean> drainingInThisThread
+          = ThreadLocal.withInitial(() -> false);
 
     public BulkTaskThrottle(int permits) {
         this.permits = new Semaphore(permits);
@@ -126,11 +132,11 @@ public final class BulkTaskThrottle {
      *  is available.
      */
     private void drain() {
-        if (draining.get()) {
+        if (drainingInThisThread.get()) {
             return;
         }
 
-        draining.set(true);
+        drainingInThisThread.set(true);
         try {
             while (!pending.isEmpty() && permits.tryAcquire()) {
                 Runnable launcher = pending.poll();
@@ -148,7 +154,7 @@ public final class BulkTaskThrottle {
                 }
             }
         } finally {
-            draining.set(false);
+            drainingInThisThread.set(false);
         }
     }
 }
