@@ -23,6 +23,7 @@ import java.util.function.Consumer;
 import javax.security.auth.Subject;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.dcache.http.tpc.RemoteHttpTransferClient;
+import org.dcache.pool.movers.TransferLifeCycle.DataDirection;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
@@ -102,6 +103,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     private final TransferLifeCycle _transferLifeCycle;
     private Subject _subject;
     private boolean _startMarkerSent;
+    private volatile DataDirection _direction;
 
     public RemoteHttpDataTransferProtocol(CloseableHttpClient client,
           TransferLifeCycle transferLifeCycle) {
@@ -145,6 +147,9 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                 }
             });
         });
+
+        // a pull writes the file: the remote server supplies the data
+        _direction = DataDirection.ofWrite(access.contains(StandardOpenOption.WRITE));
 
         try {
             if (access.contains(StandardOpenOption.WRITE)) {
@@ -253,7 +258,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
             return;
         }
 
-        _transferLifeCycle.onStart(remoteEndpoint, _localEndpoint,
+        _transferLifeCycle.onStart(remoteEndpoint, _localEndpoint, _direction,
               protocolInfo, _subject);
         _startMarkerSent = true;
     }
