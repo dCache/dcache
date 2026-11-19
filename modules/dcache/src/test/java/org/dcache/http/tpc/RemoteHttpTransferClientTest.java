@@ -25,16 +25,25 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.google.common.collect.ImmutableMap;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import diskCacheV111.util.ThirdPartyTransferFailedCacheException;
 import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.ArrayList;
@@ -51,12 +60,14 @@ import org.apache.http.HttpEntity;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.protocol.HttpRequestExecutor;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.LoggerFactory;
 
 public class RemoteHttpTransferClientTest {
 
@@ -268,6 +279,213 @@ public class RemoteHttpTransferClientTest {
         assertThat(uploaded.toByteArray(), equalTo(DATA));
         assertThat(requests.get(0), equalTo("PUT /file"));
         assertThat(requests.get(1), equalTo("PUT /target"));
+    }
+
+    @Test
+    public void shouldReportConnectionBeforeSendingUpload() throws Exception {
+        List<Optional<InetSocketAddress>> reported = Collections.synchronizedList(new ArrayList<>());
+        AtomicInteger reportedWhenBodyReceived = new AtomicInteger(-1);
+        handle("/file", e -> {
+            if (e.getRequestMethod().equals("PUT")) {
+                e.getRequestBody().transferTo(uploaded);
+                reportedWhenBodyReceived.set(reported.size());
+                respond(e, 201, null);
+            } else {
+                respond(e, 200, null, "Content-Length", String.valueOf(DATA.length));
+            }
+        });
+        AtomicReference<RemoteHttpTransferClient> transfer = new AtomicReference<>();
+        transfer.set(new RemoteHttpTransferClient(client, info("/file", false),
+              () -> reported.add(transfer.get().remoteAddress())));
+
+        transfer.get().putAndVerify(RemoteHttpTransferClientTest::entity, NO_PROGRESS,
+              DATA.length, Optional.empty());
+
+        assertThat(uploaded.toByteArray(), equalTo(DATA));
+        assertEquals("connection must be reported before the upload completes",
+              1, reportedWhenBodyReceived.get());
+        assertThat(reported.get(0).map(InetSocketAddress::getPort),
+              equalTo(Optional.of(server.getAddress().getPort())));
+    }
+
+    @Test
+    public void shouldReportOnlyDataConnectionWhenUploadIsRedirected() throws Exception {
+        handle("/target", e -> {
+            if (e.getRequestMethod().equals("PUT")) {
+                e.getRequestBody().transferTo(uploaded);
+                respond(e, 201, null);
+            } else {
+                respond(e, 200, null, "Content-Length", String.valueOf(DATA.length));
+            }
+        });
+        String target = "http://127.0.0.1:" + server.getAddress().getPort() + "/target";
+
+        // Like a dCache door: answers the request headers with a redirect, without sending
+        // "100 Continue", so the client never sends it any data.
+        try (ServerSocket door = new ServerSocket(0, 5, InetAddress.getLoopbackAddress())) {
+            Thread doorThread = new Thread(() -> redirectAllRequests(door, target));
+            doorThread.setDaemon(true);
+            doorThread.start();
+
+            List<Optional<InetSocketAddress>> reported =
+                  Collections.synchronizedList(new ArrayList<>());
+            AtomicReference<RemoteHttpTransferClient> transfer = new AtomicReference<>();
+            RemoteHttpDataTransferProtocolInfo info = new RemoteHttpDataTransferProtocolInfo(
+                  "RemoteHttpDataTransfer", 1, 1,
+                  new InetSocketAddress(InetAddress.getLoopbackAddress(), door.getLocalPort()),
+                  "http://127.0.0.1:" + door.getLocalPort() + "/file",
+                  false, ImmutableMap.of(), List.of());
+            transfer.set(new RemoteHttpTransferClient(client, info,
+                  () -> reported.add(transfer.get().remoteAddress())));
+
+            transfer.get().putAndVerify(RemoteHttpTransferClientTest::entity, NO_PROGRESS,
+                  DATA.length, Optional.empty());
+
+            assertThat(uploaded.toByteArray(), equalTo(DATA));
+            assertThat(reported.stream()
+                        .map(a -> a.map(InetSocketAddress::getPort)).toList(),
+                  contains(Optional.of(server.getAddress().getPort())));
+        }
+    }
+
+    @Test
+    public void shouldReportConnectionOfRetriedDownload() throws Exception {
+        // Like DPM while it calculates the checksum: "202 Accepted" until the file is ready.
+        // The first connection is closed, so the data arrives on another one.
+        List<Integer> clientPorts = Collections.synchronizedList(new ArrayList<>());
+        handle("/file", e -> {
+            clientPorts.add(e.getRemoteAddress().getPort());
+            if (clientPorts.size() == 1) {
+                respond(e, 202, null, "Connection", "close");
+            } else {
+                respond(e, 200, DATA);
+            }
+        });
+        List<Optional<InetSocketAddress>> reported = Collections.synchronizedList(new ArrayList<>());
+        AtomicReference<RemoteHttpTransferClient> transfer = new AtomicReference<>();
+        transfer.set(new RemoteHttpTransferClient(client, info("/file", false),
+              () -> reported.add(transfer.get().localAddress())));
+        ByteArrayOutputStream body = new ByteArrayOutputStream();
+
+        transfer.get().get(c -> {}, entity -> entity.writeTo(body), NO_PROGRESS, l -> {});
+
+        assertThat(body.toByteArray(), equalTo(DATA));
+        assertEquals(2, clientPorts.size());
+        Assume.assumeTrue("the retry used a new connection",
+              !clientPorts.get(0).equals(clientPorts.get(1)));
+        assertThat("only the connection that carries the data is reported",
+              reported.stream().map(a -> a.map(InetSocketAddress::getPort)).toList(),
+              contains(Optional.of(clientPorts.get(1))));
+    }
+
+    @Test
+    public void shouldReportConnectionOnlyOnceWhenUploadIsSentAgain() throws Exception {
+        handle("/target", e -> {
+            if (e.getRequestMethod().equals("PUT")) {
+                e.getRequestBody().transferTo(uploaded);
+                respond(e, 201, null);
+            } else {
+                respond(e, 200, null, "Content-Length", String.valueOf(DATA.length));
+            }
+        });
+        String target = "http://127.0.0.1:" + server.getAddress().getPort() + "/target";
+
+        // A server that does not answer "Expect: 100-continue": the client gives up waiting and
+        // sends the file, and only then learns that it has to send it somewhere else.
+        try (ServerSocket slowDoor = new ServerSocket(0, 5, InetAddress.getLoopbackAddress());
+              CloseableHttpClient impatientClient = HttpClients.custom()
+                    .setRequestExecutor(new HttpRequestExecutor(50)).build()) {
+            Thread doorThread = new Thread(() -> redirectAfterReceivingBody(slowDoor, target));
+            doorThread.setDaemon(true);
+            doorThread.start();
+
+            List<Optional<InetSocketAddress>> reported =
+                  Collections.synchronizedList(new ArrayList<>());
+            AtomicInteger sent = new AtomicInteger();
+            AtomicReference<RemoteHttpTransferClient> transfer = new AtomicReference<>();
+            RemoteHttpDataTransferProtocolInfo info = new RemoteHttpDataTransferProtocolInfo(
+                  "RemoteHttpDataTransfer", 1, 1,
+                  new InetSocketAddress(InetAddress.getLoopbackAddress(),
+                        slowDoor.getLocalPort()),
+                  "http://127.0.0.1:" + slowDoor.getLocalPort() + "/file",
+                  false, ImmutableMap.of(), List.of());
+            transfer.set(new RemoteHttpTransferClient(impatientClient, info,
+                  () -> reported.add(transfer.get().remoteAddress())));
+
+            Logger scitagsLogger = (Logger) LoggerFactory.getLogger("org.dcache.scitags");
+            Level previousLevel = scitagsLogger.getLevel();
+            ListAppender<ILoggingEvent> log = new ListAppender<>();
+            log.start();
+            scitagsLogger.addAppender(log);
+            scitagsLogger.setLevel(Level.DEBUG);
+            try {
+                transfer.get().putAndVerify(() -> new ByteArrayEntity(DATA) {
+                    @Override
+                    public void writeTo(OutputStream out) throws IOException {
+                        sent.incrementAndGet();
+                        super.writeTo(out);
+                    }
+                }, NO_PROGRESS, DATA.length, Optional.empty());
+            } finally {
+                scitagsLogger.detachAppender(log);
+                scitagsLogger.setLevel(previousLevel);
+            }
+
+            assertThat(uploaded.toByteArray(), equalTo(DATA));
+            assertEquals("the file is sent to both servers", 2, sent.get());
+            assertThat("the connection is reported once, when data is first sent",
+                  reported.stream().map(a -> a.map(InetSocketAddress::getPort)).toList(),
+                  contains(Optional.of(slowDoor.getLocalPort())));
+            assertThat("the second connection is logged",
+                  log.list.stream().map(ILoggingEvent::getFormattedMessage)
+                        .filter(m -> m.contains("event=connection-unreported")).toList(),
+                  contains(containsString("reason=data-sent-again remote=/127.0.0.1:"
+                        + server.getAddress().getPort() + " ")));
+        }
+    }
+
+    private static void redirectAfterReceivingBody(ServerSocket door, String location) {
+        while (!door.isClosed()) {
+            try (Socket socket = door.accept()) {
+                InputStream in = socket.getInputStream();
+                StringBuilder headers = new StringBuilder();
+                int c;
+                while (!headers.toString().endsWith("\r\n\r\n") && (c = in.read()) != -1) {
+                    headers.append((char) c);
+                }
+                if (headers.toString().startsWith("PUT ")) {
+                    // no "100 Continue": wait until the client sends the file anyway
+                    in.readNBytes(DATA.length);
+                }
+                OutputStream out = socket.getOutputStream();
+                out.write(("HTTP/1.1 307 Temporary Redirect\r\nLocation: " + location
+                      + "\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+                      .getBytes(StandardCharsets.US_ASCII));
+                out.flush();
+            } catch (IOException e) {
+                // the test closed the socket, or the client went away
+            }
+        }
+    }
+
+    private static void redirectAllRequests(ServerSocket door, String location) {
+        while (!door.isClosed()) {
+            try (Socket socket = door.accept()) {
+                BufferedReader in = new BufferedReader(new InputStreamReader(
+                      socket.getInputStream(), StandardCharsets.US_ASCII));
+                String line;
+                while ((line = in.readLine()) != null && !line.isEmpty()) {
+                    // skip the request line and headers
+                }
+                OutputStream out = socket.getOutputStream();
+                out.write(("HTTP/1.1 307 Temporary Redirect\r\nLocation: " + location
+                      + "\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+                      .getBytes(StandardCharsets.US_ASCII));
+                out.flush();
+            } catch (IOException e) {
+                // the test closed the socket, or the client went away
+            }
+        }
     }
 
     @Test

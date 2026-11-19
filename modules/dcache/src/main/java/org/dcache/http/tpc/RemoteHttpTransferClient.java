@@ -34,6 +34,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.ThirdPartyTransferFailedCacheException;
 import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -48,6 +49,7 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -70,6 +72,7 @@ import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.entity.HttpEntityWrapper;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.conn.ConnectionShutdownException;
 import org.apache.http.protocol.HttpContext;
@@ -135,6 +138,7 @@ public class RemoteHttpTransferClient {
           = EnumSet.noneOf(HeaderFlags.class);
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RemoteHttpTransferClient.class);
+    private static final Logger SCITAGS_LOGGER = LoggerFactory.getLogger("org.dcache.scitags");
 
     /**
      * Maximum time to wait when establishing a connection.
@@ -202,6 +206,7 @@ public class RemoteHttpTransferClient {
     private final CloseableHttpClient _client;
     private final RemoteHttpDataTransferProtocolInfo _info;
     private final Runnable _onConnected;
+    private final AtomicBoolean _connectionReported = new AtomicBoolean();
 
     @GuardedBy("this")
     private HttpClientContext _context;
@@ -217,8 +222,14 @@ public class RemoteHttpTransferClient {
     /**
      * @param client      the HTTP client used to make all requests
      * @param info        describes the remote resource, credentials and headers
-     * @param onConnected called after the first response headers of a request have been received,
-     *                    when the connection's endpoints are known
+     * @param onConnected called once, when the connection that carries the file's data is
+     *                    known: for a download, after the response headers of the last request
+     *                    have been received; for an upload, just before the first byte of the
+     *                    file is sent.  At that time {@link #remoteAddress()} and
+     *                    {@link #localAddress()} describe that connection.  An upload request
+     *                    that is redirected before any data is sent is not reported.  If the
+     *                    file is sent again, because a server asked for a redirection only
+     *                    after it had received data, the later connection is not reported.
      */
     public RemoteHttpTransferClient(CloseableHttpClient client,
           RemoteHttpDataTransferProtocolInfo info, Runnable onConnected) {
@@ -366,6 +377,18 @@ public class RemoteHttpTransferClient {
             request.abort();
         }
         return _client.execute(request, context);
+    }
+
+    private void reportConnection() {
+        if (_connectionReported.compareAndSet(false, true)) {
+            _onConnected.run();
+        } else {
+            // The file is being sent again, on a connection other than the reported one.
+            SCITAGS_LOGGER.debug(
+                  "scitags event=connection-unreported reason=data-sent-again remote={} local={}",
+                  remoteAddress().map(Object::toString).orElse("-"),
+                  localAddress().map(Object::toString).orElse("-"));
+        }
     }
 
     /**
@@ -551,8 +574,6 @@ public class RemoteHttpTransferClient {
         HttpGet get = buildGetRequest(deadline);
         CloseableHttpResponse response = execute(get, context);
 
-        _onConnected.run();
-
         boolean isSuccessful = false;
         try {
             while (shouldRetry(response) && System.currentTimeMillis() < deadline) {
@@ -560,8 +581,12 @@ public class RemoteHttpTransferClient {
 
                 response.close();
                 get = buildGetRequest(deadline);
-                response = execute(get, null);
+                // Use the same context, so that the endpoints describe this request's
+                // connection: the server may have closed the previous one.
+                response = execute(get, context);
             }
+
+            reportConnection();
 
             int statusCode = response.getStatusLine().getStatusCode();
             String reason = response.getStatusLine().getReasonPhrase();
@@ -602,7 +627,6 @@ public class RemoteHttpTransferClient {
                       redirectionCount > 0 ? REDIRECTED_REQUEST : INITIAL_REQUEST);
 
                 try (CloseableHttpResponse response = execute(put, context)) {
-                    _onConnected.run();
                     StatusLine status = response.getStatusLine();
                     switch (status.getStatusCode()) {
                         case 200: /* OK (not actually a valid response from PUT) */
@@ -694,7 +718,16 @@ public class RemoteHttpTransferClient {
               .setSocketTimeout(0)
               .build());
         addHeadersToRequest(put, flags);
-        put.setEntity(entity);
+        put.setEntity(new HttpEntityWrapper(entity) {
+            @Override
+            public void writeTo(OutputStream out) throws IOException {
+                // The request is only complete once all data is sent, which is too late to
+                // learn about the connection.  With expect-continue, the entity is not
+                // written to a server that redirects the request.
+                reportConnection();
+                super.writeTo(out);
+            }
+        });
 
         long size = entity.getContentLength();
         if (size != -1) {
