@@ -62,6 +62,13 @@ public interface Mover<T extends ProtocolInfo> {
     long getTransferTime();
 
     /**
+     * Returns how long this mover waited in the pool's mover queue before it was executed.
+     *
+     * @return queue time in milliseconds, or zero if the mover has not been executed.
+     */
+    long getQueueTime();
+
+    /**
      * Number of bytes transferred by this mover.
      */
     long getBytesTransferred();

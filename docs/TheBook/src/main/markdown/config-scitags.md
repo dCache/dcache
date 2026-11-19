@@ -74,7 +74,19 @@ Pools and WebDAV doors each have their own properties, which default to the site
 properties. Set these only where a service must differ from the rest of the site.
 
 In addition, `pool.firefly.storage-statistics` controls whether pools include storage statistics
-in end markers.
+in end markers. The `storage-stats` section then holds:
+
+| Key | Meaning |
+|-----|---------|
+| `bytes-transferred` | bytes moved by the mover |
+| `connection-time` | duration of the transfer in milliseconds |
+| `read-bw`, `write-bw` | mean disk read and write rate in bytes per second while the mover was reading or writing |
+| `read-active`, `read-idle`, `write-active`, `write-idle` | time spent in, and between, disk reads and writes (ISO-8601 duration, or `"0"` if not measured) |
+| `result-code` | return code of the transfer; `0` is success |
+| `file-size` | size of the file in bytes; compare with `bytes-transferred` to recognise a partial transfer |
+| `io-mode` | `write` if the pool received the file, `read` if it sent it |
+| `queue-time` | time the request waited in the pool's mover queue, in milliseconds |
+| `pool-name` | name of the pool that served the transfer |
 
 Reference defaults: `skel/share/defaults/dcache.properties`, `skel/share/defaults/pool.properties`
 and `skel/share/defaults/webdav.properties`.
