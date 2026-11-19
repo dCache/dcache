@@ -152,8 +152,12 @@ public class TransferLifeCycle {
      * @param mover the mover's description of the completed transfer
      */
     public void onEnd(InetSocketAddress src, InetSocketAddress dst, MoverInfoMessage mover) {
+        // The mover info message is created when the transfer has finished, so its
+        // timestamp is the end of the transfer; the start is derived from the duration.
+        long durationMillis = Math.max(0L, mover.getConnectionTime());
         onEnd(src, dst, mover.getProtocolInfo(), mover.getSubject(),
-              Instant.ofEpochMilli(mover.getTimestamp()), mover.getConnectionTime(),
+              Instant.ofEpochMilli(mover.getTimestamp()).minusMillis(durationMillis),
+              durationMillis,
               mover.getBytesRead(), mover.getBytesWritten(),
               storageStatisticsEnabled ? mover : null);
     }
