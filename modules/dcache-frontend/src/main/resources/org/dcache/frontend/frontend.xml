@@ -489,8 +489,10 @@
         </property>
     </bean>
 
-  <bean id="authentication-handler" class="org.dcache.http.AuthenticationHandler">
-        <description>Handler that authenticates a request</description>
+  <bean id="authentication-handler" class="org.dcache.util.jetty.FilterHandler">
+    <description>Handler that authenticates a request</description>
+    <property name="filter">
+      <bean class="org.dcache.http.AuthenticationFilter">
         <property name="loginStrategy" ref="cache-login-strategy"/>
         <property name="readOnly" value="${frontend.authz.readonly}"/>
         <property name="enableBasicAuthentication" value="${frontend.authn.basic}"/>
@@ -509,7 +511,9 @@
                 <value>/api/v1/auth/callback</value>
             </list>
         </property>
-    </bean>
+      </bean>
+    </property>
+  </bean>
 
   <!-- 1. ZooKeeper Session Store -->
   <bean id="zkSessionDataStore"
@@ -608,7 +612,10 @@
             </list>
           </property>
           <property name="handler">
-            <bean class="org.dcache.restful.LoggingHandler">
+            <bean class="org.dcache.util.jetty.FilterHandler">
+              <property name="filter">
+                <bean class="org.dcache.restful.LoggingFilter"/>
+              </property>
               <property name="handler" ref="apiSessionHandler"/>
             </bean>
           </property>

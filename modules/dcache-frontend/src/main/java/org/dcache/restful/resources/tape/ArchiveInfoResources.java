@@ -59,7 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.tape;
 
-import static org.dcache.http.AuthenticationHandler.getLoginAttributes;
+import static org.dcache.http.AuthenticationFilter.getLoginAttributes;
 import static org.dcache.restful.util.JSONUtils.newBadRequestException;
 
 import diskCacheV111.util.FsPath;

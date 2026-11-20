@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2026 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2019 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -15,21 +15,22 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.dcache.s3;
+package org.dcache.restful;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.dcache.http.AbstractLoggingHandler;
+import org.dcache.http.AbstractLoggingFilter;
+import org.dcache.restful.interceptors.LoggingInterceptor;
 import org.dcache.util.NetLoggerBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Writes the access log of the S3 door, adding the access key and S3 operation of each request.
+ * Frontend door specific logging.
  */
-public class S3LoggingHandler extends AbstractLoggingHandler {
+public class LoggingFilter extends AbstractLoggingFilter {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("org.dcache.access.s3");
+    private static final Logger LOGGER = LoggerFactory.getLogger("org.dcache.access.frontend");
 
     @Override
     protected Logger accessLogger() {
@@ -38,14 +39,15 @@ public class S3LoggingHandler extends AbstractLoggingHandler {
 
     @Override
     protected String requestEventName() {
-        return "org.dcache.s3.request";
+        return "org.dcache.frontend.request";
     }
 
     @Override
-    protected void describeOperation(NetLoggerBuilder log, HttpServletRequest request,
-          HttpServletResponse response) {
+    protected void describeOperation(NetLoggerBuilder log,
+          HttpServletRequest request, HttpServletResponse response) {
         super.describeOperation(log, request, response);
-        log.add("s3.access-key", request.getAttribute(S3JettyHandler.ACCESS_KEY_ATTRIBUTE));
-        log.add("s3.operation", request.getAttribute(S3JettyHandler.OPERATION_ATTRIBUTE));
+
+        log.add("request.entity", LoggingInterceptor.getRequestEntity(request));
+        log.add("response.entity", LoggingInterceptor.getResponseEntity(request));
     }
 }

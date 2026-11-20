@@ -33,7 +33,7 @@ import org.dcache.auth.attributes.LoginAttributes;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.auth.attributes.RootDirectory;
-import org.dcache.http.AuthenticationHandler;
+import org.dcache.http.AuthenticationFilter;
 import org.dcache.vehicles.PnfsResolveSymlinksMessage;
 
 /**
@@ -47,16 +47,16 @@ public class HttpServletRequests {
 
     public static Restriction getRestriction(HttpServletRequest request) {
         return (Restriction) request.getAttribute(
-              AuthenticationHandler.DCACHE_RESTRICTION_ATTRIBUTE);
+              AuthenticationFilter.DCACHE_RESTRICTION_ATTRIBUTE);
     }
 
     public static Set<LoginAttribute> getLoginAttributes(HttpServletRequest request) {
-        return AuthenticationHandler.getLoginAttributes(request);
+        return AuthenticationFilter.getLoginAttributes(request);
     }
 
     public static boolean isAdmin(HttpServletRequest request) {
         return Subjects.hasAdminRole(RequestUser.getSubject()) ||
-              LoginAttributes.hasAdminRole(AuthenticationHandler.getLoginAttributes(request));
+              LoginAttributes.hasAdminRole(AuthenticationFilter.getLoginAttributes(request));
     }
 
     public static Subject roleAwareSubject(HttpServletRequest request) {

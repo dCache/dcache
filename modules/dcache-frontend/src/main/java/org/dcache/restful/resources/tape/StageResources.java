@@ -59,7 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.tape;
 
-import static org.dcache.http.AuthenticationHandler.getLoginAttributes;
+import static org.dcache.http.AuthenticationFilter.getLoginAttributes;
 import static org.dcache.restful.resources.bulk.BulkResources.getRestriction;
 import static org.dcache.restful.resources.bulk.BulkResources.getSubject;
 import static org.dcache.restful.util.HttpServletRequests.getUserRootAwareTargetPrefix;

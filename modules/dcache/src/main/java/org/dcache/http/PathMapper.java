@@ -17,7 +17,7 @@
  */
 package org.dcache.http;
 
-import static org.dcache.http.AuthenticationHandler.getLoginAttributes;
+import static org.dcache.http.AuthenticationFilter.getLoginAttributes;
 import static org.dcache.util.Exceptions.genericCheck;
 
 import diskCacheV111.util.CacheException;

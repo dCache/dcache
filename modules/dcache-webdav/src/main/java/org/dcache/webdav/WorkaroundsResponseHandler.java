@@ -44,7 +44,7 @@ import javax.xml.namespace.QName;
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.RootDirectory;
-import org.dcache.http.AuthenticationHandler;
+import org.dcache.http.AuthenticationFilter;
 import org.dcache.http.PathMapper;
 
 /**
@@ -75,7 +75,7 @@ public class WorkaroundsResponseHandler extends AbstractWrappingResponseHandler 
         // If GET on the root results in an authorization failure, we redirect to the users
         // home directory for convenience.
         if (request.getAbsolutePath().equals("/") && request.getMethod() == Request.Method.GET) {
-            Set<LoginAttribute> login = AuthenticationHandler.getLoginAttributes(
+            Set<LoginAttribute> login = AuthenticationFilter.getLoginAttributes(
                   ServletRequest.getRequest());
             FsPath userRoot = FsPath.ROOT;
             String userHome = "/";

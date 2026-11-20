@@ -90,6 +90,18 @@ public class WebdavDoorContextTest {
         assertThat(response.body(), containsString("Disallow: /"));
     }
 
+    @Test
+    public void shouldAuthenticateRequests() throws Exception {
+        HttpResponse<String> response = client.send(HttpRequest.newBuilder(endpoint.resolve("/"))
+                    .header("Authorization", "Bearer token").GET().build(),
+              HttpResponse.BodyHandlers.ofString());
+
+        // The authentication filter refuses bearer tokens sent unencrypted.
+        assertThat(response.statusCode(), is(401));
+        assertThat(response.headers().firstValue("WWW-Authenticate").orElse(""),
+              containsString("Basic realm="));
+    }
+
     private static HttpResponse<String> get(String path) throws Exception {
         return client.send(HttpRequest.newBuilder(endpoint.resolve(path)).GET().build(),
               HttpResponse.BodyHandlers.ofString());

@@ -39,7 +39,6 @@ import io.milton.servlet.ServletResponse;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-import java.security.AccessController;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -63,12 +62,11 @@ import org.dcache.auth.OidcSubjectPrincipal;
 import org.dcache.auth.OpenIdClientSecret;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restriction;
-import org.dcache.http.AuthenticationHandler;
+import org.dcache.http.AuthenticationFilter;
 import org.dcache.http.PathMapper;
 import org.dcache.util.Checksums;
 import org.dcache.util.HttpExtHeader;
 import org.dcache.util.spring.Required;
-import org.dcache.webdav.RfcResponseHandler;
 import org.dcache.webdav.transfer.RemoteTransferHandler.Direction;
 import org.dcache.webdav.transfer.RemoteTransferHandler.TransferType;
 import org.slf4j.Logger;
@@ -593,7 +591,7 @@ public class CopyFilter implements Filter {
                     // delegated X.509 credential when authenticating for the
                     // third-party copy, based on the client credential presented when
                     // establishing the TLS connection.
-                    Subject x509Subject = AuthenticationHandler.getX509Identity(request);
+                    Subject x509Subject = AuthenticationFilter.getX509Identity(request);
                     String dn = x509Subject == null ? null : Subjects.getDn(x509Subject);
                     if (dn == null) {
                         throw new ErrorResponseException(Response.Status.SC_UNAUTHORIZED,
@@ -737,7 +735,7 @@ public class CopyFilter implements Filter {
     private Restriction getRestriction() {
         HttpServletRequest servletRequest = ServletRequest.getRequest();
         return (Restriction) servletRequest.getAttribute(
-              AuthenticationHandler.DCACHE_RESTRICTION_ATTRIBUTE);
+              AuthenticationFilter.DCACHE_RESTRICTION_ATTRIBUTE);
     }
 
     private boolean clientAuthnUsingOidc() {

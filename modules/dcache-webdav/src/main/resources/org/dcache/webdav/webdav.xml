@@ -338,7 +338,10 @@
   <bean id="webdavSessionHandler" class="org.eclipse.jetty.ee8.nested.SessionHandler">
     <property name="sessionCookie" value="DCACHE_API_SESSION"/>
     <property name="handler">
-      <bean class="org.dcache.webdav.LoggingHandler">
+      <bean class="org.dcache.util.jetty.FilterHandler">
+        <property name="filter">
+          <bean class="org.dcache.webdav.LoggingFilter"/>
+        </property>
         <property name="handler"
                   value="#{ '${webdav.authn.spnego}'.equals('true') ? spnegohandler : authhandler }"/>
       </bean>
@@ -465,15 +468,19 @@
         <property name="handler" ref="authhandler"/>
     </bean>
 
-    <bean id="authhandler" class="org.dcache.http.AuthenticationHandler">
+    <bean id="authhandler" class="org.dcache.util.jetty.FilterHandler">
         <property name="handler" ref="authorised-handlers"/>
-        <property name="loginStrategy" ref="cache-login-strategy"/>
-        <property name="readOnly" value="${webdav.authz.readonly}"/>
-        <property name="enableBasicAuthentication" value="${webdav.authn.basic}"/>
-        <property name="enableSpnegoAuthentication" value="${webdav.authn.spnego}"/>
-        <property name="realm" value="${webdav.authn.realm}"/>
-        <property name="acceptBearerTokenUnencrypted"
-                  value="${webdav.macaroons.accept-over-unencrypted-channel}"/>
+        <property name="filter">
+            <bean class="org.dcache.http.AuthenticationFilter">
+                <property name="loginStrategy" ref="cache-login-strategy"/>
+                <property name="readOnly" value="${webdav.authz.readonly}"/>
+                <property name="enableBasicAuthentication" value="${webdav.authn.basic}"/>
+                <property name="enableSpnegoAuthentication" value="${webdav.authn.spnego}"/>
+                <property name="realm" value="${webdav.authn.realm}"/>
+                <property name="acceptBearerTokenUnencrypted"
+                          value="${webdav.macaroons.accept-over-unencrypted-channel}"/>
+            </bean>
+        </property>
     </bean>
 
     <bean id="lb" class="dmg.cells.services.login.LoginBrokerPublisher">

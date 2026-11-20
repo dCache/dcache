@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
-import java.security.AccessController;
 import java.security.Principal;
 import java.security.PrivilegedAction;
 import java.security.cert.CertificateException;
@@ -28,14 +27,15 @@ import java.util.Optional;
 import java.util.Set;
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
-import javax.servlet.http.Cookie;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 import javax.servlet.http.HttpSession;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Response;
 import org.dcache.auth.BearerTokenCredential;
 import org.dcache.auth.DesiredRole;
 import org.dcache.auth.LoginNamePrincipal;
@@ -49,18 +49,16 @@ import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.util.CertificateFactories;
-import org.eclipse.jetty.ee8.nested.Authentication;
-import org.eclipse.jetty.ee8.nested.HandlerWrapper;
-import org.eclipse.jetty.ee8.nested.Request;
-import org.eclipse.jetty.ee8.security.UserAuthentication;
 import org.eclipse.jetty.http.HttpHeader;
-import org.eclipse.jetty.security.UserIdentity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AuthenticationHandler extends HandlerWrapper {
+/**
+ * Logs in the client of each request and runs the rest of the filter chain as the logged-in user.
+ */
+public class AuthenticationFilter implements Filter {
 
-    private final static Logger LOG = LoggerFactory.getLogger(AuthenticationHandler.class);
+    private final static Logger LOG = LoggerFactory.getLogger(AuthenticationFilter.class);
     public static final String X509_CERTIFICATE_ATTRIBUTE =
           "javax.servlet.request.X509Certificate";
     public static final String DCACHE_SUBJECT_ATTRIBUTE =
@@ -118,7 +116,7 @@ public class AuthenticationHandler extends HandlerWrapper {
             return (Subject) existingX509Subject;
         }
 
-        AuthenticationHandler handler = (AuthenticationHandler) request.getAttribute(
+        AuthenticationFilter handler = (AuthenticationFilter) request.getAttribute(
               AUTH_HANDLER_ATTRIBUTE);
         Subject x509Subject = handler.x509Login(request);
         request.setAttribute(X509_SUBJECT_ATTRIBUTE, x509Subject);
@@ -133,9 +131,9 @@ public class AuthenticationHandler extends HandlerWrapper {
     }
 
     @Override
-    public void handle(String target, Request baseRequest, HttpServletRequest request,
-          HttpServletResponse servletResponse)
-          throws IOException, ServletException {
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse,
+          FilterChain chain) throws IOException, ServletException {
+        HttpServletRequest request = (HttpServletRequest) servletRequest;
 
         HttpSession session = request.getSession(false);
         LOG.debug("URI=" + request.getRequestURI());
@@ -162,22 +160,26 @@ public class AuthenticationHandler extends HandlerWrapper {
             // to allow unauthenticated requests to be processed as well.
             // something to this similar
             // servletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "No session found");
-            // baseRequest.setHandled(true);
             // return;
             // or
             // return Response.status(Response.Status.UNAUTHORIZED).build();
         } else {
-            LOG.error("Session found for request to {} from {}: {}", request.getRequestURI(),
+            LOG.debug("Session found for request to {} from {}: {}", request.getRequestURI(),
                   request.getRemoteAddr(), session.getId());
             Object obj = session.getAttribute("subject");
             if (obj == null) {
                 LOG.warn("No subject found in session: sessionId={}", session.getId());
+                // Jetty answered 404 when the handler left such requests unhandled.
+                ((HttpServletResponse) servletResponse).sendError(
+                      HttpServletResponse.SC_NOT_FOUND);
                 return;
             }
 
             if (!(obj instanceof Subject)) {
                 LOG.warn("Unexpected type in session: sessionId={}, type={}",
                       session.getId(), obj.getClass().getName());
+                ((HttpServletResponse) servletResponse).sendError(
+                      HttpServletResponse.SC_NOT_FOUND);
                 return;
             }
 
@@ -194,105 +196,86 @@ public class AuthenticationHandler extends HandlerWrapper {
             request.setAttribute(DCACHE_LOGIN_ATTRIBUTES, session.getAttribute("attributes"));
             request.setAttribute(AUTH_HANDLER_ATTRIBUTE, this);
             /* Process the request as the authenticated user.*/
-            AuthHandlerResponse response = new AuthHandlerResponse(servletResponse, request);
-
-            Exception problem = Subject.doAs(subjectFromSession,
-                  (PrivilegedAction<Exception>) () -> {
-                      try {
-                          AuthenticationHandler.super.handle(target, baseRequest, request,
-                                response);
-                      } catch (IOException | ServletException e) {
-                          return e;
-                      }
-                      return null;
-                  });
-            if (problem != null) {
-                Throwables.throwIfInstanceOf(problem, IOException.class);
-                Throwables.throwIfInstanceOf(problem, ServletException.class);
-                throw new RuntimeException(problem);
-            }
+            AuthHandlerResponse response = new AuthHandlerResponse(
+                  (HttpServletResponse) servletResponse, request);
+            doFilterAs(subjectFromSession, chain, request, response);
             return;
 
         }
-        if (isStarted() && !baseRequest.isHandled()) {
-            AuthHandlerResponse response = new AuthHandlerResponse(servletResponse, request);
+        AuthHandlerResponse response = new AuthHandlerResponse(
+              (HttpServletResponse) servletResponse, request);
+        try {
+            Subject suppliedIdentity = new Subject();
+            addX509ChainToSubject(request, suppliedIdentity);
+            addOriginToSubject(request, suppliedIdentity);
+            addAuthCredentialsToSubject(request, suppliedIdentity);
+            addSpnegoCredentialsToSubject(request, suppliedIdentity);
+            addQueryBearerTokenToSubject(request, suppliedIdentity);
+            addDesiredRolesToSubject(request, suppliedIdentity);
+
+            Subject authnIdentity;
+            Restriction restriction;
+            Set<LoginAttribute> loginAttributes;
             try {
-                Subject suppliedIdentity = new Subject();
-                addX509ChainToSubject(request, suppliedIdentity);
-                addOriginToSubject(request, suppliedIdentity);
-                addAuthCredentialsToSubject(request, suppliedIdentity);
-                addSpnegoCredentialsToSubject(baseRequest, request, suppliedIdentity);
-                addQueryBearerTokenToSubject(request, suppliedIdentity);
-                addDesiredRolesToSubject(request, suppliedIdentity);
-
-                Subject authnIdentity;
-                Restriction restriction;
-                Set<LoginAttribute> loginAttributes;
-                try {
-                    LoginReply login = _loginStrategy.login(suppliedIdentity);
-                    authnIdentity = login.getSubject();
-                    restriction = Restrictions.concat(_doorRestriction, login.getRestriction());
-                    loginAttributes = login.getLoginAttributes();
-                } catch (PermissionDeniedCacheException e) {
-                    if (!isAnonymousAccessiblePath(request)) {
-                        throw e;
-                    }
-                    LOG.debug("Anonymous login rejected for exempt path {} from {}; "
-                          + "continuing as nobody", request.getRequestURI(),
-                          request.getRemoteAddr());
-                    authnIdentity = Subjects.NOBODY;
-                    restriction = _doorRestriction;
-                    loginAttributes = Set.of();
-                }
-
-                request.setAttribute(DCACHE_SUBJECT_ATTRIBUTE, authnIdentity);
-                request.setAttribute(DCACHE_RESTRICTION_ATTRIBUTE, restriction);
-                request.setAttribute(DCACHE_LOGIN_ATTRIBUTES, loginAttributes);
-                request.setAttribute(AUTH_HANDLER_ATTRIBUTE, this);
-
-                /* Process the request as the authenticated user.*/
-                Exception problem = Subject.doAs(authnIdentity,
-                      (PrivilegedAction<Exception>) () -> {
-                          try {
-                              AuthenticationHandler.super.handle(target, baseRequest, request,
-                                    response);
-                          } catch (IOException | ServletException e) {
-                              return e;
-                          }
-                          return null;
-                      });
-                if (problem != null) {
-                    Throwables.throwIfInstanceOf(problem, IOException.class);
-                    Throwables.throwIfInstanceOf(problem, ServletException.class);
-                    throw new RuntimeException(problem);
-                }
+                LoginReply login = _loginStrategy.login(suppliedIdentity);
+                authnIdentity = login.getSubject();
+                restriction = Restrictions.concat(_doorRestriction, login.getRestriction());
+                loginAttributes = login.getLoginAttributes();
             } catch (PermissionDeniedCacheException e) {
-                LOG.info("Login failed for {} on {}: {}", request.getMethod(),
-                      request.getPathInfo(), e.getMessage());
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED,
-                      e.getMessage());
-                baseRequest.setHandled(true);
-            } catch (CacheException e) {
-                LOG.error("Internal server error: {}", e.getMessage());
-                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                baseRequest.setHandled(true);
+                if (!isAnonymousAccessiblePath(request)) {
+                    throw e;
+                }
+                LOG.debug("Anonymous login rejected for exempt path {} from {}; "
+                      + "continuing as nobody", request.getRequestURI(),
+                      request.getRemoteAddr());
+                authnIdentity = Subjects.NOBODY;
+                restriction = _doorRestriction;
+                loginAttributes = Set.of();
             }
+
+            request.setAttribute(DCACHE_SUBJECT_ATTRIBUTE, authnIdentity);
+            request.setAttribute(DCACHE_RESTRICTION_ATTRIBUTE, restriction);
+            request.setAttribute(DCACHE_LOGIN_ATTRIBUTES, loginAttributes);
+            request.setAttribute(AUTH_HANDLER_ATTRIBUTE, this);
+
+            /* Process the request as the authenticated user.*/
+            doFilterAs(authnIdentity, chain, request, response);
+        } catch (PermissionDeniedCacheException e) {
+            LOG.info("Login failed for {} on {}: {}", request.getMethod(),
+                  request.getPathInfo(), e.getMessage());
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED,
+                  e.getMessage());
+        } catch (CacheException e) {
+            LOG.error("Internal server error: {}", e.getMessage());
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
     }
 
-    private void addSpnegoCredentialsToSubject(Request baseRequest,
-          HttpServletRequest request,
-          Subject subject) {
+    private static void doFilterAs(Subject subject, FilterChain chain,
+          HttpServletRequest request, HttpServletResponse response)
+          throws IOException, ServletException {
+        Exception problem = Subject.doAs(subject,
+              (PrivilegedAction<Exception>) () -> {
+                  try {
+                      chain.doFilter(request, response);
+                  } catch (IOException | ServletException e) {
+                      return e;
+                  }
+                  return null;
+              });
+        if (problem != null) {
+            Throwables.throwIfInstanceOf(problem, IOException.class);
+            Throwables.throwIfInstanceOf(problem, ServletException.class);
+            throw new RuntimeException(problem);
+        }
+    }
+
+    private void addSpnegoCredentialsToSubject(HttpServletRequest request, Subject subject) {
         if (_isSpnegoAuthenticationEnabled) {
-            Authentication spnegoAuth = baseRequest.getAuthentication();
-            if (spnegoAuth instanceof Authentication.Deferred) {
-                Authentication spnegoUser = ((Authentication.Deferred) spnegoAuth).authenticate(
-                      request);
-                if (spnegoUser instanceof UserAuthentication) {
-                    UserIdentity identity = ((UserAuthentication) spnegoUser).getUserIdentity();
-                    subject.getPrincipals()
-                          .add(new KerberosPrincipal(identity.getUserPrincipal().getName()));
-                }
+            // Completes the deferred authentication of the SPNEGO security handler.
+            Principal user = request.getUserPrincipal();
+            if (user != null) {
+                subject.getPrincipals().add(new KerberosPrincipal(user.getName()));
             }
         }
     }

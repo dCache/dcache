@@ -41,7 +41,7 @@ import org.dcache.auth.attributes.LoginAttributes;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.auth.attributes.Role;
 import org.dcache.cells.CellStub;
-import org.dcache.http.AuthenticationHandler;
+import org.dcache.http.AuthenticationFilter;
 import org.dcache.http.PathMapper;
 import org.dcache.namespace.FileType;
 import org.dcache.restful.util.RequestUser;
@@ -98,9 +98,9 @@ public class FileResourcesTest {
 
         resources.setCellAddress(CELL_ADDRESS);
         when(pathMapper.asDcachePath(eq(request), anyString(), any(), any())).thenReturn(PATH);
-        when(request.getAttribute(AuthenticationHandler.DCACHE_RESTRICTION_ATTRIBUTE))
+        when(request.getAttribute(AuthenticationFilter.DCACHE_RESTRICTION_ATTRIBUTE))
               .thenReturn(Restrictions.none());
-        lenient().when(request.getAttribute(AuthenticationHandler.DCACHE_LOGIN_ATTRIBUTES))
+        lenient().when(request.getAttribute(AuthenticationFilter.DCACHE_LOGIN_ATTRIBUTES))
               .thenReturn(Collections.emptySet());
     }
 
@@ -163,7 +163,7 @@ public class FileResourcesTest {
 
     @Test
     public void shouldNameRequestingUserWhenAdminDeletesAsRoot() throws Exception {
-        when(request.getAttribute(AuthenticationHandler.DCACHE_LOGIN_ATTRIBUTES))
+        when(request.getAttribute(AuthenticationFilter.DCACHE_LOGIN_ATTRIBUTES))
               .thenReturn(Set.<LoginAttribute>of(new Role(LoginAttributes.ADMIN_ROLE_NAME)));
         givenDeleteSucceedsWith(FileType.REGULAR, 1024L);
 

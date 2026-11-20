@@ -87,6 +87,19 @@ public class FrontendDoorContextTest {
         assertThat(response.body(), containsString("swagger"));
     }
 
+    @Test
+    public void shouldAuthenticateApiRequests() throws Exception {
+        HttpResponse<String> response = client.send(
+              HttpRequest.newBuilder(endpoint.resolve("/api/v1/user"))
+                    .header("Authorization", "Bearer token").GET().build(),
+              HttpResponse.BodyHandlers.ofString());
+
+        // The authentication filter refuses bearer tokens sent unencrypted.
+        assertThat(response.statusCode(), is(401));
+        assertThat(response.headers().firstValue("WWW-Authenticate").orElse(""),
+              containsString("Basic realm="));
+    }
+
     private static HttpResponse<String> get(String path) throws Exception {
         return client.send(HttpRequest.newBuilder(endpoint.resolve(path)).GET().build(),
               HttpResponse.BodyHandlers.ofString());

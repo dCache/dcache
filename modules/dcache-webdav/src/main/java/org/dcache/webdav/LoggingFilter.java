@@ -5,7 +5,7 @@ import static org.dcache.webdav.DcacheResourceFactory.TRANSACTION_ATTRIBUTE;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.dcache.http.AbstractLoggingHandler;
+import org.dcache.http.AbstractLoggingFilter;
 import org.dcache.util.NetLoggerBuilder;
 import org.dcache.webdav.macaroons.MacaroonRequestHandler;
 import org.dcache.webdav.transfer.CopyFilter;
@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 /**
  * WebDAV door specific logging.
  */
-public class LoggingHandler extends AbstractLoggingHandler {
+public class LoggingFilter extends AbstractLoggingFilter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("org.dcache.access.webdav");
 

@@ -38,7 +38,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.AccessController;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
@@ -61,7 +60,7 @@ import org.dcache.auth.attributes.MaxUploadSize;
 import org.dcache.auth.attributes.PrefixRestriction;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.RootDirectory;
-import org.dcache.http.AuthenticationHandler;
+import org.dcache.http.AuthenticationFilter;
 import org.dcache.http.PathMapper;
 import org.dcache.macaroons.Caveat;
 import org.dcache.macaroons.InternalErrorException;
@@ -182,7 +181,7 @@ public class MacaroonRequestHandler extends AbstractHandler implements CellIdent
         JSONObject uris = new JSONObject();
         json.put("macaroon", macaroon).put("uri", uris);
         uris.put("target", request.getRequestURL());
-        String withMacaroon = "?" + AuthenticationHandler.BEARER_TOKEN_QUERY_KEY + "=" + macaroon;
+        String withMacaroon = "?" + AuthenticationFilter.BEARER_TOKEN_QUERY_KEY + "=" + macaroon;
 
         /*
          * NB. The value of "targetWithMacaroon" is used in the
@@ -245,7 +244,7 @@ public class MacaroonRequestHandler extends AbstractHandler implements CellIdent
 
         FsPath userRoot = FsPath.ROOT;
         FsPath prefixRestrictionPath = null;
-        for (LoginAttribute attr : AuthenticationHandler.getLoginAttributes(request)) {
+        for (LoginAttribute attr : AuthenticationFilter.getLoginAttributes(request)) {
             if (attr instanceof HomeDirectory) {
                 context.setHome(FsPath.ROOT.resolve(((HomeDirectory) attr).getHome()));
             } else if (attr instanceof RootDirectory) {

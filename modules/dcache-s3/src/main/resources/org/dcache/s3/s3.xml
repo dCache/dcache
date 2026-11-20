@@ -220,7 +220,10 @@
     <description>Root servlet context</description>
     <property name="contextPath" value="/"/>
     <property name="handler">
-      <bean class="org.dcache.s3.S3LoggingHandler">
+      <bean class="org.dcache.util.jetty.FilterHandler">
+        <property name="filter">
+          <bean class="org.dcache.s3.S3LoggingFilter"/>
+        </property>
         <property name="handler">
           <bean class="org.dcache.s3.S3JettyHandler">
             <constructor-arg ref="s3-proxy-handler"/>

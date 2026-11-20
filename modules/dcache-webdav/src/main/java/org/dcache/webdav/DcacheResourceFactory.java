@@ -134,7 +134,7 @@ import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.ZoneAware;
-import org.dcache.http.AuthenticationHandler;
+import org.dcache.http.AuthenticationFilter;
 import org.dcache.http.PathMapper;
 import org.dcache.missingfiles.AlwaysFailMissingFileStrategy;
 import org.dcache.missingfiles.MissingFileStrategy;
@@ -1643,12 +1643,12 @@ public class DcacheResourceFactory
     private Restriction getRestriction() {
         HttpServletRequest servletRequest = ServletRequest.getRequest();
         return (Restriction) servletRequest.getAttribute(
-              AuthenticationHandler.DCACHE_RESTRICTION_ATTRIBUTE);
+              AuthenticationFilter.DCACHE_RESTRICTION_ATTRIBUTE);
     }
 
     private OptionalLong getMaxUploadSize() {
         HttpServletRequest servletRequest = ServletRequest.getRequest();
-        Set<LoginAttribute> attributes = AuthenticationHandler.getLoginAttributes(servletRequest);
+        Set<LoginAttribute> attributes = AuthenticationFilter.getLoginAttributes(servletRequest);
         return LoginAttributes.maximumUploadSize(attributes);
     }
 

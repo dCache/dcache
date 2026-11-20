@@ -17,7 +17,7 @@
  */
 package org.dcache.http;
 
-import static org.dcache.http.AuthenticationHandler.DCACHE_SUBJECT_ATTRIBUTE;
+import static org.dcache.http.AuthenticationFilter.DCACHE_SUBJECT_ATTRIBUTE;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.net.InetAddresses;
@@ -32,15 +32,17 @@ import java.util.function.Consumer;
 import javax.security.auth.Subject;
 import javax.servlet.AsyncEvent;
 import javax.servlet.AsyncListener;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.dcache.auth.JwtJtiPrincipal;
 import org.dcache.auth.OidcSubjectPrincipal;
 import org.dcache.auth.Subjects;
 import org.dcache.util.NetLoggerBuilder;
-import org.eclipse.jetty.ee8.nested.HandlerWrapper;
-import org.eclipse.jetty.ee8.nested.Request;
 import org.eclipse.jetty.ee8.nested.Response;
 import org.eclipse.jetty.http.HttpStatus;
 import org.slf4j.Logger;
@@ -52,14 +54,14 @@ import static com.google.common.base.Throwables.throwIfUnchecked;
  * This class act as a base logging class for logging servlet-based activity. It is expected that
  * this class is subclassed to add protocol-specific logging.
  */
-public abstract class AbstractLoggingHandler extends HandlerWrapper {
+public abstract class AbstractLoggingFilter implements Filter {
 
     private static final String X509_CERTIFICATE_ATTRIBUTE =
           "javax.servlet.request.X509Certificate";
     private static final String REMOTE_ADDRESS = "org.dcache.remote-address";
     private static final String PROCESSING_TIME = "org.dcache.processing-time";
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractLoggingHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractLoggingFilter.class);
 
     private class LogOnComplete implements AsyncListener {
 
@@ -108,34 +110,33 @@ public abstract class AbstractLoggingHandler extends HandlerWrapper {
     protected abstract String requestEventName();
 
     @Override
-    public void handle(String target, Request baseRequest,
-          HttpServletRequest request, HttpServletResponse response)
-          throws IOException, ServletException {
-        if (isStarted() && !baseRequest.isHandled()) {
-            Stopwatch processingTime = Stopwatch.createStarted();
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse,
+          FilterChain chain) throws IOException, ServletException {
+        HttpServletRequest request = (HttpServletRequest) servletRequest;
+        HttpServletResponse response = (HttpServletResponse) servletResponse;
+        Stopwatch processingTime = Stopwatch.createStarted();
 
-            // Cache the remote client address because the client may disconnect
-            // while dCache is processing the request, in which case Jetty
-            // "forgets".
-            request.setAttribute(REMOTE_ADDRESS, remoteAddress(request).orElse(null));
-            request.setAttribute(PROCESSING_TIME, processingTime);
+        // Cache the remote client address because the client may disconnect
+        // while dCache is processing the request, in which case Jetty
+        // "forgets".
+        request.setAttribute(REMOTE_ADDRESS, remoteAddress(request).orElse(null));
+        request.setAttribute(PROCESSING_TIME, processingTime);
 
-            try {
-                super.handle(target, baseRequest, request, response);
-            } catch (IOException|RuntimeException|ServletException e) {
-                requestCompletedExceptionally(request, response, e);
+        try {
+            chain.doFilter(request, response);
+        } catch (IOException|RuntimeException|ServletException e) {
+            requestCompletedExceptionally(request, response, e);
 
-                throwIfInstanceOf(e, IOException.class);
-                throwIfInstanceOf(e, ServletException.class);
-                throwIfUnchecked(e);
-                throw new AssertionError(e);
-            }
+            throwIfInstanceOf(e, IOException.class);
+            throwIfInstanceOf(e, ServletException.class);
+            throwIfUnchecked(e);
+            throw new AssertionError(e);
+        }
 
-            if (request.isAsyncStarted()) {
-                request.getAsyncContext().addListener(new LogOnComplete());
-            } else {
-                requestCompletedNormally(request, response);
-            }
+        if (request.isAsyncStarted()) {
+            request.getAsyncContext().addListener(new LogOnComplete());
+        } else {
+            requestCompletedNormally(request, response);
         }
     }
 
