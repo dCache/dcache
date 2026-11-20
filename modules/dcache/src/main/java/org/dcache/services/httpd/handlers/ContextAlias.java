@@ -20,17 +20,17 @@ import org.eclipse.jetty.ee8.nested.Request;
  *
  * @author arossi
  */
-public class ContextHandler extends AbstractHandler implements DomainContextAware {
+public class ContextAlias extends AbstractHandler implements DomainContextAware {
 
     private final String specificName;
     private Map<String, Object> context;
     private final int status;
 
-    public ContextHandler(String specificName) {
+    public ContextAlias(String specificName) {
         this(specificName, HttpServletResponse.SC_OK);
     }
 
-    public ContextHandler(String specificName, int status) {
+    public ContextAlias(String specificName, int status) {
         this.specificName = specificName;
         this.status = status;
     }
@@ -71,7 +71,7 @@ public class ContextHandler extends AbstractHandler implements DomainContextAwar
             proxy.getPrintWriter().flush();
             baseRequest.setHandled(true);
         } catch (final Exception t) {
-            throw new ServletException("ContextHandler", t);
+            throw new ServletException("ContextAlias", t);
         }
     }
 

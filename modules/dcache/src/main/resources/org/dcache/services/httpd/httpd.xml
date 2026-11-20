@@ -39,7 +39,7 @@
         <property name="poolManagerStub" ref="pool-manager"/>
     </bean>
 
-    <bean id="delegator" class="org.dcache.services.httpd.handlers.HandlerDelegator"/>
+    <bean id="delegator" class="org.dcache.services.httpd.handlers.AliasDispatcherServlet"/>
 
     <bean id="restores-request-receiver" class="diskCacheV111.poolManager.RestoreRequestsReceiver"
           init-method="initialize">

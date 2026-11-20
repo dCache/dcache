@@ -404,7 +404,7 @@
                   <property name="contextPath" value="/robots.txt"/>
                   <property name="allowNullPathInfo" value="true"/>
                   <property name="handler">
-                      <bean class="org.dcache.services.httpd.handlers.ContextHandler">
+                      <bean class="org.dcache.services.httpd.handlers.ContextAlias">
                           <constructor-arg value="robots.txt"/>
                       </bean>
                   </property>

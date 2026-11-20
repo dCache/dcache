@@ -28,15 +28,15 @@ import org.slf4j.LoggerFactory;
  *
  * @author arossi
  */
-public class PathHandler extends AbstractHandler {
+public class PathAlias extends AbstractHandler {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PathHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PathAlias.class);
 
     private static final FileNameMap mimeTypeMap = URLConnection.getFileNameMap();
 
     private final File path;
 
-    public PathHandler(File path) {
+    public PathAlias(File path) {
         this.path = path;
     }
 

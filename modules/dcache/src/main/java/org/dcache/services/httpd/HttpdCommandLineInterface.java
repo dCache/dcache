@@ -12,12 +12,12 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import org.dcache.services.httpd.handlers.BadConfigHandler;
-import org.dcache.services.httpd.handlers.ContextHandler;
-import org.dcache.services.httpd.handlers.HandlerDelegator;
-import org.dcache.services.httpd.handlers.PathHandler;
-import org.dcache.services.httpd.handlers.RedirectHandler;
-import org.dcache.services.httpd.handlers.ResponseEngineHandler;
+import org.dcache.services.httpd.handlers.BadConfigAlias;
+import org.dcache.services.httpd.handlers.ContextAlias;
+import org.dcache.services.httpd.handlers.AliasDispatcherServlet;
+import org.dcache.services.httpd.handlers.PathAlias;
+import org.dcache.services.httpd.handlers.RedirectAlias;
+import org.dcache.services.httpd.handlers.EngineAlias;
 import org.dcache.services.httpd.util.AliasEntry;
 import org.dcache.util.Args;
 import org.dcache.util.spring.Required;
@@ -35,10 +35,10 @@ public class HttpdCommandLineInterface
     @Autowired
     private AutowireCapableBeanFactory beanFactory;
 
-    private HandlerDelegator delegator;
+    private AliasDispatcherServlet delegator;
 
     @Required
-    public void setDelegator(HandlerDelegator delegator) {
+    public void setDelegator(AliasDispatcherServlet delegator) {
         this.delegator = delegator;
     }
 
@@ -109,14 +109,14 @@ public class HttpdCommandLineInterface
                 if ((!dir.isDirectory()) && (!dir.isFile())) {
                     throw new FileNotFoundException(specific);
                 }
-                handler = new PathHandler(dir);
+                handler = new PathAlias(dir);
                 entry = new AliasEntry(alias, aliasType, handler, specific);
                 entry.setStatusMessage(alias + " -> " + aliasType.getType() + "(" + specific + ")");
                 break;
             case CONTEXT:
                 Handler rawHandler = args.hasOption("status")
-                      ? new ContextHandler(specific, args.getIntOption("status"))
-                      : new ContextHandler(specific);
+                      ? new ContextAlias(specific, args.getIntOption("status"))
+                      : new ContextAlias(specific);
                 handler = (Handler) beanFactory.initializeBean(rawHandler, alias);
                 entry = new AliasEntry(alias, aliasType, handler, specific);
                 entry.setOnError(args.getOpt("onError"));
@@ -124,7 +124,7 @@ public class HttpdCommandLineInterface
                 entry.setStatusMessage(alias + " -> " + aliasType.getType() + "(" + specific + ")");
                 break;
             case REDIRECT:
-                handler = new RedirectHandler(alias, specific);
+                handler = new RedirectAlias(alias, specific);
                 entry = new AliasEntry(alias, aliasType, handler, specific);
                 entry.setStatusMessage(alias + " -> " + aliasType.getType() + "(" + specific + ")");
                 break;
@@ -140,7 +140,7 @@ public class HttpdCommandLineInterface
                 try {
                     HttpResponseEngine engine = constr.newInstance(
                           new Object[]{args.getArguments().toArray(String[]::new)});
-                    handler = new ResponseEngineHandler(
+                    handler = new EngineAlias(
                           (HttpResponseEngine) beanFactory.initializeBean(engine, alias));
                 } catch (InvocationTargetException e) {
                     Throwables.propagateIfPossible(e.getCause());
@@ -153,14 +153,14 @@ public class HttpdCommandLineInterface
                       alias + " -> " + aliasType.getType() + "(" + entry.getSpecificString() + ")");
                 break;
             default:
-                handler = new BadConfigHandler();
+                handler = new BadConfigAlias();
                 entry = new AliasEntry(alias, aliasType, handler, specific);
                 entry.setStatusMessage(alias + " -> " + aliasType.getType() + "(" + specific + ")");
                 break;
         }
 
-        if (handler instanceof BadConfigHandler) {
-            ((BadConfigHandler) handler).setFailureMessage(entry.getIntFailureMsg());
+        if (handler instanceof BadConfigAlias) {
+            ((BadConfigAlias) handler).setFailureMessage(entry.getIntFailureMsg());
         }
         return entry;
     }
