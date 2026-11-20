@@ -17,6 +17,10 @@ public final class SelectionNames {
     // no additional options can be injected into the psu commands
     private static final Pattern VALID_UNIT_NAME = Pattern.compile("[^\\s\"'\\\\-][^\\s\"'\\\\]*");
 
+    // option values follow '-key=', so a leading '-' is harmless; reject whitespace and quotes
+    // so that no additional options can be injected into the commands
+    private static final Pattern VALID_OPTION_VALUE = Pattern.compile("[^\\s\"'\\\\]+");
+
     private SelectionNames() {
     }
 
@@ -29,6 +33,13 @@ public final class SelectionNames {
     public static void checkValidUnitName(String name) throws BadRequestException {
         if (!VALID_UNIT_NAME.matcher(name).matches()) {
             throw new BadRequestException("Invalid unit name: " + name);
+        }
+    }
+
+    public static void checkValidOptionValue(String option, String value)
+            throws BadRequestException {
+        if (!VALID_OPTION_VALUE.matcher(value).matches()) {
+            throw new BadRequestException("Invalid value for " + option + ": " + value);
         }
     }
 }
