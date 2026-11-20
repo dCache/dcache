@@ -1,4 +1,4 @@
-package org.dcache.webdav;
+package org.dcache.auth;
 
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
@@ -10,11 +10,6 @@ import diskCacheV111.util.CacheException;
 import java.security.Principal;
 import java.util.Set;
 import javax.security.auth.Subject;
-import org.dcache.auth.LoginNamePrincipal;
-import org.dcache.auth.LoginReply;
-import org.dcache.auth.LoginStrategy;
-import org.dcache.auth.PasswordCredential;
-import org.dcache.auth.Subjects;
 import org.dcache.auth.UnionLoginStrategy.AccessLevel;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.Restrictions;

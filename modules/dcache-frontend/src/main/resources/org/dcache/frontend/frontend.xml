@@ -122,7 +122,7 @@
         <property name="rootPath" value="${frontend.root}"/>
     </bean>
 
-  <bean id="login-strategy" class="org.dcache.webdav.AnonymousUserLoginStrategy">
+  <bean id="login-strategy" class="org.dcache.auth.AnonymousUserLoginStrategy">
       <description>Processes login for user 'anonymous'</description>
       <property name="anonymousAccess" value="${frontend.authz.anonymous-operations}"/>
       <property name="username" value="anonymous"/>
