@@ -61,25 +61,41 @@ package org.dcache.restful.resources.selection;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
+import javax.inject.Named;
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.PATCH;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.selection.Partition;
+import org.dcache.restful.util.RequestUser;
 import org.dcache.restful.util.Responses;
+import org.dcache.restful.util.selection.PsuAdminCommands;
+import org.dcache.restful.util.selection.SelectionNames;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.stereotype.Component;
 
 /**
  * <p>RESTful API to the {@link org.dcache.poolmanager.PoolMonitor}, in
- * order to deliver partition information.</p>
+ * order to deliver partition information as well as to change partition parameters.</p>
  *
  * @version v1.0
  */
@@ -90,6 +106,10 @@ public final class PartitionResources {
 
     @Inject
     private PoolMonitor poolMonitor;
+
+    @Inject
+    @Named("psu-admin-commands")
+    private PsuAdminCommands psuAdminCommands;
 
 
     @GET
@@ -103,5 +123,62 @@ public final class PartitionResources {
               .map(Partition::new)
               .collect(Collectors.toList());
         return Responses.buildResponse(result);
+    }
+
+    @PATCH
+    @ApiOperation("Change a partition's parameters via 'pm set'. Requires admin role. "
+            + "Saves the PoolManager configuration.")
+    @ApiResponses({
+            @ApiResponse(code = 400, message = "Bad Request"),
+            @ApiResponse(code = 403, message = "Partition command only accessible to admin users."),
+            @ApiResponse(code = 404, message = "Not Found"),
+            @ApiResponse(code = 500, message = "Internal Server Error"),
+    })
+    @Path("/{partition}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response updatePartition(
+            @ApiParam(value = "The partition to be changed.", required = true)
+            @PathParam("partition") String partition,
+            @ApiParam(value = "JSON object mapping parameter names to their new values, e.g. "
+                    + "{\"cpucostfactor\": \"0.5\", \"p2p-allowed\": \"no\"}. The parameters "
+                    + "are those listed in the partition's properties. A value of null resets "
+                    + "the parameter to its inherited or default value. Only parameters "
+                    + "present are changed.",
+                    required = true) String requestPayload) {
+
+        RequestUser.checkAdmin("Partition command only accessible to admin users.");
+        SelectionNames.checkValidName("partition", partition);
+
+        org.dcache.poolmanager.Partition current =
+                poolMonitor.getPartitionManager().getPartitions().get(partition);
+        if (current == null) {
+            throw new NotFoundException("Partition not found: " + partition);
+        }
+
+        Map<String, String> properties = new HashMap<>();
+        try {
+            JSONObject payload = new JSONObject(requestPayload);
+            for (String key : payload.keySet()) {
+                if (!current.getAllProperties().containsKey(key)) {
+                    throw new BadRequestException("Unknown parameter for partition "
+                            + partition + ": " + key);
+                }
+                String value = payload.isNull(key) ? null : payload.get(key).toString();
+                if (value != null) {
+                    SelectionNames.checkValidOptionValue(key, value);
+                }
+                properties.put(key, value);
+            }
+        } catch (JSONException e) {
+            throw new BadRequestException(e);
+        }
+
+        StringBuilder command = new StringBuilder("pm set ").append(partition);
+        properties.forEach((key, value) ->
+                command.append(" -").append(key).append('=').append(value == null ? "off" : value));
+
+        return psuAdminCommands.execute("Partition: " + partition + " was changed",
+                Response.Status.OK, command.toString());
     }
 }

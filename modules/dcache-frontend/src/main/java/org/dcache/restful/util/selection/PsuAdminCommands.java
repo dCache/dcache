@@ -3,9 +3,11 @@ package org.dcache.restful.util.selection;
 import diskCacheV111.util.CacheException;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.util.CommandSyntaxException;
 import dmg.util.CommandThrowableException;
 import dmg.util.Exceptions;
 import java.util.concurrent.ExecutionException;
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotFoundException;
@@ -84,6 +86,11 @@ public class PsuAdminCommands {
     }
 
     private static void throwIfClientError(CacheException e) {
+        // annotated commands (e.g. 'pm set') report invalid arguments as a syntax error
+        if (e.getCause() instanceof CommandSyntaxException) {
+            throw new BadRequestException(
+                    ((CommandSyntaxException) e.getCause()).getErrorMessage());
+        }
         if (!(e.getCause() instanceof CommandThrowableException)) {
             return;
         }
