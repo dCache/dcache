@@ -111,6 +111,32 @@ In order to handle directories consistently, a container will queue them and del
 until all regular file targets have completed.  Directories are always processed
 serially depth-first.
 
+The number of directory listings that may be sent concurrently to the PnfsManager is bounded
+by
+
+```
+bulk.limits.dir-list-semaphore=20
+```
+
+This limit exists to avoid timing out calls to the PnfsManager and is shared by all requests.
+When a recursive request expands a directory tree wider than this limit, the additional
+listings are queued and started as permits become available; submitting a listing never
+blocks a listing that is already running, so expansion of a large tree completes even
+when the number of directories to be listed at one level exceeds this value.  Earlier
+versions could deadlock in this situation, leaving the request permanently in the
+``RUNNING`` state.
+
+Because the permits are shared, a single large recursive request may temporarily delay
+directory expansion of other requests, but it can no longer block them indefinitely.
+The current state can be inspected with the ``info`` command in the admin shell, whose
+concurrency section reports both the permits still available for directory listing
+(``Available permits for directory listing``) and the number of listings queued waiting
+for a permit (``Directory listings waiting for permit``).  A steadily non-zero value for
+the latter indicates that the requests are bounded by this limit.
+
+Note that increasing ``bulk.limits.dir-list-semaphore`` beyond the default trades PnfsManager
+load for parallelism; it is no longer needed in order to avoid the hang described above.
+
 The following illustrates the structure of the service and its interactions when processing
 a request.
 
