@@ -318,7 +318,6 @@
     <dependency>
         <groupId>org.apache.curator</groupId>
         <artifactId>curator-test</artifactId>
-        <version>5.9.0</version>
         <scope>test</scope>
     </dependency>
     <dependency>

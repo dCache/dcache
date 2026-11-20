@@ -33,6 +33,26 @@
         </dependency>
         <dependency>
             <groupId>org.dcache</groupId>
+            <artifactId>dcache-core</artifactId>
+            <version>${project.version}</version>
+            <classifier>tests</classifier>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-test</artifactId>
+            <scope>test</scope>
+            <exclusions>
+                <!-- keep surefire on JUnit 4 -->
+                <exclusion>
+                    <groupId>org.junit.jupiter</groupId>
+                    <artifactId>junit-jupiter-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.dcache</groupId>
             <artifactId>cells</artifactId>
             <version>${project.version}</version>
         </dependency>
