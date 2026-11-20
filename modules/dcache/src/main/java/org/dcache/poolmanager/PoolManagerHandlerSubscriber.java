@@ -48,9 +48,9 @@ import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;
 import javax.annotation.concurrent.GuardedBy;
 import org.dcache.cells.CellStub;
+import org.dcache.util.spring.Required;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Client stub for obtaining implementations of PoolManagerHandler.

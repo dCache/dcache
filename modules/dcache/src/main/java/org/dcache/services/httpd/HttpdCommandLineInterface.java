@@ -20,11 +20,11 @@ import org.dcache.services.httpd.handlers.RedirectHandler;
 import org.dcache.services.httpd.handlers.ResponseEngineHandler;
 import org.dcache.services.httpd.util.AliasEntry;
 import org.dcache.util.Args;
+import org.dcache.util.spring.Required;
 import org.eclipse.jetty.ee8.nested.Handler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 
 public class HttpdCommandLineInterface

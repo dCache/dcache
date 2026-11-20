@@ -12,6 +12,7 @@ import java.util.concurrent.TimeUnit;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.LoginStrategyAware;
 import org.dcache.gsi.KeyPairCache;
+import org.dcache.util.spring.Required;
 import org.dcache.xrootd.core.XrootdAuthorizationHandlerFactory;
 import org.dcache.xrootd.door.LoginAuthenticationHandlerFactory;
 import org.dcache.xrootd.plugins.AuthenticationFactory;
@@ -24,7 +25,6 @@ import org.dcache.xrootd.security.GSIProxyDelegationClientFactory;
 import org.dcache.xrootd.security.ProxyDelegationStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * A Spring FactoryBean that creates ChannelHandlerFactory instances.

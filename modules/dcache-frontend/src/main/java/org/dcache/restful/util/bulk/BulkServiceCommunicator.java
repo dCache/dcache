@@ -78,9 +78,9 @@ import org.dcache.services.bulk.BulkQuotaExceededException;
 import org.dcache.services.bulk.BulkRequestNotFoundException;
 import org.dcache.services.bulk.BulkServiceException;
 import org.dcache.services.bulk.BulkServiceMessage;
+import org.dcache.util.spring.Required;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * For injection convenience.

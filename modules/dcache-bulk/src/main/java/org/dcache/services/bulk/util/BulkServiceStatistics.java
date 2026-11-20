@@ -79,7 +79,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import org.dcache.services.bulk.job.RequestContainerJobFactory;
-import org.springframework.beans.factory.annotation.Required;
+import org.dcache.util.spring.Required;
 
 /**
  * Provides activity statistics via the CellInfo interface.

@@ -70,7 +70,7 @@ import org.dcache.qos.data.QoSMessageType;
 import org.dcache.util.BoundedCachedExecutor;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.SignalAware;
-import org.springframework.beans.factory.annotation.Required;
+import org.dcache.util.spring.Required;
 
 /**
  *  Handles the configuration and lifecycle of the queues.

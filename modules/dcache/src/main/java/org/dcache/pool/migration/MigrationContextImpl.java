@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import org.dcache.cells.CellStub;
 import org.dcache.pool.repository.Repository;
-import org.springframework.beans.factory.annotation.Required;
+import org.dcache.util.spring.Required;
 
 /**
  * Describes the context of migration jobs.

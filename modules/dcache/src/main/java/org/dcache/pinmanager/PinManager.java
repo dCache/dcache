@@ -26,9 +26,9 @@ import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.NDC;
 import org.dcache.util.TimeUtils;
+import org.dcache.util.spring.Required;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DataAccessException;
 
 public class PinManager implements CellMessageReceiver, LeaderLatchListener, CellInfoProvider {

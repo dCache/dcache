@@ -33,9 +33,9 @@ import java.util.concurrent.TimeUnit;
 import javax.sql.DataSource;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.dcache.cells.CellStub;
+import org.dcache.util.spring.Required;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 

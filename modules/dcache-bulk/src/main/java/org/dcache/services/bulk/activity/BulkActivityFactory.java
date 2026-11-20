@@ -85,9 +85,9 @@ import org.dcache.services.bulk.BulkServiceException;
 import org.dcache.services.bulk.activity.plugin.qos.QoSEngineAware;
 import org.dcache.services.bulk.activity.plugin.qos.QoSResponseReceiver;
 import org.dcache.services.bulk.activity.retry.BulkTargetRetryPolicy;
+import org.dcache.util.spring.Required;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Creates activities on the basis of activity mappings.

@@ -32,10 +32,10 @@ import org.dcache.pool.statistics.StatisticsListener;
 import org.dcache.util.ByteUnit;
 import org.dcache.util.ColumnWriter;
 import org.dcache.util.Glob;
+import org.dcache.util.spring.Required;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 public class RepositoryInterpreter
       implements CellCommandListener {

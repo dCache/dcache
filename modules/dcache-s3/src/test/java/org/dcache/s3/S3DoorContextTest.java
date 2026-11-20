@@ -15,6 +15,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
+import org.dcache.util.spring.RequiredPropertyChecker;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.junit.After;
@@ -39,6 +40,7 @@ public class S3DoorContextTest {
         keyFile.toFile().deleteOnExit();
 
         context = new GenericXmlApplicationContext();
+        RequiredPropertyChecker.register(context);
         context.getEnvironment().getPropertySources()
               .addFirst(new MapPropertySource("test", properties(keyFile)));
         context.load("classpath:org/dcache/s3/s3.xml");

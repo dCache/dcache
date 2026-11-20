@@ -36,7 +36,7 @@ import org.dcache.util.ByteUnit;
 import org.dcache.util.CDCExecutorServiceDecorator;
 import org.dcache.util.ColumnWriter;
 import org.dcache.util.SqlGlob;
-import org.springframework.beans.factory.annotation.Required;
+import org.dcache.util.spring.Required;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.transaction.annotation.Transactional;

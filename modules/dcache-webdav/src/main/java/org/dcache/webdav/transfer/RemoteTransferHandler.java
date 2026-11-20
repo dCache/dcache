@@ -165,6 +165,7 @@ import org.dcache.util.HttpExtHeader;
 import org.dcache.util.Strings;
 import org.dcache.util.URIs;
 import org.dcache.util.Xattrs;
+import org.dcache.util.spring.Required;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.webdav.DcacheResourceFactory;
 import org.dcache.webdav.RfcResponseHandler;
@@ -176,7 +177,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.ObjectFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 import static diskCacheV111.services.TransferManagerHandler.RECEIVED_FIRST_POOL_REPLY_STATE;
 import static dmg.util.CommandException.checkCommand;

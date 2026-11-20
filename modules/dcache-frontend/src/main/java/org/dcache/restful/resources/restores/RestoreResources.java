@@ -85,9 +85,9 @@ import org.dcache.restful.providers.restores.RestoreInfo;
 import org.dcache.restful.services.restores.RestoresInfoService;
 import org.dcache.restful.util.RequestUser;
 import org.dcache.restful.util.Responses;
+import org.dcache.util.spring.Required;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.stereotype.Component;
 
 /**

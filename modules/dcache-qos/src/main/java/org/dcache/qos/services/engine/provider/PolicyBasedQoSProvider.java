@@ -80,10 +80,10 @@ import org.dcache.qos.data.FileQoSRequirements;
 import org.dcache.qos.data.FileQoSUpdate;
 import org.dcache.qos.services.engine.data.db.JdbcQoSEngineDao;
 import org.dcache.qos.services.engine.util.QoSPolicyCache;
+import org.dcache.util.spring.Required;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * This provider tries to derive requirements from the QoSPolicy of the file.

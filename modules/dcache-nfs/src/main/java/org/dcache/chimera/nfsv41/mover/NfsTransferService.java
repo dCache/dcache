@@ -93,10 +93,10 @@ import org.dcache.pool.repository.Repository;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.PortRange;
 import org.dcache.util.Version;
+import org.dcache.util.spring.Required;
 import org.dcache.vehicles.DoorValidateMoverMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Factory and transfer service for NFS movers.

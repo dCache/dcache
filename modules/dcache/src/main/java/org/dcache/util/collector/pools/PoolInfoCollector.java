@@ -69,7 +69,7 @@ import org.dcache.pool.json.PoolData;
 import org.dcache.services.history.pools.PoolListingService;
 import org.dcache.util.collector.CellMessagingCollector;
 import org.dcache.util.collector.ListenableFutureWrapper;
-import org.springframework.beans.factory.annotation.Required;
+import org.dcache.util.spring.Required;
 
 /**
  * <p>This collector provides a thin layer on top of cell adapter

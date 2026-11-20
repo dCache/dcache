@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.dcache.pool.PoolDataBeanProvider;
 import org.dcache.pool.classic.json.TransferServicesData;
-import org.springframework.beans.factory.annotation.Required;
+import org.dcache.util.spring.Required;
 
 public class TransferServices
       implements PoolDataBeanProvider<TransferServicesData> {

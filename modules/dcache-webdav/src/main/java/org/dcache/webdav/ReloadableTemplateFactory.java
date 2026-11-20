@@ -19,8 +19,8 @@ package org.dcache.webdav;
 
 import static java.util.Objects.requireNonNull;
 
+import org.dcache.util.spring.Required;
 import org.springframework.beans.factory.FactoryBean;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.core.io.Resource;
 
 /**

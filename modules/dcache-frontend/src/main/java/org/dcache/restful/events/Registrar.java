@@ -33,7 +33,7 @@ import javax.inject.Inject;
 import javax.security.auth.Subject;
 import javax.ws.rs.ClientErrorException;
 import org.dcache.auth.Subjects;
-import org.springframework.beans.factory.annotation.Required;
+import org.dcache.util.spring.Required;
 
 /**
  * The Registrar is responsible for holding client channels.

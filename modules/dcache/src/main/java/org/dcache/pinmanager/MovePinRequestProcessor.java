@@ -28,9 +28,9 @@ import org.dcache.pinmanager.model.Pin;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.services.pinmanager1.PinManagerMovePinMessage;
+import org.dcache.util.spring.Required;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.annotation.Transactional;
 
 /**

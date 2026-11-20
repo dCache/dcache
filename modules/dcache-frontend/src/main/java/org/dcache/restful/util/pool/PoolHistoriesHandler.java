@@ -82,12 +82,12 @@ import org.dcache.util.collector.pools.PoolInfoAggregator;
 import org.dcache.util.collector.pools.PoolInfoCollectorUtils;
 import org.dcache.util.histograms.CountingHistogram;
 import org.dcache.util.histograms.TimeseriesHistogram;
+import org.dcache.util.spring.Required;
 import org.dcache.vehicles.histograms.AggregateFileLifetimeRequestMessage;
 import org.dcache.vehicles.histograms.PoolTimeseriesRequestMessage;
 import org.dcache.vehicles.histograms.PoolTimeseriesRequestMessage.TimeseriesType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * <p>Called during the collection gathering in order to obtain

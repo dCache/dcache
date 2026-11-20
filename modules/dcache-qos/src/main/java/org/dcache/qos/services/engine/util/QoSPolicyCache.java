@@ -74,6 +74,7 @@ import javax.security.auth.Subject;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
 import org.dcache.qos.QoSPolicy;
+import org.dcache.util.spring.Required;
 import org.dcache.vehicles.qos.PnfsManagerAddQoSPolicyMessage;
 import org.dcache.vehicles.qos.PnfsManagerGetQoSPolicyMessage;
 import org.dcache.vehicles.qos.PnfsManagerInvalidateQoSPolicyMessage;
@@ -81,7 +82,6 @@ import org.dcache.vehicles.qos.PnfsManagerListQoSPoliciesMessage;
 import org.dcache.vehicles.qos.PnfsManagerRmQoSPolicyMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  *   Serves as a write-through cache for QoS Policies.   The cache is populated

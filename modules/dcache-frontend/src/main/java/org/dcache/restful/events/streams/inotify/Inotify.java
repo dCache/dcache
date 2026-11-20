@@ -83,10 +83,10 @@ import org.dcache.restful.events.spi.SelectionContext;
 import org.dcache.restful.events.spi.SelectionResult;
 import org.dcache.restful.util.RequestUser;
 import org.dcache.util.RepeatableTaskRunner;
+import org.dcache.util.spring.Required;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * An EventStream that provides the client with events based on namespace activity.  The

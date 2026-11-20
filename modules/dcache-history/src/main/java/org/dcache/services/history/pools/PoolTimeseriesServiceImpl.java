@@ -80,11 +80,11 @@ import org.dcache.util.collector.ListenableFutureWrapper;
 import org.dcache.util.collector.pools.PoolInfoCollectorUtils;
 import org.dcache.util.collector.pools.PoolLiveDataCollector;
 import org.dcache.util.histograms.TimeseriesHistogram;
+import org.dcache.util.spring.Required;
 import org.dcache.vehicles.histograms.AggregateFileLifetimeRequestMessage;
 import org.dcache.vehicles.histograms.PoolTimeseriesRequestMessage;
 import org.dcache.vehicles.histograms.PoolTimeseriesRequestMessage.TimeseriesType;
 import org.dcache.vehicles.pool.PoolLiveDataForHistoriesMessage;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * <p>This is an implementation of the {@link PoolTimeseriesService} interface

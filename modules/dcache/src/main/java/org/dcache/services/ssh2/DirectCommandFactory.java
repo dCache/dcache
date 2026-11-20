@@ -69,7 +69,7 @@ import org.apache.sshd.server.command.Command;
 import org.apache.sshd.server.command.CommandFactory;
 import org.dcache.cells.CellStub;
 import org.dcache.util.list.ListDirectoryHandler;
-import org.springframework.beans.factory.annotation.Required;
+import org.dcache.util.spring.Required;
 
 /**
  * Implementation of Command Factory interface that enables direct command execution in dCache admin

@@ -67,7 +67,7 @@ import java.util.concurrent.TimeUnit;
 import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.PoolManagerGetRestoreHandlerInfo;
 import org.dcache.util.FireAndForgetTask;
-import org.springframework.beans.factory.annotation.Required;
+import org.dcache.util.spring.Required;
 
 /**
  * <p>Periodically publishes a list of the restore requests for this

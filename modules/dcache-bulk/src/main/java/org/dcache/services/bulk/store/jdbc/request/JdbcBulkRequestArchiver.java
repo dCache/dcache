@@ -71,9 +71,9 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.dcache.services.bulk.BulkRequest;
+import org.dcache.util.spring.Required;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Looks at the request table periodically and archives those which are out of date and have

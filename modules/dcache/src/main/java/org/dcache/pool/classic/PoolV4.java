@@ -113,10 +113,10 @@ import org.dcache.pool.repository.StickyRecord;
 import org.dcache.util.IoPriority;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.Version;
+import org.dcache.util.spring.Required;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 public class PoolV4
       extends AbstractCellComponent

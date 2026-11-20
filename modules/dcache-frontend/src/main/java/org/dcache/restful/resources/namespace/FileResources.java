@@ -86,13 +86,13 @@ import org.dcache.restful.util.namespace.NamespaceUtils;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryStream;
 import org.dcache.util.list.ListDirectoryHandler;
+import org.dcache.util.spring.Required;
 import org.dcache.vehicles.FileAttributes;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.stereotype.Component;
 
 /**

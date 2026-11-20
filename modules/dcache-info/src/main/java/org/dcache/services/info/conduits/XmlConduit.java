@@ -6,9 +6,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import org.dcache.services.info.serialisation.StateSerialiser;
+import org.dcache.util.spring.Required;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Information Exporter class.<br> This class is instantiated by the <code>InfoCollector</code> to

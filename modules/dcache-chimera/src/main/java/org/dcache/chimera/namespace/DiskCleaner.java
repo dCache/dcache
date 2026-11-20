@@ -43,9 +43,9 @@ import java.util.stream.Collectors;
 import org.dcache.cells.CellStub;
 import org.dcache.util.CacheExceptionFactory;
 import org.dcache.util.TimeUtils;
+import org.dcache.util.spring.Required;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 

@@ -12,9 +12,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.NDC;
+import org.dcache.util.spring.Required;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * The StateMaintainer class provides the machinery for processing StateUpdate objects independently

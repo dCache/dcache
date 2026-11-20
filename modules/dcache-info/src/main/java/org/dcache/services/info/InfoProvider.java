@@ -19,10 +19,10 @@ import org.dcache.services.info.gathers.MessageHandlerChain;
 import org.dcache.services.info.serialisation.SimpleTextSerialiser;
 import org.dcache.services.info.serialisation.StateSerialiser;
 import org.dcache.util.Args;
+import org.dcache.util.spring.Required;
 import org.dcache.vehicles.InfoGetSerialisedDataMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 public class InfoProvider implements CellCommandListener, CellInfoProvider,
       CellMessageReceiver {

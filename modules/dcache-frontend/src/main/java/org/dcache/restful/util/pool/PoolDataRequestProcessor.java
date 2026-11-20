@@ -68,8 +68,8 @@ import org.dcache.pool.json.PoolData;
 import org.dcache.pool.json.PoolInfoWrapper;
 import org.dcache.restful.services.pool.PoolInfoServiceImpl;
 import org.dcache.util.collector.RequestFutureProcessor;
+import org.dcache.util.spring.Required;
 import org.dcache.vehicles.pool.PoolDataRequestMessage;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * <p>Handles the transformation of message content from pools into a cached

@@ -77,10 +77,10 @@ import org.dcache.services.bulk.BulkRequestStatusInfo;
 import org.dcache.services.bulk.BulkStorageException;
 import org.dcache.services.bulk.store.jdbc.JdbcBulkDaoUtils;
 import org.dcache.services.bulk.store.jdbc.rtarget.JdbcRequestTargetDao;
+import org.dcache.util.spring.Required;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.support.JdbcDaoSupport;
 import org.springframework.jdbc.support.KeyHolder;
 

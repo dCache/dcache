@@ -8,7 +8,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.security.auth.Subject;
 import org.dcache.auth.attributes.LoginAttribute;
-import org.springframework.beans.factory.annotation.Required;
+import org.dcache.util.spring.Required;
 
 /**
  * Anonymous login strategy, used on the xrootd door when no authentication is specified. The

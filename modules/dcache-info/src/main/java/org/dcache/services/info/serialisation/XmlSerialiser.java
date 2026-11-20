@@ -9,7 +9,7 @@ import org.dcache.services.info.base.State;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StringStateValue;
-import org.springframework.beans.factory.annotation.Required;
+import org.dcache.util.spring.Required;
 
 
 /**

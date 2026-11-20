@@ -82,8 +82,8 @@ import org.dcache.util.collector.RequestFutureProcessor;
 import org.dcache.util.collector.pools.PoolHistoriesAggregator;
 import org.dcache.util.collector.pools.PoolInfoCollectorUtils;
 import org.dcache.util.histograms.CountingHistogram;
+import org.dcache.util.spring.Required;
 import org.dcache.vehicles.pool.PoolLiveDataForHistoriesMessage;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * <p>Handles the transformation of message content from pools into a cached

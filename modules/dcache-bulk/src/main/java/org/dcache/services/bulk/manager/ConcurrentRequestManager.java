@@ -94,9 +94,9 @@ import org.dcache.services.bulk.util.BulkRequestTarget.State;
 import org.dcache.services.bulk.util.BulkServiceStatistics;
 import org.dcache.util.BoundedCachedExecutor;
 import org.dcache.util.FireAndForgetTask;
+import org.dcache.util.spring.Required;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Initializes a processor thread to handle the promotion of requests from queued to active, and to

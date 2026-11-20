@@ -51,7 +51,7 @@ import org.dcache.poolmanager.PoolMgrGetUpdatedHandler;
 import org.dcache.poolmanager.RemotePoolManagerHandler;
 import org.dcache.poolmanager.RendezvousPoolManagerHandler;
 import org.dcache.poolmanager.SerializablePoolManagerHandler;
-import org.springframework.beans.factory.annotation.Required;
+import org.dcache.util.spring.Required;
 
 /**
  * This class responds to requests to provide a PoolManagerHandler.

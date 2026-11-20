@@ -36,6 +36,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.dcache.util.CDCThreadFactory;
 import org.dcache.util.NDC;
+import org.dcache.util.spring.Required;
 import org.dcache.xrootd.OutboundExceptionHandler;
 import org.dcache.xrootd.core.XrootdAuthenticationHandler;
 import org.dcache.xrootd.core.XrootdDecoder;
@@ -50,7 +51,6 @@ import org.dcache.xrootd.security.TLSSessionInfo;
 import org.dcache.xrootd.util.ServerProtocolFlags;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Netty based xrootd redirector. Could possibly be replaced by pure spring configuration once we

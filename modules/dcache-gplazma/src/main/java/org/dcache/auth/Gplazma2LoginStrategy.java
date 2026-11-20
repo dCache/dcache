@@ -12,7 +12,6 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import dmg.cells.nucleus.CellCommandListener;
-import java.io.File;
 import java.lang.annotation.Annotation;
 import java.security.Principal;
 import java.util.Collection;
@@ -39,9 +38,9 @@ import org.dcache.gplazma.monitor.LoginResult;
 import org.dcache.gplazma.monitor.LoginResultPrinter;
 import org.dcache.gplazma.monitor.RecordingLoginMonitor;
 import org.dcache.util.Args;
+import org.dcache.util.spring.Required;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * A LoginStrategy that delegates login requests to an instance of org.dcache.gplazma.GPlazma.
@@ -69,7 +68,6 @@ public class Gplazma2LoginStrategy implements LoginStrategy, CellCommandListener
      */
     private static final Set<Class<?>> AUTHENTICATION_OUTPUT;
 
-    private String _configurationFile;
     private GPlazma _gplazma;
     private Function<FsPath, PrefixRestriction> _createPrefixRestriction = PrefixRestriction::new;
     private Optional<String> _uploadPath = Optional.empty();
@@ -117,24 +115,8 @@ public class Gplazma2LoginStrategy implements LoginStrategy, CellCommandListener
     }
 
     @Required
-    public void setConfigurationFile(String configurationFile) {
-        if ((configurationFile == null) || (configurationFile.length() == 0)) {
-            throw new IllegalArgumentException(
-                  "configuration file argument wasn't specified correctly");
-        } else if (!new File(configurationFile).exists()) {
-            throw new IllegalArgumentException(
-                  "configuration file does not exists at " + configurationFile);
-        }
-        _configurationFile = configurationFile;
-    }
-
-    @Required
     public void setGplazma(GPlazma gplazma) {
         _gplazma = requireNonNull(gplazma);
-    }
-
-    public String getConfigurationFile() {
-        return _configurationFile;
     }
 
     /*

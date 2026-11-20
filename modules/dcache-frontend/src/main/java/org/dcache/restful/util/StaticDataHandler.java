@@ -27,11 +27,11 @@ import java.util.Map;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.dcache.util.spring.Required;
 import org.eclipse.jetty.ee8.nested.AbstractHandler;
 import org.eclipse.jetty.ee8.nested.Request;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.MetaData;
-import org.springframework.beans.factory.annotation.Required;
 
 
 /**

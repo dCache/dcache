@@ -67,12 +67,12 @@ import org.dcache.http.AuthenticationHandler;
 import org.dcache.http.PathMapper;
 import org.dcache.util.Checksums;
 import org.dcache.util.HttpExtHeader;
+import org.dcache.util.spring.Required;
 import org.dcache.webdav.RfcResponseHandler;
 import org.dcache.webdav.transfer.RemoteTransferHandler.Direction;
 import org.dcache.webdav.transfer.RemoteTransferHandler.TransferType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * The CopyFilter adds support for initiating third-party copies via WebDAV.  This makes use of a

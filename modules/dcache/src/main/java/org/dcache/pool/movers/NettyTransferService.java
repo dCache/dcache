@@ -76,10 +76,10 @@ import org.dcache.util.ChecksumType;
 import org.dcache.util.NettyPortRange;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.TryCatchTemplate;
+import org.dcache.util.spring.Required;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;

@@ -34,9 +34,9 @@ import org.dcache.pool.PoolDataBeanProvider;
 import org.dcache.pool.classic.MoverRequestScheduler.Order;
 import org.dcache.pool.classic.json.FlushControllerData;
 import org.dcache.util.FireAndForgetTask;
+import org.dcache.util.spring.Required;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Controls flush to tape.

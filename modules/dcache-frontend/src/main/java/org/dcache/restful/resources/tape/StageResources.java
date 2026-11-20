@@ -113,10 +113,10 @@ import org.dcache.services.bulk.BulkRequestMessage;
 import org.dcache.services.bulk.BulkRequestStatusMessage;
 import org.dcache.services.bulk.BulkRequestTargetInfo;
 import org.dcache.util.TimeUtils;
+import org.dcache.util.spring.Required;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.stereotype.Component;
 
 /**

@@ -61,7 +61,7 @@ package org.dcache.alarms.spi;
 
 import java.util.Map;
 import org.dcache.alarms.file.FileBackedAlarmPriorityMap;
-import org.springframework.beans.factory.annotation.Required;
+import org.dcache.util.spring.Required;
 
 /**
  * <p>Factory for creating and configuring listeners which require

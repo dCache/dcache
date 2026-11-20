@@ -27,7 +27,7 @@ import dmg.util.Replaceable;
 import java.util.Collections;
 import java.util.Map;
 import javax.annotation.PostConstruct;
-import org.springframework.beans.factory.annotation.Required;
+import org.dcache.util.spring.Required;
 
 /**
  * A base class for creating dictionary-like objects from dCache configuration.

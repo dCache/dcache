@@ -71,9 +71,9 @@ import org.dcache.restful.events.EventStreamRepository.EventStreamMetadata;
 import org.dcache.restful.events.Registrar;
 import org.dcache.restful.events.SubscriptionResult;
 import org.dcache.restful.util.RequestUser;
+import org.dcache.util.spring.Required;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.stereotype.Component;
 
 /**

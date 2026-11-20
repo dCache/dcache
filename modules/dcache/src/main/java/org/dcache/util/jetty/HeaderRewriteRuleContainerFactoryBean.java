@@ -2,10 +2,10 @@ package org.dcache.util.jetty;
 
 import com.google.common.collect.ImmutableMap;
 import javax.annotation.PostConstruct;
+import org.dcache.util.spring.Required;
 import org.eclipse.jetty.rewrite.handler.HeaderPatternRule;
 import org.eclipse.jetty.rewrite.handler.RuleContainer;
 import org.springframework.beans.factory.FactoryBean;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Spring factory bean for creating a Jetty rewriting Rule where all configuration with some prefix

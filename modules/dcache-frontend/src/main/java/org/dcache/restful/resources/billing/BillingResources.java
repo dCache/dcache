@@ -98,9 +98,9 @@ import org.dcache.restful.providers.billing.P2PTransferRecord;
 import org.dcache.restful.services.billing.BillingInfoService;
 import org.dcache.restful.util.RequestUser;
 import org.dcache.util.histograms.Histogram;
+import org.dcache.util.spring.Required;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.stereotype.Component;
 
 /**

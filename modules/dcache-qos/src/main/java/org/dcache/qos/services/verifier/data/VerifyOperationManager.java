@@ -100,9 +100,9 @@ import org.dcache.qos.util.QoSHistory;
 import org.dcache.qos.vehicles.QoSAdjustmentRequest;
 import org.dcache.util.RunnableModule;
 import org.dcache.util.SignalAware;
+import org.dcache.util.spring.Required;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  *  Responsible for the entire lifecycle of a given verification operation.

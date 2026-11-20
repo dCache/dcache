@@ -51,10 +51,10 @@ import org.dcache.pool.statistics.SnapshotStatistics;
 import org.dcache.util.CDCExecutorServiceDecorator;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.NetworkUtils;
+import org.dcache.util.spring.Required;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 public class DefaultPostTransferService extends AbstractCellComponent implements
       PostTransferService, CellInfoProvider {

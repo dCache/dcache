@@ -72,8 +72,8 @@ import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.restful.providers.restores.RestoreInfo;
 import org.dcache.util.collector.CellMessagingCollector;
+import org.dcache.util.spring.Required;
 import org.dcache.vehicles.FileAttributes;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * <p>Thin wrapper around cell messaging to pool manager pnfs manager endpoints.</p>

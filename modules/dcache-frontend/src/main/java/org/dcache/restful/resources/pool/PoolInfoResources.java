@@ -123,11 +123,11 @@ import org.dcache.restful.services.transfers.TransferInfoService;
 import org.dcache.restful.util.RequestUser;
 import org.dcache.restful.util.selection.PsuAdminCommands;
 import org.dcache.restful.util.selection.SelectionNames;
+import org.dcache.util.spring.Required;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.stereotype.Component;
 
 /**

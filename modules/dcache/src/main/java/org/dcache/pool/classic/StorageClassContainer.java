@@ -35,8 +35,8 @@ import org.dcache.pool.classic.json.HSMFlushQManagerData;
 import org.dcache.pool.nearline.NearlineStorageHandler;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.Repository;
+import org.dcache.util.spring.Required;
 import org.dcache.vehicles.FileAttributes;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Manages tape flush queues.

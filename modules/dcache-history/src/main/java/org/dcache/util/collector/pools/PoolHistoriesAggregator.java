@@ -65,7 +65,7 @@ import org.dcache.pool.json.PoolData;
 import org.dcache.pool.json.PoolInfoWrapper;
 import org.dcache.services.history.pools.PoolTimeseriesServiceImpl;
 import org.dcache.util.histograms.CountingHistogram;
-import org.springframework.beans.factory.annotation.Required;
+import org.dcache.util.spring.Required;
 
 /**
  * <p>Called during the collection gathering in order to aggregate

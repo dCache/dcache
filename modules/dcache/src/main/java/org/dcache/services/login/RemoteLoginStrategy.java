@@ -9,7 +9,7 @@ import javax.security.auth.Subject;
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.cells.CellStub;
-import org.springframework.beans.factory.annotation.Required;
+import org.dcache.util.spring.Required;
 
 public class RemoteLoginStrategy implements LoginStrategy {
 

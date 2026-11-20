@@ -18,7 +18,7 @@ import org.dcache.auth.Subjects;
 import org.dcache.auth.UnionLoginStrategy.AccessLevel;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.Restrictions;
-import org.springframework.beans.factory.annotation.Required;
+import org.dcache.util.spring.Required;
 
 /**
  * Add support for logging in a particular user as Users.NOBODY, all other requests are passed on to

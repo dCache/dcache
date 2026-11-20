@@ -77,6 +77,7 @@ import org.apache.zookeeper.KeeperException.NoNodeException;
 import org.apache.zookeeper.data.Stat;
 import org.dcache.util.Args;
 import org.dcache.util.cli.CommandExecutor;
+import org.dcache.util.spring.RequiredPropertyChecker;
 import org.dcache.vehicles.BeanQueryAllPropertiesMessage;
 import org.dcache.vehicles.BeanQueryMessage;
 import org.dcache.vehicles.BeanQuerySinglePropertyMessage;
@@ -1035,6 +1036,7 @@ public class UniversalSpringCell
             context.setConfigLocations(args.argv(0));
             context.addBeanFactoryPostProcessor(
                   beanFactory -> beanFactory.addBeanPostProcessor(UniversalSpringCell.this));
+            RequiredPropertyChecker.register(context);
             context.addBeanFactoryPostProcessor(
                   beanFactory -> beanFactory.registerSingleton(
                         "message-executor", (Executor) this::invokeOnMessageThread)

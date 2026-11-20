@@ -95,6 +95,7 @@ import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.json.RepositoryData;
 import org.dcache.pool.statistics.StatisticsListener;
 import org.dcache.util.FieldSort;
+import org.dcache.util.spring.Required;
 import org.dcache.vehicles.pool.CacheEntryInfoMessage;
 import org.dcache.vehicles.pool.PoolDataRequestMessage;
 import org.dcache.vehicles.pool.PoolFlushListingMessage;
@@ -103,7 +104,6 @@ import org.dcache.vehicles.pool.PoolMoverListingMessage;
 import org.dcache.vehicles.pool.PoolP2PListingMessage;
 import org.dcache.vehicles.pool.PoolRemoveListingMessage;
 import org.dcache.vehicles.pool.PoolStageListingMessage;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * <p>Serves requests from frontend pool info service for info relating to the

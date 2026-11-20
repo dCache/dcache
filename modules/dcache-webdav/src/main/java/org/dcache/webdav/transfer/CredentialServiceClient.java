@@ -63,11 +63,11 @@ import org.dcache.auth.StaticOpenIdCredential;
 import org.dcache.auth.StaticOpenIdCredential.Builder;
 import org.dcache.cells.CellStub;
 import org.dcache.security.util.X509Credentials;
+import org.dcache.util.spring.Required;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * This class acts as a client to credential services.

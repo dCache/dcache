@@ -65,10 +65,10 @@ import org.dcache.poolmanager.Utils;
 import org.dcache.util.Args;
 import org.dcache.util.CDCExecutorServiceDecorator;
 import org.dcache.util.Version;
+import org.dcache.util.spring.Required;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 public class PoolManagerV5
       implements CellCommandListener, CellMessageReceiver, CellLifeCycleAware, CellInfoProvider,

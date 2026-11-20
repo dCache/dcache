@@ -24,10 +24,10 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.security.AccessController;
 import javax.security.auth.Subject;
+import org.dcache.util.spring.Required;
 import org.eclipse.jetty.io.EofException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 import org.stringtemplate.v4.ST;
 
 /**

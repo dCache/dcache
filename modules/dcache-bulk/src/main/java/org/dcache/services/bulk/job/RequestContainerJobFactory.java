@@ -83,10 +83,10 @@ import org.dcache.services.bulk.util.BulkServiceStatistics;
 import org.dcache.services.bulk.util.BulkTaskThrottle;
 import org.dcache.util.BoundedCachedExecutor;
 import org.dcache.util.list.ListDirectoryHandler;
+import org.dcache.util.spring.Required;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Constructs the request job.

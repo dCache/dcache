@@ -13,9 +13,9 @@ import java.util.concurrent.TimeUnit;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.util.NDC;
+import org.dcache.util.spring.Required;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * This thread is responsible for scheduling various data-gathering activity. Multiple

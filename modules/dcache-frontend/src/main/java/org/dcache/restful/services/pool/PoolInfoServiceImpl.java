@@ -95,6 +95,7 @@ import org.dcache.util.collector.ListenableFutureWrapper;
 import org.dcache.util.collector.pools.PoolInfoCollectorUtils;
 import org.dcache.util.histograms.Histogram;
 import org.dcache.util.histograms.HistogramModel;
+import org.dcache.util.spring.Required;
 import org.dcache.vehicles.pool.CacheEntryInfoMessage;
 import org.dcache.vehicles.pool.PoolDataRequestMessage;
 import org.dcache.vehicles.pool.PoolFlushListingMessage;
@@ -103,7 +104,6 @@ import org.dcache.vehicles.pool.PoolNearlineListingMessage;
 import org.dcache.vehicles.pool.PoolP2PListingMessage;
 import org.dcache.vehicles.pool.PoolRemoveListingMessage;
 import org.dcache.vehicles.pool.PoolStageListingMessage;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * <p>Responsible for serving up data from the cache.</p>

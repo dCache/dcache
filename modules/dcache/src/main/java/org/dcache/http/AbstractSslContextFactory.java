@@ -24,7 +24,7 @@ import java.nio.file.Path;
 import java.util.concurrent.Callable;
 import javax.annotation.PostConstruct;
 import org.dcache.ssl.CanlContextFactory;
-import org.springframework.beans.factory.annotation.Required;
+import org.dcache.util.spring.Required;
 
 abstract class AbstractSslContextFactory<C> implements Callable<C> {
 

@@ -84,10 +84,10 @@ import java.util.concurrent.Future;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.tape.ArchiveInfo;
+import org.dcache.util.spring.Required;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 public class ArchiveInfoCollector implements CellCommandListener {
 

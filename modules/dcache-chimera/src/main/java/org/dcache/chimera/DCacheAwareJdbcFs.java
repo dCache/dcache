@@ -96,8 +96,8 @@ import org.dcache.pinmanager.PinManagerPinMessage;
 import org.dcache.pinmanager.PinManagerUnpinMessage;
 import org.dcache.poolmanager.RemotePoolMonitor;
 import org.dcache.space.Capacity;
+import org.dcache.util.spring.Required;
 import org.dcache.vehicles.FileAttributes;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.PlatformTransactionManager;
 
 

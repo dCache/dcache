@@ -68,7 +68,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.dcache.poolmanager.PoolManagerGetRestoreHandlerInfo;
-import org.springframework.beans.factory.annotation.Required;
+import org.dcache.util.spring.Required;
 
 /**
  * <p>Front-end plug-in for receiving notifications of request listings

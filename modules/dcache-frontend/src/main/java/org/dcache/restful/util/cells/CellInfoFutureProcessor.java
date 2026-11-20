@@ -64,7 +64,7 @@ import dmg.cells.nucleus.CellVersion;
 import org.dcache.cells.json.CellData;
 import org.dcache.restful.services.cells.CellInfoServiceImpl;
 import org.dcache.util.collector.RequestFutureProcessor;
-import org.springframework.beans.factory.annotation.Required;
+import org.dcache.util.spring.Required;
 
 /**
  * <p>Used in conjunction with the {@link CellInfoCollector} as message

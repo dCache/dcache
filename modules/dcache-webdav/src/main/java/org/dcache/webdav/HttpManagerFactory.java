@@ -18,9 +18,9 @@ import io.milton.http.webdav.DefaultWebDavResponseHandler;
 import io.milton.http.webdav.PropFindXmlGenerator;
 import java.util.Date;
 import org.dcache.http.PathMapper;
+import org.dcache.util.spring.Required;
 import org.dcache.webdav.federation.FederationResponseHandler;
 import org.springframework.beans.factory.FactoryBean;
-import org.springframework.beans.factory.annotation.Required;
 
 public class HttpManagerFactory extends HttpManagerBuilder implements FactoryBean {
 

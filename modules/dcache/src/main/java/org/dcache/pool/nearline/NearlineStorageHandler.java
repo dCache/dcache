@@ -115,10 +115,10 @@ import org.dcache.pool.repository.StateChangeListener;
 import org.dcache.pool.repository.StickyChangeEvent;
 import org.dcache.util.CacheExceptionFactory;
 import org.dcache.util.Checksum;
+import org.dcache.util.spring.Required;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Entry point to and management interface for the nearline storage subsystem.

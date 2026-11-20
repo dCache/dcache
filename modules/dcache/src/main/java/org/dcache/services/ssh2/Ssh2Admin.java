@@ -52,9 +52,9 @@ import org.dcache.util.Files;
 import org.dcache.util.Glob;
 import org.dcache.util.NetLoggerBuilder;
 import org.dcache.util.Subnet;
+import org.dcache.util.spring.Required;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * This class starts the ssh server. It is however not started in the constructor, but in

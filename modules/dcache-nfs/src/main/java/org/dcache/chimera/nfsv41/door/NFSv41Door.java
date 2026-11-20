@@ -186,12 +186,12 @@ import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
 import org.dcache.util.Version;
+import org.dcache.util.spring.Required;
 import org.dcache.vehicles.DoorValidateMoverMessage;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Required;
 
 public class NFSv41Door extends AbstractCellComponent implements
       NFSv41DeviceManager, CellCommandListener,

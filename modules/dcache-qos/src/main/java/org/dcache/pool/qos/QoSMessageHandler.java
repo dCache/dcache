@@ -71,10 +71,10 @@ import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.StickyRecord;
+import org.dcache.util.spring.Required;
 import org.dcache.vehicles.qos.ChangePreciousBitMessage;
 import org.dcache.vehicles.qos.ChangeStickyBitMessage;
 import org.dcache.vehicles.qos.ReplicaStatusMessage;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Serves requests to verify records and change the sticky bit on entries from the repository.

@@ -10,8 +10,8 @@ import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.StateChangeEvent;
 import org.dcache.pool.repository.StateChangeListener;
 import org.dcache.pool.repository.StickyChangeEvent;
+import org.dcache.util.spring.Required;
 import org.dcache.vehicles.FileAttributes;
-import org.springframework.beans.factory.annotation.Required;
 
 public class StatisticsListener implements StateChangeListener {
 

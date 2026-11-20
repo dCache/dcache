@@ -40,8 +40,8 @@ import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pinmanager.model.Pin;
 import org.dcache.poolmanager.PoolMonitor;
+import org.dcache.util.spring.Required;
 import org.dcache.vehicles.FileAttributes;
-import org.springframework.beans.factory.annotation.Required;
 
 public class PinManagerCLI
       implements CellCommandListener, CellInfoProvider {

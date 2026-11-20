@@ -74,7 +74,7 @@ import org.dcache.services.billing.db.IBillingInfoAccess;
 import org.dcache.services.billing.db.data.IHistogramData;
 import org.dcache.services.billing.db.exceptions.RetryException;
 import org.dcache.services.billing.db.impl.AbstractBillingInfoAccess;
-import org.springframework.beans.factory.annotation.Required;
+import org.dcache.util.spring.Required;
 
 /**
  * Implements {@link IBillingInfoAccess} using <href a="http://www.datanucleus.org">DataNucleus</a>.

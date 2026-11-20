@@ -123,6 +123,7 @@ import org.dcache.util.NetworkUtils;
 import org.dcache.util.PingMoversTask;
 import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
+import org.dcache.util.spring.Required;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.vehicles.PnfsResolveSymlinksMessage;
@@ -140,7 +141,6 @@ import org.dcache.xrootd.util.ParseException;
 import org.dcache.xrootd.util.ServerProtocolFlags;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Shared cell component used to interface with the rest of dCache.

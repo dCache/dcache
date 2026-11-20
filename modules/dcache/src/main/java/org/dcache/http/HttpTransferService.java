@@ -47,9 +47,9 @@ import java.util.UUID;
 import org.dcache.util.HttpExtHeader;
 import org.dcache.pool.movers.NettyMover;
 import org.dcache.pool.movers.NettyTransferService;
+import org.dcache.util.spring.Required;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Netty-based HTTP transfer service.

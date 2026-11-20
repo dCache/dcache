@@ -13,7 +13,7 @@ import org.dcache.cells.CellStub;
 import org.dcache.cells.CuratorFrameworkAware;
 import org.dcache.http.CustomResponseHeadersHandler;
 import org.dcache.util.list.ListDirectoryHandler;
-import org.springframework.beans.factory.annotation.Required;
+import org.dcache.util.spring.Required;
 
 public class AdminShellFactory implements ShellFactory, CellMessageSender, CuratorFrameworkAware {
 

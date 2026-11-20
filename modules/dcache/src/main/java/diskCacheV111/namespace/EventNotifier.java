@@ -64,9 +64,9 @@ import org.dcache.namespace.FileType;
 import org.dcache.namespace.events.EventType;
 import org.dcache.namespace.events.InotifyEvent;
 import org.dcache.util.RepeatableTaskRunner;
+import org.dcache.util.spring.Required;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * This class is responsible for accepting inotify(7)-like events and sending them to event

@@ -22,7 +22,7 @@ import eu.emi.security.authn.x509.NamespaceCheckingMode;
 import eu.emi.security.authn.x509.OCSPCheckingMode;
 import java.security.SecureRandom;
 import java.util.concurrent.TimeUnit;
-import org.springframework.beans.factory.annotation.Required;
+import org.dcache.util.spring.Required;
 
 
 /**

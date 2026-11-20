@@ -69,12 +69,12 @@ import org.dcache.macaroons.InvalidCaveatException;
 import org.dcache.macaroons.MacaroonContext;
 import org.dcache.macaroons.MacaroonProcessor;
 import org.dcache.util.NDC;
+import org.dcache.util.spring.Required;
 import org.eclipse.jetty.ee8.nested.AbstractHandler;
 import org.eclipse.jetty.ee8.nested.Request;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Handle HTTP-based requests to create a macaroon.
