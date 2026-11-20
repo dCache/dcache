@@ -1,7 +1,6 @@
 package org.dcache.services.httpd.handlers;
 
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
-import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 
 import com.google.common.base.Joiner;
@@ -11,26 +10,19 @@ import dmg.util.HttpRequest;
 import java.io.File;
 import java.io.IOException;
 import java.net.FileNameMap;
-import java.net.URISyntaxException;
 import java.net.URLConnection;
 import java.nio.file.Files;
 import java.util.Arrays;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.dcache.services.httpd.util.StandardHttpRequest;
-import org.eclipse.jetty.ee8.nested.AbstractHandler;
-import org.eclipse.jetty.ee8.nested.Request;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Provides HTML or .css content from static file.
  *
  * @author arossi
  */
-public class PathAlias extends AbstractHandler {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(PathAlias.class);
+public class PathAlias implements AliasHandler {
 
     private static final FileNameMap mimeTypeMap = URLConnection.getFileNameMap();
 
@@ -41,22 +33,9 @@ public class PathAlias extends AbstractHandler {
     }
 
     @Override
-    public void handle(String target, Request baseRequest,
-          HttpServletRequest request, HttpServletResponse response)
-          throws IOException {
-        try {
-            HttpRequest proxy = new StandardHttpRequest(request, response);
-            sendFile(path, proxy);
-        } catch (RuntimeException | IOException e) {
-            throw e;
-        } catch (HttpException e) {
-            LOGGER.debug("Failing request {}: {} {}", request, e.getErrorCode(),
-                  e.getMessage());
-            response.setStatus(e.getErrorCode(), e.getMessage());
-        } catch (URISyntaxException e) {
-            LOGGER.debug("Failing request {}: {}", request, e.getMessage());
-            response.setStatus(SC_INTERNAL_SERVER_ERROR, "Bad URI: " + e.getMessage());
-        }
+    public void handle(HttpServletRequest request, HttpServletResponse response)
+          throws IOException, HttpException {
+        sendFile(path, StandardHttpRequest.of(request, response));
     }
 
 

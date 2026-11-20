@@ -20,6 +20,7 @@ package org.dcache.services.httpd;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.is;
 
 import java.net.URI;
@@ -49,10 +50,18 @@ public class HttpdContextTest {
               Map.of("httpd.net.port", "0",
                     "httpd.net.listen", "127.0.0.1"));
         context.domainContext().put("missing.html", "<html>missing</html>");
+        context.domainContext().put("offline.html", "<html>offline</html>");
         context.domainContext().put("robots.txt", "User-agent: *");
+        context.command("set alias <home> redirect old");
         context.command("set alias <default> context missing.html -status=404");
+        context.command("set alias old file " + context.property("httpd.static-content.index")
+              + " -onError=default");
+        context.command("set alias offline context offline.html");
         context.command("set alias robots.txt context robots.txt");
+        context.command("set alias cellInfo context cellInfoTable.html -onError=offline");
         context.command("set alias docs directory " + context.property("httpd.static-content.docs"));
+        context.command("set alias api class org.dcache.services.httpd.probe.ProbeResponseEngine");
+        context.command("set alias broken badconfig whatever");
         endpoint = URI.create("http://127.0.0.1:" + context.jettyPort());
         client = HttpClient.newHttpClient();
     }
@@ -85,6 +94,85 @@ public class HttpdContextTest {
     public void shouldUseDefaultAliasForUnknownAlias() throws Exception {
         HttpResponse<String> response = get("/no-such-alias");
 
+        assertThat(response.statusCode(), is(404));
+        assertThat(response.body(), containsString("missing"));
+    }
+
+    @Test
+    public void shouldRedirectHomeAlias() throws Exception {
+        HttpResponse<String> response = get("/");
+
+        assertThat(response.statusCode(), is(302));
+        assertThat(response.headers().firstValue("Location").orElse(""), endsWith("/old"));
+    }
+
+    @Test
+    public void shouldServeFileAlias() throws Exception {
+        HttpResponse<String> response = get("/old");
+
+        assertThat(response.statusCode(), is(200));
+        assertThat(response.body(), containsString("<html"));
+    }
+
+    @Test
+    public void shouldAnswerNotFoundForMissingFileOfDirectoryAlias() throws Exception {
+        assertThat(get("/docs/no-such-file.html").statusCode(), is(404));
+    }
+
+    @Test
+    public void shouldUseOnErrorAliasForMissingContext() throws Exception {
+        HttpResponse<String> response = get("/cellInfo");
+
+        assertThat(response.statusCode(), is(200));
+        assertThat(response.body(), containsString("offline"));
+    }
+
+    @Test
+    public void shouldAnswerWithEngine() throws Exception {
+        assertThat(get("/api").statusCode(), is(404));
+        assertThat(get("/api/PoolManager").statusCode(), is(503));
+    }
+
+    @Test
+    public void shouldAnswerInternalErrorForBadConfig() throws Exception {
+        HttpResponse<String> response = get("/broken");
+
+        assertThat(response.statusCode(), is(500));
+        assertThat(response.body(), containsString("HTTP Server badly configured"));
+    }
+
+    @Test
+    public void shouldRefuseOtherMethodsThanGet() throws Exception {
+        HttpResponse<String> response = client.send(
+              HttpRequest.newBuilder(endpoint.resolve("/robots.txt"))
+                    .POST(HttpRequest.BodyPublishers.noBody()).build(),
+              HttpResponse.BodyHandlers.ofString());
+
+        assertThat(response.statusCode(), is(405));
+        assertThat(response.headers().firstValue("Allow").orElse(null), is("GET, HEAD"));
+    }
+
+    @Test
+    public void shouldAnswerHeadLikeGet() throws Exception {
+        HttpResponse<String> response = client.send(
+              HttpRequest.newBuilder(endpoint.resolve("/robots.txt"))
+                    .method("HEAD", HttpRequest.BodyPublishers.noBody()).build(),
+              HttpResponse.BodyHandlers.ofString());
+
+        assertThat(response.statusCode(), is(200));
+        assertThat(response.body(), is(""));
+    }
+
+    @Test
+    public void shouldForgetUnsetAlias() throws Exception {
+        context.command("set alias temporary context robots.txt");
+        assertThat(get("/temporary").statusCode(), is(200));
+        assertThat(context.command("ls alias").toString(),
+              containsString("temporary -> context(robots.txt)"));
+
+        context.command("unset alias temporary");
+
+        HttpResponse<String> response = get("/temporary");
         assertThat(response.statusCode(), is(404));
         assertThat(response.body(), containsString("missing"));
     }

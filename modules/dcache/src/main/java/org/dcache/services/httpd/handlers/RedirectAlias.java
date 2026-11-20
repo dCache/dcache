@@ -18,12 +18,11 @@
  */
 package org.dcache.services.httpd.handlers;
 
+import dmg.util.HttpException;
 import java.io.IOException;
-import javax.servlet.ServletException;
+import java.util.Objects;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.eclipse.jetty.ee8.nested.AbstractHandler;
-import org.eclipse.jetty.ee8.nested.Request;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +31,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author arossi
  */
-public class RedirectAlias extends AbstractHandler {
+public class RedirectAlias implements AliasHandler {
 
     private static final Logger LOGGER
           = LoggerFactory.getLogger(RedirectAlias.class);
@@ -49,20 +48,18 @@ public class RedirectAlias extends AbstractHandler {
     }
 
     @Override
-    public void handle(String target, Request baseRequest,
-          HttpServletRequest request, HttpServletResponse response) throws
-          IOException, ServletException {
+    public void handle(HttpServletRequest request, HttpServletResponse response)
+          throws IOException, HttpException {
+        String target = request.getServletPath() + Objects.toString(request.getPathInfo(), "");
         LOGGER.debug("target: {}", target);
 
-        if (target.contains(fromContext)) {
-            StringBuilder targetUrl = new StringBuilder(target);
-            int i = targetUrl.indexOf(fromContext);
-            String newUrl
-                  = targetUrl.replace(i, i + fromContext.length(),
-                        toContext)
-                  .toString();
-            LOGGER.debug("redirected to: {}", newUrl);
-            response.sendRedirect(newUrl);
+        if (!target.contains(fromContext)) {
+            throw new HttpException(HttpServletResponse.SC_NOT_FOUND, "Not found : " + target);
         }
+        StringBuilder targetUrl = new StringBuilder(target);
+        int i = targetUrl.indexOf(fromContext);
+        String newUrl = targetUrl.replace(i, i + fromContext.length(), toContext).toString();
+        LOGGER.debug("redirected to: {}", newUrl);
+        response.sendRedirect(newUrl);
     }
 }

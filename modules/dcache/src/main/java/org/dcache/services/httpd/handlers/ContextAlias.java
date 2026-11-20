@@ -1,26 +1,24 @@
 package org.dcache.services.httpd.handlers;
 
 import dmg.cells.nucleus.DomainContextAware;
+import dmg.util.HttpException;
 import dmg.util.HttpRequest;
 import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.dcache.services.httpd.exceptions.OnErrorException;
 import org.dcache.services.httpd.util.StandardHttpRequest;
-import org.eclipse.jetty.ee8.nested.AbstractHandler;
-import org.eclipse.jetty.ee8.nested.Request;
 
 /**
  * Provides lookup in the context map of preconfigured HTML pages.
  *
  * @author arossi
  */
-public class ContextAlias extends AbstractHandler implements DomainContextAware {
+public class ContextAlias implements AliasHandler, DomainContextAware {
 
     private final String specificName;
     private Map<String, Object> context;
@@ -41,38 +39,30 @@ public class ContextAlias extends AbstractHandler implements DomainContextAware 
     }
 
     @Override
-    public void handle(String target, Request baseRequest,
-          HttpServletRequest request, HttpServletResponse response)
-          throws IOException, ServletException {
+    public void handle(HttpServletRequest request, HttpServletResponse response)
+          throws IOException, HttpException, OnErrorException {
+        HttpRequest proxy = StandardHttpRequest.of(request, response);
 
-        try {
-            final HttpRequest proxy = new StandardHttpRequest(request, response);
-
-            Object value;
-            if (specificName.equals("*")) {
-                final String[] tokens = proxy.getRequestTokens();
-                if (tokens.length < 2 || tokens[1].equals("index.html")) {
-                    value = createContextDirectory();
-                } else {
-                    value = context.get(tokens[1]);
-                }
-
+        Object value;
+        if (specificName.equals("*")) {
+            String[] tokens = proxy.getRequestTokens();
+            if (tokens.length < 2 || tokens[1].equals("index.html")) {
+                value = createContextDirectory();
             } else {
-                value = context.get(specificName);
+                value = context.get(tokens[1]);
             }
-
-            if (value == null) {
-                throw new OnErrorException();
-            }
-            String html = String.valueOf(value);
-
-            response.setStatus(status);
-            proxy.getPrintWriter().println(html);
-            proxy.getPrintWriter().flush();
-            baseRequest.setHandled(true);
-        } catch (final Exception t) {
-            throw new ServletException("ContextAlias", t);
+        } else {
+            value = context.get(specificName);
         }
+
+        if (value == null) {
+            throw new OnErrorException();
+        }
+        String html = String.valueOf(value);
+
+        response.setStatus(status);
+        proxy.getPrintWriter().println(html);
+        proxy.getPrintWriter().flush();
     }
 
     private String createContextDirectory() {

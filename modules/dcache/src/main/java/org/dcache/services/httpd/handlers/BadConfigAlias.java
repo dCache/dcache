@@ -19,41 +19,28 @@
 package org.dcache.services.httpd.handlers;
 
 import dmg.util.HttpException;
-import java.io.IOException;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.eclipse.jetty.ee8.nested.AbstractHandler;
-import org.eclipse.jetty.ee8.nested.Request;
 
 /**
  * Handles messages having to do with alias configuration errors (in the batch file).
  *
  * @author arossi
  */
-public class BadConfigAlias extends AbstractHandler {
+public class BadConfigAlias implements AliasHandler {
 
     private static final String BAD_CONFIG = "HTTP Server badly configured";
-    private ServletException exception;
-
-    public BadConfigAlias() {
-        exception = new ServletException(new HttpException(
-              HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-              BAD_CONFIG));
-    }
+    private String message = BAD_CONFIG;
 
     @Override
-    public void handle(String target, Request baseRequest,
-          HttpServletRequest request, HttpServletResponse response)
-          throws IOException, ServletException {
-        throw exception;
+    public void handle(HttpServletRequest request, HttpServletResponse response)
+          throws HttpException {
+        throw new HttpException(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, message);
     }
 
     public void setFailureMessage(String failureMessage) {
         if (failureMessage != null) {
-            exception = new ServletException(new HttpException(
-                  HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                  BAD_CONFIG + ": " + failureMessage + "."));
+            message = BAD_CONFIG + ": " + failureMessage + ".";
         }
     }
 }

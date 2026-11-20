@@ -80,6 +80,16 @@ public class WebdavDoorContextTest {
               containsString("text/css"));
     }
 
+    @Test
+    public void shouldServeRobotsTxtFromDomainContext() throws Exception {
+        context.domainContext().put("robots.txt", "User-agent: *\nDisallow: /");
+
+        HttpResponse<String> response = get("/robots.txt");
+
+        assertThat(response.statusCode(), is(200));
+        assertThat(response.body(), containsString("Disallow: /"));
+    }
+
     private static HttpResponse<String> get(String path) throws Exception {
         return client.send(HttpRequest.newBuilder(endpoint.resolve(path)).GET().build(),
               HttpResponse.BodyHandlers.ofString());

@@ -24,41 +24,28 @@ import dmg.util.HttpException;
 import dmg.util.HttpRequest;
 import dmg.util.HttpResponseEngine;
 import java.io.IOException;
-import java.net.URISyntaxException;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.dcache.services.httpd.util.StandardHttpRequest;
-import org.eclipse.jetty.ee8.nested.AbstractHandler;
-import org.eclipse.jetty.ee8.nested.Request;
 
 /**
- * Wraps calls to {@link HttpResponseEngine} aliases with the Jetty handler API.
+ * Answers an alias with an {@link HttpResponseEngine}.
  *
  * @author arossi
  */
-public class EngineAlias extends AbstractHandler {
+public class EngineAlias implements AliasHandler {
 
     private final HttpResponseEngine engine;
 
     public EngineAlias(HttpResponseEngine engine) {
-        this.engine = engine;
+        this.engine = requireNonNull(engine);
     }
 
     @Override
-    public void handle(String target, Request baseRequest,
-          HttpServletRequest request, HttpServletResponse response)
-          throws IOException, ServletException {
-        requireNonNull(engine);
-        try {
-            HttpRequest proxy = new StandardHttpRequest(request, response);
-            engine.queryUrl(proxy);
-            proxy.getPrintWriter().flush();
-        } catch (HttpException e) {
-            response.setStatus(e.getErrorCode(), e.getMessage());
-        } catch (URISyntaxException e) {
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                  e.getMessage());
-        }
+    public void handle(HttpServletRequest request, HttpServletResponse response)
+          throws IOException, HttpException {
+        HttpRequest proxy = StandardHttpRequest.of(request, response);
+        engine.queryUrl(proxy);
+        proxy.getPrintWriter().flush();
     }
 }

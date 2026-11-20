@@ -12,16 +12,16 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import org.dcache.services.httpd.handlers.AliasDispatcherServlet;
+import org.dcache.services.httpd.handlers.AliasHandler;
 import org.dcache.services.httpd.handlers.BadConfigAlias;
 import org.dcache.services.httpd.handlers.ContextAlias;
-import org.dcache.services.httpd.handlers.AliasDispatcherServlet;
+import org.dcache.services.httpd.handlers.EngineAlias;
 import org.dcache.services.httpd.handlers.PathAlias;
 import org.dcache.services.httpd.handlers.RedirectAlias;
-import org.dcache.services.httpd.handlers.EngineAlias;
 import org.dcache.services.httpd.util.AliasEntry;
 import org.dcache.util.Args;
 import org.dcache.util.spring.Required;
-import org.eclipse.jetty.ee8.nested.Handler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,11 +35,11 @@ public class HttpdCommandLineInterface
     @Autowired
     private AutowireCapableBeanFactory beanFactory;
 
-    private AliasDispatcherServlet delegator;
+    private AliasDispatcherServlet dispatcher;
 
     @Required
-    public void setDelegator(AliasDispatcherServlet delegator) {
-        this.delegator = delegator;
+    public void setDispatcher(AliasDispatcherServlet dispatcher) {
+        this.dispatcher = dispatcher;
     }
 
     public static final String hh_ls_alias = "[<alias>]";
@@ -47,13 +47,13 @@ public class HttpdCommandLineInterface
     public String ac_ls_alias_$_0_1(Args args) throws NoSuchElementException {
         if (args.argc() == 0) {
             StringBuilder sb = new StringBuilder();
-            for (Map.Entry<String, AliasEntry> aliasEntry : delegator.getAliases().entrySet()) {
+            for (Map.Entry<String, AliasEntry> aliasEntry : dispatcher.getAliases().entrySet()) {
                 sb.append(aliasEntry.getKey()).append(" -> ").append(
                       aliasEntry.getValue()).append("\n");
             }
             return sb.toString();
         } else {
-            AliasEntry entry = delegator.getAlias(args.argv(0));
+            AliasEntry entry = dispatcher.getAlias(args.argv(0));
             if (entry == null) {
                 throw new NoSuchElementException("Alias not found : " + args.argv(0));
             }
@@ -81,14 +81,14 @@ public class HttpdCommandLineInterface
         args.shift(2);
         AliasEntry entry = createEntry(alias, type, args);
         LOGGER.debug("Creating alias {}: {}", entry.getName(), entry);
-        delegator.addAlias(entry.getName(), entry);
+        dispatcher.addAlias(entry.getName(), entry);
         return entry.getStatusMessage();
     }
 
     public static final String hh_unset_alias = "<aliasName>";
 
-    public String ac_unset_alias_$_1(Args args) throws InvocationTargetException {
-        delegator.removeAlias(args.argv(0));
+    public String ac_unset_alias_$_1(Args args) {
+        dispatcher.removeAlias(args.argv(0));
         return "Done";
     }
 
@@ -100,7 +100,7 @@ public class HttpdCommandLineInterface
 
         AliasType aliasType = AliasType.fromType(type);
         AliasEntry entry;
-        Handler handler;
+        AliasHandler handler;
 
         switch (aliasType) {
             case FILE:
@@ -114,10 +114,10 @@ public class HttpdCommandLineInterface
                 entry.setStatusMessage(alias + " -> " + aliasType.getType() + "(" + specific + ")");
                 break;
             case CONTEXT:
-                Handler rawHandler = args.hasOption("status")
+                AliasHandler rawHandler = args.hasOption("status")
                       ? new ContextAlias(specific, args.getIntOption("status"))
                       : new ContextAlias(specific);
-                handler = (Handler) beanFactory.initializeBean(rawHandler, alias);
+                handler = (AliasHandler) beanFactory.initializeBean(rawHandler, alias);
                 entry = new AliasEntry(alias, aliasType, handler, specific);
                 entry.setOnError(args.getOpt("onError"));
                 entry.setOverwrite(args.getOpt("overwrite"));

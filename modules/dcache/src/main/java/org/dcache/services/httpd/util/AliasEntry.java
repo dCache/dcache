@@ -1,6 +1,6 @@
 package org.dcache.services.httpd.util;
 
-import org.eclipse.jetty.ee8.nested.Handler;
+import org.dcache.services.httpd.handlers.AliasHandler;
 
 /**
  * Abstraction for httpd aliases.
@@ -43,7 +43,7 @@ public class AliasEntry {
 
     private final String name;
     private final AliasType type;
-    private final Handler handler;
+    private final AliasHandler handler;
     private final String spec;
 
     private String onError;
@@ -51,7 +51,7 @@ public class AliasEntry {
     private String intFailureMsg;
     private String statusMessage;
 
-    public AliasEntry(String name, AliasType type, Handler handler, String spec) {
+    public AliasEntry(String name, AliasType type, AliasHandler handler, String spec) {
         this.name = name;
         this.type = type;
         this.handler = handler;
@@ -62,7 +62,7 @@ public class AliasEntry {
         this.statusMessage = statusMessage;
     }
 
-    public Handler getHandler() {
+    public AliasHandler getHandler() {
         return handler;
     }
 

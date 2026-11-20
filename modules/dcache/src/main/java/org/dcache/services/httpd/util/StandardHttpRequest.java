@@ -2,6 +2,7 @@ package org.dcache.services.httpd.util;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
+import dmg.util.HttpException;
 import dmg.util.HttpRequest;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -43,6 +44,19 @@ public class StandardHttpRequest implements HttpRequest {
     private String userName;
     private String password;
     private boolean authDone;
+
+    /**
+     * Creates the request of an httpd alias; a malformed request URI is a client error.
+     */
+    public static StandardHttpRequest of(HttpServletRequest request,
+          HttpServletResponse response) throws IOException, HttpException {
+        try {
+            return new StandardHttpRequest(request, response);
+        } catch (URISyntaxException e) {
+            throw new HttpException(HttpServletResponse.SC_BAD_REQUEST,
+                  "Bad URI: " + e.getMessage());
+        }
+    }
 
     public StandardHttpRequest(HttpServletRequest request,
           HttpServletResponse response) throws IOException, URISyntaxException {

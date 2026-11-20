@@ -20,7 +20,7 @@
     </bean>
 
     <bean id="cli" class="org.dcache.services.httpd.HttpdCommandLineInterface">
-        <property name="delegator" ref="delegator"/>
+        <property name="dispatcher" ref="dispatcher"/>
     </bean>
 
     <bean id="thread-pool" class="org.eclipse.jetty.util.thread.QueuedThreadPool">
@@ -39,7 +39,9 @@
         <property name="poolManagerStub" ref="pool-manager"/>
     </bean>
 
-    <bean id="delegator" class="org.dcache.services.httpd.handlers.AliasDispatcherServlet"/>
+    <bean id="dispatcher" class="org.dcache.services.httpd.handlers.AliasDispatcherServlet">
+        <description>Answers requests with the alias named by the first path element</description>
+    </bean>
 
     <bean id="restores-request-receiver" class="diskCacheV111.poolManager.RestoreRequestsReceiver"
           init-method="initialize">
@@ -51,7 +53,7 @@
         <description>Embedded HTTP server</description>
         <constructor-arg ref="thread-pool"/>
         <property name="connectors" ref="connectors"/>
-        <property name="handler" value="#{rootContext.get()}"/>
+        <property name="handler" ref="rootContext"/>
         <property name="requestLog">
             <bean class="org.dcache.services.httpd.HttpdRequestLog"/>
         </property>
@@ -75,10 +77,20 @@
         <property name="protocol" value="PLAIN"/>
     </bean>
 
-    <bean id="rootContext" class="org.eclipse.jetty.ee8.nested.ContextHandler">
-        <description>Root servlet context; unhandled requests get 404</description>
-        <property name="contextPath" value="/"/>
-        <property name="handler" ref="delegator"/>
+    <bean id="rootContext" class="org.dcache.util.jetty.ServletContextFactoryBean">
+        <description>Root servlet context; all requests go to the alias dispatcher</description>
+        <property name="servlets">
+            <list>
+                <bean class="org.dcache.util.jetty.ServletContextFactoryBean.ServletEntry">
+                    <property name="servlet" ref="dispatcher"/>
+                    <property name="pathSpecs">
+                        <list>
+                            <value>/</value>
+                        </list>
+                    </property>
+                </bean>
+            </list>
+        </property>
     </bean>
 
     <util:list id="connectors">
