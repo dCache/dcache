@@ -80,6 +80,7 @@ import org.dcache.services.bulk.util.BulkRequestTarget;
 import org.dcache.services.bulk.util.BulkRequestTarget.PID;
 import org.dcache.services.bulk.util.BulkRequestTargetBuilder;
 import org.dcache.services.bulk.util.BulkServiceStatistics;
+import org.dcache.services.bulk.util.BulkTaskThrottle;
 import org.dcache.util.BoundedCachedExecutor;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
@@ -101,7 +102,7 @@ public final class RequestContainerJobFactory {
     private ListDirectoryHandler listHandler;
     private BulkTargetStore targetStore;
     private BulkServiceStatistics statistics;
-    private Semaphore dirListSemaphore;
+    private BulkTaskThrottle dirListThrottle;
     private Semaphore inFlightSemaphore;
     private BoundedCachedExecutor taskExecutor;
     private BoundedCachedExecutor callbackExecutor;
@@ -134,7 +135,7 @@ public final class RequestContainerJobFactory {
         containerJob.setNamespaceHandler(pnfsHandler);
         containerJob.setTargetStore(targetStore);
         containerJob.setListHandler(listHandler);
-        containerJob.setDirListSemaphore(dirListSemaphore);
+        containerJob.setDirListThrottle(dirListThrottle);
         containerJob.setInFlightSemaphore(inFlightSemaphore);
         containerJob.setExecutor(taskExecutor);
         containerJob.setListExecutor(listExecutor);
@@ -144,7 +145,11 @@ public final class RequestContainerJobFactory {
     }
 
     public int getDirListSemaphoreAvailable() {
-        return dirListSemaphore.availablePermits();
+        return dirListThrottle.availablePermits();
+    }
+
+    public int getDirListPending() {
+        return dirListThrottle.pendingCount();
     }
 
     public int getInFlightSemaphoreAvailable() {
@@ -173,7 +178,7 @@ public final class RequestContainerJobFactory {
 
     @Required
     public void setDirListSemaphore(int permits) {
-        dirListSemaphore = new Semaphore(permits);
+        dirListThrottle = new BulkTaskThrottle(permits);
     }
 
     @Required
