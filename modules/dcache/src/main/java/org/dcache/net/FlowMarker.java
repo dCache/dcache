@@ -25,6 +25,7 @@ import java.net.InetSocketAddress;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 
+import org.dcache.util.Version;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,6 +40,12 @@ public class FlowMarker {
     public static class FlowMarkerBuilder {
 
         private final static int VERSION = 1;
+
+        /**
+         * The dCache release that sends the firefly, so that a consumer can tell which
+         * conventions the firefly follows.
+         */
+        private final static String DCACHE_VERSION = Version.of(FlowMarker.class).getVersion();
 
         private final JSONObject payload = new JSONObject();
         private final JSONObject lifecycle = new JSONObject();
@@ -130,11 +137,15 @@ public class FlowMarker {
             return this;
         }
 
-        public FlowMarkerBuilder withUsage(double bytesRead, double bytesWritten) {
-            // approx. - assumes bytesWritten to disk are bytes "received" over the network
-            // and bytesRead from disk are bytes "sent" to the network
-            usage.put("received", Double.isFinite(bytesWritten) ? (long) bytesWritten : 0L);
-            usage.put("sent", Double.isFinite(bytesRead) ? (long) bytesRead : 0L);
+        /**
+         * The bytes that crossed the flow, counted from the side of its source.
+         *
+         * @param sent     bytes the source sent to the destination: the data of the transfer
+         * @param received bytes the source received from the destination
+         */
+        public FlowMarkerBuilder withUsage(double sent, double received) {
+            usage.put("received", Double.isFinite(received) ? (long) received : 0L);
+            usage.put("sent", Double.isFinite(sent) ? (long) sent : 0L);
             return this;
         }
 
@@ -167,6 +178,7 @@ public class FlowMarker {
             }
 
             payload.put("version", VERSION);
+            payload.put("dcache-version", DCACHE_VERSION);
             payload.put("flow-lifecycle", lifecycle);
             payload.put("context", context);
             payload.put("flow-id", flow);

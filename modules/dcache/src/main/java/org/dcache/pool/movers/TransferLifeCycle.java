@@ -71,7 +71,7 @@ public class TransferLifeCycle {
      */
     private final static int UDP_PORT = 10514;
 
-    // by default, send the firefly to the destination host.
+    // by default, send the firefly to the remote party of the flow.
     private Function<InetSocketAddress, InetSocketAddress> toFireflyDestination = a -> new InetSocketAddress(
           a.getAddress(), UDP_PORT);
 
@@ -81,7 +81,7 @@ public class TransferLifeCycle {
     // optional additional collector destination for firefly markers
     private InetSocketAddress fireflyCollector;
 
-    // syslog HOSTNAME of emitted fireflies: the FQDN of this pool node. Resolved once;
+    // syslog HOSTNAME of emitted fireflies: the FQDN of this node. Resolved once;
     // it must not depend on the flow's src/dst, as either may be the remote party.
     private final String hostname = NetworkUtils.getCanonicalHostName();
     private boolean enabled;
@@ -90,72 +90,104 @@ public class TransferLifeCycle {
     private Map<String, Integer> voToExpId = new HashMap<>();
 
     /**
+     * Which way the data of a transfer moves, seen from this node.  A firefly names the supplier
+     * of the data as the source of the flow, so the direction decides which end of the
+     * connection is reported as source and which as destination.
+     */
+    public enum DataDirection {
+        /**
+         * The remote party supplies the data: an upload, or a third-party pull.
+         */
+        INBOUND,
+
+        /**
+         * This node supplies the data: a download, or a third-party push.
+         */
+        OUTBOUND;
+
+        /**
+         * The direction of a transfer in which this node writes, or reads, the file.
+         */
+        public static DataDirection ofWrite(boolean isWrite) {
+            return isWrite ? INBOUND : OUTBOUND;
+        }
+    }
+
+    /**
      * Mark transfer start.
-     * @param src remote client endpoint
-     * @param dst local endpoint
+     * @param remote the remote party's endpoint of the connection that carries the data
+     * @param local this node's endpoint of that connection
+     * @param direction which way the data moves
      * @param protocolInfo access protocol information
      * @param subject associated with the transfer
      */
-    public void onStart(InetSocketAddress src, InetSocketAddress dst, ProtocolInfo protocolInfo,
-          Subject subject) {
+    public void onStart(InetSocketAddress remote, InetSocketAddress local,
+          DataDirection direction, ProtocolInfo protocolInfo, Subject subject) {
+
+        // the supplier of the data is the source of the flow
+        InetSocketAddress src = direction == DataDirection.INBOUND ? remote : local;
+        InetSocketAddress dst = direction == DataDirection.INBOUND ? local : remote;
 
         if (!enabled) {
-                        logSkippedMarker("disabled", src, dst, protocolInfo);
+            logSkippedMarker("disabled", src, dst, direction, protocolInfo);
             return;
         }
 
         if (isRelayed(protocolInfo)) {
-            logSkippedMarker("relayed-by-door", src, dst, protocolInfo);
+            logSkippedMarker("relayed-by-door", src, dst, direction, protocolInfo);
             return;
         }
 
-        if (isExcludedTransfer(src, dst)) {
-            logSkippedMarker("excluded", src, dst, protocolInfo);
+        if (isExcludedTransfer(remote, local)) {
+            logSkippedMarker("excluded", src, dst, direction, protocolInfo);
             return;
         }
 
         if (!needMarker(protocolInfo)) {
-            logSkippedMarker("unsupported-protocol", src, dst, protocolInfo);
+            logSkippedMarker("unsupported-protocol", src, dst, direction, protocolInfo);
             return;
         }
 
-          var optionalExpId = getExperimentId(protocolInfo, subject);
-          if (optionalExpId.isEmpty()) {
-            logSkippedMarker("no-experiment-id", src, dst, protocolInfo);
+        var optionalExpId = getExperimentId(protocolInfo, subject);
+        if (optionalExpId.isEmpty()) {
+            logSkippedMarker("no-experiment-id", src, dst, direction, protocolInfo);
             return;
-          }
+        }
 
-          int activityId = getActivity(protocolInfo);
+        int activityId = getActivity(protocolInfo);
 
-          var data = new FlowMarkerBuilder()
+        var data = new FlowMarkerBuilder()
               .withStartedAt(Instant.now())
               .withExperimentId(optionalExpId.getAsInt())
               .withActivityId(activityId)
               .wittApplication(getApplication(protocolInfo))
               .withProtocol("tcp")
               .withHostname(hostname)
-              .withAFI(toAFI(dst))
+              .withAFI(toAFI(local))
               .withDestination(dst)
               .withSource(src)
               .build("start");
 
-          InetSocketAddress fireflyDestination = toFireflyDestination.apply(src);
-          sendToMultipleDestinations(fireflyDestination, data);
-          logMarkerEvent("start", src, dst, protocolInfo, optionalExpId.getAsInt(), activityId,
-              null, null, fireflyDestination);
+        // the firefly goes to the remote party, whichever end of the flow that is
+        InetSocketAddress fireflyDestination = toFireflyDestination.apply(remote);
+        sendToMultipleDestinations(fireflyDestination, data);
+        logMarkerEvent("start", src, dst, direction, protocolInfo, optionalExpId.getAsInt(),
+              activityId, null, null, fireflyDestination);
     }
 
     /**
-     * Mark transfer end.
-     * @param src remote client endpoint
-     * @param dst local endpoint
+     * Mark transfer end.  The direction is taken from the mover: a mover that created the file
+     * received the data.
+     * @param remote the remote party's endpoint of the connection that carried the data
+     * @param local this node's endpoint of that connection
      * @param mover the mover's description of the completed transfer
      */
-    public void onEnd(InetSocketAddress src, InetSocketAddress dst, MoverInfoMessage mover) {
+    public void onEnd(InetSocketAddress remote, InetSocketAddress local, MoverInfoMessage mover) {
         // The mover info message is created when the transfer has finished, so its
         // timestamp is the end of the transfer; the start is derived from the duration.
         long durationMillis = Math.max(0L, mover.getConnectionTime());
-        onEnd(src, dst, mover.getProtocolInfo(), mover.getSubject(),
+        onEnd(remote, local, DataDirection.ofWrite(mover.isFileCreated()),
+              mover.getProtocolInfo(), mover.getSubject(),
               Instant.ofEpochMilli(mover.getTimestamp()).minusMillis(durationMillis),
               durationMillis,
               mover.getBytesRead(), mover.getBytesWritten(),
@@ -164,8 +196,9 @@ public class TransferLifeCycle {
 
     /**
      * Mark transfer end, for a transfer that has no mover.
-     * @param src remote client endpoint
-     * @param dst local endpoint
+     * @param remote the remote party's endpoint of the connection that carried the data
+     * @param local this node's endpoint of that connection
+     * @param direction which way the data moved
      * @param protocolInfo access protocol information
      * @param subject associated with the transfer
      * @param startedAt when the transfer started
@@ -173,45 +206,57 @@ public class TransferLifeCycle {
      * @param bytesRead number of bytes sent to the remote endpoint
      * @param bytesWritten number of bytes received from the remote endpoint
      */
-    public void onEnd(InetSocketAddress src, InetSocketAddress dst, ProtocolInfo protocolInfo,
+    public void onEnd(InetSocketAddress remote, InetSocketAddress local,
+          DataDirection direction, ProtocolInfo protocolInfo,
           Subject subject, Instant startedAt, long durationMillis, long bytesRead,
           long bytesWritten) {
-        onEnd(src, dst, protocolInfo, subject, startedAt, durationMillis, bytesRead,
-              bytesWritten, null);
+        onEnd(remote, local, direction, protocolInfo, subject, startedAt, durationMillis,
+              bytesRead, bytesWritten, null);
     }
 
-    private void onEnd(InetSocketAddress src, InetSocketAddress dst, ProtocolInfo protocolInfo,
+    private void onEnd(InetSocketAddress remote, InetSocketAddress local,
+          DataDirection direction, ProtocolInfo protocolInfo,
           Subject subject, Instant startedAt, long durationMillis, double bytesRead,
           double bytesWritten, @Nullable MoverInfoMessage storageStatistics) {
 
+        // the supplier of the data is the source of the flow
+        boolean isInbound = direction == DataDirection.INBOUND;
+        InetSocketAddress src = isInbound ? remote : local;
+        InetSocketAddress dst = isInbound ? local : remote;
+
         if (!enabled) {
-            logSkippedMarker("disabled", src, dst, protocolInfo);
+            logSkippedMarker("disabled", src, dst, direction, protocolInfo);
             return;
         }
 
         if (isRelayed(protocolInfo)) {
-            logSkippedMarker("relayed-by-door", src, dst, protocolInfo);
+            logSkippedMarker("relayed-by-door", src, dst, direction, protocolInfo);
             return;
         }
 
-        if (isExcludedTransfer(src, dst)) {
-            logSkippedMarker("excluded", src, dst, protocolInfo);
+        if (isExcludedTransfer(remote, local)) {
+            logSkippedMarker("excluded", src, dst, direction, protocolInfo);
             return;
         }
 
         if (!needMarker(protocolInfo)) {
-            logSkippedMarker("unsupported-protocol", src, dst, protocolInfo);
+            logSkippedMarker("unsupported-protocol", src, dst, direction, protocolInfo);
             return;
         }
 
         var optionalExpId = getExperimentId(protocolInfo, subject);
         if (optionalExpId.isEmpty()) {
-            logSkippedMarker("no-experiment-id", src, dst, protocolInfo);
+            logSkippedMarker("no-experiment-id", src, dst, direction, protocolInfo);
             return;
         }
 
         int activityId = getActivity(protocolInfo);
         Instant finishedAt = startedAt.plusMillis(Math.max(0L, durationMillis));
+
+        // Usage is counted from the side of the source, like the flow itself: what this node
+        // received is what a remote source sent.
+        double sentBySource = isInbound ? bytesWritten : bytesRead;
+        double receivedBySource = isInbound ? bytesRead : bytesWritten;
 
         var data = new FlowMarkerBuilder()
               .withStartedAt(startedAt)
@@ -219,10 +264,10 @@ public class TransferLifeCycle {
               .withExperimentId(optionalExpId.getAsInt())
               .withActivityId(activityId)
               .wittApplication(getApplication(protocolInfo))
-              .withUsage(bytesRead, bytesWritten)
+              .withUsage(sentBySource, receivedBySource)
               .withProtocol("tcp")
               .withHostname(hostname)
-              .withAFI(toAFI(dst))
+              .withAFI(toAFI(local))
               .withDestination(dst)
               .withSource(src);
         if (storageStatistics != null) {
@@ -230,10 +275,11 @@ public class TransferLifeCycle {
         }
         var firefly = data.build("end");
 
-        InetSocketAddress fireflyDestination = toFireflyDestination.apply(src);
+        // the firefly goes to the remote party, whichever end of the flow that is
+        InetSocketAddress fireflyDestination = toFireflyDestination.apply(remote);
         sendToMultipleDestinations(fireflyDestination, firefly);
-        logMarkerEvent("end", src, dst, protocolInfo, optionalExpId.getAsInt(), activityId,
-              bytesRead, bytesWritten, fireflyDestination);
+        logMarkerEvent("end", src, dst, direction, protocolInfo, optionalExpId.getAsInt(),
+              activityId, bytesRead, bytesWritten, fireflyDestination);
     }
 
     /**
@@ -402,12 +448,12 @@ public class TransferLifeCycle {
                 : OptionalInt.empty();
     }
 
-    private boolean isExcludedTransfer(InetSocketAddress src, InetSocketAddress dst) {
-        InetAddress srcAddress = src.getAddress();
-        InetAddress dstAddress = dst.getAddress();
-        return srcAddress != null && dstAddress != null
-              && localSubnet.test(srcAddress)
-              && localSubnet.test(dstAddress);
+    private boolean isExcludedTransfer(InetSocketAddress remote, InetSocketAddress local) {
+        InetAddress remoteAddress = remote.getAddress();
+        InetAddress localAddress = local.getAddress();
+        return remoteAddress != null && localAddress != null
+              && localSubnet.test(remoteAddress)
+              && localSubnet.test(localAddress);
     }
 
     private int getActivity(ProtocolInfo protocolInfo) {
@@ -425,34 +471,37 @@ public class TransferLifeCycle {
     }
 
     private void logSkippedMarker(String reason, InetSocketAddress src, InetSocketAddress dst,
-          ProtocolInfo protocolInfo) {
+          DataDirection direction, ProtocolInfo protocolInfo) {
         if (SCITAGS_LOGGER.isDebugEnabled()) {
             SCITAGS_LOGGER.debug(
-                  "scitags event=marker-skip reason={} protocol={} source={} sourcePort={} destination={} destinationPort={} transferTag={}",
+                  "scitags event=marker-skip reason={} protocol={} source={} sourcePort={} destination={} destinationPort={} direction={} transferTag={}",
                   reason,
                   protocolInfo.getProtocol().toLowerCase(),
                   formatAddress(src),
                   formatPort(src),
                   formatAddress(dst),
                   formatPort(dst),
+                  direction.name().toLowerCase(),
                   formatTransferTag(protocolInfo));
         }
     }
 
     private void logMarkerEvent(String event, InetSocketAddress src, InetSocketAddress dst,
+            DataDirection direction,
             ProtocolInfo protocolInfo, int experimentId, int activityId, Double bytesRead,
             Double bytesWritten, InetSocketAddress fireflyDestination) {
         if (SCITAGS_LOGGER.isDebugEnabled()) {
             String classification = hasTransferTag(protocolInfo) ? "transfer-tag" : "fqan";
             if (bytesRead == null || bytesWritten == null) {
                 SCITAGS_LOGGER.debug(
-                      "scitags event=marker state={} protocol={} source={} sourcePort={} destination={} destinationPort={} transferTag={} experimentId={} activityId={} classifier={} fireflyDestination={} collector={}",
+                      "scitags event=marker state={} protocol={} source={} sourcePort={} destination={} destinationPort={} direction={} transferTag={} experimentId={} activityId={} classifier={} fireflyDestination={} collector={}",
                       event,
                       protocolInfo.getProtocol().toLowerCase(),
                       formatAddress(src),
                       formatPort(src),
                       formatAddress(dst),
                       formatPort(dst),
+                      direction.name().toLowerCase(),
                       formatTransferTag(protocolInfo),
                       experimentId,
                       activityId,
@@ -461,13 +510,14 @@ public class TransferLifeCycle {
                       formatCollectorDestination());
             } else {
                 SCITAGS_LOGGER.debug(
-                      "scitags event=marker state={} protocol={} source={} sourcePort={} destination={} destinationPort={} transferTag={} experimentId={} activityId={} classifier={} bytesRead={} bytesWritten={} fireflyDestination={} collector={}",
+                      "scitags event=marker state={} protocol={} source={} sourcePort={} destination={} destinationPort={} direction={} transferTag={} experimentId={} activityId={} classifier={} bytesRead={} bytesWritten={} fireflyDestination={} collector={}",
                       event,
                       protocolInfo.getProtocol().toLowerCase(),
                       formatAddress(src),
                       formatPort(src),
                       formatAddress(dst),
                       formatPort(dst),
+                      direction.name().toLowerCase(),
                       formatTransferTag(protocolInfo),
                       experimentId,
                       activityId,

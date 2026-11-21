@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.HttpProtocolInfo;
@@ -23,6 +24,7 @@ import java.net.URI;
 import java.util.OptionalInt;
 import javax.security.auth.Subject;
 import org.dcache.auth.FQANPrincipal;
+import org.dcache.pool.movers.TransferLifeCycle.DataDirection;
 import org.dcache.util.NetworkUtils;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -110,6 +112,7 @@ public class TransferLifeCycleTest {
             lifecycle.onEnd(
                   new InetSocketAddress("203.0.113.20", 443),
                   new InetSocketAddress("198.51.100.55", 42000),
+                  DataDirection.INBOUND,
                   new TestProtocolInfo("remotehttpsdatatransfer", "129"),
                   new Subject(), startedAt, 2500, 10, 2048);
 
@@ -131,8 +134,9 @@ public class TransferLifeCycleTest {
             assertEquals(443, flow.getInt("src-port"));
             assertEquals("198.51.100.55", flow.getString("dst-ip"));
             assertEquals(42000, flow.getInt("dst-port"));
-            assertEquals(10, usage.getLong("sent"));
-            assertEquals(2048, usage.getLong("received"));
+            // usage is counted from the side of the source, here the remote server
+            assertEquals(2048, usage.getLong("sent"));
+            assertEquals(10, usage.getLong("received"));
             assertFalse(payload.has("storage-stats"));
         }
     }
@@ -199,6 +203,7 @@ public class TransferLifeCycleTest {
             lifecycle.onStart(
                   new InetSocketAddress("2001:db8:3e::92", 8443),
                   new InetSocketAddress("2001:db8:62::62", 35048),
+                  DataDirection.INBOUND,
                   new TestProtocolInfo("remotehttpsdatatransfer", "129"),
                   new Subject());
 
@@ -207,23 +212,105 @@ public class TransferLifeCycleTest {
     }
 
     @Test
-    public void shouldUsePoolHostNameAsSyslogHostnameWhenDataEntersPool() throws Exception {
-        // e.g. client upload or HTTP-TPC pull: bytes are written to the pool
+    public void shouldNameRemoteAsSourceWhenDataEntersPool() throws Exception {
+        // e.g. HTTP-TPC pull or an upload: the remote party supplies the data
         String payload = endMarker("remotehttpsdatatransfer", 0, 1024);
 
         assertSyslogHostnameIsPoolHost(payload);
-        assertEquals(1024, usage(payload).getLong("received"));
-        assertEquals(0, usage(payload).getLong("sent"));
+        assertEquals(REMOTE_IP, flowId(payload).getString("src-ip"));
+        assertEquals(42000, flowId(payload).getInt("src-port"));
+        assertEquals(LOCAL_IP, flowId(payload).getString("dst-ip"));
+        assertEquals(2880, flowId(payload).getInt("dst-port"));
+        assertEquals(1024, usage(payload).getLong("sent"));
+        assertEquals(0, usage(payload).getLong("received"));
     }
 
     @Test
-    public void shouldUsePoolHostNameAsSyslogHostnameWhenDataLeavesPool() throws Exception {
-        // e.g. client download or HTTP-TPC push: bytes are read from the pool
+    public void shouldNamePoolAsSourceWhenDataLeavesPool() throws Exception {
+        // e.g. HTTP-TPC push or a download: the pool supplies the data
         String payload = endMarker("remotehttpsdatatransfer", 1024, 0);
 
         assertSyslogHostnameIsPoolHost(payload);
-        assertEquals(0, usage(payload).getLong("received"));
+        assertEquals(LOCAL_IP, flowId(payload).getString("src-ip"));
+        assertEquals(2880, flowId(payload).getInt("src-port"));
+        assertEquals(REMOTE_IP, flowId(payload).getString("dst-ip"));
+        assertEquals(42000, flowId(payload).getInt("dst-port"));
         assertEquals(1024, usage(payload).getLong("sent"));
+        assertEquals(0, usage(payload).getLong("received"));
+    }
+
+    @Test
+    public void shouldNameRemoteAsSourceInStartMarkerOfInboundTransfer() throws Exception {
+        JSONObject flow = flowId(startMarker(DataDirection.INBOUND));
+
+        assertEquals(REMOTE_IP, flow.getString("src-ip"));
+        assertEquals(42000, flow.getInt("src-port"));
+        assertEquals(LOCAL_IP, flow.getString("dst-ip"));
+        assertEquals(2880, flow.getInt("dst-port"));
+    }
+
+    @Test
+    public void shouldNameLocalNodeAsSourceInStartMarkerOfOutboundTransfer() throws Exception {
+        JSONObject flow = flowId(startMarker(DataDirection.OUTBOUND));
+
+        assertEquals(LOCAL_IP, flow.getString("src-ip"));
+        assertEquals(2880, flow.getInt("src-port"));
+        assertEquals(REMOTE_IP, flow.getString("dst-ip"));
+        assertEquals(42000, flow.getInt("dst-port"));
+    }
+
+    @Test
+    public void shouldApplyExcludesWhateverTheDirection() throws Exception {
+        for (DataDirection direction : DataDirection.values()) {
+            try (DatagramSocket socket =
+                  new DatagramSocket(0, InetAddress.getByName("127.0.0.1"))) {
+                socket.setSoTimeout(300);
+
+                TransferLifeCycle lifecycle = new TransferLifeCycle();
+                lifecycle.setEnabled(true);
+                lifecycle.setVoMapping("atlas:2");
+                lifecycle.setExcludes(new String[]{"203.0.113.0/24", "198.51.100.0/24"});
+                lifecycle.setFireflyDestination("127.0.0.1:" + socket.getLocalPort());
+
+                lifecycle.onStart(
+                      new InetSocketAddress(REMOTE_IP, 42000),
+                      new InetSocketAddress(LOCAL_IP, 2880),
+                      direction, new TestProtocolInfo("xrootd", "129"), new Subject());
+
+                try {
+                    socket.receive(new DatagramPacket(new byte[4096], 4096));
+                    fail("marker sent for an excluded " + direction + " transfer");
+                } catch (SocketTimeoutException expected) {
+                }
+            }
+        }
+    }
+
+    @Test
+    public void shouldCountUsageFromTheSideOfTheSourceForOutboundTransferWithoutMover()
+          throws Exception {
+        try (DatagramSocket socket = new DatagramSocket(0, InetAddress.getByName("127.0.0.1"))) {
+            socket.setSoTimeout(700);
+
+            TransferLifeCycle lifecycle = new TransferLifeCycle();
+            lifecycle.setEnabled(true);
+            lifecycle.setFireflyDestination("127.0.0.1:" + socket.getLocalPort());
+
+            // e.g. a download relayed by a door: 4096 bytes sent to the client
+            lifecycle.onEnd(
+                  new InetSocketAddress(REMOTE_IP, 42000),
+                  new InetSocketAddress(LOCAL_IP, 2880),
+                  DataDirection.OUTBOUND,
+                  new TestProtocolInfo("https", "129"),
+                  new Subject(), Instant.parse("2026-11-11T10:00:00Z"), 2500, 4096, 0);
+
+            String payload = receive(socket);
+
+            assertEquals(LOCAL_IP, flowId(payload).getString("src-ip"));
+            assertEquals(REMOTE_IP, flowId(payload).getString("dst-ip"));
+            assertEquals(4096, usage(payload).getLong("sent"));
+            assertEquals(0, usage(payload).getLong("received"));
+        }
     }
 
     private static final String REMOTE_IP = "203.0.113.20";
@@ -246,6 +333,8 @@ public class TransferLifeCycleTest {
             mover.setSubject(new Subject());
             mover.setBytesRead(bytesRead);
             mover.setBytesWritten(bytesWritten);
+            // a mover that writes the file receives the data
+            mover.setFileCreated(bytesWritten > 0);
 
             lifecycle.onEnd(
                   new InetSocketAddress(REMOTE_IP, 42000),
@@ -256,19 +345,36 @@ public class TransferLifeCycleTest {
         }
     }
 
+    private static String startMarker(DataDirection direction) throws Exception {
+        try (DatagramSocket socket = new DatagramSocket(0, InetAddress.getByName("127.0.0.1"))) {
+            socket.setSoTimeout(700);
+
+            TransferLifeCycle lifecycle = new TransferLifeCycle();
+            lifecycle.setEnabled(true);
+            lifecycle.setVoMapping("atlas:2");
+            lifecycle.setFireflyDestination("127.0.0.1:" + socket.getLocalPort());
+
+            lifecycle.onStart(
+                  new InetSocketAddress(REMOTE_IP, 42000),
+                  new InetSocketAddress(LOCAL_IP, 2880),
+                  direction, new TestProtocolInfo("xrootd", "129"), new Subject());
+
+            return receive(socket);
+        }
+    }
+
     /**
      * The syslog HOSTNAME must name the emitting pool node, whatever the direction of the
-     * data, and the flow-id must be left untouched.
+     * data.
      */
     private static void assertSyslogHostnameIsPoolHost(String payload) {
         String hostname = syslogHostname(payload);
         assertEquals(NetworkUtils.getCanonicalHostName(), hostname);
         assertNotEquals(REMOTE_IP, hostname);
+    }
 
-        JSONObject flowId = new JSONObject(payload.substring(payload.indexOf('{')))
-              .getJSONObject("flow-id");
-        assertEquals(REMOTE_IP, flowId.getString("src-ip"));
-        assertEquals(LOCAL_IP, flowId.getString("dst-ip"));
+    private static JSONObject flowId(String payload) {
+        return new JSONObject(payload.substring(payload.indexOf('{'))).getJSONObject("flow-id");
     }
 
     private static JSONObject usage(String payload) {
@@ -321,6 +427,7 @@ public class TransferLifeCycleTest {
             lifecycle.onStart(
                   new InetSocketAddress(srcIp, 40000),
                   new InetSocketAddress(dstIp, 20066),
+                  DataDirection.INBOUND,
                   protocolInfo,
                   new Subject());
 

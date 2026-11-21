@@ -1581,7 +1581,17 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
             _flowLocal = local.get();
             _flowStartedAt = Instant.now();
             _flowStartBytes = _relayedBytes.get();
-            _transferLifeCycle.onStart(_flowRemote, _flowLocal, _proxyInfo, _subject);
+            _transferLifeCycle.onStart(_flowRemote, _flowLocal, flowDirection(), _proxyInfo,
+                  _subject);
+        }
+
+        /**
+         * A pull brings the data from the remote server to this door.
+         */
+        private TransferLifeCycle.DataDirection flowDirection() {
+            return _direction == Direction.PULL
+                  ? TransferLifeCycle.DataDirection.INBOUND
+                  : TransferLifeCycle.DataDirection.OUTBOUND;
         }
 
         /**
@@ -1596,7 +1606,8 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
 
             long bytes = _relayedBytes.get() - _flowStartBytes;
             boolean isPull = _direction == Direction.PULL;
-            _transferLifeCycle.onEnd(_flowRemote, _flowLocal, _proxyInfo, _subject, startedAt,
+            _transferLifeCycle.onEnd(_flowRemote, _flowLocal, flowDirection(), _proxyInfo,
+                  _subject, startedAt,
                   Duration.between(startedAt, Instant.now()).toMillis(),
                   isPull ? 0 : bytes, isPull ? bytes : 0);
         }

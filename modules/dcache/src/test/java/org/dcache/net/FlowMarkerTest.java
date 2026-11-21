@@ -1,6 +1,7 @@
 package org.dcache.net;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -10,6 +11,7 @@ import java.net.InetSocketAddress;
 import java.time.Instant;
 import java.util.stream.Collectors;
 import org.dcache.net.FlowMarker.FlowMarkerBuilder;
+import org.dcache.util.Version;
 import org.everit.json.schema.Schema;
 import org.everit.json.schema.ValidationException;
 import org.everit.json.schema.loader.SchemaLoader;
@@ -103,6 +105,24 @@ public class FlowMarkerTest {
               .build("ongoing");
 
         assertFirefly(data);
+    }
+
+    @Test
+    public void shouldCarryDcacheVersion() {
+        var data = new FlowMarkerBuilder()
+              .withStartedAt(Instant.now())
+              .withExperimentId(2)
+              .withActivityId(1)
+              .wittApplication("curl")
+              .withProtocol("tcp")
+              .withAFI("ipv4")
+              .withDestination(new InetSocketAddress(InetAddress.getLoopbackAddress(), 1234))
+              .withSource(new InetSocketAddress(InetAddress.getLoopbackAddress(), 5678))
+              .build("start");
+
+        assertFirefly(data);
+        var json = new JSONObject(data.substring(data.indexOf("{")));
+        assertEquals(Version.of(FlowMarker.class).getVersion(), json.getString("dcache-version"));
     }
 
     @Test(expected = AssertionError.class)

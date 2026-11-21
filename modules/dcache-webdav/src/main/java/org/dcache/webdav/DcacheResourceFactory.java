@@ -140,6 +140,7 @@ import org.dcache.missingfiles.AlwaysFailMissingFileStrategy;
 import org.dcache.missingfiles.MissingFileStrategy;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.movers.TransferLifeCycle;
+import org.dcache.pool.movers.TransferLifeCycle.DataDirection;
 import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.Args;
@@ -1906,6 +1907,7 @@ public class DcacheResourceFactory
         private final InetSocketAddress _doorEndpoint;
         private final boolean _isRequestSecure;
         private Instant _clientFlowStartedAt;
+        private DataDirection _clientFlowDirection;
         protected HttpProtocolInfo.Disposition _disposition;
         private boolean _isSSL;
 
@@ -1955,13 +1957,16 @@ public class DcacheResourceFactory
         /**
          * Send the firefly start marker for data this door is about to relay to or from the
          * client that made the request.  Does nothing if the data is relayed for a third party.
+         *
+         * @param direction {@code OUTBOUND} for a download, {@code INBOUND} for an upload
          */
-        protected void clientFlowStarted() {
+        protected void clientFlowStarted(DataDirection direction) {
             if (_originAddress != null || _doorEndpoint == null) {
                 return;
             }
             _clientFlowStartedAt = Instant.now();
-            _transferLifeCycle.onStart(getClientAddress(), _doorEndpoint,
+            _clientFlowDirection = direction;
+            _transferLifeCycle.onStart(getClientAddress(), _doorEndpoint, direction,
                   createProtocolInfo(getClientAddress(), _isRequestSecure), _subject);
         }
 
@@ -1977,7 +1982,7 @@ public class DcacheResourceFactory
                 return;
             }
             _clientFlowStartedAt = null;
-            _transferLifeCycle.onEnd(getClientAddress(), _doorEndpoint,
+            _transferLifeCycle.onEnd(getClientAddress(), _doorEndpoint, _clientFlowDirection,
                   createProtocolInfo(getClientAddress(), _isRequestSecure), _subject,
                   startedAt, Duration.between(startedAt, Instant.now()).toMillis(),
                   sent, received);
@@ -2153,7 +2158,7 @@ public class DcacheResourceFactory
                         setStatus("Mover " + getPool() + "/" + getMoverId() +
                               ": Sending data");
                         CountingOutputStream counting = new CountingOutputStream(outputStream);
-                        clientFlowStarted();
+                        clientFlowStarted(DataDirection.OUTBOUND);
                         try {
                             inputStream.transferTo(counting);
                             counting.flush();
@@ -2322,7 +2327,7 @@ public class DcacheResourceFactory
                         setStatus("Mover " + getPool() + "/" + getMoverId() +
                               ": Receiving data");
                         CountingInputStream counting = new CountingInputStream(inputStream);
-                        clientFlowStarted();
+                        clientFlowStarted(DataDirection.INBOUND);
                         try {
                             counting.transferTo(outputStream);
                             outputStream.flush();

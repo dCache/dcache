@@ -53,6 +53,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.CompletionHandler;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -68,6 +69,7 @@ import org.dcache.cells.CellStub;
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.classic.PostTransferService;
 import org.dcache.pool.classic.TransferService;
+import org.dcache.pool.movers.TransferLifeCycle.DataDirection;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.util.CDCThreadFactory;
 import org.dcache.util.ChannelCdcSessionHandlerWrapper;
@@ -508,7 +510,10 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
                 mover.setRemoteEndpoint(remoteEndpoint);
                 if (transferLifeCycle != null) {
                     try (CDC ignored = cdc.restore()) {
+                        // a mover that writes the file receives the data
                         transferLifeCycle.onStart(remoteEndpoint, localEndpoint,
+                              DataDirection.ofWrite(
+                                    mover.getIoMode().contains(StandardOpenOption.WRITE)),
                               mover.getProtocolInfo(), mover.getSubject());
                     }
                 }
