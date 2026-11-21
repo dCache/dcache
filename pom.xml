@@ -81,7 +81,7 @@
         <version.logback>1.6.5</version.logback>
         <version.logback.contrib>0.1.5</version.logback.contrib>
         <!-- Jackson 2 is used only by dcache-frontend and third-party libraries -->
-        <version.jackson>2.18.11</version.jackson>
+        <version.jackson>2.22.4</version.jackson>
         <!-- Jackson 3 is used by buld, gplazma, s3 -->
         <version.jackson3>3.2.2</version.jackson3>
         <!-- Jackson 3 needs annotations 2.22 -->
@@ -895,29 +895,20 @@
                  libraries (Jersey, swagger, logback-contrib). dCache code
                  uses Jackson 3 (tools.jackson), see jackson-bom below. -->
 
-            <!-- com.fasterxml.jackson.databind.ObjectMapper -->
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-databind</artifactId>
-                <version>${version.jackson}</version>
-            </dependency>
-
-	    <dependency>
-	        <groupId>com.fasterxml.jackson.datatype</groupId>
-		<artifactId>jackson-datatype-jdk8</artifactId>
-		<version>${version.jackson}</version>
-	    </dependency>
-
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-annotations</artifactId>
                 <version>${version.jackson-annotations}</version>
             </dependency>
 
+            <!-- com.fasterxml.jackson.databind.ObjectMapper; one version for all
+                 Jackson 2 modules, including those of Jersey and swagger -->
             <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-core</artifactId>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
                 <version>${version.jackson}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
 
             <!-- Jackson 3: tools.jackson.databind.ObjectMapper,
