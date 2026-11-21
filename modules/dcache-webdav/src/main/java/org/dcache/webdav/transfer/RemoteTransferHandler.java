@@ -136,7 +136,6 @@ import javax.annotation.PreDestroy;
 import javax.annotation.concurrent.GuardedBy;
 import javax.security.auth.Subject;
 import javax.servlet.AsyncContext;
-import javax.servlet.ServletResponseWrapper;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.http.entity.AbstractHttpEntity;
@@ -171,7 +170,7 @@ import org.dcache.webdav.DcacheResourceFactory;
 import org.dcache.webdav.RfcResponseHandler;
 import org.dcache.webdav.transfer.CopyFilter.CredentialSource;
 import org.eclipse.jetty.ee8.nested.Request;
-import org.eclipse.jetty.http.HttpFields;
+import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.io.EndPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -844,19 +843,13 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
      */
     @VisibleForTesting
     static void commitResponse(HttpServletRequest request, HttpServletResponse response,
-          @Nullable Supplier<HttpFields> trailers) {
+          @Nullable Supplier<Map<String, String>> trailers) {
         response.setStatus(SC_ACCEPTED);
         response.setContentType("text/perf-marker-stream");
 
-        if (trailers != null && acceptsTrailers(request)) {
-            /* Servlet v4.0 setTrailerFields fails for HTTP/1.0 requests; use
-             * Jetty's proprietary interface, which silently drops trailers.
-             */
-            HttpServletResponse unwrapped = response;
-            while (unwrapped instanceof ServletResponseWrapper) {
-                unwrapped = (HttpServletResponse) ((ServletResponseWrapper) unwrapped).getResponse();
-            }
-            ((org.eclipse.jetty.ee8.nested.Response) unwrapped).setTrailers(trailers);
+        /* setTrailerFields fails for HTTP/1.0, which has no trailers. */
+        if (trailers != null && acceptsTrailers(request) && supportsTrailers(request)) {
+            response.setTrailerFields(trailers);
         }
 
         try {
@@ -870,6 +863,11 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
      * According to RFC 7230, we should only return trailers if the client indicates (with the TE
      * header) that it can understand them.  Jetty doesn't check this, so we must.
      */
+    private static boolean supportsTrailers(HttpServletRequest request) {
+        HttpVersion version = HttpVersion.fromString(request.getProtocol());
+        return version != null && version.getVersion() >= HttpVersion.HTTP_1_1.getVersion();
+    }
+
     private static boolean acceptsTrailers(HttpServletRequest request) {
         String te = request.getHeader("TE");
         return te != null && Splitter.on(',').omitEmptyStrings().trimResults().splitToList(te)
@@ -1262,12 +1260,9 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         /**
          * Provide the trailers (headers that appear after the request).
          */
-        private HttpFields getTrailers() {
-            return _digestValue.map(v -> {
-                      HttpFields.Mutable fields = HttpFields.build();
-                      fields.put(_rfcType == Checksums.RfcType.RFC9530 ? HttpExtHeader.REPR_DIGEST : HttpExtHeader.DIGEST, v);
-                      return fields;
-                  })
+        private Map<String, String> getTrailers() {
+            return _digestValue.map(v -> Map.of(
+                        _rfcType == Checksums.RfcType.RFC9530 ? HttpExtHeader.REPR_DIGEST : HttpExtHeader.DIGEST, v))
                   .orElse(null);
         }
 

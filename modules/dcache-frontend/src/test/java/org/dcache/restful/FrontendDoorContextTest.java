@@ -88,6 +88,11 @@ public class FrontendDoorContextTest {
     }
 
     @Test
+    public void shouldAnswerUnknownWellKnownEndpoint() throws Exception {
+        assertThat(get("/.well-known/no-such-endpoint").statusCode(), is(404));
+    }
+
+    @Test
     public void shouldAuthenticateApiRequests() throws Exception {
         HttpResponse<String> response = client.send(
               HttpRequest.newBuilder(endpoint.resolve("/api/v1/user"))

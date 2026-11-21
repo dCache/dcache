@@ -20,6 +20,7 @@ package org.dcache.webdav;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.is;
 
 import java.net.URI;
@@ -100,6 +101,68 @@ public class WebdavDoorContextTest {
         assertThat(response.statusCode(), is(401));
         assertThat(response.headers().firstValue("WWW-Authenticate").orElse(""),
               containsString("Basic realm="));
+    }
+
+    @Test
+    public void shouldListStaticContentDirectory() throws Exception {
+        HttpResponse<String> redirect = get("/.webdav");
+        assertThat(redirect.statusCode(), is(302));
+        assertThat(redirect.headers().firstValue("Location").orElse(""), endsWith("/.webdav/"));
+
+        HttpResponse<String> listing = get("/.webdav/");
+        assertThat(listing.statusCode(), is(200));
+        assertThat(listing.body(), containsString("css/"));
+    }
+
+    @Test
+    public void shouldAnswerMissingStaticContentItself() throws Exception {
+        assertThat(get("/.webdav/no-such-file.css").statusCode(), is(404));
+    }
+
+    @Test
+    public void shouldAnswerOptionsWithCorsFilter() throws Exception {
+        HttpResponse<String> response = client.send(
+              HttpRequest.newBuilder(endpoint.resolve("/"))
+                    .method("OPTIONS", HttpRequest.BodyPublishers.noBody()).build(),
+              HttpResponse.BodyHandlers.ofString());
+
+        assertThat(response.statusCode(), is(200));
+        assertThat(response.headers().firstValue("DAV").isPresent(), is(false));
+    }
+
+    @Test
+    public void shouldAnswerOwnCloudStatusWithoutAuthentication() throws Exception {
+        HttpResponse<String> response = client.send(
+              HttpRequest.newBuilder(endpoint.resolve("/status.php"))
+                    .header("User-Agent", "Mozilla/5.0 (Linux) mirall/2.4.1")
+                    .GET().build(),
+              HttpResponse.BodyHandlers.ofString());
+
+        assertThat(response.statusCode(), is(200));
+        assertThat(response.body(), containsString("\"installed\":true"));
+    }
+
+    @Test
+    public void shouldAnswerUnknownWellKnownEndpoint() throws Exception {
+        assertThat(get("/.well-known/no-such-endpoint").statusCode(), is(404));
+    }
+
+    @Test
+    public void shouldStartWithoutMacaroons() throws Exception {
+        Path localStatic = Files.createTempDirectory("webdav-static");
+        localStatic.toFile().deleteOnExit();
+        SpringServiceContext other = SpringServiceContext.start("webdav",
+              "classpath:org/dcache/webdav/webdav.xml",
+              Map.of("webdav.net.port", "0",
+                    "webdav.net.listen", "127.0.0.1",
+                    "webdav.authn.protocol", "http",
+                    "webdav.static-content.dir.local", localStatic.toString()),
+              "missing-files-false", "owncloud-false", "macaroons-false");
+        try {
+            assertThat(other.getBean("jetty", Server.class).isStarted(), is(true));
+        } finally {
+            other.close();
+        }
     }
 
     private static HttpResponse<String> get(String path) throws Exception {

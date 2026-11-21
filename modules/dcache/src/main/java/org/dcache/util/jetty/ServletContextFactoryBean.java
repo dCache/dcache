@@ -30,17 +30,23 @@ import org.dcache.util.spring.Required;
 import org.eclipse.jetty.ee8.nested.SessionHandler;
 import org.eclipse.jetty.ee8.security.SecurityHandler;
 import org.eclipse.jetty.ee8.servlet.FilterHolder;
+import org.eclipse.jetty.ee8.servlet.FilterMapping;
 import org.eclipse.jetty.ee8.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee8.servlet.ServletHandler;
 import org.eclipse.jetty.ee8.servlet.ServletHolder;
 import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.util.resource.Resource;
+import org.eclipse.jetty.util.resource.ResourceFactory;
+import org.eclipse.jetty.util.resource.Resources;
 import org.springframework.beans.factory.config.AbstractFactoryBean;
 
 /**
  * Creates the servlet context of a door: an ordered chain of filters in front of servlets, each
  * mapped to servlet path specs.
  * <p>
- * A request passes the filters whose path specs match, in the order given, and then reaches the
- * servlet with the best matching path spec. A filter that does not call
+ * A request passes the filters whose path specs match, in the order given, then the filters mapped
+ * to the servlet that serves it, in the order given, and then reaches the servlet with the best
+ * matching path spec. A filter that does not call
  * {@link javax.servlet.FilterChain#doFilter} handles the request itself; the rest of the chain is
  * skipped. Filters are applied to requests from clients only, not to forwards or includes.
  * <p>
@@ -54,9 +60,19 @@ public class ServletContextFactoryBean extends AbstractFactoryBean<Handler> {
     private SecurityHandler securityHandler;
     private List<FilterEntry> filters = List.of();
     private List<ServletEntry> servlets = List.of();
+    private List<String> baseResources = List.of();
 
     public void setContextPath(String contextPath) {
         this.contextPath = requireNonNull(contextPath);
+    }
+
+    /**
+     * Sets the directories of the context's static content, as served by a {@code DefaultServlet}
+     * without a base resource of its own: a file is taken from the first directory that has it.
+     * Directories that do not exist are skipped.
+     */
+    public void setBaseResources(List<String> baseResources) {
+        this.baseResources = List.copyOf(baseResources);
     }
 
     /**
@@ -91,15 +107,34 @@ public class ServletContextFactoryBean extends AbstractFactoryBean<Handler> {
     protected Handler createInstance() {
         ServletContextHandler context = new ServletContextHandler(null, contextPath,
               sessionHandler, securityHandler, null, null);
+        if (!baseResources.isEmpty()) {
+            ResourceFactory factory = ResourceFactory.of(context);
+            List<Resource> resources = baseResources.stream()
+                  .map(factory::newResource)
+                  .filter(r -> !Resources.missing(r))
+                  .toList();
+            if (!resources.isEmpty()) {
+                context.setBaseResource(ResourceFactory.combine(resources));
+            }
+        }
+        ServletHandler servletHandler = context.getServletHandler();
         for (FilterEntry entry : filters) {
             FilterHolder holder = new FilterHolder(entry.filter);
             if (entry.name != null) {
                 holder.setName(entry.name);
             }
             holder.setInitParameters(entry.initParameters);
-            for (String pathSpec : entry.pathSpecs) {
-                context.addFilter(holder, pathSpec, EnumSet.of(DispatcherType.REQUEST));
+            servletHandler.addFilter(holder);
+
+            FilterMapping mapping = new FilterMapping();
+            mapping.setFilterName(holder.getName());
+            mapping.setDispatcherTypes(EnumSet.of(DispatcherType.REQUEST));
+            if (entry.servletNames.isEmpty()) {
+                mapping.setPathSpecs(entry.pathSpecs.toArray(String[]::new));
+            } else {
+                mapping.setServletNames(entry.servletNames.toArray(String[]::new));
             }
+            servletHandler.addFilterMapping(mapping);
         }
         for (ServletEntry entry : servlets) {
             ServletHolder holder = new ServletHolder(entry.servlet);
@@ -122,6 +157,7 @@ public class ServletContextFactoryBean extends AbstractFactoryBean<Handler> {
         private Filter filter;
         private String name;
         private List<String> pathSpecs = List.of("/*");
+        private List<String> servletNames = List.of();
         private Map<String, String> initParameters = Map.of();
 
         @Required
@@ -141,6 +177,13 @@ public class ServletContextFactoryBean extends AbstractFactoryBean<Handler> {
          */
         public void setPathSpecs(List<String> pathSpecs) {
             this.pathSpecs = List.copyOf(pathSpecs);
+        }
+
+        /**
+         * Sets the names of the servlets to which the filter applies, instead of path specs.
+         */
+        public void setServletNames(List<String> servletNames) {
+            this.servletNames = List.copyOf(servletNames);
         }
 
         public void setInitParameters(Map<String, String> initParameters) {

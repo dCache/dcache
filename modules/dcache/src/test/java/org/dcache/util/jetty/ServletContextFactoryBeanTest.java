@@ -31,6 +31,8 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -45,7 +47,9 @@ import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.junit.After;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.context.support.GenericXmlApplicationContext;
 import org.springframework.core.io.ByteArrayResource;
@@ -88,6 +92,9 @@ public class ServletContextFactoryBeanTest {
                 + "    </bean>"
                 + "  </list></property>"
                 + "</bean>";
+
+    @Rule
+    public final TemporaryFolder tmp = new TemporaryFolder();
 
     private GenericXmlApplicationContext context;
     private Server server;
@@ -180,6 +187,67 @@ public class ServletContextFactoryBeanTest {
 
         assertThat(response.statusCode(), is(500));
         assertThat(response.headers().allValues("X-Mark"), is(empty()));
+    }
+
+    @Test
+    public void shouldRunServletNameFiltersAfterPathFilters() throws Exception {
+        start("<bean id='context' class='" + FACTORY + "'>"
+              + "  <property name='filters'><list>"
+              + "    <bean class='" + FILTER + "'>"
+              + "      <property name='filter'><bean class='" + MarkingFilter.class.getName() + "'/></property>"
+              + "      <property name='servletNames'><list><value>default</value></list></property>"
+              + "      <property name='initParameters'><map><entry key='mark' value='C'/></map></property>"
+              + "    </bean>"
+              + "    <bean class='" + FILTER + "'>"
+              + "      <property name='filter'><bean class='" + MarkingFilter.class.getName() + "'/></property>"
+              + "      <property name='initParameters'><map><entry key='mark' value='A'/></map></property>"
+              + "    </bean>"
+              + "  </list></property>"
+              + "  <property name='servlets'><list>"
+              + "    <bean class='" + SERVLET + "'>"
+              + "      <property name='servlet'><bean class='" + PathServlet.class.getName() + "'/></property>"
+              + "      <property name='pathSpecs'><list><value>/b/*</value></list></property>"
+              + "      <property name='initParameters'><map><entry key='name' value='b'/></map></property>"
+              + "    </bean>"
+              + "    <bean class='" + SERVLET + "'>"
+              + "      <property name='name' value='default'/>"
+              + "      <property name='servlet'><bean class='" + PathServlet.class.getName() + "'/></property>"
+              + "      <property name='pathSpecs'><list><value>/</value></list></property>"
+              + "      <property name='initParameters'><map><entry key='name' value='default'/></map></property>"
+              + "    </bean>"
+              + "  </list></property>"
+              + "</bean>");
+
+        assertThat(get("/other").headers().allValues("X-Mark"), contains("A", "C"));
+        assertThat(get("/b/file").headers().allValues("X-Mark"), contains("A"));
+    }
+
+    @Test
+    public void shouldServeStaticFileFromFirstDirectoryWithIt() throws Exception {
+        Path first = Files.createTempDirectory(tmp.getRoot().toPath(), "first");
+        Path second = Files.createTempDirectory(tmp.getRoot().toPath(), "second");
+        Files.writeString(first.resolve("a.txt"), "first a");
+        Files.writeString(second.resolve("a.txt"), "second a");
+        Files.writeString(second.resolve("b.txt"), "second b");
+
+        start("<bean id='context' class='" + FACTORY + "'>"
+              + "  <property name='baseResources'><list>"
+              + "    <value>" + tmp.getRoot().toPath().resolve("missing") + "</value>"
+              + "    <value>" + first + "</value>"
+              + "    <value>" + second + "</value>"
+              + "  </list></property>"
+              + "  <property name='servlets'><list>"
+              + "    <bean class='" + SERVLET + "'>"
+              + "      <property name='servlet'><bean class='org.eclipse.jetty.ee8.servlet.DefaultServlet'/></property>"
+              + "      <property name='pathSpecs'><list><value>/static/*</value></list></property>"
+              + "      <property name='initParameters'><map><entry key='pathInfoOnly' value='true'/></map></property>"
+              + "    </bean>"
+              + "  </list></property>"
+              + "</bean>");
+
+        assertThat(get("/static/a.txt").body(), is("first a"));
+        assertThat(get("/static/b.txt").body(), is("second b"));
+        assertThat(get("/static/c.txt").statusCode(), is(404));
     }
 
     @Test

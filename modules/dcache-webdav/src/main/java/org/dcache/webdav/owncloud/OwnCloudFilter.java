@@ -17,16 +17,20 @@
  */
 package org.dcache.webdav.owncloud;
 
+import static com.google.common.base.Strings.nullToEmpty;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.eclipse.jetty.ee8.nested.AbstractHandler;
-import org.eclipse.jetty.ee8.nested.Request;
 import org.eclipse.jetty.http.HttpMethod;
 import org.springframework.http.MediaType;
 import tools.jackson.databind.ObjectMapper;
@@ -37,19 +41,22 @@ import tools.jackson.databind.ObjectMapper;
  *
  * @author ugrin
  */
-public class OwnCloudHandler extends AbstractHandler {
+public class OwnCloudFilter implements Filter {
 
     private static final String OWNCLOUD_STATUS_ENDPOINT = "/status.php";
     private static final String OWNCLOUD_CAPABILITIES_ENDPOINT = "/ocs/v1.php/cloud/capabilities";
 
     @Override
-    public void handle(String target, Request baseRequest, HttpServletRequest request,
-          HttpServletResponse response) throws IOException, ServletException {
-        if (OwncloudClients.isSyncClient(request) && baseRequest.getMethod()
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse,
+          FilterChain chain) throws IOException, ServletException {
+        HttpServletRequest request = (HttpServletRequest) servletRequest;
+        HttpServletResponse response = (HttpServletResponse) servletResponse;
+        if (OwncloudClients.isSyncClient(request) && request.getMethod()
               .equals(HttpMethod.GET.toString())) {
 
             String json = null;
 
+            String target = request.getServletPath() + nullToEmpty(request.getPathInfo());
             switch (target) {
                 case OWNCLOUD_STATUS_ENDPOINT:
                     json = buildStatusResponse();
@@ -66,9 +73,10 @@ public class OwnCloudHandler extends AbstractHandler {
                 response.setCharacterEncoding(StandardCharsets.UTF_8.name());
                 response.getOutputStream().write(json.getBytes());
                 response.setStatus(HttpServletResponse.SC_OK);
-                baseRequest.setHandled(true);
+                return;
             }
         }
+        chain.doFilter(request, response);
     }
 
     String buildStatusResponse() throws IOException {

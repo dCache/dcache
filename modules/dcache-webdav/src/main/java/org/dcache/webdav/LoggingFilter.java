@@ -7,7 +7,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.dcache.http.AbstractLoggingFilter;
 import org.dcache.util.NetLoggerBuilder;
-import org.dcache.webdav.macaroons.MacaroonRequestHandler;
+import org.dcache.webdav.macaroons.MacaroonRequestFilter;
 import org.dcache.webdav.transfer.CopyFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,8 +52,8 @@ public class LoggingFilter extends AbstractLoggingFilter {
         super.describeOperation(log, request, response);
 
         log.add("transaction", getTransaction(request));
-        log.add("request.macaroon-request", MacaroonRequestHandler.getMacaroonRequest(request));
-        log.add("response.macaroon-id", MacaroonRequestHandler.getMacaroonId(request));
+        log.add("request.macaroon-request", MacaroonRequestFilter.getMacaroonRequest(request));
+        log.add("response.macaroon-id", MacaroonRequestFilter.getMacaroonId(request));
         log.add("tpc.credential", CopyFilter.getTpcCredential(request));
         log.add("tpc.error", CopyFilter.getTpcError(request));
         log.add("tpc.require-checksum", CopyFilter.getTpcRequireChecksumVerification(request));

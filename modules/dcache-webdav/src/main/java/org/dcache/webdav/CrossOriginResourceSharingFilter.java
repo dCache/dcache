@@ -21,19 +21,20 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.servlet.Filter;
+import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import org.eclipse.jetty.ee8.nested.AbstractHandler;
-import org.eclipse.jetty.ee8.nested.Request;
 import org.eclipse.jetty.ee8.servlets.CrossOriginFilter;
 
 /**
- * A Jetty Handler that uses Jetty's CrossOriginFilter to implement support for CORS.
+ * A filter that uses Jetty's CrossOriginFilter to implement support for CORS. It answers all
+ * OPTIONS requests.
  */
-public class CrossOriginResourceSharingHandler extends AbstractHandler implements FilterConfig {
+public class CrossOriginResourceSharingFilter implements Filter, FilterConfig {
 
     private static final Map<String, String> DEFAULT_CONFIG = Map.of(
           ALLOWED_METHODS_PARAM, "GET,PUT,POST,DELETE",
@@ -55,7 +56,7 @@ public class CrossOriginResourceSharingHandler extends AbstractHandler implement
         } else {
             // Fail fast
             Splitter.on(',').trimResults().splitToList(origins)
-                  .forEach(CrossOriginResourceSharingHandler::checkOrigin);
+                  .forEach(CrossOriginResourceSharingFilter::checkOrigin);
             configValue = origins;
         }
 
@@ -100,18 +101,14 @@ public class CrossOriginResourceSharingHandler extends AbstractHandler implement
     }
 
 
-    public void handle(String target, Request baseRequest,
-                       HttpServletRequest request, HttpServletResponse response)
-            throws IOException, ServletException {
-
-        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
-            baseRequest.setHandled(true);
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+          throws IOException, ServletException {
+        if ("OPTIONS".equalsIgnoreCase(((HttpServletRequest) request).getMethod())) {
             filter.doFilter(request, response, (req, res) -> {});  // ← empty chain, don't pass through
-            return;
+        } else {
+            filter.doFilter(request, response, chain);
         }
-
-        baseRequest.setHandled(true);
-        filter.doFilter(request, response, (req, res) -> baseRequest.setHandled(false));
     }
 
     @Override

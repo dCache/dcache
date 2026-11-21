@@ -19,6 +19,7 @@ package org.dcache.webdav.macaroons;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.emptyToNull;
+import static com.google.common.base.Strings.nullToEmpty;
 import static java.lang.Boolean.TRUE;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -49,6 +50,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import javax.security.auth.Subject;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.dcache.auth.Subjects;
@@ -69,8 +75,6 @@ import org.dcache.macaroons.MacaroonContext;
 import org.dcache.macaroons.MacaroonProcessor;
 import org.dcache.util.NDC;
 import org.dcache.util.spring.Required;
-import org.eclipse.jetty.ee8.nested.AbstractHandler;
-import org.eclipse.jetty.ee8.nested.Request;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,9 +82,9 @@ import org.slf4j.LoggerFactory;
 /**
  * Handle HTTP-based requests to create a macaroon.
  */
-public class MacaroonRequestHandler extends AbstractHandler implements CellIdentityAware {
+public class MacaroonRequestFilter implements Filter, CellIdentityAware {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(MacaroonRequestHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MacaroonRequestFilter.class);
 
     private static final String REQUEST_MIMETYPE = "application/macaroon-request";
     private static final String RESPONSE_MIMETYPE = "application/json";
@@ -140,20 +144,23 @@ public class MacaroonRequestHandler extends AbstractHandler implements CellIdent
     }
 
     @Override
-    public void handle(String target, Request baseRequest,
-          HttpServletRequest request, HttpServletResponse response)
-          throws IOException {
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse,
+          FilterChain chain) throws IOException, ServletException {
+        HttpServletRequest request = (HttpServletRequest) servletRequest;
+        HttpServletResponse response = (HttpServletResponse) servletResponse;
         try (CDC ignored = CDC.reset(_myAddress)) {
-            NDC.push("macaroon-request " + baseRequest.getRemoteAddr());
-            if (baseRequest.getMethod().equals("POST") &&
+            NDC.push("macaroon-request " + request.getRemoteAddr());
+            if (request.getMethod().equals("POST") &&
                   Objects.equals(request.getContentType(), REQUEST_MIMETYPE)) {
-                handleMacaroonRequest(target, baseRequest, response);
-                baseRequest.setHandled(true);
+                String target = request.getServletPath() + nullToEmpty(request.getPathInfo());
+                handleMacaroonRequest(target, request, response);
+                return;
             }
         }
+        chain.doFilter(request, response);
     }
 
-    private void handleMacaroonRequest(String target, Request request,
+    private void handleMacaroonRequest(String target, HttpServletRequest request,
           HttpServletResponse response) {
         try {
             try {
@@ -176,7 +183,7 @@ public class MacaroonRequestHandler extends AbstractHandler implements CellIdent
         }
     }
 
-    private JSONObject buildResponseJSON(Request request, String macaroon) {
+    private JSONObject buildResponseJSON(HttpServletRequest request, String macaroon) {
         JSONObject json = new JSONObject();
         JSONObject uris = new JSONObject();
         json.put("macaroon", macaroon).put("uri", uris);
@@ -235,7 +242,7 @@ public class MacaroonRequestHandler extends AbstractHandler implements CellIdent
         return expiry;
     }
 
-    private MacaroonContext buildContext(String target, Request request)
+    private MacaroonContext buildContext(String target, HttpServletRequest request)
           throws ErrorResponseException {
 
         MacaroonContext context = new MacaroonContext();
@@ -299,7 +306,7 @@ public class MacaroonRequestHandler extends AbstractHandler implements CellIdent
     }
 
 
-    private String buildMacaroon(String target, Request request) throws ErrorResponseException {
+    private String buildMacaroon(String target, HttpServletRequest request) throws ErrorResponseException {
         checkValidRequest(request.isSecure(), "Not secure transport");
         if (Subjects.isNobody(getSubject())) {
             throw new ErrorResponseException(SC_UNAUTHORIZED, "Authentication required");

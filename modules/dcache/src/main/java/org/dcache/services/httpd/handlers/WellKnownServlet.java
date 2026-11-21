@@ -64,30 +64,28 @@ import dmg.util.HttpRequest;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Optional;
-import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.dcache.services.httpd.exceptions.OnErrorException;
 import org.dcache.services.httpd.util.StandardHttpRequest;
 import org.dcache.services.httpd.wellknown.WellKnownContentProducer;
 import org.dcache.services.httpd.wellknown.WellKnownForwardingProducer;
 import org.dcache.services.httpd.wellknown.WellKnownProducer;
 import org.dcache.services.httpd.wellknown.WellKnownProducerFactory;
 import org.dcache.services.httpd.wellknown.WellKnownProducerFactoryProvider;
-import org.eclipse.jetty.ee8.nested.AbstractHandler;
-import org.eclipse.jetty.ee8.nested.Request;
 
 /**
  * Provides response for .well-known path requests.
  */
-public class WellKnownHandler extends AbstractHandler {
+public class WellKnownServlet extends HttpServlet {
 
-    private WellKnownProducerFactoryProvider factoryProvider;
+    private static final long serialVersionUID = 1L;
+
+    private transient WellKnownProducerFactoryProvider factoryProvider;
 
     @Override
-    public void handle(String target, Request baseRequest,
-          HttpServletRequest request, HttpServletResponse response)
-          throws IOException, ServletException {
+    protected void service(HttpServletRequest request, HttpServletResponse response)
+          throws IOException {
         try {
             HttpRequest proxy = new StandardHttpRequest(request, response);
             String[] tokens = proxy.getRequestTokens();
@@ -105,10 +103,8 @@ public class WellKnownHandler extends AbstractHandler {
                 response.setStatus(HttpServletResponse.SC_OK);
                 proxy.getPrintWriter().print(contentProducer.getContent());
                 proxy.getPrintWriter().flush();
-                baseRequest.setHandled(true);
             } else if (producer instanceof WellKnownForwardingProducer) {
                 response.sendRedirect(((WellKnownForwardingProducer)producer).getForwardingAddress());
-                baseRequest.setHandled(true);
             }
 
         } catch (CacheException | URISyntaxException e) {

@@ -49,7 +49,7 @@ import org.junit.Test;
  * embedded Jetty does not silently change which file names clients can use.
  * <p>
  * Two fixtures mirror the production layouts: a handler in the root context
- * (as {@code MiltonHandler} in the WebDAV door, which uses the raw request URL
+ * (as {@code MiltonServlet} in the WebDAV door, which uses the raw request URL
  * and the decoded target) and a {@code /api} servlet context with a
  * {@code /v1/*} servlet (as the frontend REST API).
  * <p>
@@ -262,7 +262,7 @@ public class UriComplianceBaselineTest {
         }
     }
 
-    /** Stands in for MiltonHandler. */
+    /** Stands in for MiltonServlet. */
     private static class EchoHandler extends AbstractHandler {
         @Override
         public void handle(String target, Request baseRequest, HttpServletRequest request,

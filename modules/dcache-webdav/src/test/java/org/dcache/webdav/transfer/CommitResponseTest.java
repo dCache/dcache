@@ -24,12 +24,12 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.startsWith;
 
 import java.io.IOException;
+import java.util.Map;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.eclipse.jetty.ee8.nested.AbstractHandler;
-import org.eclipse.jetty.ee8.nested.ContextHandler;
-import org.eclipse.jetty.ee8.nested.Request;
-import org.eclipse.jetty.http.HttpFields;
+import org.eclipse.jetty.ee8.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee8.servlet.ServletHolder;
 import org.eclipse.jetty.server.LocalConnector;
 import org.eclipse.jetty.server.Server;
 import org.junit.After;
@@ -49,17 +49,17 @@ public class CommitResponseTest {
 
     @Before
     public void setUp() throws Exception {
-        ContextHandler root = new ContextHandler("/");
-        root.setHandler(new AbstractHandler() {
+        ServletContextHandler root = new ServletContextHandler();
+        root.setContextPath("/");
+        root.addServlet(new ServletHolder(new HttpServlet() {
             @Override
-            public void handle(String target, Request baseRequest, HttpServletRequest request,
-                  HttpServletResponse response) throws IOException {
-                baseRequest.setHandled(true);
+            protected void service(HttpServletRequest request, HttpServletResponse response)
+                  throws IOException {
                 RemoteTransferHandler.commitResponse(request, response,
-                      () -> HttpFields.build().put("Digest", DIGEST));
+                      () -> Map.of("Digest", DIGEST));
                 response.getWriter().println("success: Created");
             }
-        });
+        }), "/");
 
         server = new Server();
         connector = new LocalConnector(server);

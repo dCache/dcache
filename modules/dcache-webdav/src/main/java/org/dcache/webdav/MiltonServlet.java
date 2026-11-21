@@ -5,43 +5,37 @@ import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellIdentityAware;
 import io.milton.http.Auth;
-import io.milton.http.FileItem;
 import io.milton.http.HttpManager;
-import io.milton.http.RequestParseException;
 import io.milton.servlet.ServletRequest;
 import io.milton.servlet.ServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.AccessController;
-import java.util.Map;
 import javax.security.auth.Subject;
 import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.commons.fileupload.FileUploadException;
 import org.dcache.auth.Subjects;
 import org.dcache.util.Transfer;
-import org.eclipse.jetty.ee8.nested.AbstractHandler;
-import org.eclipse.jetty.ee8.nested.ContextHandler;
 import org.eclipse.jetty.ee8.nested.Request;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A Jetty handler that wraps a Milton HttpManager. Makes it possible to embed Milton in Jetty
+ * A servlet that wraps a Milton HttpManager. Makes it possible to embed Milton in Jetty
  * without using the Milton servlet.
  */
-public class MiltonHandler
-      extends AbstractHandler
+public class MiltonServlet
+      extends HttpServlet
       implements CellIdentityAware {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(MiltonHandler.class);
+    private static final long serialVersionUID = 1L;
+    private static final Logger LOGGER = LoggerFactory.getLogger(MiltonServlet.class);
     private static final ImmutableList<String> ALLOWED_ORIGIN_PROTOCOL = ImmutableList.of("http",
           "https");
 
-    private HttpManager _httpManager;
-    private CellAddressCore _myAddress;
+    private transient HttpManager _httpManager;
+    private transient CellAddressCore _myAddress;
 
     public void setHttpManager(HttpManager httpManager) {
         _httpManager = httpManager;
@@ -53,12 +47,11 @@ public class MiltonHandler
     }
 
     @Override
-    public void handle(String target, Request baseRequest,
-          HttpServletRequest request, HttpServletResponse response)
-          throws IOException, ServletException {
+    protected void service(HttpServletRequest request, HttpServletResponse response)
+          throws IOException {
         try (CDC ignored = CDC.reset(_myAddress)) {
             Transfer.initSession(false, false);
-            ServletContext context = ContextHandler.getCurrentContext();
+            ServletContext context = getServletContext();
 
             if ("USERINFO".equals(request.getMethod())) {
                 response.sendError(501);
@@ -73,7 +66,6 @@ public class MiltonHandler
                  */
                 req.setAuthorization(new Auth(Subjects.getUserName(subject), subject));
 
-                baseRequest.setHandled(true);
                 _httpManager.process(req, resp);
             }
             if (!request.isAsyncStarted()) {

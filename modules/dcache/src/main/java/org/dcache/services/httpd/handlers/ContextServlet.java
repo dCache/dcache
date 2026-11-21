@@ -22,23 +22,21 @@ import dmg.cells.nucleus.DomainContextAware;
 import dmg.util.HttpException;
 import java.io.IOException;
 import java.util.Map;
-import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.dcache.services.httpd.exceptions.OnErrorException;
-import org.eclipse.jetty.ee8.nested.AbstractHandler;
-import org.eclipse.jetty.ee8.nested.Request;
 
 /**
- * Serves a page of the domain context as a nested Jetty handler.
- * <p>
- * Used by doors whose handler chains are not servlets yet; to be removed with them.
+ * Serves a page of the domain context, e.g. robots.txt; 404 if the domain has no such page.
  */
-public class ContextHandler extends AbstractHandler implements DomainContextAware {
+public class ContextServlet extends HttpServlet implements DomainContextAware {
 
-    private final ContextAlias alias;
+    private static final long serialVersionUID = 1L;
 
-    public ContextHandler(String specificName) {
+    private final transient ContextAlias alias;
+
+    public ContextServlet(String specificName) {
         alias = new ContextAlias(specificName);
     }
 
@@ -48,14 +46,14 @@ public class ContextHandler extends AbstractHandler implements DomainContextAwar
     }
 
     @Override
-    public void handle(String target, Request baseRequest,
-          HttpServletRequest request, HttpServletResponse response)
-          throws IOException, ServletException {
+    protected void service(HttpServletRequest request, HttpServletResponse response)
+          throws IOException {
         try {
             alias.handle(request, response);
-            baseRequest.setHandled(true);
-        } catch (HttpException | OnErrorException e) {
-            throw new ServletException("ContextHandler", e);
+        } catch (HttpException e) {
+            response.sendError(e.getErrorCode(), e.getMessage());
+        } catch (OnErrorException e) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
         }
     }
 }

@@ -759,7 +759,7 @@ public class DcacheResourceFactory
                  */
                 boolean proxyImpatientClient = expects100Continue
                       && isImpatientClientProxied()
-                      && ((MiltonHandler.DcacheServletRequest) request).isClientSendingEntity();
+                      && ((MiltonServlet.DcacheServletRequest) request).isClientSendingEntity();
 
                 if (proxyImpatientClient) {
                     LOGGER.warn(
