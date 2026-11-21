@@ -32,9 +32,9 @@ import jdk.jfr.Recording;
 import org.apache.curator.framework.CuratorFramework;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
+import org.dcache.util.RemoteProxyFailureException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.remoting.RemoteProxyFailureException;
 
 /**
  * @author Patrick Fuhrmann

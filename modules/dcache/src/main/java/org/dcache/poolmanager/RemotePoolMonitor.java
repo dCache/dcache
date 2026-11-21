@@ -43,13 +43,13 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
+import org.dcache.util.RemoteConnectFailureException;
+import org.dcache.util.RemoteProxyFailureException;
 import org.dcache.util.TimeUtils;
 import org.dcache.util.spring.Required;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.remoting.RemoteConnectFailureException;
-import org.springframework.remoting.RemoteProxyFailureException;
 
 /**
  * PoolMonitor that delegates to a PoolMonitor obtained from pool manager.

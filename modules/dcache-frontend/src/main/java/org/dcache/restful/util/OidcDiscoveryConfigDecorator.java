@@ -19,15 +19,15 @@
 package org.dcache.restful.util;
 
 import com.google.common.base.Splitter;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.Path;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Path;
 import org.dcache.restful.resources.auth.OidcCodeFlowCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

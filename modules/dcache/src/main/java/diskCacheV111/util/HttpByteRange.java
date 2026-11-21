@@ -1,9 +1,9 @@
 package diskCacheV111.util;
 
 import dmg.util.HttpException;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.List;
-import javax.servlet.http.HttpServletResponse;
 
 public class HttpByteRange {
 

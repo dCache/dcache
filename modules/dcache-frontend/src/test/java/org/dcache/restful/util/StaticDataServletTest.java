@@ -29,8 +29,8 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Map;
-import org.eclipse.jetty.ee8.servlet.ServletContextHandler;
-import org.eclipse.jetty.ee8.servlet.ServletHolder;
+import org.eclipse.jetty.ee11.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee11.servlet.ServletHolder;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.junit.AfterClass;
@@ -62,7 +62,7 @@ public class StaticDataServletTest {
         connector.setHost("127.0.0.1");
         connector.setPort(0);
         server.addConnector(connector);
-        server.setHandler(context.get());
+        server.setHandler(context);
         server.start();
 
         endpoint = URI.create("http://127.0.0.1:" + connector.getLocalPort());

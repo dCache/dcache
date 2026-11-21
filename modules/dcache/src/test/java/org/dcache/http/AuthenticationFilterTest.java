@@ -34,6 +34,10 @@ import static org.mockito.Mockito.when;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.Base64;
@@ -43,10 +47,6 @@ import java.util.Map;
 import java.util.Set;
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
-import javax.servlet.FilterChain;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
@@ -149,7 +149,7 @@ public class AuthenticationFilterTest {
         filter.doFilter(request, response, chain);
 
         verify(chain, never()).doFilter(any(), any());
-        verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED, "denied");
+        verify(response).sendError(HttpServletResponse.SC_UNAUTHORIZED, "denied");
         verify(response).setHeader("WWW-Authenticate", "Basic realm=\"dCache\"");
     }
 

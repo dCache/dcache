@@ -20,21 +20,21 @@ package org.dcache.util.jetty;
 
 import static java.util.Objects.requireNonNull;
 
+import jakarta.servlet.DispatcherType;
+import jakarta.servlet.Filter;
+import jakarta.servlet.Servlet;
 import java.util.EnumSet;
 import java.util.EventListener;
 import java.util.List;
 import java.util.Map;
-import javax.servlet.DispatcherType;
-import javax.servlet.Filter;
-import javax.servlet.Servlet;
 import org.dcache.util.spring.Required;
-import org.eclipse.jetty.ee8.nested.SessionHandler;
-import org.eclipse.jetty.ee8.security.SecurityHandler;
-import org.eclipse.jetty.ee8.servlet.FilterHolder;
-import org.eclipse.jetty.ee8.servlet.FilterMapping;
-import org.eclipse.jetty.ee8.servlet.ServletContextHandler;
-import org.eclipse.jetty.ee8.servlet.ServletHandler;
-import org.eclipse.jetty.ee8.servlet.ServletHolder;
+import org.eclipse.jetty.ee11.servlet.FilterHolder;
+import org.eclipse.jetty.ee11.servlet.FilterMapping;
+import org.eclipse.jetty.ee11.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee11.servlet.ServletHandler;
+import org.eclipse.jetty.ee11.servlet.ServletHolder;
+import org.eclipse.jetty.ee11.servlet.SessionHandler;
+import org.eclipse.jetty.security.SecurityHandler;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.util.resource.ResourceFactory;
@@ -48,7 +48,7 @@ import org.springframework.beans.factory.config.AbstractFactoryBean;
  * A request passes the filters whose path specs match, in the order given, then the filters mapped
  * to the servlet that serves it, in the order given, and then reaches the servlet with the best
  * matching path spec. A filter that does not call
- * {@link javax.servlet.FilterChain#doFilter} handles the request itself; the rest of the chain is
+ * {@link jakarta.servlet.FilterChain#doFilter} handles the request itself; the rest of the chain is
  * skipped. Filters are applied to requests from clients only, not to forwards or includes.
  * <p>
  * The product is the core Jetty {@link Handler} of the context, to be used as the handler of the
@@ -115,7 +115,7 @@ public class ServletContextFactoryBean extends AbstractFactoryBean<Handler> {
 
     @Override
     protected Handler createInstance() {
-        ServletContextHandler context = new ServletContextHandler(null, contextPath,
+        ServletContextHandler context = new ServletContextHandler(contextPath,
               sessionHandler, securityHandler, null, null);
         eventListeners.forEach(context::addEventListener);
         if (!baseResources.isEmpty()) {
@@ -129,6 +129,11 @@ public class ServletContextFactoryBean extends AbstractFactoryBean<Handler> {
             }
         }
         ServletHandler servletHandler = context.getServletHandler();
+        /* File names may contain what Servlet 6 calls ambiguous: "%25", "%2F", empty or
+         * encoded "." segments. Decode such paths as Jetty 9 did; the connector's URI compliance
+         * decides which paths are accepted at all.
+         */
+        servletHandler.setDecodeAmbiguousURIs(true);
         for (FilterEntry entry : filters) {
             FilterHolder holder = new FilterHolder(entry.filter);
             if (entry.name != null) {
@@ -157,7 +162,7 @@ public class ServletContextFactoryBean extends AbstractFactoryBean<Handler> {
                 context.addServlet(holder, pathSpec);
             }
         }
-        return context.get();
+        return context;
     }
 
     /**

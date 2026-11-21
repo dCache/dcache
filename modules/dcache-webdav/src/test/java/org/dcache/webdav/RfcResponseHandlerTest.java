@@ -9,12 +9,11 @@ import io.milton.http.Request;
 import io.milton.http.Response;
 import io.milton.http.webdav.WebDavResponseHandler;
 import io.milton.servlet.ServletRequest;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-
 import org.dcache.util.HttpExtHeader;
 import org.junit.Test;
 import org.mockito.ArgumentMatchers;

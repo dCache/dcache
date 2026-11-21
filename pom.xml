@@ -62,15 +62,15 @@
 
 
         <version.slf4j>2.0.20</version.slf4j>
-        <version.milton>3.1.1.488</version.milton>
-        <version.spring>5.3.39</version.spring>
+        <version.milton>4.2.0.2712</version.milton>
+        <version.spring>6.2.19</version.spring>
         <!-- Remember to sync aspectj version in dcache.properties -->
         <version.aspectj>1.9.25.1</version.aspectj>
         <version.smc>7.6.0</version.smc>
         <version.xerces>2.12.0</version.xerces>
         <version.jetty>12.1.15</version.jetty>
         <version.xrootd4j>4.6.7</version.xrootd4j>
-        <version.jersey>2.47</version.jersey>
+        <version.jersey>4.0.3</version.jersey>
         <version.dcache-view-admin>3.0.0</version.dcache-view-admin>
         <version.netty>4.2.16.Final</version.netty>
         <version.dcache>${project.version}</version.dcache>
@@ -97,7 +97,7 @@
 
 
 
-        <version.spring_kafka>2.9.11</version.spring_kafka>
+        <version.spring_kafka>3.3.16</version.spring_kafka>
         <version.kafka>3.9.2</version.kafka>
 
         <bouncycastle.bcprov>bcprov-jdk18on</bouncycastle.bcprov>
@@ -475,7 +475,7 @@
                 <artifactId>saxon-dom</artifactId>
                 <version>8.7</version>
             </dependency>
-            <!-- Jetty 12 core and the ee8 (javax.servlet 4) environment -->
+            <!-- Jetty 12 core and the ee11 (jakarta.servlet 6.1) environment -->
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-bom</artifactId>
@@ -484,16 +484,21 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
-                <groupId>org.eclipse.jetty.ee8</groupId>
-                <artifactId>jetty-ee8-bom</artifactId>
+                <groupId>org.eclipse.jetty.ee11</groupId>
+                <artifactId>jetty-ee11-bom</artifactId>
                 <version>${version.jetty}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
             <dependency>
-                <groupId>org.eclipse.jetty.toolchain</groupId>
-                <artifactId>jetty-servlet-api</artifactId>
-                <version>4.0.9</version>
+                <groupId>jakarta.servlet</groupId>
+                <artifactId>jakarta.servlet-api</artifactId>
+                <version>6.1.0</version>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.annotation</groupId>
+                <artifactId>jakarta.annotation-api</artifactId>
+                <version>3.0.0</version>
             </dependency>
 
             <dependency>
@@ -513,7 +518,7 @@
             </dependency>
             <dependency>
                 <groupId>org.glassfish.jersey.ext</groupId>
-                <artifactId>jersey-spring5</artifactId>
+                <artifactId>jersey-spring6</artifactId>
                 <version>${version.jersey}</version>
             </dependency>
             <dependency>
@@ -957,18 +962,18 @@
             </dependency>
             <dependency>
                 <groupId>io.swagger.core.v3</groupId>
-                <artifactId>swagger-jaxrs2</artifactId>
+                <artifactId>swagger-jaxrs2-jakarta</artifactId>
                 <version>${version.swagger-core}</version>
             </dependency>
             <dependency>
                 <groupId>io.swagger.core.v3</groupId>
-                <artifactId>swagger-annotations</artifactId>
+                <artifactId>swagger-annotations-jakarta</artifactId>
                 <version>${version.swagger-core}</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.plugin</groupId>
                 <artifactId>spring-plugin-core</artifactId>
-                <version>1.2.0.RELEASE</version>
+                <version>3.0.0</version>
             </dependency>
             <dependency>
                 <!-- enforce version as javassist used powermock -->

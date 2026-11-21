@@ -24,7 +24,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.gaul.s3proxy.AwsHttpHeaders;
 import org.gaul.s3proxy.CompleteMultipartUploadRequest;

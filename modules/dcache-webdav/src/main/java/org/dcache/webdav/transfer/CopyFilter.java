@@ -36,6 +36,9 @@ import io.milton.http.Response.Status;
 import io.milton.http.exceptions.BadRequestException;
 import io.milton.servlet.ServletRequest;
 import io.milton.servlet.ServletResponse;
+import jakarta.annotation.PostConstruct;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -53,10 +56,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import javax.annotation.PostConstruct;
 import javax.security.auth.Subject;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.dcache.auth.BearerTokenCredential;
 import org.dcache.auth.OidcSubjectPrincipal;
 import org.dcache.auth.OpenIdClientSecret;
@@ -308,8 +308,10 @@ public class CopyFilter implements Filter {
         } catch (ErrorResponseException e) {
             var r = ServletResponse.getResponse();
             int code = e.getStatus().code;
-            r.setStatus(code, e.getMessage());
-            if (code == 507) {
+            if (code != 507) {
+                sendError(code, e.getMessage());
+            } else {
+                r.setStatus(code);
                 /**
                  * https://www.rfc-editor.org/rfc/rfc4331.html#section-6
                  * stipulates that insufficient storage response error
@@ -329,11 +331,21 @@ public class CopyFilter implements Filter {
                 }
             }
         } catch (BadRequestException e) {
-            ServletResponse.getResponse().setStatus(HttpServletResponse.SC_BAD_REQUEST,
-                  e.getMessage());
+            sendError(HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
         } catch (InterruptedException ignored) {
-            ServletResponse.getResponse().setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
-                  "dCache is shutting down");
+            sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "dCache is shutting down");
+        }
+    }
+
+    /**
+     * Answers with an error page carrying the message; HTTP has no place for it in the status
+     * line any more.
+     */
+    private static void sendError(int code, String message) {
+        try {
+            ServletResponse.getResponse().sendError(code, message);
+        } catch (IOException e) {
+            LOGGER.warn("Failed to send error response: {}", e.toString());
         }
     }
 
@@ -468,9 +480,8 @@ public class CopyFilter implements Filter {
                 redirectWithDelegation(response);
             } else {
                 LOGGER.error("Error performing OpenId Connect Token Exchange");
-                ServletResponse.getResponse()
-                      .setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                            "Error performing OpenId Connect Token Exchange");
+                sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                      "Error performing OpenId Connect Token Exchange");
             }
             return;
         }
@@ -653,7 +664,7 @@ public class CopyFilter implements Filter {
 
         if (hasClientAlreadyBeenRedirected(request)) {
             LOGGER.debug("client failed to delegate a credential before re-requesting the COPY");
-            ServletResponse.getResponse().setStatus(HttpServletResponse.SC_UNAUTHORIZED,
+            sendError(HttpServletResponse.SC_UNAUTHORIZED,
                   "client failed to delegate a credential");
             return;
         }
@@ -665,8 +676,7 @@ public class CopyFilter implements Filter {
             response.sendRedirect(buildRedirectUrl(request));
         } catch (IllegalArgumentException e) {
             LOGGER.debug(e.getMessage());
-            ServletResponse.getResponse().setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                  e.getMessage());
+            sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
 
@@ -745,7 +755,7 @@ public class CopyFilter implements Filter {
 
     private boolean clientSuppliedX509Certificate() {
         HttpServletRequest request = ServletRequest.getRequest();
-        return Optional.ofNullable(request.getAttribute("javax.servlet.request.X509Certificate"))
+        return Optional.ofNullable(request.getAttribute("jakarta.servlet.request.X509Certificate"))
               .filter(X509Certificate[].class::isInstance)
               .isPresent();
     }

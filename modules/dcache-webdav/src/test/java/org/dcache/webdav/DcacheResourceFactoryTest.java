@@ -6,12 +6,12 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Optional;
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
 import org.dcache.util.HttpExtHeader;
 import org.junit.Test;
 

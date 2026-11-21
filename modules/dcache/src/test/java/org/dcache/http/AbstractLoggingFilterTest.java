@@ -24,6 +24,7 @@ import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -31,14 +32,14 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import jakarta.servlet.AsyncContext;
+import jakarta.servlet.AsyncListener;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import javax.servlet.AsyncContext;
-import javax.servlet.AsyncListener;
-import javax.servlet.FilterChain;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -87,7 +88,7 @@ public class AbstractLoggingFilterTest {
 
         filter.doFilter(request, response, chain);
 
-        verify(chain).doFilter(request, response);
+        verify(chain).doFilter(eq(request), any());
         String line = loggedAtInfo();
         assertThat(line, containsString("org.dcache.test.request"));
         assertThat(line, containsString("request.method=GET"));
@@ -102,6 +103,20 @@ public class AbstractLoggingFilterTest {
         filter.doFilter(request, response, chain);
 
         verify(accessLog).warn(contains("response.code=404"));
+    }
+
+    @Test
+    public void shouldLogMessageOfErrorSentAsReason() throws Exception {
+        when(response.getStatus()).thenReturn(401);
+        doAnswer(i -> {
+            ((HttpServletResponse) i.getArgument(1)).sendError(401, "Login failed");
+            return null;
+        }).when(chain).doFilter(any(), any());
+
+        filter.doFilter(request, response, chain);
+
+        verify(response).sendError(401, "Login failed");
+        verify(accessLog).warn(contains("response.reason=\"Login failed\""));
     }
 
     @Test

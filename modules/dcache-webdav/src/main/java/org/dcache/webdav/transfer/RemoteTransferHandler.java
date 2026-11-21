@@ -24,7 +24,7 @@ import static java.time.Duration.ZERO;
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static java.time.temporal.ChronoUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static javax.servlet.http.HttpServletResponse.SC_ACCEPTED;
+import static jakarta.servlet.http.HttpServletResponse.SC_ACCEPTED;
 import static org.dcache.namespace.FileAttribute.CHECKSUM;
 import static org.dcache.namespace.FileAttribute.PNFSID;
 import static org.dcache.namespace.FileAttribute.SIZE;
@@ -91,6 +91,10 @@ import io.milton.http.Response;
 import io.milton.http.Response.Status;
 import io.milton.servlet.ServletRequest;
 import io.milton.servlet.ServletResponse;
+import jakarta.annotation.PreDestroy;
+import jakarta.servlet.AsyncContext;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -132,12 +136,8 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
-import javax.annotation.PreDestroy;
 import javax.annotation.concurrent.GuardedBy;
 import javax.security.auth.Subject;
-import javax.servlet.AsyncContext;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.apache.http.entity.AbstractHttpEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.dcache.acl.enums.AccessMask;
@@ -169,7 +169,7 @@ import org.dcache.vehicles.FileAttributes;
 import org.dcache.webdav.DcacheResourceFactory;
 import org.dcache.webdav.RfcResponseHandler;
 import org.dcache.webdav.transfer.CopyFilter.CredentialSource;
-import org.eclipse.jetty.ee8.nested.Request;
+import org.eclipse.jetty.ee11.servlet.ServletContextRequest;
 import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.io.EndPoint;
 import org.slf4j.Logger;
@@ -900,8 +900,9 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         private final Instant _whenSubmitted = Instant.now();
         private final SettableFuture<Optional<String>> _transferResult = SettableFuture.create();
         private long _id;
-        private final EndPoint _endpoint = Request.getBaseRequest(ServletRequest.getRequest())
-              .getHttpChannel().getEndPoint();
+        private final EndPoint _endpoint = ServletContextRequest
+              .getServletContextRequest(ServletRequest.getRequest())
+              .getConnectionMetaData().getConnection().getEndPoint();
 
         private int _lastState = INITIAL_STATE;
         private Optional<IoJobInfo> _lastInfo = Optional.empty();

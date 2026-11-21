@@ -22,7 +22,7 @@ import java.util.Base64;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.gaul.s3proxy.AwsHttpHeaders;
 import org.gaul.s3proxy.CompleteMultipartUploadRequest;

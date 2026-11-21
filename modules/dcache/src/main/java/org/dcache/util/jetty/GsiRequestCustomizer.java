@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Customizer that extracts the GSI attributes from an {@link javax.net.ssl.SSLContext} and sets
- * them on the request with {@link javax.servlet.ServletRequest#setAttribute(String, Object)}
+ * them on the request with {@link jakarta.servlet.ServletRequest#setAttribute(String, Object)}
  * according to JGlobus requirements.
  */
 public class GsiRequestCustomizer implements HttpConfiguration.Customizer {

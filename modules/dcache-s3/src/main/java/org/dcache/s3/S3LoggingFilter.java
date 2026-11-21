@@ -17,8 +17,8 @@
  */
 package org.dcache.s3;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.dcache.http.AbstractLoggingFilter;
 import org.dcache.util.NetLoggerBuilder;
 import org.slf4j.Logger;

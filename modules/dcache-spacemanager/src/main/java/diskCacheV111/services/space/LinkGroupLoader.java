@@ -19,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 import org.dcache.poolmanager.PoolLinkGroupInfo;
 import org.dcache.poolmanager.RemotePoolMonitor;
 import org.dcache.poolmanager.Utils;
+import org.dcache.util.RemoteAccessException;
 import org.dcache.util.files.LineByLineParser;
 import org.dcache.util.files.ParsableFile;
 import org.dcache.util.spring.Required;
@@ -28,7 +29,6 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DeadlockLoserDataAccessException;
 import org.springframework.dao.RecoverableDataAccessException;
 import org.springframework.dao.TransientDataAccessException;
-import org.springframework.remoting.RemoteAccessException;
 import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.transaction.TransactionException;
 

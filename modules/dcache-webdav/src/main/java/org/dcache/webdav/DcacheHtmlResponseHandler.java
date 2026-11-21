@@ -9,10 +9,12 @@ import static io.milton.http.Response.Status.SC_METHOD_NOT_ALLOWED;
 import static io.milton.http.Response.Status.SC_NOT_FOUND;
 import static io.milton.http.Response.Status.SC_NOT_IMPLEMENTED;
 import static io.milton.http.Response.Status.SC_UNAUTHORIZED;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
+import com.google.common.net.MediaType;
 import io.milton.http.AbstractWrappingResponseHandler;
 import io.milton.http.Request;
 import io.milton.http.Response;
@@ -133,11 +135,13 @@ public class DcacheHtmlResponseHandler extends AbstractWrappingResponseHandler {
     private void errorResponse(Request request, Response response, Response.Status status) {
         try {
             String decodedPath = URI.create(request.getAbsoluteUrl()).getPath();
-            String error = generateErrorPage(decodedPath, status);
+            byte[] error = generateErrorPage(decodedPath, status).getBytes(UTF_8);
             response.setStatus(status);
-            response.setContentTypeHeader("text/html");
+            response.setContentTypeHeader(MediaType.HTML_UTF_8.toString());
+            // A failed GET already has the file's Content-Length.
+            response.setContentLengthHeader((long) error.length);
             OutputStream out = response.getOutputStream();
-            out.write(error.getBytes());
+            out.write(error);
         } catch (EofException e) {
             LOGGER.debug("Client disconnected before we could reply.");
         } catch (IOException e) {

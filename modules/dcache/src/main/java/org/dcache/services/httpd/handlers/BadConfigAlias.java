@@ -19,8 +19,8 @@
 package org.dcache.services.httpd.handlers;
 
 import dmg.util.HttpException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Handles messages having to do with alias configuration errors (in the batch file).

@@ -22,6 +22,9 @@ import static java.util.Objects.requireNonNull;
 import com.google.common.base.Throwables;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.InetAddresses;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -29,9 +32,7 @@ import java.net.InetAddress;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeoutException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import org.dcache.http.InferredCharsets;
 import org.gaul.s3proxy.AwsHttpHeaders;
 import org.gaul.s3proxy.S3ErrorCode;
 import org.gaul.s3proxy.S3ProxyHandler;
@@ -66,6 +67,15 @@ public class S3Servlet extends HttpServlet {
 
     public S3Servlet(DcacheS3ProxyHandler handler) {
         this.handler = requireNonNull(handler);
+    }
+
+    /**
+     * Objects are served with the Content-Type they were stored with: Jetty must not add the
+     * charset it infers for text types.
+     */
+    @Override
+    public void init() {
+        InferredCharsets.disable(getServletContext());
     }
 
     @Override

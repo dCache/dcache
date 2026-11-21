@@ -335,13 +335,13 @@
   </bean>
 
   <!-- 2. WebDAV SessionHandler -->
-  <bean id="webdavSessionHandler" class="org.eclipse.jetty.ee8.nested.SessionHandler">
+  <bean id="webdavSessionHandler" class="org.eclipse.jetty.ee11.servlet.SessionHandler">
     <property name="sessionCookie" value="DCACHE_API_SESSION"/>
   </bean>
 
   <!-- 3. SessionCache wrapping ZooKeeper store -->
   <bean id="webdavSessionCache" class="org.eclipse.jetty.session.DefaultSessionCache">
-    <constructor-arg value="#{webdavSessionHandler.sessionManager}"/>
+    <constructor-arg ref="webdavSessionHandler"/>
     <property name="sessionDataStore" ref="zkSessionDataStore"/>
   </bean>
 
@@ -411,7 +411,7 @@
         <list>
           <bean class="org.dcache.util.jetty.ServletContextFactoryBean$ServletEntry">
             <property name="servlet">
-              <bean class="org.eclipse.jetty.ee8.servlet.DefaultServlet"/>
+              <bean class="org.eclipse.jetty.ee11.servlet.DefaultServlet"/>
             </property>
             <property name="pathSpecs"
                       value="#{'${webdav.static-content.location}'.replaceAll('/+$', '')}/*"/>
@@ -451,7 +451,7 @@
       </property>
     </bean>
 
-    <bean id="spnegohandler" class="org.eclipse.jetty.ee8.security.ConstraintSecurityHandler">
+    <bean id="spnegohandler" class="org.eclipse.jetty.ee11.servlet.security.ConstraintSecurityHandler">
         <property name="loginService">
             <bean class="org.eclipse.jetty.security.SPNEGOLoginService">
                 <constructor-arg value="${dcache.authn.kerberos.realm}"/>
@@ -467,22 +467,17 @@
             </bean>
         </property>
         <property name="authenticator">
-            <bean class="org.eclipse.jetty.ee8.security.authentication.ConfigurableSpnegoAuthenticator"/>
+            <bean class="org.eclipse.jetty.security.authentication.SPNEGOAuthenticator"/>
         </property>
         <property name="constraintMappings">
             <list>
-                <bean class="org.eclipse.jetty.ee8.security.ConstraintMapping">
-                    <property name="constraint">
-                        <bean class="org.eclipse.jetty.ee8.nested.ServletConstraint">
-                            <property name="name" value="SPNEGO"/>
-                            <property name="roles">
-                                <list value-type="java.lang.String">
-                                    <value>${dcache.authn.kerberos.realm}</value>
-                                </list>
-                            </property>
-                            <property name="authenticate" value="false"/>
-                        </bean>
-                    </property>
+                <bean class="org.eclipse.jetty.ee11.servlet.security.ConstraintMapping">
+                    <description>
+                        SPNEGO is optional: a client is authenticated when the
+                        authentication filter asks for the user principal.
+                    </description>
+                    <property name="constraint"
+                              value="#{T(org.eclipse.jetty.security.Constraint).ALLOWED}"/>
                     <property name="pathSpec" value="/*"/>
                 </bean>
             </list>

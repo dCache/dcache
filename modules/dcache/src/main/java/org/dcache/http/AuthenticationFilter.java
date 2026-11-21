@@ -11,6 +11,15 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.net.InetAddresses;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponseWrapper;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -27,15 +36,6 @@ import java.util.Optional;
 import java.util.Set;
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpServletResponseWrapper;
-import javax.servlet.http.HttpSession;
 import org.dcache.auth.BearerTokenCredential;
 import org.dcache.auth.DesiredRole;
 import org.dcache.auth.LoginNamePrincipal;
@@ -60,7 +60,7 @@ public class AuthenticationFilter implements Filter {
 
     private final static Logger LOG = LoggerFactory.getLogger(AuthenticationFilter.class);
     public static final String X509_CERTIFICATE_ATTRIBUTE =
-          "javax.servlet.request.X509Certificate";
+          "jakarta.servlet.request.X509Certificate";
     public static final String DCACHE_SUBJECT_ATTRIBUTE =
           "org.dcache.subject";
     public static final String DCACHE_RESTRICTION_ATTRIBUTE =
@@ -243,8 +243,7 @@ public class AuthenticationFilter implements Filter {
         } catch (PermissionDeniedCacheException e) {
             LOG.info("Login failed for {} on {}: {}", request.getMethod(),
                   request.getPathInfo(), e.getMessage());
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED,
-                  e.getMessage());
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
         } catch (CacheException e) {
             LOG.error("Internal server error: {}", e.getMessage());
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
@@ -470,12 +469,6 @@ public class AuthenticationFilter implements Filter {
         public void setStatus(int code) {
             addAuthenticationChallenges(code);
             super.setStatus(code);
-        }
-
-        @Override
-        public void setStatus(int code, String message) {
-            addAuthenticationChallenges(code);
-            super.setStatus(code, message);
         }
 
         @Override

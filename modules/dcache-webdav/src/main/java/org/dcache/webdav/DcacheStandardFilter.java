@@ -12,8 +12,6 @@ import io.milton.http.exceptions.NotAuthorizedException;
 import io.milton.http.exceptions.NotFoundException;
 import io.milton.http.quota.StorageChecker;
 import io.milton.http.webdav.WebDavResponseHandler;
-import io.milton.servlet.ServletResponse;
-import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,10 +65,8 @@ public class DcacheStandardFilter implements Filter {
                 throw e;
             }
         } catch (BadRequestException e) {
+            LOGGER.debug("Bad request: {}", e.getReason());
             responseHandler.respondBadRequest(e.getResource(), response, request);
-            // Work-around: milton doesn't allow non-standard text, so we update the value here.
-            ServletResponse.getResponse()
-                  .setStatus(HttpServletResponse.SC_BAD_REQUEST, e.getReason());
         } catch (UncheckedBadRequestException e) {
             LOGGER.debug("Client supplied bad request parameters: {}", e.getMessage());
             responseHandler.respondBadRequest(e.getResource(), response, request);
@@ -97,10 +93,8 @@ public class DcacheStandardFilter implements Filter {
             response.setStatus(Response.Status.SC_TEMPORARY_REDIRECT);
             response.setLocationHeader(e.getUrl());
         } catch (MethodNotAllowedException e) {
+            LOGGER.debug("Method not allowed: {}", e.getMessage());
             responseHandler.respondMethodNotAllowed(e.getResource(), response, request);
-            // Work-around: milton doesn't allow non-standard text, so we update the value here.
-            ServletResponse.getResponse()
-                  .setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED, e.getMessage());
         } catch (WebDavException e) {
             LOGGER.warn("Internal server error: {}", e.toString());
             responseHandler.respondServerError(request, response, e.getMessage());

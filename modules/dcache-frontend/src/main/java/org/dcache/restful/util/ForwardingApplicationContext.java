@@ -1,6 +1,7 @@
 /* dCache - http://www.dcache.org/
  *
  * Copyright (C) 2001 - 2022 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2026 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -21,6 +22,7 @@ import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -158,6 +160,13 @@ public class ForwardingApplicationContext implements ApplicationContext {
     public <A extends Annotation> A findAnnotationOnBean(String s, Class<A> aClass, boolean b)
           throws NoSuchBeanDefinitionException {
         return null;
+    }
+
+    @Override
+    public <A extends Annotation> Set<A> findAllAnnotationsOnBean(String beanName,
+          Class<A> annotationType, boolean allowFactoryBeanInit)
+          throws NoSuchBeanDefinitionException {
+        return inner.findAllAnnotationsOnBean(beanName, annotationType, allowFactoryBeanInit);
     }
 
     @Override

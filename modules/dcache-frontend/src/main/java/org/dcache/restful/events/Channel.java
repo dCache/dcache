@@ -28,7 +28,14 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
 import com.google.common.collect.EvictingQueue;
 import com.google.common.primitives.Ints;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.sse.OutboundSseEvent;
+import jakarta.ws.rs.sse.Sse;
+import jakarta.ws.rs.sse.SseEventSink;
 import java.io.EOFException;
+import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,12 +51,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import javax.annotation.concurrent.GuardedBy;
 import javax.security.auth.Subject;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.sse.OutboundSseEvent;
-import javax.ws.rs.sse.Sse;
-import javax.ws.rs.sse.SseEventSink;
 import org.dcache.auth.Subjects;
 import org.dcache.restful.events.spi.EventStream;
 import org.dcache.restful.events.spi.SelectionContext;
@@ -157,7 +158,7 @@ public class Channel extends CloseableWithTasks {
             synchronized (Channel.this) {
                 if (sink != null && !sink.isClosed()) {
                     LOGGER.debug("Channel close triggering closure of connection with client");
-                    sink.close();
+                    closeSink(sink);
                     sink = null;
                     sse = null;
                 }
@@ -254,6 +255,14 @@ public class Channel extends CloseableWithTasks {
         });
     }
 
+    private static void closeSink(SseEventSink sink) {
+        try {
+            sink.close();
+        } catch (IOException e) {
+            LOGGER.debug("Failed to close connection with client: {}", e.toString());
+        }
+    }
+
     @GuardedBy("this")
     private void sinkClosed(SseEventSink closedSink) {
         if (sink == closedSink) {
@@ -278,9 +287,11 @@ public class Channel extends CloseableWithTasks {
                   .name("SYSTEM")
                   .data("{\"type\":\"COMPETING_CLIENT\"}")
                   .build();
+            // The field is replaced below: the callback must close the competing client's sink.
+            SseEventSink competing = sink;
             sendEvent(event).thenAccept(wasSent -> {
                 if (wasSent) {
-                    sink.close();
+                    closeSink(competing);
                 }
             });
         }

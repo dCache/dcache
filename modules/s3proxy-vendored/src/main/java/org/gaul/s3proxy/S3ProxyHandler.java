@@ -80,8 +80,8 @@ import com.google.common.net.HostAndPort;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.PercentEscaper;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.gaul.s3proxy.auth.AuthenticationType;
 import org.gaul.s3proxy.auth.AwsSignature;
@@ -4576,8 +4576,12 @@ public class S3ProxyHandler {
             HttpServletResponse response, InputStream is,
             BlobStore anonymousBlobStore, String containerName)
             throws IOException {
-        // dCache patch: browser POST upload needs Jetty 12
-        // MultiPartFormData, which is not available on Jetty 9.
+        // dCache patch: a browser POST upload is not served.  The only caller
+        // is doHandleAnonymous, which dCache never enters -- it needs a
+        // default blob store, and the locator refuses a null identity -- so
+        // the request fails earlier in doHandle, with AccessDenied.  The
+        // helpers it used are kept below so that an upstream merge applies
+        // cleanly.
         throw new S3ProxyException(S3ErrorCode.NOT_IMPLEMENTED);
     }
 

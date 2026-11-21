@@ -8,15 +8,6 @@
  import java.nio.charset.StandardCharsets;
  import java.security.InvalidKeyException;
  import java.security.MessageDigest;
-@@ -44,7 +43,7 @@
- import com.google.common.net.HttpHeaders;
- import com.google.common.net.PercentEscaper;
- 
--import jakarta.servlet.http.HttpServletRequest;
-+import javax.servlet.http.HttpServletRequest;
- 
- import org.gaul.s3proxy.AwsHttpHeaders;
- import org.gaul.s3proxy.S3ErrorCode;
 @@ -104,6 +103,22 @@
      private static final Pattern SHA256_HEX = Pattern.compile(
              "[0-9a-fA-F]{64}");
@@ -153,28 +144,9 @@
      @Override
      public ObjectCannedACL getBlobAccess(String container, String name) {
          return delegate().getBlobAccess(container, name);
---- a/src/main/java/org/gaul/s3proxy/checksum/FlexChecksum.java
-+++ b/src/main/java/org/gaul/s3proxy/checksum/FlexChecksum.java
-@@ -22,7 +22,7 @@
- import java.util.Map;
- import java.util.function.Supplier;
- 
--import jakarta.servlet.http.HttpServletRequest;
-+import javax.servlet.http.HttpServletRequest;
- 
- import org.gaul.s3proxy.AwsHttpHeaders;
- import org.gaul.s3proxy.CompleteMultipartUploadRequest;
 --- a/src/main/java/org/gaul/s3proxy/checksum/MpuChecksums.java
 +++ b/src/main/java/org/gaul/s3proxy/checksum/MpuChecksums.java
-@@ -24,14 +24,13 @@
- import java.util.TreeMap;
- import java.util.TreeSet;
- 
--import jakarta.servlet.http.HttpServletRequest;
-+import javax.servlet.http.HttpServletRequest;
- 
- import org.gaul.s3proxy.AwsHttpHeaders;
- import org.gaul.s3proxy.CompleteMultipartUploadRequest;
+@@ -31,7 +31,6 @@
  import org.gaul.s3proxy.S3ErrorCode;
  import org.gaul.s3proxy.S3ProxyException;
  import org.gaul.s3proxy.blobstore.BlobStore;
@@ -248,17 +220,6 @@
 +record RestoreObjectXmlRequest(
 +        @JacksonXmlProperty(localName = "Days") Integer days) {
 +}
---- a/src/main/java/org/gaul/s3proxy/S3ErrorCode.java
-+++ b/src/main/java/org/gaul/s3proxy/S3ErrorCode.java
-@@ -20,7 +20,7 @@
- 
- import com.google.common.base.CaseFormat;
- 
--import jakarta.servlet.http.HttpServletResponse;
-+import javax.servlet.http.HttpServletResponse;
- 
- /**
-  * List of S3 error codes.  Reference:
 --- a/src/main/java/org/gaul/s3proxy/S3Operation.java
 +++ b/src/main/java/org/gaul/s3proxy/S3Operation.java
 @@ -50,6 +50,8 @@
@@ -272,14 +233,9 @@
      private final String value;
 --- a/src/main/java/org/gaul/s3proxy/S3ProxyHandler.java
 +++ b/src/main/java/org/gaul/s3proxy/S3ProxyHandler.java
-@@ -80,13 +80,9 @@
- import com.google.common.net.HttpHeaders;
- import com.google.common.net.PercentEscaper;
- 
--import jakarta.servlet.http.HttpServletRequest;
--import jakarta.servlet.http.HttpServletResponse;
-+import javax.servlet.http.HttpServletRequest;
-+import javax.servlet.http.HttpServletResponse;
+@@ -83,10 +83,6 @@
+ import jakarta.servlet.http.HttpServletRequest;
+ import jakarta.servlet.http.HttpServletResponse;
  
 -import org.eclipse.jetty.http.MultiPartFormData;
 -import org.eclipse.jetty.io.ByteBufferPool;
@@ -587,7 +543,7 @@
              throw new S3ProxyException(S3ErrorCode.MAX_MESSAGE_LENGTH_EXCEEDED);
          }
          validateMultiBlobRemoveChecksum(request, body);
-@@ -4543,268 +4576,9 @@
+@@ -4543,268 +4576,13 @@
              HttpServletResponse response, InputStream is,
              BlobStore anonymousBlobStore, String containerName)
              throws IOException {
@@ -853,13 +809,17 @@
 -        finishPostBlob(request, response, grant.blobStore(), containerName,
 -                blobName, contentType, fields, payload, checksum,
 -                checksumValue);
-+        // dCache patch: browser POST upload needs Jetty 12
-+        // MultiPartFormData, which is not available on Jetty 9.
++        // dCache patch: a browser POST upload is not served.  The only caller
++        // is doHandleAnonymous, which dCache never enters -- it needs a
++        // default blob store, and the locator refuses a null identity -- so
++        // the request fails earlier in doHandle, with AccessDenied.  The
++        // helpers it used are kept below so that an upstream merge applies
++        // cleanly.
 +        throw new S3ProxyException(S3ErrorCode.NOT_IMPLEMENTED);
      }
  
      /**
-@@ -6333,6 +6107,11 @@
+@@ -6333,6 +6111,11 @@
          if (storageClass != null) {
              response.addHeader(AwsHttpHeaders.STORAGE_CLASS, storageClass);
          }
@@ -871,7 +831,7 @@
          addServerSideEncryptionHeaders(response,
                  metadata.serverSideEncryptionAsString(),
                  metadata.ssekmsKeyId(), /*kmsContext=*/ null,
-@@ -6886,10 +6665,9 @@
+@@ -6886,10 +6669,9 @@
       * is known before a backend is asked to store it.  S3 accepts an upload
       * framed with Transfer-Encoding: chunked, but most backends need a size
       * before they can stream one on, and a chunked body says nothing about how

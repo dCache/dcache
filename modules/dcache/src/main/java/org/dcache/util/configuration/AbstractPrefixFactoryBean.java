@@ -24,9 +24,9 @@ import com.google.common.collect.ImmutableMap;
 import dmg.cells.nucleus.EnvironmentAware;
 import dmg.util.Formats;
 import dmg.util.Replaceable;
+import jakarta.annotation.PostConstruct;
 import java.util.Collections;
 import java.util.Map;
-import javax.annotation.PostConstruct;
 import org.dcache.util.spring.Required;
 
 /**

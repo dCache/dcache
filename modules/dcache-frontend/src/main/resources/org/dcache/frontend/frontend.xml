@@ -431,14 +431,14 @@
 
   <!-- 2. SessionHandler, used by the authentication filter and the REST API -->
   <bean id="apiSessionHandler"
-    class="org.eclipse.jetty.ee8.nested.SessionHandler">
+    class="org.eclipse.jetty.ee11.servlet.SessionHandler">
     <property name="sessionCookie" value="DCACHE_API_SESSION"/>
   </bean>
 
   <!-- 3. SessionCache wrapping ZooKeeper store -->
   <bean id="apiSessionCache"
     class="org.eclipse.jetty.session.DefaultSessionCache">
-    <constructor-arg value="#{apiSessionHandler.sessionManager}"/>
+    <constructor-arg ref="apiSessionHandler"/>
     <property name="sessionDataStore" ref="zkSessionDataStore"/>
   </bean>
 
@@ -516,7 +516,7 @@
           <description>Provide access to standard swagger-ui library</description>
           <property name="name" value="swagger-ui-library"/>
           <property name="servlet">
-            <bean class="org.eclipse.jetty.ee8.servlet.DefaultServlet"/>
+            <bean class="org.eclipse.jetty.ee11.servlet.DefaultServlet"/>
           </property>
           <property name="pathSpecs" value="/api/libraries/swagger-ui/*"/>
           <property name="initParameters">
@@ -552,7 +552,7 @@
           <description>Provide access to dcache-view-admin</description>
           <property name="name" value="dcache-view-admin"/>
           <property name="servlet">
-            <bean class="org.eclipse.jetty.ee8.servlet.DefaultServlet"/>
+            <bean class="org.eclipse.jetty.ee11.servlet.DefaultServlet"/>
           </property>
           <property name="pathSpecs" value="/admin/*"/>
           <property name="initParameters">
@@ -576,7 +576,7 @@
           <description>Provide access to dcache-view; unknown paths get 404</description>
           <property name="name" value="dcache-view"/>
           <property name="servlet">
-            <bean class="org.eclipse.jetty.ee8.servlet.DefaultServlet"/>
+            <bean class="org.eclipse.jetty.ee11.servlet.DefaultServlet"/>
           </property>
           <property name="pathSpecs" value="/"/>
           <property name="initParameters">

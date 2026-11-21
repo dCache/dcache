@@ -17,8 +17,8 @@
  */
 package org.dcache.restful.util;
 
+import jakarta.ws.rs.core.Response;
 import java.util.Date;
-import javax.ws.rs.core.Response;
 
 public class Responses {
 

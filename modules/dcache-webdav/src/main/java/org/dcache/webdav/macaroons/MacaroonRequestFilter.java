@@ -20,10 +20,10 @@ package org.dcache.webdav.macaroons;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.emptyToNull;
 import static com.google.common.base.Strings.nullToEmpty;
+import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+import static jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
 import static java.lang.Boolean.TRUE;
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-import static javax.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
 import static org.dcache.macaroons.CaveatType.BEFORE;
 import static org.dcache.macaroons.InvalidCaveatException.checkCaveat;
 
@@ -35,6 +35,13 @@ import diskCacheV111.util.FsPath;
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellIdentityAware;
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URI;
@@ -50,13 +57,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import javax.security.auth.Subject;
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.DenyActivityRestriction;
 import org.dcache.auth.attributes.Expiry;
@@ -173,7 +173,7 @@ public class MacaroonRequestFilter implements Filter, CellIdentityAware {
                     w.println(json.toString(JSON_RESPONSE_INDENTATION));
                 }
             } catch (ErrorResponseException e) {
-                response.setStatus(e.getStatus(), e.getMessage());
+                response.sendError(e.getStatus(), e.getMessage());
             } catch (RuntimeException e) {
                 LOGGER.error("Bug detected", e);
                 response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);

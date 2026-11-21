@@ -381,8 +381,8 @@
 
   <bean id="signing-policy"
         class="org.dcache.xrootd.security.SigningPolicy">
-    <constructor-arg name="secLvl" value="${pool.mover.xrootd.security.level}"/>
-    <constructor-arg name="force" value="${pool.mover.xrootd.security.force-signing}"/>
+    <constructor-arg index="0" value="${pool.mover.xrootd.security.level}"/>
+    <constructor-arg index="1" value="${pool.mover.xrootd.security.force-signing}"/>
   </bean>
 
   <!-- Build the parser for processing text like "8 MiB" -->

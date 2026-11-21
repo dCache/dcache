@@ -20,6 +20,8 @@ package org.dcache.restful.events;
 
 import com.google.common.io.BaseEncoding;
 import dmg.cells.nucleus.CellLifeCycleAware;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.ClientErrorException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -29,9 +31,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
-import javax.inject.Inject;
 import javax.security.auth.Subject;
-import javax.ws.rs.ClientErrorException;
 import org.dcache.auth.Subjects;
 import org.dcache.util.spring.Required;
 

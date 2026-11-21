@@ -60,11 +60,11 @@ documents or software obtained from this server.
 package org.dcache.restful.providers;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import javax.validation.constraints.NotNull;
 import org.dcache.util.InvalidatableItem;
 
 @Schema(description = "A selection of results from a semi-persistant snapshot. "

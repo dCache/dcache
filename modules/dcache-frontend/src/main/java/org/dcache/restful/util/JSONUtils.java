@@ -60,7 +60,7 @@ documents or software obtained from this server.
 package org.dcache.restful.util;
 
 import com.google.common.base.Strings;
-import javax.ws.rs.BadRequestException;
+import jakarta.ws.rs.BadRequestException;
 
 public class JSONUtils {
 

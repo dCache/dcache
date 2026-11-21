@@ -26,6 +26,17 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThrows;
 
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.FilterConfig;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -33,17 +44,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.dcache.util.spring.RequiredPropertyChecker;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
@@ -68,7 +68,7 @@ public class ServletContextFactoryBeanTest {
     private static final String BEANS =
           "<bean id='context' class='" + FACTORY + "'>"
                 + "  <property name='sessionHandler'>"
-                + "    <bean class='org.eclipse.jetty.ee8.nested.SessionHandler'/>"
+                + "    <bean class='org.eclipse.jetty.ee11.servlet.SessionHandler'/>"
                 + "  </property>"
                 + "  <property name='filters'><list>"
                 + "    <bean class='" + FILTER + "'>"
@@ -240,7 +240,7 @@ public class ServletContextFactoryBeanTest {
               + "  </list></property>"
               + "  <property name='servlets'><list>"
               + "    <bean class='" + SERVLET + "'>"
-              + "      <property name='servlet'><bean class='org.eclipse.jetty.ee8.servlet.DefaultServlet'/></property>"
+              + "      <property name='servlet'><bean class='org.eclipse.jetty.ee11.servlet.DefaultServlet'/></property>"
               + "      <property name='pathSpecs'><list><value>/static/*</value></list></property>"
               + "      <property name='initParameters'><map><entry key='pathInfoOnly' value='true'/></map></property>"
               + "    </bean>"

@@ -315,6 +315,13 @@
       <logger>liquibase</logger>
       <level>warn</level>
     </threshold>
+    <threshold>
+      <!-- Spring warns when a bean is created early for a BeanPostProcessor,
+           e.g. tx-manager for tx-annotation-processor. Harmless; Spring 5
+           logged it at INFO. -->
+      <logger>org.springframework.context.support.PostProcessorRegistrationDelegate$BeanPostProcessorChecker</logger>
+      <level>error</level>
+    </threshold>
 
     <threshold>
       <!--If broker is not available processDisconnection continuously logs "Connection to node {}

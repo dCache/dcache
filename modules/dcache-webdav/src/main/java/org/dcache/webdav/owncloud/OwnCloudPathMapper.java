@@ -20,8 +20,8 @@ package org.dcache.webdav.owncloud;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import diskCacheV111.util.FsPath;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.function.Function;
-import javax.servlet.http.HttpServletRequest;
 import org.dcache.http.PathMapper;
 
 /**

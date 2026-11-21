@@ -34,7 +34,7 @@ import jline.internal.Nullable;
 import org.dcache.util.Checksums;
 import org.parboiled.support.Checks;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;

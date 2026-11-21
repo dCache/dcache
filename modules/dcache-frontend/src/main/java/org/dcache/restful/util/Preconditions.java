@@ -2,8 +2,8 @@ package org.dcache.restful.util;
 
 import static org.dcache.util.Exceptions.genericCheck;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.ForbiddenException;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.ForbiddenException;
 
 /**
  * Utility class containing useful precondition checks.  This class is strongly modelled after

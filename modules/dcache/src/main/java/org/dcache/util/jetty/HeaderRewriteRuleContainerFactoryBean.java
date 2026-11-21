@@ -1,7 +1,7 @@
 package org.dcache.util.jetty;
 
 import com.google.common.collect.ImmutableMap;
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import org.dcache.util.spring.Required;
 import org.eclipse.jetty.rewrite.handler.HeaderPatternRule;
 import org.eclipse.jetty.rewrite.handler.RuleContainer;

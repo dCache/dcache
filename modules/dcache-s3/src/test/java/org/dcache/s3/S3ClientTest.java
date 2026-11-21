@@ -48,8 +48,8 @@ import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.util.jetty.ConnectorFactoryBean;
-import org.eclipse.jetty.ee8.servlet.ServletContextHandler;
-import org.eclipse.jetty.ee8.servlet.ServletHolder;
+import org.eclipse.jetty.ee11.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee11.servlet.ServletHolder;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.gaul.s3proxy.auth.AuthenticationType;
@@ -168,7 +168,7 @@ public class S3ClientTest {
         ServletContextHandler context = new ServletContextHandler();
         context.setContextPath("/");
         context.addServlet(new ServletHolder(new S3Servlet(handler)), "/");
-        server.setHandler(context.get());
+        server.setHandler(context);
         server.start();
         return server;
     }

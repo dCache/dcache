@@ -8,16 +8,17 @@ import io.milton.http.Auth;
 import io.milton.http.HttpManager;
 import io.milton.servlet.ServletRequest;
 import io.milton.servlet.ServletResponse;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import javax.security.auth.Subject;
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.dcache.auth.Subjects;
+import org.dcache.http.InferredCharsets;
 import org.dcache.util.Transfer;
-import org.eclipse.jetty.ee8.nested.Request;
+import org.eclipse.jetty.ee11.servlet.ServletContextRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,8 +30,8 @@ public class MiltonServlet
       extends HttpServlet
       implements CellIdentityAware {
 
-    private static final long serialVersionUID = 1L;
     private static final Logger LOGGER = LoggerFactory.getLogger(MiltonServlet.class);
+    private static final long serialVersionUID = 1L;
     private static final ImmutableList<String> ALLOWED_ORIGIN_PROTOCOL = ImmutableList.of("http",
           "https");
 
@@ -44,6 +45,15 @@ public class MiltonServlet
     @Override
     public void setCellAddress(CellAddressCore address) {
         _myAddress = address;
+    }
+
+    /**
+     * Files are served with their own Content-Type: Jetty must not add the charset it infers
+     * for text types.
+     */
+    @Override
+    public void init() {
+        InferredCharsets.disable(getServletContext());
     }
 
     @Override
@@ -95,20 +105,18 @@ public class MiltonServlet
          * "100 Continue" response that {@code getInputStream()} would normally by triggered.
          */
         public boolean isClientSendingEntity() {
+            /* This is a work-around for Jetty where calling getInputStream
+             * results in Jetty immediately returning "100 Continue" to
+             * the client.  The Jetty-specific getHttpInput method
+             * provides a "back door" that returns the InputStream without
+             * triggering this behaviour.
+             */
             try {
-                /* This is a work-around for Jetty where calling getInputStream
-                 * results in Jetty immediately returning "100 Continue" to
-                 * the client.  The Jetty-specific getHttpInput method
-                 * provides a "back door" that returns the InputStream without
-                 * triggering this behaviour.
-                 */
-                InputStream in = request instanceof Request
-                      ? ((Request) request).getHttpInput()
-                      : getInputStream();
-
-                return in.available() > 0;
-            } catch (IOException e) {
-                LOGGER.warn("Got exception in hasContent: {}", e.toString());
+                return ServletContextRequest.getServletContextRequest(request).getHttpInput()
+                      .available() > 0;
+            } catch (IllegalStateException e) {
+                // not a Jetty request: there is no unparsed entity to look at
+                LOGGER.debug("Cannot inspect the request input: {}", e.toString());
                 return false;
             }
         }
@@ -184,8 +192,11 @@ public class MiltonServlet
      */
     private class DcacheServletResponse extends ServletResponse {
 
+        private final HttpServletResponse _response;
+
         public DcacheServletResponse(HttpServletResponse r) {
             super(r);
+            _response = r;
         }
 
         @Override
@@ -197,10 +208,21 @@ public class MiltonServlet
              * Instead we want the Content-Length header
              * to be skipped and rely on Jetty using
              * chunked encoding.
+             *
+             * Milton adds the header, so Jetty would keep an earlier
+             * value, e.g. the file's length when a failed GET is
+             * answered with an error message. Replace it instead.
              */
             if (length != null) {
-                super.setContentLengthHeader(length);
+                _response.setContentLengthLong(length);
+                contentLength = length;
             }
+        }
+
+        @Override
+        public void setContentTypeHeader(String type) {
+            // Replace, not add, for the same reason as Content-Length.
+            _response.setContentType(type);
         }
     }
 }

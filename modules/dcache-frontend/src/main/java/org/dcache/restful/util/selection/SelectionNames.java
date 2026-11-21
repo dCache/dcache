@@ -1,7 +1,7 @@
 package org.dcache.restful.util.selection;
 
+import jakarta.ws.rs.BadRequestException;
 import java.util.regex.Pattern;
-import javax.ws.rs.BadRequestException;
 
 /**
  * Validation of pool selection unit entity names (pools, pool groups, units, unit groups,

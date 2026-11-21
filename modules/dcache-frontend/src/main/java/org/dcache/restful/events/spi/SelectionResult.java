@@ -20,7 +20,7 @@ package org.dcache.restful.events.spi;
 
 import static java.util.Objects.requireNonNull;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * This class describes the result of a selection request.

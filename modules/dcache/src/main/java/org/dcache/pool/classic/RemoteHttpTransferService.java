@@ -18,6 +18,7 @@
 package org.dcache.pool.classic;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static dmg.util.Exceptions.meaningfulMessage;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.PoolIoFileMessage;
@@ -26,11 +27,11 @@ import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
 import diskCacheV111.vehicles.RemoteHttpsDataTransferProtocolInfo;
 import dmg.cells.nucleus.CellPath;
 import eu.emi.security.authn.x509.X509Credential;
+import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.TimeUnit;
-import javax.annotation.PostConstruct;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.dcache.http.tpc.RemoteHttpClientFactory;
 import org.dcache.pool.movers.Mover;
@@ -42,8 +43,6 @@ import org.dcache.util.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-
-import static dmg.util.Exceptions.meaningfulMessage;
 
 public class RemoteHttpTransferService extends SecureRemoteTransferService {
 

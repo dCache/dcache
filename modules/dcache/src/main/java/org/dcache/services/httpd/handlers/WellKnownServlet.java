@@ -61,12 +61,12 @@ package org.dcache.services.httpd.handlers;
 
 import diskCacheV111.util.CacheException;
 import dmg.util.HttpRequest;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Optional;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.dcache.services.httpd.util.StandardHttpRequest;
 import org.dcache.services.httpd.wellknown.WellKnownContentProducer;
 import org.dcache.services.httpd.wellknown.WellKnownForwardingProducer;

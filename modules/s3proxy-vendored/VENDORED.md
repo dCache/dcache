@@ -2,7 +2,8 @@
 
 S3 protocol handling (request parsing, SigV2/SigV4 verification, aws-chunked
 bodies, XML responses) copied from [s3proxy](https://github.com/gaul/s3proxy)
-and patched to run on dCache's Jetty 12 ee8 environment (`javax.servlet`).
+and patched for dCache. It runs on dCache's Jetty 12 ee11 environment
+(`jakarta.servlet`), as upstream does.
 
 The dCache S3 door (`modules/dcache-s3`) implements
 `org.gaul.s3proxy.blobstore.BlobStore` and `org.gaul.s3proxy.BlobStoreLocator`
@@ -39,12 +40,19 @@ patch 5).
 The full diff against upstream is in `patches/dcache.patch`. Changed code is
 marked with `dCache patch` comments.
 
-1. `jakarta.servlet` → `javax.servlet` (imports only) in `S3ProxyHandler`,
-   `S3ErrorCode`, `auth/AwsSignature`, `checksum/FlexChecksum`,
-   `checksum/MpuChecksums`.
+1. Removed. It renamed `jakarta.servlet` to `javax.servlet` while dCache ran
+   on Jetty's ee8 environment.
 2. `S3ProxyHandler.handlePostBlob` (browser POST upload) throws
-   `NOT_IMPLEMENTED`: it needs Jetty 12 `MultiPartFormData`. The four Jetty 12
-   imports are removed.
+   `NOT_IMPLEMENTED`, and the four Jetty 12 imports are removed: it needs
+   Jetty 12 `MultiPartFormData`, which Jetty 9 lacked. The stub is unreachable
+   even on Jetty 12, though: its only call site is `doHandleAnonymous`, which
+   dCache never enters — the handler is given no default blob store and
+   `DcacheBlobStoreLocator` refuses a `null` identity — so a form POST fails
+   earlier with `AccessDenied`. `PostPolicy`, `finishPostBlob` and
+   `multipartParseFailure` are kept although nothing calls them, so that the
+   next upstream merge applies without rejects. Serving browser POST uploads
+   would need upstream to route POST through the locator, plus CORS, which
+   dCache leaves disabled.
 3. Dependencies differ from upstream: Jackson 3 (`tools.jackson`) is used as
    is; `jackson-annotations` is managed at 2.22 for all of dCache (Jackson 3
    needs `JsonSerializeAs`); AWS SDK v2 `s3` is used for model classes only,
@@ -52,7 +60,9 @@ marked with `dCache patch` comments.
 4. `checksum/MpuChecksums`: the call to
    `AbstractNio2BlobStore.multipartPartName` is replaced by a private copy of
    that one-line helper, so `nio2blob/` need not be vendored. It is only used
-   for nio2blob stores.
+   for nio2blob stores. Upstream master replaced this with
+   `BlobStore.getMultipartPart`, so the patch drops away in the first release
+   that has it.
 5. Tests are converted from JUnit 6 + AssertJ to JUnit 4 + Hamcrest, like
    the rest of dCache: `assertThat(x).isEqualTo(y)` → `assertEquals(y, x)`
    (`assertArrayEquals` for `byte[]`), `assertThatThrownBy` →
@@ -98,8 +108,13 @@ before files as `diff -r` orders them.
 
 ## Dropping this module
 
-Once dCache runs on Jetty 12 with `jakarta.servlet`:
+Once upstream has what the remaining patches add (or dCache no longer needs
+it):
 
 1. Delete `modules/s3proxy-vendored` and its `<module>` entry.
 2. Depend on `org.gaul:s3proxy` (exclude the provider SDKs not needed).
-3. Switch `javax.servlet` to `jakarta.servlet` in the door's Jetty handler.
+
+Patch 2 does not hold this back: it stubs a path dCache cannot reach, and the
+upstream artifact answers a form POST the same way, failing it in `doHandle`
+before `handlePostBlob` is called. It matters only if dCache ever gives the
+handler a default blob store, which would also need CORS to be configured.

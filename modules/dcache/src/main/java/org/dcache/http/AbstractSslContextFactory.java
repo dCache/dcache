@@ -20,9 +20,9 @@ package org.dcache.http;
 import dmg.cells.nucleus.CDC;
 import eu.emi.security.authn.x509.CrlCheckingMode;
 import eu.emi.security.authn.x509.OCSPCheckingMode;
+import jakarta.annotation.PostConstruct;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
-import javax.annotation.PostConstruct;
 import org.dcache.ssl.CanlContextFactory;
 import org.dcache.util.spring.Required;
 

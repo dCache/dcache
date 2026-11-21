@@ -17,11 +17,23 @@
  */
 package org.dcache.http;
 
+import static com.google.common.base.Throwables.throwIfInstanceOf;
+import static com.google.common.base.Throwables.throwIfUnchecked;
 import static org.dcache.http.AuthenticationFilter.DCACHE_SUBJECT_ATTRIBUTE;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.net.InetAddresses;
 import dmg.cells.nucleus.CDC;
+import jakarta.servlet.AsyncEvent;
+import jakarta.servlet.AsyncListener;
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponseWrapper;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -30,25 +42,13 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.function.Consumer;
 import javax.security.auth.Subject;
-import javax.servlet.AsyncEvent;
-import javax.servlet.AsyncListener;
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.dcache.auth.JwtJtiPrincipal;
 import org.dcache.auth.OidcSubjectPrincipal;
 import org.dcache.auth.Subjects;
 import org.dcache.util.NetLoggerBuilder;
-import org.eclipse.jetty.ee8.nested.Response;
 import org.eclipse.jetty.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import static com.google.common.base.Throwables.throwIfInstanceOf;
-import static com.google.common.base.Throwables.throwIfUnchecked;
 
 /**
  * This class act as a base logging class for logging servlet-based activity. It is expected that
@@ -57,9 +57,10 @@ import static com.google.common.base.Throwables.throwIfUnchecked;
 public abstract class AbstractLoggingFilter implements Filter {
 
     private static final String X509_CERTIFICATE_ATTRIBUTE =
-          "javax.servlet.request.X509Certificate";
+          "jakarta.servlet.request.X509Certificate";
     private static final String REMOTE_ADDRESS = "org.dcache.remote-address";
     private static final String PROCESSING_TIME = "org.dcache.processing-time";
+    private static final String ERROR_MESSAGE = "org.dcache.error-message";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractLoggingFilter.class);
 
@@ -123,7 +124,7 @@ public abstract class AbstractLoggingFilter implements Filter {
         request.setAttribute(PROCESSING_TIME, processingTime);
 
         try {
-            chain.doFilter(request, response);
+            chain.doFilter(request, new ErrorMessageResponse(request, response));
         } catch (IOException|RuntimeException|ServletException e) {
             requestCompletedExceptionally(request, response, e);
 
@@ -154,7 +155,7 @@ public abstract class AbstractLoggingFilter implements Filter {
 
     private void requestCompletedNormally(HttpServletRequest request, HttpServletResponse response) {
         requestCompleted(request, response, l -> {
-                    l.add("response.reason", getReason(response));
+                    l.add("response.reason", getReason(request, response));
                     l.add("response.code", response.getStatus());
                     l.add("location", response.getHeader("Location"));
                 });
@@ -216,11 +217,31 @@ public abstract class AbstractLoggingFilter implements Filter {
         return Optional.of(new InetSocketAddress(addr, port));
     }
 
-    private static String getReason(HttpServletResponse response) {
-        if (response instanceof Response) {
-            return ((Response) response).getReason();
-        } else {
-            return HttpStatus.getMessage(response.getStatus());
+    /**
+     * Returns the message of the error sent, or else the standard reason phrase of the status.
+     */
+    private static String getReason(HttpServletRequest request, HttpServletResponse response) {
+        Object message = request.getAttribute(ERROR_MESSAGE);
+        return message != null ? message.toString() : HttpStatus.getMessage(response.getStatus());
+    }
+
+    /**
+     * Records the message of an error sent, for the access log. The message is kept in a request
+     * attribute, as an asynchronous request completes with the original response.
+     */
+    private static class ErrorMessageResponse extends HttpServletResponseWrapper {
+
+        private final HttpServletRequest request;
+
+        ErrorMessageResponse(HttpServletRequest request, HttpServletResponse response) {
+            super(response);
+            this.request = request;
+        }
+
+        @Override
+        public void sendError(int code, String message) throws IOException {
+            request.setAttribute(ERROR_MESSAGE, message);
+            super.sendError(code, message);
         }
     }
 

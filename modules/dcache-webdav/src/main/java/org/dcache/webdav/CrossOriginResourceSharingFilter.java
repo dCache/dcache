@@ -1,16 +1,24 @@
 package org.dcache.webdav;
 
 import static com.google.common.base.Preconditions.checkArgument;
-
-import static org.eclipse.jetty.ee8.servlets.CrossOriginFilter.ALLOWED_HEADERS_PARAM;
-import static org.eclipse.jetty.ee8.servlets.CrossOriginFilter.ALLOWED_METHODS_PARAM;
-import static org.eclipse.jetty.ee8.servlets.CrossOriginFilter.ALLOWED_ORIGINS_PARAM;
-import static org.eclipse.jetty.ee8.servlets.CrossOriginFilter.ALLOW_CREDENTIALS_PARAM;
-import static org.eclipse.jetty.ee8.servlets.CrossOriginFilter.CHAIN_PREFLIGHT_PARAM;
-import static org.eclipse.jetty.ee8.servlets.CrossOriginFilter.PREFLIGHT_MAX_AGE_PARAM;
+import static org.eclipse.jetty.ee11.servlets.CrossOriginFilter.ALLOWED_HEADERS_PARAM;
+import static org.eclipse.jetty.ee11.servlets.CrossOriginFilter.ALLOWED_METHODS_PARAM;
+import static org.eclipse.jetty.ee11.servlets.CrossOriginFilter.ALLOWED_ORIGINS_PARAM;
+import static org.eclipse.jetty.ee11.servlets.CrossOriginFilter.ALLOW_CREDENTIALS_PARAM;
+import static org.eclipse.jetty.ee11.servlets.CrossOriginFilter.CHAIN_PREFLIGHT_PARAM;
+import static org.eclipse.jetty.ee11.servlets.CrossOriginFilter.PREFLIGHT_MAX_AGE_PARAM;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
+import jakarta.annotation.PostConstruct;
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.FilterConfig;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -19,16 +27,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
-import javax.annotation.PostConstruct;
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import org.eclipse.jetty.ee8.servlets.CrossOriginFilter;
+import org.eclipse.jetty.ee11.servlets.CrossOriginFilter;
 
 /**
  * A filter that uses Jetty's CrossOriginFilter to implement support for CORS. It answers all

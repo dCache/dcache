@@ -3,8 +3,8 @@ package org.dcache.webdav;
 import static org.dcache.util.NetLoggerBuilder.Level.WARN;
 import static org.dcache.webdav.DcacheResourceFactory.TRANSACTION_ATTRIBUTE;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.dcache.http.AbstractLoggingFilter;
 import org.dcache.util.NetLoggerBuilder;
 import org.dcache.webdav.macaroons.MacaroonRequestFilter;

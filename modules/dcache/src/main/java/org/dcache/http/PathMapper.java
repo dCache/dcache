@@ -25,9 +25,9 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellInfoProvider;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.PrintWriter;
 import java.util.function.Function;
-import javax.servlet.http.HttpServletRequest;
 import org.dcache.auth.attributes.LoginAttributes;
 import org.dcache.vehicles.PnfsResolveSymlinksMessage;
 

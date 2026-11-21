@@ -22,8 +22,8 @@ package org.dcache.restful.events.spi;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
+import jakarta.validation.constraints.NotNull;
 import java.util.function.BiConsumer;
-import javax.validation.constraints.NotNull;
 
 /**
  * A class that can provide a stream of events.  An object that implements this interface represents

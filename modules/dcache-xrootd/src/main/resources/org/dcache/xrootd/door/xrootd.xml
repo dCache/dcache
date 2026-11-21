@@ -102,8 +102,8 @@
 
   <bean id="signing-policy"
         class="org.dcache.xrootd.security.SigningPolicy">
-      <constructor-arg name="secLvl" value="${xrootd.security.level}"/>
-      <constructor-arg name="force" value="${xrootd.security.force-signing}"/>
+      <constructor-arg index="0" value="${xrootd.security.level}"/>
+      <constructor-arg index="1" value="${xrootd.security.force-signing}"/>
   </bean>
 
   <bean id="protocol-flags" class="org.dcache.xrootd.util.ServerProtocolFlags">

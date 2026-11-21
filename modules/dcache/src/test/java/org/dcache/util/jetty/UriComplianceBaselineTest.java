@@ -20,6 +20,9 @@ package org.dcache.util.jetty;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertTrue;
 
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,16 +31,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.dcache.util.jetty.ConnectorFactoryBean.Protocol;
-import org.eclipse.jetty.ee8.nested.AbstractHandler;
-import org.eclipse.jetty.ee8.nested.ContextHandler;
-import org.eclipse.jetty.ee8.nested.Request;
-import org.eclipse.jetty.ee8.servlet.ServletContextHandler;
-import org.eclipse.jetty.ee8.servlet.ServletHolder;
-import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.junit.After;
@@ -48,10 +42,11 @@ import org.junit.Test;
  * Records how request paths reach dCache code, so that a change of the
  * embedded Jetty does not silently change which file names clients can use.
  * <p>
- * Two fixtures mirror the production layouts: a handler in the root context
- * (as {@code MiltonServlet} in the WebDAV door, which uses the raw request URL
- * and the decoded target) and a {@code /api} servlet context with a
- * {@code /v1/*} servlet (as the frontend REST API).
+ * Two servlets in a door's servlet context, as {@link ServletContextFactoryBean}
+ * creates it, mirror the production layouts: one
+ * mapped to {@code /} (as {@code MiltonServlet} in the WebDAV door, which uses
+ * the raw request URL and the decoded servlet path) and one mapped to
+ * {@code /api/v1/*} (as the frontend REST API).
  * <p>
  * The expected values are the behaviour of Jetty 9.4, except for invalid
  * UTF-8, which is rejected now.
@@ -66,114 +61,114 @@ public class UriComplianceBaselineTest {
      */
     private static final String[][] CASES = {
           {"/dir/file",
-                "200 url=http://localhost/dav/dir/file target=/dav/dir/file pathInfo=/dav/dir/file",
-                "200 uri=/api/v1/dir/file servletPath=/v1 pathInfo=/dir/file"},
+                "200 url=http://localhost/dav/dir/file servletPath=/dav/dir/file pathInfo=null",
+                "200 url=http://localhost/api/v1/dir/file servletPath=/api/v1 pathInfo=/dir/file"},
           {"/dir/",
-                "200 url=http://localhost/dav/dir/ target=/dav/dir/ pathInfo=/dav/dir/",
-                "200 uri=/api/v1/dir/ servletPath=/v1 pathInfo=/dir/"},
+                "200 url=http://localhost/dav/dir/ servletPath=/dav/dir/ pathInfo=null",
+                "200 url=http://localhost/api/v1/dir/ servletPath=/api/v1 pathInfo=/dir/"},
           {"/dir/a%20b",
-                "200 url=http://localhost/dav/dir/a%20b target=/dav/dir/a b pathInfo=/dav/dir/a b",
-                "200 uri=/api/v1/dir/a%20b servletPath=/v1 pathInfo=/dir/a b"},
+                "200 url=http://localhost/dav/dir/a%20b servletPath=/dav/dir/a b pathInfo=null",
+                "200 url=http://localhost/api/v1/dir/a%20b servletPath=/api/v1 pathInfo=/dir/a b"},
           {"/dir/a+b",
-                "200 url=http://localhost/dav/dir/a+b target=/dav/dir/a+b pathInfo=/dav/dir/a+b",
-                "200 uri=/api/v1/dir/a+b servletPath=/v1 pathInfo=/dir/a+b"},
+                "200 url=http://localhost/dav/dir/a+b servletPath=/dav/dir/a+b pathInfo=null",
+                "200 url=http://localhost/api/v1/dir/a+b servletPath=/api/v1 pathInfo=/dir/a+b"},
           {"/dir/%E2%82%AC",
-                "200 url=http://localhost/dav/dir/%E2%82%AC target=/dav/dir/\u20ac"
-                + " pathInfo=/dav/dir/\u20ac",
-                "200 uri=/api/v1/dir/%E2%82%AC servletPath=/v1 pathInfo=/dir/\u20ac"},
+                "200 url=http://localhost/dav/dir/%E2%82%AC servletPath=/dav/dir/\u20ac"
+                + " pathInfo=null",
+                "200 url=http://localhost/api/v1/dir/%E2%82%AC servletPath=/api/v1 pathInfo=/dir/\u20ac"},
           {"/dir/%C3%A9",
-                "200 url=http://localhost/dav/dir/%C3%A9 target=/dav/dir/\u00e9"
-                + " pathInfo=/dav/dir/\u00e9",
-                "200 uri=/api/v1/dir/%C3%A9 servletPath=/v1 pathInfo=/dir/\u00e9"},
+                "200 url=http://localhost/dav/dir/%C3%A9 servletPath=/dav/dir/\u00e9"
+                + " pathInfo=null",
+                "200 url=http://localhost/api/v1/dir/%C3%A9 servletPath=/api/v1 pathInfo=/dir/\u00e9"},
           // invalid UTF-8: Jetty 9.4 decoded it as ISO-8859-1 (200, "\u00c3("); Jetty 12 can
           // only reject it or replace it with U+FFFD, we reject it.
           {"/dir/%C3%28",
                 "400",
                 "400"},
           {"/dir/a%25b",
-                "200 url=http://localhost/dav/dir/a%25b target=/dav/dir/a%b pathInfo=/dav/dir/a%b",
-                "200 uri=/api/v1/dir/a%25b servletPath=/v1 pathInfo=/dir/a%b"},
+                "200 url=http://localhost/dav/dir/a%25b servletPath=/dav/dir/a%b pathInfo=null",
+                "200 url=http://localhost/api/v1/dir/a%25b servletPath=/api/v1 pathInfo=/dir/a%b"},
           {"/dir/a%25",
-                "200 url=http://localhost/dav/dir/a%25 target=/dav/dir/a% pathInfo=/dav/dir/a%",
-                "200 uri=/api/v1/dir/a%25 servletPath=/v1 pathInfo=/dir/a%"},
+                "200 url=http://localhost/dav/dir/a%25 servletPath=/dav/dir/a% pathInfo=null",
+                "200 url=http://localhost/api/v1/dir/a%25 servletPath=/api/v1 pathInfo=/dir/a%"},
           {"/dir/a%2Fb",
-                "200 url=http://localhost/dav/dir/a%2Fb target=/dav/dir/a/b pathInfo=/dav/dir/a/b",
-                "200 uri=/api/v1/dir/a%2Fb servletPath=/v1 pathInfo=/dir/a/b"},
+                "200 url=http://localhost/dav/dir/a%2Fb servletPath=/dav/dir/a/b pathInfo=null",
+                "200 url=http://localhost/api/v1/dir/a%2Fb servletPath=/api/v1 pathInfo=/dir/a/b"},
           {"/dir/a%2fb",
-                "200 url=http://localhost/dav/dir/a%2fb target=/dav/dir/a/b pathInfo=/dav/dir/a/b",
-                "200 uri=/api/v1/dir/a%2fb servletPath=/v1 pathInfo=/dir/a/b"},
+                "200 url=http://localhost/dav/dir/a%2fb servletPath=/dav/dir/a/b pathInfo=null",
+                "200 url=http://localhost/api/v1/dir/a%2fb servletPath=/api/v1 pathInfo=/dir/a/b"},
           {"/dir/a%5Cb",
-                "200 url=http://localhost/dav/dir/a%5Cb target=/dav/dir/a\\b"
-                + " pathInfo=/dav/dir/a\\b",
-                "200 uri=/api/v1/dir/a%5Cb servletPath=/v1 pathInfo=/dir/a\\b"},
+                "200 url=http://localhost/dav/dir/a%5Cb servletPath=/dav/dir/a\\b"
+                + " pathInfo=null",
+                "200 url=http://localhost/api/v1/dir/a%5Cb servletPath=/api/v1 pathInfo=/dir/a\\b"},
           {"/dir/a%3Bb",
-                "200 url=http://localhost/dav/dir/a%3Bb target=/dav/dir/a;b pathInfo=/dav/dir/a;b",
-                "200 uri=/api/v1/dir/a%3Bb servletPath=/v1 pathInfo=/dir/a;b"},
+                "200 url=http://localhost/dav/dir/a%3Bb servletPath=/dav/dir/a;b pathInfo=null",
+                "200 url=http://localhost/api/v1/dir/a%3Bb servletPath=/api/v1 pathInfo=/dir/a;b"},
           {"/dir/a%3Fb",
-                "200 url=http://localhost/dav/dir/a%3Fb target=/dav/dir/a?b pathInfo=/dav/dir/a?b",
-                "200 uri=/api/v1/dir/a%3Fb servletPath=/v1 pathInfo=/dir/a?b"},
+                "200 url=http://localhost/dav/dir/a%3Fb servletPath=/dav/dir/a?b pathInfo=null",
+                "200 url=http://localhost/api/v1/dir/a%3Fb servletPath=/api/v1 pathInfo=/dir/a?b"},
           {"/dir/a%23b",
-                "200 url=http://localhost/dav/dir/a%23b target=/dav/dir/a#b pathInfo=/dav/dir/a#b",
-                "200 uri=/api/v1/dir/a%23b servletPath=/v1 pathInfo=/dir/a#b"},
+                "200 url=http://localhost/dav/dir/a%23b servletPath=/dav/dir/a#b pathInfo=null",
+                "200 url=http://localhost/api/v1/dir/a%23b servletPath=/api/v1 pathInfo=/dir/a#b"},
           {"/dir/a%7Eb",
-                "200 url=http://localhost/dav/dir/a%7Eb target=/dav/dir/a~b pathInfo=/dav/dir/a~b",
-                "200 uri=/api/v1/dir/a%7Eb servletPath=/v1 pathInfo=/dir/a~b"},
+                "200 url=http://localhost/dav/dir/a%7Eb servletPath=/dav/dir/a~b pathInfo=null",
+                "200 url=http://localhost/api/v1/dir/a%7Eb servletPath=/api/v1 pathInfo=/dir/a~b"},
           {"/dir/a%00b",
                 "400",
                 "400"},
           {"/dir//double",
-                "200 url=http://localhost/dav/dir//double target=/dav/dir//double"
-                + " pathInfo=/dav/dir//double",
-                "200 uri=/api/v1/dir//double servletPath=/v1 pathInfo=/dir//double"},
+                "200 url=http://localhost/dav/dir//double servletPath=/dav/dir//double"
+                + " pathInfo=null",
+                "200 url=http://localhost/api/v1/dir//double servletPath=/api/v1 pathInfo=/dir//double"},
           {"/dir/./x",
-                "200 url=http://localhost/dav/dir/./x target=/dav/dir/x pathInfo=/dav/dir/x",
-                "200 uri=/api/v1/dir/./x servletPath=/v1 pathInfo=/dir/x"},
+                "200 url=http://localhost/dav/dir/./x servletPath=/dav/dir/x pathInfo=null",
+                "200 url=http://localhost/api/v1/dir/./x servletPath=/api/v1 pathInfo=/dir/x"},
           {"/dir/../x",
-                "200 url=http://localhost/dav/dir/../x target=/dav/x pathInfo=/dav/x",
-                "200 uri=/api/v1/dir/../x servletPath=/v1 pathInfo=/x"},
+                "200 url=http://localhost/dav/dir/../x servletPath=/dav/x pathInfo=null",
+                "200 url=http://localhost/api/v1/dir/../x servletPath=/api/v1 pathInfo=/x"},
           {"/dir/%2e/x",
-                "200 url=http://localhost/dav/dir/%2e/x target=/dav/dir/x pathInfo=/dav/dir/x",
-                "200 uri=/api/v1/dir/%2e/x servletPath=/v1 pathInfo=/dir/x"},
+                "200 url=http://localhost/dav/dir/%2e/x servletPath=/dav/dir/x pathInfo=null",
+                "200 url=http://localhost/api/v1/dir/%2e/x servletPath=/api/v1 pathInfo=/dir/x"},
           {"/dir/%2e%2e/x",
-                "200 url=http://localhost/dav/dir/%2e%2e/x target=/dav/x pathInfo=/dav/x",
-                "200 uri=/api/v1/dir/%2e%2e/x servletPath=/v1 pathInfo=/x"},
+                "200 url=http://localhost/dav/dir/%2e%2e/x servletPath=/dav/x pathInfo=null",
+                "200 url=http://localhost/api/v1/dir/%2e%2e/x servletPath=/api/v1 pathInfo=/x"},
           {"/../../x",
                 "400",
-                "200 url=http://localhost/api/v1/../../x target=/x pathInfo=/x"},
+                "200 url=http://localhost/api/v1/../../x servletPath=/x pathInfo=null"},
           {"/dir/.hidden",
-                "200 url=http://localhost/dav/dir/.hidden target=/dav/dir/.hidden"
-                + " pathInfo=/dav/dir/.hidden",
-                "200 uri=/api/v1/dir/.hidden servletPath=/v1 pathInfo=/dir/.hidden"},
+                "200 url=http://localhost/dav/dir/.hidden servletPath=/dav/dir/.hidden"
+                + " pathInfo=null",
+                "200 url=http://localhost/api/v1/dir/.hidden servletPath=/api/v1 pathInfo=/dir/.hidden"},
           {"/dir/...",
-                "200 url=http://localhost/dav/dir/... target=/dav/dir/... pathInfo=/dav/dir/...",
-                "200 uri=/api/v1/dir/... servletPath=/v1 pathInfo=/dir/..."},
+                "200 url=http://localhost/dav/dir/... servletPath=/dav/dir/... pathInfo=null",
+                "200 url=http://localhost/api/v1/dir/... servletPath=/api/v1 pathInfo=/dir/..."},
           {"/dir/a;p=1/b",
-                "200 url=http://localhost/dav/dir/a;p=1/b target=/dav/dir/a/b"
-                + " pathInfo=/dav/dir/a/b",
-                "200 uri=/api/v1/dir/a;p=1/b servletPath=/v1 pathInfo=/dir/a/b"},
+                "200 url=http://localhost/dav/dir/a;p=1/b servletPath=/dav/dir/a/b"
+                + " pathInfo=null",
+                "200 url=http://localhost/api/v1/dir/a;p=1/b servletPath=/api/v1 pathInfo=/dir/a/b"},
           {"/dir/a;b",
-                "200 url=http://localhost/dav/dir/a;b target=/dav/dir/a pathInfo=/dav/dir/a",
-                "200 uri=/api/v1/dir/a;b servletPath=/v1 pathInfo=/dir/a"},
+                "200 url=http://localhost/dav/dir/a;b servletPath=/dav/dir/a pathInfo=null",
+                "200 url=http://localhost/api/v1/dir/a;b servletPath=/api/v1 pathInfo=/dir/a"},
           {"/dir/a:b",
-                "200 url=http://localhost/dav/dir/a:b target=/dav/dir/a:b pathInfo=/dav/dir/a:b",
-                "200 uri=/api/v1/dir/a:b servletPath=/v1 pathInfo=/dir/a:b"},
+                "200 url=http://localhost/dav/dir/a:b servletPath=/dav/dir/a:b pathInfo=null",
+                "200 url=http://localhost/api/v1/dir/a:b servletPath=/api/v1 pathInfo=/dir/a:b"},
           {"/dir/a@b",
-                "200 url=http://localhost/dav/dir/a@b target=/dav/dir/a@b pathInfo=/dav/dir/a@b",
-                "200 uri=/api/v1/dir/a@b servletPath=/v1 pathInfo=/dir/a@b"},
+                "200 url=http://localhost/dav/dir/a@b servletPath=/dav/dir/a@b pathInfo=null",
+                "200 url=http://localhost/api/v1/dir/a@b servletPath=/api/v1 pathInfo=/dir/a@b"},
           {"/dir/a[1]",
-                "200 url=http://localhost/dav/dir/a[1] target=/dav/dir/a[1] pathInfo=/dav/dir/a[1]",
-                "200 uri=/api/v1/dir/a[1] servletPath=/v1 pathInfo=/dir/a[1]"},
+                "200 url=http://localhost/dav/dir/a[1] servletPath=/dav/dir/a[1] pathInfo=null",
+                "200 url=http://localhost/api/v1/dir/a[1] servletPath=/api/v1 pathInfo=/dir/a[1]"},
           {"/dir/a%5B1%5D",
-                "200 url=http://localhost/dav/dir/a%5B1%5D target=/dav/dir/a[1]"
-                + " pathInfo=/dav/dir/a[1]",
-                "200 uri=/api/v1/dir/a%5B1%5D servletPath=/v1 pathInfo=/dir/a[1]"},
+                "200 url=http://localhost/dav/dir/a%5B1%5D servletPath=/dav/dir/a[1]"
+                + " pathInfo=null",
+                "200 url=http://localhost/api/v1/dir/a%5B1%5D servletPath=/api/v1 pathInfo=/dir/a[1]"},
           {"/dir/a'b",
-                "200 url=http://localhost/dav/dir/a'b target=/dav/dir/a'b pathInfo=/dav/dir/a'b",
-                "200 uri=/api/v1/dir/a'b servletPath=/v1 pathInfo=/dir/a'b"},
+                "200 url=http://localhost/dav/dir/a'b servletPath=/dav/dir/a'b pathInfo=null",
+                "200 url=http://localhost/api/v1/dir/a'b servletPath=/api/v1 pathInfo=/dir/a'b"},
           {"/dir/a&b=c",
-                "200 url=http://localhost/dav/dir/a&b=c target=/dav/dir/a&b=c"
-                + " pathInfo=/dav/dir/a&b=c",
-                "200 uri=/api/v1/dir/a&b=c servletPath=/v1 pathInfo=/dir/a&b=c"},
+                "200 url=http://localhost/dav/dir/a&b=c servletPath=/dav/dir/a&b=c"
+                + " pathInfo=null",
+                "200 url=http://localhost/api/v1/dir/a&b=c servletPath=/api/v1 pathInfo=/dir/a&b=c"},
     };
 
     private Server server;
@@ -195,14 +190,11 @@ public class UriComplianceBaselineTest {
         ServerConnector connector = factory.getObject();
         server.addConnector(connector);
 
-        ServletContextHandler api = new ServletContextHandler();
-        api.setContextPath("/api");
-        api.addServlet(new ServletHolder(new EchoServlet()), "/v1/*");
+        ServletContextFactoryBean context = new ServletContextFactoryBean();
+        context.setServlets(List.of(servlet("/"), servlet("/api/v1/*")));
+        context.afterPropertiesSet();
 
-        ContextHandler root = new ContextHandler("/");
-        root.setHandler(new EchoHandler());
-
-        server.setHandler(new Handler.Sequence(api.get(), root.get()));
+        server.setHandler(context.getObject());
         server.start();
         port = connector.getLocalPort();
     }
@@ -230,6 +222,13 @@ public class UriComplianceBaselineTest {
         }
         assertTrue(String.join("\n", mismatches) + "\nActual table:\n" + actualTable,
               mismatches.isEmpty());
+    }
+
+    private static ServletContextFactoryBean.ServletEntry servlet(String pathSpec) {
+        ServletContextFactoryBean.ServletEntry entry = new ServletContextFactoryBean.ServletEntry();
+        entry.setServlet(new EchoServlet());
+        entry.setPathSpecs(List.of(pathSpec));
+        return entry;
     }
 
     private static String quote(String s) {
@@ -262,26 +261,14 @@ public class UriComplianceBaselineTest {
         }
     }
 
-    /** Stands in for MiltonServlet. */
-    private static class EchoHandler extends AbstractHandler {
-        @Override
-        public void handle(String target, Request baseRequest, HttpServletRequest request,
-              HttpServletResponse response) throws IOException {
-            baseRequest.setHandled(true);
-            response.setContentType("text/plain; charset=UTF-8");
-            response.getWriter().printf("echo url=%s target=%s pathInfo=%s%n",
-                  request.getRequestURL(), target, request.getPathInfo());
-        }
-    }
-
-    /** Stands in for the Jersey servlet. */
+    /** Stands in for MiltonServlet and the Jersey servlet. */
     private static class EchoServlet extends HttpServlet {
         @Override
         protected void doGet(HttpServletRequest request, HttpServletResponse response)
               throws IOException {
             response.setContentType("text/plain; charset=UTF-8");
-            response.getWriter().printf("echo uri=%s servletPath=%s pathInfo=%s%n",
-                  request.getRequestURI(), request.getServletPath(), request.getPathInfo());
+            response.getWriter().printf("echo url=%s servletPath=%s pathInfo=%s%n",
+                  request.getRequestURL(), request.getServletPath(), request.getPathInfo());
         }
     }
 }

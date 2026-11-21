@@ -18,7 +18,7 @@
  */
 package org.dcache.restful.events.spi;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * Optional, ancillary information supplied when a client is selecting events from an EventStream.

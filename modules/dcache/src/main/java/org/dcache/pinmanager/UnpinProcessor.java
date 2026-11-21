@@ -20,10 +20,10 @@ import org.dcache.pinmanager.model.Pin;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.CDCExecutorServiceDecorator;
 import org.dcache.util.NDC;
+import org.dcache.util.RemoteConnectFailureException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
-import org.springframework.remoting.RemoteConnectFailureException;
 import org.springframework.transaction.annotation.Transactional;
 
 /**

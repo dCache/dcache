@@ -43,10 +43,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.PoolMonitor;
+import org.dcache.util.RemoteAccessException;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.remoting.RemoteAccessException;
 
 /**
  * Total and free space reported by doors to clients (e.g., to df on an NFS or xrootdfs mount), as

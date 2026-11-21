@@ -59,18 +59,18 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.util.bulk;
 
-import static javax.ws.rs.core.Response.Status.TOO_MANY_REQUESTS;
-import static javax.ws.rs.core.Response.Status.REQUEST_ENTITY_TOO_LARGE;
+import static jakarta.ws.rs.core.Response.Status.REQUEST_ENTITY_TOO_LARGE;
+import static jakarta.ws.rs.core.Response.Status.TOO_MANY_REQUESTS;
 
 import com.google.common.base.Throwables;
 import dmg.util.Exceptions;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.ClientErrorException;
+import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.InternalServerErrorException;
+import jakarta.ws.rs.NotFoundException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.ClientErrorException;
-import javax.ws.rs.ForbiddenException;
-import javax.ws.rs.InternalServerErrorException;
-import javax.ws.rs.NotFoundException;
 import org.dcache.cells.CellStub;
 import org.dcache.services.bulk.BulkContentTooLargeException;
 import org.dcache.services.bulk.BulkPermissionDeniedException;

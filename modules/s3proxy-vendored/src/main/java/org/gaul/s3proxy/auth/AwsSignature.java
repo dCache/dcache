@@ -43,7 +43,7 @@ import com.google.common.collect.TreeMultimap;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.PercentEscaper;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.gaul.s3proxy.AwsHttpHeaders;
 import org.gaul.s3proxy.S3ErrorCode;
