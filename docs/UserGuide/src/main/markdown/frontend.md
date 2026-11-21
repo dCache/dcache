@@ -4,7 +4,7 @@ Chapter 4. Frontend
 **Table of Contents**
 
 + [REST overview](#rest-overview)
-+ [Swagger](#swagger)
++ [OpenAPI](#openapi)
 + [Authentication](#authentication)
 + [REST with curl](#rest-with-curl)
 + [Active transfers](#active-transfers)
@@ -72,31 +72,32 @@ A number of resources are intended for administrative operations and
 require special privileges.  These resources are not documented here,
 but in a separate admin-focused book.
 
-## Swagger
+## OpenAPI
 
-[Swagger](https://swagger.io/ "Swagger homepage") is a standard way of
-describing a REST API as a JSON object.  All the REST API calls are
-described, along with the arguments and the possible return values.
+[OpenAPI](https://www.openapis.org/ "OpenAPI Initiative homepage"),
+formerly known as Swagger, is a standard way of describing a REST API
+as a JSON object.  All the REST API calls are described, along with
+the arguments and the possible return values.
 
-A Swagger description of a REST API may be used to build documentation
+An OpenAPI description of a REST API may be used to build documentation
 for that API.  It may also be used to generate REST clients in almost
 any language.
 
-Each dCache frontend provides a swagger description of its API.  The
-swagger JSON description is available with the path
-`/api/v1/swagger.json`; for example, from the URL
-`https://dcache.example.org:3880/api/v1/swagger.json`.  A GET request
+Each dCache frontend provides an OpenAPI 3.0 description of its API.
+The JSON description is available with the path
+`/api/v1/openapi.json`; for example, from the URL
+`https://dcache.example.org:3880/api/v1/openapi.json`.  A GET request
 to this location returns a JSON object describing all dCache REST
-operations.
+operations.  The same description is available as YAML from
+`/api/v1/openapi.yaml`.
 
 ```console-user
-curl -s https://prometheus.desy.de:3880/api/v1/swagger.json | jq .
+curl -s https://dcache.example.org:3880/api/v1/openapi.json | jq .
 |{
-|  "swagger": "2.0",
+|  "openapi": "3.0.1",
 |  "info": {
+|    "title": "The dCache REST interface",
 |    "description": "User and administration interaction with dCache",
-|    "version": "Swagger Server",
-|    "title": "",
 |    "contact": {
 |      "name": "dCache support team",
 |      "email": "support@dCache.org"
@@ -104,19 +105,23 @@ curl -s https://prometheus.desy.de:3880/api/v1/swagger.json | jq .
 |    "license": {
 |      "name": "Apache 2.0",
 |      "url": "http://www.apache.org/licenses/LICENSE-2.0"
-|    }
+|    },
+|    "version": "v1.0.1"
 |  },
-|  "basePath": "/api/v1",
+|  "servers": [
+|    {
+|      "url": "/api/v1"
+|    }
+|  ],
 |[...]
-|  "externalDocs": {
-|    "description": "Wiki",
-|    "url": "https://github.com/dCache/dcache/wiki/Restful-API"
-|  }
 ```
+
+Earlier dCache versions provided a Swagger 2.0 description at
+`/api/v1/swagger.json` instead.
 
 ### Swagger UI
 
-The Swagger UI is a JavaScript application that reads the Swagger JSON
+The Swagger UI is a JavaScript application that reads the OpenAPI
 description of a REST API and builds an interactive web-page.  This
 page allows you to explore the API, read the documentation and even
 try out the operations.
@@ -127,7 +132,7 @@ can try the Swagger UI by pointing your browser at `/api/v1/`
 
 ![Top of Swagger UI page](images/swagger-ui-1.png)
 
-*Note* the Swagger JSON description of dCache REST API and
+*Note* the OpenAPI description of dCache REST API and
 corresponding Swagger UI include all resources, whether they are
 user-focused or admin-focused.  You will see a number of resources
 that are not described here and that regular dCache users are not
